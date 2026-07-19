@@ -1,0 +1,119 @@
+import type { AnyField, Role, SchemaLike } from '../field/index.js';
+import { anatomy } from '../field/index.js';
+import {
+  clean,
+  type FieldDescriptor,
+  type FieldExtension,
+  type RelationDescriptor,
+  type RoleDescriptor,
+  type SchemaBundle,
+  type SchemaDescriptor,
+} from './card.js';
+
+// ─── describe — schema → card (the single canonical serialiser) ────
+
+/**
+ * A caller must supply this field: no create rule answers absence, and it is not
+ * a `many` relation (absent → `[]`). Presence only — nullability is the OTHER
+ * axis: a `nullable()` field stays required (the caller may supply `null`, not
+ * omit the key), exactly what `validateFields` enforces.
+ */
+function isRequired(field: AnyField): boolean {
+  if (field.lifecycle?.create !== undefined) return false;
+  if (field.role?.relation?.kind === 'many') return false;
+  return true;
+}
+
+function describeRole(role: Role): RoleDescriptor | undefined {
+  const out: RoleDescriptor = {};
+  if (role.primary) out.primary = true;
+  if (role.unique) out.unique = true;
+  if (role.index) out.index = true;
+  if (role.relation) {
+    out.relation = clean({
+      to: (role.relation.to() as { name?: string }).name?.toLowerCase() ?? '', // thunk → name
+      kind: role.relation.kind,
+      onDelete: role.relation.onDelete,
+    }) as RelationDescriptor;
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
+function describeExtension(field: AnyField): FieldExtension | undefined {
+  const ext: FieldExtension = {};
+  if (field.role) ext.role = describeRole(field.role);
+  // The normal forms are named tokens, pure JSON — they travel verbatim
+  // (a custom generator travels by NAME, re-resolved against the consumer's registry).
+  if (field.lifecycle) ext.lifecycle = field.lifecycle;
+  // Carry only an explicit override; the derived default (date → isoDate) is
+  // re-derived from `shape.format` on reconstruction (convention over config).
+  if (field.boundary !== undefined) ext.boundary = field.boundary;
+  clean(ext as Record<string, unknown>);
+  return Object.keys(ext).length ? ext : undefined;
+}
+
+function describeField(field: AnyField): FieldDescriptor {
+  const out: FieldDescriptor = {};
+  // Shape is already JSON Schema's vocabulary — nullability included, as the
+  // `[T,'null']` type union — so its keywords copy verbatim (an embedded object's
+  // `properties`/`required` too, themselves shape-only).
+  if (field.shape) {
+    for (const [key, value] of Object.entries(field.shape)) {
+      if (value === undefined) continue;
+      (out as Record<string, unknown>)[key] = value;
+    }
+  } else if (field.role?.relation?.kind === 'many') {
+    out.type = 'array';
+  }
+  if (field.meta?.description) out.description = field.meta.description;
+  const ext = describeExtension(field);
+  if (ext) out['x-fougere'] = ext;
+  return out;
+}
+
+/**
+ * Produce the portable card for a schema — THE single canonical serialiser
+ * (the hand-rolled copies in adapters call this). `name` titles the entity; it
+ * falls back to the schema's source/class name when omitted.
+ */
+export function describe(schema: SchemaLike, name?: string): SchemaDescriptor {
+  const properties: Record<string, FieldDescriptor> = {};
+  const required: string[] = [];
+  for (const [key, field] of Object.entries(schema.getFields())) {
+    properties[key] = describeField(field);
+    if (isRequired(field)) required.push(key);
+  }
+  const descriptor: SchemaDescriptor = {
+    type: 'object',
+    properties,
+    'x-fougere-version': 1,
+    'x-fougere-vendor': 'fougere',
+  };
+  const title = name ?? sourceName(schema);
+  if (title) descriptor.title = title;
+  if (required.length) descriptor.required = required;
+  return descriptor;
+}
+
+function sourceName(schema: SchemaLike): string | undefined {
+  const s = schema as { source?: { name?: string }; name?: string };
+  return s.source?.name ?? s.name;
+}
+
+/**
+ * Describe a whole set of entities as one self-contained bundle (the `$defs`
+ * document). Accepts a name→schema record or an array (names taken from the
+ * schemas). Keys are lowercased to match the relation `to` names `describe` emits,
+ * so `$ref`-by-name resolves cleanly in {@link reconstructSet}.
+ */
+export function describeSet(schemas: Record<string, SchemaLike> | SchemaLike[]): SchemaBundle {
+  const entries = Array.isArray(schemas)
+    ? schemas.map((s) => [sourceName(s) ?? '', s] as const)
+    : Object.entries(schemas);
+  const $defs: Record<string, SchemaDescriptor> = {};
+  for (const [name, schema] of entries) {
+    const key = name.toLowerCase();
+    $defs[key] = describe(schema, key);
+  }
+  return { $defs, 'x-fougere-version': 1, 'x-fougere-vendor': 'fougere' };
+}

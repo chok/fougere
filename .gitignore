@@ -1,0 +1,12 @@
+**/dist/
+**/node_modules/
+**/.nuxt/
+**/.next/
+**/.output/
+**/.fougere/
+.claude/settings.local.json
+**/*.generated.ts
+**/*.db
+**/*.db-shm
+**/*.db-wal
+**/.data/

@@ -1,0 +1,125 @@
+import { describe, it, expect } from 'vitest';
+import {
+  entity, primary, text, date, optional, readOnly, writeOnly, boundaryOf,
+  resolveBoundary, encodeFields, validateFields,
+  registerDecoder, registerEncoder, registerBoundaryAlias,
+} from '../src/index.js';
+import { createField } from '../src/field/index.js';
+
+class Event extends entity({
+  id: primary(),
+  name: text({ min: 1 }),
+  startsAt: date(),
+}) {}
+
+describe('boundary · date default (derived from shape)', () => {
+  it('validate() decodes an ISO string into a Date', () => {
+    const result = Event.validate({ id: 'e1', name: 'Launch', startsAt: '2026-05-31T10:00:00.000Z' });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.startsAt).toBeInstanceOf(Date);
+  });
+
+  it('from() decodes too — the returned value matches its declared Date type (#3)', () => {
+    const out = Event.from({ id: 'e1', name: 'Launch', startsAt: '2026-05-31T10:00:00.000Z' });
+    expect(out.startsAt).toBeInstanceOf(Date);
+  });
+
+  it('encode (egress) turns a Date back into an ISO string', () => {
+    const field = Event.getFields().startsAt;
+    const wire = resolveBoundary(field).encode(new Date('2026-05-31T10:00:00.000Z'));
+    expect(wire).toBe('2026-05-31T10:00:00.000Z');
+  });
+
+  it('the derived default survives the nullable union — optional(date()) still decodes', () => {
+    class Task extends entity({ id: primary(), dueAt: optional(date()) }) {}
+    const result = Task.validate({ id: 't1', dueAt: '2026-05-31T10:00:00.000Z' });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.dueAt).toBeInstanceOf(Date);
+    // and a legal null skips decode instead of being rejected by the decoder
+    const asNull = Task.validate({ id: 't1', dueAt: null });
+    expect(asNull.success).toBe(true);
+    if (asNull.success) expect(asNull.data.dueAt).toBeNull();
+  });
+});
+
+describe('boundary · non-date kinds are identity', () => {
+  it('a string field decodes to itself', () => {
+    const field = Event.getFields().name;
+    expect(resolveBoundary(field).decode('hi')).toEqual({ value: 'hi' });
+  });
+});
+
+describe('boundary · override slot', () => {
+  it('a registered alias overrides the shape-derived default', () => {
+    registerDecoder('fromCents', (v) => ({ value: typeof v === 'number' ? v / 100 : v }));
+    registerEncoder('toCents', (v) => (typeof v === 'number' ? Math.round(v * 100) : v));
+    registerBoundaryAlias('moneyCents', { in: { decode: 'fromCents' }, out: { encode: 'toCents' } });
+
+    const price = createField<number>({ shape: { type: 'number' }, boundary: 'moneyCents' });
+    const { decode, encode } = resolveBoundary(price);
+    expect(decode(1099)).toEqual({ value: 10.99 });
+    expect(encode(10.99)).toBe(1099);
+  });
+
+  it('directional form allows asymmetry — an absent direction is identity', () => {
+    const f = createField<number>({ shape: { type: 'number' }, boundary: { in: { decode: 'fromCents' } } });
+    expect(resolveBoundary(f).decode(500)).toEqual({ value: 5 });
+    expect(resolveBoundary(f).encode(5)).toBe(5); // no out rule → identity
+  });
+
+  it('an unknown alias throws at resolve time', () => {
+    const f = createField<number>({ shape: { type: 'number' }, boundary: 'nope' });
+    expect(() => resolveBoundary(f)).toThrow(/Unknown boundary alias/);
+  });
+});
+
+describe("boundary · 'closed' permissions (readOnly / writeOnly)", () => {
+  it("readOnly() closes in — present in an input is 'Read-only', absent is never 'Required'", () => {
+    const fields = { views: readOnly(text()), title: text() };
+    const present = validateFields(fields, { views: '9', title: 'x' });
+    expect(present.success).toBe(false);
+    if (!present.success) expect(present.errors[0]).toEqual({ path: 'views', message: 'Read-only' });
+    // absent: the server owns it — no Required error despite no create rule
+    expect(validateFields(fields, { title: 'x' }).success).toBe(true);
+    // rejected in patch mode too
+    expect(validateFields(fields, { views: '9' }, '', { patch: true }).success).toBe(false);
+  });
+
+  it('writeOnly() closes out — accepted at ingress, omitted at egress', () => {
+    const fields = { password: writeOnly(text({ min: 8 })), name: text() };
+    const v = validateFields(fields, { password: 'hunter22', name: 'Ada' });
+    expect(v.success).toBe(true);
+    if (v.success) expect(v.data.password).toBe('hunter22'); // ingress open, shape judged
+    const wire = encodeFields(fields, { password: 'hunter22', name: 'Ada' });
+    expect('password' in wire).toBe(false);
+    expect(wire.name).toBe('Ada');
+  });
+
+  it('closing one direction keeps the derived conversion of the other (writeOnly date)', () => {
+    const f = writeOnly(date());
+    expect(boundaryOf(f).out).toBe('closed');
+    expect(resolveBoundary(f).decode('2026-05-31T10:00:00.000Z')).toEqual({ value: new Date('2026-05-31T10:00:00.000Z') });
+  });
+});
+
+describe('boundary · survit aux transforms de field (cloneField)', () => {
+  registerDecoder('fromCents', (v) => ({ value: typeof v === 'number' ? v / 100 : v }));
+  registerEncoder('toCents', (v) => (typeof v === 'number' ? Math.round(v * 100) : v));
+  registerBoundaryAlias('moneyCents', { in: { decode: 'fromCents' }, out: { encode: 'toCents' } });
+  const money = () => createField<number>({ shape: { type: 'number' }, boundary: 'moneyCents' });
+
+  it('optional() préserve le boundary', () => {
+    expect(resolveBoundary(optional(money())).decode(1099)).toEqual({ value: 10.99 });
+  });
+
+  it('primary(field) préserve le boundary ET la description', () => {
+    const f = primary(createField<string>({ shape: { type: 'string' }, boundary: 'moneyCents', meta: { description: 'id' } }));
+    expect(resolveBoundary(f).decode(1099)).toEqual({ value: 10.99 });
+    expect(f.meta?.description).toBe('id');
+  });
+
+  it('partial() préserve le boundary', () => {
+    class M extends entity({ price: money() }) {}
+    expect(resolveBoundary(M.partial().getFields().price).decode(1099)).toEqual({ value: 10.99 });
+  });
+});

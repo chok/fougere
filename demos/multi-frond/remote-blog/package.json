@@ -1,0 +1,18 @@
+{
+  "name": "remote-blog",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx tsx server.ts"
+  },
+  "dependencies": {
+    "@fougere/core": "workspace:*",
+    "@fougere/container-fougere": "workspace:*",
+    "@fougere/schema": "workspace:*",
+    "@fougere/schema-rest": "workspace:*",
+    "@fougere/http": "workspace:*",
+    "hono": "^4.0.0",
+    "@hono/node-server": "^1.0.0",
+    "jiti": "^2.0.0"
+  }
+}

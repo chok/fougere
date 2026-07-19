@@ -1,0 +1,13 @@
+.git
+**/node_modules
+**/.output
+**/.nuxt
+**/.data
+**/dist
+**/*.db
+**/*.db-shm
+**/*.db-wal
+**/*.log
+.dockerignore
+site/Dockerfile
+site/docker-compose.yml

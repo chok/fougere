@@ -1,0 +1,12 @@
+{
+  "name": "@frond/catalog",
+  "version": "0.0.1",
+  "type": "module",
+  "fougere": {
+    "frond": "catalog"
+  },
+  "exports": {
+    "./entities/*": "./entities/*.ts",
+    "./package.json": "./package.json"
+  }
+}

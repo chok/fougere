@@ -1,0 +1,216 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+/* ── Hero glow ─────────────────────────────────────────────────────────── */
+.hero-glow {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.hero-glow::before {
+  content: "";
+  position: absolute;
+  top: -12rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60rem;
+  height: 32rem;
+  border-radius: 9999px;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--ui-primary) 13%, transparent), transparent);
+  filter: blur(48px);
+}
+
+/* ── Code windows (landing) ────────────────────────────────────────────── */
+.code-window {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: var(--ui-bg-elevated);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.06), 0 8px 24px -12px rgb(0 0 0 / 0.12);
+}
+.code-window-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.9rem;
+  border-bottom: 1px solid var(--ui-border);
+}
+.code-dot {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 9999px;
+}
+.code-filename {
+  margin-left: 0.5rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.72rem;
+  color: var(--ui-text-muted);
+  letter-spacing: 0.01em;
+}
+.code-window-body {
+  flex: 1;
+}
+.code-window-body pre {
+  height: 100%;
+  margin: 0;
+  padding: 1rem;
+  font-size: 0.74rem;
+  line-height: 1.65;
+  overflow-x: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent !important;
+}
+.code-window-body :not(pre) > code {
+  background: none;
+  padding: 0;
+}
+
+/* ── Shiki dual-theme switching ────────────────────────────────────────── */
+.shiki span {
+  color: var(--shiki-default);
+  font-style: var(--shiki-default-font-style);
+  font-weight: var(--shiki-default-font-weight);
+}
+.dark .shiki,
+.dark .shiki span {
+  color: var(--shiki-dark);
+  font-style: var(--shiki-dark-font-style);
+  font-weight: var(--shiki-dark-font-weight);
+}
+
+/* ── Prose — docs pages and rendered post bodies ───────────────────────── */
+.prose-body {
+  line-height: 1.75;
+  font-size: 0.95rem;
+}
+.prose-body h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 1rem; color: var(--ui-text-highlighted); }
+.prose-body h2 { font-size: 1.35rem; font-weight: 600; letter-spacing: -0.01em; margin: 2.25rem 0 0.75rem; padding-top: 1.25rem; border-top: 1px solid var(--ui-border); color: var(--ui-text-highlighted); }
+.prose-body h3 { font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 0.5rem; color: var(--ui-text-highlighted); }
+.prose-body p { margin: 0.75rem 0; }
+.prose-body ul, .prose-body ol { margin: 0.75rem 0; padding-left: 1.5rem; }
+.prose-body ul { list-style: disc; }
+.prose-body ol { list-style: decimal; }
+.prose-body li { margin: 0.3rem 0; }
+.prose-body li::marker { color: var(--ui-text-dimmed); }
+.prose-body a { color: var(--ui-primary); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: color-mix(in oklab, var(--ui-primary) 40%, transparent); }
+.prose-body a:hover { text-decoration-color: var(--ui-primary); }
+.prose-body strong { color: var(--ui-text-highlighted); }
+
+.prose-body :not(pre) > code {
+  font-size: 0.85em;
+  background: var(--ui-bg-elevated);
+  border: 1px solid var(--ui-border);
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.375rem;
+  color: var(--ui-text-highlighted);
+}
+
+.prose-body pre {
+  border: 1px solid var(--ui-border);
+  border-radius: 0.65rem;
+  padding: 1rem 1.15rem;
+  overflow-x: auto;
+  margin: 1.1rem 0;
+  font-size: 0.82rem;
+  line-height: 1.65;
+  background: var(--ui-bg-elevated);
+}
+.prose-body pre code { background: none; border: 0; padding: 0; }
+
+.prose-body blockquote {
+  border-left: 3px solid var(--ui-primary);
+  border-radius: 0.375rem;
+  background: color-mix(in oklab, var(--ui-primary) 6%, transparent);
+  padding: 0.6rem 1rem;
+  color: var(--ui-text-muted);
+  margin: 1.25rem 0;
+}
+.prose-body blockquote p { margin: 0.25rem 0; }
+
+.prose-body hr { border: 0; border-top: 1px solid var(--ui-border); margin: 2rem 0; }
+
+.prose-body table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 1.25rem 0;
+  font-size: 0.85rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.65rem;
+  overflow: hidden;
+}
+.prose-body th, .prose-body td { border-bottom: 1px solid var(--ui-border); padding: 0.55rem 0.85rem; text-align: left; vertical-align: top; }
+.prose-body tr:last-child td { border-bottom: 0; }
+.prose-body th { background: var(--ui-bg-elevated); font-weight: 600; color: var(--ui-text-highlighted); }
+.prose-body tbody tr:hover { background: color-mix(in oklab, var(--ui-bg-elevated) 55%, transparent); }
+
+/* ── SVG diagrams ──────────────────────────────────────────────────────── */
+.deriv-svg { font-family: inherit; }
+.deriv-svg .deriv-core-rect {
+  fill: var(--ui-bg);
+  stroke: var(--ui-border-accented);
+  stroke-width: 1.5;
+}
+.deriv-svg .deriv-node-rect,
+.deriv-svg .grad-panel {
+  fill: var(--ui-bg-elevated);
+  stroke: var(--ui-border);
+  stroke-width: 1;
+}
+.deriv-svg .grad-panel { fill: transparent; }
+.deriv-svg .deriv-link {
+  fill: none;
+  stroke: var(--ui-border-accented);
+  stroke-width: 1.5;
+}
+.deriv-svg .deriv-flow {
+  fill: none;
+  stroke: var(--ui-primary);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 9;
+  opacity: 0.55;
+  animation: deriv-flow 2.6s linear infinite;
+}
+@keyframes deriv-flow {
+  to { stroke-dashoffset: -12; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .deriv-svg .deriv-flow { animation: none; opacity: 0; }
+}
+.deriv-svg .deriv-arrowhead { fill: var(--ui-border-accented); }
+.deriv-svg .deriv-dot { fill: var(--ui-border-accented); }
+.deriv-svg .deriv-node-label {
+  fill: var(--ui-text-highlighted);
+  font-size: 14px;
+  font-weight: 600;
+}
+.deriv-svg .deriv-node-hint {
+  fill: var(--ui-text-muted);
+  font-size: 11.5px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+}
+.deriv-svg .deriv-core-label {
+  fill: var(--ui-text-muted);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+.deriv-svg .deriv-code {
+  fill: var(--ui-text-highlighted);
+  font-size: 12.5px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  white-space: pre;
+}
+.deriv-svg .grad-leaf { fill: var(--ui-primary); }
+.deriv-svg .deriv-sep { stroke: var(--ui-border); stroke-width: 1; }
+.deriv-svg .deriv-judge { fill: var(--ui-text-muted); font-size: 10.5px; font-style: italic; }
+.deriv-svg .deriv-envelope {
+  fill: color-mix(in oklab, var(--ui-primary) 4%, transparent);
+  stroke: var(--ui-border-accented);
+  stroke-width: 1;
+  stroke-dasharray: 5 4;
+}

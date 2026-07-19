@@ -1,0 +1,43 @@
+// The primitive — a Field decomposed on four orthogonal axes plus the meta
+// compartment. Each axis lives in its own file; this barrel is the
+// package-internal (and index-level) view.
+export {
+  type Shape,
+  type ShapeType,
+  type BaseShape,
+  type ShapeAnatomy,
+  type StringFormat,
+  nullableShape,
+  anatomy,
+  isNullable,
+} from './shape.js';
+export { type Role, type Relation, type EntityConstructor, toTargetThunk } from './role.js';
+export {
+  type Lifecycle,
+  type GeneratorRef,
+  registerGenerator,
+  resolveCustomGenerator,
+} from './lifecycle.js';
+export {
+  type Boundary,
+  type BoundaryRef,
+  type Decoder,
+  type Encoder,
+  resolveBoundary,
+  declaredBoundary,
+  boundaryOf,
+  registerDecoder,
+  registerEncoder,
+  registerBoundaryAlias,
+} from './boundary.js';
+export { type Meta } from './meta.js';
+export {
+  type Field,
+  type AnyField,
+  type Fields,
+  type FieldInit,
+  type SchemaLike,
+  createField,
+  cloneField,
+  isField,
+} from './field.js';

@@ -1,0 +1,203 @@
+import { describe, it, expect } from 'vitest';
+import { join } from 'node:path';
+import { scanProject, toRegistrationName } from '../src/index.js';
+
+const fixturesRoot = join(import.meta.dirname, 'fixtures');
+
+describe('toRegistrationName', () => {
+  it('lowercases the first character', () => {
+    expect(toRegistrationName('OrderService')).toBe('orderService');
+    expect(toRegistrationName('X')).toBe('x');
+    expect(toRegistrationName('ProductRepository')).toBe('productRepository');
+  });
+});
+
+describe('scanProject', () => {
+  it('returns empty fronds when fronds/ does not exist', async () => {
+    const result = await scanProject('/tmp/nonexistent-fougere-test');
+    expect(result.fronds).toEqual([]);
+  });
+
+  it('discovers fronds from fronds/ directory', async () => {
+    const result = await scanProject(fixturesRoot);
+    const names = result.fronds.map((f) => f.name).sort();
+    expect(names).toEqual(['catalog', 'inventory', 'orders']);
+  });
+
+  it('discovers services', async () => {
+    const result = await scanProject(fixturesRoot);
+    const orders = result.fronds.find((f) => f.name === 'orders')!;
+    const serviceNames = orders.providers
+      .filter((p) => p.kind === 'service')
+      .map((p) => p.name);
+    expect(serviceNames).toContain('orderService');
+  });
+
+  it('discovers repositories', async () => {
+    const result = await scanProject(fixturesRoot);
+    const orders = result.fronds.find((f) => f.name === 'orders')!;
+    const repoNames = orders.providers
+      .filter((p) => p.kind === 'repository')
+      .map((p) => p.name);
+    expect(repoNames).toContain('orderRepository');
+  });
+
+  it('sets correct kind for each provider', async () => {
+    const result = await scanProject(fixturesRoot);
+    const orders = result.fronds.find((f) => f.name === 'orders')!;
+    const service = orders.providers.find((p) => p.name === 'orderService')!;
+    const repo = orders.providers.find((p) => p.name === 'orderRepository')!;
+    expect(service.kind).toBe('service');
+    expect(repo.kind).toBe('repository');
+  });
+
+  it('stores the constructor from default export', async () => {
+    const result = await scanProject(fixturesRoot);
+    const catalog = result.fronds.find((f) => f.name === 'catalog')!;
+    const product = catalog.providers.find((p) => p.name === 'productService')!;
+    expect(typeof product.ctor).toBe('function');
+    expect(product.ctor.name).toBe('ProductService');
+  });
+
+  it('discovers entities from entities/ directory', async () => {
+    const result = await scanProject(fixturesRoot);
+    const catalog = result.fronds.find((f) => f.name === 'catalog')!;
+    const entityNames = catalog.entities.map((e) => e.name).sort();
+    expect(entityNames).toEqual(['brand', 'product']);
+  });
+
+  it('stores the entity class with getFields()', async () => {
+    const result = await scanProject(fixturesRoot);
+    const catalog = result.fronds.find((f) => f.name === 'catalog')!;
+    const product = catalog.entities.find((e) => e.name === 'product')!;
+    expect(typeof product.entityClass.getFields).toBe('function');
+    expect(product.entityClass.getFields()).toHaveProperty('id');
+  });
+
+  it('returns empty entities for fronds without entities/ dir', async () => {
+    const result = await scanProject(fixturesRoot);
+    const orders = result.fronds.find((f) => f.name === 'orders')!;
+    expect(orders.entities).toEqual([]);
+  });
+
+  it('discovers handlers from handlers/ directory', async () => {
+    const result = await scanProject(fixturesRoot);
+    const catalog = result.fronds.find((f) => f.name === 'catalog')!;
+    expect(catalog.handlers).toHaveLength(1);
+    expect(catalog.handlers[0].entityName).toBe('product');
+    expect(catalog.handlers[0].name).toBe('productHandler');
+  });
+
+  it('operations contains all operations with signatures', async () => {
+    const result = await scanProject(fixturesRoot);
+    const catalog = result.fronds.find((f) => f.name === 'catalog')!;
+    const handler = catalog.handlers[0];
+
+    // CRUD ops detected
+    expect(handler.operations.has('list')).toBe(true);
+    expect(handler.operations.has('findById')).toBe(true);
+
+    // Op with schema resolution
+    expect(handler.operations.has('search')).toBe(true);
+    const search = handler.operations.get('search')!;
+    expect(typeof search.input?.getFields).toBe('function');
+    expect(typeof search.output?.getFields).toBe('function');
+    expect(search.input!.getFields()).toHaveProperty('name');
+    expect(search.output!.getFields()).toHaveProperty('id');
+  });
+
+  it('returns empty handlers for fronds without handlers/ dir', async () => {
+    const result = await scanProject(fixturesRoot);
+    const orders = result.fronds.find((f) => f.name === 'orders')!;
+    expect(orders.handlers).toEqual([]);
+  });
+
+  it('discovers presenters from presenters/ directory', async () => {
+    const result = await scanProject(fixturesRoot);
+    const catalog = result.fronds.find((f) => f.name === 'catalog')!;
+    expect(catalog.presenters).toHaveLength(1);
+    expect(catalog.presenters[0].entityName).toBe('product');
+  });
+
+  it('detects computed field names from presenter methods', async () => {
+    const result = await scanProject(fixturesRoot);
+    const catalog = result.fronds.find((f) => f.name === 'catalog')!;
+    const presenter = catalog.presenters[0];
+    expect(presenter.fields).toContain('displayPrice');
+    expect(presenter.fields).toContain('isExpensive');
+    expect(presenter.fields).not.toContain('constructor');
+  });
+
+  it('infers return types from presenter method signatures', async () => {
+    const result = await scanProject(fixturesRoot);
+    const catalog = result.fronds.find((f) => f.name === 'catalog')!;
+    const presenter = catalog.presenters[0];
+    const displayPrice = presenter.fieldMeta.find((m) => m.name === 'displayPrice')!;
+    const isExpensive = presenter.fieldMeta.find((m) => m.name === 'isExpensive')!;
+    expect(displayPrice.returnType).toBe('string');
+    expect(isExpensive.returnType).toBe('boolean');
+  });
+
+  it('returns empty presenters for fronds without presenters/ dir', async () => {
+    const result = await scanProject(fixturesRoot);
+    const orders = result.fronds.find((f) => f.name === 'orders')!;
+    expect(orders.presenters).toEqual([]);
+  });
+
+  // ── Crud inheritance ────────────────────────
+
+  it('parses inherited CRUD methods from Crud(Entity) mixin', async () => {
+    const result = await scanProject(fixturesRoot);
+    const inventory = result.fronds.find((f) => f.name === 'inventory')!;
+    const itemHandler = inventory.handlers.find((h) => h.entityName === 'item')!;
+
+    // All 5 CRUD ops should have signatures (inherited from Crud mixin)
+    expect(itemHandler.operations.has('list')).toBe(true);
+    expect(itemHandler.operations.has('findById')).toBe(true);
+    expect(itemHandler.operations.has('create')).toBe(true);
+    expect(itemHandler.operations.has('update')).toBe(true);
+    expect(itemHandler.operations.has('delete')).toBe(true);
+
+    // Signatures should exist (not just names — actual parsed params)
+    const create = itemHandler.operations.get('create')!;
+    expect(create.signature).toBeDefined();
+    expect(create.signature!.params.length).toBeGreaterThan(0);
+  });
+
+  it('resolves T → entity class in inherited CRUD operations', async () => {
+    const result = await scanProject(fixturesRoot);
+    const inventory = result.fronds.find((f) => f.name === 'inventory')!;
+    const itemHandler = inventory.handlers.find((h) => h.entityName === 'item')!;
+
+    // create(input: T) → T resolved to Item → meta.input = Item entity
+    const create = itemHandler.operations.get('create')!;
+    expect(create.input).toBeDefined();
+    expect(typeof create.input!.getFields).toBe('function');
+    expect(create.input!.getFields()).toHaveProperty('name');
+
+    // Output should also resolve (create returns T = Item)
+    expect(create.output).toBeDefined();
+    expect(create.output!.getFields()).toHaveProperty('id');
+  });
+
+  it('child methods override inherited ones', async () => {
+    const result = await scanProject(fixturesRoot);
+    const inventory = result.fronds.find((f) => f.name === 'inventory')!;
+    const stockHandler = inventory.handlers.find((h) => h.entityName === 'stock')!;
+
+    // StockHandler overrides list() — should use child signature (no params, returns Item[])
+    const list = stockHandler.operations.get('list')!;
+    expect(list.signature).toBeDefined();
+    expect(list.signature!.params).toHaveLength(0); // child's list() has no params
+
+    // Inherited ops still present
+    expect(stockHandler.operations.has('findById')).toBe(true);
+    expect(stockHandler.operations.has('create')).toBe(true);
+
+    // Custom op from child
+    expect(stockHandler.operations.has('searchStock')).toBe(true);
+    const search = stockHandler.operations.get('searchStock')!;
+    expect(search.input).toBeDefined();
+    expect(typeof search.input!.getFields).toBe('function');
+  });
+});

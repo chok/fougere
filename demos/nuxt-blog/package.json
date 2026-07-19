@@ -1,0 +1,40 @@
+{
+  "name": "@fougere/demo-nuxt-blog",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "graphql": "tsx graphql.ts",
+    "build": "nuxt build",
+    "preview": "nuxt preview",
+    "dev:blog": "node serve-blog.mjs"
+  },
+  "dependencies": {
+    "@fougere/container-fougere": "workspace:*",
+    "@fougere/auth-better": "workspace:*",
+    "@fougere/http": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/nuxt": "workspace:*",
+    "@fougere/schema": "workspace:*",
+    "@fougere/schema-drizzle": "workspace:*",
+    "@fougere/schema-graphql": "workspace:*",
+    "@nuxt/ui": "^4.6.0",
+    "@pothos/core": "^4.12.0",
+    "@tailwindcss/vite": "^4.2.2",
+    "better-sqlite3": "^11.0.0",
+    "drizzle-orm": "^0.44.0",
+    "graphql": "^16.13.1",
+    "hono": "^4.7.0",
+    "@hono/node-server": "^1.14.0",
+    "nuxt": "^4.4.2",
+    "tailwindcss": "^4.2.2",
+    "vite": "^7.3.1",
+    "vue": "^3.5.16",
+    "@fougere/transport-http": "workspace:*",
+    "jiti": "^2.6.1"
+  },
+  "devDependencies": {
+    "@iconify-json/noto": "^1.2.7",
+    "tsx": "^4.21.0"
+  }
+}

@@ -1,0 +1,20 @@
+# From the monorepo root:  docker compose -f site/docker-compose.yml up -d --build
+services:
+  site:
+    build:
+      context: ..
+      dockerfile: site/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      # Public origin of the deployment — better-auth validates it.
+      SITE_URL: ${SITE_URL:-http://localhost:3000}
+      # Required in production: any string of 32+ characters.
+      SITE_AUTH_SECRET: ${SITE_AUTH_SECRET:?set SITE_AUTH_SECRET in .env}
+    volumes:
+      # All writable state (SQLite db + content index) lives here.
+      - site-data:/app/.data
+    restart: unless-stopped
+
+volumes:
+  site-data:

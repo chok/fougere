@@ -1,0 +1,24 @@
+{
+  "name": "fougere",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "pnpm": {
+    "overrides": {
+      "graphql": "^16.13.1"
+    },
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "@swc/core"
+    ]
+  },
+  "devDependencies": {
+    "@swc/core": "^1.15.21",
+    "@types/node": "^22.19.15",
+    "typescript": "^7.0.2",
+    "unplugin-swc": "^1.5.9",
+    "vitest": "^4.1.0"
+  }
+}

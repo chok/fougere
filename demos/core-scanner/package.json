@@ -1,0 +1,17 @@
+{
+  "name": "fougere-demo-core-scanner",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/main.ts"
+  },
+  "dependencies": {
+    "@fougere/container": "workspace:*",
+    "@fougere/container-fougere": "workspace:*",
+    "@fougere/core": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0"
+  }
+}

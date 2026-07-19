@@ -1,0 +1,9 @@
+packages:
+  - packages/*
+  - packages/transport/*
+  - demos/*
+  - site
+  - demos/multi-frond/remote-blog
+  - demos/multi-frond/consumer
+
+approveBuilds: '@swc/core'

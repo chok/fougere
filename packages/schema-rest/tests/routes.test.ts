@@ -1,0 +1,311 @@
+import { describe, it, expect, vi } from 'vitest';
+import { entity, primary, text, number, auto, readOnly, writeOnly } from '@fougere/schema';
+import { generateRoutes } from '../src/index.js';
+
+// ─── Fixtures ──────────────────────────────────
+
+class Post extends entity({
+  id: primary(),
+  title: text({ min: 1 }),
+  views: number({ integer: true }),
+  createdAt: auto(),
+}) {}
+
+class Author extends entity({
+  id: primary(),
+  name: text({ min: 1 }),
+  email: text(),
+}) {}
+
+function fakeCrud() {
+  return {
+    list: vi.fn(async () => []),
+    findById: vi.fn(async () => undefined),
+    create: vi.fn(async (input: any) => ({ id: '1', ...input })),
+    update: vi.fn(async (id: string, input: any) => ({ id, ...input })),
+    delete: vi.fn(async () => true),
+  };
+}
+
+/** Build an OperationsMap from op names + optional ops with meta. */
+function opsMap(
+  ops: string[],
+  custom?: Record<string, { input?: any; output?: any }>,
+): Map<string, any> {
+  const map = new Map<string, any>();
+  for (const op of ops) map.set(op, {});
+  if (custom) {
+    for (const [name, meta] of Object.entries(custom)) {
+      map.set(name, meta);
+    }
+  }
+  return map;
+}
+
+function fakeApp(
+  entities: { name: string; entityClass: any }[],
+  facades: Record<string, any>,
+  handlers: any[] = [],
+  surfaces?: Record<string, string[]>,
+) {
+  return {
+    fronds: [{ name: 'test', entities, handlers, surfaces }],
+    resolve: <T>(name: string) => facades[name] as unknown as T,
+  };
+}
+
+// ─── Tests ─────────────────────────────────────
+
+describe('generateRoutes', () => {
+  it('generates CRUD routes for all entities', () => {
+    const app = fakeApp(
+      [{ name: 'post', entityClass: Post }],
+      { postHandler: fakeCrud() },
+      [{ entityName: 'post', operations: opsMap(['list', 'findById', 'create', 'update', 'delete']) }],
+    );
+
+    const routes = generateRoutes(app);
+
+    expect(routes).toHaveLength(5);
+    expect(routes.map((r) => `${r.method} ${r.path}`)).toEqual([
+      'GET /posts',
+      'GET /posts/:id',
+      'POST /posts',
+      'PUT /posts/:id',
+      'DELETE /posts/:id',
+    ]);
+  });
+
+  it('respects handler operations whitelist', () => {
+    // Facade only has read ops — bootstrap enforces the whitelist
+    const crud = fakeCrud();
+    const app = fakeApp(
+      [{ name: 'post', entityClass: Post }],
+      { postHandler: { list: crud.list, findById: crud.findById } },
+      [{ entityName: 'post', operations: opsMap(['list', 'findById']) }],
+    );
+
+    const routes = generateRoutes(app);
+
+    expect(routes).toHaveLength(2);
+    expect(routes.map((r) => `${r.method} ${r.path}`)).toEqual([
+      'GET /posts',
+      'GET /posts/:id',
+    ]);
+  });
+
+  it('applies prefix', () => {
+    const app = fakeApp(
+      [{ name: 'post', entityClass: Post }],
+      { postHandler: fakeCrud() },
+    );
+
+    const routes = generateRoutes(app, { prefix: '/api' });
+
+    expect(routes[0].path).toBe('/api/posts');
+    expect(routes[1].path).toBe('/api/posts/:id');
+  });
+
+  it('pluralizes entity names correctly', () => {
+    const app = fakeApp(
+      [
+        { name: 'post', entityClass: Post },
+        { name: 'category', entityClass: Post },
+      ],
+      { postHandler: fakeCrud(), categoryHandler: fakeCrud() },
+    );
+
+    const routes = generateRoutes(app);
+    const paths = routes.map((r) => r.path);
+
+    expect(paths).toContain('/posts');
+    expect(paths).toContain('/categories');
+  });
+
+  it('generates routes for all operations', () => {
+    const app = fakeApp(
+      [{ name: 'post', entityClass: Post }],
+      {
+        postHandler: {
+          ...fakeCrud(),
+          searchByTitle: vi.fn(async () => []),
+          publish: vi.fn(async () => ({})),
+        },
+      },
+      [{
+        entityName: 'post',
+        operations: opsMap(
+          ['list', 'findById', 'create', 'update', 'delete'],
+          {
+            searchByTitle: { input: Post.pick('title'), output: Post.pick('id', 'title') },
+            publish: { input: Post.pick('id'), output: Post },
+          },
+        ),
+      }],
+    );
+
+    const routes = generateRoutes(app);
+    const custom = routes.filter((r) => !['list', 'findById', 'create', 'update', 'delete'].includes(r.operationName));
+
+    expect(custom).toHaveLength(2);
+    expect(custom.map((r) => `${r.method} ${r.path}`)).toEqual([
+      'GET /posts/search-by-title',
+      'POST /posts/publish',
+    ]);
+  });
+
+  it('custom ById operations get :id in path', () => {
+    const app = fakeApp(
+      [{ name: 'post', entityClass: Post }],
+      { postHandler: { ...fakeCrud(), archiveById: vi.fn(async () => ({})) } },
+      [{
+        entityName: 'post',
+        operations: opsMap(['list'], { archiveById: { input: Post.pick('id') } }),
+      }],
+    );
+
+    const routes = generateRoutes(app);
+    const archive = routes.find((r) => r.operationName === 'archiveById');
+
+    expect(archive?.method).toBe('POST');
+    expect(archive?.path).toBe('/posts/:id/archive');
+  });
+
+  it('supports route overrides', () => {
+    const app = fakeApp(
+      [{ name: 'post', entityClass: Post }],
+      { postHandler: { ...fakeCrud(), publish: vi.fn(async () => ({})) } },
+      [{
+        entityName: 'post',
+        operations: opsMap(['list', 'findById'], { publish: { input: Post.pick('id') } }),
+      }],
+    );
+
+    const routes = generateRoutes(app, {
+      overrides: {
+        post: {
+          publish: { method: 'PUT', path: '/posts/:id/publish' },
+        },
+      },
+    });
+
+    const publish = routes.find((r) => r.operationName === 'publish');
+    expect(publish?.method).toBe('PUT');
+    expect(publish?.path).toBe('/posts/:id/publish');
+  });
+
+  it('route handler forwards InvocationContext to facade', async () => {
+    const crud = fakeCrud();
+    const app = fakeApp(
+      [{ name: 'post', entityClass: Post }],
+      { postHandler: crud },
+      [{ entityName: 'post', operations: opsMap(['list', 'findById', 'create', 'update', 'delete']) }],
+    );
+
+    const routes = generateRoutes(app);
+
+    const createRoute = routes.find((r) => r.operationName === 'create')!;
+    const invocation = { params: {}, query: {}, body: { title: 'Hello', views: 42 }, state: {} };
+    await createRoute.handler(invocation);
+    expect(crud.create).toHaveBeenCalledWith(invocation);
+
+    const findRoute = routes.find((r) => r.operationName === 'findById')!;
+    const findInvocation = { params: { id: 'abc' }, query: {}, body: undefined, state: {} };
+    await findRoute.handler(findInvocation);
+    expect(crud.findById).toHaveBeenCalledWith(findInvocation);
+
+    const updateRoute = routes.find((r) => r.operationName === 'update')!;
+    const updateInvocation = { params: { id: 'abc' }, query: {}, body: { title: 'Updated' }, state: {} };
+    await updateRoute.handler(updateInvocation);
+    expect(crud.update).toHaveBeenCalledWith(updateInvocation);
+  });
+
+  it('skips entities without handler facade', () => {
+    const app = fakeApp(
+      [
+        { name: 'post', entityClass: Post },
+        { name: 'author', entityClass: Author },
+      ],
+      { postHandler: fakeCrud() },
+    );
+
+    const routes = generateRoutes(app);
+    const entities = [...new Set(routes.map((r) => r.entityName))];
+    expect(entities).toEqual(['post']);
+  });
+
+  it('filter option works', () => {
+    const app = fakeApp(
+      [
+        { name: 'post', entityClass: Post },
+        { name: 'author', entityClass: Author },
+      ],
+      { postHandler: fakeCrud(), authorHandler: fakeCrud() },
+    );
+
+    const routes = generateRoutes(app, {
+      filter: (e) => e.name === 'post',
+    });
+
+    const entities = [...new Set(routes.map((r) => r.entityName))];
+    expect(entities).toEqual(['post']);
+  });
+
+  it('surface config filters entities for this surface', () => {
+    const app = fakeApp(
+      [
+        { name: 'post', entityClass: Post },
+        { name: 'author', entityClass: Author },
+      ],
+      { postHandler: fakeCrud(), authorHandler: fakeCrud() },
+      [],
+      { rest: ['Post'] },
+    );
+
+    const routes = generateRoutes(app, { surface: 'rest' });
+    const entities = [...new Set(routes.map((r) => r.entityName))];
+    expect(entities).toEqual(['post']);
+  });
+
+  it('without surface option, surfaces config is ignored', () => {
+    const app = fakeApp(
+      [
+        { name: 'post', entityClass: Post },
+        { name: 'author', entityClass: Author },
+      ],
+      { postHandler: fakeCrud(), authorHandler: fakeCrud() },
+      [],
+      { rest: ['Post'] },
+    );
+
+    const routes = generateRoutes(app);
+    const entities = [...new Set(routes.map((r) => r.entityName))];
+    expect(entities).toContain('post');
+    expect(entities).toContain('author');
+  });
+});
+
+describe("boundary 'closed' → route field membership", () => {
+  class Account extends entity({
+    id: primary(),
+    name: text({ min: 1 }),
+    password: writeOnly(text({ min: 8 })),
+    loginCount: readOnly(number({ integer: true })),
+  }) {}
+
+  it('write-only is absent from outputFields, read-only absent from inputFields', () => {
+    const app = fakeApp(
+      [{ name: 'account', entityClass: Account }],
+      { accountHandler: fakeCrud() },
+      [{ entityName: 'account', operations: opsMap(['list', 'create']) }],
+    );
+
+    const routes = generateRoutes(app);
+    const create = routes.find((r) => r.method === 'POST')!;
+    expect(Object.keys(create.inputFields!)).toEqual(['name', 'password']); // no loginCount
+    expect(Object.keys(create.outputFields!)).toEqual(['id', 'name', 'loginCount']); // no password
+
+    const list = routes.find((r) => r.method === 'GET')!;
+    expect(Object.keys(list.outputFields!)).toEqual(['id', 'name', 'loginCount']);
+  });
+});

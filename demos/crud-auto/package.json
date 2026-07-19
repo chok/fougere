@@ -1,0 +1,29 @@
+{
+  "name": "fougere-demo-crud-auto",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/main.ts"
+  },
+  "dependencies": {
+    "@fougere/schema": "workspace:*",
+    "@fougere/schema-drizzle": "workspace:*",
+    "@fougere/container": "workspace:*",
+    "@fougere/container-fougere": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/schema-graphql": "workspace:*",
+    "@fougere/schema-rest": "workspace:*",
+    "@fougere/http": "workspace:*",
+    "hono": "^4.7.0",
+    "@hono/node-server": "^1.14.0",
+    "@pothos/core": "^4.12.0",
+    "better-sqlite3": "^12.8.0",
+    "drizzle-orm": "^0.45.1",
+    "graphql": "^16.13.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "tsx": "^4.21.0"
+  }
+}
