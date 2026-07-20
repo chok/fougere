@@ -1,0 +1,19 @@
+{
+  "name": "fougere-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build"
+  },
+  "dependencies": {
+    "@fougere/core": "latest",
+    "@fougere/nuxt": "latest",
+    "@fougere/schema": "latest",
+    "@fougere/schema-drizzle": "latest",
+    "@fougere/container-fougere": "latest",
+    "better-sqlite3": "^11.0.0",
+    "drizzle-orm": "^0.44.0",
+    "nuxt": "^4.4.0"
+  }
+}

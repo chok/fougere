@@ -15,7 +15,8 @@
   },
   "files": [
     "dist",
-    "fronds"
+    "fronds",
+    "templates"
   ],
   "scripts": {
     "build": "tsc",

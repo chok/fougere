@@ -1,0 +1,12 @@
+{
+  "name": "@frond/admin",
+  "version": "0.0.1",
+  "type": "module",
+  "fougere": {
+    "frond": "admin"
+  },
+  "exports": {
+    "./entities/*": "./entities/*.ts",
+    "./package.json": "./package.json"
+  }
+}
