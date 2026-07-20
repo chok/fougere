@@ -12,11 +12,8 @@ function capitalize(s: string): string {
 }
 
 export default class SyncHandler {
-  private cwd: string;
-
-  constructor(cwd: string) {
-    this.cwd = cwd;
-  }
+  // cwd is ambient in a CLI — not a DI service (the container resolves by type).
+  private cwd = process.cwd();
 
   async execute(input: { name: string; from: string }): Promise<{ path: string; entities: string[] }> {
     const baseUrl = input.from.replace(/\/$/, '');

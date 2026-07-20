@@ -1,5 +1,6 @@
 import type { GraphResult } from '../../fronds/analysis/handlers/GraphHandler.js';
 import type { EntityNode, DomainCluster, App } from '@fougere/core';
+import { createAppRunner } from '@fougere/core';
 import type { ui as createUi } from '@fougere/cli-ui';
 import pc from 'picocolors';
 
@@ -9,8 +10,11 @@ export default class GraphCommand {
   constructor(private app: App, private ui: Ui) {}
 
   async run(raw: Record<string, unknown>) {
-    const handler = this.app.resolve<{ execute: (input: Record<string, unknown>) => Promise<GraphResult> }>('graphHandler');
-    const result = await handler.execute(raw);
+    // Ride the call contract — the same envelope every consumer uses.
+    const result = await createAppRunner(this.app)(
+      { entity: 'graph', op: 'execute' },
+      { params: {}, query: {}, body: raw, state: {} },
+    ) as GraphResult;
 
     if (result.fronds.length === 0) {
       this.ui.warn('No fronds found. Run this from a Fougere project root.');

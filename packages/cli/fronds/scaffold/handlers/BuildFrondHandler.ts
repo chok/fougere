@@ -7,11 +7,8 @@ function capitalize(s: string): string {
 }
 
 export default class BuildFrondHandler {
-  private cwd: string;
-
-  constructor(cwd: string) {
-    this.cwd = cwd;
-  }
+  // cwd is ambient in a CLI — not a DI service (the container resolves by type).
+  private cwd = process.cwd();
 
   async execute(input: { name: string }): Promise<{ path: string; entities: string[] }> {
     const frondDir = join(this.cwd, 'fronds', input.name);
