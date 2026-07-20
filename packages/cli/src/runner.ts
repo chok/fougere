@@ -8,6 +8,8 @@
  * - src/     → runner + bridge (framework)
  */
 import type { App } from '@fougere/core';
+import { createAppRunner } from '@fougere/core';
+import { toRegistrationName } from '@fougere/core/contract';
 import { defineCommand, runMain } from 'citty';
 import { ui } from '@fougere/cli-ui';
 import { entityToArgs } from './bridge.js';
@@ -95,12 +97,22 @@ export async function run(app: App): Promise<void> {
         run: async ({ args: parsed }) => {
           if (cmdName !== 'completion') terminal.intro();
 
+          // citty adds `_` (raw positionals) and `--` (passthrough); strip them
+          // so only the entity's own fields reach the handler.
+          const input = { ...(parsed as Record<string, unknown>) };
+          delete input._;
+          delete input['--'];
+
           try {
             if (AppCommand) {
               const cmd = new (AppCommand as new (...a: unknown[]) => { run: (raw: Record<string, unknown>) => Promise<void> })(app, terminal);
-              await cmd.run(parsed as Record<string, unknown>);
+              await cmd.run(input);
             } else {
-              await handler.execute(parsed);
+              // Ride the call contract — the same envelope every consumer uses.
+              await createAppRunner(app)(
+                { entity: toRegistrationName(entity.name), op: 'execute' },
+                { params: {}, query: {}, body: input, state: {} },
+              );
             }
           } catch (err) {
             terminal.error(err instanceof Error ? err.message : String(err));

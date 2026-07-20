@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import Init from '../../fronds/scaffold/entities/Init.js';
+import { createAppRunner } from '@fougere/core';
 import type { ui as createUi } from '@fougere/cli-ui';
 import type { App } from '@fougere/core';
 
@@ -38,8 +39,14 @@ export default class InitCommand {
     }
 
     const s = this.ui.spinner('Scaffolding...');
-    const handler = this.app.resolve<{ execute: (input: typeof result.data) => Promise<{ path: string }> }>('initHandler');
-    const { path } = await handler.execute(result.data);
+    // Ride the call contract — the same envelope Nuxt and remote callers use.
+    // The CLI is just another consumer of the frond; the runner resolves the
+    // handler in its scope and judges the body.
+    const out = await createAppRunner(this.app)(
+      { entity: 'init', op: 'execute' },
+      { params: {}, query: {}, body: result.data, state: {} },
+    );
+    const { path } = out as { path: string };
     s.stop(`Created ${path}/`);
 
     this.ui.note([`cd ${raw.name}`, `pnpm install`, `pnpm dev`].join('\n'), 'Next steps');
