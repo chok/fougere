@@ -219,6 +219,10 @@ function generateBootPlugin(
     lines.push(`import Database from 'better-sqlite3';`);
     lines.push(`import { drizzle } from 'drizzle-orm/better-sqlite3';`);
     lines.push(`import { createOrmFactory, autoMigrate } from '@fougere/schema-drizzle';`);
+    if (dbPath !== ':memory:') {
+      lines.push(`import { mkdirSync } from 'node:fs';`);
+      lines.push(`import { dirname } from 'node:path';`);
+    }
     lines.push(``);
   }
 
@@ -231,6 +235,10 @@ function generateBootPlugin(
   // Wrap all init in the plugin callback to avoid top-level native calls
   lines.push(`export default defineNitroPlugin(async () => {`);
   if (dialect === 'sqlite') {
+    if (dbPath !== ':memory:') {
+      // A file-backed DB needs its directory — SQLite won't create it.
+      lines.push(`  mkdirSync(dirname('${dbPath}'), { recursive: true });`);
+    }
     lines.push(`  const sqlite = new Database('${dbPath}');`);
     lines.push(`  sqlite.pragma('journal_mode = WAL');`);
     lines.push(`  const db = drizzle(sqlite);`);
