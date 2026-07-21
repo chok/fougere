@@ -14,7 +14,7 @@ export default class InitCommand {
     if (!raw.name) {
       raw.name = await this.ui.text({ message: 'Project name?', placeholder: 'my-app' });
     }
-    if (!raw.template) {
+    if (!raw.frond && !raw.template) {
       raw.template = await this.ui.select({
         message: 'Template?',
         options: [
@@ -49,7 +49,8 @@ export default class InitCommand {
     const { path } = out as { path: string };
     s.stop(`Created ${path}/`);
 
-    this.ui.note([`cd ${raw.name}`, `pnpm install`, `pnpm dev`].join('\n'), 'Next steps');
+    const run = raw.frond ? 'pnpm serve' : 'pnpm dev';
+    this.ui.note([`cd ${raw.name}`, `pnpm install`, run].join('\n'), 'Next steps');
     this.ui.outro('Done.');
   }
 }

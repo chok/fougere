@@ -1,20 +1,19 @@
 {
-  "name": "fougere-app",
+  "name": "fougere-frond",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "nuxt dev",
-    "build": "nuxt build"
+    "serve": "node serve.mjs"
   },
   "dependencies": {
     "@fougere/core": "latest",
-    "@fougere/nuxt": "latest",
     "@fougere/schema": "latest",
     "@fougere/schema-drizzle": "latest",
     "@fougere/container-fougere": "latest",
+    "@fougere/transport-http": "latest",
     "better-sqlite3": "^11.0.0",
     "drizzle-orm": "^0.44.0",
-    "nuxt": "^4.4.0"
+    "jiti": "^2.4.2"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

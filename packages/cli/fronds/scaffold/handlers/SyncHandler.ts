@@ -2,9 +2,8 @@ import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { SchemaDescriptor } from '@fougere/schema';
 
-interface SchemaResponse {
-  frond: string;
-  entities: SchemaDescriptor[];
+interface IdentityCard {
+  fronds: Array<{ name: string; entities: Array<{ name: string; ops: string[]; schema: SchemaDescriptor }> }>;
 }
 
 function capitalize(s: string): string {
@@ -17,17 +16,24 @@ export default class SyncHandler {
 
   async execute(input: { name: string; from: string }): Promise<{ path: string; entities: string[] }> {
     const baseUrl = input.from.replace(/\/$/, '');
-    const url = `${baseUrl}/_fougere/schema`;
 
-    const res = await fetch(url);
+    // The served frond answers `rpc.discover` on its call endpoint with its
+    // identity card — the same surface every consumer reads, no side endpoint.
+    const res = await fetch(`${baseUrl}/_fougere/call`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'rpc.discover', params: { params: {}, query: {}, state: {} } }),
+    });
     if (!res.ok) {
-      throw new Error(`Failed to fetch schema from ${url}: ${res.status} ${res.statusText}`);
+      throw new Error(`Failed to reach ${baseUrl}/_fougere/call: ${res.status} ${res.statusText}`);
     }
+    const rpc = (await res.json()) as { result?: IdentityCard; error?: { message: string } };
+    if (rpc.error) throw new Error(`Remote error: ${rpc.error.message}`);
+    const card = rpc.result!;
 
-    const fronds = (await res.json()) as SchemaResponse[];
-    const target = fronds.find((f) => f.frond === input.name);
+    const target = card.fronds.find((f) => f.name === input.name);
     if (!target) {
-      throw new Error(`Frond '${input.name}' not found on ${baseUrl}. Available: ${fronds.map((f) => f.frond).join(', ')}`);
+      throw new Error(`Frond '${input.name}' not found on ${baseUrl}. Available: ${card.fronds.map((f) => f.name).join(', ')}`);
     }
 
     const frondDir = join(this.cwd, '.fougere', 'remotes', input.name);
@@ -36,7 +42,7 @@ export default class SyncHandler {
 
     const entityNames: string[] = [];
 
-    for (const descriptor of target.entities) {
+    for (const { schema: descriptor } of target.entities) {
       const className = capitalize(descriptor.title ?? 'Entity');
       entityNames.push(className);
 
