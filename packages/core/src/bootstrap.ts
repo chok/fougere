@@ -2,7 +2,7 @@ import type { CreateAppOptions, App, AuthRuntime } from './types.js';
 import type { AppMiddleware } from './middleware.js';
 import { runMiddlewares, FougereError, ErrorCode } from './middleware.js';
 import { scanProject } from './scanner.js';
-import { Logger } from './builtins/logger.js';
+import { Logger, type LogLevel } from './builtins/logger.js';
 import { Config } from './builtins/config.js';
 import { EventBus } from './builtins/event-bus.js';
 import { CrudFor } from './crud.js';
@@ -31,7 +31,8 @@ function defaultCrudArgs(op: string, ctx: InvocationContext): unknown[] {
 export async function createApp(options: CreateAppOptions): Promise<App> {
   const root = options.root ?? process.cwd();
   const container = options.createContainer();
-  const log = new Logger('boot:app', { level: 'debug' });
+  // Boot chatter is debug by default; a host (e.g. the CLI) can quiet it.
+  const log = new Logger('boot:app', { level: (process.env.FOUGERE_LOG_LEVEL as LogLevel | undefined) ?? 'debug' });
 
   // Builtins — registered under class name (PascalCase) for type-based DI
   container.registerValue('Logger', new Logger());

@@ -20,6 +20,9 @@ const container = createContainer();
 container.registerValue('ui', ui());
 container.registerValue('cwd', process.cwd());
 
+// The CLI is a Fougere app — silence its boot chatter unless explicitly asked.
+process.env.FOUGERE_LOG_LEVEL ??= 'warn';
+
 const app = await createApp({
   root: cliRoot,
   createContainer: () => container,
