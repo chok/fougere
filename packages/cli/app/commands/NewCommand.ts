@@ -28,6 +28,12 @@ export default class NewCommand {
 
     pw.createWorkspace(dir, name);
 
+    if (raw.bare) {
+      this.ui.note([`cd ${name}`, `fougere new   # compose it (guided)`].join('\n'), `${name} — empty workspace`);
+      this.ui.outro('Prêt.');
+      return;
+    }
+
     const fronds = await this.compose(dir, pw, 'fronds', 'Fronds — tes domaines', pw.listTemplates('fronds'));
     const apps = await this.compose(dir, pw, 'apps', 'Apps — ce qui les consomme', pw.listTemplates('apps'));
 

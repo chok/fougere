@@ -110,6 +110,9 @@ export function suggestSplit(
     return annotateCrossRefs(clusters, nodes);
   }
 
+  // No entities at all — nothing to cluster (empty or fresh workspace).
+  if (clusters.length === 0) return clusters;
+
   // Single cluster — try to find natural cut points
   const allEntities = clusters[0].entities;
   if (allEntities.length <= minClusterSize) return clusters;

@@ -1,7 +1,0 @@
-import { entity, text, bool } from "@fougere/schema";
-
-/** `fougere init <name>` — a bare workspace shell (no prompts). */
-export default class Init extends entity({
-  name: text({ description: "Workspace name" }),
-  force: bool({ description: "Overwrite existing directory", default: false }),
-}) {}
