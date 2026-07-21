@@ -8,10 +8,9 @@ export default class InitHandler {
     this.projectWriter = projectWriter;
   }
 
-  async execute(input: { name: string; template: string; frond?: boolean }): Promise<{ path: string }> {
-    // cwd is ambient in a CLI — not a DI service (the container resolves by
-    // type, and a bare `string` is not a resolvable dependency).
+  async execute(input: { name: string }): Promise<{ path: string }> {
+    // cwd is ambient in a CLI, not a DI service.
     const dir = join(process.cwd(), input.name);
-    return this.projectWriter.scaffold(dir, input.name, input.template, { frond: input.frond });
+    return this.projectWriter.createWorkspace(dir, input.name);
   }
 }

@@ -7,23 +7,13 @@ import type { App } from '@fougere/core';
 
 type Ui = ReturnType<typeof createUi>;
 
+/** `fougere init <name>` — a bare workspace shell. Use `add` (or `new`) to fill it. */
 export default class InitCommand {
   constructor(private app: App, private ui: Ui) {}
 
   async run(raw: Record<string, unknown>) {
     if (!raw.name) {
-      raw.name = await this.ui.text({ message: 'Project name?', placeholder: 'my-app' });
-    }
-    if (!raw.frond && !raw.template) {
-      raw.template = await this.ui.select({
-        message: 'Template?',
-        options: [
-          { value: 'admin', label: 'Admin', hint: 'Dashboard with CRUD' },
-          { value: 'blog', label: 'Blog', hint: 'Blog with posts and authors' },
-          { value: 'api', label: 'API', hint: 'GraphQL API only' },
-          { value: 'blankosse', label: 'Blankosse', hint: 'Empty project' },
-        ],
-      });
+      raw.name = await this.ui.text({ message: 'Workspace name?', placeholder: 'shop' });
     }
 
     const dir = join(process.cwd(), raw.name as string);
@@ -38,10 +28,7 @@ export default class InitCommand {
       return;
     }
 
-    const s = this.ui.spinner('Scaffolding...');
-    // Ride the call contract — the same envelope Nuxt and remote callers use.
-    // The CLI is just another consumer of the frond; the runner resolves the
-    // handler in its scope and judges the body.
+    const s = this.ui.spinner('Creating workspace...');
     const out = await createAppRunner(this.app)(
       { entity: 'init', op: 'execute' },
       { params: {}, query: {}, body: result.data, state: {} },
@@ -49,8 +36,7 @@ export default class InitCommand {
     const { path } = out as { path: string };
     s.stop(`Created ${path}/`);
 
-    const run = raw.frond ? 'pnpm serve' : 'pnpm dev';
-    this.ui.note([`cd ${raw.name}`, `pnpm install`, run].join('\n'), 'Next steps');
+    this.ui.note([`cd ${raw.name}`, `fougere new   # or: fougere add`].join('\n'), 'Next steps');
     this.ui.outro('Done.');
   }
 }

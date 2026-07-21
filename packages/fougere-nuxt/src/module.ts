@@ -23,6 +23,12 @@ export interface FougereModuleOptions {
   /** Override fougere.config.ts values from nuxt.config. Optional. */
   db?: FougereConfig['db'];
   frondsDir?: string;
+  /**
+   * Where `fronds/` lives, relative to the app's rootDir. Default: the app
+   * itself. Set to `../..` for an app under `apps/*` in a workspace whose
+   * fronds are shared at the root. Config and `.fougere` stay app-local.
+   */
+  root?: string;
 }
 
 /** Topological sort of seeds across all fronds based on entity ref() dependencies. */
@@ -74,6 +80,8 @@ const module: any = defineNuxtModule<FougereModuleOptions>({
     const runtimeResolve = (...path: string[]) =>
       resolveModule('../src/runtime', ...path);
     const rootDir = nuxt.options.rootDir;
+    // Fronds may live at the workspace root (app under apps/*); config/.fougere stay app-local.
+    const scanRoot = options.root ? resolve(rootDir, options.root) : rootDir;
 
     // Propagate color support to Nitro dev worker (inherits parent env but has no TTY)
     if (process.stdout?.isTTY && !process.env.NO_COLOR) {
@@ -107,7 +115,7 @@ const module: any = defineNuxtModule<FougereModuleOptions>({
 
     // ── 1. Scan fronds (filtered by FOUGERE_FRONDS env var) ──
     const frondsFilter = process.env.FOUGERE_FRONDS?.split(',').map((s) => s.trim()).filter(Boolean);
-    const { fronds } = await scanProject(rootDir, frondsFilter);
+    const { fronds } = await scanProject(scanRoot, frondsFilter);
 
     // ── 1b. Register @frond/* aliases for all fronds ──
     for (const frond of fronds) {
