@@ -65,4 +65,33 @@ export default class ProjectWriter {
     if (!existsSync(dir)) return [];
     return readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name);
   }
+
+  /**
+   * Dev mode: rewrite every `@fougere/*` dependency in the workspace to a
+   * `link:` into this monorepo, so `pnpm install` resolves offline (the
+   * packages aren't on npm yet). No-op once the packages are published.
+   */
+  linkLocal(wsDir: string): void {
+    const packages = fileURLToPath(new URL('../../../../', import.meta.url));
+    const dirOf: Record<string, string> = {
+      core: 'core', schema: 'schema', 'schema-drizzle': 'schema-drizzle',
+      'container-fougere': 'container-fougere', nuxt: 'fougere-nuxt', 'transport-http': 'transport/http',
+    };
+    const walk = (d: string): void => {
+      for (const e of readdirSync(d, { withFileTypes: true })) {
+        if (e.name === 'node_modules') continue;
+        const f = join(d, e.name);
+        if (e.isDirectory()) { walk(f); continue; }
+        if (e.name !== 'package.json') continue;
+        const pkg = JSON.parse(readFileSync(f, 'utf8')) as { dependencies?: Record<string, string> };
+        let changed = false;
+        for (const dep of Object.keys(pkg.dependencies ?? {})) {
+          const m = /^@fougere\/(.+)$/.exec(dep);
+          if (m && dirOf[m[1]]) { pkg.dependencies![dep] = `link:${join(packages, dirOf[m[1]])}`; changed = true; }
+        }
+        if (changed) writeFileSync(f, JSON.stringify(pkg, null, 2) + '\n');
+      }
+    };
+    walk(wsDir);
+  }
 }

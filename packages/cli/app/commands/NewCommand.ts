@@ -37,7 +37,9 @@ export default class NewCommand {
     const fronds = await this.compose(dir, pw, 'fronds', 'Fronds — tes domaines', pw.listTemplates('fronds'));
     const apps = await this.compose(dir, pw, 'apps', 'Apps — ce qui les consomme', pw.listTemplates('apps'));
 
-    this.ui.note([`cd ${name}`, `pnpm install`, `pnpm dev`].join('\n'), `${name} — ${fronds} frond(s), ${apps} app(s)`);
+    if (raw.local) pw.linkLocal(dir);
+    const install = raw.local ? 'pnpm install' : 'pnpm install   # needs @fougere/* published (or re-run with --local)';
+    this.ui.note([`cd ${name}`, install, `pnpm dev`].join('\n'), `${name} — ${fronds} frond(s), ${apps} app(s)`);
     this.ui.outro('Prêt.');
   }
 

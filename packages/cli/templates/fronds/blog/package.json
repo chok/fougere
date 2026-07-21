@@ -8,5 +8,9 @@
   "exports": {
     "./entities/*": "./entities/*.ts",
     "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "@fougere/schema": "latest",
+    "@fougere/core": "latest"
   }
 }
