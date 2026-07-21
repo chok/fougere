@@ -61,8 +61,11 @@ async function boot(): Promise<App> {
   const jiti = createJiti(import.meta.url, { interopDefault: true });
   setModuleLoader((filePath) => jiti.import(filePath) as Promise<Record<string, unknown>>);
 
-  const root = process.cwd();
-  const fileConfig: FougereConfig = await loadConfig(root);
+  // Config and DB are app-local (cwd); fronds may live at the workspace root,
+  // handed down by the Nuxt module via FOUGERE_ROOT when the app declares `root`.
+  const configRoot = process.cwd();
+  const root = process.env.FOUGERE_ROOT ?? configRoot;
+  const fileConfig: FougereConfig = await loadConfig(configRoot);
 
   // Auto-resolve the data layer from config.db when the user didn't provide
   // a custom one via configureFougere. Today only 'sqlite' is supported.

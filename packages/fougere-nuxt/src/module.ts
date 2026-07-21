@@ -82,6 +82,9 @@ const module: any = defineNuxtModule<FougereModuleOptions>({
     const rootDir = nuxt.options.rootDir;
     // Fronds may live at the workspace root (app under apps/*); config/.fougere stay app-local.
     const scanRoot = options.root ? resolve(rootDir, options.root) : rootDir;
+    // The runtime app (fougereApp) scans fronds too; hand it the same root via
+    // env (the Nitro dev worker inherits the parent env, like FORCE_COLOR above).
+    process.env.FOUGERE_ROOT = scanRoot;
 
     // Propagate color support to Nitro dev worker (inherits parent env but has no TTY)
     if (process.stdout?.isTTY && !process.env.NO_COLOR) {
