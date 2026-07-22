@@ -15,6 +15,7 @@
     ]
   },
   "devDependencies": {
+    "@changesets/cli": "^2.31.1",
     "@swc/core": "^1.15.21",
     "@types/node": "^22.19.15",
     "typescript": "^7.0.2",
