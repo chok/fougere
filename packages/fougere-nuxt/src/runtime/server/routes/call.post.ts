@@ -13,19 +13,44 @@ import { createAppRunner } from '@fougere/core';
 import type { Transport } from '@fougere/core';
 import { useFougereApp } from '../utils/fougereApp';
 
+type NodeReq = {
+  body?: unknown;
+  on?: (event: 'data' | 'end' | 'error', cb: (arg: never) => void) => void;
+};
+
 /**
- * Read the JSON body across h3 versions (a linked module can pull a different
- * h3 than the running nitro): prefer a Web Request `.json()`, else drain the
- * node request stream. Avoids depending on `readBody`'s internals.
+ * Read the JSON-RPC payload from the h3 event, agnostic to h3 version AND trust
+ * boundary. We read the event's shape directly instead of calling `readBody`,
+ * whose static `from 'h3'` import can bind to a different h3 major than the one
+ * that shaped the event (nitro's runtime is v1 here; devtools drag in v2) —
+ * `readBody` v2 on a v1 event throws `event.req.text is not a function`.
+ *
+ * Two shapes occur, both verified:
+ *  - SSR internal `$fetch`: a synthetic event whose `node.req.body` is already
+ *    the raw JSON string — the mock stream is not readable, never drain it.
+ *  - Browser POST: a real IncomingMessage, drained via stream events (`for
+ *    await` fails: the SSR mock has no async iterator).
+ * The `event.req.json()` branch is the future once nitro is fully on h3 v2.
  */
-async function readJsonBody(event: { req?: { json?: () => Promise<unknown> }; node?: { req?: AsyncIterable<Uint8Array> } }): Promise<unknown> {
-  if (event.req && typeof event.req.json === 'function') return event.req.json();
+async function readJsonBody(event: { req?: { json?: () => Promise<unknown> }; node?: { req?: NodeReq } }): Promise<unknown> {
   const nodeReq = event.node?.req;
-  if (!nodeReq) return {};
-  const chunks: Uint8Array[] = [];
-  for await (const chunk of nodeReq) chunks.push(chunk);
-  const raw = Buffer.concat(chunks).toString('utf8');
-  return raw ? JSON.parse(raw) : {};
+  const preset = nodeReq?.body;
+  if (typeof preset === 'string') return preset ? JSON.parse(preset) : {};
+  if (preset instanceof Uint8Array) {
+    const raw = Buffer.from(preset).toString('utf8');
+    return raw ? JSON.parse(raw) : {};
+  }
+  if (event.req && typeof event.req.json === 'function') return event.req.json();
+  if (nodeReq && typeof nodeReq.on === 'function') {
+    const raw = await new Promise<string>((resolve, reject) => {
+      const chunks: Buffer[] = [];
+      nodeReq.on!('data', (chunk) => chunks.push(Buffer.from(chunk)));
+      nodeReq.on!('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+      nodeReq.on!('error', reject);
+    });
+    return raw ? JSON.parse(raw) : {};
+  }
+  return {};
 }
 
 export default defineEventHandler(async (event) => {
