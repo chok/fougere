@@ -13,7 +13,7 @@ import {
   addImports,
   createResolver,
 } from '@nuxt/kit';
-import { scanProject, setModuleLoader, loadConfig } from '@fougere/core';
+import { scanProject, setModuleLoader, loadCascadedConfig } from '@fougere/core';
 import type { FrondDescriptor, SeedEntry, FougereConfig } from '@fougere/core';
 import { createJiti } from 'jiti';
 import { resolve } from 'node:path';
@@ -109,8 +109,9 @@ const module: any = defineNuxtModule<FougereModuleOptions>({
     const jiti = createJiti(import.meta.url, { interopDefault: true });
     setModuleLoader((filePath) => jiti.import(filePath) as Promise<Record<string, unknown>>);
 
-    // ── 0b. Load fougere.config.ts; module options override only keys explicitly set. ──
-    const fileConfig = await loadConfig(rootDir);
+    // ── 0b. Load fougere.config.ts along the workspace→app cascade (scanRoot is
+    //        the workspace when the app declares `root`); module options override. ──
+    const fileConfig = await loadCascadedConfig(scanRoot, rootDir);
     const optionsOverride = Object.fromEntries(
       Object.entries(options).filter(([, v]) => v !== undefined),
     ) as Partial<FougereConfig>;

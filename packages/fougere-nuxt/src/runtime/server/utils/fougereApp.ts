@@ -9,7 +9,7 @@
  * Nitro plugin if the user wants a custom data layer (alternative driver,
  * managed migrations, etc.).
  */
-import { createApp, loadConfig, setModuleLoader, Logger } from '@fougere/core';
+import { createApp, loadCascadedConfig, setModuleLoader, Logger } from '@fougere/core';
 import { createContainer } from '@fougere/container-fougere';
 import type { App, EntityOrm, FougereConfig, Transport } from '@fougere/core';
 import type { SchemaLike } from '@fougere/schema';
@@ -61,11 +61,12 @@ async function boot(): Promise<App> {
   const jiti = createJiti(import.meta.url, { interopDefault: true });
   setModuleLoader((filePath) => jiti.import(filePath) as Promise<Record<string, unknown>>);
 
-  // Config and DB are app-local (cwd); fronds may live at the workspace root,
-  // handed down by the Nuxt module via FOUGERE_ROOT when the app declares `root`.
+  // Config cascades along the workspace→app frontier: the workspace root (via
+  // FOUGERE_ROOT, where `remotes`/shared db live) is the base, the app (cwd)
+  // overrides. Same boundary the fronds cascade along. No `root` → both equal.
   const configRoot = process.cwd();
   const root = process.env.FOUGERE_ROOT ?? configRoot;
-  const fileConfig: FougereConfig = await loadConfig(configRoot);
+  const fileConfig: FougereConfig = await loadCascadedConfig(root, configRoot);
 
   // Auto-resolve the data layer from config.db when the user didn't provide
   // a custom one via configureFougere. Today only 'sqlite' is supported.

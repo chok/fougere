@@ -71,6 +71,20 @@ export async function loadFrondConfigs(root: string, frondsDir = 'fronds'): Prom
 // ── Merging ──────────────────────────────────────
 
 /**
+ * Override a config with another, the invariant of every cascade level:
+ * scalar keys replace, but `remotes` (the topology) MERGES — an override adds
+ * or redirects a frond without erasing the others. Used for workspace→app and
+ * for global→CLI alike.
+ */
+export function mergeGlobal(base: FougereConfig, override: Partial<FougereConfig>): FougereConfig {
+  const merged: FougereConfig = { ...base, ...override };
+  if (base.remotes || override.remotes) {
+    merged.remotes = { ...base.remotes, ...override.remotes };
+  }
+  return merged;
+}
+
+/**
  * Merge configs with cascade: global → frond → CLI overrides.
  *
  * Returns a ResolvedConfig with the merged global and per-frond overrides.
@@ -80,13 +94,7 @@ export function mergeConfig(
   frondConfigs: Record<string, FougereConfig>,
   cliOverrides: Partial<FougereConfig> = {},
 ): ResolvedConfig {
-  const merged: FougereConfig = { ...global, ...cliOverrides };
-  // CLI remotes merge (don't replace)
-  if (global.remotes || cliOverrides.remotes) {
-    merged.remotes = { ...global.remotes, ...cliOverrides.remotes };
-  }
-
-  return { global: merged, fronds: frondConfigs };
+  return { global: mergeGlobal(global, cliOverrides), fronds: frondConfigs };
 }
 
 /**
@@ -97,6 +105,19 @@ export function configForFrond(resolved: ResolvedConfig, frondName: string): Fou
   const frondOverride = resolved.fronds[frondName];
   if (!frondOverride) return resolved.global;
   return { ...resolved.global, ...frondOverride };
+}
+
+/**
+ * Load config along the workspace→app frontier. The workspace-root config is
+ * the base (canonical topology: `remotes`, shared `db`); the app-root config
+ * overrides. Same `root` boundary the fronds already cascade along. When both
+ * roots resolve to the same dir (single app, no workspace), this is the plain
+ * root config — idempotent, no behavior change.
+ */
+export async function loadCascadedConfig(workspaceRoot: string, appRoot: string): Promise<FougereConfig> {
+  const base = await loadConfig(workspaceRoot);
+  if (resolve(workspaceRoot) === resolve(appRoot)) return base;
+  return mergeGlobal(base, await loadConfig(appRoot));
 }
 
 /**

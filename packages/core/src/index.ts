@@ -1,7 +1,7 @@
 export { createApp } from './bootstrap.js';
 export { boot } from './boot.js';
 export { defineFougere } from './define.js';
-export { loadConfig, loadFrondConfigs, mergeConfig, configForFrond, resolveConfig, type FougereConfig, type ResolvedConfig } from './config-loader.js';
+export { loadConfig, loadCascadedConfig, loadFrondConfigs, mergeGlobal, mergeConfig, configForFrond, resolveConfig, type FougereConfig, type ResolvedConfig } from './config-loader.js';
 export { defineFrond, loadFrondConfig, type FrondConfig, type OperationOverride } from './frond-config.js';
 export { buildGraph, clusterEntities, suggestSplit, type EntityNode, type DomainCluster } from './graph.js';
 export { Crud, CrudFor } from './crud.js';
