@@ -2,6 +2,10 @@
   "name": "fougere-workspace",
   "private": true,
   "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter './apps/*' --parallel dev",
+    "build": "pnpm --filter './apps/*' -r build"
+  },
   "pnpm": {
     "onlyBuiltDependencies": ["better-sqlite3", "esbuild"]
   }
