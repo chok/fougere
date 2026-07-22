@@ -369,9 +369,15 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../core
+      '@fougere/runtime':
+        specifier: workspace:*
+        version: link:../runtime
       '@fougere/schema':
         specifier: workspace:*
         version: link:../schema
+      '@fougere/transport-http':
+        specifier: workspace:*
+        version: link:../transport/http
       citty:
         specifier: ^0.2.1
         version: 0.2.1
@@ -465,6 +471,21 @@ importers:
       '@types/node':
         specifier: ^22.19.15
         version: 22.19.15
+
+  packages/runtime:
+    dependencies:
+      '@fougere/container-fougere':
+        specifier: workspace:*
+        version: link:../container-fougere
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../core
+      '@fougere/schema-drizzle':
+        specifier: workspace:*
+        version: link:../schema-drizzle
+      '@fougere/transport-http':
+        specifier: workspace:*
+        version: link:../transport/http
 
   packages/schema:
     dependencies:

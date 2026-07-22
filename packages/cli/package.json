@@ -15,6 +15,7 @@
   },
   "files": [
     "dist",
+    "app",
     "fronds",
     "templates"
   ],
@@ -26,7 +27,9 @@
     "@fougere/cli-ui": "workspace:*",
     "@fougere/container-fougere": "workspace:*",
     "@fougere/core": "workspace:*",
+    "@fougere/runtime": "workspace:*",
     "@fougere/schema": "workspace:*",
+    "@fougere/transport-http": "workspace:*",
     "citty": "^0.2.1",
     "jiti": "^2.4.2",
     "picocolors": "^1.1.1"

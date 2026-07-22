@@ -1,7 +1,8 @@
 import { createApp } from './bootstrap.js';
 import { loadConfig, type FougereConfig } from './config-loader.js';
-import { Logger } from './builtins/logger.js';
+import { Logger, type LogLevel } from './builtins/logger.js';
 import type { App, CreateAppOptions } from './types.js';
+import type { Transport } from './call.js';
 import type { Container } from '@fougere/container';
 
 export interface BootOptions {
@@ -11,6 +12,15 @@ export interface BootOptions {
   config?: Partial<FougereConfig>;
   /** Container factory. Required. */
   createContainer: () => Container;
+  /** Only boot these fronds (by name). Absent = all. */
+  fronds?: string[];
+  /**
+   * Remote fronds — label → address. A declared remote wins over local
+   * presence (the frond runs elsewhere). Requires `remoteTransport`.
+   */
+  remotes?: Record<string, string>;
+  /** Builds the transport to reach `remotes`. Supplied by a layer-2 package. */
+  remoteTransport?: (url: string) => Transport;
   /**
    * ORM setup — returns the storage handle (db), an ormFactory and an optional afterBoot.
    * The `db` value is forwarded to the auth provider via AuthContext when `auth` is set.
@@ -30,7 +40,7 @@ export interface BootOptions {
  */
 export async function boot(options: BootOptions): Promise<App> {
   const bootStart = performance.now();
-  const log = new Logger('boot', { level: 'debug' });
+  const log = new Logger('boot', { level: (process.env.FOUGERE_LOG_LEVEL as LogLevel | undefined) ?? 'debug' });
 
   const root = options.root ?? process.cwd();
   log.info(`root: ${root}`);
@@ -54,6 +64,9 @@ export async function boot(options: BootOptions): Promise<App> {
     ormFactory: dbSetup?.ormFactory,
     db: dbSetup?.db,
     auth: config.auth,
+    fronds: options.fronds,
+    remotes: options.remotes,
+    remoteTransport: options.remoteTransport,
   });
 
   if (dbSetup?.afterBoot) {
