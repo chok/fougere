@@ -1,0 +1,14 @@
+{
+  "name": "rust-frond-demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "frond": "cargo run --release",
+    "consume": "npx tsx consumer.ts"
+  },
+  "dependencies": {
+    "@fougere/core": "workspace:*",
+    "@fougere/schema": "workspace:*",
+    "@fougere/transport-http": "workspace:*"
+  }
+}
