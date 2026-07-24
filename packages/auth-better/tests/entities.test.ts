@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { isNullable } from '@fougere/schema';
-import { AuthUser, AuthSession, AuthAccount, AuthVerification } from '../src/entities.js';
+import { entity, primary, text, bool, optional, isNullable } from '@fougere/schema';
+import { toTable, createTableSQL } from '@fougere/schema-sql';
+import { AuthUser, AuthVerification, authEntities } from '../src/entities.js';
+
+const { AuthSession, AuthAccount } = authEntities(AuthUser);
 
 describe('AuthUser', () => {
   it('matches better-auth user shape', () => {
@@ -56,5 +59,43 @@ describe('AuthVerification', () => {
     expect(Object.keys(fields).sort()).toEqual(
       ['createdAt', 'expiresAt', 'id', 'identifier', 'updatedAt', 'value'].sort(),
     );
+  });
+});
+
+// ─── authEntities — the FK follows the resolved User, not AuthUser ─────────
+//
+// `ref()` fixes its target at field-declaration time (packages/schema-sql's
+// `referenceFor` reads `target.name` to derive the FK table when the target
+// isn't part of the same generation batch — see its doc comment). Rendering
+// each entity's DDL standalone (bare `toTable`, no batch) isolates exactly
+// that: which class `userId` actually points at.
+
+class Member extends entity({
+  id: primary(),
+  name: text(),
+  email: text(),
+  emailVerified: bool(),
+  image: optional(text()),
+}) {}
+
+describe('authEntities — FK target', () => {
+  it("session.user_id references the app's own User table when one is provided", () => {
+    const { AuthSession } = authEntities(Member);
+    const sql = createTableSQL(toTable('sessions', AuthSession), 'pg');
+    expect(sql).toContain('references "members" ("id")');
+    expect(sql).not.toContain('auth_users');
+  });
+
+  it("account.user_id references the app's own User table when one is provided", () => {
+    const { AuthAccount } = authEntities(Member);
+    const sql = createTableSQL(toTable('accounts', AuthAccount), 'pg');
+    expect(sql).toContain('references "members" ("id")');
+    expect(sql).not.toContain('auth_users');
+  });
+
+  it('falls back to AuthUser\'s own table when no User is provided', () => {
+    const { AuthSession, AuthAccount } = authEntities(AuthUser);
+    expect(createTableSQL(toTable('sessions', AuthSession), 'pg')).toContain('references "auth_users" ("id")');
+    expect(createTableSQL(toTable('accounts', AuthAccount), 'pg')).toContain('references "auth_users" ("id")');
   });
 });

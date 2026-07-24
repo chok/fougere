@@ -26,6 +26,7 @@
     "better-auth": "^1.2.0"
   },
   "devDependencies": {
+    "@fougere/schema-sql": "workspace:*",
     "vitest": "^4.1.0"
   }
 }

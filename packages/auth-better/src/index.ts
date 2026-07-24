@@ -2,7 +2,7 @@ import { betterAuth as betterAuthLib } from 'better-auth';
 import { createId } from '@paralleldrive/cuid2';
 import type { AuthConfig, AuthContext, AuthRuntime } from '@fougere/core';
 import type { SchemaLike } from '@fougere/schema';
-import { AuthSession, AuthAccount, AuthVerification, AuthUser } from './entities.js';
+import { AuthVerification, AuthUser, authEntities } from './entities.js';
 import { fougereAdapter, type OrmMap } from './adapter.js';
 import {
   translateCredential,
@@ -11,17 +11,19 @@ import {
   type FougereProviders,
 } from './translate.js';
 
-export { AuthUser, AuthSession, AuthAccount, AuthVerification } from './entities.js';
+export { AuthUser, AuthVerification, authEntities } from './entities.js';
 export type { FougereProviders, OIDCProviderConfig } from './translate.js';
 
 /**
  * Options accepted by the betterAuth() factory in fougere.config.ts.
  *
- * `user` is required and must come from the user's frond. Other entities
- * default to the shapes shipped by this package and can be overridden.
+ * `user` should come from the app's own frond (roles, extra columns, its own
+ * table — Session/Account are built against it, see `authEntities`). Omitting
+ * it falls back to the package's `AuthUser`. Other entities default to the
+ * shapes shipped by this package and can be overridden too.
  */
 export interface BetterAuthOptions {
-  user: SchemaLike;
+  user?: SchemaLike;
   secret: string;
   baseUrl?: string;
   basePath?: string;
@@ -47,6 +49,7 @@ export interface BetterAuthOptions {
  */
 export function betterAuth(opts: BetterAuthOptions): AuthConfig {
   const userSchema = opts.user ?? AuthUser;
+  const { AuthSession, AuthAccount } = authEntities(userSchema);
   const sessionSchema = opts.session ?? AuthSession;
   const accountSchema = opts.account ?? AuthAccount;
   const verificationSchema = opts.verification ?? AuthVerification;

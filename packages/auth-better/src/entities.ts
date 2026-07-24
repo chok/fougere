@@ -1,4 +1,4 @@
-import { entity, primary, text, bool, date, auto, ref, optional } from '@fougere/schema';
+import { entity, primary, text, bool, date, auto, ref, optional, type SchemaLike } from '@fougere/schema';
 
 /**
  * Default User entity — shipped as a fallback. Apps should declare their own
@@ -18,39 +18,67 @@ export class AuthUser extends entity({
 }) {}
 
 /**
- * Default Session entity — better-auth shape.
- * `token` carries the opaque session secret (cookie value).
+ * A `ref()` target is fixed at field-declaration time. Session and Account can't
+ * be static classes built once against this package's `AuthUser` — that would
+ * leave `userId` pointing at the wrong table whenever an app supplies its own
+ * User (`opts.user` in `betterAuth()`). `authEntities(User)` builds them fresh
+ * against whichever schema was actually resolved (the app's, or `AuthUser` as
+ * fallback), called from `betterAuth()` once `User` is known.
+ *
+ * `ref()` wants a live class — a construct signature plus `.name`, which
+ * `@fougere/schema-sql`'s FK naming reads off the target — narrower than the
+ * `SchemaLike` interface (`getFields()` only) this package's public options
+ * take, since `opts.user` may be any app's entity and `SchemaLike` is the
+ * shape-only contract used to stay decoupled from a specific one. Every real
+ * entity satisfies both; the cast below only crosses that type-level gap, the
+ * same bridge `@fougere/schema` uses internally in `reconstructSet`
+ * (`schema as unknown as EntityConstructor`).
  */
-export class AuthSession extends entity({
-  id: primary(),
-  userId: ref(AuthUser),
-  token: text(),
-  expiresAt: date(),
-  ipAddress: optional(text()),
-  userAgent: optional(text()),
-  createdAt: auto(),
-  updatedAt: auto(),
-}) {}
+type LiveEntity = abstract new (...args: any[]) => unknown;
 
-/**
- * Default Account entity — better-auth shape (single PK, accountId/providerId pair,
- * separate token columns instead of a JSON blob).
- */
-export class AuthAccount extends entity({
-  id: primary(),
-  accountId: text(),
-  providerId: text(),
-  userId: ref(AuthUser),
-  accessToken: optional(text()),
-  refreshToken: optional(text()),
-  idToken: optional(text()),
-  accessTokenExpiresAt: optional(date()),
-  refreshTokenExpiresAt: optional(date()),
-  scope: optional(text()),
-  password: optional(text()),
-  createdAt: auto(),
-  updatedAt: auto(),
-}) {}
+export function authEntities(User: SchemaLike): {
+  AuthSession: SchemaLike;
+  AuthAccount: SchemaLike;
+} {
+  const target = User as unknown as LiveEntity;
+
+  /**
+   * Session entity — better-auth shape.
+   * `token` carries the opaque session secret (cookie value).
+   */
+  class AuthSession extends entity({
+    id: primary(),
+    userId: ref(target),
+    token: text(),
+    expiresAt: date(),
+    ipAddress: optional(text()),
+    userAgent: optional(text()),
+    createdAt: auto(),
+    updatedAt: auto(),
+  }) {}
+
+  /**
+   * Account entity — better-auth shape (single PK, accountId/providerId pair,
+   * separate token columns instead of a JSON blob).
+   */
+  class AuthAccount extends entity({
+    id: primary(),
+    accountId: text(),
+    providerId: text(),
+    userId: ref(target),
+    accessToken: optional(text()),
+    refreshToken: optional(text()),
+    idToken: optional(text()),
+    accessTokenExpiresAt: optional(date()),
+    refreshTokenExpiresAt: optional(date()),
+    scope: optional(text()),
+    password: optional(text()),
+    createdAt: auto(),
+    updatedAt: auto(),
+  }) {}
+
+  return { AuthSession, AuthAccount };
+}
 
 /**
  * Default Verification entity — better-auth shape.
