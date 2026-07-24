@@ -161,8 +161,6 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         : hasCrudInProto ? [ormTypeName] : [];
       targetScope.register(handlerKey, handler.ctor, { deps });
 
-      const ops = [...handler.operations.keys()];
-
       let instance: any;
       const getInstance = () => {
         if (!instance) instance = targetScope.resolve(handlerKey);
@@ -170,26 +168,21 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       };
 
       /**
-       * The contracts this façade serves, by op name.
+       * The contracts this façade serves, by op name — the whole surface.
        *
-       * One table, whatever produced it: the scan derives a contract from a
-       * parsed signature, a prefab handler declares one outright. The binding
-       * is resolved here so that everything downstream sees a plan and never
-       * an AST — a contract that arrived already carrying its plan keeps it.
-       */
-      /**
-       * The contracts this façade serves, by op name.
+       * Two producers, and the closest author of an op wins. A prefab handler
+       * DECLARES what it built (`Crud(E)` knows its five, at runtime, so no
+       * scan is needed to protect them). The scan DERIVES from source: a
+       * method written in this very file is the author's own word and beats
+       * everything; a method it merely READ on a base class is a guess about
+       * someone else's code, and yields to that code's own declaration.
        *
-       * Two producers, one table. A prefab handler DECLARES its ops on the
-       * class (`Crud(E)` knows the five it built, at runtime, so no scan is
-       * needed to protect them). The scan DERIVES the author's own methods
-       * from this file, and wins on conflict — code written here beats what a
-       * preset brought in.
+       * The binding is resolved here, so nothing downstream ever sees an AST.
        */
-      const contracts = new Map<string, OperationContract>(
-        Object.entries((handler.ctor as { __ops?: Record<string, OperationContract> }).__ops ?? {}),
-      );
+      const declared = (handler.ctor as { __ops?: Record<string, OperationContract> }).__ops ?? {};
+      const contracts = new Map<string, OperationContract>(Object.entries(declared));
       for (const [opName, scanned] of handler.operations) {
+        if (scanned.signature?.inherited && opName in declared) continue;
         contracts.set(opName, {
           ...scanned,
           binding: scanned.binding
@@ -258,20 +251,11 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         });
       };
 
+      // The surface IS the contract table. A method nobody declared is not an
+      // op: it stays a method, callable from inside, unreachable from the wire.
       const facade: Record<string, Function> = {};
-      for (const op of ops) {
+      for (const op of contracts.keys()) {
         facade[op] = wrapOp(op);
-      }
-
-      let proto = handler.ctor.prototype;
-      while (proto && proto !== Object.prototype) {
-        for (const name of Object.getOwnPropertyNames(proto)) {
-          if (name === 'constructor' || name.startsWith('_') || facade[name]) continue;
-          if (typeof proto[name] === 'function') {
-            facade[name] = wrapOp(name);
-          }
-        }
-        proto = Object.getPrototypeOf(proto);
       }
 
       container.registerValue(facadeKey, facade);

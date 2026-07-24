@@ -47,6 +47,12 @@ export interface ParsedMethod {
   name: string;
   params: ParsedParam[];
   returnType?: ParsedType;
+  /**
+   * Came from a base class, not from the file being scanned. What a prefab
+   * handler declares about its own ops beats this — the scan reads a signature
+   * and guesses, the builder knows.
+   */
+  inherited?: boolean;
 }
 
 /** Parse a TypeScript type node into a ParsedType. */
@@ -513,7 +519,9 @@ function parseClassMethods(filePath: string, skip: Set<string>, projectRoot?: st
   if (projectRoot) {
     const inherited = parseInheritedMethods(cls, source, filePath, projectRoot, skip);
     // Merge: child methods win over inherited
-    const parentOnly = inherited.filter((m) => !childNames.has(m.name));
+    const parentOnly = inherited
+      .filter((m) => !childNames.has(m.name))
+      .map((m) => ({ ...m, inherited: true }));
     return [...childMethods, ...parentOnly];
   }
 
