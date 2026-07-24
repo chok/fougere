@@ -4,7 +4,7 @@ import { join, dirname, resolve as resolvePath } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { FrondDescriptor, ProviderEntry, EntityEntry, HandlerEntry, PresenterEntry, CollectorEntry, SeedEntry, ScanResult } from './types.js';
 import type { SchemaLike } from '@fougere/schema';
-import type { OperationMeta, OperationsMap } from './operation.js';
+import type { OperationContract, OperationsMap } from './operation.js';
 import { parseAllHandlerMethods, parsePresenterMethods, parseConstructorParams, type ParsedType } from './handler-parser.js';
 import { hashFile, getCached, setCached, flushCache, setCacheRoot } from './scan-cache.js';
 import { loadFrondConfig } from './frond-config.js';
@@ -167,7 +167,7 @@ function resolveSchema(type: ParsedType, moduleExports: Record<string, unknown>)
  * full signatures for the binding algorithm.
  */
 async function inferOperations(filePath: string, moduleExports: Record<string, unknown>, projectRoot?: string): Promise<OperationsMap> {
-  const map = new Map<string, OperationMeta>();
+  const map = new Map<string, OperationContract>();
   let parsed: Awaited<ReturnType<typeof parseAllHandlerMethods>>;
   try {
     const hash = hashFile(filePath);
@@ -184,7 +184,7 @@ async function inferOperations(filePath: string, moduleExports: Record<string, u
   }
 
   for (const method of parsed) {
-    const meta: OperationMeta = { signature: method };
+    const meta: OperationContract = { signature: method };
 
     // Resolve schemas for all params
     for (const param of method.params) {

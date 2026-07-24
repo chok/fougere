@@ -19,7 +19,9 @@ export type ParamSource =
   | { kind: 'collector'; entityName: string }
   | { kind: 'param'; name: string; coerce?: 'number' | 'boolean' }
   | { kind: 'body' }
-  | { kind: 'context' };
+  | { kind: 'context' }
+  /** The whole query bag, for an op whose argument IS the options (list). */
+  | { kind: 'query' };
 
 export interface ParamBinding {
   name: string;
@@ -131,6 +133,10 @@ export async function resolveArgs(
       }
       case 'body': {
         args.push(ctx.body);
+        break;
+      }
+      case 'query': {
+        args.push(ctx.query);
         break;
       }
     }

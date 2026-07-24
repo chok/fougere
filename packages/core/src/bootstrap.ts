@@ -5,28 +5,12 @@ import { scanProject } from './scanner.js';
 import { Logger, type LogLevel } from './builtins/logger.js';
 import { Config } from './builtins/config.js';
 import { EventBus } from './builtins/event-bus.js';
-import { CrudFor } from './crud.js';
 import { createRemoteRouter, createRemoteFacade } from './remote.js';
-import { computeBindingPlan, resolveArgs, type BindingPlan, type CollectorResolver } from './binding.js';
+import { computeBindingPlan, resolveArgs, type CollectorResolver } from './binding.js';
+import type { OperationContract } from './operation.js';
 import { EMPTY_INVOCATION, type InvocationContext } from './invocation.js';
 import { type SchemaLike, type Fields, validateFields } from '@fougere/schema';
 import { encodeEgress } from './egress.js';
-
-const CRUD_OPS = new Set(['list', 'findById', 'create', 'update', 'delete']);
-const READ_ONLY_OPS = ['list', 'findById'];
-
-
-/** Default argument binding for inherited CRUD methods (no AST scan available). */
-function defaultCrudArgs(op: string, ctx: InvocationContext): unknown[] {
-  switch (op) {
-    case 'list': return [ctx.query];
-    case 'findById': return [ctx.params.id ?? ctx.query.id];
-    case 'create': return [ctx.body];
-    case 'update': return [ctx.params.id ?? ctx.query.id, ctx.body];
-    case 'delete': return [ctx.params.id ?? ctx.query.id];
-    default: return [];
-  }
-}
 
 /** Bootstrap a fougere application. */
 export async function createApp(options: CreateAppOptions): Promise<App> {
@@ -185,35 +169,33 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         return instance;
       };
 
-      const bindingPlans = new Map<string, BindingPlan>();
-      const inputSchemas = new Map<string, SchemaLike>();
-      if (handler) {
-        for (const [opName, meta] of handler.operations) {
-          if (meta.signature) {
-            bindingPlans.set(opName, computeBindingPlan(meta.signature.params, collectorEntityNames));
-          }
-          if (meta.input) inputSchemas.set(opName, meta.input);
-        }
-      }
-
       /**
-       * A `Crud(E)` op carries its contract in the mixin, not in the scan.
+       * The contracts this façade serves, by op name.
        *
-       * The AST parser only sees inherited methods when it can resolve the
-       * mixin's source, which it cannot from an installed app — so a
-       * DISCOVERED contract is a bonus, never the guarantee. What the scan
-       * missed is derived here: the entity judges `create`, its patch view
-       * judges `update`. Without this the raw body reaches the ORM, which
-       * realises and never judges.
+       * One table, whatever produced it: the scan derives a contract from a
+       * parsed signature, a prefab handler declares one outright. The binding
+       * is resolved here so that everything downstream sees a plan and never
+       * an AST — a contract that arrived already carrying its plan keeps it.
        */
-      const crudEntity = (handler?.ctor as { __entity?: unknown })?.__entity
-        ?? (handler ? undefined : entity.entityClass);
-      const ensureCrudContract = (op: string) => {
-        if (inputSchemas.has(op) || !crudEntity) return;
-        const schema = crudEntity as SchemaLike & { partial?: () => SchemaLike };
-        if (op === 'create') inputSchemas.set(op, schema);
-        else if (op === 'update' && typeof schema.partial === 'function') inputSchemas.set(op, schema.partial());
-      };
+      /**
+       * The contracts this façade serves, by op name.
+       *
+       * Two producers, one table. A prefab handler DECLARES its ops on the
+       * class (`Crud(E)` knows the five it built, at runtime, so no scan is
+       * needed to protect them). The scan DERIVES the author's own methods
+       * from this file, and wins on conflict — code written here beats what a
+       * preset brought in.
+       */
+      const contracts = new Map<string, OperationContract>(
+        Object.entries((handler.ctor as { __ops?: Record<string, OperationContract> }).__ops ?? {}),
+      );
+      for (const [opName, scanned] of handler.operations) {
+        contracts.set(opName, {
+          ...scanned,
+          binding: scanned.binding
+            ?? (scanned.signature ? computeBindingPlan(scanned.signature.params, collectorEntityNames) : undefined),
+        });
+      }
 
       /**
        * The field set a result is projected onto — the handler's declared
@@ -243,7 +225,8 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         const ctx = { entity: entityName, operation: op, args: [], state: inv.state, invocation: inv };
 
         return runMiddlewares(getMiddlewares(entityName), ctx, async () => {
-          const schema = inputSchemas.get(op);
+          const contract = contracts.get(op);
+          const schema = contract?.input;
           if (schema && inv.body && typeof inv.body === 'object') {
             // The view's mode travels with it: a partial() input validates as a
             // patch (absent field → untouched), never by forging the fields.
@@ -264,10 +247,11 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
             }
           }
 
-          const plan = bindingPlans.get(op);
-          const resolved = plan
-            ? await resolveArgs(plan, inv, collectorResolver)
-            : defaultCrudArgs(op, inv);
+          // No plan means no declared argument — an op receives what its
+          // contract says it receives, never a guess based on its name.
+          const resolved = contract?.binding
+            ? await resolveArgs(contract.binding, inv, collectorResolver)
+            : [];
           // Egress at the boundary: a write-only field never rides the result
           // out, exactly as REST and Pothos already guarantee on their own.
           return encodeEgress(outputFieldSet(), await getInstance()[op](...resolved));
@@ -276,7 +260,6 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
       const facade: Record<string, Function> = {};
       for (const op of ops) {
-        ensureCrudContract(op);
         facade[op] = wrapOp(op);
       }
 
@@ -285,7 +268,6 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         for (const name of Object.getOwnPropertyNames(proto)) {
           if (name === 'constructor' || name.startsWith('_') || facade[name]) continue;
           if (typeof proto[name] === 'function') {
-            ensureCrudContract(name);
             facade[name] = wrapOp(name);
           }
         }

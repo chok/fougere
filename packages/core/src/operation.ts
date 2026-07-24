@@ -1,18 +1,28 @@
 import type { SchemaLike } from '@fougere/schema';
+import type { BindingPlan } from './binding.js';
 import type { ParsedMethod, ParsedType, ParsedParam } from './handler-parser.js';
 
-/** Metadata for a custom handler operation. */
-export interface OperationMeta {
-  /** Input schema (Entity-like) — resolved from named exports if available. */
+/**
+ * The contract of one operation — everything the façade needs to serve a call.
+ *
+ * Produced two ways, indistinguishable once here: the scan DERIVES it from a
+ * method's parsed signature, a prefab handler DECLARES it outright. The façade
+ * consumes contracts and nothing else — it knows no operation by name, and a
+ * declared contract survives a scan that resolved nothing.
+ */
+export interface OperationContract {
+  /** Judged on the way in. The view carries its own mode (`partial()` → patch). */
   input?: SchemaLike;
-  /** Output schema (Entity-like) — resolved from named exports if available. */
+  /** Projected on the way out. */
   output?: SchemaLike;
-  /** Full parsed signature from source (params, return type, generics). */
+  /** Where each argument is read from in the invocation. */
+  binding?: BindingPlan;
+  /** The scan's raw material, when it produced this contract. `binding` wins. */
   signature?: ParsedMethod;
 }
 
-/** Map of method name → operation metadata. */
-export type OperationsMap = Map<string, OperationMeta>;
+/** Map of operation name → its contract. */
+export type OperationsMap = Map<string, OperationContract>;
 
 export type { ParsedType, ParsedParam };
 
