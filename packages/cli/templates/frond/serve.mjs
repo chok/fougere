@@ -8,19 +8,18 @@
  * Nothing in the frond changes — only where it runs.
  */
 import { createJiti } from 'jiti';
-import { createApp, createLocalRunner, setModuleLoader, Logger } from '@fougere/core';
-import { createContainer } from '@fougere/container-fougere';
-import { setupSqlite, autoMigrate } from '@fougere/schema-drizzle';
+import { createLocalRunner, setModuleLoader, Logger } from '@fougere/core';
+import { bootAppFromConfig } from '@fougere/runtime';
 import { serve } from '@fougere/transport-http';
 
 const jiti = createJiti(import.meta.url, { interopDefault: true });
 setModuleLoader((filePath) => jiti.import(filePath));
 
 const log = new Logger('frond-host');
-const { ormFactory, sqlite } = setupSqlite({ path: '.data/app.db' });
 
-const app = await createApp({ root: process.cwd(), createContainer, ormFactory });
-autoMigrate({ fronds: app.fronds }, sqlite);
+// `topology: false` — this process *is* the frond, it doesn't route back out.
+// Storage comes from fougere.config.ts; this host names no engine.
+const app = await bootAppFromConfig(process.cwd(), { topology: false });
 
 const { port } = await serve(createLocalRunner(app), { port: Number(process.env.PORT ?? 4000) });
 log.info(`frond served — POST http://127.0.0.1:${port}/_fougere/call`);

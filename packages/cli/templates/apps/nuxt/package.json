@@ -10,7 +10,7 @@
     "@fougere/core": "latest",
     "@fougere/nuxt": "latest",
     "@fougere/schema": "latest",
-    "@fougere/schema-drizzle": "latest",
+    "@fougere/runtime": "latest",
     "@fougere/container-fougere": "latest",
     "better-sqlite3": "^11.0.0",
     "drizzle-orm": "^0.44.0",

@@ -1,18 +1,17 @@
 /**
- * SQLite + Drizzle setup for the demo.
+ * SQLite + Kysely setup for the demo.
  *
  * Tables match the better-auth shape (single-PK id, token on session, etc.) plus
  * the app's Note table. In a richer setup you'd generate this from entities via
- * `toSqliteTables` but the demo keeps it explicit for readability.
+ * `autoMigrate` but the demo keeps it explicit for readability.
  */
-import Database from 'better-sqlite3';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { setupSqlite } from '@fougere/schema-sql';
 
-const sqlite = new Database('auth-better-demo.db');
-sqlite.pragma('journal_mode = WAL');
-sqlite.pragma('foreign_keys = ON');
+const setup = setupSqlite({ path: 'auth-better-demo.db' });
+const sqlite = setup.sqlite;
 
-export const db = drizzle(sqlite);
+export const db = setup.db;
+export const ormFactory = setup.ormFactory;
 
 sqlite.exec(`
   CREATE TABLE IF NOT EXISTS user (

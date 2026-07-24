@@ -14,7 +14,7 @@
     "@fougere/http": "workspace:*",
     "@fougere/nuxt": "workspace:*",
     "@fougere/schema": "workspace:*",
-    "@fougere/schema-drizzle": "workspace:*",
+    "@fougere/schema-sql": "workspace:*",
     "@fougere/schema-graphql": "workspace:*",
     "@fougere/transport-http": "workspace:*",
     "@nuxt/content": "^3.6.0",

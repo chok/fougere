@@ -1,55 +1,31 @@
 /**
  * Seed — données de demo
  */
-import { db } from './db.js';
-import * as tables from './adapter-drizzle.js';
-
-function uuid() {
-  return crypto.randomUUID();
-}
-
-const now = new Date().toISOString();
+import { categoryOrm, productOrm, customerOrm, orderOrm, orderLineOrm } from './db.js';
 
 // Categories
-const catPlants = uuid();
-const catPots = uuid();
+const plantes = await categoryOrm.create({ name: 'Plantes', slug: 'plantes' });
+const pots = await categoryOrm.create({ name: 'Pots', slug: 'pots' });
 
-db.insert(tables.categories).values([
-  { id: catPlants, name: 'Plantes', slug: 'plantes' },
-  { id: catPots, name: 'Pots', slug: 'pots' },
-]).run();
-
-// Products
-const prod1 = uuid();
-const prod2 = uuid();
-const prod3 = uuid();
-
-db.insert(tables.products).values([
-  { id: prod1, categoryId: catPlants, name: 'Fougère de Boston', price: 24.99, stock: 50, active: true, createdAt: now },
-  { id: prod2, categoryId: catPlants, name: 'Fougère Maidenhair', price: 19.99, stock: 30, active: true, createdAt: now },
-  { id: prod3, categoryId: catPots, name: 'Pot en terre cuite', price: 12.50, stock: 100, active: true, createdAt: now },
-]).run();
+// Products — active/createdAt are realised by the ORM (SQL default, auto timestamp)
+const prod1 = await productOrm.create({ categoryId: plantes.id, name: 'Fougère de Boston', price: 24.99, stock: 50 });
+const prod2 = await productOrm.create({ categoryId: plantes.id, name: 'Fougère Maidenhair', price: 19.99, stock: 30 });
+const prod3 = await productOrm.create({ categoryId: pots.id, name: 'Pot en terre cuite', price: 12.50, stock: 100 });
 
 // Customers
-const cust1 = uuid();
-const cust2 = uuid();
-
-db.insert(tables.customers).values([
-  { id: cust1, firstName: 'Jean', lastName: 'Dupont', email: 'jean@example.com', createdAt: now },
-  { id: cust2, firstName: 'Marie', lastName: 'Martin', email: 'marie@example.com', createdAt: now },
-]).run();
+const cust1 = await customerOrm.create({ firstName: 'Jean', lastName: 'Dupont', email: 'jean@example.com' });
+await customerOrm.create({ firstName: 'Marie', lastName: 'Martin', email: 'marie@example.com' });
 
 // Orders
-const ord1 = uuid();
+const order = await orderOrm.create({
+  customerId: cust1.id,
+  status: 'paid',
+  total: 62.48,
+  note: 'Livraison express',
+});
 
-db.insert(tables.orders).values([
-  { id: ord1, customerId: cust1, status: 'paid', total: 62.48, note: 'Livraison express', createdAt: now },
-]).run();
-
-db.insert(tables.orderLines).values([
-  { id: uuid(), orderId: ord1, productId: prod1, quantity: 2, unitPrice: 24.99 },
-  { id: uuid(), orderId: ord1, productId: prod3, quantity: 1, unitPrice: 12.50 },
-]).run();
+await orderLineOrm.create({ orderId: order.id, productId: prod1.id, quantity: 2, unitPrice: 24.99 });
+await orderLineOrm.create({ orderId: order.id, productId: prod3.id, quantity: 1, unitPrice: 12.50 });
 
 console.log('Seeded:');
 console.log(`  2 categories`);

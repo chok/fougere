@@ -228,13 +228,9 @@ function generateBootPlugin(
   const dbPath = typeof db === 'object' && db.path ? db.path : ':memory:';
 
   if (dialect === 'sqlite') {
-    lines.push(`import Database from 'better-sqlite3';`);
-    lines.push(`import { drizzle } from 'drizzle-orm/better-sqlite3';`);
-    lines.push(`import { createOrmFactory, autoMigrate } from '@fougere/schema-drizzle';`);
-    if (dbPath !== ':memory:') {
-      lines.push(`import { mkdirSync } from 'node:fs';`);
-      lines.push(`import { dirname } from 'node:path';`);
-    }
+    // The generated plugin names no storage package — resolution lives in
+    // @fougere/runtime, the one place that knows which engine backs `db:`.
+    lines.push(`import { resolveStorage } from '@fougere/runtime';`);
     lines.push(``);
   }
 
@@ -247,19 +243,13 @@ function generateBootPlugin(
   // Wrap all init in the plugin callback to avoid top-level native calls
   lines.push(`export default defineNitroPlugin(async () => {`);
   if (dialect === 'sqlite') {
-    if (dbPath !== ':memory:') {
-      // A file-backed DB needs its directory — SQLite won't create it.
-      lines.push(`  mkdirSync(dirname('${dbPath}'), { recursive: true });`);
-    }
-    lines.push(`  const sqlite = new Database('${dbPath}');`);
-    lines.push(`  sqlite.pragma('journal_mode = WAL');`);
-    lines.push(`  const db = drizzle(sqlite);`);
+    lines.push(`  const storage = resolveStorage({ dialect: 'sqlite', path: '${dbPath}' });`);
     lines.push(``);
     lines.push(`  configureFougere({`);
-    lines.push(`    db,`);
-    lines.push(`    ormFactory: createOrmFactory(db),`);
+    lines.push(`    db: storage.db,`);
+    lines.push(`    ormFactory: storage.ormFactory,`);
     lines.push(`    async afterBoot(app) {`);
-    lines.push(`      autoMigrate(app, sqlite);`);
+    lines.push(`      await storage.afterBoot?.(app);`);
 
     if (seeds.length) {
       lines.push(`      const resolve = (name) => app.resolve(name + 'Handler');`);

@@ -74,7 +74,7 @@ export default class ProjectWriter {
   linkLocal(wsDir: string): void {
     const packages = fileURLToPath(new URL('../../../../', import.meta.url));
     const dirOf: Record<string, string> = {
-      core: 'core', schema: 'schema', 'schema-drizzle': 'schema-drizzle',
+      core: 'core', schema: 'schema', 'schema-sql': 'schema-sql', runtime: 'runtime',
       'container-fougere': 'container-fougere', nuxt: 'fougere-nuxt', 'transport-http': 'transport/http',
     };
     const walk = (d: string): void => {

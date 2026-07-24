@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text } from '../src/index.js';
 
-// Stand in for an adapter package: augment the open registry exactly as
-// @fougere/schema-drizzle would, from outside the core, via declaration merging.
+// Stand in for an adapter package: augment the open registry exactly as an SQL
+// adapter would, from outside the core, via declaration merging. The 'drizzle'
+// namespace below is arbitrary — any adapter-chosen key works the same way.
 declare module '../src/hints.js' {
   interface FougereHints<K extends string> {
     drizzle?: Partial<Record<K, { columnType?: string; index?: string }>>;

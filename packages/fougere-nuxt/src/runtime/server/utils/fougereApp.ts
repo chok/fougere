@@ -68,22 +68,21 @@ async function boot(): Promise<App> {
   const root = process.env.FOUGERE_ROOT ?? configRoot;
   const fileConfig: FougereConfig = await loadCascadedConfig(root, configRoot);
 
-  // Auto-resolve the data layer from config.db when the user didn't provide
-  // a custom one via configureFougere. Today only 'sqlite' is supported.
+  // Auto-resolve the data layer from config.db when the user didn't provide a
+  // custom one via configureFougere. The resolution itself lives in @fougere/runtime
+  // — this host must not know which storage package backs `db:`.
   let db = _config.db;
   let ormFactory = _config.ormFactory;
-  let sqlite: { exec(sql: string): void } | undefined;
+  let migrateSchema: ((app: never) => Promise<void> | void) | undefined;
   if (!ormFactory) {
-    const dbConf = fileConfig.db;
-    if (dbConf === 'sqlite' || (typeof dbConf === 'object' && dbConf?.dialect === 'sqlite')) {
-      log.debug('auto-resolving SQLite storage');
-      const { setupSqlite } = await import('@fougere/schema-drizzle');
-      const path = typeof dbConf === 'object' ? dbConf.path : undefined;
-      const setup = setupSqlite({ path });
-      db = setup.db;
-      ormFactory = setup.ormFactory;
-      sqlite = setup.sqlite;
-    } else if (dbConf === false || dbConf === undefined) {
+    const { resolveStorage } = await import('@fougere/runtime');
+    const storage = resolveStorage(fileConfig.db as never);
+    if (storage.ormFactory) {
+      log.debug('auto-resolving storage from config.db');
+      db = storage.db;
+      ormFactory = storage.ormFactory;
+      migrateSchema = storage.afterBoot as never;
+    } else {
       log.debug('no db declared — falling back to in-memory ORM');
       ormFactory = createMemoryOrm;
     }
@@ -108,19 +107,11 @@ async function boot(): Promise<App> {
     remoteTransport,
   });
 
-  // Auto-DDL from scanned entities + auth entities (when SQLite is involved).
-  if (sqlite) {
-    log.debug('running auto-DDL from entities');
-    const { autoMigrate } = await import('@fougere/schema-drizzle');
-    const fronds = [...app.fronds];
-    if (app.auth?.entities) {
-      const authEntities = Object.entries(app.auth.entities).map(([name, entityClass]) => ({
-        name,
-        entityClass,
-      }));
-      fronds.push({ name: '__auth__', entities: authEntities } as never);
-    }
-    autoMigrate({ fronds }, sqlite);
+  // Bring the schema up to date — creates missing tables and adds columns an
+  // entity gained. Auth entities travel with the app, no synthetic frond needed.
+  if (migrateSchema) {
+    log.debug('migrating schema from entities');
+    await migrateSchema(app as never);
   }
 
   if (_config.afterBoot) {

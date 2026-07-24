@@ -9,7 +9,7 @@ import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { createApp } from '@fougere/core';
 import { createContainer } from '@fougere/container-fougere';
-import { createOrmFactory } from '@fougere/schema-drizzle';
+import { createOrmFactory } from '@fougere/schema-sql';
 import { db } from './db.js';
 import { Note, CreateNote } from './entities.js';
 import config from '../fougere.config.js';

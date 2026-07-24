@@ -11,7 +11,7 @@
     "@fougere/core": "workspace:*",
     "@fougere/container-fougere": "workspace:*",
     "@fougere/schema": "workspace:*",
-    "@fougere/schema-drizzle": "workspace:*",
+    "@fougere/schema-sql": "workspace:*",
     "@fougere/nuxt": "workspace:*",
     "nuxt": "^4.4.0"
   }

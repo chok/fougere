@@ -3,15 +3,18 @@
  *
  * Booting an app from `fougere.config.ts` means the same three opinionated
  * bindings every time: the container is `container-fougere`, `db: sqlite`
- * realizes through `schema-drizzle`, and `remotes:` are reached over
+ * realizes through `schema-sql`, and `remotes:` are reached over
  * `transport-http`. core stays pure (it knows none of these); this layer-2
  * package supplies them on top of `core.boot()`. Nuxt's fallback, the CLI's
  * `serve`/`call`, and a standalone frond host are all projections of it.
  */
 import { boot, loadConfig, type App } from '@fougere/core';
 import { createContainer } from '@fougere/container-fougere';
-import { setupSqlite, autoMigrate } from '@fougere/schema-drizzle';
 import { createHttpTransport } from '@fougere/transport-http';
+import { resolveStorage, type DbConfig } from './storage.js';
+
+export { resolveStorage, declaresStorage } from './storage.js';
+export type { DbConfig, ResolvedStorage } from './storage.js';
 
 export interface BootAppOptions {
   /** Boot only these fronds (by name). Absent = every discovered frond. */
@@ -38,13 +41,7 @@ export async function bootAppFromConfig(root: string, opts: BootAppOptions = {})
     fronds: opts.fronds,
     remotes: useRemotes ? remotes : undefined,
     remoteTransport: useRemotes ? (url) => createHttpTransport(url) : undefined,
-    db: (cfg) => {
-      const dbConf = cfg.db;
-      // `db: false` — a frond with no persistence of its own.
-      if (dbConf === false) return { ormFactory: undefined };
-      const path = typeof dbConf === 'object' ? dbConf.path : undefined;
-      const { db, sqlite, ormFactory } = setupSqlite({ path });
-      return { db, ormFactory, afterBoot: (app) => autoMigrate(app, sqlite) };
-    },
+    // One resolver, one place that knows a storage package.
+    db: (cfg) => resolveStorage(cfg.db as DbConfig),
   });
 }

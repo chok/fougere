@@ -1,49 +1,35 @@
-import Database from 'better-sqlite3';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import * as schema from './adapter-drizzle.js';
+/**
+ * Storage — Kysely/SQLite wired from the entities, no hand-written DDL.
+ */
+import { setupSqlite, migrate, toTableName } from '@fougere/schema-sql';
+import { Category, Product, Customer, OrderLine, Order } from './entities.js';
 
-const sqlite = new Database('demo.db');
-sqlite.pragma('journal_mode = WAL');
-sqlite.pragma('foreign_keys = ON');
+// 'category' → 'categories' is the one irregular plural the default
+// convention (+s) gets wrong — every other entity name already pluralizes right.
+const IRREGULAR_PLURALS: Record<string, string> = { category: 'categories' };
+const tableName = (name: string) => IRREGULAR_PLURALS[name] ?? toTableName(name);
 
-export const db = drizzle(sqlite, { schema });
+const { db, ormFactory } = setupSqlite({
+  path: 'demo.db',
+  ormFactoryOptions: { tableName },
+});
 
-// TODO: générer ce SQL depuis les tables Drizzle (@fougere/schema-drizzle:migrate)
-sqlite.exec(`
-  CREATE TABLE IF NOT EXISTS categories (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    slug TEXT NOT NULL
-  );
-  CREATE TABLE IF NOT EXISTS products (
-    id TEXT PRIMARY KEY,
-    category_id TEXT NOT NULL REFERENCES categories(id),
-    name TEXT NOT NULL,
-    price REAL NOT NULL,
-    stock INTEGER NOT NULL,
-    active INTEGER NOT NULL DEFAULT 1,
-    created_at TEXT NOT NULL
-  );
-  CREATE TABLE IF NOT EXISTS customers (
-    id TEXT PRIMARY KEY,
-    first_name TEXT NOT NULL,
-    last_name TEXT NOT NULL,
-    email TEXT NOT NULL,
-    created_at TEXT NOT NULL
-  );
-  CREATE TABLE IF NOT EXISTS orders (
-    id TEXT PRIMARY KEY,
-    customer_id TEXT NOT NULL REFERENCES customers(id),
-    status TEXT NOT NULL,
-    total REAL NOT NULL,
-    note TEXT,
-    created_at TEXT NOT NULL
-  );
-  CREATE TABLE IF NOT EXISTS order_lines (
-    id TEXT PRIMARY KEY,
-    order_id TEXT NOT NULL REFERENCES orders(id),
-    product_id TEXT NOT NULL REFERENCES products(id),
-    quantity INTEGER NOT NULL,
-    unit_price REAL NOT NULL
-  );
-`);
+export { db };
+
+const entities = [
+  { name: 'category', entityClass: Category },
+  { name: 'product', entityClass: Product },
+  { name: 'customer', entityClass: Customer },
+  { name: 'orderLine', entityClass: OrderLine },
+  { name: 'order', entityClass: Order },
+];
+
+// Bring the schema up to date from the entities — additive, replaces the
+// hand-written CREATE TABLE block.
+await migrate({ fronds: [{ name: 'ecommerce', entities }] }, db, { tableName });
+
+export const categoryOrm = ormFactory(Category, 'category');
+export const productOrm = ormFactory(Product, 'product');
+export const customerOrm = ormFactory(Customer, 'customer');
+export const orderLineOrm = ormFactory(OrderLine, 'orderLine');
+export const orderOrm = ormFactory(Order, 'order');

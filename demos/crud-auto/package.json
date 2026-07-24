@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@fougere/schema": "workspace:*",
-    "@fougere/schema-drizzle": "workspace:*",
+    "@fougere/schema-sql": "workspace:*",
     "@fougere/container": "workspace:*",
     "@fougere/container-fougere": "workspace:*",
     "@fougere/core": "workspace:*",

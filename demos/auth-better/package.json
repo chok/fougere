@@ -9,7 +9,7 @@
   "dependencies": {
     "@fougere/core": "workspace:*",
     "@fougere/schema": "workspace:*",
-    "@fougere/schema-drizzle": "workspace:*",
+    "@fougere/schema-sql": "workspace:*",
     "@fougere/auth-better": "workspace:*",
     "@fougere/container-fougere": "workspace:*",
     "hono": "^4.7.0",

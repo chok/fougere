@@ -16,7 +16,7 @@
     "@fougere/core": "workspace:*",
     "@fougere/nuxt": "workspace:*",
     "@fougere/schema": "workspace:*",
-    "@fougere/schema-drizzle": "workspace:*",
+    "@fougere/schema-sql": "workspace:*",
     "@fougere/schema-graphql": "workspace:*",
     "@nuxt/ui": "^4.6.0",
     "@pothos/core": "^4.12.0",

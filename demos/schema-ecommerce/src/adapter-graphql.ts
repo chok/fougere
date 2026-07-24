@@ -2,10 +2,8 @@
  * Adapter GraphQL — schema Pothos généré depuis les entités fougere
  */
 import SchemaBuilder from '@pothos/core';
-import { eq } from 'drizzle-orm';
 import { registerType, registerInput, registerOperations } from '@fougere/schema-graphql';
-import { db } from './db.js';
-import * as t from './adapter-drizzle.js';
+import { categoryOrm, productOrm, customerOrm, orderLineOrm, orderOrm } from './db.js';
 import {
   Category, Product, Customer, OrderLine, Order,
   CreateProduct, UpdateProduct,
@@ -27,7 +25,7 @@ const ProductType = registerType(builder, {
   relations: {
     category: {
       type: CategoryType,
-      resolve: (p: any) => db.select().from(t.categories).where(eq(t.categories.id, p.categoryId)).get()!,
+      resolve: (p: any) => categoryOrm.findById(p.categoryId),
     },
   },
 });
@@ -45,7 +43,7 @@ const OrderLineType = registerType(builder, {
   relations: {
     product: {
       type: ProductType,
-      resolve: (p: any) => db.select().from(t.products).where(eq(t.products.id, p.productId)).get()!,
+      resolve: (p: any) => productOrm.findById(p.productId),
     },
   },
 });
@@ -57,12 +55,12 @@ const OrderType = registerType(builder, {
   relations: {
     customer: {
       type: CustomerType,
-      resolve: (p: any) => db.select().from(t.customers).where(eq(t.customers.id, p.customerId)).get()!,
+      resolve: (p: any) => customerOrm.findById(p.customerId),
     },
     lines: {
       type: OrderLineType,
       list: true,
-      resolve: (p: any) => db.select().from(t.orderLines).where(eq(t.orderLines.orderId, p.id)).all(),
+      resolve: (p: any) => orderLineOrm.findAllBy({ orderId: p.id }),
     },
   },
 });
@@ -115,8 +113,8 @@ registerOperations(builder, {
   name: 'Product',
   type: ProductType,
   facade: {
-    list: () => db.select().from(t.products).all(),
-    findById: (ctx: any) => db.select().from(t.products).where(eq(t.products.id, ctx.params.id)).get() ?? null,
+    list: (ctx: any) => productOrm.list(ctx.body),
+    findById: (ctx: any) => productOrm.findById(ctx.params.id),
   },
   operations: readOnlyOps(),
 });
@@ -125,8 +123,8 @@ registerOperations(builder, {
   name: 'Category',
   type: CategoryType,
   facade: {
-    list: () => db.select().from(t.categories).all(),
-    findById: (ctx: any) => db.select().from(t.categories).where(eq(t.categories.id, ctx.params.id)).get() ?? null,
+    list: (ctx: any) => categoryOrm.list(ctx.body),
+    findById: (ctx: any) => categoryOrm.findById(ctx.params.id),
   },
   operations: readOnlyOps(),
 });
@@ -135,8 +133,8 @@ registerOperations(builder, {
   name: 'Customer',
   type: CustomerType,
   facade: {
-    list: () => db.select().from(t.customers).all(),
-    findById: (ctx: any) => db.select().from(t.customers).where(eq(t.customers.id, ctx.params.id)).get() ?? null,
+    list: (ctx: any) => customerOrm.list(ctx.body),
+    findById: (ctx: any) => customerOrm.findById(ctx.params.id),
   },
   operations: readOnlyOps(),
 });
@@ -145,15 +143,13 @@ registerOperations(builder, {
   name: 'Order',
   type: OrderType,
   facade: {
-    list: () => db.select().from(t.orders).all(),
-    findById: (ctx: any) => db.select().from(t.orders).where(eq(t.orders.id, ctx.params.id)).get() ?? null,
+    list: (ctx: any) => orderOrm.list(ctx.body),
+    findById: (ctx: any) => orderOrm.findById(ctx.params.id),
   },
   operations: readOnlyOps(),
 });
 
 // ─── Mutations ─────────────────────────────────────
-
-function uuid() { return crypto.randomUUID(); }
 
 builder.mutationType({});
 
@@ -161,15 +157,13 @@ builder.mutationType({});
   createProduct: f.field({
     type: ProductType,
     args: { input: f.arg({ type: CreateProductInput, required: true }) },
-    resolve: (_: any, { input }: any) => {
+    resolve: async (_: any, { input }: any) => {
       const v = CreateProduct.validate(input);
       if (!v.success) throw new Error(v.errors.map((e: any) => `${e.path}: ${e.message}`).join(', '));
 
-      const id = uuid();
-      db.insert(t.products).values({
-        id, ...input, active: true, createdAt: new Date().toISOString(),
-      }).run();
-      return db.select().from(t.products).where(eq(t.products.id, id)).get()!;
+      // active/createdAt are realised by the ORM (SQL default, auto timestamp) —
+      // the caller only supplies what it owns.
+      return productOrm.create(input);
     },
   }),
 
@@ -180,7 +174,7 @@ builder.mutationType({});
       id: f.arg.string({ required: true }),
       input: f.arg({ type: UpdateProductInput, required: true }),
     },
-    resolve: (_: any, { id, input }: any) => {
+    resolve: async (_: any, { id, input }: any) => {
       const v = UpdateProduct.validate(input);
       if (!v.success) throw new Error(v.errors.map((e: any) => `${e.path}: ${e.message}`).join(', '));
 
@@ -188,37 +182,38 @@ builder.mutationType({});
       for (const [k, val] of Object.entries(input)) {
         if (val != null) updates[k] = val;
       }
-      if (Object.keys(updates).length > 0) {
-        db.update(t.products).set(updates).where(eq(t.products.id, id)).run();
-      }
-      return db.select().from(t.products).where(eq(t.products.id, id)).get() ?? null;
+      // An empty patch has no SET clause to run — just hand back the current row.
+      if (Object.keys(updates).length === 0) return (await productOrm.findById(id)) ?? null;
+      return productOrm.update(id, updates);
     },
   }),
 
   createOrder: f.field({
     type: OrderType,
     args: { input: f.arg({ type: CreateOrderInput, required: true }) },
-    resolve: (_: any, { input }: any) => {
-      const orderId = uuid();
+    resolve: async (_: any, { input }: any) => {
       let total = 0;
-      const lines: Array<{ id: string; orderId: string; productId: string; quantity: number; unitPrice: number }> = [];
+      const lines: Array<{ productId: string; quantity: number; unitPrice: number }> = [];
 
       for (const line of input.lines) {
-        const product = db.select().from(t.products).where(eq(t.products.id, line.productId)).get();
+        const product = await productOrm.findById(line.productId);
         if (!product) throw new Error(`Product ${line.productId} not found`);
-        total += product.price * line.quantity;
-        lines.push({ id: uuid(), orderId, productId: line.productId, quantity: line.quantity, unitPrice: product.price });
+        total += (product as any).price * line.quantity;
+        lines.push({ productId: line.productId, quantity: line.quantity, unitPrice: (product as any).price });
       }
 
-      db.insert(t.orders).values({
-        id: orderId, customerId: input.customerId,
-        status: 'pending', total, note: input.note ?? null,
-        createdAt: new Date().toISOString(),
-      }).run();
+      const order = await orderOrm.create({
+        customerId: input.customerId,
+        status: 'pending',
+        total,
+        note: input.note ?? null,
+      });
 
-      for (const line of lines) db.insert(t.orderLines).values(line).run();
+      for (const line of lines) {
+        await orderLineOrm.create({ ...line, orderId: order.id });
+      }
 
-      return db.select().from(t.orders).where(eq(t.orders.id, orderId)).get()!;
+      return order;
     },
   }),
 }));

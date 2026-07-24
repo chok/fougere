@@ -5,11 +5,9 @@
  * PostHandler: full CRUD + custom ops (searchByTitle, publish).
  * Zero SQL, zero services, zero resolvers.
  */
-import Database from 'better-sqlite3';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { createContainer } from '@fougere/container-fougere';
 import { createApp } from '@fougere/core';
-import { createOrmFactory, autoMigrate } from '@fougere/schema-drizzle';
+import { setupSqlite, migrate } from '@fougere/schema-sql';
 import { registerAll, registerGraphQL } from '@fougere/schema-graphql';
 import { generateRoutes, registerRoutes } from '@fougere/schema-rest';
 import { createHonoRouter } from '@fougere/http';
@@ -20,22 +18,18 @@ import { join } from 'node:path';
 
 // --- DB -----------------------------------------------
 
-const sqlite = new Database(':memory:');
-sqlite.pragma('journal_mode = WAL');
-sqlite.pragma('foreign_keys = ON');
-
-const db = drizzle(sqlite);
+const { db, ormFactory } = setupSqlite({ path: ':memory:' });
 
 // --- Bootstrap ----------------------------------------
 
 const app = await createApp({
   root: join(import.meta.dirname, '..'),
   createContainer,
-  ormFactory: createOrmFactory(db),
+  ormFactory,
 });
 
-// Auto-create tables from scanned entities
-autoMigrate(app, sqlite);
+// Bring the schema up to date from the scanned entities
+await migrate(app, db);
 
 // --- GraphQL schema (auto-generated) ------------------
 

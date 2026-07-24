@@ -5,26 +5,19 @@
  */
 import { boot, loggerMiddleware, errorMiddleware, type Logger } from '@fougere/core';
 import { createContainer } from '@fougere/container-fougere';
-import { createOrmFactory, autoMigrate } from '@fougere/schema-drizzle';
+import { setupSqlite, migrate } from '@fougere/schema-sql';
 import { registerAll, registerGraphQL } from '@fougere/schema-graphql';
 import { createHonoRouter, httpLogger } from '@fougere/http';
 import SchemaBuilder from '@pothos/core';
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
-import Database from 'better-sqlite3';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
 
 const app = await boot({
   root: import.meta.dirname,
   createContainer,
   db: () => {
-    const sqlite = new Database(':memory:');
-    sqlite.pragma('journal_mode = WAL');
-    const db = drizzle(sqlite);
-    return {
-      ormFactory: createOrmFactory(db),
-      afterBoot: (app) => autoMigrate(app, sqlite),
-    };
+    const { db, ormFactory } = setupSqlite({ path: ':memory:' });
+    return { db, ormFactory, afterBoot: (app) => migrate(app, db) };
   },
 });
 
