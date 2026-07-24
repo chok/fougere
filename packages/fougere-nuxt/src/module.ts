@@ -204,8 +204,10 @@ const module: any = defineNuxtModule<FougereModuleOptions>({
 export default module;
 
 // ── Boot plugin generation ─────────────────────────
+// Exported (not just module-internal) so its output is unit-testable without
+// spinning up a whole Nuxt build.
 
-function generateBootPlugin(
+export function generateBootPlugin(
   config: FougereConfig,
   seeds: SeedEntry[],
   fougereAppPath: string,
@@ -225,7 +227,6 @@ function generateBootPlugin(
 
   // SQLite setup
   const dialect = typeof db === 'string' ? db : db.dialect;
-  const dbPath = typeof db === 'object' && db.path ? db.path : ':memory:';
 
   if (dialect === 'sqlite') {
     // The generated plugin names no storage package — resolution lives in
@@ -243,7 +244,10 @@ function generateBootPlugin(
   // Wrap all init in the plugin callback to avoid top-level native calls
   lines.push(`export default defineNitroPlugin(async () => {`);
   if (dialect === 'sqlite') {
-    lines.push(`  const storage = resolveStorage({ dialect: 'sqlite', path: '${dbPath}' });`);
+    // Pass `db` through unchanged — resolveStorage (@fougere/runtime → setupSqlite)
+    // is the one place that defaults an absent path, so both call sites (this
+    // codegen'd plugin and fougereApp.ts's own fallback) land on the same file.
+    lines.push(`  const storage = resolveStorage(${JSON.stringify(db)});`);
     lines.push(``);
     lines.push(`  configureFougere({`);
     lines.push(`    db: storage.db,`);
