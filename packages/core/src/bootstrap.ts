@@ -9,7 +9,8 @@ import { CrudFor } from './crud.js';
 import { createRemoteRouter, createRemoteFacade } from './remote.js';
 import { computeBindingPlan, resolveArgs, type BindingPlan, type CollectorResolver } from './binding.js';
 import { EMPTY_INVOCATION, type InvocationContext } from './invocation.js';
-import { type SchemaLike, validateFields } from '@fougere/schema';
+import { type SchemaLike, type Fields, validateFields } from '@fougere/schema';
+import { encodeEgress } from './egress.js';
 
 const CRUD_OPS = new Set(['list', 'findById', 'create', 'update', 'delete']);
 const READ_ONLY_OPS = ['list', 'findById'];
@@ -151,32 +152,32 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     const surfaceHandlers = frond.handlers.filter((h) => h.surface);
     const defaultHandlerMap = new Map(defaultHandlers.map((h) => [h.entityName, h]));
 
-    /** Build a facade for a handler and register it in the root container. */
+    /**
+     * Build a facade for a handler and register it in the root container.
+     *
+     * A facade is built FROM a handler — that is the whole rule. An entity is
+     * a shape, not a surface: on its own it declares no operation, so it gets
+     * no facade and answers nothing. Exposing it would mean the framework
+     * deciding, on the author's behalf, that its rows are public.
+     */
     const buildFacade = (
       entity: typeof frond.entities[number],
-      handler: typeof frond.handlers[number] | undefined,
+      handler: typeof frond.handlers[number],
       targetScope: typeof scope,
       facadeKey: string,
     ) => {
       const handlerKey = `_handler:${facadeKey}`;
       const ormTypeName = `${entity.name[0].toUpperCase()}${entity.name.slice(1)}Orm`;
 
-      if (!handler) {
-        const HandlerClass = CrudFor(entity.name, entity.entityClass as any);
-        targetScope.register(handlerKey, HandlerClass, { deps: [ormTypeName] });
-      } else {
-        const hasCrudInProto = handler.deps.length === 0
-          && typeof handler.ctor.prototype?.list === 'function'
-          && typeof handler.ctor.prototype?.findById === 'function';
-        const deps = handler.deps.length > 0
-          ? handler.deps
-          : hasCrudInProto ? [ormTypeName] : [];
-        targetScope.register(handlerKey, handler.ctor, { deps });
-      }
+      const hasCrudInProto = handler.deps.length === 0
+        && typeof handler.ctor.prototype?.list === 'function'
+        && typeof handler.ctor.prototype?.findById === 'function';
+      const deps = handler.deps.length > 0
+        ? handler.deps
+        : hasCrudInProto ? [ormTypeName] : [];
+      targetScope.register(handlerKey, handler.ctor, { deps });
 
-      const ops = handler
-        ? [...handler.operations.keys()]
-        : [...READ_ONLY_OPS];
+      const ops = [...handler.operations.keys()];
 
       let instance: any;
       const getInstance = () => {
@@ -194,6 +195,41 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
           if (meta.input) inputSchemas.set(opName, meta.input);
         }
       }
+
+      /**
+       * A `Crud(E)` op carries its contract in the mixin, not in the scan.
+       *
+       * The AST parser only sees inherited methods when it can resolve the
+       * mixin's source, which it cannot from an installed app — so a
+       * DISCOVERED contract is a bonus, never the guarantee. What the scan
+       * missed is derived here: the entity judges `create`, its patch view
+       * judges `update`. Without this the raw body reaches the ORM, which
+       * realises and never judges.
+       */
+      const crudEntity = (handler?.ctor as { __entity?: unknown })?.__entity
+        ?? (handler ? undefined : entity.entityClass);
+      const ensureCrudContract = (op: string) => {
+        if (inputSchemas.has(op) || !crudEntity) return;
+        const schema = crudEntity as SchemaLike & { partial?: () => SchemaLike };
+        if (op === 'create') inputSchemas.set(op, schema);
+        else if (op === 'update' && typeof schema.partial === 'function') inputSchemas.set(op, schema.partial());
+      };
+
+      /**
+       * The field set a result is projected onto — the handler's declared
+       * output view when it has one (`Crud(Post, PostPublic)`), the entity
+       * otherwise. Resolved once, on first call.
+       */
+      let cachedOutput: Fields | undefined;
+      const outputFieldSet = (): Fields => {
+        if (!cachedOutput) {
+          const schema = (handler?.outputOverride
+            ?? (handler?.ctor as { __output?: unknown })?.__output
+            ?? entity.entityClass) as { getFields?: () => Fields };
+          cachedOutput = typeof schema?.getFields === 'function' ? schema.getFields() : {};
+        }
+        return cachedOutput;
+      };
 
       const collectorResolver = (entityName: string): CollectorResolver | undefined => {
         const key = `${entityName[0].toUpperCase()}${entityName.slice(1)}Collector`;
@@ -232,37 +268,39 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
           const resolved = plan
             ? await resolveArgs(plan, inv, collectorResolver)
             : defaultCrudArgs(op, inv);
-          return getInstance()[op](...resolved);
+          // Egress at the boundary: a write-only field never rides the result
+          // out, exactly as REST and Pothos already guarantee on their own.
+          return encodeEgress(outputFieldSet(), await getInstance()[op](...resolved));
         });
       };
 
       const facade: Record<string, Function> = {};
       for (const op of ops) {
+        ensureCrudContract(op);
         facade[op] = wrapOp(op);
       }
 
-      if (handler) {
-        let proto = handler.ctor.prototype;
-        while (proto && proto !== Object.prototype) {
-          for (const name of Object.getOwnPropertyNames(proto)) {
-            if (name === 'constructor' || name.startsWith('_') || facade[name]) continue;
-            if (typeof proto[name] === 'function') {
-              facade[name] = wrapOp(name);
-            }
+      let proto = handler.ctor.prototype;
+      while (proto && proto !== Object.prototype) {
+        for (const name of Object.getOwnPropertyNames(proto)) {
+          if (name === 'constructor' || name.startsWith('_') || facade[name]) continue;
+          if (typeof proto[name] === 'function') {
+            ensureCrudContract(name);
+            facade[name] = wrapOp(name);
           }
-          proto = Object.getPrototypeOf(proto);
         }
+        proto = Object.getPrototypeOf(proto);
       }
 
       container.registerValue(facadeKey, facade);
       return facade;
     };
 
-    // Default handlers (no surface) — one per entity
+    // Default handlers (no surface) — one per entity that declares one
     for (const entity of frond.entities) {
       const handler = defaultHandlerMap.get(entity.name);
       const facadeKey = `${entity.name}Handler`;
-      buildFacade(entity, handler, scope, facadeKey);
+      if (handler) buildFacade(entity, handler, scope, facadeKey);
 
       // Expose presenter instance (lazy — resolved on first access by bridge)
       const presenter = presenterMap.get(entity.name);
@@ -277,7 +315,9 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         }));
       }
 
-      frondLog.debug(`${facadeKey} [${Object.keys(container.resolve(facadeKey) as any).join(', ')}]`);
+      frondLog.debug(handler
+        ? `${facadeKey} [${Object.keys(container.resolve(facadeKey) as any).join(', ')}]`
+        : `${entity.name} — entity only, no handler: exposes nothing`);
     }
 
     // Surface handlers — create sub-scope per surface handler with scoped ORM

@@ -105,7 +105,8 @@ describe('handler facades', () => {
     const app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
 
     expect(app.container.has('productHandler')).toBe(true);
-    expect(app.container.has('brandHandler')).toBe(true);
+    // Brand is an entity with no handler — a shape, not a surface.
+    expect(app.container.has('brandHandler')).toBe(false);
 
     await app.dispose();
   });
@@ -133,7 +134,7 @@ describe('handler facades', () => {
     await app.dispose();
   });
 
-  it('handler facade exposes read-only operations when no custom handler', async () => {
+  it('an entity with no handler declares no operation, so it exposes none', async () => {
     const fakeOrm = {
       list: vi.fn(async () => []),
       findById: vi.fn(async () => undefined),
@@ -145,13 +146,12 @@ describe('handler facades', () => {
 
     const app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
 
-    // Brand has no handler → read-only by default (secure default)
-    const brandHandler = app.resolve<Record<string, Function>>('brandHandler');
-    expect(brandHandler.list).toBeDefined();
-    expect(brandHandler.findById).toBeDefined();
-    expect(brandHandler.create).toBeUndefined();
-    expect(brandHandler.update).toBeUndefined();
-    expect(brandHandler.delete).toBeUndefined();
+    // Brand is scanned, gets its ORM, and answers nothing: exposing it would be
+    // the framework deciding, for the author, that its rows are public.
+    expect(app.resolve<Container>('frond:catalog').has('BrandOrm')).toBe(true);
+    expect(app.container.has('brandHandler')).toBe(false);
+    expect(() => app.resolve('brandHandler')).toThrow();
+    expect(fakeOrm.list).not.toHaveBeenCalled();
 
     await app.dispose();
   });
@@ -167,9 +167,10 @@ describe('handler facades', () => {
     const ormFactory: OrmFactory = vi.fn(() => fakeOrm);
 
     const app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
-    const brandHandler = app.resolve<Record<string, Function>>('brandHandler');
+    // ItemHandler extends Crud(Item) — it declares the five by inheriting them.
+    const itemHandler = app.resolve<Record<string, Function>>('itemHandler');
 
-    const result = await brandHandler.list({ params: {}, query: {}, body: undefined, state: {} });
+    const result = await itemHandler.list({ params: {}, query: {}, body: undefined, state: {} });
     expect(result).toEqual([{ id: '1' }]);
     expect(fakeOrm.list).toHaveBeenCalled();
 

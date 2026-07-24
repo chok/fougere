@@ -83,23 +83,34 @@ export async function boot(options: BootOptions): Promise<App> {
       for (const seed of frond.seeds) {
         const resolve = <T>(name: string) => app.resolve<T>(name + 'Handler');
         const data = typeof seed.data === 'function' ? await seed.data(resolve) : seed.data;
-        const handler = app.resolve<Record<string, Function>>(`${seed.entityName}Handler`);
 
-        // Seed via handler facade. list() accepts optional InvocationContext.
-        const existing = await handler.list() as unknown[];
+        // A seed is not a client: it writes at boot, from inside. The façade is
+        // used when the entity declares one (its judge catches a bad seed
+        // early), the ORM when it does not — an entity that exposes nothing is
+        // still an entity whose reference rows must land.
+        const tryResolve = <T>(name: string): T | undefined => {
+          try { return app.resolve<T>(name); } catch { return undefined; }
+        };
+        const handler = tryResolve<Record<string, Function>>(`${seed.entityName}Handler`);
+        const ormName = `${seed.entityName[0].toUpperCase()}${seed.entityName.slice(1)}Orm`;
+        const orm = tryResolve<{ list: () => Promise<unknown[]>; create: (input: unknown) => Promise<unknown> }>(ormName);
+
+        const canRead = typeof handler?.list === 'function' ? handler : orm;
+        if (!canRead) {
+          log.warn(`  ${seed.entityName}: no handler façade nor ORM — skipping seed`);
+          continue;
+        }
+
+        // list() accepts optional InvocationContext; ListResult IS an array.
+        const existing = await canRead.list() as unknown[];
         if (existing.length === 0) {
-          if (typeof handler.create === 'function') {
+          if (typeof handler?.create === 'function') {
             for (const item of data) await handler.create({ params: {}, query: {}, body: item, state: {} });
+          } else if (orm) {
+            for (const item of data) await orm.create(item);
           } else {
-            // No create on handler — seed via ORM directly
-            const ormName = `${seed.entityName[0].toUpperCase()}${seed.entityName.slice(1)}Orm`;
-            try {
-              const orm = app.resolve<{ create: (input: unknown) => Promise<unknown> }>(ormName);
-              for (const item of data) await orm.create(item);
-            } catch {
-              log.warn(`  ${seed.entityName}: no create handler or ORM — skipping seed`);
-              continue;
-            }
+            log.warn(`  ${seed.entityName}: no create handler or ORM — skipping seed`);
+            continue;
           }
           log.debug(`  ${seed.entityName}: ${Array.isArray(data) ? data.length : '?'} records`);
         } else {
