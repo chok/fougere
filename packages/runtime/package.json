@@ -1,6 +1,13 @@
 {
   "name": "@fougere/runtime",
   "version": "0.0.1",
+  "description": "Boot conventionnel d'une app Fougere — l'unique point de câblage du stockage.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chok/fougere.git",
+    "directory": "packages/runtime"
+  },
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -15,12 +22,16 @@
   ],
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
     "@fougere/core": "workspace:*",
     "@fougere/container-fougere": "workspace:*",
     "@fougere/schema-sql": "workspace:*",
     "@fougere/transport-http": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

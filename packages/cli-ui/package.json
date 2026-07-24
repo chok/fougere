@@ -1,6 +1,13 @@
 {
   "name": "@fougere/cli-ui",
   "version": "0.0.1",
+  "description": "Les primitives d'affichage de la CLI Fougere.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chok/fougere.git",
+    "directory": "packages/cli-ui"
+  },
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -15,11 +22,15 @@
   ],
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
     "@clack/prompts": "^0.10.0",
     "picocolors": "^1.1.1",
     "consola": "^3.4.2"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

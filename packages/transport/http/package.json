@@ -1,6 +1,13 @@
 {
   "name": "@fougere/transport-http",
   "version": "0.0.1",
+  "description": "Le contrat d'appel sur le fil, en JSON-RPC 2.0 (serveur + client).",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chok/fougere.git",
+    "directory": "packages/transport/http"
+  },
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -21,7 +28,8 @@
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
     "@fougere/core": "workspace:*"
@@ -30,5 +38,8 @@
     "@fougere/container-fougere": "workspace:*",
     "@fougere/schema": "workspace:*",
     "jiti": "^2.6.1"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

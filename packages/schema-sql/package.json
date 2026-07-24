@@ -1,6 +1,13 @@
 {
   "name": "@fougere/schema-sql",
   "version": "0.0.1",
+  "description": "Entité → tables SQL via Kysely (SQLite, PostgreSQL, MySQL, SQL Server).",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chok/fougere.git",
+    "directory": "packages/schema-sql"
+  },
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -17,7 +24,8 @@
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
     "@fougere/schema": "workspace:*",
@@ -31,5 +39,8 @@
     "@types/node": "^22.0.0",
     "better-sqlite3": "^12.8.0",
     "kysely": "^0.28.17"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

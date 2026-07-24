@@ -1,6 +1,13 @@
 {
   "name": "@fougere/http",
   "version": "0.0.1",
+  "description": "Routeur HTTP et middlewares.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chok/fougere.git",
+    "directory": "packages/http"
+  },
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -15,9 +22,13 @@
   ],
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm run build"
   },
   "devDependencies": {
     "@types/node": "^22.19.15"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

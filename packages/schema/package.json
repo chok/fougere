@@ -1,6 +1,13 @@
 {
   "name": "@fougere/schema",
   "version": "0.0.1",
+  "description": "L'entité et ses 4 axes — shape, role, lifecycle, boundary. Zéro dépendance à un moteur.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chok/fougere.git",
+    "directory": "packages/schema"
+  },
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -18,12 +25,16 @@
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
     "@cfworker/json-schema": "^4.1.1"
   },
   "devDependencies": {
     "@types/json-schema": "^7.0.15"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

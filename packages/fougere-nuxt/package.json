@@ -1,6 +1,13 @@
 {
   "name": "@fougere/nuxt",
   "version": "0.0.1",
+  "description": "Module Nuxt : les primitives client et la surface serveur de Fougere.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chok/fougere.git",
+    "directory": "packages/fougere-nuxt"
+  },
   "type": "module",
   "main": "dist/module.js",
   "types": "dist/module.d.ts",
@@ -17,7 +24,8 @@
   "scripts": {
     "build": "tsc",
     "test": "vitest run --passWithNoTests",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
     "@fougere/container-fougere": "workspace:*",
@@ -35,5 +43,8 @@
   },
   "peerDependencies": {
     "nuxt": "^4.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

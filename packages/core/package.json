@@ -1,6 +1,13 @@
 {
   "name": "@fougere/core",
   "version": "0.0.1",
+  "description": "Le cœur : scan, contrat d'appel, façades, doublures distantes.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chok/fougere.git",
+    "directory": "packages/core"
+  },
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -23,23 +30,19 @@
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
     "@fougere/container": "workspace:*",
     "@fougere/schema": "workspace:*",
     "typescript": "^5.5.0"
   },
-  "peerDependencies": {
-    "fastify": ">=5"
-  },
-  "peerDependenciesMeta": {
-    "fastify": {
-      "optional": true
-    }
-  },
   "devDependencies": {
     "@fougere/container-fougere": "workspace:*",
     "@types/node": "^22.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

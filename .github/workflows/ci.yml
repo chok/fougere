@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Build first: the packages' tests import each other's dist/, and a
+      # fixture that boots a project outside any workspace loads it by path.
+      - run: pnpm -r build
+
+      - run: pnpm -r typecheck
+
+      - run: pnpm -r test
+
+      # The scan cache is keyed on source hashes, not on the parser's version —
+      # a cold run is the only one that proves the parser itself still agrees.
+      - name: tests, cold scan cache
+        run: |
+          find . -name '.fougere' -type d -not -path '*/node_modules/*' -exec rm -rf {} +
+          pnpm -r test
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Informational, NOT a gate. Every high/critical left in the prod tree
+      # comes from `better-auth > next` and `better-auth > vitest` — framework
+      # integrations better-auth declares and Fougere never loads. Gating on
+      # them would paint CI red for code we do not execute. Read it when
+      # raising a floor; the floors we own (kysely, better-auth) are pinned
+      # above their advisories.
+      - run: pnpm audit --prod --audit-level high
+        continue-on-error: true

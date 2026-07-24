@@ -1,6 +1,13 @@
 {
   "name": "@fougere/cli",
   "version": "0.0.1",
+  "description": "La CLI Fougere — composer un workspace, servir un frond, appeler une op.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chok/fougere.git",
+    "directory": "packages/cli"
+  },
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -21,7 +28,8 @@
   ],
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
     "@fougere/cli-ui": "workspace:*",
@@ -33,5 +41,8 @@
     "citty": "^0.2.1",
     "jiti": "^2.4.2",
     "picocolors": "^1.1.1"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
