@@ -226,6 +226,14 @@ export interface App {
   fronds: FrondDescriptor[];
   /** Resolve from root container (shortcut). */
   resolve<T>(name: string): T;
+  /**
+   * Resolve an entity's schema — the local `entityClass` when it's hosted or
+   * scanned here, else reconstructed from the remote's identity card
+   * (rpc.discover → reconstruct()). The one way to get a live schema for an
+   * entity whose class may not be importable at all (another repo, another
+   * language) — a card travelled, but until now its `schema` was thrown away.
+   */
+  schemaFor(entity: string): Promise<SchemaLike>;
   /** Dispose the root container. */
   dispose(): Promise<void>;
   /** Register a global app middleware (runs on every operation). */

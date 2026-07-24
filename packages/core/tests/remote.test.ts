@@ -162,6 +162,48 @@ describe('remote façade (repli)', () => {
     ).rejects.toThrow(/remoteTransport/);
   });
 
+  it('schemaFor reconstructs a live, validating schema for an entity with no local class', async () => {
+    const host = await bootHost();
+    // emptyRoot: the consumer scans NOTHING — no Product.ts exists anywhere in
+    // this app. Everything it knows about 'product' comes off the wire.
+    const consumer = await bootConsumer(host);
+
+    const Product = await consumer.schemaFor('product');
+
+    // Not just present — actually exploitable: same field set as the host's
+    // real entity, and the reconstructed shape rules (min: 0 on price) still judge.
+    expect(Object.keys(Product.getFields())).toEqual(['id', 'name', 'price']);
+
+    const tooCheap = Product.validate({ name: 'Fern', price: -5 });
+    expect(tooCheap.success).toBe(false);
+    if (!tooCheap.success) expect(tooCheap.errors[0]).toMatchObject({ path: 'price' });
+
+    const strayField = Product.validate({ name: 'Fern', price: 5, color: 'green' });
+    expect(strayField.success).toBe(false);
+    if (!strayField.success) expect(strayField.errors[0].message).toMatch(/Unknown field/);
+
+    // id is auto-generated ({generate}) — a create payload need not supply it.
+    const valid = Product.validate({ name: 'Fern', price: 5 });
+    expect(valid.success).toBe(true);
+
+    await consumer.dispose();
+    await host.dispose();
+  });
+
+  it('schemaFor returns the local entityClass directly — no reconstruction, no network', async () => {
+    const host = await bootHost();
+    const Product = await host.schemaFor('product');
+    // The host scanned Product.ts itself: same identity as the frond descriptor.
+    expect(Product).toBe(host.fronds.find((f) => f.name === 'catalog')!.entities.find((e) => e.name === 'product')!.entityClass);
+    await host.dispose();
+  });
+
+  it('schemaFor rejects an entity nothing declares, local or remote', async () => {
+    const app = await createApp({ root: emptyRoot, createContainer });
+    await expect(app.schemaFor('unicorn')).rejects.toThrow(/is not loaded/);
+    await app.dispose();
+  });
+
   it('a remote declaration wins over local presence — metadata stays, hosting moves', async () => {
     const host = await bootHost();
     // Same fixtures on disk, but catalog is declared remote: the frond must be

@@ -12,10 +12,17 @@ import type { FrondCall, IdentityCard, Transport } from './call.js';
 import { RPC_ENTITY } from './call.js';
 import { EMPTY_INVOCATION, type InvocationContext } from './invocation.js';
 import { FougereError, ErrorCode } from './middleware.js';
+import { reconstruct, type SchemaConstructor, type Fields, type SchemaDescriptor } from '@fougere/schema';
 
 interface Route {
   frond: string;
   transport: Transport;
+  /**
+   * The entity's schema, rebuilt from the identity card — the same
+   * `SchemaConstructor` shape `entity({...})` produces, live validation
+   * included. Reconstructed once per entity, at discovery time.
+   */
+  schema: SchemaConstructor<Fields>;
 }
 
 export interface RemoteRouter {
@@ -42,7 +49,13 @@ export function createRemoteRouter(
           pending.delete(label);
           for (const frond of card.fronds) {
             for (const entity of frond.entities) {
-              if (!byEntity.has(entity.name)) byEntity.set(entity.name, { frond: frond.name, transport });
+              if (!byEntity.has(entity.name)) {
+                byEntity.set(entity.name, {
+                  frond: frond.name,
+                  transport,
+                  schema: reconstruct(entity.schema as SchemaDescriptor),
+                });
+              }
             }
           }
         } catch {

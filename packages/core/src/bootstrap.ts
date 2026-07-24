@@ -330,10 +330,23 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     }
   };
 
+  const schemaFor = async (entity: string): Promise<SchemaLike> => {
+    for (const frond of fronds) {
+      const found = frond.entities.find((e) => e.name === entity);
+      if (found) return found.entityClass;
+    }
+    if (remoteRouter) {
+      const route = await remoteRouter.route(entity);
+      return route.schema;
+    }
+    throw new Error(`Frond for '${entity}' is not loaded.`);
+  };
+
   return {
     container,
     fronds,
     resolve,
+    schemaFor,
     dispose: () => container.dispose(),
     use(...args: [AppMiddleware] | [string, AppMiddleware]): void {
       if (typeof args[0] === 'string') {
