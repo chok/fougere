@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { entity, primary, text, number, bool, auto, oneOf, ref, optional, many, json } from '@fougere/schema';
+import { entity, primary, text, number, bool, auto, oneOf, ref, optional, many, json, reconstruct } from '@fougere/schema';
 import { toTable, isKeyed, dialects, type ColumnDef } from '../src/index.js';
 
 // ─── Fixtures ──────────────────────────────────────
@@ -88,6 +88,66 @@ describe('isKeyed', () => {
     const table = toTable('products', Product);
     expect(isKeyed(table, column(table, 'id'))).toBe(true);
     expect(isKeyed(table, column(table, 'name'))).toBe(false);
+  });
+});
+
+// ─── references — the FK a ref() field describes ───
+
+describe('references', () => {
+  it('resolves the target via the identity map when the target is part of the same batch', () => {
+    const tableNameOf = new Map<any, string>([[Category, 'categories']]);
+    const table = toTable('products', Product, { resolve: (n) => `custom_${n}`, tableNameOf });
+    expect(column(table, 'categoryId').references).toEqual({ table: 'categories', column: 'id' });
+  });
+
+  it('falls back to deriving the name from the class when there is no identity map', () => {
+    // No `relations` option — the default resolver (camelCase → snake_case + 's')
+    // applied to the class name is all that's left.
+    const table = toTable('products', Product);
+    expect(column(table, 'categoryId').references).toEqual({ table: 'categorys', column: 'id' });
+  });
+
+  it('an identity map miss still derives a name, even off a custom resolver', () => {
+    // `Category` is a live class, but absent from `tableNameOf` (e.g. it lives in
+    // another frond's batch) — the resolver still runs, just on the derived name.
+    const table = toTable('products', Product, { resolve: (n) => `zz_${n}`, tableNameOf: new Map() });
+    expect(column(table, 'categoryId').references?.table).toBe('zz_category');
+  });
+
+  it("resolves the target's real primary key column, not just a guess", () => {
+    class Tag extends entity({ slug: primary(), label: text({ min: 1 }) }) {}
+    class Post extends entity({ id: primary(), tagSlug: ref(Tag) }) {}
+    const table = toTable('posts', Post, { resolve: (n) => `${n}s`, tableNameOf: new Map<any, string>([[Tag, 'tags']]) });
+    expect(column(table, 'tagSlug').references).toEqual({ table: 'tags', column: 'slug' });
+  });
+
+  it('carries onDelete only when the field declares it', () => {
+    class CascadingProduct extends entity({ id: primary(), categoryId: ref(Category, { cascade: true }) }) {}
+    const cascading = toTable('products', CascadingProduct);
+    expect(cascading.columns[1].references?.onDelete).toBe('cascade');
+    expect(column(toTable('products', Product), 'categoryId').references?.onDelete).toBeUndefined();
+  });
+
+  it('assumes the PK is "id" for a relation reconstructed from a lone card — the thunk is gone', () => {
+    const card = {
+      title: 'post',
+      type: 'object' as const,
+      properties: {
+        id: { type: 'string', 'x-fougere': { role: { primary: true } } },
+        tagSlug: { type: 'string', 'x-fougere': { role: { relation: { to: 'tag', kind: 'one' as const } } } },
+      },
+      required: ['tagSlug'],
+      'x-fougere-version': 1 as const,
+      'x-fougere-vendor': 'fougere' as const,
+    };
+    const Post = reconstruct(card as any);
+    const table = toTable('posts', Post, { resolve: (n) => `${n}s` });
+    expect(column(table, 'tagSlug').references).toEqual({ table: 'tags', column: 'id' });
+  });
+
+  it('a many relation owns no column, so it carries no reference either', () => {
+    const table = toTable('categories', Category);
+    expect(table.columns.find((c) => c.field === 'products')).toBeUndefined();
   });
 });
 

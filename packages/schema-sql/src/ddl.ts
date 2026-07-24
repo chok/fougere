@@ -16,9 +16,16 @@ import {
   MysqlAdapter, MysqlQueryCompiler, MysqlIntrospector,
   MssqlAdapter, MssqlQueryCompiler, MssqlIntrospector,
 } from 'kysely';
-import type { SchemaLike } from '@fougere/schema';
+import {
+  isKeyed,
+  orderTables,
+  toTableName,
+  toTables,
+  type AppLike,
+  type ColumnDef,
+  type TableDef,
+} from './table.js';
 import { resolveDialect, type DialectName } from './dialect.js';
-import { isKeyed, toTable, type TableDef } from './table.js';
 
 // ─── Compile-only engines ──────────────────────────
 
@@ -56,10 +63,20 @@ export function compiler(name: DialectName): Kysely<any> {
  * `IF NOT EXISTS` is emitted everywhere it exists — SQL Server has no such
  * clause, so there the statement is bare and the caller must not replay it
  * blindly (the diff pass, once it lands, answers that properly).
+ *
+ * `skipReferences` names the columns whose FK is rendered WITHOUT the inline
+ * `references()` — the column itself still gets created; `orderTables` sends a
+ * column here when its target is part of a cycle, so the constraint reaches the
+ * table separately, once every table involved exists (`addForeignKeyConstraintSQL`).
  */
-export function createTableSQL(table: TableDef, dialectName: DialectName): string {
+export function createTableSQL(
+  table: TableDef,
+  dialectName: DialectName,
+  options?: { skipReferences?: Set<string> },
+): string {
   const dialect = resolveDialect(dialectName);
   const composite = table.compositePrimary.length > 0;
+  const skip = options?.skipReferences;
   let builder = compiler(dialectName).schema.createTable(table.name);
   if (dialectName !== 'mssql') builder = builder.ifNotExists();
 
@@ -71,6 +88,10 @@ export function createTableSQL(table: TableDef, dialectName: DialectName): strin
       if (column.primary && !composite) built = built.primaryKey();
       if (!column.nullable) built = built.notNull();
       if (column.default !== undefined) built = built.defaultTo(column.default);
+      if (column.references && !skip?.has(column.name)) {
+        built = built.references(`${column.references.table}.${column.references.column}`);
+        if (column.references.onDelete) built = built.onDelete(column.references.onDelete);
+      }
       return built;
     });
   }
@@ -82,28 +103,23 @@ export function createTableSQL(table: TableDef, dialectName: DialectName): strin
   return builder.compile().sql;
 }
 
+/**
+ * `ALTER TABLE ADD CONSTRAINT` for one FK `orderTables` deferred — closes a
+ * relation cycle once every table in it exists. Not available on SQLite (its
+ * `ALTER TABLE` is limited to RENAME/ADD COLUMN/RENAME COLUMN/DROP COLUMN) — a
+ * caller on that dialect never produces a deferred edge to render here.
+ */
+export function addForeignKeyConstraintSQL(table: TableDef, column: ColumnDef, dialectName: DialectName): string {
+  const ref = column.references!;
+  const name = `${table.name}_${column.name}_fk`;
+  let builder = compiler(dialectName)
+    .schema.alterTable(table.name)
+    .addForeignKeyConstraint(name, [column.name], ref.table, [ref.column]);
+  if (ref.onDelete) builder = builder.onDelete(ref.onDelete);
+  return builder.compile().sql;
+}
+
 // ─── App-wide generation ───────────────────────────
-
-interface EntityEntry {
-  name: string;
-  entityClass: SchemaLike;
-}
-
-interface FrondLike {
-  name: string;
-  entities: EntityEntry[];
-}
-
-interface AppLike {
-  fronds: FrondLike[];
-  /** Auth runtime entities are migrated alongside scanned fronds when present. */
-  auth?: { entities: Record<string, SchemaLike> };
-}
-
-/** camelCase → snake_case + plural */
-export function toTableName(name: string): string {
-  return name.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`) + 's';
-}
 
 export interface GenerateOptions {
   /** Override table name resolution. Default: camelCase → snake_case + 's'. */
@@ -115,24 +131,41 @@ export interface GenerateOptions {
 /**
  * `CREATE TABLE` for every entity the app hosts — scanned frond entities plus
  * auth runtime entities when present.
+ *
+ * SQLite resolves FK targets lazily and accepts any order, and it has no
+ * `ALTER TABLE ADD CONSTRAINT` to close a cycle with — every FK stays inline,
+ * unordered. Every other engine needs a referenced table to exist first:
+ * `orderTables` sorts the batch and reports the edges a cycle forces to defer,
+ * rendered as `ALTER TABLE ADD CONSTRAINT` after every `CREATE TABLE`.
+ *
+ * Caveat for a repeat call (`autoMigrate`): `CREATE TABLE IF NOT EXISTS` is
+ * idempotent, `ADD CONSTRAINT` is not — on pg/mysql/mssql, calling this twice
+ * for an app with a relation cycle re-issues the same constraint and errors.
+ * The introspection-based `migrate()` (`diff.ts`) doesn't have this problem: it
+ * only ever emits a table's constraints once, the run that creates it.
  */
 export function generateSQL(app: AppLike, options?: GenerateOptions): string[] {
   const resolve = options?.tableName ?? toTableName;
   const dialect = options?.dialect ?? 'sqlite';
-  const statements: string[] = [];
+  const tables = toTables(app, resolve);
 
-  const emit = (entityName: string, entityClass: SchemaLike) => {
-    statements.push(createTableSQL(toTable(resolve(entityName), entityClass), dialect));
-  };
-
-  for (const frond of app.fronds) {
-    for (const entity of frond.entities) emit(entity.name, entity.entityClass);
-  }
-  if (app.auth?.entities) {
-    for (const [name, entityClass] of Object.entries(app.auth.entities)) emit(name, entityClass);
+  if (dialect === 'sqlite') {
+    return tables.map((table) => createTableSQL(table, dialect));
   }
 
-  return statements;
+  const { ordered, deferred } = orderTables(tables);
+  const deferredColumnsOf = new Map<string, Set<string>>();
+  for (const { table, column } of deferred) {
+    const names = deferredColumnsOf.get(table.name) ?? new Set<string>();
+    names.add(column.name);
+    deferredColumnsOf.set(table.name, names);
+  }
+
+  const creates = ordered.map((table) =>
+    createTableSQL(table, dialect, { skipReferences: deferredColumnsOf.get(table.name) }),
+  );
+  const constraints = deferred.map(({ table, column }) => addForeignKeyConstraintSQL(table, column, dialect));
+  return [...creates, ...constraints];
 }
 
 /**

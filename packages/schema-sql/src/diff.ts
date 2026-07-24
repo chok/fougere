@@ -12,23 +12,20 @@
  * written migration, never in an automatic pass.
  */
 import { sql, type Kysely } from 'kysely';
-import type { SchemaLike } from '@fougere/schema';
-import { compiler, createTableSQL, toTableName, type GenerateOptions } from './ddl.js';
+import { addForeignKeyConstraintSQL, compiler, createTableSQL, type GenerateOptions } from './ddl.js';
 import { resolveDialect, type DialectName } from './dialect.js';
-import { isKeyed, toTable, type ColumnDef, type TableDef } from './table.js';
+import {
+  isKeyed,
+  orderTables,
+  toTables,
+  toTableName,
+  type AppLike,
+  type ColumnDef,
+  type TableDef,
+} from './table.js';
 
 /** What the database actually holds: column names per table. */
 export type SchemaState = Map<string, Set<string>>;
-
-interface EntityEntry {
-  name: string;
-  entityClass: SchemaLike;
-}
-
-interface AppLike {
-  fronds: { name: string; entities: EntityEntry[] }[];
-  auth?: { entities: Record<string, SchemaLike> };
-}
 
 /** Read the live schema. Only names are needed — an additive pass never inspects types. */
 export async function actualState(db: Kysely<any>): Promise<SchemaState> {
@@ -42,22 +39,13 @@ export async function actualState(db: Kysely<any>): Promise<SchemaState> {
 
 /** Project the app's entities into the tables they ask for. */
 export function desiredTables(app: AppLike, options?: GenerateOptions): TableDef[] {
-  const resolve = options?.tableName ?? toTableName;
-  const tables: TableDef[] = [];
-  for (const frond of app.fronds) {
-    for (const entity of frond.entities) tables.push(toTable(resolve(entity.name), entity.entityClass));
-  }
-  if (app.auth?.entities) {
-    for (const [name, entityClass] of Object.entries(app.auth.entities)) {
-      tables.push(toTable(resolve(name), entityClass));
-    }
-  }
-  return tables;
+  return toTables(app, options?.tableName ?? toTableName);
 }
 
 export type Change =
-  | { kind: 'createTable'; table: TableDef }
-  | { kind: 'addColumn'; table: TableDef; column: ColumnDef };
+  | { kind: 'createTable'; table: TableDef; deferredColumns?: string[] }
+  | { kind: 'addColumn'; table: TableDef; column: ColumnDef }
+  | { kind: 'addConstraint'; table: TableDef; column: ColumnDef };
 
 /** Compare the two states. Pure — the only place that decides what is missing. */
 export function delta(desired: TableDef[], actual: SchemaState): Change[] {
@@ -76,6 +64,42 @@ export function delta(desired: TableDef[], actual: SchemaState): Change[] {
 }
 
 /**
+ * Order the changes `delta` found, dialect-aware — `delta` itself stays pure and
+ * unordered, this is the one place that adds engine knowledge to the plan.
+ *
+ * SQLite resolves FK targets lazily and accepts any order, with no `ALTER TABLE
+ * ADD CONSTRAINT` to defer to — changes pass through unchanged. Every other
+ * engine needs a `createTable`'s FK targets to already exist: `orderTables`
+ * sorts the NEW tables among themselves and reports the edges a cycle forces to
+ * defer as `addConstraint` changes. An `addColumn` always lands last — its
+ * table already exists (that's why it's `addColumn` and not `createTable`), but
+ * its FK target might be one of THIS batch's new tables, so it waits until
+ * every `createTable`/`addConstraint` above it has run.
+ */
+export function orderChanges(changes: Change[], dialectName: DialectName): Change[] {
+  if (dialectName === 'sqlite') return changes;
+
+  const creates = changes.filter((c): c is Extract<Change, { kind: 'createTable' }> => c.kind === 'createTable');
+  const addColumns = changes.filter((c) => c.kind === 'addColumn');
+
+  const { ordered, deferred } = orderTables(creates.map((c) => c.table));
+  const deferredColumnsOf = new Map<string, Set<string>>();
+  for (const { table, column } of deferred) {
+    const names = deferredColumnsOf.get(table.name) ?? new Set<string>();
+    names.add(column.name);
+    deferredColumnsOf.set(table.name, names);
+  }
+
+  const createChanges: Change[] = ordered.map((table) => {
+    const names = deferredColumnsOf.get(table.name);
+    return names ? { kind: 'createTable', table, deferredColumns: [...names] } : { kind: 'createTable', table };
+  });
+  const constraintChanges: Change[] = deferred.map(({ table, column }) => ({ kind: 'addConstraint', table, column }));
+
+  return [...createChanges, ...constraintChanges, ...addColumns];
+}
+
+/**
  * Render one change.
  *
  * A column added to a populated table cannot be `NOT NULL` without a default —
@@ -87,7 +111,11 @@ export function changeSQL(change: Change, dialectName: DialectName): string {
   const dialect = resolveDialect(dialectName);
   if (change.kind === 'createTable') {
     // Reuse the same renderer as a fresh install — one builder, no drift.
-    return createTableSQL(change.table, dialectName);
+    const skip = change.deferredColumns ? new Set(change.deferredColumns) : undefined;
+    return createTableSQL(change.table, dialectName, { skipReferences: skip });
+  }
+  if (change.kind === 'addConstraint') {
+    return addForeignKeyConstraintSQL(change.table, change.column, dialectName);
   }
   const { table, column } = change;
   const type = dialect.columnType(column, isKeyed(table, column));
@@ -98,6 +126,10 @@ export function changeSQL(change: Change, dialectName: DialectName): string {
       if (column.default !== undefined) {
         built = built.defaultTo(column.default);
         if (!column.nullable) built = built.notNull();
+      }
+      if (column.references) {
+        built = built.references(`${column.references.table}.${column.references.column}`);
+        if (column.references.onDelete) built = built.onDelete(column.references.onDelete);
       }
       return built;
     })
@@ -111,7 +143,7 @@ export async function planMigration(
   options?: GenerateOptions,
 ): Promise<{ changes: Change[]; statements: string[] }> {
   const dialect = options?.dialect ?? 'sqlite';
-  const changes = delta(desiredTables(app, options), await actualState(db));
+  const changes = orderChanges(delta(desiredTables(app, options), await actualState(db)), dialect);
   return { changes, statements: changes.map((change) => changeSQL(change, dialect)) };
 }
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { entity, primary, text, number, bool, auto, optional, many, reconstruct } from '@fougere/schema';
-import { createTableSQL, generateSQL, toTable } from '../src/index.js';
+import { entity, primary, text, number, bool, auto, optional, many, ref, reconstruct } from '@fougere/schema';
+import { createTableSQL, generateSQL, toTable, addForeignKeyConstraintSQL } from '../src/index.js';
 
 // ─── Fixtures ──────────────────────────────────────
 
@@ -25,6 +25,31 @@ class Membership extends entity({
   userId: primary(),
   groupId: primary(),
   role: text(),
+}) {}
+
+class Category extends entity({
+  id: primary(),
+  name: text({ min: 1 }),
+}) {}
+
+class Product extends entity({
+  id: primary(),
+  categoryId: ref(Category),
+  name: text({ min: 1 }),
+}) {}
+
+// A relation cycle, legal in the model (role.ts's relation thunk exists precisely
+// so two entities can reference each other): Club → Captain → Club.
+class Club extends entity({
+  id: primary(),
+  name: text({ min: 1 }),
+  captainId: ref(() => Captain),
+}) {}
+
+class Captain extends entity({
+  id: primary(),
+  name: text({ min: 1 }),
+  clubId: ref(Club),
 }) {}
 
 const fakeApp = (entities: { name: string; entityClass: any }[]) => ({
@@ -130,6 +155,115 @@ describe('generateSQL', () => {
   it('targets the requested dialect', () => {
     const [sql] = generateSQL(fakeApp([{ name: 'post', entityClass: Post }]), { dialect: 'pg' });
     expect(sql).toContain('double precision');
+  });
+});
+
+// ─── Foreign keys — inline, per dialect ────────────
+
+describe('createTableSQL — foreign keys', () => {
+  it('emits an inline reference for every dialect', () => {
+    const table = toTable('products', Product, { resolve: (n) => `${n}s`, tableNameOf: new Map<any, string>([[Category, 'categorys']]) });
+    for (const dialect of ['sqlite', 'pg', 'mysql', 'mssql'] as const) {
+      const sql = createTableSQL(table, dialect);
+      expect(sql).toMatch(/references [`"]categorys[`"] \([`"]id[`"]\)/);
+    }
+  });
+
+  it('carries onDelete when the field declares cascade', () => {
+    class CascadingProduct extends entity({ id: primary(), categoryId: ref(Category, { cascade: true }) }) {}
+    const table = toTable('products', CascadingProduct);
+    expect(createTableSQL(table, 'pg')).toContain('on delete cascade');
+  });
+
+  it('omits the constraint clause when nothing is declared', () => {
+    const table = toTable('products', Product);
+    expect(createTableSQL(table, 'pg')).not.toContain('on delete');
+  });
+
+  it('a self-reference stays inline — no ordering or deferral needed', () => {
+    class Node extends entity({ id: primary(), parentId: optional(ref(() => Node)) }) {}
+    const table = toTable('nodes', Node);
+    expect(createTableSQL(table, 'pg')).toContain('references "nodes" ("id")');
+  });
+
+  it('skipReferences renders the column without its inline FK', () => {
+    const table = toTable('products', Product, { resolve: (n) => `${n}s`, tableNameOf: new Map<any, string>([[Category, 'categorys']]) });
+    const sql = createTableSQL(table, 'pg', { skipReferences: new Set(['category_id']) });
+    expect(sql).not.toContain('references');
+  });
+});
+
+describe('addForeignKeyConstraintSQL', () => {
+  it('renders ALTER TABLE ADD CONSTRAINT, per dialect', () => {
+    const table = toTable('products', Product, { resolve: (n) => `${n}s`, tableNameOf: new Map<any, string>([[Category, 'categorys']]) });
+    const column = table.columns.find((c) => c.field === 'categoryId')!;
+    expect(addForeignKeyConstraintSQL(table, column, 'pg')).toBe(
+      'alter table "products" add constraint "products_category_id_fk" foreign key ("category_id") references "categorys" ("id")',
+    );
+    expect(addForeignKeyConstraintSQL(table, column, 'mysql')).toContain('add constraint `products_category_id_fk`');
+  });
+});
+
+// ─── generateSQL — FK ordering across engines ──────
+
+describe('generateSQL — FK ordering', () => {
+  const shopApp = (entities: { name: string; entityClass: any }[]) => ({ fronds: [{ name: 'shop', entities }] });
+
+  it('SQLite keeps declaration order — lazy FK resolution needs no sort', () => {
+    // Declared in reverse dependency order: Product before its Category.
+    const statements = generateSQL(shopApp([
+      { name: 'product', entityClass: Product },
+      { name: 'category', entityClass: Category },
+    ]));
+    expect(statements).toHaveLength(2);
+    expect(statements[0]).toContain('"products"');
+    expect(statements[1]).toContain('"categorys"');
+  });
+
+  it.each(['pg', 'mysql', 'mssql'] as const)('%s reorders so the referenced table is created first', (dialect) => {
+    const statements = generateSQL(shopApp([
+      { name: 'product', entityClass: Product },
+      { name: 'category', entityClass: Category },
+    ]), { dialect });
+    expect(statements).toHaveLength(2);
+    expect(statements[0]).toContain('categorys');
+    expect(statements[1]).toContain('products');
+  });
+
+  it('a custom tableName resolver is honored for the FK target too — not re-derived', () => {
+    const tableName = (name: string) => (name === 'category' ? 'categories' : `${name}s`);
+    const statements = generateSQL(shopApp([
+      { name: 'category', entityClass: Category },
+      { name: 'product', entityClass: Product },
+    ]), { tableName });
+    expect(statements[1]).toContain('references "categories" ("id")');
+  });
+});
+
+describe('generateSQL — a relation cycle', () => {
+  const clubApp = (entities: { name: string; entityClass: any }[]) => ({ fronds: [{ name: 'club', entities }] });
+
+  it('SQLite inlines both FKs — no cycle-breaking needed', () => {
+    const statements = generateSQL(clubApp([
+      { name: 'club', entityClass: Club },
+      { name: 'captain', entityClass: Captain },
+    ]));
+    expect(statements).toHaveLength(2);
+    expect(statements.join('\n')).toContain('references "captains"');
+    expect(statements.join('\n')).toContain('references "clubs"');
+  });
+
+  it.each(['pg', 'mysql', 'mssql'] as const)('%s defers one edge to ALTER TABLE ADD CONSTRAINT', (dialect) => {
+    const statements = generateSQL(clubApp([
+      { name: 'club', entityClass: Club },
+      { name: 'captain', entityClass: Captain },
+    ]), { dialect });
+    expect(statements).toHaveLength(3);
+    // Exactly one of the two creates carries no inline FK — the deferred one.
+    const creates = statements.slice(0, 2);
+    expect(creates.filter((s) => s.includes('references'))).toHaveLength(1);
+    // The third statement closes the loop.
+    expect(statements[2]).toMatch(/alter table .* add constraint .* foreign key/);
   });
 });
 
