@@ -6,7 +6,7 @@ l'i18n est en/fr (`prefix_except_default` : `/docs`, `/fr/docs`).
 
 ```bash
 pnpm dev                 # depuis site/ — dev server :3000
-pnpm build && node .output/server/index.mjs   # build prod (voir Dockerfile pour le fix drizzle-orm)
+pnpm build && node .output/server/index.mjs   # build prod (voir Dockerfile pour les fixes de trace)
 ```
 
 Tout l'état writable (SQLite + index content) vit sous `.data/` — c'est le seul volume à
@@ -22,4 +22,4 @@ SITE_AUTH_SECRET='...32+ chars...' SITE_URL='https://fougere.example' \
 
 Le build docker part de la **racine** (deps `workspace:*`), retire la référence workspace
 `../sylvauth` (repo frère, hors contexte) et remplace le tracé Nitro partiel de
-`drizzle-orm` par le paquet complet (issue pnpm connue).
+`jiti` par le paquet complet (issue pnpm connue).

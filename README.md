@@ -36,7 +36,7 @@ pnpm -r test
 
 ## Monorepo
 
-- [`packages/`](./packages) — schema, adapters (Drizzle, GraphQL, REST), core (scanner, contrat d'appel), transport HTTP, module Nuxt, auth
+- [`packages/`](./packages) — schema, adapters (SQL, GraphQL, REST), core (scanner, contrat d'appel), transport HTTP, module Nuxt, auth
 - [`site/`](./site) — le site de Fougere, construit avec Fougere
 - [`demos/`](./demos) — démos et prototypes d'usage
 

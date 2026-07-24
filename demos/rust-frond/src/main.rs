@@ -1,6 +1,6 @@
 //! telemetry — un Frond Fougère écrit en Rust.
 //!
-//! Il ne connaît ni TypeScript, ni Drizzle, ni Pothos, ni `entity({...})`.
+//! Il ne connaît ni TypeScript, ni Kysely, ni Pothos, ni `entity({...})`.
 //! Il honore exactement deux choses :
 //!
 //!   1. le contrat d'appel   — POST /_fougere/call, JSON-RPC 2.0, `method = "entity.op"`,

@@ -16,12 +16,13 @@ RUN sed -i '/demos/d' pnpm-workspace.yaml \
 RUN pnpm --filter "./packages/**" -r run build \
   && pnpm --filter "@fougere/site" run build
 # Known monorepo issue: Nitro's trace of packages with lazy internals is
-# partial under pnpm (drizzle-orm misses its entrypoints, jiti its babel
-# transform for the runtime frond scanner). Replace them with the real
-# packages, and add core's pinned TS 5.9 (dynamically imported by the
-# scanner; the root TS 7 has no JS API and goes untraced).
+# partial under pnpm (jiti misses its babel transform for the runtime frond
+# scanner). Replace them with the real packages, and add core's pinned TS 5.9
+# (dynamically imported by the scanner; the root TS 7 has no JS API and goes
+# untraced). drizzle-orm used to sit in this list — the ORM is Kysely now, a
+# single-entrypoint package that has not needed the same treatment.
 RUN mkdir -p site/.output/server/node_modules \
-  && for pkg in drizzle-orm@ jiti@ typescript@5; do \
+  && for pkg in jiti@ typescript@5; do \
        name="${pkg%@*}"; \
        rm -rf "site/.output/server/node_modules/$name"; \
        cp -RL "$(ls -d node_modules/.pnpm/${pkg}*/node_modules/$name | head -1)" \

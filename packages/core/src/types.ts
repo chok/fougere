@@ -161,7 +161,7 @@ export interface AuthConfig {
  * Provides the resources the provider needs to integrate with the app.
  */
 export interface AuthContext {
-  /** Storage handle (Drizzle DB instance, Prisma client, etc.) — opaque to core. */
+  /** Storage handle (Kysely DB instance, Prisma client, etc.) — opaque to core. */
   db: unknown;
   /** Per-entity ORM factory — auth provider uses this to back its adapter. */
   ormFactory: OrmFactory;

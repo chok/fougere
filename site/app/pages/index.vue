@@ -104,7 +104,7 @@ the type). Business rules are handler operations, e.g.
 publish(id, user), judged server-side. Moving a module to its
 own process is one line of config; user code does not change.
 
-Scope today (pre-release): storage is SQLite auto-DDL (Drizzle
+Scope today (pre-release): storage is SQLite auto-DDL (Kysely
 underneath) — no Postgres adapter yet; no search-index
 projection; auth via better-auth (credentials + OAuth). Price
 the adoption costs against THIS scope, not an imagined one.

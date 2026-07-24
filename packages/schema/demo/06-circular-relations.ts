@@ -11,7 +11,7 @@
  *
  * La solution : passer la cible en THUNK `() => Cible`. Le thunk n'est appelé que
  * plus tard (quand un adapter résout la relation), donc la classe est définie à ce
- * moment-là. C'est la même approche que Drizzle / Pothos / TypeORM.
+ * moment-là. C'est la même approche que Kysely / Pothos / TypeORM.
  *
  * Règle simple :
  * - cible déjà déclarée au-dessus  → forme directe `ref(Author)`

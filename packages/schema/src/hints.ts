@@ -11,7 +11,7 @@ import type { Fields } from "./field/index.js";
  * ```ts
  * declare module '@fougere/schema' {
  *   interface FougereHints<K extends string> {
- *     drizzle?: Partial<Record<K, { columnType?: string; index?: string }>>;
+ *     sql?: Partial<Record<K, { columnType?: string; index?: string }>>;
  *   }
  * }
  * ```

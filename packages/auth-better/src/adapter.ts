@@ -12,7 +12,7 @@ export type OrmMap = Map<string, EntityOrm>;
  * Where[] supported subset:
  * - All clauses use 'eq' operator
  * - Implicit AND between clauses (no OR connector)
- * Anything else throws — extend EntityOrm or add a Drizzle fallback when needed.
+ * Anything else throws — extend EntityOrm or add an engine-level fallback when needed.
  */
 function whereToCriteria(where: readonly CleanedWhere[]): Record<string, unknown> {
   const criteria: Record<string, unknown> = {};
@@ -48,7 +48,7 @@ function getOrm(ormMap: OrmMap, model: string): EntityOrm {
  *
  * This closes the loop: the same `db` resolved by Fougere's bootstrap is the
  * one EntityOrm writes to, and better-auth never touches the storage directly.
- * If Fougere swaps Drizzle for another backend, this adapter follows for free.
+ * If Fougere swaps Kysely for another backend, this adapter follows for free.
  */
 export function fougereAdapter(ormMap: OrmMap) {
   return createAdapterFactory({
@@ -59,7 +59,7 @@ export function fougereAdapter(ormMap: OrmMap) {
       supportsArrays: false,
       supportsJSON: false,
       // false on both = better-auth coerces Date → ISO string and boolean → 0/1
-      // before reaching the ORM. ISO strings + 0/1 ints are accepted by Drizzle
+      // before reaching the ORM. ISO strings + 0/1 ints are accepted by the SQL
       // for both SQLite and Postgres, so this stays driver-agnostic. Native Date
       // columns would need an inverse coercion on reads — out of scope for now.
       supportsDates: false,
@@ -161,7 +161,7 @@ export function fougereAdapter(ormMap: OrmMap) {
 
 /**
  * Augmented EntityOrm shape — the core interface doesn't expose findBy/findAllBy
- * but DrizzleEntityOrm (the only impl today) does. Cast locally to use them.
+ * but SqlEntityOrm (the only impl today) does. Cast locally to use them.
  */
 interface OrmWithFindBy extends EntityOrm {
   findBy(criteria: Record<string, unknown>): Promise<Record<string, unknown> | undefined>;

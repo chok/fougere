@@ -14,8 +14,7 @@
     "@fougere/container-fougere": "workspace:*",
     "hono": "^4.7.0",
     "@hono/node-server": "^1.14.0",
-    "better-sqlite3": "^12.8.0",
-    "drizzle-orm": "^0.45.1"
+    "better-sqlite3": "^12.8.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",

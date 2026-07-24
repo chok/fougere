@@ -167,11 +167,11 @@ describe('derivation', () => {
     });
 
     it('applies the same merge law to hints — per adapter, per field, later wins', () => {
-      const A = entity({ a: text(), shared: text() }, { drizzle: { a: { columnType: 'x' }, shared: { columnType: 'old' } } } as never);
-      const B = entity({ b: text(), shared: text() }, { drizzle: { shared: { columnType: 'new' } } } as never);
+      const A = entity({ a: text(), shared: text() }, { sql: { a: { columnType: 'x' }, shared: { columnType: 'old' } } } as never);
+      const B = entity({ b: text(), shared: text() }, { sql: { shared: { columnType: 'new' } } } as never);
       const h = compose(A, B).getHints() as Record<string, Record<string, { columnType: string }>> | undefined;
-      expect(h?.drizzle?.a?.columnType).toBe('x');
-      expect(h?.drizzle?.shared?.columnType).toBe('new');
+      expect(h?.sql?.a?.columnType).toBe('x');
+      expect(h?.sql?.shared?.columnType).toBe('new');
     });
   });
 });
