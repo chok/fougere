@@ -6,10 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Fougere is a TypeScript framework built around two ideas:
 
-1. **Single-schema** — one Entity class (`class Post extends entity({...})`) generates validation, DB tables (Drizzle), GraphQL types (Pothos), form contracts, and API surfaces.
+1. **Single-schema** — one Entity class (`class Post extends entity({...})`) generates validation, DB tables (Kysely), GraphQL types (Pothos), form contracts, and API surfaces.
 2. **The gradient** — a Frond (business hexagon: entities + handlers + collectors + seeds) runs in-process or in its own process behind JSON-RPC, with **identical user code**. `remotes: { blog: 'http://...' }` in `fougere.config.ts` is the whole topology statement.
 
-The reference documentation is the site's (`site/content/`, en/fr): entities and the 4 axes, views, handlers, collectors, errors, seeds, the client primitives, the gradient, surfaces, deployment.
+The reference documentation is the site's (`site/content/`, en/fr): entities and the 4 axes, views, handlers, collectors, errors, seeds, the client primitives, the gradient, surfaces, deployment. The design doctrine lives in `concepts/` — philosophy, the Frond, and the shortest path (application graph, the three degrees, teaching refusals, CI delta).
 
 ## Commands
 
@@ -47,7 +47,7 @@ pnpm -C demos/core-scanner dev     # Auto-scanning fronds demo
 ```
 packages/
   schema/              @fougere/schema — entity() factory, field vocabulary, 4 axes, validation
-  schema-drizzle/      Entity → Drizzle SQLite tables, ORM realization of lifecycle rules
+  schema-sql/          Entity → Kysely tables (SQLite/PostgreSQL/MySQL/SQL Server), ORM realization of lifecycle rules
   schema-graphql/      Entity → Pothos GraphQL types/inputs/CRUD
   schema-rest/         REST projection
   container/           Container interface (zero deps)
@@ -68,7 +68,7 @@ demos/
 
 ## Architecture
 
-**Core flow:** Entity → adapters (Drizzle, GraphQL, REST, forms). The schema is the source of truth; adapters read fields via `Entity.getFields()`.
+**Core flow:** Entity → adapters (SQL, GraphQL, REST, forms). The schema is the source of truth; adapters read fields via `Entity.getFields()`.
 
 **Field = 4 axes**: `shape` (JSON Schema — the shape IS JSON Schema), `role` (primary, ref…), `lifecycle` (who writes the value, at which moment: create `{value}|'now'|{generate}|'optional'`, update `'now'|'forbidden'`), `boundary` (readOnly/writeOnly — io projections `inputFields`/`outputFields`). **La validation juge, le storage réalise** : the façade judges client input (unknown keys refused — `Unknown field`); handlers write freely through the ORM, which realizes lifecycle rules.
 
@@ -91,8 +91,11 @@ demos/
 
 ## Known issues
 
-- `db: 'sqlite'` (string) in fougere.config.ts → **`:memory:`** on the Nuxt side : la DB est resemée à chaque reload Nitro (les users auth disparaissent) ; en split, les posts vivent dans le fichier du host → split-brain. Décision en attente : défaut fichier. Le site utilise la forme objet (`{ dialect: 'sqlite', path: '…' }`) pour l'esquiver.
+- ~~`db: 'sqlite'` (string) in fougere.config.ts → `:memory:` on the Nuxt side~~ — **résolu** : `resolveStorage()` (`@fougere/runtime`) est l'unique point qui défaute un path absent (`setupSqlite` → `fougere.db`) ; le module Nuxt recalculait ce défaut à sa façon et le contredisait (`:memory:` codé en dur). `generateBootPlugin` (`packages/fougere-nuxt/src/module.ts`) passe désormais `db` tel quel à `resolveStorage`, comme `fougereApp.ts` le fait déjà — un seul défaut, un seul endroit. Le fichier reste le défaut partout, mémoire seulement sur opt-in explicite (`path: ':memory:'`).
 - Nitro prod build does not trace `drizzle-orm` under pnpm — see `site/Dockerfile` (pnpm deploy) and `site/content/*/docs/6.infra/3.deployment.md`
 - `graphql` dual ESM/CJS hazard in tests — schema-graphql tests use `schema.getTypeMap()` instead of `printSchema()`
 - The signature parser is AST-only (no type checker) : type aliases in handler signatures are invisible — spell `User | null`, not `type CurrentUser = ...`
+- **The scan cache is keyed on source, not on parser version** : `.fougere/scan-cache.json` (`core/src/scan-cache.ts`) stores parse results under `<file>:<suffix>` with a content hash of **that file only**. Change the parser — or a base class the file inherits from — and every unchanged handler keeps returning its **stale parse**, silently. Cost a real diagnosis: after adding `ParsedMethod.inherited`, `list(limit)` still looked broken until `rm -rf .fougere`. Two open consequences : an app upgrading Fougere keeps the previous parse semantics until something touches each handler file, and a workspace edit to `Crud()` does not invalidate the handlers that extend it. A parser-version stamp in the cache envelope would close both.
+- **Heritage resolution is workspace-only** : `resolveSpecifier` (`core/src/handler-parser.ts`) maps `@fougere/x` to `<workspaceRoot>/packages/x/src`, and `findWorkspaceRoot` walks up to the `pnpm-workspace.yaml`. Inside this repo (demos, site, tests) it resolves ; from an **installed** app it falls back to the app root, finds nothing, and **says nothing**. The security consequence is closed: a prefab handler declares its ops at runtime (`Crud.__ops`), so the judge never depends on the scan — `tests/crud-contract.test.ts` boots a project outside any workspace to prove it. What remains open is the silence itself: a method inherited from a *published* base class that declares no `__ops` gets no contract, so it is simply **absent from the façade, without a word**. State the unresolved heritage clause at boot ; a `.d.ts` strategy only if a real published base class appears.
 - Collectors register per-frond : under a split, a handler depending on another frond's collector silently loses it — keep collectors in the frond that consumes them (frontière à trancher)
+- **A split receiver trusts the `state` it is handed** (`transport/http/src/server.ts`) : `state` carries user/session, and it is read straight off the wire. What holds today is the `127.0.0.1` default of `serve()` (`ServeCommand` exposes no `host` at all), so only the same machine can talk — but that is an unwritten default, not a guarantee, and `host: '0.0.0.0'` opens a full identity bypass **without a word**. Deliberately deferred (2026-07-25) : the answer is frond-level auth with a real mechanism, not a shared secret on the link. Until then, do not document nor ship a non-loopback `serve()`.
