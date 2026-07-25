@@ -41,16 +41,27 @@ export interface IdentityCard {
 
 type Facade = Record<string, (invocation?: InvocationContext) => Promise<unknown>>;
 
-/** Serialize what the app hosts. Served on `rpc.discover`, cached by callers. */
+/**
+ * Serialize what the app hosts. Served on `rpc.discover`, cached by callers.
+ *
+ * Hosting means answering: an entity with no façade declares no operation, so
+ * it is not listed — publishing its shape would hand an anonymous caller the
+ * structure of tables it can never reach (the auth tables, typically), and
+ * `fougere sync` would rebuild a schema with nothing to call on it.
+ */
 export function identityCardOf(app: App): IdentityCard {
   return {
     fronds: app.fronds.map((frond) => ({
       name: frond.name,
-      entities: frond.entities.map((entity) => ({
-        name: entity.name,
-        ops: facadeOps(app, entity.name),
-        schema: describeSchema(entity.entityClass, entity.name),
-      })),
+      entities: frond.entities.flatMap((entity) => {
+        const ops = facadeOps(app, entity.name);
+        if (ops.length === 0) return [];
+        return [{
+          name: entity.name,
+          ops,
+          schema: describeSchema(entity.entityClass, entity.name),
+        }];
+      }),
     })),
   };
 }
@@ -106,7 +117,10 @@ function runnerFor(app: App, resolveFacade: (key: string) => Facade): Transport 
       });
     }
 
-    const fn = facade[call.op];
+    // Own properties only: a façade is a plain object, so a bare lookup reaches
+    // Object.prototype — `constructor` echoed the invocation back, `toString`
+    // answered. An op is what the façade declares, not what JS inherits.
+    const fn = Object.hasOwn(facade, call.op) ? facade[call.op] : undefined;
     if (typeof fn !== 'function') {
       throw new FougereError({
         code: ErrorCode.NOT_FOUND,
