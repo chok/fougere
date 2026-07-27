@@ -1,6 +1,13 @@
-// ─── Axis 2 · role — DOMAIN / PERSISTENCE meaning ────────────
-// What no value validator expresses: identity, relations, persistence
-// intentions. Read by storage/transport adapters, never by validation.
+// ─── Axis 2 · role — place in the entity graph ────────────
+// What no value validator expresses: identity and relations. Read by the storage and
+// transport adapters, and ALSO by validation — `relation.kind === 'many'` decides that
+// an absent collection defaults to `[]` and that a supplied one must be an array
+// (`projections/validation.ts`). The earlier claim "never by validation" was false.
+//
+// `unique` and `index` are DEAD: no vocabulary word produces them, no DDL emits them,
+// no consumer decides on them — `describe`/`reconstruct` merely carry them, so a
+// portable card can promise a uniqueness nothing enforces. They are storage hints
+// wearing a graph axis; `hints` is their home. Remove rather than implement here.
 
 export type EntityConstructor = abstract new (...args: any[]) => any;
 

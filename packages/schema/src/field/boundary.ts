@@ -2,11 +2,18 @@ import type { AnyField } from './field.js';
 import { anatomy, type Shape } from './shape.js';
 
 /**
- * Axis 4 · boundary — HOW AND IN WHICH DIRECTION a value crosses wire↔domain.
+ * Axis 4 · boundary — HOW AND IN WHICH DIRECTION a value crosses the CLIENT frontier.
  *
- * The normal form is indexed by DIRECTION: `in` runs inbound (parse a request /
- * a DB row → domain value), `out` runs outbound (domain value → response /
- * storage). Each direction carries one of the two facets of the same frontier:
+ * ⚠️ SCOPE — this axis covers the client frontier ONLY. A direction is meaningless
+ * unless stated relative to a centre, and this one is relative to the domain facing a
+ * client: `in` parses a request, `out` renders a response. It does NOT cover storage —
+ * no storage adapter reads it, which is exactly why `bool`, `list`, `json` and a judged
+ * `date` cannot be written today (they reach the driver unconverted). The domain↔column
+ * conversion belongs to the storage adapter, and naming that second frontier is an open
+ * design question — see the axes study.
+ *
+ * The normal form is indexed by DIRECTION. Each direction carries one of the two facets
+ * of the same frontier:
  * a conversion (`{ decode }` / `{ encode }`, a NAMED rule) or the permission
  * token `'closed'` — read-only closes `in` (never accepted from a client),
  * write-only closes `out` (never emitted, e.g. a password). A key absent →

@@ -12,9 +12,12 @@ export interface ListOptions {
  * shape travels as JSON Schema `items`, so the engine validates every element natively.
  *
  * NOT a relation: `many(Post)` is a role (related rows, no value shape); `list(text())`
- * is a value (an array column/JSON, fully owned by the record). The element field's
- * value axis is what embeds — its `role`/`lifecycle`/`boundary` are meaningless
- * per-element and rejected by construction (only value fields make list elements).
+ * is a value (an array column/JSON, fully owned by the record).
+ *
+ * Only the element's `shape` embeds. Its other axes are meaningless per-element and are
+ * DROPPED SILENTLY — `list(primary())` is accepted and loses the role. The guard below
+ * only rejects a field with no shape at all (a relation). Tightening it to reject a
+ * carried role/lifecycle/boundary is open.
  */
 export function list<T>(item: Field<T, boolean>, opts?: ListOptions): Field<T[]> {
   if (!item.shape) throw new Error('list() takes a value field (text(), number()…) — a relation has no value shape');
