@@ -5,6 +5,7 @@ export { loadConfig, loadCascadedConfig, loadFrondConfigs, mergeGlobal, mergeCon
 export { defineFrond, loadFrondConfig, type FrondConfig, type OperationOverride } from './frond-config.js';
 export { buildGraph, clusterEntities, suggestSplit, type EntityNode, type DomainCluster } from './graph.js';
 export { Crud } from './crud.js';
+export type { CrudOps, CrudOpName, CrudViews, CrudConstructor } from './crud.js';
 export { Presenter, getPresenterTarget, getPresenterFields } from './presenter.js';
 export { Collector, getCollectorTarget } from './collector.js';
 export { computeBindingPlan, resolveArgs } from './binding.js';

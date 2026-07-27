@@ -29,17 +29,30 @@ function arrayExtras(source: unknown[]): Record<string, unknown> {
   return extras;
 }
 
-/** Project a façade result onto its output fields, whatever shape it takes. */
-export function encodeEgress(fields: Fields, result: unknown): unknown {
+/**
+ * Project a façade result onto its output fields, whatever shape it takes.
+ *
+ * `closed` says the field set is the WHOLE of what this op emits, so anything
+ * else is dropped. That is what naming a view for an op means (`Crud(Post, {
+ * list: PostCard })`): the author states the audience, and a field they left
+ * out must not ride along. Open is the default and stays the rule for the
+ * entity itself — a presenter's computed field is an addition to the entity's
+ * output, not an intruder.
+ */
+export function encodeEgress(fields: Fields, result: unknown, closed = false): unknown {
   if (result === null || result === undefined) return result;
 
   if (Array.isArray(result)) {
-    const rows = result.map((item) => encodeEgress(fields, item));
+    const rows = result.map((item) => encodeEgress(fields, item, closed));
     return Object.assign(rows, arrayExtras(result));
   }
 
   // A scalar (the boolean from `delete`, an id) crosses untouched.
   if (typeof result !== 'object') return result;
 
-  return encodeFields(fields, result as Record<string, unknown>);
+  const record = result as Record<string, unknown>;
+  const scoped = closed
+    ? Object.fromEntries(Object.keys(fields).filter((k) => k in record).map((k) => [k, record[k]]))
+    : record;
+  return encodeFields(fields, scoped);
 }

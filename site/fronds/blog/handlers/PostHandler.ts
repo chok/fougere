@@ -10,34 +10,18 @@ export class BySlugInput extends Post.pick('slug') {}
 /** Public card — what the blog index shows, no body. */
 export class PostCard extends Post.pick('id', 'slug', 'title', 'summary', 'authorName', 'publishedAt') {}
 
-/** Loose row shape — the ORM realizes the schema, reads come back untyped enough. */
-type Row = {
-  id: string;
-  slug: string;
-  title: string;
-  summary?: string;
-  body?: string;
-  authorId: string;
-  authorName?: string;
-  createdAt?: string;
-  status: 'draft' | 'published';
-  publishedAt?: string;
-};
-
-type Author = { id: string; name?: string; email?: string };
-
 // Judges live at module level on purpose: every class method is an operation
 // (the parser exposes them all), helpers must not be reachable over the wire.
 
-function requireUser(user: User | null, operation: string): Author {
+function requireUser(user: User | null, operation: string): User {
   if (!user) {
     throw new FougereError({ code: ErrorCode.UNAUTHORIZED, message: 'Sign in to write', entity: 'post', operation });
   }
-  return user as Author;
+  return user;
 }
 
-async function requireOwn(orm: EntityOrm, id: string, author: Author, operation: string): Promise<Row> {
-  const post = (await orm.findById(id)) as unknown as Row | undefined;
+async function requireOwn(orm: EntityOrm<Post>, id: string, author: User, operation: string): Promise<Post> {
+  const post = await orm.findById(id);
   if (!post) {
     throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `Post '${id}' not found`, entity: 'post', operation });
   }
@@ -47,70 +31,69 @@ async function requireOwn(orm: EntityOrm, id: string, author: Author, operation:
   return post;
 }
 
-async function requireFreeSlug(orm: EntityOrm, slug: string, ownId: string | undefined, operation: string): Promise<void> {
-  const all = (await orm.list()) as unknown as Row[];
+async function requireFreeSlug(orm: EntityOrm<Post>, slug: string, ownId: string | undefined, operation: string): Promise<void> {
+  const all = await orm.list();
   if (all.some((p) => p.slug === slug && p.id !== ownId)) {
     throw new FougereError({ code: ErrorCode.CONFLICT, message: `Slug '${slug}' is already taken`, entity: 'post', operation });
   }
 }
 
-export default class PostHandler extends Crud(Post) {
-  /** Public reading: published only, newest first, card shape. */
+export default class PostHandler extends Crud(Post, { list: PostCard }) {
+  /** Public reading: published only, newest first, card shape — no body on the index. */
   async list(): Promise<PostCard[]> {
-    const all = (await this.orm.list()) as unknown as Row[];
+    const all = await this.orm.list();
     return all
       .filter((p) => p.status === 'published')
       .sort((a, b) => String(b.publishedAt).localeCompare(String(a.publishedAt)))
       .map(({ id, slug, title, summary, authorName, publishedAt }) =>
-        ({ id, slug, title, summary, authorName, publishedAt })) as PostCard[];
+        ({ id, slug, title, summary, authorName, publishedAt }));
   }
 
   /** Public reading: one published post, full body, designated by slug. */
   async bySlug(input: BySlugInput): Promise<Post> {
-    const all = (await this.orm.list()) as unknown as Row[];
+    const all = await this.orm.list();
     const post = all.find((p) => p.slug === input.slug && p.status === 'published');
     if (!post) {
       throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `No published post at '${input.slug}'`, entity: 'post', operation: 'bySlug' });
     }
-    return post as unknown as Post;
+    return post;
   }
 
   /** A post is visible when published, or when it's the author's own. */
   async findById(id: string, user: User | null): Promise<Post | undefined> {
-    const post = (await this.orm.findById(id)) as unknown as Row | undefined;
+    const post = await this.orm.findById(id);
     if (!post) return undefined;
-    const own = user && post.authorId === (user as { id: string }).id;
-    return post.status === 'published' || own ? (post as unknown as Post) : undefined;
+    const own = user && post.authorId === user.id;
+    return post.status === 'published' || own ? post : undefined;
   }
 
   /** The author's workbench: own posts, drafts first, newest first. */
   async mine(user: User | null): Promise<Post[]> {
     if (!user) return [];
-    const all = (await this.orm.list()) as unknown as Row[];
+    const all = await this.orm.list();
     return all
-      .filter((p) => p.authorId === (user as { id: string }).id)
+      .filter((p) => p.authorId === user.id)
       .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
-      .sort((a, b) => (a.status === 'draft' ? 0 : 1) - (b.status === 'draft' ? 0 : 1)) as unknown as Post[];
+      .sort((a, b) => (a.status === 'draft' ? 0 : 1) - (b.status === 'draft' ? 0 : 1));
   }
 
   /** Judge: signed-in author, free slug. Realize: stamp the author pair. */
   async create(input: PostDraft, user: User | null): Promise<Post> {
     const author = requireUser(user, 'create');
-    await requireFreeSlug(this.orm, (input as { slug: string }).slug, undefined, 'create');
+    await requireFreeSlug(this.orm, input.slug, undefined, 'create');
     return this.orm.create({
-      ...(input as Partial<Post>),
+      ...input,
       authorId: author.id,
       authorName: author.name ?? author.email,
-    } as Partial<Post>);
+    });
   }
 
   /** Judge: the author only, free slug if it changes. */
   async update(id: string, input: PostDraft, user: User | null): Promise<Post> {
     const author = requireUser(user, 'update');
     const post = await requireOwn(this.orm, id, author, 'update');
-    const draft = input as { slug?: string };
-    if (draft.slug && draft.slug !== post.slug) await requireFreeSlug(this.orm, draft.slug, id, 'update');
-    return this.orm.update(id, input as Partial<Post>);
+    if (input.slug && input.slug !== post.slug) await requireFreeSlug(this.orm, input.slug, id, 'update');
+    return this.orm.update(id, input);
   }
 
   /**
@@ -127,7 +110,12 @@ export default class PostHandler extends Crud(Post) {
     if (!post.body?.trim()) {
       throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Cannot publish an empty draft', entity: 'post', operation: 'publish' });
     }
-    return this.orm.update(id, { status: 'published', publishedAt: new Date().toISOString() } as Partial<Post>);
+    // `date()` types the field as `Date`, but nothing converts at the storage port:
+    // measured 2026-07-27 — the ORM rejects a Date ("SQLite3 can only bind …") and
+    // reads the column back as a string. The ISO string is the only value that works,
+    // so this cast marks exactly where the type stops telling the truth.
+    const publishedAt = new Date().toISOString() as unknown as Date;
+    return this.orm.update(id, { status: 'published', publishedAt });
   }
 
   /** Judge: the author only. */

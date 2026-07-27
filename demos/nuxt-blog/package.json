@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "nuxt dev",
+    "typecheck": "tsc -p fronds",
     "graphql": "tsx graphql.ts",
     "build": "nuxt build",
     "preview": "nuxt preview",

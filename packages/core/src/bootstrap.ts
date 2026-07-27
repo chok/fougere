@@ -191,19 +191,27 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       }
 
       /**
-       * The field set a result is projected onto — the handler's declared
-       * output view when it has one (`Crud(Post, PostPublic)`), the entity
-       * otherwise. Resolved once, on first call.
+       * The field set an op's result is projected onto — the view declared for THAT op
+       * (`Crud(Post, { list: PostCard })`), else the handler-wide view
+       * (`Crud(Post, PostPublic)`), else the entity. Each op is the audience of its own
+       * view: a public index emits cards while `bySlug` emits the full row, from one
+       * handler reading one full-row ORM. Resolved once per op, on first call.
        */
-      let cachedOutput: Fields | undefined;
-      const outputFieldSet = (): Fields => {
-        if (!cachedOutput) {
-          const schema = (handler?.outputOverride
-            ?? (handler?.ctor as { __output?: unknown })?.__output
-            ?? entity.entityClass) as { getFields?: () => Fields };
-          cachedOutput = typeof schema?.getFields === 'function' ? schema.getFields() : {};
-        }
-        return cachedOutput;
+      const cachedOutput = new Map<string, { fields: Fields; closed: boolean }>();
+      const outputFieldsFor = (op: string) => {
+        const known = cachedOutput.get(op);
+        if (known) return known;
+        const perOp = (handler?.ctor as { __opOutputs?: Record<string, unknown> })?.__opOutputs?.[op];
+        const schema = (perOp
+          ?? handler?.outputOverride
+          ?? (handler?.ctor as { __output?: unknown })?.__output
+          ?? entity.entityClass) as { getFields?: () => Fields };
+        const fields = typeof schema?.getFields === 'function' ? schema.getFields() : {};
+        // A view named for THIS op is a closed list: the author said what this
+        // audience gets. The handler-wide forms already narrow at the ORM.
+        const resolved = { fields, closed: perOp !== undefined };
+        cachedOutput.set(op, resolved);
+        return resolved;
       };
 
       const collectorResolver = (entityName: string): CollectorResolver | undefined => {
@@ -247,7 +255,8 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
             : [];
           // Egress at the boundary: a write-only field never rides the result
           // out, exactly as REST and Pothos already guarantee on their own.
-          return encodeEgress(outputFieldSet(), await getInstance()[op](...resolved));
+          const out = outputFieldsFor(op);
+          return encodeEgress(out.fields, await getInstance()[op](...resolved), out.closed);
         });
       };
 

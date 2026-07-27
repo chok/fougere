@@ -9,15 +9,15 @@ export default class PostHandler extends Crud(Post) {
   /** Public reading: only published posts exist for the outside world. */
   async list(): Promise<Post[]> {
     const all = await this.orm.list();
-    return all.filter((p) => (p as { status?: string }).status === 'published') as Post[];
+    return all.filter((p) => p.status === 'published');
   }
 
   /** A post is visible when published, or when it's the reader's own draft. */
   async findById(id: string, user: User | null): Promise<Post | undefined> {
     const post = await this.orm.findById(id);
     if (!post) return undefined;
-    const own = user && (post as { authorId?: string }).authorId === (user as { id: string }).id;
-    return (post as { status?: string }).status === 'published' || own ? post : undefined;
+    const own = user && post.authorId === user.id;
+    return post.status === 'published' || own ? post : undefined;
   }
 
   /**
@@ -32,21 +32,26 @@ export default class PostHandler extends Crud(Post) {
     if (!post) {
       throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `Post '${id}' not found`, entity: 'post', operation: 'publish' });
     }
-    if ((post as { authorId?: string }).authorId !== (user as { id: string }).id) {
+    if (post.authorId !== user.id) {
       throw new FougereError({ code: ErrorCode.FORBIDDEN, message: 'Only the author can publish', entity: 'post', operation: 'publish' });
     }
-    if ((post as { status?: string }).status === 'published') {
+    if (post.status === 'published') {
       throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published', entity: 'post', operation: 'publish' });
     }
-    return this.orm.update(id, { status: 'published', publishedAt: new Date().toISOString() } as Partial<Post>);
+    // `date()` types the field as `Date`, but nothing converts at the storage port:
+    // measured 2026-07-27 — the ORM rejects a Date ("SQLite3 can only bind …") and
+    // reads the column back as a string. The ISO string is the only value that works,
+    // so this cast marks exactly where the type stops telling the truth.
+    const publishedAt = new Date().toISOString() as unknown as Date;
+    return this.orm.update(id, { status: 'published', publishedAt });
   }
 
   async searchByTitle(input: SearchByTitleInput): Promise<SearchByTitleOutput[]> {
     const all = await this.orm.list();
     return all
-      .filter((p) => (p as { status?: string }).status === 'published')
-      .filter((p) => String(p.title).toLowerCase().includes(input.title.toLowerCase()))
-      .map(({ id, title }) => ({ id: String(id), title: String(title) }));
+      .filter((p) => p.status === 'published')
+      .filter((p) => p.title.toLowerCase().includes(input.title.toLowerCase()))
+      .map(({ id, title }) => ({ id, title }));
   }
 
   /**
@@ -57,6 +62,6 @@ export default class PostHandler extends Crud(Post) {
   async mine(user: User | null): Promise<Post[]> {
     if (!user) return [];
     const all = await this.orm.list();
-    return all.filter((p) => (p as { authorId?: string }).authorId === (user as { id: string }).id) as Post[];
+    return all.filter((p) => p.authorId === user.id);
   }
 }

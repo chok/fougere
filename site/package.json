@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "nuxt dev",
+    "typecheck": "tsc -p fronds",
     "build": "nuxt build",
     "preview": "nuxt preview"
   },
