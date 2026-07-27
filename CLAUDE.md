@@ -61,6 +61,8 @@ demos/
 **Field = 4 axes** — `shape` (the shape IS JSON Schema), `role` (primary, ref…), `lifecycle` (who writes the value and when: create `{value}|'now'|{generate}|'optional'`, update `'now'|'forbidden'`), `boundary` (readOnly/writeOnly → `inputFields`/`outputFields`).
 **La validation juge, le storage réalise** : the façade judges client input (unknown keys → `Unknown field`); handlers write freely through the ORM, which realizes lifecycle rules.
 
+**Prefab ops** — `Crud(Post)` gives the five typed CRUD ops. `Crud(Post, { list: PostCard })` names the view **one op** emits: a declaration only, the handler keeps its full-row ORM so judges still read every field, and the façade projects each result onto its view. `Crud(Post, PostPublic)` is the handler-wide form and does scope the injected ORM.
+
 **Call contract** (`core/src/call.ts`) — a Frond call is a value `(entity, op, invocation)`. `createLocalRunner` executes locally; `createAppRunner` follows the topology (local façades + remote doublures). Transports move the value, never reshape it. In-process = direct memory execution, no RPC. Browser-safe surface: `@fougere/core/contract`.
 
 **Nuxt primitives** — `useQuery`/`useCommand` (a command on X revalidates mounted queries on X), `useFormFor` (contract, not rendering; local judge = remote judge), `useCurrentUser`, `invoke` (server dual, state via async context). Metadata = the imported entity class, nothing serialized to the client.
@@ -89,7 +91,6 @@ Fact — where — state. The reasoning lives in the notes, not here.
 - **The scan cache is keyed on source, not parser version** (`core/src/scan-cache.ts`) : change the parser, or a base class a file inherits from, and unchanged handlers keep returning a **stale parse**, silently. Cost a real diagnosis (`rm -rf .fougere`). A version stamp in the envelope closes it.
 - **Heritage resolution is workspace-only** (`core/src/handler-parser.ts`) : from an *installed* app it finds nothing and says nothing. Security consequence closed — a prefab declares its ops at runtime (`Crud.__ops`), proven by `tests/crud-contract.test.ts`. What remains : a method inherited from a *published* base class with no `__ops` is absent from the façade, without a word. State the unresolved clause at boot.
 - **A split receiver trusts the `state` it is handed** (`transport/http/src/server.ts`) : identity read straight off the wire. Held only by the `127.0.0.1` default of `serve()` — unwritten, not guaranteed. Deferred 2026-07-25 : the answer is frond-level auth, not a link secret. Do not ship a non-loopback `serve()`.
-- **A prefab op cannot narrow its return type.** `Crud(Post, PostCard)` scopes `output(PostCard)` to the whole ORM (`bootstrap.ts:300`), so an op needing the full row breaks ; TS refuses a narrower override. Op-level output projection is not expressible — `site`'s blog index ships full rows.
 - **Collectors register per-frond** : under a split, a handler depending on another frond's collector silently loses it. Keep collectors in the consuming frond.
 - The signature parser is AST-only : type aliases are invisible — spell `User | null`, not `type CurrentUser = ...`
 - Nitro prod build does not trace `drizzle-orm` under pnpm — see `site/Dockerfile`
