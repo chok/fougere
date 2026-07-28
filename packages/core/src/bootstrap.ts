@@ -6,12 +6,12 @@ import { Logger, type LogLevel } from './builtins/logger.js';
 import { Config } from './builtins/config.js';
 import { EventBus } from './builtins/event-bus.js';
 import { createRemoteRouter, createRemoteFacade } from './remote.js';
-import { judgeOnWrite } from './judged-orm.js';
+
 import { computeBindingPlan, resolveArgs, type CollectorResolver } from './binding.js';
 import type { OperationContract } from './operation.js';
 import { EMPTY_INVOCATION, type InvocationContext } from './invocation.js';
 import { type SchemaLike, type Fields, validateFields } from '@fougere/schema';
-import { encodeEgress } from './egress.js';
+import { encodeEgress, guardStorage } from './egress.js';
 
 /** Bootstrap a fougere application. */
 export async function createApp(options: CreateAppOptions): Promise<App> {
@@ -105,8 +105,8 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
           ? baseOrm.output(outputSchema)
           : baseOrm;
 
-        // Judge the values on their way to storage — see judged-orm.ts.
-        scope.registerValue(ormName, judgeOnWrite(scoped, entity.entityClass, entity.name));
+        // Storage is a way out like the client surface — see egress.ts.
+        scope.registerValue(ormName, guardStorage(scoped, entity.entityClass.getFields(), entity.name));
       }
       if (frond.entities.length > 0) {
         frondLog.debug(`${frond.entities.length} entity ORM(s): ${frond.entities.map((e) => e.name).join(', ')}`);
@@ -312,7 +312,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         const scoped = outputSchema && outputSchema !== entity.entityClass
           ? baseOrm.output(outputSchema)
           : baseOrm;
-        surfaceScope.registerValue(ormName, judgeOnWrite(scoped, entity.entityClass, entity.name));
+        surfaceScope.registerValue(ormName, guardStorage(scoped, entity.entityClass.getFields(), entity.name));
       }
 
       const facadeKey = `${handler.surface}:${entity.name}Handler`;

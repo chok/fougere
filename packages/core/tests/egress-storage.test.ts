@@ -1,13 +1,16 @@
 /**
- * A handler writing through the ORM cannot store a value the shape refuses.
+ * Storage as a way out of the domain — the judge runs there like it runs anywhere else.
  *
  * Measured 2026-07-25, before this: `status: 'n-importe-quoi'` on a
  * `oneOf('draft','published')` was stored and read back unchanged. The database catches
  * nullability and column types, never a closed set or a format.
+ *
+ * The other half of the way out — projecting per receiver — has no work to do here:
+ * storage is the receiver that sees everything.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { entity, primary, text, oneOf, email, number, optional, readOnly } from '@fougere/schema';
-import { judgeOnWrite } from '../src/judged-orm.js';
+import { guardStorage } from '../src/egress.js';
 import { FougereError, ErrorCode } from '../src/middleware.js';
 
 class Contact extends entity({
@@ -31,7 +34,7 @@ function spyOrm() {
 
 const judged = () => {
   const orm = spyOrm();
-  return { orm, guarded: judgeOnWrite(orm, Contact as never, 'contact') };
+  return { orm, guarded: guardStorage(orm, Contact.getFields(), 'contact') };
 };
 
 const ok = { id: 'c1', name: 'Ada', status: 'draft', ownerId: 'u1' };
