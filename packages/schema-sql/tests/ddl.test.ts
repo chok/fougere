@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { entity, primary, text, number, bool, auto, optional, many, ref, reconstruct } from '@fougere/schema';
+import { entity, primary, text, number, bool, auto, optional, many, ref, reconstruct, type EntityConstructor } from '@fougere/schema';
 import { createTableSQL, generateSQL, toTable, addForeignKeyConstraintSQL } from '../src/index.js';
 
 // ─── Fixtures ──────────────────────────────────────
@@ -8,7 +8,7 @@ class Author extends entity({
   id: primary(),
   name: text({ min: 1 }),
   email: text(),
-  posts: many(() => Post),
+  posts: many((): EntityConstructor => Post),
 }) {}
 
 class Post extends entity({
@@ -40,10 +40,14 @@ class Product extends entity({
 
 // A relation cycle, legal in the model (role.ts's relation thunk exists precisely
 // so two entities can reference each other): Club → Captain → Club.
+// The thunk defers the VALUE, not the TYPE: inferring `Club` would still require
+// inferring `Captain`, which requires `Club`. `ref()` returns `Field<string>` whatever
+// its target, so widening the annotation cuts the loop without losing anything —
+// a cycle in the data is legal, a cycle in inference is not.
 class Club extends entity({
   id: primary(),
   name: text({ min: 1 }),
-  captainId: ref(() => Captain),
+  captainId: ref((): EntityConstructor => Captain),
 }) {}
 
 class Captain extends entity({
@@ -181,7 +185,8 @@ describe('createTableSQL — foreign keys', () => {
   });
 
   it('a self-reference stays inline — no ordering or deferral needed', () => {
-    class Node extends entity({ id: primary(), parentId: optional(ref(() => Node)) }) {}
+    // Self-reference: same inference loop as Club/Captain, one entity instead of two.
+    class Node extends entity({ id: primary(), parentId: optional(ref((): EntityConstructor => Node)) }) {}
     const table = toTable('nodes', Node);
     expect(createTableSQL(table, 'pg')).toContain('references "nodes" ("id")');
   });

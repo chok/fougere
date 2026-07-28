@@ -5,7 +5,7 @@
  * The old create-if-not-exists pass ignored it silently.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { entity, primary, text, number, optional, bool, ref } from '@fougere/schema';
+import { entity, primary, text, number, optional, bool, ref, type EntityConstructor } from '@fougere/schema';
 import { setupSqlite, type SqliteSetup } from '../src/index.js';
 import { actualState, delta, desiredTables, orderChanges, planMigration, migrate, changeSQL } from '../src/diff.js';
 
@@ -110,7 +110,9 @@ describe('migrate', () => {
   it('the added column is usable, and existing rows survive', async () => {
     await migrate(appOf(PostV1), setup.db);
     const ormV1 = setup.ormFactory(PostV1, 'post');
-    const { id } = await ormV1.create({ title: 'Hello' });
+    // The ORM answers rows as `Record<string, unknown>` — it realises a schema it
+    // does not carry as a type. The generated id is a string; say so once here.
+    const id = String((await ormV1.create({ title: 'Hello' })).id);
 
     await migrate(appOf(PostV2), setup.db);
     const ormV2 = setup.ormFactory(PostV2, 'post');
@@ -198,7 +200,7 @@ describe('foreign keys, enforced', () => {
 class Club extends entity({
   id: primary(),
   name: text({ min: 1 }),
-  captainId: optional(ref((): typeof Captain => Captain)),
+  captainId: optional(ref((): EntityConstructor => Captain)),
 }) {}
 
 class Captain extends entity({

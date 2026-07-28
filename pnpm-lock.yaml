@@ -534,6 +534,9 @@ importers:
         specifier: ^3.3.0
         version: 3.3.0
     devDependencies:
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../core
       '@types/better-sqlite3':
         specifier: ^7.6.13
         version: 7.6.13
