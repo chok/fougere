@@ -1,0 +1,13 @@
+{
+  // The build config emits `dist` from `src` alone. Tests are not shipped, but a
+  // test that asserts a TYPE is only worth something if a compiler reads it —
+  // vitest erases types without checking them.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".",
+    "declaration": false,
+    "declarationMap": false
+  },
+  "include": ["src", "tests"]
+}

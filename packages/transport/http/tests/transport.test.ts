@@ -101,7 +101,9 @@ describe('sender ↔ receiver over real HTTP', () => {
 
   it('answers PARSE_ERROR to a non-JSON body', async () => {
     const res = await fetch(`${base}/_fougere/call`, { method: 'POST', body: 'not json' });
-    const body = await res.json();
+    // `Response.json()` answers `unknown` — the wire carries no type. Naming the
+    // envelope here is the test saying what it expects to have received.
+    const body = await res.json() as { error: { code: number } };
     expect(body.error.code).toBe(PARSE_ERROR);
   });
 });
