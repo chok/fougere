@@ -16,6 +16,7 @@ import type { Kysely } from 'kysely';
 import { resolveCustomGenerator, type GeneratorRef, type SchemaLike } from '@fougere/schema';
 import { createId } from '@paralleldrive/cuid2';
 import { toTable, type TableDef } from './table.js';
+import { codecsOf, type ValueCodec } from './values.js';
 
 /** ListOptions — duplicated from @fougere/core to avoid a runtime dep. */
 interface ListOptions {
@@ -115,6 +116,8 @@ export class SqlEntityOrm {
   /** field → column and back; the entity names travel, the SQL names stay inside. */
   private toColumn = new Map<string, string>();
   private toField = new Map<string, string>();
+  /** field → the value pair a driver needs; only for the shapes a driver can't bind. */
+  private codecs: Map<string, ValueCodec>;
 
   constructor(
     private db: Kysely<any>,
@@ -127,6 +130,7 @@ export class SqlEntityOrm {
       this.toColumn.set(column.field, column.name);
       this.toField.set(column.name, column.field);
     }
+    this.codecs = codecsOf(this.table.columns);
     const { pk, autos, updateNow } = analyzeFields(entity);
     this.pk = pk;
     this.autos = autos;
@@ -150,17 +154,25 @@ export class SqlEntityOrm {
     return this.toColumn.get(field) ?? field;
   }
 
-  /** Entity keys → column keys, for writes. */
+  /** The value a driver can bind — `true` becomes 1, a Date becomes its ISO string. */
+  private write(field: string, value: unknown): unknown {
+    return this.codecs.get(field)?.write(value) ?? value;
+  }
+
+  /** Entity keys → column keys, and entity values → bindable values. */
   private toRow(data: Record<string, unknown>): Record<string, unknown> {
     const row: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(data)) row[this.column(key)] = value;
+    for (const [key, value] of Object.entries(data)) row[this.column(key)] = this.write(key, value);
     return row;
   }
 
-  /** Column keys → entity keys, for reads. */
+  /** Column keys → entity keys, and column values → the values the entity declares. */
   private fromRow(row: Record<string, unknown>): Record<string, unknown> {
     const data: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(row)) data[this.toField.get(key) ?? key] = value;
+    for (const [key, value] of Object.entries(row)) {
+      const field = this.toField.get(key) ?? key;
+      data[field] = this.codecs.get(field)?.read(value) ?? value;
+    }
     return data;
   }
 
@@ -173,8 +185,13 @@ export class SqlEntityOrm {
     return query.where(this.column(this.pk.names[0]), '=', id as string);
   }
 
+  // A filter compares against the COLUMN, so its value crosses the same way a write
+  // does: `findBy({ done: true })` has to look for 1, not for `true`.
   private whereAll<Q extends { where(a: any, b: any, c: any): Q }>(query: Q, criteria: Record<string, unknown>): Q {
-    return Object.entries(criteria).reduce((q, [key, value]) => q.where(this.column(key), '=', value), query);
+    return Object.entries(criteria).reduce(
+      (q, [key, value]) => q.where(this.column(key), '=', this.write(key, value)),
+      query,
+    );
   }
 
   async list(options?: ListOptions & SelectOption): Promise<ListResult<Record<string, unknown>>> {

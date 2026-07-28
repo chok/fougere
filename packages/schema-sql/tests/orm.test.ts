@@ -40,12 +40,13 @@ describe('create', () => {
     expect(post.title).toBe('Hello');
     // Defaults realised by SQL come back, because create re-reads the row.
     expect(post.views).toBe(0);
-    expect(post.published).toBe(0);
+    // The column holds 0; the field declares a boolean, so that is what comes back.
+    expect(post.published).toBe(false);
   });
 
   it('stamps a managed creation timestamp', async () => {
     const post = await seed('Hello');
-    expect(typeof post.createdAt).toBe('string');
+    expect(post.createdAt).toBeInstanceOf(Date);
     expect(post.createdAt).not.toBe('');
   });
 

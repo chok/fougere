@@ -24,6 +24,8 @@ export {
 export type { Dialect, DialectName } from './dialect.js';
 export { SqlEntityOrm, createOrmFactory } from './crud.js';
 export type { OrmFactoryOptions } from './crud.js';
+export { codecFor, codecsOf } from './values.js';
+export type { ValueCodec } from './values.js';
 export { setupSqlite, setupKysely, sqlSink } from './setup.js';
 export type { Setup, SetupOptions, SqliteSetup, SqliteSetupOptions } from './setup.js';
 export { actualState, desiredTables, delta, orderChanges, changeSQL, planMigration, migrate } from './diff.js';

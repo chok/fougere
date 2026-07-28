@@ -38,12 +38,7 @@ export default class PostHandler extends Crud(Post) {
     if (post.status === 'published') {
       throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published', entity: 'post', operation: 'publish' });
     }
-    // `date()` types the field as `Date`, but nothing converts at the storage port:
-    // measured 2026-07-27 — the ORM rejects a Date ("SQLite3 can only bind …") and
-    // reads the column back as a string. The ISO string is the only value that works,
-    // so this cast marks exactly where the type stops telling the truth.
-    const publishedAt = new Date().toISOString() as unknown as Date;
-    return this.orm.update(id, { status: 'published', publishedAt });
+    return this.orm.update(id, { status: 'published', publishedAt: new Date() });
   }
 
   async searchByTitle(input: SearchByTitleInput): Promise<SearchByTitleOutput[]> {

@@ -58,12 +58,10 @@ export function fougereAdapter(ormMap: OrmMap) {
       usePlural: false,
       supportsArrays: false,
       supportsJSON: false,
-      // false on both = better-auth coerces Date → ISO string and boolean → 0/1
-      // before reaching the ORM. ISO strings + 0/1 ints are accepted by the SQL
-      // for both SQLite and Postgres, so this stays driver-agnostic. Native Date
-      // columns would need an inverse coercion on reads — out of scope for now.
-      supportsDates: false,
-      supportsBooleans: false,
+      // The ORM converts both ways now (`schema-sql/src/values.ts`), so better-auth
+      // can hand over the Dates and booleans its own types declare.
+      supportsDates: true,
+      supportsBooleans: true,
     },
     adapter: (): CustomAdapter => ({
       create: async ({ model, data }: { model: string; data: Record<string, unknown> }) => {
