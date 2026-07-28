@@ -26,7 +26,7 @@ export type ValidationResult<T> =
   | { success: true; data: T }
   | { success: false; errors: ValidationError[] };
 
-type Checked = { value: unknown } | { error: string };
+export type Checked = { value: unknown } | { error: string };
 
 /**
  * One validator per shape — the shape object IS the source JSON Schema (the closed
@@ -45,8 +45,14 @@ function validatorFor(shape: Shape): Validator {
   return v;
 }
 
-/** Validate a present value (null included) against its field — pure, never mutates. */
-function checkValue(field: AnyField, value: unknown): Checked {
+/**
+ * Validate a present value (null included) against its field — pure, never mutates.
+ *
+ * Reads `shape` and nothing else, so it answers "is this a legal value?" without ever
+ * asking who is speaking. That is what makes it usable on the way OUT of the domain,
+ * where the client-only axes (`boundary`, `lifecycle`) do not apply.
+ */
+export function checkValue(field: AnyField, value: unknown): Checked {
   const shape = field.shape;
   // Relation-only field (`many`): no value shape, just an array of related rows.
   if (!shape) {

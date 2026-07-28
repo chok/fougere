@@ -31,6 +31,11 @@ export {
   registerDecoder,
   registerEncoder,
   registerBoundaryAlias,
+  // Public because a relation CYCLE needs it: `ref(() => Captain)` defers the value,
+  // not the type, so inferring one entity still requires the other. Annotating the
+  // thunk with this cuts the inference loop — and `ref()` returns `Field<string>`
+  // whatever its target, so nothing is lost.
+  type EntityConstructor,
 } from './field/index.js';
 
 // ─── The carrier and its derivation algebra ──────────────────
@@ -67,7 +72,7 @@ export { json } from './vocabulary/json.js';
 
 // ─── Projections — consumers of the axes ─────────────────────
 // validation: shape → ingress predicate (+ boundary decode)
-export { type ValidationResult, type ValidationError, validateFields } from './projections/validation.js';
+export { type ValidationResult, type ValidationError, type Checked, validateFields, checkValue } from './projections/validation.js';
 // encode: boundary → egress wire form (the dual of validation)
 export { encodeFields } from './projections/encode.js';
 // io: the dual client-surface projections — ingress (may supply) / egress (may read)

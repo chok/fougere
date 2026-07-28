@@ -6,6 +6,7 @@ import { Logger, type LogLevel } from './builtins/logger.js';
 import { Config } from './builtins/config.js';
 import { EventBus } from './builtins/event-bus.js';
 import { createRemoteRouter, createRemoteFacade } from './remote.js';
+import { judgeOnWrite } from './judged-orm.js';
 import { computeBindingPlan, resolveArgs, type CollectorResolver } from './binding.js';
 import type { OperationContract } from './operation.js';
 import { EMPTY_INVOCATION, type InvocationContext } from './invocation.js';
@@ -100,11 +101,12 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         // Check if the default handler (no surface) declares an output override
         const defaultHandler = frond.handlers.find((h) => h.entityName === entity.name && !h.surface);
         const outputSchema = defaultHandler?.outputOverride ?? (defaultHandler?.ctor as any)?.__output;
-        const orm = outputSchema && outputSchema !== entity.entityClass
+        const scoped = outputSchema && outputSchema !== entity.entityClass
           ? baseOrm.output(outputSchema)
           : baseOrm;
 
-        scope.registerValue(ormName, orm);
+        // Judge the values on their way to storage — see judged-orm.ts.
+        scope.registerValue(ormName, judgeOnWrite(scoped, entity.entityClass, entity.name));
       }
       if (frond.entities.length > 0) {
         frondLog.debug(`${frond.entities.length} entity ORM(s): ${frond.entities.map((e) => e.name).join(', ')}`);
@@ -307,10 +309,10 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         const ormName = `${entity.name[0].toUpperCase()}${entity.name.slice(1)}Orm`;
         const baseOrm = options.ormFactory(entity.entityClass, entity.name);
         const outputSchema = handler.outputOverride ?? (handler.ctor as any).__output;
-        const orm = outputSchema && outputSchema !== entity.entityClass
+        const scoped = outputSchema && outputSchema !== entity.entityClass
           ? baseOrm.output(outputSchema)
           : baseOrm;
-        surfaceScope.registerValue(ormName, orm);
+        surfaceScope.registerValue(ormName, judgeOnWrite(scoped, entity.entityClass, entity.name));
       }
 
       const facadeKey = `${handler.surface}:${entity.name}Handler`;

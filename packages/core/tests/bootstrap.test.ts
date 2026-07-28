@@ -68,7 +68,11 @@ describe('createApp + ormFactory', () => {
     // Both entities get an orm
     expect(catalogScope.has('ProductOrm')).toBe(true);
     expect(catalogScope.has('BrandOrm')).toBe(true);
-    expect(catalogScope.resolve('BrandOrm')).toBe(fakeOrm);
+    // What is registered wraps the factory's ORM — writes are judged on the way to
+    // storage — so the factory's own ops are reached through it, not identical to it.
+    const brandOrm = catalogScope.resolve<typeof fakeOrm>('BrandOrm');
+    await brandOrm.list();
+    expect(fakeOrm.list).toHaveBeenCalled();
 
     await app.dispose();
   });
