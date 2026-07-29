@@ -17,7 +17,7 @@ describe('nullableShape — null enters the grammar', () => {
   it('enum: null joins the closed value set too', () => {
     const s = nullableShape({ type: 'string', enum: ['a', 'b'] });
     expect(s.type).toEqual(['string', 'null']);
-    expect((s as { enum: unknown[] }).enum).toEqual(['a', 'b', null]);
+    expect((s as { enum?: readonly (string | null)[] }).enum).toEqual(['a', 'b', null]);
   });
 
   it('array/object: the union wraps the container, items/properties untouched', () => {
@@ -53,7 +53,7 @@ describe('anatomy — the single customs post for readers', () => {
 
   it('strips null from enum in the base', () => {
     const { base } = anatomy(nullableShape({ type: 'string', enum: ['a', 'b'] }));
-    expect((base as { enum: unknown[] }).enum).toEqual(['a', 'b']);
+    expect((base as { enum?: readonly (string | null)[] }).enum).toEqual(['a', 'b']);
   });
 
   it('no shape → no base, not nullable (a many relation)', () => {

@@ -2,6 +2,7 @@ import { describe as group, it, expect } from 'vitest';
 import {
   entity, primary, text, number, optional, auto, ref, many, json, list, email,
   describe, reconstruct, describeSet, reconstructSet,
+  type SchemaLike, type EntityConstructor,
 } from '../src/index.js';
 
 class Author extends entity({ id: primary() }) {}
@@ -153,7 +154,10 @@ group('describeSet / reconstructSet — self-contained $defs bundle', () => {
     const authorTarget = schemas.post.getFields().author.role!.relation!.to();
     // Not a {name} stand-in: the actual reconstructed Author, with its fields.
     expect(authorTarget).toBe(schemas.author);
-    expect(Object.keys((authorTarget as { getFields(): object }).getFields())).toEqual(['id']);
+    // `relation.to()` answers an `EntityConstructor` — a bare construct signature,
+    // by design (role.ts must not depend on the carrier). Reading its fields means
+    // saying, here, that the reconstructed target does carry them.
+    expect(Object.keys((authorTarget as unknown as SchemaLike).getFields())).toEqual(['id']);
   });
 
   it('a many relation resolves its element target too', () => {
@@ -167,7 +171,9 @@ group('describeSet / reconstructSet — self-contained $defs bundle', () => {
   });
 
   it('handles a circular relation by reference (no infinite nesting)', () => {
-    class Node extends entity({ id: primary(), parent: optional(ref(() => Node)) }) {}
+    // The thunk defers the value, not the type: inferring `Node` would require `Node`.
+    // Annotating it cuts the loop — `ref()` answers `Field<string>` whatever its target.
+    class Node extends entity({ id: primary(), parent: optional(ref((): EntityConstructor => Node)) }) {}
     const set = reconstructSet(JSON.parse(JSON.stringify(describeSet({ node: Node }))));
     expect(set.node.getFields().parent.role!.relation!.to()).toBe(set.node);
   });

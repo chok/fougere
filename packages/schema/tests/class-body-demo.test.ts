@@ -62,7 +62,9 @@ group('2 · class body conveniences', () => {
     expect(Object.keys(describe(Invoice).properties)).toEqual(['number', 'customer', 'amount']);
     // donc un schéma reconstruit depuis la carte n'a PAS le getter.
     const rebuilt = reconstruct(describe(Invoice));
-    expect('label' in (rebuilt as any).prototype ?? {}).toBe(false);
+    // `in` already answers a boolean, so the `?? {}` that used to sit here was dead
+    // and, worse, applied to the whole comparison rather than to the prototype.
+    expect('label' in (rebuilt as { prototype: object }).prototype).toBe(false);
   });
 });
 

@@ -128,7 +128,9 @@ describe('derivation', () => {
     it('omit then extend', () => {
       const view = Order.omit('createdAt').extend({ updatedAt: auto() });
       const fields = view.getFields();
-      expect(fields.createdAt).toBeUndefined();
+      // The TYPE already proves `createdAt` is gone — reading it would not compile.
+      // What remains to check is the runtime map, so ask it for its keys.
+      expect(Object.keys(fields)).not.toContain('createdAt');
       expect(fields.updatedAt).toBeDefined();
     });
 
