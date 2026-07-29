@@ -11,7 +11,7 @@ import { computeBindingPlan, resolveArgs, type CollectorResolver } from './bindi
 import type { OperationContract } from './operation.js';
 import { EMPTY_INVOCATION, type InvocationContext } from './invocation.js';
 import { type SchemaLike, type Fields, validateFields } from '@fougere/schema';
-import { encodeEgress, guardStorage } from './egress.js';
+import { projectEgress, guardStorage } from './egress.js';
 
 /** Bootstrap a fougere application. */
 export async function createApp(options: CreateAppOptions): Promise<App> {
@@ -258,7 +258,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
           // Egress at the boundary: a write-only field never rides the result
           // out, exactly as REST and Pothos already guarantee on their own.
           const out = outputFieldsFor(op);
-          return encodeEgress(out.fields, await getInstance()[op](...resolved), out.closed);
+          return projectEgress(out.fields, await getInstance()[op](...resolved), out.closed);
         });
       };
 

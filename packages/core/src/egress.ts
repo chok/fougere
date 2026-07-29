@@ -77,7 +77,8 @@ function arrayExtras(source: unknown[]): Record<string, unknown> {
 }
 
 /**
- * Project a façade result onto what a CLIENT may read — `writeOnly` fields dropped.
+ * Drop what this receiver may not see — a `writeOnly` field goes here — then hand the
+ * rest to `encodeFields`, which converts the values to their wire form.
  *
  * `closed` says the field set is the WHOLE of what this op emits, so anything else is
  * dropped. That is what naming a view for an op means (`Crud(Post, { list: PostCard })`):
@@ -85,11 +86,11 @@ function arrayExtras(source: unknown[]): Record<string, unknown> {
  * the default and stays the rule for the entity itself — a presenter's computed field is
  * an addition to the entity's output, not an intruder.
  */
-export function encodeEgress(fields: Fields, result: unknown, closed = false): unknown {
+export function projectEgress(fields: Fields, result: unknown, closed = false): unknown {
   if (result === null || result === undefined) return result;
 
   if (Array.isArray(result)) {
-    const rows = result.map((item) => encodeEgress(fields, item, closed));
+    const rows = result.map((item) => projectEgress(fields, item, closed));
     return Object.assign(rows, arrayExtras(result));
   }
 
