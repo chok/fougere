@@ -1,15 +1,31 @@
 import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
+import type { SchemaLike } from '@fougere/schema';
+import type { BindingPlan } from './binding.js';
 
 // ── Types ────────────────────────────────────────
 
 /**
  * Per-operation override. Config takes precedence over conventions (isReadOp, facade lookup).
  *
- * Use this when:
- * - A method name doesn't fit default verb conventions (`republishPost` → `kind: 'command'`)
- * - An op should be routed to a different handler than `{Entity}Handler` (`handler`/`method`)
- * - An op is guarded by a CASL policy (`policy`)
+ * Two families of keys, and they act at different depths:
+ *
+ * - **Surface** (`kind`, `handler`, `method`, `policy`) — how the op is EXPOSED. Read by
+ *   the transport adapters: `kind` decides query vs mutation and GET vs POST.
+ * - **Contract** (`input`, `output`, `binding`) — what the op IS. Read by the façade,
+ *   and this is the third producer of an {@link OperationContract}: a prefab DECLARES its
+ *   ops (`Crud.__ops`), the scan DERIVES them from source, config STATES them outright.
+ *   The façade cannot tell the three apart.
+ *
+ * Stating a contract here makes the scan optional rather than load-bearing. Two cases it
+ * answers that nothing else does:
+ * - a method inherited from an **installed** base class — the scan resolves nothing there
+ *   (workspace-only heritage) and says nothing, so the op silently misses the façade;
+ * - a signature the AST parser cannot read (a type alias, `type CurrentUser = User | null`).
+ *
+ * Config wins over both other producers — it is the most explicit statement, made by
+ * whoever assembles the app. Precedence: CLI > frond config > fougere config > scan >
+ * conventions.
  */
 export interface OperationOverride {
   /** Force operation kind (overrides isReadOp-based default). */
@@ -23,6 +39,22 @@ export interface OperationOverride {
   method?: string;
   /** CASL ability check (e.g. 'archive Post'). Evaluated before the handler runs. Opt-in. */
   policy?: string;
+
+  // ── The contract itself — see the note above ──
+
+  /** What judges the input. The view carries its own mode (`partial()` → patch). */
+  input?: SchemaLike;
+  /**
+   * Where each argument is read from — states what the scan would otherwise derive
+   * from the method signature. An empty array is meaningful: "this op takes nothing".
+   */
+  binding?: BindingPlan;
+
+  // No `output` on purpose. `OperationContract.output` has no reader today: the scan
+  // fills it from the return type (`scanner.ts`), and the façade projects through
+  // `__opOutputs` / `outputOverride` / `__output` instead — so a config key would state
+  // something nothing acts on. Name the op's view where the façade looks for it
+  // (`Crud(Post, { list: PostCard })`) until that slot gets an interpreter.
 }
 
 export interface FrondConfig {

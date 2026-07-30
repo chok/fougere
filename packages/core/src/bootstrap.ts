@@ -193,6 +193,28 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       }
 
       /**
+       * The third producer: config STATES a contract the other two could only guess at.
+       * It wins — it is the most explicit statement, made by whoever assembles the app
+       * (CLI > frond config > fougere config > scan > conventions).
+       *
+       * It also CREATES the entry when neither producer found one, which is the only
+       * answer today for a method inherited from an *installed* base class: heritage
+       * resolution is workspace-only, so the scan finds nothing and says nothing, and
+       * the op silently misses the façade. Declaring it here puts it back.
+       *
+       * Per key, so stating a `binding` alone does not erase an `input` the scan found.
+       */
+      for (const [opName, override] of Object.entries(frond.operationsOverrides ?? {})) {
+        const { input, binding } = override;
+        if (input === undefined && binding === undefined) continue;
+        contracts.set(opName, {
+          ...contracts.get(opName),
+          ...(input !== undefined && { input }),
+          ...(binding !== undefined && { binding }),
+        });
+      }
+
+      /**
        * The field set an op's result is projected onto — the view declared for THAT op
        * (`Crud(Post, { list: PostCard })`), else the handler-wide view
        * (`Crud(Post, PostPublic)`), else the entity. Each op is the audience of its own

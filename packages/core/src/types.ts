@@ -1,7 +1,7 @@
 import type { Container } from '@fougere/container';
 import type { EntityOrm, OrmFactory } from './orm.js';
 import type { SchemaLike } from '@fougere/schema';
-import type { OperationsMap } from './operation.js';
+import type { OperationContract, OperationsMap } from './operation.js';
 import type { AppMiddleware } from './middleware.js';
 import type { Transport } from './call.js';
 
@@ -122,8 +122,15 @@ export interface FrondDescriptor {
   seeds: SeedEntry[];
   /** Per-surface entity lists from frond.config.ts (e.g. { graphql: ['Post'], rest: ['Post', 'Author'] }). */
   surfaces?: Record<string, string[]>;
-  /** Per-operation overrides from frond.config.ts. Key = operation name. */
-  operationsOverrides?: Record<string, {
+  /**
+   * Per-operation overrides from frond.config.ts. Key = operation name.
+   *
+   * Two depths, as declared on {@link OperationOverride}: the surface keys travel to the
+   * transport adapters, the contract keys (`input`/`output`/`binding`) travel to the
+   * façade — where config is the third producer of an operation's contract, alongside a
+   * prefab's `__ops` and the scan.
+   */
+  operationsOverrides?: Record<string, OperationContract & {
     kind?: 'query' | 'command';
     /** Class name to resolve from DI (overrides default `{Entity}Handler` lookup). */
     handlerName?: string;

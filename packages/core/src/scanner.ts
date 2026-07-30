@@ -359,17 +359,17 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
     }
   }
 
-  // Flatten per-op config overrides: resolve class refs to their class names (for DI lookup)
+  // Flatten per-op config overrides: the only thing that needs flattening is the handler
+  // CLASS, which becomes its name (that is the DI key). Everything else — the surface keys
+  // AND the contract keys (`input`, `binding`) — travels verbatim, so a slot added to
+  // OperationOverride reaches its reader without a stop here. Enumerating keys by hand is
+  // what used to silently drop whatever was added last (the same invariant `cloneField`
+  // holds one layer down).
   const operationsOverrides = frondConfig?.operations
     ? Object.fromEntries(
-        Object.entries(frondConfig.operations).map(([opName, override]) => [
+        Object.entries(frondConfig.operations).map(([opName, { handler, ...rest }]) => [
           opName,
-          {
-            kind: override.kind,
-            handlerName: override.handler ? (override.handler as any).name : undefined,
-            method: override.method,
-            policy: override.policy,
-          },
+          { ...rest, handlerName: handler?.name },
         ]),
       )
     : undefined;
