@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import type { HttpRouter, HttpMethod, Handler } from '@fougere/http';
+import type { HttpRouter, HttpMethod, Handler, RequestContext } from '@fougere/http';
 import { registerRoutes, type RouteDefinition } from '../src/index.js';
 
 function fakeRouter() {
@@ -18,8 +18,12 @@ function fakeRouter() {
   };
 }
 
-function ctx(params = {}, query = {}, body = {}, method: HttpMethod = 'GET') {
+// Typed as the real `RequestContext`, so this stand-in cannot quietly drift from it.
+// `request` was missing: the handlers under test don't read it, but a context without
+// it is not the thing the router hands them.
+function ctx(params = {}, query = {}, body = {}, method: HttpMethod = 'GET'): RequestContext {
   return {
+    request: new Request('http://localhost/'),
     method,
     path: '/',
     params: params as Record<string, string>,

@@ -49,7 +49,10 @@ function fakeApp(
   surfaces?: Record<string, string[]>,
 ) {
   return {
-    fronds: [{ name: 'test', entities, handlers, surfaces }],
+    // `presenters` was missing: the real scanner always answers an array, empty when
+    // a frond declares none. Omitting it made this stand-in a shape the source never
+    // produces — no test here exercises presenters, so the empty list is the truth.
+    fronds: [{ name: 'test', entities, handlers, presenters: [], surfaces }],
     resolve: <T>(name: string) => facades[name] as unknown as T,
   };
 }

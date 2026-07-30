@@ -106,7 +106,9 @@ describe('fougereAdapter', () => {
       sortBy: { field: 'name', direction: 'asc' },
       limit: 2,
     });
-    expect(rows.map((r: { name: string }) => r.name)).toEqual(['Alice', 'Bob']);
+    // better-auth's adapter answers `unknown[]` — it is generic over the app's models.
+    // Naming the row shape on the array says what this call asked for, once.
+    expect((rows as { name: string }[]).map((r) => r.name)).toEqual(['Alice', 'Bob']);
   });
 
   it('update mutates the matched row by email', async () => {

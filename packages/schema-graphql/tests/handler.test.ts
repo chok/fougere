@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import SchemaBuilder from '@pothos/core';
-import { entity, primary, text, number, auto, ref, many } from '@fougere/schema';
+import { entity, primary, text, number, auto, ref, many, type EntityConstructor } from '@fougere/schema';
 import { registerAll } from '../src/index.js';
 
 // ─── Fixtures ──────────────────────────────────
@@ -508,7 +508,7 @@ describe('registerAll', () => {
     class BlogAuthor extends entity({
       id: primary(),
       name: text({ min: 1 }),
-      posts: many(() => BlogPost),
+      posts: many((): EntityConstructor => BlogPost),
     }) {}
 
     class BlogPost extends entity({
