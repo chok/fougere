@@ -29,7 +29,8 @@
   },
   "dependencies": {
     "@fougere/schema": "workspace:*",
-    "@paralleldrive/cuid2": "^3.3.0"
+    "@paralleldrive/cuid2": "^3.3.0",
+    "better-sqlite3": "^12.8.0"
   },
   "peerDependencies": {
     "kysely": ">=0.28.17"
@@ -38,7 +39,6 @@
     "@fougere/core": "workspace:*",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.0.0",
-    "better-sqlite3": "^12.8.0",
     "kysely": "^0.28.17"
   },
   "publishConfig": {

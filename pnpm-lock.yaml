@@ -533,6 +533,9 @@ importers:
       '@paralleldrive/cuid2':
         specifier: ^3.3.0
         version: 3.3.0
+      better-sqlite3:
+        specifier: ^12.8.0
+        version: 12.8.0
     devDependencies:
       '@fougere/core':
         specifier: workspace:*
@@ -543,9 +546,6 @@ importers:
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.15
-      better-sqlite3:
-        specifier: ^12.8.0
-        version: 12.8.0
       kysely:
         specifier: ^0.28.17
         version: 0.28.17

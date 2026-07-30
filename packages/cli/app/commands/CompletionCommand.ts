@@ -1,5 +1,7 @@
 import type { App } from '@fougere/core';
-import { generateZshCompletion, generateBashCompletion } from '../../src/completion.js';
+// `dist/`, not `src/` — app/ ships raw and is loaded by jiti at runtime, but the
+// published package carries only dist/, app/, fronds/ and templates/.
+import { generateZshCompletion, generateBashCompletion } from '../../dist/completion.js';
 
 export default class CompletionCommand {
   constructor(private app: App) {}
