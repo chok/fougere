@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { createContainer } from '@fougere/container-fougere';
 import { createApp, createLocalRunner, FougereError, ErrorCode } from '../src/index.js';
 import type { App, OrmFactory, Transport } from '../src/index.js';
+import type { SchemaConstructor, Fields } from '@fougere/schema';
 import { EMPTY_INVOCATION } from '../src/invocation.js';
 
 const fixturesRoot = join(import.meta.dirname, 'fixtures');
@@ -168,7 +169,10 @@ describe('remote façade (repli)', () => {
     // this app. Everything it knows about 'product' comes off the wire.
     const consumer = await bootConsumer(host);
 
-    const Product = await consumer.schemaFor('product');
+    // `schemaFor` promises `SchemaLike` — the minimum an adapter needs, and all a
+    // hand-rolled `{ getFields() }` entity can honour. This one came off the wire and
+    // through `reconstruct()`, which builds a real schema constructor, so it judges.
+    const Product = await consumer.schemaFor('product') as SchemaConstructor<Fields>;
 
     // Not just present — actually exploitable: same field set as the host's
     // real entity, and the reconstructed shape rules (min: 0 on price) still judge.

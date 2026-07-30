@@ -14,10 +14,12 @@ export class SearchOutput {
   }
 }
 
-// Resolved by type from the container — not imported directly
+// Resolved by type from the container — not imported directly. Declared over the
+// row shape rather than `unknown`: the real ORM is `EntityOrm<T>`, so a stand-in
+// answering `unknown[]` forces every caller into a cast that says nothing.
 declare class ProductOrm {
-  list(): unknown[];
-  findById(id: string): unknown;
+  list(): SearchOutput[];
+  findById(id: string): SearchOutput | undefined;
 }
 
 /** Handler fixture — read-only + search op. */

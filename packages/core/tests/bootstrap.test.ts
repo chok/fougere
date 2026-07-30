@@ -3,9 +3,27 @@ import { join } from 'node:path';
 import { createContainer } from '@fougere/container-fougere';
 import { createApp } from '../src/index.js';
 import type { Container } from '@fougere/container';
-import type { OrmFactory } from '../src/index.js';
+import type { OrmFactory, EntityOrm } from '../src/index.js';
 
 const fixturesRoot = join(import.meta.dirname, 'fixtures');
+
+/**
+ * A stand-in for the per-entity ORM. `output()` was the missing one — every copy of
+ * this fake declared the five ops and forgot that the port also lets a caller scope
+ * reads to a view. Answering `this` is what the real one does when nothing narrows.
+ */
+function fakeOrm(overrides: Partial<EntityOrm> = {}): EntityOrm {
+  const orm: EntityOrm = {
+    list: vi.fn(async () => []),
+    findById: vi.fn(async () => undefined),
+    create: vi.fn(async () => ({})),
+    update: vi.fn(async () => ({})),
+    delete: vi.fn(async () => true),
+    output: () => orm,
+    ...overrides,
+  };
+  return orm;
+}
 
 describe('createApp', () => {
   it('registers builtins', async () => {
@@ -59,8 +77,8 @@ describe('createApp', () => {
 
 describe('createApp + ormFactory', () => {
   it('registers EntityOrm for every entity', async () => {
-    const fakeOrm = { list: vi.fn(), findById: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() };
-    const ormFactory: OrmFactory = vi.fn(() => fakeOrm);
+    const orm = fakeOrm();
+    const ormFactory: OrmFactory = vi.fn(() => orm);
 
     const app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
     const catalogScope = app.resolve<Container>('frond:catalog');
@@ -70,16 +88,16 @@ describe('createApp + ormFactory', () => {
     expect(catalogScope.has('BrandOrm')).toBe(true);
     // What is registered wraps the factory's ORM — writes are judged on the way to
     // storage — so the factory's own ops are reached through it, not identical to it.
-    const brandOrm = catalogScope.resolve<typeof fakeOrm>('BrandOrm');
+    const brandOrm = catalogScope.resolve<EntityOrm>('BrandOrm');
     await brandOrm.list();
-    expect(fakeOrm.list).toHaveBeenCalled();
+    expect(orm.list).toHaveBeenCalled();
 
     await app.dispose();
   });
 
   it('calls ormFactory for every entity', async () => {
-    const fakeOrm = { list: vi.fn(), findById: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() };
-    const ormFactory: OrmFactory = vi.fn(() => fakeOrm);
+    const orm = fakeOrm();
+    const ormFactory: OrmFactory = vi.fn(() => orm);
 
     const app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
 
@@ -103,8 +121,8 @@ describe('createApp + ormFactory', () => {
 
 describe('handler facades', () => {
   it('registers handler facades in root container', async () => {
-    const fakeOrm = { list: vi.fn(), findById: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() };
-    const ormFactory: OrmFactory = vi.fn(() => fakeOrm);
+    const orm = fakeOrm();
+    const ormFactory: OrmFactory = vi.fn(() => orm);
 
     const app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
 
@@ -116,14 +134,8 @@ describe('handler facades', () => {
   });
 
   it('handler facade respects operations whitelist', async () => {
-    const fakeOrm = {
-      list: vi.fn(async () => []),
-      findById: vi.fn(async () => undefined),
-      create: vi.fn(async () => ({})),
-      update: vi.fn(async () => ({})),
-      delete: vi.fn(async () => true),
-    };
-    const ormFactory: OrmFactory = vi.fn(() => fakeOrm);
+    const orm = fakeOrm();
+    const ormFactory: OrmFactory = vi.fn(() => orm);
 
     const app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
 
@@ -139,14 +151,8 @@ describe('handler facades', () => {
   });
 
   it('an entity with no handler declares no operation, so it exposes none', async () => {
-    const fakeOrm = {
-      list: vi.fn(async () => []),
-      findById: vi.fn(async () => undefined),
-      create: vi.fn(async () => ({})),
-      update: vi.fn(async () => ({})),
-      delete: vi.fn(async () => true),
-    };
-    const ormFactory: OrmFactory = vi.fn(() => fakeOrm);
+    const orm = fakeOrm();
+    const ormFactory: OrmFactory = vi.fn(() => orm);
 
     const app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
 
@@ -155,20 +161,17 @@ describe('handler facades', () => {
     expect(app.resolve<Container>('frond:catalog').has('BrandOrm')).toBe(true);
     expect(app.container.has('brandHandler')).toBe(false);
     expect(() => app.resolve('brandHandler')).toThrow();
-    expect(fakeOrm.list).not.toHaveBeenCalled();
+    expect(orm.list).not.toHaveBeenCalled();
 
     await app.dispose();
   });
 
   it('handler facade delegates to the orm', async () => {
-    const fakeOrm = {
+    const orm = fakeOrm({
       list: vi.fn(async () => [{ id: '1' }]),
       findById: vi.fn(async () => ({ id: '1' })),
-      create: vi.fn(async () => ({})),
-      update: vi.fn(async () => ({})),
-      delete: vi.fn(async () => true),
-    };
-    const ormFactory: OrmFactory = vi.fn(() => fakeOrm);
+    });
+    const ormFactory: OrmFactory = vi.fn(() => orm);
 
     const app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
     // ItemHandler extends Crud(Item) — it declares the five by inheriting them.
@@ -176,20 +179,14 @@ describe('handler facades', () => {
 
     const result = await itemHandler.list({ params: {}, query: {}, body: undefined, state: {} });
     expect(result).toEqual([{ id: '1' }]);
-    expect(fakeOrm.list).toHaveBeenCalled();
+    expect(orm.list).toHaveBeenCalled();
 
     await app.dispose();
   });
 
   it('handler facade delegates to custom service when it exists', async () => {
-    const fakeOrm = {
-      list: vi.fn(async () => [{ id: 'from-orm' }]),
-      findById: vi.fn(async () => undefined),
-      create: vi.fn(async () => ({})),
-      update: vi.fn(async () => ({})),
-      delete: vi.fn(async () => true),
-    };
-    const ormFactory: OrmFactory = vi.fn(() => fakeOrm);
+    const orm = fakeOrm({ list: vi.fn(async () => [{ id: 'from-orm' }]) });
+    const ormFactory: OrmFactory = vi.fn(() => orm);
 
     const app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
 

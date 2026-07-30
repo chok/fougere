@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import {
   runMiddlewares,
   FougereError,
+  ErrorCode,
   type AppMiddleware,
   type OperationContext,
 } from '../src/middleware.js';
@@ -103,7 +104,7 @@ describe('runMiddlewares', () => {
 describe('FougereError', () => {
   it('has code, entity, operation', () => {
     const err = new FougereError({
-      code: 'NOT_FOUND',
+      code: ErrorCode.NOT_FOUND,
       message: 'Product not found',
       entity: 'product',
       operation: 'findById',
@@ -119,14 +120,14 @@ describe('FougereError', () => {
 
   it('serializes to JSON', () => {
     const err = new FougereError({
-      code: 'VALIDATION',
+      code: ErrorCode.VALIDATION_FAILED,
       message: 'Invalid input',
       entity: 'order',
       operation: 'create',
     });
 
     expect(err.toJSON()).toEqual({
-      code: 'VALIDATION',
+      code: ErrorCode.VALIDATION_FAILED,
       message: 'Invalid input',
       entity: 'order',
       operation: 'create',
@@ -135,7 +136,7 @@ describe('FougereError', () => {
 
   it('preserves cause', () => {
     const cause = new Error('original');
-    const err = new FougereError({ code: 'WRAP', message: 'wrapped', cause });
+    const err = new FougereError({ code: ErrorCode.INTERNAL_ERROR, message: 'wrapped', cause });
     expect(err.cause).toBe(cause);
   });
 });
@@ -195,7 +196,7 @@ describe('errorMiddleware', () => {
 
   it('passes through FougereError unchanged', async () => {
     const mw = errorMiddleware();
-    const original = new FougereError({ code: 'CUSTOM', message: 'custom' });
+    const original = new FougereError({ code: ErrorCode.CONFLICT, message: 'custom' });
 
     try {
       await runMiddlewares([mw], ctx(), async () => {
