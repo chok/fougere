@@ -28,7 +28,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.templates.json",
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {

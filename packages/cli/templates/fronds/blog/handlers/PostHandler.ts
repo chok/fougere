@@ -1,16 +1,28 @@
 import { Crud, FougereError, ErrorCode } from '@fougere/core';
 import Post from '../entities/Post.js';
 
+/** What a client may propose when drafting — `status` is not its to write. */
+export class NewPost extends Post.pick('title', 'body') {}
+
+/** What the outside world reads in a list — the body stays home. */
 export class PostCard extends Post.pick('id', 'title', 'status') {}
 
 export default class PostHandler extends Crud(Post) {
+  /**
+   * Crud gives the five ops; this one narrows its contract. `readOnly` already
+   * bars `status` for the whole entity — `NewPost` says what *this* op accepts.
+   */
+  async create(input: NewPost): Promise<Post> {
+    return this.orm.create(input);
+  }
+
   /** The draft→published transition — an operation, not a field write. */
   async publish(id: string): Promise<Post> {
     const post = await this.orm.findById(id);
     if (!post) {
       throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `Post '${id}' not found`, entity: 'post', operation: 'publish' });
     }
-    if ((post as { status?: string }).status === 'published') {
+    if (post.status === 'published') {
       throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published', entity: 'post', operation: 'publish' });
     }
     return this.orm.update(id, { status: 'published' });
@@ -20,7 +32,7 @@ export default class PostHandler extends Crud(Post) {
   async published(): Promise<PostCard[]> {
     const all = await this.orm.list();
     return all
-      .filter((p) => (p as { status?: string }).status === 'published')
-      .map((p) => ({ id: String(p.id), title: String(p.title), status: 'published' })) as PostCard[];
+      .filter((p) => p.status === 'published')
+      .map(({ id, title, status }) => ({ id, title, status }));
   }
 }

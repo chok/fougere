@@ -1,0 +1,16 @@
+/*
+ * The scaffold templates are the first code a new user reads — they are judged
+ * like the rest of the repo, not copied blind. Separate from tsconfig.json
+ * because they must never be emitted into dist: they ship as source.
+ */
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
+    "rootDir": "templates"
+  },
+  "include": ["templates/fronds"]
+}
