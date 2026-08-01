@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container-fougere';
-import { createApp, createLocalRunner, FougereError, ErrorCode } from '../src/index.js';
+import { createApp, createLocalRunner, createAppRunner, FougereError, ErrorCode } from '../src/index.js';
 import type { App, OrmFactory, Transport } from '../src/index.js';
 import type { SchemaConstructor, Fields } from '@fougere/schema';
 import { EMPTY_INVOCATION } from '../src/invocation.js';
@@ -57,6 +57,28 @@ describe('remote façade (repli)', () => {
 
     expect(remote).toEqual(JSON.parse(JSON.stringify(local)));
     expect(remote).toEqual(products);
+
+    await consumer.dispose();
+    await host.dispose();
+  });
+
+  /**
+   * The door the browser actually knocks on: `createAppRunner`, not the façade object.
+   * Every other test here calls `facade.list()` directly, which only exercises the
+   * proxy's `get` trap — so a stand-in that answered `get` but denied `hasOwn` passed
+   * them all while every real split call came back `Unknown operation`. The runner
+   * checks `Object.hasOwn` before calling; the traps must agree.
+   */
+  it('answers through the app runner — the path the browser endpoint takes', async () => {
+    const host = await bootHost();
+    const consumer = await bootConsumer(host);
+
+    const run = createAppRunner(consumer);
+    expect(await run({ entity: 'product', op: 'list' }, EMPTY_INVOCATION)).toEqual(products);
+
+    // What the proxy must NOT claim: Object.prototype's own names are not operations.
+    await expect(run({ entity: 'product', op: 'constructor' }, EMPTY_INVOCATION))
+      .rejects.toMatchObject({ code: ErrorCode.NOT_FOUND });
 
     await consumer.dispose();
     await host.dispose();

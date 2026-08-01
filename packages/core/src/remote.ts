@@ -88,17 +88,43 @@ export function createRemoteRouter(
 
 type Facade = Record<string, (invocation?: InvocationContext) => Promise<unknown>>;
 
-/** Façade-shaped stand-in — the consumer can't tell it from a local facade. */
+/**
+ * Does this name designate an operation at all? `then` is excluded so the façade is
+ * never mistaken for a thenable, and `Object.prototype`'s own names so `constructor`
+ * or `toString` cannot be called across the wire.
+ */
+function isOpName(prop: string | symbol): prop is string {
+  return typeof prop === 'string' && prop !== 'then' && !Object.hasOwn(Object.prototype, prop);
+}
+
+/**
+ * Façade-shaped stand-in — the consumer can't tell it from a local facade.
+ *
+ * Every trap answers the same question, and that is the point: the runner asks
+ * `Object.hasOwn(facade, op)` before calling, so a proxy that only trapped `get`
+ * reported *no* operations and every split call came back `Unknown operation` —
+ * `get` said yes, `hasOwn` said no, and the runner believed `hasOwn`.
+ *
+ * The stand-in claims every legal op name because it cannot know better: routing is
+ * lazy on purpose (the card is fetched at the first miss), and the remote is the
+ * authority on its own surface anyway. An op it does not serve comes back as its
+ * NOT_FOUND — judged where it is owned, which is the same answer a local façade gives.
+ */
 export function createRemoteFacade(entity: string, router: RemoteRouter): Facade {
+  const opFn = (op: string) => async (invocation: InvocationContext = EMPTY_INVOCATION) => {
+    const { frond, transport } = await router.route(entity);
+    const call: FrondCall = { frond, entity, op };
+    return transport(call, invocation);
+  };
+
   return new Proxy({} as Facade, {
-    get(_target, prop) {
-      // A façade is not a thenable — `then` must stay absent for await-safety.
-      if (typeof prop !== 'string' || prop === 'then') return undefined;
-      return async (invocation: InvocationContext = EMPTY_INVOCATION) => {
-        const { frond, transport } = await router.route(entity);
-        const call: FrondCall = { frond, entity, op: prop };
-        return transport(call, invocation);
-      };
-    },
+    get: (_target, prop) => (isOpName(prop) ? opFn(prop) : undefined),
+    has: (_target, prop) => isOpName(prop),
+    getOwnPropertyDescriptor: (_target, prop) =>
+      // `configurable: true` is required: a proxy may not report a non-configurable
+      // property that the target does not actually have.
+      isOpName(prop)
+        ? { value: opFn(prop), writable: false, enumerable: true, configurable: true }
+        : undefined,
   });
 }
