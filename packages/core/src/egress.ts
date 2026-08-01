@@ -104,6 +104,64 @@ export function projectEgress(fields: Fields, result: unknown, closed = false): 
   return encodeFields(fields, scoped);
 }
 
+// ─── 3 · Enrich ─────────────────────────────────────────────
+
+/**
+ * Add a presenter's computed fields — the last step out, after the projection.
+ *
+ * After, not before, for two reasons: a computed field is not an entity field, so
+ * `encodeFields` has no boundary to apply to it; and it must not be dropped by the
+ * projection, which keeps only what the entity declares.
+ *
+ * Skipped when the op names a view (`closed`): there the author stated exactly what
+ * this audience gets, and an addition they did not list would contradict it. Open is
+ * the default, and there a computed field is an addition to the entity's output, not
+ * an intruder.
+ *
+ * It ran only in the REST and GraphQL projections before, each with its own copy — so
+ * the same presenter answered on two doors and was silently absent from `useQuery`.
+ * The cost travels with it: one computed field doing a read is one read per row.
+ */
+export async function presentEgress(
+  result: unknown,
+  presenter: Record<string, unknown> | undefined,
+  fieldNames: string[] | undefined,
+  entity = 'unknown',
+  operation = 'unknown',
+): Promise<unknown> {
+  if (!presenter || !fieldNames?.length || result === null || typeof result !== 'object') return result;
+
+  const enrich = async (item: unknown) => {
+    if (item === null || typeof item !== 'object') return item;
+    const enriched = { ...(item as Record<string, unknown>) };
+    for (const name of fieldNames) {
+      const fn = presenter[name];
+      if (typeof fn !== 'function') continue;
+      try {
+        enriched[name] = await fn.call(presenter, item);
+      } catch (cause) {
+        // Now that this runs on every call, a throwing computed field would take the
+        // whole operation down with a raw stack. Name the field instead: the domain
+        // produced this, so it is our bug — same verdict `judgeEgress` renders.
+        throw new FougereError({
+          code: ErrorCode.INTERNAL_ERROR,
+          message: `Computed field '${name}' failed: ${(cause as Error)?.message ?? cause}`,
+          entity,
+          operation,
+          cause,
+        });
+      }
+    }
+    return enriched;
+  };
+
+  if (Array.isArray(result)) {
+    // `ListResult` IS an array — carry its own properties across, like projectEgress.
+    return Object.assign(await Promise.all(result.map(enrich)), arrayExtras(result));
+  }
+  return enrich(result);
+}
+
 // ─── The way out to storage ─────────────────────────────────
 
 /** The writing ops — a read comes FROM storage, so it is not the domain emitting. */

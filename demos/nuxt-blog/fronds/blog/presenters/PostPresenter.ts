@@ -14,8 +14,10 @@ type AuthorOrm = EntityOrm<Author>;
  * Each method on the presenter becomes a computed field added to the Post
  * sent out by the handlers. Method name = field name in the JSON output.
  *
- * Fougere wires this automatically: any handler returning a Post (or list of
- * Posts) goes through PostPresenter before serialization.
+ * Fougere applies this at the façade, so every door agrees: the envelope
+ * (useQuery/invoke), the REST catch-all and GraphQL all carry the computed
+ * fields. An op that names its output view is the exception — there the author
+ * stated the list, and an addition they left out stays out.
  */
 export default class PostPresenter extends Presenter(Post) {
   constructor(private authorOrm: AuthorOrm) {

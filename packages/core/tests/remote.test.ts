@@ -9,7 +9,8 @@ import { EMPTY_INVOCATION } from '../src/invocation.js';
 const fixturesRoot = join(import.meta.dirname, 'fixtures');
 const emptyRoot = '/tmp/fougere-remote-test-empty';
 
-const products = [{ id: '1', name: 'Fern' }, { id: '2', name: 'Moss' }];
+// `price` feeds ProductPresenter.displayPrice — the presenter runs on every call now.
+const products = [{ id: '1', name: 'Fern', price: 12.5 }, { id: '2', name: 'Moss', price: 320 }];
 const fakeOrm = {
   list: vi.fn(async () => products),
   findById: vi.fn(async (id: string) => products.find((p) => p.id === id)),
@@ -55,8 +56,14 @@ describe('remote façade (repli)', () => {
     const remote = await facade.list();
     const local = await createLocalRunner(host)({ entity: 'product', op: 'list' }, EMPTY_INVOCATION);
 
+    // Parity is the claim: the same enrichment on both sides, computed where the
+    // frond is hosted and carried across untouched.
     expect(remote).toEqual(JSON.parse(JSON.stringify(local)));
-    expect(remote).toEqual(products);
+    expect(remote).toEqual(products.map((p) => ({
+      ...p,
+      displayPrice: `$${p.price.toFixed(2)}`,
+      isExpensive: p.price > 100,
+    })));
 
     await consumer.dispose();
     await host.dispose();
@@ -74,7 +81,8 @@ describe('remote façade (repli)', () => {
     const consumer = await bootConsumer(host);
 
     const run = createAppRunner(consumer);
-    expect(await run({ entity: 'product', op: 'list' }, EMPTY_INVOCATION)).toEqual(products);
+    expect(await run({ entity: 'product', op: 'list' }, EMPTY_INVOCATION))
+      .toMatchObject([{ id: '1', displayPrice: '$12.50' }, { id: '2', displayPrice: '$320.00' }]);
 
     // What the proxy must NOT claim: Object.prototype's own names are not operations.
     await expect(run({ entity: 'product', op: 'constructor' }, EMPTY_INVOCATION))
@@ -90,7 +98,7 @@ describe('remote façade (repli)', () => {
 
     const facade = consumer.resolve<Record<string, (inv?: unknown) => Promise<unknown>>>('productHandler');
     const found = await facade.findById({ ...EMPTY_INVOCATION, params: { id: '2' } });
-    expect(found).toEqual({ id: '2', name: 'Moss' });
+    expect(found).toEqual({ id: '2', name: 'Moss', price: 320, displayPrice: '$320.00', isExpensive: true });
 
     // A miss is null on every transport — undefined has no wire form.
     const miss = await facade.findById({ ...EMPTY_INVOCATION, params: { id: 'nope' } });
@@ -246,7 +254,7 @@ describe('remote façade (repli)', () => {
     expect(consumer.container.has('productHandler')).toBe(false);
 
     const facade = consumer.resolve<Record<string, (inv?: unknown) => Promise<unknown>>>('productHandler');
-    expect(await facade.list()).toEqual(products);
+    expect(await facade.list()).toMatchObject([{ id: '1' }, { id: '2' }]);
 
     await consumer.dispose();
     await host.dispose();

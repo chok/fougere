@@ -7,7 +7,9 @@ import { EMPTY_INVOCATION } from '../src/invocation.js';
 
 const fixturesRoot = join(import.meta.dirname, 'fixtures');
 
-const products = [{ id: '1', name: 'Fern' }];
+// `price` is not decoration: ProductPresenter computes displayPrice from it, and a
+// presenter now runs on every façade call — a row missing the field it reads is a bug.
+const products = [{ id: '1', name: 'Fern', price: 12.5 }];
 const fakeOrm = {
   list: vi.fn(async () => products),
   findById: vi.fn(async (id: string) => products.find((p) => p.id === id)),
@@ -52,9 +54,12 @@ describe('createLocalRunner', () => {
     const app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
     const run = createLocalRunner(app);
     const result = await run({ entity: 'product', op: 'list' }, EMPTY_INVOCATION);
-    expect(result).toEqual(products);
+    // The row, plus what ProductPresenter computes from it. The façade enriches now —
+    // it used to be the projections' job alone, so `useQuery` saw none of it.
+    expect(result).toEqual([{ ...products[0], displayPrice: '$12.50', isExpensive: false }]);
     await app.dispose();
   });
+
 
   it('rejects an unknown operation with a typed NOT_FOUND', async () => {
     const app = await createApp({ root: fixturesRoot, createContainer, ormFactory });

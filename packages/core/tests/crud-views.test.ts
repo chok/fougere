@@ -66,3 +66,29 @@ describe('a view named for one op', () => {
     await app.dispose();
   });
 });
+
+/**
+ * A presenter's computed fields are an ADDITION to the entity's output — so they follow
+ * the same rule as the entity's own fields: added where the output is open, absent where
+ * the author closed it by naming a view. Naming the audience is what makes it closed.
+ */
+describe('a computed field meets the same boundary', () => {
+  it('rides along on an op with no view — open is the default', async () => {
+    const { app, run } = await boot();
+
+    const note = await run({ entity: 'note', op: 'findById' }, call()) as Record<string, unknown>;
+
+    expect(note.excerpt).toBe('Le ');
+    await app.dispose();
+  });
+
+  it('stays out of an op that named its view — the author stated the list', async () => {
+    const { app, run } = await boot();
+
+    const rows = await run({ entity: 'note', op: 'list' }, call()) as Array<Record<string, unknown>>;
+
+    expect(Object.keys(rows[0]!).sort()).toEqual(['id', 'title']);
+    expect(rows[0]).not.toHaveProperty('excerpt');
+    await app.dispose();
+  });
+});

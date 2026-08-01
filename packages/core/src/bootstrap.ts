@@ -12,7 +12,10 @@ import { computeBindingPlan, resolveArgs, type CollectorResolver } from './bindi
 import type { OperationContract } from './operation.js';
 import { EMPTY_INVOCATION, type InvocationContext } from './invocation.js';
 import { type SchemaLike, type Fields, validateFields } from '@fougere/schema';
-import { projectEgress, guardStorage } from './egress.js';
+import { projectEgress, presentEgress, guardStorage } from './egress.js';
+
+/** Container key of an entity's presenter — 'post' → 'PostPresenter'. */
+const presenterKeyOf = (entity: string) => `${entity[0].toUpperCase()}${entity.slice(1)}Presenter`;
 
 /** Bootstrap a fougere application. */
 export async function createApp(options: CreateAppOptions): Promise<App> {
@@ -117,8 +120,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // Register presenters in scope — PascalCase type name (e.g. 'PostPresenter')
     const presenterMap = new Map(frond.presenters.map((p) => [p.entityName, p]));
     for (const presenter of frond.presenters) {
-      const key = `${presenter.entityName[0].toUpperCase()}${presenter.entityName.slice(1)}Presenter`;
-      scope.register(key, presenter.ctor, { deps: presenter.deps });
+      scope.register(presenterKeyOf(presenter.entityName), presenter.ctor, { deps: presenter.deps });
     }
     if (frond.presenters.length > 0) {
       frondLog.debug(`${frond.presenters.length} presenter(s): ${frond.presenters.map((p) => p.entityName).join(', ')}`);
@@ -279,9 +281,16 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
             ? await resolveArgs(contract.binding, inv, collectorResolver)
             : [];
           // Egress at the boundary: a write-only field never rides the result
-          // out, exactly as REST and Pothos already guarantee on their own.
+          // out, exactly as REST and Pothos already guarantee on their own —
+          // then a presenter's computed fields are added, so every door answers
+          // the same thing (they used to be applied by the projections alone).
           const out = outputFieldsFor(op);
-          return projectEgress(out.fields, await getInstance()[op](...resolved), out.closed);
+          const projected = projectEgress(out.fields, await getInstance()[op](...resolved), out.closed);
+          if (out.closed) return projected;
+          const meta = presenterMap.get(entity.name);
+          return meta
+            ? presentEgress(projected, scope.resolve(presenterKeyOf(entity.name)), meta.fields, entityName, op)
+            : projected;
         });
       };
 
@@ -305,7 +314,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       // Expose presenter instance (lazy — resolved on first access by bridge)
       const presenter = presenterMap.get(entity.name);
       if (presenter) {
-        const presenterKey = `${entity.name[0].toUpperCase()}${entity.name.slice(1)}Presenter`;
+        const presenterKey = presenterKeyOf(entity.name);
         let presenterInstance: any;
         container.registerValue(presenterKey, new Proxy({} as any, {
           get(_target, prop) {
