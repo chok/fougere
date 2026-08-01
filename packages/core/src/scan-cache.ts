@@ -5,14 +5,35 @@
  * Key: cache key (file path + suffix) → { hash, data }.
  * Hash: content hash of the source file.
  * If hash matches, skip parsing entirely → TypeScript never loaded.
+ *
+ * The envelope carries PARSER_VERSION, and a mismatch drops the whole file. The hash
+ * answers "did this source change?"; it cannot answer "does the parser still read it the
+ * same way?". A parser fix therefore left every unchanged handler serving the OLD parse,
+ * indefinitely and without a word — that is how `Crud`'s inherited ops stayed silently
+ * underived for weeks, until someone deleted `.fougere/` by hand and the tests went red.
+ *
+ * Bump PARSER_VERSION whenever the parser's OUTPUT for unchanged source can differ.
  */
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
+/**
+ * Bump when the parser can read unchanged source differently.
+ *
+ * 2 — `handler-parser` unwraps a class returned through a call/assertion, so a mixin
+ *     like `asCrudConstructor(class { … })` yields its methods again.
+ */
+const PARSER_VERSION = 2;
+
 interface CacheEntry {
   hash: string;
   data: unknown;
+}
+
+interface CacheFile {
+  parser: number;
+  entries: Record<string, CacheEntry>;
 }
 
 type CacheData = Record<string, CacheEntry>;
@@ -35,8 +56,13 @@ function load(): CacheData {
   const path = cachePath();
   if (existsSync(path)) {
     try {
-      cache = JSON.parse(readFileSync(path, 'utf-8'));
-      return cache!;
+      const file = JSON.parse(readFileSync(path, 'utf-8')) as Partial<CacheFile>;
+      // A stamp from another parser is not stale data to refresh entry by entry — every
+      // entry in the file was produced by it. Drop the lot; the next scan is cold once.
+      if (file.parser === PARSER_VERSION && file.entries) {
+        cache = file.entries;
+        return cache;
+      }
     } catch {
       // Corrupted cache — start fresh
     }
@@ -73,6 +99,7 @@ export function flushCache(): void {
   if (!dirty || !cache) return;
   const path = cachePath();
   mkdirSync(join(root, '.fougere'), { recursive: true });
-  writeFileSync(path, JSON.stringify(cache, null, 2));
+  const file: CacheFile = { parser: PARSER_VERSION, entries: cache };
+  writeFileSync(path, JSON.stringify(file, null, 2));
   dirty = false;
 }

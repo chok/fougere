@@ -250,6 +250,37 @@ function resolveIdentifierSource(
 
 // ── Mixin / heritage parsing ─────────────────
 
+/**
+ * The class a returned expression carries, however it is wrapped.
+ *
+ * A mixin does not always hand its class back bare. `Crud` returns
+ * `asCrudConstructor(class CrudHandler { … })` — one assertion helper standing between
+ * `return` and the class — and a parser accepting only a bare `return class` found
+ * nothing there, silently: the five inherited CRUD ops stopped being derived, and a warm
+ * scan cache kept answering the old parse for weeks (`scan-cache.ts` keys on source, not
+ * on parser version).
+ *
+ * So unwrap rather than match one shape: descend through call arguments, `as` and
+ * `satisfies` assertions, and parentheses. What is looked for is a class; where the
+ * author put it is their business.
+ */
+function classInExpression(expr: ts.Node, depth = 0): ts.ClassExpression | undefined {
+  const ts = getTS();
+  if (depth > 8) return undefined;
+  if (ts.isClassExpression(expr)) return expr;
+  if (ts.isCallExpression(expr)) {
+    for (const arg of expr.arguments) {
+      const found = classInExpression(arg, depth + 1);
+      if (found) return found;
+    }
+    return undefined;
+  }
+  if (ts.isAsExpression(expr) || ts.isSatisfiesExpression(expr) || ts.isParenthesizedExpression(expr)) {
+    return classInExpression(expr.expression, depth + 1);
+  }
+  return undefined;
+}
+
 /** Find a class declaration inside a function (mixin pattern). */
 function findClassInFunction(source: ts.SourceFile, functionName: string): ts.ClassDeclaration | ts.ClassExpression | undefined {
   const ts = getTS();
@@ -260,9 +291,10 @@ function findClassInFunction(source: ts.SourceFile, functionName: string): ts.Cl
 
     // Walk statements inside the function
     for (const inner of stmt.body.statements) {
-      // return class CrudHandler { ... }
+      // return class CrudHandler { … }, or the same class behind a wrapper
       if (ts.isReturnStatement(inner) && inner.expression) {
-        if (ts.isClassExpression(inner.expression)) return inner.expression;
+        const found = classInExpression(inner.expression);
+        if (found) return found;
       }
       // class CrudHandler { ... } (followed by return)
       if (ts.isClassDeclaration(inner)) return inner;
