@@ -19,6 +19,21 @@ interface FieldLike {
   role?: { primary?: boolean; relation?: { kind: string } };
 }
 
+/**
+ * The literal a field is born with, when it declares one.
+ *
+ * `text({ default: 'x' })` and `oneOf('a', 'b', { default: 'a' })` both compile to
+ * `lifecycle.create = { value }` — the create rule that answers the field's absence.
+ * The other create rules ('now', { generate }, 'optional') name no literal: their value
+ * is decided at write time, so a form has nothing to show for them.
+ */
+function defaultOf(field: FieldLike): unknown {
+  const create = field.lifecycle?.create;
+  return create !== null && typeof create === 'object' && 'value' in create
+    ? (create as { value: unknown }).value
+    : undefined;
+}
+
 export interface FormField {
   name: string;
   /** Rendering hint derived from the shape — the page maps it to widgets. */
@@ -30,6 +45,12 @@ export interface FormField {
   label: string;
   /** Enum values, when control is 'select'. */
   options?: string[];
+  /**
+   * The value the field is born with — the literal its `lifecycle.create` rule names.
+   * Present so the form can SHOW what is about to be written; the storage realizes it
+   * either way, so a form that ignores this still produces the same row.
+   */
+  default?: unknown;
 }
 
 /** The base JSON type of a shape — unwraps the `[T,'null']` union. */
@@ -63,6 +84,7 @@ export function formFieldsOf(entity: FormEntity, entityKey: string): FormField[]
       labelKey: `${entityKey}.${name}`,
       label: name[0].toUpperCase() + name.slice(1),
       ...(Array.isArray(f.shape?.enum) ? { options: f.shape.enum as string[] } : {}),
+      ...(defaultOf(f) !== undefined ? { default: defaultOf(f) } : {}),
     };
   });
 }

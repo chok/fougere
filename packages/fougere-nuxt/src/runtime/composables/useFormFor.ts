@@ -26,8 +26,12 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
   const entityKey = toRegistrationName(entity.name);
   const fields: FormField[] = formFieldsOf(entity, entityKey);
 
+  // `initial` wins over the declared default: editing a row shows the row, including a
+  // value the author deliberately changed away from that default. On a create form
+  // there is no `initial`, so the field opens on what is about to be written — the
+  // schema's own literal, shown rather than guessed by the page.
   const values = reactive<Record<string, unknown>>(
-    Object.fromEntries(fields.map((f) => [f.name, options.initial?.[f.name]])),
+    Object.fromEntries(fields.map((f) => [f.name, options.initial?.[f.name] ?? f.default])),
   );
   const errors = reactive<Record<string, string>>({});
   const command = useCommand<T>(entity, options.op ?? 'create');

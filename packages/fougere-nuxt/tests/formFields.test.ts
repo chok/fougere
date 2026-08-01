@@ -65,3 +65,32 @@ describe('errorsByField — local judge and wire judge share the shape', () => {
     expect(Object.keys(byField)).not.toContain('subtitle');
   });
 });
+
+describe('declared defaults', () => {
+  class Doc extends entity({
+    id: primary(),
+    title: text(),
+    visibility: oneOf('public', 'private', { default: 'public' }),
+    createdAt: auto(),
+  }) {}
+
+  const fields = formFieldsOf(Doc as never, 'doc');
+  const by = (n: string) => fields.find((f) => f.name === n)!;
+
+  it('carries the literal a field is born with', () => {
+    expect(by('visibility').default).toBe('public');
+  });
+
+  it('carries nothing for a field whose value is decided at write time', () => {
+    // `auto()` is `lifecycle.create = 'now'` — a rule with no literal to show.
+    // (It is server-owned anyway, so it never reaches a form.)
+    expect(by('title').default).toBeUndefined();
+    expect(fields.map((f) => f.name)).not.toContain('createdAt');
+  });
+
+  it('a declared default does not make the field required', () => {
+    // The create rule answers the absence — that is what `required: false` means.
+    expect(by('visibility').required).toBe(false);
+    expect(by('title').required).toBe(true);
+  });
+});
