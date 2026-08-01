@@ -54,6 +54,17 @@ function fakeApp(
     // produces — no test here exercises presenters, so the empty list is the truth.
     fronds: [{ name: 'test', entities, handlers, presenters: [], surfaces }],
     resolve: <T>(name: string) => facades[name] as unknown as T,
+    // Mirrors App.facadeFor (bootstrap.ts): naming an audience closes it —
+    // the `surfaces:` list when it exists, else a façade under the surface key.
+    facadeFor: (entity: string, surface?: string) => {
+      if (!surface) return facades[`${entity}Handler`];
+      const own = facades[`${surface}:${entity}Handler`];
+      const declared = surfaces?.[surface];
+      if (!declared) return own;
+      return declared.some((n) => n.toLowerCase() === entity.toLowerCase())
+        ? (own ?? facades[`${entity}Handler`])
+        : undefined;
+    },
   };
 }
 

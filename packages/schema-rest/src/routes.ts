@@ -9,7 +9,10 @@ import { resolveIsReadOp } from '@fougere/core';
 
 // ─── Types ──────────────────────────────────────
 
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
+// Le vocabulaire des verbes appartient au routeur, pas à la projection : le redéclarer ici
+// avait produit deux listes à tenir d'accord à la main, qui ont divergé au premier verbe ajouté.
+export type { HttpMethod } from '@fougere/http';
+import type { HttpMethod } from '@fougere/http';
 
 export interface RouteDefinition {
   method: HttpMethod;
@@ -66,6 +69,8 @@ interface FrondLike {
 interface AppLike {
   fronds: FrondLike[];
   resolve<T>(name: string): T;
+  /** The façade an entity exposes to one audience — `undefined` when none. */
+  facadeFor(entity: string, surface?: string): Record<string, Function> | undefined;
 }
 
 type HandlerFacade = Record<string, Function>;
@@ -155,38 +160,19 @@ export function generateRoutes(app: AppLike, options?: GenerateRoutesOptions): R
   for (const frond of app.fronds) {
     const handlerMap = new Map(frond.handlers.filter((h: any) => !h.surface).map((h) => [h.entityName, h]));
 
-    // Surface filtering: if frond declares surfaces and this bridge has a surface name, use it
     const surfaceName = options?.surface;
-    const surfaceList = surfaceName && frond.surfaces?.[surfaceName];
-    const surfaceSet = surfaceList ? new Set(surfaceList.map((s) => s.toLowerCase())) : undefined;
 
     for (const entity of frond.entities) {
-      // Resolve facade — surface-specific if available, fallback to default
-      const defaultFacadeKey = `${entity.name}Handler`;
-      let facade: HandlerFacade | undefined;
-
-      if (surfaceName) {
-        const surfaceFacadeKey = `${surfaceName}:${entity.name}Handler`;
-        try { facade = app.resolve<HandlerFacade>(surfaceFacadeKey); } catch { /* noop */ }
-      }
-      if (!facade) {
-        try { facade = app.resolve<HandlerFacade>(defaultFacadeKey); } catch { /* noop */ }
-      }
+      // Membership is core's answer, not ours — one rule, read here (see App.facadeFor).
+      const facade = app.facadeFor(entity.name, surfaceName) as HandlerFacade | undefined;
       if (!facade) continue;
 
       if (options?.filter && !options.filter(entity, frond.name)) continue;
+      if (!surfaceName && entity.exposed === false) continue;
 
-      // Surface config takes precedence over exposed flag
-      if (surfaceSet) {
-        if (!surfaceSet.has(entity.name)) continue;
-      } else if (entity.exposed === false) {
-        continue;
-      }
-
-      // Prefer surface handler if available, fallback to default
-      const handler = surfaceName
-        ? (frond.handlers.find((h: any) => h.entityName === entity.name && h.surface === surfaceName) ?? handlerMap.get(entity.name))
-        : handlerMap.get(entity.name);
+      const handler = (surfaceName
+        ? frond.handlers.find((h: any) => h.entityName === entity.name && h.surface === surfaceName)
+        : undefined) ?? handlerMap.get(entity.name);
       // Use facade keys (includes inherited ops like CRUD), fallback to handler.operations
       const opNames = Object.keys(facade);
       const entityOverrides = overrides[entity.name] ?? {};

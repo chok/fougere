@@ -113,6 +113,17 @@ function fakeApp(
   return {
     fronds: [{ name: 'test', entities, handlers: effectiveHandlers, presenters: [], surfaces }],
     resolve: <T>(name: string) => facades[name] as unknown as T,
+    // Mirrors App.facadeFor (bootstrap.ts): naming an audience closes it —
+    // the `surfaces:` list when it exists, else a façade under the surface key.
+    facadeFor: (entity: string, surface?: string) => {
+      if (!surface) return facades[`${entity}Handler`];
+      const own = facades[`${surface}:${entity}Handler`];
+      const declared = surfaces?.[surface];
+      if (!declared) return own;
+      return declared.some((n) => n.toLowerCase() === entity.toLowerCase())
+        ? (own ?? facades[`${entity}Handler`])
+        : undefined;
+    },
   };
 }
 
@@ -480,7 +491,7 @@ describe('registerAll', () => {
     expect(typeMap['Author']).toBeDefined();
   });
 
-  it('surface config with unknown surface name falls back to default', () => {
+  it('a surface nothing declares serves nothing — it does not fall back to the full façade', () => {
     const builder = new SchemaBuilder({});
     builder.queryType({});
     builder.mutationType({});
@@ -495,13 +506,36 @@ describe('registerAll', () => {
       { rest: ['Post'] },
     );
 
-    // surface='graphql' but config only has 'rest' → no filtering
+    // surface='graphql', but nothing names an entity into it: no handler under
+    // handlers/graphql/, no `graphql` list. This used to widen — both entities
+    // got mounted whole on a door nobody declared.
     registerAll(builder, app, { surface: 'graphql' });
-    const schema = builder.toSchema();
-    const typeMap = schema.getTypeMap();
+    const typeMap = builder.toSchema().getTypeMap();
+
+    expect(typeMap['Post']).toBeUndefined();
+    expect(typeMap['Author']).toBeUndefined();
+  });
+
+  it('a surface handler names its entity in, and the rest stays out', () => {
+    const builder = new SchemaBuilder({});
+    builder.queryType({});
+    builder.mutationType({});
+
+    // The nuxt-blog shape: `handlers/public/PostHandler.ts` exists, Author has no
+    // public handler and no config naming it. Author must not ride along.
+    const app = fakeApp(
+      [
+        { name: 'author', entityClass: Author },
+        { name: 'post', entityClass: Post },
+      ],
+      { authorHandler: fakeCrud(), postHandler: fakeCrud(), 'public:postHandler': fakeCrud() },
+    );
+
+    registerAll(builder, app, { surface: 'public' });
+    const typeMap = builder.toSchema().getTypeMap();
 
     expect(typeMap['Post']).toBeDefined();
-    expect(typeMap['Author']).toBeDefined();
+    expect(typeMap['Author']).toBeUndefined();
   });
 
   describe('auto-wired relations', () => {

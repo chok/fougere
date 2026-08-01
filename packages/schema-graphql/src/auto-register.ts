@@ -94,6 +94,8 @@ interface FrondLike {
 interface AppLike {
   fronds: FrondLike[];
   resolve<T>(name: string): T;
+  /** The façade an entity exposes to one audience — `undefined` when none. */
+  facadeFor(entity: string, surface?: string): Record<string, Function> | undefined;
 }
 
 // ─── Helpers ────────────────────────────────────
@@ -133,35 +135,18 @@ export function registerAll(
     const presenterMap = new Map((frond.presenters ?? []).map((p) => [p.entityName, p]));
 
     const surfaceName = options?.surface;
-    const surfaceList = surfaceName && frond.surfaces?.[surfaceName];
-    const surfaceSet = surfaceList ? new Set(surfaceList.map((s) => s.toLowerCase())) : undefined;
 
     for (const entity of frond.entities) {
-      // Resolve facade — surface-specific if available, fallback to default
-      const defaultFacadeKey = `${entity.name}Handler`;
-      let facade: HandlerFacade | undefined;
-
-      if (surfaceName) {
-        const surfaceFacadeKey = `${surfaceName}:${entity.name}Handler`;
-        try { facade = app.resolve<HandlerFacade>(surfaceFacadeKey); } catch { /* noop */ }
-      }
-      if (!facade) {
-        try { facade = app.resolve<HandlerFacade>(defaultFacadeKey); } catch { /* noop */ }
-      }
+      // Membership is core's answer, not ours — one rule, read here (see App.facadeFor).
+      const facade = app.facadeFor(entity.name, surfaceName) as HandlerFacade | undefined;
       if (!facade) continue;
 
       if (options?.filter && !options.filter(entity, frond.name)) continue;
+      if (!surfaceName && entity.exposed === false) continue;
 
-      if (surfaceSet) {
-        if (!surfaceSet.has(entity.name)) continue;
-      } else if (entity.exposed === false) {
-        continue;
-      }
-
-      // Prefer surface handler if available, fallback to default
-      const handler = surfaceName
-        ? (frond.handlers.find((h) => h.entityName === entity.name && h.surface === surfaceName) ?? handlerMap.get(entity.name))
-        : handlerMap.get(entity.name);
+      const handler = (surfaceName
+        ? frond.handlers.find((h) => h.entityName === entity.name && h.surface === surfaceName)
+        : undefined) ?? handlerMap.get(entity.name);
       const typeName = capitalize(entity.name);
 
       const presenterMeta = presenterMap.get(entity.name);
@@ -252,8 +237,11 @@ export function registerAll(
           resolve: (parent: any) => {
             const id = parent.id;
             if (id == null) return [];
+            // `where` — un critère se nomme. Passé à la racine de la query, il retombait
+            // dans les options de `list()`, qui ignore ce qu'elle ne connaît pas : la
+            // relation rendait alors TOUTE la table cible, sans un mot.
             return targetEntry.facade.list({
-              params: {}, query: { [reverseFkName]: id }, body: undefined, state: {},
+              params: {}, query: { where: { [reverseFkName]: id } }, body: undefined, state: {},
             }).then((result: any) => Array.isArray(result) ? result : result?.items ?? result);
           },
         });

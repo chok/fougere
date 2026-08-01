@@ -241,6 +241,16 @@ export interface App {
    * language) — a card travelled, but until now its `schema` was thrown away.
    */
   schemaFor(entity: string): Promise<SchemaLike>;
+  /**
+   * The façade an entity exposes to one audience, or `undefined` when it
+   * exposes none. A named surface is CLOSED: an entity with no façade of its
+   * own under that surface is not in it — it never falls back to the full one.
+   *
+   * The one way an adapter reaches a façade. It exists so the key format stays
+   * inside core (see `facadeKeyOf`), which is what lets a projection package
+   * stay structurally typed and depend on nothing.
+   */
+  facadeFor(entity: string, surface?: string): Record<string, Function> | undefined;
   /** Dispose the root container. */
   dispose(): Promise<void>;
   /** Register a global app middleware (runs on every operation). */

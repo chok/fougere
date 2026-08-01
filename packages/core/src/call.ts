@@ -42,19 +42,39 @@ export interface IdentityCard {
 type Facade = Record<string, (invocation?: InvocationContext) => Promise<unknown>>;
 
 /**
- * Serialize what the app hosts. Served on `rpc.discover`, cached by callers.
+ * The container key of a façade — THE one place that spells the format.
+ *
+ * A surface is a named audience, and it is a key: `handlers/public/PostHandler.ts`
+ * registers `public:postHandler` next to the default `postHandler`. The default
+ * surface is the empty key, so callers that know nothing about surfaces keep
+ * designating exactly what they designated before.
+ *
+ * Nobody outside this package builds this string: adapters ask `app.facadeFor()`,
+ * which is why an adapter can stay structurally typed and core-free.
+ */
+export function facadeKeyOf(entityName: string, surface?: string): string {
+  return surface ? `${surface}:${entityName}Handler` : `${entityName}Handler`;
+}
+
+/**
+ * Serialize what the app hosts, for one audience. Served on `rpc.discover`,
+ * cached by callers.
  *
  * Hosting means answering: an entity with no façade declares no operation, so
  * it is not listed — publishing its shape would hand an anonymous caller the
  * structure of tables it can never reach (the auth tables, typically), and
  * `fougere sync` would rebuild a schema with nothing to call on it.
+ *
+ * `surface` makes that sentence audience-aware rather than app-wide: a door
+ * answers with what IT serves. Nothing falls back to the full façade — under a
+ * named surface, an entity with no façade of its own is simply not there.
  */
-export function identityCardOf(app: App): IdentityCard {
+export function identityCardOf(app: App, surface?: string): IdentityCard {
   return {
     fronds: app.fronds.map((frond) => ({
       name: frond.name,
       entities: frond.entities.flatMap((entity) => {
-        const ops = facadeOps(app, entity.name);
+        const ops = facadeOps(app, entity.name, surface);
         if (ops.length === 0) return [];
         return [{
           name: entity.name,
@@ -66,9 +86,9 @@ export function identityCardOf(app: App): IdentityCard {
   };
 }
 
-function facadeOps(app: App, entityName: string): string[] {
+function facadeOps(app: App, entityName: string, surface?: string): string[] {
   try {
-    return Object.keys(app.container.resolve<Facade>(`${entityName}Handler`));
+    return Object.keys(app.container.resolve<Facade>(facadeKeyOf(entityName, surface)));
   } catch {
     return [];
   }
@@ -80,23 +100,30 @@ function facadeOps(app: App, entityName: string): string[] {
  * Resolves strictly from the app's own container: a call that lands here is
  * judged here. A miss is a typed NOT_FOUND, never a forward to another remote.
  */
-export function createLocalRunner(app: App): Transport {
-  return runnerFor(app, (key) => app.container.resolve<Facade>(key));
+export function createLocalRunner(app: App, surface?: string): Transport {
+  return runnerFor(app, (key) => app.container.resolve<Facade>(key), surface);
 }
 
 /**
  * Build the app runner — same judgment, but resolution follows the app's
  * topology: local façades and remote doublures alike. This is the runner
  * an app's own entry points (browser endpoint, bridges) stand on.
+ *
+ * `surface` is the audience this runner serves, and it belongs to the DOOR that
+ * builds the runner, never to the call: a caller cannot name its own audience
+ * any more than it can name its own identity (`state` is stamped server-side
+ * for the same reason). Reaching the admin door IS the proof. So `FrondCall`
+ * gains nothing and the wire format gains nothing — a remote frond's audience
+ * is simply which URL `remotes:` points at.
  */
-export function createAppRunner(app: App): Transport {
-  return runnerFor(app, (key) => app.resolve<Facade>(key));
+export function createAppRunner(app: App, surface?: string): Transport {
+  return runnerFor(app, (key) => app.resolve<Facade>(key), surface);
 }
 
-function runnerFor(app: App, resolveFacade: (key: string) => Facade): Transport {
+function runnerFor(app: App, resolveFacade: (key: string) => Facade, surface?: string): Transport {
   return async (call, invocation) => {
     if (call.entity === RPC_ENTITY) {
-      if (call.op === 'discover') return identityCardOf(app);
+      if (call.op === 'discover') return identityCardOf(app, surface);
       throw new FougereError({
         code: ErrorCode.NOT_FOUND,
         message: `Unknown rpc operation '${call.op}'`,
@@ -107,11 +134,13 @@ function runnerFor(app: App, resolveFacade: (key: string) => Facade): Transport 
 
     let facade: Facade;
     try {
-      facade = resolveFacade(`${call.entity}Handler`);
+      facade = resolveFacade(facadeKeyOf(call.entity, surface));
     } catch {
       throw new FougereError({
         code: ErrorCode.NOT_FOUND,
-        message: `Entity '${call.entity}' is not hosted here`,
+        message: surface
+          ? `Entity '${call.entity}' is not served on surface '${surface}'`
+          : `Entity '${call.entity}' is not hosted here`,
         entity: call.entity,
         operation: call.op,
       });

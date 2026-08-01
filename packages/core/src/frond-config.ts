@@ -37,7 +37,17 @@ export interface OperationOverride {
   handler?: abstract new (...args: any[]) => any;
   /** Method name on `handler` (defaults to the operation name). */
   method?: string;
-  /** CASL ability check (e.g. 'archive Post'). Evaluated before the handler runs. Opt-in. */
+  /**
+   * CASL ability check (e.g. 'archive Post'). **Declared, not implemented** — no
+   * reader interprets it today, in any adapter. Kept as the named slot for the
+   * question rather than silently dropped, but do not rely on it: a config that
+   * states a policy is not enforced anywhere.
+   *
+   * Wiring it means adopting a rules engine, which is precisely what the design
+   * turns down: an identity-dependent right is judged INSIDE the operation
+   * (`publish` reads `post.authorId !== user.id`), and a door-dependent one is a
+   * surface. Neither needs a second vocabulary evaluated by a second engine.
+   */
   policy?: string;
 
   // ── The contract itself — see the note above ──

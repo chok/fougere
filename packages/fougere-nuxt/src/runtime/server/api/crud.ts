@@ -25,8 +25,12 @@ export default defineEventHandler(async (event) => {
   const entity = frond.entities.find((e) => pluralize(e.name) === segments[1]);
   if (!entity) return;
 
+  // The default handler, explicitly: this catch-all IS the default surface, and
+  // the call below lands on the default façade. Without `!h.surface` the op list
+  // that arbitrates "segment = op or id" could come from a surface handler while
+  // the call went somewhere else — two answers for one route.
   const ops = [
-    ...(frond.handlers.find((h) => h.entityName === entity.name)?.operations.keys() ?? []),
+    ...(frond.handlers.find((h) => h.entityName === entity.name && !h.surface)?.operations.keys() ?? []),
   ];
 
   const method = event.method.toUpperCase();

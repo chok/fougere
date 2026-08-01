@@ -6,6 +6,7 @@ import { Logger, type LogLevel } from './builtins/logger.js';
 import { Config } from './builtins/config.js';
 import { EventBus } from './builtins/event-bus.js';
 import { createRemoteRouter, createRemoteFacade } from './remote.js';
+import { facadeKeyOf } from './call.js';
 
 import { computeBindingPlan, resolveArgs, type CollectorResolver } from './binding.js';
 import type { OperationContract } from './operation.js';
@@ -298,7 +299,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // Default handlers (no surface) — one per entity that declares one
     for (const entity of frond.entities) {
       const handler = defaultHandlerMap.get(entity.name);
-      const facadeKey = `${entity.name}Handler`;
+      const facadeKey = facadeKeyOf(entity.name);
       if (handler) buildFacade(entity, handler, scope, facadeKey);
 
       // Expose presenter instance (lazy — resolved on first access by bridge)
@@ -337,9 +338,26 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         surfaceScope.registerValue(ormName, guardStorage(scoped, entity.entityClass.getFields(), entity.name));
       }
 
-      const facadeKey = `${handler.surface}:${entity.name}Handler`;
+      const facadeKey = facadeKeyOf(entity.name, handler.surface);
       buildFacade(entity, handler, surfaceScope, facadeKey);
       frondLog.debug(`${facadeKey} [${Object.keys(container.resolve(facadeKey) as any).join(', ')}]`);
+    }
+
+    // A named surface is closed, so what it contains is a fact worth stating.
+    // Saying it at boot is the difference between a rule and a rule you can
+    // check: an entity you meant to serve and never wrote a handler for is
+    // absent HERE, in one line, instead of being discovered missing later.
+    const surfaceNames = [...new Set(surfaceHandlers.map((h) => h.surface as string))].sort();
+    for (const surfaceName of surfaceNames) {
+      const served = surfaceHandlers
+        .filter((h) => h.surface === surfaceName)
+        .map((h) => h.entityName)
+        .sort();
+      const absent = frond.entities.map((e) => e.name).filter((n) => !served.includes(n));
+      frondLog.info(
+        `surface '${surfaceName}' — ${served.length} entit${served.length === 1 ? 'y' : 'ies'}: ${served.join(', ')}` +
+        (absent.length > 0 ? ` (not served: ${absent.join(', ')})` : ''),
+      );
     }
 
     container.registerValue(`frond:${frond.name}`, scope);
@@ -381,11 +399,54 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     throw new Error(`Frond for '${entity}' is not loaded.`);
   };
 
+  const facadeAt = (key: string, topology: boolean): Record<string, Function> | undefined => {
+    try {
+      return topology
+        ? resolve<Record<string, Function>>(key)
+        : container.resolve<Record<string, Function>>(key);
+    } catch {
+      return undefined;
+    }
+  };
+
+  /**
+   * THE membership rule, stated once — every projection reads this and nothing
+   * else. It used to live twice, verbatim, in the REST and GraphQL adapters,
+   * and two other readers invented their own answer.
+   *
+   * Naming an audience closes it. Three ways to name an entity into a surface,
+   * in precedence order:
+   *   - `surfaces:` in frond.config.ts — when the list exists, it IS the list;
+   *   - a handler under `handlers/<surface>/` — which also restricts the façade;
+   *   - the `@expose` sugar, resolved into the same two by the scan.
+   * What none of them names is not served. It used to be the reverse: no
+   * `public:categoryHandler` meant the FULL CategoryHandler rode the public
+   * door, create/update/delete included (measured on demos/nuxt-blog).
+   *
+   * A named entity with no façade of its own falls back to the default one —
+   * that is not the old widening, it is the author saying "this one, as it is".
+   * The leak was exposure with no statement behind it.
+   *
+   * A surface key stays local: a doublure serves whatever the remote's own door
+   * serves, which is the remote's business and not ours to re-audience.
+   */
+  const facadeFor = (entity: string, surface?: string): Record<string, Function> | undefined => {
+    if (!surface) return facadeAt(facadeKeyOf(entity), true);
+
+    const own = facadeAt(facadeKeyOf(entity, surface), false);
+    const declared = fronds.find((f) => f.entities.some((e) => e.name === entity))?.surfaces?.[surface];
+    if (!declared) return own;
+    return declared.some((n) => n.toLowerCase() === entity.toLowerCase())
+      ? (own ?? facadeAt(facadeKeyOf(entity), false))
+      : undefined;
+  };
+
   return {
     container,
     fronds,
     resolve,
     schemaFor,
+    facadeFor,
     dispose: () => container.dispose(),
     use(...args: [AppMiddleware] | [string, AppMiddleware]): void {
       if (typeof args[0] === 'string') {
