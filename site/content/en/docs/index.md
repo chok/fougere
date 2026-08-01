@@ -61,6 +61,7 @@ in-process and ~12,900 req/s split. The split costs exactly the HTTP hop.
 **Concepts** — [Philosophy](/docs/concepts/philosophy) · [The Frond](/docs/concepts/frond)
 
 **Server side** — [Getting started](/docs/getting-started) · [Existing Nuxt app](/docs/existing-app) ·
+[The CLI](/docs/cli) ·
 [Entities](/docs/schema/entities) · [Views](/docs/schema/views) · [Handlers](/docs/business/handlers) ·
 [Collectors](/docs/business/collectors) · [Errors](/docs/business/errors) · [Seeds](/docs/business/seeds)
 

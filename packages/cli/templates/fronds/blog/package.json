@@ -2,9 +2,6 @@
   "name": "@frond/__name__",
   "version": "0.0.1",
   "type": "module",
-  "fougere": {
-    "frond": "__name__"
-  },
   "exports": {
     "./entities/*": "./entities/*.ts",
     "./package.json": "./package.json"

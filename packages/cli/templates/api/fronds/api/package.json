@@ -2,9 +2,6 @@
   "name": "@frond/api",
   "version": "0.0.1",
   "type": "module",
-  "fougere": {
-    "frond": "api"
-  },
   "exports": {
     "./entities/*": "./entities/*.ts",
     "./package.json": "./package.json"

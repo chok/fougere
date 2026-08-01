@@ -40,11 +40,13 @@ export default class ProjectWriter {
   addFrond(wsDir: string, template: string, name: string): { path: string } {
     const dest = join(wsDir, 'fronds', name);
     cpSync(join(TEMPLATES, 'fronds', template), dest, { recursive: true });
+    // Only the import name. Being under fronds/ is what makes it a frond — the
+    // scan reads directories, and no `fougere.frond` key was ever read by
+    // anything. Writing one taught a marker that does not exist.
     const pkgPath = join(dest, 'package.json');
     if (existsSync(pkgPath)) {
-      const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as { name: string; fougere?: unknown };
+      const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as { name: string };
       pkg.name = `@frond/${name}`;
-      pkg.fougere = { frond: name };
       writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
     }
     return { path: dest };

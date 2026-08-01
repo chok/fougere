@@ -2,9 +2,6 @@
   "name": "@frond/blog",
   "version": "0.0.1",
   "type": "module",
-  "fougere": {
-    "frond": "blog"
-  },
   "exports": {
     "./entities/*": "./entities/*.ts",
     "./package.json": "./package.json"
