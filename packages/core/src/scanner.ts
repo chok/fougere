@@ -79,10 +79,8 @@ function findWorkspaceRoot(from: string): string {
 
 // Convention
 
-const KINDS: Record<string, ProviderEntry['kind']> = {
-  services: 'service',
-  repositories: 'repository',
-};
+/** Directories whose classes register as providers — two spellings, one behaviour. */
+const PROVIDER_DIRS = ['services', 'repositories'] as const;
 
 export { toRegistrationName } from './contract.js';
 import { toRegistrationName } from './contract.js';
@@ -117,11 +115,11 @@ async function cachedPresenterMethods(filePath: string) {
   return methods;
 }
 
-async function toProvider(filePath: string, kind: ProviderEntry['kind']): Promise<ProviderEntry> {
+async function toProvider(filePath: string): Promise<ProviderEntry> {
   const ctor = await loadClass(filePath);
   const params = await cachedCtorParams(filePath);
   const deps = params.map((p) => p.type.name);
-  return { name: toRegistrationName(ctor.name), ctor, kind, deps, filePath };
+  return { name: toRegistrationName(ctor.name), ctor, deps, filePath };
 }
 
 async function toEntityEntry(filePath: string): Promise<EntityEntry | null> {
@@ -298,10 +296,10 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
   const collectors: CollectorEntry[] = [];
   const seeds: SeedEntry[] = [];
 
-  // Scan services/ and repositories/
-  for (const [dir, kind] of Object.entries(KINDS)) {
+  // Scan services/ and repositories/ — both land in the same provider list.
+  for (const dir of PROVIDER_DIRS) {
     const paths = await files(join(frondPath, dir));
-    providers.push(...await Promise.all(paths.map((f) => toProvider(f, kind))));
+    providers.push(...await Promise.all(paths.map((f) => toProvider(f))));
   }
 
   // Scan entities/

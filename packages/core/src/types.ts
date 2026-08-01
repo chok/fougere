@@ -5,14 +5,19 @@ import type { OperationContract, OperationsMap } from './operation.js';
 import type { AppMiddleware } from './middleware.js';
 import type { Transport } from './call.js';
 
-/** A discovered provider (service or repository). */
+/**
+ * A discovered provider — a class under `services/` or `repositories/`, injected by type.
+ *
+ * Which of the two directories it came from is deliberately not recorded. The scan used
+ * to tag it `kind: 'service' | 'repository'`, a field it filled on every provider and
+ * that **no consumer ever read** — the two directories are two spellings of the same
+ * thing, and DI resolves by type either way.
+ */
 export interface ProviderEntry {
   /** Registration key: class name with first letter lowercased. */
   name: string;
   /** The class constructor (default export of the file). */
   ctor: new (...args: unknown[]) => unknown;
-  /** Origin: 'service' or 'repository'. */
-  kind: 'service' | 'repository';
   /** Constructor dependency type names (from AST scan). */
   deps: string[];
   /** Absolute file path (for debugging). */

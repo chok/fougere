@@ -27,28 +27,21 @@ describe('scanProject', () => {
   it('discovers services', async () => {
     const result = await scanProject(fixturesRoot);
     const orders = result.fronds.find((f) => f.name === 'orders')!;
-    const serviceNames = orders.providers
-      .filter((p) => p.kind === 'service')
-      .map((p) => p.name);
-    expect(serviceNames).toContain('orderService');
+    expect(orders.providers.map((p) => p.name)).toContain('orderService');
   });
 
   it('discovers repositories', async () => {
     const result = await scanProject(fixturesRoot);
     const orders = result.fronds.find((f) => f.name === 'orders')!;
-    const repoNames = orders.providers
-      .filter((p) => p.kind === 'repository')
-      .map((p) => p.name);
-    expect(repoNames).toContain('orderRepository');
+    expect(orders.providers.map((p) => p.name)).toContain('orderRepository');
   });
 
-  it('sets correct kind for each provider', async () => {
+  // Two directories, one list: where a provider was found is not recorded, because
+  // nothing ever decided on it. DI resolves by type either way.
+  it('services/ and repositories/ land in the same provider list', async () => {
     const result = await scanProject(fixturesRoot);
     const orders = result.fronds.find((f) => f.name === 'orders')!;
-    const service = orders.providers.find((p) => p.name === 'orderService')!;
-    const repo = orders.providers.find((p) => p.name === 'orderRepository')!;
-    expect(service.kind).toBe('service');
-    expect(repo.kind).toBe('repository');
+    expect(orders.providers.map((p) => p.name).sort()).toEqual(['orderRepository', 'orderService']);
   });
 
   it('stores the constructor from default export', async () => {
