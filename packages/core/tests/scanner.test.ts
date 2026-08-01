@@ -194,3 +194,34 @@ describe('scanProject', () => {
     expect(typeof search.input!.getFields).toBe('function');
   });
 });
+
+// ── The frond's name ────────────────────────
+
+describe('frond naming', () => {
+  const nameRoot = join(import.meta.dirname, 'fixtures-frond-name');
+
+  it('names a frond after its directory when nothing says otherwise', async () => {
+    const result = await scanProject(nameRoot);
+    const plain = result.fronds.find((f) => f.source.path.endsWith('plain'))!;
+    expect(plain.name).toBe('plain');
+    expect(plain.source.package).toBe('@frond/plain');
+  });
+
+  /**
+   * The one thing the directory cannot say. `fronds/blog-v2/` still serves the frond
+   * called `blog`, so renaming on disk does not rename the entity keys, the `@frond/*`
+   * import, or a `remotes:` entry pointing at it.
+   */
+  it('honours `fougere.frond` in package.json as a rename', async () => {
+    const result = await scanProject(nameRoot);
+    const renamed = result.fronds.find((f) => f.source.path.endsWith('blog-v2'))!;
+    expect(renamed.name).toBe('blog');
+    expect(renamed.source.package).toBe('@frond/blog');
+    expect(renamed.entities.map((e) => e.name)).toEqual(['note']);
+  });
+
+  it('filters on the declared name, not the directory', async () => {
+    const result = await scanProject(nameRoot, ['blog']);
+    expect(result.fronds.map((f) => f.name)).toEqual(['blog']);
+  });
+});

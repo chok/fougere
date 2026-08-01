@@ -1,4 +1,4 @@
-import { readdir } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join, dirname, resolve as resolvePath } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -386,21 +386,44 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
   };
 }
 
+/**
+ * The frond's name — the directory, unless its `package.json` renames it.
+ *
+ * Being under `fronds/` is what makes a frond; the key never marked anything and
+ * nothing read it. It earns its keep as the one thing the directory cannot say: that
+ * `fronds/blog-v2/` serves the frond still called `blog` — so a rename on disk does not
+ * rename the entity keys, the `@frond/*` import or a `remotes:` entry.
+ */
+async function frondNameOf(frondPath: string, dirName: string): Promise<string> {
+  try {
+    const pkg = JSON.parse(await readFile(join(frondPath, 'package.json'), 'utf8')) as {
+      fougere?: { frond?: unknown };
+    };
+    const declared = pkg.fougere?.frond;
+    return typeof declared === 'string' && declared.length > 0 ? declared : dirName;
+  } catch {
+    return dirName;
+  }
+}
+
 export async function scanProject(root: string, filter?: string[]): Promise<ScanResult> {
   setCacheRoot(root);
 
   const frondsDir = join(root, 'fronds');
-  const names = await dirs(frondsDir);
+  const dirNames = await dirs(frondsDir);
   // Resolve workspace root (parent of packages/) for package import resolution
   // For monorepo: root is the project dir (e.g. demos/nuxt-blog), workspace root is the repo root
   const workspaceRoot = findWorkspaceRoot(root);
 
   const all = await Promise.all(
-    names.map((n) => scanFrond(
-      join(frondsDir, n), n,
-      { path: join(frondsDir, n), package: `@frond/${n}` },
-      workspaceRoot,
-    )),
+    dirNames.map(async (dir) => {
+      const name = await frondNameOf(join(frondsDir, dir), dir);
+      return scanFrond(
+        join(frondsDir, dir), name,
+        { path: join(frondsDir, dir), package: `@frond/${name}` },
+        workspaceRoot,
+      );
+    }),
   );
 
   const fronds = filter ? all.filter((f) => filter.includes(f.name)) : all;
