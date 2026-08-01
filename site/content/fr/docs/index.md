@@ -64,7 +64,7 @@ binding, collectors et SQLite compris ; la même app sert ~23 300 req/s in-proce
 **Côté serveur** — [Démarrer](/fr/docs/getting-started) · [App Nuxt existante](/fr/docs/existing-app) ·
 [La CLI](/fr/docs/cli) ·
 [Entités](/fr/docs/schema/entities) · [Vues](/fr/docs/schema/views) · [Handlers](/fr/docs/business/handlers) ·
-[Collectors](/fr/docs/business/collectors) · [Erreurs](/fr/docs/business/errors) · [Seeds](/fr/docs/business/seeds)
+[Presenters](/fr/docs/business/presenters) · [Collectors](/fr/docs/business/collectors) · [Erreurs](/fr/docs/business/errors) · [Seeds](/fr/docs/business/seeds)
 
 **Côté client** — [Queries & commands](/fr/docs/client/queries-commands) ·
 [Formulaires](/fr/docs/client/forms) · [Session](/fr/docs/client/session) · [invoke](/fr/docs/client/invoke)
