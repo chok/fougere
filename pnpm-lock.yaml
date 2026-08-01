@@ -207,6 +207,9 @@ importers:
       '@fougere/schema-rest':
         specifier: workspace:*
         version: link:../../../packages/schema-rest
+      '@fougere/transport-http':
+        specifier: workspace:*
+        version: link:../../../packages/transport/http
       '@hono/node-server':
         specifier: ^1.0.0
         version: 1.19.11(hono@4.12.9)

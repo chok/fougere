@@ -51,20 +51,29 @@ async function main() {
   });
 
   try {
-    await waitForServer(`http://localhost:${PORT}/_fougere/schema`);
+    await waitForServer(`http://localhost:${PORT}/api/posts`);
     pass('Remote server started');
 
-    // 2. Test schema endpoint
-    log('Fetching /_fougere/schema...');
-    const res = await fetch(`http://localhost:${PORT}/_fougere/schema`);
-    const data = await res.json() as any[];
+    // 2. Test discovery — rpc.discover on the envelope, the one surface
+    log('Calling rpc.discover...');
+    const res = await fetch(`http://localhost:${PORT}/_fougere/call`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'rpc.discover', params: { params: {}, query: {}, state: {} } }),
+    });
+    const card = (await res.json() as any).result;
 
-    if (!Array.isArray(data) || data.length === 0) fail('No fronds in schema response');
-    const blogFrond = data.find((f: any) => f.frond === 'blog');
-    if (!blogFrond) fail('Blog frond not found in schema');
-    if (!blogFrond.entities.find((e: any) => e.title === 'post')) fail('Post entity not in schema');
-    if (!blogFrond.entities.find((e: any) => e.title === 'author')) fail('Author entity not in schema');
-    pass(`Schema endpoint returns ${blogFrond.entities.length} entities`);
+    if (!card?.fronds?.length) fail('No fronds in identity card');
+    const blogFrond = card.fronds.find((f: any) => f.name === 'blog');
+    if (!blogFrond) fail('Blog frond not found in identity card');
+    const post = blogFrond.entities.find((e: any) => e.name === 'post');
+    const author = blogFrond.entities.find((e: any) => e.name === 'author');
+    if (!post) fail('Post entity not in identity card');
+    if (!author) fail('Author entity not in identity card');
+    // Hosting means answering: the card carries the ops, not just the shape.
+    if (!post.ops?.includes('list')) fail('Post ops missing from identity card');
+    if (!post.schema?.properties) fail('Post schema missing from identity card');
+    pass(`rpc.discover returns ${blogFrond.entities.length} entities with their ops`);
 
     // 3. Test REST API works
     log('Testing REST API...');

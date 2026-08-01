@@ -3,14 +3,17 @@
  *
  * Exposes:
  * - REST CRUD on /api/posts, /api/authors
- * - GET /_fougere/schema for `fougere sync`
+ * - POST /_fougere/call — the envelope, which answers `rpc.discover` with the
+ *   identity card `fougere sync` reads. One discovery surface, not two: a
+ *   dedicated GET used to publish every entity, façade or not.
  */
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
-import { createApp, setModuleLoader } from '@fougere/core';
+import { createApp, setModuleLoader, createLocalRunner } from '@fougere/core';
 import { createContainer } from '@fougere/container-fougere';
 import { createHonoRouter } from '@fougere/http';
-import { generateRoutes, registerRoutes, registerSchemaEndpoint } from '@fougere/schema-rest';
+import { handleRpc } from '@fougere/transport-http';
+import { generateRoutes, registerRoutes } from '@fougere/schema-rest';
 
 const PORT = Number(process.env.PORT ?? 4001);
 
@@ -34,8 +37,10 @@ async function main() {
   const routes = generateRoutes(app, { prefix: '/api' });
   registerRoutes(router, routes);
 
-  // Schema endpoint for `fougere sync`
-  registerSchemaEndpoint(router, app);
+  // The envelope — same wire as process-to-process, and the surface `fougere sync`
+  // reads (rpc.discover).
+  const runner = createLocalRunner(app);
+  hono.post('/_fougere/call', async (c) => c.json(await handleRpc(runner, await c.req.json()) as never));
 
   // Seed some data
   const postHandler = app.resolve<Record<string, Function>>('postHandler');
@@ -48,7 +53,7 @@ async function main() {
     console.log('  \x1b[32m\uD83C\uDF3F fougere\x1b[0m  remote-blog');
     console.log('');
     console.log(`  \x1b[2m\u279C\x1b[0m  REST     http://localhost:${PORT}/api/posts`);
-    console.log(`  \x1b[2m\u279C\x1b[0m  Schema   http://localhost:${PORT}/_fougere/schema`);
+    console.log(`  \x1b[2m\u279C\x1b[0m  Call     http://localhost:${PORT}/_fougere/call  (rpc.discover)`);
     console.log('');
   });
 }

@@ -14,9 +14,9 @@ import type { SchemaDescriptor } from '@fougere/schema';
 const REMOTE_URL = process.env.REMOTE_URL ?? 'http://localhost:4001';
 const CWD = import.meta.dirname;
 
-interface SchemaResponse {
-  frond: string;
-  entities: SchemaDescriptor[];
+/** The identity card a host serves on `rpc.discover` — one entry per hosted entity. */
+interface IdentityCard {
+  fronds: Array<{ name: string; entities: Array<{ name: string; ops: string[]; schema: SchemaDescriptor }> }>;
 }
 
 function capitalize(s: string): string {
@@ -24,21 +24,29 @@ function capitalize(s: string): string {
 }
 
 async function sync() {
-  console.log(`Syncing from ${REMOTE_URL}/_fougere/schema ...`);
+  console.log(`Syncing from ${REMOTE_URL}/_fougere/call (rpc.discover) ...`);
 
-  const res = await fetch(`${REMOTE_URL}/_fougere/schema`);
+  // The envelope every consumer already speaks — no side endpoint. It answers
+  // with what the host SERVES: an entity with no façade is absent, so a synced
+  // schema always has something to call on it.
+  const res = await fetch(`${REMOTE_URL}/_fougere/call`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'rpc.discover', params: { params: {}, query: {}, state: {} } }),
+  });
   if (!res.ok) throw new Error(`Failed: ${res.status} ${res.statusText}`);
 
-  const fronds = (await res.json()) as SchemaResponse[];
+  const rpc = (await res.json()) as { result?: IdentityCard; error?: { message: string } };
+  if (rpc.error) throw new Error(`Remote error: ${rpc.error.message}`);
 
-  for (const frond of fronds) {
-    const frondDir = join(CWD, '.fougere', 'remotes', frond.frond);
+  for (const frond of rpc.result!.fronds) {
+    const frondDir = join(CWD, '.fougere', 'remotes', frond.name);
     const entitiesDir = join(frondDir, 'entities');
     mkdirSync(entitiesDir, { recursive: true });
 
     const entityNames: string[] = [];
 
-    for (const descriptor of frond.entities) {
+    for (const { schema: descriptor } of frond.entities) {
       const className = capitalize(descriptor.title ?? 'Entity');
       entityNames.push(className);
 
@@ -56,7 +64,7 @@ async function sync() {
       ].join('\n');
 
       writeFileSync(join(entitiesDir, `${className}.ts`), code);
-      console.log(`  Generated ${frond.frond}/entities/${className}.ts`);
+      console.log(`  Generated ${frond.name}/entities/${className}.ts`);
     }
 
     // Barrel index
@@ -67,10 +75,10 @@ async function sync() {
 
     // Package.json
     writeFileSync(join(frondDir, 'package.json'), JSON.stringify({
-      name: `@frond/${frond.frond}`,
+      name: `@frond/${frond.name}`,
       version: '0.0.0-synced',
       type: 'module',
-      fougere: { frond: frond.frond, synced: true, source: REMOTE_URL },
+      fougere: { frond: frond.name, synced: true, source: REMOTE_URL },
       exports: {
         '.': './index.ts',
         './entities/*': './entities/*.ts',
@@ -85,10 +93,10 @@ async function sync() {
   if (existsSync(registryPath)) {
     try { registry = JSON.parse(readFileSync(registryPath, 'utf-8')); } catch { /* reset */ }
   }
-  for (const frond of fronds) {
-    registry[frond.frond] = {
+  for (const frond of rpc.result!.fronds) {
+    registry[frond.name] = {
       url: REMOTE_URL,
-      path: join(CWD, '.fougere', 'remotes', frond.frond),
+      path: join(CWD, '.fougere', 'remotes', frond.name),
     };
   }
   writeFileSync(registryPath, JSON.stringify(registry, null, 2) + '\n');
