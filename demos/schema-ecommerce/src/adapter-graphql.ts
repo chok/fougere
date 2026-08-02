@@ -2,7 +2,7 @@
  * Adapter GraphQL — schema Pothos généré depuis les entités fougere
  */
 import SchemaBuilder from '@pothos/core';
-import { registerType, registerInput, registerOperations } from '@fougere/schema-graphql';
+import { registerType, registerInput, registerOperations } from '@fougere/schema-graphql/pothos';
 import { categoryOrm, productOrm, customerOrm, orderLineOrm, orderOrm } from './db.js';
 import {
   Category, Product, Customer, OrderLine, Order,
