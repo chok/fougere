@@ -10,8 +10,8 @@ the validation, the input contract, the write and the output shape. No migration
 DTO to keep in step, no permitted-params list.
 
 ```ts
-// fronds/<frond>/entities/Order.ts — and nothing else
-discount_percent: number({ integer: true, min: 0, max: 100, default: 0 }),
+// fronds/<frond>/entities/Product.ts — and nothing else
+sku: text({ min: 3, max: 32 }),
 ```
 
 Two consequences worth stating, because they are what makes it hold:
