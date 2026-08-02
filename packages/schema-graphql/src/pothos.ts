@@ -27,6 +27,14 @@ export interface TypeConfig {
   presenterFields?: string[];
   /** Per-field type metadata from source parsing. */
   presenterFieldMeta?: { name: string; returnType?: string; nullable?: boolean }[];
+  /**
+   * The view a computed field emits, when the presenter declared one — the object type
+   * to build for it. Without a declaration the scan reads a scalar or nothing, and an
+   * object-valued field can only be serialized.
+   */
+  presenterViews?: Record<string, EntityClass | [EntityClass]>;
+  /** Builds (or reuses) the GraphQL object type for a declared view. */
+  viewType?: (view: EntityClass, fieldName: string) => any;
 }
 
 export interface RelationConfig {
@@ -375,6 +383,16 @@ export function registerType(builder: InstanceType<typeof SchemaBuilder>, config
           const meta = metaMap.get(name);
           const nullable = meta?.nullable ?? true;
           const resolve = (parent: any) => (fn as Function).call(config.presenter, parent);
+
+          // The presenter STATED what this field emits — build its type instead of guessing.
+          const declared = config.presenterViews?.[name];
+          if (declared && config.viewType) {
+            const isList = Array.isArray(declared);
+            const view = (isList ? declared[0] : declared) as EntityClass;
+            const viewRef = config.viewType(view, name);
+            result[name] = t.field({ type: isList ? [viewRef] : viewRef, nullable, resolve });
+            continue;
+          }
 
           // Map inferred return type → GraphQL scalar
           switch (meta?.returnType) {

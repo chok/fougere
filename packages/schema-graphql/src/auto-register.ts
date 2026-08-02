@@ -130,6 +130,26 @@ export interface RegisterAllOptions {
  * Operations are driven by parsed handler signatures (from the scanner).
  * Relations (ref/many) are auto-wired between registered entity types.
  */
+/**
+ * The GraphQL type of a declared presenter view, built once per view class.
+ *
+ * Named after the field that emits it (`OrderItems`, `OrderUser`) rather than after the view
+ * class, so two fields sharing one view still land on the same type and a view used twice is
+ * registered once — Pothos refuses a duplicate type name and would take the schema down.
+ */
+const viewTypes = new WeakMap<object, any>();
+function viewTypeOf(
+  builder: InstanceType<typeof SchemaBuilder>,
+  view: any,
+  name: string,
+): any {
+  const known = viewTypes.get(view);
+  if (known) return known;
+  const type = registerType(builder, { name, entity: view });
+  viewTypes.set(view, type);
+  return type;
+}
+
 export function registerAll(
   builder: InstanceType<typeof SchemaBuilder>,
   app: AppLike,
@@ -181,6 +201,8 @@ export function registerAll(
         presenter: presenter as any,
         presenterFields: presenterMeta?.fields,
         presenterFieldMeta: presenterMeta?.fieldMeta,
+        presenterViews: presenterMeta?.views as any,
+        viewType: (view, fieldName) => viewTypeOf(builder, view, `${typeName}${capitalize(fieldName)}`),
       });
 
       // Track for relation wiring — key is entity class. The presenter's computed field
