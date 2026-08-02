@@ -194,8 +194,13 @@ export class SqlEntityOrm {
     );
   }
 
-  async list(options?: ListOptions & SelectOption): Promise<ListResult<Record<string, unknown>>> {
+  async list(options?: ListOptions & SelectOption & { where?: Record<string, unknown> }): Promise<ListResult<Record<string, unknown>>> {
     let query = this.db.selectFrom(this.table.name).selectAll();
+
+    // The criteria a caller states — `list({ where: { orderId } })`, and the whole of
+    // `listBy`. Named `where` rather than spread across the options so an unknown key
+    // stays what it always was (ignored) instead of silently becoming a filter.
+    if (options?.where) query = this.whereAll(query as any, options.where) as any;
 
     // Cursor-based: fetch after a given id (uses the first PK field).
     if (options?.after) {

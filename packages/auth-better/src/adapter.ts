@@ -76,7 +76,7 @@ export function fougereAdapter(ormMap: OrmMap) {
           const found = await orm.findById(criteria.id as string);
           return (found ?? null) as never;
         }
-        const found = await (orm as OrmWithFindBy).findBy(criteria);
+        const found = await orm.findBy(criteria);
         return (found ?? null) as never;
       },
 
@@ -96,7 +96,7 @@ export function fougereAdapter(ormMap: OrmMap) {
         const orm = getOrm(ormMap, model);
         if (where && where.length > 0) {
           const criteria = whereToCriteria(where);
-          const rows = await (orm as OrmWithFindBy).findAllBy(criteria);
+          const rows = await orm.findAllBy(criteria);
           return applyClientSidePagination(rows, sortBy, offset, limit) as never;
         }
         const rows = await orm.list({
@@ -112,7 +112,7 @@ export function fougereAdapter(ormMap: OrmMap) {
         const orm = getOrm(ormMap, model);
         if (where && where.length > 0) {
           const criteria = whereToCriteria(where);
-          const rows = await (orm as OrmWithFindBy).findAllBy(criteria);
+          const rows = await orm.findAllBy(criteria);
           return rows.length;
         }
         const rows = await orm.list({ count: true });
@@ -124,7 +124,7 @@ export function fougereAdapter(ormMap: OrmMap) {
         const criteria = whereToCriteria(where);
         const target = 'id' in criteria
           ? await orm.findById(criteria.id as string)
-          : await (orm as OrmWithFindBy).findBy(criteria);
+          : await orm.findBy(criteria);
         if (!target) return null;
         return (await orm.update(target.id as string, update as Partial<Record<string, unknown>>)) as T;
       },
@@ -132,7 +132,7 @@ export function fougereAdapter(ormMap: OrmMap) {
       updateMany: async ({ model, where, update }: { model: string; where: CleanedWhere[]; update: Record<string, unknown> }) => {
         const orm = getOrm(ormMap, model);
         const criteria = whereToCriteria(where);
-        const targets = await (orm as OrmWithFindBy).findAllBy(criteria);
+        const targets = await orm.findAllBy(criteria);
         await Promise.all(targets.map((t) => orm.update(t.id as string, update)));
         return targets.length;
       },
@@ -142,14 +142,14 @@ export function fougereAdapter(ormMap: OrmMap) {
         const criteria = whereToCriteria(where);
         const target = 'id' in criteria
           ? await orm.findById(criteria.id as string)
-          : await (orm as OrmWithFindBy).findBy(criteria);
+          : await orm.findBy(criteria);
         if (target) await orm.delete(target.id as string);
       },
 
       deleteMany: async ({ model, where }: { model: string; where: CleanedWhere[] }) => {
         const orm = getOrm(ormMap, model);
         const criteria = whereToCriteria(where);
-        const targets = await (orm as OrmWithFindBy).findAllBy(criteria);
+        const targets = await orm.findAllBy(criteria);
         await Promise.all(targets.map((t) => orm.delete(t.id as string)));
         return targets.length;
       },
@@ -161,11 +161,6 @@ export function fougereAdapter(ormMap: OrmMap) {
  * Augmented EntityOrm shape — the core interface doesn't expose findBy/findAllBy
  * but SqlEntityOrm (the only impl today) does. Cast locally to use them.
  */
-interface OrmWithFindBy extends EntityOrm {
-  findBy(criteria: Record<string, unknown>): Promise<Record<string, unknown> | undefined>;
-  findAllBy(criteria: Record<string, unknown>): Promise<Array<Record<string, unknown>>>;
-}
-
 /**
  * EntityOrm.findAllBy doesn't expose pagination/sort, so we apply them in JS
  * after fetching the eq-filtered rows. Fine for auth volumes (orgs/sessions/accounts).
