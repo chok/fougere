@@ -66,6 +66,8 @@ export { many } from './vocabulary/many.js';
 export { optional } from './vocabulary/optional.js';
 export { nullable } from './vocabulary/nullable.js';
 export { immutable } from './vocabulary/immutable.js';
+export { unique } from './vocabulary/unique.js';
+export { indexed } from './vocabulary/indexed.js';
 export { readOnly } from './vocabulary/readOnly.js';
 export { writeOnly } from './vocabulary/writeOnly.js';
 export { json } from './vocabulary/json.js';

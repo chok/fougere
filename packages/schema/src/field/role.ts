@@ -4,10 +4,11 @@
 // an absent collection defaults to `[]` and that a supplied one must be an array
 // (`projections/validation.ts`). The earlier claim "never by validation" was false.
 //
-// `unique` and `index` are DEAD: no vocabulary word produces them, no DDL emits them,
-// no consumer decides on them — `describe`/`reconstruct` merely carry them, so a
-// portable card can promise a uniqueness nothing enforces. They are storage hints
-// wearing a graph axis; `hints` is their home. Remove rather than implement here.
+// `unique` and `index` are STORAGE facts, and the only axis member realized outside the
+// framework: `unique(...)`/`indexed(...)` set them, the DDL emits the constraint and the
+// index, and the database enforces uniqueness on every write — including ones Fougere
+// never saw. A collision therefore surfaces as the driver's error, never as a
+// `validate()` failure: judging one value can never see the other rows.
 
 export type EntityConstructor = abstract new (...args: any[]) => any;
 

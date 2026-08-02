@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   entity, primary, text, number, oneOf, list, optional, nullable,
   nullableShape, anatomy, isNullable, registerGenerator, resolveCustomGenerator,
-  validateFields,
+  validateFields, unique, indexed, describe as describeSchema, reconstruct,
 } from '../src/index.js';
 
 // ─── nullableShape / anatomy — the two gates of the union, per shape genre ──
@@ -141,5 +141,46 @@ describe('descriptor carries the axes verbatim', () => {
     const card = describeCard(Memo, 'memo');
     expect(card.properties.note.type).toEqual(['string', 'null']);
     expect(card.required).toContain('note'); // nullable-but-required survives the wire
+  });
+});
+
+// ─── role.unique / role.index — the axis members storage realizes ──
+
+describe('unique / indexed — declared here, enforced by the storage', () => {
+  class Account extends entity({
+    id: primary(),
+    email: unique(text()),
+    city: indexed(optional(text())),
+    bio: optional(text()),
+  }) {}
+
+  const fields = Account.getFields();
+
+  it('sets the role flag and leaves every other axis alone', () => {
+    expect(fields.email.role?.unique).toBe(true);
+    expect(fields.city.role?.index).toBe(true);
+    // The wrapper composes: `indexed(optional(...))` keeps the optionality.
+    expect(fields.city.lifecycle?.create).toBe('optional');
+    expect(fields.bio.role?.unique).toBeUndefined();
+  });
+
+  /**
+   * The shape is untouched, and that is the point: uniqueness is not a property of a
+   * value. Judging one input can never see the other rows, so `validate` must stay
+   * silent about it — a collision is the database's answer, not the judge's.
+   */
+  it('does not make the judge refuse a duplicate — it cannot see the other rows', () => {
+    expect(Account.validate({ id: 'a', email: 'x@y.z' }).success).toBe(true);
+    expect(Account.validate({ id: 'b', email: 'x@y.z' }).success).toBe(true);
+  });
+
+  it('travels on the card, both ways', () => {
+    const card = describeSchema(Account, 'account');
+    expect(card.properties.email['x-fougere']).toMatchObject({ role: { unique: true } });
+    expect(card.properties.city['x-fougere']).toMatchObject({ role: { index: true } });
+
+    const rebuilt = reconstruct(card);
+    expect(rebuilt.getFields().email.role?.unique).toBe(true);
+    expect(rebuilt.getFields().city.role?.index).toBe(true);
   });
 });
