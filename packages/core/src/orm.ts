@@ -41,6 +41,28 @@ export interface ListResult<T> extends Array<T> {
   hasMore?: boolean;
 }
 
+/**
+ * The keys `list()` answers to. Anything else is a mistake, and saying so is the point:
+ * the façade refuses an unknown key in a CLIENT's input (`Unknown field`) — this applies the
+ * same rule to the framework's own arguments. `list({ orderId })` used to be accepted and
+ * the filter dropped, so a one-to-many relation quietly returned the whole table.
+ */
+export const LIST_OPTION_KEYS = [
+  'limit', 'offset', 'page', 'after', 'orderBy', 'order', 'count', 'where', 'select',
+] as const;
+
+/** Refuse an option the port does not answer to, naming it and what was expected. */
+export function assertListOptions(options: object | undefined, entity: string): void {
+  if (!options) return;
+  const legal = new Set<string>(LIST_OPTION_KEYS);
+  const strangers = Object.keys(options).filter((key) => !legal.has(key));
+  if (strangers.length === 0) return;
+  throw new Error(
+    `${entity}.list(): unknown option ${strangers.map((s) => `\`${s}\``).join(', ')}. ` +
+    `Known options are ${LIST_OPTION_KEYS.join(', ')} — to filter, pass \`where: { ${strangers[0]}: … }\`.`,
+  );
+}
+
 /** Select option — restrict returned fields to those of a SchemaLike. */
 export interface SelectOption {
   select?: SchemaLike;

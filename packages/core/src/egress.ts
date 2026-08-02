@@ -26,6 +26,7 @@
  */
 import { checkValue, encodeFields, type Fields } from '@fougere/schema';
 import { ErrorCode, FougereError } from './middleware.js';
+import { assertListOptions } from './orm.js';
 
 // ─── 1 · Judge ──────────────────────────────────────────────
 
@@ -197,6 +198,18 @@ export function guardStorage<T extends object>(orm: T, fields: Fields, entityNam
     judgeEgress(fields, args[1], entityName, 'update');
     return base.update.apply(this, args);
   };
+
+  // A read is judged too, on its ARGUMENTS. The façade refuses an unknown key in a client's
+  // input; the same rule applied to the port's own options closes the mirror image of that
+  // hole: `list({ orderId })` was accepted, the criterion dropped, and a one-to-many relation
+  // quietly answered with the whole table. An option nobody reads must say so.
+  const reader = orm as unknown as { list?: (...args: unknown[]) => unknown };
+  if (typeof reader.list === 'function') {
+    (guarded as unknown as typeof reader).list = async function (...args: unknown[]) {
+      assertListOptions(args[0] as object | undefined, entityName);
+      return (reader.list as Function).apply(this, args);
+    };
+  }
 
   return guarded;
 }
