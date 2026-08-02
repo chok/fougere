@@ -9,13 +9,15 @@ interface HonoLike {
   get(path: string, handler: Function): void;
   post(path: string, handler: Function): void;
   put(path: string, handler: Function): void;
+  patch(path: string, handler: Function): void;
   delete(path: string, handler: Function): void;
 }
 
-const METHOD_MAP: Record<HttpMethod, 'get' | 'post' | 'put' | 'delete'> = {
+const METHOD_MAP: Record<HttpMethod, 'get' | 'post' | 'put' | 'patch' | 'delete'> = {
   GET: 'get',
   POST: 'post',
   PUT: 'put',
+  PATCH: 'patch',
   DELETE: 'delete',
 };
 

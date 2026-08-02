@@ -5,7 +5,7 @@
  * Consumers (schema-rest, schema-graphql) program against it.
  */
 
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 export interface RequestContext {
   /** The original Web Standard Request — source of truth. */
