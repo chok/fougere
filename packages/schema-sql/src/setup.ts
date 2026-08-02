@@ -30,18 +30,12 @@ export interface Setup {
   /** Runs raw statements — what `autoMigrate` writes through. */
   sink: SqlSink;
   /**
-   * The way past every judge, named as such.
+   * The Kysely instance, for what precedes any entity: `migrate(app, setup)` writes the
+   * schema through it, and a script may need it before a container exists.
    *
-   * A statement issued on this Kysely instance meets neither the façade nor
-   * `guardStorage`: a value the entity refuses lands in the table without a word. It used
-   * to sit at the top level as `db`, where it read as the ordinary way in — an agent
-   * writing its own GraphQL resolver took it and lost the domain's rules on that whole
-   * surface (measured 2026-08-02). Reads and writes belong on the injected `EntityOrm`;
-   * `migrate(app, setup)` covers the schema. What is left is the aggregate no port
-   * answers — worth reaching for, worth typing the word.
+   * It is not the way to reach data from inside an app — that is the injected `EntityOrm`,
+   * whose `client` gives the same handle while keeping the scope of its entity.
    */
-  unguarded: { db: Kysely<any> };
-  /** @deprecated Use `migrate(app, setup)`, or `setup.unguarded.db` where nothing else answers. */
   db: Kysely<any>;
 }
 
@@ -62,7 +56,7 @@ export function setupKysely(
   opts: SetupOptions = {},
 ): Setup {
   const db = new Kysely<any>({ dialect: kyselyDialect });
-  return { db, unguarded: { db }, dialect, ormFactory: createOrmFactory(db, opts.ormFactoryOptions), sink: sqlSink(db) };
+  return { db, dialect, ormFactory: createOrmFactory(db, opts.ormFactoryOptions), sink: sqlSink(db) };
 }
 
 export function setupSqlite(opts: SqliteSetupOptions = {}): SqliteSetup {
@@ -75,7 +69,6 @@ export function setupSqlite(opts: SqliteSetupOptions = {}): SqliteSetup {
   const db = new Kysely<any>({ dialect: new SqliteDialect({ database: sqlite }) });
   return {
     db,
-    unguarded: { db },
     sqlite,
     dialect: 'sqlite',
     ormFactory: createOrmFactory(db, opts.ormFactoryOptions),

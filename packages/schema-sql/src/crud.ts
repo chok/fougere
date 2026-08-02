@@ -138,6 +138,11 @@ export class SqlEntityOrm {
     this.selectFields = selectFields;
   }
 
+  /** The Kysely instance this ORM wraps — no judge sits behind it. See EntityOrm.client. */
+  get client(): Kysely<any> {
+    return this.db;
+  }
+
   /** Returns a scoped ORM that restricts all read results to the fields of the given schema. */
   output(schema: SchemaLike): SqlEntityOrm {
     const scoped = Object.create(this) as SqlEntityOrm;

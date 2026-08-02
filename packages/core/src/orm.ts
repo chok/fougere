@@ -89,6 +89,18 @@ export interface EntityOrm<T = Record<string, unknown>> {
   delete(id: string): Promise<boolean>;
   /** Returns a scoped ORM that restricts all read results to the fields of the given schema. */
   output(schema: SchemaLike): EntityOrm<T>;
+  /**
+   * What this ORM wraps — the Kysely instance for the SQL one, something else elsewhere.
+   *
+   * Every judge sits on the ORM's own methods, so a statement issued here meets none of
+   * them: a value the entity refuses lands in the table without a word. It is the port's
+   * own escape hatch rather than a handle on the side, so it keeps the scope the container
+   * gave you — `productOrm.client` reaches the products, not the whole database.
+   *
+   * `unknown` on purpose: the client belongs to the implementation, and narrowing it is
+   * the caller saying out loud which one they are standing on.
+   */
+  readonly client: unknown;
 }
 
 /**

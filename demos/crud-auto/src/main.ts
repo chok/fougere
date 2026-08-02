@@ -29,7 +29,7 @@ const app = await createApp({
 });
 
 // Bring the schema up to date from the scanned entities
-await migrate(app, db);
+await migrate(app, setup);
 
 // --- GraphQL schema (auto-generated) ------------------
 

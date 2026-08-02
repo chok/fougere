@@ -21,6 +21,7 @@ function fakeOrm(overrides: Partial<EntityOrm> = {}): EntityOrm {
     create: vi.fn(async () => ({})),
     update: vi.fn(async () => ({})),
     delete: vi.fn(async () => true),
+    client: undefined,
     output: () => orm,
     ...overrides,
   };
