@@ -171,11 +171,17 @@ export async function planMigration(
  * create-if-not-exists pass: it also catches a field added to an existing entity,
  * which used to be silently ignored.
  */
+/**
+ * Bring the schema up to date. Takes the setup itself — `migrate(app, setup)` — so the
+ * common case never has to reach into `setup.db`, the one handle that meets no judge.
+ * A bare Kysely instance is still accepted, for a caller who holds only that.
+ */
 export async function migrate(
   app: AppLike,
-  db: Kysely<any>,
+  target: Kysely<any> | { db: Kysely<any> },
   options?: GenerateOptions,
 ): Promise<Change[]> {
+  const db = (target as { db?: Kysely<any> }).db ?? (target as Kysely<any>);
   const { changes, statements } = await planMigration(app, db, options);
   for (const statement of statements) {
     await sql.raw(statement).execute(db);
