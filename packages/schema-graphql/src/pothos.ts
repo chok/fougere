@@ -356,14 +356,25 @@ export function registerType(builder: InstanceType<typeof SchemaBuilder>, config
         const metaMap = new Map(
           (config.presenterFieldMeta ?? []).map((m) => [m.name, m]),
         );
-        for (const [name, fn] of Object.entries(config.presenter)) {
+        // The names the scan found, looked up on the instance — never `Object.entries`.
+        // A presenter is a class instance: its methods live on the prototype, so own
+        // enumerable properties are its INJECTED DEPENDENCIES and nothing else. Enumerating
+        // them added no computed field at all and would have exposed the ORMs if any name
+        // had matched — an Order reached GraphQL with neither user, items nor total, while
+        // REST carried all three from the same presenter.
+        const names = config.presenterFields ?? Object.getOwnPropertyNames(
+          Object.getPrototypeOf(config.presenter),
+        );
+        for (const name of names) {
           if (name === 'constructor') continue;
           if (allowed && !allowed.has(name)) continue;
           if (result[name]) continue; // entity field takes precedence
+          const fn = (config.presenter as Record<string, unknown>)[name];
+          if (typeof fn !== 'function') continue;
 
           const meta = metaMap.get(name);
           const nullable = meta?.nullable ?? true;
-          const resolve = (parent: any) => fn.call(config.presenter, parent);
+          const resolve = (parent: any) => (fn as Function).call(config.presenter, parent);
 
           // Map inferred return type → GraphQL scalar
           switch (meta?.returnType) {
@@ -374,8 +385,22 @@ export function registerType(builder: InstanceType<typeof SchemaBuilder>, config
               result[name] = t.boolean({ nullable, resolve });
               break;
             case 'string':
-            default:
               result[name] = t.string({ nullable, resolve });
+              break;
+            default:
+              // The scan could not name a scalar: the method returns an object, a list, or
+              // nothing it can read. Serialize, exactly as an `object`-shaped entity field
+              // does — a String typing without serialization made GraphQL coerce the value
+              // to "[object Object]", and any client selecting subfields got a schema error
+              // on a field that REST served whole.
+              result[name] = t.string({
+                nullable,
+                resolve: async (parent: any) => {
+                  const value = await resolve(parent);
+                  if (value == null) return null;
+                  return typeof value === 'string' ? value : JSON.stringify(value);
+                },
+              });
               break;
           }
         }

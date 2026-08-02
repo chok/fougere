@@ -15,6 +15,16 @@ import { registerType, registerOperations } from './pothos.js';
 type HandlerFacade = Record<string, Function>;
 
 /**
+ * The relation a foreign key points at — `authorId → author`, `user_id → user`.
+ * Returns undefined when the field carries no id suffix at all: there is nothing to
+ * derive, and taking the scalar's own name would collide with it.
+ */
+function relationNameFor(fieldName: string): string | undefined {
+  const stripped = fieldName.replace(/(_id|Id|ID)$/, '');
+  return stripped && stripped !== fieldName ? stripped : undefined;
+}
+
+/**
  * Redirect specific ops to alternate handlers based on frond.config.ts overrides.
  * For ops declaring `handler: OtherClass, method?: 'name'`, replaces the facade entry
  * with a call into the resolved alternate handler.
@@ -126,7 +136,10 @@ export function registerAll(
   options?: RegisterAllOptions,
 ): void {
   // Collect registered types across all fronds for relation wiring
-  const typeRegistry = new Map<any, { name: string; type: any; facade: HandlerFacade }>();
+  const typeRegistry = new Map<
+    any,
+    { name: string; type: any; facade: HandlerFacade; presenterFields: Set<string> }
+  >();
 
   // ── Pass 1: register types + operations ────────
 
@@ -170,8 +183,12 @@ export function registerAll(
         presenterFieldMeta: presenterMeta?.fieldMeta,
       });
 
-      // Track for relation wiring — key is entity class
-      typeRegistry.set(entity.entityClass, { name: typeName, type, facade });
+      // Track for relation wiring — key is entity class. The presenter's computed field
+      // names travel too: pass 2 must not derive a relation over a name the author wrote.
+      typeRegistry.set(entity.entityClass, {
+        name: typeName, type, facade,
+        presenterFields: new Set(presenterMeta?.fields ?? []),
+      });
 
       // Apply per-op handler/method overrides: redirect specific ops to a different handler instance.
       const opOverrides = frond.operationsOverrides;
@@ -191,6 +208,8 @@ export function registerAll(
 
   // ── Pass 2: auto-wire relations (ref → N:1, many → 1:N) ──
 
+  const presenterFieldsOf = (cls: any) => typeRegistry.get(cls)?.presenterFields ?? new Set<string>();
+
   for (const [entityClass, { type }] of typeRegistry) {
     const fields = entityClass.getFields() as Fields;
     const relationFields: Record<string, (t: any) => any> = {};
@@ -202,8 +221,15 @@ export function registerAll(
         const targetEntry = typeRegistry.get(target);
         if (!targetEntry) continue;
 
-        // authorId → author
-        const relationName = fieldName.replace(/Id$/, '');
+        // authorId → author, user_id → user. Both spellings, because a foreign key
+        // is named by its author and `/Id$/` alone left `user_id` untouched — the
+        // relation then took the scalar's own name and Pothos refused the duplicate,
+        // taking the WHOLE schema down with it.
+        const relationName = relationNameFor(fieldName);
+        // Nothing to strip, or the name is already taken by a field of the entity or by
+        // a presenter's computed field: the author named it, the author wins. Deriving
+        // over it would either crash the build or shadow what they wrote.
+        if (!relationName || relationName in fields || presenterFieldsOf(entityClass).has(relationName)) continue;
         const nullable = isNullable(field.shape);
 
         relationFields[relationName] = (t: any) => t.field({
