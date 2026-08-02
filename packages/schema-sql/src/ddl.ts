@@ -88,6 +88,9 @@ export function createTableSQL(
       if (column.primary && !composite) built = built.primaryKey();
       if (!column.nullable) built = built.notNull();
       if (column.default !== undefined) built = built.defaultTo(column.default);
+      // Uniqueness is the storage's to enforce: no shape can express it, since judging
+      // one value never sees the other rows.
+      if (column.unique) built = built.unique();
       if (column.references && !skip?.has(column.name)) {
         built = built.references(`${column.references.table}.${column.references.column}`);
         if (column.references.onDelete) built = built.onDelete(column.references.onDelete);
@@ -101,6 +104,29 @@ export function createTableSQL(
   }
 
   return builder.compile().sql;
+}
+
+/**
+ * `CREATE INDEX` for every column that asked for one.
+ *
+ * Separate statements, never part of `CREATE TABLE`: an index is not a constraint, it
+ * changes no answer — only what a read costs. `IF NOT EXISTS` everywhere it exists, so
+ * replaying the batch is safe (SQL Server has no such clause, same rule as the tables).
+ */
+export function indexSQL(table: TableDef, column: ColumnDef, dialectName: DialectName): string {
+  let builder = compiler(dialectName)
+    .schema.createIndex(`${table.name}_${column.name}_idx`)
+    .on(table.name)
+    .column(column.name);
+  if (dialectName !== 'mssql') builder = builder.ifNotExists();
+  return builder.compile().sql;
+}
+
+/** Every index one table asks for — one statement each. */
+export function createIndexSQL(table: TableDef, dialectName: DialectName): string[] {
+  return table.columns
+    .filter((column) => column.index)
+    .map((column) => indexSQL(table, column, dialectName));
 }
 
 /**
@@ -150,7 +176,10 @@ export function generateSQL(app: AppLike, options?: GenerateOptions): string[] {
   const tables = toTables(app, resolve);
 
   if (dialect === 'sqlite') {
-    return tables.map((table) => createTableSQL(table, dialect));
+    return [
+      ...tables.map((table) => createTableSQL(table, dialect)),
+      ...tables.flatMap((table) => createIndexSQL(table, dialect)),
+    ];
   }
 
   const { ordered, deferred } = orderTables(tables);
@@ -165,7 +194,10 @@ export function generateSQL(app: AppLike, options?: GenerateOptions): string[] {
     createTableSQL(table, dialect, { skipReferences: deferredColumnsOf.get(table.name) }),
   );
   const constraints = deferred.map(({ table, column }) => addForeignKeyConstraintSQL(table, column, dialect));
-  return [...creates, ...constraints];
+  // Indexes last: every table exists by then, and an index on a table that does not is
+  // the one ordering mistake this pass can make.
+  const indexes = ordered.flatMap((table) => createIndexSQL(table, dialect));
+  return [...creates, ...constraints, ...indexes];
 }
 
 /**

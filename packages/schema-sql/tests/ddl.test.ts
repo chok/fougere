@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { entity, primary, text, number, bool, auto, optional, many, ref, reconstruct, type EntityConstructor } from '@fougere/schema';
-import { createTableSQL, generateSQL, toTable, addForeignKeyConstraintSQL } from '../src/index.js';
+import { entity, primary, text, number, bool, auto, optional, many, ref, reconstruct, unique, indexed, type EntityConstructor } from '@fougere/schema';
+import { createTableSQL, createIndexSQL, generateSQL, toTable, addForeignKeyConstraintSQL } from '../src/index.js';
 
 // ─── Fixtures ──────────────────────────────────────
 
@@ -295,5 +295,59 @@ describe('a card is enough', () => {
     expect(ddl('sensors', Sensor, 'pg')).toContain('"celsius" double precision not null');
     expect(ddl('sensors', Sensor, 'mssql')).toContain('"id" nvarchar(255) not null primary key');
     expect(ddl('sensors', Sensor, 'sqlite')).toContain('"recorded_at" text not null');
+  });
+});
+
+// ─── unique / index — the axis the storage realizes ──
+
+describe('unique and index reach the DDL', () => {
+  class Account extends entity({
+    id: primary(),
+    email: unique(text()),
+    city: indexed(optional(text())),
+    bio: optional(text()),
+  }) {}
+
+  const table = toTable('accounts', Account);
+
+  it('emits the constraint inline, on every dialect', () => {
+    for (const dialect of ['sqlite', 'pg', 'mysql', 'mssql'] as const) {
+      const sql = createTableSQL(table, dialect);
+      expect(sql).toMatch(/"?`?email`?"?[^,]*unique/i);
+      expect(sql).not.toMatch(/"?`?bio`?"?[^,]*unique/i);
+    }
+  });
+
+  it('emits the index as its own statement, never inside CREATE TABLE', () => {
+    expect(createTableSQL(table, 'sqlite')).not.toMatch(/create index/i);
+    expect(createIndexSQL(table, 'sqlite')).toEqual([
+      expect.stringMatching(/create index if not exists "accounts_city_idx" on "accounts" \("city"\)/i),
+    ]);
+  });
+
+  /**
+   * MySQL and SQL Server refuse an unbounded TEXT column in an index — which is what
+   * `isKeyed` exists to answer. It used to answer for the primary key alone, because no
+   * vocabulary word could produce anything else to answer for.
+   */
+  it('bounds an indexed text column where the engine demands it', () => {
+    expect(createTableSQL(table, 'mysql')).toMatch(/`email` varchar\(255\)/);
+    expect(createTableSQL(table, 'mysql')).toMatch(/`city` varchar\(255\)/);
+    // Untouched: nothing indexes `bio`, so it keeps the unbounded type.
+    expect(createTableSQL(table, 'mysql')).toMatch(/`bio` text/);
+  });
+
+  it('says nothing for a primary key — it is already unique and already indexed', () => {
+    class Plain extends entity({ id: primary(), name: text() }) {}
+    const sql = createTableSQL(toTable('plains', Plain), 'sqlite');
+    expect(sql).toMatch(/"id" text not null primary key/i);
+    expect(sql).not.toMatch(/unique/i);
+  });
+
+  it('generateSQL ships the indexes after the tables', () => {
+    const app = { fronds: [{ name: 'a', entities: [{ name: 'account', entityClass: Account }] }] };
+    const statements = generateSQL(app as never);
+    expect(statements[0]).toMatch(/create table/i);
+    expect(statements.at(-1)).toMatch(/create index/i);
   });
 });

@@ -27,6 +27,10 @@ export interface ColumnDef {
   primary: boolean;
   /** A literal default (`lifecycle.create.value`), when the field declares one. */
   default?: unknown;
+  /** `role.unique` — realized as a column constraint the database enforces. */
+  unique?: boolean;
+  /** `role.index` — realized as a separate `CREATE INDEX`, never a constraint. */
+  index?: boolean;
   /** The FK target, from `role.relation` when it's a `ref()` (kind `'one'`). */
   references?: ColumnReference;
 }
@@ -134,6 +138,10 @@ function toColumn(
   if (typeof create === 'object' && create !== null && 'value' in create) {
     column.default = create.value;
   }
+  // A primary key is already unique and already indexed — saying it twice would emit a
+  // redundant constraint on every engine. So would indexing what `unique` constrains.
+  if (field.role?.unique === true && !column.primary) column.unique = true;
+  if (field.role?.index === true && !column.primary && !column.unique) column.index = true;
   const references = referenceFor(field, resolve, tableNameOf);
   if (references) column.references = references;
   return column;
@@ -166,9 +174,16 @@ export function toTable(tableName: string, entity: SchemaLike, relations?: Relat
 /**
  * Is this column part of a key? MySQL and SQL Server refuse an unbounded text
  * column in a primary key or an index, so the dialect needs to know.
+ *
+ * `unique` and `index` count, and until they could be declared nothing did but the
+ * primary key — the comment above already said "or an index" while the code answered
+ * for the key alone, because no vocabulary word produced one to answer for.
  */
 export function isKeyed(table: TableDef, column: ColumnDef): boolean {
-  return column.primary || table.compositePrimary.includes(column.name);
+  return column.primary
+    || column.unique === true
+    || column.index === true
+    || table.compositePrimary.includes(column.name);
 }
 
 // ─── App-wide entity collection — shared by generateSQL and desiredTables ──

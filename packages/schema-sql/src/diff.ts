@@ -12,7 +12,7 @@
  * written migration, never in an automatic pass.
  */
 import { sql, type Kysely } from 'kysely';
-import { addForeignKeyConstraintSQL, compiler, createTableSQL, type GenerateOptions } from './ddl.js';
+import { addForeignKeyConstraintSQL, compiler, createTableSQL, indexSQL, type GenerateOptions } from './ddl.js';
 import { resolveDialect, type DialectName } from './dialect.js';
 import {
   isKeyed,
@@ -45,7 +45,8 @@ export function desiredTables(app: AppLike, options?: GenerateOptions): TableDef
 export type Change =
   | { kind: 'createTable'; table: TableDef; deferredColumns?: string[] }
   | { kind: 'addColumn'; table: TableDef; column: ColumnDef }
-  | { kind: 'addConstraint'; table: TableDef; column: ColumnDef };
+  | { kind: 'addConstraint'; table: TableDef; column: ColumnDef }
+  | { kind: 'createIndex'; table: TableDef; column: ColumnDef };
 
 /** Compare the two states. Pure — the only place that decides what is missing. */
 export function delta(desired: TableDef[], actual: SchemaState): Change[] {
@@ -58,6 +59,15 @@ export function delta(desired: TableDef[], actual: SchemaState): Change[] {
     }
     for (const column of table.columns) {
       if (!existing.has(column.name)) changes.push({ kind: 'addColumn', table, column });
+    }
+  }
+  // Indexes, unconditionally: this pass reads column NAMES from the live schema, so it
+  // cannot see whether an index exists. `CREATE INDEX IF NOT EXISTS` is idempotent, so
+  // proposing it every time is cheaper and more honest than introspecting to guess —
+  // the alternative would be an index that a `unique()` added later never gets.
+  for (const table of desired) {
+    for (const column of table.columns) {
+      if (column.index) changes.push({ kind: 'createIndex', table, column });
     }
   }
   return changes;
@@ -81,6 +91,7 @@ export function orderChanges(changes: Change[], dialectName: DialectName): Chang
 
   const creates = changes.filter((c): c is Extract<Change, { kind: 'createTable' }> => c.kind === 'createTable');
   const addColumns = changes.filter((c) => c.kind === 'addColumn');
+  const indexes = changes.filter((c) => c.kind === 'createIndex');
 
   const { ordered, deferred } = orderTables(creates.map((c) => c.table));
   const deferredColumnsOf = new Map<string, Set<string>>();
@@ -96,7 +107,8 @@ export function orderChanges(changes: Change[], dialectName: DialectName): Chang
   });
   const constraintChanges: Change[] = deferred.map(({ table, column }) => ({ kind: 'addConstraint', table, column }));
 
-  return [...createChanges, ...constraintChanges, ...addColumns];
+  // Indexes last: the column they stand on may be one this very batch added.
+  return [...createChanges, ...constraintChanges, ...addColumns, ...indexes];
 }
 
 /**
@@ -116,6 +128,11 @@ export function changeSQL(change: Change, dialectName: DialectName): string {
   }
   if (change.kind === 'addConstraint') {
     return addForeignKeyConstraintSQL(change.table, change.column, dialectName);
+  }
+  if (change.kind === 'createIndex') {
+    // One statement per change — `migrate` runs them one by one, and no driver here
+    // accepts a batch.
+    return indexSQL(change.table, change.column, dialectName);
   }
   const { table, column } = change;
   const type = dialect.columnType(column, isKeyed(table, column));
