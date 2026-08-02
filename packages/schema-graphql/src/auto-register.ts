@@ -226,6 +226,12 @@ export function registerAll(
         facade: effectiveFacade,
         operations: handler?.operations ?? new Map(),
         operationsOverrides: opOverrides,
+        // What an op declares as its return becomes its GraphQL type — unless that IS
+        // the entity's own schema, which already has one.
+        viewType: (view, opName) =>
+          view === outputSchema || view === entity.entityClass
+            ? type
+            : viewTypeOf(builder, view, `${typeName}${capitalize(opName)}`),
       });
     }
   }

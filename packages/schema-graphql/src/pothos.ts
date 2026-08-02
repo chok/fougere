@@ -78,6 +78,12 @@ export interface OperationsConfig {
   operations: Map<string, OperationMeta>;
   /** Per-op kind overrides from frond.config.ts (optional). */
   operationsOverrides?: Record<string, { kind?: 'query' | 'command' }>;
+  /**
+   * The GraphQL type for a schema an operation declares as its return. The caller owns
+   * this because it alone knows whether the schema IS the entity's (then: the type
+   * already registered) or something else (then: a new named type).
+   */
+  viewType?: (view: SchemaLike, opName: string) => any;
 }
 
 // Mirrors core's resolveIsReadOp (this package stays core-free, same as OperationMeta
@@ -594,6 +600,8 @@ function buildArgsFromSignature(
 function resolveOutputType(
   sig: ParsedSignature,
   config: OperationsConfig,
+  meta?: OperationMeta,
+  opName?: string,
 ): { type: any; isList: boolean; nullable: boolean } {
   const rt = sig.returnType;
 
@@ -607,13 +615,26 @@ function resolveOutputType(
     return { type: 'list-wrapper', isList: true, nullable: false };
   }
 
-  // Array return → list of entity type
-  if (rt?.array) {
-    return { type: [config.type], isList: false, nullable: false };
-  }
+  /**
+   * The type the operation SAYS it returns.
+   *
+   * `async stats(): Promise<StatsOutput[]>` is a declaration, and the scan already
+   * resolved it into a live schema class. Until now this threw it away and announced the
+   * entity's type instead, so a schema built from a handler with such an op was simply
+   * wrong: its own fields were not queryable, and the entity's came back null.
+   *
+   * Falls back to the entity when nothing is declared, or when what is declared IS the
+   * entity — `publish(): Promise<Post>` must not mint a second Post type.
+   */
+  const declared = meta?.output && opName && config.viewType
+    ? config.viewType(meta.output, opName)
+    : undefined;
+  const type = declared ?? config.type;
 
-  // Everything else → entity type (output scoping is at handler/ORM level)
-  return { type: config.type, isList: false, nullable: rt?.nullable ?? false };
+  if (rt?.array) {
+    return { type: [type], isList: false, nullable: false };
+  }
+  return { type, isList: false, nullable: rt?.nullable ?? false };
 }
 
 // ─── registerOperations ──────────────────────────
@@ -660,8 +681,8 @@ export function registerOperations(builder: InstanceType<typeof SchemaBuilder>, 
     const fieldName = graphqlFieldName(opName, config.name);
     const { argsDef, buildInvocation } = buildArgsFromSignature(sig, meta, builder, opName, config.name);
 
-    // Output type — always the entity type (output scoping is at handler/ORM level)
-    const output = resolveOutputType(sig, config);
+    // Output type — what the op declares, else the entity's.
+    const output = resolveOutputType(sig, config, meta, opName);
     const isListWrapper = output.type === 'list-wrapper';
     const outputType = isListWrapper ? listWrapperType : output.type;
     if (!outputType) continue;

@@ -633,3 +633,52 @@ describe('registerAll', () => {
     });
   });
 });
+
+/**
+ * What an operation says it returns is what GraphQL must announce.
+ *
+ * `async stats(): Promise<StatsOutput[]>` is a declaration, and the scan already resolves
+ * it. GraphQL used to throw it away and announce the entity's type instead — so a client
+ * could not ask for the op's own fields, and the entity's came back null. Measured on
+ * demos/nuxt-blog, where `stats` was announced as `[Category]`.
+ */
+describe('an operation that declares its return type', () => {
+  const declaredOp = (output: any) => withCustomOps(crudOps('Post', Post), {
+    digest: {
+      output,
+      signature: { name: 'digest', params: [], returnType: { raw: 'X[]', name: 'X', array: true } },
+    },
+  });
+
+  it('gets its own GraphQL type, named after the entity and the op', () => {
+    const builder = new SchemaBuilder({});
+    builder.queryType({}); builder.mutationType({});
+
+    class PostDigest extends Post.pick('id', 'title') {}
+    const app = fakeApp([{ name: 'post', entityClass: Post }],
+      { postHandler: { ...fakeCrud(), digest: vi.fn(async () => []) } },
+      [{ entityName: 'post', operations: declaredOp(PostDigest) }]);
+
+    registerAll(builder, app);
+    const typeMap = builder.toSchema().getTypeMap();
+
+    expect(typeMap['PostDigest']).toBeDefined();
+    expect(Object.keys((typeMap['PostDigest'] as any).getFields()).sort()).toEqual(['id', 'title']);
+  });
+
+  it('reuses the entity type when what it declares IS the entity', () => {
+    const builder = new SchemaBuilder({});
+    builder.queryType({}); builder.mutationType({});
+
+    const app = fakeApp([{ name: 'post', entityClass: Post }],
+      { postHandler: { ...fakeCrud(), digest: vi.fn(async () => []) } },
+      [{ entityName: 'post', operations: declaredOp(Post) }]);
+
+    registerAll(builder, app);
+    const typeMap = builder.toSchema().getTypeMap();
+
+    // No second Post type minted under another name.
+    expect(typeMap['PostDigest']).toBeUndefined();
+    expect(typeMap['Post']).toBeDefined();
+  });
+});
