@@ -156,6 +156,14 @@ const module: any = defineNuxtModule<FougereModuleOptions>({
       method: 'post',
       handler: runtimeResolve('server/routes/call.post'),
     });
+    // The same door, per audience: `/_fougere/call/public` serves the surface named
+    // `public`, the way `generateRoutes(app, { surface })` does for REST. The handler
+    // reads the segment (see `surfaceOf`).
+    addServerHandler({
+      route: '/_fougere/call/**',
+      method: 'post',
+      handler: runtimeResolve('server/routes/call.post'),
+    });
     addServerHandler({
       route: '/_fougere/session',
       method: 'get',

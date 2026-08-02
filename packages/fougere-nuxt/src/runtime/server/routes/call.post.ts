@@ -53,9 +53,27 @@ async function readJsonBody(event: { req?: { json?: () => Promise<unknown> }; no
   return {};
 }
 
+/**
+ * The audience this door serves — the path segment after `/_fougere/call`.
+ *
+ * The envelope is a surface like REST and GraphQL, so it selects its audience like they
+ * do; the difference is only that it takes it from the path instead of an option, because
+ * a door is mounted, not called. The same word names the directory
+ * (`handlers/public/`), the config key (`surfaces: { public: [...] }`) and this segment —
+ * derived, never configured.
+ *
+ * No escalation to guard: a named surface serves the entities it names and nothing else
+ * (closed by naming), so every one of them is a subset of what the bare path already
+ * serves.
+ */
+function surfaceOf(path: string): string | undefined {
+  const named = /^\/_fougere\/call\/([A-Za-z0-9_-]+)/.exec(path.replace(/\?.*$/, ''));
+  return named?.[1];
+}
+
 export default defineEventHandler(async (event) => {
   const app = await useFougereApp();
-  const runner = createAppRunner(app);
+  const runner = createAppRunner(app, surfaceOf(event.path));
   const stamped: Transport = (call, invocation) =>
     runner(call, { ...invocation, state: (event.context ?? {}) as Record<string, unknown> });
   return handleRpc(stamped, await readJsonBody(event));
