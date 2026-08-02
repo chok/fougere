@@ -158,12 +158,28 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       const handlerKey = `_handler:${facadeKey}`;
       const ormTypeName = `${entity.name[0].toUpperCase()}${entity.name.slice(1)}Orm`;
 
-      const hasCrudInProto = handler.deps.length === 0
-        && typeof handler.ctor.prototype?.list === 'function'
+      const inheritsCrud = typeof handler.ctor.prototype?.list === 'function'
         && typeof handler.ctor.prototype?.findById === 'function';
+      const hasCrudInProto = handler.deps.length === 0 && inheritsCrud;
       const deps = handler.deps.length > 0
         ? handler.deps
         : hasCrudInProto ? [ormTypeName] : [];
+
+      // Declaring a constructor turns the automatic ORM injection OFF — the handler now
+      // states what it takes, and that is the whole DI convention. But a Crud handler
+      // that forgets to state its ORM used to get `this.orm === undefined` and break on
+      // the FIRST REQUEST, silently: `super()` assigns whatever it was handed. Refuse at
+      // boot instead, naming the fix — the clause is deducible, so it is stated, not
+      // configured.
+      if (inheritsCrud && handler.deps.length > 0 && !handler.deps.includes(ormTypeName)) {
+        throw new Error(
+          `${handler.ctor.name} extends Crud() and declares a constructor, so the ORM is no ` +
+          `longer injected for it — but it does not take one.\n` +
+          `  Add it and hand it to super():\n` +
+          `    constructor(orm: ${ormTypeName}, …) { super(orm); }`,
+        );
+      }
+
       targetScope.register(handlerKey, handler.ctor, { deps });
 
       let instance: any;
