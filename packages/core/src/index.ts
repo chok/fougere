@@ -6,7 +6,8 @@ export { defineFrond, loadFrondConfig, type FrondConfig, type OperationOverride 
 export { buildGraph, clusterEntities, suggestSplit, type EntityNode, type DomainCluster } from './graph.js';
 export { Crud } from './crud.js';
 export type { CrudOps, CrudOpName, CrudViews, CrudConstructor } from './crud.js';
-export { Presenter, getPresenterTarget, getPresenterFields } from './presenter.js';
+export { Presenter, getPresenterTarget, getPresenterFields, getPresenterViews } from './presenter.js';
+export type { PresenterViews } from './presenter.js';
 export { Collector, getCollectorTarget } from './collector.js';
 export { computeBindingPlan, resolveArgs } from './binding.js';
 export type { BindingPlan, ParamBinding, ParamSource, CollectorResolver } from './binding.js';
@@ -28,6 +29,7 @@ export { Logger } from './builtins/logger.js';
 export { Config } from './builtins/config.js';
 export { EventBus, type EventHandler } from './builtins/event-bus.js';
 export type { EntityOrm, OrmFactory, ListOptions, ListResult } from './orm.js';
+export { LIST_OPTION_KEYS, assertListOptions } from './orm.js';
 export type {
   App,
   CreateAppOptions,

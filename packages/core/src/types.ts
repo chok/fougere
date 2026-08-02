@@ -3,6 +3,7 @@ import type { EntityOrm, OrmFactory } from './orm.js';
 import type { SchemaLike } from '@fougere/schema';
 import type { OperationContract, OperationsMap } from './operation.js';
 import type { AppMiddleware } from './middleware.js';
+import type { PresenterViews } from './presenter.js';
 import type { Transport } from './call.js';
 
 /**
@@ -77,6 +78,13 @@ export interface PresenterEntry {
   fields: string[];
   /** Per-field type metadata (inferred from source via parser). */
   fieldMeta: PresenterFieldMeta[];
+  /**
+   * The view each computed field emits, when the presenter declares one
+   * (`Presenter(Order, { items: [OrderItemView] })`). Stated rather than inferred: the
+   * parser reads a scalar off a return type and nothing more, so an object-valued field
+   * has no derivable shape without this.
+   */
+  views?: PresenterViews;
   /** Constructor dependency type names (from AST scan). */
   deps: string[];
   /** Absolute file path (for debugging). */

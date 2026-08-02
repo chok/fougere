@@ -8,7 +8,7 @@ import type { OperationContract, OperationsMap } from './operation.js';
 import { parseAllHandlerMethods, parsePresenterMethods, parseConstructorParams, type ParsedType } from './handler-parser.js';
 import { hashFile, getCached, setCached, flushCache, setCacheRoot } from './scan-cache.js';
 import { loadFrondConfig } from './frond-config.js';
-import { getPresenterTarget, getPresenterFields } from './presenter.js';
+import { getPresenterTarget, getPresenterFields, getPresenterViews } from './presenter.js';
 import { getCollectorTarget } from './collector.js';
 
 /** Module loader — can be swapped (e.g. jiti for TS files in Nuxt context). */
@@ -275,7 +275,8 @@ async function toPresenterEntry(filePath: string): Promise<PresenterEntry | null
     }));
   } catch { /* parse failure — fall back to untyped */ }
 
-  return { entityName, ctor, fields, fieldMeta, deps, filePath };
+  // Declared at runtime on the class, so it survives a scan that resolved nothing.
+  return { entityName, ctor, fields, fieldMeta, views: getPresenterViews(ctor), deps, filePath };
 }
 
 async function toCollectorEntry(filePath: string): Promise<CollectorEntry | null> {
