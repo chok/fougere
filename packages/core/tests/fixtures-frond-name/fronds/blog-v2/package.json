@@ -1,4 +1,5 @@
 {
   "name": "@frond/blog",
+  "type": "module",
   "fougere": { "frond": "blog" }
 }
