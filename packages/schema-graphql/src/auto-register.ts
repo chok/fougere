@@ -85,6 +85,8 @@ interface PresenterEntry {
   entityName: string;
   fields: string[];
   fieldMeta: PresenterFieldMeta[];
+  /** The view each computed field emits, when the presenter declares one. */
+  views?: Record<string, unknown>;
 }
 
 interface FrondLike {
