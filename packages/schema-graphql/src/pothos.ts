@@ -188,7 +188,58 @@ function fieldToGraphQL(t: any, field: AnyField, fieldName: string): any {
   }
 }
 
-function fieldToInput(t: any, field: AnyField, patch: boolean): any {
+/**
+ * A JSON-Schema object shape, turned into a GraphQL input type.
+ *
+ * `list(json(OrderLine))` inlines the line's shape as nested `properties` — good enough for
+ * the judge, invisible to GraphQL until now: the `array` case fell through to `stringList`,
+ * so `items` reached the schema as `[String!]!` and a client had to hand-encode every line
+ * as JSON. The mutation was unusable (measured 2026-08-02).
+ */
+function nestedInputType(
+  builder: InstanceType<typeof SchemaBuilder>,
+  shape: Record<string, any>,
+  name: string,
+): any {
+  let perBuilder = nestedInputs.get(builder as object);
+  if (!perBuilder) nestedInputs.set(builder as object, (perBuilder = new Map()));
+  const known = perBuilder.get(name);
+  if (known) return known;
+
+  const properties = (shape.properties ?? {}) as Record<string, any>;
+  const required = new Set<string>((shape.required ?? []) as string[]);
+  const type = (builder as any).inputType(name, {
+    fields: (t: any) => {
+      const out: Record<string, any> = {};
+      for (const [key, prop] of Object.entries(properties)) {
+        const isRequired = required.has(key);
+        switch (anatomy(prop).base?.type) {
+          case 'integer': out[key] = t.int({ required: isRequired }); break;
+          case 'number': out[key] = t.float({ required: isRequired }); break;
+          case 'boolean': out[key] = t.boolean({ required: isRequired }); break;
+          default: out[key] = t.string({ required: isRequired }); break;
+        }
+      }
+      return out;
+    },
+  });
+  perBuilder.set(name, type);
+  return type;
+}
+
+/**
+ * One input type per name, PER BUILDER — Pothos refuses a duplicate name, and a ref built on
+ * one builder is unknown to the next: a global cache handed a stale ref to the second schema
+ * ("InputObjectRef has not been implemented"). The builder owns its types, so it owns the map.
+ */
+const nestedInputs = new WeakMap<object, Map<string, any>>();
+
+function fieldToInput(
+  t: any,
+  field: AnyField,
+  patch: boolean,
+  nested?: (shape: Record<string, any>, suffix: string) => any,
+): any {
   // Required = the presence axis, projected onto GraphQL's single knob: the
   // caller must supply it (no `lifecycle.create` rule answers absence), null is
   // not legal, and the view is not in patch mode (a patch omits freely).
@@ -211,6 +262,11 @@ function fieldToInput(t: any, field: AnyField, patch: boolean): any {
         case 'integer': return t.intList({ required });
         case 'number': return t.floatList({ required });
         case 'boolean': return t.booleanList({ required });
+        case 'object': {
+          // A nested shape IS a type — serializing it would make the caller encode JSON by hand.
+          const built = nested?.(items, 'Item');
+          return built ? t.field({ type: [built], required }) : t.stringList({ required });
+        }
         default: return t.stringList({ required });
       }
     }
@@ -461,7 +517,9 @@ export function registerInput(builder: InstanceType<typeof SchemaBuilder>, confi
         // Read-only (boundary in: 'closed'): never accepted from a client
         if (boundaryOf(field).in === 'closed') continue;
 
-        result[fieldName] = fieldToInput(t, field, patch);
+        result[fieldName] = fieldToInput(t, field, patch, (shape, suffix) =>
+          nestedInputType(builder, shape, `${config.name}${capitalize(fieldName)}${suffix}`),
+        );
       }
 
       return result;
