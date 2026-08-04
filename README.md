@@ -2,26 +2,28 @@
 
 # 🌿 Fougere
 
-**Write the domain. The rest follows.**
+**Write the domain. Everything else is a projection of it — including the wire.**
 
-A TypeScript framework where you spend your day on the business object and its rules —
-and where the plumbing around them is derived, not written.
+You declare the business object and you judge its transitions. From that, one class is
+the TypeScript type, the validator, the SQL table, the form contract and the API
+surface. And because the declaration is JSON on the wire, the domain can move to its
+own process — or to another language — while the code calling it does not change.
 
+**Pre-release**, not on npm yet — [what works today](#where-it-stands).
 **[Read the docs →](https://chok.github.io/fougere/)**
 
 [![CI](https://github.com/chok/fougere/actions/workflows/ci.yml/badge.svg)](https://github.com/chok/fougere/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
-[![Node](https://img.shields.io/badge/node-%E2%89%A520-brightgreen.svg)](#)
 [![Status](https://img.shields.io/badge/status-pre--release-orange.svg)](#where-it-stands)
 
 </div>
 
 ---
 
-## Your domain, in one file
+## Your domain, declared once
 
 This is a blog post. Not a DTO, not a table, not a validation schema — the business
-object itself, said once, in the words of the business.
+object itself, said once, in the words of the business. It is the real file behind
+[this project's own site](./site/fronds/blog), not a sketch.
 
 ```ts
 // fronds/blog/entities/Post.ts
@@ -30,36 +32,58 @@ export default class Post extends entity({
   slug: text({ min: 1, max: 80 }),
   title: text({ min: 1, max: 160 }),
   summary: optional(text({ max: 300 })),
+  body: optional(text()),
   // Server-owned: stamped from the session at create, never client-written.
   authorId: readOnly(text()),
-  // Born draft, flipped by the publish OPERATION — never by a client
-  // writing the field. readOnly closes the inbound door.
+  authorName: readOnly(optional(text())),
+  createdAt: auto(),
+  // Server-owned pair: born draft, flipped by the publish OPERATION —
+  // never by a client writing the field (readOnly closes the inbound door).
   status: readOnly(oneOf('draft', 'published', { default: 'draft' })),
   publishedAt: readOnly(optional(date())),
 }) {}
 ```
 
-A field carries four axes — its shape, its role, its lifecycle (*who* writes this
-value and *when*) and its boundary (which direction it may cross). `readOnly` above
-is not a comment about intent: it removes the field from the inbound door.
+A field says **four** things, and each one is read by someone different:
+
+| axis | what it states | who reads it |
+| --- | --- | --- |
+| `shape` | `text({ max: 160 })` — and it *is* JSON Schema | the validator, in the browser and at the façade |
+| `role` | `primary()`, `ref(User)` | the table, the relations, the GraphQL type |
+| `lifecycle` | *who* writes this value and *when* — `auto()`, `updated()` | the ORM, which stamps it |
+| `boundary` | which direction it may cross — `readOnly`, `writeOnly` | the door, which drops it from `inputFields` |
+
+`readOnly(status)` is not a note about intent. It removes `status` from what a client
+may ever send, so publishing cannot be a field write — it has to be an operation.
 
 ## The rules are the domain too
 
 The interesting part is never `update()`. It is the transition — and a transition has
-a judge. That judge is the code you actually get paid to write.
+a judge. That judge is the code you are actually paid to write, and it is the only
+code on this page Fougere does not derive.
 
 ```ts
-export default class PostHandler extends Crud(Post) {
+// fronds/blog/handlers/PostHandler.ts
+export class PostDraft extends Post.pick('slug', 'title', 'summary', 'body') {}
+export class PostCard  extends Post.pick('id', 'slug', 'title', 'summary', 'authorName', 'publishedAt') {}
+
+export default class PostHandler extends Crud(Post, { list: PostCard }) {
   /** Judge: the author, a draft, a body worth publishing. Realize: stamp the pair. */
   async publish(id: string, user: User | null): Promise<Post> {
     const author = requireUser(user, 'publish');
     const post = await requireOwn(this.orm, id, author, 'publish');
 
     if (post.status === 'published') {
-      throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published', entity: 'post', operation: 'publish' });
+      throw new FougereError({
+        code: ErrorCode.CONFLICT, message: 'Already published',
+        entity: 'post', operation: 'publish',
+      });
     }
     if (!post.body?.trim()) {
-      throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Cannot publish an empty draft', entity: 'post', operation: 'publish' });
+      throw new FougereError({
+        code: ErrorCode.CONFLICT, message: 'Cannot publish an empty draft',
+        entity: 'post', operation: 'publish',
+      });
     }
 
     return this.orm.update(id, { status: 'published', publishedAt: new Date() });
@@ -67,11 +91,24 @@ export default class PostHandler extends Crud(Post) {
 }
 ```
 
-That is the whole feature. Two files.
+Three things carry weight here, and none of them are wiring:
+
+- **`user: User | null` is the injection.** The signature is matched *by type* against
+  the collector that resolves the session — no decorator, no container lookup to write.
+- **`PostDraft` and `PostCard` are `Post.pick(…)`.** One class per business object,
+  several derived contracts: what a client may propose, what a list emits. The judge
+  still reads every field of the row.
+- **`requireUser` and `requireOwn` are module-level functions**, deliberately. Only
+  *public class methods* become operations, so a helper outside the class cannot turn
+  into a callable op by accident.
+
+That is the blog behind this site, trimmed to `publish`. The whole Frond — the entity,
+the handler with its six other operations, the collector — is three files and 153 lines
+under [`site/fronds/blog/`](./site/fronds/blog).
 
 ## What you did not write
 
-Both files above are the domain and nothing else. Everything below was derived from
+Those three files are the domain and nothing else. Everything below was derived from
 them, and none of it is yours to keep in sync:
 
 | | |
@@ -106,11 +143,10 @@ const rules = { title: [required, maxLength(160)] };
 
 The bug is never in one of those files. It is in the day two of them stopped agreeing.
 
-## The gradient
+## The domain travels
 
 A **Frond** is a domain — its entities, its handlers, its collectors, its seeds.
-It runs inside your app's process, or in its own process behind JSON-RPC, and the
-code that consumes it does not change. Not "barely changes". Does not change.
+Where it runs is one line of configuration, and it is the only line that changes.
 
 ```ts
 // fougere.config.ts — the entire topology statement
@@ -121,7 +157,7 @@ export default defineFougere({
 ```
 
 ```ts
-// app/pages/blog/index.vue — identical either way
+// app/pages/blog/index.vue — identical either way, byte for byte
 import Post from '@frond/blog/entities/Post';
 
 const { items } = await useQuery(Post, 'list');
@@ -130,46 +166,20 @@ const publish = useCommand(Post, 'publish');
 await publish.execute({ params: { id } });   // every mounted query on Post revalidates
 ```
 
-Split, the host going down is a typed `503` in your pages, not a stack trace. It
-comes back, the pages recover.
+There is no RPC without travel: in-process, a call is direct memory execution, not a
+loopback request. Split, the host going down is a typed `503` in your pages, not a
+stack trace — and when it comes back, the pages recover.
 
-## Rules are operations, not field writes
+### The far side does not have to be TypeScript
 
-The interesting part of a domain is never `update()`. It's the transition — and a
-transition has a judge.
-
-```ts
-export default class PostHandler extends Crud(Post) {
-  /** Judge: the author, a draft, a body worth publishing. Realize: stamp the pair. */
-  async publish(id: string, user: User | null): Promise<Post> {
-    const author = requireUser(user, 'publish');
-    const post = await requireOwn(this.orm, id, author, 'publish');
-
-    if (post.status === 'published') {
-      throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published', entity: 'post', operation: 'publish' });
-    }
-    if (!post.body?.trim()) {
-      throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Cannot publish an empty draft', entity: 'post', operation: 'publish' });
-    }
-
-    return this.orm.update(id, { status: 'published', publishedAt: new Date() });
-  }
-}
-```
-
-`publish` is now an operation on the wire, a `useCommand` in the browser, a GraphQL
-mutation and a REST route. You declared none of those.
-
-## A Frond does not have to be TypeScript
+A Frond honours two contracts and both are JSON: **the wire** (JSON-RPC 2.0 at
+`POST /_fougere/call`) and **the map** (`rpc.discover`, which returns what it hosts,
+schemas included). Neither mentions TypeScript.
 
 [`demos/rust-frond`](./demos/rust-frond) is a `telemetry` domain written in Rust. There
-is no `class Sensor extends entity({…})` anywhere in that demo — the declaration lives
-in `src/main.rs`. The frond honours two contracts, and both are JSON: the wire
-(JSON-RPC 2.0 at `POST /_fougere/call`) and the map (`rpc.discover`, which returns what
-it hosts, schemas included).
-
-The consumer asks for the map, rebuilds a **live** schema from it, and refuses a bad
-payload before any network happens:
+is no `class Sensor extends entity({…})` anywhere in it — the declaration lives in
+`src/main.rs`. The TypeScript consumer asks for the map, rebuilds a **live** schema from
+it, and refuses a bad payload before any network happens:
 
 ```
 ✗ couleur  — Unknown field
@@ -177,37 +187,54 @@ payload before any network happens:
 ✗ checksum — Read-only
 ```
 
-The language, the storage and the judge belong to the frond. Everything else is the
-contract.
+Those three refusals are the four axes crossing a language boundary: `shape` *is* the
+JSON Schema at the top level of the field, and `role`, `lifecycle` and `boundary` ride
+under `x-fougere`. The **rules** travel, not just the types — and no line of TypeScript
+declared any of them.
+
+What does not travel is the static type: the map rebuilds a full runtime schema, but
+its literal keys are lost, so `sensor.label` comes back untyped. A map → `.d.ts`
+projection would close that, and does not exist.
 
 ## Try it
 
 ```bash
 git clone git@github.com:chok/fougere.git && cd fougere
 pnpm install
-pnpm -r --filter './packages/**' build
-
-pnpm -C site dev                   # :3000 — the site, built with Fougere
+pnpm -r --filter './packages/**' build      # the packages are not on npm yet
 ```
 
-The site is the fullest thing to read: its blog is a real Frond with a judged
-draft→publish, its docs are the reference, and it is itself the proof of the claim.
+> If `better-sqlite3` fails to load, run `npx prebuild-install` in its pnpm directory.
 
-Then watch the gradient move:
+**The site — the fullest thing to read.** Its blog is a real Frond: a judged
+draft→publish, author-only edits, the form contract and the query primitive. The docs
+are the reference, and the whole thing is the proof of the claim.
+
+```bash
+pnpm -C site dev                   # :3000
+```
+
+**The gradient — two terminals, one line of config.**
 
 ```bash
 pnpm -C demos/nuxt-blog dev:blog   # the blog Frond alone, in its own process (:4100)
 pnpm -C demos/nuxt-blog dev        # the Nuxt app that consumes it (:3000)
 ```
 
-Comment out `remotes:` in `demos/nuxt-blog/fougere.config.ts` and run only the second
-command. Same app, same code, one process.
+Kill the first one and reload: a typed `503` in the pages. Start it again: they
+recover. Then comment out `remotes:` in `demos/nuxt-blog/fougere.config.ts` and run
+only the second command — same app, same code, one process.
 
-To start your own:
+**The Rust Frond — the shortest proof that the contract is not TypeScript.**
 
 ```bash
-node packages/cli/dist/bin.js new my-app --frond blog:catalogue --app nuxt:web --local
+cd demos/rust-frond
+cargo run --release     # the Rust frond, :4200
+npx tsx consumer.ts     # another terminal — a TS consumer that knows none of its entities
 ```
+
+To start your own app, `fougere new` composes a pnpm workspace linked to this checkout
+— see [the CLI docs](https://chok.github.io/fougere/docs/cli).
 
 ## Where it stands
 
