@@ -61,6 +61,8 @@ function makeMemoryOrm(): EntityOrm & {
     async findAllBy(criteria) {
       return [...store.values()].filter((r) => matches(r, criteria));
     },
+    /** What this ORM wraps — the Kysely instance for the SQL one, the Map here. */
+    client: store,
   };
 }
 
