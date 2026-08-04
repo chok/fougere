@@ -18,8 +18,10 @@ class Article extends entity(
     body: text(),
   },
   {
-    sql: { body: { columnType: 'tsvector', index: 'gin' } },
-    graphql: { title: { description: 'The headline' } },
+    hints: {
+      sql: { body: { columnType: 'tsvector', index: 'gin' } },
+      graphql: { title: { description: 'The headline' } },
+    },
   },
 ) {}
 
@@ -64,16 +66,16 @@ describe('entity() per-consumer hints', () => {
 
   it('type-level: only registered adapters / real fields / known options are accepted', () => {
     // @ts-expect-error — 'mongo' is not a registered adapter
-    entity({ id: primary() }, { mongo: { id: {} } });
+    entity({ id: primary() }, { hints: { mongo: { id: {} } } });
 
     // @ts-expect-error — 'missing' is not a field of this entity
-    entity({ id: primary() }, { sql: { missing: { columnType: 'x' } } });
+    entity({ id: primary() }, { hints: { sql: { missing: { columnType: 'x' } } } });
 
     // @ts-expect-error — 'wat' is not a known sql hint option
-    entity({ id: primary() }, { sql: { id: { wat: 1 } } });
+    entity({ id: primary() }, { hints: { sql: { id: { wat: 1 } } } });
 
     // Accepted: registered adapter, real field, known option
-    entity({ id: primary() }, { sql: { id: { columnType: 'uuid' } } });
+    entity({ id: primary() }, { hints: { sql: { id: { columnType: 'uuid' } } } });
 
     expect(true).toBe(true);
   });

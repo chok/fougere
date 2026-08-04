@@ -46,6 +46,12 @@ export interface TableDef {
   columns: ColumnDef[];
   /** PK column names when the key is composite — empty for a simple key. */
   compositePrimary: string[];
+  /**
+   * Column groups unique together, from `entity(fields, { unique: [...] })`.
+   * A single-field group is left to the column's own `unique` — this is the
+   * table-level form, for facts no column can hold alone.
+   */
+  uniqueGroups: string[][];
 }
 
 /** camelCase → snake_case */
@@ -164,10 +170,19 @@ export function toTable(tableName: string, entity: SchemaLike, relations?: Relat
     columns.push(toColumn(fieldName, field, resolve, relations?.tableNameOf));
   }
   const primaries = columns.filter((column) => column.primary).map((column) => column.name);
+  const stored = new Set(columns.map((column) => column.name));
+  // Declared in field names, realized in column names — and a group that names a
+  // field the storage does not keep is not enforceable, so it is dropped here
+  // rather than emitted against a column that will not exist.
+  const uniqueGroups = (entity.getUnique?.() ?? [])
+    .map((group) => group.map(toSnakeCase))
+    .filter((group) => group.length > 1 && group.every((column) => stored.has(column)));
+
   return {
     name: tableName,
     columns,
     compositePrimary: primaries.length > 1 ? primaries : [],
+    uniqueGroups,
   };
 }
 

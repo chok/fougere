@@ -48,6 +48,7 @@ export {
   type CtorInput,
 } from './entity.js';
 export { type FougereHints, type Hints } from './hints.js';
+export { type CompositeUnique, type EntityDeclarations } from './unique.js';
 
 // ─── The vocabulary — field constructors and transforms ──────
 export { primary } from './vocabulary/primary.js';

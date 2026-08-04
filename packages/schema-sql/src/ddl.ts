@@ -103,6 +103,12 @@ export function createTableSQL(
     builder = builder.addPrimaryKeyConstraint(`${table.name}_pk`, table.compositePrimary as any);
   }
 
+  // The pair the entity declared. Named after its columns so a second group on the
+  // same table cannot collide, and so a migration can recognize it later.
+  for (const group of table.uniqueGroups) {
+    builder = builder.addUniqueConstraint(`${table.name}_${group.join('_')}_unique`, group as any);
+  }
+
   return builder.compile().sql;
 }
 

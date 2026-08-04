@@ -73,6 +73,8 @@ export interface SchemaLike {
   getFields(): Fields;
   /** The view's validation mode (patch…) — carried by SchemaConstructor, optional on bare wrappers. */
   getOpts?(): { patch?: boolean };
+  /** Field groups unique together — carried by SchemaConstructor, absent on bare wrappers. */
+  getUnique?(): ReadonlyArray<ReadonlyArray<string>> | undefined;
 }
 
 export function isField(value: unknown): value is AnyField {

@@ -1,5 +1,6 @@
 import { cloneField, resolveBoundary, type Field, type Fields } from "./field/index.js";
 import type { Hints } from "./hints.js";
+import { deriveUnique, type CompositeUnique, type EntityDeclarations } from "./unique.js";
 import { validateFields, type ValidationResult, type ValidateOptions } from "./projections/validation.js";
 import type { StandardSchemaV1 } from "./projections/standard.js";
 
@@ -51,6 +52,11 @@ export interface SchemaConstructor<TFields extends Fields> {
    * pick/omit filter to surviving fields, rename remaps keys, partial/extend pass through.
    */
   getHints(): Hints<TFields> | undefined;
+  /**
+   * Field groups that are unique together, from the 2nd arg of `entity()`.
+   * Derivations carry them; a group loses a member and the group is dropped.
+   */
+  getUnique(): CompositeUnique<TFields> | undefined;
   /** Validation options of this view (e.g. `patch` set by `partial()`). Derivations carry them. */
   getOpts(): ValidateOptions;
   validate(input: unknown): ValidationResult<SchemaViewInfer<TFields>>;
@@ -138,6 +144,7 @@ export function createSchemaConstructor<TFields extends Fields>(
   source?: abstract new (...args: unknown[]) => unknown,
   hints?: Hints<TFields>,
   opts: ValidateOptions = {},
+  unique?: CompositeUnique<Fields>,
 ): SchemaConstructor<TFields> {
   class Schema {
     /** Trusted constructor — assigns already-shaped data. Validate untrusted input via `validate()`/`from()` first. */
@@ -168,6 +175,9 @@ export function createSchemaConstructor<TFields extends Fields>(
     }
     static getHints() {
       return hints;
+    }
+    static getUnique() {
+      return unique;
     }
     static getOpts() {
       return opts;
@@ -201,7 +211,8 @@ export function createSchemaConstructor<TFields extends Fields>(
       for (const key of keys) {
         if (fields[key]) picked[key] = fields[key];
       }
-      return createSchemaConstructor(picked, source, deriveHints(hints, (k) => (keys.includes(k) ? k : undefined)), opts);
+      const survives = (k: string) => (keys.includes(k) ? k : undefined);
+      return createSchemaConstructor(picked, source, deriveHints(hints, survives), opts, deriveUnique(unique, survives));
     }
     static omit(...keys: string[]) {
       assertKnownKeys('omit', keys, fields);
@@ -209,17 +220,18 @@ export function createSchemaConstructor<TFields extends Fields>(
       for (const [key, value] of Object.entries(fields)) {
         if (!keys.includes(key)) omitted[key] = value;
       }
-      return createSchemaConstructor(omitted, source, deriveHints(hints, (k) => (keys.includes(k) ? undefined : k)), opts);
+      const survives = (k: string) => (keys.includes(k) ? undefined : k);
+      return createSchemaConstructor(omitted, source, deriveHints(hints, survives), opts, deriveUnique(unique, survives));
     }
     static partial() {
       // patch mode: an unsent field is omitted ("don't touch"), enforced by
       // ValidateOptions.patch — the fields themselves are untouched, so `null`
       // stays legal only where the base field is nullable. partial() moves the
       // presence axis, never the nullity axis.
-      return createSchemaConstructor({ ...fields }, source, hints, { ...opts, patch: true });
+      return createSchemaConstructor({ ...fields }, source, hints, { ...opts, patch: true }, unique);
     }
     static extend(extra: Fields) {
-      return createSchemaConstructor({ ...fields, ...extra }, source, hints, opts);
+      return createSchemaConstructor({ ...fields, ...extra }, source, hints, opts, unique);
     }
     static rename(mapping: Record<string, string>) {
       assertKnownKeys('rename', Object.keys(mapping), fields);
@@ -227,7 +239,8 @@ export function createSchemaConstructor<TFields extends Fields>(
       for (const [key, field] of Object.entries(fields)) {
         renamed[mapping[key] ?? key] = field;
       }
-      return createSchemaConstructor(renamed, source, deriveHints(hints, (k) => mapping[k] ?? k), opts);
+      const remap = (k: string) => mapping[k] ?? k;
+      return createSchemaConstructor(renamed, source, deriveHints(hints, remap), opts, deriveUnique(unique, remap));
     }
   }
 
@@ -257,9 +270,9 @@ export function createSchemaConstructor<TFields extends Fields>(
  */
 export function entity<TFields extends Fields>(
   fields: TFields,
-  hints?: Hints<TFields>,
+  declarations?: EntityDeclarations<TFields>,
 ): SchemaConstructor<TFields> {
-  return createSchemaConstructor(fields, undefined, hints);
+  return createSchemaConstructor(fields, undefined, declarations?.hints, {}, declarations?.unique);
 }
 
 // ─── compose — the other entry of the derivation algebra ───
