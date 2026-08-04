@@ -45,6 +45,8 @@ export default class NewCommand {
       ? this.state(dir, pw, 'apps', raw.app as string)
       : await this.compose(dir, pw, 'apps', 'Apps — ce qui les consomme', pw.listTemplates('apps'));
 
+    // Every app depends on every frond — stated here, where both names are known.
+    pw.linkFronds(dir);
     if (raw.local) pw.linkLocal(dir);
     const install = raw.local ? 'pnpm install' : 'pnpm install   # needs @fougere/* published (or re-run with --local)';
     this.ui.note([`cd ${name}`, install, `pnpm dev`].join('\n'), `${name} — ${fronds} frond(s), ${apps} app(s)`);

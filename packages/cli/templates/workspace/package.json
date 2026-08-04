@@ -4,7 +4,16 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm --filter './apps/*' --parallel dev",
-    "build": "pnpm --filter './apps/*' -r build"
+    "build": "pnpm --filter './apps/*' -r build",
+    "typecheck": "tsc -p fronds"
+  },
+  "dependencies": {
+    "@fougere/core": "latest",
+    "@fougere/schema": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.15",
+    "typescript": "^5.9.3"
   },
   "pnpm": {
     "onlyBuiltDependencies": ["better-sqlite3", "esbuild"]

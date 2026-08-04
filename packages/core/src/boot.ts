@@ -1,4 +1,5 @@
 import { createApp } from './bootstrap.js';
+import { orderSeeds, runSeeds } from './seed.js';
 import { loadConfig, type FougereConfig } from './config-loader.js';
 import { Logger, type LogLevel } from './builtins/logger.js';
 import type { App, CreateAppOptions } from './types.js';
@@ -75,49 +76,11 @@ export async function boot(options: BootOptions): Promise<App> {
     log.info('migrations done');
   }
 
-  // Run seeds
-  const seedCount = app.fronds.reduce((n, f) => n + f.seeds.length, 0);
-  if (seedCount > 0) {
-    log.debug(`seeding ${seedCount} entities`);
-    for (const frond of app.fronds) {
-      for (const seed of frond.seeds) {
-        const resolve = <T>(name: string) => app.resolve<T>(name + 'Handler');
-        const data = typeof seed.data === 'function' ? await seed.data(resolve) : seed.data;
-
-        // A seed is not a client: it writes at boot, from inside. The façade is
-        // used when the entity declares one (its judge catches a bad seed
-        // early), the ORM when it does not — an entity that exposes nothing is
-        // still an entity whose reference rows must land.
-        const tryResolve = <T>(name: string): T | undefined => {
-          try { return app.resolve<T>(name); } catch { return undefined; }
-        };
-        const handler = tryResolve<Record<string, Function>>(`${seed.entityName}Handler`);
-        const ormName = `${seed.entityName[0].toUpperCase()}${seed.entityName.slice(1)}Orm`;
-        const orm = tryResolve<{ list: () => Promise<unknown[]>; create: (input: unknown) => Promise<unknown> }>(ormName);
-
-        const canRead = typeof handler?.list === 'function' ? handler : orm;
-        if (!canRead) {
-          log.warn(`  ${seed.entityName}: no handler façade nor ORM — skipping seed`);
-          continue;
-        }
-
-        // list() accepts optional InvocationContext; ListResult IS an array.
-        const existing = await canRead.list() as unknown[];
-        if (existing.length === 0) {
-          if (typeof handler?.create === 'function') {
-            for (const item of data) await handler.create({ params: {}, query: {}, body: item, state: {} });
-          } else if (orm) {
-            for (const item of data) await orm.create(item);
-          } else {
-            log.warn(`  ${seed.entityName}: no create handler or ORM — skipping seed`);
-            continue;
-          }
-          log.debug(`  ${seed.entityName}: ${Array.isArray(data) ? data.length : '?'} records`);
-        } else {
-          log.debug(`  ${seed.entityName}: skipped (${existing.length} exist)`);
-        }
-      }
-    }
+  // Run seeds — in dependency order, so a referrer never lands before its target.
+  const seeds = orderSeeds(app.fronds);
+  if (seeds.length > 0) {
+    log.debug(`seeding ${seeds.length} entities: ${seeds.map((s) => s.entityName).join(' → ')}`);
+    await runSeeds(app, seeds, (message) => log.debug(message));
     log.info('seeding done');
   }
 

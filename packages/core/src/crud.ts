@@ -84,7 +84,10 @@ export interface CrudOps<T, V = {}> {
 
 /** The prefab handler class — its ops, plus the statics the bootstrap and adapters read. */
 export interface CrudConstructor<T, V = {}> {
-  new (orm: EntityOrm): CrudOps<T, V>;
+  // `EntityOrm<T>`, not the bare `EntityOrm`: a handler that injects a second ORM has to
+  // spell its own constructor, and `super(orm)` with the ORM the container hands it —
+  // typed on the entity, as the `orm` property below already says — was refused.
+  new (orm: EntityOrm<T>): CrudOps<T, V>;
   readonly __entity: unknown;
   readonly __output: unknown;
   readonly __opOutputs?: CrudViews;

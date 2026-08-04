@@ -1,3 +1,4 @@
+import type { Container } from '@fougere/container';
 import type { CreateAppOptions, App, AuthRuntime } from './types.js';
 import type { AppMiddleware } from './middleware.js';
 import { runMiddlewares, FougereError, ErrorCode } from './middleware.js';
@@ -466,12 +467,34 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       : undefined;
   };
 
+  /**
+   * The storage an entity is backed by — the dual of `facadeFor`, which serves its
+   * client-facing door. Both are ways in; an entity that opens none of them still has rows.
+   *
+   * It resolves through the owning frond's scope, because that is where entity ORMs live:
+   * `resolve('UserOrm')` reads the ROOT container and never finds one, so callers outside
+   * the frond concluded there was no storage. The seed loop did exactly that, and skipped
+   * every entity with no façade — the one case its own fallback existed for.
+   */
+  const ormFor = (entity: string): unknown | undefined => {
+    const owner = fronds.find((f) => f.entities.some((e) => e.name === entity));
+    if (!owner) return undefined;
+
+    const key = `${entity[0].toUpperCase()}${entity.slice(1)}Orm`;
+    try {
+      return container.resolve<Container>(`frond:${owner.name}`).resolve(key);
+    } catch {
+      return undefined;
+    }
+  };
+
   return {
     container,
     fronds,
     resolve,
     schemaFor,
     facadeFor,
+    ormFor,
     dispose: () => container.dispose(),
     use(...args: [AppMiddleware] | [string, AppMiddleware]): void {
       if (typeof args[0] === 'string') {

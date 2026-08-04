@@ -264,6 +264,15 @@ export interface App {
    * stay structurally typed and depend on nothing.
    */
   facadeFor(entity: string, surface?: string): Record<string, Function> | undefined;
+  /**
+   * The storage an entity is backed by, resolved through its owning frond's scope —
+   * the dual of {@link facadeFor}. `undefined` when no loaded frond hosts the entity,
+   * or when the app booted with no storage at all.
+   *
+   * `unknown` because the port belongs to whoever wired it: narrowing it to `EntityOrm`
+   * is the caller saying which implementation they are standing on.
+   */
+  ormFor(entity: string): unknown | undefined;
   /** Dispose the root container. */
   dispose(): Promise<void>;
   /** Register a global app middleware (runs on every operation). */

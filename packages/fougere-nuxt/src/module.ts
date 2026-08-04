@@ -13,8 +13,8 @@ import {
   addImports,
   createResolver,
 } from '@nuxt/kit';
-import { scanProject, setModuleLoader, loadCascadedConfig } from '@fougere/core';
-import type { FrondDescriptor, SeedEntry, FougereConfig } from '@fougere/core';
+import { scanProject, setModuleLoader, loadCascadedConfig, orderSeeds } from '@fougere/core';
+import type { SeedEntry, FougereConfig } from '@fougere/core';
 import { createJiti } from 'jiti';
 import { resolve } from 'node:path';
 import { existsSync, readFileSync } from 'node:fs';
@@ -29,38 +29,6 @@ export interface FougereModuleOptions {
    * fronds are shared at the root. Config and `.fougere` stay app-local.
    */
   root?: string;
-}
-
-/** Topological sort of seeds across all fronds based on entity ref() dependencies. */
-function sortSeedsByDeps(fronds: FrondDescriptor[]): SeedEntry[] {
-  // Build entity → refs map from all fronds
-  const deps = new Map<string, string[]>();
-  for (const frond of fronds) {
-    for (const entity of frond.entities) {
-      const refs: string[] = [];
-      for (const [, field] of Object.entries(entity.entityClass.getFields())) {
-        if (field.role?.relation?.kind === 'one') {
-          const targetName = (field.role.relation.to() as any).name?.toLowerCase();
-          if (targetName) refs.push(targetName);
-        }
-      }
-      deps.set(entity.name.toLowerCase(), refs);
-    }
-  }
-
-  // Collect all seeds
-  const seeds = fronds.flatMap((f) => f.seeds);
-
-  // Sort: entities without deps first, then entities that depend on already-placed ones
-  return seeds.sort((a, b) => {
-    const aDeps = deps.get(a.entityName.toLowerCase()) ?? [];
-    const bDeps = deps.get(b.entityName.toLowerCase()) ?? [];
-    // If a depends on b's entity, b goes first
-    if (aDeps.includes(b.entityName.toLowerCase())) return 1;
-    if (bDeps.includes(a.entityName.toLowerCase())) return -1;
-    // Fewer deps first
-    return aDeps.length - bDeps.length;
-  });
 }
 
 
@@ -198,7 +166,7 @@ const module: any = defineNuxtModule<FougereModuleOptions>({
     }
 
     // ── 6. Boot plugin (virtual — lives in .nuxt/) ───
-    const allSeeds = sortSeedsByDeps(fronds);
+    const allSeeds = orderSeeds(fronds);
     const bootTpl = addTemplate({
       filename: 'fougere-boot.ts',
       write: true,
@@ -225,6 +193,7 @@ export function generateBootPlugin(
   // Explicit imports — nitro's auto-imports don't reach this template in a prod build
   lines.push(`import { defineNitroPlugin } from 'nitropack/runtime';`);
   lines.push(`import { configureFougere } from '${fougereAppPath}';`);
+  if (seeds.length) lines.push(`import { runSeeds } from '@fougere/core';`);
 
   const db = config.db ?? 'sqlite';
 
@@ -264,16 +233,15 @@ export function generateBootPlugin(
     lines.push(`      await storage.afterBoot?.(app);`);
 
     if (seeds.length) {
-      lines.push(`      const resolve = (name) => app.resolve(name + 'Handler');`);
+      // The seeding LOOP is core's (`runSeeds`), not written out here: a second copy
+      // drifted, and the one that had lost its storage fallback was this one — the one
+      // that actually runs when you open the app. Codegen's only job is the static
+      // imports, which is the one thing a bundler needs spelled out.
+      lines.push(`      await runSeeds(app, [`);
       for (let i = 0; i < seeds.length; i++) {
-        const s = seeds[i];
-        lines.push(`      // ${s.entityName}`);
-        lines.push(`      const data_${i} = typeof seed_${i} === 'function' ? await seed_${i}(resolve) : seed_${i};`);
-        lines.push(`      const handler_${i} = app.resolve('${s.entityName}Handler');`);
-        lines.push(`      if ((await handler_${i}.list({ limit: 1 })).length === 0) {`);
-        lines.push(`        for (const item of data_${i}) await handler_${i}.create({ params: {}, query: {}, body: item, state: {} });`);
-        lines.push(`      }`);
+        lines.push(`        { entityName: '${seeds[i].entityName}', data: seed_${i}, filePath: ${JSON.stringify(seeds[i].filePath)} },`);
       }
+      lines.push(`      ]);`);
     }
 
     lines.push(`    },`);

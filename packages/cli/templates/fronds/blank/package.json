@@ -1,0 +1,13 @@
+{
+  "name": "@frond/__name__",
+  "version": "0.0.1",
+  "type": "module",
+  "exports": {
+    "./entities/*": "./entities/*.ts",
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "@fougere/schema": "latest",
+    "@fougere/core": "latest"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  // A frond is autonomous TypeScript domain code — it typechecks on its own, against
+  // this file, without Nuxt and without `.nuxt/tsconfig.json`. `pnpm typecheck` at the
+  // workspace root runs it, and it is the cheapest judge you have.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "lib": ["ESNext"],
+    "types": ["node"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "rootDir": "."
+  },
+  "include": ["."]
+}

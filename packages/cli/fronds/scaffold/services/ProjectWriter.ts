@@ -69,16 +69,66 @@ export default class ProjectWriter {
   }
 
   /**
+   * Every app depends on every frond of the workspace — stated once composition is done,
+   * because that is when the names exist.
+   *
+   * A template cannot carry it: the frond is named at composition time (`blog:catalog`),
+   * so a dependency written into `templates/apps/nuxt` would name the template instead
+   * and resolve to nothing. Which is what happened — the generated app imported
+   * `@frond/blog` whatever you had called it, and did not start.
+   *
+   * `fronds/` and `apps/` are the registry, like `listTemplates`: nothing to declare.
+   */
+  linkFronds(wsDir: string): void {
+    const dirs = (kind: string): string[] => {
+      const dir = join(wsDir, kind);
+      if (!existsSync(dir)) return [];
+
+      return readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name);
+    };
+
+    const fronds = dirs('fronds');
+    if (fronds.length === 0) return;
+
+    for (const app of dirs('apps')) {
+      const pkgPath = join(wsDir, 'apps', app, 'package.json');
+      if (!existsSync(pkgPath)) continue;
+
+      const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as { dependencies?: Record<string, string> };
+      pkg.dependencies ??= {};
+      for (const frond of fronds) pkg.dependencies[`@frond/${frond}`] = 'workspace:*';
+      writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+    }
+  }
+
+  /**
    * Dev mode: rewrite every `@fougere/*` dependency in the workspace to a
    * `link:` into this monorepo, so `pnpm install` resolves offline (the
    * packages aren't on npm yet). No-op once the packages are published.
    */
   linkLocal(wsDir: string): void {
     const packages = fileURLToPath(new URL('../../../../', import.meta.url));
-    const dirOf: Record<string, string> = {
-      core: 'core', schema: 'schema', 'schema-sql': 'schema-sql', runtime: 'runtime',
-      'container-fougere': 'container-fougere', nuxt: 'fougere-nuxt', 'transport-http': 'transport/http',
+    // Read off the monorepo rather than listed here: a hand-kept map knew the seven
+    // packages the default templates use, so the first step beyond the default — a
+    // GraphQL surface, auth — added a dependency it had never heard of, which stayed
+    // on `latest` and broke the install. `@fougere/nuxt` lives in `fougere-nuxt/` and
+    // `@fougere/transport-http` one level down, which is exactly why the name is read
+    // from each package.json instead of guessed from its directory.
+    const dirOf = new Map<string, string>();
+    const scan = (dir: string, depth = 0): void => {
+      for (const e of readdirSync(dir, { withFileTypes: true })) {
+        if (!e.isDirectory() || e.name === 'node_modules') continue;
+        const sub = join(dir, e.name);
+        const pkgPath = join(sub, 'package.json');
+        if (existsSync(pkgPath)) {
+          const { name } = JSON.parse(readFileSync(pkgPath, 'utf8')) as { name?: string };
+          if (name?.startsWith('@fougere/')) dirOf.set(name, sub);
+        } else if (depth === 0) {
+          scan(sub, depth + 1);
+        }
+      }
     };
+    scan(packages);
     const walk = (d: string): void => {
       for (const e of readdirSync(d, { withFileTypes: true })) {
         if (e.name === 'node_modules') continue;
@@ -88,8 +138,8 @@ export default class ProjectWriter {
         const pkg = JSON.parse(readFileSync(f, 'utf8')) as { dependencies?: Record<string, string> };
         let changed = false;
         for (const dep of Object.keys(pkg.dependencies ?? {})) {
-          const m = /^@fougere\/(.+)$/.exec(dep);
-          if (m && dirOf[m[1]]) { pkg.dependencies![dep] = `link:${join(packages, dirOf[m[1]])}`; changed = true; }
+          const local = dirOf.get(dep);
+          if (local) { pkg.dependencies![dep] = `link:${local}`; changed = true; }
         }
         if (changed) writeFileSync(f, JSON.stringify(pkg, null, 2) + '\n');
       }

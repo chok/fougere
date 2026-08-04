@@ -1,5 +1,6 @@
 export { createApp } from './bootstrap.js';
 export { boot } from './boot.js';
+export { orderSeeds, runSeeds } from './seed.js';
 export { defineFougere } from './define.js';
 export { loadConfig, loadCascadedConfig, loadFrondConfigs, mergeGlobal, mergeConfig, configForFrond, resolveConfig, type FougereConfig, type ResolvedConfig } from './config-loader.js';
 export { defineFrond, loadFrondConfig, type FrondConfig, type OperationOverride } from './frond-config.js';
