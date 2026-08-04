@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const { user, refresh } = useCurrentUser();
+const readOnly = useReadOnlyDeployment();
 const { locale } = useI18n();
 const localePath = useLocalePath();
 const switchLocalePath = useSwitchLocalePath();
@@ -38,7 +39,7 @@ async function logout() {
             <UButton :to="localePath('/blog/new')" variant="soft" size="sm" icon="i-lucide-plus" :label="$t('nav.write')" />
             <UButton variant="ghost" size="sm" icon="i-lucide-log-out" :aria-label="$t('nav.signOut')" @click="logout" />
           </template>
-          <UButton v-else :to="localePath('/login')" variant="ghost" size="sm" :label="$t('nav.signIn')" />
+          <UButton v-else-if="!readOnly" :to="localePath('/login')" variant="ghost" size="sm" :label="$t('nav.signIn')" />
         </div>
       </div>
     </header>

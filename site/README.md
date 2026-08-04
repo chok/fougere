@@ -12,6 +12,29 @@ pnpm build && node .output/server/index.mjs   # build prod (voir Dockerfile pour
 Tout l'état writable (SQLite + index content) vit sous `.data/` — c'est le seul volume à
 monter en déploiement.
 
+## Static
+
+Le site se prérend vers de l'hébergement statique — c'est ce que fait
+`.github/workflows/pages.yml` à chaque push sur `main`.
+
+```bash
+NITRO_PRESET=github_pages NUXT_APP_BASE_URL=/fougere/ pnpm generate
+npx serve .output/public          # attention : sert à la racine, pas sous /fougere/
+```
+
+Ce qui traverse l'export : la vitrine, les docs (en/fr), et le **côté lecture** du
+blog — rendu par la Frond au moment du build, exactement comme en SSR.
+
+Ce qui ne traverse pas : écrire et se connecter, qui demandent un serveur.
+`useReadOnlyDeployment()` le dérive du build (`import.meta.prerender`, mis dans le
+payload) et retire l'entrée « Connexion » de la barre. Le fallback SPA rend
+quand même n'importe quelle URL tapée à la main : `/login` dessine son formulaire,
+qui n'a simplement plus de destinataire. Aucun chemin dans le site n'y mène.
+
+Le blog statique est vide tant que `.data/` n'est pas dans git : la CI part d'une
+base neuve. Pour publier des billets sur Pages, il faudrait des seeds — la lecture,
+elle, marche déjà.
+
 ## Déployer
 
 ```bash

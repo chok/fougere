@@ -1,0 +1,69 @@
+name: Pages
+
+# The site prerendered to static hosting. What survives the export: the landing
+# page, the docs (en/fr), and the blog's READ side — rendered by the Frond at
+# build time. What does not: writing and signing in, which need a server. See
+# site/README.md#static.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - 'packages/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time; never cancel one in flight.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - id: pages
+        uses: actions/configure-pages@v5
+
+      - run: pnpm install --frozen-lockfile
+
+      # The site consumes @fougere/* through their dist/.
+      - run: pnpm -r --filter './packages/**' build
+
+      - name: generate
+        # The base path is the repo name — derived, so renaming the repo
+        # does not silently produce a site with broken asset URLs.
+        env:
+          NITRO_PRESET: github_pages
+          NUXT_APP_BASE_URL: /${{ github.event.repository.name }}/
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
+        run: pnpm -C site generate
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/.output/public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

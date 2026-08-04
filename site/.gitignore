@@ -1,6 +1,8 @@
 node_modules
 .nuxt
 .output
+# symlink to .output/public, created by `nuxt generate`
+dist
 .data
 *.db
 *.db-shm

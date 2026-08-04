@@ -6,6 +6,7 @@
     "dev": "nuxt dev",
     "typecheck": "tsc -p fronds",
     "build": "nuxt build",
+    "generate": "nuxt generate",
     "preview": "nuxt preview"
   },
   "dependencies": {
