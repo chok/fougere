@@ -47,7 +47,7 @@ packages/
   http/                HttpRouter, middleware
   auth-better/         better-auth translation layer
   cli/ cli-ui/  decorators/
-site/                  Le site de Fougere, construit avec Fougere — voir site/README.md
+site/                  The Fougere site, built with Fougere — see site/README.md
 demos/
   nuxt-blog/           FLAGSHIP — primitives, auth, draft→publish, lived split
   schema-ecommerce/    SQLite + Apollo Server
@@ -80,7 +80,7 @@ demos/
 - `resolveStorage()` (`@fougere/runtime`) is the **single** place that defaults a missing db path — never recompute it elsewhere
 - `graphql` deduplicated across the workspace (override + hoist)
 - `better-sqlite3` bindings may need `npx prebuild-install` in its pnpm dir
-- Commits : titre + 1-3 lignes. Jamais `git add -A` (sessions parallèles)
+- Commits: title + 1-3 lines. Never `git add -A` (parallel sessions)
 
 ## Known issues
 
