@@ -12,8 +12,8 @@
   },
   "home": {
     "badge": "Pré-version — les API se stabilisent",
-    "title": "Une classe. Toute votre stack en dérive.",
-    "subtitle": "Fougere est un modèle applicatif : entités, opérations, frontières de propriété — projeté vers Nuxt, SQL, GraphQL et les formulaires. Démarrez en monolithe, passez en services en éditant une ligne : le modèle ne bouge pas.",
+    "title": "Écrivez le domaine. Tout le reste en est une projection.",
+    "subtitle": "Vous déclarez l'objet métier et vous jugez ses transitions. En dérivent la validation, la table, le contrat de formulaire, les surfaces GraphQL et REST. Et parce que la déclaration est du JSON sur le fil, le domaine peut passer dans son propre process — ou dans un autre langage — sans que le code qui l'appelle change.",
     "ctaDocs": "Lire la doc",
     "ctaBlog": "Lire le blog",
     "gradientTitle": "Le gradient",
