@@ -10,8 +10,8 @@ export class BySlugInput extends Post.pick('slug') {}
 /** Public card — what the blog index shows, no body. */
 export class PostCard extends Post.pick('id', 'slug', 'title', 'summary', 'authorName', 'publishedAt') {}
 
-// Judges live at module level on purpose: every class method is an operation
-// (the parser exposes them all), helpers must not be reachable over the wire.
+// Judges live at module level on purpose: only PUBLIC class methods become
+// operations, so a helper out here cannot become one by accident.
 
 function requireUser(user: User | null, operation: string): User {
   if (!user) {
