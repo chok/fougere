@@ -54,14 +54,21 @@ jobs:
       # The site consumes @fougere/* through their dist/.
       - run: pnpm -r --filter './packages/**' build
 
+      # nuxt is invoked directly rather than through `pnpm run`: a Fougere app
+      # carries its own pnpm-workspace.yaml (that is the shape the CLI ships),
+      # so running a script inside site/ makes pnpm verify a nested workspace
+      # that has never been installed on its own — and it then tries to resolve
+      # @fougere/* there, where they do not live. The frozen install above
+      # already pinned every dependency.
       - name: generate
+        working-directory: site
         # The base path is the repo name — derived, so renaming the repo
         # does not silently produce a site with broken asset URLs.
         env:
           NITRO_PRESET: github_pages
           NUXT_APP_BASE_URL: /${{ github.event.repository.name }}/
           SITE_URL: ${{ steps.pages.outputs.base_url }}
-        run: pnpm -C site generate
+        run: ./node_modules/.bin/nuxt generate
 
       - uses: actions/upload-pages-artifact@v3
         with:
