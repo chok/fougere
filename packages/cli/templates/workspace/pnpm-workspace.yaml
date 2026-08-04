@@ -1,3 +1,10 @@
 packages:
   - fronds/*
   - apps/*
+
+# pnpm 11 fails an install rather than warning about a build script it was not
+# told to run, and it reads the allowlist here — `pnpm.onlyBuiltDependencies` in
+# package.json is the pnpm 10 location, now ignored in silence.
+allowBuilds:
+  better-sqlite3: true
+  esbuild: true
