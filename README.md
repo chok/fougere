@@ -2,10 +2,12 @@
 
 # 🌿 Fougere
 
-**Declare a business object once. Everything else is derived.**
+**Write the domain. The rest follows.**
 
-A TypeScript framework where one entity class is the source of truth — and where
-moving a domain to another machine is one line of config, not a rewrite.
+A TypeScript framework where you spend your day on the business object and its rules —
+and where the plumbing around them is derived, not written.
+
+**[Read the docs →](https://chok.github.io/fougere/)**
 
 [![CI](https://github.com/chok/fougere/actions/workflows/ci.yml/badge.svg)](https://github.com/chok/fougere/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
@@ -16,29 +18,10 @@ moving a domain to another machine is one line of config, not a rewrite.
 
 ---
 
-## The shape you write four times
+## Your domain, in one file
 
-Every app does this. A post has a title, at most 160 characters. You say so to the
-validator, to the database, to the form, and to TypeScript — and then you keep those
-four sentences agreeing with each other, by hand, forever.
-
-```ts
-// schemas/post.ts — the shape, first time
-export const postSchema = z.object({ title: z.string().min(1).max(160) });
-
-// server/db/schema.ts — the shape, again
-export const posts = sqliteTable('posts', { title: text('title').notNull() });
-
-// server/api/posts.post.ts — wired by hand
-const body = postSchema.parse(await readBody(event));
-
-// app/components/PostForm.vue — the rules, again
-const rules = { title: [required, maxLength(160)] };
-```
-
-The bug is never in one of those files. It's in the day two of them stopped agreeing.
-
-## The shape you write once
+This is a blog post. Not a DTO, not a table, not a validation schema — the business
+object itself, said once, in the words of the business.
 
 ```ts
 // fronds/blog/entities/Post.ts
@@ -56,7 +39,40 @@ export default class Post extends entity({
 }) {}
 ```
 
-Derived from it, with nothing to keep in sync:
+A field carries four axes — its shape, its role, its lifecycle (*who* writes this
+value and *when*) and its boundary (which direction it may cross). `readOnly` above
+is not a comment about intent: it removes the field from the inbound door.
+
+## The rules are the domain too
+
+The interesting part is never `update()`. It is the transition — and a transition has
+a judge. That judge is the code you actually get paid to write.
+
+```ts
+export default class PostHandler extends Crud(Post) {
+  /** Judge: the author, a draft, a body worth publishing. Realize: stamp the pair. */
+  async publish(id: string, user: User | null): Promise<Post> {
+    const author = requireUser(user, 'publish');
+    const post = await requireOwn(this.orm, id, author, 'publish');
+
+    if (post.status === 'published') {
+      throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published', entity: 'post', operation: 'publish' });
+    }
+    if (!post.body?.trim()) {
+      throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Cannot publish an empty draft', entity: 'post', operation: 'publish' });
+    }
+
+    return this.orm.update(id, { status: 'published', publishedAt: new Date() });
+  }
+}
+```
+
+That is the whole feature. Two files.
+
+## What you did not write
+
+Both files above are the domain and nothing else. Everything below was derived from
+them, and none of it is yours to keep in sync:
 
 | | |
 | --- | --- |
@@ -64,15 +80,33 @@ Derived from it, with nothing to keep in sync:
 | **Storage** | the SQL table and its migrations |
 | **Forms** | `useFormFor(Post)` — fields, rules, per-field error mapping |
 | **API surface** | `post.list`, `post.create`, `post.publish`… |
-| **GraphQL** | `type Post { … }` and its inputs |
+| **GraphQL** | `type Post { … }`, its inputs, and `publish` as a mutation |
+| **REST** | the routes, from the same operations |
 | **Types** | the class *is* the type |
 
-That's the first idea: **single-schema**. A field carries four axes — its shape, its
-role, its lifecycle (*who* writes this value and *when*) and its boundary (which
-direction it may cross). `readOnly` above isn't a comment about intent; it removes
-the field from the inbound door.
+No codegen step, no `dist/generated`, no watcher to keep running. The declaration is
+the artefact.
 
-## The second idea: the gradient
+Held the usual way, that list is four files you write, then re-read every time the
+shape moves:
+
+```ts
+// schemas/post.ts — the shape, first time
+export const postSchema = z.object({ title: z.string().min(1).max(160) });
+
+// server/db/schema.ts — the shape, again
+export const posts = sqliteTable('posts', { title: text('title').notNull() });
+
+// server/api/posts.post.ts — wired by hand
+const body = postSchema.parse(await readBody(event));
+
+// app/components/PostForm.vue — the rules, again
+const rules = { title: [required, maxLength(160)] };
+```
+
+The bug is never in one of those files. It is in the day two of them stopped agreeing.
+
+## The gradient
 
 A **Frond** is a domain — its entities, its handlers, its collectors, its seeds.
 It runs inside your app's process, or in its own process behind JSON-RPC, and the
@@ -214,13 +248,14 @@ Known limits, stated plainly, because you'd find them anyway:
 
 ## Docs
 
-Reference documentation lives in [`site/content/`](./site/content) (English and French),
-and reads best served — `pnpm -C site dev`.
+**[chok.github.io/fougere](https://chok.github.io/fougere/)** — the site, prerendered
+on every push. English and French. The source is [`site/content/`](./site/content), and
+`pnpm -C site dev` serves it live, blog included.
 
-- [Philosophy](./site/content/en/docs/2.concepts/1.philosophy.md) — the model, and why it is shaped this way
-- [Entities and the four axes](./site/content/en/docs/3.schema/1.entities.md) — the field vocabulary
-- [The gradient](./site/content/en/docs/6.infra/1.gradient.md) — in-process, split, and what stays identical
-- [Adopting it in an existing app](./site/content/en/docs/02.existing-app.md) — feature by feature, honestly priced
+- [Philosophy](https://chok.github.io/fougere/docs/concepts/philosophy) — the model, and why it is shaped this way
+- [Entities and the four axes](https://chok.github.io/fougere/docs/schema/entities) — the field vocabulary
+- [The gradient](https://chok.github.io/fougere/docs/infra/gradient) — in-process, split, and what stays identical
+- [Adopting it in an existing app](https://chok.github.io/fougere/docs/existing-app) — feature by feature, honestly priced
 
 ---
 

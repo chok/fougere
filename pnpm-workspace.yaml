@@ -13,12 +13,13 @@ overrides:
   graphql: ^16.13.1
 
 # pnpm 11 fails an install rather than warning about a build script it was not
-# told to run. Every entry here is a package that genuinely builds something:
-# native bindings, a binary, or a postinstall that picks a variant.
-onlyBuiltDependencies:
-  - better-sqlite3
-  - '@swc/core'
-  - esbuild
-  - sharp
-  - '@parcel/watcher'
-  - vue-demi
+# told to run, and it renamed the allowlist: onlyBuiltDependencies (a list) is
+# now allowBuilds (a map). Every entry builds something real — native bindings,
+# a binary, or a postinstall that picks a variant.
+allowBuilds:
+  better-sqlite3: true
+  '@swc/core': true
+  esbuild: true
+  sharp: true
+  '@parcel/watcher': true
+  vue-demi: true
