@@ -3,10 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "remote": "cd remote-blog && npx tsx server.ts",
-    "sync": "cd consumer && REMOTE_URL=http://localhost:4001 npx tsx sync-remote.ts",
+    "remote": "cd remote-blog && tsx server.ts",
+    "sync": "cd consumer && REMOTE_URL=http://localhost:4001 tsx sync-remote.ts",
     "dev": "cd consumer && npx nuxt dev --port 3002",
-    "test": "npx tsx test.ts"
+    "test": "tsx test.ts"
   },
   "dependencies": {
     "@fougere/core": "workspace:*",
@@ -17,5 +17,8 @@
     "hono": "^4.0.0",
     "@hono/node-server": "^1.0.0",
     "jiti": "^2.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0"
   }
 }

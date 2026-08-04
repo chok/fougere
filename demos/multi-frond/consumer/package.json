@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "sync": "npx tsx sync-remote.ts",
+    "sync": "tsx sync-remote.ts",
     "dev": "nuxt dev --port 3002",
     "build:synced": "nuxt build"
   },
