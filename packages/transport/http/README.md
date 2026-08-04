@@ -1,9 +1,9 @@
 # @fougere/transport-http
-> Le contrat d'appel sur le fil
-JSON-RPC 2.0, une route : `POST /_fougere/call`. `serve()` héberge un frond dans son
-propre process, `createHttpTransport()` l'appelle depuis un autre.
+> The call contract, on the wire
+JSON-RPC 2.0, one route: `POST /_fougere/call`. `serve()` hosts a frond in its own
+process; `createHttpTransport()` calls it from another.
 
-Pas de RPC sans voyage : en in-process, un appel reste une exécution mémoire directe.
+No RPC without travel: in-process, a call stays a direct memory execution.
 
 ## Installation
 ```bash
@@ -12,6 +12,6 @@ pnpm add @fougere/transport-http
 
 ---
 
-Fait partie de [Fougere](https://github.com/chok/fougere) — un schéma unique,
-un gradient du monolithe au distribué, le même code utilisateur.
-Documentation de référence : le site (`site/content`, fr/en).
+Part of [Fougere](https://github.com/chok/fougere) — one schema, a gradient from
+monolith to distributed, the same user code.
+Reference documentation: [the site](https://chok.github.io/fougere/) (en/fr).

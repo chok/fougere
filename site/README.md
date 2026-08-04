@@ -1,48 +1,46 @@
 # @fougere/site
 
-Le site de Fougere — vitrine, docs, blog — construit avec Fougere : le blog est une Frond
-(`fronds/blog`, draft→publish jugé), les docs sont du markdown Nuxt Content (`content/{en,fr}/docs`),
-l'i18n est en/fr (`prefix_except_default` : `/docs`, `/fr/docs`).
+The Fougere site — landing page, docs, blog — built with Fougere: the blog is a Frond
+(`fronds/blog`, a judged draft→publish), the docs are Nuxt Content markdown
+(`content/{en,fr}/docs`), i18n is en/fr (`prefix_except_default`: `/docs`, `/fr/docs`).
 
 ```bash
-pnpm dev                 # depuis site/ — dev server :3000
-pnpm build && node .output/server/index.mjs   # build prod (voir Dockerfile pour les fixes de trace)
+pnpm dev                 # from site/ — dev server :3000
+pnpm build && node .output/server/index.mjs   # prod build (see Dockerfile for the trace fixes)
 ```
 
-Tout l'état writable (SQLite + index content) vit sous `.data/` — c'est le seul volume à
-monter en déploiement.
+Every piece of writable state (SQLite + the content index) lives under `.data/` — the
+single volume to mount when deploying.
 
 ## Static
 
-Le site se prérend vers de l'hébergement statique — c'est ce que fait
-`.github/workflows/pages.yml` à chaque push sur `main`.
+The site prerenders to static hosting — that is what `.github/workflows/pages.yml` does
+on every push to `main`, publishing to https://chok.github.io/fougere/.
 
 ```bash
 NITRO_PRESET=github_pages NUXT_APP_BASE_URL=/fougere/ pnpm generate
-npx serve .output/public          # attention : sert à la racine, pas sous /fougere/
+npx serve .output/public          # note: serves at the root, not under /fougere/
 ```
 
-Ce qui traverse l'export : la vitrine, les docs (en/fr), et le **côté lecture** du
-blog — rendu par la Frond au moment du build, exactement comme en SSR.
+What survives the export: the landing page, the docs (en/fr), and the **read side** of
+the blog — rendered by the Frond at build time, exactly as it would be in SSR.
 
-Ce qui ne traverse pas : écrire et se connecter, qui demandent un serveur.
-`useReadOnlyDeployment()` le dérive du build (`import.meta.prerender`, mis dans le
-payload) et retire l'entrée « Connexion » de la barre. Le fallback SPA rend
-quand même n'importe quelle URL tapée à la main : `/login` dessine son formulaire,
-qui n'a simplement plus de destinataire. Aucun chemin dans le site n'y mène.
+What does not: writing and signing in, which need a server. `useReadOnlyDeployment()`
+derives that from the build (`import.meta.prerender`, put in the payload) and removes the
+"Sign in" entry from the bar. The SPA fallback still renders any hand-typed URL: `/login`
+draws its form, which simply has no recipient. No path through the site leads there.
 
-Le blog statique est vide tant que `.data/` n'est pas dans git : la CI part d'une
-base neuve. Pour publier des billets sur Pages, il faudrait des seeds — la lecture,
-elle, marche déjà.
+The static blog is empty as long as `.data/` is out of git: CI starts from a fresh
+database. Publishing posts on Pages would take seeds — the reading side already works.
 
-## Déployer
+## Deploy
 
 ```bash
-# depuis la racine du monorepo
+# from the monorepo root
 SITE_AUTH_SECRET='...32+ chars...' SITE_URL='https://fougere.example' \
   docker compose -f site/docker-compose.yml up -d --build
 ```
 
-Le build docker part de la **racine** (deps `workspace:*`), retire la référence workspace
-`../sylvauth` (repo frère, hors contexte) et remplace le tracé Nitro partiel de
-`jiti` par le paquet complet (issue pnpm connue).
+The docker build starts from the **root** (`workspace:*` deps), drops the `../sylvauth`
+workspace reference (a sibling repo, out of context) and replaces Nitro's partial trace of
+`jiti` with the full package (a known pnpm issue).

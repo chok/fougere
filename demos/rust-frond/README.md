@@ -1,28 +1,28 @@
-# rust-frond — un Frond hors TypeScript
+# rust-frond — a Frond outside TypeScript
 
-Un frond `telemetry` écrit en Rust, consommé par du TypeScript qui ne connaît
-aucune de ses entités. Il n'existe **aucun** `class Sensor extends entity({...})`
-dans ce repo : la déclaration vit dans `src/main.rs`.
+A `telemetry` frond written in Rust, consumed by TypeScript that knows none of its
+entities. There is **no** `class Sensor extends entity({...})` anywhere in this repo:
+the declaration lives in `src/main.rs`.
 
 ```bash
-cargo run --release     # le frond Rust, :4200
-npx tsx consumer.ts     # le consommateur TS, dans un autre terminal
+cargo run --release     # the Rust frond, :4200
+npx tsx consumer.ts     # the TS consumer, in another terminal
 ```
 
-## Ce que ça prouve
+## What it proves
 
-Le frond n'honore que deux contrats, et les deux sont du JSON :
+The frond honours two contracts, and both are JSON:
 
-1. **le fil** — `POST /_fougere/call`, JSON-RPC 2.0, `method = "entity.op"`,
-   `params` = l'InvocationContext. Voir `packages/transport/http/src/jsonrpc.ts`.
-2. **la carte** — `rpc.discover` rend ce qu'il héberge, schéma compris.
-   Voir `packages/core/src/call.ts:31`.
+1. **the wire** — `POST /_fougere/call`, JSON-RPC 2.0, `method = "entity.op"`,
+   `params` = the InvocationContext. See `packages/transport/http/src/jsonrpc.ts`.
+2. **the map** — `rpc.discover` returns what it hosts, schemas included.
+   See `packages/core/src/call.ts:31`.
 
-Tout le reste lui appartient : le langage, le stockage, le juge.
+Everything else belongs to it: the language, the storage, the judge.
 
-Le moment qui compte est l'étape 4 du consommateur. `reconstruct()`
-(`packages/schema/src/projections/reconstruct.ts:103`) rebâtit un schéma
-**vivant** depuis la carte, et le juge TS refuse un payload avant tout réseau :
+The moment that counts is step 4 of the consumer. `reconstruct()`
+(`packages/schema/src/projections/reconstruct.ts:103`) rebuilds a **live** schema from
+the map, and the TS judge refuses a payload before any network:
 
 ```
 ✗ couleur  — Unknown field
@@ -31,46 +31,36 @@ Le moment qui compte est l'étape 4 du consommateur. `reconstruct()`
 ✗ label    — String is too short (1 < 2).
 ```
 
-Ces messages viennent de `@cfworker/json-schema`, côté TS, appliqués à des
-règles qu'aucune ligne de TypeScript ne déclare. « La vérité voyage, la
-réalisation varie » — au sens littéral.
+Those messages come from `@cfworker/json-schema`, on the TS side, applied to rules that
+no line of TypeScript declares. "The truth travels, the realization varies" — literally.
 
-## Les 4 axes sur le fil
+## The 4 axes on the wire
 
-`shape` EST du JSON Schema, au niveau supérieur du champ. Les trois autres
-vivent sous `x-fougere` :
+`shape` IS JSON Schema, at the top level of the field. The other three live under
+`x-fougere`:
 
-| axe | dans `src/main.rs` | effet côté TS |
+| axis | in `src/main.rs` | effect on the TS side |
 |---|---|---|
-| `role.primary` | `id` | exclu de `inputFields` |
-| `lifecycle.create: 'now'` | `recordedAt` | exclu de `inputFields`, estampillé par Rust |
-| `lifecycle.create: {generate}` | `id` | non requis à la création |
-| `boundary.in: 'closed'` | `checksum` | `Read-only` si un client le fournit |
+| `role.primary` | `id` | excluded from `inputFields` |
+| `lifecycle.create: 'now'` | `recordedAt` | excluded from `inputFields`, stamped by Rust |
+| `lifecycle.create: {generate}` | `id` | not required at creation |
+| `boundary.in: 'closed'` | `checksum` | `Read-only` if a client supplies it |
 
-## Le trou que ça découvre
+## What the demo does not do
 
-`createRemoteFacade` (`packages/core/src/remote.ts:79`) est un Proxy qui route
-sur le **nom** de l'entité. La carte arrive avec `entity.schema` dedans
-(`remote.ts:41-46`) et la boucle ne retient que `{ frond, transport }` : **le
-schéma est reçu puis jeté.**
+- **The static type.** `reconstruct()` returns a `SchemaConstructor<Fields>` — full
+  runtime, literal keys lost. Getting `sensor.label` typed would need a map → `.d.ts`
+  projection, which does not exist (no codegen in `packages/cli/src`).
+- **The map is hand-written** (`sensor_card()`). A real Rust frond would derive it —
+  `#[derive(Entity)]` on the struct, with `schemars` underneath. That is where Rust
+  beats TS: a macro sees the declaration, where Fougere pays for an AST scan.
+- **The documented losses** of `card.ts:18-22` apply: a relation would travel by name,
+  and so would a custom generator.
 
-Conséquence : un frond distant donne des *appels*, pas de *schéma* — donc pas de
-surface GraphQL sur lui, pas de `useFormFor` sur ses entités. Le consommateur
-ici doit appeler `rpc.discover` à la main pour obtenir ce que la doublure a
-déjà eu entre les mains.
+## What the consumer still does by hand
 
-Ce n'est pas un problème rustien : un split TS a exactement la même cécité, elle
-ne se voit pas parce que l'app importe les classes en local de toute façon.
-
-## Ce que la démo ne fait pas
-
-- **Le type statique.** `reconstruct()` rend un `SchemaConstructor<Fields>` —
-  runtime complet, clés littérales perdues. Récupérer `sensor.label` typé
-  demanderait une projection carte → `.d.ts`, qui n'existe pas (aucun codegen
-  dans `packages/cli/src`).
-- **La carte est écrite à la main** (`sensor_card()`). Un vrai frond Rust la
-  dériverait — `#[derive(Entity)]` sur la struct, avec `schemars` en dessous.
-  C'est là que Rust est meilleur que TS : une macro voit la déclaration, là où
-  Fougere paie un scan AST.
-- **Les pertes documentées** de `card.ts:18-22` s'appliquent : une relation
-  voyagerait par nom, un générateur custom aussi.
+It calls `rpc.discover` itself. It no longer has to — since `0e51395`, the remote router
+reconstructs each entity's schema at discovery time and `App.schemaFor(entity)` serves it
+(`core/src/remote.ts:56`, `core/src/bootstrap.ts:429`). The explicit call is kept here
+because it is the demo's subject: showing the map arrive, and the judge being rebuilt
+from it. An app would ask `schemaFor`.

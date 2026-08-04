@@ -1,8 +1,8 @@
 # @fougere/auth-better
-> L'auth de Fougere
-Une couche de traduction vers [better-auth](https://better-auth.com) : ses écritures
-passent par l'ORM de Fougere, et le `User` de l'application reste le sien — Session et
-Account sont construits contre lui.
+> Fougere's auth
+A translation layer onto [better-auth](https://better-auth.com): its writes go through
+Fougere's ORM, and the application's `User` stays its own — Session and Account are
+built against it.
 
 ## Installation
 ```bash
@@ -11,6 +11,6 @@ pnpm add @fougere/auth-better
 
 ---
 
-Fait partie de [Fougere](https://github.com/chok/fougere) — un schéma unique,
-un gradient du monolithe au distribué, le même code utilisateur.
-Documentation de référence : le site (`site/content`, fr/en).
+Part of [Fougere](https://github.com/chok/fougere) — one schema, a gradient from
+monolith to distributed, the same user code.
+Reference documentation: [the site](https://chok.github.io/fougere/) (en/fr).

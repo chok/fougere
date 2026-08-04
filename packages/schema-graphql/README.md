@@ -1,7 +1,7 @@
 # @fougere/schema-graphql
-> Entité → GraphQL, via Pothos
-Types, inputs et opérations CRUD dérivés de l'entité. Les projections `boundary`
-sont respectées : un champ `writeOnly` n'apparaît dans aucun type de sortie.
+> Entity → GraphQL, through Pothos
+Types, inputs and CRUD operations derived from the entity. The `boundary` projections
+are honoured: a `writeOnly` field appears in no output type.
 
 ## Installation
 ```bash
@@ -10,6 +10,6 @@ pnpm add @fougere/schema-graphql
 
 ---
 
-Fait partie de [Fougere](https://github.com/chok/fougere) — un schéma unique,
-un gradient du monolithe au distribué, le même code utilisateur.
-Documentation de référence : le site (`site/content`, fr/en).
+Part of [Fougere](https://github.com/chok/fougere) — one schema, a gradient from
+monolith to distributed, the same user code.
+Reference documentation: [the site](https://chok.github.io/fougere/) (en/fr).

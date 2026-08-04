@@ -1,9 +1,9 @@
 # @fougere/cli
-> La CLI Fougere
-Composer un workspace (`new`, `init`), servir un frond seul (`serve`), appeler une
-opération (`call`), lire le graphe de l'application (`graph`).
+> The Fougere CLI
+Compose a workspace (`new`, `init`), serve a frond on its own (`serve`), call an
+operation (`call`), read the application graph (`graph`).
 
-La CLI est elle-même une app Fougere : ses commandes roulent sur le contrat d'appel.
+The CLI is itself a Fougere app: its commands ride on the call contract.
 
 ## Installation
 ```bash
@@ -12,6 +12,6 @@ pnpm add @fougere/cli
 
 ---
 
-Fait partie de [Fougere](https://github.com/chok/fougere) — un schéma unique,
-un gradient du monolithe au distribué, le même code utilisateur.
-Documentation de référence : le site (`site/content`, fr/en).
+Part of [Fougere](https://github.com/chok/fougere) — one schema, a gradient from
+monolith to distributed, the same user code.
+Reference documentation: [the site](https://chok.github.io/fougere/) (en/fr).

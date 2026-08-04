@@ -1,6 +1,6 @@
 # @fougere/cli-ui
-> L'affichage de la CLI
-Les primitives de rendu terminal utilisées par `@fougere/cli`.
+> The CLI's display
+The terminal rendering primitives used by `@fougere/cli`.
 
 ## Installation
 ```bash
@@ -9,6 +9,6 @@ pnpm add @fougere/cli-ui
 
 ---
 
-Fait partie de [Fougere](https://github.com/chok/fougere) — un schéma unique,
-un gradient du monolithe au distribué, le même code utilisateur.
-Documentation de référence : le site (`site/content`, fr/en).
+Part of [Fougere](https://github.com/chok/fougere) — one schema, a gradient from
+monolith to distributed, the same user code.
+Reference documentation: [the site](https://chok.github.io/fougere/) (en/fr).

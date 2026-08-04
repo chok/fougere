@@ -1,9 +1,9 @@
 # @fougere/nuxt
-> Les primitives client et la surface serveur
-`useQuery` / `useCommand` (le couple — une commande sur X revalide les requêtes montées
-sur X), `useFormFor` (un contrat, pas un rendu), `useCurrentUser`, et `invoke` côté
-serveur. Les métadonnées sont la classe d'entité importée — rien n'est sérialisé vers
-le navigateur.
+> The client primitives and the server surface
+`useQuery` / `useCommand` (the pair — a command on X revalidates the mounted queries on
+X), `useFormFor` (a contract, not a rendering), `useCurrentUser`, and `invoke` on the
+server side. The metadata IS the imported entity class — nothing is serialized to the
+browser.
 
 ## Installation
 ```bash
@@ -12,6 +12,6 @@ pnpm add @fougere/nuxt
 
 ---
 
-Fait partie de [Fougere](https://github.com/chok/fougere) — un schéma unique,
-un gradient du monolithe au distribué, le même code utilisateur.
-Documentation de référence : le site (`site/content`, fr/en).
+Part of [Fougere](https://github.com/chok/fougere) — one schema, a gradient from
+monolith to distributed, the same user code.
+Reference documentation: [the site](https://chok.github.io/fougere/) (en/fr).

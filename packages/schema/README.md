@@ -1,11 +1,11 @@
 # @fougere/schema
-> L'entité et ses 4 axes
-Une entité déclare des champs ; chaque champ porte quatre axes indépendants —
-`shape` (du JSON Schema), `role` (primary, ref…), `lifecycle` (qui écrit la valeur,
-à quel moment) et `boundary` (readOnly / writeOnly). Tout le reste de Fougere en
-est une projection : tables, types GraphQL, contrats de formulaire, validation.
+> The entity and its 4 axes
+An entity declares fields; every field carries four independent axes — `shape` (which
+IS JSON Schema), `role` (primary, ref…), `lifecycle` (who writes the value, and when)
+and `boundary` (readOnly / writeOnly). Everything else in Fougere is a projection of
+them: tables, GraphQL types, form contracts, validation.
 
-Ce paquet ne nomme aucun adaptateur et ne dépend d'aucun moteur.
+This package names no adapter and depends on no engine.
 
 ```ts
 import { entity, primary, text, auto, readOnly } from '@fougere/schema';
@@ -27,6 +27,6 @@ pnpm add @fougere/schema
 
 ---
 
-Fait partie de [Fougere](https://github.com/chok/fougere) — un schéma unique,
-un gradient du monolithe au distribué, le même code utilisateur.
-Documentation de référence : le site (`site/content`, fr/en).
+Part of [Fougere](https://github.com/chok/fougere) — one schema, a gradient from
+monolith to distributed, the same user code.
+Reference documentation: [the site](https://chok.github.io/fougere/) (en/fr).

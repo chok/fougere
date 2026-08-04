@@ -1,10 +1,10 @@
 # @fougere/schema-sql
-> Entité → tables SQL, via Kysely
-La réalisation SQL du schéma : les tables, la migration additive et l'ORM scopé par
-entité. Quatre dialectes — SQLite, PostgreSQL, MySQL, SQL Server.
+> Entity → SQL tables, through Kysely
+The SQL realization of the schema: the tables, the additive migration and the
+per-entity scoped ORM. Four dialects — SQLite, PostgreSQL, MySQL, SQL Server.
 
-La validation juge, le storage réalise : cet ORM n'oppose aucun jugement à ce qu'un
-handler lui confie, il applique les règles de `lifecycle`.
+Validation judges, storage realizes: this ORM passes no judgment on what a handler
+hands it — it applies the `lifecycle` rules.
 
 ## Installation
 ```bash
@@ -13,6 +13,6 @@ pnpm add @fougere/schema-sql
 
 ---
 
-Fait partie de [Fougere](https://github.com/chok/fougere) — un schéma unique,
-un gradient du monolithe au distribué, le même code utilisateur.
-Documentation de référence : le site (`site/content`, fr/en).
+Part of [Fougere](https://github.com/chok/fougere) — one schema, a gradient from
+monolith to distributed, the same user code.
+Reference documentation: [the site](https://chok.github.io/fougere/) (en/fr).
