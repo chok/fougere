@@ -219,6 +219,9 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
           ...scanned,
           binding: scanned.binding
             ?? (scanned.signature ? computeBindingPlan(scanned.signature.params, collectorEntityNames) : undefined),
+          // The doc comment the author already wrote, carried through rather than
+          // asked for a second time.
+          description: scanned.description ?? scanned.signature?.description,
         });
       }
 
@@ -235,12 +238,13 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
        * Per key, so stating a `binding` alone does not erase an `input` the scan found.
        */
       for (const [opName, override] of Object.entries(frond.operationsOverrides ?? {})) {
-        const { input, binding } = override;
-        if (input === undefined && binding === undefined) continue;
+        const { input, binding, description } = override;
+        if (input === undefined && binding === undefined && description === undefined) continue;
         contracts.set(opName, {
           ...contracts.get(opName),
           ...(input !== undefined && { input }),
           ...(binding !== undefined && { binding }),
+          ...(description !== undefined && { description }),
         });
       }
 
@@ -329,6 +333,9 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       }
 
       container.registerValue(facadeKey, facade);
+      // The terms alongside the door, under the same audience — a surface that
+      // serves fewer ops describes fewer ops.
+      container.registerValue(`${facadeKey}:contracts`, contracts);
       return facade;
     };
 

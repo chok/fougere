@@ -59,7 +59,7 @@ async function main(): Promise<void> {
   const card = (await transport({ entity: 'rpc', op: 'discover' }, EMPTY_INVOCATION)) as IdentityCard;
   for (const frond of card.fronds) {
     for (const entity of frond.entities) {
-      console.log(`   ${frond.name} › ${entity.name} — ops: ${entity.ops.join(', ')}`);
+      console.log(`   ${frond.name} › ${entity.name} — ops: ${entity.ops.map((o) => o.name).join(', ')}`);
     }
   }
 

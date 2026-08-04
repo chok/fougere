@@ -53,6 +53,15 @@ export interface ParsedMethod {
    * and guesses, the builder knows.
    */
   inherited?: boolean;
+  /**
+   * The operation in words — the first sentence of the method's doc comment.
+   *
+   * Not a new thing to write: handlers already carry it (`/** Judge: the author,
+   * a draft… *&#47;`), the AST already holds it, and nothing read it. A caller that
+   * discovers an operation over the wire has its name and its schema; what the
+   * operation is FOR lived only in the source.
+   */
+  description?: string;
 }
 
 /** Parse a TypeScript type node into a ParsedType. */
@@ -389,10 +398,36 @@ function extractClassMethods(cls: ts.ClassDeclaration | ts.ClassExpression, sour
     }));
 
     const returnType = member.type ? parseTypeNode(member.type, source) : undefined;
-    results.push({ name, params, returnType });
+    results.push({ name, params, returnType, description: docSentenceOf(member, source) });
   }
 
   return results;
+}
+
+/**
+ * The first sentence of a member's doc comment, or nothing.
+ *
+ * One sentence on purpose: what a caller needs to choose an operation is a claim,
+ * not an essay, and the rest of the comment addresses whoever edits the method.
+ * Reads the leading trivia rather than `ts.getJSDocTags` — the comment is what the
+ * author wrote, tags are a schema they never agreed to.
+ */
+function docSentenceOf(member: ts.Node, source: ts.SourceFile): string | undefined {
+  const ts = getTS();
+  const ranges = ts.getLeadingCommentRanges(source.text, member.pos) ?? [];
+  const block = ranges.filter((r) => source.text.slice(r.pos, r.pos + 3) === '/**').pop();
+  if (!block) return undefined;
+
+  const body = source.text
+    .slice(block.pos + 3, block.end - 2)
+    .split('\n')
+    .map((line) => line.replace(/^\s*\*/, '').trim())
+    .join(' ')
+    .trim();
+
+  const [sentence] = body.split(/(?<=\.)\s/);
+
+  return sentence?.trim() || undefined;
 }
 
 /**

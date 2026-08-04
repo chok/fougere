@@ -108,7 +108,7 @@ fn identity_card(state: &AppState) -> Value {
             "name": "telemetry",
             "entities": [{
                 "name": "sensor",
-                "ops": state.ops,
+                "ops": state.ops.clone(),
                 "schema": sensor_card()
             }]
         }]
@@ -205,7 +205,9 @@ fn judge(body: &Value) -> Result<(String, f64), Vec<Rejected>> {
 
 struct AppState {
     sensors: Mutex<Vec<Sensor>>,
-    ops: [&'static str; 3],
+    /// Les termes, pas seulement les noms : ce que l'op fait, et si elle lit ou
+    /// écrit. Un appelant qui rencontre ce frond sur le fil n'a rien d'autre.
+    ops: Value,
 }
 
 fn dispatch(state: &AppState, method: &str, params: &Value) -> Result<Value, Failure> {
@@ -276,7 +278,11 @@ async fn main() {
             Sensor::record("cuve-nord".into(), 4.2),
             Sensor::record("cuve-sud".into(), 5.1),
         ]),
-        ops: ["list", "findById", "record"],
+        ops: json!([
+            { "name": "list",     "kind": "query",   "description": "Toutes les mesures connues, la plus récente d'abord." },
+            { "name": "findById", "kind": "query",   "description": "Une mesure, désignée par son identifiant." },
+            { "name": "record",   "kind": "command", "description": "Enregistre une mesure. Le frond estampille l'instant et le checksum." }
+        ]),
     });
 
     let app = Router::new().route("/_fougere/call", post(call)).with_state(state);

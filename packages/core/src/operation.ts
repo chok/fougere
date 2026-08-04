@@ -17,6 +17,12 @@ export interface OperationContract {
   output?: SchemaLike;
   /** Where each argument is read from in the invocation. */
   binding?: BindingPlan;
+  /**
+   * The operation in words, for a caller that meets it over the wire and has to
+   * choose. Same three producers as the rest: the scan derives it from the method's
+   * doc comment, a prefab declares it, config states it and wins.
+   */
+  description?: string;
   /** The scan's raw material, when it produced this contract. `binding` wins. */
   signature?: ParsedMethod;
 }

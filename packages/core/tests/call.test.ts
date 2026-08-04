@@ -88,8 +88,19 @@ describe('createLocalRunner', () => {
 
     const catalog = card.fronds.find((f) => f.name === 'catalog')!;
     const product = catalog.entities.find((e) => e.name === 'product')!;
-    expect(product.ops).toEqual(expect.arrayContaining(['list', 'findById', 'search']));
+    expect(product.ops.map((o) => o.name)).toEqual(expect.arrayContaining(['list', 'findById', 'search']));
     expect(product.schema).toBeTruthy();
+
+    // An op carries its terms, not just its name: what it is for (the author's own
+    // doc sentence), what it takes, and whether it reads or writes.
+    const search = product.ops.find((o) => o.name === 'search')!;
+    expect(search.description).toBe('Find products by name.');
+    expect(search.kind).toBe('query');
+    expect(search.input).toBeTruthy();
+
+    const list = product.ops.find((o) => o.name === 'list')!;
+    expect(list.kind).toBe('query');
+    expect(list.description).toBeUndefined();
 
     // The card is a wire document — it must survive JSON as-is.
     expect(JSON.parse(JSON.stringify(card))).toEqual(card);

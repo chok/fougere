@@ -29,6 +29,7 @@ export default class ProductHandler {
   async list() { return this.productOrm.list(); }
   async findById(id: string) { return this.productOrm.findById(id); }
 
+  /** Find products by name. Matches on a prefix, never on the description. */
   async search(input: SearchInput): Promise<SearchOutput[]> {
     return this.productOrm.list();
   }

@@ -16,7 +16,7 @@ const CWD = import.meta.dirname;
 
 /** The identity card a host serves on `rpc.discover` — one entry per hosted entity. */
 interface IdentityCard {
-  fronds: Array<{ name: string; entities: Array<{ name: string; ops: string[]; schema: SchemaDescriptor }> }>;
+  fronds: Array<{ name: string; entities: Array<{ name: string; ops: Array<{ name: string }>; schema: SchemaDescriptor }> }>;
 }
 
 function capitalize(s: string): string {

@@ -9,6 +9,7 @@
 import { describe as describeSchema } from '@fougere/schema';
 import type { InvocationContext } from './invocation.js';
 import { FougereError, ErrorCode } from './middleware.js';
+import { resolveIsReadOp, type OperationsMap } from './operation.js';
 import type { App } from './types.js';
 
 /** Target of a call — which façade operation, wherever it lives. */
@@ -27,13 +28,30 @@ export type Transport = (call: FrondCall, invocation: InvocationContext) => Prom
 /** Reserved namespace — calls the runner answers itself, never a façade. */
 export const RPC_ENTITY = 'rpc';
 
+/**
+ * One operation, as a stranger meets it — its name, what it is for, what it takes
+ * and whether it reads or writes. Everything here already existed on the contract;
+ * it just never left the process.
+ */
+export interface CardOp {
+  name: string;
+  /** The author's own doc sentence, when the method carries one. */
+  description?: string;
+  /** JSON Schema of what it accepts, when the contract names a view. */
+  input?: unknown;
+  /** JSON Schema of what it emits, when the contract names one. */
+  output?: unknown;
+  /** `query` reads, `command` writes — the same call REST turns into GET vs POST. */
+  kind: 'query' | 'command';
+}
+
 /** What an app hosts — the wire projection of its scanned fronds. */
 export interface IdentityCard {
   fronds: Array<{
     name: string;
     entities: Array<{
       name: string;
-      ops: string[];
+      ops: CardOp[];
       schema: unknown;
     }>;
   }>;
@@ -54,6 +72,18 @@ type Facade = Record<string, (invocation?: InvocationContext) => Promise<unknown
  */
 export function facadeKeyOf(entityName: string, surface?: string): string {
   return surface ? `${surface}:${entityName}Handler` : `${entityName}Handler`;
+}
+
+/**
+ * Where the contracts behind a façade live — the dual of `facadeKeyOf`.
+ *
+ * The façade answers calls; it does not say what it answers. That sentence used
+ * to be true only inside `buildFacade`, so anything asking the app what it hosts
+ * got bare names. A door and its terms are registered together, under the same
+ * audience.
+ */
+export function contractsKeyOf(entityName: string, surface?: string): string {
+  return `${facadeKeyOf(entityName, surface)}:contracts`;
 }
 
 /**
@@ -86,12 +116,34 @@ export function identityCardOf(app: App, surface?: string): IdentityCard {
   };
 }
 
-function facadeOps(app: App, entityName: string, surface?: string): string[] {
+function facadeOps(app: App, entityName: string, surface?: string): CardOp[] {
+  let facade: Facade;
   try {
-    return Object.keys(app.container.resolve<Facade>(facadeKeyOf(entityName, surface)));
+    facade = app.container.resolve<Facade>(facadeKeyOf(entityName, surface));
   } catch {
     return [];
   }
+
+  // The façade is the list of names; the contracts are the terms. Registered
+  // together, so a door that serves fewer ops also describes fewer.
+  let contracts: OperationsMap | undefined;
+  try {
+    contracts = app.container.resolve<OperationsMap>(contractsKeyOf(entityName, surface));
+  } catch {
+    contracts = undefined;
+  }
+
+  return Object.keys(facade).map((name) => {
+    const contract = contracts?.get(name);
+
+    return {
+      name,
+      ...(contract?.description && { description: contract.description }),
+      ...(contract?.input && { input: describeSchema(contract.input, name) }),
+      ...(contract?.output && { output: describeSchema(contract.output, name) }),
+      kind: resolveIsReadOp(name) ? 'query' as const : 'command' as const,
+    };
+  });
 }
 
 /**
