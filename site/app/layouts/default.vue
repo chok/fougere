@@ -24,7 +24,7 @@ async function logout() {
         </NuxtLink>
         <nav class="flex items-center gap-4 text-sm">
           <NuxtLink :to="localePath('/docs')" class="text-muted hover:text-highlighted">{{ $t('nav.docs') }}</NuxtLink>
-          <NuxtLink :to="localePath('/blog')" class="text-muted hover:text-highlighted">{{ $t('nav.blog') }}</NuxtLink>
+          <NuxtLink v-if="!readOnly" :to="localePath('/blog')" class="text-muted hover:text-highlighted">{{ $t('nav.blog') }}</NuxtLink>
         </nav>
         <div class="ml-auto flex items-center gap-2">
           <UButton

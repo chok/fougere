@@ -1,3 +1,22 @@
+const locales = [
+  { code: 'en', name: 'English', language: 'en-US', file: 'en.json' },
+  { code: 'fr', name: 'Français', language: 'fr-FR', file: 'fr.json' },
+];
+
+/**
+ * Sections a prerendered deployment cannot serve — the blog is a live Frond
+ * (reading it means a database, writing it means a server), and the auth pages
+ * are doors onto that server. Stated once as routes; the locale prefixes are
+ * derived from the locales above rather than spelled out per language.
+ *
+ * This binds the crawler alone. Under `nuxt build` they are served normally,
+ * which is where the blog is the dogfooding proof.
+ */
+const serverOnly = ['/blog', '/login', '/register'];
+const serverOnlyRoutes = locales.flatMap((l) =>
+  serverOnly.map((route) => (l.code === 'en' ? route : `/${l.code}${route}`)),
+);
+
 export default defineNuxtConfig({
   modules: ['@nuxt/ui', '@nuxt/content', '@nuxtjs/i18n', '@fougere/nuxt'],
   css: ['~/assets/css/main.css'],
@@ -7,6 +26,9 @@ export default defineNuxtConfig({
     { path: '~/components/content', global: true, pathPrefix: false },
     '~/components',
   ],
+  nitro: {
+    prerender: { ignore: serverOnlyRoutes },
+  },
   content: {
     build: {
       markdown: {
@@ -20,9 +42,6 @@ export default defineNuxtConfig({
   i18n: {
     defaultLocale: 'en',
     strategy: 'prefix_except_default',
-    locales: [
-      { code: 'en', name: 'English', language: 'en-US', file: 'en.json' },
-      { code: 'fr', name: 'Français', language: 'fr-FR', file: 'fr.json' },
-    ],
+    locales,
   },
 });
