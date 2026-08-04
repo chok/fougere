@@ -11,6 +11,11 @@ on:
     paths:
       - 'site/**'
       - 'packages/**'
+      # The build resolves through the workspace root: its deps and its
+      # package manager are inputs too.
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
