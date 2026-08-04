@@ -12,6 +12,9 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    # A test that leaks a server process hangs the job rather than failing it, and
+    # the default ceiling is six hours of a runner saying nothing.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -41,6 +44,7 @@ jobs:
 
   audit:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

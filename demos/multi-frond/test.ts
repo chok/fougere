@@ -44,10 +44,15 @@ async function main() {
 
   // 1. Start remote-blog server
   log('Starting remote-blog server...');
+  // `detached` puts the server in its own process group. `tsx` is a wrapper that
+  // spawns node underneath, so killing the wrapper alone leaves a grandchild holding
+  // the port and the pipes — and nothing ever returns. The group is what we started,
+  // so the group is what we stop.
   server = spawn('npx', ['tsx', 'server.ts'], {
     cwd: REMOTE_DIR,
     env: { ...process.env, PORT: String(PORT) },
     stdio: 'pipe',
+    detached: true,
   });
 
   try {
@@ -168,14 +173,25 @@ async function main() {
 
   } finally {
     if (server) {
-      server.kill();
+      stopServer(server);
       log('Remote server stopped');
     }
   }
 }
 
+/** Stop the whole process group — see the `detached` note at the spawn. */
+function stopServer(child: ChildProcess): void {
+  if (child.pid === undefined) return;
+  try {
+    process.kill(-child.pid, 'SIGTERM');
+  } catch {
+    // Already gone, or never grouped — the direct kill is the fallback.
+    child.kill();
+  }
+}
+
 main().catch((err) => {
   console.error(err);
-  if (server) server.kill();
+  if (server) stopServer(server);
   process.exit(1);
 });
