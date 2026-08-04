@@ -7,3 +7,13 @@ packages:
   - demos/multi-frond/consumer
 
 approveBuilds: '@swc/core'
+
+# pnpm 10 moved these out of package.json and pnpm 11 stopped reading them
+# there — silently, so `--frozen-lockfile` saw no overrides at all and refused
+# a lockfile that records one.
+overrides:
+  graphql: ^16.13.1
+
+onlyBuiltDependencies:
+  - better-sqlite3
+  - '@swc/core'

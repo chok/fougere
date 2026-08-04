@@ -7,15 +7,6 @@
   "engines": {
     "node": ">=20"
   },
-  "pnpm": {
-    "overrides": {
-      "graphql": "^16.13.1"
-    },
-    "onlyBuiltDependencies": [
-      "better-sqlite3",
-      "@swc/core"
-    ]
-  },
   "devDependencies": {
     "@changesets/cli": "^2.31.1",
     "@swc/core": "^1.15.21",
