@@ -371,6 +371,13 @@ function extractClassMethods(cls: ts.ClassDeclaration | ts.ClassExpression, sour
   for (const member of cls.members) {
     if (!ts.isMethodDeclaration(member)) continue;
     if (!member.name || !ts.isIdentifier(member.name)) continue;
+    // `private`/`protected` is a statement about the surface, and the AST carries it —
+    // it was read past. Every helper a handler names by intent (`mustOwn`, `readMany`,
+    // `refuse`) became a callable op: measured on the bench, `list.readMany` executed
+    // and `list.mayPublish` judged its argument. A door is what the author declares
+    // public, and TypeScript already has the word for it. `#name` is private too, but
+    // it is not an identifier, so it never reached here in the first place.
+    if (member.modifiers?.some((m) => m.kind === ts.SyntaxKind.PrivateKeyword || m.kind === ts.SyntaxKind.ProtectedKeyword)) continue;
 
     const name = member.name.text;
     if (skip.has(name)) continue;

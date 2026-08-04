@@ -14,6 +14,7 @@ import {
   createResolver,
 } from '@nuxt/kit';
 import { scanProject, setModuleLoader, loadCascadedConfig, orderSeeds } from '@fougere/core';
+import { declaresStorage } from '@fougere/runtime';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
 import { createJiti } from 'jiti';
 import { resolve } from 'node:path';
@@ -89,9 +90,14 @@ const module: any = defineNuxtModule<FougereModuleOptions>({
     const frondsFilter = process.env.FOUGERE_FRONDS?.split(',').map((s) => s.trim()).filter(Boolean);
     const { fronds } = await scanProject(scanRoot, frondsFilter);
 
-    // ── 1b. Register @frond/* aliases for all fronds ──
+    // ── 1b. Register @frond/* aliases for all fronds, and watch them ──
+    // The scanned fronds ARE the watch list — nothing to declare. Without this, a
+    // frond under `apps/../..` sits outside rootDir, so Nuxt never restarts: the scan,
+    // the additive migration (once per boot) and the seeds all keep the previous shape,
+    // and a field you just added is simply absent with no error anywhere.
     for (const frond of fronds) {
       nuxt.options.alias[`@frond/${frond.name}`] = frond.source.path;
+      nuxt.options.watch.push(frond.source.path);
     }
 
     // ── 1c. Register aliases for synced remote fronds (.fougere/remotes.json) ──
@@ -197,20 +203,19 @@ export function generateBootPlugin(
 
   const db = config.db ?? 'sqlite';
 
-  if (db === false) {
+  // `declaresStorage` is the canonical reader of `db:` — asked, not re-interpreted.
+  // Reading `dialect` here made this codegen a SECOND reader, and the two disagreed:
+  // any value but 'sqlite' emitted an empty plugin, so no config, no seeds, not a word.
+  // resolveStorage now refuses an unresolvable dialect by name, at boot, out loud.
+  if (!declaresStorage(db as Parameters<typeof declaresStorage>[0])) {
     lines.push(`export default defineNitroPlugin(() => {});`);
     return lines.join('\n') + '\n';
   }
 
-  // SQLite setup
-  const dialect = typeof db === 'string' ? db : db.dialect;
-
-  if (dialect === 'sqlite') {
-    // The generated plugin names no storage package — resolution lives in
-    // @fougere/runtime, the one place that knows which engine backs `db:`.
-    lines.push(`import { resolveStorage } from '@fougere/runtime';`);
-    lines.push(``);
-  }
+  // The generated plugin names no storage package — resolution lives in
+  // @fougere/runtime, the one place that knows which engine backs `db:`.
+  lines.push(`import { resolveStorage } from '@fougere/runtime';`);
+  lines.push(``);
 
   // Seed imports
   for (let i = 0; i < seeds.length; i++) {
@@ -220,33 +225,34 @@ export function generateBootPlugin(
 
   // Wrap all init in the plugin callback to avoid top-level native calls
   lines.push(`export default defineNitroPlugin(async () => {`);
-  if (dialect === 'sqlite') {
-    // Pass `db` through unchanged — resolveStorage (@fougere/runtime → setupSqlite)
-    // is the one place that defaults an absent path, so both call sites (this
-    // codegen'd plugin and fougereApp.ts's own fallback) land on the same file.
-    lines.push(`  const storage = resolveStorage(${JSON.stringify(db)});`);
-    lines.push(``);
-    lines.push(`  configureFougere({`);
-    lines.push(`    db: storage.db,`);
-    lines.push(`    ormFactory: storage.ormFactory,`);
-    lines.push(`    async afterBoot(app) {`);
-    lines.push(`      await storage.afterBoot?.(app);`);
+  // Pass `db` through unchanged — resolveStorage (@fougere/runtime → setupSqlite)
+  // is the one place that defaults an absent path, so both call sites (this
+  // codegen'd plugin and fougereApp.ts's own fallback) land on the same file.
+  lines.push(`  const storage = resolveStorage(${JSON.stringify(db)});`);
+  lines.push(``);
+  lines.push(`  configureFougere({`);
+  lines.push(`    db: storage.db,`);
+  lines.push(`    ormFactory: storage.ormFactory,`);
+  lines.push(`    async afterBoot(app) {`);
+  lines.push(`      await storage.afterBoot?.(app);`);
 
-    if (seeds.length) {
-      // The seeding LOOP is core's (`runSeeds`), not written out here: a second copy
-      // drifted, and the one that had lost its storage fallback was this one — the one
-      // that actually runs when you open the app. Codegen's only job is the static
-      // imports, which is the one thing a bundler needs spelled out.
-      lines.push(`      await runSeeds(app, [`);
-      for (let i = 0; i < seeds.length; i++) {
-        lines.push(`        { entityName: '${seeds[i].entityName}', data: seed_${i}, filePath: ${JSON.stringify(seeds[i].filePath)} },`);
-      }
-      lines.push(`      ]);`);
+  if (seeds.length) {
+    // The seeding LOOP is core's (`runSeeds`), not written out here: a second copy
+    // drifted, and the one that had lost its storage fallback was this one — the one
+    // that actually runs when you open the app. Codegen's only job is the static
+    // imports, which is the one thing a bundler needs spelled out.
+    //
+    // `report` is passed: its default is a no-op, so the boot you actually open said
+    // nothing about a skipped seed — the very silence F-12 was aggravated by.
+    lines.push(`      await runSeeds(app, [`);
+    for (let i = 0; i < seeds.length; i++) {
+      lines.push(`        { entityName: '${seeds[i].entityName}', data: seed_${i}, filePath: ${JSON.stringify(seeds[i].filePath)} },`);
     }
-
-    lines.push(`    },`);
-    lines.push(`  });`);
+    lines.push(`      ], (message) => console.log('[fougere:seed]' + message));`);
   }
+
+  lines.push(`    },`);
+  lines.push(`  });`);
   lines.push(`});`);
 
   return lines.join('\n') + '\n';

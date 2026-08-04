@@ -93,6 +93,27 @@ function toEntityName(className: string): string {
 
 // Scan
 
+/**
+ * The container key a constructor parameter asks for — derived from its TYPE, not from
+ * how the type was spelled.
+ *
+ * `deps` used to be `p.type.name`, so the key WAS the alias's name: `type ListOrm =
+ * EntityOrm<List>` resolved only because someone had spelled it exactly like the
+ * registration key (`ListOrm`), while `type ListRepo = EntityOrm<List>` — the same type —
+ * typechecked and died at boot on `'ListRepo' is not registered`. And `EntityOrm<List>`
+ * written out in full asked for `'EntityOrm'`, which nothing registers.
+ *
+ * `EntityOrm<X>` names X's storage, so that is the key. The generic argument was already
+ * parsed (`ParsedType.generics`) and thrown away. Anything else keeps its own name: a
+ * plain service IS designated by its class name.
+ */
+function depKeyOf(type: ParsedType): string {
+  const target = type.name === 'EntityOrm' ? type.generics?.[0]?.name : undefined;
+  if (!target) return type.name;
+
+  return `${target[0].toUpperCase()}${target.slice(1)}Orm`;
+}
+
 /** Cached parseConstructorParams — skips TS loading when cache is warm. */
 async function cachedCtorParams(filePath: string) {
   const hash = hashFile(filePath);
@@ -118,7 +139,7 @@ async function cachedPresenterMethods(filePath: string) {
 async function toProvider(filePath: string): Promise<ProviderEntry> {
   const ctor = await loadClass(filePath);
   const params = await cachedCtorParams(filePath);
-  const deps = params.map((p) => p.type.name);
+  const deps = params.map((p) => depKeyOf(p.type));
   return { name: toRegistrationName(ctor.name), ctor, deps, filePath };
 }
 
@@ -221,7 +242,7 @@ async function toHandlerEntry(
   const entityName = toEntityName(ctor.name);
   const operations = await inferOperations(filePath, augmented, projectRoot);
   const ctorParams = await cachedCtorParams(filePath);
-  const deps = ctorParams.map((p) => p.type.name);
+  const deps = ctorParams.map((p) => depKeyOf(p.type));
 
   // Read output override from Crud(Entity, Output) — static __output property
   const __entity = (ctor as any).__entity;
@@ -262,7 +283,7 @@ async function toPresenterEntry(filePath: string): Promise<PresenterEntry | null
   const entityName = toRegistrationName((target as any).name);
   const fields = getPresenterFields(ctor);
   const presenterParams = await cachedCtorParams(filePath);
-  const deps = presenterParams.map((p) => p.type.name);
+  const deps = presenterParams.map((p) => depKeyOf(p.type));
 
   // Parse method return types from source
   let fieldMeta: PresenterEntry['fieldMeta'] = [];
@@ -285,7 +306,7 @@ async function toCollectorEntry(filePath: string): Promise<CollectorEntry | null
   if (!target) return null;
   const entityName = toRegistrationName((target as any).name);
   const collectorParams = await cachedCtorParams(filePath);
-  const deps = collectorParams.map((p) => p.type.name);
+  const deps = collectorParams.map((p) => depKeyOf(p.type));
   return { entityName, ctor, deps, filePath };
 }
 

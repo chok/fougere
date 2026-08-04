@@ -18,6 +18,16 @@ import { projectEgress, presentEgress, guardStorage } from './egress.js';
 /** Container key of an entity's presenter — 'post' → 'PostPresenter'. */
 const presenterKeyOf = (entity: string) => `${entity[0].toUpperCase()}${entity.slice(1)}Presenter`;
 
+/**
+ * The one wording for "nobody hosts this here", with both ways out. Said twice, and the
+ * second copy (`schemaFor`) had lost the two remedies — the same dead end, strictly less
+ * useful, for no reason.
+ */
+const notLoaded = (entity: string) =>
+  `Frond for '${entity}' is not loaded.\n` +
+  `  - Add '${entity}' to --fronds flag\n` +
+  `  - Or declare a remote: remotes: { ${entity}: 'http://...' }`;
+
 /** Bootstrap a fougere application. */
 export async function createApp(options: CreateAppOptions): Promise<App> {
   const root = options.root ?? process.cwd();
@@ -403,11 +413,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
           container.registerValue(name, facade);
           return facade as T;
         }
-        throw new Error(
-          `Frond for '${entityName}' is not loaded.\n` +
-          `  - Add '${entityName}' to --fronds flag\n` +
-          `  - Or declare a remote: remotes: { ${entityName}: 'http://...' }`,
-        );
+        throw new Error(notLoaded(entityName));
       }
       throw err;
     }
@@ -422,7 +428,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       const route = await remoteRouter.route(entity);
       return route.schema;
     }
-    throw new Error(`Frond for '${entity}' is not loaded.`);
+    throw new Error(notLoaded(entity));
   };
 
   const facadeAt = (key: string, topology: boolean): Record<string, Function> | undefined => {

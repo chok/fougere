@@ -107,6 +107,31 @@ function deriveHints(
   return Object.keys(out).length ? (out as Hints<Fields>) : undefined;
 }
 
+/**
+ * Refuse a key the schema does not carry, naming it and what was expected — the twin of
+ * `assertListOptions` in `@fougere/core`, applied to the derivation algebra.
+ *
+ * `pick` skipped an unknown key and `omit` filtered on a key nothing matched, so a typo
+ * was silently obeyed. `pick('titel')` returned a view without the field, and — the
+ * dangerous half — `omit('ownerUserID')` removed NOTHING: the field stayed in the input
+ * view, so the façade's unknown-key refusal no longer applied to it, and a client could
+ * write the very field the view was written to close. Measured: the view accepted
+ * `ownerUserId: 'someone-else'`.
+ *
+ * TypeScript catches this at the call site when the key is a literal. It does not when
+ * the keys come from a variable, from JSON, or across a package boundary — and a view
+ * that quietly widens is not a thing to leave to the type-checker alone.
+ */
+function assertKnownKeys(operation: string, keys: string[], fields: Fields): void {
+  const strangers = keys.filter((key) => !(key in fields));
+  if (strangers.length === 0) return;
+
+  throw new Error(
+    `${operation}(): unknown field ${strangers.map((s) => `\`${s}\``).join(', ')}. ` +
+    `This schema carries ${Object.keys(fields).join(', ')}.`,
+  );
+}
+
 /** Create a schema constructor from a field record. */
 export function createSchemaConstructor<TFields extends Fields>(
   fields: TFields,
@@ -171,6 +196,7 @@ export function createSchemaConstructor<TFields extends Fields>(
     // Every derivation carries hints and opts — same invariant as cloneField, one
     // level up: change the fields you mean, keep everything else the view holds.
     static pick(...keys: string[]) {
+      assertKnownKeys('pick', keys, fields);
       const picked: Fields = {};
       for (const key of keys) {
         if (fields[key]) picked[key] = fields[key];
@@ -178,6 +204,7 @@ export function createSchemaConstructor<TFields extends Fields>(
       return createSchemaConstructor(picked, source, deriveHints(hints, (k) => (keys.includes(k) ? k : undefined)), opts);
     }
     static omit(...keys: string[]) {
+      assertKnownKeys('omit', keys, fields);
       const omitted: Fields = {};
       for (const [key, value] of Object.entries(fields)) {
         if (!keys.includes(key)) omitted[key] = value;
@@ -195,6 +222,7 @@ export function createSchemaConstructor<TFields extends Fields>(
       return createSchemaConstructor({ ...fields, ...extra }, source, hints, opts);
     }
     static rename(mapping: Record<string, string>) {
+      assertKnownKeys('rename', Object.keys(mapping), fields);
       const renamed: Fields = {};
       for (const [key, field] of Object.entries(fields)) {
         renamed[mapping[key] ?? key] = field;

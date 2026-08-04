@@ -136,11 +136,14 @@ function runnerFor(app: App, resolveFacade: (key: string) => Facade, surface?: s
     try {
       facade = resolveFacade(facadeKeyOf(call.entity, surface));
     } catch {
+      // What IS hosted, so a wrong entity name (or a missing frond) reads at a glance.
+      const hosted = app.fronds.flatMap((frond) => frond.entities.map((e) => e.name)).sort();
       throw new FougereError({
         code: ErrorCode.NOT_FOUND,
-        message: surface
+        message: (surface
           ? `Entity '${call.entity}' is not served on surface '${surface}'`
-          : `Entity '${call.entity}' is not hosted here`,
+          : `Entity '${call.entity}' is not hosted here`)
+          + (hosted.length ? `. Hosted here: ${hosted.join(', ')}.` : '. This app hosts no entity.'),
         entity: call.entity,
         operation: call.op,
       });
@@ -151,9 +154,13 @@ function runnerFor(app: App, resolveFacade: (key: string) => Facade, surface?: s
     // answered. An op is what the façade declares, not what JS inherits.
     const fn = Object.hasOwn(facade, call.op) ? facade[call.op] : undefined;
     if (typeof fn !== 'function') {
+      // Name what IS served: the façade is right here, and `op` is a bare string all
+      // the way from `useQuery` — so a typo is the ordinary case, not the exotic one.
+      const served = Object.keys(facade).filter((key) => typeof facade[key] === 'function');
       throw new FougereError({
         code: ErrorCode.NOT_FOUND,
-        message: `Unknown operation '${call.op}' on '${call.entity}'`,
+        message: `Unknown operation '${call.op}' on '${call.entity}'. `
+          + (served.length ? `It serves ${served.join(', ')}.` : 'It serves nothing.'),
         entity: call.entity,
         operation: call.op,
       });
