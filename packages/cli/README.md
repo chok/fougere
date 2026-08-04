@@ -1,7 +1,7 @@
 # @fougere/cli
 > The Fougere CLI
-Compose a workspace (`new`, `init`), serve a frond on its own (`serve`), call an
-operation (`call`), read the application graph (`graph`).
+Compose a workspace (`new`), serve a frond on its own (`serve`), call an operation
+(`call`), read the application graph (`graph`).
 
 The CLI is itself a Fougere app: its commands ride on the call contract.
 
