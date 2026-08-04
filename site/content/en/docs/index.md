@@ -52,9 +52,8 @@ There is no RPC without travel: a call is a value `(entity, operation, invocatio
 runner executes it directly in memory when the Frond is local and frames it onto the wire
 when it is remote. Transports move the value — they never reshape it.
 
-Measured on the flagship demo (production build): the framework core executes ~47,200 ops/s
-with judgment, binding, collectors and SQLite included; the same app serves ~23,300 req/s
-in-process and ~12,900 req/s split. The split costs exactly the HTTP hop.
+That is why the split costs the HTTP hop and nothing else: no serialization the local
+path avoids, no framework tax layered on top of the network.
 
 ## Reading order
 

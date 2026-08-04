@@ -53,9 +53,8 @@ Pas de RPC sans voyage : un appel est une valeur `(entity, operation, invocation
 runner l'exécute directement en mémoire quand la Frond est locale et la met sur le fil
 quand elle est distante. Les transports déplacent la valeur — ils ne la remodèlent jamais.
 
-Mesuré sur la démo phare (build de production) : le cœur exécute ~47 200 ops/s, jugement,
-binding, collectors et SQLite compris ; la même app sert ~23 300 req/s in-process et
-~12 900 req/s en split. Le split coûte exactement le saut HTTP.
+C'est pourquoi le split coûte le saut HTTP et rien d'autre : aucune sérialisation que le
+chemin local éviterait, aucun impôt du framework par-dessus le réseau.
 
 ## Ordre de lecture
 

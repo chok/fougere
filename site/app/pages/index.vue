@@ -38,6 +38,15 @@ const publish = useCommand(Post, 'publish');
 await publish.execute({ params: { id } });
 // → every mounted query on Post revalidates`;
 
+// Verbatim output of demos/rust-frond's TypeScript consumer — rules declared
+// in Rust, enforced by the TS judge before a single byte goes on the wire.
+const foreignSnippet = `$ npx tsx consumer.ts
+
+✗ couleur  — Unknown field
+✗ celsius  — 250 is greater than 80.
+✗ checksum — Read-only
+✗ label    — String is too short (1 < 2).`;
+
 // The before/after: the same shape, hand-synced across a bare Nuxt app…
 const glueSnippet = `// schemas/post.ts — the shape, first time
 export const postSchema = z.object({
@@ -242,6 +251,22 @@ async function copyAudit() {
       </div>
     </section>
 
+    <!-- The far end of the gradient: a Frond that is not TypeScript at all -->
+    <section class="max-w-6xl mx-auto px-6 py-16 grid lg:grid-cols-2 gap-10 items-center">
+      <div>
+        <h2 class="text-2xl font-bold text-highlighted">{{ $t('home.foreignTitle') }}</h2>
+        <p class="mt-3 text-muted">{{ $t('home.foreignText') }}</p>
+        <p class="mt-4 text-muted">{{ $t('home.foreignAxes') }}</p>
+      </div>
+      <div>
+        <CodeWindow :code="foreignSnippet" filename="demos/rust-frond — the TS consumer's output" lang="bash" />
+        <p class="mt-3 text-sm text-muted flex items-center gap-2">
+          <UIcon name="i-lucide-shield-check" class="size-4 shrink-0 text-primary/70" />
+          {{ $t('home.foreignCaption') }}
+        </p>
+      </div>
+    </section>
+
     <!-- Proof: without the model, the shape is re-declared by hand -->
     <section class="max-w-6xl mx-auto px-6 py-16">
       <div class="max-w-2xl mb-8">
@@ -301,8 +326,8 @@ async function copyAudit() {
     <!-- Numbers -->
     <section class="max-w-6xl mx-auto px-6 py-16 grid sm:grid-cols-3 gap-8 text-center">
       <div>
-        <p class="text-3xl font-semibold text-highlighted tabular-nums">47,200 <span class="text-base font-normal text-muted">ops/s</span></p>
-        <p class="mt-2 text-sm text-muted text-balance">{{ $t('home.statOps') }}</p>
+        <p class="text-3xl font-semibold text-highlighted tabular-nums">{{ $t('home.statAxes') }}</p>
+        <p class="mt-2 text-sm text-muted text-balance">{{ $t('home.statAxesText') }}</p>
       </div>
       <div>
         <p class="text-3xl font-semibold text-highlighted tabular-nums">{{ $t('home.statTopology') }}</p>
