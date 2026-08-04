@@ -42,8 +42,12 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      # enablement: turns Pages on for the repo on the first run, rather than
+      # asking for a checkbox in the settings before the workflow can pass.
       - id: pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - run: pnpm install --frozen-lockfile
 
