@@ -6,7 +6,7 @@
  * other — the entity never mentions a column type, the dialect never mentions a
  * field. Adding a dialect touches only the second half.
  */
-import { anatomy, uniqueMembers, type AnyField, type SchemaLike } from '@fougere/schema';
+import { anatomy, fieldsOf, uniqueMembers, type AnyField, type SchemaLike, type SchemaSource } from '@fougere/schema';
 import { boundsOf, type ShapeBounds } from './check.js';
 
 /** The shape keywords a dialect needs to choose a column type. */
@@ -119,7 +119,7 @@ function primaryColumnOf(target: Partial<SchemaLike>): string {
 function referenceFor(
   field: AnyField,
   resolve: (name: string) => string,
-  tableNameOf?: Map<SchemaLike, string>,
+  tableNameOf?: Map<SchemaSource, string>,
 ): ColumnReference | undefined {
   const relation = field.role?.relation;
   if (!relation || relation.kind !== 'one') return undefined;
@@ -133,7 +133,7 @@ function toColumn(
   fieldName: string,
   field: AnyField,
   resolve: (name: string) => string,
-  tableNameOf?: Map<SchemaLike, string>,
+  tableNameOf?: Map<SchemaSource, string>,
 ): ColumnDef {
   // The column type comes from the `shape` axis alone. `anatomy` strips the
   // nullable union so a nullable integer stays an integer instead of falling
@@ -169,14 +169,26 @@ export interface RelationResolve {
   /** Same resolver used for every entity's own table (default or a custom `tableName`). */
   resolve: (name: string) => string;
   /** Live entity class → its already-resolved table name, reused instead of re-derived. */
-  tableNameOf?: Map<SchemaLike, string>;
+  tableNameOf?: Map<SchemaSource, string>;
 }
 
-/** Describe one entity as a table — the single reader of the axes. */
-export function toTable(tableName: string, entity: SchemaLike, relations?: RelationResolve): TableDef {
+/**
+ * Describe one entity as a table — the single reader of the axes.
+ *
+ * Takes the entity as a live class or as a card. Read ONCE into `fields`: `fieldsOf`
+ * reconstructs a descriptor on each call, so re-reading per loop would rebuild the schema
+ * as many times as this function iterates.
+ *
+ * A lone card has no live relation targets, so a `ref()` falls back to the conventions
+ * `referenceFor`/`primaryColumnOf` already document (name-derived table, `id` as the key).
+ * Pass a bundle through `reconstructSet` first when the FKs matter — it resolves the
+ * targets, and its output is the live-class case again.
+ */
+export function toTable(tableName: string, entity: SchemaSource, relations?: RelationResolve): TableDef {
   const resolve = relations?.resolve ?? toTableName;
+  const fields = fieldsOf(entity);
   const columns: ColumnDef[] = [];
-  for (const [fieldName, field] of Object.entries(entity.getFields())) {
+  for (const [fieldName, field] of Object.entries(fields)) {
     if (!isStored(field)) continue;
     columns.push(toColumn(fieldName, field, resolve, relations?.tableNameOf));
   }
@@ -189,7 +201,7 @@ export function toTable(tableName: string, entity: SchemaLike, relations?: Relat
   // storage does not keep is not enforceable, so it is dropped here rather than emitted
   // against a column that will not exist.
   const groups = new Map<string, string[]>();
-  for (const [fieldName, field] of Object.entries(entity.getFields())) {
+  for (const [fieldName, field] of Object.entries(fields)) {
     for (const group of field.role?.unique ?? []) {
       const members = uniqueMembers(group, fieldName).map(toSnakeCase);
       if (members.length > 1 && members.every((column) => stored.has(column))) {
@@ -231,7 +243,8 @@ export function toTableName(name: string): string {
 
 export interface EntityEntry {
   name: string;
-  entityClass: SchemaLike;
+  /** A live class in-process, a card from a frond whose class never crossed. */
+  entityClass: SchemaSource;
 }
 
 export interface FrondLike {
@@ -242,7 +255,7 @@ export interface FrondLike {
 export interface AppLike {
   fronds: FrondLike[];
   /** Auth runtime entities are migrated alongside scanned fronds when present. */
-  auth?: { entities: Record<string, SchemaLike> };
+  auth?: { entities: Record<string, SchemaSource> };
 }
 
 function collectEntities(app: AppLike): EntityEntry[] {
@@ -262,7 +275,7 @@ function collectEntities(app: AppLike): EntityEntry[] {
  */
 export function toTables(app: AppLike, resolve: (name: string) => string): TableDef[] {
   const entries = collectEntities(app);
-  const tableNameOf = new Map<SchemaLike, string>(entries.map((entry) => [entry.entityClass, resolve(entry.name)]));
+  const tableNameOf = new Map<SchemaSource, string>(entries.map((entry) => [entry.entityClass, resolve(entry.name)]));
   return entries.map((entry) => toTable(resolve(entry.name), entry.entityClass, { resolve, tableNameOf }));
 }
 

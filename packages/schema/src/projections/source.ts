@@ -22,22 +22,35 @@ function isDescriptor(source: SchemaSource): source is SchemaDescriptor {
 }
 
 /**
- * The fields an adapter projects from, whichever form it was handed.
+ * Normalize a source to a live schema — reconstructing a card, passing a class through.
+ *
+ * This is what an adapter reaching for the schema MORE THAN ONCE should call, once, at its
+ * boundary: `reconstruct` runs per call (6.5 µs for a 17-field entity), so a component that
+ * reads fields in two places would otherwise rebuild the schema twice and hold two
+ * unrelated field objects. Normalize at the edge, then nothing downstream knows the
+ * difference — which is the point.
+ */
+export function schemaOf(source: SchemaSource): SchemaLike {
+  return isDescriptor(source) ? reconstruct(source) : source;
+}
+
+/**
+ * The fields an adapter projects from, whichever form it was handed — {@link schemaOf}
+ * for the single-read case.
  *
  * Cost: nothing for a class. For a card, one `reconstruct` — measured at 6.5 µs for a
- * 17-field entity, paid once per entity when the adapter builds, never per request.
- * Callers that build repeatedly from the same card should hold the reconstructed schema,
- * not call this in a loop.
+ * 17-field entity, paid once per entity when the adapter builds, never per request. Read
+ * twice and you pay twice: hold the result, or normalize with `schemaOf` instead.
  */
 export function fieldsOf(source: SchemaSource): Fields {
-  return isDescriptor(source) ? reconstruct(source).getFields() : source.getFields();
+  return schemaOf(source).getFields();
 }
 
 /**
  * The composite unique groups, whichever form. A bare wrapper (a view mid-derivation)
- * carries no `getUnique`, and a card does not carry the groups at all yet — both answer
- * `undefined` rather than inventing a promise the storage would not keep.
+ * carries no `getUnique` and answers `undefined`; a card's groups are recovered from what
+ * its members carry, so `reconstruct` has already restored them by the time this reads.
  */
 export function uniqueOf(source: SchemaSource): ReadonlyArray<ReadonlyArray<string>> | undefined {
-  return isDescriptor(source) ? undefined : source.getUnique?.();
+  return schemaOf(source).getUnique?.();
 }

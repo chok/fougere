@@ -13,7 +13,7 @@
  * `RETURNING` clause.
  */
 import type { Kysely } from 'kysely';
-import { resolveCustomGenerator, type GeneratorRef, type SchemaLike } from '@fougere/schema';
+import { resolveCustomGenerator, schemaOf, type GeneratorRef, type SchemaLike, type SchemaSource } from '@fougere/schema';
 import { createId } from '@paralleldrive/cuid2';
 import { toTable, type TableDef } from './table.js';
 import { codecsOf, type ValueCodec } from './values.js';
@@ -121,10 +121,14 @@ export class SqlEntityOrm {
 
   constructor(
     private db: Kysely<any>,
-    entity: SchemaLike,
+    source: SchemaSource,
     tableName: string,
     selectFields?: Set<string>,
   ) {
+    // Normalized once: the table projection and the axis analysis below both read the
+    // schema, and a card handed to each separately would be rebuilt twice into two
+    // unrelated field objects. Past this line nothing knows which form arrived.
+    const entity = schemaOf(source);
     this.table = toTable(tableName, entity);
     for (const column of this.table.columns) {
       this.toColumn.set(column.field, column.name);
@@ -343,5 +347,5 @@ export interface OrmFactoryOptions {
  */
 export function createOrmFactory(db: Kysely<any>, options?: OrmFactoryOptions) {
   const resolve = options?.tableName ?? defaultTableName;
-  return (entity: SchemaLike, name: string) => new SqlEntityOrm(db, entity, resolve(name));
+  return (entity: SchemaSource, name: string) => new SqlEntityOrm(db, entity, resolve(name));
 }
