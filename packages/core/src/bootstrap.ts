@@ -8,6 +8,7 @@ import { Config } from './builtins/config.js';
 import { EventBus } from './builtins/event-bus.js';
 import { createRemoteRouter, createRemoteFacade } from './remote.js';
 import { facadeKeyOf } from './call.js';
+import { repositoryKeyOf } from './repository.js';
 
 import { computeBindingPlan, resolveArgs, type CollectorResolver } from './binding.js';
 import type { OperationContract } from './operation.js';
@@ -121,7 +122,19 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
           : baseOrm;
 
         // Storage is a way out like the client surface — see egress.ts.
-        scope.registerValue(ormName, guardStorage(scoped, entity.entityClass.getFields(), entity.name));
+        const guarded = guardStorage(scoped, entity.entityClass.getFields(), entity.name);
+        scope.registerValue(ormName, guarded);
+
+        // The default repository holds the port and adds nothing — the same shape a
+        // declared one has, so a handler reads `repo.orm.list()` either way. Giving
+        // the ORM itself as the default was shorter and wrong: `repo.orm` would then
+        // exist only when someone had written the file, and the two forms would
+        // differ exactly where the convention promises they do not.
+        //
+        // `providers` are registered above, so a declared repository is never
+        // overwritten by this.
+        const repoKey = repositoryKeyOf(entity.name);
+        if (!scope.has(repoKey)) scope.registerValue(repoKey, { orm: guarded });
       }
       if (frond.entities.length > 0) {
         frondLog.debug(`${frond.entities.length} entity ORM(s): ${frond.entities.map((e) => e.name).join(', ')}`);

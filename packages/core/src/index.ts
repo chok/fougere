@@ -49,3 +49,4 @@ export type {
   AuthContext,
   AuthRuntime,
 } from './types.js';
+export { Repository, getRepositoryTarget, repositoryKeyOf, type RepositoryOf, type RepositoryConstructor } from './repository.js';

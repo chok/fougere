@@ -9,6 +9,7 @@ import { parseAllHandlerMethods, parsePresenterMethods, parseConstructorParams, 
 import { hashFile, getCached, setCached, flushCache, setCacheRoot } from './scan-cache.js';
 import { loadFrondConfig } from './frond-config.js';
 import { getPresenterTarget, getPresenterFields, getPresenterViews } from './presenter.js';
+import { getRepositoryTarget } from './repository.js';
 import { getCollectorTarget } from './collector.js';
 
 /** Module loader — can be swapped (e.g. jiti for TS files in Nuxt context). */
@@ -140,6 +141,16 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
   const ctor = await loadClass(filePath);
   const params = await cachedCtorParams(filePath);
   const deps = params.map((p) => depKeyOf(p.type));
+
+  // A repository inherits its constructor from `Repository(Entity)`, so the file
+  // declares none and the scan reads no parameter. The mixin knows which entity it
+  // was built for and says so at runtime — same escape as `Crud.__ops`, and the same
+  // reason: what a prefab fabricates, only the prefab can describe.
+  const target = getRepositoryTarget(ctor);
+  if (target && deps.length === 0) {
+    deps.push(`${toRegistrationName((target as { name: string }).name).replace(/^./, (c) => c.toUpperCase())}Orm`);
+  }
+
   return { name: toRegistrationName(ctor.name), ctor, deps, filePath };
 }
 
