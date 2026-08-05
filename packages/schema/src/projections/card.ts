@@ -70,7 +70,17 @@ export interface FieldExtension {
 
 export interface RoleDescriptor {
   primary?: boolean;
-  unique?: boolean;
+  /**
+   * The unique constraints this field is a member of — one member list each, member
+   * names spelled out. `[["slug"]]` is unique on its own; `[["listId","docId"]]` on both
+   * members says the pair is unique together, which is the fact a foreign consumer could
+   * not read before: the card carried one boolean per field and the pair vanished.
+   *
+   * Self-reference is resolved on the way out (a lone `unique()` holds `[]` in memory,
+   * because a field does not know its own key) — a card always names its members, so a
+   * reader never has to know which field a group hangs on.
+   */
+  unique?: string[][];
   index?: boolean;
   relation?: RelationDescriptor;
 }

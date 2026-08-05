@@ -1,6 +1,6 @@
 import { cloneField, resolveBoundary, type Field, type Fields } from "./field/index.js";
 import type { Hints } from "./hints.js";
-import { deriveUnique, type CompositeUnique, type EntityDeclarations } from "./unique.js";
+import { deriveUnique, deriveUniqueRoles, projectUniqueOntoFields, type CompositeUnique, type EntityDeclarations } from "./unique.js";
 import { validateFields, type ValidationResult, type ValidateOptions } from "./projections/validation.js";
 import type { StandardSchemaV1 } from "./projections/standard.js";
 
@@ -212,7 +212,7 @@ export function createSchemaConstructor<TFields extends Fields>(
         if (fields[key]) picked[key] = fields[key];
       }
       const survives = (k: string) => (keys.includes(k) ? k : undefined);
-      return createSchemaConstructor(picked, source, deriveHints(hints, survives), opts, deriveUnique(unique, survives));
+      return createSchemaConstructor(deriveUniqueRoles(picked, survives), source, deriveHints(hints, survives), opts, deriveUnique(unique, survives));
     }
     static omit(...keys: string[]) {
       assertKnownKeys('omit', keys, fields);
@@ -221,7 +221,7 @@ export function createSchemaConstructor<TFields extends Fields>(
         if (!keys.includes(key)) omitted[key] = value;
       }
       const survives = (k: string) => (keys.includes(k) ? undefined : k);
-      return createSchemaConstructor(omitted, source, deriveHints(hints, survives), opts, deriveUnique(unique, survives));
+      return createSchemaConstructor(deriveUniqueRoles(omitted, survives), source, deriveHints(hints, survives), opts, deriveUnique(unique, survives));
     }
     static partial() {
       // patch mode: an unsent field is omitted ("don't touch"), enforced by
@@ -240,7 +240,7 @@ export function createSchemaConstructor<TFields extends Fields>(
         renamed[mapping[key] ?? key] = field;
       }
       const remap = (k: string) => mapping[k] ?? k;
-      return createSchemaConstructor(renamed, source, deriveHints(hints, remap), opts, deriveUnique(unique, remap));
+      return createSchemaConstructor(deriveUniqueRoles(renamed, remap), source, deriveHints(hints, remap), opts, deriveUnique(unique, remap));
     }
   }
 
@@ -272,7 +272,11 @@ export function entity<TFields extends Fields>(
   fields: TFields,
   declarations?: EntityDeclarations<TFields>,
 ): SchemaConstructor<TFields> {
-  return createSchemaConstructor(fields, undefined, declarations?.hints, {}, declarations?.unique);
+  // This is the only place that knows both the field KEYS and the entity's declarations,
+  // so it is where a composite group becomes readable on each member's role axis. The
+  // declaration remains the source — `getUnique()` still answers it.
+  const projected = projectUniqueOntoFields(fields, declarations?.unique);
+  return createSchemaConstructor(projected, undefined, declarations?.hints, {}, declarations?.unique);
 }
 
 // ─── compose — the other entry of the derivation algebra ───

@@ -6,7 +6,7 @@
  * other — the entity never mentions a column type, the dialect never mentions a
  * field. Adding a dialect touches only the second half.
  */
-import { anatomy, type AnyField, type SchemaLike } from '@fougere/schema';
+import { anatomy, uniqueMembers, type AnyField, type SchemaLike } from '@fougere/schema';
 import { boundsOf, type ShapeBounds } from './check.js';
 
 /** The shape keywords a dialect needs to choose a column type. */
@@ -154,7 +154,10 @@ function toColumn(
   }
   // A primary key is already unique and already indexed — saying it twice would emit a
   // redundant constraint on every engine. So would indexing what `unique` constrains.
-  if (field.role?.unique === true && !column.primary) column.unique = true;
+  // Only a constraint of ONE becomes a column constraint; a group of several is a table
+  // constraint, emitted once from `uniqueGroups` rather than once per member column.
+  const soleUnique = (field.role?.unique ?? []).some((group) => group.length <= 1);
+  if (soleUnique && !column.primary) column.unique = true;
   if (field.role?.index === true && !column.primary && !column.unique) column.index = true;
   const references = referenceFor(field, resolve, tableNameOf);
   if (references) column.references = references;
@@ -179,12 +182,22 @@ export function toTable(tableName: string, entity: SchemaLike, relations?: Relat
   }
   const primaries = columns.filter((column) => column.primary).map((column) => column.name);
   const stored = new Set(columns.map((column) => column.name));
-  // Declared in field names, realized in column names — and a group that names a
-  // field the storage does not keep is not enforceable, so it is dropped here
-  // rather than emitted against a column that will not exist.
-  const uniqueGroups = (entity.getUnique?.() ?? [])
-    .map((group) => group.map(toSnakeCase))
-    .filter((group) => group.length > 1 && group.every((column) => stored.has(column)));
+  // Read off the fields, not off `getUnique()`: a card has no entity-level declaration to
+  // offer, and the members carry the same fact either way. One reader for both forms.
+  //
+  // Declared in field names, realized in column names — and a group that names a field the
+  // storage does not keep is not enforceable, so it is dropped here rather than emitted
+  // against a column that will not exist.
+  const groups = new Map<string, string[]>();
+  for (const [fieldName, field] of Object.entries(entity.getFields())) {
+    for (const group of field.role?.unique ?? []) {
+      const members = uniqueMembers(group, fieldName).map(toSnakeCase);
+      if (members.length > 1 && members.every((column) => stored.has(column))) {
+        groups.set(members.join(' '), members);
+      }
+    }
+  }
+  const uniqueGroups = [...groups.values()];
 
   return {
     name: tableName,

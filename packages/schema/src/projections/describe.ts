@@ -1,5 +1,5 @@
 import type { AnyField, Role, SchemaLike } from '../field/index.js';
-import { anatomy } from '../field/index.js';
+import { anatomy, uniqueMembers } from '../field/index.js';
 import {
   clean,
   type FieldDescriptor,
@@ -24,10 +24,13 @@ function isRequired(field: AnyField): boolean {
   return true;
 }
 
-function describeRole(role: Role): RoleDescriptor | undefined {
+function describeRole(role: Role, key: string): RoleDescriptor | undefined {
   const out: RoleDescriptor = {};
   if (role.primary) out.primary = true;
-  if (role.unique) out.unique = true;
+  // Members are spelled out on the wire: in memory a lone `unique()` holds the empty
+  // self-reference (a field cannot name its own key), and a consumer has no way to know
+  // which field a group hangs on. `key` is that missing half, so it is resolved here.
+  if (role.unique?.length) out.unique = role.unique.map((group) => uniqueMembers(group, key));
   if (role.index) out.index = true;
   if (role.relation) {
     out.relation = clean({
@@ -39,9 +42,9 @@ function describeRole(role: Role): RoleDescriptor | undefined {
   return Object.keys(out).length ? out : undefined;
 }
 
-function describeExtension(field: AnyField): FieldExtension | undefined {
+function describeExtension(field: AnyField, key: string): FieldExtension | undefined {
   const ext: FieldExtension = {};
-  if (field.role) ext.role = describeRole(field.role);
+  if (field.role) ext.role = describeRole(field.role, key);
   // The normal forms are named tokens, pure JSON — they travel verbatim
   // (a custom generator travels by NAME, re-resolved against the consumer's registry).
   if (field.lifecycle) ext.lifecycle = field.lifecycle;
@@ -52,7 +55,7 @@ function describeExtension(field: AnyField): FieldExtension | undefined {
   return Object.keys(ext).length ? ext : undefined;
 }
 
-function describeField(field: AnyField): FieldDescriptor {
+function describeField(field: AnyField, key: string): FieldDescriptor {
   const out: FieldDescriptor = {};
   // Shape is already JSON Schema's vocabulary — nullability included, as the
   // `[T,'null']` type union — so its keywords copy verbatim (an embedded object's
@@ -66,7 +69,7 @@ function describeField(field: AnyField): FieldDescriptor {
     out.type = 'array';
   }
   if (field.meta?.description) out.description = field.meta.description;
-  const ext = describeExtension(field);
+  const ext = describeExtension(field, key);
   if (ext) out['x-fougere'] = ext;
   return out;
 }
@@ -80,7 +83,7 @@ export function describe(schema: SchemaLike, name?: string): SchemaDescriptor {
   const properties: Record<string, FieldDescriptor> = {};
   const required: string[] = [];
   for (const [key, field] of Object.entries(schema.getFields())) {
-    properties[key] = describeField(field);
+    properties[key] = describeField(field, key);
     if (isRequired(field)) required.push(key);
   }
   const descriptor: SchemaDescriptor = {

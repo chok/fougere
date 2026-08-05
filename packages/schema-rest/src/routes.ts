@@ -3,8 +3,8 @@
  *
  * Framework-agnostic: produces RouteDefinition[], consumed by an adapter (Fastify, Express, etc).
  */
-import type { Field, Fields, SchemaLike } from '@fougere/schema';
-import { inputFields as clientInputFields, outputFields as clientOutputFields } from '@fougere/schema';
+import type { Field, Fields, SchemaSource } from '@fougere/schema';
+import { fieldsOf, inputFields as clientInputFields, outputFields as clientOutputFields } from '@fougere/schema';
 import { resolveIsReadOp } from '@fougere/core';
 
 // ─── Types ──────────────────────────────────────
@@ -32,19 +32,26 @@ export interface RouteDefinition {
 }
 
 interface OperationMeta {
-  input?: SchemaLike;
-  output?: SchemaLike;
+  input?: SchemaSource;
+  output?: SchemaSource;
 }
 
 interface EntityEntry {
   name: string;
-  entityClass: SchemaLike;
+  /** A live class in-process, a card from a frond whose class never crossed. */
+  entityClass: SchemaSource;
   exposed?: boolean;
 }
 
 interface HandlerEntry {
   entityName: string;
   operations: Map<string, OperationMeta>;
+  /** `handlers/<surface>/` — the named audience this handler answers, absent for the default door. */
+  surface?: string;
+  /** `Crud(Post, PostPublic)` — the handler-wide output view, scoping every op. */
+  outputOverride?: SchemaSource;
+  /** The scanned constructor, which carries the same statement made on the class. */
+  ctor?: { __output?: SchemaSource };
 }
 
 interface PresenterEntry {
@@ -158,7 +165,7 @@ export function generateRoutes(app: AppLike, options?: GenerateRoutesOptions): R
   const routes: RouteDefinition[] = [];
 
   for (const frond of app.fronds) {
-    const handlerMap = new Map(frond.handlers.filter((h: any) => !h.surface).map((h) => [h.entityName, h]));
+    const handlerMap = new Map(frond.handlers.filter((h) => !h.surface).map((h) => [h.entityName, h]));
 
     const surfaceName = options?.surface;
 
@@ -171,16 +178,18 @@ export function generateRoutes(app: AppLike, options?: GenerateRoutesOptions): R
       if (!surfaceName && entity.exposed === false) continue;
 
       const handler = (surfaceName
-        ? frond.handlers.find((h: any) => h.entityName === entity.name && h.surface === surfaceName)
+        ? frond.handlers.find((h) => h.entityName === entity.name && h.surface === surfaceName)
         : undefined) ?? handlerMap.get(entity.name);
       // Use facade keys (includes inherited ops like CRUD), fallback to handler.operations
       const opNames = Object.keys(facade);
       const entityOverrides = overrides[entity.name] ?? {};
-      // Use handler's output schema if declared, otherwise entity
-      const outputSchema = (handler as any)?.outputOverride
-        ?? (handler as any)?.ctor?.__output
+      // Use handler's output schema if declared, otherwise entity. A live class or a
+      // card — `fieldsOf` takes both, so a frond whose class never crossed the wire
+      // projects the same routes as a local one.
+      const outputSchema: SchemaSource = handler?.outputOverride
+        ?? handler?.ctor?.__output
         ?? entity.entityClass;
-      const fields = outputSchema.getFields();
+      const fields = fieldsOf(outputSchema);
 
       // Resolve presenter (if any)
       const presenterMap = new Map((frond.presenters ?? []).map((p) => [p.entityName, p]));
@@ -205,11 +214,11 @@ export function generateRoutes(app: AppLike, options?: GenerateRoutesOptions): R
         let inputFields: Fields | undefined;
         let outputFields: Fields | undefined = clientOutputFields(fields);
         if (meta?.input) {
-          inputFields = meta.input.getFields();
+          inputFields = fieldsOf(meta.input);
         } else if (opName === 'create' || opName === 'update') {
           inputFields = clientInputFields(fields);
         }
-        if (meta?.output) outputFields = clientOutputFields(meta.output.getFields());
+        if (meta?.output) outputFields = clientOutputFields(fieldsOf(meta.output));
 
         // Per-op handler override: redirect to a different class+method resolved from DI.
         const opOverride = frond.operationsOverrides?.[opName];

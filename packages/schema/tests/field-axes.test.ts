@@ -157,7 +157,9 @@ describe('unique / indexed — declared here, enforced by the storage', () => {
   const fields = Account.getFields();
 
   it('sets the role flag and leaves every other axis alone', () => {
-    expect(fields.email.role?.unique).toBe(true);
+    // A constraint of one, written as the empty self-reference: a field does not know its
+    // own key, so `[]` denotes whichever field carries it (resolved by the reader).
+    expect(fields.email.role?.unique).toEqual([[]]);
     expect(fields.city.role?.index).toBe(true);
     // The wrapper composes: `indexed(optional(...))` keeps the optionality.
     expect(fields.city.lifecycle?.create).toBe('optional');
@@ -176,11 +178,15 @@ describe('unique / indexed — declared here, enforced by the storage', () => {
 
   it('travels on the card, both ways', () => {
     const card = describeSchema(Account, 'account');
-    expect(card.properties.email['x-fougere']).toMatchObject({ role: { unique: true } });
+    // Members are NAMED on the wire: a consumer reads the constraint without having to
+    // know which property the group hangs on.
+    expect(card.properties.email['x-fougere']).toMatchObject({ role: { unique: [['email']] } });
     expect(card.properties.city['x-fougere']).toMatchObject({ role: { index: true } });
 
     const rebuilt = reconstruct(card);
-    expect(rebuilt.getFields().email.role?.unique).toBe(true);
+    expect(rebuilt.getFields().email.role?.unique).toEqual([['email']]);
     expect(rebuilt.getFields().city.role?.index).toBe(true);
+    // A constraint of one is not a composite — it is fully stated by the field itself.
+    expect(rebuilt.getUnique?.()).toBeUndefined();
   });
 });

@@ -11,7 +11,7 @@ export {
   anatomy,
   isNullable,
 } from './shape.js';
-export { type Role, type Relation, type EntityConstructor, toTargetThunk } from './role.js';
+export { type Role, type Relation, type EntityConstructor, toTargetThunk, uniqueMembers } from './role.js';
 export {
   type Lifecycle,
   type GeneratorRef,

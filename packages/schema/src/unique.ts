@@ -51,3 +51,73 @@ export function deriveUnique(
 
   return carried.length > 0 ? carried : undefined;
 }
+
+/**
+ * Carry the projected groups across the same key transform — the field-level twin of
+ * {@link deriveUnique}, and it has to run with it: the group lives in TWO places once
+ * projected (the declaration and each member's role), so remapping one alone left
+ * `pick('id','listId')` with a role still claiming a pair whose other member was gone.
+ *
+ * Same rule as the declaration — a group that lost a member is dropped, not narrowed.
+ * The empty self-reference needs no remapping: it names no key, which is exactly why it
+ * survives a `rename()` for free.
+ */
+export function deriveUniqueRoles<TFields extends Fields>(
+  fields: TFields,
+  mapKey: (key: string) => string | undefined,
+): TFields {
+  const out = { ...fields } as Fields;
+  for (const [key, field] of Object.entries(out)) {
+    const groups = field.role?.unique;
+    if (!groups?.length) continue;
+
+    const carried = groups
+      .map((group) => (group.length === 0 ? [] : group.map(mapKey)))
+      .filter((group): group is string[] => group.every((member) => member !== undefined));
+
+    if (carried.length === groups.length) continue;   // nothing lost, keep the field as is
+    const { unique: _dropped, ...rest } = field.role!;
+    out[key] = {
+      ...field,
+      role: carried.length ? { ...rest, unique: carried } : rest,
+    };
+  }
+  return out as TFields;
+}
+
+/**
+ * Project the entity's composite groups onto the role of every member — the single
+ * place the two ways of stating uniqueness meet.
+ *
+ * The author writes each fact where it lives: `unique(slug)` on the field it is about,
+ * `entity(fields, { unique: [['listId','docId']] })` on the entity, because a fact about
+ * a pair is held by neither field alone. Both then read as ONE normal form on the role
+ * axis, so every consumer — the DDL, the card, a foreign adapter — has a single shape to
+ * handle, and a field belonging to two constraints simply carries two member lists.
+ *
+ * The entity declaration stays the source (`getUnique()` keeps answering it); this is a
+ * projection of it, never a second place to edit. A named member group is spelled out
+ * here, while a lone `unique()` keeps its `[]` self-reference — resolved by whoever reads
+ * it, which is what makes `rename()` free.
+ */
+export function projectUniqueOntoFields<TFields extends Fields>(
+  fields: TFields,
+  groups: CompositeUnique<TFields> | undefined,
+): TFields {
+  if (!groups || groups.length === 0) return fields;
+
+  const projected = { ...fields } as Fields;
+  for (const group of groups) {
+    const members = [...group];
+    for (const key of members) {
+      const field = projected[key];
+      if (!field) continue;   // a group naming an absent field states nothing here
+      const already = field.role?.unique ?? [];
+      projected[key] = {
+        ...field,
+        role: { ...field.role, unique: [...already, members] },
+      };
+    }
+  }
+  return projected as TFields;
+}

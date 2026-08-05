@@ -31,7 +31,28 @@ export interface Relation {
 
 export interface Role {
   primary?: boolean;
-  unique?: boolean;
+  /**
+   * The unique constraints this field is a member of — one member list per constraint.
+   *
+   * A constraint is a NAMED SET of fields, and a lone `unique(slug)` is the degenerate
+   * case: a set of one. So there is one shape, not two — `boolean` could say "unique on
+   * its own" and nothing else, neither "unique together with docId" nor "in two
+   * constraints at once".
+   *
+   * **An empty member list denotes the field carrying it.** `unique(text())` applies to a
+   * field that does not yet know its own key — `slug` exists only once `entity({...})`
+   * assembles the object — so the self-reference is written as `[]` and stays that way:
+   * nothing to resolve, nothing to remap when a view renames the key, and a reader that
+   * never went through `entity()` still reads something true. A group with named members
+   * comes from the entity's own declaration (`entity(fields, { unique: [[...]] })`), which
+   * is where a fact about a pair belongs — no field holds it alone.
+   */
+  unique?: ReadonlyArray<ReadonlyArray<string>>;
   index?: boolean;
   relation?: Relation;
+}
+
+/** The constraint a member list denotes, resolved against the field carrying it. */
+export function uniqueMembers(group: ReadonlyArray<string>, ownKey: string): string[] {
+  return group.length === 0 ? [ownKey] : [...group];
 }

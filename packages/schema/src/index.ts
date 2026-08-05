@@ -22,6 +22,8 @@ export {
   cloneField,
   nullableShape,
   anatomy,
+  // The constraint a `role.unique` member list denotes — `[]` means the field carrying it.
+  uniqueMembers,
   isNullable,
   registerGenerator,
   resolveCustomGenerator,
@@ -92,5 +94,7 @@ export {
   type RelationDescriptor,
   type JsonSchemaType,
 } from './projections/card.js';
+// source: the one reader that takes a live class OR a card — what an adapter stands on
+export { type SchemaSource, fieldsOf, uniqueOf } from './projections/source.js';
 // standard: the live Standard Schema interop surface (`~standard`)
 export type { StandardSchemaV1 } from './projections/standard.js';
