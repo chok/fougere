@@ -19,31 +19,6 @@ function encodeOutput(result: unknown, fields: Fields): unknown {
   return result;
 }
 
-/** Apply presenter computed fields to a result (single object or array). */
-async function applyPresenter(
-  result: unknown,
-  presenter: Record<string, (parent: any) => any>,
-  fieldNames: string[],
-): Promise<unknown> {
-  const enrich = async (item: Record<string, unknown>) => {
-    const enriched = { ...item };
-    for (const name of fieldNames) {
-      if (typeof presenter[name] === 'function') {
-        enriched[name] = await presenter[name](item);
-      }
-    }
-    return enriched;
-  };
-
-  if (Array.isArray(result)) {
-    return Promise.all(result.map(enrich));
-  }
-  if (result && typeof result === 'object') {
-    return enrich(result as Record<string, unknown>);
-  }
-  return result;
-}
-
 /**
  * Register all route definitions on an HttpRouter.
  *
@@ -81,14 +56,14 @@ export function registerRoutes(
           return { status: 404, data: { error: 'Not found' } };
         }
 
-        // Apply presenter computed fields
-        const enriched = route.presenter && route.presenterFieldNames
-          ? await applyPresenter(result, route.presenter, route.presenterFieldNames)
-          : result;
+        // The computed fields are already here: the façade applies the presenter on every
+        // door (`presentEgress`), so a route that re-applied it did the work twice — and
+        // once a computed field started receiving the PAGE rather than one row, the second
+        // pass handed it a single object and threw `posts.map is not a function`.
 
         // Egress: encode domain values → wire (Date → ISO, money cents → decimal, …).
         // Convention applied once at the boundary; computed fields pass through untouched.
-        const data = route.outputFields ? encodeOutput(enriched, route.outputFields) : enriched;
+        const data = route.outputFields ? encodeOutput(result, route.outputFields) : result;
 
         return {
           status: route.method === 'POST' ? 201 : 200,

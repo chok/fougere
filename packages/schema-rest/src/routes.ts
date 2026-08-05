@@ -25,10 +25,9 @@ export interface RouteDefinition {
   inputFields?: Fields;
   /** Output schema (for JSON schema generation). */
   outputFields?: Fields;
-  /** Presenter instance for computed fields (resolved from DI). */
-  presenter?: Record<string, (parent: any) => any>;
-  /** Computed field names from the presenter. */
-  presenterFieldNames?: string[];
+  // No presenter here. A route used to carry the instance and its field names so the
+  // registration could enrich each row; the façade does that for every door now
+  // (`presentEgress`), so the rows arrive computed and a second pass was duplicated work.
 }
 
 interface OperationMeta {
@@ -191,18 +190,6 @@ export function generateRoutes(app: AppLike, options?: GenerateRoutesOptions): R
         ?? entity.entityClass;
       const fields = fieldsOf(outputSchema);
 
-      // Resolve presenter (if any)
-      const presenterMap = new Map((frond.presenters ?? []).map((p) => [p.entityName, p]));
-      const presenterMeta = presenterMap.get(entity.name);
-      let presenter: Record<string, (parent: any) => any> | undefined;
-      let presenterFieldNames: string[] | undefined;
-      if (presenterMeta) {
-        try {
-          presenter = app.resolve<Record<string, Function>>(`${entity.name[0].toUpperCase()}${entity.name.slice(1)}Presenter`) as any;
-          presenterFieldNames = presenterMeta.fields;
-        } catch { /* no presenter */ }
-      }
-
       for (const opName of opNames) {
         const meta = handler?.operations.get(opName);
         const override = entityOverrides[opName];
@@ -242,8 +229,6 @@ export function generateRoutes(app: AppLike, options?: GenerateRoutesOptions): R
           handler: (invocation) => op(invocation),
           inputFields,
           outputFields,
-          presenter,
-          presenterFieldNames,
         });
       }
     }
