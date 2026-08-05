@@ -92,13 +92,21 @@ export function describe(schema: SchemaLike, name?: string): SchemaDescriptor {
     'x-fougere-version': 1,
     'x-fougere-vendor': 'fougere',
   };
-  const title = name ?? sourceName(schema);
+  const title = name ?? sourceNameOf(schema);
   if (title) descriptor.title = title;
   if (required.length) descriptor.required = required;
   return descriptor;
 }
 
-function sourceName(schema: SchemaLike): string | undefined {
+/**
+ * The name of the schema a view came from — `Post` for `Post`, and `Post` for
+ * `Post.pick('title')` too, since a derivation carries its `source`.
+ *
+ * Exported because two projections need the SAME answer: the card titles an entity with it,
+ * and GraphQL names a field's enum type with it — an enum named after the view would give
+ * `Post.status` and `CreatePostInput.status` two incompatible types for one set of values.
+ */
+export function sourceNameOf(schema: SchemaLike): string | undefined {
   const s = schema as { source?: { name?: string }; name?: string };
   return s.source?.name ?? s.name;
 }
@@ -111,7 +119,7 @@ function sourceName(schema: SchemaLike): string | undefined {
  */
 export function describeSet(schemas: Record<string, SchemaLike> | SchemaLike[]): SchemaBundle {
   const entries = Array.isArray(schemas)
-    ? schemas.map((s) => [sourceName(s) ?? '', s] as const)
+    ? schemas.map((s) => [sourceNameOf(s) ?? '', s] as const)
     : Object.entries(schemas);
   const $defs: Record<string, SchemaDescriptor> = {};
   for (const [name, schema] of entries) {

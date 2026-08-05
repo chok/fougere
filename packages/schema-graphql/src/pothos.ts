@@ -3,7 +3,7 @@
  */
 import type SchemaBuilder from '@pothos/core';
 import type { AnyField, Fields, SchemaLike, SchemaSource } from '@fougere/schema';
-import { anatomy, boundaryOf, fieldsOf, inputFields, resolveBoundary } from '@fougere/schema';
+import { anatomy, boundaryOf, fieldsOf, inputFields, resolveBoundary, sourceNameOf } from '@fougere/schema';
 
 // ─── Types ─────────────────────────────────────────
 
@@ -117,10 +117,32 @@ const SKIP_TYPES = new Set(['InvocationContext', 'ListOptions']);
 
 // ─── Helpers ───────────────────────────────────────
 
-function fieldToGraphQL(t: any, field: AnyField, fieldName: string): any {
+function fieldToGraphQL(
+  t: any,
+  field: AnyField,
+  fieldName: string,
+  enumFor?: (values: string[]) => any | undefined,
+): any {
   // Dispatch on the BASE type via anatomy — `shape.type` may be the nullable
   // `[T,'null']` union, a direct comparison would fail silently on it.
   const { base: shape, nullable } = anatomy(field.shape);
+
+  // Before the type switch: a bounded set is its own GraphQL type whatever its base type
+  // carries. `oneOf` fed the form's `select` and the DDL's `CHECK` from the day it was
+  // written; here it fell through to `String`, so a schema explorer showed nothing of the
+  // set and a generated client could not narrow the union.
+  // Only the TYPE changes here. `nullable` is passed exactly where the `String` branch below
+  // passes it and omitted where that branch calls `exposeString` — spelling `nullable: false`
+  // instead would emit `PostStatus!` next to a `title: String` on the same type, so a bounded
+  // set would carry a stricter contract than a plain field for no reason of its own.
+  const values = enumFor && enumValuesOf(shape);
+  if (values) {
+    const ref = enumFor(values);
+    if (ref) {
+      const resolve = (parent: any) => parent[fieldName] ?? null;
+      return nullable ? t.field({ type: ref, nullable: true, resolve }) : t.field({ type: ref, resolve });
+    }
+  }
 
   switch (shape?.type) {
     case 'integer':
@@ -235,17 +257,76 @@ function nestedInputType(
  */
 const nestedInputs = new WeakMap<object, Map<string, any>>();
 
+/** Same rule as {@link nestedInputs}, for the enum types — with the values, see below. */
+const enumTypes = new WeakMap<object, Map<string, { ref: any; values: string[] }>>();
+
+/**
+ * A GraphQL enum value is an IDENTIFIER, not a string: `in-progress` or `à valider` cannot
+ * be spelled in a query. `oneOf` is a JSON Schema keyword and accepts any string, so a set
+ * that will not fit stays a `String` — the judge still refuses what is not in it.
+ */
+const GRAPHQL_NAME = /^[_A-Za-z][_0-9A-Za-z]*$/;
+
+function enumValuesOf(shape: Record<string, any> | undefined): string[] | undefined {
+  const values = shape?.enum;
+  if (!Array.isArray(values) || values.length === 0) return undefined;
+  if (!values.every((v) => typeof v === 'string' && GRAPHQL_NAME.test(v))) return undefined;
+  return values as string[];
+}
+
+/**
+ * The enum type for one field's value set — one per NAME per builder, so `Post.status` and
+ * `CreatePostInput.status` are the same `PostStatus` and a value read can be written back.
+ *
+ * A second field claiming the name with a different set falls back to `String` rather than
+ * being served the first one: two different sets under one name would let a client send a
+ * value this field never declared, which is the opposite of what the enum is for.
+ */
+function enumTypeFor(
+  builder: InstanceType<typeof SchemaBuilder>,
+  name: string,
+  values: string[],
+): any | undefined {
+  let perBuilder = enumTypes.get(builder as object);
+  if (!perBuilder) enumTypes.set(builder as object, (perBuilder = new Map()));
+
+  const known = perBuilder.get(name);
+  if (known) {
+    const same = known.values.length === values.length && known.values.every((v, i) => v === values[i]);
+    return same ? known.ref : undefined;
+  }
+
+  const ref = (builder as any).enumType(name, { values });
+  perBuilder.set(name, { ref, values });
+  return ref;
+}
+
+/** `Post` + `status` → `PostStatus`. Undefined when the schema has no name to build on. */
+function enumNameFor(owner: string | undefined, fieldName: string): string | undefined {
+  return owner ? `${owner}${capitalize(fieldName)}` : undefined;
+}
+
 function fieldToInput(
   t: any,
   field: AnyField,
   patch: boolean,
   nested?: (shape: Record<string, any>, suffix: string) => any,
+  enumFor?: (values: string[]) => any | undefined,
 ): any {
   // Required = the presence axis, projected onto GraphQL's single knob: the
   // caller must supply it (no `lifecycle.create` rule answers absence), null is
   // not legal, and the view is not in patch mode (a patch omits freely).
   const { base: shape, nullable } = anatomy(field.shape);
   const required = !patch && !nullable && field.lifecycle?.create === undefined;
+
+  // The dual of the output side, and it must be the SAME type: an input left as `String`
+  // would refuse nothing the enum refuses, and a client could not hand back the value a
+  // query just gave it.
+  const values = enumFor && enumValuesOf(shape);
+  if (values) {
+    const ref = enumFor(values);
+    if (ref) return t.field({ type: ref, required });
+  }
 
   switch (shape?.type) {
     case 'integer':
@@ -386,6 +467,10 @@ export function registerType(builder: InstanceType<typeof SchemaBuilder>, config
   // A live class or a card — an adapter needs the fields, never the constructor.
   const fields = fieldsOf(config.entity);
   const exclude = new Set(config.exclude ?? []);
+  // Who owns the enum names: the schema a view came from, so `PostCard.status` and
+  // `CreatePostInput.status` land on the one `PostStatus`. A card that travelled carries no
+  // class name — the GraphQL type name is then the best owner available.
+  const enumOwner = sourceNameOf(config.entity as SchemaLike) ?? config.name;
 
   return (builder as any).objectRef(config.name).implement({
     fields: (t: any) => {
@@ -400,7 +485,10 @@ export function registerType(builder: InstanceType<typeof SchemaBuilder>, config
         // Write-only (boundary out: 'closed', e.g. password): never emitted
         if (boundaryOf(field).out === 'closed') continue;
 
-        result[fieldName] = fieldToGraphQL(t, field, fieldName);
+        result[fieldName] = fieldToGraphQL(t, field, fieldName, (values) => {
+          const name = enumNameFor(enumOwner, fieldName);
+          return name ? enumTypeFor(builder, name, values) : undefined;
+        });
       }
 
       // Add relations
@@ -446,7 +534,12 @@ export function registerType(builder: InstanceType<typeof SchemaBuilder>, config
 
           const meta = metaMap.get(name);
           const nullable = meta?.nullable ?? true;
-          const resolve = (parent: any) => (fn as Function).call(config.presenter, parent);
+          // READ the value, never recompute it. The façade applies the presenter on every
+          // door (`presentEgress`), so the row arrives carrying its computed fields; calling
+          // the method again ran the work twice — and once the method started receiving the
+          // PAGE rather than one row, the second call was handed a single object and threw
+          // `posts.map is not a function`. What GraphQL owes the field is its declaration.
+          const resolve = (parent: any) => parent?.[name] ?? null;
 
           // The presenter STATED what this field emits — build its type instead of guessing.
           const declared = config.presenterViews?.[name];
@@ -505,6 +598,9 @@ export function registerType(builder: InstanceType<typeof SchemaBuilder>, config
  */
 export function registerInput(builder: InstanceType<typeof SchemaBuilder>, config: InputConfig): any {
   const fields = config.schema.getFields();
+  // The view's SOURCE, not the input's name: `CreatePostInput` derives from `Post`, and its
+  // `status` must be the same `PostStatus` the query emits.
+  const enumOwner = sourceNameOf(config.schema);
   // Input-field omissibility is a projection of the view's MODE (partial() → patch),
   // never of forged per-field flags — the fields themselves stay untouched.
   const patch = config.schema.getOpts?.()?.patch ?? false;
@@ -519,8 +615,13 @@ export function registerInput(builder: InstanceType<typeof SchemaBuilder>, confi
         // Read-only (boundary in: 'closed'): never accepted from a client
         if (boundaryOf(field).in === 'closed') continue;
 
-        result[fieldName] = fieldToInput(t, field, patch, (shape, suffix) =>
-          nestedInputType(builder, shape, `${config.name}${capitalize(fieldName)}${suffix}`),
+        result[fieldName] = fieldToInput(
+          t, field, patch,
+          (shape, suffix) => nestedInputType(builder, shape, `${config.name}${capitalize(fieldName)}${suffix}`),
+          (values) => {
+            const name = enumNameFor(enumOwner, fieldName);
+            return name ? enumTypeFor(builder, name, values) : undefined;
+          },
         );
       }
 

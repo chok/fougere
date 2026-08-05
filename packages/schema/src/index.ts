@@ -83,7 +83,7 @@ export { encodeFields } from './projections/encode.js';
 // io: the dual client-surface projections — ingress (may supply) / egress (may read)
 export { inputFields, outputFields } from './projections/io.js';
 // descriptor (the card): the portable, serialisable identity of a schema
-export { describe, describeSet } from './projections/describe.js';
+export { describe, describeSet, sourceNameOf } from './projections/describe.js';
 export { reconstruct, reconstructSet } from './projections/reconstruct.js';
 export {
   type SchemaBundle,

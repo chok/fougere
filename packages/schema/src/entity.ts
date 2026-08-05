@@ -45,7 +45,7 @@ export interface SchemaConstructor<TFields extends Fields> {
   new (data: CtorInput<TFields>): SchemaViewInfer<TFields>;
   readonly '~standard': StandardSchemaV1.Props<Record<string, unknown>, SchemaViewInfer<TFields>>;
   /** The original Entity class this derivation was created from (undefined for compose() results). */
-  readonly source?: abstract new (...args: unknown[]) => unknown;
+  readonly source?: abstract new (...args: never[]) => unknown;
   getFields(): TFields;
   /**
    * Per-consumer hints passed as the 2nd arg of `entity()`. Derivations carry them:
@@ -141,7 +141,7 @@ function assertKnownKeys(operation: string, keys: string[], fields: Fields): voi
 /** Create a schema constructor from a field record. */
 export function createSchemaConstructor<TFields extends Fields>(
   fields: TFields,
-  source?: abstract new (...args: unknown[]) => unknown,
+  source?: abstract new (...args: never[]) => unknown,
   hints?: Hints<TFields>,
   opts: ValidateOptions = {},
   unique?: CompositeUnique<Fields>,
@@ -205,6 +205,13 @@ export function createSchemaConstructor<TFields extends Fields>(
     }
     // Every derivation carries hints and opts — same invariant as cloneField, one
     // level up: change the fields you mean, keep everything else the view holds.
+    //
+    // `source ?? this` records WHERE a view came from, once, at the first derivation:
+    // `this` is the class the static was called on (`Post`), and a view of a view keeps
+    // the origin rather than the intermediate. The slot existed and was only ever
+    // propagated — `entity()` passes `undefined` — so `describe` read an empty field and
+    // titled a view `Schema`, the anonymous class. One reader assumed it; now two do
+    // (GraphQL names `PostStatus` from it, so an input view and the type share one enum).
     static pick(...keys: string[]) {
       assertKnownKeys('pick', keys, fields);
       const picked: Fields = {};
@@ -212,7 +219,7 @@ export function createSchemaConstructor<TFields extends Fields>(
         if (fields[key]) picked[key] = fields[key];
       }
       const survives = (k: string) => (keys.includes(k) ? k : undefined);
-      return createSchemaConstructor(deriveUniqueRoles(picked, survives), source, deriveHints(hints, survives), opts, deriveUnique(unique, survives));
+      return createSchemaConstructor(deriveUniqueRoles(picked, survives), source ?? this, deriveHints(hints, survives), opts, deriveUnique(unique, survives));
     }
     static omit(...keys: string[]) {
       assertKnownKeys('omit', keys, fields);
@@ -221,17 +228,17 @@ export function createSchemaConstructor<TFields extends Fields>(
         if (!keys.includes(key)) omitted[key] = value;
       }
       const survives = (k: string) => (keys.includes(k) ? undefined : k);
-      return createSchemaConstructor(deriveUniqueRoles(omitted, survives), source, deriveHints(hints, survives), opts, deriveUnique(unique, survives));
+      return createSchemaConstructor(deriveUniqueRoles(omitted, survives), source ?? this, deriveHints(hints, survives), opts, deriveUnique(unique, survives));
     }
     static partial() {
       // patch mode: an unsent field is omitted ("don't touch"), enforced by
       // ValidateOptions.patch — the fields themselves are untouched, so `null`
       // stays legal only where the base field is nullable. partial() moves the
       // presence axis, never the nullity axis.
-      return createSchemaConstructor({ ...fields }, source, hints, { ...opts, patch: true }, unique);
+      return createSchemaConstructor({ ...fields }, source ?? this, hints, { ...opts, patch: true }, unique);
     }
     static extend(extra: Fields) {
-      return createSchemaConstructor({ ...fields, ...extra }, source, hints, opts, unique);
+      return createSchemaConstructor({ ...fields, ...extra }, source ?? this, hints, opts, unique);
     }
     static rename(mapping: Record<string, string>) {
       assertKnownKeys('rename', Object.keys(mapping), fields);
@@ -240,7 +247,7 @@ export function createSchemaConstructor<TFields extends Fields>(
         renamed[mapping[key] ?? key] = field;
       }
       const remap = (k: string) => mapping[k] ?? k;
-      return createSchemaConstructor(deriveUniqueRoles(renamed, remap), source, deriveHints(hints, remap), opts, deriveUnique(unique, remap));
+      return createSchemaConstructor(deriveUniqueRoles(renamed, remap), source ?? this, deriveHints(hints, remap), opts, deriveUnique(unique, remap));
     }
   }
 
