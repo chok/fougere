@@ -9,6 +9,22 @@
 // index, and the database enforces uniqueness on every write — including ones Fougere
 // never saw. A collision therefore surfaces as the driver's error, never as a
 // `validate()` failure: judging one value can never see the other rows.
+//
+// ⚠️ READING `unique` — the one member of this axis that is not self-contained. A member
+// list may be EMPTY, denoting the field that carries it, so a reader that walks the array
+// literally sees a group of no fields. Every reader goes through `uniqueMembers(group,
+// key)`, which needs the field's key — the half a field does not have (`slug` is named by
+// the object literal `entity({...})` receives, one call up).
+//
+//   for (const [key, field] of Object.entries(schema.getFields()))
+//     for (const group of field.role?.unique ?? [])
+//       uniqueMembers(group, key)     // ← always. `[]` at key `slug` means `['slug']`.
+//
+// The in-repo readers do this (`schema-sql/src/table.ts`, `projections/describe.ts`). A
+// consumer reading a CARD never meets the empty form: `describe` resolves it on the way
+// out, so the wire always names its members — which is the point of resolving it there
+// and not in `entity()`. Keeping it unresolved in memory is what makes `rename()` free:
+// a self-reference names no key, so there is nothing to remap when the key moves.
 
 export type EntityConstructor = abstract new (...args: any[]) => any;
 
@@ -46,13 +62,28 @@ export interface Role {
    * never went through `entity()` still reads something true. A group with named members
    * comes from the entity's own declaration (`entity(fields, { unique: [[...]] })`), which
    * is where a fact about a pair belongs — no field holds it alone.
+   *
+   * So NEVER read a group directly — {@link uniqueMembers} is the accessor.
    */
   unique?: ReadonlyArray<ReadonlyArray<string>>;
   index?: boolean;
   relation?: Relation;
 }
 
-/** The constraint a member list denotes, resolved against the field carrying it. */
+/**
+ * The constraint a member list denotes, resolved against the field carrying it — the
+ * accessor every reader of `role.unique` goes through.
+ *
+ * ```ts
+ * uniqueMembers([], 'slug')                 // ['slug']            — the self-reference
+ * uniqueMembers(['listId', 'docId'], 'docId')  // ['listId','docId'] — already named
+ * ```
+ *
+ * `ownKey` is the half the field is missing, and only its holder can supply it: iterate
+ * `Object.entries(getFields())`, never the field alone. Two spellings for one constraint
+ * is the price of a self-reference that survives `rename()` untouched; this function is
+ * what makes them one, and it is why the two forms never need to be compared as data.
+ */
 export function uniqueMembers(group: ReadonlyArray<string>, ownKey: string): string[] {
   return group.length === 0 ? [ownKey] : [...group];
 }
