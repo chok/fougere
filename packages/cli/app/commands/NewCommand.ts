@@ -26,6 +26,25 @@ export default class NewCommand {
       if (!ok) { this.ui.cancel(); return; }
     }
 
+    // A shape, decided before anything is written — the flat form has no workspace shell
+    // to put the domain beside, because the root IS the domain.
+    if (raw.flat) {
+      if (raw.app) throw new Error('--flat is one app and it is the root — drop --app.');
+      const template = ((raw.frond as string) || 'blank').split(':')[0].trim();
+      const available = pw.listTemplates('fronds');
+      if (!available.includes(template)) {
+        throw new Error(`Unknown fronds template '${template}' — available: ${available.join(', ') || '(none)'}`);
+      }
+      pw.createFlat(dir, name);
+      pw.addRootFrond(dir, template);
+      if (raw.local) pw.linkLocal(dir);
+      this.ui.info(`${template} at the root`);
+      const flatInstall = raw.local ? 'pnpm install' : 'pnpm install   # needs @fougere/* published (or re-run with --local)';
+      this.ui.note([`cd ${name}`, flatInstall, `pnpm dev`].join('\n'), `${name} — one frond, at the root`);
+      this.ui.outro('Prêt.');
+      return;
+    }
+
     pw.createWorkspace(dir, name);
 
     if (raw.bare) {

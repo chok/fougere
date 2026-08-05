@@ -10,7 +10,7 @@ the validation, the input contract, the write and the output shape. No migration
 DTO to keep in step, no permitted-params list.
 
 ```ts
-// fronds/<frond>/entities/Product.ts — and nothing else
+// entities/Product.ts — and nothing else
 sku: text({ min: 3, max: 32 }),
 ```
 
@@ -58,7 +58,7 @@ Read a relation with `findAllBy`. Never read a whole table to filter it in memor
 ## Checking your work
 
 ```bash
-npx tsc -p fronds --noEmit    # the compiler — free, immediate, and it catches most of it
+npx tsc -p tsconfig.frond.json    # the compiler — free, immediate, and it catches most of it
 ```
 
 Run it. It is the first judge, and the cheapest.

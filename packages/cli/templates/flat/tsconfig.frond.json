@@ -1,0 +1,25 @@
+{
+  // The domain typechecks on its own, without Nuxt and without `.nuxt/tsconfig.json`.
+  // `include` names the convention directories rather than `["."]`, which would swallow
+  // `app/` and `nuxt.config.ts` — the whole point being that the domain does not need them.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "lib": ["ESNext"],
+    "types": ["node"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": [
+    "entities",
+    "handlers",
+    "presenters",
+    "collectors",
+    "seeds",
+    "services",
+    "repositories"
+  ]
+}

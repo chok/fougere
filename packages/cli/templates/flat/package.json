@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "nuxt dev",
-    "build": "nuxt build"
+    "build": "nuxt build",
+    "typecheck": "tsc -p tsconfig.frond.json"
   },
   "dependencies": {
     "@fougere/core": "latest",
@@ -21,5 +22,8 @@
       "better-sqlite3",
       "esbuild"
     ]
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.15"
   }
 }

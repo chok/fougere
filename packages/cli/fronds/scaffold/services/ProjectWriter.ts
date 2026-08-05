@@ -36,13 +36,40 @@ export default class ProjectWriter {
     return { path: dir };
   }
 
+  /**
+   * The flat shell — one Nuxt app whose root carries the convention, so no `fronds/`
+   * and no workspace. `templates/flat/` is that shell; what separates the two shapes is
+   * only where the domain lands.
+   */
+  createFlat(dir: string, name: string): { path: string } {
+    cpSync(join(TEMPLATES, 'flat'), dir, { recursive: true });
+    restoreGitignore(dir);
+    setPackageName(dir, name);
+    return { path: dir };
+  }
+
+  /**
+   * Put a frond template's directories at the project root. Only the directories: at the
+   * root the app's own `package.json` is the frond's, and `@frond/<name>` comes from the
+   * directory through the Nuxt module's alias, so the template's package would only
+   * duplicate it under a second name.
+   */
+  addRootFrond(dir: string, template: string): { path: string } {
+    const src = join(TEMPLATES, 'fronds', template);
+    for (const entry of readdirSync(src, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      cpSync(join(src, entry.name), join(dir, entry.name), { recursive: true });
+    }
+    return { path: dir };
+  }
+
   /** Add a frond (business hexagon) under fronds/<name>. */
   addFrond(wsDir: string, template: string, name: string): { path: string } {
     const dest = join(wsDir, 'fronds', name);
     cpSync(join(TEMPLATES, 'fronds', template), dest, { recursive: true });
-    // Only the import name. Being under fronds/ is what makes it a frond — the
-    // scan reads directories, and no `fougere.frond` key was ever read by
-    // anything. Writing one taught a marker that does not exist.
+    // Only the import name. Carrying the convention is what makes a frond — the scan
+    // reads directories. `fougere.frond` IS read now (`scanner.ts`, `frondNameOf`), but
+    // it renames the contract, which a freshly scaffolded frond has no reason to do.
     const pkgPath = join(dest, 'package.json');
     if (existsSync(pkgPath)) {
       const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as { name: string };
