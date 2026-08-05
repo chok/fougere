@@ -26,6 +26,7 @@ import {
   type TableDef,
 } from './table.js';
 import { resolveDialect, type DialectName } from './dialect.js';
+import { checkFor } from './check.js';
 
 // ─── Compile-only engines ──────────────────────────
 
@@ -107,6 +108,14 @@ export function createTableSQL(
   // same table cannot collide, and so a migration can recognize it later.
   for (const group of table.uniqueGroups) {
     builder = builder.addUniqueConstraint(`${table.name}_${group.join('_')}_unique`, group as any);
+  }
+
+  // What the shape says, told to the storage. Table-level rather than inline: a
+  // named constraint is what a later migration can find and replace, and the same
+  // form will hold a cross-field check when one is declared.
+  for (const column of table.columns) {
+    const check = checkFor(column);
+    if (check) builder = builder.addCheckConstraint(`${table.name}_${column.name}_check`, check);
   }
 
   return builder.compile().sql;

@@ -37,15 +37,31 @@ describe('orm.client', () => {
     expect(rows[0].name).toBe('Clavier');
   });
 
-  it('ne rencontre aucun juge — le prix de la porte', async () => {
+  it('échappe au juge du domaine, pas à celui du stockage', async () => {
     const { orm } = await app();
     const client = (orm as { client: any }).client;
 
-    // `price_cents` déclare `min: 0`. Par le port, `guardStorage` le refuse ; par le client,
-    // la valeur entre. C'est le contrat de cette porte, et la raison pour laquelle elle se
-    // nomme au lieu de s'offrir.
-    await client.insertInto('products').values({ id: 'x', name: 'A', price_cents: -100 }).execute();
-    const row = await client.selectFrom('products').selectAll().executeTakeFirst();
-    expect(row.price_cents).toBe(-100);
+    // `price_cents` déclare `min: 0`. Le port le refuse par `guardStorage` ; le client
+    // ne rencontre pas ce juge-là — c'est le contrat de cette porte. Mais la borne est
+    // aussi descendue dans le schéma, et la base ne fait de faveur à personne.
+    await expect(
+      client.insertInto('products').values({ id: 'x', name: 'A', price_cents: -100 }).execute(),
+    ).rejects.toThrow(/CHECK/i);
+  });
+
+  it("reste la porte de ce que le port n'offre pas", async () => {
+    const { orm } = await app();
+    const client = (orm as { client: any }).client;
+    await orm.create({ name: 'A', price_cents: 100 });
+    await orm.create({ name: 'B', price_cents: 300 });
+
+    // Une agrégation : aucune méthode du port ne la rend, et c'est pour ça que le
+    // client se nomme au lieu de s'offrir.
+    const { total } = await client
+      .selectFrom('products')
+      .select((eb: any) => eb.fn.sum('price_cents').as('total'))
+      .executeTakeFirst();
+
+    expect(Number(total)).toBe(400);
   });
 });

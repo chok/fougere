@@ -7,6 +7,7 @@
  * field. Adding a dialect touches only the second half.
  */
 import { anatomy, type AnyField, type SchemaLike } from '@fougere/schema';
+import { boundsOf, type ShapeBounds } from './check.js';
 
 /** The shape keywords a dialect needs to choose a column type. */
 export interface ColumnShape {
@@ -31,6 +32,11 @@ export interface ColumnDef {
   unique?: boolean;
   /** `role.index` — realized as a separate `CREATE INDEX`, never a constraint. */
   index?: boolean;
+  /**
+   * What the shape bounds beyond its type — `oneOf`, `min`, `max`. Realized as a
+   * `CHECK`, so the rule holds on every write and not only at the façade.
+   */
+  bounds?: ShapeBounds;
   /** The FK target, from `role.relation` when it's a `ref()` (kind `'one'`). */
   references?: ColumnReference;
 }
@@ -141,6 +147,8 @@ function toColumn(
     nullable,
     primary: field.role?.primary === true,
   };
+  const bounds = boundsOf(base as Record<string, unknown> | undefined);
+  if (bounds) column.bounds = bounds;
   if (typeof create === 'object' && create !== null && 'value' in create) {
     column.default = create.value;
   }

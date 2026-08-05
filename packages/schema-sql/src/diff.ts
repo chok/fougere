@@ -13,6 +13,7 @@
  */
 import { sql, type Kysely } from 'kysely';
 import { addForeignKeyConstraintSQL, compiler, createTableSQL, indexSQL, type GenerateOptions } from './ddl.js';
+import { checkFor } from './check.js';
 import { resolveDialect, type DialectName } from './dialect.js';
 import {
   isKeyed,
@@ -148,6 +149,11 @@ export function changeSQL(change: Change, dialectName: DialectName): string {
         built = built.references(`${column.references.table}.${column.references.column}`);
         if (column.references.onDelete) built = built.onDelete(column.references.onDelete);
       }
+      // Inline rather than a named table constraint: SQLite cannot ALTER one in, and
+      // the column is new, so no existing row can be caught out by it. A column that
+      // arrives later is bounded like a column that was there from the start.
+      const check = checkFor(column);
+      if (check) built = built.check(check);
       return built;
     })
     .compile().sql;
