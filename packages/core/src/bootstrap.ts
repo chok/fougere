@@ -13,7 +13,7 @@ import { computeBindingPlan, resolveArgs, type CollectorResolver } from './bindi
 import type { OperationContract } from './operation.js';
 import { EMPTY_INVOCATION, type InvocationContext } from './invocation.js';
 import { type SchemaLike, type Fields, validateFields } from '@fougere/schema';
-import { projectEgress, presentEgress, guardStorage } from './egress.js';
+import { projectEgress, presentEgress, guardStorage, type PresenterArgs } from './egress.js';
 
 /** Container key of an entity's presenter — 'post' → 'PostPresenter'. */
 const presenterKeyOf = (entity: string) => `${entity[0].toUpperCase()}${entity.slice(1)}Presenter`;
@@ -319,9 +319,30 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
           const projected = projectEgress(out.fields, await getInstance()[op](...resolved), out.closed);
           if (out.closed) return projected;
           const meta = presenterMap.get(entity.name);
-          return meta
-            ? presentEgress(projected, scope.resolve(presenterKeyOf(entity.name)), meta.fields, entityName, op)
-            : projected;
+          if (!meta) return projected;
+
+          // A computed field is bound like an op: what it declares after the rows is
+          // resolved from the same invocation, by the same collectors. The plan is
+          // computed here and not at scan time because the scan meets presenters
+          // before it meets collectors.
+          const args: PresenterArgs = {};
+          for (const field of meta.fieldMeta) {
+            if (!field.params?.length) continue;
+            args[field.name] = await resolveArgs(
+              computeBindingPlan(field.params, collectorEntityNames),
+              inv,
+              collectorResolver,
+            );
+          }
+
+          return presentEgress(
+            projected,
+            scope.resolve(presenterKeyOf(entity.name)),
+            meta.fields,
+            entityName,
+            op,
+            args,
+          );
         });
       };
 

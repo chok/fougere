@@ -24,13 +24,20 @@ export default class PostPresenter extends Presenter(Post) {
     super();
   }
 
-  excerpt(post: Post): string {
-    return typeof post.body === 'string' ? post.body.slice(0, 200) : '';
+  excerpt(posts: Post[]): string[] {
+    return posts.map((post) => (typeof post.body === 'string' ? post.body.slice(0, 200) : ''));
   }
 
-  async authorName(post: Post): Promise<string> {
-    if (!post.authorId) return 'Anonymous';
-    const author = await this.authorOrm.findById(post.authorId);
-    return author?.name ?? 'Anonymous';
+  /**
+   * One read for the page, not one per row. A computed field is handed the whole
+   * response precisely so a lookup can be done once — the row-at-a-time form made
+   * twenty posts twenty queries, and nothing about the code said so.
+   */
+  async authorName(posts: Post[]): Promise<string[]> {
+    const ids = [...new Set(posts.map((p) => p.authorId).filter(Boolean))] as string[];
+    const authors = await Promise.all(ids.map((id) => this.authorOrm.findById(id)));
+    const byId = new Map(authors.filter(Boolean).map((a) => [a!.id, a!.name]));
+
+    return posts.map((post) => (post.authorId && byId.get(post.authorId)) || 'Anonymous');
   }
 }

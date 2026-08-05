@@ -6,7 +6,7 @@ const PRESENTER_TARGET = Symbol.for('fougere:presenter_target');
 export default class NotePresenter {
   static [PRESENTER_TARGET] = Note;
 
-  excerpt(note: { body: string }): string {
-    return note.body.slice(0, 3);
+  excerpt(notes: { body: string }[]): string[] {
+    return notes.map((note) => note.body.slice(0, 3));
   }
 }

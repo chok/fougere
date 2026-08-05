@@ -1,4 +1,5 @@
 import type { Container } from '@fougere/container';
+import type { ParsedParam } from './operation.js';
 import type { EntityOrm, OrmFactory } from './orm.js';
 import type { SchemaLike } from '@fougere/schema';
 import type { OperationContract, OperationsMap } from './operation.js';
@@ -66,6 +67,15 @@ export interface PresenterFieldMeta {
   returnType?: string;
   /** Whether the return is nullable. */
   nullable?: boolean;
+  /**
+   * The declared parameters AFTER the rows. Kept raw rather than resolved: the scan
+   * meets presenters before collectors, so the plan is computed at boot where the
+   * collector names are known — exactly as a handler op's is.
+   *
+   * A computed field that declares `user: User | null` is then fed by the collector
+   * that resolves one. A presenter is not a second mechanism.
+   */
+  params?: ParsedParam[];
 }
 
 /** A discovered presenter (computed fields for an entity's output). */

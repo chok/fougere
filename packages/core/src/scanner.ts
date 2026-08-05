@@ -293,6 +293,8 @@ async function toPresenterEntry(filePath: string): Promise<PresenterEntry | null
       name: m.name,
       returnType: m.returnType?.name,
       nullable: m.returnType?.nullable,
+      // Everything after the rows is bound like a handler's argument.
+      params: m.params.slice(1),
     }));
   } catch { /* parse failure — fall back to untyped */ }
 

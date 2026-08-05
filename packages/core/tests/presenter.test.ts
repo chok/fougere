@@ -8,12 +8,12 @@ class FakeEntity {
 }
 
 class ProductPresenter extends Presenter(FakeEntity) {
-  excerpt(product: any) {
-    return product.name.slice(0, 10);
+  excerpt(products: any[]) {
+    return products.map((p) => p.name.slice(0, 10));
   }
 
-  isExpensive(product: any) {
-    return product.price > 100;
+  isExpensive(products: any[]) {
+    return products.map((p) => p.price > 100);
   }
 }
 
@@ -36,8 +36,7 @@ describe('Presenter', () => {
 
   it('methods are callable on an instance', () => {
     const presenter = new ProductPresenter();
-    expect(presenter.excerpt({ name: 'Long Product Name' })).toBe('Long Produ');
-    expect(presenter.isExpensive({ price: 200 })).toBe(true);
-    expect(presenter.isExpensive({ price: 50 })).toBe(false);
+    expect(presenter.excerpt([{ name: 'Long Product Name' }])).toEqual(['Long Produ']);
+    expect(presenter.isExpensive([{ price: 200 }, { price: 50 }])).toEqual([true, false]);
   });
 });

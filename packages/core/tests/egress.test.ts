@@ -125,9 +125,11 @@ describe('a write-only field never crosses the façade outbound', () => {
 });
 
 describe('presentEgress — computed fields, added last', () => {
+  // The page, not the row: a computed field answers as many values as it was given,
+  // in the same order — which is what lets a field that reads do it once.
   const presenter = {
-    excerpt: (p: { body: string }) => p.body.slice(0, 5),
-    async authorName(p: { authorId: string }) { return `author:${p.authorId}`; },
+    excerpt: (rows: { body: string }[]) => rows.map((p) => p.body.slice(0, 5)),
+    async authorName(rows: { authorId: string }[]) { return rows.map((p) => `author:${p.authorId}`); },
   };
   const names = ['excerpt', 'authorName'];
 

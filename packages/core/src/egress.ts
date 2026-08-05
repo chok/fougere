@@ -123,44 +123,58 @@ export function projectEgress(fields: Fields, result: unknown, closed = false): 
  * the same presenter answered on two doors and was silently absent from `useQuery`.
  * The cost travels with it: one computed field doing a read is one read per row.
  */
+/** Resolved arguments per computed field — everything the signature declares after the rows. */
+export type PresenterArgs = Record<string, unknown[]>;
+
 export async function presentEgress(
   result: unknown,
   presenter: Record<string, unknown> | undefined,
   fieldNames: string[] | undefined,
   entity = 'unknown',
   operation = 'unknown',
+  args: PresenterArgs = {},
 ): Promise<unknown> {
   if (!presenter || !fieldNames?.length || result === null || typeof result !== 'object') return result;
 
-  const enrich = async (item: unknown) => {
-    if (item === null || typeof item !== 'object') return item;
-    const enriched = { ...(item as Record<string, unknown>) };
-    for (const name of fieldNames) {
-      const fn = presenter[name];
-      if (typeof fn !== 'function') continue;
-      try {
-        enriched[name] = await fn.call(presenter, item);
-      } catch (cause) {
-        // Now that this runs on every call, a throwing computed field would take the
-        // whole operation down with a raw stack. Name the field instead: the domain
-        // produced this, so it is our bug — same verdict `judgeEgress` renders.
-        throw new FougereError({
-          code: ErrorCode.INTERNAL_ERROR,
-          message: `Computed field '${name}' failed: ${(cause as Error)?.message ?? cause}`,
-          entity,
-          operation,
-          cause,
-        });
-      }
-    }
-    return enriched;
-  };
+  const rows = Array.isArray(result) ? result : [result];
+  const values = new Map<string, unknown[]>();
 
-  if (Array.isArray(result)) {
-    // `ListResult` IS an array — carry its own properties across, like projectEgress.
-    return Object.assign(await Promise.all(result.map(enrich)), arrayExtras(result));
+  // One pass per FIELD over every row, not one pass per row over every field. A
+  // computed field that reads issues its query once for the page — which is the
+  // whole reason it is handed the page. And the reader arrives here as an argument,
+  // bound from the signature like a handler's, so a field may depend on who asks.
+  for (const name of fieldNames) {
+    const fn = presenter[name];
+    if (typeof fn !== 'function') continue;
+    try {
+      const answered = await fn.call(presenter, rows, ...(args[name] ?? []));
+      if (!Array.isArray(answered) || answered.length !== rows.length) {
+        throw new Error(`expected ${rows.length} value(s) for ${rows.length} row(s), got ${Array.isArray(answered) ? answered.length : typeof answered}`);
+      }
+      values.set(name, answered);
+    } catch (cause) {
+      // A throwing computed field would take the whole operation down with a raw
+      // stack. Name the field instead: the domain produced this, so it is our bug —
+      // same verdict `judgeEgress` renders.
+      throw new FougereError({
+        code: ErrorCode.INTERNAL_ERROR,
+        message: `Computed field '${name}' failed: ${(cause as Error)?.message ?? cause}`,
+        entity,
+        operation,
+        cause,
+      });
+    }
   }
-  return enrich(result);
+
+  const enriched = rows.map((item, index) => {
+    if (item === null || typeof item !== 'object') return item;
+    const out = { ...(item as Record<string, unknown>) };
+    for (const [name, answered] of values) out[name] = answered[index];
+    return out;
+  });
+
+  // `ListResult` IS an array — carry its own properties across, like projectEgress.
+  return Array.isArray(result) ? Object.assign(enriched, arrayExtras(result)) : enriched[0];
 }
 
 // ─── The way out to storage ─────────────────────────────────
