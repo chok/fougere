@@ -65,6 +65,15 @@ export interface PresenterFieldMeta {
   name: string;
   /** Inferred return type name: 'string', 'number', 'boolean', or a class name. */
   returnType?: string;
+  /**
+   * The field emits a LIST per row — `tags(posts: Post[]): string[][]`.
+   *
+   * The method answers one value per row, so the outer array level of its return type is
+   * the page, not the field: what remains after removing it is the field's own arity.
+   * Nothing measured that remainder, so a computed list and a computed scalar looked
+   * identical and every projection announced the scalar.
+   */
+  list?: boolean;
   /** Whether the return is nullable. */
   nullable?: boolean;
   /**

@@ -14,4 +14,12 @@ export default class ListPresenter {
     ListPresenter.calls++;
     return lists.map((list) => Boolean(user) && list.ownerUserId === user!.id);
   }
+
+  /**
+   * SEVERAL values per row — two array levels, one for the page and one for the field.
+   * Indistinguishable from `canEdit`'s single level until the parser counted them.
+   */
+  tags(lists: List[]): string[][] {
+    return lists.map((list) => list.title.split(' '));
+  }
 }

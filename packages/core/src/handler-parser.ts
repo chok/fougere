@@ -25,8 +25,16 @@ export interface ParsedType {
   raw: string;
   /** Base type name (e.g. 'Pagination', 'string', 'Post'). */
   name: string;
-  /** Whether this is an array (T[] or Array<T>). */
+  /** Whether this is an array (T[] or Array<T>) — true at any depth. */
   array?: boolean;
+  /**
+   * How MANY array levels: `string[]` is 1, `string[][]` is 2. `array` only ever said
+   * "at least one", which sufficed while one level meant one thing. It stopped sufficing
+   * when a presenter method started taking the page — there the outer level IS the page
+   * and what remains is the field, so telling `string[]` from `string[][]` is telling a
+   * computed string from a computed list.
+   */
+  arrayDepth?: number;
   /** Generic type arguments (e.g. for Pagination<Post> → [{ name: 'Post' }]). */
   generics?: ParsedType[];
   /** Whether the type is nullable (T | null | undefined). */
@@ -97,7 +105,7 @@ function parseTypeNode(node: ts.TypeNode, source: ts.SourceFile): ParsedType {
     // Array<T>
     if (typeName === 'Array' && node.typeArguments?.length === 1) {
       const inner = parseTypeNode(node.typeArguments[0], source);
-      return { ...inner, array: true, raw };
+      return { ...inner, array: true, arrayDepth: (inner.arrayDepth ?? 0) + 1, raw };
     }
 
     // Generic type: Foo<Bar, Baz>
@@ -113,7 +121,7 @@ function parseTypeNode(node: ts.TypeNode, source: ts.SourceFile): ParsedType {
   // T[]
   if (ts.isArrayTypeNode(node)) {
     const inner = parseTypeNode(node.elementType, source);
-    return { ...inner, array: true, raw };
+    return { ...inner, array: true, arrayDepth: (inner.arrayDepth ?? 0) + 1, raw };
   }
 
   // Keyword types: string, number, boolean, void

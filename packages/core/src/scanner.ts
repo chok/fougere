@@ -314,6 +314,9 @@ async function toPresenterEntry(filePath: string): Promise<PresenterEntry | null
     fieldMeta = parsed.map((m) => ({
       name: m.name,
       returnType: m.returnType?.name,
+      // One array level IS the page — the method answers one value per row. What is left
+      // over is the field's own arity: `string[]` a scalar per row, `string[][]` a list.
+      list: (m.returnType?.arrayDepth ?? 0) > 1,
       nullable: m.returnType?.nullable,
       // Everything after the rows is bound like a handler's argument.
       params: m.params.slice(1),

@@ -27,7 +27,7 @@ export interface TypeConfig {
   /** Presenter field names (methods to expose). If absent, all methods are exposed. */
   presenterFields?: string[];
   /** Per-field type metadata from source parsing. */
-  presenterFieldMeta?: { name: string; returnType?: string; nullable?: boolean }[];
+  presenterFieldMeta?: { name: string; returnType?: string; list?: boolean; nullable?: boolean }[];
   /**
    * The view a computed field emits, when the presenter declared one — the object type
    * to build for it. Without a declaration the scan reads a scalar or nothing, and an
@@ -551,16 +551,20 @@ export function registerType(builder: InstanceType<typeof SchemaBuilder>, config
             continue;
           }
 
-          // Map inferred return type → GraphQL scalar
+          // Map inferred return type → GraphQL scalar, one per row or a list of them.
+          // `list` is the arity the scan measured after removing the page level of the
+          // method's return type; without it a computed list announced its item type and
+          // a client selecting the field got one value where the row carried several.
+          const many = meta?.list === true;
           switch (meta?.returnType) {
             case 'number':
-              result[name] = t.float({ nullable, resolve });
+              result[name] = many ? t.floatList({ nullable, resolve }) : t.float({ nullable, resolve });
               break;
             case 'boolean':
-              result[name] = t.boolean({ nullable, resolve });
+              result[name] = many ? t.booleanList({ nullable, resolve }) : t.boolean({ nullable, resolve });
               break;
             case 'string':
-              result[name] = t.string({ nullable, resolve });
+              result[name] = many ? t.stringList({ nullable, resolve }) : t.string({ nullable, resolve });
               break;
             default:
               // The scan could not name a scalar: the method returns an object, a list, or

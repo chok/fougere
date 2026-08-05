@@ -131,6 +131,21 @@ describe('scanProject', () => {
     expect(isExpensive.returnType).toBe('boolean');
   });
 
+  /**
+   * A computed field is handed the page and answers one value per row, so the outer array
+   * level of its return type is the page — what is left is the field's own arity. Nothing
+   * measured that remainder, so `string[][]` read exactly like `string[]` and every
+   * projection announced a lone value for a field carrying several.
+   */
+  it('tells a computed list from a computed scalar', async () => {
+    const result = await scanProject(join(import.meta.dirname, 'fixtures-presenter-reader'));
+    const listes = result.fronds.find((f) => f.name === 'listes')!;
+    const meta = (name: string) => listes.presenters[0].fieldMeta.find((m) => m.name === name)!;
+
+    expect(meta('tags')).toMatchObject({ returnType: 'string', list: true });
+    expect(meta('canEdit')).toMatchObject({ returnType: 'boolean', list: false });
+  });
+
   it('returns empty presenters for fronds without presenters/ dir', async () => {
     const result = await scanProject(fixturesRoot);
     const orders = result.fronds.find((f) => f.name === 'orders')!;

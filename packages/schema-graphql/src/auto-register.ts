@@ -79,6 +79,8 @@ interface HandlerEntry {
 interface PresenterFieldMeta {
   name: string;
   returnType?: string;
+  /** The field emits a list per row, the page level of its return type removed. */
+  list?: boolean;
   nullable?: boolean;
 }
 
