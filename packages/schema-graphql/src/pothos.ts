@@ -2,8 +2,8 @@
  * @fougere/schema-graphql — génère des types Pothos depuis les entités fougere
  */
 import type SchemaBuilder from '@pothos/core';
-import type { AnyField, Fields, SchemaLike } from '@fougere/schema';
-import { anatomy, boundaryOf, inputFields, resolveBoundary } from '@fougere/schema';
+import type { AnyField, Fields, SchemaLike, SchemaSource } from '@fougere/schema';
+import { anatomy, boundaryOf, fieldsOf, inputFields, resolveBoundary } from '@fougere/schema';
 
 // ─── Types ─────────────────────────────────────────
 
@@ -16,7 +16,8 @@ export interface TypeConfig {
   /** Nom du type GraphQL */
   name: string;
   /** Entity source */
-  entity: EntityClass;
+  /** The schema whose fields become the type — a live class, or a card that travelled. */
+  entity: SchemaSource;
   /** Champs à exclure du type GraphQL */
   exclude?: string[];
   /** Relations à résoudre */
@@ -382,7 +383,8 @@ export function registerObjectType(
  * ```
  */
 export function registerType(builder: InstanceType<typeof SchemaBuilder>, config: TypeConfig): any {
-  const fields = config.entity.getFields();
+  // A live class or a card — an adapter needs the fields, never the constructor.
+  const fields = fieldsOf(config.entity);
   const exclude = new Set(config.exclude ?? []);
 
   return (builder as any).objectRef(config.name).implement({

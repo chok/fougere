@@ -8,8 +8,8 @@
  * Relations (ref/many) are auto-wired between registered types.
  */
 import type SchemaBuilder from '@pothos/core';
-import type { Fields, SchemaLike } from '@fougere/schema';
-import { isNullable } from '@fougere/schema';
+import type { Fields, SchemaLike, SchemaSource } from '@fougere/schema';
+import { fieldsOf, isNullable } from '@fougere/schema';
 import { registerType, registerOperations } from './pothos.js';
 
 type HandlerFacade = Record<string, Function>;
@@ -63,7 +63,8 @@ interface OperationMeta {
 
 interface EntityEntry {
   name: string;
-  entityClass: SchemaLike;
+  /** A live class in-process, a card from a frond whose class never crossed. */
+  entityClass: SchemaSource;
   exposed?: boolean;
 }
 
@@ -116,6 +117,25 @@ function capitalize(s: string): string {
   return s[0].toUpperCase() + s.slice(1);
 }
 
+/**
+ * The key an entity is filed under — case-folded, because the same entity is spelled
+ * differently depending on where its name came from: the scan yields the registration name
+ * (`authorUser`), while a card's relation target is fully lowercased by `describe`
+ * (`authoruser`). Folding both is what lets one registry serve both sources.
+ */
+function registryKey(entityName: string): string {
+  return entityName.toLowerCase();
+}
+
+/**
+ * The key a relation points at. A live entity class answers with its class name; a target
+ * rebuilt from a lone card is a `{ name }` stand-in and answers with the name `describe`
+ * wrote. Both are names, which is the whole reason this resolves by name.
+ */
+function targetKey(target: unknown): string {
+  return registryKey(String((target as { name?: string } | undefined)?.name ?? ''));
+}
+
 // ─── Public API ─────────────────────────────────
 
 export interface RegisterAllOptions {
@@ -157,10 +177,25 @@ export function registerAll(
   app: AppLike,
   options?: RegisterAllOptions,
 ): void {
-  // Collect registered types across all fronds for relation wiring
+  // Collect registered types across all fronds for relation wiring, keyed by entity NAME.
+  //
+  // The name is the identity everywhere else in the system — `facadeFor(entity)`,
+  // `ormFor(entity)`, `schemaFor(entity)` all take one, and the table, the GraphQL type
+  // and the DI match are all derived from it. This registry keyed by class OBJECT was the
+  // lone dissent, and it cost a silent failure: a relation target that is not the very
+  // object registered (an entity rebuilt from a card, whose `to()` leaves a `{ name }`
+  // stand-in) missed the lookup, hit `if (!targetEntry) continue`, and the relation
+  // vanished from the schema without a word. `schema-sql` already resolved by name.
   const typeRegistry = new Map<
-    any,
-    { name: string; type: any; facade: HandlerFacade; presenterFields: Set<string> }
+    string,
+    {
+      name: string;
+      type: any;
+      facade: HandlerFacade;
+      presenterFields: Set<string>;
+      /** The entity's OWN fields — pass 2 wires relations from these, not from an output view. */
+      fields: Fields;
+    }
   >();
 
   // ── Pass 1: register types + operations ────────
@@ -207,11 +242,12 @@ export function registerAll(
         viewType: (view, fieldName) => viewTypeOf(builder, view, `${typeName}${capitalize(fieldName)}`),
       });
 
-      // Track for relation wiring — key is entity class. The presenter's computed field
-      // names travel too: pass 2 must not derive a relation over a name the author wrote.
-      typeRegistry.set(entity.entityClass, {
+      // Track for relation wiring. The presenter's computed field names travel too: pass 2
+      // must not derive a relation over a name the author wrote.
+      typeRegistry.set(registryKey(entity.name), {
         name: typeName, type, facade,
         presenterFields: new Set(presenterMeta?.fields ?? []),
+        fields: fieldsOf(entity.entityClass),
       });
 
       // Apply per-op handler/method overrides: redirect specific ops to a different handler instance.
@@ -238,17 +274,14 @@ export function registerAll(
 
   // ── Pass 2: auto-wire relations (ref → N:1, many → 1:N) ──
 
-  const presenterFieldsOf = (cls: any) => typeRegistry.get(cls)?.presenterFields ?? new Set<string>();
-
-  for (const [entityClass, { type }] of typeRegistry) {
-    const fields = entityClass.getFields() as Fields;
+  for (const [entityName, { type, fields, presenterFields }] of typeRegistry) {
     const relationFields: Record<string, (t: any) => any> = {};
 
     for (const [fieldName, field] of Object.entries(fields)) {
       if (field.role?.relation?.kind === 'one') {
         const target = field.role.relation.to();
         if (!target) continue;
-        const targetEntry = typeRegistry.get(target);
+        const targetEntry = typeRegistry.get(targetKey(target));
         if (!targetEntry) continue;
 
         // authorId → author, user_id → user. Both spellings, because a foreign key
@@ -259,7 +292,7 @@ export function registerAll(
         // Nothing to strip, or the name is already taken by a field of the entity or by
         // a presenter's computed field: the author named it, the author wins. Deriving
         // over it would either crash the build or shadow what they wrote.
-        if (!relationName || relationName in fields || presenterFieldsOf(entityClass).has(relationName)) continue;
+        if (!relationName || relationName in fields || presenterFields.has(relationName)) continue;
         const nullable = isNullable(field.shape);
 
         relationFields[relationName] = (t: any) => t.field({
@@ -276,13 +309,15 @@ export function registerAll(
       if (field.role?.relation?.kind === 'many') {
         const target = field.role.relation.to();
         if (!target) continue;
-        const targetEntry = typeRegistry.get(target);
+        const targetEntry = typeRegistry.get(targetKey(target));
         if (!targetEntry) continue;
 
-        // Trouver la FK inverse sur l'entité cible (la relation « one » qui pointe ici)
-        const targetFields = (target as unknown as SchemaLike).getFields() as Fields;
-        const reverseFk = Object.entries(targetFields).find(
-          ([, f]) => f.role?.relation?.kind === 'one' && f.role.relation.to() === entityClass,
+        // Trouver la FK inverse sur l'entité cible (la relation « one » qui pointe ici).
+        // Read off the registry, not off the target object: a target rebuilt from a card is
+        // a `{ name }` stand-in with no fields to walk, and the registry already holds them.
+        const reverseFk = Object.entries(targetEntry.fields).find(
+          ([, f]) => f.role?.relation?.kind === 'one'
+            && targetKey(f.role.relation.to()) === entityName,
         );
         if (!reverseFk) continue;
 
