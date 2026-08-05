@@ -16,7 +16,7 @@ export type { InvocationContext } from './invocation.js';
 export { EMPTY_INVOCATION } from './invocation.js';
 export { isReadOp, resolveIsReadOp } from './operation.js';
 export type { OperationContract, OperationsMap } from './operation.js';
-export { scanProject, toRegistrationName, setModuleLoader, type ModuleLoader } from './scanner.js';
+export { scanProject, FROND_DIRS, toRegistrationName, setModuleLoader, type ModuleLoader } from './scanner.js';
 export { runMiddlewares, FougereError, ErrorCode } from './middleware.js';
 export { createLocalRunner, createAppRunner, identityCardOf, RPC_ENTITY } from './call.js';
 export type { FrondCall, Transport, IdentityCard, CardOp } from './call.js';

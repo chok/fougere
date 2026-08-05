@@ -13,7 +13,7 @@ import {
   addImports,
   createResolver,
 } from '@nuxt/kit';
-import { scanProject, setModuleLoader, loadCascadedConfig, orderSeeds } from '@fougere/core';
+import { scanProject, FROND_DIRS, setModuleLoader, loadCascadedConfig, orderSeeds } from '@fougere/core';
 import { declaresStorage } from '@fougere/runtime';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
 import { createJiti } from 'jiti';
@@ -95,9 +95,15 @@ const module: any = defineNuxtModule<FougereModuleOptions>({
     // frond under `apps/../..` sits outside rootDir, so Nuxt never restarts: the scan,
     // the additive migration (once per boot) and the seeds all keep the previous shape,
     // and a field you just added is simply absent with no error anywhere.
+    // The root frond IS the scan root, so watching its path would match every write in
+    // the project — `.nuxt/`, `node_modules/`, the build output. Its convention
+    // directories are the frond, and they are what changes when the domain changes.
     for (const frond of fronds) {
       nuxt.options.alias[`@frond/${frond.name}`] = frond.source.path;
-      nuxt.options.watch.push(frond.source.path);
+      const watched = frond.source.path === scanRoot
+        ? FROND_DIRS.map((dir) => resolve(scanRoot, dir))
+        : [frond.source.path];
+      nuxt.options.watch.push(...watched);
     }
 
     // ── 1c. Register aliases for synced remote fronds (.fougere/remotes.json) ──

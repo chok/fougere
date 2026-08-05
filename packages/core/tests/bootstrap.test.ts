@@ -1,9 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container-fougere';
-import { createApp } from '../src/index.js';
+import { createApp, createLocalRunner } from '../src/index.js';
 import type { Container } from '@fougere/container';
 import type { OrmFactory, EntityOrm } from '../src/index.js';
+import { EMPTY_INVOCATION } from '../src/invocation.js';
 
 const fixturesRoot = join(import.meta.dirname, 'fixtures');
 
@@ -74,6 +75,30 @@ describe('createApp', () => {
     const app = await createApp({ root: fixturesRoot, createContainer });
     const logger = app.resolve('Logger');
     expect(logger).toBeDefined();
+    await app.dispose();
+  });
+});
+
+/**
+ * The scan finding a root frond is one thing; the app hosting it is the claim. A flat
+ * project gets its container scope, its per-entity ORM and its façade like any other —
+ * nothing downstream of the scan knows where the frond sat on disk.
+ */
+describe('createApp on a flat project', () => {
+  const flatRoot = join(import.meta.dirname, 'fixtures-root-frond', 'shop');
+
+  it('hosts the root frond and answers an operation', async () => {
+    const orm = fakeOrm({ list: vi.fn(async () => [{ id: '1', name: 'Fern', price: 12.5 }]) });
+    const app = await createApp({ root: flatRoot, createContainer, ormFactory: () => orm });
+
+    expect(app.fronds.map((f) => f.name)).toEqual(['shop']);
+    const scope = app.resolve<Container>('frond:shop');
+    expect(scope.has('ProductOrm')).toBe(true);
+
+    const run = createLocalRunner(app);
+    const rows = await run({ entity: 'product', op: 'list' }, EMPTY_INVOCATION);
+    expect(rows).toEqual([{ id: '1', name: 'Fern', price: 12.5 }]);
+
     await app.dispose();
   });
 });

@@ -225,3 +225,50 @@ describe('frond naming', () => {
     expect(result.fronds.map((f) => f.name)).toEqual(['blog']);
   });
 });
+
+// ── The root frond ──────────────────────────
+
+/**
+ * A single-domain app has no `fronds/` at all: the project root carries the convention
+ * and IS the frond. `fronds/` is not the definition, it is where the others live — so
+ * the root frond stays put when a second domain appears.
+ */
+describe('the root frond', () => {
+  const rootFixtures = join(import.meta.dirname, 'fixtures-root-frond');
+
+  it('scans the project root as a frond named after its directory', async () => {
+    const result = await scanProject(join(rootFixtures, 'shop'));
+    expect(result.fronds.map((f) => f.name)).toEqual(['shop']);
+
+    const shop = result.fronds[0]!;
+    expect(shop.source.path).toBe(join(rootFixtures, 'shop'));
+    expect(shop.source.package).toBe('@frond/shop');
+    expect(shop.entities.map((e) => e.name)).toEqual(['product']);
+    expect(shop.handlers.map((h) => h.entityName)).toEqual(['product']);
+  });
+
+  it('keeps the root frond when a second domain arrives under fronds/', async () => {
+    const result = await scanProject(join(rootFixtures, 'mixed'));
+    // The app's own domain first, then the ones it took in.
+    expect(result.fronds.map((f) => f.name)).toEqual(['mixed', 'billing']);
+    expect(result.fronds[0]!.source.path).toBe(join(rootFixtures, 'mixed'));
+    expect(result.fronds[1]!.entities.map((e) => e.name)).toEqual(['invoice']);
+  });
+
+  it('honours `fougere.frond` on the root package.json too', async () => {
+    const result = await scanProject(join(rootFixtures, 'renamed'));
+    expect(result.fronds.map((f) => f.name)).toEqual(['shop']);
+    expect(result.fronds[0]!.source.package).toBe('@frond/shop');
+  });
+
+  /** `entities/` is the test — `services/` is an ordinary top-level name elsewhere. */
+  it('does not conjure a frond from a root services/ alone', async () => {
+    const result = await scanProject(join(rootFixtures, 'no-entities'));
+    expect(result.fronds).toEqual([]);
+  });
+
+  it('leaves a project that keeps everything under fronds/ untouched', async () => {
+    const result = await scanProject(fixturesRoot);
+    expect(result.fronds.map((f) => f.name).sort()).toEqual(['catalog', 'inventory', 'orders']);
+  });
+});

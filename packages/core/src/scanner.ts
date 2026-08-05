@@ -1,6 +1,6 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { join, dirname, resolve as resolvePath } from 'node:path';
+import { join, dirname, basename, resolve as resolvePath } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { FrondDescriptor, ProviderEntry, EntityEntry, HandlerEntry, PresenterEntry, CollectorEntry, SeedEntry, ScanResult } from './types.js';
 import type { SchemaLike } from '@fougere/schema';
@@ -82,6 +82,17 @@ function findWorkspaceRoot(from: string): string {
 
 /** Directories whose classes register as providers — two spellings, one behaviour. */
 const PROVIDER_DIRS = ['services', 'repositories'] as const;
+
+/**
+ * The frond vocabulary — every directory {@link scanFrond} reads. A frond directory says
+ * nothing else, which is why this list is what a reader needs to bound one: the Nuxt
+ * module watches these for the root frond (watching the root itself would match every
+ * write), and a flat app's tsconfig lists them instead of `["."]`, which would swallow
+ * `app/` and `nuxt.config.ts`.
+ */
+export const FROND_DIRS = [
+  'entities', 'handlers', 'presenters', 'collectors', 'seeds', ...PROVIDER_DIRS,
+] as const;
 
 export { toRegistrationName } from './contract.js';
 import { toRegistrationName } from './contract.js';
@@ -422,9 +433,10 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
 }
 
 /**
- * The frond's name — the directory, unless its `package.json` renames it.
+ * The frond's name — the directory, unless its `package.json` renames it. One rule for a
+ * frond under `fronds/` and for the root frond alike, so the root needs no second spelling.
  *
- * Being under `fronds/` is what makes a frond; the key never marked anything and
+ * Carrying the convention is what makes a frond; the key never marked anything and
  * nothing read it. It earns its keep as the one thing the directory cannot say: that
  * `fronds/blog-v2/` serves the frond still called `blog` — so a rename on disk does not
  * rename the entity keys, the `@frond/*` import or a `remotes:` entry.
@@ -441,6 +453,23 @@ async function frondNameOf(frondPath: string, dirName: string): Promise<string> 
   }
 }
 
+/**
+ * A frond is a directory carrying the convention, and the project root is one such
+ * directory — so a single-domain app writes `entities/` next to `app/` and never names
+ * anything. `fronds/` is not the definition, it is where the OTHERS live: the root frond
+ * stays put when a second domain appears, which is what makes flattening free instead of
+ * a deferred move.
+ *
+ * `entities/` is the test, not "any convention directory". `services/` and `repositories/`
+ * are ordinary top-level names in projects that never heard of Fougere, and a domain
+ * without a single entity is not a domain.
+ */
+async function rootFrondOf(root: string, workspaceRoot: string): Promise<FrondDescriptor | null> {
+  if ((await files(join(root, 'entities'))).length === 0) return null;
+  const name = await frondNameOf(root, basename(resolvePath(root)));
+  return scanFrond(root, name, { path: root, package: `@frond/${name}` }, workspaceRoot);
+}
+
 export async function scanProject(root: string, filter?: string[]): Promise<ScanResult> {
   setCacheRoot(root);
 
@@ -450,17 +479,22 @@ export async function scanProject(root: string, filter?: string[]): Promise<Scan
   // For monorepo: root is the project dir (e.g. demos/nuxt-blog), workspace root is the repo root
   const workspaceRoot = findWorkspaceRoot(root);
 
-  const all = await Promise.all(
-    dirNames.map(async (dir) => {
-      const name = await frondNameOf(join(frondsDir, dir), dir);
-      return scanFrond(
-        join(frondsDir, dir), name,
-        { path: join(frondsDir, dir), package: `@frond/${name}` },
-        workspaceRoot,
-      );
-    }),
-  );
+  const [rootFrond, under] = await Promise.all([
+    rootFrondOf(root, workspaceRoot),
+    Promise.all(
+      dirNames.map(async (dir) => {
+        const name = await frondNameOf(join(frondsDir, dir), dir);
+        return scanFrond(
+          join(frondsDir, dir), name,
+          { path: join(frondsDir, dir), package: `@frond/${name}` },
+          workspaceRoot,
+        );
+      }),
+    ),
+  ]);
 
+  // The app's own domain first, then the ones it took in.
+  const all = rootFrond ? [rootFrond, ...under] : under;
   const fronds = filter ? all.filter((f) => filter.includes(f.name)) : all;
 
   flushCache();
