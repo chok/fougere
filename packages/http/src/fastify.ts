@@ -49,11 +49,9 @@ function sendResponse(reply: any, result: ResponseResult): void {
       reply.header(k, v);
     }
   }
-  if (result.raw) {
-    reply.status(result.status).send(result.data);
-  } else {
-    reply.status(result.status).send(result.data);
-  }
+  // `raw` needs no branch here: fastify serializes a string as-is and an object as JSON,
+  // and the content-type rides in `headers` — the producer states it, we do not guess.
+  reply.status(result.status).send(result.data);
 }
 
 /**
