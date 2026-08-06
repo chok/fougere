@@ -106,6 +106,23 @@ describe('sender ↔ receiver over real HTTP', () => {
     const body = await res.json() as { error: { code: number } };
     expect(body.error.code).toBe(PARSE_ERROR);
   });
+
+  it('refuses any bind that is not loopback', async () => {
+    await expect(serve(runner, { host: '0.0.0.0' })).rejects.toThrow(/binds loopback only/);
+  });
+
+  it('rejects a body larger than the configured limit', async () => {
+    const limited = await serve(runner, { maxBodyBytes: 32 });
+    try {
+      const res = await fetch(`http://127.0.0.1:${limited.port}/_fougere/call`, {
+        method: 'POST',
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'product.list', padding: 'x'.repeat(64) }),
+      });
+      expect(res.status).toBe(413);
+    } finally {
+      await limited.close();
+    }
+  });
 });
 
 describe('handleRpc (receiving half alone)', () => {
@@ -125,6 +142,6 @@ describe('handleRpc (receiving half alone)', () => {
     if (!('error' in response)) throw new Error('expected error');
     const revived = FougereError.fromJSON(response.error.data);
     expect(revived.code).toBe(ErrorCode.INTERNAL_ERROR);
-    expect(revived.message).toBe('kaboom');
+    expect(revived.message).toBe('Internal error');
   });
 });
