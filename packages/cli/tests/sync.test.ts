@@ -89,4 +89,49 @@ describe('remote frond sync', () => {
     }
   });
 
+  /**
+   * The card a real host answers, copied from `demos/multi-frond/remote-blog`.
+   *
+   * Every other test here sends `ops: []`, which is why none of them noticed that sync
+   * had started refusing every Fougere server: an op stopped being a bare name the day
+   * the card began saying what an op DOES, and a private copy of the card's type in this
+   * handler still said `string[]`. An empty array satisfies both readings.
+   */
+  it('accepts the card a real host answers, ops and all', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'fougere-sync-'));
+    process.chdir(root);
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      result: {
+        fronds: [{
+          name: 'blog',
+          entities: [{
+            name: 'post',
+            ops: [
+              { name: 'list', kind: 'query' },
+              { name: 'findById', kind: 'query' },
+              { name: 'create', kind: 'command', input: { type: 'object', properties: {} } },
+              { name: 'publish', kind: 'command', description: 'Make the post public.' },
+            ],
+            schema: {
+              title: 'Post',
+              type: 'object',
+              properties: {},
+              'x-fougere-version': 1,
+              'x-fougere-vendor': 'fougere',
+            },
+          }],
+        }],
+      },
+    }), { status: 200 })));
+
+    try {
+      const out = await new SyncHandler().execute({ name: 'blog', from: 'https://example.test' });
+      expect(out.entities).toEqual(['Post']);
+      expect(readFileSync(join(root, '.fougere', 'remotes', 'blog', 'entities', 'Post.ts'), 'utf8'))
+        .toContain('const Post = reconstruct(');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
 });

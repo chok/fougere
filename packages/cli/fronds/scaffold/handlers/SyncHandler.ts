@@ -1,10 +1,10 @@
 import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { SchemaDescriptor } from '@fougere/schema';
-
-interface IdentityCard {
-  fronds: Array<{ name: string; entities: Array<{ name: string; ops: unknown[]; schema: SchemaDescriptor }> }>;
-}
+// The card's shape is declared once, in core, and imported here. A private copy of it
+// lived in this file and went stale the day an op stopped being a bare name: nothing
+// compared the copy to the original, so the drift cost nothing until someone read it.
+import type { IdentityCard } from '@fougere/core';
 
 function assertSafeName(kind: string, name: string): void {
   if (typeof name !== 'string' || !/^[A-Za-z_$][A-Za-z0-9_$-]*$/.test(name)) {
@@ -43,9 +43,10 @@ function identityCardOf(value: unknown): IdentityCard {
         throw new Error(`Remote frond '${frond.name}' contains an invalid entity entry`);
       }
       assertSafeName('entity', entity.name);
-      if (!Array.isArray(entity.ops) || entity.ops.some((op) => typeof op !== 'string')) {
-        throw new Error(`Remote entity '${entity.name}' has no valid operations array`);
-      }
+      // `ops` is not checked because it is not used: sync writes entities, and the name
+      // and the descriptor below are the only two values that reach a file. The clause
+      // that stood here demanded strings — the shape ops had before they carried their
+      // kind and their views — and so refused every real host. Judge what you consume.
       const descriptor = entity.schema as unknown;
       if (
         !descriptor
