@@ -168,19 +168,31 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     /**
      * Build a facade for a handler and register it in the root container.
      *
-     * A facade is built FROM a handler — that is the whole rule. An entity is
-     * a shape, not a surface: on its own it declares no operation, so it gets
-     * no facade and answers nothing. Exposing it would mean the framework
-     * deciding, on the author's behalf, that its rows are public.
+     * A facade is built FROM a handler — that is the whole rule, and the entity is
+     * OPTIONAL. An entity is a shape, not a surface: on its own it declares no
+     * operation, so it gets no facade and answers nothing. The converse used to be
+     * false in fact though true on paper — the loop below walked entities, so a
+     * handler naming no entity was scanned and then silently never built. An
+     * operation that is about no stored row (`health.check`, a pure computation) is
+     * an ordinary case, not a gap to accommodate.
+     *
+     * Without an entity a facade loses exactly three things, and nothing else: the
+     * ORM injected by convention, the output fields to project onto, and the
+     * presenter. Its result travels as the handler returned it.
      */
     const buildFacade = (
-      entity: typeof frond.entities[number],
+      entity: typeof frond.entities[number] | undefined,
       handler: typeof frond.handlers[number],
       targetScope: typeof scope,
       facadeKey: string,
     ) => {
       const handlerKey = `_handler:${facadeKey}`;
-      const ormTypeName = `${entity.name[0].toUpperCase()}${entity.name.slice(1)}Orm`;
+      // The ORM belongs to the SUBJECT, never to the address. `StockHandler extends
+      // Crud(Item)` is called `stock` and reads `Item`; asking for `StockOrm` would be
+      // asking the address for a table. The two coincide in the ordinary case and that
+      // is why it went unnoticed.
+      const ormBase = entity?.name ?? handler.entityName;
+      const ormTypeName = `${ormBase[0].toUpperCase()}${ormBase.slice(1)}Orm`;
 
       const inheritsCrud = typeof handler.ctor.prototype?.list === 'function'
         && typeof handler.ctor.prototype?.findById === 'function';
@@ -202,6 +214,15 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
           `  Add it and hand it to super():\n` +
           `    constructor(orm: ${ormTypeName}, …) { super(orm); }`,
         );
+      }
+
+      // A Crud handler whose subject is not among the scanned entities is either broken
+      // or installed — `Crud(Note)` from a published package is legitimate and the scan
+      // cannot see it (CLAUDE.md, heritage resolution is workspace-only). Refusing at
+      // boot would break the second case to catch the first, so it is said, not thrown.
+      if (inheritsCrud && !entity) {
+        frondLog.debug(`${handler.ctor.name} extends Crud() and no scanned entity is named `
+          + `'${ormBase}' — installed entity, or a missing one: no ORM will be injected`);
       }
 
       targetScope.register(handlerKey, handler.ctor, { deps });
@@ -276,7 +297,9 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
           ?? contractOutput
           ?? handler?.outputOverride
           ?? (handler?.ctor as { __output?: unknown })?.__output
-          ?? entity.entityClass) as { getFields?: () => Fields };
+          // No entity and nothing declared: there is no shape to project onto, so the
+          // result travels as the handler returned it (`encodeFields({}, r)` is `{…r}`).
+          ?? entity?.entityClass) as { getFields?: () => Fields };
         const fields = typeof schema?.getFields === 'function' ? schema.getFields() : {};
         // A view named for THIS op is a closed list: the author said what this
         // audience gets. The handler-wide forms already narrow at the ORM.
@@ -291,7 +314,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         catch { return undefined; }
       };
 
-      const entityName = entity.name;
+      const entityName = handler.entityName;
       const wrapOp = (op: string) => (invocation?: InvocationContext) => {
         const inv = invocation ?? EMPTY_INVOCATION;
         const ctx = { entity: entityName, operation: op, args: [], state: inv.state, invocation: inv };
@@ -334,7 +357,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
           const out = outputFieldsFor(op);
           const projected = projectEgress(out.fields, await getInstance()[op](...resolved), out.closed);
           if (out.closed) return projected;
-          const meta = presenterMap.get(entity.name);
+          const meta = presenterMap.get(entityName);
           if (!meta) return projected;
 
           // A computed field is bound like an op: what it declares after the rows is
@@ -353,7 +376,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
           return presentEgress(
             projected,
-            scope.resolve(presenterKeyOf(entity.name)),
+            scope.resolve(presenterKeyOf(entityName)),
             meta.fields,
             entityName,
             op,
@@ -376,28 +399,48 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       return facade;
     };
 
-    // Default handlers (no surface) — one per entity that declares one
+    // A presenter is about an entity — computed fields sit on a shape — so this walks
+    // entities. Exposing the instance lazily; the bridge resolves it on first access.
     for (const entity of frond.entities) {
-      const handler = defaultHandlerMap.get(entity.name);
-      const facadeKey = facadeKeyOf(entity.name);
-      if (handler) buildFacade(entity, handler, scope, facadeKey);
+      if (!presenterMap.has(entity.name)) continue;
+      const presenterKey = presenterKeyOf(entity.name);
+      let presenterInstance: any;
+      container.registerValue(presenterKey, new Proxy({} as any, {
+        get(_target, prop) {
+          if (!presenterInstance) presenterInstance = scope.resolve(presenterKey);
+          return presenterInstance[prop];
+        },
+      }));
+    }
 
-      // Expose presenter instance (lazy — resolved on first access by bridge)
-      const presenter = presenterMap.get(entity.name);
-      if (presenter) {
-        const presenterKey = presenterKeyOf(entity.name);
-        let presenterInstance: any;
-        container.registerValue(presenterKey, new Proxy({} as any, {
-          get(_target, prop) {
-            if (!presenterInstance) presenterInstance = scope.resolve(presenterKey);
-            return presenterInstance[prop];
-          },
-        }));
+    // A facade is about a handler, so this walks HANDLERS. It walked entities before,
+    // which made an entity a precondition for being callable at all: a handler naming
+    // none was scanned, then never built, and nothing said so.
+    for (const handler of defaultHandlers) {
+      // Two ways to know the subject, and the explicit one wins: `Crud(Item)` names the
+      // entity it was built on, whatever the handler is called. Otherwise the handler's
+      // own name is the only thing pointing at one — and pointing at nothing is legal.
+      //
+      // By NAME, not by identity: the scanner loads an entity through its own loader and
+      // the handler imports it through the runtime's, so the same class arrives as two
+      // objects. `===` compares module instances, which is not the question being asked.
+      const crudTarget = (handler.ctor as { __entity?: { name?: string } }).__entity;
+      const subject = crudTarget?.name
+        ? crudTarget.name[0].toLowerCase() + crudTarget.name.slice(1)
+        : handler.entityName;
+      const entity = frond.entities.find((e) => e.name === subject);
+      const facadeKey = facadeKeyOf(handler.entityName);
+      buildFacade(entity, handler, scope, facadeKey);
+      frondLog.debug(`${facadeKey} [${Object.keys(container.resolve(facadeKey) as any).join(', ')}]`
+        + (entity ? '' : ' — no entity of that name: no ORM, no projection, no presenter'));
+    }
+
+    // The dual, and it stays: a shape that declares no operation answers nothing. Said
+    // once per entity rather than deduced from a silence.
+    for (const entity of frond.entities) {
+      if (!defaultHandlerMap.has(entity.name)) {
+        frondLog.debug(`${entity.name} — entity only, no handler: exposes nothing`);
       }
-
-      frondLog.debug(handler
-        ? `${facadeKey} [${Object.keys(container.resolve(facadeKey) as any).join(', ')}]`
-        : `${entity.name} — entity only, no handler: exposes nothing`);
     }
 
     // Surface handlers — create sub-scope per surface handler with scoped ORM
