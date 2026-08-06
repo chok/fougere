@@ -22,7 +22,7 @@
     "src/runtime"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "node ../../scripts/clean-dist.mjs && tsc",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "pnpm run build"
@@ -33,16 +33,19 @@
     "@fougere/runtime": "workspace:*",
     "@fougere/schema": "workspace:*",
     "@fougere/transport-http": "workspace:*",
-    "@nuxt/kit": "^4.4.2",
+    "@nuxt/kit": "^4.5.1",
     "jiti": "^2.6.1"
   },
   "devDependencies": {
+    "@nuxt/schema": "^4.5.1",
     "nitropack": "^2.13.2",
-    "nuxt": "^4.4.2",
+    "nuxt": "^4.5.1",
+    "vue": "^3.5.40",
     "vitest": "^4.1.0"
   },
   "peerDependencies": {
-    "nuxt": "^4.0.0"
+    "nuxt": "^4.0.0",
+    "vue": "^3.5.0"
   },
   "publishConfig": {
     "access": "public"

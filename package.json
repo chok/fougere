@@ -7,6 +7,13 @@
   "engines": {
     "node": ">=20"
   },
+  "scripts": {
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "changeset": "changeset",
+    "version-packages": "changeset version"
+  },
   "devDependencies": {
     "@changesets/cli": "^2.31.1",
     "@swc/core": "^1.15.21",

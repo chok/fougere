@@ -121,7 +121,8 @@ export function projectEgress(fields: Fields, result: unknown, closed = false): 
  *
  * It ran only in the REST and GraphQL projections before, each with its own copy — so
  * the same presenter answered on two doors and was silently absent from `useQuery`.
- * The cost travels with it: one computed field doing a read is one read per row.
+ * The cost travels with it, which is why the signature takes the page: a field is handed
+ * every row at once and answers one value per row, so a read it needs is issued once.
  */
 /** Resolved arguments per computed field — everything the signature declares after the rows. */
 export type PresenterArgs = Record<string, unknown[]>;
