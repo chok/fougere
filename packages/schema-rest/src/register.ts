@@ -3,21 +3,7 @@
  */
 import type { HttpRouter } from '@fougere/http';
 import { toHttpError } from '@fougere/core';
-import { encodeFields, type Fields } from '@fougere/schema';
 import type { RouteDefinition } from './routes.js';
-
-/** Egress: encode a result (single object or array) into wire form against its output fields. */
-function encodeOutput(result: unknown, fields: Fields): unknown {
-  if (Array.isArray(result)) {
-    return result.map((item) =>
-      item && typeof item === 'object' ? encodeFields(fields, item as Record<string, unknown>) : item,
-    );
-  }
-  if (result && typeof result === 'object') {
-    return encodeFields(fields, result as Record<string, unknown>);
-  }
-  return result;
-}
 
 /**
  * Register all route definitions on an HttpRouter.
@@ -46,13 +32,13 @@ export function registerRoutes(
       try {
         const result = await route.handler(invocation);
 
-        if (result === undefined || result === null) {
+        if ((result === undefined || result === null) && route.operationName === 'findById') {
           return { status: 404, data: { error: 'Not found' } };
         }
-        if (result === true) {
+        if (result === true && route.operationName === 'delete') {
           return { status: 204, data: null };
         }
-        if (result === false) {
+        if (result === false && route.operationName === 'delete') {
           return { status: 404, data: { error: 'Not found' } };
         }
 
@@ -61,13 +47,11 @@ export function registerRoutes(
         // once a computed field started receiving the PAGE rather than one row, the second
         // pass handed it a single object and threw `posts.map is not a function`.
 
-        // Egress: encode domain values → wire (Date → ISO, money cents → decimal, …).
-        // Convention applied once at the boundary; computed fields pass through untouched.
-        const data = route.outputFields ? encodeOutput(result, route.outputFields) : result;
-
         return {
-          status: route.method === 'POST' ? 201 : 200,
-          data,
+          status: route.successStatus ?? (route.operationName === 'create' ? 201 : 200),
+          // The façade is the single egress boundary for every door. Re-encoding here
+          // makes custom encoders run twice and makes REST disagree with the envelope.
+          data: result,
         };
       } catch (err) {
         const { status, body } = toHttpError(err);

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { HttpRouter, HttpMethod, Handler, RequestContext } from '@fougere/http';
+import { cloneField, number, registerBoundaryAlias, registerEncoder, type Fields } from '@fougere/schema';
 import { registerRoutes, type RouteDefinition } from '../src/index.js';
 
 function fakeRouter() {
@@ -87,6 +88,24 @@ describe('registerRoutes', () => {
     expect(result.status).toBe(201);
   });
 
+  it('returns 200 for a custom POST command unless a status is stated', async () => {
+    const { router, getHandler } = fakeRouter();
+    registerRoutes(router, [
+      { method: 'POST', path: '/posts/:id/publish', operationName: 'publish', entityName: 'post', handler: async () => ({ id: '1' }) },
+    ]);
+
+    expect((await getHandler('POST', '/posts/:id/publish')!(ctx({}, {}, {}, 'POST'))).status).toBe(200);
+  });
+
+  it('honors an explicit success status', async () => {
+    const { router, getHandler } = fakeRouter();
+    registerRoutes(router, [
+      { method: 'POST', path: '/jobs', operationName: 'enqueue', entityName: 'job', successStatus: 202, handler: async () => ({ id: '1' }) },
+    ]);
+
+    expect((await getHandler('POST', '/jobs')!(ctx({}, {}, {}, 'POST'))).status).toBe(202);
+  });
+
   it('returns 204 for delete (true)', async () => {
     const { router, getHandler } = fakeRouter();
     const routes: RouteDefinition[] = [
@@ -115,6 +134,31 @@ describe('registerRoutes', () => {
     expect(result.status).toBe(404);
   });
 
+  it('keeps nullable and boolean custom results as data', async () => {
+    const { router, getHandler } = fakeRouter();
+    registerRoutes(router, [
+      { method: 'GET', path: '/posts/maybe', operationName: 'maybe', entityName: 'post', handler: async () => null },
+      { method: 'GET', path: '/posts/exists', operationName: 'exists', entityName: 'post', handler: async () => false },
+    ]);
+
+    await expect(getHandler('GET', '/posts/maybe')!(ctx())).resolves.toEqual({ status: 200, data: null });
+    await expect(getHandler('GET', '/posts/exists')!(ctx())).resolves.toEqual({ status: 200, data: false });
+  });
+
+  it('does not encode a facade result a second time', async () => {
+    registerEncoder('rest-test-increment', (value) => typeof value === 'number' ? value + 1 : value);
+    registerBoundaryAlias('rest-test-increment', { out: { encode: 'rest-test-increment' } });
+    const outputFields: Fields = {
+      value: cloneField(number(), { boundary: 'rest-test-increment' }),
+    };
+    const { router, getHandler } = fakeRouter();
+    registerRoutes(router, [
+      { method: 'GET', path: '/values', operationName: 'list', entityName: 'value', outputFields, handler: async () => ({ value: 11 }) },
+    ]);
+
+    expect((await getHandler('GET', '/values')!(ctx())).data).toEqual({ value: 11 });
+  });
+
   it('returns 500 on error', async () => {
     const { router, getHandler } = fakeRouter();
     const routes: RouteDefinition[] = [
@@ -127,6 +171,6 @@ describe('registerRoutes', () => {
     const result = await handler(ctx());
 
     expect(result.status).toBe(500);
-    expect(result.data).toEqual({ code: 'INTERNAL_ERROR', message: 'boom' });
+    expect(result.data).toEqual({ code: 'INTERNAL_ERROR', message: 'Internal error' });
   });
 });

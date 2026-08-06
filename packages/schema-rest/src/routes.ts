@@ -25,6 +25,8 @@ export interface RouteDefinition {
   inputFields?: Fields;
   /** Output schema (for JSON schema generation). */
   outputFields?: Fields;
+  /** Explicit success status. Defaults to 201 only for the canonical `create` op. */
+  successStatus?: number;
   // No presenter here. A route used to carry the instance and its field names so the
   // registration could enrich each row; the façade does that for every door now
   // (`presentEgress`), so the rows arrive computed and a second pass was duplicated work.
@@ -137,7 +139,7 @@ export interface GenerateRoutesOptions {
   /** Base path prefix (e.g. '/api'). Default: ''. */
   prefix?: string;
   /** Override route config per entity. */
-  overrides?: Record<string, Record<string, { method?: HttpMethod; path?: string }>>;
+  overrides?: Record<string, Record<string, { method?: HttpMethod; path?: string; status?: number }>>;
   /** Filter entities. */
   filter?: (entity: EntityEntry, frondName: string) => boolean;
   /** Surface name for filtering (e.g. 'rest', 'graphql'). Uses frond.config.ts surfaces if set. */
@@ -229,6 +231,7 @@ export function generateRoutes(app: AppLike, options?: GenerateRoutesOptions): R
           handler: (invocation) => op(invocation),
           inputFields,
           outputFields,
+          successStatus: override?.status,
         });
       }
     }
