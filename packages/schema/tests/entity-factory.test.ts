@@ -51,6 +51,14 @@ describe('entity() factory carrier', () => {
     expect(() => Post.pick('id').named('../Escape')).toThrow(/valid class name/);
   });
 
+  it('refuses to rename what a class declaration already named', () => {
+    // Every projection reads this name — the table, the GraphQL type, the registration
+    // key. Renaming a declared class in place would move all three at once.
+    expect(() => (Post as unknown as { named(n: string): unknown }).named('Other'))
+      .toThrow(/already named by its class declaration/);
+    expect(Post.name).toBe('Post');
+  });
+
   it('exposes ~standard for ecosystem interop', () => {
     const std = Post['~standard'];
     expect(std.version).toBe(1);

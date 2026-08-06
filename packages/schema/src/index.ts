@@ -45,6 +45,7 @@ export {
   entity,
   compose,
   createSchemaConstructor,
+  ANONYMOUS_SCHEMA_NAME,
   type SchemaConstructor,
   type SchemaViewInfer as InferView,
   type CtorInput,

@@ -142,6 +142,16 @@ function assertKnownKeys(operation: string, keys: string[], fields: Fields): voi
 }
 
 /** Create a schema constructor from a field record. */
+/**
+ * The runtime name a derivation carries when no class declaration named it.
+ *
+ * `class Post extends entity({…}) {}` is named by its declaration; `User.pick('id')` has
+ * only the factory's own class to be named after. A reader — the scanner, notably — needs
+ * to tell one from the other, so the name is stamped from here rather than read off a
+ * class whose identifier someone could rename without noticing the other end.
+ */
+export const ANONYMOUS_SCHEMA_NAME = 'Schema';
+
 export function createSchemaConstructor<TFields extends Fields>(
   fields: TFields,
   source?: abstract new (...args: never[]) => unknown,
@@ -247,6 +257,12 @@ export function createSchemaConstructor<TFields extends Fields>(
       if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name)) {
         throw new Error(`named(): \`${name}\` is not a valid class name.`);
       }
+      // It renames in place, so it may only name what has no name. On a declared class
+      // `Post.named('Other')` would silently retarget its table, its GraphQL type and
+      // its registration key — every projection reads this name.
+      if (this.name !== ANONYMOUS_SCHEMA_NAME) {
+        throw new Error(`named(): \`${this.name}\` is already named by its class declaration.`);
+      }
       Object.defineProperty(this, 'name', { value: name, configurable: true });
       return this;
     }
@@ -261,6 +277,7 @@ export function createSchemaConstructor<TFields extends Fields>(
     }
   }
 
+  Object.defineProperty(Schema, 'name', { value: ANONYMOUS_SCHEMA_NAME, configurable: true });
   return asSchemaConstructor<TFields>(Schema);
 }
 
