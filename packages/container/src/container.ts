@@ -40,6 +40,18 @@ export interface Container {
   /** Check if a name is registered (including parent scopes). */
   has(name: string): boolean;
 
+  /**
+   * A resolver of last resort, consulted when no scope holds the name.
+   *
+   * It exists for one reason: a frond declared in `remotes` registers nothing locally,
+   * so its façade cannot be *found* — it has to be fabricated. Set on the root, inherited
+   * by every scope. Returning `undefined` means "I don't know either", and the miss
+   * throws as before.
+   *
+   * Optional: a container without one behaves exactly as it did.
+   */
+  setFallback?(resolve: (name: string) => unknown): void;
+
   /** Create a child scope. Inherits parent registrations. */
   createScope(): Container;
 

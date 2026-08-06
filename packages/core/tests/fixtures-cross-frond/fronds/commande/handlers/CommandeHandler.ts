@@ -1,17 +1,20 @@
+import type { Facade } from '@fougere/core';
 import type ArticleHandler from '../../stock/handlers/ArticleHandler.js';
 
 /**
- * The whole question, in one class: a frond reaching another frond's façade.
+ * The whole question, in one class: a frond reaching another frond.
  *
- * `articleHandler` is the key the root container holds for the stock frond's façade
- * (`facadeKeyOf('article')`). Never its service, never its ORM — the façade is the
- * only public thing a frond has.
+ * `Facade<ArticleHandler>` is the second port, read like the first (`EntityOrm<Post>`).
+ * It names what arrives — the door built in front of the handler, not the handler, which
+ * is never injected. The same type resolves the local façade or a doublure, so the
+ * signature says nothing about where the stock frond runs.
  */
 export default class CommandeHandler {
-  constructor(private articleHandler: ArticleHandler) {}
+  constructor(private articleFacade: Facade<ArticleHandler>) {}
 
   /** Can this order be served from the shelf? */
   async servable(): Promise<boolean> {
-    return (await this.articleHandler.onHand()) > 0;
+    const onHand = await this.articleFacade.onHand() as number;
+    return onHand > 0;
   }
 }

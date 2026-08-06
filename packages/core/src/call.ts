@@ -57,7 +57,28 @@ export interface IdentityCard {
   }>;
 }
 
-type Facade = Record<string, (invocation?: InvocationContext) => Promise<unknown>>;
+/** A façade as the runtime holds it: op names to functions, nothing typed about them. */
+type AnyFacade = Record<string, (invocation?: InvocationContext) => Promise<unknown>>;
+
+/**
+ * The door built in front of a handler — the framework's second port, after `EntityOrm`.
+ *
+ * `Facade<PostHandler>` is what a neighbouring frond injects. It names what ARRIVES
+ * rather than what is written: never the handler (nobody injects it, and its methods take
+ * positional arguments), but the door, whose every op takes the invocation and whose
+ * implementation is the local façade or a doublure. A signature therefore says nothing
+ * about where the other frond runs, which is the whole point.
+ *
+ * `keyof T` is the right set by construction, not by approximation: the scan skips
+ * `private` and `protected` (`handler-parser.ts`) because "TypeScript already has the
+ * word for it", so a handler's public methods ARE its operations — and `keyof` excludes
+ * the rest for the same reason.
+ */
+export type Facade<T> = {
+  [K in keyof T]: T[K] extends (...args: never[]) => infer R
+    ? (invocation?: InvocationContext) => R
+    : never;
+};
 
 /**
  * The container key of a façade — THE one place that spells the format.
@@ -117,9 +138,9 @@ export function identityCardOf(app: App, surface?: string): IdentityCard {
 }
 
 function facadeOps(app: App, entityName: string, surface?: string): CardOp[] {
-  let facade: Facade;
+  let facade: AnyFacade;
   try {
-    facade = app.container.resolve<Facade>(facadeKeyOf(entityName, surface));
+    facade = app.container.resolve<AnyFacade>(facadeKeyOf(entityName, surface));
   } catch {
     return [];
   }
@@ -153,7 +174,7 @@ function facadeOps(app: App, entityName: string, surface?: string): CardOp[] {
  * judged here. A miss is a typed NOT_FOUND, never a forward to another remote.
  */
 export function createLocalRunner(app: App, surface?: string): Transport {
-  return runnerFor(app, (key) => app.container.resolve<Facade>(key), surface);
+  return runnerFor(app, (key) => app.container.resolve<AnyFacade>(key), surface);
 }
 
 /**
@@ -169,10 +190,10 @@ export function createLocalRunner(app: App, surface?: string): Transport {
  * is simply which URL `remotes:` points at.
  */
 export function createAppRunner(app: App, surface?: string): Transport {
-  return runnerFor(app, (key) => app.resolve<Facade>(key), surface);
+  return runnerFor(app, (key) => app.resolve<AnyFacade>(key), surface);
 }
 
-function runnerFor(app: App, resolveFacade: (key: string) => Facade, surface?: string): Transport {
+function runnerFor(app: App, resolveFacade: (key: string) => AnyFacade, surface?: string): Transport {
   return async (call, invocation) => {
     if (call.entity === RPC_ENTITY) {
       if (call.op === 'discover') return identityCardOf(app, surface);
@@ -184,7 +205,7 @@ function runnerFor(app: App, resolveFacade: (key: string) => Facade, surface?: s
       });
     }
 
-    let facade: Facade;
+    let facade: AnyFacade;
     try {
       facade = resolveFacade(facadeKeyOf(call.entity, surface));
     } catch {

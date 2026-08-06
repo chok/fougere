@@ -487,20 +487,30 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     frondLog.info(`registered — ${frond.entities.length} entities, ${frond.handlers.length} handlers, ${frond.seeds.length} seeds`);
   }
 
+  /**
+   * The last resort, held by the container so every resolution path shares it.
+   *
+   * It used to live on `app.resolve` alone, which meant the runner found a remote façade
+   * and dependency injection did not — a handler asking for a neighbour that had moved
+   * got `is not registered` while the very same call over the wire worked. One door now.
+   *
+   * Surface-scoped keys ('admin:productHandler') stay local: a named surface resolves in
+   * this container only, so fabricating one for a remote frond would answer NOT_FOUND on
+   * everything (see Known issues).
+   */
+  container.setFallback?.((name) => {
+    if (!remoteRouter) return undefined;
+    if (!name.endsWith('Handler') || name.includes(':')) return undefined;
+    // Façade-shaped stand-in; routing happens lazily at the first call.
+    return createRemoteFacade(name.replace(/Handler$/, ''), remoteRouter);
+  });
+
   const resolve = <T>(name: string): T => {
     try {
       return container.resolve<T>(name);
     } catch (err) {
-      // Surface-scoped keys ('admin:productHandler') stay local — no remote fallback.
-      if (name.endsWith('Handler') && !name.includes(':')) {
-        const entityName = name.replace(/Handler$/, '');
-        if (remoteRouter) {
-          // Façade-shaped stand-in; routing happens lazily at the first call.
-          const facade = createRemoteFacade(entityName, remoteRouter);
-          container.registerValue(name, facade);
-          return facade as T;
-        }
-        throw new Error(notLoaded(entityName));
+      if (name.endsWith('Handler') && !name.includes(':') && !remoteRouter) {
+        throw new Error(notLoaded(name.replace(/Handler$/, '')));
       }
       throw err;
     }

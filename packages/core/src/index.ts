@@ -19,7 +19,7 @@ export type { OperationContract, OperationsMap } from './operation.js';
 export { scanProject, FROND_DIRS, toRegistrationName, setModuleLoader, type ModuleLoader } from './scanner.js';
 export { runMiddlewares, FougereError, ErrorCode } from './middleware.js';
 export { createLocalRunner, createAppRunner, identityCardOf, RPC_ENTITY } from './call.js';
-export type { FrondCall, Transport, IdentityCard, CardOp } from './call.js';
+export type { FrondCall, Transport, IdentityCard, CardOp, Facade } from './call.js';
 export { callValueOf } from './contract.js';
 export type { CallValue } from './contract.js';
 export type { OperationContext, AppNext, AppMiddleware, FougereErrorOptions } from './middleware.js';

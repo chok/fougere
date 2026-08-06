@@ -120,6 +120,13 @@ function toEntityName(className: string): string {
  * plain service IS designated by its class name.
  */
 function depKeyOf(type: ParsedType): string {
+  // `Facade<PostHandler>` — the second port, read exactly like the first. The type names
+  // what arrives: not the handler (its methods take positional arguments and it is never
+  // injected), but the door built in front of it. Same key whether that door is the local
+  // façade or a doublure, which is what makes the topology invisible from a signature.
+  const facadeOf = type.name === 'Facade' ? type.generics?.[0]?.name : undefined;
+  if (facadeOf) return toRegistrationName(facadeOf);
+
   const target = type.name === 'EntityOrm' ? type.generics?.[0]?.name : undefined;
   if (!target) return type.name;
 

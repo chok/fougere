@@ -29,21 +29,8 @@ async function stockOnAnotherProcess(): Promise<Transport> {
   return createLocalRunner(host);
 }
 
-/**
- * Both are `it.fails` — they record a gap, and they are the alarm for closing it.
- *
- * The DI derives its key from the constructor parameter's TYPE NAME, verbatim:
- * `depKeyOf` returns `ArticleHandler`. The façade is registered under
- * `facadeKeyOf('article')` → `articleHandler`. The two keys never meet, so frond→frond
- * has never worked, in any topology — the absence of any such call in this repo was not
- * discipline.
- *
- * `it.fails` passes while the call throws. Fix the key and these turn red: that is the
- * point. Flip them to `it` then, and the second one will say whether the remote half
- * needs its own answer (the fallback lives on `app.resolve`, not on the container).
- */
 describe('frond → frond, through the façade', () => {
-  it.fails('answers when both fronds live in one process', async () => {
+  it('answers when both fronds live in one process', async () => {
     const app = await createApp({ root, createContainer });
 
     const out = await createLocalRunner(app)({ entity: 'commande', op: 'servable' }, EMPTY_INVOCATION);
@@ -51,7 +38,7 @@ describe('frond → frond, through the façade', () => {
     expect(out).toBe(true);
   });
 
-  it.fails('answers the same when the stock frond moved out', async () => {
+  it('answers the same when the stock frond moved out', async () => {
     const remote = await stockOnAnotherProcess();
     const app = await createApp({
       root,

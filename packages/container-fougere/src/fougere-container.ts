@@ -14,10 +14,12 @@ function isClass(fn: unknown): fn is Constructor {
 
 interface ScopeContainer extends Container {
   _getEntry(name: string): Entry | undefined;
+  _getFallback(): ((name: string) => unknown) | undefined;
 }
 
 function createScope(parent?: ScopeContainer): ScopeContainer {
   const registry = new Map<string, Entry>();
+  let fallback: ((name: string) => unknown) | undefined;
 
   const container: ScopeContainer = {
     register<T>(name: string, registration: Registration<T>, options?: RegisterOptions) {
@@ -57,7 +59,16 @@ function createScope(parent?: ScopeContainer): ScopeContainer {
         }
       }
 
-      if (!entry) throw new Error(`[container] '${name}' is not registered`);
+      // Nobody holds it. Before failing, ask whoever set a last resort — a frond declared
+      // in `remotes` registers nothing here, so its façade is fabricated rather than found.
+      if (!entry) {
+        const made = container._getFallback()?.(name);
+        if (made !== undefined) {
+          registry.set(name, { factory: () => made, lifetime: 'singleton', instance: made });
+          return made as T;
+        }
+        throw new Error(`[container] '${name}' is not registered`);
+      }
 
       if (entry.instance !== undefined) return entry.instance as T;
       const value = entry.factory(container) as T;
@@ -79,8 +90,17 @@ function createScope(parent?: ScopeContainer): ScopeContainer {
       registry.clear();
     },
 
+    setFallback(resolve: (name: string) => unknown) {
+      fallback = resolve;
+    },
+
     _getEntry(name: string): Entry | undefined {
       return registry.get(name) ?? parent?._getEntry(name);
+    },
+
+    /** Set on the root, honoured from any scope — a scope inherits it by asking upward. */
+    _getFallback() {
+      return fallback ?? parent?._getFallback();
     },
   };
 
