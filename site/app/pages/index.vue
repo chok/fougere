@@ -22,7 +22,7 @@ const judgeSnippet = `class PostHandler extends Crud(Post) {
   async publish(id: string, user: User | null) {
     if (!user) throw new FougereError({
       code: ErrorCode.UNAUTHORIZED, /* … */ });
-    // Check the author and current status, then update:
+    // author-only, draft-only — then realize:
     return this.orm.update(id, {
       status: 'published',
       publishedAt: new Date().toISOString(),
@@ -36,7 +36,7 @@ const { items } = await useQuery(Post, 'list');
 const publish = useCommand(Post, 'publish');
 
 await publish.execute({ params: { id } });
-// Queries for Post are then revalidated.`;
+// → every mounted query on Post revalidates`;
 
 // Verbatim output of demos/rust-frond's TypeScript consumer — rules declared
 // in Rust, enforced by the TS judge before a single byte goes on the wire.
@@ -66,16 +66,16 @@ const body = postSchema.parse(await readBody(event));
 // app/components/PostForm.vue — the rules, again
 const rules = { title: [required, maxLength(160)] };`;
 
-// …vs an entity definition used by each integration.
-const derivedSnippet = `// fronds/blog/entities/Post.ts — entity definition
+// …vs the single declaration everything derives from.
+const derivedSnippet = `// fronds/blog/entities/Post.ts — the shape, once
 class Post extends entity({
   id: primary(),
   slug: text({ min: 1, max: 80 }),
   title: text({ min: 1, max: 160 }),
 }) {}
 
-// Uses of the entity metadata:
-//   validation  (browser + API facade)
+// Derived from it — nothing to keep in sync:
+//   validation  (browser + façade, same judge)
 //   SQLite table + additive schema sync
 //   form contract   useFormFor(Post)
 //   API surface     post.create / post.list
@@ -87,14 +87,14 @@ class Post extends entity({
 // valid wherever the site is deployed; the embedded model covers
 // agents running without web access.
 const origin = useRequestURL().origin;
-const auditPrompt = `# Audit schema duplication in this repository
+const auditPrompt = `# Audit: how much schema glue does this repo maintain by hand?
 
-Estimate how much code repeats the same data definitions across
-the application. Report migration costs as well as possible savings.
+You are auditing THIS repository. Be honest: report the costs
+of switching as carefully as the gains.
 
-## Fougere reference
+## Reference model — Fougere, a single-schema TS framework
 
-Fougere defines a business object with an entity class:
+One class declares a business object once:
 
     class Post extends entity({
       id: primary(),
@@ -104,53 +104,62 @@ Fougere defines a business object with an entity class:
         { default: 'draft' })),
     }) {}
 
-Fougere uses the entity metadata for browser and server input
-validation, additive SQLite schema sync, form fields and errors,
-API operations, GraphQL types, and TypeScript types. Handlers
-implement server-side operations such as publish(id, user).
-A Frond can run locally or be routed to a compatible JSON-RPC
-host through the remotes configuration.
+Everything derives from it — input validation (the same judge
+in the browser and at the API facade, unknown keys refused),
+the SQL table (additive auto-DDL; renames, removals and type
+changes need an explicit migration), the form contract (fields,
+rules, per-field error mapping), the API surface (post.list,
+post.create...), GraphQL types, and the TS type (the class IS
+the type). Business rules are handler operations, e.g.
+publish(id, user), judged server-side. Moving a module to its
+own process is one line of config; user code does not change.
 
-Current limits: Fougere is in pre-release and is not published
-to npm. Storage uses additive SQLite auto-DDL through Kysely;
-renames, removals, and type changes require explicit migrations.
-There is no Postgres adapter or search-index integration yet.
-Authentication uses better-auth for credentials and OAuth.
+Scope today (pre-release): storage is additive SQLite auto-DDL
+(Kysely underneath) — no Postgres adapter yet; no search-index
+projection; auth via better-auth (credentials + OAuth). Price
+the adoption costs against THIS scope, not an imagined one.
 
 If you can fetch the web, ground yourself in the docs first:
 
-- ${origin}/docs — overview
-- ${origin}/docs/schema/entities — entity fields
-- ${origin}/docs/client/forms — forms and validation
-- ${origin}/docs/existing-app — incremental adoption
+- ${origin}/docs — the model in one page
+- ${origin}/docs/schema/entities — field vocabulary, the 4 axes
+- ${origin}/docs/client/forms — the shared browser/facade judge
+- ${origin}/docs/existing-app — the feature-by-feature migration
+  path (use it to price the adoption cost honestly)
 
-## Review this repository
+## Measure, in this repo
 
-1. Select three business objects that are central to the
-   application and frequently changed. Explain the evidence used.
-2. For each object, list every file where its fields are declared:
+1. Identify the 3 most-touched business objects. A repo has
+   no traffic stats — use git churn as the proxy (most-modified
+   schema/form/handler files over the last ~500 commits),
+   crossed with the app's main forms and API routes.
+2. For each, list every file where its SHAPE is re-declared:
    validation schema (Zod/Yup/joi), DB table or migration,
    API input/output types, form state and rules, TS
-   interfaces, and API-client types. Include declarations owned
-   by external systems and identify their constraints.
-3. Estimate the lines used only to keep those declarations aligned:
+   interfaces, API-client types. Quote the paths. If one
+   object's shape belongs to an external system (legacy API,
+   search index), audit it anyway and flag it: that is the
+   unfavorable case, and it belongs in an honest report.
+3. Count the lines that exist ONLY to keep those in sync:
    parse/serialize, DTO mapping, hand-rolled error
-   formatting, and manual refetch after mutations. Include
-   committed generated output and pass-through wrappers, but
-   exclude business logic and computed fields.
-4. Report any concrete mismatch between declarations. If none
-   is found, say so. Do not treat necessary external contracts
-   as duplication that Fougere can remove.
+   formatting, manual refetch after mutations. Counting
+   rule: committed codegen output and pass-through wrappers
+   count; business logic in resolvers or computed fields
+   does not.
+4. Look for one place where two of those declarations
+   already disagree (a max length, an optional, a nullable).
+   There usually is one — that drift is the argument. If there
+   is none here, say so plainly rather than reaching.
 
 ## Report
 
-For each object, provide a table with declaration site, file,
-purpose, and estimated lines. Then report:
-- code that Fougere could replace with its current feature set;
-- code that would remain and why;
-- unsupported requirements or migration blockers;
-- a staged adoption estimate, including storage changes and
-  concepts the team would need to learn.`;
+Per object: a table declaration-site → file → lines.
+Then two totals, honestly:
+- lines deletable under a derive-everything model;
+- what adopting Fougere would cost HERE: storage handover
+  (SQLite auto-DDL today), pre-release status (not on npm
+  yet), the feature-by-feature migration path, what the
+  team would have to learn.`;
 
 const copied = ref(false);
 async function copyAudit() {

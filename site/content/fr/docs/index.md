@@ -1,16 +1,19 @@
 ---
 title: Qu'est-ce que Fougere
-description: Présentation du schéma partagé et de l'exécution locale ou distante.
+description: Un framework TypeScript construit autour de deux idées — single-schema et le gradient.
 ---
 
 # Qu'est-ce que Fougere
 
 Fougere est un framework TypeScript construit autour de deux idées.
 
-**Single-schema.** Une classe d'entité décrit les données et valide les entrées. La même
-méthode `validate()` s'exécute dans le navigateur et à la façade. La classe contient aussi
-les métadonnées lues par les adapters SQLite et GraphQL, les formulaires et les surfaces
-d'API. Toutes lisent cette déclaration.
+**Single-schema.** Une classe d'entité déclare vos données une fois — et juge elle-même
+ses entrées : le même `validate()` tourne dans le navigateur et à la façade. Le juge est
+lui-même une projection — dérivée de l'axe shape — mais une projection normative,
+embarquée avec la classe : toutes les autres doivent lui obéir, et elle ne peut pas
+dériver seule. Les tables
+SQLite, les types GraphQL, les contrats de formulaire et les surfaces d'API sont des
+*projections* de cette déclaration — rien n'est écrit deux fois.
 
 ```ts
 import { entity, primary, text, auto, oneOf, date, readOnly, optional } from '@fougere/schema';
@@ -28,7 +31,7 @@ export default class Post extends entity({
 ::derivation-diagram
 ::
 
-Cette classe fournit :
+Cette seule classe est à la fois :
 
 - le **type TypeScript** d'une ligne (`function render(p: Post)` — pas d'`Infer<typeof …>`),
 - le **validateur** des entrées client (`Post.validate(input)`),
@@ -36,19 +39,22 @@ Cette classe fournit :
 - la **désignation** que les pages utilisent pour appeler les opérations (`useQuery(Post, 'list')`),
 - le **nom nominal** que l'injection de dépendances matche dans les signatures (`user: User | null`).
 
-**Le gradient.** La logique métier est regroupée dans des *Fronds*, composées d'entités,
-de handlers, de collectors et de seeds. Une Frond s'exécute localement par défaut. Elle
-peut être routée vers un hôte JSON-RPC 2.0 avec une entrée de configuration :
+**Le gradient.** La logique métier vit dans des *Fronds* — des modules autonomes
+d'entités, handlers, collectors et seeds. Une Frond tourne in-process aujourd'hui et dans
+son propre process demain, derrière JSON-RPC 2.0, avec un **code utilisateur identique**.
+L'énoncé de topologie entier tient en une ligne de config :
 
 ```ts
 // fougere.config.ts
 remotes: { blog: 'http://127.0.0.1:4100' }
 ```
 
-Un appel est représenté par `(entity, operation, invocation)`. Le runner l'exécute en
-mémoire pour une Frond locale. Pour une Frond distante, le transport l'encode et l'envoie
-à l'hôte. Ce second chemin ajoute donc un saut HTTP, la sérialisation JSON et les
-contraintes habituelles du réseau.
+Pas de RPC sans voyage : un appel est une valeur `(entity, operation, invocation)` ; le
+runner l'exécute directement en mémoire quand la Frond est locale et la met sur le fil
+quand elle est distante. Les transports déplacent la valeur — ils ne la remodèlent jamais.
+
+Donc le split coûte le saut et le JSON qui voyage avec, et rien d'autre : aucune
+sérialisation que le chemin local éviterait, aucun impôt du framework par-dessus le réseau.
 
 ## Ordre de lecture
 
