@@ -50,7 +50,7 @@ function sendResponse(reply: any, result: ResponseResult): void {
     }
   }
   if (result.raw) {
-    reply.status(result.status).type('text/html').send(result.data);
+    reply.status(result.status).send(result.data);
   } else {
     reply.status(result.status).send(result.data);
   }

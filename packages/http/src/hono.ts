@@ -1,7 +1,7 @@
 /**
  * Hono adapter — bridges a Hono app to the HttpRouter interface.
  */
-import type { HttpRouter, HttpMethod, RequestContext, ResponseResult, Middleware, Handler } from './router.js';
+import { MalformedJsonError, type HttpRouter, type HttpMethod, type RequestContext, type ResponseResult, type Middleware, type Handler } from './router.js';
 
 interface HonoLike {
   use(path: string, ...handlers: Function[]): void;
@@ -31,7 +31,16 @@ function buildContext(c: any): RequestContext {
     path: c.req.path,
     params: c.req.param() ?? {},
     query: c.req.query() ?? {},
-    body: () => c.req.json().catch(() => ({})),
+    body: async () => {
+      const method = c.req.method.toUpperCase();
+      const contentType = c.req.header?.('content-type') ?? c.req.raw?.headers?.get?.('content-type') ?? '';
+      if (method === 'GET' || method === 'HEAD' || !contentType.toLowerCase().includes('json')) return {};
+      try {
+        return await c.req.json();
+      } catch (cause) {
+        throw new MalformedJsonError({ cause });
+      }
+    },
     state,
   };
 }
@@ -55,6 +64,10 @@ function sendResponse(c: any, result: ResponseResult): Response {
   return c.json(result.data, result.status);
 }
 
+function malformedJsonResponse(c: any): Response {
+  return sendResponse(c, { status: 400, data: { code: 'BAD_REQUEST', message: 'Malformed JSON body' } });
+}
+
 /**
  * Create an HttpRouter backed by a Hono app.
  *
@@ -74,15 +87,20 @@ export function createHonoRouter(app: HonoLike): HttpRouter {
       const mw: Middleware = (typeof pathOrMw === 'function' ? pathOrMw : maybeMw) as Middleware;
 
       const honoMiddleware = async (c: any, next: Function) => {
-        const ctx = buildContext(c);
-        const result = await mw(ctx, async () => {
-          await next();
-          // After next(), Hono has already set the response — return a passthrough
-          return { status: c.res.status, data: null };
-        });
-        // If the middleware returned a custom response (short-circuit), send it
-        if (result.data !== null) {
-          return sendResponse(c, result);
+        try {
+          const ctx = buildContext(c);
+          const result = await mw(ctx, async () => {
+            await next();
+            // After next(), Hono has already set the response — return a passthrough
+            return { status: c.res.status, data: null };
+          });
+          // If the middleware returned a custom response (short-circuit), send it
+          if (result.data !== null) {
+            return sendResponse(c, result);
+          }
+        } catch (err) {
+          if (err instanceof MalformedJsonError) return malformedJsonResponse(c);
+          throw err;
         }
       };
 
@@ -99,8 +117,13 @@ export function createHonoRouter(app: HonoLike): HttpRouter {
       const m = METHOD_MAP[method];
       app[m](path, async (c: any) => {
         const ctx = buildContext(c);
-        const result = await handler(ctx);
-        return sendResponse(c, result);
+        try {
+          const result = await handler(ctx);
+          return sendResponse(c, result);
+        } catch (err) {
+          if (err instanceof MalformedJsonError) return malformedJsonResponse(c);
+          throw err;
+        }
       });
     },
   };

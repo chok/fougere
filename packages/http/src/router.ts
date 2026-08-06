@@ -27,6 +27,14 @@ export interface ResponseResult {
   raw?: boolean;
 }
 
+/** Raised by an adapter when a request claims JSON but cannot be parsed. */
+export class MalformedJsonError extends Error {
+  constructor(options?: ErrorOptions) {
+    super('Malformed JSON body', options);
+    this.name = 'MalformedJsonError';
+  }
+}
+
 export type Handler = (ctx: RequestContext) => Promise<ResponseResult>;
 export type Next = () => Promise<ResponseResult>;
 export type Middleware = (ctx: RequestContext, next: Next) => Promise<ResponseResult>;
