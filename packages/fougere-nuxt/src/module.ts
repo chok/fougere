@@ -13,6 +13,7 @@ import {
   addImports,
   createResolver,
 } from '@nuxt/kit';
+import type { Nuxt } from '@nuxt/schema';
 import { scanProject, FROND_DIRS, setModuleLoader, loadCascadedConfig, orderSeeds } from '@fougere/core';
 import { declaresStorage } from '@fougere/runtime';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
@@ -33,8 +34,7 @@ export interface FougereModuleOptions {
 }
 
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const module: any = defineNuxtModule<FougereModuleOptions>({
+const module = defineNuxtModule<FougereModuleOptions>({
   meta: {
     name: '@fougere/nuxt',
     configKey: 'fougere',
@@ -44,7 +44,7 @@ const module: any = defineNuxtModule<FougereModuleOptions>({
     frondsDir: 'fronds',
   },
 
-  async setup(options, nuxt) {
+  async setup(options: FougereModuleOptions, nuxt: Nuxt) {
     const { resolve: resolveModule } = createResolver(import.meta.url);
     const runtimeResolve = (...path: string[]) =>
       resolveModule('../src/runtime', ...path);
@@ -263,4 +263,3 @@ export function generateBootPlugin(
 
   return lines.join('\n') + '\n';
 }
-

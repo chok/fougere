@@ -8,7 +8,7 @@
  * doublures alike — the browser never knows where a Frond lives.
  */
 import { defineEventHandler } from 'h3';
-import { handleRpc } from '@fougere/transport-http';
+import { handleRpc, PARSE_ERROR } from '@fougere/transport-http';
 import { createAppRunner } from '@fougere/core';
 import type { Transport } from '@fougere/core';
 import { useFougereApp } from '../utils/fougereApp';
@@ -17,6 +17,54 @@ type NodeReq = {
   body?: unknown;
   on?: (event: 'data' | 'end' | 'error', cb: (arg: never) => void) => void;
 };
+
+type WebReq = {
+  body?: { getReader?: () => { read: () => Promise<{ done: boolean; value?: Uint8Array }>; cancel?: () => Promise<void> } } | null;
+  headers?: { get?: (name: string) => string | null };
+  text?: () => Promise<string>;
+  json?: () => Promise<unknown>;
+};
+
+const MAX_BODY_BYTES = 1024 * 1024;
+
+function payloadTooLarge(): Error & { statusCode: number; statusMessage: string } {
+  return Object.assign(new Error('Payload too large'), { statusCode: 413, statusMessage: 'Payload too large' });
+}
+
+function parseRawJson(raw: string): unknown {
+  if (Buffer.byteLength(raw) > MAX_BODY_BYTES) throw payloadTooLarge();
+  return raw ? JSON.parse(raw) : {};
+}
+
+async function readWebBody(req: WebReq): Promise<unknown> {
+  const declaredLength = Number(req.headers?.get?.('content-length'));
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) throw payloadTooLarge();
+
+  const reader = req.body?.getReader?.();
+  if (reader) {
+    const chunks: Buffer[] = [];
+    let size = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = Buffer.from(value ?? []);
+      size += chunk.length;
+      if (size > MAX_BODY_BYTES) {
+        await reader.cancel?.();
+        throw payloadTooLarge();
+      }
+      chunks.push(chunk);
+    }
+    return parseRawJson(Buffer.concat(chunks).toString('utf8'));
+  }
+
+  if (typeof req.text === 'function') return parseRawJson(await req.text());
+  // Legacy request-like implementations may expose only json(). The content-length
+  // check above still rejects declared oversized payloads; standard Request objects
+  // take the streamed branch and enforce the limit while reading.
+  if (typeof req.json === 'function') return req.json();
+  return {};
+}
 
 /**
  * Read the JSON-RPC payload from the h3 event, agnostic to h3 version AND trust
@@ -32,23 +80,44 @@ type NodeReq = {
  *    await` fails: the SSR mock has no async iterator).
  * The `event.req.json()` branch is the future once nitro is fully on h3 v2.
  */
-async function readJsonBody(event: { req?: { json?: () => Promise<unknown> }; node?: { req?: NodeReq } }): Promise<unknown> {
-  const nodeReq = event.node?.req;
+async function readJsonBody(event: { req?: unknown; node?: { req?: unknown } }): Promise<unknown> {
+  const rawNodeReq = event.node?.req;
+  const nodeReq = rawNodeReq && typeof rawNodeReq === 'object' ? rawNodeReq as NodeReq : undefined;
   const preset = nodeReq?.body;
-  if (typeof preset === 'string') return preset ? JSON.parse(preset) : {};
-  if (preset instanceof Uint8Array) {
-    const raw = Buffer.from(preset).toString('utf8');
-    return raw ? JSON.parse(raw) : {};
+  if (typeof preset === 'string') {
+    if (Buffer.byteLength(preset) > MAX_BODY_BYTES) throw payloadTooLarge();
+    return parseRawJson(preset);
   }
-  if (event.req && typeof event.req.json === 'function') return event.req.json();
+  if (preset instanceof Uint8Array) {
+    if (preset.byteLength > MAX_BODY_BYTES) throw payloadTooLarge();
+    const raw = Buffer.from(preset).toString('utf8');
+    return parseRawJson(raw);
+  }
+  const webReq = event.req && typeof event.req === 'object' ? event.req as WebReq : undefined;
+  if (
+    webReq
+    && (webReq.body?.getReader || typeof webReq.text === 'function' || typeof webReq.json === 'function')
+  ) return readWebBody(webReq);
   if (nodeReq && typeof nodeReq.on === 'function') {
     const raw = await new Promise<string>((resolve, reject) => {
       const chunks: Buffer[] = [];
-      nodeReq.on!('data', (chunk) => chunks.push(Buffer.from(chunk)));
-      nodeReq.on!('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+      let size = 0;
+      let exceeded = false;
+      nodeReq.on!('data', (chunk) => {
+        if (exceeded) return;
+        const buffer = Buffer.from(chunk);
+        size += buffer.length;
+        if (size > MAX_BODY_BYTES) {
+          exceeded = true;
+          reject(payloadTooLarge());
+          return;
+        }
+        chunks.push(buffer);
+      });
+      nodeReq.on!('end', () => { if (!exceeded) resolve(Buffer.concat(chunks).toString('utf8')); });
       nodeReq.on!('error', reject);
     });
-    return raw ? JSON.parse(raw) : {};
+    return parseRawJson(raw);
   }
   return {};
 }
@@ -76,5 +145,14 @@ export default defineEventHandler(async (event) => {
   const runner = createAppRunner(app, surfaceOf(event.path));
   const stamped: Transport = (call, invocation) =>
     runner(call, { ...invocation, state: (event.context ?? {}) as Record<string, unknown> });
-  return handleRpc(stamped, await readJsonBody(event));
+  try {
+    return handleRpc(stamped, await readJsonBody(event));
+  } catch (err) {
+    if ((err as { statusCode?: number })?.statusCode === 413) throw err;
+    return {
+      jsonrpc: '2.0' as const,
+      id: null,
+      error: { code: PARSE_ERROR, message: 'Parse error' },
+    };
+  }
 });

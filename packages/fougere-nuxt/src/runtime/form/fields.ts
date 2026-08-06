@@ -14,7 +14,7 @@ export interface FormEntity {
 }
 
 interface FieldLike {
-  shape?: { type?: unknown; enum?: unknown[]; format?: string; properties?: unknown };
+  shape?: { type?: unknown; enum?: readonly unknown[]; format?: string; properties?: unknown };
   lifecycle?: { create?: unknown };
   role?: { primary?: boolean; relation?: { kind: string } };
 }
@@ -82,8 +82,10 @@ export function formFieldsOf(entity: FormEntity, entityKey: string): FormField[]
       control: controlOf(f),
       required: f.lifecycle?.create === undefined,
       labelKey: `${entityKey}.${name}`,
-      label: name[0].toUpperCase() + name.slice(1),
-      ...(Array.isArray(f.shape?.enum) ? { options: f.shape.enum as string[] } : {}),
+      label: name.charAt(0).toUpperCase() + name.slice(1),
+      ...(Array.isArray(f.shape?.enum)
+        ? { options: f.shape.enum.filter((value): value is string => typeof value === 'string') }
+        : {}),
       ...(defaultOf(f) !== undefined ? { default: defaultOf(f) } : {}),
     };
   });

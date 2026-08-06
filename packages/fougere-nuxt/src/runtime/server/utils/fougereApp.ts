@@ -130,9 +130,13 @@ async function boot(): Promise<App> {
 
 function createMemoryOrm(_entity: SchemaLike, _name: string): EntityOrm {
   const store = new Map<string, Record<string, unknown>>();
+  const matches = (row: Record<string, unknown>, criteria: Record<string, unknown>) =>
+    Object.entries(criteria).every(([key, value]) => Object.is(row[key], value));
   return {
+    client: store,
     async list(options?: any) {
       let items = [...store.values()];
+      if (options?.where) items = items.filter((row) => matches(row, options.where));
       const limit = options?.limit;
       const offset = options?.page && limit ? (options.page - 1) * limit : options?.offset ?? 0;
       if (offset > 0) items = items.slice(offset);
@@ -145,6 +149,12 @@ function createMemoryOrm(_entity: SchemaLike, _name: string): EntityOrm {
       return result;
     },
     async findById(id: string) { return store.get(id); },
+    async findBy(criteria: Record<string, unknown>) {
+      return [...store.values()].find((row) => matches(row, criteria));
+    },
+    async findAllBy(criteria: Record<string, unknown>) {
+      return [...store.values()].filter((row) => matches(row, criteria));
+    },
     async create(input: Partial<Record<string, unknown>>) {
       const id = input.id as string ?? crypto.randomUUID();
       const record = { ...input, id };
