@@ -28,6 +28,14 @@ function toCamel(kebab: string): string {
   return kebab.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
 }
 
+const COMMAND_DESCRIPTIONS: Record<string, string> = {
+  add: 'Add a frond or app to a workspace',
+  completion: 'Generate shell completion',
+  doctor: 'Check a Fougere workspace',
+  new: 'Create a Fougere project',
+  sync: 'Synchronize a remote frond contract',
+};
+
 /** Scan app/commands/ for command classes. */
 async function loadAppCommands(
   cliRoot: string,
@@ -92,7 +100,10 @@ export async function run(app: App): Promise<void> {
       }
 
       subCommands[cmdName] = defineCommand({
-        meta: { name: cmdName },
+        meta: {
+          name: cmdName,
+          description: COMMAND_DESCRIPTIONS[cmdName] ?? `Run the ${entity.name} command`,
+        },
         args,
         run: async ({ args: parsed }) => {
           if (cmdName !== 'completion') terminal.intro();

@@ -47,10 +47,10 @@ export default class CallCommand {
     // a primitive param (like `id`) resolves from `params`, an object from
     // `body`. So `--id` is a route param, every other flag is the body.
     const flags = parseFlags(process.argv.slice(2));
-    const params: Record<string, unknown> = {};
+    const params: Record<string, string> = {};
     const body: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(flags)) {
-      if (k === 'id') params.id = v;
+      if (k === 'id') params.id = String(v);
       else body[k] = v;
     }
 

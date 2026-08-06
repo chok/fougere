@@ -3,11 +3,66 @@ import { join } from 'node:path';
 import type { SchemaDescriptor } from '@fougere/schema';
 
 interface IdentityCard {
-  fronds: Array<{ name: string; entities: Array<{ name: string; ops: string[]; schema: SchemaDescriptor }> }>;
+  fronds: Array<{ name: string; entities: Array<{ name: string; ops: unknown[]; schema: SchemaDescriptor }> }>;
 }
 
-function capitalize(s: string): string {
-  return s[0].toUpperCase() + s.slice(1);
+function assertSafeName(kind: string, name: string): void {
+  if (typeof name !== 'string' || !/^[A-Za-z_$][A-Za-z0-9_$-]*$/.test(name)) {
+    throw new Error(`Invalid ${kind} name '${name}' received from remote`);
+  }
+}
+
+export function entityClassName(name: string): string {
+  assertSafeName('entity', name);
+  const identifier = name
+    .split('-')
+    .filter(Boolean)
+    .map((part) => part[0].toUpperCase() + part.slice(1))
+    .join('');
+  if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(identifier)) {
+    throw new Error(`Entity name '${name}' cannot be represented as a TypeScript identifier`);
+  }
+  return identifier;
+}
+
+function identityCardOf(value: unknown): IdentityCard {
+  if (!value || typeof value !== 'object' || !Array.isArray((value as IdentityCard).fronds)) {
+    throw new Error('Remote rpc.discover returned an invalid identity card');
+  }
+  const card = value as IdentityCard;
+  for (const frond of card.fronds) {
+    if (!frond || typeof frond !== 'object') {
+      throw new Error('Remote rpc.discover returned an invalid frond entry');
+    }
+    assertSafeName('frond', frond.name);
+    if (!Array.isArray(frond.entities)) {
+      throw new Error(`Remote frond '${frond.name}' has no valid entities array`);
+    }
+    for (const entity of frond.entities) {
+      if (!entity || typeof entity !== 'object') {
+        throw new Error(`Remote frond '${frond.name}' contains an invalid entity entry`);
+      }
+      assertSafeName('entity', entity.name);
+      if (!Array.isArray(entity.ops) || entity.ops.some((op) => typeof op !== 'string')) {
+        throw new Error(`Remote entity '${entity.name}' has no valid operations array`);
+      }
+      const descriptor = entity.schema as unknown;
+      if (
+        !descriptor
+        || typeof descriptor !== 'object'
+        || Array.isArray(descriptor)
+        || (descriptor as SchemaDescriptor).type !== 'object'
+        || !(descriptor as SchemaDescriptor).properties
+        || typeof (descriptor as SchemaDescriptor).properties !== 'object'
+        || Array.isArray((descriptor as SchemaDescriptor).properties)
+        || (descriptor as SchemaDescriptor)['x-fougere-version'] !== 1
+        || (descriptor as SchemaDescriptor)['x-fougere-vendor'] !== 'fougere'
+      ) {
+        throw new Error(`Remote entity '${entity.name}' has no valid schema descriptor`);
+      }
+    }
+  }
+  return card;
 }
 
 export default class SyncHandler {
@@ -15,7 +70,17 @@ export default class SyncHandler {
   private cwd = process.cwd();
 
   async execute(input: { name: string; from: string }): Promise<{ path: string; entities: string[] }> {
-    const baseUrl = input.from.replace(/\/$/, '');
+    assertSafeName('frond', input.name);
+    let remoteUrl: URL;
+    try {
+      remoteUrl = new URL(input.from);
+    } catch {
+      throw new Error(`Invalid remote URL '${input.from}'`);
+    }
+    if (remoteUrl.protocol !== 'http:' && remoteUrl.protocol !== 'https:') {
+      throw new Error(`Remote URL must use http or https, got '${remoteUrl.protocol}'`);
+    }
+    const baseUrl = remoteUrl.toString().replace(/\/$/, '');
 
     // The served frond answers `rpc.discover` on its call endpoint with its
     // identity card — the same surface every consumer reads, no side endpoint.
@@ -23,13 +88,14 @@ export default class SyncHandler {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'rpc.discover', params: { params: {}, query: {}, state: {} } }),
+      signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) {
       throw new Error(`Failed to reach ${baseUrl}/_fougere/call: ${res.status} ${res.statusText}`);
     }
     const rpc = (await res.json()) as { result?: IdentityCard; error?: { message: string } };
     if (rpc.error) throw new Error(`Remote error: ${rpc.error.message}`);
-    const card = rpc.result!;
+    const card = identityCardOf(rpc.result);
 
     const target = card.fronds.find((f) => f.name === input.name);
     if (!target) {
@@ -42,8 +108,11 @@ export default class SyncHandler {
 
     const entityNames: string[] = [];
 
-    for (const { schema: descriptor } of target.entities) {
-      const className = capitalize(descriptor.title ?? 'Entity');
+    const seen = new Set<string>();
+    for (const { name, schema: descriptor } of target.entities) {
+      const className = entityClassName(name);
+      if (seen.has(className)) throw new Error(`Remote declares duplicate entity '${className}'`);
+      seen.add(className);
       entityNames.push(className);
 
       const cardJson = JSON.stringify(descriptor, null, 2)
@@ -97,7 +166,13 @@ export default class SyncHandler {
     let registry: Record<string, { url: string; path: string }> = {};
 
     if (existsSync(registryPath)) {
-      try { registry = JSON.parse(readFileSync(registryPath, 'utf-8')); } catch { /* corrupt, reset */ }
+      try {
+        const parsed: unknown = JSON.parse(readFileSync(registryPath, 'utf-8'));
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('expected an object');
+        registry = parsed as Record<string, { url: string; path: string }>;
+      } catch (cause) {
+        throw new Error(`Cannot update corrupt remote registry at ${registryPath}`, { cause });
+      }
     }
 
     registry[name] = { url: baseUrl, path: localPath };
