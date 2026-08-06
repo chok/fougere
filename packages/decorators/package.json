@@ -22,7 +22,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "node ../../scripts/clean-dist.mjs && tsc",
+    "build": "rm -rf dist && tsc",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.test.json",
     "prepublishOnly": "pnpm run build"

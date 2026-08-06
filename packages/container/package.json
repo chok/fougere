@@ -22,7 +22,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "node ../../scripts/clean-dist.mjs && tsc",
+    "build": "rm -rf dist && tsc",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "pnpm run build"
   },

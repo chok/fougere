@@ -27,7 +27,7 @@
     "templates"
   ],
   "scripts": {
-    "build": "node ../../scripts/clean-dist.mjs && tsc && node ../../scripts/mark-executable.mjs dist/bin.js",
+    "build": "rm -rf dist && tsc && chmod +x dist/bin.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.runtime.json && tsc -p tsconfig.templates.json",

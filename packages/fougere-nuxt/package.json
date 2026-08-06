@@ -22,7 +22,7 @@
     "src/runtime"
   ],
   "scripts": {
-    "build": "node ../../scripts/clean-dist.mjs && tsc",
+    "build": "rm -rf dist && tsc",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "pnpm run build"
