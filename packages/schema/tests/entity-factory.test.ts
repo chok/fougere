@@ -45,6 +45,12 @@ describe('entity() factory carrier', () => {
     expect(Object.keys(CreatePost.getFields())).toEqual(['title', 'status']);
   });
 
+  it('can explicitly name a derivation used outside a class declaration', () => {
+    const PublicPost = Post.pick('id', 'title').named('PublicPost');
+    expect(PublicPost.name).toBe('PublicPost');
+    expect(() => Post.pick('id').named('../Escape')).toThrow(/valid class name/);
+  });
+
   it('exposes ~standard for ecosystem interop', () => {
     const std = Post['~standard'];
     expect(std.version).toBe(1);

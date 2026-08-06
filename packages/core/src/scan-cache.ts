@@ -23,8 +23,10 @@ import { join } from 'node:path';
  *
  * 2 — `handler-parser` unwraps a class returned through a call/assertion, so a mixin
  *     like `asCrudConstructor(class { … })` yields its methods again.
+ * 3 — parsed array types carry `arrayDepth`, used to distinguish a presenter page
+ *     returning scalar fields from one returning list fields.
  */
-const PARSER_VERSION = 2;
+const PARSER_VERSION = 3;
 
 interface CacheEntry {
   hash: string;

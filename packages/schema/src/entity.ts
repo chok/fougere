@@ -43,6 +43,7 @@ type PatchFields<TFields extends Fields> = {
  */
 export interface SchemaConstructor<TFields extends Fields> {
   new (data: CtorInput<TFields>): SchemaViewInfer<TFields>;
+  readonly name: string;
   readonly '~standard': StandardSchemaV1.Props<Record<string, unknown>, SchemaViewInfer<TFields>>;
   /** The original Entity class this derivation was created from (undefined for compose() results). */
   readonly source?: abstract new (...args: never[]) => unknown;
@@ -71,6 +72,8 @@ export interface SchemaConstructor<TFields extends Fields> {
   extend<E extends Fields>(
     extra: E,
   ): SchemaConstructor<TFields & E>;
+  /** Give an anonymous derivation an explicit runtime name. */
+  named(name: string): SchemaConstructor<TFields>;
   rename(mapping: Partial<Record<string & keyof TFields, string>>): SchemaConstructor<Fields>;
 }
 
@@ -240,6 +243,13 @@ export function createSchemaConstructor<TFields extends Fields>(
     static extend(extra: Fields) {
       return createSchemaConstructor({ ...fields, ...extra }, source ?? this, hints, opts, unique);
     }
+    static named(name: string) {
+      if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name)) {
+        throw new Error(`named(): \`${name}\` is not a valid class name.`);
+      }
+      Object.defineProperty(this, 'name', { value: name, configurable: true });
+      return this;
+    }
     static rename(mapping: Record<string, string>) {
       assertKnownKeys('rename', Object.keys(mapping), fields);
       const renamed: Fields = {};
@@ -332,4 +342,3 @@ export function compose<T extends HasFields[]>(
     createSchemaConstructor(merged, undefined, hints, mergedOpts),
   );
 }
-

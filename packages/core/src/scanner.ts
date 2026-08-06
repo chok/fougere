@@ -168,7 +168,14 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
 async function toEntityEntry(filePath: string): Promise<EntityEntry | null> {
   const exported = await loadDefault(filePath);
   if (!isEntityClass(exported)) return null;
-  const name = toRegistrationName((exported as any).name);
+  const runtimeName = (exported as { name?: string }).name;
+  // A derivation returned directly (`export default User.extend(...)`) has the
+  // factory name `Schema`. The file is the declaration site and therefore the
+  // only name the author actually supplied; named classes keep winning.
+  const declaredName = runtimeName && runtimeName !== 'Schema'
+    ? runtimeName
+    : basename(filePath).replace(/\.[^.]+$/, '');
+  const name = toRegistrationName(declaredName);
   return { name, entityClass: exported, filePath };
 }
 
