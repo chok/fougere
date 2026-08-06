@@ -5,11 +5,13 @@ export interface NumberOptions {
   max?: number;
   integer?: boolean;
   default?: number;
+  description?: string;
 }
 
 export function number(opts?: NumberOptions): Field<number> {
   return createField<number>({
     shape: { type: opts?.integer ? 'integer' : 'number', minimum: opts?.min, maximum: opts?.max },
     lifecycle: opts?.default !== undefined ? { create: { value: opts.default } } : undefined,
+    meta: opts?.description !== undefined ? { description: opts.description } : undefined,
   });
 }

@@ -45,8 +45,9 @@ describe('helpers', () => {
   });
 
   it('number() creates a number field with constraints', () => {
-    const f = number({ min: 0, max: 100, integer: true });
+    const f = number({ min: 0, max: 100, integer: true, description: 'Percentage' });
     expect(f.shape).toEqual({ type: 'integer', minimum: 0, maximum: 100 });
+    expect(f.meta).toEqual({ description: 'Percentage' });
   });
 
   it('bool() creates a boolean field', () => {
