@@ -6,8 +6,9 @@ the few facts that change what they should write.
 ## One declaration, everything derives
 
 A field belongs to its entity and to nowhere else. Adding it there alone produces the SQL column,
-the validation, the input contract, the write and the output shape. No migration to hand-write, no
-DTO to keep in step, no permitted-params list.
+the validation, the input contract, the write and the output shape. Additive storage changes need no
+hand-written migration; renames, removals and type changes still do. No DTO or permitted-params list
+needs to stay in step.
 
 ```ts
 // fronds/<frond>/entities/Product.ts — and nothing else

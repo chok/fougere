@@ -1,4 +1,9 @@
-const locales = [
+const locales: Array<{
+  code: 'en' | 'fr';
+  name: string;
+  language: string;
+  file: string;
+}> = [
   { code: 'en', name: 'English', language: 'en-US', file: 'en.json' },
   { code: 'fr', name: 'Français', language: 'fr-FR', file: 'fr.json' },
 ];
@@ -21,6 +26,13 @@ export default defineNuxtConfig({
   modules: ['@nuxt/ui', '@nuxt/content', '@nuxtjs/i18n', '@fougere/nuxt'],
   css: ['~/assets/css/main.css'],
   compatibilityDate: '2026-07-18',
+  // No icon leaves for the Iconify API at runtime: the scan inlines what the source
+  // names. The server bundle stays on — it is the fallback for a name the scan cannot
+  // see (a dynamic one), and turning it off buys nothing measurable here.
+  icon: {
+    provider: 'none',
+    clientBundle: { scan: true },
+  },
   components: [
     // content/ components are global (usable from markdown) and unprefixed.
     { path: '~/components/content', global: true, pathPrefix: false },

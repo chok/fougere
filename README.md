@@ -114,7 +114,7 @@ them, and none of it is yours to keep in sync:
 | | |
 | --- | --- |
 | **Validation** | the same judge in the browser and at the façade — unknown keys refused |
-| **Storage** | the SQL table and its migrations |
+| **Storage** | the SQL table and additive schema sync (create tables/add columns) |
 | **Forms** | `useFormFor(Post)` — fields, rules, per-field error mapping |
 | **API surface** | `post.list`, `post.create`, `post.publish`… |
 | **GraphQL** | `type Post { … }`, its inputs, and `publish` as a mutation |
@@ -251,12 +251,13 @@ seen running, not planned:
 
 Known limits, stated plainly, because you'd find them anyway:
 
-- **storage** is SQLite with auto-DDL today; the other dialects exist in `schema-sql`
-  but are not the walked path;
+- **storage** is SQLite with additive auto-DDL today; renames, removals and type changes
+  require an explicit migration. The other dialects exist in `schema-sql` but are not
+  the walked path;
 - **a computed field costs one read per row** — name a view for the operation
   (`Crud(Post, { list: PostCard })`) or batch in the handler;
-- **a split link is loopback-only**: the receiving side trusts the identity it is
-  handed, so do not expose `serve()` beyond `127.0.0.1`;
+- **a split link is loopback only**: the receiving side trusts the identity it is handed,
+  so `serve()` refuses any other bind;
 - the full list lives in [`CLAUDE.md`](./CLAUDE.md#known-issues), kept honest rather
   than short.
 
