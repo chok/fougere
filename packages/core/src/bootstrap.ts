@@ -251,11 +251,12 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
        * Per key, so stating a `binding` alone does not erase an `input` the scan found.
        */
       for (const [opName, override] of Object.entries(frond.operationsOverrides ?? {})) {
-        const { input, binding, description } = override;
-        if (input === undefined && binding === undefined && description === undefined) continue;
+        const { input, output, binding, description } = override;
+        if (input === undefined && output === undefined && binding === undefined && description === undefined) continue;
         contracts.set(opName, {
           ...contracts.get(opName),
           ...(input !== undefined && { input }),
+          ...(output !== undefined && { output }),
           ...(binding !== undefined && { binding }),
           ...(description !== undefined && { description }),
         });
@@ -273,7 +274,9 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         const known = cachedOutput.get(op);
         if (known) return known;
         const perOp = (handler?.ctor as { __opOutputs?: Record<string, unknown> })?.__opOutputs?.[op];
+        const contractOutput = contracts.get(op)?.output;
         const schema = (perOp
+          ?? contractOutput
           ?? handler?.outputOverride
           ?? (handler?.ctor as { __output?: unknown })?.__output
           ?? entity.entityClass) as { getFields?: () => Fields };
@@ -299,6 +302,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         return runMiddlewares(getMiddlewares(entityName), ctx, async () => {
           const contract = contracts.get(op);
           const schema = contract?.input;
+          let effectiveInvocation = inv;
           if (schema && inv.body && typeof inv.body === 'object') {
             // The view's mode travels with it: a partial() input validates as a
             // patch (absent field → untouched), never by forging the fields.
@@ -317,12 +321,14 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
                 operation: op,
               });
             }
+            effectiveInvocation = { ...inv, body: result.data };
+            ctx.invocation = effectiveInvocation;
           }
 
           // No plan means no declared argument — an op receives what its
           // contract says it receives, never a guess based on its name.
           const resolved = contract?.binding
-            ? await resolveArgs(contract.binding, inv, collectorResolver)
+            ? await resolveArgs(contract.binding, effectiveInvocation, collectorResolver)
             : [];
           // Egress at the boundary: a write-only field never rides the result
           // out, exactly as REST and Pothos already guarantee on their own —
@@ -343,7 +349,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
             if (!field.params?.length) continue;
             args[field.name] = await resolveArgs(
               computeBindingPlan(field.params, collectorEntityNames),
-              inv,
+              effectiveInvocation,
               collectorResolver,
             );
           }
