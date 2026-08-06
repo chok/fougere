@@ -23,7 +23,7 @@ export type { FrondCall, Transport, IdentityCard, CardOp } from './call.js';
 export { callValueOf } from './contract.js';
 export type { CallValue } from './contract.js';
 export type { OperationContext, AppNext, AppMiddleware, FougereErrorOptions } from './middleware.js';
-export { toHttpError, httpStatusFor } from './errors.js';
+export { toHttpError, toPublicError, httpStatusFor } from './errors.js';
 export { loggerMiddleware } from './middleware/logger.js';
 export { errorMiddleware } from './middleware/error-handler.js';
 export { Logger } from './builtins/logger.js';

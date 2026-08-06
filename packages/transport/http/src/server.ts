@@ -4,7 +4,7 @@
  * Judges nothing: validation and middlewares live with the handler, inside
  * the runner. The error a façade throws is framed whole, never flattened.
  */
-import { FougereError, ErrorCode, type InvocationContext, type Transport } from '@fougere/core';
+import { FougereError, ErrorCode, toPublicError, type InvocationContext, type Transport } from '@fougere/core';
 import { APP_ERROR, INVALID_REQUEST, type RpcRequest, type RpcResponse } from './jsonrpc.js';
 
 export async function handleRpc(runner: Transport, raw: unknown): Promise<RpcResponse> {
@@ -47,6 +47,7 @@ export async function handleRpc(runner: Transport, raw: unknown): Promise<RpcRes
           operation: op,
           cause: err,
         });
-    return { jsonrpc: '2.0', id, error: { code: APP_ERROR, message: failure.message, data: failure.toJSON() } };
+    const data = toPublicError(failure);
+    return { jsonrpc: '2.0', id, error: { code: APP_ERROR, message: data.message, data } };
   }
 }
