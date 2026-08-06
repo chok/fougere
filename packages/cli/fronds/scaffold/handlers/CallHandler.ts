@@ -4,5 +4,6 @@
  * the `call` subcommand.
  */
 export default class CallHandler {
+  /** Invoke one operation of a frond from the terminal. */
   async execute(): Promise<void> {}
 }

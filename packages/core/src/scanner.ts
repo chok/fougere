@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import { join, dirname, basename, resolve as resolvePath } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { FrondDescriptor, ProviderEntry, EntityEntry, HandlerEntry, PresenterEntry, CollectorEntry, SeedEntry, ScanResult } from './types.js';
-import type { SchemaLike } from '@fougere/schema';
+import { ANONYMOUS_SCHEMA_NAME, type SchemaLike } from '@fougere/schema';
 import type { OperationContract, OperationsMap } from './operation.js';
 import { parseAllHandlerMethods, parsePresenterMethods, parseConstructorParams, type ParsedType } from './handler-parser.js';
 import { hashFile, getCached, setCached, flushCache, setCacheRoot } from './scan-cache.js';
@@ -169,10 +169,11 @@ async function toEntityEntry(filePath: string): Promise<EntityEntry | null> {
   const exported = await loadDefault(filePath);
   if (!isEntityClass(exported)) return null;
   const runtimeName = (exported as { name?: string }).name;
-  // A derivation returned directly (`export default User.extend(...)`) has the
-  // factory name `Schema`. The file is the declaration site and therefore the
-  // only name the author actually supplied; named classes keep winning.
-  const declaredName = runtimeName && runtimeName !== 'Schema'
+  // A derivation returned directly (`export default User.extend(...)`) carries the
+  // factory's own name, which the schema package stamps and exports. The file is then
+  // the declaration site and therefore the only name the author actually supplied;
+  // named classes keep winning.
+  const declaredName = runtimeName && runtimeName !== ANONYMOUS_SCHEMA_NAME
     ? runtimeName
     : basename(filePath).replace(/\.[^.]+$/, '');
   const name = toRegistrationName(declaredName);
@@ -232,7 +233,13 @@ async function inferOperations(filePath: string, moduleExports: Record<string, u
   }
 
   for (const method of parsed) {
-    const meta: OperationContract = { signature: method };
+    // The contract is what carries the description; `signature` is the raw material it
+    // was read from. Leaving it only on the signature meant every consumer had to know
+    // to look one level down, and only the façade did.
+    const meta: OperationContract = {
+      signature: method,
+      ...(method.description && { description: method.description }),
+    };
 
     // Resolve schemas for all params
     for (const param of method.params) {

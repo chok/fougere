@@ -69,6 +69,7 @@ export default class SyncHandler {
   // cwd is ambient in a CLI — not a DI service (the container resolves by type).
   private cwd = process.cwd();
 
+  /** Mirror a remote frond's contract into local entities. */
   async execute(input: { name: string; from: string }): Promise<{ path: string; entities: string[] }> {
     assertSafeName('frond', input.name);
     let remoteUrl: URL;

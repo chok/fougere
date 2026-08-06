@@ -4,5 +4,6 @@
  * `serve` subcommand.
  */
 export default class ServeHandler {
+  /** Host a frond in its own process, behind JSON-RPC. */
   async execute(): Promise<void> {}
 }

@@ -232,9 +232,6 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
           ...scanned,
           binding: scanned.binding
             ?? (scanned.signature ? computeBindingPlan(scanned.signature.params, collectorEntityNames) : undefined),
-          // The doc comment the author already wrote, carried through rather than
-          // asked for a second time.
-          description: scanned.description ?? scanned.signature?.description,
         });
       }
 

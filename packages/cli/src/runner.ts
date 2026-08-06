@@ -28,14 +28,6 @@ function toCamel(kebab: string): string {
   return kebab.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
 }
 
-const COMMAND_DESCRIPTIONS: Record<string, string> = {
-  add: 'Add a frond or app to a workspace',
-  completion: 'Generate shell completion',
-  doctor: 'Check a Fougere workspace',
-  new: 'Create a Fougere project',
-  sync: 'Synchronize a remote frond contract',
-};
-
 /** Scan app/commands/ for command classes. */
 async function loadAppCommands(
   cliRoot: string,
@@ -102,7 +94,11 @@ export async function run(app: App): Promise<void> {
       subCommands[cmdName] = defineCommand({
         meta: {
           name: cmdName,
-          description: COMMAND_DESCRIPTIONS[cmdName] ?? `Run the ${entity.name} command`,
+          // `--help` reads the operation's own doc sentence, which the scan already
+          // carries for every door (`OperationContract.description`). A table here
+          // would be the same fact written twice, and it drifted: it described `add`
+          // and `doctor`, which do not exist, and had nothing for `call` or `serve`.
+          description: handlerEntry.operations.get('execute')?.description,
         },
         args,
         run: async ({ args: parsed }) => {

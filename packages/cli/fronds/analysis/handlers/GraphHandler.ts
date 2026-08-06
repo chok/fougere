@@ -16,6 +16,7 @@ export default class GraphHandler {
   // cwd is ambient in a CLI — not a DI service (the container resolves by type).
   private cwd = process.cwd();
 
+  /** Report how a workspace's fronds and entities reference each other. */
   async execute(input: { root?: string; minEntities?: number }): Promise<GraphResult> {
     const { resolve } = await import('node:path');
     const root = resolve(this.cwd, input.root || '.');

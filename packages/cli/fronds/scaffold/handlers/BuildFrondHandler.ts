@@ -10,6 +10,7 @@ export default class BuildFrondHandler {
   // cwd is ambient in a CLI — not a DI service (the container resolves by type).
   private cwd = process.cwd();
 
+  /** Build a frond into a standalone deployable package. */
   async execute(input: { name: string }): Promise<{ path: string; entities: string[] }> {
     const frondDir = join(this.cwd, 'fronds', input.name);
 
