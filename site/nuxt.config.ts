@@ -26,11 +26,13 @@ export default defineNuxtConfig({
   modules: ['@nuxt/ui', '@nuxt/content', '@nuxtjs/i18n', '@fougere/nuxt'],
   css: ['~/assets/css/main.css'],
   compatibilityDate: '2026-07-18',
-  // No icon leaves for the Iconify API at runtime: the scan inlines what the source
-  // names. The server bundle stays on — it is the fallback for a name the scan cannot
-  // see (a dynamic one), and turning it off buys nothing measurable here.
+  // `lucide` and `noto` are devDependencies so the icons ship with the build instead of
+  // being fetched from api.iconify.design at render time. Both halves are named: `scan`
+  // inlines every name the source spells into the client bundle, and the collections are
+  // listed for the server bundle because Nitro does not trace them into .output/server
+  // under pnpm — the same trap as drizzle-orm.
   icon: {
-    provider: 'none',
+    serverBundle: { collections: ['lucide', 'noto'] },
     clientBundle: { scan: true },
   },
   components: [

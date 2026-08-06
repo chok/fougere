@@ -661,6 +661,12 @@ importers:
         specifier: ^3.5.16
         version: 3.5.40(typescript@7.0.2)
     devDependencies:
+      '@iconify-json/lucide':
+        specifier: ^1.2.121
+        version: 1.2.121
+      '@iconify-json/noto':
+        specifier: ^1.2.7
+        version: 1.2.7
       '@types/markdown-it':
         specifier: ^14.1.2
         version: 14.1.2
@@ -1567,6 +1573,9 @@ packages:
   '@humanwhocodes/retry@0.4.3':
     resolution: {integrity: sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ==}
     engines: {node: '>=18.18'}
+
+  '@iconify-json/lucide@1.2.121':
+    resolution: {integrity: sha512-zSoQQSmsyFaeTpSwURHJ9PIrsDcGFpDNhGlpiTrs+Ua4uFeH5UsE26L4OEBLrgLWoSK0UO+JhsO8yehSw0403g==}
 
   '@iconify-json/noto@1.2.7':
     resolution: {integrity: sha512-2pNHliXnMLpnepNTZwR9hPBSl6GmhIfXPnudFCHY5v9pJhmA7LoVb/pFY0qLDY/k+3ikET8RXRf7XFxc/pHObA==}
@@ -9118,6 +9127,10 @@ snapshots:
   '@humanwhocodes/module-importer@1.0.1': {}
 
   '@humanwhocodes/retry@0.4.3': {}
+
+  '@iconify-json/lucide@1.2.121':
+    dependencies:
+      '@iconify/types': 2.0.0
 
   '@iconify-json/noto@1.2.7':
     dependencies:
