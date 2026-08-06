@@ -1,0 +1,6 @@
+packages: []
+
+# pnpm 11 requires native build permissions in the workspace configuration.
+allowBuilds:
+  better-sqlite3: true
+  esbuild: true

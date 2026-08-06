@@ -2,6 +2,7 @@
   "name": "fougere-app",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@11.20.0",
   "scripts": {
     "dev": "nuxt dev",
     "build": "nuxt build",
@@ -15,13 +16,7 @@
     "@fougere/container-fougere": "latest",
     "better-sqlite3": "^12.8.0",
     "kysely": "^0.28.17",
-    "nuxt": "^4.4.0"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "better-sqlite3",
-      "esbuild"
-    ]
+    "nuxt": "^4.5.1"
   },
   "devDependencies": {
     "@types/node": "^22.19.15"

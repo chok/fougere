@@ -14,6 +14,6 @@
     "@fougere/container-fougere": "latest",
     "better-sqlite3": "^12.8.0",
     "kysely": "^0.28.17",
-    "nuxt": "^4.4.0"
+    "nuxt": "^4.5.1"
   }
 }

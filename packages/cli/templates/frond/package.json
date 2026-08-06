@@ -14,11 +14,5 @@
     "better-sqlite3": "^12.8.0",
     "kysely": "^0.28.17",
     "jiti": "^2.4.2"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "better-sqlite3",
-      "esbuild"
-    ]
   }
 }

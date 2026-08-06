@@ -13,6 +13,6 @@
     "@fougere/schema": "workspace:*",
     "@fougere/schema-sql": "workspace:*",
     "@fougere/nuxt": "workspace:*",
-    "nuxt": "^4.4.0"
+    "nuxt": "^4.5.1"
   }
 }
