@@ -14,14 +14,28 @@ const fromBody = { name: 'input', source: { kind: 'body' as const }, optional: f
  * runtime — which is what makes the guarantee independent of the AST scan (an
  * installed app cannot resolve this file, and never needs to).
  */
+/**
+ * `output` says the entity, and saying it costs nothing at runtime.
+ *
+ * The façade already projected onto the entity when nothing else was named, so this
+ * changes no result: `outputFieldsFor` reads `contractOutput` and falls back to the
+ * entity, and both are the same shape here. What changes is that the sentence now
+ * EXISTS — the identity card publishes `output` per op, and a card was measured
+ * carrying none at all (2026-08-06, ten ops, zero outputs), which typed every remote
+ * return as `unknown` for anyone building on it.
+ *
+ * It does not close the view: only an explicit `__opOutputs` does (`closed: perOp !==
+ * undefined`), so a named view still wins and a presenter's computed fields still ride
+ * out. `delete` names none — a boolean is not a shape.
+ */
 function crudOps(entity: SchemaLike & { partial?: () => SchemaLike }): Record<string, OperationContract> {
   return {
-    list: { binding: [{ name: 'options', source: { kind: 'query' }, optional: true }] },
-    findById: { binding: [byId] },
-    create: { input: entity, binding: [fromBody] },
+    list: { output: entity, binding: [{ name: 'options', source: { kind: 'query' }, optional: true }] },
+    findById: { output: entity, binding: [byId] },
+    create: { input: entity, output: entity, binding: [fromBody] },
     // The patch view carries its own mode: an absent field is untouched, an
     // immutable one re-supplied is refused.
-    update: { input: entity.partial?.(), binding: [byId, fromBody] },
+    update: { input: entity.partial?.(), output: entity, binding: [byId, fromBody] },
     delete: { binding: [byId] },
   };
 }
