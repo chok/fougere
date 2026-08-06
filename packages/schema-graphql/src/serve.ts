@@ -2,15 +2,15 @@
  * Serve a GraphQL schema on an HttpRouter — no Apollo, no Yoga needed.
  *
  * Uses the `graphql` package directly for execution.
- * Includes GraphiQL playground in development.
+ * GraphiQL is available as an explicit opt-in for trusted development environments.
  */
-import type { HttpRouter } from '@fougere/http';
-import { graphql, type GraphQLSchema } from 'graphql';
+import type { HttpRouter, ResponseResult } from '@fougere/http';
+import { getOperationAST, graphql, parse, type GraphQLSchema } from 'graphql';
 
 export interface GraphQLServeOptions {
   /** Route path. Default: '/graphql'. */
   path?: string;
-  /** Enable GraphiQL playground on GET requests from browsers. Default: true. */
+  /** Enable GraphiQL playground on GET requests from browsers. Default: false. */
   playground?: boolean;
 }
 
@@ -42,13 +42,12 @@ function graphiqlHtml(path: string): string {
  *
  * - POST: execute queries/mutations
  * - GET with `query` param: execute queries
- * - GET from browser (no `query` param): serve GraphiQL playground
+ * - GET from browser (no `query` param): serve GraphiQL only with `playground: true`
  *
  * ```ts
  * import { registerGraphQL } from '@fougere/schema-graphql'
  *
- * registerGraphQL(router, schema)
- * // Open http://localhost:4000/graphql in your browser → GraphiQL
+ * registerGraphQL(router, schema, { playground: process.env.NODE_ENV === 'development' })
  * ```
  */
 export function registerGraphQL(
@@ -57,7 +56,7 @@ export function registerGraphQL(
   options?: GraphQLServeOptions,
 ): void {
   const path = options?.path ?? '/graphql';
-  const playground = options?.playground ?? true;
+  const playground = options?.playground ?? false;
 
   router.on('POST', path, async (ctx) => {
     const body = (await ctx.body()) as {
@@ -84,12 +83,26 @@ export function registerGraphQL(
     };
   });
 
-  router.on('GET', path, async (ctx) => {
+  router.on('GET', path, async (ctx): Promise<ResponseResult> => {
     // If there's a query param, execute it
     if (ctx.query.query) {
-      const variables = ctx.query.variables
-        ? JSON.parse(ctx.query.variables)
-        : undefined;
+      let variables: Record<string, unknown> | undefined;
+      let document;
+      try {
+        variables = ctx.query.variables ? JSON.parse(ctx.query.variables) : undefined;
+        document = parse(ctx.query.query);
+      } catch (err) {
+        return { status: 400, data: { errors: [{ message: (err as Error).message }] } };
+      }
+
+      const operation = getOperationAST(document, ctx.query.operationName);
+      if (operation && operation.operation !== 'query') {
+        return {
+          status: 405,
+          data: { errors: [{ message: 'Only GraphQL queries may be executed over GET' }] },
+          headers: { allow: 'POST' },
+        };
+      }
 
       const result = await graphql({
         schema,
