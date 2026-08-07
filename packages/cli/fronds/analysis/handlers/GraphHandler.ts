@@ -1,8 +1,8 @@
 import {
-  scanProject, setModuleLoader,
   buildGraph, suggestSplit,
   type EntityNode, type DomainCluster, type FrondDescriptor,
 } from '@fougere/core';
+import ProjectScan from '../services/ProjectScan.js';
 
 export interface GraphResult {
   fronds: FrondDescriptor[];
@@ -13,19 +13,11 @@ export interface GraphResult {
 }
 
 export default class GraphHandler {
-  // cwd is ambient in a CLI — not a DI service (the container resolves by type).
-  private cwd = process.cwd();
+  constructor(private projectScan: ProjectScan) {}
 
   /** Report how a workspace's fronds and entities reference each other. */
   async execute(input: { root?: string; minEntities?: number }): Promise<GraphResult> {
-    const { resolve } = await import('node:path');
-    const root = resolve(this.cwd, input.root || '.');
-
-    const { createJiti } = await import('jiti');
-    const jiti = createJiti(import.meta.url, { interopDefault: true });
-    setModuleLoader((filePath) => jiti.import(filePath) as Promise<Record<string, unknown>>);
-
-    const { fronds } = await scanProject(root);
+    const { fronds } = await this.projectScan.at(input.root);
     const nodes = buildGraph(fronds);
     const clusters = suggestSplit(nodes);
 

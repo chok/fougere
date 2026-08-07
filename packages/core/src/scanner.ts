@@ -61,8 +61,10 @@ async function readEntries(path: string): Promise<Dirent[]> {
       severity: 'blocking',
       code: 'directory-unreadable',
       filePath: path,
-      message: `Could not read '${path}' — anything it declares is missing from this app, `
-        + `and nothing downstream can tell that from an empty directory.`,
+      // The path is NOT repeated here: `filePath` carries it, and a renderer that
+      // prints both wraps an absolute path twice into an unreadable box.
+      message: 'Could not read this directory — anything it declares is missing from '
+        + 'the app, and nothing downstream can tell that from an empty directory.',
       cause,
     });
     return [];
@@ -281,8 +283,8 @@ async function inferOperations(filePath: string, moduleExports: Record<string, u
       severity: 'blocking',
       code: 'handler-parse-failed',
       filePath,
-      message: `Could not parse '${filePath}' — its operations carry no contract, so the `
-        + `façade serves them unbound. This is not the same as a handler with no operation.`,
+      message: 'Could not parse this handler — its operations carry no contract, so the '
+        + 'façade serves them unbound. Not the same as a handler with no operation.',
       cause,
     });
     return map;
@@ -304,9 +306,9 @@ async function inferOperations(filePath: string, moduleExports: Record<string, u
       severity: 'warning',
       code: 'heritage-unresolved',
       filePath,
-      message: `Could not resolve 'extends ${base}' in '${filePath}' — any operation it `
-        + `declares is absent from this façade, and the scan cannot tell that from a base `
-        + `class with none. State the contract in frond.config.ts to put it back.`,
+      message: `Could not resolve 'extends ${base}' — any operation it declares is absent `
+        + `from this façade, and the scan cannot tell that from a base class with none. `
+        + `State the contract in frond.config.ts to put it back.`,
     });
   }
 
