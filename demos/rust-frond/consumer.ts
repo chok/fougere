@@ -12,23 +12,17 @@
  * sur des règles qu'aucune ligne de TypeScript ne déclare.
  */
 import { createHttpTransport } from '@fougere/transport-http/client';
-import { reconstruct, inputFields, outputFields, type SchemaDescriptor } from '@fougere/schema';
+import { reconstruct, inputFields, outputFields } from '@fougere/schema';
 import {
   EMPTY_INVOCATION,
   FougereError,
   type FrondCall,
+  type IdentityCard,
   type InvocationContext,
   type Transport,
 } from '@fougere/core/contract';
 
 const RUST_FROND = process.env.RUST_FROND_URL ?? 'http://localhost:4200';
-
-interface IdentityCard {
-  fronds: Array<{
-    name: string;
-    entities: Array<{ name: string; ops: string[]; schema: SchemaDescriptor }>;
-  }>;
-}
 
 /**
  * La doublure — copie fidèle de `createRemoteFacade` (packages/core/src/remote.ts:79).

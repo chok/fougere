@@ -15,6 +15,16 @@ export type { FougereErrorOptions } from './middleware.js';
 export { EMPTY_INVOCATION } from './invocation.js';
 export type { InvocationContext } from './invocation.js';
 export type { FrondCall, Transport } from './call.js';
+/**
+ * What `rpc.discover` answers. It belongs here and not to the runtime: the
+ * reserved op travels on the same wire as every other call, so a consumer that
+ * only sends — a browser bundle, a frond written elsewhere — needs its shape and
+ * nothing else. Type-only, so `call.js` never enters the runtime graph.
+ *
+ * Stated once, on purpose: two private copies of this interface have already gone
+ * stale (the CLI's, then the Rust demo's) the day an op stopped being a bare name.
+ */
+export type { IdentityCard, CardOp } from './call.js';
 
 /** Registration key of a class — 'Post' → 'post', 'PostHandler' → 'postHandler'. */
 export function toRegistrationName(name: string): string {

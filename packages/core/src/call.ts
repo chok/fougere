@@ -6,7 +6,7 @@
  * runner below is the reference realization. Transports move the value,
  * they never reshape it.
  */
-import { describe as describeSchema } from '@fougere/schema';
+import { describe as describeSchema, type SchemaDescriptor } from '@fougere/schema';
 import type { InvocationContext } from './invocation.js';
 import { FougereError, ErrorCode } from './middleware.js';
 import { resolveIsReadOp, type OperationsMap } from './operation.js';
@@ -38,9 +38,9 @@ export interface CardOp {
   /** The author's own doc sentence, when the method carries one. */
   description?: string;
   /** JSON Schema of what it accepts, when the contract names a view. */
-  input?: unknown;
+  input?: SchemaDescriptor;
   /** JSON Schema of what it emits, when the contract names one. */
-  output?: unknown;
+  output?: SchemaDescriptor;
   /** `query` reads, `command` writes — the same call REST turns into GET vs POST. */
   kind: 'query' | 'command';
 }
@@ -52,7 +52,7 @@ export interface IdentityCard {
     entities: Array<{
       name: string;
       ops: CardOp[];
-      schema: unknown;
+      schema: SchemaDescriptor;
     }>;
   }>;
 }

@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "frond": "cargo run --release",
-    "consume": "npx tsx consumer.ts"
+    "consume": "npx tsx consumer.ts",
+    "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
     "@fougere/core": "workspace:*",
