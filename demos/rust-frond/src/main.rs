@@ -15,17 +15,117 @@ use serde::Serialize;
 use serde_json::{json, Map, Value};
 use std::sync::{Arc, Mutex};
 
-// ─── Le domaine — il n'existe qu'ici ────────────────────────────────
+// ─── La déclaration — une seule, deux projections ───────────────────
+//
+// `entity({...})` n'existe pas ici, mais son GESTE si : on énonce les champs une
+// fois, et le type Rust comme la carte en sont dérivés. La version précédente de
+// ce fichier les écrivait tous les deux à la main — `struct Sensor` d'un côté,
+// le `json!` de la carte de l'autre — donc rien ne signalait qu'un champ ajouté
+// à l'un manquait à l'autre. Une duplication tenue à la main est la seule chose
+// que ce dépôt refuse partout ailleurs ; elle n'avait pas sa place dans la démo
+// qui sert à le montrer.
+//
+// `macro_rules!` suffit — pas de crate proc-macro, pas de dépendance ajoutée.
+// Ce qu'un vrai portage écrirait, c'est `#[derive(Fougere)]` sur la struct : le
+// même geste, à un cran de confort au-dessus.
 
-#[derive(Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct Sensor {
-    id: String,
-    label: String,
-    celsius: f64,
-    recorded_at: String,
-    /// Calculé par le frond. L'axe boundary le ferme en entrée : jamais accepté d'un client.
-    checksum: String,
+/// `recorded_at` → `recordedAt` — la même convention que `#[serde(rename_all)]`,
+/// appliquée à la carte pour que les deux projections nomment le champ pareil.
+fn camel(snake: &str) -> String {
+    let mut out = String::with_capacity(snake.len());
+    let mut upper = false;
+    for ch in snake.chars() {
+        if ch == '_' {
+            upper = true;
+        } else if upper {
+            out.extend(ch.to_uppercase());
+            upper = false;
+        } else {
+            out.push(ch);
+        }
+    }
+    out
+}
+
+macro_rules! frond_entity {
+    (
+        $name:ident as $card_name:literal {
+            $( $field:ident : $ty:ty , $req:ident , $schema:tt );* $(;)?
+        }
+    ) => {
+        #[derive(Clone, Serialize)]
+        #[serde(rename_all = "camelCase")]
+        struct $name {
+            $( $field: $ty, )*
+        }
+
+        /// La carte — dérivée de la déclaration ci-dessus, jamais tenue à côté.
+        fn sensor_card() -> Value {
+            let mut properties = Map::new();
+            let mut required: Vec<Value> = Vec::new();
+            $(
+                let key = camel(stringify!($field));
+                if stringify!($req) == "required" {
+                    required.push(Value::String(key.clone()));
+                }
+                properties.insert(key, json!($schema));
+            )*
+            json!({
+                "title": $card_name,
+                "type": "object",
+                "properties": Value::Object(properties),
+                "required": Value::Array(required),
+                "x-fougere-version": 1,
+                "x-fougere-vendor": "fougere"
+            })
+        }
+    };
+}
+
+// ─── Le domaine — il n'existe qu'ici ────────────────────────────────
+//
+// `shape` EST du JSON Schema, au niveau supérieur. Les trois autres axes
+// (role, lifecycle, boundary) vivent sous `x-fougere`, le slot d'extension
+// standard. Un `reconstruct()` côté TS rebâtit un schéma vivant depuis ça.
+
+frond_entity! {
+    Sensor as "sensor" {
+        id: String, optional, {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identité — le frond la génère, jamais le client.",
+            "x-fougere": {
+                "role": { "primary": true },
+                "lifecycle": { "create": { "generate": "uuid" } }
+            }
+        };
+        label: String, required, {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 40,
+            "description": "Nom lisible de la sonde."
+        };
+        celsius: f64, required, {
+            "type": "number",
+            "minimum": -80,
+            "maximum": 80,
+            "description": "Relevé, en degrés Celsius."
+        };
+        recorded_at: String, optional, {
+            "type": "string",
+            "format": "date-time",
+            "description": "Horodatage — estampillé à la création, immuable ensuite.",
+            "x-fougere": {
+                "lifecycle": { "create": "now", "update": "forbidden" }
+            }
+        };
+        // Calculé par le frond. L'axe boundary le ferme en entrée : jamais accepté d'un client.
+        checksum: String, optional, {
+            "type": "string",
+            "description": "Empreinte calculée par le frond — lecture seule.",
+            "x-fougere": { "boundary": { "in": "closed" } }
+        }
+    }
 }
 
 impl Sensor {
@@ -51,56 +151,8 @@ fn checksum(label: &str, celsius: f64) -> String {
     format!("{hash:016x}")
 }
 
-// ─── La carte d'identité — les 4 axes en JSON ───────────────────────
-// `shape` EST du JSON Schema, au niveau supérieur. Les trois autres axes
-// (role, lifecycle, boundary) vivent sous `x-fougere`, le slot d'extension
-// standard. Un `reconstruct()` côté TS rebâtit un schéma vivant depuis ça.
-
-fn sensor_card() -> Value {
-    json!({
-        "title": "sensor",
-        "type": "object",
-        "properties": {
-            "id": {
-                "type": "string",
-                "format": "uuid",
-                "description": "Identité — le frond la génère, jamais le client.",
-                "x-fougere": {
-                    "role": { "primary": true },
-                    "lifecycle": { "create": { "generate": "uuid" } }
-                }
-            },
-            "label": {
-                "type": "string",
-                "minLength": 2,
-                "maxLength": 40,
-                "description": "Nom lisible de la sonde."
-            },
-            "celsius": {
-                "type": "number",
-                "minimum": -80,
-                "maximum": 80,
-                "description": "Relevé, en degrés Celsius."
-            },
-            "recordedAt": {
-                "type": "string",
-                "format": "date-time",
-                "description": "Horodatage — estampillé à la création, immuable ensuite.",
-                "x-fougere": {
-                    "lifecycle": { "create": "now", "update": "forbidden" }
-                }
-            },
-            "checksum": {
-                "type": "string",
-                "description": "Empreinte calculée par le frond — lecture seule.",
-                "x-fougere": { "boundary": { "in": "closed" } }
-            }
-        },
-        "required": ["label", "celsius"],
-        "x-fougere-version": 1,
-        "x-fougere-vendor": "fougere"
-    })
-}
+// ─── La carte d'identité ────────────────────────────────────────────
+// `sensor_card()` est dérivée de la déclaration plus haut, pas écrite ici.
 
 fn identity_card(state: &AppState) -> Value {
     json!({
