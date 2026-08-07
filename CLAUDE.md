@@ -86,6 +86,7 @@ demos/
 - `graphql` deduplicated across the workspace (override + hoist)
 - `better-sqlite3` bindings may need `npx prebuild-install` in its pnpm dir
 - Commits: title + 1-3 lines. Never `git add -A` (parallel sessions)
+- **Everything committed to this repository is in English** — commit messages, PR bodies, code comments, doc comments, test names, `README.md`, `CLAUDE.md`. The repository is public and its readers are not assumed to read French. The one exception is `site/content/fr/`, which is a translation target and French by design; `site/content/en/` is its pair, and the two move together. Private design notes live outside this repo and are not covered by this rule.
 
 ## Known issues
 
