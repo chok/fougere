@@ -59,7 +59,7 @@ describe('Repository(Entity)', () => {
 
 describe('the declared one wins, the default is always there', () => {
   it('resolves a repository nobody wrote — it is the port itself', async () => {
-    const app = await createApp({ root, createContainer, ormFactory });
+    await using app = await createApp({ root, createContainer, ormFactory });
     const out = await createLocalRunner(app)({ entity: 'node', op: 'all' }, EMPTY_INVOCATION);
 
     // NodeHandler asked for `NodeRepository`, no such file exists, and the call answered.
@@ -67,7 +67,7 @@ describe('the declared one wins, the default is always there', () => {
   });
 
   it('uses the written one when there is one', async () => {
-    const app = await createApp({ root, createContainer, ormFactory });
+    await using app = await createApp({ root, createContainer, ormFactory });
     const out = await createLocalRunner(app)({ entity: 'reading', op: 'loud' }, EMPTY_INVOCATION);
 
     // `loud()` exists on no ORM — answering it proves the declared class was injected.
@@ -75,7 +75,7 @@ describe('the declared one wins, the default is always there', () => {
   });
 
   it('is not a door — a repository method is unreachable from the wire', async () => {
-    const app = await createApp({ root, createContainer, ormFactory });
+    await using app = await createApp({ root, createContainer, ormFactory });
 
     await expect(
       createLocalRunner(app)({ entity: 'reading', op: 'orm' }, EMPTY_INVOCATION),

@@ -294,6 +294,13 @@ export interface App {
   ormFor(entity: string): unknown | undefined;
   /** Dispose the root container. */
   dispose(): Promise<void>;
+  /**
+   * The same disposal, spelled so the language does it: `await using app = await
+   * createApp(…)`. Twelve of the twenty-six mounts in this repo's own tests never
+   * called `dispose()` — a scope that closes itself is the only version of that
+   * rule nobody forgets.
+   */
+  [Symbol.asyncDispose](): Promise<void>;
   /** Register a global app middleware (runs on every operation). */
   use(middleware: AppMiddleware): void;
   /** Register an app middleware scoped to a specific entity. */

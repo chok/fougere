@@ -16,7 +16,7 @@ const root = join(import.meta.dirname, 'fixtures-no-entity');
 
 describe('a handler with no entity', () => {
   it('is served, and answers', async () => {
-    const app = await createApp({ root, createContainer });
+    await using app = await createApp({ root, createContainer });
 
     const out = await createLocalRunner(app)({ entity: 'health', op: 'check' }, EMPTY_INVOCATION);
 
@@ -24,7 +24,7 @@ describe('a handler with no entity', () => {
   });
 
   it('lets its result through untouched — there is no shape to project onto', async () => {
-    const app = await createApp({ root, createContainer });
+    await using app = await createApp({ root, createContainer });
     const facade = app.container.resolve<Record<string, Function>>('healthHandler');
 
     // Not `{}`: an absent field set means nothing to encode, not everything to drop.

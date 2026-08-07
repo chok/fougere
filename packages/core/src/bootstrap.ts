@@ -599,6 +599,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     facadeFor,
     ormFor,
     dispose: () => container.dispose(),
+    [Symbol.asyncDispose]: () => container.dispose(),
     use(...args: [AppMiddleware] | [string, AppMiddleware]): void {
       if (typeof args[0] === 'string') {
         const [entity, mw] = args as [string, AppMiddleware];

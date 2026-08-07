@@ -37,7 +37,8 @@ const app = () => createApp({ root, createContainer, ormFactory });
 
 describe('a computed field sees the reader', () => {
   it('answers differently for two readers, on the same rows', async () => {
-    const run = createLocalRunner(await app());
+    await using mounted = await app();
+    const run = createLocalRunner(mounted);
 
     const asOwner = await run(
       { entity: 'list', op: 'list' },
@@ -54,7 +55,8 @@ describe('a computed field sees the reader', () => {
   });
 
   it('answers for nobody when nobody is asking', async () => {
-    const run = createLocalRunner(await app());
+    await using mounted = await app();
+    const run = createLocalRunner(mounted);
     const out = await run({ entity: 'list', op: 'list' }, EMPTY_INVOCATION) as { canEdit: boolean }[];
 
     expect(out.map((l) => l.canEdit)).toEqual([false, false]);
@@ -63,7 +65,8 @@ describe('a computed field sees the reader', () => {
 
 describe('a computed field runs once for the page', () => {
   it('is called once, whatever the number of rows', async () => {
-    const run = createLocalRunner(await app());
+    await using mounted = await app();
+    const run = createLocalRunner(mounted);
     await run(
       { entity: 'list', op: 'list' },
       { ...EMPTY_INVOCATION, state: { user: { id: 'u1', name: 'Moi' } } },

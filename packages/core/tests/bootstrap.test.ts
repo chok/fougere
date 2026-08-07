@@ -31,51 +31,46 @@ function fakeOrm(overrides: Partial<EntityOrm> = {}): EntityOrm {
 
 describe('createApp', () => {
   it('registers builtins', async () => {
-    const app = await createApp({ root: fixturesRoot, createContainer });
+    await using app = await createApp({ root: fixturesRoot, createContainer });
     expect(app.container.has('Logger')).toBe(true);
     expect(app.container.has('Config')).toBe(true);
     expect(app.container.has('EventBus')).toBe(true);
   });
 
   it('discovers fronds', async () => {
-    const app = await createApp({ root: fixturesRoot, createContainer });
+    await using app = await createApp({ root: fixturesRoot, createContainer });
     const names = app.fronds.map((f) => f.name).sort();
     expect(names).toEqual(['catalog', 'inventory', 'orders']);
-    await app.dispose();
   });
 
   it('registers frond scopes accessible from root', async () => {
-    const app = await createApp({ root: fixturesRoot, createContainer });
+    await using app = await createApp({ root: fixturesRoot, createContainer });
     const ordersScope = app.resolve<Container>('frond:orders');
     expect(ordersScope).toBeDefined();
     expect(ordersScope.has('OrderService')).toBe(true);
     expect(ordersScope.has('OrderRepository')).toBe(true);
-    await app.dispose();
   });
 
   it('resolves providers from frond scope with builtins', async () => {
-    const app = await createApp({ root: fixturesRoot, createContainer });
+    await using app = await createApp({ root: fixturesRoot, createContainer });
     const ordersScope = app.resolve<Container>('frond:orders');
     const service = ordersScope.resolve('OrderService');
     expect(service).toBeDefined();
-    await app.dispose();
   });
 
   it('works with no fronds directory', async () => {
-    const app = await createApp({
+    await using app = await createApp({
       root: '/tmp/nonexistent-fougere-test',
       createContainer,
     });
     expect(app.fronds).toEqual([]);
     expect(app.container.has('Logger')).toBe(true);
-    await app.dispose();
   });
 
   it('resolve shortcut delegates to container', async () => {
-    const app = await createApp({ root: fixturesRoot, createContainer });
+    await using app = await createApp({ root: fixturesRoot, createContainer });
     const logger = app.resolve('Logger');
     expect(logger).toBeDefined();
-    await app.dispose();
   });
 });
 
@@ -89,7 +84,7 @@ describe('createApp on a flat project', () => {
 
   it('hosts the root frond and answers an operation', async () => {
     const orm = fakeOrm({ list: vi.fn(async () => [{ id: '1', name: 'Fern', price: 12.5 }]) });
-    const app = await createApp({ root: flatRoot, createContainer, ormFactory: () => orm });
+    await using app = await createApp({ root: flatRoot, createContainer, ormFactory: () => orm });
 
     expect(app.fronds.map((f) => f.name)).toEqual(['shop']);
     const scope = app.resolve<Container>('frond:shop');
@@ -98,8 +93,6 @@ describe('createApp on a flat project', () => {
     const run = createLocalRunner(app);
     const rows = await run({ entity: 'product', op: 'list' }, EMPTY_INVOCATION);
     expect(rows).toEqual([{ id: '1', name: 'Fern', price: 12.5 }]);
-
-    await app.dispose();
   });
 });
 
@@ -108,7 +101,7 @@ describe('createApp + ormFactory', () => {
     const orm = fakeOrm();
     const ormFactory: OrmFactory = vi.fn(() => orm);
 
-    const app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
+    await using app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
     const catalogScope = app.resolve<Container>('frond:catalog');
 
     // Both entities get an orm
@@ -119,31 +112,25 @@ describe('createApp + ormFactory', () => {
     const brandOrm = catalogScope.resolve<EntityOrm>('BrandOrm');
     await brandOrm.list();
     expect(orm.list).toHaveBeenCalled();
-
-    await app.dispose();
   });
 
   it('calls ormFactory for every entity', async () => {
     const orm = fakeOrm();
     const ormFactory: OrmFactory = vi.fn(() => orm);
 
-    const app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
+    await using app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
 
     // Should have been called for Brand, Item, and Product
     expect(ormFactory).toHaveBeenCalledTimes(3);
     const names = (ormFactory as any).mock.calls.map((c: any) => c[1]).sort();
     expect(names).toEqual(['brand', 'item', 'product']);
-
-    await app.dispose();
   });
 
   it('skips orm registration when no ormFactory provided', async () => {
-    const app = await createApp({ root: fixturesRoot, createContainer });
+    await using app = await createApp({ root: fixturesRoot, createContainer });
     const catalogScope = app.resolve<Container>('frond:catalog');
 
     expect(catalogScope.has('BrandOrm')).toBe(false);
-
-    await app.dispose();
   });
 });
 
@@ -152,20 +139,18 @@ describe('handler facades', () => {
     const orm = fakeOrm();
     const ormFactory: OrmFactory = vi.fn(() => orm);
 
-    const app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
+    await using app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
 
     expect(app.container.has('productHandler')).toBe(true);
     // Brand is an entity with no handler — a shape, not a surface.
     expect(app.container.has('brandHandler')).toBe(false);
-
-    await app.dispose();
   });
 
   it('handler facade respects operations whitelist', async () => {
     const orm = fakeOrm();
     const ormFactory: OrmFactory = vi.fn(() => orm);
 
-    const app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
+    await using app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
 
     // ProductHandler has static operations = ['list', 'findById']
     const productHandler = app.resolve<Record<string, Function>>('productHandler');
@@ -174,15 +159,13 @@ describe('handler facades', () => {
     expect(productHandler.create).toBeUndefined();
     expect(productHandler.update).toBeUndefined();
     expect(productHandler.delete).toBeUndefined();
-
-    await app.dispose();
   });
 
   it('an entity with no handler declares no operation, so it exposes none', async () => {
     const orm = fakeOrm();
     const ormFactory: OrmFactory = vi.fn(() => orm);
 
-    const app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
+    await using app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
 
     // Brand is scanned, gets its ORM, and answers nothing: exposing it would be
     // the framework deciding, for the author, that its rows are public.
@@ -190,8 +173,6 @@ describe('handler facades', () => {
     expect(app.container.has('brandHandler')).toBe(false);
     expect(() => app.resolve('brandHandler')).toThrow();
     expect(orm.list).not.toHaveBeenCalled();
-
-    await app.dispose();
   });
 
   it('handler facade delegates to the orm', async () => {
@@ -201,29 +182,25 @@ describe('handler facades', () => {
     });
     const ormFactory: OrmFactory = vi.fn(() => orm);
 
-    const app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
+    await using app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
     // ItemHandler extends Crud(Item) — it declares the five by inheriting them.
     const itemHandler = app.resolve<Record<string, Function>>('itemHandler');
 
     const result = await itemHandler.list({ params: {}, query: {}, body: undefined, state: {} });
     expect(result).toEqual([{ id: '1' }]);
     expect(orm.list).toHaveBeenCalled();
-
-    await app.dispose();
   });
 
   it('handler facade delegates to custom service when it exists', async () => {
     const orm = fakeOrm({ list: vi.fn(async () => [{ id: 'from-orm' }]) });
     const ormFactory: OrmFactory = vi.fn(() => orm);
 
-    const app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
+    await using app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
 
     // Product has a custom ProductService → handler is instantiated with service as delegate
     const productHandler = app.resolve<Record<string, Function>>('productHandler');
     expect(productHandler.list).toBeDefined();
     expect(productHandler.findById).toBeDefined();
-
-    await app.dispose();
   });
 });
 

@@ -25,13 +25,16 @@ const root = join(import.meta.dirname, 'fixtures-cross-frond');
  * transport is the other app's own runner, called in memory.
  */
 async function stockOnAnotherProcess(): Promise<Transport> {
+  // Plain `const`, not `await using`: this app must OUTLIVE the function that builds
+  // it — the transport returned below still calls into it. A scope-bound disposal here
+  // closes the host before the first call, which is exactly what this test then reports.
   const host = await createApp({ root, createContainer, fronds: ['stock'] });
   return createLocalRunner(host);
 }
 
 describe('frond → frond, through the façade', () => {
   it('answers when both fronds live in one process', async () => {
-    const app = await createApp({ root, createContainer });
+    await using app = await createApp({ root, createContainer });
 
     const out = await createLocalRunner(app)({ entity: 'commande', op: 'servable' }, EMPTY_INVOCATION);
 
@@ -40,7 +43,7 @@ describe('frond → frond, through the façade', () => {
 
   it('answers the same when the stock frond moved out', async () => {
     const remote = await stockOnAnotherProcess();
-    const app = await createApp({
+    await using app = await createApp({
       root,
       createContainer,
       fronds: ['commande'],
