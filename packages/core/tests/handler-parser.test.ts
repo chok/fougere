@@ -60,7 +60,7 @@ describe('a handler inheriting from a mixin', () => {
     try {
       // Heritage resolution is gated on a project root — without one the parser
       // reads the class alone and inherits nothing (workspace-only, by design).
-      return (await parseAllHandlerMethods(handler, dir)).map((m) => m.name).sort();
+      return (await parseAllHandlerMethods(handler, dir)).methods.map((m) => m.name).sort();
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

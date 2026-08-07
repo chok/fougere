@@ -26,7 +26,9 @@ import { join } from 'node:path';
  * 3 — parsed array types carry `arrayDepth`, used to distinguish a presenter page
  *     returning scalar fields from one returning list fields.
  */
-const PARSER_VERSION = 3;
+// 4 — the parse became a pair (methods + unresolvedHeritage); a v3 entry
+// would answer with an array and lose the half that reports what it could not open.
+const PARSER_VERSION = 4;
 
 interface CacheEntry {
   hash: string;

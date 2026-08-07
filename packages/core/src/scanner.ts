@@ -287,7 +287,29 @@ async function inferOperations(filePath: string, moduleExports: Record<string, u
     return map;
   }
 
-  for (const method of parsed) {
+  /**
+   * A base class the parse could not open — an installed package, typically, whose
+   * source is not in the workspace. Its operations are missing from this façade, and
+   * the scan cannot tell whether there were any.
+   *
+   * A warning, not a refusal: an installed base class with no operation is perfectly
+   * ordinary, and the boot has no way to decide between the two. So it names the
+   * clause and stops there. Stating the contract in `frond.config.ts` is the answer
+   * — the third producer, which creates an op neither other producer found — and it
+   * silences this by making the op exist.
+   */
+  for (const base of parsed.unresolvedHeritage) {
+    record({
+      severity: 'warning',
+      code: 'heritage-unresolved',
+      filePath,
+      message: `Could not resolve 'extends ${base}' in '${filePath}' — any operation it `
+        + `declares is absent from this façade, and the scan cannot tell that from a base `
+        + `class with none. State the contract in frond.config.ts to put it back.`,
+    });
+  }
+
+  for (const method of parsed.methods) {
     // The contract is what carries the description; `signature` is the raw material it
     // was read from. Leaving it only on the signature meant every consumer had to know
     // to look one level down, and only the façade did.

@@ -20,6 +20,7 @@ import { scanProject } from '../src/scanner.js';
 
 const blind = join(import.meta.dirname, 'fixtures-scan-blind');
 const seeing = join(import.meta.dirname, 'fixtures-same-verdict');
+const blindHeritage = join(import.meta.dirname, 'fixtures-heritage-blind');
 
 describe('le scan dit ce qu\'il n\'a pas pu faire', () => {
   it('un dossier de convention illisible est rapporté, pas confondu avec un dossier vide', async () => {
@@ -46,6 +47,25 @@ describe('le scan dit ce qu\'il n\'a pas pu faire', () => {
 
     expect(fronds[0].presenters).toEqual([]);
     expect(diagnostics).toEqual([]);
+  });
+
+  it('un héritage non résolu est nommé, et n\'arrête pas le boot', async () => {
+    const { fronds, diagnostics } = await scanProject(blindHeritage);
+
+    // `BaseReporting` est exportée par son NOM, pas en `default` : la passe
+    // d'héritage cherche la classe par défaut du fichier, n'en trouve pas, et
+    // abandonnait sans un mot. `weekly` manque donc à la façade.
+    const ops = [...fronds[0].handlers[0].operations.keys()];
+    expect(ops).toContain('ping');
+    expect(ops).not.toContain('weekly');
+
+    const found = diagnostics.find((d) => d.code === 'heritage-unresolved');
+    expect(found, 'aucun diagnostic pour un extends non résolu').toBeDefined();
+    // Un avertissement, pas un blocage : une classe de base installée SANS opération
+    // est parfaitement ordinaire, et le boot ne peut pas trancher entre les deux.
+    expect(found!.severity).toBe('warning');
+    expect(found!.message).toContain('BaseReporting');
+    expect(found!.message).toContain('frond.config.ts');
   });
 
   it('une exécution ne conserve pas les constats de la précédente', async () => {

@@ -448,6 +448,13 @@ function parseInheritedMethods(
   filePath: string,
   projectRoot: string,
   skip: Set<string>,
+  /**
+   * Base classes this pass could not open — an INSTALLED one, typically, whose
+   * source is not in the workspace. Reported rather than treated as "no inherited
+   * method": the two used to be the same answer, so an op inherited from a
+   * published base class was absent from the façade without a word.
+   */
+  unresolved: string[],
 ): ParsedMethod[] {
   const ts = getTS();
   if (!cls.heritageClauses) return [];
@@ -467,13 +474,13 @@ function parseInheritedMethods(
           .map((a) => a.text);
 
         const mixinFile = resolveIdentifierSource(source, mixinName, filePath, projectRoot);
-        if (!mixinFile) continue;
+        if (!mixinFile) { unresolved.push(`${mixinName}(…)`); continue; }
 
         const mixinContent = readFileSync(mixinFile, 'utf-8');
         const mixinSource = ts.createSourceFile(mixinFile, mixinContent, ts.ScriptTarget.Latest, true);
 
         const innerClass = findClassInFunction(mixinSource, mixinName);
-        if (!innerClass) continue;
+        if (!innerClass) { unresolved.push(`${mixinName}(…)`); continue; }
 
         const parentMethods = extractClassMethods(innerClass, mixinSource, skip);
 
@@ -496,12 +503,12 @@ function parseInheritedMethods(
       if (ts.isIdentifier(expr)) {
         const parentName = expr.text;
         const parentFile = resolveIdentifierSource(source, parentName, filePath, projectRoot);
-        if (!parentFile) continue;
+        if (!parentFile) { unresolved.push(parentName); continue; }
 
         const parentContent = readFileSync(parentFile, 'utf-8');
         const parentSource = ts.createSourceFile(parentFile, parentContent, ts.ScriptTarget.Latest, true);
         const parentClass = findDefaultClass(parentSource);
-        if (!parentClass) continue;
+        if (!parentClass) { unresolved.push(parentName); continue; }
 
         return extractClassMethods(parentClass, parentSource, skip);
       }
@@ -546,7 +553,21 @@ function findDefaultClass(source: ts.SourceFile): ts.ClassDeclaration | undefine
  * Used by the binding algorithm — every operation gets a BindingPlan.
  * When projectRoot is provided, follows heritage clauses to parse parent methods.
  */
-export async function parseAllHandlerMethods(filePath: string, projectRoot?: string): Promise<ParsedMethod[]> {
+/**
+ * What a handler file yielded — its methods, AND what the pass could not open.
+ *
+ * The second half is why this is a pair rather than an array: an unresolvable base
+ * class used to give the same answer as a base class with no method, so an op
+ * inherited from an installed package was missing from the façade in silence. The
+ * pair travels through the scan cache, which is why {@link PARSER_VERSION} moved.
+ */
+export interface HandlerParse {
+  methods: ParsedMethod[];
+  /** Base classes whose source this pass could not open. Empty is a claim. */
+  unresolvedHeritage: string[];
+}
+
+export async function parseAllHandlerMethods(filePath: string, projectRoot?: string): Promise<HandlerParse> {
   await loadTS();
   return parseClassMethods(filePath, CONSTRUCTOR_ONLY, projectRoot);
 }
@@ -558,7 +579,9 @@ export async function parseAllHandlerMethods(filePath: string, projectRoot?: str
  */
 export async function parsePresenterMethods(filePath: string): Promise<ParsedMethod[]> {
   await loadTS();
-  return parseClassMethods(filePath, CONSTRUCTOR_ONLY);
+  // No `projectRoot`, so no heritage pass and nothing to report: a presenter's
+  // computed fields are its own methods.
+  return parseClassMethods(filePath, CONSTRUCTOR_ONLY).methods;
 }
 
 /**
@@ -586,12 +609,13 @@ export async function parseConstructorParams(filePath: string): Promise<ParsedPa
 
 const CONSTRUCTOR_ONLY = new Set(['constructor']);
 
-function parseClassMethods(filePath: string, skip: Set<string>, projectRoot?: string): ParsedMethod[] {
+function parseClassMethods(filePath: string, skip: Set<string>, projectRoot?: string): HandlerParse {
   const ts = getTS();
+  const unresolved: string[] = [];
   const content = readFileSync(filePath, 'utf-8');
   const source = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true);
   const cls = findDefaultClass(source);
-  if (!cls) return [];
+  if (!cls) return { methods: [], unresolvedHeritage: unresolved };
 
   // Parse child class methods
   const childMethods = extractClassMethods(cls, source, skip);
@@ -599,13 +623,13 @@ function parseClassMethods(filePath: string, skip: Set<string>, projectRoot?: st
 
   // Parse inherited methods (if projectRoot is provided for resolution)
   if (projectRoot) {
-    const inherited = parseInheritedMethods(cls, source, filePath, projectRoot, skip);
+    const inherited = parseInheritedMethods(cls, source, filePath, projectRoot, skip, unresolved);
     // Merge: child methods win over inherited
     const parentOnly = inherited
       .filter((m) => !childNames.has(m.name))
       .map((m) => ({ ...m, inherited: true }));
-    return [...childMethods, ...parentOnly];
+    return { methods: [...childMethods, ...parentOnly], unresolvedHeritage: unresolved };
   }
 
-  return childMethods;
+  return { methods: childMethods, unresolvedHeritage: unresolved };
 }
