@@ -138,9 +138,9 @@ export default class ProjectWriter {
     // Read off the monorepo rather than listed here: a hand-kept map knew the seven
     // packages the default templates use, so the first step beyond the default — a
     // GraphQL surface, auth — added a dependency it had never heard of, which stayed
-    // on `latest` and broke the install. `@fougere/nuxt` lives in `fougere-nuxt/` and
-    // `@fougere/transport-http` one level down, which is exactly why the name is read
-    // from each package.json instead of guessed from its directory.
+    // on `latest` and broke the install. `@fougere/nuxt` lives in `app/nuxt/` and
+    // `@fougere/transport-http` in `transport/http/`, which is exactly why the name is
+    // read from each package.json instead of guessed from its directory.
     const dirOf = new Map<string, string>();
     const scan = (dir: string, depth = 0): void => {
       for (const e of readdirSync(dir, { withFileTypes: true })) {

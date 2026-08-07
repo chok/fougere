@@ -43,7 +43,7 @@ packages/
   container-fougere/   Implementation — type-based DI, AST scan
   core/                Scanner, bootstrap, call contract, doublures, Crud, binding
   transport/http/      JSON-RPC 2.0 wire (serve + client subpath)
-  fougere-nuxt/        Client primitives + server surface
+  app/nuxt/            `@fougere/nuxt` — client primitives + server surface
   http/                HttpRouter, middleware
   auth-better/         better-auth translation layer
   cli/ cli-ui/  decorators/

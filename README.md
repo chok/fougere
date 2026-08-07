@@ -279,7 +279,7 @@ Known limits, stated plainly, because you'd find them anyway:
 | [`packages/schema-sql`](./packages/schema-sql) · [`-graphql`](./packages/schema-graphql) · [`-rest`](./packages/schema-rest) | the projections — Kysely tables, Pothos types, REST routes |
 | [`packages/core`](./packages/core) | the scanner, the call contract, `Crud`, bootstrap |
 | [`packages/transport`](./packages/transport) | the JSON-RPC 2.0 wire — it moves the call, never reshapes it |
-| [`packages/fougere-nuxt`](./packages/fougere-nuxt) | the client primitives and the server surface |
+| [`packages/app/nuxt`](./packages/app/nuxt) | the client primitives and the server surface |
 | [`packages/auth-better`](./packages/auth-better) · [`container`](./packages/container) · [`cli`](./packages/cli) | auth translation, DI, the scaffolder |
 | [`site/`](./site) | the site of Fougere, built with Fougere |
 | [`demos/`](./demos) | `nuxt-blog` is the flagship; the others isolate one idea each |
