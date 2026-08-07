@@ -107,8 +107,22 @@ describe('sender ↔ receiver over real HTTP', () => {
     expect(body.error.code).toBe(PARSE_ERROR);
   });
 
-  it('refuses any bind that is not loopback', async () => {
-    await expect(serve(runner, { host: '0.0.0.0' })).rejects.toThrow(/binds loopback only/);
+  it('binds loopback when nobody says otherwise', async () => {
+    await expect(serve(runner, { host: '0.0.0.0' })).rejects.toThrow(/add it to `hosts`/);
+  });
+
+  it('binds wider when `hosts` says so, and the message names what is allowed', async () => {
+    // Stating the address IS taking the decision — that is the whole guard now.
+    const open = await serve(runner, { hosts: ['0.0.0.0'] });
+    try {
+      expect(open.port).toBeGreaterThan(0);
+    } finally {
+      await open.close();
+    }
+    // …and `host` still has to be one of them: a widened list is not a blank cheque.
+    await expect(serve(runner, { hosts: ['0.0.0.0'], host: '10.0.0.1' }))
+      .rejects.toThrow(/binds one of \[0\.0\.0\.0\], got '10\.0\.0\.1'/);
+    await expect(serve(runner, { hosts: [] })).rejects.toThrow(/`hosts` is empty/);
   });
 
   it('rejects a body larger than the configured limit', async () => {
