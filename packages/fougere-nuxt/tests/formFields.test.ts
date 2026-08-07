@@ -94,3 +94,27 @@ describe('declared defaults', () => {
     expect(by('title').required).toBe(true);
   });
 });
+
+describe('formFieldsOf — the bounds, under the names a browser enforces', () => {
+  const byName = Object.fromEntries(
+    formFieldsOf(Article as never, 'article').map((f) => [f.name, f]),
+  );
+
+  it('carries a string field bounds as minlength/maxlength', () => {
+    expect(byName.title.attrs).toEqual({ minlength: 1, maxlength: 200 });
+  });
+
+  it('carries a number field bound as min, and omits the one not stated', () => {
+    expect(byName.views.attrs).toEqual({ min: 0 });
+  });
+
+  it('states nothing when the shape states nothing', () => {
+    expect(byName.published.attrs).toBeUndefined();
+    expect(byName.subtitle.attrs).toBeUndefined();
+  });
+
+  it('leaves an enum to `options` — a select has no bound to enforce', () => {
+    expect(byName.status.attrs).toBeUndefined();
+    expect(byName.status.options).toEqual(['draft', 'live']);
+  });
+});

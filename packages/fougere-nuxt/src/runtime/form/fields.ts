@@ -14,7 +14,17 @@ export interface FormEntity {
 }
 
 interface FieldLike {
-  shape?: { type?: unknown; enum?: readonly unknown[]; format?: string; properties?: unknown };
+  shape?: {
+    type?: unknown;
+    enum?: readonly unknown[];
+    format?: string;
+    properties?: unknown;
+    minLength?: number;
+    maxLength?: number;
+    minimum?: number;
+    maximum?: number;
+    pattern?: string;
+  };
   lifecycle?: { create?: unknown };
   role?: { primary?: boolean; relation?: { kind: string } };
 }
@@ -46,6 +56,26 @@ export interface FormField {
   /** Enum values, when control is 'select'. */
   options?: string[];
   /**
+   * The bounds, named as the HTML input attributes that already mean them.
+   *
+   * The shape holds `minLength`/`maximum`/`pattern`; a browser holds `minlength`/
+   * `max`/`pattern` and enforces them with no JavaScript at all. Carrying them here
+   * is a projection, not a second rule: the judge reads the same shape, and a form
+   * that ignores these still gets the same verdict — it just gets it later, and a
+   * screen reader never gets it at all.
+   *
+   * `pattern` is the one that does not always travel: the shape's is a JavaScript
+   * regex and so is the attribute's, but a `format` (email, uri) has no attribute —
+   * `control` carries those, and the judge stays the authority.
+   */
+  attrs?: {
+    minlength?: number;
+    maxlength?: number;
+    min?: number;
+    max?: number;
+    pattern?: string;
+  };
+  /**
    * The value the field is born with — the literal its `lifecycle.create` rule names.
    * Present so the form can SHOW what is about to be written; the storage realizes it
    * either way, so a form that ignores this still produces the same row.
@@ -69,6 +99,20 @@ function controlOf(field: FieldLike): FormField['control'] {
   return 'text';
 }
 
+/** The shape's bounds, under the names a browser already enforces. */
+function attrsOf(field: FieldLike): FormField['attrs'] | undefined {
+  const s = field.shape ?? {};
+  const attrs = {
+    minlength: s.minLength,
+    maxlength: s.maxLength,
+    min: s.minimum,
+    max: s.maximum,
+    pattern: s.pattern,
+  };
+  const stated = Object.entries(attrs).filter(([, v]) => v !== undefined);
+  return stated.length ? Object.fromEntries(stated) : undefined;
+}
+
 /**
  * The fields a create form is made of: membership from the io projection
  * (`inputFields` — what a client may supply), requiredness from the
@@ -86,6 +130,7 @@ export function formFieldsOf(entity: FormEntity, entityKey: string): FormField[]
       ...(Array.isArray(f.shape?.enum)
         ? { options: f.shape.enum.filter((value): value is string => typeof value === 'string') }
         : {}),
+      ...(attrsOf(f) ? { attrs: attrsOf(f) } : {}),
       ...(defaultOf(f) !== undefined ? { default: defaultOf(f) } : {}),
     };
   });
