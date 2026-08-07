@@ -124,6 +124,16 @@ them, and none of it is yours to keep in sync:
 No codegen step, no `dist/generated`, no watcher to keep running. The declaration is
 the artefact.
 
+That holds because the declaration is a TypeScript file you `import`. Prisma writes
+`.prisma`, GraphQL writes `.graphql`, Ash writes Elixir — none of which a TypeScript
+consumer can import, so a translation step is not their weakness, it is the only way
+in. The one case where the same is true here is a frond whose code you do not have:
+another repo, another language. Then `fougere sync` fetches its card over
+`rpc.discover` and writes a file — an address is all it needs, never the source.
+And even that is optional: `reconstruct(card)` rebuilds a working judge in memory
+with nothing on disk (`demos/rust-frond/consumer.ts`). The file exists so the
+*compiler* has a type, not so the rule can travel.
+
 Held the usual way, that list is four files you write, then re-read every time the
 shape moves:
 
