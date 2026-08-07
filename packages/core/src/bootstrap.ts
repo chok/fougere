@@ -44,9 +44,22 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
   // Scan (with optional filter)
   const scanStart = performance.now();
-  const { fronds } = await scanProject(root, options.fronds);
+  const { fronds, diagnostics } = await scanProject(root, options.fronds);
   const scanMs = (performance.now() - scanStart).toFixed(0);
-  log.info(`scanned ${fronds.length} frond(s) in ${scanMs}ms`);
+  const blocking = diagnostics.filter((d) => d.severity === 'blocking');
+  log.info(`scanned ${fronds.length} frond(s) in ${scanMs}ms`
+    + (diagnostics.length ? ` — ${diagnostics.length} thing(s) the scan could not do` : ''));
+
+  /**
+   * Say what could not be read, at the one line everyone already watches.
+   *
+   * Not a refusal: an app whose `presenters/` is unreadable still serves its
+   * entities, and stopping the boot would trade a partial app for none. But it is
+   * an ERROR, not a debug line — the app now serves less than its source declares,
+   * and nothing downstream can tell that from a source that declares less.
+   */
+  for (const d of blocking) log.error(`[${d.code}] ${d.message}`, d.cause);
+  for (const d of diagnostics) if (d.severity === 'warning') log.warn(`[${d.code}] ${d.message}`);
 
   // Auth runtime — built once from the lazy AuthConfig produced by a provider factory
   // (e.g. betterAuth({...})) in fougere.config.ts. The provider receives our db +

@@ -1,8 +1,8 @@
 import { readdir, readFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, type Dirent } from 'node:fs';
 import { join, dirname, basename, resolve as resolvePath } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import type { FrondDescriptor, ProviderEntry, EntityEntry, HandlerEntry, PresenterEntry, CollectorEntry, SeedEntry, ScanResult } from './types.js';
+import type { FrondDescriptor, ProviderEntry, EntityEntry, HandlerEntry, PresenterEntry, CollectorEntry, SeedEntry, ScanResult, ScanDiagnostic } from './types.js';
 import { ANONYMOUS_SCHEMA_NAME, type SchemaLike } from '@fougere/schema';
 import type { OperationContract, OperationsMap } from './operation.js';
 import { parseAllHandlerMethods, parsePresenterMethods, parseConstructorParams, type ParsedType } from './handler-parser.js';
@@ -32,13 +32,49 @@ export function getModuleLoader(): ModuleLoader {
 
 // FS
 
+/**
+ * What this scan run could not do. Reset by {@link scanProject}, which owns a run.
+ *
+ * Module-scoped like the loader and the cache root above: the scanner already has
+ * a notion of "the current run", and threading a collector through twenty call
+ * sites would state the same thing more loudly and less clearly.
+ */
+let diagnostics: ScanDiagnostic[] = [];
+
+function record(d: ScanDiagnostic): void {
+  diagnostics.push(d);
+}
+
+/**
+ * An absent convention directory is the ordinary case — a frond without
+ * `presenters/` is not a defect. Anything else (permissions, an I/O error, a path
+ * that is not a directory) means the scan did not look, and answering `[]` says
+ * it did. One `catch` used to conflate the two.
+ */
+async function readEntries(path: string): Promise<Dirent[]> {
+  try {
+    return await readdir(path, { withFileTypes: true });
+  } catch (cause) {
+    if ((cause as NodeJS.ErrnoException)?.code === 'ENOENT') return [];
+    record({
+      severity: 'blocking',
+      code: 'directory-unreadable',
+      filePath: path,
+      message: `Could not read '${path}' — anything it declares is missing from this app, `
+        + `and nothing downstream can tell that from an empty directory.`,
+      cause,
+    });
+    return [];
+  }
+}
+
 async function dirs(path: string): Promise<string[]> {
-  const entries = await readdir(path, { withFileTypes: true }).catch(() => []);
+  const entries = await readEntries(path);
   return entries.filter((e) => e.isDirectory()).map((e) => e.name);
 }
 
 async function files(path: string): Promise<string[]> {
-  const entries = await readdir(path, { withFileTypes: true }).catch(() => []);
+  const entries = await readEntries(path);
   return entries
     .filter((e) => e.isFile() && (e.name.endsWith('.ts') || e.name.endsWith('.js')))
     .map((e) => join(path, e.name));
@@ -235,7 +271,19 @@ async function inferOperations(filePath: string, moduleExports: Record<string, u
       parsed = await parseAllHandlerMethods(filePath, projectRoot);
       setCached(cacheKey, hash, parsed);
     }
-  } catch {
+  } catch (cause) {
+    // The handler still gets a façade — its methods exist at runtime — but with no
+    // contract: no binding plan, no input schema, no doc sentence. It used to
+    // return the empty map, so the app served a stranger's idea of the handler and
+    // said nothing. The operations are gone; the sentence saying so is not.
+    record({
+      severity: 'blocking',
+      code: 'handler-parse-failed',
+      filePath,
+      message: `Could not parse '${filePath}' — its operations carry no contract, so the `
+        + `façade serves them unbound. This is not the same as a handler with no operation.`,
+      cause,
+    });
     return map;
   }
 
@@ -496,6 +544,9 @@ async function rootFrondOf(root: string, workspaceRoot: string): Promise<FrondDe
 
 export async function scanProject(root: string, filter?: string[]): Promise<ScanResult> {
   setCacheRoot(root);
+  // A run owns its findings: two scans in one process (a test suite, a watcher)
+  // must not inherit each other's.
+  diagnostics = [];
 
   const frondsDir = join(root, 'fronds');
   const dirNames = await dirs(frondsDir);
@@ -522,5 +573,5 @@ export async function scanProject(root: string, filter?: string[]): Promise<Scan
   const fronds = filter ? all.filter((f) => filter.includes(f.name)) : all;
 
   flushCache();
-  return { fronds };
+  return { fronds, diagnostics };
 }

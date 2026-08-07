@@ -1,0 +1,1 @@
+Not a directory. readdir() answers ENOTDIR here, which is the whole point.
