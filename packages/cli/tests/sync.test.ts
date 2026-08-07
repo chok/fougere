@@ -42,21 +42,16 @@ describe('remote frond sync', () => {
     try {
       await new SyncHandler().execute({ name: 'blog', from: 'https://example.test/' });
       const generated = readFileSync(join(root, '.fougere', 'remotes', 'blog', 'entities', 'Post.ts'), 'utf8');
-      expect(generated).toContain('const Post = reconstruct(');
-      expect(generated).not.toContain("const Post; await import");
+      // The host's `title` names NOTHING: the class takes the already-sanitized name.
+      // The string stays present INSIDE the card, as inert data.
+      expect(generated).toContain('export class Post extends reconstruct<');
+      expect(generated).not.toContain("class Post; await import");
 
-      // La carte porte de quoi typer, et jusqu'ici personne ne le lisait :
-      // `reconstruct` rend un générique, donc l'entité synchronisée validait
-      // parfaitement et n'apprenait rien au compilateur.
-      expect(generated).toContain('export interface Post {');
-      // Le nom est partagé entre l'interface et la const — comme une classe, pour
-      // qu'un seul import donne la valeur et le type.
-      expect(generated).toContain('export const Post = reconstruct(');
-      // Et le `title` de l'hôte ne nomme RIEN : l'interface prend le nom déjà
-      // assaini, sinon la charge de ce test entrerait par cette deuxième porte.
-      // (La chaîne reste présente DANS la carte, en donnée inerte — c'est ce que
-      // la sonde d'origine ci-dessus vérifie déjà.)
-      expect(generated).not.toContain("interface Post; await import");
+      // The card carries what it takes to type, and until now nobody read it: a synced
+      // entity validated perfectly and taught the compiler nothing. One declaration now
+      // carries the judge and the shape.
+      expect(generated).not.toContain('export interface Post');
+      expect(generated).toContain('export default Post;');
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
@@ -141,7 +136,7 @@ describe('remote frond sync', () => {
       const out = await new SyncHandler().execute({ name: 'blog', from: 'https://example.test' });
       expect(out.entities).toEqual(['Post']);
       expect(readFileSync(join(root, '.fougere', 'remotes', 'blog', 'entities', 'Post.ts'), 'utf8'))
-        .toContain('const Post = reconstruct(');
+        .toContain('class Post extends reconstruct<');
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

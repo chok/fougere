@@ -86,7 +86,7 @@ export { inputFields, outputFields } from './projections/io.js';
 // descriptor (the card): the portable, serialisable identity of a schema
 export { describe, describeSet, sourceNameOf } from './projections/describe.js';
 export { reconstruct, reconstructSet } from './projections/reconstruct.js';
-export { typeSourceOf, facadeTypeSourceOf, type TypeSourceOptions, type OpDescriptor } from './projections/typescript.js';
+export { shapeTypeOf, entitySourceOf, facadeTypeSourceOf, type TypeSourceOptions, type OpDescriptor } from './projections/typescript.js';
 export {
   type SchemaBundle,
   type SchemaDescriptor,

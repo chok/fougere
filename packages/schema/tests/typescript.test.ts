@@ -1,14 +1,14 @@
 /**
- * La carte porte de quoi typer, et personne ne le lisait.
+ * The card carries what it takes to type, and nobody read it.
  *
- * `reconstruct` rend un `SchemaConstructor<Fields>` — un générique. Une entité
- * synchronisée depuis un hôte distant valide donc parfaitement à l'exécution et
- * n'apprend rien au compilateur. Ce test dit ce que la troisième lecture produit.
+ * An entity synced from a remote host validated perfectly at runtime and taught the
+ * compiler nothing. This test states what the third reading produces: ONE class, the
+ * one you would have written by hand.
  */
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text, number, bool, date, oneOf, list, optional, nullable, ref, many } from '../src/index.js';
 import { describe as describeSchema } from '../src/index.js';
-import { typeSourceOf, facadeTypeSourceOf } from '../src/projections/typescript.js';
+import { shapeTypeOf, entitySourceOf, facadeTypeSourceOf } from '../src/projections/typescript.js';
 
 class Author extends entity({ id: primary(), name: text() }) {}
 
@@ -25,74 +25,94 @@ class Post extends entity({
   comments: many(Author),
 }) {}
 
-const source = typeSourceOf(describeSchema(Post, 'post'));
+const source = shapeTypeOf(describeSchema(Post, 'post'));
 
-describe('carte → type TypeScript', () => {
-  it('rend chaque champ dans la forme que le consommateur reçoit', () => {
+describe('card → TypeScript type', () => {
+  it('renders every field in the form the consumer receives', () => {
     expect(source).toBe([
-      'export interface Post {',
+      '{',
       '  id: string;',
       '  title: string;',
       '  views: number;',
       '  draft: boolean;',
-      // Un jeu de valeurs borné EST un type : l'énumération voyage, l'union aussi.
+      // A bounded value set IS a type: the enum travels, so the union does too.
       "  status: \"draft\" | \"published\";",
-      // `date-time` est la forme du fil ; le boundary la décode, donc le type dit Date.
+      // `date-time` is the wire form; the boundary decodes it, so the type says Date.
       '  publishedAt: Date | null;',
       '  editedAt: Date | null;',
       '  tags: string[];',
       '  authorId: string;',
-      // Une relation `many` n'a pas d'items — ce sont les ids de l'autre côté.
+      // A `many` relation has no items — those are the ids on the other side.
       '  comments: string[];',
       '}',
     ].join('\n'));
   });
 
-  it('type la LECTURE, pas la création', () => {
-    // `required` sur une carte répond « ce qu'un appelant doit fournir à la création ».
-    // `id` en est absent (il est généré) et il est pourtant toujours là sur une ligne.
-    // Typer la lecture depuis la règle de création rendrait `post.id` peut-être absent.
+  it('types the READ, not the creation', () => {
+    // `required` on a card answers "what must a caller supply at creation". `id` is
+    // absent from it (it is generated) and is always there on a row. Typing the read
+    // shape from the create rule would make `post.id` possibly-undefined.
     const card = describeSchema(Post, 'post');
     expect(card.required).not.toContain('id');
     expect(source).toContain('  id: string;');
   });
 
-  it('nomme l\'interface d\'après la carte, ou d\'après ce qu\'on lui dit', () => {
-    expect(typeSourceOf(describeSchema(Author, 'author'))).toContain('interface Author {');
-    expect(typeSourceOf(describeSchema(Author, 'author'), { name: 'AuthorCard' })).toContain('interface AuthorCard {');
-    expect(typeSourceOf(describeSchema(Author, 'author'), { exported: false })).toMatch(/^interface /);
+  it('renders ONE class: the judge and the shape under a single name', () => {
+    const entitySource = entitySourceOf(describeSchema(Author, 'author'));
+
+    // No interface beside a const: `class` is the language's own answer to
+    // "a name that is both a value and a type".
+    expect(entitySource).toMatch(/^export class Author extends reconstruct<\{/);
+    expect(entitySource).toContain('  name: string;');
+    // The card travels inline — the rebuilt judge is exact, and the shape above it
+    // is read off that same card.
+    expect(entitySource).toContain('"x-fougere-vendor": "fougere"');
+    expect(entitySource.trimEnd()).toMatch(/\}\) \{\}$/);
+  });
+
+  it('names the class after the card, or after what it is told', () => {
+    expect(entitySourceOf(describeSchema(Author, 'author'), { name: 'AuthorCard' })).toContain('class AuthorCard ');
+    expect(entitySourceOf(describeSchema(Author, 'author'), { exported: false })).toMatch(/^class /);
+  });
+
+  it('refuses a name that is not an identifier', () => {
+    // Everything else emits DATA — a string lands inside `JSON.stringify`. A name lands
+    // in a declaration: it is the one value that could stop being data, and it sometimes
+    // comes from a stranger.
+    expect(() => entitySourceOf({ ...describeSchema(Author, 'author'), title: "Author; await import('node:fs')" }))
+      .toThrow(/not a TypeScript identifier/);
   });
 });
 
-describe('carte → type de façade', () => {
+describe('card → façade type', () => {
   const ops = [
-    { name: 'list', cardinality: 'page' as const, description: 'Tous les posts.' },
+    { name: 'list', cardinality: 'page' as const, description: 'Every post.' },
     { name: 'findById', cardinality: 'maybe' as const },
     { name: 'create', cardinality: 'one' as const },
     { name: 'delete', cardinality: 'none' as const },
     { name: 'search', cardinality: 'many' as const },
   ];
 
-  it('dit combien revient, pas seulement quelle forme', () => {
+  it('says how much comes back, not only what shape', () => {
     const source = facadeTypeSourceOf(ops, { name: 'PostFacade', rowType: 'Post' });
 
-    // Le piège que ce champ existe pour éviter : `list` ne rend PAS `Post[]`.
-    // `ListResult<T> extends Array<T>` — un tableau qui porte ses totaux.
+    // The trap this field exists to avoid: `list` does NOT return `Post[]`.
+    // `ListResult<T> extends Array<T>` — an array carrying its own totals.
     expect(source).toContain('list(invocation?: Invocation): Promise<Post[] & { total?: number; endCursor?: string; hasMore?: boolean }>;');
     expect(source).toContain('findById(invocation?: Invocation): Promise<Post | undefined>;');
     expect(source).toContain('create(invocation?: Invocation): Promise<Post>;');
     expect(source).toContain('search(invocation?: Invocation): Promise<Post[]>;');
-    // `none` = aucune forme publiée. `unknown` le dit ; `void` interdirait de lire
-    // un booléen qui revient bel et bien.
+    // `none` = no published shape. `unknown` says so; `void` would forbid reading a
+    // boolean that does come back.
     expect(source).toContain('delete(invocation?: Invocation): Promise<unknown>;');
   });
 
-  it('porte la phrase de doc de l\'opération', () => {
-    expect(facadeTypeSourceOf(ops, { rowType: 'Post' })).toContain('/** Tous les posts. */');
+  it('carries the operation\'s own doc sentence', () => {
+    expect(facadeTypeSourceOf(ops, { rowType: 'Post' })).toContain('/** Every post. */');
   });
 
-  it('sans cardinalité, ne devine pas', () => {
-    // Une carte muette doit produire `unknown`, pas une supposition qui compile.
+  it('does not guess when the card gives no cardinality', () => {
+    // A silent card must produce `unknown`, not a guess that compiles.
     expect(facadeTypeSourceOf([{ name: 'weekly' }], { rowType: 'Post' }))
       .toContain('weekly(invocation?: Invocation): Promise<unknown>;');
   });

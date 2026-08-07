@@ -5,12 +5,14 @@ import type { FieldDescriptor, SchemaDescriptor } from './card.js';
  *
  * `describe` turns a schema into a card and `reconstruct` turns it back into a
  * living judge, so a consumer in another repository validates by the host's rules
- * without holding its code. What it does NOT get is a type: `reconstruct` returns
- * `SchemaConstructor<Fields>`, a generic, so `post.title` is unknown to TypeScript.
- * The declaration travelled and the compiler learned nothing from it.
+ * without holding its code. What it did NOT get is a type: left to infer, a rebuilt
+ * schema has an index signature for an instance type, so `post.title` was `any` and
+ * `post.titel` compiled. The declaration travelled and the compiler learned nothing.
  *
- * So the card gets a third reader. Same input as the other two, same rule — the
- * shape IS JSON Schema, and JSON Schema has a type form.
+ * So the card gets a third reader, and it writes the shape where `reconstruct` now
+ * accepts it — as the type argument of the class's own base expression, one
+ * declaration for the judge and the rows it judges. Same input as the other two
+ * readers, same rule: the shape IS JSON Schema, and JSON Schema has a type form.
  *
  * Deliberately NOT a JSON Schema→TS library: the input is not arbitrary JSON Schema,
  * it is a Fougère card, whose vocabulary is closed (`describe` writes it). A general
@@ -76,25 +78,60 @@ export interface TypeSourceOptions {
 }
 
 /**
- * Emit a TypeScript interface for what one card describes.
+ * The anonymous object type one card describes — the members, nothing around them.
  *
  * Every property is present: `required` on a Fougère card answers "what must a CALLER
  * supply at creation", not "what is always there when read" — an `id` the system
  * generates is absent from `required` and always present on a row. Typing the read
  * shape from the create rule would make `post.id` possibly-undefined for everyone.
  */
-export function typeSourceOf(descriptor: SchemaDescriptor, options: TypeSourceOptions = {}): string {
-  const name = options.name ?? capitalize(descriptor.title ?? 'Schema');
-  const exported = options.exported === false ? '' : 'export ';
-  const properties = descriptor.properties ?? {};
+export function shapeTypeOf(descriptor: SchemaDescriptor, indent = ''): string {
+  const entries = Object.entries(descriptor.properties ?? {});
+  if (entries.length === 0) return '{}';
 
-  const lines = Object.entries(properties).map(([key, field]) => {
-    const doc = field.description ? `  /** ${field.description} */\n` : '';
-    return `${doc}  ${propertyKey(key)}: ${typeOf(field)};`;
+  const lines = entries.map(([key, field]) => {
+    const doc = field.description ? `${indent}  /** ${field.description} */\n` : '';
+    return `${doc}${indent}  ${propertyKey(key)}: ${typeOf(field)};`;
   });
+  return `{\n${lines.join('\n')}\n${indent}}`;
+}
 
-  if (lines.length === 0) return `${exported}interface ${name} {}`;
-  return `${exported}interface ${name} {\n${lines.join('\n')}\n}`;
+/**
+ * Emit the entity a card describes — ONE class, judge and shape together.
+ *
+ * An entity is a class here (`class Post extends entity({…}) {}`), and a class is the
+ * language's own answer to "a name that is both a value and a type". Emitting an
+ * interface next to a const said the same thing twice and relied on declaration
+ * merging to look like a class; this IS one.
+ *
+ * The card travels inline, so the rebuilt judge is exact — the shape written above it
+ * is read off that same card, never a second source to keep in step.
+ *
+ * Requires `reconstruct` in scope: the caller writes the import, since only it knows
+ * whether the consumer says `@fougere/schema` or a path.
+ */
+export function entitySourceOf(descriptor: SchemaDescriptor, options: TypeSourceOptions = {}): string {
+  const name = identifierOf(options.name ?? capitalize(descriptor.title ?? 'Schema'));
+  const exported = options.exported === false ? '' : 'export ';
+  const card = JSON.stringify(descriptor, null, 2)
+    .split('\n')
+    .map((line, i) => (i === 0 ? line : `  ${line}`))
+    .join('\n');
+
+  return `${exported}class ${name} extends reconstruct<${shapeTypeOf(descriptor)}>(${card}) {}`;
+}
+
+/**
+ * A card names itself, and a card can come from a stranger. Everything else here emits
+ * data — a string lands inside `JSON.stringify` — but a name lands in a DECLARATION,
+ * so it is the one value that could stop being data. Refuse it here as well as at the
+ * caller: the projection should not depend on who calls it to be safe.
+ */
+function identifierOf(name: string): string {
+  if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name)) {
+    throw new Error(`'${name}' is not a TypeScript identifier — it cannot name a generated declaration`);
+  }
+  return name;
 }
 
 function capitalize(s: string): string {
