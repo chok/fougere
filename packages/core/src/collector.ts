@@ -31,3 +31,8 @@ export function Collector<E extends EntityClass>(entity: E) {
 export function getCollectorTarget(ctor: Function): EntityClass | undefined {
   return (ctor as any)[COLLECTOR_TARGET];
 }
+
+/** Container key of an entity's collector — 'user' → 'UserCollector'. */
+export function collectorKeyOf(entity: string): string {
+  return `${entity[0].toUpperCase()}${entity.slice(1)}Collector`;
+}

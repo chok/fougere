@@ -108,3 +108,16 @@ export interface EntityOrm<T = Record<string, unknown>> {
  * Called by bootstrap for every scanned entity.
  */
 export type OrmFactory = (entity: SchemaLike, name: string) => EntityOrm;
+
+/**
+ * Container key of an entity's storage — 'reading' → 'ReadingOrm'.
+ *
+ * The twin of {@link repositoryKeyOf} and of `facadeKeyOf`: the key of a thing
+ * lives with the thing. This one was spelled by hand in four places in
+ * `bootstrap.ts` and a fifth in `scanner.ts` — where the SCAN derives what a
+ * constructor asks for. Two readers of one convention, neither of them naming it,
+ * so a rename would have moved one and left the other resolving to nothing.
+ */
+export function ormKeyOf(entity: string): string {
+  return `${entity[0].toUpperCase()}${entity.slice(1)}Orm`;
+}

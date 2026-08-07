@@ -9,15 +9,18 @@ import { EventBus } from './builtins/event-bus.js';
 import { createRemoteRouter, createRemoteFacade } from './remote.js';
 import { facadeKeyOf } from './call.js';
 import { repositoryKeyOf } from './repository.js';
+// The keys, each read from where its concept is declared — never respelled here.
+import { ormKeyOf } from './orm.js';
+import { presenterKeyOf } from './presenter.js';
+import { collectorKeyOf } from './collector.js';
 
 import { computeBindingPlan, resolveArgs, type CollectorResolver } from './binding.js';
 import type { OperationContract } from './operation.js';
+import { resolveContracts } from './operation.js';
 import { EMPTY_INVOCATION, type InvocationContext } from './invocation.js';
 import { type SchemaLike, type Fields, validateFields } from '@fougere/schema';
 import { projectEgress, presentEgress, guardStorage, type PresenterArgs } from './egress.js';
 
-/** Container key of an entity's presenter — 'post' → 'PostPresenter'. */
-const presenterKeyOf = (entity: string) => `${entity[0].toUpperCase()}${entity.slice(1)}Presenter`;
 
 /**
  * The one wording for "nobody hosts this here", with both ways out. Said twice, and the
@@ -124,7 +127,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // When a handler declares Crud(Entity, Output), scope the ORM via .output(Output)
     if (options.ormFactory) {
       for (const entity of frond.entities) {
-        const ormName = `${entity.name[0].toUpperCase()}${entity.name.slice(1)}Orm`;
+        const ormName = ormKeyOf(entity.name);
         const baseOrm = options.ormFactory(entity.entityClass, entity.name);
 
         // Check if the default handler (no surface) declares an output override
@@ -166,7 +169,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // Register collectors in scope — PascalCase type name (e.g. 'UserCollector')
     const collectorEntityNames = new Set(frond.collectors.map((c) => c.entityName));
     for (const collector of frond.collectors) {
-      const key = `${collector.entityName[0].toUpperCase()}${collector.entityName.slice(1)}Collector`;
+      const key = collectorKeyOf(collector.entityName);
       scope.register(key, collector.ctor, { deps: collector.deps });
     }
     if (frond.collectors.length > 0) {
@@ -205,7 +208,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       // asking the address for a table. The two coincide in the ordinary case and that
       // is why it went unnoticed.
       const ormBase = entity?.name ?? handler.entityName;
-      const ormTypeName = `${ormBase[0].toUpperCase()}${ormBase.slice(1)}Orm`;
+      const ormTypeName = ormKeyOf(ormBase);
 
       const inheritsCrud = typeof handler.ctor.prototype?.list === 'function'
         && typeof handler.ctor.prototype?.findById === 'function';
@@ -247,51 +250,10 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       };
 
       /**
-       * The contracts this façade serves, by op name — the whole surface.
-       *
-       * Two producers, and the closest author of an op wins. A prefab handler
-       * DECLARES what it built (`Crud(E)` knows its five, at runtime, so no
-       * scan is needed to protect them). The scan DERIVES from source: a
-       * method written in this very file is the author's own word and beats
-       * everything; a method it merely READ on a base class is a guess about
-       * someone else's code, and yields to that code's own declaration.
-       *
-       * The binding is resolved here, so nothing downstream ever sees an AST.
+       * The contracts this façade serves — one function, shared with every other
+       * reader, so nobody re-derives the three producers and drifts.
        */
-      const declared = (handler.ctor as { __ops?: Record<string, OperationContract> }).__ops ?? {};
-      const contracts = new Map<string, OperationContract>(Object.entries(declared));
-      for (const [opName, scanned] of handler.operations) {
-        if (scanned.signature?.inherited && opName in declared) continue;
-        contracts.set(opName, {
-          ...scanned,
-          binding: scanned.binding
-            ?? (scanned.signature ? computeBindingPlan(scanned.signature.params, collectorEntityNames) : undefined),
-        });
-      }
-
-      /**
-       * The third producer: config STATES a contract the other two could only guess at.
-       * It wins — it is the most explicit statement, made by whoever assembles the app
-       * (CLI > frond config > fougere config > scan > conventions).
-       *
-       * It also CREATES the entry when neither producer found one, which is the only
-       * answer today for a method inherited from an *installed* base class: heritage
-       * resolution is workspace-only, so the scan finds nothing and says nothing, and
-       * the op silently misses the façade. Declaring it here puts it back.
-       *
-       * Per key, so stating a `binding` alone does not erase an `input` the scan found.
-       */
-      for (const [opName, override] of Object.entries(frond.operationsOverrides ?? {})) {
-        const { input, output, binding, description } = override;
-        if (input === undefined && output === undefined && binding === undefined && description === undefined) continue;
-        contracts.set(opName, {
-          ...contracts.get(opName),
-          ...(input !== undefined && { input }),
-          ...(output !== undefined && { output }),
-          ...(binding !== undefined && { binding }),
-          ...(description !== undefined && { description }),
-        });
-      }
+      const contracts = resolveContracts(handler, frond.operationsOverrides, collectorEntityNames);
 
       /**
        * The field set an op's result is projected onto — the view declared for THAT op
@@ -322,7 +284,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       };
 
       const collectorResolver = (entityName: string): CollectorResolver | undefined => {
-        const key = `${entityName[0].toUpperCase()}${entityName.slice(1)}Collector`;
+        const key = collectorKeyOf(entityName);
         try { return targetScope.resolve(key) as CollectorResolver; }
         catch { return undefined; }
       };
@@ -465,7 +427,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
       // Register scoped ORM if output override differs from entity
       if (options.ormFactory) {
-        const ormName = `${entity.name[0].toUpperCase()}${entity.name.slice(1)}Orm`;
+        const ormName = ormKeyOf(entity.name);
         const baseOrm = options.ormFactory(entity.entityClass, entity.name);
         const outputSchema = handler.outputOverride ?? (handler.ctor as any).__output;
         const scoped = outputSchema && outputSchema !== entity.entityClass
@@ -596,7 +558,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     const owner = fronds.find((f) => f.entities.some((e) => e.name === entity));
     if (!owner) return undefined;
 
-    const key = `${entity[0].toUpperCase()}${entity.slice(1)}Orm`;
+    const key = ormKeyOf(entity);
     try {
       return container.resolve<Container>(`frond:${owner.name}`).resolve(key);
     } catch {

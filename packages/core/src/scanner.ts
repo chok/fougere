@@ -10,6 +10,7 @@ import { hashFile, getCached, setCached, flushCache, setCacheRoot } from './scan
 import { loadFrondConfig } from './frond-config.js';
 import { getPresenterTarget, getPresenterFields, getPresenterViews } from './presenter.js';
 import { getRepositoryTarget } from './repository.js';
+import { ormKeyOf } from './orm.js';
 import { getCollectorTarget } from './collector.js';
 
 /** Module loader — can be swapped (e.g. jiti for TS files in Nuxt context). */
@@ -166,7 +167,7 @@ function depKeyOf(type: ParsedType): string {
   const target = type.name === 'EntityOrm' ? type.generics?.[0]?.name : undefined;
   if (!target) return type.name;
 
-  return `${target[0].toUpperCase()}${target.slice(1)}Orm`;
+  return ormKeyOf(target);
 }
 
 /** Cached parseConstructorParams — skips TS loading when cache is warm. */

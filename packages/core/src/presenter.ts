@@ -78,3 +78,8 @@ export function getPresenterFields(ctor: Function): string[] {
   return Object.getOwnPropertyNames(ctor.prototype)
     .filter((name) => name !== 'constructor' && typeof ctor.prototype[name] === 'function');
 }
+
+/** Container key of an entity's presenter — 'post' → 'PostPresenter'. */
+export function presenterKeyOf(entity: string): string {
+  return `${entity[0].toUpperCase()}${entity.slice(1)}Presenter`;
+}

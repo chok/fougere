@@ -19,6 +19,10 @@ export type { OperationContract, OperationsMap } from './operation.js';
 export { scanProject, FROND_DIRS, toRegistrationName, setModuleLoader, type ModuleLoader } from './scanner.js';
 export { runMiddlewares, FougereError, ErrorCode } from './middleware.js';
 export { createLocalRunner, createAppRunner, identityCardOf, RPC_ENTITY } from './call.js';
+// The container keys, exported so any reader asks the same question the bootstrap
+// answers. A second reader that respells one looks in the wrong place and reports
+// nothing found — which is indistinguishable from nothing wrong.
+export { facadeKeyOf, contractsKeyOf } from './call.js';
 export type { FrondCall, Transport, IdentityCard, CardOp, Facade } from './call.js';
 export { callValueOf } from './contract.js';
 export type { CallValue } from './contract.js';
@@ -49,5 +53,8 @@ export type {
   AuthContext,
   AuthRuntime,
 } from './types.js';
+export { ormKeyOf } from './orm.js';
+export { presenterKeyOf } from './presenter.js';
+export { collectorKeyOf } from './collector.js';
 export { Repository, getRepositoryTarget, repositoryKeyOf, type RepositoryOf, type RepositoryConstructor } from './repository.js';
 export { verify, assertSplittable, type Violation } from './verify.js';
