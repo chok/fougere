@@ -8,7 +8,7 @@
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text, number, bool, date, oneOf, list, optional, nullable, ref, many } from '../src/index.js';
 import { describe as describeSchema } from '../src/index.js';
-import { typeSourceOf } from '../src/projections/typescript.js';
+import { typeSourceOf, facadeTypeSourceOf } from '../src/projections/typescript.js';
 
 class Author extends entity({ id: primary(), name: text() }) {}
 
@@ -61,5 +61,39 @@ describe('carte → type TypeScript', () => {
     expect(typeSourceOf(describeSchema(Author, 'author'))).toContain('interface Author {');
     expect(typeSourceOf(describeSchema(Author, 'author'), { name: 'AuthorCard' })).toContain('interface AuthorCard {');
     expect(typeSourceOf(describeSchema(Author, 'author'), { exported: false })).toMatch(/^interface /);
+  });
+});
+
+describe('carte → type de façade', () => {
+  const ops = [
+    { name: 'list', cardinality: 'page' as const, description: 'Tous les posts.' },
+    { name: 'findById', cardinality: 'maybe' as const },
+    { name: 'create', cardinality: 'one' as const },
+    { name: 'delete', cardinality: 'none' as const },
+    { name: 'search', cardinality: 'many' as const },
+  ];
+
+  it('dit combien revient, pas seulement quelle forme', () => {
+    const source = facadeTypeSourceOf(ops, { name: 'PostFacade', rowType: 'Post' });
+
+    // Le piège que ce champ existe pour éviter : `list` ne rend PAS `Post[]`.
+    // `ListResult<T> extends Array<T>` — un tableau qui porte ses totaux.
+    expect(source).toContain('list(invocation?: Invocation): Promise<Post[] & { total?: number; endCursor?: string; hasMore?: boolean }>;');
+    expect(source).toContain('findById(invocation?: Invocation): Promise<Post | undefined>;');
+    expect(source).toContain('create(invocation?: Invocation): Promise<Post>;');
+    expect(source).toContain('search(invocation?: Invocation): Promise<Post[]>;');
+    // `none` = aucune forme publiée. `unknown` le dit ; `void` interdirait de lire
+    // un booléen qui revient bel et bien.
+    expect(source).toContain('delete(invocation?: Invocation): Promise<unknown>;');
+  });
+
+  it('porte la phrase de doc de l\'opération', () => {
+    expect(facadeTypeSourceOf(ops, { rowType: 'Post' })).toContain('/** Tous les posts. */');
+  });
+
+  it('sans cardinalité, ne devine pas', () => {
+    // Une carte muette doit produire `unknown`, pas une supposition qui compile.
+    expect(facadeTypeSourceOf([{ name: 'weekly' }], { rowType: 'Post' }))
+      .toContain('weekly(invocation?: Invocation): Promise<unknown>;');
   });
 });

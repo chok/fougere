@@ -43,6 +43,13 @@ export interface CardOp {
   output?: SchemaDescriptor;
   /** `query` reads, `command` writes — the same call REST turns into GET vs POST. */
   kind: 'query' | 'command';
+  /**
+   * How much `output` describes: one row, maybe one, many, a page, or nothing shaped.
+   * `output` alone is the shape of a ROW, so a consumer generating a signature from
+   * this card would otherwise have to guess — and `list` returning a page rather than
+   * an array is exactly the guess it would get wrong.
+   */
+  cardinality?: 'one' | 'maybe' | 'many' | 'page' | 'none';
 }
 
 /** What an app hosts — the wire projection of its scanned fronds. */
@@ -162,6 +169,7 @@ function facadeOps(app: App, entityName: string, surface?: string): CardOp[] {
       ...(contract?.description && { description: contract.description }),
       ...(contract?.input && { input: describeSchema(contract.input, name) }),
       ...(contract?.output && { output: describeSchema(contract.output, name) }),
+      ...(contract?.cardinality && { cardinality: contract.cardinality }),
       kind: resolveIsReadOp(name) ? 'query' as const : 'command' as const,
     };
   });

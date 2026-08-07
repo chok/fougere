@@ -100,3 +100,62 @@ export function typeSourceOf(descriptor: SchemaDescriptor, options: TypeSourceOp
 function capitalize(s: string): string {
   return s ? s[0].toUpperCase() + s.slice(1) : s;
 }
+
+/** One operation, as much of it as a card can say. */
+export interface OpDescriptor {
+  name: string;
+  description?: string;
+  output?: SchemaDescriptor;
+  /** How much `output` describes. Absent means the card did not say. */
+  cardinality?: 'one' | 'maybe' | 'many' | 'page' | 'none';
+}
+
+/**
+ * What one operation hands back, in TypeScript.
+ *
+ * `output` is the shape of a ROW; `cardinality` is how many rows. Separating them is
+ * what makes this honest — `list` returns a page, not an array, and a generator that
+ * assumed otherwise would have written a signature that compiles and lies.
+ *
+ * A page is spelled as what it IS: `ListResult<T> extends Array<T>`, an array carrying
+ * its own totals. So the type is the array intersected with them, not a wrapper.
+ */
+function returnTypeOf(op: OpDescriptor, rowType: string): string {
+  switch (op.cardinality) {
+    case 'many': return `${rowType}[]`;
+    case 'page': return `${rowType}[] & { total?: number; endCursor?: string; hasMore?: boolean }`;
+    case 'maybe': return `${rowType} | undefined`;
+    case 'one': return rowType;
+    // `none` says there is no shaped output — a boolean, a void. Saying `unknown` is
+    // the truth; guessing `void` would forbid reading a value that does come back.
+    case 'none': return 'unknown';
+    default: return 'unknown';
+  }
+}
+
+/**
+ * Emit the type of a façade — every operation an entity serves, as a caller meets it.
+ *
+ * This is what `Facade<T>` needs and what no consumer in another repository could have:
+ * writing `Facade<ArticleHandler>` used to require importing the handler's class, which
+ * `sync` does not carry and should not. The card carries the operations; this reads them.
+ *
+ * Each op takes an optional invocation and returns a promise — the door's signature, not
+ * the handler's. A handler's method takes positional arguments; its door takes the call.
+ */
+export function facadeTypeSourceOf(
+  ops: readonly OpDescriptor[],
+  options: TypeSourceOptions & { rowType?: string } = {},
+): string {
+  const name = options.name ?? 'Facade';
+  const exported = options.exported === false ? '' : 'export ';
+  const rowType = options.rowType ?? 'unknown';
+
+  const members = ops.map((op) => {
+    const doc = op.description ? `  /** ${op.description} */\n` : '';
+    return `${doc}  ${propertyKey(op.name)}(invocation?: Invocation): Promise<${returnTypeOf(op, rowType)}>;`;
+  });
+
+  if (members.length === 0) return `${exported}interface ${name} {}`;
+  return `${exported}interface ${name} {\n${members.join('\n')}\n}`;
+}

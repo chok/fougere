@@ -5,6 +5,7 @@ import { pathToFileURL } from 'node:url';
 import type { FrondDescriptor, ProviderEntry, EntityEntry, HandlerEntry, PresenterEntry, CollectorEntry, SeedEntry, ScanResult, ScanDiagnostic } from './types.js';
 import { ANONYMOUS_SCHEMA_NAME, type SchemaLike } from '@fougere/schema';
 import type { OperationContract, OperationsMap } from './operation.js';
+import { cardinalityOf } from './operation.js';
 import { parseAllHandlerMethods, parsePresenterMethods, parseConstructorParams, type ParsedType } from './handler-parser.js';
 import { hashFile, getCached, setCached, flushCache, setCacheRoot } from './scan-cache.js';
 import { loadFrondConfig } from './frond-config.js';
@@ -329,6 +330,8 @@ async function inferOperations(filePath: string, moduleExports: Record<string, u
 
     if (method.returnType) {
       meta.output = resolveSchema(method.returnType, moduleExports);
+      // `output` is the shape of one row; this says how many rows come back.
+      meta.cardinality = cardinalityOf(method.returnType);
     }
 
     map.set(method.name, meta);

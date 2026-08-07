@@ -25,9 +25,42 @@ export interface OperationContract {
    * doc comment, a prefab declares it, config states it and wins.
    */
   description?: string;
+  /**
+   * How MUCH comes back — the half of the return type that `output` cannot say.
+   *
+   * `output` is the shape of ONE row; it is silent on whether the op hands back one,
+   * several, or a page. The prefab knows (`list` returns a `ListResult`, `findById`
+   * returns `T | undefined`) and the card did not, so anything generating a signature
+   * from the card would have written `list(): Promise<Post[]>` — false, and a false
+   * signature is worse than none.
+   *
+   * `none` says there is no shaped output at all (a boolean, a void), not that the op
+   * returns nothing.
+   */
+  cardinality?: 'one' | 'maybe' | 'many' | 'page' | 'none';
   /** The scan's raw material, when it produced this contract. `binding` wins. */
   signature?: ParsedMethod;
 }
+
+/**
+ * Read an op's cardinality off its parsed return type.
+ *
+ * `Promise` is unwrapped first — it says when, not how much. `ListResult<T>` extends
+ * `Array<T>`, so it must be recognised BEFORE the array test or a page would read as
+ * a plain list and lose its `total`/`hasMore`.
+ */
+export function cardinalityOf(type: ParsedType | undefined): OperationContract['cardinality'] {
+  if (!type) return undefined;
+  const inner = type.name === 'Promise' ? type.generics?.[0] : type;
+  if (!inner) return 'none';
+  if (inner.name === 'ListResult') return 'page';
+  if (inner.array) return 'many';
+  if (PRIMITIVE_RETURNS.has(inner.name)) return 'none';
+  return inner.nullable ? 'maybe' : 'one';
+}
+
+/** A return that carries no schema — the card has nothing to project onto it. */
+const PRIMITIVE_RETURNS = new Set(['boolean', 'string', 'number', 'void', 'undefined', 'unknown', 'any']);
 
 /** Map of operation name → its contract. */
 export type OperationsMap = Map<string, OperationContract>;

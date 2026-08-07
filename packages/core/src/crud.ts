@@ -30,13 +30,13 @@ const fromBody = { name: 'input', source: { kind: 'body' as const }, optional: f
  */
 function crudOps(entity: SchemaLike & { partial?: () => SchemaLike }): Record<string, OperationContract> {
   return {
-    list: { output: entity, binding: [{ name: 'options', source: { kind: 'query' }, optional: true }] },
-    findById: { output: entity, binding: [byId] },
-    create: { input: entity, output: entity, binding: [fromBody] },
+    list: { output: entity, cardinality: 'page', binding: [{ name: 'options', source: { kind: 'query' }, optional: true }] },
+    findById: { output: entity, cardinality: 'maybe', binding: [byId] },
+    create: { input: entity, output: entity, cardinality: 'one', binding: [fromBody] },
     // The patch view carries its own mode: an absent field is untouched, an
     // immutable one re-supplied is refused.
-    update: { input: entity.partial?.(), output: entity, binding: [byId, fromBody] },
-    delete: { binding: [byId] },
+    update: { input: entity.partial?.(), output: entity, cardinality: 'one', binding: [byId, fromBody] },
+    delete: { cardinality: 'none', binding: [byId] },
   };
 }
 
