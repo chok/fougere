@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import Author from '@frond/blog/entities/Author';
 
-const { values, errors, submit, loading, error } = useFormFor(Author);
+// `fieldsByName` carries what the browser enforces — type, required, bounds — read off
+// the entity. The page lays the form out; it states no rule.
+const { fieldsByName, values, errors, submit, loading, error } = useFormFor(Author);
 
 async function onSubmit() {
   if (await submit()) navigateTo('/blog/authors');
@@ -21,15 +23,15 @@ async function onSubmit() {
     <UCard>
       <form class="space-y-4" @submit.prevent="onSubmit">
         <UFormField label="Name" :error="errors.name">
-          <UInput v-model="values.name" autofocus />
+          <UInput v-model="values.name" v-bind="fieldsByName.name?.attrs" autofocus />
         </UFormField>
 
         <UFormField label="Email" :error="errors.email">
-          <UInput v-model="values.email" type="email" />
+          <UInput v-model="values.email" v-bind="fieldsByName.email?.attrs" />
         </UFormField>
 
         <UFormField label="Bio" :error="errors.bio">
-          <UTextarea v-model="values.bio" :rows="4" />
+          <UTextarea v-model="values.bio" v-bind="fieldsByName.bio?.attrs" :rows="4" />
         </UFormField>
 
         <p v-if="error" class="text-sm text-error">{{ error.message }}</p>

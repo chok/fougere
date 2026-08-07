@@ -5,7 +5,7 @@ const route = useRoute();
 const id = route.params.id as string;
 
 const { data: post } = await useQuery<Record<string, unknown>>(Post, 'findById', { params: { id } });
-const { values, errors, submit, loading, error } = useFormFor(Post, {
+const { fieldsByName, values, errors, submit, loading, error } = useFormFor(Post, {
   op: 'update',
   params: { id },
   initial: post.value ?? undefined,
@@ -39,11 +39,11 @@ async function onSubmit() {
     <UCard>
       <form class="space-y-4" @submit.prevent="onSubmit">
         <UFormField label="Title" :error="errors.title">
-          <UInput v-model="values.title" autofocus />
+          <UInput v-model="values.title" v-bind="fieldsByName.title?.attrs" autofocus />
         </UFormField>
 
         <UFormField label="Body" :error="errors.body">
-          <UTextarea v-model="values.body" :rows="8" />
+          <UTextarea v-model="values.body" v-bind="fieldsByName.body?.attrs" :rows="8" />
         </UFormField>
 
         <p v-if="error" class="text-sm text-error">{{ error.message }}</p>

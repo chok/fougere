@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { entity, primary, text, number, bool, auto, oneOf, ref, optional, writeOnly } from '@fougere/schema';
+import { entity, primary, text, email, url, number, bool, date, auto, oneOf, ref, optional, writeOnly } from '@fougere/schema';
 import { formFieldsOf, payloadOf, errorsByField } from '../src/runtime/form/fields.js';
 
 class Author extends entity({ id: primary(), name: text() }) {}
@@ -12,6 +12,9 @@ class Article extends entity({
   status: oneOf('draft', 'live'),
   secret: writeOnly(text()),
   subtitle: optional(text()),
+  contact: email(),
+  source: url(),
+  publishAt: date(),
   authorId: ref(Author),
   createdAt: auto(),
 }) {}
@@ -40,6 +43,12 @@ describe('formFieldsOf — membership and axes', () => {
     expect(byName.published.control).toBe('boolean');
     expect(byName.status.control).toBe('select');
     expect(byName.status.options).toEqual(['draft', 'live']);
+    // A format the browser has a type for is a control of its own. Before this, an
+    // email field came out as `text` and the page typed `type="email"` by hand —
+    // spelling a second time what the card already said.
+    expect(byName.contact.control).toBe('email');
+    expect(byName.source.control).toBe('url');
+    expect(byName.publishAt.control).toBe('date');
   });
 
   it('labels are convention keys — the schema carries no display text', () => {
@@ -95,26 +104,44 @@ describe('declared defaults', () => {
   });
 });
 
-describe('formFieldsOf — the bounds, under the names a browser enforces', () => {
+describe('formFieldsOf — what the browser enforces, under the names it knows', () => {
   const byName = Object.fromEntries(
     formFieldsOf(Article as never, 'article').map((f) => [f.name, f]),
   );
 
   it('carries a string field bounds as minlength/maxlength', () => {
-    expect(byName.title.attrs).toEqual({ minlength: 1, maxlength: 200 });
+    expect(byName.title.attrs).toEqual({ type: 'text', required: true, minlength: 1, maxlength: 200 });
   });
 
   it('carries a number field bound as min, and omits the one not stated', () => {
-    expect(byName.views.attrs).toEqual({ min: 0 });
+    expect(byName.views.attrs).toEqual({ type: 'number', required: true, min: 0 });
   });
 
-  it('states nothing when the shape states nothing', () => {
+  it('names the type a format has, so the page states no rule of its own', () => {
+    // The whole point: `type="email"` used to be typed by hand in the page, next to a
+    // card that already said `format: 'email'`. The browser checks it live, per field.
+    expect(byName.contact.attrs).toEqual({ type: 'email', required: true });
+    expect(byName.source.attrs).toEqual({ type: 'url', required: true });
+  });
+
+  it('emits no `required` when the lifecycle answers the absence', () => {
+    // Absence emits nothing rather than `required="false"` — a browser reads presence.
+    expect(byName.subtitle.attrs).toEqual({ type: 'text' });
+  });
+
+  it('gives a date no type: the browser would accept what the judge refuses', () => {
+    // Neither `date` nor `datetime-local` produces the RFC 3339 string a `date-time`
+    // shape judges. `control` still says `date` — the page picks the widget.
+    expect(byName.publishAt.attrs).toEqual({ required: true });
+  });
+
+  it('gives a checkbox no `required`: there it would mean "must be checked"', () => {
+    // The shape says the value must be SUPPLIED, and `false` is a value.
     expect(byName.published.attrs).toBeUndefined();
-    expect(byName.subtitle.attrs).toBeUndefined();
   });
 
-  it('leaves an enum to `options` — a select has no bound to enforce', () => {
-    expect(byName.status.attrs).toBeUndefined();
+  it('leaves an enum to `options` — a select is not an input', () => {
+    expect(byName.status.attrs).toEqual({ required: true });
     expect(byName.status.options).toEqual(['draft', 'live']);
   });
 });

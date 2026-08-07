@@ -69,6 +69,13 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
 
   return {
     fields,
+    /**
+     * The same fields, keyed by name — a form that lays its inputs out by hand binds
+     * one at a time (`v-bind="fieldsByName.email.attrs"`), and still states no rule of
+     * its own. Without it, a page retypes `type="email"` next to a card that says
+     * `format: 'email'`, and the browser enforces the page rather than the declaration.
+     */
+    fieldsByName: Object.fromEntries(fields.map((f) => [f.name, f])) as Record<string, FormField>,
     values,
     errors,
     submit,

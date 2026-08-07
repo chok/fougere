@@ -47,7 +47,7 @@ function defaultOf(field: FieldLike): unknown {
 export interface FormField {
   name: string;
   /** Rendering hint derived from the shape — the page maps it to widgets. */
-  control: 'text' | 'number' | 'boolean' | 'date' | 'select';
+  control: 'text' | 'email' | 'url' | 'number' | 'boolean' | 'date' | 'select';
   required: boolean;
   /** i18n key by convention: `entity.field`. The schema never carries display text. */
   labelKey: string;
@@ -56,7 +56,8 @@ export interface FormField {
   /** Enum values, when control is 'select'. */
   options?: string[];
   /**
-   * The bounds, named as the HTML input attributes that already mean them.
+   * What the browser enforces, under the names it already knows — spread this on the
+   * input and the page states no rule of its own.
    *
    * The shape holds `minLength`/`maximum`/`pattern`; a browser holds `minlength`/
    * `max`/`pattern` and enforces them with no JavaScript at all. Carrying them here
@@ -64,11 +65,23 @@ export interface FormField {
    * that ignores these still gets the same verdict — it just gets it later, and a
    * screen reader never gets it at all.
    *
-   * `pattern` is the one that does not always travel: the shape's is a JavaScript
-   * regex and so is the attribute's, but a `format` (email, uri) has no attribute —
-   * `control` carries those, and the judge stays the authority.
+   * `type` is part of the contract, not decoration: `email` and `url` are formats the
+   * shape states and the browser checks live, per field, as one types. A page writing
+   * `type="email"` by hand is spelling a second time what the card already said.
+   *
+   * Three deliberate absences, each one a place where the attribute would mean
+   * something the shape does not say:
+   * - a `date` field gets no `type` — neither `date` nor `datetime-local` produces the
+   *   RFC 3339 string a `date-time` shape judges, so the browser would accept what the
+   *   judge refuses;
+   * - `select` and `boolean` are not inputs — the page picks the widget, `control` says
+   *   which;
+   * - a required `boolean` gets no `required` — on a checkbox that attribute means
+   *   "must be CHECKED", where the shape only says the value must be supplied.
    */
   attrs?: {
+    type?: 'text' | 'email' | 'url' | 'number';
+    required?: boolean;
     minlength?: number;
     maxlength?: number;
     min?: number;
@@ -89,28 +102,39 @@ function baseType(type: unknown): string {
   return (type as string) ?? 'string';
 }
 
+/** The formats a browser has an input type for — the rest stay `text`, judged later. */
+const CONTROL_BY_FORMAT: Record<string, FormField['control']> = {
+  'date-time': 'date',
+  email: 'email',
+  uri: 'url',
+};
+
 function controlOf(field: FieldLike): FormField['control'] {
   const shape = field.shape ?? {};
   if (Array.isArray(shape.enum) && shape.enum.length) return 'select';
   const base = baseType(shape.type);
   if (base === 'number' || base === 'integer') return 'number';
   if (base === 'boolean') return 'boolean';
-  if (base === 'string' && shape.format === 'date-time') return 'date';
+  if (base === 'string' && shape.format) return CONTROL_BY_FORMAT[shape.format] ?? 'text';
   return 'text';
 }
 
+/** Controls that ARE an `<input type>` — see the two absences on {@link FormField.attrs}. */
+const INPUT_TYPES = new Set(['text', 'email', 'url', 'number']);
+
 /** The shape's bounds, under the names a browser already enforces. */
-function attrsOf(field: FieldLike): FormField['attrs'] | undefined {
+function attrsOf(field: FieldLike, control: FormField['control'], required: boolean): NonNullable<FormField['attrs']> {
   const s = field.shape ?? {};
   const attrs = {
+    type: INPUT_TYPES.has(control) ? control : undefined,
+    required: (required && control !== 'boolean') || undefined,
     minlength: s.minLength,
     maxlength: s.maxLength,
     min: s.minimum,
     max: s.maximum,
     pattern: s.pattern,
   };
-  const stated = Object.entries(attrs).filter(([, v]) => v !== undefined);
-  return stated.length ? Object.fromEntries(stated) : undefined;
+  return Object.fromEntries(Object.entries(attrs).filter(([, v]) => v !== undefined));
 }
 
 /**
@@ -121,16 +145,19 @@ function attrsOf(field: FieldLike): FormField['attrs'] | undefined {
 export function formFieldsOf(entity: FormEntity, entityKey: string): FormField[] {
   return Object.entries(inputFields(entity.getFields() as never)).map(([name, field]) => {
     const f = field as FieldLike;
+    const control = controlOf(f);
+    const required = f.lifecycle?.create === undefined;
+    const attrs = attrsOf(f, control, required);
     return {
       name,
-      control: controlOf(f),
-      required: f.lifecycle?.create === undefined,
+      control,
+      required,
       labelKey: `${entityKey}.${name}`,
       label: name.charAt(0).toUpperCase() + name.slice(1),
       ...(Array.isArray(f.shape?.enum)
         ? { options: f.shape.enum.filter((value): value is string => typeof value === 'string') }
         : {}),
-      ...(attrsOf(f) ? { attrs: attrsOf(f) } : {}),
+      ...(Object.keys(attrs).length ? { attrs } : {}),
       ...(defaultOf(f) !== undefined ? { default: defaultOf(f) } : {}),
     };
   });
