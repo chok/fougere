@@ -114,8 +114,10 @@ the type). Business rules are handler operations, e.g.
 publish(id, user), judged server-side. Moving a module to its
 own process is one line of config; user code does not change.
 
-Scope today (pre-release): storage is additive SQLite auto-DDL
-(Kysely underneath) — no Postgres adapter yet; no search-index
+Scope today (pre-release): storage is additive auto-DDL over
+Kysely. SQLite resolves from its name; Postgres, MySQL and SQL
+Server work by handing Fougere the Kysely dialect you built
+(setupKysely) — only you have the driver. No search-index
 projection; auth via better-auth (credentials + OAuth). Price
 the adoption costs against THIS scope, not an imagined one.
 

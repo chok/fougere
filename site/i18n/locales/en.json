@@ -12,8 +12,8 @@
   },
   "home": {
     "badge": "Pre-release — APIs are settling",
-    "title": "Write the domain. Everything else is a projection of it.",
-    "subtitle": "You declare the business object and you judge its transitions. From that derive the validation, the table, the form contract, the GraphQL and REST surfaces. And because the declaration is JSON on the wire, the domain can move to its own process — or to another language — while the code calling it does not change.",
+    "title": "Write the domain. Everything derives from it — down to the process it runs in.",
+    "subtitle": "One class declares the business object: validation, table, form and surfaces derive from it. The day it moves to its own process — or another language — the code calling it does not change.",
     "ctaDocs": "Read the docs",
     "ctaBlog": "Read the blog",
     "gradientTitle": "The gradient",

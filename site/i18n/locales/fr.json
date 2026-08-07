@@ -12,8 +12,8 @@
   },
   "home": {
     "badge": "Pré-version — les API se stabilisent",
-    "title": "Écrivez le domaine. Tout le reste en est une projection.",
-    "subtitle": "Vous déclarez l'objet métier et vous jugez ses transitions. En dérivent la validation, la table, le contrat de formulaire, les surfaces GraphQL et REST. Et parce que la déclaration est du JSON sur le fil, le domaine peut passer dans son propre process — ou dans un autre langage — sans que le code qui l'appelle change.",
+    "title": "Écrivez le domaine. Tout en dérive — jusqu'au process où il tourne.",
+    "subtitle": "Une classe déclare l'objet métier : validation, table, formulaire et surfaces en dérivent. Le jour où il doit partir dans son propre process — ou dans un autre langage — le code qui l'appelle ne bouge pas.",
     "ctaDocs": "Lire la doc",
     "ctaBlog": "Lire le blog",
     "gradientTitle": "Le gradient",
