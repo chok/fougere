@@ -50,3 +50,4 @@ export type {
   AuthRuntime,
 } from './types.js';
 export { Repository, getRepositoryTarget, repositoryKeyOf, type RepositoryOf, type RepositoryConstructor } from './repository.js';
+export { verify, assertSplittable, type Violation } from './verify.js';
