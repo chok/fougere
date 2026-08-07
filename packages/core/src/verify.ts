@@ -1,5 +1,8 @@
 import type { App, FrondDescriptor } from './types.js';
 import { repositoryKeyOf } from './repository.js';
+import { ormKeyOf } from './orm.js';
+import { presenterKeyOf } from './presenter.js';
+import { collectorKeyOf } from './collector.js';
 
 /**
  * What a rule found in an app.
@@ -17,7 +20,17 @@ export interface Violation {
   subject: string;
   /** Where to go and look. */
   filePath: string;
-  /** What breaks, in the terms of the split. */
+  /**
+   * What the subject reaches for, and where it actually lives.
+   *
+   * `frond` above is the CONSUMER; the target used to exist only inside the
+   * sentence. A reader that has to parse prose to learn which frond a violation
+   * points at is a second opinion on a fact the checker already held — so the
+   * boot can ask "does this violation target a frond named in `remotes:`?" by
+   * reading a field.
+   */
+  dependsOn: { key: string; frond: string; kind: string };
+  /** What breaks, and what the caller gets instead. */
   message: string;
 }
 
@@ -28,20 +41,19 @@ type Registration = { frond: string; kind: string };
  * The container keys a frond registers in its own scope, keyed as a handler's
  * `deps` spell them — DI resolves by type name, so both sides are PascalCase.
  *
- * These derivations mirror `bootstrap.ts` at registration time, and that mirror
- * is the finding: nothing states a frond's keys once. Writing this second reader
- * is what makes extracting them worth doing rather than merely tidy.
+ * Every key comes from the function that states it, never from a derivation
+ * respelled here: a second reader that spells one differently finds nothing and
+ * reports nothing wrong, which is the failure mode a checker must not have.
  */
 function registrationsOf(frond: FrondDescriptor): Map<string, Registration> {
-  const pascal = (s: string) => `${s[0].toUpperCase()}${s.slice(1)}`;
   const out = new Map<string, Registration>();
   const put = (key: string, kind: string) => out.set(key, { frond: frond.name, kind });
 
   for (const p of frond.providers) put(p.ctor.name, 'provider');
-  for (const p of frond.presenters) put(`${pascal(p.entityName)}Presenter`, 'presenter');
-  for (const c of frond.collectors) put(`${pascal(c.entityName)}Collector`, 'collector');
+  for (const p of frond.presenters) put(presenterKeyOf(p.entityName), 'presenter');
+  for (const c of frond.collectors) put(collectorKeyOf(c.entityName), 'collector');
   for (const e of frond.entities) {
-    put(`${pascal(e.name)}Orm`, 'ORM');
+    put(ormKeyOf(e.name), 'ORM');
     put(repositoryKeyOf(e.name), 'repository');
   }
   return out;
@@ -109,6 +121,7 @@ export function verify(app: Pick<App, 'fronds'>): Violation[] {
           frond: frond.name,
           subject: subject.name,
           filePath: subject.filePath,
+          dependsOn: { key: dep, frond: declared.frond, kind: declared.kind },
           message:
             `${subject.name} depends on ${dep}, the ${declared.kind} of frond '${declared.frond}'. ` +
             `Each frond registers into its own scope, so this does not resolve here. ` +
@@ -140,11 +153,13 @@ export function verify(app: Pick<App, 'fronds'>): Violation[] {
             frond: frond.name,
             subject: `${handler.ctor.name}.${opName}(${param.name})`,
             filePath: handler.filePath,
+            dependsOn: { key: collectorKeyOf(wanted), frond: elsewhere, kind: 'collector' },
             message:
               `'${param.name}' is typed ${param.type.name}, and the collector that produces one ` +
               `is declared in frond '${elsewhere}'. A binding plan only sees its own frond's ` +
               `collectors, so this parameter falls through to the request body — it receives ` +
-              `what the caller sent, not what the collector would have said. ` +
+              `what the CALLER sent. An op that judges it (\`if (${param.name}.role !== 'admin') throw\`) ` +
+              `is judging the caller's own claim about themselves. ` +
               `Move the collector into '${frond.name}'.`,
           });
         }

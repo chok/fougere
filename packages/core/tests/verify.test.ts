@@ -56,6 +56,10 @@ describe('verify — cross-frond dependency', () => {
     // nothing to do with it.
     expect(violations[0].message).toContain("collector of frond 'identity'");
     expect(violations[0].message).toContain('its own scope');
+    // The target as a FIELD, not as prose. A reader deciding whether this
+    // violation concerns a frond named in `remotes:` reads it here — parsing the
+    // sentence would be a second opinion on a fact already held.
+    expect(violations[0].dependsOn).toEqual({ key: 'UserCollector', frond: 'identity', kind: 'collector' });
   });
 
   it('says nothing when the collector lives in the consuming frond', () => {
@@ -127,5 +131,10 @@ describe('verify — collector in another frond', () => {
     expect(violations[0].frond).toBe('blog');
     expect(violations[0].message).toContain("declared in frond 'identity'");
     expect(violations[0].message).toContain('falls through to the request body');
+    // What the boot filters on when `remotes:` names a frond.
+    expect(violations[0].dependsOn).toEqual({ key: 'UserCollector', frond: 'identity', kind: 'collector' });
+    // The consumer is 'blog', the target is 'identity' — two different fields,
+    // and the pair is what a caller needs to decide anything.
+    expect(violations[0].frond).not.toBe(violations[0].dependsOn.frond);
   });
 });
