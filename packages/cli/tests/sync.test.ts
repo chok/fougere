@@ -44,6 +44,19 @@ describe('remote frond sync', () => {
       const generated = readFileSync(join(root, '.fougere', 'remotes', 'blog', 'entities', 'Post.ts'), 'utf8');
       expect(generated).toContain('const Post = reconstruct(');
       expect(generated).not.toContain("const Post; await import");
+
+      // La carte porte de quoi typer, et jusqu'ici personne ne le lisait :
+      // `reconstruct` rend un générique, donc l'entité synchronisée validait
+      // parfaitement et n'apprenait rien au compilateur.
+      expect(generated).toContain('export interface Post {');
+      // Le nom est partagé entre l'interface et la const — comme une classe, pour
+      // qu'un seul import donne la valeur et le type.
+      expect(generated).toContain('export const Post = reconstruct(');
+      // Et le `title` de l'hôte ne nomme RIEN : l'interface prend le nom déjà
+      // assaini, sinon la charge de ce test entrerait par cette deuxième porte.
+      // (La chaîne reste présente DANS la carte, en donnée inerte — c'est ce que
+      // la sonde d'origine ci-dessus vérifie déjà.)
+      expect(generated).not.toContain("interface Post; await import");
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
