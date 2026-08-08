@@ -101,13 +101,13 @@ function withCustomOps(
 function fakeApp(
   entities: { name: string; entityClass: any }[],
   facades: Record<string, any>,
-  handlers?: { entityName: string; operations: Map<string, any> }[],
+  handlers?: { address: string; operations: Map<string, any> }[],
   surfaces?: Record<string, string[]>,
 ) {
   const effectiveHandlers = handlers !== undefined ? handlers : entities
     .filter((e) => facades[`${e.name}Handler`])
     .map((e) => ({
-      entityName: e.name,
+      address: e.name,
       operations: crudOps(e.entityClass.name, e.entityClass),
     }));
   return {
@@ -265,7 +265,7 @@ describe('registerAll', () => {
     const app = fakeApp(
       [{ name: 'post', entityClass: Post }],
       { postHandler: { list: crud.list, findById: crud.findById } },
-      [{ entityName: 'post', operations: readOps }],
+      [{ address: 'post', operations: readOps }],
     );
 
     registerAll(builder, app);
@@ -295,7 +295,7 @@ describe('registerAll', () => {
     const app = fakeApp(
       [{ name: 'author', entityClass: Author }],
       { authorHandler: { create: crud.create } },
-      [{ entityName: 'author', operations: createOps }],
+      [{ address: 'author', operations: createOps }],
     );
 
     registerAll(builder, app);
@@ -320,7 +320,7 @@ describe('registerAll', () => {
     const app = fakeApp(
       [{ name: 'author', entityClass: Author }],
       { authorHandler: { list: crud.list, findById: crud.findById } },
-      [{ entityName: 'author', operations: readOps }],
+      [{ address: 'author', operations: readOps }],
     );
 
     registerAll(builder, app);
@@ -360,7 +360,7 @@ describe('registerAll', () => {
     const app = fakeApp(
       [{ name: 'post', entityClass: Post }],
       { postHandler: { ...fakeCrud(), searchByTitle: searchFn } },
-      [{ entityName: 'post', operations: ops }],
+      [{ address: 'post', operations: ops }],
     );
 
     registerAll(builder, app);
@@ -399,7 +399,7 @@ describe('registerAll', () => {
     const app = fakeApp(
       [{ name: 'post', entityClass: Post }],
       { postHandler: { ...fakeCrud(), publish: publishFn } },
-      [{ entityName: 'post', operations: ops }],
+      [{ address: 'post', operations: ops }],
     );
 
     registerAll(builder, app);
@@ -434,7 +434,7 @@ describe('registerAll', () => {
     const app = fakeApp(
       [{ name: 'post', entityClass: Post }],
       { postHandler: { ...fakeCrud(), listFeatured: vi.fn(async () => []) } },
-      [{ entityName: 'post', operations: ops }],
+      [{ address: 'post', operations: ops }],
     );
 
     registerAll(builder, app);
@@ -657,7 +657,7 @@ describe('an operation that declares its return type', () => {
     class PostDigest extends Post.pick('id', 'title') {}
     const app = fakeApp([{ name: 'post', entityClass: Post }],
       { postHandler: { ...fakeCrud(), digest: vi.fn(async () => []) } },
-      [{ entityName: 'post', operations: declaredOp(PostDigest) }]);
+      [{ address: 'post', operations: declaredOp(PostDigest) }]);
 
     registerAll(builder, app);
     const typeMap = builder.toSchema().getTypeMap();
@@ -672,7 +672,7 @@ describe('an operation that declares its return type', () => {
 
     const app = fakeApp([{ name: 'post', entityClass: Post }],
       { postHandler: { ...fakeCrud(), digest: vi.fn(async () => []) } },
-      [{ entityName: 'post', operations: declaredOp(Post) }]);
+      [{ address: 'post', operations: declaredOp(Post) }]);
 
     registerAll(builder, app);
     const typeMap = builder.toSchema().getTypeMap();

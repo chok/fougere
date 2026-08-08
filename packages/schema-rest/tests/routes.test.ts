@@ -75,7 +75,7 @@ describe('generateRoutes', () => {
     const app = fakeApp(
       [{ name: 'post', entityClass: Post }],
       { postHandler: fakeCrud() },
-      [{ entityName: 'post', operations: opsMap(['list', 'findById', 'create', 'update', 'delete']) }],
+      [{ address: 'post', operations: opsMap(['list', 'findById', 'create', 'update', 'delete']) }],
     );
 
     const routes = generateRoutes(app);
@@ -96,7 +96,7 @@ describe('generateRoutes', () => {
     const app = fakeApp(
       [{ name: 'post', entityClass: Post }],
       { postHandler: { list: crud.list, findById: crud.findById } },
-      [{ entityName: 'post', operations: opsMap(['list', 'findById']) }],
+      [{ address: 'post', operations: opsMap(['list', 'findById']) }],
     );
 
     const routes = generateRoutes(app);
@@ -147,7 +147,7 @@ describe('generateRoutes', () => {
         },
       },
       [{
-        entityName: 'post',
+        address: 'post',
         operations: opsMap(
           ['list', 'findById', 'create', 'update', 'delete'],
           {
@@ -173,7 +173,7 @@ describe('generateRoutes', () => {
       [{ name: 'post', entityClass: Post }],
       { postHandler: { ...fakeCrud(), archiveById: vi.fn(async () => ({})) } },
       [{
-        entityName: 'post',
+        address: 'post',
         operations: opsMap(['list'], { archiveById: { input: Post.pick('id') } }),
       }],
     );
@@ -190,7 +190,7 @@ describe('generateRoutes', () => {
       [{ name: 'post', entityClass: Post }],
       { postHandler: { ...fakeCrud(), publish: vi.fn(async () => ({})) } },
       [{
-        entityName: 'post',
+        address: 'post',
         operations: opsMap(['list', 'findById'], { publish: { input: Post.pick('id') } }),
       }],
     );
@@ -213,7 +213,7 @@ describe('generateRoutes', () => {
     const app = fakeApp(
       [{ name: 'post', entityClass: Post }],
       { postHandler: crud },
-      [{ entityName: 'post', operations: opsMap(['list', 'findById', 'create', 'update', 'delete']) }],
+      [{ address: 'post', operations: opsMap(['list', 'findById', 'create', 'update', 'delete']) }],
     );
 
     const routes = generateRoutes(app);
@@ -311,7 +311,7 @@ describe("boundary 'closed' → route field membership", () => {
     const app = fakeApp(
       [{ name: 'account', entityClass: Account }],
       { accountHandler: fakeCrud() },
-      [{ entityName: 'account', operations: opsMap(['list', 'create']) }],
+      [{ address: 'account', operations: opsMap(['list', 'create']) }],
     );
 
     const routes = generateRoutes(app);

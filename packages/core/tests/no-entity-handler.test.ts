@@ -31,4 +31,22 @@ describe('a handler with no entity', () => {
     expect(Object.keys(facade)).toEqual(['check']);
     expect(await facade.check(EMPTY_INVOCATION)).toEqual({ status: 'up' });
   });
+
+  it('is served under a NAMED surface too, not only the default one', async () => {
+    await using app = await createApp({ root, createContainer });
+
+    // The surface loop looked the entity up and skipped the handler when it found none,
+    // so this door did not exist and `facadeFor` answered `undefined` — silently, while
+    // the identical handler one directory up was built and logged.
+    const door = app.facadeFor('health', 'public');
+
+    expect(door).toBeDefined();
+    expect(await door!.check(EMPTY_INVOCATION)).toEqual({ status: 'up', audience: 'public' });
+  });
+
+  it('keeps the two audiences apart — a surface is closed, it does not shadow', async () => {
+    await using app = await createApp({ root, createContainer });
+
+    expect(await app.facadeFor('health')!.check(EMPTY_INVOCATION)).toEqual({ status: 'up' });
+  });
 });

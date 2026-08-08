@@ -31,9 +31,9 @@ function fakeApp(presenterFields: string[], views?: Record<string, any>) {
         { name: 'line', entityClass: Line },
       ],
       handlers: [
-        { entityName: 'user', operations: new Map() },
-        { entityName: 'order', operations: new Map() },
-        { entityName: 'line', operations: new Map() },
+        { address: 'user', operations: new Map() },
+        { address: 'order', operations: new Map() },
+        { address: 'line', operations: new Map() },
       ],
       presenters: [{ entityName: 'order', fields: presenterFields, views }],
     }],

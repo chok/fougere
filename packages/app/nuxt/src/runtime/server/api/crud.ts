@@ -30,7 +30,7 @@ export default defineEventHandler(async (event) => {
   // that arbitrates "segment = op or id" could come from a surface handler while
   // the call went somewhere else — two answers for one route.
   const ops = [
-    ...(frond.handlers.find((h) => h.entityName === entity.name && !h.surface)?.operations.keys() ?? []),
+    ...(frond.handlers.find((h) => h.address === entity.name && !h.surface)?.operations.keys() ?? []),
   ];
 
   const method = event.method.toUpperCase();

@@ -69,7 +69,8 @@ interface EntityEntry {
 }
 
 interface HandlerEntry {
-  entityName: string;
+  /** The name the door answers to — `PostHandler` → `post`. NOT an entity name: a handler may carry none. */
+  address: string;
   operations: Map<string, OperationMeta>;
   surface?: string;
   outputOverride?: SchemaLike;
@@ -203,7 +204,7 @@ export function registerAll(
   // ── Pass 1: register types + operations ────────
 
   for (const frond of app.fronds) {
-    const handlerMap = new Map(frond.handlers.filter((h) => !h.surface).map((h) => [h.entityName, h]));
+    const handlerMap = new Map(frond.handlers.filter((h) => !h.surface).map((h) => [h.address, h]));
     const presenterMap = new Map((frond.presenters ?? []).map((p) => [p.entityName, p]));
 
     const surfaceName = options?.surface;
@@ -217,7 +218,7 @@ export function registerAll(
       if (!surfaceName && entity.exposed === false) continue;
 
       const handler = (surfaceName
-        ? frond.handlers.find((h) => h.entityName === entity.name && h.surface === surfaceName)
+        ? frond.handlers.find((h) => h.address === entity.name && h.surface === surfaceName)
         : undefined) ?? handlerMap.get(entity.name);
       const typeName = capitalize(entity.name);
 

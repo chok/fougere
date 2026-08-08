@@ -77,7 +77,7 @@ describe('scanProject', () => {
     const result = await scanProject(fixturesRoot);
     const catalog = result.fronds.find((f) => f.name === 'catalog')!;
     expect(catalog.handlers).toHaveLength(1);
-    expect(catalog.handlers[0].entityName).toBe('product');
+    expect(catalog.handlers[0].address).toBe('product');
     expect(catalog.handlers[0].name).toBe('productHandler');
   });
 
@@ -157,7 +157,7 @@ describe('scanProject', () => {
   it('parses inherited CRUD methods from Crud(Entity) mixin', async () => {
     const result = await scanProject(fixturesRoot);
     const inventory = result.fronds.find((f) => f.name === 'inventory')!;
-    const itemHandler = inventory.handlers.find((h) => h.entityName === 'item')!;
+    const itemHandler = inventory.handlers.find((h) => h.address === 'item')!;
 
     // All 5 CRUD ops should have signatures (inherited from Crud mixin)
     expect(itemHandler.operations.has('list')).toBe(true);
@@ -175,7 +175,7 @@ describe('scanProject', () => {
   it('resolves T → entity class in inherited CRUD operations', async () => {
     const result = await scanProject(fixturesRoot);
     const inventory = result.fronds.find((f) => f.name === 'inventory')!;
-    const itemHandler = inventory.handlers.find((h) => h.entityName === 'item')!;
+    const itemHandler = inventory.handlers.find((h) => h.address === 'item')!;
 
     // create(input: T) → T resolved to Item → meta.input = Item entity
     const create = itemHandler.operations.get('create')!;
@@ -191,7 +191,7 @@ describe('scanProject', () => {
   it('child methods override inherited ones', async () => {
     const result = await scanProject(fixturesRoot);
     const inventory = result.fronds.find((f) => f.name === 'inventory')!;
-    const stockHandler = inventory.handlers.find((h) => h.entityName === 'stock')!;
+    const stockHandler = inventory.handlers.find((h) => h.address === 'stock')!;
 
     // StockHandler overrides list() — should use child signature (no params, returns Item[])
     const list = stockHandler.operations.get('list')!;
@@ -259,7 +259,7 @@ describe('the root frond', () => {
     expect(shop.source.path).toBe(join(rootFixtures, 'shop'));
     expect(shop.source.package).toBe('@frond/shop');
     expect(shop.entities.map((e) => e.name)).toEqual(['product']);
-    expect(shop.handlers.map((h) => h.entityName)).toEqual(['product']);
+    expect(shop.handlers.map((h) => h.address)).toEqual(['product']);
   });
 
   it('keeps the root frond when a second domain arrives under fronds/', async () => {

@@ -40,8 +40,8 @@ function fakeApp(authorSchema: unknown, postSchema: unknown) {
         { name: 'post', entityClass: postSchema },
       ],
       handlers: [
-        { entityName: 'author', operations: new Map() },
-        { entityName: 'post', operations: new Map() },
+        { address: 'author', operations: new Map() },
+        { address: 'post', operations: new Map() },
       ],
       presenters: [],
     }],
@@ -101,8 +101,8 @@ suite('the GraphQL projection reads a card as readily as a class', () => {
           { name: 'note', entityClass: describeCard(Note, 'note') },
         ],
         handlers: [
-          { entityName: 'authorUser', operations: new Map() },
-          { entityName: 'note', operations: new Map() },
+          { address: 'authorUser', operations: new Map() },
+          { address: 'note', operations: new Map() },
         ],
         presenters: [],
       }],

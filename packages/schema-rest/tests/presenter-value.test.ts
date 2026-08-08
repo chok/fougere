@@ -32,7 +32,7 @@ function fakeApp(facade: object, presenter: object) {
     fronds: [{
       name: 'blog',
       entities: [{ name: 'post', entityClass: Post }],
-      handlers: [{ entityName: 'post', operations: new Map([['list', {}]]) }],
+      handlers: [{ address: 'post', operations: new Map([['list', {}]]) }],
       presenters: [{ entityName: 'post', fields: ['excerpt'] }],
     }],
     resolve: <T>(name: string) => (name === 'PostPresenter' ? presenter : facade) as T,

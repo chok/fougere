@@ -37,7 +37,7 @@ describe('les clés d\'enregistrement ont une seule orthographe', () => {
       }
       for (const handler of frond.handlers) {
         if (handler.surface) continue;
-        expect(() => app.resolve(facadeKeyOf(handler.entityName)), handler.ctor.name).not.toThrow();
+        expect(() => app.resolve(facadeKeyOf(handler.address)), handler.ctor.name).not.toThrow();
       }
     }
   });

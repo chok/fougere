@@ -87,7 +87,7 @@ describe('the arity of a computed field', () => {
       fronds: [{
         name: 'blog',
         entities: [{ name: 'post', entityClass: Post }],
-        handlers: [{ entityName: 'post', operations: new Map() }],
+        handlers: [{ address: 'post', operations: new Map() }],
         presenters: [{
           entityName: 'post',
           fields: ['tags', 'excerpt'],

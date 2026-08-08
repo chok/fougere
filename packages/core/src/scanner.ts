@@ -137,8 +137,14 @@ export const FROND_DIRS = [
 export { toRegistrationName } from './contract.js';
 import { toRegistrationName } from './contract.js';
 
-/** Strip 'Handler' suffix → entity name. 'PostHandler' → 'post'. */
-function toEntityName(className: string): string {
+/**
+ * Strip the 'Handler' suffix → the name the handler answers to. 'PostHandler' → 'post'.
+ *
+ * Nothing here checks that an entity carries the result, and nothing should: a handler
+ * about no stored row is ordinary. The old name of this function — `toEntityName` — is
+ * what let "one façade per entity" be repeated until it read as a rule.
+ */
+function toAddress(className: string): string {
   const base = className.endsWith('Handler') ? className.slice(0, -7) : className;
   return base[0].toLowerCase() + base.slice(1);
 }
@@ -358,7 +364,7 @@ async function toHandlerEntry(
     if (!(className in augmented)) augmented[className] = entityClass;
   }
 
-  const entityName = toEntityName(ctor.name);
+  const address = toAddress(ctor.name);
   const operations = await inferOperations(filePath, augmented, projectRoot);
   const ctorParams = await cachedCtorParams(filePath);
   const deps = ctorParams.map((p) => depKeyOf(p.type));
@@ -370,7 +376,7 @@ async function toHandlerEntry(
 
   return {
     name: toRegistrationName(ctor.name),
-    entityName,
+    address,
     ctor: ctor as ProviderEntry['ctor'],
     operations,
     deps,

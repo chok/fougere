@@ -42,8 +42,19 @@ export interface EntityEntry {
 export interface HandlerEntry {
   /** Registration key (e.g. 'postHandler'). */
   name: string;
-  /** Entity name this handler controls (e.g. 'post' from PostHandler). */
-  entityName: string;
+  /**
+   * The name this handler answers to — its class name minus `Handler`, lowercased
+   * (`PostHandler` → `post`). It is what `facadeKeyOf` builds its key from and what
+   * travels as `FrondCall.entity` on the wire.
+   *
+   * **It is NOT an entity name**, and it was called `entityName` for long enough to
+   * mislead: `toEntityName` (`scanner.ts`) strips the suffix without checking that any
+   * entity carries the result, and the boot states the consequence — *pointing at
+   * nothing is legal*. A health check, a search across several shapes, a pure
+   * computation: ordinary handlers that own no row. `PresenterEntry`/`CollectorEntry`
+   * keep `entityName` because those really do target a declared entity.
+   */
+  address: string;
   /** The handler class. */
   ctor: new (...args: unknown[]) => unknown;
   /** All operations with full signatures for binding. */
@@ -308,11 +319,16 @@ export interface App {
    */
   schemaFor(entity: string): Promise<SchemaLike>;
   /**
-   * The façade an entity exposes to one audience, or `undefined` when it
-   * exposes none. A named surface is CLOSED: an entity with no façade of its
-   * own under that surface is not in it — it never falls back to the full one.
+   * The door a name exposes to one audience, or `undefined` when it exposes
+   * none. A named surface is CLOSED: a name with no door of its own under that
+   * surface is not in it — it never falls back to the full one.
    *
-   * The one way an adapter reaches a façade. It exists so the key format stays
+   * **Not always a façade**, despite the name: when the owning frond is declared
+   * remote, nothing is registered locally (`bootstrap.ts`, `declaredRemotes`) and
+   * this resolves to a doublure — a façade-shaped stand-in (`remote.ts`). The
+   * caller cannot tell, which is the point; the word here was simply wrong.
+   *
+   * The one way an adapter reaches that door. It exists so the key format stays
    * inside core (see `facadeKeyOf`), which is what lets a projection package
    * stay structurally typed and depend on nothing.
    */

@@ -63,7 +63,7 @@ export async function run(app: App): Promise<void> {
   const subCommands: Record<string, ReturnType<typeof defineCommand>> = {};
 
   for (const frond of app.fronds) {
-    const handlerMap = new Map(frond.handlers.map((h) => [h.entityName, h]));
+    const handlerMap = new Map(frond.handlers.map((h) => [h.address, h]));
 
     for (const entity of frond.entities) {
       const handlerEntry = handlerMap.get(entity.name);

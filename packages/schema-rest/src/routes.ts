@@ -6,6 +6,7 @@
 import type { Field, Fields, SchemaSource } from '@fougere/schema';
 import { fieldsOf, inputFields as clientInputFields, outputFields as clientOutputFields } from '@fougere/schema';
 import { resolveIsReadOp } from '@fougere/core';
+import type { HandlerEntry as CoreHandlerEntry } from '@fougere/core';
 
 // ─── Types ──────────────────────────────────────
 
@@ -44,16 +45,27 @@ interface EntityEntry {
   exposed?: boolean;
 }
 
-interface HandlerEntry {
-  entityName: string;
+/**
+ * Only what this projection reads of a scanned handler — five fields of nine.
+ *
+ * The narrowness is deliberate: a consumer that declares what it consumes accepts a
+ * minimal literal in a test and does not break when a field it ignores moves. What was
+ * NOT deliberate is that the two names it does read were spelled again here, so renaming
+ * `entityName` to `address` in core left this file compiling against a field the runtime
+ * object no longer carried — a silent break, caught only because the same commit touched
+ * the reads. `Pick` keeps the narrow view and makes core the one place the names live.
+ *
+ * `schema-graphql` holds a copy of this shape and cannot do the same: it depends on
+ * `@fougere/schema` and `@fougere/http`, never on core, which is what lets a projection
+ * package stay structurally typed. There the duplication is the doctrine, not an oversight.
+ */
+type HandlerEntry = Pick<CoreHandlerEntry, 'address' | 'surface'> & {
   operations: Map<string, OperationMeta>;
-  /** `handlers/<surface>/` — the named audience this handler answers, absent for the default door. */
-  surface?: string;
   /** `Crud(Post, PostPublic)` — the handler-wide output view, scoping every op. */
   outputOverride?: SchemaSource;
   /** The scanned constructor, which carries the same statement made on the class. */
   ctor?: { __output?: SchemaSource };
-}
+};
 
 interface PresenterEntry {
   entityName: string;
@@ -166,7 +178,7 @@ export function generateRoutes(app: AppLike, options?: GenerateRoutesOptions): R
   const routes: RouteDefinition[] = [];
 
   for (const frond of app.fronds) {
-    const handlerMap = new Map(frond.handlers.filter((h) => !h.surface).map((h) => [h.entityName, h]));
+    const handlerMap = new Map(frond.handlers.filter((h) => !h.surface).map((h) => [h.address, h]));
 
     const surfaceName = options?.surface;
 
@@ -179,7 +191,7 @@ export function generateRoutes(app: AppLike, options?: GenerateRoutesOptions): R
       if (!surfaceName && entity.exposed === false) continue;
 
       const handler = (surfaceName
-        ? frond.handlers.find((h) => h.entityName === entity.name && h.surface === surfaceName)
+        ? frond.handlers.find((h) => h.address === entity.name && h.surface === surfaceName)
         : undefined) ?? handlerMap.get(entity.name);
       // Use facade keys (includes inherited ops like CRUD), fallback to handler.operations
       const opNames = Object.keys(facade);

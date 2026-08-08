@@ -131,7 +131,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         const baseOrm = options.ormFactory(entity.entityClass, entity.name);
 
         // Check if the default handler (no surface) declares an output override
-        const defaultHandler = frond.handlers.find((h) => h.entityName === entity.name && !h.surface);
+        const defaultHandler = frond.handlers.find((h) => h.address === entity.name && !h.surface);
         const outputSchema = defaultHandler?.outputOverride ?? (defaultHandler?.ctor as any)?.__output;
         const scoped = outputSchema && outputSchema !== entity.entityClass
           ? baseOrm.output(outputSchema)
@@ -179,7 +179,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // Build handler facades → registered in ROOT container (public contract)
     const defaultHandlers = frond.handlers.filter((h) => !h.surface);
     const surfaceHandlers = frond.handlers.filter((h) => h.surface);
-    const defaultHandlerMap = new Map(defaultHandlers.map((h) => [h.entityName, h]));
+    const defaultHandlerMap = new Map(defaultHandlers.map((h) => [h.address, h]));
 
     /**
      * Build a facade for a handler and register it in the root container.
@@ -207,7 +207,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       // Crud(Item)` is called `stock` and reads `Item`; asking for `StockOrm` would be
       // asking the address for a table. The two coincide in the ordinary case and that
       // is why it went unnoticed.
-      const ormBase = entity?.name ?? handler.entityName;
+      const ormBase = entity?.name ?? handler.address;
       const ormTypeName = ormKeyOf(ormBase);
 
       const inheritsCrud = typeof handler.ctor.prototype?.list === 'function'
@@ -289,12 +289,15 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         catch { return undefined; }
       };
 
-      const entityName = handler.entityName;
+      // The name the door answers to. It reaches the presenter map below, which is keyed
+      // by ENTITY name — they coincide whenever both exist, and when no entity carries
+      // this name the lookup simply misses, which is the correct answer.
+      const address = handler.address;
       const wrapOp = (op: string) => (invocation?: InvocationContext) => {
         const inv = invocation ?? EMPTY_INVOCATION;
-        const ctx = { entity: entityName, operation: op, args: [], state: inv.state, invocation: inv };
+        const ctx = { entity: address, operation: op, args: [], state: inv.state, invocation: inv };
 
-        return runMiddlewares(getMiddlewares(entityName), ctx, async () => {
+        return runMiddlewares(getMiddlewares(address), ctx, async () => {
           const contract = contracts.get(op);
           const schema = contract?.input;
           let effectiveInvocation = inv;
@@ -312,7 +315,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
                 code: ErrorCode.VALIDATION_FAILED,
                 message: result.errors.map((e) => `${e.path}: ${e.message}`).join(', '),
                 details: result.errors,
-                entity: entityName,
+                entity: address,
                 operation: op,
               });
             }
@@ -332,7 +335,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
           const out = outputFieldsFor(op);
           const projected = projectEgress(out.fields, await getInstance()[op](...resolved), out.closed);
           if (out.closed) return projected;
-          const meta = presenterMap.get(entityName);
+          const meta = presenterMap.get(address);
           if (!meta) return projected;
 
           // A computed field is bound like an op: what it declares after the rows is
@@ -351,9 +354,9 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
           return presentEgress(
             projected,
-            scope.resolve(presenterKeyOf(entityName)),
+            scope.resolve(presenterKeyOf(address)),
             meta.fields,
-            entityName,
+            address,
             op,
             args,
           );
@@ -402,9 +405,9 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       const crudTarget = (handler.ctor as { __entity?: { name?: string } }).__entity;
       const subject = crudTarget?.name
         ? crudTarget.name[0].toLowerCase() + crudTarget.name.slice(1)
-        : handler.entityName;
+        : handler.address;
       const entity = frond.entities.find((e) => e.name === subject);
-      const facadeKey = facadeKeyOf(handler.entityName);
+      const facadeKey = facadeKeyOf(handler.address);
       buildFacade(entity, handler, scope, facadeKey);
       frondLog.debug(`${facadeKey} [${Object.keys(container.resolve(facadeKey) as any).join(', ')}]`
         + (entity ? '' : ' — no entity of that name: no ORM, no projection, no presenter'));
@@ -419,14 +422,17 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     }
 
     // Surface handlers — create sub-scope per surface handler with scoped ORM
+    //
+    // Pointing at nothing is legal HERE TOO. This loop used to `continue` when no entity
+    // carried the handler's name, so `handlers/public/SearchHandler.ts` with no `Search`
+    // entity got no door at all and no line saying why — while the very same handler at
+    // the default surface is built and logged. One rule, both surfaces.
     for (const handler of surfaceHandlers) {
-      const entity = frond.entities.find((e) => e.name === handler.entityName);
-      if (!entity) continue;
-
+      const entity = frond.entities.find((e) => e.name === handler.address);
       const surfaceScope = scope.createScope();
 
       // Register scoped ORM if output override differs from entity
-      if (options.ormFactory) {
+      if (entity && options.ormFactory) {
         const ormName = ormKeyOf(entity.name);
         const baseOrm = options.ormFactory(entity.entityClass, entity.name);
         const outputSchema = handler.outputOverride ?? (handler.ctor as any).__output;
@@ -436,9 +442,10 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         surfaceScope.registerValue(ormName, guardStorage(scoped, entity.entityClass.getFields(), entity.name));
       }
 
-      const facadeKey = facadeKeyOf(entity.name, handler.surface);
+      const facadeKey = facadeKeyOf(handler.address, handler.surface);
       buildFacade(entity, handler, surfaceScope, facadeKey);
-      frondLog.debug(`${facadeKey} [${Object.keys(container.resolve(facadeKey) as any).join(', ')}]`);
+      frondLog.debug(`${facadeKey} [${Object.keys(container.resolve(facadeKey) as any).join(', ')}]`
+        + (entity ? '' : ' — no entity of that name: no ORM, no projection, no presenter'));
     }
 
     // A named surface is closed, so what it contains is a fact worth stating.
@@ -449,7 +456,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     for (const surfaceName of surfaceNames) {
       const served = surfaceHandlers
         .filter((h) => h.surface === surfaceName)
-        .map((h) => h.entityName)
+        .map((h) => h.address)
         .sort();
       const absent = frond.entities.map((e) => e.name).filter((n) => !served.includes(n));
       frondLog.info(

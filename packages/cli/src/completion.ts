@@ -20,7 +20,7 @@ function extractCommandMeta(app: App): CommandMeta[] {
   const commands: CommandMeta[] = [];
 
   for (const frond of app.fronds) {
-    const handlerMap = new Map(frond.handlers.map((h) => [h.entityName, h]));
+    const handlerMap = new Map(frond.handlers.map((h) => [h.address, h]));
 
     for (const entity of frond.entities) {
       const handler = handlerMap.get(entity.name);
