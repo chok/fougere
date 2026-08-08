@@ -319,6 +319,19 @@ importers:
         specifier: ^4.21.0
         version: 4.21.0
 
+  demos/one-declaration:
+    dependencies:
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
+      '@fougere/schema-sql':
+        specifier: workspace:*
+        version: link:../../packages/schema-sql
+    devDependencies:
+      tsx:
+        specifier: ^4.0.0
+        version: 4.21.0
+
   demos/rust-frond:
     dependencies:
       '@fougere/core':
