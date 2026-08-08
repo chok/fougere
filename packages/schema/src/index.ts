@@ -77,6 +77,10 @@ export { writeOnly } from './vocabulary/writeOnly.js';
 export { json } from './vocabulary/json.js';
 
 // ─── Projections — consumers of the axes ─────────────────────
+// lifecycle: the axis → the values the system writes. The dual of validation — the
+// judge never fills a hole, this is what fills it, and a storage adapter calls it
+// instead of re-deriving the rule.
+export { applyCreate, applyUpdate } from './projections/lifecycle.js';
 // validation: shape → ingress predicate (+ boundary decode)
 export { type ValidationResult, type ValidationError, type Checked, validateFields, checkValue } from './projections/validation.js';
 // encode: boundary → egress wire form (the dual of validation)

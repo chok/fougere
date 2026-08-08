@@ -13,8 +13,7 @@
  * `RETURNING` clause.
  */
 import type { Kysely } from 'kysely';
-import { resolveCustomGenerator, schemaOf, type GeneratorRef, type SchemaLike, type SchemaSource } from '@fougere/schema';
-import { createId } from '@paralleldrive/cuid2';
+import { applyCreate, applyUpdate, schemaOf, type Fields, type SchemaLike, type SchemaSource } from '@fougere/schema';
 import { toTable, type TableDef } from './table.js';
 import { codecsOf, type ValueCodec } from './values.js';
 
@@ -41,53 +40,23 @@ interface SelectOption {
 
 interface PrimaryKeyInfo {
   names: string[];
-  generators: Map<string, () => string>;
   isComposite: boolean;
 }
 
 /**
- * Resolve a generator TOKEN to a function: a custom name registered via
- * `registerGenerator` wins, then the built-in presets. An unknown name throws —
- * loud and local, instead of a silent closure lost through describe/reconstruct.
+ * The primary key, read off the role axis.
+ *
+ * Used to answer "what identifies a row" — where to point a WHERE, what a cursor
+ * carries. The generated ids and managed timestamps that used to be computed here
+ * moved to `applyCreate`/`applyUpdate` (`@fougere/schema`): nothing in them was about
+ * SQL, and every other storage was re-deriving them from scratch.
  */
-function resolveGenerator(gen: GeneratorRef): () => string {
-  const custom = resolveCustomGenerator(gen);
-  if (custom) return custom;
-  switch (gen) {
-    case 'cuid2': return createId;
-    case 'uuid': return () => globalThis.crypto.randomUUID();
-    case 'nanoid': {
-      return () => {
-        const bytes = new Uint8Array(21);
-        globalThis.crypto.getRandomValues(bytes);
-        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
-        return Array.from(bytes, (b) => alphabet[b & 63]).join('');
-      };
-    }
-    default:
-      throw new Error(`Unknown generator '${gen}' — register it with registerGenerator('${gen}', fn)`);
-  }
-}
+function analyzeFields(entity: SchemaLike): { pk: PrimaryKeyInfo } {
+  const pkNames = Object.entries(entity.getFields())
+    .filter(([, field]) => field.role?.primary)
+    .map(([name]) => name);
 
-/** Primary key, generated ids and managed timestamps, read off the axes. */
-function analyzeFields(entity: SchemaLike): { pk: PrimaryKeyInfo; autos: string[]; updateNow: string[] } {
-  const pkNames: string[] = [];
-  const generators = new Map<string, () => string>();
-  const autos: string[] = [];
-  const updateNow: string[] = [];
-
-  for (const [name, field] of Object.entries(entity.getFields())) {
-    if (field.role?.primary) pkNames.push(name);
-    const create = field.lifecycle?.create;
-    if (typeof create === 'object' && create !== null && 'generate' in create) {
-      generators.set(name, resolveGenerator(create.generate));
-    } else if (create === 'now') {
-      autos.push(name);
-    }
-    if (field.lifecycle?.update === 'now') updateNow.push(name);
-  }
-
-  return { pk: { names: pkNames, generators, isComposite: pkNames.length > 1 }, autos, updateNow };
+  return { pk: { names: pkNames, isComposite: pkNames.length > 1 } };
 }
 
 /** Stand-in for "no upper bound", where the engine still demands a LIMIT. */
@@ -110,8 +79,8 @@ function pickList<T extends Record<string, unknown>>(list: ListResult<T>, keys: 
 export class SqlEntityOrm {
   private table: TableDef;
   private pk: PrimaryKeyInfo;
-  private autos: string[];
-  private updateNow: string[];
+  /** The axes `applyCreate`/`applyUpdate` read — held once, they are asked per write. */
+  private fields: Fields;
   private selectFields?: Set<string>;
   /** field → column and back; the entity names travel, the SQL names stay inside. */
   private toColumn = new Map<string, string>();
@@ -135,10 +104,8 @@ export class SqlEntityOrm {
       this.toField.set(column.name, column.field);
     }
     this.codecs = codecsOf(this.table.columns);
-    const { pk, autos, updateNow } = analyzeFields(entity);
-    this.pk = pk;
-    this.autos = autos;
-    this.updateNow = updateNow;
+    this.pk = analyzeFields(entity).pk;
+    this.fields = entity.getFields();
     this.selectFields = selectFields;
   }
 
@@ -283,13 +250,10 @@ export class SqlEntityOrm {
   }
 
   async create(input: Record<string, unknown>, options?: SelectOption): Promise<Record<string, unknown>> {
-    const data: Record<string, unknown> = { ...input };
-    for (const [name, gen] of this.pk.generators) {
-      if (!(name in data)) data[name] = gen();
-    }
-    for (const key of this.autos) {
-      if (!(key in data)) data[key] = new Date().toISOString();
-    }
+    // The lifecycle axis, realized where it is declared — a generated id, a stamped
+    // `createdAt`, a declared default. The column DEFAULT below still holds for a
+    // writer that is not us, the way a CHECK does; nothing depends on it any more.
+    const data = applyCreate(this.fields, input);
 
     await this.db.insertInto(this.table.name).values(this.toRow(data)).execute();
 
@@ -305,12 +269,7 @@ export class SqlEntityOrm {
   }
 
   async update(id: string | Record<string, unknown>, input: Record<string, unknown>, options?: SelectOption): Promise<Record<string, unknown>> {
-    const data: Record<string, unknown> = { ...input };
-    // Realise `update: 'now'` — stamped at every update when absent (a supplied
-    // value is accepted, same rule as create).
-    for (const key of this.updateNow) {
-      if (!(key in data)) data[key] = new Date().toISOString();
-    }
+    const data = applyUpdate(this.fields, input);
 
     await this.wherePk(this.db.updateTable(this.table.name).set(this.toRow(data)) as any, id).execute();
 

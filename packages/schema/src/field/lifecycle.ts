@@ -41,10 +41,16 @@ export interface Lifecycle {
 }
 
 // ─── Generator registry (open, same spirit as the boundary registries) ──
-// The schema package stays zero-dep, so the BUILT-IN presets (cuid2/uuid/nanoid)
-// are resolved by the storage adapter that owns those dependencies. This registry
-// only carries CUSTOM generators, declared once per module:
+// CUSTOM generators, declared once per module:
 //   registerGenerator('monId', () => …)  →  primary({ generate: 'monId' })
+//
+// The BUILT-IN presets (cuid2/uuid/nanoid) used to be resolved by each storage adapter,
+// on the grounds that this package took no dependency. It took one already
+// (`@cfworker/json-schema`, for the other projection), and the arrangement put the
+// inversion in plain sight: a generator YOU invented reached every adapter, and the
+// three the framework ships did not — so a second adapter honoured `cuid2` differently
+// or not at all. They live with the realization now (`projections/lifecycle.ts`), which
+// consults this registry first.
 
 const generators = new Map<string, () => string>();
 

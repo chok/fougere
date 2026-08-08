@@ -1,7 +1,7 @@
 {
   "name": "@fougere/schema",
   "version": "0.0.1",
-  "description": "L'entité et ses 4 axes — shape, role, lifecycle, boundary. Zéro dépendance à un moteur.",
+  "description": "L'entit\u00e9 et ses 4 axes \u2014 shape, role, lifecycle, boundary. Z\u00e9ro d\u00e9pendance \u00e0 un moteur.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -29,7 +29,8 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@cfworker/json-schema": "^4.1.1"
+    "@cfworker/json-schema": "^4.1.1",
+    "@paralleldrive/cuid2": "^3.3.0"
   },
   "devDependencies": {
     "@types/json-schema": "^7.0.15"

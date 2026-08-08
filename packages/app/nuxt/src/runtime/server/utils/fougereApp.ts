@@ -12,7 +12,7 @@
 import { createApp, loadCascadedConfig, setModuleLoader, Logger } from '@fougere/core';
 import { createContainer } from '@fougere/container-fougere';
 import type { App, EntityOrm, FougereConfig, Transport } from '@fougere/core';
-import type { SchemaLike } from '@fougere/schema';
+import { applyCreate, applyUpdate, type SchemaLike } from '@fougere/schema';
 
 // ── Public types ─────────────────────────────────
 
@@ -128,7 +128,19 @@ async function boot(): Promise<App> {
 
 // ── Fallback ORM ─────────────────────────────────
 
-function createMemoryOrm(_entity: SchemaLike, _name: string): EntityOrm {
+/**
+ * The store an app with no `db` runs on.
+ *
+ * It used to ignore both its arguments — `(_entity, _name)` — so it forced the field
+ * name `id`, minted a uuid whatever the entity declared, and realized none of the
+ * lifecycle rules: `auto()` stamped nothing, a declared default stayed absent. The
+ * same page therefore behaved one way here and another way on SQLite.
+ *
+ * It reads the axes now, through the one realization every storage shares.
+ */
+function createMemoryOrm(entity: SchemaLike, _name: string): EntityOrm {
+  const fields = entity.getFields();
+  const pk = Object.entries(fields).find(([, field]) => field.role?.primary)?.[0] ?? 'id';
   const store = new Map<string, Record<string, unknown>>();
   const matches = (row: Record<string, unknown>, criteria: Record<string, unknown>) =>
     Object.entries(criteria).every(([key, value]) => Object.is(row[key], value));
@@ -144,7 +156,7 @@ function createMemoryOrm(_entity: SchemaLike, _name: string): EntityOrm {
       if (limit) items = items.slice(0, limit);
       const result = items as any;
       result.hasMore = hasMore;
-      result.endCursor = items.length > 0 ? String((items[items.length - 1] as any).id ?? '') : undefined;
+      result.endCursor = items.length > 0 ? String((items[items.length - 1] as any)[pk] ?? '') : undefined;
       if (options?.count) result.total = store.size;
       return result;
     },
@@ -156,15 +168,15 @@ function createMemoryOrm(_entity: SchemaLike, _name: string): EntityOrm {
       return [...store.values()].filter((row) => matches(row, criteria));
     },
     async create(input: Partial<Record<string, unknown>>) {
-      const id = input.id as string ?? crypto.randomUUID();
-      const record = { ...input, id };
+      const record = applyCreate(fields, input);
+      const id = record[pk] as string;
       store.set(id, record);
       return record;
     },
     async update(id: string, input: Partial<Record<string, unknown>>) {
       const existing = store.get(id);
       if (!existing) throw new Error(`Not found: ${id}`);
-      const updated = { ...existing, ...input, id };
+      const updated = { ...existing, ...applyUpdate(fields, input), [pk]: id };
       store.set(id, updated);
       return updated;
     },
