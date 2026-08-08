@@ -59,7 +59,13 @@ export interface IdentityCard {
     entities: Array<{
       name: string;
       ops: CardOp[];
-      schema: SchemaDescriptor;
+      /**
+       * The shape stored under this name — **absent when nothing is**. A handler may
+       * carry no entity (`bootstrap`: *pointing at nothing is legal*), and a door with
+       * no rows behind it is ordinary: a health check, a computation, a search across
+       * several shapes. A reader that needs the shape must say what it does without one.
+       */
+      schema?: SchemaDescriptor;
     }>;
   }>;
 }
@@ -129,18 +135,33 @@ export function contractsKeyOf(entityName: string, surface?: string): string {
  */
 export function identityCardOf(app: App, surface?: string): IdentityCard {
   return {
-    fronds: app.fronds.map((frond) => ({
-      name: frond.name,
-      entities: frond.entities.flatMap((entity) => {
-        const ops = facadeOps(app, entity.name, surface);
-        if (ops.length === 0) return [];
-        return [{
-          name: entity.name,
-          ops,
-          schema: describeSchema(entity.entityClass, entity.name),
-        }];
-      }),
-    })),
+    fronds: app.fronds.map((frond) => {
+      // What the frond answers to, not what it stores. This walked `frond.entities`, so a
+      // handler carrying no entity — a health check, a search across shapes — was built,
+      // served, and absent from the card: `sync` could not generate its door and a remote
+      // consumer had no way to know it existed. The boot has said "pointing at nothing is
+      // legal" since handlers became the subject; the card had not caught up.
+      const byEntity = new Map(frond.entities.map((entity) => [entity.name, entity]));
+      const addresses = [...new Set([
+        ...frond.entities.map((entity) => entity.name),
+        ...frond.handlers.map((handler) => handler.address),
+      ])];
+
+      return {
+        name: frond.name,
+        entities: addresses.flatMap((address) => {
+          const ops = facadeOps(app, address, surface);
+          if (ops.length === 0) return [];
+          const entity = byEntity.get(address);
+          return [{
+            name: address,
+            ops,
+            // Absent when nothing of that name is stored. A door is still a door.
+            ...(entity ? { schema: describeSchema(entity.entityClass, address) } : {}),
+          }];
+        }),
+      };
+    }),
   };
 }
 

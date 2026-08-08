@@ -60,7 +60,11 @@ async function main(): Promise<void> {
   // ─── 2. Le schéma déclaré en Rust ────────────────────────────────
   title('2.', 'Le schéma — déclaré dans src/main.rs, jamais en TypeScript');
 
+  // Une porte peut ne rien stocker — la carte publie alors ses ops et pas de schéma.
+  // Ce frond en déclare un, donc l'absence est une panne, pas un cas à contourner.
   const descriptor = card.fronds[0].entities[0].schema;
+  if (!descriptor) throw new Error("le frond Rust n'a publié aucun schéma — la carte est incomplète");
+
   console.log(`   ${Object.keys(descriptor.properties).length} champs · requis à la création : ${descriptor.required?.join(', ')}`);
   show(descriptor.properties.recordedAt);
 

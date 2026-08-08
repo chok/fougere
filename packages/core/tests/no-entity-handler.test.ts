@@ -9,7 +9,7 @@
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container-fougere';
-import { createApp, createLocalRunner } from '../src/index.js';
+import { createApp, createLocalRunner, identityCardOf } from '../src/index.js';
 import { EMPTY_INVOCATION } from '../src/invocation.js';
 
 const root = join(import.meta.dirname, 'fixtures-no-entity');
@@ -48,5 +48,25 @@ describe('a handler with no entity', () => {
     await using app = await createApp({ root, createContainer });
 
     expect(await app.facadeFor('health')!.check(EMPTY_INVOCATION)).toEqual({ status: 'up' });
+  });
+
+  it('appears in the identity card, so a consumer can discover it', async () => {
+    await using app = await createApp({ root, createContainer });
+
+    // The card walked `frond.entities`, so this door was built, served, and invisible:
+    // `sync` could not generate it and a remote consumer had no way to know it existed.
+    const card = identityCardOf(app);
+    const health = card.fronds[0].entities.find((e) => e.name === 'health');
+
+    expect(health?.ops.map((op) => op.name)).toEqual(['check']);
+    // No shape, and that is the fact rather than an empty one: nothing is stored.
+    expect(health?.schema).toBeUndefined();
+  });
+
+  it('carries its named surface into the card too', async () => {
+    await using app = await createApp({ root, createContainer });
+
+    const publicCard = identityCardOf(app, 'public');
+    expect(publicCard.fronds[0].entities.map((e) => e.name)).toEqual(['health']);
   });
 });

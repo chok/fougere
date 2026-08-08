@@ -21,8 +21,12 @@ interface Route {
    * The entity's schema, rebuilt from the identity card — the same
    * `SchemaConstructor` shape `entity({...})` produces, live validation
    * included. Reconstructed once per entity, at discovery time.
+   *
+   * **Absent when the door stores nothing.** A handler may carry no entity, so the card
+   * publishes it with ops and no shape; there is nothing to rebuild and pretending
+   * otherwise would hand callers an empty schema that validates everything.
    */
-  schema: SchemaConstructor<Fields>;
+  schema?: SchemaConstructor<Fields>;
 }
 
 export interface RemoteRouter {
@@ -53,7 +57,7 @@ export function createRemoteRouter(
                 byEntity.set(entity.name, {
                   frond: frond.name,
                   transport,
-                  schema: reconstruct(entity.schema as SchemaDescriptor),
+                  ...(entity.schema ? { schema: reconstruct(entity.schema as SchemaDescriptor) } : {}),
                 });
               }
             }

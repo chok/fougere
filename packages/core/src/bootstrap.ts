@@ -551,6 +551,14 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     }
     if (remoteRouter) {
       const route = await remoteRouter.route(entity);
+      // A remote door that stores nothing publishes ops and no shape. Saying so beats
+      // handing back an empty schema, which would validate every input it was given.
+      if (!route.schema) {
+        throw new Error(
+          `'${entity}' is served by frond '${route.frond}' but stores no rows, so it has no schema. `
+          + `Call its operations through the façade instead.`,
+        );
+      }
       return route.schema;
     }
     throw new Error(notLoaded(entity));
