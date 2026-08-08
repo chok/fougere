@@ -1,5 +1,5 @@
 import type { Container } from '@fougere/container';
-import type { CreateAppOptions, App, AuthRuntime } from './types.js';
+import type { CreateAppOptions, App, AuthRuntime, HandlerEntry, PresenterEntry } from './types.js';
 import type { AppMiddleware } from './middleware.js';
 import { runMiddlewares, FougereError, ErrorCode } from './middleware.js';
 import { scanProject } from './scanner.js';
@@ -31,6 +31,50 @@ const notLoaded = (entity: string) =>
   `Frond for '${entity}' is not loaded.\n` +
   `  - Add '${entity}' to --fronds flag\n` +
   `  - Or declare a remote: remotes: { ${entity}: 'http://...' }`;
+
+/**
+ * Two fronds cannot claim one name — said at boot, because nothing else says it.
+ *
+ * A door lands on the ROOT container under `facadeKeyOf(address)`, and that key carries
+ * no frond; a presenter lands there too. `registerValue` is a `Map.set`, so the second
+ * frond loaded simply replaced the first and every call meant for one went to the other.
+ * Silent in-process, and worse than silent under a split: `createRemoteRouter` guards its
+ * index with `if (!byEntity.has(...))`, so THERE the first frond discovered wins. The same
+ * application answered differently depending on how it was deployed.
+ *
+ * Refusing is the honest answer while a key cannot say which frond owns it. It is not the
+ * last word: qualify the key and this boot can accept both. ORMs and repositories are not
+ * checked because they are registered in the frond's own scope, where two fronds do not meet.
+ *
+ * A frond declared remote registers nothing locally, so it cannot collide here. Two REMOTE
+ * fronds publishing one entity still shadow each other inside the router — a hole this
+ * check does not reach.
+ */
+function assertOneOwnerPerKey(
+  fronds: Array<{ name: string; handlers: HandlerEntry[]; presenters: PresenterEntry[] }>,
+  remotes: Record<string, string> | undefined,
+): void {
+  const owner = new Map<string, string>();
+
+  const claim = (key: string, frond: string, what: string) => {
+    const held = owner.get(key);
+    if (held !== undefined && held !== frond) {
+      throw new Error(
+        `Two fronds claim the key '${key}': '${held}' and '${frond}'.\n`
+        + `  A ${what} is registered under a key that names no frond, so one would silently replace the other.\n`
+        + `  - Rename one of the two classes, or\n`
+        + `  - keep one of the two fronds out of this process (--fronds), or declare it in remotes:`,
+      );
+    }
+    owner.set(key, frond);
+  };
+
+  for (const frond of fronds) {
+    if (remotes && frond.name in remotes) continue;
+    for (const handler of frond.handlers) claim(facadeKeyOf(handler.address, handler.surface), frond.name, 'door');
+    for (const presenter of frond.presenters) claim(presenterKeyOf(presenter.entityName), frond.name, 'presenter');
+  }
+}
 
 /** Bootstrap a fougere application. */
 export async function createApp(options: CreateAppOptions): Promise<App> {
@@ -104,6 +148,8 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     const scoped = scopedMiddlewares.get(entity) ?? [];
     return [...globalMiddlewares, ...scoped];
   }
+
+  assertOneOwnerPerKey(fronds, options.remotes);
 
   // Register frond scopes
   for (const frond of fronds) {
