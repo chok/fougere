@@ -57,6 +57,54 @@ describe('remote frond sync', () => {
     }
   });
 
+  it('mirrors a door that stores nothing instead of refusing the whole card', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'fougere-sync-'));
+    process.chdir(root);
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      result: {
+        fronds: [{
+          name: 'ops',
+          entities: [
+            // A health check owns no rows, so the card publishes ops and no schema. This
+            // used to throw `has no valid schema descriptor` and take the card with it,
+            // so ONE entity-less handler on the host made `sync` useless for the rest.
+            { name: 'health', ops: [{ name: 'check', kind: 'query' }] },
+            {
+              name: 'ticket',
+              ops: [{ name: 'list', kind: 'query' }],
+              schema: {
+                type: 'object',
+                properties: { id: { type: 'string' } },
+                'x-fougere-version': 1,
+                'x-fougere-vendor': 'fougere',
+              },
+            },
+          ],
+        }],
+      },
+    }), { status: 200 })));
+
+    try {
+      await new SyncHandler().execute({ name: 'ops', from: 'https://example.test/' });
+      const dir = join(root, '.fougere', 'remotes', 'ops');
+
+      // The door travels; there is simply no row class to write beside it.
+      expect(readFileSync(join(dir, 'handlers', 'HealthHandler.ts'), 'utf8'))
+        .toContain('interface HealthHandler');
+      expect(() => readFileSync(join(dir, 'entities', 'Health.ts'), 'utf8')).toThrow();
+
+      // And the entity that DOES have a shape is untouched by its neighbour.
+      expect(readFileSync(join(dir, 'entities', 'Ticket.ts'), 'utf8')).toContain('class Ticket');
+
+      const barrel = readFileSync(join(dir, 'index.ts'), 'utf8');
+      expect(barrel).toContain("export type { HealthHandler }");
+      expect(barrel).not.toContain("export { default as Health }");
+      expect(barrel).toContain("export { default as Ticket }");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it('rejects a traversal name supplied by a remote', async () => {
     const root = mkdtempSync(join(tmpdir(), 'fougere-sync-'));
     process.chdir(root);
