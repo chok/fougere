@@ -152,13 +152,21 @@ export class SqlEntityOrm {
     return data;
   }
 
-  /** Apply a primary-key filter (simple or composite). */
+  /**
+   * Apply a primary-key filter (simple or composite).
+   *
+   * The key crosses to the column exactly like every other value — `whereAll` states
+   * the rule two lines below and this did not follow it. It cost nothing while every
+   * generated key was a string; a key that holds a Date (`primary(auto())`) inserted
+   * fine and then failed its own re-read, with the row already persisted.
+   */
   private wherePk<Q extends { where(a: any, b: any, c: any): Q }>(query: Q, id: string | Record<string, unknown>): Q {
     if (this.pk.isComposite) {
       const obj = id as Record<string, unknown>;
-      return this.pk.names.reduce((q, name) => q.where(this.column(name), '=', obj[name]), query);
+      return this.pk.names.reduce((q, name) => q.where(this.column(name), '=', this.write(name, obj[name])), query);
     }
-    return query.where(this.column(this.pk.names[0]), '=', id as string);
+    const name = this.pk.names[0];
+    return query.where(this.column(name), '=', this.write(name, id));
   }
 
   // A filter compares against the COLUMN, so its value crosses the same way a write

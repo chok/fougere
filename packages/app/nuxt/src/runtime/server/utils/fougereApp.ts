@@ -138,10 +138,14 @@ async function boot(): Promise<App> {
  *
  * It reads the axes now, through the one realization every storage shares.
  */
-function createMemoryOrm(entity: SchemaLike, _name: string): EntityOrm {
+export function createMemoryOrm(entity: SchemaLike, name: string): EntityOrm {
   const fields = entity.getFields();
   const pk = Object.entries(fields).find(([, field]) => field.role?.primary)?.[0] ?? 'id';
   const store = new Map<string, Record<string, unknown>>();
+  // `EntityOrm.findById(id: string)` — but a key can hold a number, and a Map keyed on
+  // `1` does not answer `'1'`. SQL never had the question; here the divergence was
+  // silent and only on this storage.
+  const keyOf = (value: unknown) => String(value);
   const matches = (row: Record<string, unknown>, criteria: Record<string, unknown>) =>
     Object.entries(criteria).every(([key, value]) => Object.is(row[key], value));
   return {
@@ -160,7 +164,7 @@ function createMemoryOrm(entity: SchemaLike, _name: string): EntityOrm {
       if (options?.count) result.total = store.size;
       return result;
     },
-    async findById(id: string) { return store.get(id); },
+    async findById(id: string) { return store.get(keyOf(id)); },
     async findBy(criteria: Record<string, unknown>) {
       return [...store.values()].find((row) => matches(row, criteria));
     },
@@ -169,18 +173,32 @@ function createMemoryOrm(entity: SchemaLike, _name: string): EntityOrm {
     },
     async create(input: Partial<Record<string, unknown>>) {
       const record = applyCreate(fields, input);
-      const id = record[pk] as string;
-      store.set(id, record);
+      const id = record[pk] as string | undefined;
+      // `primary(text())` declares no generator, so nothing fills the hole and the
+      // caller has to. Keying on `undefined` would let the second create overwrite the
+      // first, in silence — the old version hid this by inventing an `id` field the
+      // entity never declared.
+      if (id === undefined) {
+        throw new Error(`${name}.create: '${pk}' is the primary key and nothing supplied it — this entity declares no generator for it.`);
+      }
+      // A create is not an upsert. `Map.set` overwrites, so a second create under the
+      // same key answered "created" while destroying the previous row — SQL answers a
+      // constraint violation, and a store that loses data silently is worse than one
+      // that fails.
+      if (store.has(keyOf(id))) {
+        throw new Error(`${name}.create: '${pk}' ${JSON.stringify(id)} already exists.`);
+      }
+      store.set(keyOf(id), record);
       return record;
     },
     async update(id: string, input: Partial<Record<string, unknown>>) {
-      const existing = store.get(id);
+      const existing = store.get(keyOf(id));
       if (!existing) throw new Error(`Not found: ${id}`);
-      const updated = { ...existing, ...applyUpdate(fields, input), [pk]: id };
-      store.set(id, updated);
+      const updated = { ...existing, ...applyUpdate(fields, input), [pk]: existing[pk] };
+      store.set(keyOf(id), updated);
       return updated;
     },
-    async delete(id: string) { return store.delete(id); },
+    async delete(id: string) { return store.delete(keyOf(id)); },
     output(_schema: SchemaLike) { return this; },
   };
 }
