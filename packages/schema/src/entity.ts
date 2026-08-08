@@ -1,7 +1,7 @@
 import { cloneField, resolveBoundary, type Field, type Fields } from "./field/index.js";
 import type { Hints } from "./hints.js";
 import { deriveUnique, deriveUniqueRoles, projectUniqueOntoFields, type CompositeUnique, type EntityDeclarations } from "./unique.js";
-import { validateFields, type ValidationResult, type ValidateOptions } from "./projections/validation.js";
+import { checkValue, validateFields, type ValidationResult, type ValidateOptions } from "./projections/validation.js";
 import type { StandardSchemaV1 } from "./projections/standard.js";
 
 // ─── Types ──────────────────────────────────────
@@ -310,7 +310,38 @@ export function entity<TFields extends Fields>(
   // so it is where a composite group becomes readable on each member's role axis. The
   // declaration remains the source — `getUnique()` still answers it.
   const projected = projectUniqueOntoFields(fields, declarations?.unique);
+  assertDefaultsAreValid(projected);
   return createSchemaConstructor(projected, undefined, declarations?.hints, {}, declarations?.unique);
+}
+
+/**
+ * A declared default must satisfy its own shape — checked once, here.
+ *
+ * `applyCreate` writes it into every row without passing the client judge, which is
+ * correct: the judge asks "is what the CALLER sent legal", and this value comes from the
+ * author. But that means `text({ min: 5, default: 'ab' })` produced rows the entity's own
+ * `validate` refuses — silently on a store that judges nothing, as a constraint violation
+ * on SQL, as a validator error on MongoDB. Three symptoms, one cause, none of them naming
+ * it.
+ *
+ * The value is static and so is the shape, so the answer is static: it belongs at the
+ * declaration, not on every write. `oneOf` closes its own case in the type system; this
+ * catches what no type can — a bound, a pattern, a format.
+ */
+function assertDefaultsAreValid(fields: Fields): void {
+  for (const [name, field] of Object.entries(fields)) {
+    const create = field.lifecycle?.create;
+    if (typeof create !== 'object' || create === null || !('value' in create)) continue;
+
+    const checked = checkValue(field, (create as { value: unknown }).value);
+    if ('error' in checked) {
+      throw new Error(
+        `Field '${name}': the declared default ${JSON.stringify((create as { value: unknown }).value)} `
+        + `is not a legal value for it — ${checked.error}. It would be written into every row `
+        + `without passing the judge.`,
+      );
+    }
+  }
 }
 
 // ─── compose — the other entry of the derivation algebra ───

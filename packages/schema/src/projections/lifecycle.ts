@@ -66,15 +66,19 @@ function generatorFor(ref: string): () => string {
  */
 export function applyCreate(fields: Fields, input: Row): Row {
   const out: Row = { ...input };
-  const now = new Date();
+  const instant = Date.now();
 
   for (const [name, field] of Object.entries(fields) as [string, AnyField][]) {
     if (name in out) continue;
     const create = field.lifecycle?.create;
     if (create === 'now') {
-      out[name] = now;
+      // One instant, one Date PER FIELD. `auto()` and `updated()` on the same entity
+      // would otherwise hold the same object, so mutating `updatedAt` would move an
+      // immutable `createdAt` with it — invisible where a storage serializes on write
+      // (SQL), lasting where it does not (an in-memory store keeps the row as handed).
+      out[name] = new Date(instant);
     } else if (typeof create === 'object' && create !== null) {
-      if ('value' in create) out[name] = (create as { value: unknown }).value;
+      if ('value' in create) out[name] = freshValue((create as { value: unknown }).value);
       else if ('generate' in create) out[name] = generatorFor(String((create as { generate: unknown }).generate))();
     }
     // `'optional'` and an absent rule both mean: the system writes nothing here.
@@ -84,15 +88,29 @@ export function applyCreate(fields: Fields, input: Row): Row {
 }
 
 /**
+ * A declared default is written into every row, so handing out the declaration itself
+ * would alias every row to it — mutate one, mutate the field and all its siblings.
+ *
+ * Every default the vocabulary can express is a primitive (`text`, `number`, `bool`,
+ * `oneOf`; `list` and `json` take none), so this only pays for itself under the escape
+ * hatch — `createField({ lifecycle: { create: { value: {…} } } })`. Cheap insurance
+ * against the one failure mode nobody would ever debug from the symptom.
+ */
+function freshValue(value: unknown): unknown {
+  if (value === null || typeof value !== 'object') return value;
+  return structuredClone(value);
+}
+
+/**
  * Fill what the entity says the system writes at every update — `updated()`, and
  * nothing else. A supplied value wins, same rule as create.
  */
 export function applyUpdate(fields: Fields, patch: Row): Row {
   const out: Row = { ...patch };
-  const now = new Date();
+  const instant = Date.now();
 
   for (const [name, field] of Object.entries(fields) as [string, AnyField][]) {
-    if (field.lifecycle?.update === 'now' && !(name in out)) out[name] = now;
+    if (field.lifecycle?.update === 'now' && !(name in out)) out[name] = new Date(instant);
   }
 
   return out;
