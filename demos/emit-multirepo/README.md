@@ -62,6 +62,47 @@ On arrival the payload goes through the **same local dispatch** the emitter woul
 in-process — so the judge, the binding and the middlewares apply. A fact off a wire is
 validated against the entity it is.
 
+## The same thing without a broker — a tunnel
+
+Same two repositories, same `PostHandler`, same `IndexHandler`. **Only the carrier
+changes**, and this one needs nothing deployed:
+
+```bash
+cd blog   && pnpm tunnel      # holds a socket open, publishes every 3 s
+cd search && pnpm tunnel      # connects and introduces itself
+```
+
+```
+[blog] postPublished → 0 listener(s) down the tunnel          ← nobody yet
+[blog] a listener introduced itself: postPublished            ← the handshake
+[blog] postPublished → 1 listener(s) down the tunnel
+[search · pid 43776] indexed p15 — "Frond number 15"
+…
+[blog] postPublished → 0 listener(s) down the tunnel          ← listener killed
+```
+
+The emitter still reads nobody's code. It **learns** from the handshake:
+
+```ts
+// search — the payload of the handshake IS what the code accepts
+socket.write(JSON.stringify({ subscribe: app.listensTo() }));
+```
+
+Stop `search` and the count drops back to zero: the emitter forgets, and the facts
+published meanwhile are gone. Nothing is held, by anyone.
+
+### Which carrier, and why
+
+| | how the emitter learns who listens | needs |
+|---|---|---|
+| **direct call** ([emit-split](../emit-split)) | by **reading their code** | one project |
+| **tunnel** | the listener **introduced itself** | the listener knows the emitter's address |
+| **broker** | nobody — both meet on **a name** | something deployed |
+
+Only the last two cross a repository boundary. A tunnel is lighter — two processes, no
+infrastructure — and its price is that the listener must know where to call, and that the
+emitter holds one connection per listener.
+
 ## What this demo is not
 
 - **The broker is forty lines of stand-in.** Real deployments put NATS, Redis or Kafka
