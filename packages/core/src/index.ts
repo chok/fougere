@@ -33,7 +33,6 @@ export { loggerMiddleware } from './middleware/logger.js';
 export { errorMiddleware } from './middleware/error-handler.js';
 export { Logger } from './builtins/logger.js';
 export { Config } from './builtins/config.js';
-export { EventBus, type EventHandler } from './builtins/event-bus.js';
 export type { EntityOrm, OrmFactory, ListOptions, ListResult } from './orm.js';
 export { LIST_OPTION_KEYS, assertListOptions } from './orm.js';
 export type {

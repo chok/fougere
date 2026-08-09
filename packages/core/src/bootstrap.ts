@@ -5,7 +5,6 @@ import { runMiddlewares, FougereError, ErrorCode } from './middleware.js';
 import { scanProject } from './scanner.js';
 import { Logger, type LogLevel } from './builtins/logger.js';
 import { Config } from './builtins/config.js';
-import { EventBus } from './builtins/event-bus.js';
 import { createRemoteRouter, createRemoteFacade } from './remote.js';
 import { facadeKeyOf } from './call.js';
 import { repositoryKeyOf } from './repository.js';
@@ -86,8 +85,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   // Builtins — registered under class name (PascalCase) for type-based DI
   container.registerValue('Logger', new Logger());
   container.register('Config', Config, { lifetime: 'singleton' });
-  container.register('EventBus', EventBus, { lifetime: 'singleton' });
-  log.debug('builtins registered (Logger, Config, EventBus)');
+  log.debug('builtins registered (Logger, Config)');
 
   // Scan (with optional filter)
   const scanStart = performance.now();

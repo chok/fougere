@@ -34,7 +34,6 @@ describe('createApp', () => {
     await using app = await createApp({ root: fixturesRoot, createContainer });
     expect(app.container.has('Logger')).toBe(true);
     expect(app.container.has('Config')).toBe(true);
-    expect(app.container.has('EventBus')).toBe(true);
   });
 
   it('discovers fronds', async () => {

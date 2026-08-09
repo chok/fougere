@@ -112,7 +112,7 @@ export function verify(app: Pick<App, 'fronds'>): Violation[] {
     for (const subject of injectablesOf(frond)) {
       for (const dep of subject.deps) {
         const declared = index.get(dep);
-        // Not in the index at all = a builtin (Logger, Config, EventBus), a
+        // Not in the index at all = a builtin (Logger, Config), a
         // façade key, or an unresolved name. None is a boundary crossing, and
         // an unresolved dependency is the container's complaint, not this rule's.
         if (!declared || declared.frond === frond.name) continue;
