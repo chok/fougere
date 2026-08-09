@@ -114,6 +114,12 @@ export function validateFields(
   // foreign key), so a stranger is a bug or an attack — both deserve the 400.
   // Stripping would also let the envelope diverge from GraphQL, which refuses
   // unknown input keys by construction.
+  //
+  // A FACT is judged by this same rule, deliberately — the one place it was tempting to
+  // relax it. A subscriber's copy of a fact can be older than the sender's, so tolerating
+  // a stranger key would let a rolling deployment through; it would also mean a reader
+  // silently ignoring a field it was supposed to handle. If the judge refuses, that is
+  // the end of it: the sender re-syncs its readers before it ships.
   for (const key of Object.keys(data)) {
     if (!(key in fields)) {
       errors.push({ path: pathPrefix ? `${pathPrefix}.${key}` : key, message: 'Unknown field' });

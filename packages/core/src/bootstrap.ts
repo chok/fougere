@@ -626,6 +626,23 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
    * and the same middlewares as any caller. Nothing new answers for correctness — that is
    * the dividend of a subscriber being an ordinary op rather than a special kind.
    */
+  /**
+   * A subscriber refusing the SHAPE, said in one line instead of dumped as an error.
+   *
+   * This is the one refusal nobody else will ever see. A door hands its 400 back to the
+   * caller who can fix it; a fact is dispatched, not delivered, so the sender learns
+   * nothing and the log is the whole of the evidence. The most likely cause is also the
+   * one a stack trace hides worst — this process's copy is older than the sender's — so
+   * the line names the fields and the remedy, and hedges because a genuinely bad payload
+   * produces the same refusal.
+   */
+  const describeRefusal = (fact: string, cause: unknown): string | undefined => {
+    const err = cause as { code?: string; details?: Array<{ path: string; message: string }> };
+    if (err?.code !== ErrorCode.VALIDATION_FAILED || !err.details?.length) return undefined;
+    return `refused the shape — ${err.details.map((d) => `${d.path}: ${d.message}`).join(', ')}.`
+      + ` If '${fact}' gained a field, this copy is older than the sender's: re-run \`fougere sync\`.`;
+  };
+
   /** The listeners in THIS process, and nothing beyond it. Shared by emission and delivery. */
   const dispatchLocally = async (fact: string, payload: unknown): Promise<void> => {
     const walked = chain.getStore() ?? [];
@@ -648,7 +665,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         try {
           const facade = container.resolve<Record<string, Function>>(door);
           void Promise.resolve(facade[op]({ ...EMPTY_INVOCATION, body: payload }))
-            .catch((cause) => log.error(`${fact} → ${door}.${op}`, cause));
+            .catch((cause) => log.error(`${fact} → ${door}.${op}`, describeRefusal(fact, cause) ?? cause));
         } catch (cause) {
           log.error(`${fact} → ${door} could not be reached`, cause);
         }

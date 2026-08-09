@@ -6,7 +6,7 @@
  * registers anything: a handler that declares `Emit<PostPublished>` and a handler that
  * accepts `Fact<PostPublished>` find each other because the scan read their signatures.
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container-fougere';
 import { createApp, createLocalRunner, emitKeyOf, factOfEmitKey, identityCardOf } from '../src/index.js';
@@ -169,6 +169,93 @@ describe('a fact on the identity card', () => {
     // Listing it as a door would claim it is callable, and the runner would answer
     // NOT_FOUND on every op — a remote router would even route calls to it.
     expect(blog.doors.some((door) => door.name === 'postPublished')).toBe(false);
+  });
+});
+
+/**
+ * A fact meets the same judge as everything else, and that is a DECISION.
+ *
+ * `deliver` is what a carrier calls, so these are facts off a wire — announced by a `blog`
+ * whose copy of `PostPublished` no longer matches the subscriber's. It was tempting to
+ * tolerate a stranger key here, since the sender ships on its own schedule: a fleet, a
+ * multirepo or two teams live in version skew permanently, and refusing means a rolling
+ * deployment breaks every listener that has not re-synced.
+ *
+ * Refused anyway. Tolerating would mean a reader silently ignoring a field it was meant to
+ * handle, which is the failure you find six months later. If the judge refuses, that is the
+ * end of it — the price is an ORDER: re-sync the readers, then ship the sender.
+ *
+ * These tests exist to keep that decision from being "fixed" later.
+ */
+describe('a sender whose copy has moved ahead', () => {
+  beforeEach(() => { (globalThis as any).__heard = []; });
+
+  it('is refused, and the refusal names the field', async () => {
+    await using app = await createApp({ root, createContainer });
+    const refusals: unknown[] = [];
+    app.use(async (_ctx, next) => {
+      try { return await next(); } catch (cause) { refusals.push(cause); throw cause; }
+    });
+
+    await app.deliver('postPublished', {
+      id: '77',
+      title: 'a post',
+      at: new Date().toISOString(),
+      author: 'a field this subscriber has never heard of',
+    });
+    await settle();
+
+    expect(heard()).not.toContain('search:77');
+    expect((refusals[0] as { details?: unknown[] }).details)
+      .toEqual([{ path: 'author', message: 'Unknown field' }]);
+  });
+
+  /**
+   * The log IS the evidence, so it is pinned like any other contract.
+   *
+   * A door hands its 400 back to a caller who can act on it. A fact is dispatched and not
+   * delivered, so nothing travels back and this line is all anyone gets — a bare error
+   * dump would leave the most likely cause (a copy older than the sender's) unsaid.
+   */
+  it('says so in a log that names the field and the remedy', async () => {
+    await using app = await createApp({ root, createContainer });
+    const written: string[] = [];
+    const spy = vi.spyOn(console, 'error').mockImplementation((...args) => {
+      written.push(args.map(String).join(' '));
+    });
+
+    try {
+      await app.deliver('postPublished', {
+        id: '80', title: 'a post', at: new Date().toISOString(), author: 'unknown here',
+      });
+      await settle();
+    } finally {
+      spy.mockRestore();
+    }
+
+    const line = written.find((entry) => entry.includes('postPublished → indexHandler.reindex'));
+    expect(line).toMatch(/author: Unknown field/);
+    expect(line).toMatch(/fougere sync/);
+  });
+
+  it('leaves the emitter untouched — a refusal reaches a log, never back up', async () => {
+    await using app = await createApp({ root, createContainer });
+
+    // Dispatch is not delivery. Whatever a subscriber decides about the payload, the
+    // announcement settles: this is the same rule a throwing subscriber already obeys.
+    await expect(
+      app.deliver('postPublished', { id: '78', title: 'x', at: new Date().toISOString(), author: 'y' }),
+    ).resolves.toBeUndefined();
+  });
+
+  /** The other direction was never in question: a field that left is missing data. */
+  it('refuses a fact that lost a field it needs', async () => {
+    await using app = await createApp({ root, createContainer });
+
+    await app.deliver('postPublished', { id: '79' });
+    await settle();
+
+    expect(heard()).not.toContain('search:79');
   });
 });
 
