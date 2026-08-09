@@ -630,7 +630,9 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
    * and the same middlewares as any caller. Nothing new answers for correctness — that is
    * the dividend of a subscriber being an ordinary op rather than a special kind.
    */
-  for (const fact of emitted) {
+  // Emitted here, or merely listened to: a transport that carries facts in from outside
+  // resolves this same value to deliver them, so a frond that only subscribes needs one too.
+  for (const fact of new Set([...emitted, ...subscribers.keys()])) {
     container.registerValue(emitKeyOf(fact), async (payload: unknown) => {
       const walked = chain.getStore() ?? [];
       if (walked.includes(fact)) {
@@ -641,8 +643,21 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       }
 
       const listeners = subscribers.get(fact) ?? [];
+
+      /**
+       * Whoever is not in this process — and it is the ONLY way to reach them.
+       *
+       * The loop below finds its listeners by having READ their code, so it stops at the
+       * repository boundary: another team's Frond is not on this disk, and the emission
+       * reaches nobody. A carrier hands the fact to a name instead, and the far side
+       * subscribes to that same name from ITS own code. Neither reads the other, which is
+       * the whole of what a broker adds over a transport.
+       */
+      const carried = options.onEmit?.(fact, payload);
+      if (carried) void Promise.resolve(carried).catch((cause) => log.error(`${fact} — carrier refused it`, cause));
+
       if (listeners.length === 0) {
-        log.debug(`${fact} — announced, nobody listens`);
+        log.debug(`${fact} — announced, nobody listens in this process`);
         return;
       }
 
@@ -779,6 +794,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     resolve,
     schemaFor,
     facadeFor,
+    listensTo: () => [...subscribers.keys()],
     ormFor,
     dispose: () => container.dispose(),
     [Symbol.asyncDispose]: () => container.dispose(),

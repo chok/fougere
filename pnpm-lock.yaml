@@ -142,6 +142,44 @@ importers:
         specifier: ^4.21.0
         version: 4.21.0
 
+  demos/emit-multirepo/blog:
+    dependencies:
+      '@fougere/container-fougere':
+        specifier: workspace:*
+        version: link:../../../packages/container-fougere
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../../packages/core
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../../packages/schema
+      jiti:
+        specifier: ^2.0.0
+        version: 2.7.0
+    devDependencies:
+      tsx:
+        specifier: ^4.0.0
+        version: 4.21.0
+
+  demos/emit-multirepo/search:
+    dependencies:
+      '@fougere/container-fougere':
+        specifier: workspace:*
+        version: link:../../../packages/container-fougere
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../../packages/core
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../../packages/schema
+      jiti:
+        specifier: ^2.0.0
+        version: 2.7.0
+    devDependencies:
+      tsx:
+        specifier: ^4.0.0
+        version: 4.21.0
+
   demos/emit-split:
     dependencies:
       '@fougere/container-fougere':

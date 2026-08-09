@@ -294,6 +294,19 @@ export interface CreateAppOptions {
    */
   remoteTransport?: (url: string) => Transport;
   /**
+   * Carries an announced fact out of this process — a broker, a queue, a log.
+   *
+   * Called for every emission, ALONGSIDE the local dispatch and never instead of it: a
+   * listener in this process is reached directly, and this is how the others hear.
+   *
+   * It exists because the local dispatch finds its listeners by having READ their code,
+   * which stops at the repository boundary. A carrier hands the fact to a NAME; the far
+   * side subscribes to that same name from its own code, and neither ever reads the other.
+   *
+   * Its failure never reaches the emitter — same rule as a subscriber's.
+   */
+  onEmit?: (fact: string, payload: unknown) => void | Promise<void>;
+  /**
    * Storage handle to expose to the auth provider via AuthContext.db.
    * Required when `auth` is set.
    */
@@ -333,6 +346,14 @@ export interface App {
    * stay structurally typed and depend on nothing.
    */
   facadeFor(entity: string, surface?: string): Record<string, Function> | undefined;
+  /**
+   * The facts this app has a listener for — what a carrier must subscribe to on its behalf.
+   *
+   * Derived from the signatures it scanned (`Fact<T>` in an op's parameters), so a process
+   * states what it listens to without anyone declaring it twice. The dual of `onEmit`: one
+   * says what leaves, this says what should be brought in.
+   */
+  listensTo(): string[];
   /**
    * The storage an entity is backed by, resolved through its owning frond's scope —
    * the dual of {@link facadeFor}. `undefined` when no loaded frond hosts the entity,

@@ -6,6 +6,8 @@ packages:
   - site
   - demos/multi-frond/remote-blog
   - demos/multi-frond/consumer
+  - demos/emit-multirepo/blog
+  - demos/emit-multirepo/search
 
 # pnpm 10 moved these out of package.json and pnpm 11 stopped reading them
 # there — silently, so `--frozen-lockfile` saw no overrides at all and refused
