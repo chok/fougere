@@ -19,7 +19,7 @@ import { computeBindingPlan, resolveArgs, type CollectorResolver } from './bindi
 import type { OperationContract, OperationsMap } from './operation.js';
 import { resolveContracts } from './operation.js';
 import { EMPTY_INVOCATION, type InvocationContext } from './invocation.js';
-import { type SchemaLike, type Fields, validateFields } from '@fougere/schema';
+import { type SchemaLike, type Fields, validateFields, applyCreate } from '@fougere/schema';
 import { projectEgress, presentEgress, guardStorage, type PresenterArgs } from './egress.js';
 
 
@@ -676,7 +676,34 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   // Emitted here, or merely listened to: a process that only subscribes still needs the
   // value, because `deliver` is what a carrier calls and it goes through the same door.
   for (const fact of new Set([...emitted, ...subscribers.keys()])) {
-    container.registerValue(emitKeyOf(fact), async (payload: unknown) => {
+    const shape = entityByName.get(fact);
+
+    container.registerValue(emitKeyOf(fact), async (raw: unknown) => {
+      /**
+       * The announcement realizes the fact's own `lifecycle.create` — an `auto()` stamped,
+       * an id generated, a default applied.
+       *
+       * `validation.ts` states the split: the judge never fills a hole, the STORAGE does,
+       * at the point of persistence. A fact has no storage, so nobody did — the judge
+       * declared an absent `auto()` legal and omitted it, and a subscriber received a
+       * value missing a field its own type promises. Announcing is a fact's point of
+       * persistence, and `applyCreate` is the one realization every storage already shares.
+       *
+       * Here and not in `dispatchLocally`, which is shared with `deliver`: a fact that
+       * arrives from elsewhere was stamped by its sender, and stamping it again would give
+       * one fact a different identity in every process that relayed it.
+       *
+       * **A typed emitter cannot reach this yet.** `Emit<T>` names the ROW type, where an
+       * `auto()` field is present and required, so `announce({ id, title })` is a
+       * compile error and the author writes `at: new Date()` anyway. `CtorInput`
+       * (`schema/src/entity.ts`) is exactly the shape wanted and derives from the FIELDS,
+       * which the instance type has already thrown away. So this runs for a payload built
+       * outside the type — a bridge, a replay, a test — and is inert for everyone else.
+       */
+      const payload = shape && raw !== null && typeof raw === 'object' && !Array.isArray(raw)
+        ? applyCreate(shape.getFields(), raw as Record<string, unknown>)
+        : raw;
+
       /**
        * Whoever is not in this process — and it is the ONLY way to reach them.
        *

@@ -187,6 +187,43 @@ describe('a fact on the identity card', () => {
  *
  * These tests exist to keep that decision from being "fixed" later.
  */
+/**
+ * An announcement is the moment a fact becomes real, so it is where the entity's own
+ * `lifecycle.create` rules are realized — exactly what an insert is for a stored row.
+ *
+ * Nothing did it before: the judge declares an absent `auto()` LEGAL and omits it
+ * (`validation.ts`: filling the hole belongs to the storage, at the point of
+ * persistence), and a fact has no storage. So a subscriber received a value missing a
+ * field its own type says is there — a lie no compiler on either side can see.
+ */
+describe('a fact stamped at the announcement', () => {
+  beforeEach(() => { (globalThis as any).__heard = []; (globalThis as any).__lastFact = undefined; });
+
+  it('fills what the entity says the system writes', async () => {
+    await using app = await createApp({ root, createContainer });
+    const announce = app.container.resolve<(fact: unknown) => Promise<void>>(emitKeyOf('PostPublished'));
+
+    // `at: auto()` — the emitter does not write it, the entity says who does.
+    await announce({ id: 'z', title: 'A fern' });
+    await settle();
+
+    const arrived = (globalThis as any).__lastFact as { id: string; at: Date };
+    expect(arrived.at).toBeInstanceOf(Date);
+  });
+
+  it('never re-stamps a fact that arrived from elsewhere', async () => {
+    await using app = await createApp({ root, createContainer });
+
+    // `deliver` is the carrier's door. The sender already stamped this fact; doing it
+    // again would give one fact two identities, one per process that relayed it.
+    const at = new Date('2020-01-01T00:00:00.000Z');
+    await app.deliver('postPublished', { id: 'y', title: 'A fern', at: at.toISOString() });
+    await settle();
+
+    expect(((globalThis as any).__lastFact as { at: Date }).at.toISOString()).toBe(at.toISOString());
+  });
+});
+
 describe('a sender whose copy has moved ahead', () => {
   beforeEach(() => { (globalThis as any).__heard = []; });
 

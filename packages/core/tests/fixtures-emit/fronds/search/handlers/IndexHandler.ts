@@ -10,6 +10,9 @@ import type PostPublished from '../../blog/entities/PostPublished.js';
 export default class IndexHandler {
   /** Re-index a post that has just been published. */
   async reindex(fact: Fact<PostPublished>): Promise<void> {
+    // The whole value, so a test can assert what actually arrived — a fact's declared
+    // fields are a promise to its readers, and only the emission can keep it.
+    (globalThis as any).__lastFact = fact;
     ((globalThis as any).__heard ??= []).push(`search:${fact.id}`);
   }
 }
