@@ -16,7 +16,7 @@ import { presenterKeyOf } from './presenter.js';
 import { collectorKeyOf } from './collector.js';
 
 import { computeBindingPlan, resolveArgs, type CollectorResolver } from './binding.js';
-import type { OperationContract } from './operation.js';
+import type { OperationContract, OperationsMap } from './operation.js';
 import { resolveContracts } from './operation.js';
 import { EMPTY_INVOCATION, type InvocationContext } from './invocation.js';
 import { type SchemaLike, type Fields, validateFields } from '@fougere/schema';
@@ -167,6 +167,28 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   const subscribers = new Map<string, Array<{ door: string; op: string }>>();
 
   /**
+   * Who listens to what — read from the PLAN, where `{ kind: 'fact' }` is a sentence
+   * `computeBindingPlan` already wrote, so nothing re-derives what a parameter is.
+   *
+   * It runs for a frond hosted here AND for one declared remote. A remote frond is still
+   * scanned — only its hosting is elsewhere — so its subscriptions are known, and its door
+   * resolves to a doublure. That is the whole reason an emission crosses a process without
+   * a line of transport code: the emitter learned the signature locally and calls the same
+   * key. Filling this inside `buildFacade` alone left the index EMPTY under a split, and a
+   * fact announced to a remote listener reached nobody, in silence.
+   */
+  const noteSubscriptions = (contracts: OperationsMap, door: string) => {
+    for (const [op, contract] of contracts) {
+      for (const bound of contract.binding ?? []) {
+        if (bound.source.kind !== 'fact') continue;
+        const listeners = subscribers.get(bound.source.factName) ?? [];
+        listeners.push({ door, op });
+        subscribers.set(bound.source.factName, listeners);
+      }
+    }
+  };
+
+  /**
    * The facts already being announced up the stack, so a fact cannot cause itself.
    *
    * A CHAIN and not a depth: `A → B → D` and `A → C → D` is a diamond, perfectly legal,
@@ -188,6 +210,14 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // register nothing locally — resolve() falls through to the remote façade.
     if (options.remotes && frond.name in options.remotes) {
       log.child(frond.name).info('declared remote — not hosted locally');
+      // Its doors answer elsewhere, but what they LISTEN to was read here.
+      const remoteCollectors = new Set(frond.collectors.map((c) => c.entityName));
+      for (const handler of frond.handlers) {
+        noteSubscriptions(
+          resolveContracts(handler, frond.operationsOverrides, remoteCollectors),
+          facadeKeyOf(handler.address, handler.surface),
+        );
+      }
       continue;
     }
     const scope = container.createScope();
@@ -341,14 +371,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
        * an emission and a direct call are the same call, which is why nothing here has to
        * build a second path.
        */
-      for (const [op, contract] of contracts) {
-        for (const bound of contract.binding ?? []) {
-          if (bound.source.kind !== 'fact') continue;
-          const listeners = subscribers.get(bound.source.factName) ?? [];
-          listeners.push({ door: facadeKey, op });
-          subscribers.set(bound.source.factName, listeners);
-        }
-      }
+      noteSubscriptions(contracts, facadeKey);
 
       /**
        * The field set an op's result is projected onto — the view declared for THAT op

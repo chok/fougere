@@ -82,6 +82,37 @@ describe('a fact reaching several fronds', () => {
   });
 });
 
+describe('a listener that lives in another process', () => {
+  it('is still dispatched to — its subscription was read here, its door answers there', async () => {
+    (globalThis as any).__heard = [];
+    const wire: string[] = [];
+
+    // A frond declared remote is SCANNED — only its hosting is elsewhere. Filling the
+    // subscriber index inside `buildFacade` alone left it empty under a split, and a fact
+    // announced to a remote listener reached nobody, in silence. Proven by a demo, not by
+    // a test, which is why this one exists.
+    await using app = await createApp({
+      root,
+      createContainer,
+      remotes: { search: 'http://127.0.0.1:9' },
+      remoteTransport: () => async (call) => {
+        if (call.entity === 'rpc') {
+          return { fronds: [{ name: 'search', entities: [{ name: 'index', ops: [{ name: 'reindex', kind: 'command' }] }] }] };
+        }
+        wire.push(`${call.frond}:${call.entity}.${call.op}`);
+        return undefined;
+      },
+    });
+
+    await createLocalRunner(app)({ entity: 'post', op: 'publish' }, { ...EMPTY_INVOCATION, params: { id: '9' } });
+    await settle();
+
+    expect(wire).toEqual(['search:index.reindex']);
+    // `mail` is still hosted here, so the same emission reached both topologies at once.
+    expect(heard()).toEqual(['mail:9']);
+  });
+});
+
 describe('a fact that would cause itself', () => {
   it('is refused, and the message names the ring', async () => {
     (globalThis as any).__heard = [];
