@@ -87,7 +87,7 @@ describe('createLocalRunner', () => {
     expect(frondNames).toEqual(['catalog', 'inventory', 'orders']);
 
     const catalog = card.fronds.find((f) => f.name === 'catalog')!;
-    const product = catalog.entities.find((e) => e.name === 'product')!;
+    const product = catalog.doors.find((e) => e.name === 'product')!;
     expect(product.ops.map((o) => o.name)).toEqual(expect.arrayContaining(['list', 'findById', 'search']));
     expect(product.schema).toBeTruthy();
 

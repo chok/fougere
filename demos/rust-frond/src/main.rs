@@ -158,11 +158,15 @@ fn identity_card(state: &AppState) -> Value {
     json!({
         "fronds": [{
             "name": "telemetry",
-            "entities": [{
+            // Deux listes, duales : ce qu'on peut APPELER, et ce qui SORT tout seul.
+            "doors": [{
                 "name": "sensor",
                 "ops": state.ops.clone(),
                 "schema": sensor_card()
-            }]
+            }],
+            // Ce frond n'annonce aucun fait. Le dire vaut mieux que l'omettre : la liste
+            // vide est une réponse, l'absence est un doute sur la version d'en face.
+            "facts": []
         }]
     })
 }

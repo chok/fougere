@@ -24,7 +24,7 @@ describe('remote frond sync', () => {
       result: {
         fronds: [{
           name: 'blog',
-          entities: [{
+          doors: [{
             name: 'post',
             ops: [],
             schema: {
@@ -64,7 +64,7 @@ describe('remote frond sync', () => {
       result: {
         fronds: [{
           name: 'ops',
-          entities: [
+          doors: [
             // A health check owns no rows, so the card publishes ops and no schema. This
             // used to throw `has no valid schema descriptor` and take the card with it,
             // so ONE entity-less handler on the host made `sync` useless for the rest.
@@ -112,7 +112,7 @@ describe('remote frond sync', () => {
       result: {
         fronds: [{
           name: 'blog',
-          entities: [{
+          doors: [{
             name: '../../escape',
             ops: [],
             schema: { type: 'object', properties: {}, 'x-fougere-version': 1, 'x-fougere-vendor': 'fougere' },
@@ -123,7 +123,9 @@ describe('remote frond sync', () => {
 
     try {
       await expect(new SyncHandler().execute({ name: 'blog', from: 'https://example.test' }))
-        .rejects.toThrow(/Invalid entity name/);
+        // The message names the list it came from — the card has two now, and a bad
+        // name in one says nothing about the other.
+        .rejects.toThrow(/Invalid door name/);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
@@ -133,12 +135,12 @@ describe('remote frond sync', () => {
     const root = mkdtempSync(join(tmpdir(), 'fougere-sync-'));
     process.chdir(root);
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
-      result: { fronds: [{ name: 'blog', entities: {} }] },
+      result: { fronds: [{ name: 'blog', doors: {} }] },
     }), { status: 200 })));
 
     try {
       await expect(new SyncHandler().execute({ name: 'blog', from: 'https://example.test' }))
-        .rejects.toThrow(/valid entities array/);
+        .rejects.toThrow(/valid doors array/);
       expect(() => readFileSync(join(root, '.fougere', 'remotes.json'), 'utf8')).toThrow();
     } finally {
       rmSync(root, { recursive: true, force: true });
@@ -160,7 +162,7 @@ describe('remote frond sync', () => {
       result: {
         fronds: [{
           name: 'blog',
-          entities: [{
+          doors: [{
             name: 'post',
             ops: [
               { name: 'list', kind: 'query' },
@@ -185,6 +187,61 @@ describe('remote frond sync', () => {
       expect(out.entities).toEqual(['Post']);
       expect(readFileSync(join(root, '.fougere', 'remotes', 'blog', 'entities', 'Post.ts'), 'utf8'))
         .toContain('class Post extends reconstruct<');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  /**
+   * The reason a subscriber runs this command at all.
+   *
+   * A fact has no operation, so it never appeared among the doors and never crossed a
+   * repository boundary: the listener kept a hand-written copy of the emitter's
+   * declaration, and the two drifted with nothing to say so.
+   *
+   * Every other test here sends no `facts` key, which is deliberate — a host older than
+   * the list must still sync.
+   */
+  it('writes a fact as a row class with no door beside it', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'fougere-sync-'));
+    process.chdir(root);
+    const shape = (properties: Record<string, unknown>) => ({
+      type: 'object',
+      properties,
+      'x-fougere-version': 1,
+      'x-fougere-vendor': 'fougere',
+    });
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      result: {
+        fronds: [{
+          name: 'blog',
+          doors: [{ name: 'post', ops: [{ name: 'list', kind: 'query' }], schema: shape({ id: { type: 'string' } }) }],
+          facts: [
+            { name: 'postPublished', schema: shape({ id: { type: 'string' }, title: { type: 'string' } }) },
+            // Announced without a declared shape: legal, and nothing to write. A class
+            // built from the bare name would validate everything.
+            { name: 'cacheWarmed' },
+          ],
+        }],
+      },
+    }), { status: 200 })));
+
+    try {
+      const out = await new SyncHandler().execute({ name: 'blog', from: 'https://example.test' });
+      const dir = join(root, '.fougere', 'remotes', 'blog');
+
+      expect(out.entities).toEqual(['Post', 'PostPublished']);
+      expect(readFileSync(join(dir, 'entities', 'PostPublished.ts'), 'utf8'))
+        .toContain('class PostPublished extends reconstruct<');
+
+      // No façade type: nobody calls a fact, it arrives.
+      expect(() => readFileSync(join(dir, 'handlers', 'PostPublishedHandler.ts'), 'utf8')).toThrow();
+      expect(() => readFileSync(join(dir, 'entities', 'CacheWarmed.ts'), 'utf8')).toThrow();
+
+      const barrel = readFileSync(join(dir, 'index.ts'), 'utf8');
+      expect(barrel).toContain("export { default as PostPublished }");
+      expect(barrel).not.toContain('PostPublishedHandler');
+      expect(barrel).not.toContain('CacheWarmed');
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

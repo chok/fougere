@@ -8,7 +8,7 @@ import { Config } from './builtins/config.js';
 import { createRemoteRouter, createRemoteFacade } from './remote.js';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { facadeKeyOf } from './call.js';
-import { emitKeyOf, factOfEmitKey } from './emit.js';
+import { emitKeyOf, factsAnnouncedBy } from './emit.js';
 import { repositoryKeyOf } from './repository.js';
 // The keys, each read from where its concept is declared — never respelled here.
 import { ormKeyOf } from './orm.js';
@@ -159,11 +159,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
    * to nobody is legal. The index is filled by `buildFacade` as each contract is resolved,
    * and the value below closes over it — so no order between the two ever matters.
    */
-  const emitted = new Set(
-    fronds.flatMap((f) => f.handlers.flatMap((h) => h.deps))
-      .map(factOfEmitKey)
-      .filter((fact): fact is string => fact !== undefined),
-  );
+  const emitted = new Set(fronds.flatMap((frond) => factsAnnouncedBy(frond.handlers)));
   const subscribers = new Map<string, Array<{ door: string; op: string }>>();
 
   /**

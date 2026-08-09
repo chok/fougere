@@ -161,44 +161,6 @@ importers:
         specifier: ^4.0.0
         version: 4.21.0
 
-  demos/emit-fleet/hub:
-    dependencies:
-      '@fougere/container-fougere':
-        specifier: workspace:*
-        version: link:../../../packages/container-fougere
-      '@fougere/core':
-        specifier: workspace:*
-        version: link:../../../packages/core
-      '@fougere/schema':
-        specifier: workspace:*
-        version: link:../../../packages/schema
-      jiti:
-        specifier: ^2.0.0
-        version: 2.7.0
-    devDependencies:
-      tsx:
-        specifier: ^4.0.0
-        version: 4.21.0
-
-  demos/emit-fleet/node:
-    dependencies:
-      '@fougere/container-fougere':
-        specifier: workspace:*
-        version: link:../../../packages/container-fougere
-      '@fougere/core':
-        specifier: workspace:*
-        version: link:../../../packages/core
-      '@fougere/schema':
-        specifier: workspace:*
-        version: link:../../../packages/schema
-      jiti:
-        specifier: ^2.0.0
-        version: 2.7.0
-    devDependencies:
-      tsx:
-        specifier: ^4.0.0
-        version: 4.21.0
-
   demos/emit-multirepo/blog:
     dependencies:
       '@fougere/container-fougere':
@@ -210,6 +172,9 @@ importers:
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../../packages/schema
+      '@fougere/transport-http':
+        specifier: workspace:*
+        version: link:../../../packages/transport/http
       jiti:
         specifier: ^2.0.0
         version: 2.7.0
@@ -233,6 +198,9 @@ importers:
         specifier: ^2.0.0
         version: 2.7.0
     devDependencies:
+      '@fougere/cli':
+        specifier: workspace:*
+        version: link:../../../packages/cli
       tsx:
         specifier: ^4.0.0
         version: 4.21.0

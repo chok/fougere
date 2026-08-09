@@ -9,7 +9,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container-fougere';
-import { createApp, createLocalRunner, emitKeyOf, factOfEmitKey } from '../src/index.js';
+import { createApp, createLocalRunner, emitKeyOf, factOfEmitKey, identityCardOf } from '../src/index.js';
 import { EMPTY_INVOCATION } from '../src/invocation.js';
 
 const root = join(import.meta.dirname, 'fixtures-emit');
@@ -121,7 +121,7 @@ describe('a listener that lives in another process', () => {
       remotes: { search: 'http://127.0.0.1:9' },
       remoteTransport: () => async (call) => {
         if (call.entity === 'rpc') {
-          return { fronds: [{ name: 'search', entities: [{ name: 'index', ops: [{ name: 'reindex', kind: 'command' }] }] }] };
+          return { fronds: [{ name: 'search', doors: [{ name: 'index', ops: [{ name: 'reindex', kind: 'command' }] }], facts: [] }] };
         }
         wire.push(`${call.frond}:${call.entity}.${call.op}`);
         return undefined;
@@ -134,6 +134,41 @@ describe('a listener that lives in another process', () => {
     expect(wire).toEqual(['search:index.reindex']);
     // `mail` is still hosted here, so the same emission reached both topologies at once.
     expect(heard()).toEqual(['mail:9']);
+  });
+});
+
+describe('a fact on the identity card', () => {
+  /**
+   * What made a fact stop at the repository boundary.
+   *
+   * `PostPublished` has no handler, so it is not a door — and the card only published
+   * doors. A subscriber in another repository had no way to obtain the shape and kept a
+   * hand-written copy of it (`demos/emit-multirepo`), which is the drift the card exists
+   * to prevent everywhere else.
+   */
+  it('publishes what a frond announces, next to what it serves', async () => {
+    await using app = await createApp({ root, createContainer });
+    const card = identityCardOf(app);
+
+    const blog = card.fronds.find((frond) => frond.name === 'blog')!;
+    expect(blog.doors.map((door) => door.name)).toEqual(['post']);
+    expect(blog.facts.map((fact) => fact.name)).toEqual(['postPublished']);
+    // The shape, so `sync` can write the class the subscriber would otherwise copy.
+    expect(blog.facts[0].schema?.properties).toMatchObject({ title: expect.anything() });
+
+    // A frond that only listens announces nothing — `Emit<T>` is what puts a name here,
+    // never `Fact<T>`. What a process ACCEPTS is `app.listensTo()`, and it is not the card.
+    expect(card.fronds.find((frond) => frond.name === 'search')!.facts).toEqual([]);
+    expect(app.listensTo()).toContain('postPublished');
+  });
+
+  it('keeps a fact out of the doors, where hosting means answering', async () => {
+    await using app = await createApp({ root, createContainer });
+    const blog = identityCardOf(app).fronds.find((frond) => frond.name === 'blog')!;
+
+    // Listing it as a door would claim it is callable, and the runner would answer
+    // NOT_FOUND on every op — a remote router would even route calls to it.
+    expect(blog.doors.some((door) => door.name === 'postPublished')).toBe(false);
   });
 });
 

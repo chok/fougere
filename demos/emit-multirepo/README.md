@@ -1,14 +1,18 @@
 # emit-multirepo — two repositories that never read each other
 
-`blog/` and `search/` are two separate projects. Neither contains one line of the other:
-`search` even declares its **own copy** of `PostPublished`.
+`blog/` and `search/` are two separate projects. Neither contains one line of the other's
+source — `search` gets the fact's shape the way a stranger does, off the wire.
 
 ```bash
 pnpm install
 pnpm -r build
 
+# once — the contract crosses the boundary, then Ctrl-C the server
+cd blog   && pnpm serve                     # repository A, standing still, :4301
+cd search && pnpm sync                      # writes .fougere/remotes/blog/ — generated, gitignored
+
 # three terminals
-npx tsx broker.ts                          # the stand-in carrier, :4300
+npx tsx broker.ts                           # the stand-in carrier, :4300
 cd search && pnpm dev                       # repository B — subscribes
 cd blog   && pnpm dev                       # repository A — publishes twice
 ```
@@ -62,6 +66,42 @@ On arrival the payload goes through the **same local dispatch** the emitter woul
 in-process — so the judge, the binding and the middlewares apply. A fact off a wire is
 validated against the entity it is.
 
+## Where the shape comes from
+
+The name is derived on both sides. The **shape** is not: `search` must know that a
+`postPublished` carries an `id`, a `title` of at least one character and an `at`. Nothing on
+this disk says so.
+
+It comes from the identity card, which publishes two lists per frond — the doors you may
+call, and the facts that leave:
+
+```json
+{ "name": "blog",
+  "doors": [{ "name": "post", "ops": [...], "schema": {...} }],
+  "facts": [{ "name": "postPublished", "schema": {...} }] }
+```
+
+`fougere sync` turns the second into a class under `.fougere/remotes/blog/`, and `search`
+re-exports it into its own `entities/` in one line — the only thing this repository states
+about someone else's fact is that it accepts it:
+
+```ts
+// search/fronds/search/entities/PostPublished.ts
+export { default } from '../../../.fougere/remotes/blog/entities/PostPublished.js';
+```
+
+That re-export is not decoration: the boot judges an arriving fact against an entity of a
+**scanned** frond, and a package under `.fougere/` is not one. With it, a payload the
+emitter's own declaration refuses is refused here too:
+
+```
+[search] postPublished → indexHandler.reindex
+  { path: 'title', message: 'String is too short (0 < 1).' }
+```
+
+The fields used to be copied by hand into that file. Two declarations, nothing comparing
+them, and the drift would have shown up as a fact silently refused.
+
 ## The same thing without a broker — a tunnel
 
 Same two repositories, same `PostHandler`, same `IndexHandler`. **Only the carrier
@@ -110,6 +150,5 @@ emitter holds one connection per listener.
   name and a payload.
 - **Still nothing is durable.** Stop `search`, publish, restart it: the fact is gone. The
   stand-in holds no queue, which is exactly what a real broker adds.
-- **`search` writes its own `PostPublished` by hand** because `fougere sync` cannot fetch
-  it: a fact carries no operations, and the identity card only publishes what has a door.
-  That gap is real, and this file stands in for it.
+- **The sync is manual and one-way.** Nothing tells `search` that the blog's fact has
+  changed shape; re-running `pnpm sync` is a decision someone takes.

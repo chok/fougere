@@ -71,14 +71,14 @@ async function main() {
     if (!card?.fronds?.length) fail('No fronds in identity card');
     const blogFrond = card.fronds.find((f: any) => f.name === 'blog');
     if (!blogFrond) fail('Blog frond not found in identity card');
-    const post = blogFrond.entities.find((e: any) => e.name === 'post');
-    const author = blogFrond.entities.find((e: any) => e.name === 'author');
+    const post = blogFrond.doors.find((d: any) => d.name === 'post');
+    const author = blogFrond.doors.find((d: any) => d.name === 'author');
     if (!post) fail('Post entity not in identity card');
     if (!author) fail('Author entity not in identity card');
     // Hosting means answering: the card carries the ops, not just the shape.
     if (!post.ops?.some((o: { name: string }) => o.name === 'list')) fail('Post ops missing from identity card');
     if (!post.schema?.properties) fail('Post schema missing from identity card');
-    pass(`rpc.discover returns ${blogFrond.entities.length} entities with their ops`);
+    pass(`rpc.discover returns ${blogFrond.doors.length} doors with their ops, and ${blogFrond.facts.length} fact(s)`);
 
     // 3. Test REST API works
     log('Testing REST API...');

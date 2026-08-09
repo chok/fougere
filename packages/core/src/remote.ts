@@ -52,12 +52,15 @@ export function createRemoteRouter(
           const card = (await transport({ entity: RPC_ENTITY, op: 'discover' }, EMPTY_INVOCATION)) as IdentityCard;
           pending.delete(label);
           for (const frond of card.fronds) {
-            for (const entity of frond.entities) {
-              if (!byEntity.has(entity.name)) {
-                byEntity.set(entity.name, {
+            // Doors only. A fact is not routable — nobody calls it, it arrives — so
+            // adding one here would answer a call with a transport to a door that
+            // does not exist.
+            for (const door of frond.doors) {
+              if (!byEntity.has(door.name)) {
+                byEntity.set(door.name, {
                   frond: frond.name,
                   transport,
-                  ...(entity.schema ? { schema: reconstruct(entity.schema as SchemaDescriptor) } : {}),
+                  ...(door.schema ? { schema: reconstruct(door.schema as SchemaDescriptor) } : {}),
                 });
               }
             }

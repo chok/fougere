@@ -71,6 +71,8 @@ demos/
 
 **Call contract** (`core/src/call.ts`) — a Frond call is a value `(entity, op, invocation)`. `createLocalRunner` executes locally; `createAppRunner` follows the topology (local façades + remote doublures). Transports move the value, never reshape it. In-process = direct memory execution, no RPC. Browser-safe surface: `@fougere/core/contract`.
 
+**`Emit<T>` / `Fact<T>`** (`core/src/emit.ts`) — every other call names ONE recipient; an emission names a **subject**. `Emit<PostPublished>` is a constructor dependency resolved by type like `EntityOrm<Post>`, and accepting a `Fact<T>` IS the subscription — no topic, no register call, the scan reads the signature. It is a **resolver, not a channel**: it answers *who*, then hands over to the door that already exists, which is why nothing is durable (a resolver holds nothing) and why a subscriber keeps its judge, its binding and its middlewares. Dispatch is not delivery; a ring is refused (`AsyncLocalStorage`, a chain not a depth), a diamond is legal. Across a repository, `onEmit` carries the fact out under its name and `app.deliver` brings one in; the identity card's `facts` list carries the SHAPE so `fougere sync` writes the class the subscriber used to copy by hand.
+
 **Nuxt primitives** — `useQuery`/`useCommand` (a command on X revalidates mounted queries on X), `useFormFor` (contract, not rendering; local judge = remote judge), `useCurrentUser`, `invoke` (server dual, state via async context). Metadata = the imported entity class, nothing serialized to the client.
 
 **Validation** — `@cfworker/json-schema` (edge-safe). `Entity.validate(input)` → `{ success, data }` | `{ success: false, errors: [{path, message}] }`.

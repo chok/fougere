@@ -14,9 +14,17 @@ import type { SchemaDescriptor } from '@fougere/schema';
 const REMOTE_URL = process.env.REMOTE_URL ?? 'http://localhost:4001';
 const CWD = import.meta.dirname;
 
-/** The identity card a host serves on `rpc.discover` — one entry per hosted entity. */
+/**
+ * The identity card a host serves on `rpc.discover` — two lists per frond, and they are
+ * duals: what you may CALL, and what you will RECEIVE. Both carry a shape when there is
+ * one; a door may store nothing and a fact may announce a type that is not an entity.
+ */
 interface IdentityCard {
-  fronds: Array<{ name: string; entities: Array<{ name: string; ops: Array<{ name: string }>; schema: SchemaDescriptor }> }>;
+  fronds: Array<{
+    name: string;
+    doors: Array<{ name: string; ops: Array<{ name: string }>; schema?: SchemaDescriptor }>;
+    facts?: Array<{ name: string; schema?: SchemaDescriptor }>;
+  }>;
 }
 
 function capitalize(s: string): string {
@@ -46,7 +54,13 @@ async function sync() {
 
     const entityNames: string[] = [];
 
-    for (const { schema: descriptor } of frond.entities) {
+    // Doors and facts alike: both give a class when they carry a shape. A door with none
+    // is a health check or a search across shapes; a fact with none announces a type the
+    // host does not store. Neither produces a file.
+    const shaped = [...frond.doors, ...(frond.facts ?? [])]
+      .flatMap(({ schema }) => (schema ? [schema] : []));
+
+    for (const descriptor of shaped) {
       const className = capitalize(descriptor.title ?? 'Entity');
       entityNames.push(className);
 

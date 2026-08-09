@@ -80,8 +80,8 @@ describe('the envelope, per audience', () => {
     const all = await createAppRunner(app)({ entity: 'rpc', op: 'discover' }, EMPTY_INVOCATION) as IdentityCard;
     const pub = await createAppRunner(app, 'public')({ entity: 'rpc', op: 'discover' }, EMPTY_INVOCATION) as IdentityCard;
 
-    expect(all.fronds[0].entities.map((e) => e.name).sort()).toEqual(['ledger', 'note']);
-    expect(pub.fronds[0].entities.map((e) => e.name)).toEqual(['note']);
+    expect(all.fronds[0].doors.map((d) => d.name).sort()).toEqual(['ledger', 'note']);
+    expect(pub.fronds[0].doors.map((d) => d.name)).toEqual(['note']);
     await app.dispose();
   });
 });

@@ -25,6 +25,41 @@ export function entityClassName(name: string): string {
   return identifier;
 }
 
+/**
+ * One entry — a door or a fact — judged the same way, because sync consumes the same two
+ * values from both: a name it can turn into a class, and a descriptor it can rebuild.
+ *
+ * A missing descriptor is legal on either side and means different things: a door that
+ * stores nothing (a health check, a search across shapes), or a fact whose announced type
+ * is not a declared entity. Neither produces a row class, and demanding one here refused
+ * the WHOLE card over a single entry.
+ */
+function assertEntry(kind: string, frondName: string, entry: { name: string; schema?: SchemaDescriptor } | undefined): void {
+  if (!entry || typeof entry !== 'object') {
+    throw new Error(`Remote frond '${frondName}' contains an invalid ${kind} entry`);
+  }
+  assertSafeName(kind, entry.name);
+  if (entry.schema === undefined) return;
+  // `ops` is not checked because it is not used: sync writes entities, and the name
+  // and the descriptor below are the only two values that reach a file. The clause
+  // that stood here demanded strings — the shape ops had before they carried their
+  // kind and their views — and so refused every real host. Judge what you consume.
+  const descriptor = entry.schema as unknown;
+  if (
+    !descriptor
+    || typeof descriptor !== 'object'
+    || Array.isArray(descriptor)
+    || (descriptor as SchemaDescriptor).type !== 'object'
+    || !(descriptor as SchemaDescriptor).properties
+    || typeof (descriptor as SchemaDescriptor).properties !== 'object'
+    || Array.isArray((descriptor as SchemaDescriptor).properties)
+    || (descriptor as SchemaDescriptor)['x-fougere-version'] !== 1
+    || (descriptor as SchemaDescriptor)['x-fougere-vendor'] !== 'fougere'
+  ) {
+    throw new Error(`Remote ${kind} '${entry.name}' has no valid schema descriptor`);
+  }
+}
+
 function identityCardOf(value: unknown): IdentityCard {
   if (!value || typeof value !== 'object' || !Array.isArray((value as IdentityCard).fronds)) {
     throw new Error('Remote rpc.discover returned an invalid identity card');
@@ -35,38 +70,17 @@ function identityCardOf(value: unknown): IdentityCard {
       throw new Error('Remote rpc.discover returned an invalid frond entry');
     }
     assertSafeName('frond', frond.name);
-    if (!Array.isArray(frond.entities)) {
-      throw new Error(`Remote frond '${frond.name}' has no valid entities array`);
+    if (!Array.isArray(frond.doors)) {
+      throw new Error(`Remote frond '${frond.name}' has no valid doors array`);
     }
-    for (const entity of frond.entities) {
-      if (!entity || typeof entity !== 'object') {
-        throw new Error(`Remote frond '${frond.name}' contains an invalid entity entry`);
-      }
-      assertSafeName('entity', entity.name);
-      // A door that stores nothing publishes ops and no shape — a health check, a search
-      // across several shapes. Legal since the card started naming doors rather than
-      // entities; demanding a descriptor here refused the WHOLE card because one entry
-      // had none. There is simply no entity file to write for it.
-      if (entity.schema === undefined) continue;
-      // `ops` is not checked because it is not used: sync writes entities, and the name
-      // and the descriptor below are the only two values that reach a file. The clause
-      // that stood here demanded strings — the shape ops had before they carried their
-      // kind and their views — and so refused every real host. Judge what you consume.
-      const descriptor = entity.schema as unknown;
-      if (
-        !descriptor
-        || typeof descriptor !== 'object'
-        || Array.isArray(descriptor)
-        || (descriptor as SchemaDescriptor).type !== 'object'
-        || !(descriptor as SchemaDescriptor).properties
-        || typeof (descriptor as SchemaDescriptor).properties !== 'object'
-        || Array.isArray((descriptor as SchemaDescriptor).properties)
-        || (descriptor as SchemaDescriptor)['x-fougere-version'] !== 1
-        || (descriptor as SchemaDescriptor)['x-fougere-vendor'] !== 'fougere'
-      ) {
-        throw new Error(`Remote entity '${entity.name}' has no valid schema descriptor`);
-      }
+    // Absent rather than empty is tolerated: a host older than the fact list says nothing
+    // about facts, and refusing it would break sync against every previous version for a
+    // feature the consumer may not use.
+    if (frond.facts !== undefined && !Array.isArray(frond.facts)) {
+      throw new Error(`Remote frond '${frond.name}' has no valid facts array`);
     }
+    for (const door of frond.doors) assertEntry('door', frond.name, door);
+    for (const fact of frond.facts ?? []) assertEntry('fact', frond.name, fact);
   }
   return card;
 }
@@ -115,51 +129,50 @@ export default class SyncHandler {
     mkdirSync(entitiesDir, { recursive: true });
     mkdirSync(handlersDir, { recursive: true });
 
-    const entityNames: string[] = [];
-    /** Names the barrel must re-export as a door only — no row class stands behind them. */
-    const doorOnly = new Set<string>();
-
-    const seen = new Set<string>();
-    for (const { name, schema: descriptor, ops } of target.entities) {
+    /**
+     * What was written under each name — the barrel below is a projection of exactly this.
+     *
+     * Three combinations, and all three occur: a door with rows behind it (both files), a
+     * door with none (the façade type alone), and a fact (the row class alone, because
+     * nothing calls a fact).
+     */
+    const generated = new Map<string, { row: boolean; door: boolean }>();
+    const claim = (name: string): string => {
       const className = entityClassName(name);
-      if (seen.has(className)) throw new Error(`Remote declares duplicate entity '${className}'`);
-      seen.add(className);
-      entityNames.push(className);
+      if (generated.has(className)) throw new Error(`Remote declares duplicate entity '${className}'`);
+      generated.set(className, { row: false, door: false });
+      return className;
+    };
 
-      // No shape behind this door: its operations still travel, its rows do not exist.
-      // `rowType` falls back to `unknown`, which is the truth rather than an empty class.
-      if (descriptor === undefined) {
-        doorOnly.add(className);
-        writeFileSync(join(handlersDir, `${className}Handler.ts`), [
-          `// Generated by \`fougere sync\` from ${baseUrl} — do not edit.`,
-          `type Invocation = { params?: Record<string, string>; query?: Record<string, unknown>; body?: unknown; state?: Record<string, unknown> };`,
-          ``,
-          facadeTypeSourceOf(ops ?? [], { name: `${className}Handler` }),
-          ``,
-        ].join('\n'));
-        continue;
-      }
-
-      /**
-       * One card, one class.
-       *
-       * `reconstruct` gives the JUDGE — validate, from, getFields — and now takes the
-       * row shape as a type argument, so the same declaration gives the TYPE. Both
-       * come off the same card: nothing to keep in step, and the file a consumer reads
-       * has the shape of the one they would have written by hand
-       * (`class Post extends entity({…}) {}`).
-       */
-      const code = [
+    /**
+     * One card, one class.
+     *
+     * `reconstruct` gives the JUDGE — validate, from, getFields — and now takes the
+     * row shape as a type argument, so the same declaration gives the TYPE. Both
+     * come off the same card: nothing to keep in step, and the file a consumer reads
+     * has the shape of the one they would have written by hand
+     * (`class Post extends entity({…}) {}`).
+     */
+    const writeRow = (className: string, descriptor: SchemaDescriptor): void => {
+      writeFileSync(join(entitiesDir, `${className}.ts`), [
         `import { reconstruct } from '@fougere/schema';`,
         ``,
         `// Generated by \`fougere sync\` from ${baseUrl} — do not edit.`,
-        entitySourceOf(descriptor as SchemaDescriptor, { name: className }),
+        entitySourceOf(descriptor, { name: className }),
         ``,
         `export default ${className};`,
         ``,
-      ].join('\n');
+      ].join('\n'));
+      generated.get(className)!.row = true;
+    };
 
-      writeFileSync(join(entitiesDir, `${className}.ts`), code);
+    for (const { name, schema: descriptor, ops } of target.doors) {
+      const className = claim(name);
+      generated.get(className)!.door = true;
+
+      // No shape behind this door: its operations still travel, its rows do not exist.
+      // `rowType` falls back to `unknown`, which is the truth rather than an empty class.
+      if (descriptor !== undefined) writeRow(className, descriptor as SchemaDescriptor);
 
       /**
        * The door's type, next to the row's — what `Facade<T>` needs and what nothing
@@ -170,32 +183,45 @@ export default class SyncHandler {
        * and behaviour does not travel. Its OPERATIONS do — the card names them, says how
        * much each returns, and that is exactly a signature.
        */
-      const facadeSource = facadeTypeSourceOf(ops ?? [], {
-        name: `${className}Handler`,
-        rowType: className,
-      });
       writeFileSync(join(handlersDir, `${className}Handler.ts`), [
-        `import type { ${className} } from '../entities/${className}.js';`,
-        ``,
+        ...(descriptor !== undefined ? [`import type { ${className} } from '../entities/${className}.js';`, ``] : []),
         `// Generated by \`fougere sync\` from ${baseUrl} — do not edit.`,
         `// The shape of an invocation, restated rather than imported: this file is a`,
         `// contract, and a contract that drags a runtime dependency is not one.`,
         `type Invocation = { params?: Record<string, string>; query?: Record<string, unknown>; body?: unknown; state?: Record<string, unknown> };`,
         ``,
-        facadeSource,
+        facadeTypeSourceOf(ops ?? [], {
+          name: `${className}Handler`,
+          ...(descriptor !== undefined ? { rowType: className } : {}),
+        }),
         ``,
       ].join('\n'));
+    }
+
+    /**
+     * The facts, which is the only reason a subscriber needs this command at all.
+     *
+     * A fact has no operation, so no façade type is written: a listener spells
+     * `reindex(fact: Fact<PostPublished>)` and the class is the whole of what it needs.
+     * Announced without a declared shape, there is nothing to write — a class built from
+     * a bare name would validate everything, which is worse than the absence.
+     */
+    for (const { name, schema: descriptor } of target.facts ?? []) {
+      const className = claim(name);
+      if (descriptor === undefined) {
+        generated.delete(className);
+        continue;
+      }
+      writeRow(className, descriptor as SchemaDescriptor);
     }
 
     // Barrel index
     // One binding carries the value AND the type, because a class is both — the pair of
     // re-exports that stood here was the price of declaring them separately.
-    const indexLines = entityNames.flatMap((name) => (doorOnly.has(name)
-      ? [`export type { ${name}Handler } from './handlers/${name}Handler.js';`]
-      : [
-        `export { default as ${name} } from './entities/${name}.js';`,
-        `export type { ${name}Handler } from './handlers/${name}Handler.js';`,
-      ]));
+    const indexLines = [...generated].flatMap(([name, { row, door }]) => [
+      ...(row ? [`export { default as ${name} } from './entities/${name}.js';`] : []),
+      ...(door ? [`export type { ${name}Handler } from './handlers/${name}Handler.js';`] : []),
+    ]);
     writeFileSync(join(frondDir, 'index.ts'), indexLines.join('\n') + '\n');
 
     // Package.json
@@ -218,7 +244,7 @@ export default class SyncHandler {
     // Update tsconfig paths if tsconfig.json exists (non-Nuxt projects)
     this.updateTsconfigPaths(input.name, frondDir);
 
-    return { path: entitiesDir, entities: entityNames };
+    return { path: entitiesDir, entities: [...generated.keys()] };
   }
 
   /** Write/update .fougere/remotes.json — read by @fougere/nuxt for auto-aliasing. */

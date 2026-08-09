@@ -7,6 +7,7 @@
  * they never reshape it.
  */
 import { describe as describeSchema, type SchemaDescriptor } from '@fougere/schema';
+import { factsAnnouncedBy } from './emit.js';
 import type { InvocationContext } from './invocation.js';
 import { FougereError, ErrorCode } from './middleware.js';
 import { resolveIsReadOp, type OperationsMap } from './operation.js';
@@ -52,11 +53,21 @@ export interface CardOp {
   cardinality?: 'one' | 'maybe' | 'many' | 'page' | 'none';
 }
 
-/** What an app hosts — the wire projection of its scanned fronds. */
+/**
+ * What an app hosts — the wire projection of its scanned fronds.
+ *
+ * Two lists per frond, and they are duals: **what you may call**, and **what you will
+ * receive**. A door is entered from outside; a fact leaves on its own.
+ *
+ * `doors` was called `entities` and the name lied: an entry is an ADDRESS, and the shape
+ * behind it is optional (`facadeKeyOf` builds its key from a handler's name, which need not
+ * be an entity's). The lie cost something real — `fougere sync` demanded a descriptor on
+ * every entry and refused whole cards over a health check.
+ */
 export interface IdentityCard {
   fronds: Array<{
     name: string;
-    entities: Array<{
+    doors: Array<{
       name: string;
       ops: CardOp[];
       /**
@@ -67,6 +78,24 @@ export interface IdentityCard {
        */
       schema?: SchemaDescriptor;
     }>;
+    /**
+     * The facts this frond ANNOUNCES — one entry per `Emit<T>` its handlers inject.
+     *
+     * They carry no operation, which is why they cannot ride in `doors`: the rule there is
+     * *hosting means answering*, and an entity with no façade is excluded on purpose (it
+     * would publish the auth tables to anyone who asks). A fact is the opposite case —
+     * someone WROTE that it leaves, so publishing its shape is honouring a statement, not
+     * leaking one.
+     *
+     * Without this, a fact stopped at the repository boundary: `remotes:` gives the
+     * location, colocation gives the contract, and across two repositories there is no
+     * colocation. The subscriber had to hand-copy the emitter's declaration.
+     *
+     * `schema` is absent when the announced type is not a declared entity — legal (nothing
+     * requires a fact to be one) and worth saying rather than hiding: the name travels, the
+     * shape does not, and a consumer can see exactly that.
+     */
+    facts: Array<{ name: string; schema?: SchemaDescriptor }>;
   }>;
 }
 
@@ -125,15 +154,27 @@ export function contractsKeyOf(entityName: string, surface?: string): string {
  * cached by callers.
  *
  * Hosting means answering: an entity with no façade declares no operation, so
- * it is not listed — publishing its shape would hand an anonymous caller the
- * structure of tables it can never reach (the auth tables, typically), and
+ * it is not among the DOORS — publishing its shape would hand an anonymous caller
+ * the structure of tables it can never reach (the auth tables, typically), and
  * `fougere sync` would rebuild a schema with nothing to call on it.
+ *
+ * `facts` is the one thing that shape-without-a-door rule does not cover, and the
+ * reason is the opposite of a leak: an entity nobody exposed is silent, whereas a
+ * fact was explicitly declared to leave.
  *
  * `surface` makes that sentence audience-aware rather than app-wide: a door
  * answers with what IT serves. Nothing falls back to the full façade — under a
  * named surface, an entity with no façade of its own is simply not there.
  */
 export function identityCardOf(app: App, surface?: string): IdentityCard {
+  /**
+   * Every entity of every frond, by name — a fact is announced where it is USED, which is
+   * not always where it is declared. Same reason the boot builds this map to judge one.
+   */
+  const declared = new Map(
+    app.fronds.flatMap((frond) => frond.entities.map((entity) => [entity.name, entity.entityClass] as const)),
+  );
+
   return {
     fronds: app.fronds.map((frond) => {
       // What the frond answers to, not what it stores. This walked `frond.entities`, so a
@@ -149,7 +190,7 @@ export function identityCardOf(app: App, surface?: string): IdentityCard {
 
       return {
         name: frond.name,
-        entities: addresses.flatMap((address) => {
+        doors: addresses.flatMap((address) => {
           const ops = facadeOps(app, address, surface);
           if (ops.length === 0) return [];
           const entity = byEntity.get(address);
@@ -159,6 +200,19 @@ export function identityCardOf(app: App, surface?: string): IdentityCard {
             // Absent when nothing of that name is stored. A door is still a door.
             ...(entity ? { schema: describeSchema(entity.entityClass, address) } : {}),
           }];
+        }),
+        /**
+         * What leaves on its own — the same list on every surface, deliberately.
+         *
+         * A door has an audience; a fact does not. `Emit<T>` names a subject and *the
+         * number of readers is not the emitter's business* (`emit.ts`), so narrowing this
+         * by `surface` would invent an axis the primitive refuses. The consequence is
+         * stated rather than hidden: a fact's SHAPE is readable by anyone who can read the
+         * card at all. What must not be published must not be announced.
+         */
+        facts: factsAnnouncedBy(frond.handlers).map((name) => {
+          const entityClass = declared.get(name);
+          return { name, ...(entityClass ? { schema: describeSchema(entityClass, name) } : {}) };
         }),
       };
     }),

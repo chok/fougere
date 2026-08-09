@@ -68,3 +68,23 @@ export function factOfEmitKey(key: string): string | undefined {
     ? key.slice(0, -SUFFIX.length)
     : undefined;
 }
+
+/**
+ * What a set of handlers ANNOUNCES — `Emit<T>` read back out of their dependencies.
+ *
+ * Two readers, which is exactly why it is a function and not a line: the boot registers one
+ * emission value per name, and the identity card publishes the same set. Spelled twice they
+ * would drift the day an emission stops being a constructor dependency.
+ *
+ * The dual — what a handler ACCEPTS — is not here, because it is not read the same way: a
+ * `Fact<T>` parameter is a fact about one operation, and `computeBindingPlan` has already
+ * written it into the plan (`app.listensTo()`).
+ */
+export function factsAnnouncedBy(handlers: ReadonlyArray<{ deps: readonly string[] }>): string[] {
+  return [...new Set(
+    handlers
+      .flatMap((handler) => handler.deps)
+      .map(factOfEmitKey)
+      .filter((fact): fact is string => fact !== undefined),
+  )];
+}

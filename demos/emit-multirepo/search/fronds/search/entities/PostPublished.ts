@@ -1,18 +1,18 @@
-import { entity, primary, text, auto } from '@fougere/schema';
-
 /**
- * THIS repository's own copy of the contract. It imports nothing from `blog` — there is no
- * `blog` on this disk.
+ * The one line this repository writes about someone else's fact: **it accepts it**.
  *
- * Written by hand here, because `fougere sync` cannot fetch it yet: a fact carries no
- * operations, and the identity card only publishes what has a door. That gap is real and
- * this file is standing in for it.
+ * The SHAPE is no longer here. `fougere sync` fetched it from the blog's identity card
+ * (`pnpm sync`) and wrote `.fougere/remotes/blog/entities/PostPublished.ts` — generated,
+ * gitignored, regenerated whenever the emitter changes. This file re-exports it into
+ * `search`'s own `entities/`, which is what makes the judge apply: the boot judges an
+ * arriving fact against an entity of a scanned frond, and a package under `.fougere/`
+ * is not one.
  *
- * The two copies meet on ONE thing: the name. `PostPublished` on both sides becomes the
- * topic `postPublished`, derived and never written.
+ * Until the card published facts, the fields were copied by hand right here — two
+ * declarations, nothing comparing them, and a drift nobody would have seen until a
+ * payload was silently refused.
+ *
+ * What the two repositories still meet on is the NAME. `PostPublished` on both sides
+ * becomes the topic `postPublished`, derived and never written.
  */
-export default class PostPublished extends entity({
-  id: primary(),
-  title: text({ min: 1 }),
-  at: auto(),
-}) {}
+export { default } from '../../../.fougere/remotes/blog/entities/PostPublished.js';

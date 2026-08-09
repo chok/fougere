@@ -23,7 +23,7 @@ export { createLocalRunner, createAppRunner, identityCardOf, RPC_ENTITY } from '
 // answers. A second reader that respells one looks in the wrong place and reports
 // nothing found — which is indistinguishable from nothing wrong.
 export { facadeKeyOf, contractsKeyOf } from './call.js';
-export { type Emit, type Fact, emitKeyOf, factOfEmitKey } from './emit.js';
+export { type Emit, type Fact, emitKeyOf, factOfEmitKey, factsAnnouncedBy } from './emit.js';
 export { resolveContracts } from './operation.js';
 export type { FrondCall, Transport, IdentityCard, CardOp, Facade } from './call.js';
 export { callValueOf } from './contract.js';
