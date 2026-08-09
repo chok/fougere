@@ -167,6 +167,17 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   const subscribers = new Map<string, Array<{ door: string; op: string }>>();
 
   /**
+   * Every entity of every frond, by name — so a fact can be judged where it LANDS.
+   *
+   * A fact usually lives in the frond that announces it and is heard in another, so the
+   * subscriber's own frond does not hold it. Across all fronds and not per-frond for that
+   * one reason.
+   */
+  const entityByName = new Map(
+    fronds.flatMap((f) => f.entities.map((e) => [e.name, e.entityClass] as const)),
+  );
+
+  /**
    * Who listens to what — read from the PLAN, where `{ kind: 'fact' }` is a sentence
    * `computeBindingPlan` already wrote, so nothing re-derives what a parameter is.
    *
@@ -372,6 +383,26 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
        * build a second path.
        */
       noteSubscriptions(contracts, facadeKey);
+
+      /**
+       * A fact is judged on arrival, by the entity it IS.
+       *
+       * The scan never fills `input` from a parameter type, so a subscriber's payload met
+       * no judge at all — tolerable while it came from an emitter in this very process,
+       * false the moment it comes off a wire, from another repository, from an older
+       * emitter, or out of a queue that held it for three days. A fact is an entity: it
+       * has a card, `reconstruct` rebuilds it on the far side, so the same judge stands on
+       * both ends — which is already what a door promises.
+       *
+       * A contract that states its own `input` wins: the three producers keep their order.
+       */
+      for (const [op, contract] of contracts) {
+        if (contract.input) continue;
+        const bound = contract.binding?.find((b) => b.source.kind === 'fact');
+        if (!bound || bound.source.kind !== 'fact') continue;
+        const shape = entityByName.get(bound.source.factName);
+        if (shape) contracts.set(op, { ...contract, input: shape });
+      }
 
       /**
        * The field set an op's result is projected onto — the view declared for THAT op

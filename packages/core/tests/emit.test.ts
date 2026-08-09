@@ -82,6 +82,30 @@ describe('a fact reaching several fronds', () => {
   });
 });
 
+describe('a fact is judged where it lands', () => {
+  beforeEach(() => { (globalThis as any).__heard = []; });
+
+  it('refuses a payload the fact itself refuses, and the op is never called', async () => {
+    await using app = await createApp({ root, createContainer });
+    const door = app.facadeFor('index')!;
+
+    // `PostPublished` picks `title: text({ min: 1 })` from Post, so an empty title is not
+    // one. The scan fills no `input` from a parameter type, so this used to pass straight
+    // through: a subscriber met no judge at all.
+    await expect(door.reindex({ ...EMPTY_INVOCATION, body: { id: 'x', title: '' } }))
+      .rejects.toThrow(/title/);
+    expect(heard()).toEqual([]);
+  });
+
+  it('lets a legal fact through, decoded', async () => {
+    await using app = await createApp({ root, createContainer });
+    const door = app.facadeFor('index')!;
+
+    await door.reindex({ ...EMPTY_INVOCATION, body: { id: 'ok', title: 'A fern', at: new Date().toISOString() } });
+    expect(heard()).toEqual(['search:ok']);
+  });
+});
+
 describe('a listener that lives in another process', () => {
   it('is still dispatched to — its subscription was read here, its door answers there', async () => {
     (globalThis as any).__heard = [];
