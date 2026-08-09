@@ -61,7 +61,10 @@ async function main() {
 
       // Upward. `deliver` and not the emission value: resolving the latter would carry the
       // reading straight back out through `onEmit` and echo it to the whole fleet.
-      if (msg.fact) void app.deliver(msg.fact, msg.payload);
+      // `deliver` rejects when a listener refused. This tunnel holds nothing, so there
+      // is nothing to redeliver — it says so and moves on. A queue would not.
+      if (msg.fact) void app.deliver(msg.fact, msg.payload)
+        .catch((cause) => console.log(`\x1b[31m[hub]\x1b[0m ${msg.fact} refused: ${(cause as Error).message}`));
     });
 
     const bye = () => {

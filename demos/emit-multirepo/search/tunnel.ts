@@ -35,7 +35,10 @@ async function main() {
       buffer = buffer.slice(cut + 1);
       const { fact, payload } = JSON.parse(line) as { fact: string; payload: unknown };
       // The same local dispatch as in-process — judge, binding and middlewares included.
-      void app.deliver(fact, payload);
+      // It rejects when a listener refused; this carrier keeps nothing, so it can only
+      // report. `main.ts` shows the other half: a broker that replays what was not acked.
+      void app.deliver(fact, payload)
+        .catch((cause) => console.log(`\x1b[31m[search]\x1b[0m ${fact} refused: ${(cause as Error).message}`));
     }
   });
 

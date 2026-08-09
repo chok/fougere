@@ -364,6 +364,16 @@ export interface App {
    *
    * The local dispatch is identical either way — same judge, same binding, same
    * middlewares — so a fact off a wire is no less checked than one raised next door.
+   *
+   * **It waits, and it tells** — the opposite of announcing, on purpose. It resolves once
+   * every listener here is done, and REJECTS with an `AggregateError` if any refused. A
+   * carrier's whole job is to know whether the fact landed: at-least-once is retrying what
+   * failed, so a delivery that cannot report makes durability impossible to build above it.
+   * "Dispatch is not delivery" protects the EMITTER from a slow subscriber; a carrier is
+   * not the emitter, it is the party whose business this is.
+   *
+   * It still holds nothing. A refused fact is refused, and whether it comes back is the
+   * carrier's decision — Fougere puts the channel underneath rather than reimplementing it.
    */
   deliver(fact: string, payload: unknown): Promise<void>;
   /**

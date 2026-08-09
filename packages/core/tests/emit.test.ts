@@ -216,9 +216,10 @@ describe('a fact stamped at the announcement', () => {
 
     // `deliver` is the carrier's door. The sender already stamped this fact; doing it
     // again would give one fact two identities, one per process that relayed it.
+    // It rejects here because `mail` fails on every fact by design — what this test
+    // watches is the value that reached `search`, not the outcome.
     const at = new Date('2020-01-01T00:00:00.000Z');
-    await app.deliver('postPublished', { id: 'y', title: 'A fern', at: at.toISOString() });
-    await settle();
+    await app.deliver('postPublished', { id: 'y', title: 'A fern', at: at.toISOString() }).catch(() => {});
 
     expect(((globalThis as any).__lastFact as { at: Date }).at.toISOString()).toBe(at.toISOString());
   });
@@ -229,22 +230,18 @@ describe('a sender whose copy has moved ahead', () => {
 
   it('is refused, and the refusal names the field', async () => {
     await using app = await createApp({ root, createContainer });
-    const refusals: unknown[] = [];
-    app.use(async (_ctx, next) => {
-      try { return await next(); } catch (cause) { refusals.push(cause); throw cause; }
-    });
 
-    await app.deliver('postPublished', {
+    const refused = await app.deliver('postPublished', {
       id: '77',
       title: 'a post',
       at: new Date().toISOString(),
       author: 'a field this subscriber has never heard of',
-    });
-    await settle();
+    }).catch((cause: AggregateError) => cause);
 
     expect(heard()).not.toContain('search:77');
-    expect((refusals[0] as { details?: unknown[] }).details)
-      .toEqual([{ path: 'author', message: 'Unknown field' }]);
+    const shape = (refused as AggregateError).errors
+      .find((e: { entity?: string }) => e.entity === 'index') as { details?: unknown[] };
+    expect(shape.details).toEqual([{ path: 'author', message: 'Unknown field' }]);
   });
 
   /**
@@ -264,8 +261,7 @@ describe('a sender whose copy has moved ahead', () => {
     try {
       await app.deliver('postPublished', {
         id: '80', title: 'a post', at: new Date().toISOString(), author: 'unknown here',
-      });
-      await settle();
+      }).catch(() => {});
     } finally {
       spy.mockRestore();
     }
@@ -275,24 +271,66 @@ describe('a sender whose copy has moved ahead', () => {
     expect(line).toMatch(/fougere sync/);
   });
 
-  it('leaves the emitter untouched — a refusal reaches a log, never back up', async () => {
+  it('leaves the ANNOUNCEMENT untouched — a refusal reaches a log, never back up', async () => {
     await using app = await createApp({ root, createContainer });
+    const announce = app.container.resolve<(fact: unknown) => Promise<void>>(emitKeyOf('PostPublished'));
 
-    // Dispatch is not delivery. Whatever a subscriber decides about the payload, the
-    // announcement settles: this is the same rule a throwing subscriber already obeys.
-    await expect(
-      app.deliver('postPublished', { id: '78', title: 'x', at: new Date().toISOString(), author: 'y' }),
-    ).resolves.toBeUndefined();
+    // The emission path, not `deliver`: this is the rule that protects the EMITTER, and
+    // an earlier version of this test asserted it through the carrier's door, which is
+    // exactly the party that must NOT be shielded.
+    await expect(announce({ id: '78', title: 'x', author: 'y' })).resolves.toBeUndefined();
   });
 
   /** The other direction was never in question: a field that left is missing data. */
   it('refuses a fact that lost a field it needs', async () => {
     await using app = await createApp({ root, createContainer });
 
-    await app.deliver('postPublished', { id: '79' });
-    await settle();
-
+    await expect(app.deliver('postPublished', { id: '79' })).rejects.toThrow(/refused it/);
     expect(heard()).not.toContain('search:79');
+  });
+});
+
+/**
+ * What a carrier needs from Fougere, and the whole of what Fougere owes it.
+ *
+ * At-least-once is retrying what failed, so a delivery that cannot report makes every
+ * durability story impossible to build above it. `deliver` used to BE the announcement
+ * path: it resolved before any subscriber had run and swallowed each failure into a log,
+ * so a queue calling it could only ever ack blindly and lose the fact.
+ *
+ * The queue itself stays outside — `demos/emit-multirepo/broker.ts` is where retention
+ * lives, and that is the position, not an omission.
+ */
+describe('a carrier that must decide whether to redeliver', () => {
+  beforeEach(() => { (globalThis as any).__heard = []; });
+
+  it('is told which listener refused, and how many', async () => {
+    await using app = await createApp({ root, createContainer });
+
+    // `mail` throws on every fact by design, `search` accepts this one.
+    const refused = await app.deliver('postPublished', {
+      id: 'ack', title: 'A fern', at: new Date().toISOString(),
+    }).catch((cause: AggregateError) => cause);
+
+    expect(refused).toBeInstanceOf(AggregateError);
+    expect((refused as AggregateError).message).toMatch(/1 of 2 listener\(s\) refused it/);
+    expect((refused as AggregateError).message).toMatch(/digestHandler\.queue/);
+    // And it says the framework is not holding it — the carrier decides.
+    expect((refused as AggregateError).message).toMatch(/the carrier decides/);
+    // The one that accepted still ran: a partial failure is not a rollback.
+    expect(heard()).toContain('search:ack');
+  });
+
+  it('waits for the listeners rather than handing back straight away', async () => {
+    await using app = await createApp({ root, createContainer });
+
+    // Nothing settles between the call and the assertion — no `settle()` here, which is
+    // the difference from every announcement test above.
+    await app.deliver('postPublished', {
+      id: 'sync', title: 'A fern', at: new Date().toISOString(),
+    }).catch(() => {});
+
+    expect(heard()).toContain('search:sync');
   });
 });
 

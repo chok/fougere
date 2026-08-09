@@ -615,18 +615,6 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   }
 
   /**
-   * One value per announced fact. Dispatch, never delivery.
-   *
-   * The returned promise settles once every subscriber has been HANDED the fact, not once
-   * any of them is done: `void` and `.catch` say that in the only two words that can. The
-   * `EventBus` this replaces awaited `Promise.all(handlers)` and took their rejections,
-   * which made a publication hostage to its own indexer.
-   *
-   * The call goes THROUGH the door, so a subscriber meets the same judge, the same binding
-   * and the same middlewares as any caller. Nothing new answers for correctness — that is
-   * the dividend of a subscriber being an ordinary op rather than a special kind.
-   */
-  /**
    * A subscriber refusing the SHAPE, said in one line instead of dumped as an error.
    *
    * This is the one refusal nobody else will ever see. A door hands its 400 back to the
@@ -643,8 +631,17 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       + ` If '${fact}' gained a field, this copy is older than the sender's: re-run \`fougere sync\`.`;
   };
 
-  /** The listeners in THIS process, and nothing beyond it. Shared by emission and delivery. */
-  const dispatchLocally = async (fact: string, payload: unknown): Promise<void> => {
+  /**
+   * Hand the fact to every listener in THIS process, and give back one promise each.
+   *
+   * The call goes THROUGH the door, so a subscriber meets the same judge, the same binding
+   * and the same middlewares as any caller. Nothing new answers for correctness — that is
+   * the dividend of a subscriber being an ordinary op rather than a special kind.
+   *
+   * It returns the promises rather than settling them, because the two callers want
+   * opposite things and only one of them is wrong to wait. See `deliver`.
+   */
+  const handToListeners = (fact: string, payload: unknown): Array<{ door: string; op: string; done: Promise<unknown> }> => {
     const walked = chain.getStore() ?? [];
     if (walked.includes(fact)) {
       throw new Error(
@@ -656,20 +653,71 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     const listeners = subscribers.get(fact) ?? [];
     if (listeners.length === 0) {
       log.debug(`${fact} — nobody listens in this process`);
-      return;
+      return [];
     }
 
     const deeper = [...walked, fact];
-    for (const { door, op } of listeners) {
-      chain.run(deeper, () => {
+    return listeners.map(({ door, op }) => ({
+      door,
+      op,
+      done: chain.run(deeper, async () => {
+        let facade: Record<string, Function>;
         try {
-          const facade = container.resolve<Record<string, Function>>(door);
-          void Promise.resolve(facade[op]({ ...EMPTY_INVOCATION, body: payload }))
-            .catch((cause) => log.error(`${fact} → ${door}.${op}`, describeRefusal(fact, cause) ?? cause));
+          facade = container.resolve<Record<string, Function>>(door);
         } catch (cause) {
-          log.error(`${fact} → ${door} could not be reached`, cause);
+          throw new Error(`${fact} → ${door} could not be reached`, { cause });
         }
-      });
+        return facade[op]({ ...EMPTY_INVOCATION, body: payload });
+      }),
+    }));
+  };
+
+  /**
+   * Announcing. Dispatch, never delivery — the emitter is handed back the moment every
+   * subscriber has been HANDED the fact, not when any of them is done.
+   *
+   * The `EventBus` this replaces did `await Promise.all(handlers)` and passed their
+   * rejections up, which made a publication hostage to its own indexer.
+   */
+  const dispatchLocally = async (fact: string, payload: unknown): Promise<void> => {
+    for (const { door, op, done } of handToListeners(fact, payload)) {
+      void done.catch((cause) => log.error(`${fact} → ${door}.${op}`, describeRefusal(fact, cause) ?? cause));
+    }
+  };
+
+  /**
+   * Receiving. **The opposite rule, deliberately**: this one waits, and it tells.
+   *
+   * `deliver` is what a CARRIER calls, and a carrier's whole job is to know whether the
+   * fact landed — at-least-once is retrying what failed, so a delivery that cannot report
+   * makes durability impossible to build on top. It used to be `dispatchLocally` itself:
+   * it resolved before any subscriber had run and swallowed every failure into a log, so a
+   * queue calling it could only ever ack blindly.
+   *
+   * That is not a contradiction of "dispatch is not delivery". That rule protects the
+   * EMITTER, which must not become hostage to a subscriber; a carrier is not the emitter,
+   * it is precisely the party whose business this is.
+   *
+   * What it still does not do is HOLD anything. A fact refused here is refused, and the
+   * carrier decides whether it comes back — which is the whole of Fougere's position on
+   * durability: the channel goes underneath, it is not reimplemented here.
+   */
+  const deliver = async (fact: string, payload: unknown): Promise<void> => {
+    const handed = handToListeners(fact, payload);
+    const settled = await Promise.allSettled(handed.map((h) => h.done));
+
+    const refused = settled.flatMap((result, i) =>
+      result.status === 'rejected' ? [{ ...handed[i], reason: result.reason as unknown }] : []);
+    for (const { door, op, reason } of refused) {
+      log.error(`${fact} → ${door}.${op}`, describeRefusal(fact, reason) ?? reason);
+    }
+    if (refused.length > 0) {
+      throw new AggregateError(
+        refused.map((r) => r.reason),
+        `${fact} — ${refused.length} of ${handed.length} listener(s) refused it`
+        + ` (${refused.map((r) => `${r.door}.${r.op}`).join(', ')}).`
+        + ` Nothing here holds it: the carrier decides whether it comes back.`,
+      );
     }
   };
 
@@ -841,7 +889,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     schemaFor,
     facadeFor,
     listensTo: () => [...subscribers.keys()],
-    deliver: dispatchLocally,
+    deliver,
     ormFor,
     dispose: () => container.dispose(),
     [Symbol.asyncDispose]: () => container.dispose(),

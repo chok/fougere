@@ -20,18 +20,19 @@ cd blog   && pnpm dev                       # repository A — publishes twice
 ## What you should see
 
 ```
-[broker · pid 41109] on http://127.0.0.1:4300
-[broker]  + subscriber for postPublished
-[search · pid 41166] listening for: postPublished
+[broker · pid 60877] on http://127.0.0.1:4300 — log + cursors
+[broker]  + search for postPublished
+[search · pid 60948] listening for: postPublished
 
-[blog · pid 41212] 1. No carrier
+[blog · pid 61012] 1. No carrier
                       { id: 'p1', status: 'published' }
                       …and that is all. Nothing failed, nobody heard.      ← the failure
 
-[blog · pid 41212] 2. With a carrier
+[blog · pid 61012] 2. With a carrier
                       { id: 'p2', status: 'published' }
-[broker]  postPublished → 1 subscriber(s)
-[search · pid 41166] indexed p2 — "A frond is a leaf that repeats itself"  ← the fix
+[broker]  #1 postPublished → 1 online, kept in the log
+[search · pid 60948] indexed p2 — "A frond is a leaf that repeats itself"  ← the fix
+[broker]    search acked #1
 ```
 
 **`p1` is lost in silence.** That is the point of step 1, and it is the honest failure mode
@@ -102,6 +103,33 @@ emitter's own declaration refuses is refused here too:
 The fields used to be copied by hand into that file. Two declarations, nothing comparing
 them, and the drift would have shown up as a fact silently refused.
 
+## Catching up after being offline
+
+Stop `search`, publish, start it again — the fact arrives:
+
+```
+[broker]  #1 postPublished → 0 online, kept in the log      ← nobody listening
+[broker]  + search for postPublished — replaying 1 it never acked
+[search]  indexed p2 — "A frond is a leaf that repeats itself"
+[broker]    search acked #1
+```
+
+**None of that is Fougere.** Durability is three things and all three are in `broker.ts`:
+a log, a cursor per named subscriber, and an ack that only moves the cursor once the fact
+was handled. `Emit` is a resolver — it answers *who* — and a resolver holds nothing.
+
+What Fougere owes a carrier is the ability to answer "did it land?", and that is
+`app.deliver()`: it resolves when every local listener is done, and rejects when one
+refused. Watch a fact the subscriber cannot read:
+
+```
+[search]  #2 refused — not acking, it will come back
+[broker]  + search for postPublished — replaying 1 it never acked   ← on the next connect
+```
+
+Had `deliver` resolved blindly — which it did until it was made to wait — the subscriber
+would have acked a fact it never handled, and the log would have moved past it forever.
+
 ## The same thing without a broker — a tunnel
 
 Same two repositories, same `PostHandler`, same `IndexHandler`. **Only the carrier
@@ -145,10 +173,8 @@ emitter holds one connection per listener.
 
 ## What this demo is not
 
-- **The broker is forty lines of stand-in.** Real deployments put NATS, Redis or Kafka
+- **The broker is eighty lines of stand-in.** Real deployments put NATS, Redis or Kafka
   there. Nothing about the shape changes: subscribers announce names, publishers hand a
   name and a payload.
-- **Still nothing is durable.** Stop `search`, publish, restart it: the fact is gone. The
-  stand-in holds no queue, which is exactly what a real broker adds.
 - **The sync is manual and one-way.** Nothing tells `search` that the blog's fact has
   changed shape; re-running `pnpm sync` is a decision someone takes.

@@ -49,7 +49,8 @@ async function main() {
       while ((cut = buffer.indexOf('\n')) >= 0) {
         const { fact, payload } = JSON.parse(buffer.slice(0, cut)) as { fact: string; payload: unknown };
         buffer = buffer.slice(cut + 1);
-        void app.deliver(fact, payload);
+        void app.deliver(fact, payload)
+          .catch((cause) => console.log(`\x1b[31m[${ME}]\x1b[0m ${fact} refused: ${(cause as Error).message}`));
       }
     });
 
