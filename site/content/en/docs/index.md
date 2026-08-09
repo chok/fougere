@@ -70,5 +70,6 @@ the local path avoids, no framework tax layered on top of the network.
 **Topology** — [The gradient](/docs/infra/gradient) · [Surfaces](/docs/infra/surfaces) ·
 [Deployment](/docs/infra/deployment)
 
-> **Status.** Fougere is pre-release: the `@fougere/*` packages are not yet on npm, and this
-> documentation describes the API as it exists in the repository today. This site runs on it.
+> **Status.** Fougere is in alpha: the `@fougere/*` packages are on npm under the `alpha`
+> tag, and this documentation describes the API as it exists in the repository today.
+> This site runs on it.

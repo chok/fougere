@@ -7,6 +7,13 @@ import type { App } from '@fougere/core';
 type Ui = ReturnType<typeof createUi>;
 
 /**
+ * The same line either way, which is the point: `--local` links this checkout, the
+ * default resolves `@fougere/*` from npm, and neither needs a caveat since the alpha
+ * is published. It used to carry one, and a stale caveat is worse than none.
+ */
+const INSTALL = 'pnpm install';
+
+/**
  * The guided composer: a workspace, then its fronds (domains), then the apps
  * that consume them — in that dependency order. ProjectWriter is a plain,
  * dependency-free service, so the presentation command drives it directly.
@@ -39,8 +46,7 @@ export default class NewCommand {
       pw.addRootFrond(dir, template);
       if (raw.local) pw.linkLocal(dir);
       this.ui.info(`${template} at the root`);
-      const flatInstall = raw.local ? 'pnpm install' : 'pnpm install   # needs @fougere/* published (or re-run with --local)';
-      this.ui.note([`cd ${name}`, flatInstall, `pnpm dev`].join('\n'), `${name} — one frond, at the root`);
+      this.ui.note([`cd ${name}`, INSTALL, `pnpm dev`].join('\n'), `${name} — one frond, at the root`);
       this.ui.outro('Prêt.');
       return;
     }
@@ -67,8 +73,7 @@ export default class NewCommand {
     // Every app depends on every frond — stated here, where both names are known.
     pw.linkFronds(dir);
     if (raw.local) pw.linkLocal(dir);
-    const install = raw.local ? 'pnpm install' : 'pnpm install   # needs @fougere/* published (or re-run with --local)';
-    this.ui.note([`cd ${name}`, install, `pnpm dev`].join('\n'), `${name} — ${fronds} frond(s), ${apps} app(s)`);
+    this.ui.note([`cd ${name}`, INSTALL, `pnpm dev`].join('\n'), `${name} — ${fronds} frond(s), ${apps} app(s)`);
     this.ui.outro('Prêt.');
   }
 

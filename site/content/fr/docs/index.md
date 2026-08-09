@@ -71,6 +71,6 @@ sérialisation que le chemin local éviterait, aucun impôt du framework par-des
 **Topologie** — [Le gradient](/fr/docs/infra/gradient) · [Surfaces](/fr/docs/infra/surfaces) ·
 [Déploiement](/fr/docs/infra/deployment)
 
-> **Statut.** Fougere est en pré-version : les paquets `@fougere/*` ne sont pas encore sur
-> npm, et cette documentation décrit l'API telle qu'elle existe dans le dépôt aujourd'hui.
-> Ce site tourne dessus.
+> **Statut.** Fougere est en alpha : les paquets `@fougere/*` sont sur npm sous le tag
+> `alpha`, et cette documentation décrit l'API telle qu'elle existe dans le dépôt
+> aujourd'hui. Ce site tourne dessus.

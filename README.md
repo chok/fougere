@@ -9,11 +9,12 @@ the TypeScript type, the validator, the SQL table, the form contract and the API
 surface. And because the declaration is JSON on the wire, the domain can move to its
 own process — or to another language — while the code calling it does not change.
 
-**Pre-release**, not on npm yet — [what works today](#where-it-stands).
+**Alpha on npm** — `npm create fougere` — [what works today](#where-it-stands).
 **[Read the docs →](https://chok.github.io/fougere/)**
 
 [![CI](https://github.com/chok/fougere/actions/workflows/ci.yml/badge.svg)](https://github.com/chok/fougere/actions/workflows/ci.yml)
-[![Status](https://img.shields.io/badge/status-pre--release-orange.svg)](#where-it-stands)
+[![npm](https://img.shields.io/npm/v/@fougere/schema/alpha.svg)](https://www.npmjs.com/package/@fougere/schema)
+[![Status](https://img.shields.io/badge/status-alpha-orange.svg)](#where-it-stands)
 
 </div>
 
@@ -209,9 +210,16 @@ projection would close that, and does not exist.
 ## Try it
 
 ```bash
+npm create fougere shop --frond blog --app nuxt
+cd shop && pnpm install && pnpm dev
+```
+
+Or read the source of everything below, which is where the claims are proven:
+
+```bash
 git clone git@github.com:chok/fougere.git && cd fougere
 pnpm install
-pnpm -r --filter './packages/**' build      # the packages are not on npm yet
+pnpm -r build
 ```
 
 > If `better-sqlite3` fails to load, run `npx prebuild-install` in its pnpm directory.
@@ -243,14 +251,14 @@ cargo run --release     # the Rust frond, :4200
 npx tsx consumer.ts     # another terminal — a TS consumer that knows none of its entities
 ```
 
-To start your own app, `fougere new` composes a pnpm workspace linked to this checkout
-— see [the CLI docs](https://chok.github.io/fougere/docs/cli).
+To start your own app, `fougere new` composes a pnpm workspace — from npm by default,
+or linked to this checkout with `--local`. See
+[the CLI docs](https://chok.github.io/fougere/docs/cli).
 
 ## Where it stands
 
-**Pre-release.** The packages are not on npm yet, so a Fougere app lives as a pnpm
-workspace next to the framework (`--local` above wires it). What follows has been
-seen running, not planned:
+**Alpha** — `0.1.0-alpha.0`, published under the `alpha` tag. The version is the whole
+promise: the surface can still move. What follows has been seen running, not planned:
 
 - the five client primitives (`useQuery`/`useCommand`, `useFormFor`, `useCurrentUser`,
   `invoke`) are the only path — there is no escape hatch to maintain;
