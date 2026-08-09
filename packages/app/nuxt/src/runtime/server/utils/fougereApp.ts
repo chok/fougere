@@ -9,7 +9,7 @@
  * Nitro plugin if the user wants a custom data layer (alternative driver,
  * managed migrations, etc.).
  */
-import { createApp, loadCascadedConfig, setModuleLoader, Logger } from '@fougere/core';
+import { createApp, loadCascadedConfig, setModuleLoader, frondAliases, Logger } from '@fougere/core';
 import { createContainer } from '@fougere/container-fougere';
 import type { App, EntityOrm, FougereConfig, Transport } from '@fougere/core';
 import { applyCreate, applyUpdate, type SchemaLike } from '@fougere/schema';
@@ -58,7 +58,12 @@ async function boot(): Promise<App> {
   log.info('booting (Nuxt/Nitro)');
 
   const { createJiti } = await import('jiti');
-  const jiti = createJiti(import.meta.url, { interopDefault: true });
+  // Nitro serves from a bundle, but the scan still reads frond sources from disk — so the
+  // named form a frond uses for its neighbour has to resolve here too.
+  const jiti = createJiti(import.meta.url, {
+    interopDefault: true,
+    alias: await frondAliases(process.env.FOUGERE_ROOT ?? process.cwd()),
+  });
   setModuleLoader((filePath) => jiti.import(filePath) as Promise<Record<string, unknown>>);
 
   // Config cascades along the workspace→app frontier: the workspace root (via

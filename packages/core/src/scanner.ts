@@ -583,6 +583,61 @@ async function rootFrondOf(root: string, workspaceRoot: string): Promise<FrondDe
   return scanFrond(root, name, { path: root, package: `@frond/${name}` }, workspaceRoot);
 }
 
+/**
+ * `@frond/<name>` → the directory it names, for every frond of a project.
+ *
+ * The framework states this convention — `FrondSource.package` has always spelled it, and
+ * `fougere sync` writes it into a consumer's tsconfig — and until now its own reader could
+ * not resolve it. The Nuxt module registered a Vite alias, so a `.vue` page could import
+ * `@frond/blog/entities/Post`, while the SCAN loaded sources through a bare jiti: a frond
+ * naming its neighbour got `Cannot find module '@frond/user/entities/User.js'`. So the one
+ * form that survives a split was the one form that did not run.
+ *
+ * Hand it to the module loader — `createJiti(url, { alias: await frondAliases(root) })` —
+ * and the named form resolves everywhere the framework reads. A directory listing and a
+ * `package.json` read, no parsing: it is deliberately callable BEFORE the loader exists,
+ * which is what makes the chicken-and-egg go away.
+ */
+export async function frondAliases(root: string): Promise<Record<string, string>> {
+  const frondsDir = join(root, 'fronds');
+  const aliases: Record<string, string> = {};
+
+  // The root itself is a frond when it carries `entities/` — same rule as the scan.
+  if ((await files(join(root, 'entities'))).length > 0) {
+    aliases[`@frond/${await frondNameOf(root, basename(resolvePath(root)))}`] = resolvePath(root);
+  }
+  for (const dir of await dirs(frondsDir)) {
+    const path = join(frondsDir, dir);
+    aliases[`@frond/${await frondNameOf(path, dir)}`] = resolvePath(path);
+  }
+
+  /**
+   * A SYNCED frond answers to the same name.
+   *
+   * `fougere sync` writes `.fougere/remotes/<name>/` and registers it in `remotes.json`,
+   * which the Nuxt module already reads to alias `@frond/<name>`. Doing it here too is
+   * what makes the convention mean ONE thing: a consumer writes `@frond/blog/entities/Post`
+   * and never learns whether that frond is on this disk or was fetched from a card.
+   *
+   * A local frond wins a name collision — its source is the truth, a synced copy is a
+   * mirror of somebody else's.
+   */
+  try {
+    const registry = JSON.parse(
+      await readFile(join(root, '.fougere', 'remotes.json'), 'utf8'),
+    ) as Record<string, { path?: string }>;
+    for (const [name, entry] of Object.entries(registry)) {
+      if (typeof entry?.path !== 'string' || aliases[`@frond/${name}`]) continue;
+      aliases[`@frond/${name}`] = resolvePath(entry.path);
+    }
+  } catch {
+    // No registry, or an unreadable one: nothing was synced here. Not this function's
+    // complaint — `sync` owns that file and reports on it.
+  }
+
+  return aliases;
+}
+
 export async function scanProject(root: string, filter?: string[]): Promise<ScanResult> {
   setCacheRoot(root);
   // A run owns its findings: two scans in one process (a test suite, a watcher)

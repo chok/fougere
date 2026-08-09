@@ -7,7 +7,7 @@
  *   terminal 1   pnpm dev:search
  *   terminal 2   pnpm dev
  */
-import { createApp, createLocalRunner, setModuleLoader } from '@fougere/core';
+import { createApp, createLocalRunner, setModuleLoader, frondAliases } from '@fougere/core';
 import type { App, InvocationContext } from '@fougere/core';
 import { createContainer } from '@fougere/container-fougere';
 import { createHttpTransport } from '@fougere/transport-http';
@@ -30,7 +30,11 @@ function title(n: string, text: string) {
 
 async function main() {
   const { createJiti } = await import('jiti');
-  const jiti = createJiti(import.meta.url, { interopDefault: true });
+  const jiti = createJiti(import.meta.url, {
+    interopDefault: true,
+    // `@frond/<name>` is how a frond names its neighbour; the loader has to know it.
+    alias: await frondAliases(import.meta.dirname),
+  });
   setModuleLoader((path) => jiti.import(path) as Promise<Record<string, unknown>>);
 
   title('1.', 'Both fronds in THIS process — nothing is declared, nothing is registered');

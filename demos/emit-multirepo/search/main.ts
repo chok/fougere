@@ -9,7 +9,7 @@
  * this process can actually answer — which is the whole of what a queue needs from
  * Fougere. The queue itself is in `broker.ts`, deliberately: a resolver holds nothing.
  */
-import { createApp, setModuleLoader } from '@fougere/core';
+import { createApp, setModuleLoader, frondAliases } from '@fougere/core';
 import { createContainer } from '@fougere/container-fougere';
 
 const BROKER = `http://127.0.0.1:${process.env.BROKER_PORT ?? 4300}`;
@@ -18,7 +18,11 @@ const ME = process.env.SUBSCRIBER ?? 'search';
 
 async function main() {
   const { createJiti } = await import('jiti');
-  const jiti = createJiti(import.meta.url, { interopDefault: true });
+  const jiti = createJiti(import.meta.url, {
+    interopDefault: true,
+    // `@frond/<name>` is how a frond names its neighbour; the loader has to know it.
+    alias: await frondAliases(import.meta.dirname),
+  });
   setModuleLoader((path) => jiti.import(path) as Promise<Record<string, unknown>>);
 
   const app = await createApp({ root: import.meta.dirname, createContainer });

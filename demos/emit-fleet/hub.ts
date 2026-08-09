@@ -8,7 +8,7 @@
  * Devices behind a NAT cannot be called, so they call. One socket carries both directions.
  */
 import { createServer, type Socket } from 'node:net';
-import { createApp, createLocalRunner, setModuleLoader } from '@fougere/core';
+import { createApp, createLocalRunner, setModuleLoader, frondAliases } from '@fougere/core';
 import { createContainer } from '@fougere/container-fougere';
 
 const PORT = Number(process.env.FLEET_PORT ?? 4500);
@@ -29,7 +29,11 @@ function readLines(socket: Socket, onLine: (line: string) => void): void {
 
 async function main() {
   const { createJiti } = await import('jiti');
-  const jiti = createJiti(import.meta.url, { interopDefault: true });
+  const jiti = createJiti(import.meta.url, {
+    interopDefault: true,
+    // `@frond/<name>` is how a frond names its neighbour; the loader has to know it.
+    alias: await frondAliases(import.meta.dirname),
+  });
   setModuleLoader((path) => jiti.import(path) as Promise<Record<string, unknown>>);
 
   const app = await createApp({

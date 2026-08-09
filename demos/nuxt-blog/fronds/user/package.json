@@ -1,9 +1,9 @@
 {
-  "name": "@frond/blog",
+  "name": "@frond/user",
   "version": "0.0.1",
   "type": "module",
   "fougere": {
-    "frond": "blog"
+    "frond": "user"
   },
   "exports": {
     "./entities/*.js": "./entities/*.ts",

@@ -1,4 +1,4 @@
-import { scanProject, setModuleLoader, type ScanResult } from '@fougere/core';
+import { scanProject, frondAliases, setModuleLoader, type ScanResult } from '@fougere/core';
 import { resolve } from 'node:path';
 
 /**
@@ -25,7 +25,9 @@ export default class ProjectScan {
     // cannot. Installed once per call because the loader is module-global — the
     // CLI's own app was loaded with its own, and this replaces it for the target.
     const { createJiti } = await import('jiti');
-    const jiti = createJiti(import.meta.url, { interopDefault: true });
+    // `@frond/<name>` is the framework's own convention; the loader has to know it,
+    // or a frond naming its neighbour is unreadable to the very tool that checks it.
+    const jiti = createJiti(import.meta.url, { interopDefault: true, alias: await frondAliases(target) });
     setModuleLoader((filePath) => jiti.import(filePath) as Promise<Record<string, unknown>>);
 
     return { root: target, ...(await scanProject(target)) };

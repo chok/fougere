@@ -1,4 +1,4 @@
-import { resolveContracts, type ScanDiagnostic } from '@fougere/core';
+import { resolveContracts, crossFrondImports, type ScanDiagnostic } from '@fougere/core';
 import ProjectScan from '../services/ProjectScan.js';
 
 /** One thing that does not hold, in the terms of whoever has to fix it. */
@@ -28,7 +28,9 @@ export interface CheckResult {
  *   - what the scan could not do (`ScanResult.diagnostics`) — an unreadable
  *     directory, a handler that would not parse, an `extends` it could not follow;
  *   - an operation whose parameters have no binding plan — it is served, and it
- *     receives nothing.
+ *     receives nothing;
+ *   - a relative import that resolves into another frond — a colocation constraint
+ *     nothing declares, which holds until the day the other frond is not on this disk.
  *
  * A rule about an ABSENCE is only sound if the analysis attests it looked, which
  * is why the first bullet had to exist before this command could.
@@ -63,6 +65,19 @@ export default class CheckHandler {
           }
         }
       }
+    }
+
+    /**
+     * A warning, not a refusal: it resolves today and the app runs. What it costs is
+     * paid once, late — the day the frond it reaches into is deployed on its own.
+     */
+    for (const reach of await crossFrondImports(fronds)) {
+      findings.push({
+        severity: 'warning',
+        code: reach.rule,
+        filePath: reach.filePath,
+        message: reach.message,
+      });
     }
 
     return { fronds: fronds.length, handlers, findings };

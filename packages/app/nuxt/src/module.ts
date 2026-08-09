@@ -14,7 +14,7 @@ import {
   createResolver,
 } from '@nuxt/kit';
 import type { Nuxt } from '@nuxt/schema';
-import { scanProject, FROND_DIRS, setModuleLoader, loadCascadedConfig, orderSeeds } from '@fougere/core';
+import { scanProject, frondAliases, FROND_DIRS, setModuleLoader, loadCascadedConfig, orderSeeds } from '@fougere/core';
 import { declaresStorage } from '@fougere/runtime';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
 import { createJiti } from 'jiti';
@@ -75,7 +75,10 @@ const module = defineNuxtModule<FougereModuleOptions>({
     });
 
     // ── 0. Setup TS-aware module loader before reading any user config ──
-    const jiti = createJiti(import.meta.url, { interopDefault: true });
+    // The Vite alias below covers `.vue` pages; this covers the SCAN, which loads a
+    // frond's own sources — so `@frond/user/entities/User.js` inside a handler resolves
+    // for the same reason it does in a page.
+    const jiti = createJiti(import.meta.url, { interopDefault: true, alias: await frondAliases(scanRoot) });
     setModuleLoader((filePath) => jiti.import(filePath) as Promise<Record<string, unknown>>);
 
     // ── 0b. Load fougere.config.ts along the workspace→app cascade (scanRoot is

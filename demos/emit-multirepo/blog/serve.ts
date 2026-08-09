@@ -7,7 +7,7 @@
  *
  * Nothing here is about emission. It is the same app, reachable.
  */
-import { createApp, createAppRunner, setModuleLoader } from '@fougere/core';
+import { createApp, createAppRunner, setModuleLoader, frondAliases } from '@fougere/core';
 import { createContainer } from '@fougere/container-fougere';
 import { serve } from '@fougere/transport-http';
 
@@ -15,7 +15,11 @@ const PORT = Number(process.env.CARD_PORT ?? 4301);
 
 async function main() {
   const { createJiti } = await import('jiti');
-  const jiti = createJiti(import.meta.url, { interopDefault: true });
+  const jiti = createJiti(import.meta.url, {
+    interopDefault: true,
+    // `@frond/<name>` is how a frond names its neighbour; the loader has to know it.
+    alias: await frondAliases(import.meta.dirname),
+  });
   setModuleLoader((path) => jiti.import(path) as Promise<Record<string, unknown>>);
 
   const app = await createApp({ root: import.meta.dirname, createContainer });

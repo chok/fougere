@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "type": "module",
   "exports": {
+    "./entities/*.js": "./entities/*.ts",
     "./entities/*": "./entities/*.ts",
     "./package.json": "./package.json"
   },

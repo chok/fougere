@@ -1,6 +1,6 @@
 import { Collector } from '@fougere/core';
 import type { InvocationContext } from '@fougere/core';
-import User from '../../user/entities/User.js';
+import User from '@frond/user/entities/User.js';
 
 /**
  * Resolves the current user from the invocation context.

@@ -1,6 +1,6 @@
 import type { Emit, Fact } from '@fougere/core';
-import type Recalibrate from '../../fleet/entities/Recalibrate.js';
-import type Reading from '../../fleet/entities/Reading.js';
+import type Recalibrate from '@frond/fleet/entities/Recalibrate.js';
+import type Reading from '@frond/fleet/entities/Reading.js';
 
 /**
  * The hub — it announces downward and listens upward, in one class.

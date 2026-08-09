@@ -9,7 +9,7 @@
  */
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
-import { createApp, setModuleLoader, createLocalRunner } from '@fougere/core';
+import { createApp, setModuleLoader, createLocalRunner, frondAliases } from '@fougere/core';
 import { createContainer } from '@fougere/container-fougere';
 import { createHonoRouter } from '@fougere/http';
 import { handleRpc } from '@fougere/transport-http';
@@ -20,7 +20,11 @@ const PORT = Number(process.env.PORT ?? 4001);
 async function main() {
   // Boot fougere with in-memory ORM
   const { createJiti } = await import('jiti');
-  const jiti = createJiti(import.meta.url, { interopDefault: true });
+  const jiti = createJiti(import.meta.url, {
+    interopDefault: true,
+    // `@frond/<name>` is how a frond names its neighbour; the loader has to know it.
+    alias: await frondAliases(import.meta.dirname),
+  });
   setModuleLoader((p) => jiti.import(p) as Promise<Record<string, unknown>>);
 
   const app = await createApp({

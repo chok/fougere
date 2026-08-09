@@ -1,5 +1,5 @@
 import type { Fact } from '@fougere/core';
-import type PostPublished from '../../blog/entities/PostPublished.js';
+import type PostPublished from '@frond/blog/entities/PostPublished.js';
 
 /**
  * Another frond, owning no row at all — and subscribing to nothing.

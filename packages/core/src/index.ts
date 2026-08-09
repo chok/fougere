@@ -16,7 +16,7 @@ export type { InvocationContext } from './invocation.js';
 export { EMPTY_INVOCATION } from './invocation.js';
 export { isReadOp, resolveIsReadOp } from './operation.js';
 export type { OperationContract, OperationsMap } from './operation.js';
-export { scanProject, FROND_DIRS, toRegistrationName, setModuleLoader, type ModuleLoader } from './scanner.js';
+export { scanProject, frondAliases, FROND_DIRS, toRegistrationName, setModuleLoader, type ModuleLoader } from './scanner.js';
 export { runMiddlewares, FougereError, ErrorCode } from './middleware.js';
 export { createLocalRunner, createAppRunner, identityCardOf, RPC_ENTITY } from './call.js';
 // The container keys, exported so any reader asks the same question the bootstrap
@@ -60,3 +60,5 @@ export { presenterKeyOf } from './presenter.js';
 export { collectorKeyOf } from './collector.js';
 export { Repository, getRepositoryTarget, repositoryKeyOf, type RepositoryOf, type RepositoryConstructor } from './repository.js';
 export { verify, assertSplittable, type Violation } from './verify.js';
+// Same question as verify(), answered from the source text instead of the model.
+export { crossFrondImports, type CrossFrondImport } from './imports.js';

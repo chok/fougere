@@ -6,7 +6,7 @@
  * the consumer. Run it and read the table: the same call gives the same value
  * and the same typed failure down all three paths.
  */
-import { createApp, createLocalRunner, setModuleLoader, FougereError } from '@fougere/core';
+import { createApp, createLocalRunner, setModuleLoader, FougereError, frondAliases } from '@fougere/core';
 import type { App, InvocationContext, Transport } from '@fougere/core';
 import { createContainer } from '@fougere/container-fougere';
 import { serve, createHttpTransport } from '@fougere/transport-http';
@@ -36,7 +36,11 @@ function render(value: unknown): string {
 
 async function main() {
   const { createJiti } = await import('jiti');
-  const jiti = createJiti(import.meta.url, { interopDefault: true });
+  const jiti = createJiti(import.meta.url, {
+    interopDefault: true,
+    // `@frond/<name>` is how a frond names its neighbour; the loader has to know it.
+    alias: await frondAliases(import.meta.dirname),
+  });
   setModuleLoader((path) => jiti.import(path) as Promise<Record<string, unknown>>);
 
   const app = await createApp({ root: import.meta.dirname, createContainer, ormFactory: createMemoryOrm });

@@ -4,7 +4,7 @@
  * Twice: once with nothing carrying the fact out, once with a carrier. `PostHandler` is
  * the same file in both, and this repository holds no copy of anyone else's code.
  */
-import { createApp, createLocalRunner, setModuleLoader } from '@fougere/core';
+import { createApp, createLocalRunner, setModuleLoader, frondAliases } from '@fougere/core';
 import type { App, InvocationContext } from '@fougere/core';
 import { createContainer } from '@fougere/container-fougere';
 
@@ -20,7 +20,11 @@ const publish = (app: App, id: string, title: string) =>
 
 async function main() {
   const { createJiti } = await import('jiti');
-  const jiti = createJiti(import.meta.url, { interopDefault: true });
+  const jiti = createJiti(import.meta.url, {
+    interopDefault: true,
+    // `@frond/<name>` is how a frond names its neighbour; the loader has to know it.
+    alias: await frondAliases(import.meta.dirname),
+  });
   setModuleLoader((path) => jiti.import(path) as Promise<Record<string, unknown>>);
 
   console.log(`\x1b[33m[blog · pid ${process.pid}]\x1b[0m repository A — knows only itself\n`);

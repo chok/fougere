@@ -8,6 +8,10 @@
  * arriving fact against an entity of a scanned frond, and a package under `.fougere/`
  * is not one.
  *
+ * `@frond/blog` and not a relative path into `.fougere/`: the name means the same thing
+ * whether that frond is on this disk or was fetched from a card, and only the name
+ * survives the folder moving.
+ *
  * Until the card published facts, the fields were copied by hand right here — two
  * declarations, nothing comparing them, and a drift nobody would have seen until a
  * payload was silently refused.
@@ -15,4 +19,4 @@
  * What the two repositories still meet on is the NAME. `PostPublished` on both sides
  * becomes the topic `postPublished`, derived and never written.
  */
-export { default } from '../../../.fougere/remotes/blog/entities/PostPublished.js';
+export { default } from '@frond/blog/entities/PostPublished.js';
