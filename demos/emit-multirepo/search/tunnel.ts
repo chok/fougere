@@ -5,7 +5,7 @@
  * list is written by hand, it comes off the `Fact<PostPublished>` in `IndexHandler`.
  */
 import { connect } from 'node:net';
-import { createApp, setModuleLoader, emitKeyOf } from '@fougere/core';
+import { createApp, setModuleLoader } from '@fougere/core';
 import { createContainer } from '@fougere/container-fougere';
 
 const PORT = Number(process.env.TUNNEL_PORT ?? 4400);
@@ -35,7 +35,7 @@ async function main() {
       buffer = buffer.slice(cut + 1);
       const { fact, payload } = JSON.parse(line) as { fact: string; payload: unknown };
       // The same local dispatch as in-process — judge, binding and middlewares included.
-      void app.container.resolve<(f: unknown) => Promise<void>>(emitKeyOf(fact))(payload);
+      void app.deliver(fact, payload);
     }
   });
 

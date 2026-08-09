@@ -4,7 +4,7 @@
  * `app.listensTo()` is what it tells the broker — derived from its own signatures, so it
  * subscribes to exactly what its code accepts, and to nothing it does not.
  */
-import { createApp, setModuleLoader, emitKeyOf } from '@fougere/core';
+import { createApp, setModuleLoader } from '@fougere/core';
 import { createContainer } from '@fougere/container-fougere';
 
 const BROKER = `http://127.0.0.1:${process.env.BROKER_PORT ?? 4300}`;
@@ -36,8 +36,7 @@ async function main() {
       const { topic, payload } = JSON.parse(frame.slice(6)) as { topic: string; payload: unknown };
       // The local dispatch, unchanged: the same value the emitter would have called in
       // process. The judge, the binding and the middlewares apply exactly as always.
-      const deliver = app.container.resolve<(f: unknown) => Promise<void>>(emitKeyOf(topic));
-      await deliver(payload);
+      await app.deliver(topic, payload);
     }
     buffer = buffer.slice(buffer.lastIndexOf('\n\n') + 2);
   }

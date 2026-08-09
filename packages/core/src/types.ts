@@ -355,6 +355,18 @@ export interface App {
    */
   listensTo(): string[];
   /**
+   * Hand a fact that came from OUTSIDE to the listeners in this process — and stop there.
+   *
+   * The dual of `onEmit`, and deliberately not the same thing as announcing: resolving the
+   * emission value to deliver an inbound fact would carry it straight back out through
+   * `onEmit`, so a hub echoed every reading it received to the whole fleet. Receiving and
+   * announcing are two operations; only one of them leaves.
+   *
+   * The local dispatch is identical either way — same judge, same binding, same
+   * middlewares — so a fact off a wire is no less checked than one raised next door.
+   */
+  deliver(fact: string, payload: unknown): Promise<void>;
+  /**
    * The storage an entity is backed by, resolved through its owning frond's scope —
    * the dual of {@link facadeFor}. `undefined` when no loaded frond hosts the entity,
    * or when the app booted with no storage at all.

@@ -630,49 +630,55 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
    * and the same middlewares as any caller. Nothing new answers for correctness — that is
    * the dividend of a subscriber being an ordinary op rather than a special kind.
    */
-  // Emitted here, or merely listened to: a transport that carries facts in from outside
-  // resolves this same value to deliver them, so a frond that only subscribes needs one too.
+  /** The listeners in THIS process, and nothing beyond it. Shared by emission and delivery. */
+  const dispatchLocally = async (fact: string, payload: unknown): Promise<void> => {
+    const walked = chain.getStore() ?? [];
+    if (walked.includes(fact)) {
+      throw new Error(
+        `Emission cycle: ${[...walked, fact].join(' → ')}.\n`
+        + `  A fact cannot cause itself. One of the subscribers above announces a fact that leads back here.`,
+      );
+    }
+
+    const listeners = subscribers.get(fact) ?? [];
+    if (listeners.length === 0) {
+      log.debug(`${fact} — nobody listens in this process`);
+      return;
+    }
+
+    const deeper = [...walked, fact];
+    for (const { door, op } of listeners) {
+      chain.run(deeper, () => {
+        try {
+          const facade = container.resolve<Record<string, Function>>(door);
+          void Promise.resolve(facade[op]({ ...EMPTY_INVOCATION, body: payload }))
+            .catch((cause) => log.error(`${fact} → ${door}.${op}`, cause));
+        } catch (cause) {
+          log.error(`${fact} → ${door} could not be reached`, cause);
+        }
+      });
+    }
+  };
+
+  // Emitted here, or merely listened to: a process that only subscribes still needs the
+  // value, because `deliver` is what a carrier calls and it goes through the same door.
   for (const fact of new Set([...emitted, ...subscribers.keys()])) {
     container.registerValue(emitKeyOf(fact), async (payload: unknown) => {
-      const walked = chain.getStore() ?? [];
-      if (walked.includes(fact)) {
-        throw new Error(
-          `Emission cycle: ${[...walked, fact].join(' → ')}.\n`
-          + `  A fact cannot cause itself. One of the subscribers above announces a fact that leads back here.`,
-        );
-      }
-
-      const listeners = subscribers.get(fact) ?? [];
-
       /**
        * Whoever is not in this process — and it is the ONLY way to reach them.
        *
-       * The loop below finds its listeners by having READ their code, so it stops at the
-       * repository boundary: another team's Frond is not on this disk, and the emission
-       * reaches nobody. A carrier hands the fact to a name instead, and the far side
-       * subscribes to that same name from ITS own code. Neither reads the other, which is
-       * the whole of what a broker adds over a transport.
+       * The local dispatch finds its listeners by having READ their code, so it stops at
+       * the repository boundary: another team's Frond is not on this disk, and the
+       * emission reaches nobody. A carrier hands the fact to a name instead, and the far
+       * side subscribes to that same name from ITS own code. Neither reads the other.
+       *
+       * `deliver` deliberately does NOT come here: a hub that resolved this value to hand
+       * on an incoming reading echoed it straight back to the whole fleet.
        */
       const carried = options.onEmit?.(fact, payload);
       if (carried) void Promise.resolve(carried).catch((cause) => log.error(`${fact} — carrier refused it`, cause));
 
-      if (listeners.length === 0) {
-        log.debug(`${fact} — announced, nobody listens in this process`);
-        return;
-      }
-
-      const deeper = [...walked, fact];
-      for (const { door, op } of listeners) {
-        chain.run(deeper, () => {
-          try {
-            const facade = container.resolve<Record<string, Function>>(door);
-            void Promise.resolve(facade[op]({ ...EMPTY_INVOCATION, body: payload }))
-              .catch((cause) => log.error(`${fact} → ${door}.${op}`, cause));
-          } catch (cause) {
-            log.error(`${fact} → ${door} could not be reached`, cause);
-          }
-        });
-      }
+      await dispatchLocally(fact, payload);
     });
   }
 
@@ -795,6 +801,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     schemaFor,
     facadeFor,
     listensTo: () => [...subscribers.keys()],
+    deliver: dispatchLocally,
     ormFor,
     dispose: () => container.dispose(),
     [Symbol.asyncDispose]: () => container.dispose(),
