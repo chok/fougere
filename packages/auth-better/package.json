@@ -30,7 +30,7 @@
   "dependencies": {
     "@fougere/core": "workspace:*",
     "@fougere/schema": "workspace:*",
-    "@paralleldrive/cuid2": "^2.2.2",
+    "@paralleldrive/cuid2": "^3.3.0",
     "better-auth": "^1.6.11"
   },
   "devDependencies": {
