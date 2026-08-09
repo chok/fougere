@@ -1,7 +1,7 @@
 {
   "name": "@fougere/cli-ui",
   "version": "0.0.1",
-  "description": "Les primitives d'affichage de la CLI Fougere.",
+  "description": "The display primitives of the Fougere CLI.",
   "license": "MIT",
   "repository": {
     "type": "git",

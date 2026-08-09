@@ -1,7 +1,7 @@
 {
   "name": "@fougere/runtime",
   "version": "0.0.1",
-  "description": "Boot conventionnel d'une app Fougere — l'unique point de câblage du stockage.",
+  "description": "The conventional boot of a Fougere app — the one place storage is wired.",
   "license": "MIT",
   "repository": {
     "type": "git",

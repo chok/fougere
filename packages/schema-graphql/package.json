@@ -1,7 +1,7 @@
 {
   "name": "@fougere/schema-graphql",
   "version": "0.0.1",
-  "description": "Entit\u00e9 \u2192 types, inputs et CRUD GraphQL via Pothos.",
+  "description": "Entity → GraphQL types, inputs and CRUD, through Pothos.",
   "license": "MIT",
   "repository": {
     "type": "git",

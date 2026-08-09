@@ -1,7 +1,7 @@
 {
   "name": "@fougere/schema-sql",
   "version": "0.0.1",
-  "description": "Entité → tables SQL via Kysely (SQLite, PostgreSQL, MySQL, SQL Server).",
+  "description": "Entity → SQL tables through Kysely (SQLite, PostgreSQL, MySQL, SQL Server).",
   "license": "MIT",
   "repository": {
     "type": "git",

@@ -1,7 +1,7 @@
 {
   "name": "@fougere/auth-better",
   "version": "0.0.1",
-  "description": "Auth Fougere — couche de traduction vers better-auth.",
+  "description": "Fougere's auth — a translation layer onto better-auth.",
   "license": "MIT",
   "repository": {
     "type": "git",

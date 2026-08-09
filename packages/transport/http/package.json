@@ -1,7 +1,7 @@
 {
   "name": "@fougere/transport-http",
   "version": "0.0.1",
-  "description": "Le contrat d'appel sur le fil, en JSON-RPC 2.0 (serveur + client).",
+  "description": "The call contract on the wire, in JSON-RPC 2.0 (server + client).",
   "license": "MIT",
   "repository": {
     "type": "git",

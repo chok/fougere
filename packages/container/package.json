@@ -1,7 +1,7 @@
 {
   "name": "@fougere/container",
   "version": "0.0.1",
-  "description": "L'interface de conteneur DI de Fougere. Zéro dépendance.",
+  "description": "Fougere's DI container interface. Zero dependencies.",
   "license": "MIT",
   "repository": {
     "type": "git",

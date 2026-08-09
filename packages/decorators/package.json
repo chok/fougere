@@ -1,7 +1,7 @@
 {
   "name": "@fougere/decorators",
   "version": "0.0.1",
-  "description": "Sucre de configuration (@config) — déclaratif, jamais de runtime caché.",
+  "description": "Configuration sugar (@config) — declarative, never hidden runtime.",
   "license": "MIT",
   "repository": {
     "type": "git",

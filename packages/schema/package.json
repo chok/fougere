@@ -1,7 +1,7 @@
 {
   "name": "@fougere/schema",
   "version": "0.0.1",
-  "description": "L'entit\u00e9 et ses 4 axes \u2014 shape, role, lifecycle, boundary. Z\u00e9ro d\u00e9pendance \u00e0 un moteur.",
+  "description": "The entity and its 4 axes — shape, role, lifecycle, boundary. No engine dependency.",
   "license": "MIT",
   "repository": {
     "type": "git",

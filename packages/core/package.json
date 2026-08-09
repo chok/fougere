@@ -1,7 +1,7 @@
 {
   "name": "@fougere/core",
   "version": "0.0.1",
-  "description": "Le cœur : scan, contrat d'appel, façades, doublures distantes.",
+  "description": "The core — scan, call contract, façades, remote stand-ins.",
   "license": "MIT",
   "repository": {
     "type": "git",

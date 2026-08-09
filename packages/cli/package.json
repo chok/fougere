@@ -1,7 +1,7 @@
 {
   "name": "@fougere/cli",
   "version": "0.0.1",
-  "description": "La CLI Fougere — composer un workspace, servir un frond, appeler une op.",
+  "description": "The Fougere CLI — compose a workspace, serve a frond, call an operation.",
   "license": "MIT",
   "repository": {
     "type": "git",

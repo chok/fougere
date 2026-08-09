@@ -1,7 +1,7 @@
 {
   "name": "@fougere/nuxt",
   "version": "0.0.1",
-  "description": "Module Nuxt : les primitives client et la surface serveur de Fougere.",
+  "description": "The Nuxt module: Fougere's client primitives and server surface.",
   "license": "MIT",
   "repository": {
     "type": "git",

@@ -1,7 +1,7 @@
 {
   "name": "@fougere/schema-rest",
   "version": "0.0.1",
-  "description": "Entité → routes REST.",
+  "description": "Entity → REST routes.",
   "license": "MIT",
   "repository": {
     "type": "git",
