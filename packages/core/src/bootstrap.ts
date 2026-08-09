@@ -6,7 +6,9 @@ import { scanProject } from './scanner.js';
 import { Logger, type LogLevel } from './builtins/logger.js';
 import { Config } from './builtins/config.js';
 import { createRemoteRouter, createRemoteFacade } from './remote.js';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { facadeKeyOf } from './call.js';
+import { emitKeyOf, factOfEmitKey } from './emit.js';
 import { repositoryKeyOf } from './repository.js';
 // The keys, each read from where its concept is declared — never respelled here.
 import { ormKeyOf } from './orm.js';
@@ -148,6 +150,37 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   }
 
   assertOneOwnerPerKey(fronds, options.remotes);
+
+  /**
+   * Emissions — the only place in Fougere where an initiator names a SUBJECT.
+   *
+   * The set comes from the DEPS, not from the subscribers: a handler that declares
+   * `Emit<PostPublished>` must resolve it whether or not anybody listens, and announcing
+   * to nobody is legal. The index is filled by `buildFacade` as each contract is resolved,
+   * and the value below closes over it — so no order between the two ever matters.
+   */
+  const emitted = new Set(
+    fronds.flatMap((f) => f.handlers.flatMap((h) => h.deps))
+      .map(factOfEmitKey)
+      .filter((fact): fact is string => fact !== undefined),
+  );
+  const subscribers = new Map<string, Array<{ door: string; op: string }>>();
+
+  /**
+   * The facts already being announced up the stack, so a fact cannot cause itself.
+   *
+   * A CHAIN and not a depth: `A → B → D` and `A → C → D` is a diamond, perfectly legal,
+   * while `A → … → A` never ends. Carried in async context because a nested emission
+   * happens inside a subscriber, whose own `Emit` closure never sees the invocation that
+   * reached it.
+   *
+   * Detecting this at boot was the first idea and it was wrong: `Emit<G>` is a CONSTRUCTOR
+   * dependency, so it belongs to the handler and not to one of its methods. A handler that
+   * subscribes to `A` in one method and emits `G` from another would have been refused for
+   * a cycle it never walks. Refusing a correct program is worse than a guard that costs
+   * one array per emission.
+   */
+  const chain = new AsyncLocalStorage<readonly string[]>();
 
   // Register frond scopes
   for (const frond of fronds) {
@@ -298,6 +331,24 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
        * reader, so nobody re-derives the three producers and drifts.
        */
       const contracts = resolveContracts(handler, frond.operationsOverrides, collectorEntityNames);
+
+      /**
+       * Who listens to what — read HERE because this is where a contract becomes real,
+       * and read from the PLAN rather than from the AST: `{ kind: 'fact' }` is a sentence
+       * `computeBindingPlan` already wrote, so nothing re-derives what a parameter is.
+       *
+       * A subscriber is an ordinary op. It keeps its door, its judge and its middlewares —
+       * an emission and a direct call are the same call, which is why nothing here has to
+       * build a second path.
+       */
+      for (const [op, contract] of contracts) {
+        for (const bound of contract.binding ?? []) {
+          if (bound.source.kind !== 'fact') continue;
+          const listeners = subscribers.get(bound.source.factName) ?? [];
+          listeners.push({ door: facadeKey, op });
+          subscribers.set(bound.source.factName, listeners);
+        }
+      }
 
       /**
        * The field set an op's result is projected onto — the view declared for THAT op
@@ -511,6 +562,49 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
     container.registerValue(`frond:${frond.name}`, scope);
     frondLog.info(`registered — ${frond.entities.length} entities, ${frond.handlers.length} handlers, ${frond.seeds.length} seeds`);
+  }
+
+  /**
+   * One value per announced fact. Dispatch, never delivery.
+   *
+   * The returned promise settles once every subscriber has been HANDED the fact, not once
+   * any of them is done: `void` and `.catch` say that in the only two words that can. The
+   * `EventBus` this replaces awaited `Promise.all(handlers)` and took their rejections,
+   * which made a publication hostage to its own indexer.
+   *
+   * The call goes THROUGH the door, so a subscriber meets the same judge, the same binding
+   * and the same middlewares as any caller. Nothing new answers for correctness — that is
+   * the dividend of a subscriber being an ordinary op rather than a special kind.
+   */
+  for (const fact of emitted) {
+    container.registerValue(emitKeyOf(fact), async (payload: unknown) => {
+      const walked = chain.getStore() ?? [];
+      if (walked.includes(fact)) {
+        throw new Error(
+          `Emission cycle: ${[...walked, fact].join(' → ')}.\n`
+          + `  A fact cannot cause itself. One of the subscribers above announces a fact that leads back here.`,
+        );
+      }
+
+      const listeners = subscribers.get(fact) ?? [];
+      if (listeners.length === 0) {
+        log.debug(`${fact} — announced, nobody listens`);
+        return;
+      }
+
+      const deeper = [...walked, fact];
+      for (const { door, op } of listeners) {
+        chain.run(deeper, () => {
+          try {
+            const facade = container.resolve<Record<string, Function>>(door);
+            void Promise.resolve(facade[op]({ ...EMPTY_INVOCATION, body: payload }))
+              .catch((cause) => log.error(`${fact} → ${door}.${op}`, cause));
+          } catch (cause) {
+            log.error(`${fact} → ${door} could not be reached`, cause);
+          }
+        });
+      }
+    });
   }
 
   /**

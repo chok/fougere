@@ -12,11 +12,21 @@
  */
 import type { ParsedParam } from './handler-parser.js';
 import type { InvocationContext } from './invocation.js';
+import { toRegistrationName } from './contract.js';
 
 // ── Types ─────────────────────────────────────
 
 export type ParamSource =
   | { kind: 'collector'; entityName: string }
+  /**
+   * `Fact<PostPublished>` — something that happened, not something a caller typed.
+   *
+   * It resolves from the body exactly like `body` does, and that is deliberate: an
+   * emission and a direct call ARE the same call, so a subscriber cannot tell them apart
+   * and does not need to. The branch exists so the PLAN says what this parameter is —
+   * that sentence is what makes the subscriber index readable without reparsing types.
+   */
+  | { kind: 'fact'; factName: string }
   | { kind: 'param'; name: string; coerce?: 'number' | 'boolean' }
   | { kind: 'body' }
   | { kind: 'context' }
@@ -56,6 +66,18 @@ export function computeBindingPlan(
   return params.map((param) => {
     const typeName = param.type.name;
     const typeNameLower = typeName.toLowerCase();
+
+    // 0. Fact — `Fact<X>` names itself, so nothing has to be known in advance. It comes
+    //    FIRST because branch 4 would otherwise hand it the caller's body under the name
+    //    of something that happened.
+    const factOf = param.type.name === 'Fact' ? param.type.generics?.[0]?.name : undefined;
+    if (factOf) {
+      return {
+        name: param.name,
+        source: { kind: 'fact' as const, factName: toRegistrationName(factOf) },
+        optional: param.optional ?? false,
+      };
+    }
 
     // 1. Collector — param type matches a known collector entity
     if (collectorEntityNames.has(typeNameLower)) {
@@ -131,6 +153,7 @@ export async function resolveArgs(
         args.push(val);
         break;
       }
+      case 'fact':
       case 'body': {
         args.push(ctx.body);
         break;

@@ -9,6 +9,7 @@ import { cardinalityOf } from './operation.js';
 import { parseAllHandlerMethods, parsePresenterMethods, parseConstructorParams, type ParsedType } from './handler-parser.js';
 import { hashFile, getCached, setCached, flushCache, setCacheRoot } from './scan-cache.js';
 import { loadFrondConfig } from './frond-config.js';
+import { emitKeyOf } from './emit.js';
 import { getPresenterTarget, getPresenterFields, getPresenterViews } from './presenter.js';
 import { getRepositoryTarget } from './repository.js';
 import { ormKeyOf } from './orm.js';
@@ -172,6 +173,12 @@ function depKeyOf(type: ParsedType): string {
   // façade or a doublure, which is what makes the topology invisible from a signature.
   const facadeOf = type.name === 'Facade' ? type.generics?.[0]?.name : undefined;
   if (facadeOf) return toRegistrationName(facadeOf);
+
+  // `Emit<PostPublished>` — the third port, and the only one that names a SUBJECT rather
+  // than an interlocutor. Read like the other two: the type names what arrives, here a
+  // function that announces. Who receives it is not in the signature and never will be.
+  const factOf = type.name === 'Emit' ? type.generics?.[0]?.name : undefined;
+  if (factOf) return emitKeyOf(factOf);
 
   const target = type.name === 'EntityOrm' ? type.generics?.[0]?.name : undefined;
   if (!target) return type.name;
