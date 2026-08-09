@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import SyncHandler, { entityClassName } from '../fronds/scaffold/handlers/SyncHandler.js';
@@ -187,6 +187,53 @@ describe('remote frond sync', () => {
       expect(out.entities).toEqual(['Post']);
       expect(readFileSync(join(root, '.fougere', 'remotes', 'blog', 'entities', 'Post.ts'), 'utf8'))
         .toContain('class Post extends reconstruct<');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  /**
+   * What the host stops serving stops being importable.
+   *
+   * The barrel is rewritten each run, so a dropped entity loses its export by itself — but
+   * the FILE stayed, and the generated `package.json` exports `'./entities/*'` as a
+   * wildcard. So `@frond/blog/entities/Ticket.js` kept resolving to a class that validates
+   * perfectly and that nothing behind it answers for.
+   */
+  it('removes what the host no longer serves, and only what it wrote itself', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'fougere-sync-'));
+    process.chdir(root);
+    const shape = { type: 'object', properties: { id: { type: 'string' } }, 'x-fougere-version': 1, 'x-fougere-vendor': 'fougere' };
+    const cardWith = (names: string[]) => JSON.stringify({
+      result: {
+        fronds: [{
+          name: 'blog',
+          doors: names.map((name) => ({ name, ops: [{ name: 'list', kind: 'query' }], schema: shape })),
+          facts: [],
+        }],
+      },
+    });
+
+    try {
+      const dir = join(root, '.fougere', 'remotes', 'blog');
+
+      vi.stubGlobal('fetch', vi.fn(async () => new Response(cardWith(['post', 'ticket']), { status: 200 })));
+      await new SyncHandler().execute({ name: 'blog', from: 'https://example.test' });
+      expect(readFileSync(join(dir, 'entities', 'Ticket.ts'), 'utf8')).toContain('class Ticket');
+
+      // A file the operator put there by hand — sync owns the folder, not its contents.
+      writeFileSync(join(dir, 'entities', 'Notes.ts'), 'export const mine = 1;\n');
+
+      vi.unstubAllGlobals();
+      vi.stubGlobal('fetch', vi.fn(async () => new Response(cardWith(['post']), { status: 200 })));
+      const out = await new SyncHandler().execute({ name: 'blog', from: 'https://example.test' });
+
+      expect(out.removed.sort()).toEqual(['Ticket.ts', 'TicketHandler.ts']);
+      expect(() => readFileSync(join(dir, 'entities', 'Ticket.ts'), 'utf8')).toThrow();
+      expect(() => readFileSync(join(dir, 'handlers', 'TicketHandler.ts'), 'utf8')).toThrow();
+      // Still there, and still ours to leave alone.
+      expect(readFileSync(join(dir, 'entities', 'Notes.ts'), 'utf8')).toContain('export const mine');
+      expect(readFileSync(join(dir, 'entities', 'Post.ts'), 'utf8')).toContain('class Post');
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
