@@ -43,33 +43,73 @@ export function createRemoteRouter(
   const pending = new Map(Object.entries(remotes));
   const transports = new Map<string, Transport>();
 
+  /** Which remote label claimed a door name — so a second claim can name the first. */
+  const claimedBy = new Map<string, string>();
+
   const discover = async (): Promise<void> => {
-    await Promise.all(
+    // Asking is concurrent; INDEXING is not, and is done in the order `remotes` declares.
+    // Reading the cards inside the race made "which remote won" depend on who answered
+    // first, so the same two remotes could resolve differently between two runs.
+    const cards = await Promise.all(
       [...pending].map(async ([label, url]) => {
         const transport = transports.get(url) ?? makeTransport(url);
         transports.set(url, transport);
         try {
           const card = (await transport({ entity: RPC_ENTITY, op: 'discover' }, EMPTY_INVOCATION)) as IdentityCard;
-          pending.delete(label);
-          for (const frond of card.fronds) {
-            // Doors only. A fact is not routable — nobody calls it, it arrives — so
-            // adding one here would answer a call with a transport to a door that
-            // does not exist.
-            for (const door of frond.doors) {
-              if (!byEntity.has(door.name)) {
-                byEntity.set(door.name, {
-                  frond: frond.name,
-                  transport,
-                  ...(door.schema ? { schema: reconstruct(door.schema as SchemaDescriptor) } : {}),
-                });
-              }
-            }
-          }
+          return { label, transport, card };
         } catch {
           // Unreachable — stays pending, retried on the next miss.
+          return undefined;
         }
       }),
     );
+
+    for (const answered of cards) {
+      if (!answered) continue;
+      const { label, transport, card } = answered;
+      pending.delete(label);
+
+      for (const frond of card.fronds) {
+        // Doors only. A fact is not routable — nobody calls it, it arrives — so
+        // adding one here would answer a call with a transport to a door that
+        // does not exist.
+        for (const door of frond.doors) {
+          const held = claimedBy.get(door.name);
+          /**
+           * Two remotes claiming one name is refused, not silently arbitrated.
+           *
+           * `byEntity` is keyed by the door name alone, so the second claim used to be
+           * dropped with `if (!byEntity.has(...))` — no warning, and the winner was
+           * whichever remote answered first. The local boot already refuses the same
+           * collision (`assertOneOwnerPerKey`) and it refused the OTHER duplicate: in
+           * process the last frond loaded won, here the first discovered did. One
+           * application, two topologies, two different handlers answering — which is
+           * precisely the gradient not holding.
+           *
+           * Refusing is the honest answer while a call names an entity and not a frond.
+           * `FrondCall` already carries an optional `frond`; the day it is required, this
+           * becomes a disambiguation instead of a refusal.
+           */
+          if (held !== undefined && held !== label) {
+            throw new FougereError({
+              code: ErrorCode.INTERNAL_ERROR,
+              message:
+                `Two remotes serve '${door.name}': '${held}' and '${label}'.\n`
+                + `  A call names an entity, not a frond, so nothing could choose between them.\n`
+                + `  - Keep one of the two out of \`remotes:\`, or\n`
+                + `  - expose one of them under a different entity name.`,
+              entity: door.name,
+            });
+          }
+          claimedBy.set(door.name, label);
+          byEntity.set(door.name, {
+            frond: frond.name,
+            transport,
+            ...(door.schema ? { schema: reconstruct(door.schema as SchemaDescriptor) } : {}),
+          });
+        }
+      }
+    }
   };
 
   return {

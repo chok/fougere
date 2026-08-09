@@ -260,3 +260,68 @@ describe('remote façade (repli)', () => {
     await host.dispose();
   });
 });
+
+/**
+ * The half of the collision that `assertOneOwnerPerKey` cannot reach.
+ *
+ * The boot refuses two LOCAL fronds claiming one door key, and skips fronds declared
+ * remote because they register nothing locally. So the same collision survived across the
+ * wire — and it kept the OTHER duplicate: in process `registerValue` let the last frond
+ * loaded win, here `if (!byEntity.has(...))` let the first card received win. One
+ * application, two topologies, two different handlers answering.
+ */
+describe('two remotes serving one entity', () => {
+  /** A remote that answers `rpc.discover` with one door of the given name, and nothing else. */
+  const serving = (frond: string, door: string): Transport => async (call) => {
+    if (call.entity === 'rpc') {
+      return { fronds: [{ name: frond, doors: [{ name: door, ops: [{ name: 'list', kind: 'query' }] }], facts: [] }] };
+    }
+    return [];
+  };
+
+  it('is refused, and the message names both', async () => {
+    await using consumer = await createApp({
+      root: emptyRoot,
+      createContainer,
+      remotes: { east: 'mem://east', west: 'mem://west' },
+      remoteTransport: (url) => (url.endsWith('east') ? serving('catalog', 'product') : serving('stock', 'product')),
+    });
+
+    const facade = consumer.resolve<Record<string, () => Promise<unknown>>>('productHandler');
+    // Routing is lazy, so the refusal lands on the first call that misses — the same
+    // place every other routing answer lands.
+    await expect(facade.list()).rejects.toThrow(/Two remotes serve 'product': 'east' and 'west'/);
+  });
+
+  it('says the same thing whichever remote answers first', async () => {
+    // The old loop read each card inside `Promise.all`, so the winner was whoever
+    // replied first. Indexing now follows the order `remotes:` declares, which is the
+    // only order a reader can predict from their own config.
+    const slowEast: Transport = async (call) => {
+      await new Promise((r) => setTimeout(r, 20));
+      return serving('catalog', 'product')(call, EMPTY_INVOCATION);
+    };
+
+    await using consumer = await createApp({
+      root: emptyRoot,
+      createContainer,
+      remotes: { east: 'mem://east', west: 'mem://west' },
+      remoteTransport: (url) => (url.endsWith('east') ? slowEast : serving('stock', 'product')),
+    });
+
+    const facade = consumer.resolve<Record<string, () => Promise<unknown>>>('productHandler');
+    await expect(facade.list()).rejects.toThrow(/'east' and 'west'/);
+  });
+
+  it('leaves a name only one of them serves alone', async () => {
+    await using consumer = await createApp({
+      root: emptyRoot,
+      createContainer,
+      remotes: { east: 'mem://east', west: 'mem://west' },
+      remoteTransport: (url) => (url.endsWith('east') ? serving('catalog', 'product') : serving('stock', 'crate')),
+    });
+
+    const facade = consumer.resolve<Record<string, () => Promise<unknown>>>('crateHandler');
+    await expect(facade.list()).resolves.toEqual([]);
+  });
+});
