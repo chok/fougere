@@ -1,6 +1,6 @@
 {
   "name": "@fougere/http",
-  "version": "0.0.1",
+  "version": "0.1.0-alpha.0",
   "description": "HTTP router and middleware.",
   "license": "MIT",
   "repository": {

@@ -1,6 +1,6 @@
 {
   "name": "@fougere/container",
-  "version": "0.0.1",
+  "version": "0.1.0-alpha.0",
   "description": "Fougere's DI container interface. Zero dependencies.",
   "license": "MIT",
   "repository": {

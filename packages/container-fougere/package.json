@@ -1,6 +1,6 @@
 {
   "name": "@fougere/container-fougere",
-  "version": "0.0.1",
+  "version": "0.1.0-alpha.0",
   "description": "A DI container that resolves by type, wired from the AST scan.",
   "license": "MIT",
   "repository": {
