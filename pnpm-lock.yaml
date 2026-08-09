@@ -601,7 +601,19 @@ importers:
         specifier: ^22.0.0
         version: 22.19.15
 
+  packages/create-fougere:
+    dependencies:
+      '@fougere/cli':
+        specifier: workspace:*
+        version: link:../cli
+
   packages/decorators: {}
+
+  packages/fougere:
+    dependencies:
+      '@fougere/cli':
+        specifier: workspace:*
+        version: link:../cli
 
   packages/http:
     devDependencies:

@@ -1,6 +1,6 @@
 {
   "name": "@fougere/cli",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.1",
   "description": "The Fougere CLI — compose a workspace, serve a frond, call an operation.",
   "license": "MIT",
   "repository": {
@@ -18,7 +18,8 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    }
+    },
+    "./bin": "./dist/bin.js"
   },
   "files": [
     "dist",
