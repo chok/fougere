@@ -1,0 +1,29 @@
+{
+  "mode": "pre",
+  "tag": "alpha",
+  "initialVersions": {
+    "fougere-demo-auth-better": "0.0.1",
+    "fougere-demo-container-basics": "0.0.1",
+    "fougere-demo-core-scanner": "0.0.1",
+    "fougere-demo-crud-auto": "0.0.1",
+    "fougere-demo-schema-ecommerce": "0.0.1",
+    "@fougere/nuxt": "0.0.1",
+    "@fougere/auth-better": "0.0.1",
+    "@fougere/cli": "0.0.1",
+    "@fougere/cli-ui": "0.0.1",
+    "@fougere/container": "0.0.1",
+    "@fougere/container-fougere": "0.0.1",
+    "@fougere/core": "0.0.1",
+    "@fougere/decorators": "0.0.1",
+    "@fougere/http": "0.0.1",
+    "@fougere/runtime": "0.0.1",
+    "@fougere/schema": "0.0.1",
+    "@fougere/schema-graphql": "0.0.1",
+    "@fougere/schema-rest": "0.0.1",
+    "@fougere/schema-sql": "0.0.1",
+    "@fougere/transport-http": "0.0.1"
+  },
+  "changesets": [
+    "honest-contract-boundaries"
+  ]
+}
