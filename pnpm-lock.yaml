@@ -480,6 +480,9 @@ importers:
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../schema
+      '@fougere/schema-rest':
+        specifier: workspace:*
+        version: link:../../schema-rest
       '@fougere/transport-http':
         specifier: workspace:*
         version: link:../../transport/http
