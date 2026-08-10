@@ -2,22 +2,49 @@
   "name": "@fougere/vite",
   "version": "0.1.0-alpha.0",
   "description": "The Vite plugin: what any Vite-built host must know to run a Fougere app.",
-  "keywords": ["fougere","vite","plugin","sveltekit","tanstack","react-router"],
+  "keywords": [
+    "fougere",
+    "vite",
+    "plugin",
+    "sveltekit",
+    "tanstack",
+    "react-router"
+  ],
   "license": "MIT",
-  "repository": { "type": "git", "url": "git+https://github.com/chok/fougere.git", "directory": "packages/app/vite" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chok/fougere.git",
+    "directory": "packages/app/vite"
+  },
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
-  "files": ["dist"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "rm -rf dist && tsc",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.test.json",
     "prepublishOnly": "pnpm run build"
   },
-  "dependencies": { "terser": "^5.44.0" },
-  "devDependencies": { "vite": "^8.0.0", "vitest": "^4.1.0" },
-  "peerDependencies": { "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0" },
-  "publishConfig": { "access": "public" }
+  "dependencies": {
+    "terser": "^5.44.0"
+  },
+  "devDependencies": {
+    "vite": "^8.0.0",
+    "vitest": "^4.1.0"
+  },
+  "peerDependencies": {
+    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

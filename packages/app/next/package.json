@@ -47,7 +47,7 @@
   ],
   "scripts": {
     "build": "rm -rf dist && tsc",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.test.json",
     "prepublishOnly": "pnpm run build"
   },

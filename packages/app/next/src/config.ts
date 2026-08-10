@@ -67,10 +67,11 @@ export function withFougere(config: NextConfig = {}): NextConfig {
       // and anything the app's own webpack function had added.
       const isJsMinifier = (m: unknown) => String(m).includes('minify-webpack-plugin');
       base.optimization.minimizer = [
+        ...(base.optimization.minimizer ?? []).filter((m: unknown) => !isJsMinifier(m)),
         // `keep_fnames` is deliberately absent: designation reads a CLASS name and
         // nothing in this path reads a function name. Keeping every function name
-        // costs bundle size for an invariant that does not exist.
-        new TerserPlugin({ terserOptions: { keep_classnames: true, keep_fnames: true } }),
+        // costs bundle size for an invariant nothing has demonstrated.
+        new TerserPlugin({ terserOptions: { keep_classnames: true } }),
       ];
 
       return base;
