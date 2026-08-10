@@ -61,26 +61,35 @@ curl -X POST localhost:3100/api/blog/posts \
 `title` carries `minlength`/`maxlength` on the input because its shape declares
 `min`/`max`. The page states no rule of its own; it spreads what the entity says.
 
-## Known limit — `next build` does not pass, and the reason is not Next
+## Production builds
 
-There is deliberately no `build` script here. `next build` fails:
+`pnpm build` works, and `next.config.mjs` is why:
+
+```js
+import { withFougere } from '@fougere/next/config';
+export default withFougere();
+```
+
+Designation is class + verb — `invoke(Post, 'list')` reads `Post.name` — and Next's
+minifier renames the class, so a production build used to ask for an entity nobody
+hosts (`Entity 'j' is not hosted here. Hosted here: post`). `withFougere` replaces
+the minimizer with terser configured to keep class names, and lists the packages a
+boot loads at runtime. Everything else is still mangled.
+
+The fix lives in the adapter, not in the framework: a host-specific problem gets a
+host-specific answer, and no entity has to declare anything twice.
+
+Two things measured on the built output:
 
 ```
-Error [FougereError]: Entity 'j' is not hosted here. Hosted here: post.
-  code: 'NOT_FOUND', entity: 'j', operation: 'list'
+.next/static/chunks/*.js    class Post extends …    ← the browser keeps the name
 ```
 
-Designation is class + verb, and the registration key is the class's own name —
-`invoke(Post, 'list')` reads `Post.name`. Next's production minifier renames the
-class to `j`, and the call goes looking for an entity nobody hosts. The dev server
-is green throughout; only the minified build is not.
+and the production server boots **once** for all four doors — the repeated boots
+visible in `next dev` are a dev-mode artifact of per-route compilation.
 
-This is a property of the framework, not of this adapter: **any host that minifies a
-bundle containing entity classes hits it, browser side included.** Preserving class
-names is a per-bundler setting (`keep_classnames`), which makes correctness depend on
-a toolchain flag no one is obliged to set. The durable answer is for an entity to
-carry its registration name instead of borrowing the class's, and that is a decision
-about the designation model, not a demo fix — so nothing here papers over it.
+`.mjs` rather than `.ts`: Next loads a TypeScript config through a CommonJS require,
+and `@fougere/next` is ESM-only, so the subpath does not resolve there.
 
 ## The topology is still one line
 

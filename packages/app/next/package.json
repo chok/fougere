@@ -36,6 +36,10 @@
     "./session": {
       "types": "./dist/routes/session.d.ts",
       "import": "./dist/routes/session.js"
+    },
+    "./config": {
+      "types": "./dist/config.d.ts",
+      "import": "./dist/config.js"
     }
   },
   "files": [
@@ -49,7 +53,8 @@
   },
   "dependencies": {
     "@fougere/app": "workspace:*",
-    "@fougere/core": "workspace:*"
+    "@fougere/core": "workspace:*",
+    "terser-webpack-plugin": "^5.3.14"
   },
   "devDependencies": {
     "next": "^15.5.7",

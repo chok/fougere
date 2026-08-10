@@ -1,23 +1,24 @@
 {
   "name": "@fougere/demo-next-blog",
   "private": true,
-  "//": "No \"type\": \"module\" — Next emits CommonJS into .next/server, and declaring ESM here makes it fail to load its own _document.js.",
+  "//": "No \"type\": \"module\" \u2014 Next emits CommonJS into .next/server, and declaring ESM here makes it fail to load its own _document.js.",
   "scripts": {
     "dev": "next dev -p 3100",
     "start": "next start -p 3100",
-    "typecheck": "tsc -p fronds"
+    "typecheck": "tsc -p fronds",
+    "build": "next build"
   },
   "dependencies": {
     "@fougere/core": "workspace:*",
     "@fougere/next": "workspace:*",
+    "@fougere/react": "workspace:*",
     "@fougere/schema": "workspace:*",
     "@fougere/schema-sql": "workspace:*",
     "better-sqlite3": "^12.8.0",
     "jiti": "^2.6.1",
     "next": "^15.5.7",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "@fougere/react": "workspace:*"
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@types/react": "^19.2.2",
