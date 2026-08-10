@@ -133,9 +133,9 @@ export function verify(app: Pick<App, 'fronds'>): Violation[] {
 
     // Rule 2 — an operation parameter that wanted a collector this frond has not
     // got. `computeBindingPlan` gates the collector branch on the frond's OWN
-    // collector set (bootstrap.ts:167), then falls through to branch 4,
-    // "Everything else — body" (binding.ts:90). So the parameter does not go
-    // missing: it carries what the caller sent. Measured in
+    // collector set (`collectorEntityNames`, bootstrap.ts), then falls through to
+    // branch 4, "Everything else — body" (`computeBindingPlan`, binding.ts). So the
+    // parameter does not go missing: it carries what the caller sent. Measured in
     // tests/collector-frond.test.ts.
     const own = new Set(frond.collectors.map((c) => c.entityName));
     for (const handler of frond.handlers) {
