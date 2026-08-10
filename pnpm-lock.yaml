@@ -235,9 +235,6 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@fougere/http':
-        specifier: workspace:*
-        version: link:../../packages/http
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
