@@ -8,11 +8,12 @@
  *
  * The routes below `// ── the app you already had` are deliberately mounted first
  * and deliberately overlap `/api` — they still answer, because Express matches in
- * registration order and the REST projection is a catch-all registered after them.
+ * registration order. And a path Fougere does not serve calls `next()`, so they
+ * would answer even if registered after.
  */
 import express from 'express';
-import { createExpressRouter } from '@fougere/http';
-import { mountDoors, useFougereApp, invokeOn } from '@fougere/app';
+import { fougereCall, fougereSession, fougereRest } from '@fougere/app/express';
+import { useFougereApp, invokeOn } from '@fougere/app';
 import Post from './fronds/blog/entities/Post.ts';
 
 const app = express();
@@ -42,11 +43,19 @@ that has never heard of Express.</p>
 </body>`);
 });
 
-// ── the four lines that add fougere ────────────────
-// `/api/*splat` is Express 5's wildcard spelling. `mountDoors` does not guess it:
-// the syntax belongs to the framework, and an adapter that guessed would work on
-// one host and silently not on another.
-mountDoors(createExpressRouter(app), { restPath: '/api/*splat' });
+// ── adding fougere: one middleware per door ────────
+//
+// `fougere()` mounts all three in one line, and this demo deliberately does not use
+// it. On an app that already exists, the doors are not one decision: the envelope and
+// the session serve YOUR pages, while REST is a public API for anyone with the URL.
+// Taking them together would hand out a surface nobody asked for — which is the very
+// thing this shape exists to avoid.
+app.use(fougereCall());
+app.use(fougereSession());
+
+// Wanted here, so it is stated here. Comment it out and `/api/blog/posts` simply
+// stops existing, while the pages above keep working.
+app.use(fougereRest());
 
 app.listen(3300, () => {
   console.log('express-blog on http://localhost:3300');

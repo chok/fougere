@@ -33,7 +33,7 @@ const METHOD_MAP: Record<HttpMethod, 'get' | 'post' | 'put' | 'patch' | 'delete'
 const MAX_BODY_BYTES = 1024 * 1024;
 
 /** Drain the Node stream. Only reached when no body parser ran before us. */
-function readRawBody(req: any): Promise<string> {
+export function readRawBody(req: any): Promise<string> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     let size = 0;
@@ -53,6 +53,35 @@ function readRawBody(req: any): Promise<string> {
   });
 }
 
+/**
+ * The JSON body of an Express request, whoever parsed it.
+ *
+ * Exported because two consumers need the same Express fact: this adapter, and the
+ * middlewares in `@fougere/app/express`. `express.json()` may or may not have run —
+ * an adapter that only works when the host app is configured a particular way is a
+ * footgun — so this trusts `req.body` when it is there and drains the stream when it
+ * is not. Parsed once per request: a drained stream answers empty the second time.
+ */
+export function readExpressBody(req: any): Promise<unknown> {
+  if (req.__fougereBody) return req.__fougereBody;
+
+  const verb = String(req.method ?? 'GET').toUpperCase();
+  req.__fougereBody = (async () => {
+    if (verb === 'GET' || verb === 'HEAD') return {};
+    if (req.body !== undefined && req.body !== null) return req.body;
+    const contentType = String(req.headers?.['content-type'] ?? '');
+    if (!contentType.toLowerCase().includes('json')) return {};
+    const raw = await readRawBody(req);
+    if (!raw) return {};
+    try {
+      return JSON.parse(raw);
+    } catch (cause) {
+      throw new MalformedJsonError({ cause });
+    }
+  })();
+  return req.__fougereBody;
+}
+
 function buildContext(req: any): RequestContext {
   const host = req.headers?.host ?? 'localhost';
   const protocol = req.protocol ?? 'http';
@@ -66,26 +95,8 @@ function buildContext(req: any): RequestContext {
       .filter((entry): entry is [string, string] => typeof entry[1] === 'string'),
   );
 
-  // Parsed once per request whoever asks: `body()` may be called by a middleware
-  // and again by the handler, and a drained stream answers empty the second time.
-  let parsed: Promise<unknown> | undefined;
-  const body = (): Promise<unknown> => {
-    parsed ??= (async () => {
-      if (verb === 'GET' || verb === 'HEAD') return {};
-      // `express.json()` already ran — trust it, including its own limits.
-      if (req.body !== undefined && req.body !== null) return req.body;
-      const contentType = String(req.headers?.['content-type'] ?? '');
-      if (!contentType.toLowerCase().includes('json')) return {};
-      const raw = await readRawBody(req);
-      if (!raw) return {};
-      try {
-        return JSON.parse(raw);
-      } catch (cause) {
-        throw new MalformedJsonError({ cause });
-      }
-    })();
-    return parsed;
-  };
+  // One reader for both consumers — see `readExpressBody`.
+  const body = () => readExpressBody(req);
 
   return {
     // The Request carries no body: Express may have consumed the stream already,

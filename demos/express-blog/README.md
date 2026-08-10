@@ -8,12 +8,20 @@ The only demo where Fougere is **not** the framework. `express()` is the server,
 renders its own HTML, it has its own routes, and Fougere is a guest:
 
 ```ts
-mountDoors(createExpressRouter(app), { restPath: '/api/*splat' });
+app.use(fougereCall());       // your pages
+app.use(fougereSession());    // your session
+app.use(fougereRest());       // a public API — only because this demo wants one
 ```
 
-One line, after everything the app already had. `/api/health` was registered before
-it and still answers — Express matches in registration order, so a catch-all added
-last takes nothing away.
+Middlewares, like `express.json()` and `cors()` above them. `fougere()` mounts all
+three in one line and this demo deliberately does not use it: on an app that already
+exists, the doors are not one decision. The envelope and the session serve YOUR pages;
+REST is a surface anyone with the URL can call. Comment the third line out and
+`/api/blog/posts` stops existing while the pages keep working.
+
+`/api/health` still answers, and would even if registered after: a path Fougere does
+not serve calls `next()`, which is Express's own passthrough — the earlier
+`mountDoors` had invented one.
 
 ## Why Express costs an adapter and TanStack did not
 

@@ -9,7 +9,6 @@
   "dependencies": {
     "@fougere/app": "workspace:*",
     "@fougere/core": "workspace:*",
-    "@fougere/http": "workspace:*",
     "@fougere/schema": "workspace:*",
     "@fougere/schema-sql": "workspace:*",
     "better-sqlite3": "^12.8.0",

@@ -47,5 +47,3 @@ export {
 export { sessionViewOf, type SessionView } from './session.js';
 
 export { stateFor } from './state.js';
-
-export { mountDoors, type MountOptions } from './router.js';

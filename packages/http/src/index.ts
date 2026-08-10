@@ -11,5 +11,5 @@ export { MalformedJsonError } from './router.js';
 
 export { createHonoRouter } from './hono.js';
 export { createFastifyRouter } from './fastify.js';
-export { createExpressRouter } from './express.js';
+export { createExpressRouter, readExpressBody } from './express.js';
 export { httpLogger } from './logger.js';
