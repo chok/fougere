@@ -109,6 +109,30 @@ const module = defineNuxtModule<FougereModuleOptions>({
       nuxt.options.watch.push(...watched);
     }
 
+    // ── 1b-bis. Keep entity names through minification ──────────────────────
+    //
+    // Designation is class + verb: `useQuery(Post, 'list')` reads `Post.name`, and
+    // that name travels — it is the JSON-RPC method (`post.list`) and the REST path.
+    //
+    // Rollup cannot keep `class Post extends entity({…})` as a hoisted declaration
+    // (its heritage clause is a CALL), so it emits `var Post = class extends …`.
+    // The class is ANONYMOUS; the name comes from JavaScript's inference on the
+    // variable. `keep_classnames` therefore protects nothing — measured, in
+    // `compress` and in `mangle` both. Reserving the IDENTIFIER is what works.
+    //
+    // The list is exact rather than guessed: the scan just ran, so these are the
+    // classes themselves, read before any bundler touched them. `@fougere/vite`
+    // does the same for the hosts that have no module to do it for them.
+    const entityNames = fronds.flatMap((frond) => frond.entities.map((e) => (e.entityClass as unknown as { name: string }).name));
+    if (entityNames.length > 0) {
+      const vite = (nuxt.options.vite ??= {});
+      const build = (vite.build ??= {});
+      build.minify = 'terser';
+      const terser = (build.terserOptions ??= {});
+      const mangle = ((terser as Record<string, any>).mangle ??= {});
+      mangle.reserved = [...new Set([...(mangle.reserved ?? []), ...entityNames])];
+    }
+
     // ── 1c. Register aliases for synced remote fronds (.fougere/remotes.json) ──
     const remotesPath = resolve(rootDir, '.fougere', 'remotes.json');
     if (existsSync(remotesPath)) {
