@@ -1,0 +1,64 @@
+{
+  "name": "@fougere/next",
+  "version": "0.1.0-alpha.0",
+  "description": "The Next.js adapter: mounting, and the one import that is genuinely Next.",
+  "keywords": [
+    "fougere",
+    "next",
+    "nextjs",
+    "react",
+    "typescript",
+    "fullstack",
+    "rpc"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chok/fougere.git",
+    "directory": "packages/app/next"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./call": {
+      "types": "./dist/routes/call.d.ts",
+      "import": "./dist/routes/call.js"
+    },
+    "./rest": {
+      "types": "./dist/routes/rest.d.ts",
+      "import": "./dist/routes/rest.js"
+    },
+    "./session": {
+      "types": "./dist/routes/session.d.ts",
+      "import": "./dist/routes/session.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit -p tsconfig.test.json",
+    "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "@fougere/app": "workspace:*",
+    "@fougere/core": "workspace:*"
+  },
+  "devDependencies": {
+    "next": "^15.5.7",
+    "vitest": "^4.1.0"
+  },
+  "peerDependencies": {
+    "next": "^15.0.0 || ^16.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "lib": ["ESNext", "DOM"],
+    "types": ["node"],
+    // Node16 elsewhere in this workspace; Bundler here, because that is how the
+    // environment this package targets actually resolves. `next` ships no `exports`
+    // map, so under Node16/ESM a subpath like `next/headers` is unresolvable by the
+    // spec — Next apps only ever see it through a bundler. Stating the target's
+    // resolution is a fact about the target; the alternative was casting the
+    // specifier to defeat the checker, which would have been a lie about it.
+    // Imports still carry their `.js` extension, which Bundler accepts.
+    "module": "ESNext",
+    "moduleResolution": "Bundler"
+  },
+  "include": ["src"]
+}

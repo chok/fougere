@@ -1,0 +1,14 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "lib": ["ESNext", "DOM"],
+    "types": ["node", "react"],
+    // Bundler resolution, like every React host resolves. Nothing here imports a
+    // host, but `react` itself is consumed through a bundler everywhere this runs.
+    "module": "ESNext",
+    "moduleResolution": "Bundler"
+  },
+  "include": ["src"]
+}
