@@ -219,12 +219,17 @@ export class SqlEntityOrm {
       result.endCursor = String(data[data.length - 1][this.pk.names[0]] ?? '');
     }
 
-    // Count is opt-in — a separate query.
+    // Count is opt-in — a separate query, over the same FILTER.
+    //
+    // It used to count the whole table: `list({ where: { authorId }, count: true })`
+    // returned this author's page beside everybody's total, so a paginator computed the
+    // wrong number of pages and a tenant learned how many rows the other tenants have.
+    // `where` is the filter and belongs here; `after`, `limit` and `offset` are the page
+    // and do not — `total` is what the query matches, not what this page holds.
     if (options?.count) {
-      const row = await this.db
-        .selectFrom(this.table.name)
-        .select((eb: any) => eb.fn.countAll().as('count'))
-        .executeTakeFirst();
+      let counting = this.db.selectFrom(this.table.name).select((eb: any) => eb.fn.countAll().as('count'));
+      if (options.where) counting = this.whereAll(counting as any, options.where) as any;
+      const row = await counting.executeTakeFirst();
       result.total = Number((row as any)?.count ?? 0);
     }
 

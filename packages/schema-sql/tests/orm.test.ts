@@ -134,6 +134,23 @@ describe('list', () => {
     expect((await orm.list({ count: true })).total).toBe(3);
   });
 
+  it('counts what the filter matches, not what the table holds', async () => {
+    await orm.update((await orm.list({ orderBy: 'title' }))[0].id, { published: true });
+
+    const page = await orm.list({ where: { published: true }, count: true });
+    expect(page).toHaveLength(1);
+    // It used to answer 3 — the page was this filter's, the total was everybody's. A
+    // paginator divided by the wrong number, and a tenant read the other tenants' size.
+    expect(page.total).toBe(1);
+  });
+
+  it('counts the whole filter, not the page', async () => {
+    // `limit` is the page and must not reach the count; `total` is what matches.
+    const page = await orm.list({ limit: 2, count: true });
+    expect(page).toHaveLength(2);
+    expect(page.total).toBe(3);
+  });
+
   it('offsets', async () => {
     expect(await orm.list({ offset: 2 })).toHaveLength(1);
   });

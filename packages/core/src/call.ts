@@ -236,6 +236,12 @@ function facadeOps(app: App, entityName: string, surface?: string): CardOp[] {
     contracts = undefined;
   }
 
+  // `resolveIsReadOp` takes the overrides for a reason: `kind` is exactly the field
+  // frond.config.ts exists to state, for the op whose name the convention reads wrong.
+  // Called without them, the card announced `query` for an op its own author had
+  // declared a command — and the card is what a remote consumer builds its calls on.
+  const overrides = app.fronds.find((f) => f.entities.some((e) => e.name === entityName))?.operationsOverrides;
+
   return Object.keys(facade).map((name) => {
     const contract = contracts?.get(name);
 
@@ -245,7 +251,7 @@ function facadeOps(app: App, entityName: string, surface?: string): CardOp[] {
       ...(contract?.input && { input: describeSchema(contract.input, name) }),
       ...(contract?.output && { output: describeSchema(contract.output, name) }),
       ...(contract?.cardinality && { cardinality: contract.cardinality }),
-      kind: resolveIsReadOp(name) ? 'query' as const : 'command' as const,
+      kind: resolveIsReadOp(name, overrides) ? 'query' as const : 'command' as const,
     };
   });
 }
