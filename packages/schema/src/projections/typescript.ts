@@ -70,6 +70,24 @@ function propertyKey(name: string): string {
   return /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name) ? name : JSON.stringify(name);
 }
 
+/**
+ * A description lands INSIDE a comment, and a card can come from a stranger.
+ *
+ * `identifierOf` already refuses a name for this reason — a name stops being data when it
+ * lands in a declaration. So does a description: `*\/` ends the comment, and everything
+ * after it is source. A card carrying `*\/ } console.log(…); interface X {` produced a file
+ * that compiled with zero diagnostics and emitted a top-level statement, which `fougere
+ * sync` then wrote into the consumer's repository for its next import to run.
+ *
+ * Escaped rather than refused, unlike a name: a description is prose, and prose contains
+ * `*\/` legitimately (a sentence about a comment, a regex). `*\/` renders the same to a
+ * reader and terminates nothing, so the text survives and the exit does not.
+ */
+function docCommentOf(text: string | undefined, indent: string): string {
+  if (!text) return '';
+  return `${indent}/** ${text.replace(/\*\//g, '*\\/')} */\n`;
+}
+
 export interface TypeSourceOptions {
   /** Name of the emitted interface. Defaults to the card's `title`, capitalized. */
   name?: string;
@@ -90,7 +108,7 @@ export function shapeTypeOf(descriptor: SchemaDescriptor, indent = ''): string {
   if (entries.length === 0) return '{}';
 
   const lines = entries.map(([key, field]) => {
-    const doc = field.description ? `${indent}  /** ${field.description} */\n` : '';
+    const doc = docCommentOf(field.description, `${indent}  `);
     return `${doc}${indent}  ${propertyKey(key)}: ${typeOf(field)};`;
   });
   return `{\n${lines.join('\n')}\n${indent}}`;
@@ -189,7 +207,7 @@ export function facadeTypeSourceOf(
   const rowType = options.rowType ?? 'unknown';
 
   const members = ops.map((op) => {
-    const doc = op.description ? `  /** ${op.description} */\n` : '';
+    const doc = docCommentOf(op.description, '  ');
     return `${doc}  ${propertyKey(op.name)}(invocation?: Invocation): Promise<${returnTypeOf(op, rowType)}>;`;
   });
 

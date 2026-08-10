@@ -117,3 +117,62 @@ describe('card → façade type', () => {
       .toContain('weekly(invocation?: Invocation): Promise<unknown>;');
   });
 });
+
+/**
+ * A card can come from a stranger, and `fougere sync` writes what it says into a file
+ * the consumer imports. Two values reach that file: the name, refused when it is not an
+ * identifier, and the descriptions — which used to land raw inside a `/**` comment.
+ *
+ * Measured before the fix: a description closing the comment compiled with ZERO
+ * diagnostics and emitted `console.log(…)` as a top-level statement. So this is not a
+ * broken-output test, it is the injection test.
+ */
+describe('a description cannot stop being a comment', () => {
+  // Closes the comment, closes the declaration, emits a statement, reopens a comment
+  // so the generated tail still parses. The shape of a real payload, not a stray `*/`.
+  const payload = '*/ } console.log("pwned"); interface X {';
+
+  it('escapes the terminator in a field description', () => {
+    const source = shapeTypeOf({
+      type: 'object',
+      title: 'post',
+      properties: { title: { type: 'string', description: payload } },
+    } as never);
+
+    expect(source).toContain('/** *\\/ } console.log("pwned"); interface X { */');
+    // The real invariant: one opening, one terminator. A payload that escaped would
+    // add a second, and that second one is where the injected source begins.
+    expect(source.split('*/').length - 1).toBe(1);
+  });
+
+  it('escapes the terminator in an operation description', () => {
+    const source = facadeTypeSourceOf([{ name: 'list', cardinality: 'many', description: payload }], {
+      rowType: 'Post',
+    });
+
+    expect(source).toContain('/** *\\/ } console.log("pwned"); interface X { */');
+    expect(source.split('*/').length - 1).toBe(1);
+  });
+
+  it('leaves the whole generated entity with no way out of its comments', () => {
+    const source = entitySourceOf({
+      type: 'object',
+      title: 'post',
+      properties: {
+        id: { type: 'string', description: payload },
+        title: { type: 'string', description: payload },
+      },
+    } as never);
+
+    // The type literal, where a description is SOURCE: both are escaped.
+    const shape = source.slice(source.indexOf('<'), source.indexOf('>('));
+    expect(shape.split('*/').length - 1).toBe(2);
+    expect(shape).not.toContain('*/ }');
+
+    // The card below it, where the same string is DATA: `JSON.stringify` put it in a
+    // string literal, so its `*/` is inert and must stay verbatim — escaping it there
+    // would corrupt the description the rebuilt judge hands back.
+    const card = source.slice(source.indexOf('>('));
+    expect(card).toContain(JSON.stringify(payload));
+  });
+});
