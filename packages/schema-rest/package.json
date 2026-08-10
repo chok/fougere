@@ -1,8 +1,14 @@
 {
   "name": "@fougere/schema-rest",
-  "version": "0.1.0-alpha.0",
-  "description": "Entity → REST routes.",
-  "keywords": ["fougere","typescript","rest","http","api"],
+  "version": "0.2.0-alpha.0",
+  "description": "Entity \u2192 REST routes.",
+  "keywords": [
+    "fougere",
+    "typescript",
+    "rest",
+    "http",
+    "api"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",

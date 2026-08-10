@@ -1,8 +1,16 @@
 {
   "name": "fougere",
-  "version": "0.1.0-alpha.0",
-  "description": "The Fougere CLI, under its unscoped name — compose a workspace, serve a frond, call an operation.",
-  "keywords": ["fougere","typescript","framework","fullstack","schema","entity","cli"],
+  "version": "0.2.0-alpha.0",
+  "description": "The Fougere CLI, under its unscoped name \u2014 compose a workspace, serve a frond, call an operation.",
+  "keywords": [
+    "fougere",
+    "typescript",
+    "framework",
+    "fullstack",
+    "schema",
+    "entity",
+    "cli"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",

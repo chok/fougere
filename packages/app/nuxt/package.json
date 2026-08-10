@@ -1,8 +1,16 @@
 {
   "name": "@fougere/nuxt",
-  "version": "0.1.0-alpha.0",
+  "version": "0.2.0-alpha.0",
   "description": "The Nuxt module: Fougere's client primitives and server surface.",
-  "keywords": ["fougere","nuxt","nuxt-module","vue","typescript","fullstack","rpc"],
+  "keywords": [
+    "fougere",
+    "nuxt",
+    "nuxt-module",
+    "vue",
+    "typescript",
+    "fullstack",
+    "rpc"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",

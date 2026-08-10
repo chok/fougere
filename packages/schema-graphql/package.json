@@ -1,8 +1,15 @@
 {
   "name": "@fougere/schema-graphql",
-  "version": "0.1.0-alpha.0",
-  "description": "Entity → GraphQL types, inputs and CRUD, through Pothos.",
-  "keywords": ["fougere","typescript","graphql","pothos","schema-first","codegen"],
+  "version": "0.2.0-alpha.0",
+  "description": "Entity \u2192 GraphQL types, inputs and CRUD, through Pothos.",
+  "keywords": [
+    "fougere",
+    "typescript",
+    "graphql",
+    "pothos",
+    "schema-first",
+    "codegen"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",

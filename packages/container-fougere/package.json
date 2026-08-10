@@ -1,8 +1,14 @@
 {
   "name": "@fougere/container-fougere",
-  "version": "0.1.0-alpha.0",
+  "version": "0.2.0-alpha.0",
   "description": "A DI container that resolves by type, wired from the AST scan.",
-  "keywords": ["fougere","typescript","dependency-injection","ioc","container"],
+  "keywords": [
+    "fougere",
+    "typescript",
+    "dependency-injection",
+    "ioc",
+    "container"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
