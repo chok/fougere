@@ -4,7 +4,7 @@
  * family as /_fougere/call.
  */
 import { defineEventHandler } from 'h3';
-import { sessionViewOf } from '../../session/view.js';
+import { sessionViewOf } from '@fougere/app';
 
 export default defineEventHandler((event) =>
   sessionViewOf((event.context ?? {}) as Record<string, unknown>),

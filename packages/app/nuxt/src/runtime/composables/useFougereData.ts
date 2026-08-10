@@ -1,52 +1,38 @@
 /**
- * The couple — useQuery (reads) and useCommand (writes), the two dual
- * gestures of a page talking to a Frond. Designation is class + verb:
- * the imported entity class carries the metadata, its name carries the
- * registration key.
+ * The couple — useQuery (reads) and useCommand (writes), the two dual gestures of
+ * a page talking to a Frond, in Vue.
+ *
+ * What the gestures ARE lives in `@fougere/app/client`: designation is class +
+ * verb, the key derives from designation plus input, and a successful command on
+ * an entity revalidates every mounted query on that entity. What lives here is
+ * Vue — `useAsyncData` for the read, refs for the pending flags, `onScopeDispose`
+ * for unregistration. The React adapter states the same three facts against its
+ * own primitives, and neither restates the rules.
  *
  * Both gestures ride the call envelope: the browser POSTs JSON-RPC to
- * /_fougere/call; during SSR Nuxt collapses the same call to an
- * in-process fetch (no network, no port).
- *
- * The link: a successful command on an entity revalidates every mounted
- * query on that entity — designation gives the entity on both sides,
- * nothing to declare.
+ * /_fougere/call; during SSR Nuxt collapses the same call to an in-process fetch
+ * (no network, no port).
  */
 import { useAsyncData, useRequestFetch, refreshNuxtData } from '#imports';
 import { ref, computed, toValue, onScopeDispose, type MaybeRefOrGetter, type Ref } from 'vue';
+import type { FougereError } from '@fougere/core/contract';
 import {
-  FougereError,
-  ErrorCode,
-  toRegistrationName,
-  type InvocationContext,
-  type FrondCall,
-} from '@fougere/core/contract';
-import { frameCall, unframeResponse, type RpcResponse } from '@fougere/transport-http/client';
+  callOf,
+  entityKeyOf,
+  invocationOf,
+  queryKeyOf,
+  sendCall,
+  trackQuery,
+  mountedKeys,
+  itemsOf,
+  pageOf,
+  asFougereError,
+  type CallInput,
+  type EntityClass,
+  type Fetcher,
+} from '@fougere/app/client';
 
-/** An entity class is a designation: its name is the registration key. */
-type EntityClass = { name: string };
-
-/** What a page provides of an invocation — the rest is stamped server-side. */
-export type CallInput = Partial<Pick<InvocationContext, 'params' | 'query' | 'body'>>;
-
-let nextId = 1;
-
-/** Mounted queries per entity — the command side of the link reads this. */
-const mounted = new Map<string, Set<string>>();
-
-function invocationOf(input?: CallInput): InvocationContext {
-  return { params: {}, query: {}, body: undefined, state: {}, ...input };
-}
-
-type Fetcher = <T>(url: string, options: { method: 'POST'; body: unknown }) => Promise<T>;
-
-async function send(fetcher: Fetcher, call: FrondCall, invocation: InvocationContext): Promise<unknown> {
-  const response = await fetcher<RpcResponse>('/_fougere/call', {
-    method: 'POST',
-    body: frameCall(call, invocation, nextId++),
-  });
-  return unframeResponse(response, call);
-}
+export type { CallInput };
 
 export async function useQuery<T = Record<string, unknown>>(
   entity: EntityClass,
@@ -54,46 +40,35 @@ export async function useQuery<T = Record<string, unknown>>(
   input?: MaybeRefOrGetter<CallInput | undefined>,
   opts?: { immediate?: boolean },
 ) {
-  const entityKey = toRegistrationName(entity.name);
-  const call: FrondCall = { entity: entityKey, op };
-  const key = `fougere:${entityKey}.${op}:${JSON.stringify(toValue(input) ?? {})}`;
+  const entityKey = entityKeyOf(entity);
+  const call = callOf(entity, op);
+  const key = queryKeyOf(entityKey, op, toValue(input));
   const fetcher = useRequestFetch() as Fetcher;
 
   // Register before any await — the link and scope cleanup need the setup scope.
   if (import.meta.client) {
-    const keys = mounted.get(entityKey) ?? new Set<string>();
-    keys.add(key);
-    mounted.set(entityKey, keys);
-    onScopeDispose(() => keys.delete(key));
+    onScopeDispose(trackQuery(entityKey, key));
   }
 
   const { data, pending, error, refresh } = await useAsyncData(
     key,
-    () => send(fetcher, call, invocationOf(toValue(input))),
+    () => sendCall(fetcher, call, invocationOf(toValue(input))),
     {
       ...(input === undefined ? {} : { watch: [() => toValue(input)] }),
       ...(opts?.immediate === false ? { immediate: false } : {}),
     },
   );
 
-  // A list result reads as items/total/hasMore whatever the wire delivered.
-  const items = computed<T[]>(() => {
-    const v = data.value as unknown;
-    if (Array.isArray(v)) return v as T[];
-    if (v && typeof v === 'object' && Array.isArray((v as { items?: unknown }).items)) {
-      return (v as { items: T[] }).items;
-    }
-    return [];
-  });
-  const total = computed(() => (data.value as { total?: number } | null)?.total);
-  const hasMore = computed(() => (data.value as { hasMore?: boolean } | null)?.hasMore);
+  const items = computed<T[]>(() => itemsOf<T>(data.value));
+  const total = computed(() => pageOf(data.value).total);
+  const hasMore = computed(() => pageOf(data.value).hasMore);
 
   return { data: data as Ref<T | null>, items, total, hasMore, loading: pending, error, refresh };
 }
 
 export function useCommand<T = unknown>(entity: EntityClass, op: string) {
-  const entityKey = toRegistrationName(entity.name);
-  const call: FrondCall = { entity: entityKey, op };
+  const entityKey = entityKeyOf(entity);
+  const call = callOf(entity, op);
   const fetcher = useRequestFetch() as Fetcher;
   const loading = ref(false);
   const error = ref<FougereError | null>(null);
@@ -102,22 +77,13 @@ export function useCommand<T = unknown>(entity: EntityClass, op: string) {
     loading.value = true;
     error.value = null;
     try {
-      const result = (await send(fetcher, call, invocationOf(input))) as T;
+      const result = (await sendCall(fetcher, call, invocationOf(input))) as T;
       // The link: same entity designated on both sides → revalidate its queries.
-      const keys = mounted.get(entityKey);
-      if (keys?.size) await refreshNuxtData([...keys]);
+      const keys = mountedKeys(entityKey);
+      if (keys.length) await refreshNuxtData(keys);
       return result;
     } catch (err) {
-      error.value =
-        err instanceof FougereError
-          ? err
-          : new FougereError({
-              code: ErrorCode.SERVICE_UNAVAILABLE,
-              message: (err as Error)?.message ?? String(err),
-              entity: entityKey,
-              operation: op,
-              cause: err,
-            });
+      error.value = asFougereError(err, entityKey, op);
       throw error.value;
     } finally {
       loading.value = false;

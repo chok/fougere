@@ -5,7 +5,7 @@
  * page arrives already knowing its user — no round-trip.
  */
 import { defineNuxtPlugin, useRequestEvent, useState } from '#imports';
-import { sessionViewOf, type SessionView } from '../session/view.js';
+import { sessionViewOf, type SessionView } from '@fougere/app/client';
 
 export default defineNuxtPlugin(() => {
   const event = useRequestEvent();

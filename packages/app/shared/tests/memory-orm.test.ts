@@ -7,7 +7,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text, number, oneOf, auto } from '@fougere/schema';
-import { createMemoryOrm } from '../src/runtime/server/utils/fougereApp.js';
+import { createMemoryOrm } from '../src/boot.js';
 
 class Post extends entity({
   id: primary(),
@@ -68,5 +68,37 @@ describe('the fallback store realizes what the entity declares', () => {
 
     expect(await orm.findById('1')).toEqual(row);
     expect(await orm.findById(1 as never)).toEqual(row);
+  });
+});
+
+/**
+ * `where` and `count` answer the same page, and used to disagree.
+ *
+ * The filter narrowed the rows; the total read `store.size`, which is every row
+ * the store holds. So a paginator computed its page count from a number the
+ * caller was never allowed to see — and on a filter that scopes a tenant, the
+ * total published the other tenant's volume.
+ */
+describe('a filtered list counts what it filtered', () => {
+  class Row extends entity({ id: primary(), tenant: text() }) {}
+
+  it('totals the matching rows, not the whole store', async () => {
+    const orm = createMemoryOrm(Row as never, 'row');
+    await orm.create({ tenant: 'A' });
+    await orm.create({ tenant: 'A' });
+    await orm.create({ tenant: 'B' });
+
+    const page = await orm.list({ where: { tenant: 'A' }, count: true });
+    expect(page.length).toBe(2);
+    expect(page.total).toBe(2);
+  });
+
+  it('counts the matching rows even when the page is smaller', async () => {
+    const orm = createMemoryOrm(Row as never, 'row');
+    for (const tenant of ['A', 'A', 'A', 'B']) await orm.create({ tenant });
+
+    const page = await orm.list({ where: { tenant: 'A' }, limit: 2, count: true });
+    expect(page.length).toBe(2);
+    expect(page.total).toBe(3);
   });
 });

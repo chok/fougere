@@ -1,20 +1,15 @@
 /**
- * The server dual of the couple — same designation (class + verb), same
- * return, same errors. Fabricates the call value and hands it to the app
- * runner: local façade → direct in-memory execution, frond in `remotes`
- * → JSON-RPC on the wire. The caller never knows which.
+ * The server dual of the couple — same designation (class + verb), same return,
+ * same errors. `invokeOn` places the call (local façade → direct in-memory
+ * execution, a frond in `remotes` → JSON-RPC on the wire); what this file owns is
+ * the one host-specific part: finding the current request.
  *
  * In request context the current session rides along (event.context →
  * invocation.state); outside a request, state is empty or explicit.
  */
 import { useEvent } from 'nitropack/runtime';
-import {
-  createAppRunner,
-  callValueOf,
-  type FrondCall,
-  type InvocationContext,
-} from '@fougere/core';
-import { useFougereApp } from './fougereApp';
+import { invokeOn, useFougereApp } from '@fougere/app';
+import type { FrondCall, InvocationContext } from '@fougere/core';
 
 type EntityClass = { name: string };
 type CallInput = Partial<InvocationContext>;
@@ -26,11 +21,8 @@ export async function invoke<T = unknown>(
   opOrInput?: string | CallInput,
   input?: CallInput,
 ): Promise<T> {
-  const given = typeof opOrInput === 'string' ? input : opOrInput;
-  const { call, invocation } = callValueOf(target, opOrInput, input);
-  const state = given?.state ?? requestState();
   const app = await useFougereApp();
-  return (await createAppRunner(app)(call, { ...invocation, state })) as T;
+  return invokeOn<T>(app, target, opOrInput, input, requestState());
 }
 
 function requestState(): Record<string, unknown> {

@@ -1,5 +1,5 @@
 import { defineEventHandler } from 'h3';
-import { useFougereAuth } from '../../../utils/fougereAuth';
+import { useFougereAuth } from '@fougere/app';
 
 export default defineEventHandler(async (event) => {
   const auth = await useFougereAuth();

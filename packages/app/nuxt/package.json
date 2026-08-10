@@ -29,12 +29,9 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@fougere/container-fougere": "workspace:*",
+    "@fougere/app": "workspace:*",
     "@fougere/core": "workspace:*",
     "@fougere/runtime": "workspace:*",
-    "@fougere/schema": "workspace:*",
-    "@fougere/schema-rest": "workspace:*",
-    "@fougere/transport-http": "workspace:*",
     "@nuxt/kit": "^4.5.1",
     "jiti": "^2.6.1"
   },

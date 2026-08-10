@@ -1,0 +1,64 @@
+{
+  "name": "@fougere/app",
+  "version": "0.1.0-alpha.0",
+  "description": "The host-independent half of a Fougere app: boot, call envelope, REST table, form contract.",
+  "keywords": [
+    "fougere",
+    "typescript",
+    "fullstack",
+    "rpc",
+    "adapter"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chok/fougere.git",
+    "directory": "packages/app/shared"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js"
+    },
+    "./web": {
+      "types": "./dist/web.d.ts",
+      "import": "./dist/web.js"
+    },
+    "./router": {
+      "types": "./dist/router.d.ts",
+      "import": "./dist/router.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.test.json",
+    "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "@fougere/container-fougere": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/runtime": "workspace:*",
+    "@fougere/schema": "workspace:*",
+    "@fougere/schema-rest": "workspace:*",
+    "@fougere/transport-http": "workspace:*",
+    "jiti": "^2.6.1",
+    "@fougere/http": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

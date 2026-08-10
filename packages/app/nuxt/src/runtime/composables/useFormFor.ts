@@ -11,7 +11,7 @@
 import { reactive, computed } from 'vue';
 import { FougereError, ErrorCode, toRegistrationName } from '@fougere/core/contract';
 import { useCommand } from './useFougereData.js';
-import { formFieldsOf, payloadOf, errorsByField, type FormEntity, type FormField } from '../form/fields.js';
+import { formFieldsOf, payloadOf, errorsByField, type FormEntity, type FormField } from '@fougere/app/client';
 
 export interface FormOptions {
   /** Command the submit rides. Default: 'create'. */

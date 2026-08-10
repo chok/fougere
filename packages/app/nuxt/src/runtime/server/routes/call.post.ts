@@ -1,17 +1,14 @@
 /**
- * Receiving end for the browser — same wire as process-to-process
- * (POST /_fougere/call, JSON-RPC), different trust boundary: the browser
- * sits outside the topology, so `state` is stamped from the server-resolved
- * session (event.context), never taken from the wire.
+ * Receiving end for the browser — the h3 half. The decision (which audience, which
+ * runner, what a parse failure answers) lives in `@fougere/app`; what stays here is
+ * getting a JSON payload out of an h3 event, which is the one thing that genuinely
+ * differs between hosts. Next reads `await request.json()` and needs none of this.
  *
- * The runner follows the app's topology: local façades and remote
- * doublures alike — the browser never knows where a Frond lives.
+ * Trust boundary, unchanged: the browser sits outside the topology, so `state` is
+ * stamped from the server-resolved session (event.context), never taken from the wire.
  */
 import { defineEventHandler } from 'h3';
-import { handleRpc, PARSE_ERROR } from '@fougere/transport-http';
-import { createAppRunner } from '@fougere/core';
-import type { Transport } from '@fougere/core';
-import { useFougereApp } from '../utils/fougereApp';
+import { serveRpc, rpcParseError, useFougereApp } from '@fougere/app';
 
 type NodeReq = {
   body?: unknown;
@@ -122,37 +119,16 @@ async function readJsonBody(event: { req?: unknown; node?: { req?: unknown } }):
   return {};
 }
 
-/**
- * The audience this door serves — the path segment after `/_fougere/call`.
- *
- * The envelope is a surface like REST and GraphQL, so it selects its audience like they
- * do; the difference is only that it takes it from the path instead of an option, because
- * a door is mounted, not called. The same word names the directory
- * (`handlers/public/`), the config key (`surfaces: { public: [...] }`) and this segment —
- * derived, never configured.
- *
- * No escalation to guard: a named surface serves the entities it names and nothing else
- * (closed by naming), so every one of them is a subset of what the bare path already
- * serves.
- */
-function surfaceOf(path: string): string | undefined {
-  const named = /^\/_fougere\/call\/([A-Za-z0-9_-]+)/.exec(path.replace(/\?.*$/, ''));
-  return named?.[1];
-}
-
 export default defineEventHandler(async (event) => {
   const app = await useFougereApp();
-  const runner = createAppRunner(app, surfaceOf(event.path));
-  const stamped: Transport = (call, invocation) =>
-    runner(call, { ...invocation, state: (event.context ?? {}) as Record<string, unknown> });
   try {
-    return handleRpc(stamped, await readJsonBody(event));
+    return await serveRpc(app, {
+      path: event.path,
+      body: await readJsonBody(event),
+      state: (event.context ?? {}) as Record<string, unknown>,
+    });
   } catch (err) {
     if ((err as { statusCode?: number })?.statusCode === 413) throw err;
-    return {
-      jsonrpc: '2.0' as const,
-      id: null,
-      error: { code: PARSE_ERROR, message: 'Parse error' },
-    };
+    return rpcParseError();
   }
 });

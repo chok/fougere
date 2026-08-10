@@ -185,7 +185,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
     const bootTpl = addTemplate({
       filename: 'fougere-boot.ts',
       write: true,
-      getContents: () => generateBootPlugin(config, allSeeds, runtimeResolve('server/utils/fougereApp')),
+      getContents: () => generateBootPlugin(config, allSeeds, runtimeResolve('server/utils/boot')),
     });
     addServerPlugin(bootTpl.dst);
 

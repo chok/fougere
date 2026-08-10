@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sessionViewOf } from '../src/runtime/session/view.js';
+import { sessionViewOf } from '../src/session.js';
 
 describe('sessionViewOf', () => {
   it('empty context → anonymous view', () => {

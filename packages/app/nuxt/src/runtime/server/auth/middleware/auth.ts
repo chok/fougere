@@ -1,5 +1,5 @@
 import { defineEventHandler, getRequestHeader } from 'h3';
-import { useFougereAuth } from '../../utils/fougereAuth';
+import { useFougereAuth } from '@fougere/app';
 
 /**
  * Resolves the current session/user from the request cookie and exposes them

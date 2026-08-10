@@ -6,7 +6,7 @@
  * thin async helper for server code (middleware, routes, /api/me).
  */
 import type { AuthRuntime } from '@fougere/core';
-import { useFougereApp } from './fougereApp';
+import { useFougereApp } from './boot.js';
 
 /** Get the auth runtime resolved at boot. Throws if no `auth` was declared in fougere.config.ts. */
 export async function useFougereAuth(): Promise<AuthRuntime> {

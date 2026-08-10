@@ -1,13 +1,20 @@
 /**
- * Fougere server bootstrap — single entry point for app lifecycle in Nuxt.
+ * Fougere server bootstrap — single entry point for an app's lifecycle,
+ * whatever hosts it.
+ *
+ * Nothing here knows h3, Nitro, Vue or React: a boot reads `fougere.config.ts`,
+ * scans fronds off the filesystem and hands back an `App`. That is why it lives
+ * in `@fougere/app` rather than in one of the two adapters — the second host
+ * would otherwise have copied it, and a copied boot drifts (the seeding loop
+ * already did, `core/src/seed.ts`).
  *
  * Default path (zero-config): fougere.config.ts declares `db: 'sqlite'` and
  * everything else; this module auto-resolves the storage handle, builds an
  * ormFactory, runs auto-DDL from the entities, and boots the app.
  *
- * Escape hatch: `configureFougere({ db, ormFactory })` can be called from a
- * Nitro plugin if the user wants a custom data layer (alternative driver,
- * managed migrations, etc.).
+ * Escape hatch: `configureFougere({ db, ormFactory })` can be called from the
+ * host's own startup (a Nitro plugin, a Next instrumentation hook) if the user
+ * wants a custom data layer — alternative driver, managed migrations, etc.
  */
 import { createApp, loadCascadedConfig, setModuleLoader, frondAliases, Logger } from '@fougere/core';
 import { createContainer } from '@fougere/container-fougere';
@@ -23,6 +30,12 @@ export interface FougereServerConfig {
   ormFactory?: (entity: SchemaLike, name: string) => EntityOrm;
   /** Called after app is created. Use for migrations, seeding, etc. */
   afterBoot?: (app: App) => void | Promise<void>;
+  /**
+   * What the boot line names as the host — 'Nuxt/Nitro', 'Next'. Stated by the
+   * adapter, never sniffed: a boot that guesses its host from what happens to be
+   * importable is the hidden runtime the doctrine refuses.
+   */
+  host?: string;
 }
 
 // ── State ────────────────────────────────────────
@@ -55,7 +68,7 @@ async function boot(): Promise<App> {
   const bootStart = performance.now();
   const log = new Logger('boot', { level: 'debug' });
 
-  log.info('booting (Nuxt/Nitro)');
+  log.info(`booting (${_config.host ?? 'app'})`);
 
   const { createJiti } = await import('jiti');
   // Nitro serves from a bundle, but the scan still reads frond sources from disk — so the
@@ -120,9 +133,19 @@ async function boot(): Promise<App> {
   }
 
   if (_config.afterBoot) {
+    // A host that declares `afterBoot` OWNS what happens after the boot, seeding
+    // included — Nuxt's generated Nitro plugin does exactly that, because Nitro
+    // bundles and the seed modules have to be spelled out as static imports for it.
     log.debug('running afterBoot');
     await _config.afterBoot(app);
     log.info('afterBoot done');
+  } else {
+    // Nobody claimed it, so the boot seeds. The scan already carries each seed's
+    // data (`SeedEntry.data` is its resolved default export), and the order comes
+    // from core — the same `orderSeeds`/`runSeeds` pair Nuxt's plugin calls. A host
+    // that does not bundle its frond sources needs nothing else.
+    const { orderSeeds, runSeeds } = await import('@fougere/core');
+    await runSeeds(app, orderSeeds(app.fronds), (message) => log.info(`[seed]${message}`));
   }
 
   const ms = (performance.now() - bootStart).toFixed(0);
@@ -158,6 +181,11 @@ export function createMemoryOrm(entity: SchemaLike, name: string): EntityOrm {
     async list(options?: any) {
       let items = [...store.values()];
       if (options?.where) items = items.filter((row) => matches(row, options.where));
+      // Held before the page is cut, and after the filter: `total` answers "how many
+      // match", which is what a paginator divides. Reading `store.size` at the end
+      // answered a different question — every row the store holds, including the ones
+      // the filter exists to keep out of this caller's sight.
+      const matching = items.length;
       const limit = options?.limit;
       const offset = options?.page && limit ? (options.page - 1) * limit : options?.offset ?? 0;
       if (offset > 0) items = items.slice(offset);
@@ -166,7 +194,7 @@ export function createMemoryOrm(entity: SchemaLike, name: string): EntityOrm {
       const result = items as any;
       result.hasMore = hasMore;
       result.endCursor = items.length > 0 ? String((items[items.length - 1] as any)[pk] ?? '') : undefined;
-      if (options?.count) result.total = store.size;
+      if (options?.count) result.total = matching;
       return result;
     },
     async findById(id: string) { return store.get(keyOf(id)); },

@@ -8,7 +8,7 @@
  */
 import { useState, useRequestFetch } from '#imports';
 import { computed } from 'vue';
-import type { SessionView } from '../session/view.js';
+import type { SessionView } from '@fougere/app/client';
 
 export function useCurrentUser<TUser = Record<string, unknown>>() {
   const session = useState<SessionView>('fougere:session', () => ({ user: null }));
