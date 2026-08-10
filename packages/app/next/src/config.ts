@@ -25,6 +25,11 @@
  * 2. **The scan's dependencies stay out of the bundle.** A boot reads frond
  *    sources off disk through jiti, so those packages must be loaded at runtime
  *    rather than compiled in.
+ *
+ * **Limit, stated rather than discovered later:** this rides Next's `webpack()`
+ * hook, which Turbopack ignores. Next 16 builds with Turbopack by default, so an
+ * app on 16 needs `next build --webpack` until Turbopack exposes a minifier option.
+ * Next also documents its webpack config as outside semver.
  */
 import TerserPlugin from 'terser-webpack-plugin';
 import type { NextConfig } from 'next';
@@ -34,10 +39,7 @@ const RUNTIME_PACKAGES = [
   '@fougere/app',
   '@fougere/core',
   '@fougere/next',
-  '@fougere/schema',
   '@fougere/schema-sql',
-  '@fougere/schema-graphql',
-  '@fougere/auth-better',
   'better-sqlite3',
   'jiti',
   'typescript',
@@ -58,13 +60,17 @@ export function withFougere(config: NextConfig = {}): NextConfig {
       const base = userWebpack ? userWebpack(webpackConfig, context) : webpackConfig;
 
       base.optimization ??= {};
-      // Replaced rather than configured: Next's minimizers are plain functions with
-      // no readable options, and its `noMangling` flag would keep every variable
-      // name, not just classes.
+      // ONLY the JS minifier is replaced. Next's minimizers are plain functions with
+      // no readable options, so they are told apart by their source: index 0 loads
+      // `minify-webpack-plugin` (JS), index 1 loads `css-minimizer-plugin`. Replacing
+      // the whole array — which this did at first — silently dropped CSS minification
+      // and anything the app's own webpack function had added.
+      const isJsMinifier = (m: unknown) => String(m).includes('minify-webpack-plugin');
       base.optimization.minimizer = [
-        new TerserPlugin({
-          terserOptions: { keep_classnames: true, keep_fnames: true },
-        }),
+        // `keep_fnames` is deliberately absent: designation reads a CLASS name and
+        // nothing in this path reads a function name. Keeping every function name
+        // costs bundle size for an invariant that does not exist.
+        new TerserPlugin({ terserOptions: { keep_classnames: true, keep_fnames: true } }),
       ];
 
       return base;

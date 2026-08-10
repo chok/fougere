@@ -23,6 +23,7 @@
     "@fougere/schema": "workspace:*",
     "@fougere/schema-sql": "workspace:*",
     "better-sqlite3": "^12.8.0",
-    "jiti": "^2.6.1"
+    "jiti": "^2.6.1",
+    "@fougere/vite": "workspace:*"
   }
 }

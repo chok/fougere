@@ -17,7 +17,8 @@
     "better-sqlite3": "^12.8.0",
     "jiti": "^2.6.1",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "@fougere/vite": "workspace:*"
   },
   "devDependencies": {
     "@tanstack/router-cli": "^1.132.0",
