@@ -15,24 +15,24 @@
  *
  * ## What it states, and why each one
  *
- * **1. A minifier that keeps class names — necessary here, and NOT sufficient.**
- * Designation is class + verb, so `useQuery(Post, 'list')` reads `Post.name`.
+ * **1. The entity's name survives minification.** Designation is class + verb, so
+ * `useQuery(Post, 'list')` reads `Post.name`, and that name travels — it is the
+ * JSON-RPC method (`post.list`) and the REST path.
  *
- * Measured, and the measurement is the point: with `minify: 'terser'` and
- * `keep_classnames` resolved (verified through `configResolved` on all three
- * builds), a named class DOES survive — `class FougereError extends` is in the
- * output — but an entity does not: it ships as `Ot=class extends…`. Rollup emits
- * `export default class Post extends entity({…})` as an assignment to a variable,
- * so the name is already gone by the time terser runs, and terser cannot keep a
- * name that no longer exists. Making it a named export changes nothing (measured).
+ * Getting there took measuring what actually happens, because the obvious setting
+ * is not enough. Rollup cannot keep `class Post extends entity({…})` as a hoisted
+ * declaration — its heritage clause is a CALL — so it emits `var Post = class
+ * extends entity({…})`. The class is ANONYMOUS; `Post.name` works only through
+ * JavaScript's name inference from the variable. So `keep_classnames` protects
+ * nothing (there is no class name to keep), in `compress` or in `mangle` — both
+ * measured, both `Ot`.
  *
- * So on a Rollup-based host this setting is correct and insufficient, and a
- * production build there still designates an entity nobody hosts. Webpack keeps the
- * name, which is why `@fougere/next` is fixed and these are not. What that shows is
- * that the rule is not a host's to enforce: an identity that only survives when the
- * compiler feels like it is not an identity. The durable answer is for an entity to
- * carry its registration name as data — a decision about designation, deliberately
- * not taken here.
+ * What works is reserving the IDENTIFIER: `mangle.reserved`. The variable keeps its
+ * name, inference keeps working, and everything else is still mangled. Measured:
+ * `var Post=class extends…` in the production client bundle.
+ *
+ * And the list is not config — `entityNamesIn` reads it from `fronds/<frond>/entities/`,
+ * the same convention the scan already uses. The developer writes nothing.
  *
  * **2. The scan's dependencies stay out of the server bundle.** A boot reads frond
  * sources off disk through jiti, so those packages are loaded at runtime instead.
@@ -41,7 +41,34 @@
  * The rule this encodes is not "Vite is special", it is: **any bundler that carries
  * a Fougere entity class must preserve its name.**
  */
+import { readdirSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
 import type { Plugin } from 'vite';
+
+/**
+ * The entity names a build must not rename, read off the filesystem.
+ *
+ * `fronds/blog/entities/Post.ts` IS the declaration of an entity called `Post` —
+ * the scan already treats the file name that way. So the list needs no config and
+ * no annotation: it is derived from the same convention the framework already
+ * relies on, which is why this feint costs the developer nothing.
+ */
+export function entityNamesIn(root: string): string[] {
+  const frondsDir = join(root, 'fronds');
+  if (!existsSync(frondsDir)) return [];
+
+  const names = new Set<string>();
+  for (const frond of readdirSync(frondsDir, { withFileTypes: true })) {
+    if (!frond.isDirectory()) continue;
+    const entities = join(frondsDir, frond.name, 'entities');
+    if (!existsSync(entities)) continue;
+    for (const file of readdirSync(entities)) {
+      const match = /^(.+)\.tsx?$/.exec(file);
+      if (match) names.add(match[1]!);
+    }
+  }
+  return [...names];
+}
 
 /** Packages a Fougere boot loads at runtime — they must not be bundled. */
 export const RUNTIME_PACKAGES = [
@@ -65,6 +92,8 @@ export interface FougereViteOptions {
    * renamed class and the call is refused.
    */
   keepClassNames?: boolean;
+  /** Extra identifiers to reserve, for entities that do not live under `fronds/`. */
+  reserved?: string[];
 }
 
 export function fougere(options: FougereViteOptions = {}): Plugin {
@@ -93,12 +122,19 @@ export function fougere(options: FougereViteOptions = {}): Plugin {
 
         if (options.keepClassNames === false) return;
 
+        const reserved = [...(options.reserved ?? []), ...entityNamesIn(config.root ?? process.cwd())];
+        if (reserved.length === 0) return;
+
         config.build ??= {};
         // Vite's default minifier is esbuild, which has no per-name option; terser does.
         config.build.minify = 'terser';
         config.build.terserOptions = {
           ...config.build.terserOptions,
           keep_classnames: true,
+          mangle: {
+            ...(config.build.terserOptions?.mangle ?? {}),
+            reserved: [...new Set([...(config.build.terserOptions?.mangle?.reserved ?? []), ...reserved])],
+          },
         };
       },
     },

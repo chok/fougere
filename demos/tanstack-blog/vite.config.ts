@@ -13,5 +13,6 @@ import viteReact from '@vitejs/plugin-react';
  */
 export default defineConfig({
   resolve: { tsconfigPaths: true },
+  build: { minify: 'terser', terserOptions: { mangle: { reserved: ['Post'] } } },
   plugins: [fougere(), tanstackStart(), viteReact()],
 });

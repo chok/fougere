@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev --port 3200",
-    "typecheck": "tsc -p fronds"
+    "typecheck": "tsc -p fronds",
+    "build": "vite build"
   },
   "dependencies": {
     "@fougere/app": "workspace:*",

@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "react-router dev --port 3400",
-    "typecheck": "tsc -p fronds"
+    "typecheck": "tsc -p fronds",
+    "build": "react-router build"
   },
   "dependencies": {
     "@react-router/node": "^8",
