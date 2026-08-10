@@ -2,6 +2,7 @@
   "name": "@fougere/core",
   "version": "0.1.0-alpha.0",
   "description": "The core — scan, call contract, façades, remote stand-ins.",
+  "keywords": ["fougere","typescript","framework","dependency-injection","rpc","microservices","monorepo"],
   "license": "MIT",
   "repository": {
     "type": "git",

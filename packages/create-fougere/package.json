@@ -2,6 +2,7 @@
   "name": "create-fougere",
   "version": "0.1.0-alpha.0",
   "description": "Scaffold a Fougere workspace — `npm create fougere`.",
+  "keywords": ["fougere","create","scaffold","starter","typescript","framework"],
   "license": "MIT",
   "repository": {
     "type": "git",

@@ -2,6 +2,7 @@
   "name": "@fougere/schema-sql",
   "version": "0.1.0-alpha.0",
   "description": "Entity → SQL tables through Kysely (SQLite, PostgreSQL, MySQL, SQL Server).",
+  "keywords": ["fougere","typescript","kysely","sql","sqlite","postgresql","mysql","orm","ddl"],
   "license": "MIT",
   "repository": {
     "type": "git",

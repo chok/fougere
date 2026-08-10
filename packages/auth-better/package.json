@@ -2,6 +2,7 @@
   "name": "@fougere/auth-better",
   "version": "0.1.0-alpha.0",
   "description": "Fougere's auth — a translation layer onto better-auth.",
+  "keywords": ["fougere","better-auth","auth","authentication","typescript"],
   "license": "MIT",
   "repository": {
     "type": "git",

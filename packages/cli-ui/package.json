@@ -2,6 +2,7 @@
   "name": "@fougere/cli-ui",
   "version": "0.1.0-alpha.0",
   "description": "The display primitives of the Fougere CLI.",
+  "keywords": ["fougere","cli","prompts","terminal"],
   "license": "MIT",
   "repository": {
     "type": "git",

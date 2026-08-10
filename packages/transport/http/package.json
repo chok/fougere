@@ -2,6 +2,7 @@
   "name": "@fougere/transport-http",
   "version": "0.1.0-alpha.0",
   "description": "The call contract on the wire, in JSON-RPC 2.0 (server + client).",
+  "keywords": ["fougere","typescript","json-rpc","rpc","http","microservices"],
   "license": "MIT",
   "repository": {
     "type": "git",

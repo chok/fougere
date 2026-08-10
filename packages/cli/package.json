@@ -2,6 +2,7 @@
   "name": "@fougere/cli",
   "version": "0.1.0-alpha.1",
   "description": "The Fougere CLI — compose a workspace, serve a frond, call an operation.",
+  "keywords": ["fougere","cli","typescript","scaffold","codegen"],
   "license": "MIT",
   "repository": {
     "type": "git",
