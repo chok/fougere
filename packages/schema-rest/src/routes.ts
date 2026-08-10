@@ -28,6 +28,16 @@ export interface RouteDefinition {
   outputFields?: Fields;
   /** Explicit success status. Defaults to 201 only for the canonical `create` op. */
   successStatus?: number;
+  /**
+   * The operation in words — the method's own doc sentence, carried by the contract.
+   *
+   * A route is what an OpenAPI `summary` is generated FROM, and the sentence reached
+   * this file already (`handler.operations` is core's `Map<string, OperationContract>`);
+   * only this type had no name for it, so every generated route was undocumented while
+   * the sentence sat one property away. Carried, not rendered: emitting OpenAPI is a
+   * reader's job, and this is what it reads.
+   */
+  description?: string;
   // No presenter here. A route used to carry the instance and its field names so the
   // registration could enrich each row; the façade does that for every door now
   // (`presentEgress`), so the rows arrive computed and a second pass was duplicated work.
@@ -36,6 +46,8 @@ export interface RouteDefinition {
 interface OperationMeta {
   input?: SchemaSource;
   output?: SchemaSource;
+  /** The operation in words — see `RouteDefinition.description`. */
+  description?: string;
 }
 
 interface EntityEntry {
@@ -244,6 +256,7 @@ export function generateRoutes(app: AppLike, options?: GenerateRoutesOptions): R
           inputFields,
           outputFields,
           successStatus: override?.status,
+          ...(meta?.description && { description: meta.description }),
         });
       }
     }

@@ -682,3 +682,30 @@ describe('an operation that declares its return type', () => {
     expect(typeMap['Post']).toBeDefined();
   });
 });
+
+describe('the operation in words', () => {
+  it('publishes the method\'s doc sentence on its GraphQL field', () => {
+    // The sentence reached this projection already — `handler.operations` is core's
+    // Map<string, OperationContract>. It was dropped here, so an explorer showed every
+    // field undocumented while the sentence sat one property away.
+    const ops = crudOps('Post', Post);
+    ops.set('list', { ...ops.get('list'), description: 'Every post, newest first.' });
+
+    const builder = new SchemaBuilder({});
+    builder.queryType({});
+    builder.mutationType({});
+
+    const app = fakeApp(
+      [{ name: 'post', entityClass: Post }],
+      { postHandler: fakeCrud() },
+      [{ address: 'post', operations: ops }],
+    );
+
+    registerAll(builder, app as never);
+    const queryFields = builder.toSchema().getQueryType()!.getFields();
+
+    expect(queryFields['posts']?.description).toBe('Every post, newest first.');
+    // An op with no sentence publishes none rather than an empty string.
+    expect(queryFields['post']?.description ?? null).toBeNull();
+  });
+});

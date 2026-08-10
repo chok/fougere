@@ -66,6 +66,13 @@ interface OperationMeta {
   input?: SchemaLike;
   output?: SchemaLike;
   signature?: ParsedSignature;
+  /**
+   * The operation in words. It reaches here already — `handler.operations` is core's
+   * `Map<string, OperationContract>`, and this narrowed view simply did not name the
+   * field, so an explorer showed every field undocumented while the sentence sat one
+   * property away.
+   */
+  description?: string;
 }
 
 export interface OperationsConfig {
@@ -857,6 +864,7 @@ export function registerOperations(builder: InstanceType<typeof SchemaBuilder>, 
         type: outputType,
         nullable: output.nullable,
         args: argsDef(t),
+        ...(meta.description && { description: meta.description }),
         resolve: async (_: any, args: any, gqlCtx: any) => {
           const invocation = buildInvocation(args, gqlCtx);
           const result = await config.facade[opName](invocation);

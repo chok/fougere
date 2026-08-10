@@ -323,3 +323,28 @@ describe("boundary 'closed' → route field membership", () => {
     expect(Object.keys(list.outputFields!)).toEqual(['id', 'name', 'loginCount']);
   });
 });
+
+describe('the operation in words', () => {
+  it('carries the method\'s own doc sentence onto its route', () => {
+    // The sentence reaches this projection already — `handler.operations` is core's
+    // Map<string, OperationContract>. It was simply dropped here, so every generated
+    // route was undocumented and no OpenAPI could be produced from them.
+    const app = fakeApp(
+      [{ name: 'post', entityClass: Post }],
+      { postHandler: { ...fakeCrud(), publish: async () => ({}) } },
+      [{
+        address: 'post',
+        operations: opsMap(['list', 'publish'], {
+          publish: { description: 'Make a draft visible to everyone.' } as never,
+        }),
+      }],
+    );
+
+    const routes = generateRoutes(app);
+
+    expect(routes.find((r) => r.operationName === 'publish')?.description)
+      .toBe('Make a draft visible to everyone.');
+    // An op with no sentence carries none — absent, not an empty string.
+    expect(routes.find((r) => r.operationName === 'list')).not.toHaveProperty('description');
+  });
+});
