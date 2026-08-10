@@ -1,0 +1,30 @@
+{
+  "name": "@fougere/demo-tanstack-blog",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev --port 3200",
+    "typecheck": "tsc -p fronds"
+  },
+  "dependencies": {
+    "@fougere/app": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/react": "workspace:*",
+    "@fougere/schema": "workspace:*",
+    "@fougere/schema-sql": "workspace:*",
+    "@tanstack/react-router": "^1.170.25",
+    "@tanstack/react-start": "^1.168.42",
+    "better-sqlite3": "^12.8.0",
+    "jiti": "^2.6.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@tanstack/router-cli": "^1.132.0",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^6.0.1",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.0"
+  }
+}

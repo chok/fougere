@@ -1,0 +1,28 @@
+{
+  "name": "@fougere/demo-sveltekit-blog",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev --port 3500",
+    "typecheck": "tsc -p fronds"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-auto": "^7.0.1",
+    "@sveltejs/kit": "^2.63.0",
+    "@sveltejs/vite-plugin-svelte": "^7.1.2",
+    "svelte": "^5.56.1",
+    "svelte-check": "^4.6.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.16"
+  },
+  "dependencies": {
+    "@fougere/app": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/svelte": "workspace:*",
+    "@fougere/schema": "workspace:*",
+    "@fougere/schema-sql": "workspace:*",
+    "better-sqlite3": "^12.8.0",
+    "jiti": "^2.6.1"
+  }
+}

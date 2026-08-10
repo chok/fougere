@@ -1,0 +1,34 @@
+{
+  "name": "@fougere/demo-react-router-blog",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "react-router dev --port 3400",
+    "typecheck": "tsc -p fronds"
+  },
+  "dependencies": {
+    "@react-router/node": "^8",
+    "@react-router/serve": "^8",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-router": "^8",
+    "@fougere/app": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/react": "workspace:*",
+    "@fougere/schema": "workspace:*",
+    "@fougere/schema-sql": "workspace:*",
+    "better-sqlite3": "^12.8.0",
+    "jiti": "^2.6.1",
+    "isbot": "^5"
+  },
+  "devDependencies": {
+    "@react-router/dev": "^8",
+    "@tailwindcss/vite": "^4.2.2",
+    "@types/node": "^22",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "tailwindcss": "^4.2.2",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.3"
+  }
+}

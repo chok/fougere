@@ -1,0 +1,9 @@
+node_modules/
+.fougere/
+.svelte-kit/
+.react-router/
+build/
+.vite/
+*.db
+*.db-shm
+*.db-wal

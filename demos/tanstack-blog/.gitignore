@@ -1,0 +1,10 @@
+.output/
+.tanstack/
+.nitro/
+.vinxi/
+node_modules/
+.fougere/
+src/routeTree.gen.ts
+*.db
+*.db-shm
+*.db-wal

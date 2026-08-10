@@ -1,0 +1,24 @@
+{
+  "name": "@fougere/demo-express-blog",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --experimental-strip-types server.ts",
+    "typecheck": "tsc -p fronds"
+  },
+  "dependencies": {
+    "@fougere/app": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/http": "workspace:*",
+    "@fougere/schema": "workspace:*",
+    "@fougere/schema-sql": "workspace:*",
+    "better-sqlite3": "^12.8.0",
+    "express": "^5.2.1",
+    "jiti": "^2.6.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.19.15",
+    "typescript": "^5.9.3"
+  }
+}
