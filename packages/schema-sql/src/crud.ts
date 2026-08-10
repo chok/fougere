@@ -14,7 +14,7 @@
  */
 import type { Kysely } from 'kysely';
 import { applyCreate, applyUpdate, schemaOf, type Fields, type SchemaLike, type SchemaSource } from '@fougere/schema';
-import { toTable, type TableDef } from './table.js';
+import { toTable, toTableName, type TableDef } from './table.js';
 import { codecsOf, type ValueCodec } from './values.js';
 
 /** ListOptions — duplicated from @fougere/core to avoid a runtime dep. */
@@ -295,10 +295,6 @@ export class SqlEntityOrm {
   }
 }
 
-/** camelCase → snake_case + plural ('orderLine' → 'order_lines') */
-function defaultTableName(name: string): string {
-  return name.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`) + 's';
-}
 
 export interface OrmFactoryOptions {
   /** Override table name resolution. Default: camelCase → snake_case + 's'. */
@@ -313,6 +309,6 @@ export interface OrmFactoryOptions {
  * ```
  */
 export function createOrmFactory(db: Kysely<any>, options?: OrmFactoryOptions) {
-  const resolve = options?.tableName ?? defaultTableName;
+  const resolve = options?.tableName ?? toTableName;
   return (entity: SchemaSource, name: string) => new SqlEntityOrm(db, entity, resolve(name));
 }

@@ -229,6 +229,28 @@ What does not travel is the static type: the map rebuilds a full runtime schema,
 its literal keys are lost, so `sensor.label` comes back untyped. A map → `.d.ts`
 projection would close that, and does not exist.
 
+### And some things leave without being called
+
+Every call above names **one** recipient. An emission names a **subject**, and the number
+of readers is not the emitter's business:
+
+```ts
+constructor(private published: Emit<PostPublished>) {}      // in the blog handler
+async reindex(fact: Fact<PostPublished>): Promise<void> {}   // in the search handler
+```
+
+There is no topic, no subscribe call, no listener list. **Accepting a `Fact<T>` is the
+subscription** — the scan reads the signature, exactly as it reads `EntityOrm<Post>`. A
+subscriber keeps its own judge, its own binding and its own middlewares, because a fact is
+routed to the door that already exists rather than to a channel.
+
+It is a resolver, so it holds nothing: no log, no cursor, no retry. That is deliberate, and
+[`demos/emit-multirepo`](./demos/emit-multirepo) shows the ~80-line broker that supplies all
+three when you need them. [`demos/emit-fleet`](./demos/emit-fleet) is the fan-out — one hub,
+many nodes, facts in both directions.
+
+[Read about facts →](https://chok.github.io/fougere/docs/business/facts)
+
 ## Try it
 
 ```bash
