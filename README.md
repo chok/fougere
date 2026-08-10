@@ -154,6 +154,28 @@ const rules = { title: [required, maxLength(160)] };
 
 The bug is never in one of those files. It is in the day two of them stopped agreeing.
 
+## One entity, in the framework you already have
+
+None of the above asks you to adopt the framework. An entity is a
+[Standard Schema](https://standardschema.dev/), so it is accepted wherever one is —
+tRPC, Hono, TanStack Form today, and NestJS 12 in `@Body` / `@Query` / `@Param`, where
+it lands as the replacement for class-validator.
+
+```ts
+export class PostDraft extends Post.pick('title', 'summary', 'body') {}
+
+PostDraft['~standard'];                          // { version: 1, vendor: 'fougere', validate }
+PostDraft['~standard'].validate({ title: '' });  // { issues: [{ message, path: [{ key: 'title' }] }] }
+```
+
+That is one `npm i @fougere/schema` and no adapter package — the interface is a static
+getter on the class, and derivations (`pick`, `omit`, `partial`, `extend`) carry it too.
+
+Be clear about what crosses: **the judge, and only the judge**. Standard Schema is
+`validate(value) → value | issues`, so the other three axes stay home — no table, no
+GraphQL type, no form contract. The entity is the piece that fits through the hole; the
+reason to come back for the rest is `getFields()`.
+
 ## The domain travels
 
 A **Frond** is a domain — its entities, its handlers, its collectors, its seeds.

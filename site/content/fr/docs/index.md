@@ -62,7 +62,8 @@ sérialisation que le chemin local éviterait, aucun impôt du framework par-des
 
 **Côté serveur** — [Démarrer](/fr/docs/getting-started) · [App Nuxt existante](/fr/docs/existing-app) ·
 [La CLI](/fr/docs/cli) ·
-[Entités](/fr/docs/schema/entities) · [Vues](/fr/docs/schema/views) · [Handlers](/fr/docs/business/handlers) ·
+[Entités](/fr/docs/schema/entities) · [Vues](/fr/docs/schema/views) ·
+[Standard Schema](/fr/docs/schema/standard-schema) · [Handlers](/fr/docs/business/handlers) ·
 [Presenters](/fr/docs/business/presenters) · [Collectors](/fr/docs/business/collectors) · [Erreurs](/fr/docs/business/errors) · [Seeds](/fr/docs/business/seeds)
 
 **Côté client** — [Queries & commands](/fr/docs/client/queries-commands) ·

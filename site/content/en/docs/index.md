@@ -61,7 +61,8 @@ the local path avoids, no framework tax layered on top of the network.
 
 **Server side** — [Getting started](/docs/getting-started) · [Existing Nuxt app](/docs/existing-app) ·
 [The CLI](/docs/cli) ·
-[Entities](/docs/schema/entities) · [Views](/docs/schema/views) · [Handlers](/docs/business/handlers) ·
+[Entities](/docs/schema/entities) · [Views](/docs/schema/views) ·
+[Standard Schema](/docs/schema/standard-schema) · [Handlers](/docs/business/handlers) ·
 [Presenters](/docs/business/presenters) · [Collectors](/docs/business/collectors) · [Errors](/docs/business/errors) · [Seeds](/docs/business/seeds)
 
 **Client side** — [Queries & commands](/docs/client/queries-commands) ·
