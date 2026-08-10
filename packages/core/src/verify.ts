@@ -81,10 +81,10 @@ function injectablesOf(frond: FrondDescriptor) {
  * resolves today because both scopes live in one container, and resolves to
  * nothing the day the other frond answers over the wire.
  *
- * The gradient is the one question no other framework can ask. Nest has nothing
- * to check — every inter-module call is already remote, so nothing changes when
- * you split. Spring Modulith has nothing to check either — it plans no exit.
- * Here the question means something, and until now it had no answer.
+ * The question only exists where a module boundary is meant to become a process
+ * boundary later. Where every inter-module call is already remote there is
+ * nothing to check, and where no exit is planned there is nothing to check
+ * either. Here it means something, and until now it had no answer.
  *
  * Pure over `app.fronds`: no mount, no process, no file. Call it from a test.
  */

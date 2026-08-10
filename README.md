@@ -158,8 +158,8 @@ The bug is never in one of those files. It is in the day two of them stopped agr
 
 None of the above asks you to adopt the framework. An entity is a
 [Standard Schema](https://standardschema.dev/), so it is accepted wherever one is —
-tRPC, Hono, TanStack Form today, and NestJS 12 in `@Body` / `@Query` / `@Param`, where
-it lands as the replacement for class-validator.
+tRPC, Hono, TanStack Form today, and the server frameworks adopting the spec as their
+route-level validation.
 
 ```ts
 export class PostDraft extends Post.pick('title', 'summary', 'body') {}
