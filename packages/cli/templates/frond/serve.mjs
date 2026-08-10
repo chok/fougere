@@ -8,11 +8,18 @@
  * Nothing in the frond changes — only where it runs.
  */
 import { createJiti } from 'jiti';
-import { createLocalRunner, setModuleLoader, Logger } from '@fougere/core';
+import { createLocalRunner, setModuleLoader, frondAliases, Logger } from '@fougere/core';
 import { bootAppFromConfig } from '@fougere/runtime';
 import { serve } from '@fougere/transport-http';
 
-const jiti = createJiti(import.meta.url, { interopDefault: true });
+// `frondAliases` is what makes `@frond/<neighbour>/entities/X.js` resolve — the
+// named form a frond uses for its neighbour. A bare jiti loads frond sources but
+// not that convention, so a collector or handler importing across fronds dies here
+// while the same code works in-process.
+const jiti = createJiti(import.meta.url, {
+  interopDefault: true,
+  alias: await frondAliases(process.cwd()),
+});
 setModuleLoader((filePath) => jiti.import(filePath));
 
 const log = new Logger('frond-host');
