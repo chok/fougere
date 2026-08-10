@@ -120,7 +120,14 @@ const PRIMITIVES: Record<string, (t: any, required: boolean) => any> = {
   boolean: (t, r) => t.arg.boolean({ required: r }),
 };
 
-const SKIP_TYPES = new Set(['InvocationContext', 'ListOptions']);
+/**
+ * Parameter types no GraphQL argument stands for. `ListOptions` is NOT one of
+ * them: it has its own branch below that turns it into the six pagination
+ * arguments. Listing it here classified it first — the skip branch runs before
+ * the pagination one — so `kind: 'pagination'` was never assigned and every
+ * `list(options?: ListOptions)` op reached GraphQL with no arguments at all.
+ */
+const SKIP_TYPES = new Set(['InvocationContext']);
 
 // ─── Helpers ───────────────────────────────────────
 

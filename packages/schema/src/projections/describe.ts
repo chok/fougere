@@ -1,5 +1,5 @@
 import type { AnyField, Role, SchemaLike } from '../field/index.js';
-import { anatomy, uniqueMembers } from '../field/index.js';
+import { anatomy, uniqueMembers, boundaryOf } from '../field/index.js';
 import {
   clean,
   type FieldDescriptor,
@@ -19,6 +19,11 @@ import {
  * omit the key), exactly what `validateFields` enforces.
  */
 function isRequired(field: AnyField): boolean {
+  // Read `boundary` for the same reason `validateFields` does: a server-owned
+  // field is one a caller may never supply, so listing it as required states a
+  // demand the door then refuses with `Read-only`. Same stance as OpenAPI's
+  // readOnly+required, and the two readers now answer from the same axis.
+  if (boundaryOf(field).in === 'closed') return false;
   if (field.lifecycle?.create !== undefined) return false;
   if (field.role?.relation?.kind === 'many') return false;
   return true;

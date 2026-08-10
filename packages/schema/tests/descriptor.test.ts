@@ -1,6 +1,6 @@
 import { describe as group, it, expect } from 'vitest';
 import {
-  entity, primary, text, number, optional, auto, ref, many, json, list, email,
+  entity, primary, text, number, optional, auto, ref, many, json, list, email, readOnly,
   describe, reconstruct, describeSet, reconstructSet,
   type SchemaLike, type EntityConstructor,
 } from '../src/index.js';
@@ -182,5 +182,27 @@ group('describeSet / reconstructSet — self-contained $defs bundle', () => {
     const onlyPost = reconstructSet(JSON.parse(JSON.stringify(describeSet({ post: Post }))));
     // author/tag not in the set → unresolved $ref → name stand-in
     expect((onlyPost.post.getFields().author.role!.relation!.to() as { name: string }).name).toBe('author');
+  });
+});
+
+/**
+ * `required` and the judge answer the same question, and used to disagree.
+ *
+ * `validateFields` lets a read-only field be absent — it is server-owned, so its
+ * absence from client input is never "Required" (the OpenAPI readOnly+required
+ * stance). `isRequired` only consulted `lifecycle.create` and `many`, so the card
+ * listed it anyway. A consumer that reads the card literally — the whole point of
+ * a portable document — then supplies the field and is told `Read-only`.
+ */
+group('required and the judge answer the same question', () => {
+  class Owned extends entity({
+    id: primary(),
+    title: text({ min: 1 }),
+    authorId: readOnly(text()),
+  }) {}
+
+  it('leaves a read-only field out of required, like the judge does', () => {
+    expect(Owned.validate({ title: 'hello' }).success).toBe(true);
+    expect(describe(Owned, 'owned').required).toEqual(['title']);
   });
 });
