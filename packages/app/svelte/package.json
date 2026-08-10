@@ -1,8 +1,15 @@
 {
   "name": "@fougere/svelte",
   "version": "0.1.0-alpha.0",
-  "description": "Fougere's four primitives as Svelte stores — host-independent.",
-  "keywords": ["fougere","svelte","sveltekit","typescript","fullstack","rpc"],
+  "description": "Fougere's four primitives as Svelte stores \u2014 host-independent.",
+  "keywords": [
+    "fougere",
+    "svelte",
+    "sveltekit",
+    "typescript",
+    "fullstack",
+    "rpc"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -18,10 +25,12 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "rm -rf dist && tsc",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.test.json",
     "prepublishOnly": "pnpm run build"
   },
@@ -31,10 +40,13 @@
   },
   "devDependencies": {
     "svelte": "^5.53.4",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.0",
+    "@fougere/schema": "workspace:*"
   },
   "peerDependencies": {
     "svelte": "^5.0.0"
   },
-  "publishConfig": { "access": "public" }
+  "publishConfig": {
+    "access": "public"
+  }
 }
