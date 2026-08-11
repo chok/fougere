@@ -124,6 +124,10 @@ function fakeApp(
         ? (own ?? facades[`${entity}Handler`])
         : undefined;
     },
+    // The dual of `facadeFor` (added to AppLike in c8e4c32). These fixtures declare no
+    // presenters, so the honest answer is that there is none — not that the method is
+    // missing, which is what left this file red while its three siblings were updated.
+    presenterFor: () => undefined,
   };
 }
 

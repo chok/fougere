@@ -22,7 +22,12 @@ const hono = new Hono();
 hono.all('/api/*', (c) => fougereRest(c.req.raw));
 hono.post('/graphql', (c) => fougereGraphQL(c.req.raw));
 
-const routes = generateRoutes(app, { prefix: '/api' });
+// The printed table below is the only reason this is called directly. `as never` is
+// the same cast `@fougere/app/rest.ts:47` already carries: core's `App` and
+// schema-rest's structural `AppLike` disagree on `HandlerEntry.ctor`, and a projection
+// package is structurally typed on purpose so the two drifted. Not introduced here —
+// only made visible, because this demo's typecheck now covers src/ and used not to.
+const routes = generateRoutes(app as never, { prefix: '/api' });
 
 const port = Number(process.env.PORT ?? 4000);
 serve({ fetch: hono.fetch, port });

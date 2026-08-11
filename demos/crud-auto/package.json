@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx src/main.ts",
-    "typecheck": "tsc -p fronds && tsc --noEmit src/main.ts --module esnext --moduleResolution bundler --target es2022 --skipLibCheck"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@fougere/schema": "workspace:*",
