@@ -882,6 +882,25 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     }
   };
 
+  /**
+   * The presenter of an entity, resolved through its owning frond's scope.
+   *
+   * Same shape as `ormFor`, and it exists for the same reason: without it an adapter
+   * has to spell the container key itself. `schema-graphql` did — a hand-written
+   * `${Name}Presenter` — and a key respelled elsewhere finds nothing and says nothing
+   * the day the convention moves, which is exactly the failure `verify.ts` refuses.
+   */
+  const presenterFor = (entity: string): unknown | undefined => {
+    const owner = fronds.find((f) => f.entities.some((e) => e.name === entity));
+    if (!owner) return undefined;
+
+    try {
+      return container.resolve<Container>(`frond:${owner.name}`).resolve(presenterKeyOf(entity));
+    } catch {
+      return undefined;
+    }
+  };
+
   return {
     container,
     fronds,
@@ -894,6 +913,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     listensTo: () => [...subscribers.keys()],
     deliver,
     ormFor,
+    presenterFor,
     dispose: () => container.dispose(),
     [Symbol.asyncDispose]: () => container.dispose(),
     use(...args: [AppMiddleware] | [string, AppMiddleware]): void {

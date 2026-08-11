@@ -39,12 +39,13 @@ function fakeApp(presenterFields: string[], views?: Record<string, any>) {
     }],
     // Une instance de classe, comme le vrai presenter : les méthodes sont sur le prototype,
     // et les dépendances injectées sont les seules propriétés propres.
-    resolve: () => new (class {
+    presenterFor: () => new (class {
       itemOrm = { list: async () => [] };
       async user() { return { id: '1', name: 'depuis le presenter' }; }
       async items() { return []; }
       async total_cents() { return 0; }
     })(),
+    resolve: () => { throw new Error('no such registration'); },
     facadeFor: () => facade,
   } as never;
 }

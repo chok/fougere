@@ -176,7 +176,13 @@ export function createSchemaConstructor<TFields extends Fields>(
           return {
             issues: result.errors.map((e) => ({
               message: e.message,
-              path: e.path && e.path !== '.' ? e.path.split('.').map((key) => ({ key })) : undefined,
+              // ONE segment, not a split: `validateFields` joins with `.` only when it
+              // receives a `pathPrefix`, and no caller passes one — the recursion that
+              // parameter exists for is not written. So a path is always a single field
+              // name, and splitting it invented segments for a name legally spelled `a.b`.
+              // The day nested objects report their own path, this becomes a real split
+              // and the joining side has to say where the boundaries are.
+              path: e.path && e.path !== '.' ? [{ key: e.path }] : undefined,
             })),
           };
         },

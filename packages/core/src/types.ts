@@ -399,6 +399,14 @@ export interface App {
    * is the caller saying which implementation they are standing on.
    */
   ormFor(entity: string): unknown | undefined;
+  /**
+   * The presenter of an entity, resolved through its owning frond's scope.
+   *
+   * Same shape as {@link ormFor}, and it exists so an adapter never spells the container
+   * key itself: `schema-graphql` wrote out `${Name}Presenter` by hand, and a key respelled
+   * in a second place finds nothing and reports nothing the day the convention moves.
+   */
+  presenterFor(entity: string): unknown | undefined;
   /** Dispose the root container. */
   dispose(): Promise<void>;
   /**

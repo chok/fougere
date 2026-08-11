@@ -112,6 +112,13 @@ interface AppLike {
   resolve<T>(name: string): T;
   /** The façade an entity exposes to one audience — `undefined` when none. */
   facadeFor(entity: string, surface?: string): Record<string, Function> | undefined;
+  /**
+   * The presenter of an entity — `undefined` when none. Asked for rather than
+   * resolved by a key spelled here: this adapter used to build `${Name}Presenter`
+   * itself, and a convention respelled in two places drifts silently on the day it
+   * changes, exactly as `facadeFor` exists to prevent for doors.
+   */
+  presenterFor(entity: string): unknown | undefined;
 }
 
 // ─── Helpers ────────────────────────────────────
@@ -225,9 +232,7 @@ export function registerAll(
       const presenterMeta = presenterMap.get(entity.name);
       let presenter: Record<string, Function> | undefined;
       if (presenterMeta) {
-        try {
-          presenter = app.resolve<Record<string, Function>>(`${entity.name[0].toUpperCase()}${entity.name.slice(1)}Presenter`);
-        } catch { /* no presenter registered */ }
+        presenter = app.presenterFor(entity.name) as Record<string, Function> | undefined;
       }
 
       // Use handler's output schema if declared, otherwise entity

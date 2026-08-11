@@ -46,6 +46,7 @@ function fakeApp(authorSchema: unknown, postSchema: unknown) {
       presenters: [],
     }],
     resolve: () => { throw new Error('no presenter'); },
+    presenterFor: () => undefined,
     facadeFor: () => facade,
   } as any;
 }
@@ -107,6 +108,7 @@ suite('the GraphQL projection reads a card as readily as a class', () => {
         presenters: [],
       }],
       resolve: () => { throw new Error('no presenter'); },
+      presenterFor: () => undefined,
       facadeFor: () => facade,
     } as any);
 

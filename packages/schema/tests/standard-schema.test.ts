@@ -95,3 +95,20 @@ describe('Standard Schema v1', () => {
     });
   });
 });
+
+/**
+ * A path is not a sentence to be re-parsed.
+ *
+ * `validateFields` builds `path` as `pathPrefix ? `${prefix}.${key}` : key`, and
+ * every caller passes `''` — the recursion `pathPrefix` exists for is not written,
+ * so a path is always ONE field name. Splitting it on `.` therefore invents
+ * segments the judge never made: a field legally named `a.b` came out as two.
+ */
+describe('a field name that contains a dot', () => {
+  class Odd extends entity({ id: primary(), 'a.b': text({ min: 3 }) }) {}
+
+  it('is one path segment, not two', () => {
+    const issues = issuesOf(Odd['~standard'].validate({ id: '1', 'a.b': 'x' }));
+    expect(issues[0].path).toEqual([{ key: 'a.b' }]);
+  });
+});
