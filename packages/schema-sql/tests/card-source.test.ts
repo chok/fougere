@@ -12,7 +12,7 @@ import {
   auto, updated, immutable, optional, nullable, unique, indexed,
   describe as describeCard, reconstructSet, describeSet,
 } from '@fougere/schema';
-import { toTable } from '../src/table.js';
+import { toTable, toTables, toTableName } from '../src/table.js';
 
 class Author extends entity({
   id: primary(),
@@ -63,5 +63,32 @@ suite('a table is described from a card as from a class', () => {
     const { post } = reconstructSet(describeSet({ post: Post, author: Author }));
     expect(toTable('posts', post!).columns.find((c) => c.name === 'author_id')?.references)
       .toEqual(toTable('posts', Post).columns.find((c) => c.name === 'author_id')?.references);
+  });
+
+  it('points a two-word target at the table the same pass creates', () => {
+    // The fallback derives the FK's table from the name the card carries, so that name
+    // must be the one the entity is filed under. `describe` used to lowercase it whole:
+    // `AuthorUser` crossed as `authoruser`, and `toTableName` turned that into
+    // `authorusers` while the table being created was `author_users`. One word hid it —
+    // `author` folds to itself either way — so the two paths agreed everywhere the repo
+    // looked, and the reference pointed at nothing the day an entity had two.
+    class AuthorUser extends entity({ id: primary(), name: text() }) {}
+    class Note extends entity({ id: primary(), authorUserId: ref(AuthorUser) }) {}
+
+    const fks = (app: Parameters<typeof toTables>[0]) =>
+      toTables(app, toTableName).flatMap((t) =>
+        t.columns.filter((c) => c.references).map((c) => `${t.name}.${c.name} -> ${c.references!.table}`));
+
+    const live = fks({ fronds: [{ name: 'n', entities: [
+      { name: 'authorUser', entityClass: AuthorUser },
+      { name: 'note', entityClass: Note },
+    ] }] });
+    const card = fks({ fronds: [{ name: 'n', entities: [
+      { name: 'authorUser', entityClass: describeCard(AuthorUser, 'authorUser') },
+      { name: 'note', entityClass: describeCard(Note, 'note') },
+    ] }] });
+
+    expect(live).toEqual(['notes.author_user_id -> author_users']);
+    expect(card).toEqual(live);
   });
 });

@@ -1,5 +1,6 @@
 import type { AnyField, Role, SchemaLike } from '../field/index.js';
 import { anatomy, uniqueMembers, boundaryOf } from '../field/index.js';
+import { registrationKeyOf } from '../name.js';
 import {
   clean,
   type FieldDescriptor,
@@ -39,7 +40,7 @@ function describeRole(role: Role, key: string): RoleDescriptor | undefined {
   if (role.index) out.index = true;
   if (role.relation) {
     out.relation = clean({
-      to: (role.relation.to() as { name?: string }).name?.toLowerCase() ?? '', // thunk → name
+      to: registrationKeyOf((role.relation.to() as { name?: string }).name ?? ''), // thunk → name
       kind: role.relation.kind,
       onDelete: role.relation.onDelete,
     }) as RelationDescriptor;
@@ -119,8 +120,8 @@ export function sourceNameOf(schema: SchemaLike): string | undefined {
 /**
  * Describe a whole set of entities as one self-contained bundle (the `$defs`
  * document). Accepts a name→schema record or an array (names taken from the
- * schemas). Keys are lowercased to match the relation `to` names `describe` emits,
- * so `$ref`-by-name resolves cleanly in {@link reconstructSet}.
+ * schemas). Keys carry the registration key, the same spelling `describe` gives a
+ * relation's `to`, so `$ref`-by-name resolves cleanly in {@link reconstructSet}.
  */
 export function describeSet(schemas: Record<string, SchemaLike> | SchemaLike[]): SchemaBundle {
   const entries = Array.isArray(schemas)
@@ -128,7 +129,7 @@ export function describeSet(schemas: Record<string, SchemaLike> | SchemaLike[]):
     : Object.entries(schemas);
   const $defs: Record<string, SchemaDescriptor> = {};
   for (const [name, schema] of entries) {
-    const key = name.toLowerCase();
+    const key = registrationKeyOf(name);
     $defs[key] = describe(schema, key);
   }
   return { $defs, 'x-fougere-version': 1, 'x-fougere-vendor': 'fougere' };

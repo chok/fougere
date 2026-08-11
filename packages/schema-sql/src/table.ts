@@ -6,7 +6,7 @@
  * other — the entity never mentions a column type, the dialect never mentions a
  * field. Adding a dialect touches only the second half.
  */
-import { anatomy, fieldsOf, uniqueMembers, type AnyField, type SchemaLike, type SchemaSource } from '@fougere/schema';
+import { anatomy, fieldsOf, registrationKeyOf, uniqueMembers, type AnyField, type SchemaLike, type SchemaSource } from '@fougere/schema';
 import { boundsOf, type ShapeBounds } from './check.js';
 
 /** The shape keywords a dialect needs to choose a column type. */
@@ -74,17 +74,6 @@ function isStored(field: AnyField): boolean {
 }
 
 /**
- * PascalCase class name → the registration key every table name is resolved
- * from elsewhere in this package (mirrors `@fougere/core`'s scanner convention;
- * kept local so schema-sql stays decoupled from core: `'Category'` → `'category'`).
- * A no-op on an already-lowercased name — what a relation reconstructed from a
- * lone card falls back to (see {@link primaryColumnOf}'s doc).
- */
-function registrationName(className: string): string {
-  return className ? className[0].toLowerCase() + className.slice(1) : className;
-}
-
-/**
  * The target's primary key column. A live thunk (an in-process entity) answers
  * for real; a relation reconstructed from a lone card (`reconstruct()`, no
  * bundle — `packages/schema/src/projections/card.ts:18-22`) has lost it to a
@@ -124,7 +113,7 @@ function referenceFor(
   const relation = field.role?.relation;
   if (!relation || relation.kind !== 'one') return undefined;
   const target = relation.to() as Partial<SchemaLike> & { name?: string };
-  const table = tableNameOf?.get(target as SchemaLike) ?? resolve(registrationName(target.name ?? ''));
+  const table = tableNameOf?.get(target as SchemaLike) ?? resolve(registrationKeyOf(target.name ?? ''));
   const column = primaryColumnOf(target);
   return relation.onDelete ? { table, column, onDelete: relation.onDelete } : { table, column };
 }

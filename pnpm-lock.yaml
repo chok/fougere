@@ -95,6 +95,9 @@ importers:
 
   demos/crud-auto:
     dependencies:
+      '@fougere/app':
+        specifier: workspace:*
+        version: link:../../packages/app/shared
       '@fougere/container':
         specifier: workspace:*
         version: link:../../packages/container
@@ -419,6 +422,9 @@ importers:
 
   demos/nuxt-blog:
     dependencies:
+      '@fougere/app':
+        specifier: workspace:*
+        version: link:../../packages/app/shared
       '@fougere/auth-better':
         specifier: workspace:*
         version: link:../../packages/auth-better
