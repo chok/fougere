@@ -32,6 +32,18 @@ there is nothing between them. That is what `@fougere/next` turned out to be too
 once the Web-standard half was pulled out of it: 124 lines, of which one import is
 actually Next.
 
+## Mounting is not publishing
+
+The route files put the doors in place. What they serve is declared once, in
+`fougere.config.ts`:
+
+```ts
+adapters: { rest: true }
+```
+
+Remove it and `/api/...` stops answering while the pages keep working — the host does
+not get to make that decision.
+
 ## The frond is the same file
 
 ```bash

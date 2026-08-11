@@ -121,6 +121,7 @@ async function boot(): Promise<App> {
     ormFactory,
     db,
     auth: fileConfig.auth,
+    adapters: fileConfig.adapters,
     remotes: fileConfig.remotes,
     remoteTransport,
   });

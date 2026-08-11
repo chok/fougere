@@ -15,6 +15,29 @@ export interface FougereConfig {
   remotes?: Record<string, string>;
   /** Auth declaration — picks a provider package and forwards options to it. */
   auth?: AuthConfig;
+  /**
+   * Which protocol adapters this app serves.
+   *
+   * A fact about the APP, declared once beside `db`, `remotes` and `auth` — not a
+   * property of whichever host runs it. Before this existed the same decision was
+   * spelled five different ways: Nuxt mounted REST unconditionally, the Web hosts
+   * served it if you happened to create a route file, and Express if you happened to
+   * call a middleware. One decision, five dialects, no canonical place.
+   *
+   * Absent means not served. The call envelope is not listed here: it is the wire the
+   * client primitives use, not a projection an app chooses to publish.
+   */
+  adapters?: AdapterConfig;
+}
+
+/** Protocol adapters, by the name of the package that provides them. */
+export interface AdapterConfig {
+  /** `@fougere/schema-rest` — REST under `/api/{frond}/{plural}`. */
+  rest?: boolean;
+  /** `@fougere/schema-graphql` — a GraphQL schema over the same operations. */
+  graphql?: boolean;
+  /** A surface of your own; the framework only records that you declared it. */
+  [adapter: string]: boolean | undefined;
 }
 
 export interface ResolvedConfig {

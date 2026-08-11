@@ -885,6 +885,9 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   return {
     container,
     fronds,
+    // What this app publishes, straight from fougere.config.ts — the doors read it,
+    // so an undeclared adapter serves nothing whatever a host mounted.
+    adapters: options.adapters ?? {},
     resolve,
     schemaFor,
     facadeFor,

@@ -24,8 +24,9 @@ const facade = {
   delete: () => true,
 };
 
-function appOf() {
+function appOf(adapters: Record<string, boolean> = { rest: true }) {
   return {
+    adapters,
     fronds: [{
       name: 'blog',
       entities: [{ name: 'post', entityClass: Post }],
@@ -52,6 +53,36 @@ describe('surfaceOf', () => {
 
   it('ignores a query string — the audience is a path segment, not a parameter', () => {
     expect(surfaceOf('/_fougere/call/public?trace=1')).toBe('public');
+  });
+});
+
+describe('the app decides which adapters it serves', () => {
+  it('serves nothing when the app declares no adapters — the route file is not the decision', async () => {
+    const closed = appOf({});
+    const outcome = await serveRest(closed, { method: 'GET', path: 'blog/posts', query: {}, state: {} });
+    expect(outcome).toEqual({ kind: 'pass' });
+  });
+
+  it('serves nothing when it declares another adapter but not rest', async () => {
+    const closed = appOf({ graphql: true });
+    expect(await serveRest(closed, { method: 'GET', path: 'blog/posts', query: {}, state: {} }))
+      .toEqual({ kind: 'pass' });
+  });
+
+  it('declines rather than refuses, so the host keeps routing the request', async () => {
+    // `pass`, never a 404: the app that mounted the door may serve `/api/...` itself,
+    // and an undeclared adapter must not take that path away from it.
+    const closed = appOf({ rest: false });
+    const outcome = await serveRest(closed, { method: 'DELETE', path: 'blog/posts', query: {}, state: {} });
+    expect(outcome).toEqual({ kind: 'pass' });
+  });
+
+  it('consults the table once declared — the same request, a different answer', async () => {
+    const closed = { method: 'DELETE', path: 'blog/posts', query: {}, state: {} };
+
+    // Undeclared: the door never looks. Declared: it looks, and refuses the verb.
+    expect(await serveRest(appOf({}), closed)).toEqual({ kind: 'pass' });
+    expect(await serveRest(appOf(), closed)).toMatchObject({ kind: 'error', status: 405 });
   });
 });
 

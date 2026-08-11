@@ -14,10 +14,19 @@ app.use(fougereRest());       // a public API — only because this demo wants o
 ```
 
 Middlewares, like `express.json()` and `cors()` above them. `fougere()` mounts all
-three in one line and this demo deliberately does not use it: on an app that already
-exists, the doors are not one decision. The envelope and the session serve YOUR pages;
-REST is a surface anyone with the URL can call. Comment the third line out and
-`/api/blog/posts` stops existing while the pages keep working.
+three in one line; mounting them separately is what an existing app usually wants,
+since the envelope serves YOUR pages while REST is a surface anyone with the URL can call.
+
+But mounting is not publishing. Whether REST answers at all is declared in
+`fougere.config.ts`:
+
+```ts
+adapters: { rest: true }
+```
+
+Take that away and `/api/blog/posts` returns Express's own 404 while the envelope, the
+pages and `/api/health` keep working — measured. The host puts the door in place; the
+app decides what it serves.
 
 `/api/health` still answers, and would even if registered after: a path Fougere does
 not serve calls `next()`, which is Express's own passthrough — the earlier

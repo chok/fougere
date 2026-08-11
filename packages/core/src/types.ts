@@ -294,6 +294,12 @@ export interface CreateAppOptions {
    */
   remoteTransport?: (url: string) => Transport;
   /**
+   * Which protocol adapters this app serves — see `FougereConfig.adapters`.
+   * Carried onto the App so every door reads one answer instead of each host
+   * deciding for itself.
+   */
+  adapters?: Record<string, boolean | undefined>;
+  /**
    * Carries an announced fact out of this process — a broker, a queue, a log.
    *
    * Called for every emission, ALONGSIDE the local dispatch and never instead of it: a
@@ -319,6 +325,14 @@ export interface CreateAppOptions {
 export interface App {
   /** Root container with builtins + frond scopes. */
   container: Container;
+  /**
+   * Which protocol adapters this app declared, from `fougere.config.ts`.
+   *
+   * Read by the doors themselves, so an undeclared adapter serves nothing whatever
+   * the host mounted — the route file may exist, the middleware may be installed, and
+   * the answer is still "not here".
+   */
+  adapters: Record<string, boolean | undefined>;
   /** Discovered fronds metadata. */
   fronds: FrondDescriptor[];
   /** Resolve from root container (shortcut). */
