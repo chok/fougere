@@ -6,7 +6,7 @@ export default defineFougere({
   db: 'sqlite',
   // Ce que cette app publie. Absent = non servi : le module monte la porte, la
   // config décide si elle sert quelque chose.
-  adapters: { rest: true },
+  adapters: { rest: true, graphql: true },
   // La Frond blog vit dans un autre process (pnpm dev:blog). Commenter cette
   // ligne pour la ravoir in-process — le code ne change pas d'une virgule.
   remotes: { blog: 'http://127.0.0.1:4100' },

@@ -1,57 +1,28 @@
 /**
- * Demo: Entity -> CRUD auto-generated, single server (REST + GraphQL).
+ * Demo: Entity → CRUD auto-generated, one server, both surfaces.
  *
- * AuthorHandler: extends Crud, overrides create.
- * PostHandler: full CRUD + custom ops (searchByTitle, publish).
- * Zero SQL, zero services, zero resolvers.
+ * AuthorHandler extends Crud and overrides create; PostHandler adds custom ops.
+ * Zero SQL, zero services, zero resolvers — and now zero schema wiring: what this
+ * app serves is declared in `fougere.config.ts`, and Hono mounts the doors.
+ *
+ * Hono hands a standard Web `Request`, so it uses `@fougere/app/web` exactly as the
+ * Next, TanStack, React Router and SvelteKit demos do. It needs no adapter package.
  */
-import { createContainer } from '@fougere/container-fougere';
-import { createApp } from '@fougere/core';
-import { setupSqlite, migrate } from '@fougere/schema-sql';
-import { registerAll, registerGraphQL } from '@fougere/schema-graphql';
-import { generateRoutes, registerRoutes } from '@fougere/schema-rest';
-import { createHonoRouter } from '@fougere/http';
-import SchemaBuilder from '@pothos/core';
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
-import { join } from 'node:path';
+import { fougereRest, fougereGraphQL } from '@fougere/app/web';
+import { useFougereApp } from '@fougere/app';
+import { generateRoutes } from '@fougere/schema-rest';
 
-// --- DB -----------------------------------------------
+const app = await useFougereApp();
 
-const { db, ormFactory } = setupSqlite({ path: ':memory:' });
-
-// --- Bootstrap ----------------------------------------
-
-const app = await createApp({
-  root: join(import.meta.dirname, '..'),
-  createContainer,
-  ormFactory,
-});
-
-// Bring the schema up to date from the scanned entities
-await migrate(app, setup);
-
-// --- GraphQL schema (auto-generated) ------------------
-
-const builder = new SchemaBuilder({});
-builder.queryType({});
-builder.mutationType({});
-
-registerAll(builder, app);
-
-const schema = builder.toSchema();
-
-// --- Single Hono server: REST + GraphQL ---------------
+// --- One server, both doors ---------------------------
 
 const hono = new Hono();
-const router = createHonoRouter(hono);
+hono.all('/api/*', (c) => fougereRest(c.req.raw));
+hono.post('/graphql', (c) => fougereGraphQL(c.req.raw));
 
-// REST routes
 const routes = generateRoutes(app, { prefix: '/api' });
-registerRoutes(router, routes);
-
-// GraphQL endpoint
-registerGraphQL(router, schema);
 
 const port = Number(process.env.PORT ?? 4000);
 serve({ fetch: hono.fetch, port });
@@ -63,9 +34,10 @@ console.log(`
   Fougere — Single server demo (REST + GraphQL on Hono)
 
   GraphQL:  ${url}/graphql
-  REST:     ${url}/api
+  REST:     ${url}/api/{frond}/{plural}
 
-  Same handlers, one server, zero duplication.
+  Same handlers, one server, zero duplication — and zero wiring: adapters in
+  fougere.config.ts says what is served, the two lines above only mount the doors.
 
   --- GraphQL -----------------------------------------
 
@@ -80,16 +52,16 @@ console.log(`
 
   --- REST --------------------------------------------
 
-  GET    ${url}/api/authors
-  GET    ${url}/api/authors/:id
-  POST   ${url}/api/authors         { "name": "Alice", "email": "alice@fougere.dev" }
-  GET    ${url}/api/posts
-  GET    ${url}/api/posts?limit=10&page=2
-  POST   ${url}/api/posts           { "authorId": "<id>", "title": "Hello", "body": "World" }
-  PUT    ${url}/api/posts/:id       { "title": "Updated" }
-  DELETE ${url}/api/posts/:id
-  GET    ${url}/api/posts/search-by-title?title=Hello
-  POST   ${url}/api/posts/publish   { "id": "<post-id>" }
+  GET    ${url}/api/blog/authors
+  GET    ${url}/api/blog/authors/:id
+  POST   ${url}/api/blog/authors         { "name": "Alice", "email": "alice@fougere.dev" }
+  GET    ${url}/api/blog/posts
+  GET    ${url}/api/blog/posts?limit=10&page=2
+  POST   ${url}/api/blog/posts           { "authorId": "<id>", "title": "Hello", "body": "World" }
+  PUT    ${url}/api/blog/posts/:id       { "title": "Updated" }
+  DELETE ${url}/api/blog/posts/:id
+  GET    ${url}/api/blog/posts/search-by-title?title=Hello
+  POST   ${url}/api/blog/posts/publish   { "id": "<post-id>" }
 `);
 
 console.log('  Routes auto-generated:');
