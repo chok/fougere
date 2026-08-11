@@ -153,7 +153,15 @@ export async function resolveArgs(
         args.push(val);
         break;
       }
-      case 'fact':
+      case 'fact': {
+        // A fact IS the payload — the whole of what happened, never a piece of it.
+        // Identical to `body` today, and deliberately not sharing its branch: the two
+        // agree by coincidence, not by rule, and the day `body` learns to look up a
+        // value by parameter name a subscriber would receive ONE FIELD of the fact it
+        // subscribed to. Splitting it costs nothing and removes that trap.
+        args.push(ctx.body);
+        break;
+      }
       case 'body': {
         args.push(ctx.body);
         break;
