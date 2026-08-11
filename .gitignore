@@ -11,3 +11,4 @@
 **/*.db-wal
 **/.data/
 CLAUDE.local.md
+.fougere/
