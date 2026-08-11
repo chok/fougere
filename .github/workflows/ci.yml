@@ -42,6 +42,30 @@ jobs:
           find . -name '.fougere' -type d -not -path '*/node_modules/*' -exec rm -rf {} +
           pnpm -r test
 
+  # Mechanical readings, NOT gates — same posture as `audit` below, for the same
+  # reason: a job that turns red on a finding forces the finding to be cleared in
+  # bulk, and clearing in bulk is how this repo grew code nobody had read. These
+  # record a baseline a human moves deliberately, one package at a time.
+  floor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # Warnings exit 0 on their own; only a genuine error stops this.
+      - run: pnpm lint
+
+      # `--no-exit-code` is what makes this a reading. The finding that pays for
+      # the job is `unlisted`: a package importing what its package.json never
+      # declares works in the workspace and breaks once published.
+      - run: pnpm knip --no-exit-code
+
   audit:
     runs-on: ubuntu-latest
     timeout-minutes: 10
