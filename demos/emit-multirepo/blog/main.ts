@@ -6,7 +6,7 @@
  */
 import { createApp, createLocalRunner, setModuleLoader, frondAliases } from '@fougere/core';
 import type { App, InvocationContext } from '@fougere/core';
-import { createContainer } from '@fougere/container-fougere';
+import { createContainer } from '@fougere/container';
 
 const BROKER = `http://127.0.0.1:${process.env.BROKER_PORT ?? 4300}`;
 

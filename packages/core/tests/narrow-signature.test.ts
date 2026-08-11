@@ -25,7 +25,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { join } from 'node:path';
-import { createContainer } from '@fougere/container-fougere';
+import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner } from '../src/index.js';
 
 const root = join(import.meta.dirname, 'fixtures-narrow-signature');

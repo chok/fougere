@@ -12,7 +12,6 @@
     "@fougere/cli": "0.0.1",
     "@fougere/cli-ui": "0.0.1",
     "@fougere/container": "0.0.1",
-    "@fougere/container-fougere": "0.0.1",
     "@fougere/core": "0.0.1",
     "@fougere/decorators": "0.0.1",
     "@fougere/http": "0.0.1",

@@ -11,9 +11,9 @@
     "@fougere/nuxt": "latest",
     "@fougere/schema": "latest",
     "@fougere/runtime": "latest",
-    "@fougere/container-fougere": "latest",
     "better-sqlite3": "^12.8.0",
     "kysely": "^0.28.17",
-    "nuxt": "^4.5.1"
+    "nuxt": "^4.5.1",
+    "@fougere/container": "latest"
   }
 }

@@ -10,7 +10,7 @@
 import { connect, type Socket } from 'node:net';
 import { createApp, createLocalRunner, setModuleLoader, frondAliases } from '@fougere/core';
 import type { App } from '@fougere/core';
-import { createContainer } from '@fougere/container-fougere';
+import { createContainer } from '@fougere/container';
 
 const PORT = Number(process.env.FLEET_PORT ?? 4500);
 const ME = process.env.NODE_ID ?? 'sensor-1';

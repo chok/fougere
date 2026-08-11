@@ -1,5 +1,5 @@
 import { createApp } from '@fougere/core';
-import { createContainer } from '@fougere/container-fougere';
+import { createContainer } from '@fougere/container';
 import { join } from 'node:path';
 import type { Container } from '@fougere/container';
 

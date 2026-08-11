@@ -1,7 +1,7 @@
 {
   "name": "@fougere/core",
   "version": "0.2.0-alpha.0",
-  "description": "The core \u2014 scan, call contract, fa\u00e7ades, remote stand-ins.",
+  "description": "The core — scan, call contract, façades, remote stand-ins.",
   "keywords": [
     "fougere",
     "typescript",
@@ -48,7 +48,6 @@
     "typescript": "^5.5.0"
   },
   "devDependencies": {
-    "@fougere/container-fougere": "workspace:*",
     "@types/node": "^22.0.0"
   },
   "publishConfig": {

@@ -7,8 +7,7 @@
     "dev": "tsx src/main.ts"
   },
   "dependencies": {
-    "@fougere/container": "workspace:*",
-    "@fougere/container-fougere": "workspace:*"
+    "@fougere/container": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.21.0"

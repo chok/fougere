@@ -1,5 +1,5 @@
 import type { Container } from '@fougere/container';
-import { createContainer } from '@fougere/container-fougere';
+import { createContainer } from '@fougere/container';
 
 // --- Domain classes (no framework imports, no decorators) ---
 

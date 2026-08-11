@@ -7,7 +7,7 @@
  * app/   → loaded at runtime by jiti (presentation)
  */
 import { createApp, setModuleLoader } from '@fougere/core';
-import { createContainer } from '@fougere/container-fougere';
+import { createContainer } from '@fougere/container';
 import { ui } from '@fougere/cli-ui';
 import { run } from './runner.js';
 

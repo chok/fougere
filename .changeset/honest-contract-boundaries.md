@@ -2,7 +2,6 @@
 '@fougere/auth-better': minor
 '@fougere/cli-ui': minor
 '@fougere/cli': minor
-'@fougere/container-fougere': minor
 '@fougere/container': minor
 '@fougere/core': minor
 '@fougere/decorators': minor

@@ -43,9 +43,9 @@
     "@fougere/core": "workspace:*"
   },
   "devDependencies": {
-    "@fougere/container-fougere": "workspace:*",
     "@fougere/schema": "workspace:*",
-    "jiti": "^2.6.1"
+    "jiti": "^2.6.1",
+    "@fougere/container": "workspace:*"
   },
   "publishConfig": {
     "access": "public"

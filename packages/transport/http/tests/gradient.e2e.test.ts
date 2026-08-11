@@ -10,7 +10,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { join } from 'node:path';
 import { createApp, createLocalRunner, FougereError, EMPTY_INVOCATION, ErrorCode } from '@fougere/core';
 import type { App, InvocationContext, Transport } from '@fougere/core';
-import { createContainer } from '@fougere/container-fougere';
+import { createContainer } from '@fougere/container';
 import { createHttpTransport } from '../src/index.js';
 // @ts-expect-error plain-JS shared fixture
 import { createOrmFactory, PRODUCTS } from './fixtures/data.mjs';

@@ -18,7 +18,7 @@ import { createServer, connect, type Server, type Socket } from 'node:net';
 import { join } from 'node:path';
 import { createApp, createLocalRunner, FougereError, ErrorCode } from '@fougere/core';
 import type { App, InvocationContext, Transport } from '@fougere/core';
-import { createContainer } from '@fougere/container-fougere';
+import { createContainer } from '@fougere/container';
 import { frameCall, unframeResponse, handleRpc, serve, createHttpTransport } from '../src/index.js';
 import type { RpcResponse, RunningReceiver } from '../src/index.js';
 // @ts-expect-error plain-JS shared fixture

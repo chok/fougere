@@ -6,7 +6,7 @@
  */
 import { connect } from 'node:net';
 import { createApp, setModuleLoader, frondAliases } from '@fougere/core';
-import { createContainer } from '@fougere/container-fougere';
+import { createContainer } from '@fougere/container';
 
 const PORT = Number(process.env.TUNNEL_PORT ?? 4400);
 

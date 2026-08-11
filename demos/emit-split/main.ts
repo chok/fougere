@@ -9,7 +9,7 @@
  */
 import { createApp, createLocalRunner, setModuleLoader, frondAliases } from '@fougere/core';
 import type { App, InvocationContext } from '@fougere/core';
-import { createContainer } from '@fougere/container-fougere';
+import { createContainer } from '@fougere/container';
 import { createHttpTransport } from '@fougere/transport-http';
 
 const SEARCH = `http://127.0.0.1:${process.env.PORT ?? 4210}`;

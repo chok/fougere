@@ -18,7 +18,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
-import { createContainer } from '@fougere/container-fougere';
+import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, FougereError } from '../src/index.js';
 import { EMPTY_INVOCATION } from '../src/invocation.js';
 import { inputFields, type AnyField, type SchemaLike } from '@fougere/schema';

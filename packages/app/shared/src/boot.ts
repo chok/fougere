@@ -17,7 +17,7 @@
  * wants a custom data layer — alternative driver, managed migrations, etc.
  */
 import { createApp, loadCascadedConfig, setModuleLoader, frondAliases, Logger } from '@fougere/core';
-import { createContainer } from '@fougere/container-fougere';
+import { createContainer } from '@fougere/container';
 import type { App, EntityOrm, FougereConfig, Transport } from '@fougere/core';
 import { applyCreate, applyUpdate, type SchemaLike } from '@fougere/schema';
 

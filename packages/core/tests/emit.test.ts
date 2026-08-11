@@ -8,7 +8,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { join } from 'node:path';
-import { createContainer } from '@fougere/container-fougere';
+import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, emitKeyOf, factOfEmitKey, identityCardOf } from '../src/index.js';
 import { EMPTY_INVOCATION } from '../src/invocation.js';
 

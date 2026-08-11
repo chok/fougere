@@ -50,14 +50,14 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@fougere/container-fougere": "workspace:*",
     "@fougere/core": "workspace:*",
     "@fougere/runtime": "workspace:*",
     "@fougere/schema": "workspace:*",
     "@fougere/schema-rest": "workspace:*",
     "@fougere/transport-http": "workspace:*",
     "jiti": "^2.6.1",
-    "@fougere/http": "workspace:*"
+    "@fougere/http": "workspace:*",
+    "@fougere/container": "workspace:*"
   },
   "devDependencies": {
     "vitest": "^4.1.0",

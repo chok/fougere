@@ -23,9 +23,15 @@ class UserService {
   }
 }
 
+/** Records that it was told, and in which order relative to its siblings. */
+const closing = (log: string[], name: string) =>
+  class {
+    async dispose() { log.push(name); }
+  };
+
 // --- Tests ---
 
-describe('Container (fougere)', () => {
+describe('Container', () => {
   describe('register + resolve', () => {
     it('resolves a class with no dependencies', () => {
       const container = createContainer();
@@ -42,15 +48,6 @@ describe('Container (fougere)', () => {
 
       const service = container.resolve<UserService>('UserService');
       expect(service.getUsers()).toEqual(['alice', 'bob']);
-    });
-
-    it('resolves a factory function', () => {
-      const container = createContainer();
-      container.registerValue('dbUrl', 'sqlite://test.db');
-      container.register('connection', (c) => ({ url: c.resolve('dbUrl') }));
-
-      const conn = container.resolve<{ url: string }>('connection');
-      expect(conn.url).toBe('sqlite://test.db');
     });
 
     it('resolves a pre-built value', () => {
@@ -78,27 +75,18 @@ describe('Container (fougere)', () => {
       expect(a).not.toBe(b);
     });
 
+    it('transient is the default', () => {
+      const container = createContainer();
+      container.register('Logger', Logger);
+      expect(container.resolve('Logger')).not.toBe(container.resolve('Logger'));
+    });
+
     it('singleton returns the same instance', () => {
       const container = createContainer();
       container.register('Logger', Logger, { lifetime: 'singleton' });
       const a = container.resolve('Logger');
       const b = container.resolve('Logger');
       expect(a).toBe(b);
-    });
-
-    it('scoped returns the same instance within a scope', () => {
-      const container = createContainer();
-      container.register('Logger', Logger, { lifetime: 'scoped' });
-
-      const scope1 = container.createScope();
-      const scope2 = container.createScope();
-
-      const a = scope1.resolve('Logger');
-      const b = scope1.resolve('Logger');
-      const c = scope2.resolve('Logger');
-
-      expect(a).toBe(b);       // same scope → same instance
-      expect(a).not.toBe(c);   // different scope → different instance
     });
   });
 
@@ -124,10 +112,84 @@ describe('Container (fougere)', () => {
     });
   });
 
-  describe('dispose', () => {
-    it('can be disposed without error', async () => {
+  describe('fallback', () => {
+    it('fabricates what no scope holds', () => {
       const container = createContainer();
-      container.register('Logger', Logger);
+      container.setFallback?.((name) => (name === 'remote' ? { made: true } : undefined));
+
+      expect(container.resolve('remote')).toEqual({ made: true });
+      expect(() => container.resolve('other')).toThrow();
+    });
+
+    it('is inherited by a child scope', () => {
+      const container = createContainer();
+      container.setFallback?.(() => ({ made: true }));
+      expect(container.createScope().resolve('anything')).toEqual({ made: true });
+    });
+  });
+
+  describe('dispose', () => {
+    it('tells the singletons it kept, most recent first', async () => {
+      const log: string[] = [];
+      const container = createContainer();
+      container.register('First', closing(log, 'first'), { lifetime: 'singleton' });
+      container.register('Second', closing(log, 'second'), { lifetime: 'singleton' });
+      container.resolve('First');
+      container.resolve('Second');
+
+      await container.dispose();
+
+      expect(log).toEqual(['second', 'first']);
+    });
+
+    it('says nothing to a singleton nobody ever resolved', async () => {
+      const log: string[] = [];
+      const container = createContainer();
+      container.register('Unused', closing(log, 'unused'), { lifetime: 'singleton' });
+
+      await container.dispose();
+
+      expect(log).toEqual([]);
+    });
+
+    it('does not dispose a transient — its caller owns it', async () => {
+      const log: string[] = [];
+      const container = createContainer();
+      container.register('Handler', closing(log, 'handler'));
+      container.resolve('Handler');
+
+      await container.dispose();
+
+      expect(log).toEqual([]);
+    });
+
+    it('does not dispose a value it did not build', async () => {
+      const log: string[] = [];
+      const container = createContainer();
+      container.registerValue('db', { dispose: async () => { log.push('db'); } });
+      container.resolve('db');
+
+      await container.dispose();
+
+      expect(log).toEqual([]);
+    });
+
+    it('tells everyone even when one refuses, then reports together', async () => {
+      const log: string[] = [];
+      const container = createContainer();
+      container.register('Bad', class { dispose() { throw new Error('nope'); } }, { lifetime: 'singleton' });
+      container.register('Good', closing(log, 'good'), { lifetime: 'singleton' });
+      container.resolve('Bad');
+      container.resolve('Good');
+
+      await expect(container.dispose()).rejects.toThrow(AggregateError);
+      expect(log).toEqual(['good']);
+    });
+
+    it('ignores an instance with no dispose method', async () => {
+      const container = createContainer();
+      container.register('Logger', Logger, { lifetime: 'singleton' });
+      container.resolve('Logger');
       await expect(container.dispose()).resolves.toBeUndefined();
     });
   });

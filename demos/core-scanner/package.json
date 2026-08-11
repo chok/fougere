@@ -9,7 +9,6 @@
   },
   "dependencies": {
     "@fougere/container": "workspace:*",
-    "@fougere/container-fougere": "workspace:*",
     "@fougere/core": "workspace:*"
   },
   "devDependencies": {

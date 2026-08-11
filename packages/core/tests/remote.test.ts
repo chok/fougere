@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { join } from 'node:path';
-import { createContainer } from '@fougere/container-fougere';
+import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, createAppRunner, FougereError, ErrorCode } from '../src/index.js';
 import type { App, OrmFactory, Transport } from '../src/index.js';
 import type { SchemaConstructor, Fields } from '@fougere/schema';

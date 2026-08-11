@@ -44,9 +44,9 @@ importers:
       '@fougere/auth-better':
         specifier: workspace:*
         version: link:../../packages/auth-better
-      '@fougere/container-fougere':
+      '@fougere/container':
         specifier: workspace:*
-        version: link:../../packages/container-fougere
+        version: link:../../packages/container
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -78,9 +78,6 @@ importers:
       '@fougere/container':
         specifier: workspace:*
         version: link:../../packages/container
-      '@fougere/container-fougere':
-        specifier: workspace:*
-        version: link:../../packages/container-fougere
     devDependencies:
       tsx:
         specifier: ^4.21.0
@@ -91,9 +88,6 @@ importers:
       '@fougere/container':
         specifier: workspace:*
         version: link:../../packages/container
-      '@fougere/container-fougere':
-        specifier: workspace:*
-        version: link:../../packages/container-fougere
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -110,9 +104,6 @@ importers:
       '@fougere/container':
         specifier: workspace:*
         version: link:../../packages/container
-      '@fougere/container-fougere':
-        specifier: workspace:*
-        version: link:../../packages/container-fougere
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -156,9 +147,9 @@ importers:
 
   demos/emit-fleet:
     dependencies:
-      '@fougere/container-fougere':
+      '@fougere/container':
         specifier: workspace:*
-        version: link:../../packages/container-fougere
+        version: link:../../packages/container
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -175,9 +166,9 @@ importers:
 
   demos/emit-multirepo/blog:
     dependencies:
-      '@fougere/container-fougere':
+      '@fougere/container':
         specifier: workspace:*
-        version: link:../../../packages/container-fougere
+        version: link:../../../packages/container
       '@fougere/core':
         specifier: workspace:*
         version: link:../../../packages/core
@@ -197,9 +188,9 @@ importers:
 
   demos/emit-multirepo/search:
     dependencies:
-      '@fougere/container-fougere':
+      '@fougere/container':
         specifier: workspace:*
-        version: link:../../../packages/container-fougere
+        version: link:../../../packages/container
       '@fougere/core':
         specifier: workspace:*
         version: link:../../../packages/core
@@ -219,9 +210,9 @@ importers:
 
   demos/emit-split:
     dependencies:
-      '@fougere/container-fougere':
+      '@fougere/container':
         specifier: workspace:*
-        version: link:../../packages/container-fougere
+        version: link:../../packages/container
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -284,9 +275,9 @@ importers:
 
   demos/multi-frond:
     dependencies:
-      '@fougere/container-fougere':
+      '@fougere/container':
         specifier: workspace:*
-        version: link:../../packages/container-fougere
+        version: link:../../packages/container
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -315,9 +306,9 @@ importers:
 
   demos/multi-frond/consumer:
     dependencies:
-      '@fougere/container-fougere':
+      '@fougere/container':
         specifier: workspace:*
-        version: link:../../../packages/container-fougere
+        version: link:../../../packages/container
       '@fougere/core':
         specifier: workspace:*
         version: link:../../../packages/core
@@ -336,9 +327,9 @@ importers:
 
   demos/multi-frond/remote-blog:
     dependencies:
-      '@fougere/container-fougere':
+      '@fougere/container':
         specifier: workspace:*
-        version: link:../../../packages/container-fougere
+        version: link:../../../packages/container
       '@fougere/core':
         specifier: workspace:*
         version: link:../../../packages/core
@@ -366,9 +357,9 @@ importers:
 
   demos/multi-transport:
     dependencies:
-      '@fougere/container-fougere':
+      '@fougere/container':
         specifier: workspace:*
-        version: link:../../packages/container-fougere
+        version: link:../../packages/container
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -437,9 +428,9 @@ importers:
       '@fougere/auth-better':
         specifier: workspace:*
         version: link:../../packages/auth-better
-      '@fougere/container-fougere':
+      '@fougere/container':
         specifier: workspace:*
-        version: link:../../packages/container-fougere
+        version: link:../../packages/container
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -833,9 +824,9 @@ importers:
 
   packages/app/shared:
     dependencies:
-      '@fougere/container-fougere':
+      '@fougere/container':
         specifier: workspace:*
-        version: link:../../container-fougere
+        version: link:../../container
       '@fougere/core':
         specifier: workspace:*
         version: link:../../core
@@ -930,9 +921,9 @@ importers:
       '@fougere/cli-ui':
         specifier: workspace:*
         version: link:../cli-ui
-      '@fougere/container-fougere':
+      '@fougere/container':
         specifier: workspace:*
-        version: link:../container-fougere
+        version: link:../container
       '@fougere/core':
         specifier: workspace:*
         version: link:../core
@@ -971,13 +962,11 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1
 
-  packages/container: {}
-
-  packages/container-fougere:
-    dependencies:
-      '@fougere/container':
-        specifier: workspace:*
-        version: link:../container
+  packages/container:
+    devDependencies:
+      vitest:
+        specifier: ^4.1.0
+        version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(vite@8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))
 
   packages/core:
     dependencies:
@@ -991,9 +980,6 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
     devDependencies:
-      '@fougere/container-fougere':
-        specifier: workspace:*
-        version: link:../container-fougere
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.15
@@ -1023,9 +1009,9 @@ importers:
 
   packages/runtime:
     dependencies:
-      '@fougere/container-fougere':
+      '@fougere/container':
         specifier: workspace:*
-        version: link:../container-fougere
+        version: link:../container
       '@fougere/core':
         specifier: workspace:*
         version: link:../core
@@ -1105,9 +1091,9 @@ importers:
         specifier: workspace:*
         version: link:../../core
     devDependencies:
-      '@fougere/container-fougere':
+      '@fougere/container':
         specifier: workspace:*
-        version: link:../../container-fougere
+        version: link:../../container
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../schema
@@ -1120,9 +1106,9 @@ importers:
       '@fougere/auth-better':
         specifier: workspace:*
         version: link:../packages/auth-better
-      '@fougere/container-fougere':
+      '@fougere/container':
         specifier: workspace:*
-        version: link:../packages/container-fougere
+        version: link:../packages/container
       '@fougere/core':
         specifier: workspace:*
         version: link:../packages/core

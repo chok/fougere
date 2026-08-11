@@ -13,7 +13,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
-import { createContainer } from '@fougere/container-fougere';
+import { createContainer } from '@fougere/container';
 import { createApp, ormKeyOf, facadeKeyOf } from '../src/index.js';
 import type { EntityOrm } from '../src/orm.js';
 

@@ -6,7 +6,7 @@
  */
 import { createJiti } from 'jiti';
 import { createApp, createLocalRunner, setModuleLoader, frondAliases, Logger } from '@fougere/core';
-import { createContainer } from '@fougere/container-fougere';
+import { createContainer } from '@fougere/container';
 import { setupSqlite, migrate } from '@fougere/schema-sql';
 import { serve } from '@fougere/transport-http';
 

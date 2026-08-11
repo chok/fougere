@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@fougere/auth-better": "workspace:*",
-    "@fougere/container-fougere": "workspace:*",
     "@fougere/core": "workspace:*",
     "@fougere/http": "workspace:*",
     "@fougere/nuxt": "workspace:*",
@@ -33,7 +32,8 @@
     "shiki": "^4.3.1",
     "tailwindcss": "^4.2.2",
     "vite": "^7.3.1",
-    "vue": "^3.5.16"
+    "vue": "^3.5.16",
+    "@fougere/container": "workspace:*"
   },
   "devDependencies": {
     "@iconify-json/lucide": "^1.2.121",

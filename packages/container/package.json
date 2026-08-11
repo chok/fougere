@@ -1,7 +1,7 @@
 {
   "name": "@fougere/container",
   "version": "0.2.0-alpha.0",
-  "description": "Fougere's DI container interface. Zero dependencies.",
+  "description": "Fougere's DI container: resolution by type, wired from the AST scan. Zero dependencies.",
   "keywords": [
     "fougere",
     "typescript",
@@ -30,8 +30,13 @@
   ],
   "scripts": {
     "build": "rm -rf dist && tsc",
-    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit -p tsconfig.test.json",
     "prepublishOnly": "pnpm run build"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.0"
   },
   "publishConfig": {
     "access": "public"

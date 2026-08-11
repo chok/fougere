@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { createJiti } from 'jiti';
 import { createApp, createLocalRunner, setModuleLoader } from '@fougere/core';
-import { createContainer } from '@fougere/container-fougere';
+import { createContainer } from '@fougere/container';
 import { serve } from '../../dist/index.js';
 import { createOrmFactory } from './data.mjs';
 

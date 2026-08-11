@@ -9,7 +9,7 @@
  */
 import { createServer, type Socket } from 'node:net';
 import { createApp, createLocalRunner, setModuleLoader, frondAliases } from '@fougere/core';
-import { createContainer } from '@fougere/container-fougere';
+import { createContainer } from '@fougere/container';
 
 const PORT = Number(process.env.FLEET_PORT ?? 4500);
 const fleet = new Map<Socket, { id: string; topics: Set<string> }>();

@@ -39,8 +39,7 @@ packages/
   schema-sql/          Entity → Kysely tables (SQLite/PG/MySQL/MSSQL)
   schema-graphql/      Entity → Pothos types/inputs/CRUD
   schema-rest/         REST projection
-  container/           Container interface (zero deps)
-  container-fougere/   Implementation — type-based DI, AST scan
+  container/           Container + createContainer — type-based DI, zero deps
   core/                Scanner, bootstrap, call contract, doublures, Crud, binding
   transport/http/      JSON-RPC 2.0 wire (serve + client subpath)
   app/nuxt/            `@fougere/nuxt` — client primitives + server surface

@@ -9,7 +9,7 @@ import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { join } from 'node:path';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { createContainer } from '@fougere/container-fougere';
+import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner } from '../src/index.js';
 import type { OrmFactory } from '../src/index.js';
 import { presentEgress } from '../src/egress.js';

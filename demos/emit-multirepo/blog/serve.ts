@@ -8,7 +8,7 @@
  * Nothing here is about emission. It is the same app, reachable.
  */
 import { createApp, createAppRunner, setModuleLoader, frondAliases } from '@fougere/core';
-import { createContainer } from '@fougere/container-fougere';
+import { createContainer } from '@fougere/container';
 import { serve } from '@fougere/transport-http';
 
 const PORT = Number(process.env.CARD_PORT ?? 4301);

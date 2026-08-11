@@ -8,7 +8,7 @@
  */
 import { createApp, createLocalRunner, setModuleLoader, FougereError, frondAliases } from '@fougere/core';
 import type { App, InvocationContext, Transport } from '@fougere/core';
-import { createContainer } from '@fougere/container-fougere';
+import { createContainer } from '@fougere/container';
 import { serve, createHttpTransport } from '@fougere/transport-http';
 import { createSocketTransport, serveSocket } from './socket-transport.js';
 

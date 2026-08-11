@@ -8,7 +8,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { join } from 'node:path';
-import { createContainer } from '@fougere/container-fougere';
+import { createContainer } from '@fougere/container';
 import { createApp, createAppRunner, ErrorCode } from '../src/index.js';
 import type { OrmFactory, IdentityCard } from '../src/index.js';
 import { EMPTY_INVOCATION } from '../src/invocation.js';

@@ -6,7 +6,7 @@
  * a listener never reaches back.
  */
 import { createApp, createAppRunner, setModuleLoader, frondAliases } from '@fougere/core';
-import { createContainer } from '@fougere/container-fougere';
+import { createContainer } from '@fougere/container';
 import { serve } from '@fougere/transport-http';
 
 const PORT = Number(process.env.PORT ?? 4210);

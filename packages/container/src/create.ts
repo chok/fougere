@@ -1,15 +1,9 @@
-import type { Container, Registration, RegisterOptions, Constructor } from '@fougere/container';
+import type { Container, RegisterOptions, Constructor, Disposable } from './container.js';
 
 interface Entry {
   factory: (container: Container) => unknown;
-  lifetime: 'singleton' | 'scoped' | 'transient';
+  lifetime: 'singleton' | 'transient';
   instance?: unknown;
-}
-
-function isClass(fn: unknown): fn is Constructor {
-  if (typeof fn !== 'function') return false;
-  const str = fn.toString();
-  return str.startsWith('class ') || str.startsWith('class{');
 }
 
 interface ScopeContainer extends Container {
@@ -17,46 +11,43 @@ interface ScopeContainer extends Container {
   _getFallback(): ((name: string) => unknown) | undefined;
 }
 
+const isDisposable = (value: unknown): value is Disposable =>
+  typeof value === 'object' && value !== null &&
+  typeof (value as Disposable).dispose === 'function';
+
 function createScope(parent?: ScopeContainer): ScopeContainer {
   const registry = new Map<string, Entry>();
+  // Construction order, so disposal can run in reverse: a thing built later may
+  // hold something built earlier.
+  const built: unknown[] = [];
   let fallback: ((name: string) => unknown) | undefined;
 
+  const remember = <T>(value: T): T => {
+    if (isDisposable(value)) built.push(value);
+    return value;
+  };
+
   const container: ScopeContainer = {
-    register<T>(name: string, registration: Registration<T>, options?: RegisterOptions) {
+    register<T>(name: string, ctor: Constructor<T>, options?: RegisterOptions) {
       const lifetime = options?.lifetime ?? 'transient';
       const deps = options?.deps ?? [];
-
-      let factory: (c: Container) => unknown;
-      if (isClass(registration)) {
-        const Ctor = registration;
-        factory = (c) => new Ctor(...deps.map((d) => c.resolve(d)));
-      } else {
-        factory = registration as (c: Container) => unknown;
-      }
-
-      registry.set(name, { factory, lifetime });
+      registry.set(name, {
+        factory: (c) => new ctor(...deps.map((d) => c.resolve(d))),
+        lifetime,
+      });
     },
 
     registerValue<T>(name: string, value: T) {
+      // A value the container did not build is not the container's to dispose.
       registry.set(name, { factory: () => value, lifetime: 'singleton', instance: value });
     },
 
     resolve<T>(name: string): T {
       let entry = registry.get(name);
 
-      // Not found locally — look in parent
-      if (!entry && parent) {
-        const parentEntry = parent._getEntry(name);
-        if (parentEntry) {
-          if (parentEntry.lifetime === 'scoped') {
-            // Scoped: create a local copy so each scope gets its own instance
-            entry = { factory: parentEntry.factory, lifetime: 'scoped' };
-            registry.set(name, entry);
-          } else {
-            // Singleton/transient: delegate to parent
-            return parent.resolve<T>(name);
-          }
-        }
+      // Not found locally — the parent holds it, and holds its instance too.
+      if (!entry && parent && parent._getEntry(name)) {
+        return parent.resolve<T>(name);
       }
 
       // Nobody holds it. Before failing, ask whoever set a last resort — a frond declared
@@ -72,8 +63,12 @@ function createScope(parent?: ScopeContainer): ScopeContainer {
 
       if (entry.instance !== undefined) return entry.instance as T;
       const value = entry.factory(container) as T;
-      if (entry.lifetime === 'singleton' || entry.lifetime === 'scoped') {
+      // The container disposes what it KEEPS. A transient is handed over and
+      // forgotten in the same breath — remembering it would be a leak that grows
+      // once per call, and its caller is the one who knows when it is done.
+      if (entry.lifetime === 'singleton') {
         entry.instance = value;
+        remember(value);
       }
       return value;
     },
@@ -87,7 +82,21 @@ function createScope(parent?: ScopeContainer): ScopeContainer {
     },
 
     async dispose(): Promise<void> {
+      // Reverse order, and one failure must not silence the rest: everything gets
+      // told, then the errors travel together.
+      const failures: unknown[] = [];
+      for (const value of built.reverse()) {
+        try {
+          await (value as Disposable).dispose();
+        } catch (error) {
+          failures.push(error);
+        }
+      }
+      built.length = 0;
       registry.clear();
+      if (failures.length > 0) {
+        throw new AggregateError(failures, '[container] one or more disposals failed');
+      }
     },
 
     setFallback(resolve: (name: string) => unknown) {

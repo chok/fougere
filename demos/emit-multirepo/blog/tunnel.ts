@@ -12,7 +12,7 @@
 import { createServer, type Socket } from 'node:net';
 import { createApp, createLocalRunner, setModuleLoader, frondAliases } from '@fougere/core';
 import type { InvocationContext } from '@fougere/core';
-import { createContainer } from '@fougere/container-fougere';
+import { createContainer } from '@fougere/container';
 
 const PORT = Number(process.env.TUNNEL_PORT ?? 4400);
 const listeners = new Map<Socket, Set<string>>();

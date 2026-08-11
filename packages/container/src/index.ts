@@ -1,7 +1,7 @@
 export {
   type Container,
-  type Registration,
   type RegisterOptions,
-  type ResolverFn,
   type Constructor,
+  type Disposable,
 } from './container.js';
+export { createContainer } from './create.js';

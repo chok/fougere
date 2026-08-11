@@ -10,7 +10,7 @@
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { createApp, setModuleLoader, createLocalRunner, frondAliases } from '@fougere/core';
-import { createContainer } from '@fougere/container-fougere';
+import { createContainer } from '@fougere/container';
 import { createHonoRouter } from '@fougere/http';
 import { handleRpc } from '@fougere/transport-http';
 import { generateRoutes, registerRoutes } from '@fougere/schema-rest';
