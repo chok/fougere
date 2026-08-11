@@ -12,7 +12,7 @@
  * would answer even if registered after.
  */
 import express from 'express';
-import { fougereCall, fougereSession, fougereRest } from '@fougere/app/express';
+import { fougereCall, fougereSession, fougereRest, fougereGraphQL } from '@fougere/app/express';
 import { useFougereApp, invokeOn } from '@fougere/app';
 import Post from './fronds/blog/entities/Post.ts';
 
@@ -56,6 +56,9 @@ app.use(fougereSession());
 // Wanted here, so it is stated here. Comment it out and `/api/blog/posts` simply
 // stops existing, while the pages above keep working.
 app.use(fougereRest());
+
+// Mounted, and it serves nothing until `adapters: { graphql: true }` says so.
+app.use(fougereGraphQL());
 
 app.listen(3300, () => {
   console.log('express-blog on http://localhost:3300');

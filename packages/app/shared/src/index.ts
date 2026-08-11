@@ -47,3 +47,5 @@ export {
 export { sessionViewOf, type SessionView } from './session.js';
 
 export { stateFor } from './state.js';
+
+export { serveGraphQL, type GraphQLRequest } from './graphql.js';

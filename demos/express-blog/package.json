@@ -13,7 +13,10 @@
     "@fougere/schema-sql": "workspace:*",
     "better-sqlite3": "^12.8.0",
     "express": "^5.2.1",
-    "jiti": "^2.6.1"
+    "jiti": "^2.6.1",
+    "@fougere/schema-graphql": "workspace:*",
+    "@pothos/core": "^4.12.0",
+    "graphql": "^16.13.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",

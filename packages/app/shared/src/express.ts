@@ -32,6 +32,7 @@
  */
 import { readExpressBody } from '@fougere/http';
 import { serveRest, serveRpc, rpcParseError } from './serve.js';
+import { serveGraphQL } from './graphql.js';
 import { sessionViewOf } from './session.js';
 import { useFougereApp } from './boot.js';
 
@@ -167,9 +168,33 @@ export function fougereRest(mountPath = '/api'): ExpressMiddleware {
   };
 }
 
-/** The three doors, for an app that wants all of them. */
+/** GraphQL, at `/graphql` by default. Declines when the app declares no such adapter. */
+export function fougereGraphQL(mountPath = '/graphql'): ExpressMiddleware {
+  return (req, res, next) => {
+    if (req.method !== 'POST' || pathOf(req) !== mountPath) return next();
+
+    void (async () => {
+      try {
+        const app = await useFougereApp();
+        const body = ((await readExpressBody(req)) ?? {}) as {
+          query?: string;
+          variables?: Record<string, unknown>;
+          operationName?: string;
+        };
+        const outcome = await serveGraphQL(app, { ...body, state: stateOf(req) });
+        if (outcome.kind === 'pass') return next();
+        res.status(outcome.status).json(outcome.body);
+      } catch (err) {
+        fail(res, next, err);
+      }
+    })();
+  };
+}
+
+/** Every door, for an app that wants all of them. What each one SERVES is still the
+ *  app's declaration — mounting is not publishing. */
 export function fougere(): ExpressMiddleware {
-  const doors = [fougereCall(), fougereSession(), fougereRest()];
+  const doors = [fougereCall(), fougereSession(), fougereRest(), fougereGraphQL()];
   return (req, res, next) => {
     let index = 0;
     const step = (err?: unknown) => {

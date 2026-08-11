@@ -131,3 +131,24 @@ describe('shapeRest', () => {
     expect(shapeRest('findById', null)).toEqual({ kind: 'error', status: 404, body: { message: 'Not found' } });
   });
 });
+
+describe('the GraphQL door obeys the same declaration', () => {
+  it('serves nothing when the app declares no graphql adapter', async () => {
+    const { serveGraphQL } = await import('../src/graphql.js');
+    const outcome = await serveGraphQL(appOf({ rest: true }), { query: '{ __typename }', state: {} });
+    expect(outcome).toEqual({ kind: 'pass' });
+  });
+
+  it('refuses a request with no query once declared', async () => {
+    const { serveGraphQL } = await import('../src/graphql.js');
+    const outcome = await serveGraphQL(appOf({ graphql: true }), { state: {} });
+    expect(outcome).toMatchObject({ kind: 'error', status: 400 });
+  });
+
+  it('checks the declaration before the query — an undeclared adapter says nothing at all', async () => {
+    const { serveGraphQL } = await import('../src/graphql.js');
+    // No query AND no adapter: the answer is `pass`, not a 400. A door that is not
+    // served does not get to complain about what was sent to it.
+    expect(await serveGraphQL(appOf({}), { state: {} })).toEqual({ kind: 'pass' });
+  });
+});

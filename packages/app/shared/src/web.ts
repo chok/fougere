@@ -11,7 +11,7 @@
  * majors (`server/routes/call.post.ts` carries that hundred lines). That file is
  * what a NON-Web-standard host costs.
  */
-import { serveRest, serveRpc, rpcParseError, useFougereApp } from './index.js';
+import { serveRest, serveRpc, rpcParseError, useFougereApp, serveGraphQL } from './index.js';
 import { sessionViewOf } from './session.js';
 import { stateFor } from './state.js';
 
@@ -79,4 +79,30 @@ export async function fougereRest(request: Request): Promise<Response> {
 /** The session view over the wire, for a client refreshing after login or logout. */
 export async function fougereSession(request: Request): Promise<Response> {
   return Response.json(sessionViewOf(await stateFor(request.headers)));
+}
+
+/**
+ * GraphQL, at whatever path the host mounted it — `/graphql` by convention.
+ *
+ * Answers `404` when the app declares no GraphQL adapter, because unlike REST this
+ * door is mounted at a path of its own: there is no app route underneath it to pass to.
+ */
+export async function fougereGraphQL(request: Request): Promise<Response> {
+  const app = await useFougereApp();
+  const body = (await request.json().catch(() => ({}))) as {
+    query?: string;
+    variables?: Record<string, unknown>;
+    operationName?: string;
+  };
+
+  const outcome = await serveGraphQL(app, {
+    ...body,
+    surface: new URL(request.url).pathname.split('/').filter(Boolean)[1],
+    state: await stateFor(request.headers),
+  });
+
+  if (outcome.kind === 'pass') {
+    return Response.json({ message: 'GraphQL is not served by this app' }, { status: 404 });
+  }
+  return Response.json(outcome.body, { status: outcome.status });
 }

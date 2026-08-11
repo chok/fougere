@@ -28,6 +28,21 @@ Take that away and `/api/blog/posts` returns Express's own 404 while the envelop
 pages and `/api/health` keep working — measured. The host puts the door in place; the
 app decides what it serves.
 
+The same holds for GraphQL, and it is the whole GraphQL setup:
+
+```ts
+adapters: { rest: true, graphql: true }
+```
+
+```bash
+curl -X POST localhost:3300/graphql -H 'content-type: application/json' \
+  -d '{"query":"{ posts { id title status } }"}'
+# {"data":{"posts":[{"id":"…","title":"One declaration, three hosts","status":"published"}]}}
+```
+
+No builder, no type registration — the schema comes from the entities the app already
+scanned. Without the declaration the same request gets Express's 404.
+
 `/api/health` still answers, and would even if registered after: a path Fougere does
 not serve calls `next()`, which is Express's own passthrough — the earlier
 `mountDoors` had invented one.
