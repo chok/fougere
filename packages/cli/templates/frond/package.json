@@ -10,7 +10,7 @@
     "@fougere/schema": "latest",
     "@fougere/runtime": "latest",
     "@fougere/transport-http": "latest",
-    "better-sqlite3": "^12.8.0",
+    "better-sqlite3": "^13.0.3",
     "kysely": "^0.28.17",
     "jiti": "^2.4.2",
     "@fougere/container": "latest"

@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "@fougere/schema": "workspace:*",
-    "better-sqlite3": "^12.8.0"
+    "better-sqlite3": "^13.0.3"
   },
   "peerDependencies": {
     "kysely": ">=0.28.17"
