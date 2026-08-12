@@ -1,0 +1,17 @@
+{
+  "name": "sse-live",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx main.ts"
+  },
+  "dependencies": {
+    "@fougere/core": "workspace:*",
+    "@fougere/schema": "workspace:*",
+    "@fougere/container": "workspace:*",
+    "jiti": "^2.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0"
+  }
+}

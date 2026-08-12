@@ -628,6 +628,25 @@ importers:
         specifier: ^4.21.0
         version: 4.21.0
 
+  demos/sse-live:
+    dependencies:
+      '@fougere/container':
+        specifier: workspace:*
+        version: link:../../packages/container
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
+      jiti:
+        specifier: ^2.0.0
+        version: 2.7.0
+    devDependencies:
+      tsx:
+        specifier: ^4.0.0
+        version: 4.21.0
+
   demos/sveltekit-blog:
     dependencies:
       '@fougere/app':
