@@ -1,7 +1,7 @@
 {
   "name": "@fougere/svelte",
   "version": "0.2.0-alpha.0",
-  "description": "Fougere's four primitives as Svelte stores \u2014 host-independent.",
+  "description": "Fougere's four primitives as Svelte stores — host-independent.",
   "keywords": [
     "fougere",
     "svelte",

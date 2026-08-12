@@ -1,4 +1,4 @@
-# @fougere/transport-http
+# @fougere/vite
 
 ## 0.2.0-alpha.0
 
@@ -56,20 +56,3 @@
   Keywords so an adapter is found by the library it adapts; one id generator instead of two
   majors of it; and a mechanical floor in CI — oxlint, knip and v8 coverage, recorded rather
   than gated.
-
-### Patch Changes
-
-- Updated dependencies [5076973]
-  - @fougere/core@0.2.0-alpha.0
-
-## 0.1.0-alpha.0
-
-### Minor Changes
-
-- cf5b52e: Apply decoded inputs and declared outputs at the facade boundary, harden public transports,
-  correct HTTP and GraphQL semantics, and make scaffolds and published artifacts reproducible.
-
-### Patch Changes
-
-- Updated dependencies [cf5b52e]
-  - @fougere/core@0.1.0-alpha.0

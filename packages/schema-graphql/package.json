@@ -1,7 +1,7 @@
 {
   "name": "@fougere/schema-graphql",
   "version": "0.2.0-alpha.0",
-  "description": "Entity \u2192 GraphQL types, inputs and CRUD, through Pothos.",
+  "description": "Entity → GraphQL types, inputs and CRUD, through Pothos.",
   "keywords": [
     "fougere",
     "typescript",

@@ -1,7 +1,7 @@
 {
   "name": "@fougere/react",
   "version": "0.2.0-alpha.0",
-  "description": "Fougere's four primitives as React hooks \u2014 host-independent.",
+  "description": "Fougere's four primitives as React hooks — host-independent.",
   "keywords": [
     "fougere",
     "react",

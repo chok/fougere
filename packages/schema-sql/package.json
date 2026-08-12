@@ -1,7 +1,7 @@
 {
   "name": "@fougere/schema-sql",
   "version": "0.2.0-alpha.0",
-  "description": "Entity \u2192 SQL tables through Kysely (SQLite, PostgreSQL, MySQL, SQL Server).",
+  "description": "Entity → SQL tables through Kysely (SQLite, PostgreSQL, MySQL, SQL Server).",
   "keywords": [
     "fougere",
     "typescript",
