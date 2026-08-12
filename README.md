@@ -37,7 +37,7 @@ export default class Post extends entity({
   // Server-owned: stamped from the session at create, never client-written.
   authorId: readOnly(text()),
   authorName: readOnly(optional(text())),
-  createdAt: auto(),
+  createdAt: created(),
   // Server-owned pair: born draft, flipped by the publish OPERATION —
   // never by a client writing the field (readOnly closes the inbound door).
   status: readOnly(oneOf('draft', 'published', { default: 'draft' })),
@@ -51,7 +51,7 @@ A field says **four** things, and each one is read by someone different:
 | --- | --- | --- |
 | `shape` | `text({ max: 160 })` — and it *is* JSON Schema | the validator, in the browser and at the façade |
 | `role` | `primary()`, `ref(User)` | the table, the relations, the GraphQL type |
-| `lifecycle` | *who* writes this value and *when* — `auto()`, `updated()` | the ORM, which stamps it |
+| `lifecycle` | *who* writes this value and *when* — `created()`, `updated()` | the ORM, which stamps it |
 | `boundary` | which direction it may cross — `readOnly`, `writeOnly` | the door, which drops it from `inputFields` |
 
 `readOnly(status)` is not a note about intent. It removes `status` from what a client

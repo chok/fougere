@@ -6,7 +6,7 @@
  * storage can refuse the second write, so only the storage is tested here.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { entity, primary, text, auto } from '@fougere/schema';
+import { entity, primary, text, created } from '@fougere/schema';
 import { setupSqlite, autoMigrate, toTable, type SqliteSetup } from '../src/index.js';
 
 class ListBook extends entity(
@@ -14,7 +14,7 @@ class ListBook extends entity(
     id: primary(),
     listId: text(),
     docId: text(),
-    addedAt: auto(),
+    addedAt: created(),
   },
   { unique: [['listId', 'docId']] },
 ) {}

@@ -72,7 +72,7 @@ export function applyCreate(fields: Fields, input: Row): Row {
     if (name in out) continue;
     const create = field.lifecycle?.create;
     if (create === 'now') {
-      // One instant, one Date PER FIELD. `auto()` and `updated()` on the same entity
+      // One instant, one Date PER FIELD. `created()` and `updated()` on the same entity
       // would otherwise hold the same object, so mutating `updatedAt` would move an
       // immutable `createdAt` with it — invisible where a storage serializes on write
       // (SQL), lasting where it does not (an in-memory store keeps the row as handed).

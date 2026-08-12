@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import SchemaBuilder from '@pothos/core';
-import { entity, primary, text, number, auto, ref, many, type EntityConstructor } from '@fougere/schema';
+import { entity, primary, text, number, created, ref, many, type EntityConstructor } from '@fougere/schema';
 import { registerAll } from '../src/index.js';
 
 // ─── Fixtures ──────────────────────────────────
@@ -15,7 +15,7 @@ class Post extends entity({
   id: primary(),
   title: text({ min: 1 }),
   views: number({ integer: true }),
-  createdAt: auto(),
+  createdAt: created(),
 }) {}
 
 function fakeCrud(data: Record<string, unknown>[] = []) {

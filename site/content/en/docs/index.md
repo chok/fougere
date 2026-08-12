@@ -15,13 +15,13 @@ GraphQL types, form contracts and API surfaces are *projections* of that declara
 nothing is written twice.
 
 ```ts
-import { entity, primary, text, auto, oneOf, date, readOnly, optional } from '@fougere/schema';
+import { entity, primary, text, created, oneOf, date, readOnly, optional } from '@fougere/schema';
 
 export default class Post extends entity({
   id: primary(),
   title: text({ min: 1, max: 160 }),
   body: optional(text()),
-  createdAt: auto(),
+  createdAt: created(),
   status: readOnly(oneOf('draft', 'published', { default: 'draft' })),
   publishedAt: readOnly(optional(date())),
 }) {}

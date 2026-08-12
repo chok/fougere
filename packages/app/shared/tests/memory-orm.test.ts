@@ -6,14 +6,14 @@
  * which is what these tests hold; and reading them raised a case the old version hid.
  */
 import { describe, it, expect } from 'vitest';
-import { entity, primary, text, number, oneOf, auto } from '@fougere/schema';
+import { entity, primary, text, number, oneOf, created } from '@fougere/schema';
 import { createMemoryOrm } from '../src/boot.js';
 
 class Post extends entity({
   id: primary(),
   title: text({ min: 1 }),
   status: oneOf('draft', 'published', { default: 'draft' }),
-  createdAt: auto(),
+  createdAt: created(),
 }) {}
 
 /** The caller supplies the key — `primary(field)` adds no create rule. */

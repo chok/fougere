@@ -10,7 +10,7 @@
 import { describe as suite, it, expect, vi } from 'vitest';
 import {
   entity, primary, text, email, number, bool, date, list, json,
-  oneOf, ref, many, auto, updated, immutable, optional, nullable,
+  oneOf, ref, many, created, updated, immutable, optional, nullable,
   unique, indexed, readOnly, writeOnly,
   describe as describeCard, reconstruct, inputFields, outputFields, uniqueMembers,
   type Fields,
@@ -38,7 +38,7 @@ class Post extends entity({
   comments: many(Author),
   status: readOnly(oneOf('draft', 'published', { default: 'draft' })),
   secret: writeOnly(text()),
-  createdAt: auto(),
+  createdAt: created(),
   updatedAt: updated(),
   publishedAt: immutable(optional(date())),
 }) {}

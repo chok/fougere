@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  entity, primary, text, number, bool, date, auto, updated, immutable, oneOf, ref, many, optional, json, list, email, url, isField, isNullable,
+  entity, primary, text, number, bool, date, created, updated, immutable, oneOf, ref, many, optional, json, list, email, url, isField, isNullable,
 } from '../src/index.js';
 
 describe('helpers', () => {
@@ -61,8 +61,8 @@ describe('helpers', () => {
     expect(f.shape).toEqual({ type: 'string', format: 'date-time' });
   });
 
-  it('auto() creates a date field stamped at creation, immutable after', () => {
-    const f = auto();
+  it('created() creates a date field stamped at creation, immutable after', () => {
+    const f = created();
     expect(f.shape).toEqual({ type: 'string', format: 'date-time' });
     expect(f.lifecycle).toEqual({ create: 'now', update: 'forbidden' });
   });

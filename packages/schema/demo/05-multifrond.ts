@@ -5,7 +5,7 @@
  * Simule ce que fougere fera en vrai avec les Fronds.
  */
 import {
-  entity, primary, text, number, oneOf, ref, many, auto, optional,
+  entity, primary, text, number, oneOf, ref, many, created, optional,
 } from '../src/index.js';
 
 // ─── Frond: catalog ─────────────────────────────
@@ -41,7 +41,7 @@ class Order extends entity({
   status: oneOf('pending', 'paid', 'shipped'),
   total: number({ min: 0 }),
   lines: many(OrderLine),
-  createdAt: auto(),
+  createdAt: created(),
 }) {}
 
 // Dérivations pour le domaine orders

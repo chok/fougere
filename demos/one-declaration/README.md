@@ -14,7 +14,7 @@ class Reading extends entity({
   id: primary(),
   station: text({ min: 2, max: 40 }),
   celsius: number({ min: -90, max: 60 }),
-  recordedAt: auto(),
+  recordedAt: created(),
 }) {}
 ```
 
@@ -50,7 +50,7 @@ a client may send    station, celsius
 a client receives    id, station, celsius, recordedAt
 ```
 
-`primary()` and `auto()` state it, and the door reads them.
+`primary()` and `created()` state it, and the door reads them.
 
 **The judge** — the same verdict in the browser, at the façade, and across a split
 (proven in `packages/core/tests/judge-local-remote.test.ts`):

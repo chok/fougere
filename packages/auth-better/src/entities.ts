@@ -1,4 +1,4 @@
-import { entity, primary, text, bool, date, auto, ref, optional, type SchemaLike } from '@fougere/schema';
+import { entity, primary, text, bool, date, created, ref, optional, type SchemaLike } from '@fougere/schema';
 
 /**
  * Default User entity — shipped as a fallback. Apps should declare their own
@@ -13,8 +13,8 @@ export class AuthUser extends entity({
   email: text(),
   emailVerified: bool(),
   image: optional(text()),
-  createdAt: auto(),
-  updatedAt: auto(),
+  createdAt: created(),
+  updatedAt: created(),
 }) {}
 
 /**
@@ -53,8 +53,8 @@ export function authEntities(User: SchemaLike): {
     expiresAt: date(),
     ipAddress: optional(text()),
     userAgent: optional(text()),
-    createdAt: auto(),
-    updatedAt: auto(),
+    createdAt: created(),
+    updatedAt: created(),
   }) {}
 
   /**
@@ -73,8 +73,8 @@ export function authEntities(User: SchemaLike): {
     refreshTokenExpiresAt: optional(date()),
     scope: optional(text()),
     password: optional(text()),
-    createdAt: auto(),
-    updatedAt: auto(),
+    createdAt: created(),
+    updatedAt: created(),
   }) {}
 
   return { AuthSession, AuthAccount };
@@ -89,6 +89,6 @@ export class AuthVerification extends entity({
   identifier: text(),
   value: text(),
   expiresAt: date(),
-  createdAt: auto(),
-  updatedAt: auto(),
+  createdAt: created(),
+  updatedAt: created(),
 }) {}

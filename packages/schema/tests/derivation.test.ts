@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { entity, compose, primary, text, number, oneOf, auto, optional, isNullable } from '../src/index.js';
+import { entity, compose, primary, text, number, oneOf, created, optional, isNullable } from '../src/index.js';
 
 class Order extends entity({
   id: primary(),
   status: oneOf('pending', 'paid', 'shipped'),
   total: number({ min: 0 }),
   note: text(),
-  createdAt: auto(),
+  createdAt: created(),
 }) {}
 
 describe('derivation', () => {
@@ -126,7 +126,7 @@ describe('derivation', () => {
     });
 
     it('omit then extend', () => {
-      const view = Order.omit('createdAt').extend({ updatedAt: auto() });
+      const view = Order.omit('createdAt').extend({ updatedAt: created() });
       const fields = view.getFields();
       // The TYPE already proves `createdAt` is gone — reading it would not compile.
       // What remains to check is the runtime map, so ask it for its keys.

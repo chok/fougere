@@ -1,4 +1,4 @@
-import { entity, primary, text, readOnly, auto } from '@fougere/schema';
+import { entity, primary, text, readOnly, created } from '@fougere/schema';
 
 /** Same entity as fixtures-crud — the views are what this fixture is about. */
 export default class Note extends entity({
@@ -6,5 +6,5 @@ export default class Note extends entity({
   title: text(),
   body: text(),
   ownerId: readOnly(text()),
-  createdAt: auto(),
+  createdAt: created(),
 }) {}

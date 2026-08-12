@@ -1,7 +1,7 @@
 /**
  * Demo 2 — Relations entre entités (ref, many)
  */
-import { entity, primary, text, number, ref, many, oneOf, auto } from '../src/index.js';
+import { entity, primary, text, number, ref, many, oneOf, created } from '../src/index.js';
 
 class Customer extends entity({
   id: primary(),
@@ -22,7 +22,7 @@ class Order extends entity({
   status: oneOf('pending', 'paid', 'shipped', 'cancelled'),
   total: number({ min: 0 }),
   lines: many(OrderLine),
-  createdAt: auto(),
+  createdAt: created(),
 }) {}
 
 // Les fields connaissent les relations

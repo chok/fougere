@@ -63,12 +63,12 @@ function writeInstalledApp(): string {
   mkdirSync(join(frond, 'handlers'), { recursive: true });
 
   writeFileSync(join(frond, 'entities', 'Note.js'), `
-import { entity, primary, text, readOnly, auto } from ${JSON.stringify(schemaDist)};
+import { entity, primary, text, readOnly, created } from ${JSON.stringify(schemaDist)};
 export default class Note extends entity({
   id: primary(),
   title: text(),
   ownerId: readOnly(text()),
-  createdAt: auto(),
+  createdAt: created(),
 }) {}
 `);
   writeFileSync(join(frond, 'handlers', 'NoteHandler.js'), `

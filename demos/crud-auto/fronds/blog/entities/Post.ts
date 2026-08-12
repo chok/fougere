@@ -1,4 +1,4 @@
-import { entity, primary, text, ref, auto } from "@fougere/schema";
+import { entity, primary, text, ref, created } from "@fougere/schema";
 import Author from "./Author.js";
 
 export default class Post extends entity({
@@ -6,5 +6,5 @@ export default class Post extends entity({
   authorId: ref(Author),
   title: text({ min: 1, max: 255 }),
   body: text(),
-  createdAt: auto(),
+  createdAt: created(),
 }) {}

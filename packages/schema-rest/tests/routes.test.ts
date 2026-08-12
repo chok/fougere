@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { entity, primary, text, number, auto, readOnly, writeOnly } from '@fougere/schema';
+import { entity, primary, text, number, created, readOnly, writeOnly } from '@fougere/schema';
 import { generateRoutes } from '../src/index.js';
 
 // ─── Fixtures ──────────────────────────────────
@@ -8,7 +8,7 @@ class Post extends entity({
   id: primary(),
   title: text({ min: 1 }),
   views: number({ integer: true }),
-  createdAt: auto(),
+  createdAt: created(),
 }) {}
 
 class Author extends entity({

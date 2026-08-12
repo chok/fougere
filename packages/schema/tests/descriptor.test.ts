@@ -1,6 +1,6 @@
 import { describe as group, it, expect } from 'vitest';
 import {
-  entity, primary, text, number, optional, auto, ref, many, json, list, email, readOnly,
+  entity, primary, text, number, optional, created, ref, many, json, list, email, readOnly,
   describe, reconstruct, describeSet, reconstructSet,
   type SchemaLike, type EntityConstructor,
 } from '../src/index.js';
@@ -13,7 +13,7 @@ class Post extends entity({
   title: text({ min: 1 }),
   views: number({ integer: true, min: 0 }),
   rating: optional(number()),
-  createdAt: auto(),
+  createdAt: created(),
   author: ref(Author),
   tags: many(Tag),
 }) {}

@@ -1,4 +1,4 @@
-import { entity, primary, text, readOnly, auto, oneOf } from '@fougere/schema';
+import { entity, primary, text, readOnly, created, oneOf } from '@fougere/schema';
 
 /**
  * Chosen for its axes, not its domain: one field per branch of the judge's
@@ -9,5 +9,5 @@ export default class Article extends entity({
   title: text({ min: 3, max: 40 }),
   body: text(),
   status: readOnly(oneOf('draft', 'published', { default: 'draft' })),
-  createdAt: auto(),
+  createdAt: created(),
 }) {}

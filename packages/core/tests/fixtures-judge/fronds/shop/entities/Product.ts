@@ -1,4 +1,4 @@
-import { entity, primary, text, number, oneOf, auto, immutable, readOnly } from '@fougere/schema';
+import { entity, primary, text, number, oneOf, created, immutable, readOnly } from '@fougere/schema';
 
 /**
  * One instance of each way an input can be refused, so a single payload
@@ -13,7 +13,7 @@ export default class Product extends entity({
   /** shape — a bounded set */
   status: oneOf('draft', 'published'),
   /** lifecycle — server-stamped, refused in a patch */
-  createdAt: immutable(auto()),
+  createdAt: immutable(created()),
   /** boundary — computed by the frond, never accepted inbound */
   slug: readOnly(text()),
 }) {}

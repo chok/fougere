@@ -1,7 +1,7 @@
 /**
  * Entités fougere — source de vérité unique
  */
-import { entity, primary, text, number, oneOf, ref, auto, optional, bool } from '@fougere/schema';
+import { entity, primary, text, number, oneOf, ref, created, optional, bool } from '@fougere/schema';
 
 // ─── Entités ─────────────────────────────────────
 
@@ -18,7 +18,7 @@ export class Product extends entity({
   price: number({ min: 0 }),
   stock: number({ min: 0, integer: true }),
   active: bool({ default: true }),
-  createdAt: auto(),
+  createdAt: created(),
 }) {}
 
 export class Customer extends entity({
@@ -26,7 +26,7 @@ export class Customer extends entity({
   firstName: text({ min: 1 }),
   lastName: text({ min: 1 }),
   email: text({ min: 5 }),
-  createdAt: auto(),
+  createdAt: created(),
 }) {}
 
 export class OrderLine extends entity({
@@ -43,7 +43,7 @@ export class Order extends entity({
   status: oneOf('draft', 'pending', 'paid', 'shipped', 'cancelled'),
   total: number({ min: 0 }),
   note: optional(text()),
-  createdAt: auto(),
+  createdAt: created(),
 }) {}
 
 // ─── Dérivations ─────────────────────────────────

@@ -6,7 +6,7 @@
  * `oneOf('draft','published')` used to let `'brouillon'` land and stay.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { entity, primary, text, number, oneOf, optional, auto } from '@fougere/schema';
+import { entity, primary, text, number, oneOf, optional, created } from '@fougere/schema';
 import { setupSqlite, autoMigrate, createTableSQL, toTable, type SqliteSetup } from '../src/index.js';
 
 class Post extends entity({
@@ -15,7 +15,7 @@ class Post extends entity({
   status: oneOf('draft', 'published'),
   score: number({ min: 0, max: 100 }),
   note: optional(text({ max: 5 })),
-  createdAt: auto(),
+  createdAt: created(),
 }) {}
 
 let setup: SqliteSetup;

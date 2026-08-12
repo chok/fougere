@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { entity, primary, text, email, url, number, bool, date, auto, oneOf, ref, optional, writeOnly } from '@fougere/schema';
+import { entity, primary, text, email, url, number, bool, date, created, oneOf, ref, optional, writeOnly } from '@fougere/schema';
 import { formFieldsOf, payloadOf, errorsByField } from '../src/form.js';
 
 class Author extends entity({ id: primary(), name: text() }) {}
@@ -16,7 +16,7 @@ class Article extends entity({
   source: url(),
   publishAt: date(),
   authorId: ref(Author),
-  createdAt: auto(),
+  createdAt: created(),
 }) {}
 
 describe('formFieldsOf — membership and axes', () => {
@@ -80,7 +80,7 @@ describe('declared defaults', () => {
     id: primary(),
     title: text(),
     visibility: oneOf('public', 'private', { default: 'public' }),
-    createdAt: auto(),
+    createdAt: created(),
   }) {}
 
   const fields = formFieldsOf(Doc as never, 'doc');
@@ -91,7 +91,7 @@ describe('declared defaults', () => {
   });
 
   it('carries nothing for a field whose value is decided at write time', () => {
-    // `auto()` is `lifecycle.create = 'now'` — a rule with no literal to show.
+    // `created()` is `lifecycle.create = 'now'` — a rule with no literal to show.
     // (It is server-owned anyway, so it never reaches a form.)
     expect(by('title').default).toBeUndefined();
     expect(fields.map((f) => f.name)).not.toContain('createdAt');

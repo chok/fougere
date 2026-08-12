@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { entity, primary, text, number, bool, auto, oneOf, ref, optional, many, json, reconstruct, type EntityConstructor } from '@fougere/schema';
+import { entity, primary, text, number, bool, created, oneOf, ref, optional, many, json, reconstruct, type EntityConstructor } from '@fougere/schema';
 import { toTable, isKeyed, dialects, type ColumnDef } from '../src/index.js';
 
 // ─── Fixtures ──────────────────────────────────────
@@ -19,7 +19,7 @@ class Product extends entity({
   stock: number({ min: 0, integer: true }),
   active: bool({ default: true }),
   note: optional(text()),
-  createdAt: auto(),
+  createdAt: created(),
 }) {}
 
 class Shipment extends entity({

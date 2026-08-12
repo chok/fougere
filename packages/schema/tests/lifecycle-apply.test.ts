@@ -9,7 +9,7 @@
  * These tests are what a storage adapter no longer has to write.
  */
 import { describe, it, expect } from 'vitest';
-import { entity, primary, text, oneOf, auto, updated, optional, date, number } from '../src/index.js';
+import { entity, primary, text, oneOf, created, updated, optional, date, number } from '../src/index.js';
 import { applyCreate, applyUpdate, registerGenerator } from '../src/index.js';
 
 class Product extends entity({
@@ -17,7 +17,7 @@ class Product extends entity({
   sku: text({ min: 3 }),
   status: oneOf('draft', 'published', { default: 'draft' }),
   stock: number({ default: 0 }),
-  createdAt: auto(),
+  createdAt: created(),
   updatedAt: updated(),
   archivedAt: optional(date()),
 }) {}

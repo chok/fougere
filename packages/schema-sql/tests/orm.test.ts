@@ -5,7 +5,7 @@
  * field↔column mapping, and the lifecycle rules realised on write.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { entity, primary, text, number, bool, auto, updated, optional } from '@fougere/schema';
+import { entity, primary, text, number, bool, created, updated, optional } from '@fougere/schema';
 import { setupSqlite, autoMigrate, type SqliteSetup } from '../src/index.js';
 
 class Post extends entity({
@@ -16,7 +16,7 @@ class Post extends entity({
   views: number({ integer: true, default: 0 }),
   published: bool({ default: false }),
   note: optional(text()),
-  createdAt: auto(),
+  createdAt: created(),
   updatedAt: updated(),
 }) {}
 

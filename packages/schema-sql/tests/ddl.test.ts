@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { entity, primary, text, number, bool, auto, optional, many, ref, reconstruct, unique, indexed, type EntityConstructor } from '@fougere/schema';
+import { entity, primary, text, number, bool, created, optional, many, ref, reconstruct, unique, indexed, type EntityConstructor } from '@fougere/schema';
 import { createTableSQL, createIndexSQL, generateSQL, toTable, addForeignKeyConstraintSQL } from '../src/index.js';
 
 // ─── Fixtures ──────────────────────────────────────
@@ -18,7 +18,7 @@ class Post extends entity({
   score: number(),
   active: bool({ default: true }),
   note: optional(text()),
-  createdAt: auto(),
+  createdAt: created(),
 }) {}
 
 class Membership extends entity({

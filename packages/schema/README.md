@@ -8,13 +8,13 @@ them: tables, GraphQL types, form contracts, validation.
 This package names no adapter and depends on no engine.
 
 ```ts
-import { entity, primary, text, auto, readOnly } from '@fougere/schema';
+import { entity, primary, text, created, readOnly } from '@fougere/schema';
 
 export default class Post extends entity({
   id: primary(),
   title: text(),
   authorId: readOnly(text()),
-  createdAt: auto(),
+  createdAt: created(),
 }) {}
 
 Post.validate({ title: 'Bonjour' }); // → { success, data } | { success: false, errors }

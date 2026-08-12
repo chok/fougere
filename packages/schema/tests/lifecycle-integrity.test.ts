@@ -6,12 +6,12 @@
  * at the declaration, because a static value against a static shape has a static answer.
  */
 import { describe, it, expect } from 'vitest';
-import { entity, primary, text, number, auto, updated, applyCreate, applyUpdate } from '../src/index.js';
+import { entity, primary, text, number, created, updated, applyCreate, applyUpdate } from '../src/index.js';
 
 class Doc extends entity({
   id: primary(),
   title: text(),
-  createdAt: auto(),
+  createdAt: created(),
   updatedAt: updated(),
 }) {}
 
@@ -23,7 +23,7 @@ describe('a stamp is one instant, but never one object', () => {
 
     // Same instant: two stamps from one write must not disagree.
     expect(created.getTime()).toBe(updatedAt.getTime());
-    // Different objects: `auto()` is immutable, and moving `updatedAt` used to move it.
+    // Different objects: `created()` is immutable, and moving `updatedAt` used to move it.
     // Invisible where a storage serializes on write (SQL), lasting where it does not.
     expect(created).not.toBe(updatedAt);
 

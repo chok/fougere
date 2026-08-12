@@ -62,7 +62,7 @@ export { list, type ListOptions } from './vocabulary/list.js';
 export { number } from './vocabulary/number.js';
 export { bool } from './vocabulary/bool.js';
 export { date } from './vocabulary/date.js';
-export { auto } from './vocabulary/auto.js';
+export { created } from './vocabulary/created.js';
 export { updated } from './vocabulary/updated.js';
 export { oneOf } from './vocabulary/oneOf.js';
 export { ref } from './vocabulary/ref.js';

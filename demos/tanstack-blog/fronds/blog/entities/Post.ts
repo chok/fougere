@@ -1,4 +1,4 @@
-import { entity, primary, text, auto, oneOf, date, readOnly, optional } from '@fougere/schema';
+import { entity, primary, text, created, oneOf, date, readOnly, optional } from '@fougere/schema';
 
 /**
  * The same declaration `demos/nuxt-blog` uses, minus the author relation this demo
@@ -10,7 +10,7 @@ export default class Post extends entity({
   id: primary(),
   title: text({ min: 1, max: 200 }),
   body: text(),
-  createdAt: auto(),
+  createdAt: created(),
   // Server-owned pair: born draft, flipped by the publish OPERATION — never by a
   // client writing the field.
   status: readOnly(oneOf('draft', 'published', { default: 'draft' })),

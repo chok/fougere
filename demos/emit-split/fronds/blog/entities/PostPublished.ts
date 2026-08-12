@@ -1,4 +1,4 @@
-import { auto } from '@fougere/schema';
+import { created } from '@fougere/schema';
 import Post from './Post.js';
 
 /**
@@ -8,4 +8,4 @@ import Post from './Post.js';
  * touching this file. Nothing marks it as a fact: it becomes one because somebody writes
  * `Emit<PostPublished>` — or `Fact<PostPublished>` — about it.
  */
-export default class PostPublished extends Post.pick('id', 'title').extend({ at: auto() }) {}
+export default class PostPublished extends Post.pick('id', 'title').extend({ at: created() }) {}

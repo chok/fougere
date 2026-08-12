@@ -5,7 +5,7 @@
  * make of it — the SQL dialect, the wire, the io projection, the judge. Nobody
  * wrote any of the four. Run it and read the arrows.
  */
-import { entity, primary, text, number, auto, describe, inputFields, outputFields } from '@fougere/schema';
+import { entity, primary, text, number, created, describe, inputFields, outputFields } from '@fougere/schema';
 import { toTable, createTableSQL } from '@fougere/schema-sql';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -16,7 +16,7 @@ class Reading extends entity({
   id: primary(),
   station: text({ min: 2, max: 40 }),
   celsius: number({ min: -90, max: 60 }),
-  recordedAt: auto(),
+  recordedAt: created(),
 }) {}
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -37,7 +37,7 @@ console.log(`
   ${B('  id: primary(),')}
   ${B("  station: text({ min: 2, max: 40 }),")}
   ${B('  celsius: number({ min: -90, max: 60 }),')}
-  ${B('  recordedAt: auto(),')}
+  ${B('  recordedAt: created(),')}
   ${B('}) {}')}
 `);
 
@@ -65,7 +65,7 @@ const gets = Object.keys(outputFields(Reading.getFields() as never));
 console.log(`     ${D('a client may send   ')} ${may.join(', ')}`);
 console.log(`     ${D('a client receives   ')} ${gets.join(', ')}`);
 console.log(D(`
-     Nobody wrote "a client cannot supply an id". primary() and auto() say it,
+     Nobody wrote "a client cannot supply an id". primary() and created() say it,
      and the door reads them.`));
 
 // ── 4. the judge ─────────────────────────────────────────────────────────────

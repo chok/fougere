@@ -191,7 +191,7 @@ describe('a fact on the identity card', () => {
  * An announcement is the moment a fact becomes real, so it is where the entity's own
  * `lifecycle.create` rules are realized — exactly what an insert is for a stored row.
  *
- * Nothing did it before: the judge declares an absent `auto()` LEGAL and omits it
+ * Nothing did it before: the judge declares an absent `created()` LEGAL and omits it
  * (`validation.ts`: filling the hole belongs to the storage, at the point of
  * persistence), and a fact has no storage. So a subscriber received a value missing a
  * field its own type says is there — a lie no compiler on either side can see.
@@ -203,7 +203,7 @@ describe('a fact stamped at the announcement', () => {
     await using app = await createApp({ root, createContainer });
     const announce = app.container.resolve<(fact: unknown) => Promise<void>>(emitKeyOf('PostPublished'));
 
-    // `at: auto()` — the emitter does not write it, the entity says who does.
+    // `at: created()` — the emitter does not write it, the entity says who does.
     await announce({ id: 'z', title: 'A fern' });
     await settle();
 

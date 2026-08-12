@@ -4,7 +4,7 @@
  * Plusieurs entités, relations, dérivations pour API REST.
  */
 import {
-  entity, primary, text, number, bool, oneOf, ref, many, auto, optional, json,
+  entity, primary, text, number, bool, oneOf, ref, many, created, optional, json,
 } from '../src/index.js';
 
 // ─── Entités ─────────────────────────────────────
@@ -25,7 +25,7 @@ class Product extends entity({
   stock: number({ min: 0, integer: true }),
   active: bool({ default: true }),
   metadata: json(),
-  createdAt: auto(),
+  createdAt: created(),
 }) {}
 
 class Customer extends entity({
@@ -33,7 +33,7 @@ class Customer extends entity({
   firstName: text({ min: 1 }),
   lastName: text({ min: 1 }),
   email: text({ min: 5 }),
-  createdAt: auto(),
+  createdAt: created(),
 }) {}
 
 class OrderLine extends entity({
@@ -50,7 +50,7 @@ class Order extends entity({
   total: number({ min: 0 }),
   lines: many(OrderLine),
   note: optional(text()),
-  createdAt: auto(),
+  createdAt: created(),
 }) {}
 
 // ─── Dérivations pour l'API ─────────────────────

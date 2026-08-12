@@ -5,7 +5,7 @@
  * an app-specific `role` field. Better-auth sees it as the user model and
  * accepts the extra column via `additionalFields` (handled by the adapter).
  */
-import { entity, primary, text, bool, date, auto, ref, optional, oneOf } from '@fougere/schema';
+import { entity, primary, text, bool, date, created, ref, optional, oneOf } from '@fougere/schema';
 import { AuthUser } from '@fougere/auth-better';
 
 /**
@@ -23,7 +23,7 @@ export class Note extends entity({
   userId: text(),
   title: text({ min: 1, max: 200 }),
   content: optional(text()),
-  createdAt: auto(),
+  createdAt: created(),
 }) {}
 
 /** Input schema for note creation — derived from Note. */

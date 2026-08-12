@@ -1,7 +1,7 @@
 /**
  * Demo 1 — Définition basique d'une entité
  */
-import { entity, primary, text, number, bool, auto, anatomy } from '../src/index.js';
+import { entity, primary, text, number, bool, created, anatomy } from '../src/index.js';
 
 // Une classe = une entité. Pas de decorators, pas de chaînage.
 class Product extends entity({
@@ -10,7 +10,7 @@ class Product extends entity({
   price: number({ min: 0 }),
   stock: number({ min: 0, integer: true }),
   active: bool({ default: true }),
-  createdAt: auto(),
+  createdAt: created(),
 }) {}
 
 // Introspection

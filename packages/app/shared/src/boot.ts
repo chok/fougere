@@ -162,7 +162,7 @@ async function boot(): Promise<App> {
  *
  * It used to ignore both its arguments — `(_entity, _name)` — so it forced the field
  * name `id`, minted a uuid whatever the entity declared, and realized none of the
- * lifecycle rules: `auto()` stamped nothing, a declared default stayed absent. The
+ * lifecycle rules: `created()` stamped nothing, a declared default stayed absent. The
  * same page therefore behaved one way here and another way on SQLite.
  *
  * It reads the axes now, through the one realization every storage shares.

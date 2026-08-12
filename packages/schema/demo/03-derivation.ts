@@ -3,7 +3,7 @@
  *
  * Une seule Entity, plusieurs vues pour différents cas d'usage.
  */
-import { entity, primary, text, number, oneOf, auto, optional, ref } from '../src/index.js';
+import { entity, primary, text, number, oneOf, created, optional, ref } from '../src/index.js';
 
 class Customer extends entity({
   id: primary(),
@@ -17,7 +17,7 @@ class Order extends entity({
   status: oneOf('pending', 'paid', 'shipped'),
   total: number({ min: 0 }),
   note: optional(text()),   // nullable — donc effaçable par un patch
-  createdAt: auto(),
+  createdAt: created(),
 }) {}
 
 // --- Input pour créer une commande (POST /orders) ---

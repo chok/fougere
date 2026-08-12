@@ -9,7 +9,7 @@
 import { describe as suite, it, expect } from 'vitest';
 import {
   entity, primary, text, number, bool, date, json, oneOf, ref,
-  auto, updated, immutable, optional, nullable, unique, indexed,
+  created, updated, immutable, optional, nullable, unique, indexed,
   describe as describeCard, reconstructSet, describeSet,
 } from '@fougere/schema';
 import { toTable, toTables, toTableName } from '../src/table.js';
@@ -30,7 +30,7 @@ class Post extends entity({
   meta: json(),
   authorId: ref(Author),
   status: oneOf('draft', 'published', { default: 'draft' }),
-  createdAt: auto(),
+  createdAt: created(),
   updatedAt: updated(),
   publishedAt: immutable(optional(date())),
 }, {

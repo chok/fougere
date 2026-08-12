@@ -1,4 +1,4 @@
-import { entity, auto, number, optional, text } from '@fougere/schema';
+import { entity, created, number, optional, text } from '@fougere/schema';
 
 /**
  * Down the fleet. `node` absent means EVERYONE.
@@ -10,5 +10,5 @@ import { entity, auto, number, optional, text } from '@fougere/schema';
 export default class Recalibrate extends entity({
   node: optional(text()),
   offset: number(),
-  at: auto(),
+  at: created(),
 }) {}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { entity, primary, text, number, oneOf, ref, many, auto } from '../src/index.js';
+import { entity, primary, text, number, oneOf, ref, many, created } from '../src/index.js';
 
 class Customer extends entity({
   id: primary(),
@@ -20,7 +20,7 @@ class Order extends entity({
   status: oneOf('pending', 'paid', 'shipped'),
   total: number({ min: 0 }),
   lines: many(OrderLine),
-  createdAt: auto(),
+  createdAt: created(),
 }) {}
 
 describe('Entity', () => {

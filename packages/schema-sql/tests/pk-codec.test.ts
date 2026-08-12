@@ -7,12 +7,12 @@
  * driver cannot bind.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { entity, primary, auto, text } from '@fougere/schema';
+import { entity, primary, created, text } from '@fougere/schema';
 import { setupSqlite, autoMigrate } from '../src/index.js';
 
 class Reading extends entity({
   // A timestamp AS the key: legal, and the value the entity declares is a Date.
-  at: primary(auto()),
+  at: primary(created()),
   note: text(),
 }) {}
 

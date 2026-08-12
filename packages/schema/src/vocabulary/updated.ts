@@ -1,4 +1,4 @@
-import { auto } from './auto.js';
+import { created } from './created.js';
 import { createField, type Field } from '../field/index.js';
 
 /**
@@ -7,6 +7,6 @@ import { createField, type Field } from '../field/index.js';
  * shape and creation rule are auto()'s, stated once there.
  */
 export function updated(): Field<Date, true> {
-  const base = auto();
+  const base = created();
   return createField<Date, true>({ ...base, lifecycle: { ...base.lifecycle, update: 'now' } });
 }

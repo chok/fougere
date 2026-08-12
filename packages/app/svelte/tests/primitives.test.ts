@@ -10,7 +10,7 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { get } from 'svelte/store';
-import { entity, primary, text, oneOf, readOnly, auto } from '@fougere/schema';
+import { entity, primary, text, oneOf, readOnly, created } from '@fougere/schema';
 import { ErrorCode } from '@fougere/core/contract';
 import { useQuery, useCommand } from '../src/useFougereData.js';
 import { useFormFor } from '../src/useFormFor.js';
@@ -19,7 +19,7 @@ class Post extends entity({
   id: primary(),
   title: text({ min: 1, max: 200 }),
   body: text(),
-  createdAt: auto(),
+  createdAt: created(),
   status: readOnly(oneOf('draft', 'published', { default: 'draft' })),
 }) {}
 
