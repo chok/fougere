@@ -8,14 +8,15 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "pnpm -r build",
+    "build": "pnpm -r --filter './packages/**' build",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "lint": "oxlint packages site demos",
     "knip": "knip",
     "coverage": "pnpm -r --filter './packages/**' exec vitest run --passWithNoTests --coverage --coverage.provider=v8 --coverage.reporter=text --coverage.include=src/**",
     "changeset": "changeset",
-    "version-packages": "changeset version"
+    "version-packages": "changeset version",
+    "build:apps": "pnpm -r --filter \"./demos/**\" --filter ./site build"
   },
   "devDependencies": {
     "@changesets/cli": "^2.31.1",
