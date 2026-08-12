@@ -20,7 +20,12 @@ overrides:
 # now allowBuilds (a map). Every entry builds something real — native bindings,
 # a binary, or a postinstall that picks a variant.
 allowBuilds:
-  better-sqlite3: true
+  # Refused rather than absent: pnpm 11 fails an install on a build script it was
+  # told nothing about. Since 13, better-sqlite3 ships `prebuilds/` in its tarball,
+  # so building it runs node-gyp for a binary that is already there. The 12 that
+  # `better-auth` drags in is covered by the same answer — nothing here needs the
+  # sqlite it would have fetched.
+  better-sqlite3: false
   '@swc/core': true
   esbuild: true
   sharp: true

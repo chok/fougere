@@ -1,6 +1,6 @@
 {
   "name": "@fougere/cli-ui",
-  "version": "0.2.0-alpha.0",
+  "version": "0.2.0-alpha.1",
   "description": "The display primitives of the Fougere CLI.",
   "keywords": [
     "fougere",

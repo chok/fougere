@@ -32,6 +32,7 @@
   },
   "changesets": [
     "five-hosts-one-frond",
-    "honest-contract-boundaries"
+    "honest-contract-boundaries",
+    "prebuilt-sqlite"
   ]
 }

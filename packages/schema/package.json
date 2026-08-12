@@ -1,6 +1,6 @@
 {
   "name": "@fougere/schema",
-  "version": "0.2.0-alpha.0",
+  "version": "0.2.0-alpha.1",
   "description": "The entity and its 4 axes — shape, role, lifecycle, boundary. No engine dependency.",
   "keywords": [
     "fougere",

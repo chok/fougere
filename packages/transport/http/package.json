@@ -1,6 +1,6 @@
 {
   "name": "@fougere/transport-http",
-  "version": "0.2.0-alpha.0",
+  "version": "0.2.0-alpha.1",
   "description": "The call contract on the wire, in JSON-RPC 2.0 (server + client).",
   "keywords": [
     "fougere",

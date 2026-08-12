@@ -1,5 +1,16 @@
 # fougere-demo-auth-better
 
+## 0.0.2-alpha.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @fougere/auth-better@0.2.0-alpha.1
+  - @fougere/container@0.2.0-alpha.1
+  - @fougere/core@0.2.0-alpha.1
+  - @fougere/schema@0.2.0-alpha.1
+  - @fougere/schema-sql@0.2.0-alpha.1
+
 ## 0.0.2-alpha.1
 
 ### Patch Changes

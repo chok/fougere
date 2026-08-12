@@ -1,5 +1,21 @@
 # @fougere/schema
 
+## 0.2.0-alpha.1
+
+### Patch Changes
+
+- Nothing downloads or compiles when you install.
+
+  `better-sqlite3` moves to 13, which carries its prebuilt binaries inside the tarball
+  (`prebuilds/darwin-arm64.node`, `linux-x64`, `linuxmusl`, `win32-arm64`, …). Version 12
+  fetched one at install time through `prebuild-install`, a package that is no longer
+  maintained and that printed a deprecation warning on every `create fougere`.
+
+  Measured on a bare install: no deprecation line, no `build/` directory, no `node-gyp`, no
+  Python, 9.6 s — and it works offline, which the download never did.
+
+  The scaffold templates move with it, since that is where a new app met the warning.
+
 ## 0.2.0-alpha.0
 
 ### Minor Changes
