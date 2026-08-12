@@ -179,8 +179,6 @@ export interface FrondDescriptor {
     handlerName?: string;
     /** Method name on the resolved handler (defaults to op name). */
     method?: string;
-    /** CASL ability string for opt-in policy check. */
-    policy?: string;
   }>;
 }
 

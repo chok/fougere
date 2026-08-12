@@ -71,6 +71,17 @@ describe('boundary · override slot', () => {
     const f = createField<number>({ shape: { type: 'number' }, boundary: 'nope' });
     expect(() => resolveBoundary(f)).toThrow(/Unknown boundary alias/);
   });
+
+  // The two spellings of one axis must fail the same way. The direct form used to
+  // fall back to identity: the value arrived unconverted while the card said it had
+  // been converted, and nothing said a word.
+  it('an unregistered NAMED codec throws too, in both directions', () => {
+    const inbound = createField<number>({ shape: { type: 'number' }, boundary: { in: { decode: 'celsius' } } });
+    expect(() => resolveBoundary(inbound)).toThrow(/Unknown boundary decoder: 'celsius'/);
+
+    const outbound = createField<number>({ shape: { type: 'number' }, boundary: { out: { encode: 'celsius' } } });
+    expect(() => resolveBoundary(outbound)).toThrow(/Unknown boundary encoder: 'celsius'/);
+  });
 });
 
 describe("boundary · 'closed' permissions (readOnly / writeOnly)", () => {
@@ -82,7 +93,7 @@ describe("boundary · 'closed' permissions (readOnly / writeOnly)", () => {
     // absent: the server owns it — no Required error despite no create rule
     expect(validateFields(fields, { title: 'x' }).success).toBe(true);
     // rejected in patch mode too
-    expect(validateFields(fields, { views: '9' }, '', { patch: true }).success).toBe(false);
+    expect(validateFields(fields, { views: '9' }, { patch: true }).success).toBe(false);
   });
 
   it('writeOnly() closes out — accepted at ingress, omitted at egress', () => {

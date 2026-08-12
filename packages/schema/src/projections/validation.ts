@@ -95,14 +95,21 @@ export interface ValidateOptions {
   patch?: boolean;
 }
 
+/**
+ * A path is a field NAME here, never a dotted trail: `json(Entity)` is judged as one
+ * opaque shape by the engine, so a nested failure answers `{ path: 'addr' }` with the
+ * inner field in the prose. This used to take a `pathPrefix` that every call site passed
+ * as `''` — a parameter for a recursion nobody wrote, which made the code read as if
+ * nesting were handled. Writing that recursion changes what `FougereError.details`
+ * carries across processes and languages, so it is a contract decision, not a patch.
+ */
 export function validateFields(
   fields: Fields,
   input: unknown,
-  pathPrefix = '',
   opts: ValidateOptions = {},
 ): ValidationResult<Record<string, unknown>> {
   if (typeof input !== 'object' || input === null) {
-    return { success: false, errors: [{ path: pathPrefix || '.', message: 'Expected an object' }] };
+    return { success: false, errors: [{ path: '.', message: 'Expected an object' }] };
   }
 
   const data = input as Record<string, unknown>;
@@ -122,12 +129,12 @@ export function validateFields(
   // the end of it: the sender re-syncs its readers before it ships.
   for (const key of Object.keys(data)) {
     if (!(key in fields)) {
-      errors.push({ path: pathPrefix ? `${pathPrefix}.${key}` : key, message: 'Unknown field' });
+      errors.push({ path: key, message: 'Unknown field' });
     }
   }
 
   for (const [key, field] of Object.entries(fields)) {
-    const path = pathPrefix ? `${pathPrefix}.${key}` : key;
+    const path = key;
     const value = data[key];
 
     if (value === undefined) {

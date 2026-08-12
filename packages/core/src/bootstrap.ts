@@ -454,7 +454,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
             // patch is 'Immutable', a read-only field 'Read-only', every
             // system-stamped absence is legal via its lifecycle rule, and a
             // key outside the contract is 'Unknown field' (refused, not stripped).
-            const result = validateFields(schema.getFields(), inv.body, '', { patch: schema.getOpts?.().patch });
+            const result = validateFields(schema.getFields(), inv.body, { patch: schema.getOpts?.().patch });
             if (!result.success) {
               throw new FougereError({
                 code: ErrorCode.VALIDATION_FAILED,
@@ -728,12 +728,12 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
     container.registerValue(emitKeyOf(fact), async (raw: unknown) => {
       /**
-       * The announcement realizes the fact's own `lifecycle.create` — an `auto()` stamped,
+       * The announcement realizes the fact's own `lifecycle.create` — an `created()` stamped,
        * an id generated, a default applied.
        *
        * `validation.ts` states the split: the judge never fills a hole, the STORAGE does,
        * at the point of persistence. A fact has no storage, so nobody did — the judge
-       * declared an absent `auto()` legal and omitted it, and a subscriber received a
+       * declared an absent `created()` legal and omitted it, and a subscriber received a
        * value missing a field its own type promises. Announcing is a fact's point of
        * persistence, and `applyCreate` is the one realization every storage already shares.
        *
@@ -742,7 +742,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
        * one fact a different identity in every process that relayed it.
        *
        * **A typed emitter cannot reach this yet.** `Emit<T>` names the ROW type, where an
-       * `auto()` field is present and required, so `announce({ id, title })` is a
+       * `created()` field is present and required, so `announce({ id, title })` is a
        * compile error and the author writes `at: new Date()` anyway. `CtorInput`
        * (`schema/src/entity.ts`) is exactly the shape wanted and derives from the FIELDS,
        * which the instance type has already thrown away. So this runs for a payload built

@@ -169,7 +169,7 @@ export function createSchemaConstructor<TFields extends Fields>(
         version: 1,
         vendor: 'fougere',
         validate(value: unknown) {
-          const result = validateFields(fields, value, '', opts);
+          const result = validateFields(fields, value, opts);
           if (result.success) {
             return { value: result.data };
           }
@@ -202,7 +202,7 @@ export function createSchemaConstructor<TFields extends Fields>(
       return opts;
     }
     static validate(input: unknown) {
-      return validateFields(fields, input, '', opts);
+      return validateFields(fields, input, opts);
     }
     static from(data: Record<string, unknown>) {
       // Trusted projection: keep known keys, drop the rest. Runs the boundary's decode

@@ -48,7 +48,7 @@ describe('validation — edge cases', () => {
     const create = validateFields(fields, { title: 'x' });
     expect(create.success).toBe(true);
     if (create.success) expect('updatedAt' in create.data).toBe(false);
-    const patch = validateFields(fields, { title: 'x' }, '', { patch: true });
+    const patch = validateFields(fields, { title: 'x' }, { patch: true });
     expect(patch.success).toBe(true);
     if (patch.success) expect('updatedAt' in patch.data).toBe(false);
   });
@@ -56,10 +56,10 @@ describe('validation — edge cases', () => {
   it("immutable(): re-supplied in a patch → 'Immutable'; create accepts; absent patch untouched", () => {
     const fields = { slug: immutable(text()), title: text() };
     expect(validateFields(fields, { slug: 'a', title: 'x' }).success).toBe(true); // create
-    const patch = validateFields(fields, { slug: 'b' }, '', { patch: true });
+    const patch = validateFields(fields, { slug: 'b' }, { patch: true });
     expect(patch.success).toBe(false);
     if (!patch.success) expect(patch.errors[0]).toEqual({ path: 'slug', message: 'Immutable' });
-    expect(validateFields(fields, { title: 'y' }, '', { patch: true }).success).toBe(true);
+    expect(validateFields(fields, { title: 'y' }, { patch: true }).success).toBe(true);
   });
 
   it('nullable field with a default: the default rule survives optional() (order fixed)', () => {
@@ -85,7 +85,7 @@ describe('validation — edge cases', () => {
     expect(validateFields(fields, {}).success).toBe(true);
     const create = validateFields(fields, { status: 'published' });
     expect(create.success).toBe(false);
-    const patch = validateFields(fields, { status: 'published' }, '', { patch: true });
+    const patch = validateFields(fields, { status: 'published' }, { patch: true });
     expect(patch.success).toBe(false);
   });
 
@@ -94,7 +94,7 @@ describe('validation — edge cases', () => {
     const create = validateFields(fields, { title: 'x', status: 'published' });
     expect(create.success).toBe(false);
     if (!create.success) expect(create.errors[0]).toEqual({ path: 'status', message: 'Unknown field' });
-    const patch = validateFields(fields, { titel: 'typo' }, '', { patch: true });
+    const patch = validateFields(fields, { titel: 'typo' }, { patch: true });
     expect(patch.success).toBe(false);
     if (!patch.success) expect(patch.errors[0]).toEqual({ path: 'titel', message: 'Unknown field' });
     expect(validateFields(fields, { title: 'x' }).success).toBe(true);
