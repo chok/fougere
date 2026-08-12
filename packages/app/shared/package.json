@@ -69,7 +69,7 @@
     "access": "public"
   },
   "peerDependencies": {
-    "@fougere/schema-graphql": "workspace:*",
+    "@fougere/schema-graphql": "^0.2.0-alpha.0",
     "@pothos/core": "^4.0.0",
     "graphql": "^16.0.0"
   },

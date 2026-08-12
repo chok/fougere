@@ -1,0 +1,76 @@
+---
+'@fougere/app': minor
+'@fougere/auth-better': minor
+'@fougere/cli': minor
+'@fougere/cli-ui': minor
+'@fougere/container': minor
+'@fougere/core': minor
+'@fougere/decorators': minor
+'@fougere/http': minor
+'@fougere/next': minor
+'@fougere/nuxt': minor
+'@fougere/react': minor
+'@fougere/runtime': minor
+'@fougere/schema': minor
+'@fougere/schema-graphql': minor
+'@fougere/schema-rest': minor
+'@fougere/schema-sql': minor
+'@fougere/svelte': minor
+'@fougere/transport-http': minor
+'@fougere/vite': minor
+'create-fougere': minor
+'fougere': minor
+---
+
+One frond, five hosts — and the declarations that did not keep their promise are gone.
+
+**Five hosts, one frond, byte-identical.** The half of a Nuxt app that was never Nuxt now
+lives in `@fougere/app`, and each UI framework gets its own package: `@fougere/react`,
+`@fougere/svelte`, `@fougere/next`, plus `@fougere/vite` — one plugin serving three hosts.
+Express joins as an adapter, being the one host that is not Web-standard. The same frond
+runs under all of them without a line changed.
+
+**Breaking**
+
+- `@fougere/container-fougere` is gone. Its implementation moved into `@fougere/container`,
+  which now exports `createContainer` alongside the `Container` type. The port never had a
+  second adapter, and the scan knows the graph before boot, so what was left to bind late is
+  a Map, a scope and a resolver of last resort. Update the import and drop the dependency.
+- `auto()` is now `created()`. Its dual `updated()` is literally built on it and names its
+  moment; this one said "the server fills it" without saying when. Every template already
+  spelled it `createdAt: auto()`.
+- `validateFields(fields, input, opts)` — the `pathPrefix` parameter is removed, so `opts`
+  moves from the fourth position to the third. Every caller passed `''`: it was a parameter
+  for a recursion nobody wrote, and it made the code read as if nested paths were handled.
+- A named boundary codec that no one registered now **throws** instead of converting as
+  identity. A frond declaring `{ decode: 'celsius' }` against a consumer that never called
+  `registerDecoder` used to receive the value unconverted while the card said otherwise. One
+  axis, two spellings, one failure mode — the alias form already threw.
+- `OperationOverride.policy` is removed from `frond.config.ts`'s type. It had no reader at
+  all, so setting it did nothing, silently.
+- `graphql` and `@pothos/core` are optional peers of `@fougere/app` rather than dependencies:
+  an app that serves no GraphQL no longer installs them.
+- An adapter is published by the app, not mounted by the host.
+- Express surfaces are middlewares, because that is what an Express app speaks.
+
+**Fixed**
+
+- `@fougere/nuxt` declares the `h3` its runtime has always imported — seven imports across six
+  server files, resolvable from nothing but Nitro's build.
+- `@frond/<name>` resolves in the scan: two entry points were loading a neighbour's sources
+  without the alias map.
+- A `list` op reaches GraphQL with its pagination arguments, and `required` no longer demands
+  what the door refuses.
+- `count` applies its own filter; the identity card reports an operation's overridden kind.
+- `presenterFor` is the dual `facadeFor` already had.
+- An operation's doc sentence now reaches both REST and GraphQL, instead of being dropped in
+  each adapter's narrowed view of the same contract.
+- `dispose()` disposes: it used to clear the registry while its own doc promised to release
+  the singletons it held, and `await using app` routed straight to it. Failures are collected
+  rather than swallowed at the first one.
+
+**Also**
+
+Keywords so an adapter is found by the library it adapts; one id generator instead of two
+majors of it; and a mechanical floor in CI — oxlint, knip and v8 coverage, recorded rather
+than gated.
