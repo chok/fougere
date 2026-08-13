@@ -1,4 +1,4 @@
-import { createField, type Field, type SchemaLike } from '../field/index.js';
+import { Field, type SchemaLike } from '../field/index.js';
 import { describe } from '../projections/describe.js';
 import type { FieldDescriptor } from '../projections/card.js';
 
@@ -19,14 +19,14 @@ import type { FieldDescriptor } from '../projections/card.js';
 export function json<T = unknown>(): Field<T>;
 export function json<E extends SchemaLike & (new (...args: any[]) => any)>(of: E): Field<InstanceType<E>>;
 export function json(of?: SchemaLike): Field<unknown> {
-  if (!of) return createField({ shape: { type: 'object' } });
+  if (!of) return new Field({ shape: { type: 'object' } });
   const card = describe(of);
   const properties: Record<string, unknown> = {};
   for (const [key, prop] of Object.entries(card.properties)) {
     const { 'x-fougere': _ext, ...shapeOnly } = prop as FieldDescriptor;
     properties[key] = shapeOnly;
   }
-  return createField({
+  return new Field({
     shape: { type: 'object', properties, ...(card.required ? { required: card.required } : {}) },
   });
 }

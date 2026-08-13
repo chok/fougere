@@ -116,8 +116,9 @@ group('reconstruct — card → working schema', () => {
     expect(Remote.validate({ mail: 'a@b.co', tags: ['x'] }).success).toBe(true);
     expect(Remote.validate({ mail: 'a@b.co', tags: [''] }).success).toBe(false);
     expect(Remote.validate({ mail: 'nope', tags: ['x'] }).success).toBe(false);
-    // a bare many() relation still reconstructs as shapeless (array without items)
-    expect(reconstruct(JSON.parse(JSON.stringify(describe(Post, 'post')))).getFields().tags.shape).toBeUndefined();
+    // a bare many() relation round-trips as an array WITHOUT items — the card always wrote
+    // `type: 'array'` for it, and now the field it rebuilds says the same thing it did.
+    expect(reconstruct(JSON.parse(JSON.stringify(describe(Post, 'post')))).getFields().tags.shape).toEqual({ type: 'array' });
   });
 
   it('an embedded value object (json(Entity)) travels and still validates after reconstruct', () => {

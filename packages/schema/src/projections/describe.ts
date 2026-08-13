@@ -66,13 +66,9 @@ function describeField(field: AnyField, key: string): FieldDescriptor {
   // Shape is already JSON Schema's vocabulary — nullability included, as the
   // `[T,'null']` type union — so its keywords copy verbatim (an embedded object's
   // `properties`/`required` too, themselves shape-only).
-  if (field.shape) {
-    for (const [key, value] of Object.entries(field.shape)) {
-      if (value === undefined) continue;
-      (out as Record<string, unknown>)[key] = value;
-    }
-  } else if (field.role?.relation?.kind === 'many') {
-    out.type = 'array';
+  for (const [key, value] of Object.entries(field.shape)) {
+    if (value === undefined) continue;
+    (out as Record<string, unknown>)[key] = value;
   }
   if (field.meta?.description) out.description = field.meta.description;
   const ext = describeExtension(field, key);

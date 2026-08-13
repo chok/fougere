@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { HttpRouter, HttpMethod, Handler, RequestContext } from '@fougere/http';
-import { cloneField, number, registerBoundaryAlias, registerEncoder, type Fields } from '@fougere/schema';
+import { number, registerBoundaryAlias, registerEncoder, type Fields } from '@fougere/schema';
 import { registerRoutes, type RouteDefinition } from '../src/index.js';
 
 function fakeRouter() {
@@ -149,7 +149,7 @@ describe('registerRoutes', () => {
     registerEncoder('rest-test-increment', (value) => typeof value === 'number' ? value + 1 : value);
     registerBoundaryAlias('rest-test-increment', { out: { encode: 'rest-test-increment' } });
     const outputFields: Fields = {
-      value: cloneField(number(), { boundary: 'rest-test-increment' }),
+      value: number().with({ boundary: 'rest-test-increment' }),
     };
     const { router, getHandler } = fakeRouter();
     registerRoutes(router, [

@@ -1,4 +1,4 @@
-import { createField, type Field } from '../field/index.js';
+import { Field } from '../field/index.js';
 
 export interface ListOptions {
   /** Minimum number of elements. */
@@ -16,12 +16,13 @@ export interface ListOptions {
  *
  * Only the element's `shape` embeds. Its other axes are meaningless per-element and are
  * DROPPED SILENTLY — `list(primary())` is accepted and loses the role. The guard below
- * only rejects a field with no shape at all (a relation). Tightening it to reject a
- * carried role/lifecycle/boundary is open.
+ * only rejects a relation. Tightening it to reject a carried lifecycle/boundary is open.
  */
 export function list<T>(item: Field<T, boolean>, opts?: ListOptions): Field<T[]> {
-  if (!item.shape) throw new Error('list() takes a value field (text(), number()…) — a relation has no value shape');
-  return createField<T[]>({
+  // Reads the ROLE, not the absence of a shape: since every field carries one, `many(Post)`
+  // now has an array shape too, and embedding it would claim the other side's rows are ours.
+  if (item.role?.relation) throw new Error('list() takes a value field (text(), number()…) — a relation has no value shape');
+  return new Field<T[]>({
     shape: { type: 'array', items: item.shape, minItems: opts?.min, maxItems: opts?.max },
   });
 }

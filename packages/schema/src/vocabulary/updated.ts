@@ -1,5 +1,5 @@
 import { created } from './created.js';
-import { createField, type Field } from '../field/index.js';
+import { Field } from '../field/index.js';
 
 /**
  * `auto()`, plus the update stamp — the canonical `updatedAt` (Prisma
@@ -8,5 +8,5 @@ import { createField, type Field } from '../field/index.js';
  */
 export function updated(): Field<Date, true> {
   const base = created();
-  return createField<Date, true>({ ...base, lifecycle: { ...base.lifecycle, update: 'now' } });
+  return base.with({ lifecycle: { ...base.lifecycle, update: 'now' } });
 }

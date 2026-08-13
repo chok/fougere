@@ -100,13 +100,6 @@ function customFormatOf(name: string): FormatPredicate | undefined {
  */
 export function checkValue(field: AnyField, value: unknown): Checked {
   const shape = field.shape;
-  // Relation-only field (`many`): no value shape, just an array of related rows.
-  if (!shape) {
-    if (field.role?.relation?.kind === 'many') {
-      return Array.isArray(value) ? { value } : { error: 'Expected an array' };
-    }
-    return { value };
-  }
   // The pre-engine guards dispatch on the BASE type — `shape.type` itself may be
   // the nullable union. They only short-circuit NON-null values: null always goes
   // to the engine, whose union judges it (that is the whole nullability model).

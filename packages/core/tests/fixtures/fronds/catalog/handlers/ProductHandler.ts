@@ -1,18 +1,14 @@
-/** Schema-like stubs for testing AST inference. */
-export class SearchInput {
-  static getFields() {
-    return { name: { __brand: 'fougere_field' as const, type: 'text', options: {}, nullable: false } };
-  }
-}
+import { entity, primary, text } from '@fougere/schema';
 
-export class SearchOutput {
-  static getFields() {
-    return {
-      id: { __brand: 'fougere_field' as const, type: 'id', options: { primary: true }, nullable: false },
-      name: { __brand: 'fougere_field' as const, type: 'text', options: {}, nullable: false },
-    };
-  }
-}
+/** Schema stubs for testing AST inference. */
+export class SearchInput extends entity({
+  name: text(),
+}) {}
+
+export class SearchOutput extends entity({
+  id: primary(),
+  name: text(),
+}) {}
 
 // Resolved by type from the container — not imported directly. Declared over the
 // row shape rather than `unknown`: the real ORM is `EntityOrm<T>`, so a stand-in

@@ -4,7 +4,7 @@ import {
   resolveBoundary, encodeFields, validateFields,
   registerDecoder, registerEncoder, registerBoundaryAlias,
 } from '../src/index.js';
-import { createField } from '../src/field/index.js';
+import { Field } from '../src/field/index.js';
 
 class Event extends entity({
   id: primary(),
@@ -55,20 +55,20 @@ describe('boundary · override slot', () => {
     registerEncoder('toCents', (v) => (typeof v === 'number' ? Math.round(v * 100) : v));
     registerBoundaryAlias('moneyCents', { in: { decode: 'fromCents' }, out: { encode: 'toCents' } });
 
-    const price = createField<number>({ shape: { type: 'number' }, boundary: 'moneyCents' });
+    const price = new Field<number>({ shape: { type: 'number' }, boundary: 'moneyCents' });
     const { decode, encode } = resolveBoundary(price);
     expect(decode(1099)).toEqual({ value: 10.99 });
     expect(encode(10.99)).toBe(1099);
   });
 
   it('directional form allows asymmetry — an absent direction is identity', () => {
-    const f = createField<number>({ shape: { type: 'number' }, boundary: { in: { decode: 'fromCents' } } });
+    const f = new Field<number>({ shape: { type: 'number' }, boundary: { in: { decode: 'fromCents' } } });
     expect(resolveBoundary(f).decode(500)).toEqual({ value: 5 });
     expect(resolveBoundary(f).encode(5)).toBe(5); // no out rule → identity
   });
 
   it('an unknown alias throws at resolve time', () => {
-    const f = createField<number>({ shape: { type: 'number' }, boundary: 'nope' });
+    const f = new Field<number>({ shape: { type: 'number' }, boundary: 'nope' });
     expect(() => resolveBoundary(f)).toThrow(/Unknown boundary alias/);
   });
 
@@ -76,10 +76,10 @@ describe('boundary · override slot', () => {
   // fall back to identity: the value arrived unconverted while the card said it had
   // been converted, and nothing said a word.
   it('an unregistered NAMED codec throws too, in both directions', () => {
-    const inbound = createField<number>({ shape: { type: 'number' }, boundary: { in: { decode: 'celsius' } } });
+    const inbound = new Field<number>({ shape: { type: 'number' }, boundary: { in: { decode: 'celsius' } } });
     expect(() => resolveBoundary(inbound)).toThrow(/Unknown boundary decoder: 'celsius'/);
 
-    const outbound = createField<number>({ shape: { type: 'number' }, boundary: { out: { encode: 'celsius' } } });
+    const outbound = new Field<number>({ shape: { type: 'number' }, boundary: { out: { encode: 'celsius' } } });
     expect(() => resolveBoundary(outbound)).toThrow(/Unknown boundary encoder: 'celsius'/);
   });
 });
@@ -117,14 +117,14 @@ describe('boundary · survit aux transforms de field (cloneField)', () => {
   registerDecoder('fromCents', (v) => ({ value: typeof v === 'number' ? v / 100 : v }));
   registerEncoder('toCents', (v) => (typeof v === 'number' ? Math.round(v * 100) : v));
   registerBoundaryAlias('moneyCents', { in: { decode: 'fromCents' }, out: { encode: 'toCents' } });
-  const money = () => createField<number>({ shape: { type: 'number' }, boundary: 'moneyCents' });
+  const money = () => new Field<number>({ shape: { type: 'number' }, boundary: 'moneyCents' });
 
   it('optional() préserve le boundary', () => {
     expect(resolveBoundary(optional(money())).decode(1099)).toEqual({ value: 10.99 });
   });
 
   it('primary(field) préserve le boundary ET la description', () => {
-    const f = primary(createField<string>({ shape: { type: 'string' }, boundary: 'moneyCents', meta: { description: 'id' } }));
+    const f = primary(new Field<string>({ shape: { type: 'string' }, boundary: 'moneyCents', meta: { description: 'id' } }));
     expect(resolveBoundary(f).decode(1099)).toEqual({ value: 10.99 });
     expect(f.meta?.description).toBe('id');
   });

@@ -1,4 +1,4 @@
-import { createField, declaredBoundary, type Field } from '../field/index.js';
+import { Field, declaredBoundary } from '../field/index.js';
 
 /**
  * Close the field's INBOUND direction — emitted normally, never accepted from
@@ -8,5 +8,5 @@ import { createField, declaredBoundary, type Field } from '../field/index.js';
  * The outbound direction (and its conversion) is untouched.
  */
 export function readOnly<T, A extends boolean>(field: Field<T, A>): Field<T, A> {
-  return createField<T, A>({ ...field, boundary: { ...declaredBoundary(field), in: 'closed' } });
+  return field.with({ boundary: { ...declaredBoundary(field), in: 'closed' } });
 }

@@ -1,8 +1,7 @@
 import {
-  createField,
   type AnyField,
   type EntityConstructor,
-  type Field,
+  Field,
   type Fields,
   type Role,
   type Shape,
@@ -28,11 +27,11 @@ function reconstructShape(prop: FieldDescriptor): Shape | undefined {
   const base = types.find((t) => t !== 'null');
   if (base === undefined) return undefined;
   const type = prop.type as Shape['type'];
-  // `array` is two distinct things: with `items` it is a value list (a real shape);
-  // without, it is a bare `many` relation marker — no shape, the role carries it.
+  // `array` with `items` is a value list, without it a `many` relation whose elements
+  // live on the other side. Both are array shapes; only the role tells them apart, and
+  // it travels in `x-fougere`. Nothing to branch on here — the keywords copy back.
   if (base === 'array') {
-    if (!prop.items) return undefined;
-    const items = reconstructShape(prop.items);
+    const items = prop.items ? reconstructShape(prop.items) : undefined;
     return clean({ type, items, minItems: prop.minItems, maxItems: prop.maxItems }) as unknown as Shape;
   }
   switch (base) {
@@ -77,10 +76,20 @@ function reconstructRole(role: RoleDescriptor, resolve?: Resolver): Role {
   return out;
 }
 
-function reconstructField(prop: FieldDescriptor, resolve?: Resolver): AnyField {
+function reconstructField(prop: FieldDescriptor, key: string, resolve?: Resolver): AnyField {
   const ext = prop['x-fougere'];
-  return createField({
-    shape: reconstructShape(prop),
+  const shape = reconstructShape(prop);
+  // A card that names no type for a property cannot become a field: every field states a
+  // shape. Loud and local, at the property that is missing it — the alternative is a field
+  // that judges nothing, which is what this whole rule exists to stop.
+  if (!shape) {
+    throw new Error(
+      `Field '${key}': the card carries no \`type\` for it, so there is no shape to rebuild. `
+      + `A field always states one.`,
+    );
+  }
+  return new Field({
+    shape,
     role: ext?.role ? reconstructRole(ext.role, resolve) : undefined,
     // The normal forms are pure JSON — they travelled verbatim, they read back verbatim.
     lifecycle: ext?.lifecycle,
@@ -113,7 +122,7 @@ function compositeFromFields(fields: Fields): ReadonlyArray<ReadonlyArray<string
 function buildSchema(descriptor: SchemaDescriptor, resolve?: Resolver): SchemaConstructor<Fields> {
   const fields: Fields = {};
   for (const [key, prop] of Object.entries(descriptor.properties)) {
-    fields[key] = reconstructField(prop, resolve);
+    fields[key] = reconstructField(prop, key, resolve);
   }
   // Recover the entity-level declaration from what the members carry. The card holds the
   // fact once per member; a group of two arrives twice, so the set is de-duplicated —

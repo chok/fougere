@@ -1,10 +1,8 @@
+import { entity, primary, text, number } from '@fougere/schema';
+
 /** Test entity for Crud inheritance tests. */
-export default class Item {
-  static getFields() {
-    return {
-      id: { __brand: 'fougere_field' as const, type: 'id', options: { primary: true }, nullable: false },
-      name: { __brand: 'fougere_field' as const, type: 'text', options: {}, nullable: false },
-      quantity: { __brand: 'fougere_field' as const, type: 'number', options: {}, nullable: false },
-    };
-  }
-}
+export default class Item extends entity({
+  id: primary(),
+  name: text(),
+  quantity: number(),
+}) {}

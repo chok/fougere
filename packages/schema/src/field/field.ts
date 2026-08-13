@@ -18,55 +18,97 @@ import type { Meta } from './meta.js';
  * @typeParam A - "auto-supplied at creation" (primary/auto/default/optional) →
  *   the field is optional in `new X(input)`. Phantom, type-level only.
  */
-export interface Field<T = unknown, A extends boolean = false> {
-  readonly __brand: 'fougere_field';
-  readonly shape?: Shape;
+export class Field<T = unknown, A extends boolean = false> {
+  /**
+   * REQUIRED — a field always says what its value looks like. It was optional, and
+   * the one field that had no shape (`many`) forced five readers to re-derive "what
+   * kind of field is this" from its absence: the judge, `describe`, `reconstruct`,
+   * `list`'s guard and the TS projection. A field with neither shape nor role was
+   * legal, judged nothing, and became an invented `text not null` column in SQL.
+   */
+  readonly shape: Shape;
   readonly role?: Role;
   readonly lifecycle?: Lifecycle;
   readonly boundary?: BoundaryRef;
   readonly meta?: Meta;
-  /** Phantom — data type, never read at runtime. */
-  readonly _type?: T;
+  /** Phantom — data type, never read at runtime. `declare`: no slot, no emit. */
+  declare readonly _type?: T;
   /** Phantom — auto-at-creation flag, never read at runtime. */
-  readonly _auto?: A;
+  declare readonly _auto?: A;
+
+  /**
+   * The five slots, always the same five, whatever the caller passed — so the
+   * constructor IS the normaliser. `new Field(x)` on anything field-shaped answers a
+   * canonical field, which is why {@link normalizeFields} is a loop around this line
+   * and why nothing downstream has to ask where a field came from.
+   *
+   * Where a plain object stands, exactly: the RUNTIME takes one — {@link normalizeFields}
+   * asks {@link isField}, which reads the shape and never the constructor, so a config, a
+   * plain-JS caller and a card another language wrote all get in and come out canonical.
+   * TypeScript does NOT: `with` is a member, and an object literal has no `with`, so
+   * `entity({ t: { shape } })` is a type error where the same call succeeds from JS.
+   *
+   * That asymmetry is the method's real price, and it is the affordable half — the untyped
+   * callers are precisely the ones no compiler was ever going to serve, and a TS caller has
+   * the vocabulary. What was NOT affordable is the runtime door, which is why it stays open.
+   * (No `private` member either, so nothing about the class is nominal: `instanceof` is
+   * never the question asked of a field, here or anywhere downstream.)
+   */
+  constructor(init: FieldInit) {
+    this.shape = init.shape;
+    this.role = init.role;
+    this.lifecycle = init.lifecycle;
+    this.boundary = init.boundary;
+    this.meta = init.meta;
+  }
+
+  /**
+   * Copy, overriding only the named axes — every OTHER axis is preserved. This is the
+   * invariant every field transform must hold: change what you mean, keep the rest.
+   * Enumerating axes by hand (the old `optional`/`primary`) silently drops whatever axis
+   * was added last — `codec` did exactly that. Spread + override, so a future 6th slot
+   * travels for free.
+   *
+   * `T`/`A` ride through by DEFAULT — an axis is not the data type, so the six words that
+   * only touch an axis (`indexed`, `unique`, `immutable`, `readOnly`, `writeOnly`,
+   * `updated`) name no type argument. The two that genuinely re-type say which:
+   * `nullable` widens to `T | null`, `optional` widens and turns auto-at-creation on.
+   * Stating it in the call is the point — the alternative was `as unknown as Field<…>`
+   * at both sites, which is a cast that can express anything, including a mistake.
+   */
+  with<U = T, B extends boolean = A>(overrides: FieldOverrides): Field<U, B> {
+    return new Field<U, B>({ ...this, ...overrides });
+  }
 }
 
-/** Any field, regardless of its T/A parameters — the correct generic bound. */
-export type AnyField = Field<any, boolean>;
+/**
+ * Any field, regardless of its T/A parameters — the correct generic bound.
+ *
+ * `unknown` and not `any`: the bound accepts every concrete field either way, and
+ * the whole workspace typechecks either way. The difference shows where the field
+ * map is no longer captured by a generic — `SchemaViewInfer<Fields>` reads this `T`,
+ * so `any` handed a silent value to every consumer that lost the precise map.
+ */
+export type AnyField = Field<unknown, boolean>;
 
 /** A record of fields — the input to `entity()` and every derivation. */
 export type Fields = Record<string, AnyField>;
 
+/** What it takes to BUILD a field — a shape, plus whatever the other axes state. */
 export interface FieldInit {
-  shape?: Shape;
+  shape: Shape;
   role?: Role;
   lifecycle?: Lifecycle;
   boundary?: BoundaryRef;
   meta?: Meta;
 }
 
-export function createField<T, A extends boolean = false>(init: FieldInit = {}): Field<T, A> {
-  return {
-    __brand: 'fougere_field',
-    shape: init.shape,
-    role: init.role,
-    lifecycle: init.lifecycle,
-    boundary: init.boundary,
-    meta: init.meta,
-  };
-}
-
 /**
- * Copy a field, overriding only the named axes — every OTHER axis is preserved.
- * This is the invariant every field transform must hold: change what you mean,
- * keep the rest. Enumerating axes by hand (the old `optional`/`primary`) silently
- * drops whatever axis was added last — `codec` did exactly that. Spread + override,
- * so a future 6th slot travels for free. (Spread props skip excess-property checks,
- * so the field's `__brand`/phantoms ride along harmlessly and `createField` resets them.)
+ * The axes a derivation CHANGES — the dual of {@link FieldInit}: build states everything,
+ * modify states the difference. `with`'s parameter, and the reason `shape` can be required
+ * on the way in without making every transform restate it.
  */
-export function cloneField(field: AnyField, overrides: FieldInit = {}): AnyField {
-  return createField({ ...field, ...overrides });
-}
+export type FieldOverrides = Partial<FieldInit>;
 
 /** Duck type for anything with fields — Entity, SchemaConstructor. */
 export interface SchemaLike {
@@ -77,11 +119,47 @@ export interface SchemaLike {
   getUnique?(): ReadonlyArray<ReadonlyArray<string>> | undefined;
 }
 
+/**
+ * Is this a field? Asked of its FORM, not of its origin.
+ *
+ * It used to read a `__brand` stamped by `createField` — a nominal test, which answers
+ * "did this come through us". Two things made that the wrong question. A field crosses
+ * processes and languages as plain JSON, where a private stamp means nothing and has to
+ * be re-applied on arrival to keep the lie coherent; and the stamp let a hand-written
+ * object claim to be a field on the strength of one string — three fixtures in
+ * `@fougere/core` carried a vocabulary three refactors old, passed this test for months,
+ * and only fell over once `shape` became required.
+ *
+ * `shape` answers both: every field states one, no non-field does, and it survives
+ * `JSON.stringify` — the only place the question is ever really asked.
+ */
 export function isField(value: unknown): value is AnyField {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    '__brand' in value &&
-    (value as any).__brand === 'fougere_field'
-  );
+  return typeof value === 'object' && value !== null && Boolean((value as AnyField).shape);
+}
+
+/**
+ * Bring a field map into canonical form, refusing what is not a field — THE door.
+ *
+ * The dual of checking: rather than ask every reader downstream to trust a stamp, the
+ * entry point REBUILDS what it was handed. So a map may legitimately arrive as plain
+ * data — from a `fougere.config.ts`, from JS with no compiler in front of it, from a
+ * card another language wrote — and what comes out is a field like any other, with the
+ * same five slots and nothing extra riding along.
+ *
+ * A shapeless entry is named and refused here rather than three layers down: it used to
+ * be legal, judged NOTHING (every value accepted), and reached `adapter/sql` as an
+ * invented `text not null` column, so the failure surfaced at the driver on an insert.
+ */
+export function normalizeFields(fields: Fields): Fields {
+  const out: Fields = {};
+  for (const [name, field] of Object.entries(fields)) {
+    if (!isField(field)) {
+      throw new Error(
+        `Field '${name}': not a field — got ${JSON.stringify(field)}. `
+        + `Use the vocabulary (text(), number(), primary(), many()…); every field states a shape.`,
+      );
+    }
+    out[name] = new Field(field);
+  }
+  return out;
 }

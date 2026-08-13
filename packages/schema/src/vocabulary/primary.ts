@@ -1,9 +1,8 @@
 import {
-  cloneField,
-  createField,
+  Field,
+  isField,
   registerGenerator,
   type AnyField,
-  type Field,
   type GeneratorRef,
 } from '../field/index.js';
 
@@ -31,9 +30,11 @@ export function primary(fieldOrOptions?: AnyField | PrimaryOptions): AnyField {
   // primary(field) — promote an existing field to primary key. cloneField keeps
   // every axis (boundary, meta…); the role gains `primary`, and identity in the
   // graph implies immutability in time: `update: 'forbidden'` (decided 2026-07-15).
-  if (fieldOrOptions && '__brand' in fieldOrOptions && fieldOrOptions.__brand === 'fougere_field') {
+  // `isField` and not a brand: the two overloads are told apart by SHAPE, which a field
+  // always states and `PrimaryOptions` (a lone `generate?`) never does.
+  if (isField(fieldOrOptions)) {
     const field = fieldOrOptions;
-    return cloneField(field, {
+    return field.with({
       role: { ...field.role, primary: true },
       lifecycle: { ...field.lifecycle, update: 'forbidden' },
     });
@@ -49,7 +50,7 @@ export function primary(fieldOrOptions?: AnyField | PrimaryOptions): AnyField {
   } else {
     generate = opts.generate ?? 'cuid2';
   }
-  return createField<string, true>({
+  return new Field<string, true>({
     shape: { type: 'string' },
     role: { primary: true },
     // An id is immutable by default: re-supplying it in a patch is an error.

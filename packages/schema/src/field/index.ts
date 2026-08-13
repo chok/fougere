@@ -35,12 +35,11 @@ export {
 } from './boundary.js';
 export { type Meta } from './meta.js';
 export {
-  type Field,
+  Field,
   type AnyField,
   type Fields,
   type FieldInit,
   type SchemaLike,
-  createField,
-  cloneField,
-  isField,
+    isField,
+  normalizeFields,
 } from './field.js';

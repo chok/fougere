@@ -1,6 +1,6 @@
 // ─── The primitive — a Field on four orthogonal axes + meta ──
 export {
-  type Field,
+  Field,
   type AnyField,
   type Fields,
   type Shape,
@@ -20,7 +20,7 @@ export {
   type Encoder,
   type Meta,
   isField,
-  cloneField,
+  normalizeFields,
   nullableShape,
   anatomy,
   // The constraint a `role.unique` member list denotes — `[]` means the field carrying it.

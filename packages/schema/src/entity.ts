@@ -1,4 +1,4 @@
-import { cloneField, resolveBoundary, type Field, type Fields } from "./field/index.js";
+import { normalizeFields, resolveBoundary, type Field, type Fields } from "./field/index.js";
 import type { Hints } from "./hints.js";
 import { deriveUnique, deriveUniqueRoles, projectUniqueOntoFields, type CompositeUnique, type EntityDeclarations } from "./unique.js";
 import { checkValue, validateFields, type ValidationResult, type ValidateOptions } from "./projections/validation.js";
@@ -312,10 +312,14 @@ export function entity<TFields extends Fields>(
   fields: TFields,
   declarations?: EntityDeclarations<TFields>,
 ): SchemaConstructor<TFields> {
+  // The door: what comes in is rebuilt into canonical fields, and an entry that is not one
+  // is refused here by name. Every reader downstream then holds a field because it was MADE
+  // one — the reason nothing needs a brand to ask.
+  const own = normalizeFields(fields) as TFields;
   // This is the only place that knows both the field KEYS and the entity's declarations,
   // so it is where a composite group becomes readable on each member's role axis. The
   // declaration remains the source — `getUnique()` still answers it.
-  const projected = projectUniqueOntoFields(fields, declarations?.unique);
+  const projected = projectUniqueOntoFields(own, declarations?.unique);
   assertDefaultsAreValid(projected);
   return createSchemaConstructor(projected, undefined, declarations?.hints, {}, declarations?.unique);
 }

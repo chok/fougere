@@ -106,7 +106,12 @@ depth is encoded there: check it when a package moves families.
 - **TS 7 (native tsc) at the root** ; `packages/core` pins TS 5.9 — the scanner uses the compiler JS API, dropped in TS 7 (exit: oxc-parser, planned)
 - **`.vue` files are not type-checked** ; `typecheck` is `tsc -p fronds`, which covers the Frond and stops at the SFC. `vue-tsc` would cover them but requires `typescript/lib/tsc` — a path the native tsc no longer exports, and its `>=5.0.0` peer range does not say so. Adding it means lowering TS *and* carrying a pinned Nuxt dependency graph to keep it green. Rejected 2026-08-06; revisit when vue-tsc runs on TS 7.
 - `"types": ["node"]` explicit in tsconfig.base — TS 7 dropped automatic @types
-- Field detection via `__brand === 'fougere_field'`
+- A field is recognized by its FORM — it states a `shape` — never by a brand. `entity()`
+  runs its map through `normalizeFields`, so a plain object may be handed in (config, JS,
+  a card from another language) and comes out canonical; a shapeless entry is refused by
+  name at the door. The `__brand` stamp this line used to describe is gone (2026-08-13):
+  it answered "did this come through us", which is not the question, and it let three
+  fixtures carrying a three-refactor-old vocabulary pass as fields for months.
 - `resolveStorage()` (`@fougere/defaults`) is the **single** place that defaults a missing db path — never recompute it elsewhere
 - `graphql` deduplicated across the workspace (override + hoist)
 - `better-sqlite3` bindings may need `npx prebuild-install` in its pnpm dir
