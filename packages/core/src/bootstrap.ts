@@ -743,7 +743,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
        *
        * **A typed emitter cannot reach this yet.** `Emit<T>` names the ROW type, where an
        * `created()` field is present and required, so `announce({ id, title })` is a
-       * compile error and the author writes `at: new Date()` anyway. `CtorInput`
+       * compile error and the author writes `at: new Date()` anyway. `PartialRow`
        * (`schema/src/entity.ts`) is exactly the shape wanted and derives from the FIELDS,
        * which the instance type has already thrown away. So this runs for a payload built
        * outside the type — a bridge, a replay, a test — and is inert for everyone else.

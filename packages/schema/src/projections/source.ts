@@ -1,5 +1,5 @@
 import type { Fields } from '../field/index.js';
-import type { SchemaView } from '../entity.js';
+import type { SchemaView } from '../schema/index.js';
 import type { SchemaDescriptor } from './card.js';
 import { reconstruct } from './reconstruct.js';
 

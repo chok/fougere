@@ -41,15 +41,14 @@ export {
 
 // ─── The carrier and its derivation algebra ──────────────────
 export {
-  entity,
   compose,
-  createSchemaConstructor,
+  Schema,
   ANONYMOUS_SCHEMA_NAME,
   type SchemaConstructor,
   type SchemaView,
-  type RowOf,
-  type CtorInput,
-} from "./entity.js";
+  type Row,
+  type PartialRow,
+} from "./schema/index.js";
 export { type FougereHints, type Hints } from "./hints.js";
 export { type CompositeUnique, type EntityDeclarations } from "./unique.js";
 
@@ -120,3 +119,5 @@ export {
 } from "./projections/source.js";
 // standard: the live Standard Schema interop surface (`~standard`)
 export type { StandardSchemaV1 } from "./projections/standard.js";
+
+export { entity } from "./entity.js";

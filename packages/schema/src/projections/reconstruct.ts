@@ -5,7 +5,7 @@ import {
   type Role,
   type Shape,
 } from '../field/index.js';
-import { createSchemaConstructor, type SchemaConstructor, type SchemaView, type RowOf } from '../entity.js';
+import { Schema, type SchemaConstructor, type SchemaView, type Row } from '../schema/index.js';
 import {
   clean,
   type FieldDescriptor,
@@ -127,7 +127,7 @@ function buildSchema(descriptor: SchemaDescriptor, resolve?: Resolver): SchemaVi
   // fact once per member; a group of two arrives twice, so the set is de-duplicated —
   // `getUnique()` then answers what the original author wrote, and the DDL on this side
   // emits the same constraint as the DDL on the other.
-  const schema = createSchemaConstructor(fields, undefined, undefined, {}, compositeFromFields(fields));
+  const schema = Schema.of(fields, undefined, undefined, {}, compositeFromFields(fields));
 
   // The name is the identity everything downstream keys on — the registration key, the
   // table, the GraphQL type, what a relation's `to` points at. `describe` writes it as
@@ -143,7 +143,7 @@ function buildSchema(descriptor: SchemaDescriptor, resolve?: Resolver): SchemaVi
 /**
  * The field map a stated row shape implies.
  *
- * Every member is marked auto-at-creation, so `CtorInput` asks for nothing: a card
+ * Every member is marked auto-at-creation, so `PartialRow` asks for nothing: a card
  * describes rows as they are READ, and "what a caller must supply at creation" is a
  * different question — one `required` answers, and one a synced consumer never asks,
  * since it calls the host rather than constructing.
@@ -162,7 +162,7 @@ type FieldsOf<T> = { [K in keyof T]-?: Field<T[K]> };
  * Without it the instance type is an index signature, so a synced entity validated
  * perfectly and taught the compiler nothing — `post.titel` compiled.
  */
-export function reconstruct<T = RowOf<Fields>>(
+export function reconstruct<T = Row<Fields>>(
   descriptor: SchemaDescriptor,
 ): SchemaConstructor<FieldsOf<T>> {
   return buildSchema(descriptor) as unknown as SchemaConstructor<FieldsOf<T>>;

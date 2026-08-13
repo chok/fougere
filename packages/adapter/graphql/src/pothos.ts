@@ -2,7 +2,7 @@
  * @fougere/adapter-graphql — génère des types Pothos depuis les entités fougere
  */
 import type SchemaBuilder from '@pothos/core';
-import { createSchemaConstructor } from '@fougere/schema';
+import { Schema } from '@fougere/schema';
 import type { Field, Fields, SchemaView, SchemaSource } from '@fougere/schema';
 import { anatomy, boundaryOf, fieldsOf, inputFields, resolveBoundary, sourceNameOf } from '@fougere/schema';
 
@@ -719,7 +719,7 @@ function buildArgsFromSignature(
       name: inputName,
       // A real schema over those fields, not a forged stand-in: an update input is the
       // same fields seen through the patch mode.
-      schema: createSchemaConstructor(opInputFields, undefined, undefined, { patch: opName === 'update' }),
+      schema: Schema.of(opInputFields, undefined, undefined, { patch: opName === 'update' }),
     });
   }
 
