@@ -1,13 +1,11 @@
 import {
-  createField,
-  type AnyField,
+  Field,
   type EntityConstructor,
-  type Field,
   type Fields,
   type Role,
   type Shape,
 } from '../field/index.js';
-import { createSchemaConstructor, type SchemaConstructor, type SchemaViewInfer } from '../entity.js';
+import { Schema, type SchemaConstructor, type SchemaView, type Row } from '../schema/index.js';
 import {
   clean,
   type FieldDescriptor,
@@ -28,11 +26,11 @@ function reconstructShape(prop: FieldDescriptor): Shape | undefined {
   const base = types.find((t) => t !== 'null');
   if (base === undefined) return undefined;
   const type = prop.type as Shape['type'];
-  // `array` is two distinct things: with `items` it is a value list (a real shape);
-  // without, it is a bare `many` relation marker — no shape, the role carries it.
+  // `array` with `items` is a value list, without it a `many` relation whose elements
+  // live on the other side. Both are array shapes; only the role tells them apart, and
+  // it travels in `x-fougere`. Nothing to branch on here — the keywords copy back.
   if (base === 'array') {
-    if (!prop.items) return undefined;
-    const items = reconstructShape(prop.items);
+    const items = prop.items ? reconstructShape(prop.items) : undefined;
     return clean({ type, items, minItems: prop.minItems, maxItems: prop.maxItems }) as unknown as Shape;
   }
   switch (base) {
@@ -77,10 +75,20 @@ function reconstructRole(role: RoleDescriptor, resolve?: Resolver): Role {
   return out;
 }
 
-function reconstructField(prop: FieldDescriptor, resolve?: Resolver): AnyField {
+function reconstructField(prop: FieldDescriptor, key: string, resolve?: Resolver): Field {
   const ext = prop['x-fougere'];
-  return createField({
-    shape: reconstructShape(prop),
+  const shape = reconstructShape(prop);
+  // A card that names no type for a property cannot become a field: every field states a
+  // shape. Loud and local, at the property that is missing it — the alternative is a field
+  // that judges nothing, which is what this whole rule exists to stop.
+  if (!shape) {
+    throw new Error(
+      `Field '${key}': the card carries no \`type\` for it, so there is no shape to rebuild. `
+      + `A field always states one.`,
+    );
+  }
+  return new Field({
+    shape,
     role: ext?.role ? reconstructRole(ext.role, resolve) : undefined,
     // The normal forms are pure JSON — they travelled verbatim, they read back verbatim.
     lifecycle: ext?.lifecycle,
@@ -110,16 +118,16 @@ function compositeFromFields(fields: Fields): ReadonlyArray<ReadonlyArray<string
 }
 
 /** Build a live schema from a card; `resolve` wires relation targets when in a bundle. */
-function buildSchema(descriptor: SchemaDescriptor, resolve?: Resolver): SchemaConstructor<Fields> {
+function buildSchema(descriptor: SchemaDescriptor, resolve?: Resolver): SchemaView {
   const fields: Fields = {};
   for (const [key, prop] of Object.entries(descriptor.properties)) {
-    fields[key] = reconstructField(prop, resolve);
+    fields[key] = reconstructField(prop, key, resolve);
   }
   // Recover the entity-level declaration from what the members carry. The card holds the
   // fact once per member; a group of two arrives twice, so the set is de-duplicated —
   // `getUnique()` then answers what the original author wrote, and the DDL on this side
   // emits the same constraint as the DDL on the other.
-  const schema = createSchemaConstructor(fields, undefined, undefined, {}, compositeFromFields(fields));
+  const schema = Schema.of(fields, undefined, undefined, {}, compositeFromFields(fields));
 
   // The name is the identity everything downstream keys on — the registration key, the
   // table, the GraphQL type, what a relation's `to` points at. `describe` writes it as
@@ -135,12 +143,12 @@ function buildSchema(descriptor: SchemaDescriptor, resolve?: Resolver): SchemaCo
 /**
  * The field map a stated row shape implies.
  *
- * Every member is marked auto-at-creation, so `CtorInput` asks for nothing: a card
+ * Every member is marked auto-at-creation, so `PartialRow` asks for nothing: a card
  * describes rows as they are READ, and "what a caller must supply at creation" is a
  * different question — one `required` answers, and one a synced consumer never asks,
  * since it calls the host rather than constructing.
  */
-type FieldsOf<T> = { [K in keyof T]-?: Field<T[K], true> };
+type FieldsOf<T> = { [K in keyof T]-?: Field<T[K]> };
 
 /**
  * Read a lone card back into a working schema — THE single reconstructor. The result
@@ -154,7 +162,7 @@ type FieldsOf<T> = { [K in keyof T]-?: Field<T[K], true> };
  * Without it the instance type is an index signature, so a synced entity validated
  * perfectly and taught the compiler nothing — `post.titel` compiled.
  */
-export function reconstruct<T = SchemaViewInfer<Fields>>(
+export function reconstruct<T = Row<Fields>>(
   descriptor: SchemaDescriptor,
 ): SchemaConstructor<FieldsOf<T>> {
   return buildSchema(descriptor) as unknown as SchemaConstructor<FieldsOf<T>>;
@@ -166,10 +174,10 @@ export function reconstruct<T = SchemaViewInfer<Fields>>(
  * hands back the real reconstructed target (feeds adapters), not a name stand-in.
  * Targets absent from the set (external/cross-frond `$ref`) keep the stand-in.
  */
-export function reconstructSet(bundle: SchemaBundle): Record<string, SchemaConstructor<Fields>> {
+export function reconstructSet(bundle: SchemaBundle): Record<string, SchemaView> {
   const map: Record<string, EntityConstructor> = {};
   const resolve: Resolver = (name) => map[name.toLowerCase()];
-  const out: Record<string, SchemaConstructor<Fields>> = {};
+  const out: Record<string, SchemaView> = {};
   for (const [name, descriptor] of Object.entries(bundle.$defs)) {
     const schema = buildSchema(descriptor, resolve);
     // Name the rebuilt class after its key so re-describing it yields the same `to` name

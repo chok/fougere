@@ -1,4 +1,4 @@
-import { createField, toTargetThunk, type EntityConstructor, type Field } from '../field/index.js';
+import { toTargetThunk, Field, type EntityConstructor } from '../field/index.js';
 
 export interface RefOptions {
   cascade?: boolean;
@@ -11,7 +11,7 @@ export interface RefOptions {
  * — that path also flips the type to `string | null` (which `ref` alone never did).
  */
 export function ref<E extends EntityConstructor>(target: E | (() => E), opts?: RefOptions): Field<string> {
-  return createField<string>({
+  return new Field<string>({
     shape: { type: 'string' },
     role: {
       relation: {

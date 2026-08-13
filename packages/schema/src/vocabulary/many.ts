@@ -1,12 +1,12 @@
-import { createField, toTargetThunk, type EntityConstructor, type Field } from '../field/index.js';
+import { toTargetThunk, Field, type EntityConstructor } from '../field/index.js';
 
 /**
- * A collection of related entities — a many-relation role, no value shape of its own.
- * Pass the target class (`many(Post)`) or, for circular/forward references, a thunk
- * (`many(() => Post)`).
+ * A collection of related entities — `many(Post)`, or `many(() => Post)` for a cycle.
+ * Shape `array` without `items`: the element shape lives on the other side, named by the role.
  */
 export function many<E extends EntityConstructor>(target: E | (() => E)): Field<InstanceType<E>[]> {
-  return createField<InstanceType<E>[]>({
+  return new Field<InstanceType<E>[]>({
+    shape: { type: 'array' },
     role: { relation: { to: toTargetThunk(target), kind: 'many' } },
   });
 }

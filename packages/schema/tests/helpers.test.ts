@@ -94,10 +94,12 @@ describe('helpers', () => {
     expect(f.role?.relation?.to()).toBe(Customer);
   });
 
-  it('many() creates a many-relation field with no value shape', () => {
+  it('many() is an array whose elements live on the other side', () => {
     class OrderLine extends entity({ id: primary() }) {}
     const f = many(OrderLine);
-    expect(f.shape).toBeUndefined();
+    // The value IS a collection — the field says that much itself. What it does NOT say
+    // is the element shape (no `items`): that belongs to the target, and the role names it.
+    expect(f.shape).toEqual({ type: 'array' });
     expect(f.role?.relation?.kind).toBe('many');
     expect(f.role?.relation?.to()).toBe(OrderLine);
   });

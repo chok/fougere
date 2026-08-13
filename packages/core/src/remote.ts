@@ -12,7 +12,7 @@ import type { FrondCall, IdentityCard, Transport } from './call.js';
 import { RPC_ENTITY } from './call.js';
 import { EMPTY_INVOCATION, type InvocationContext } from './invocation.js';
 import { FougereError, ErrorCode } from './middleware.js';
-import { reconstruct, type SchemaConstructor, type Fields, type SchemaDescriptor } from '@fougere/schema';
+import { reconstruct, type SchemaView, type Fields, type SchemaDescriptor } from '@fougere/schema';
 
 interface Route {
   frond: string;
@@ -26,7 +26,7 @@ interface Route {
    * publishes it with ops and no shape; there is nothing to rebuild and pretending
    * otherwise would hand callers an empty schema that validates everything.
    */
-  schema?: SchemaConstructor<Fields>;
+  schema?: SchemaView;
 }
 
 export interface RemoteRouter {

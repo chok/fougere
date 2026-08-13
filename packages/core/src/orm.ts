@@ -1,4 +1,4 @@
-import type { SchemaLike } from '@fougere/schema';
+import type { SchemaView } from '@fougere/schema';
 
 /** Options for list queries — pagination, sorting, counting. */
 export interface ListOptions {
@@ -63,9 +63,9 @@ export function assertListOptions(options: object | undefined, entity: string): 
   );
 }
 
-/** Select option — restrict returned fields to those of a SchemaLike. */
+/** Select option — restrict returned fields to those of a SchemaView. */
 export interface SelectOption {
-  select?: SchemaLike;
+  select?: SchemaView;
 }
 
 /** Per-entity ORM — scoped CRUD operations on a single entity type. */
@@ -88,7 +88,7 @@ export interface EntityOrm<T = Record<string, unknown>> {
   update(id: string, input: Partial<T>, options?: SelectOption): Promise<T>;
   delete(id: string): Promise<boolean>;
   /** Returns a scoped ORM that restricts all read results to the fields of the given schema. */
-  output(schema: SchemaLike): EntityOrm<T>;
+  output(schema: SchemaView): EntityOrm<T>;
   /**
    * What this ORM wraps — the Kysely instance for the SQL one, something else elsewhere.
    *
@@ -107,7 +107,7 @@ export interface EntityOrm<T = Record<string, unknown>> {
  * Factory that creates an EntityOrm for a given entity.
  * Called by bootstrap for every scanned entity.
  */
-export type OrmFactory = (entity: SchemaLike, name: string) => EntityOrm;
+export type OrmFactory = (entity: SchemaView, name: string) => EntityOrm;
 
 /**
  * Container key of an entity's storage — 'reading' → 'ReadingOrm'.

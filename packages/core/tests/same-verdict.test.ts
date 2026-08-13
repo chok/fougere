@@ -21,7 +21,7 @@ import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, FougereError } from '../src/index.js';
 import { EMPTY_INVOCATION } from '../src/invocation.js';
-import { inputFields, type AnyField, type SchemaLike } from '@fougere/schema';
+import { inputFields, type Field, type SchemaView } from '@fougere/schema';
 import type { EntityOrm, OrmFactory } from '../src/orm.js';
 import Article from './fixtures-same-verdict/fronds/press/entities/Article.js';
 import { NewArticle } from './fixtures-same-verdict/fronds/press/handlers/ArticleHandler.js';
@@ -35,7 +35,7 @@ const sorted = (errors: { path: string; message: string }[]) =>
   [...errors].sort((a, b) => (a.path + a.message).localeCompare(b.path + b.message));
 
 /** What the browser does before sending — `useFormFor.ts:46`, verbatim. */
-function verdictOfForm(schema: SchemaLike & { validate(i: unknown): unknown }, body: unknown): Verdict {
+function verdictOfForm(schema: SchemaView & { validate(i: unknown): unknown }, body: unknown): Verdict {
   const result = schema.validate(body) as { success: boolean; errors?: { path: string; message: string }[] };
   return result.success ? { ok: true } : { ok: false, errors: sorted(result.errors ?? []) };
 }
@@ -65,7 +65,7 @@ async function verdictOfFacade(run: ReturnType<typeof createLocalRunner>, op: st
  * and which one is right depends on the schema the op names. Naming the expected
  * message would make this table a third judge; comparing the two is the whole point.
  */
-function decisionTable(schema: SchemaLike, baseline: Record<string, unknown>) {
+function decisionTable(schema: SchemaView, baseline: Record<string, unknown>) {
   const all = schema.getFields();
   // `inputFields` IS the boundary reader — the same one the façade and the form
   // stand on. Re-deriving `boundary.in === 'closed'` here would make the test a
@@ -73,7 +73,7 @@ function decisionTable(schema: SchemaLike, baseline: Record<string, unknown>) {
   const writable = new Set(Object.keys(inputFields(all)));
   const cases: { why: string; body: Record<string, unknown> }[] = [];
 
-  for (const [name, field] of Object.entries(all) as [string, AnyField][]) {
+  for (const [name, field] of Object.entries(all) as [string, Field][]) {
     if (!field.lifecycle?.create && field.role?.relation?.kind !== 'many' && name in baseline) {
       const body = { ...baseline };
       delete body[name];

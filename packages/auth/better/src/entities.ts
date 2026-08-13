@@ -1,4 +1,4 @@
-import { entity, primary, text, bool, date, created, ref, optional, type SchemaLike } from '@fougere/schema';
+import { entity, primary, text, bool, date, created, ref, optional, type SchemaView } from '@fougere/schema';
 
 /**
  * Default User entity — shipped as a fallback. Apps should declare their own
@@ -27,8 +27,8 @@ export class AuthUser extends entity({
  *
  * `ref()` wants a live class — a construct signature plus `.name`, which
  * `@fougere/adapter-sql`'s FK naming reads off the target — narrower than the
- * `SchemaLike` interface (`getFields()` only) this package's public options
- * take, since `opts.user` may be any app's entity and `SchemaLike` is the
+ * `SchemaView` interface (`getFields()` only) this package's public options
+ * take, since `opts.user` may be any app's entity and `SchemaView` is the
  * shape-only contract used to stay decoupled from a specific one. Every real
  * entity satisfies both; the cast below only crosses that type-level gap, the
  * same bridge `@fougere/schema` uses internally in `reconstructSet`
@@ -36,9 +36,9 @@ export class AuthUser extends entity({
  */
 type LiveEntity = abstract new (...args: any[]) => unknown;
 
-export function authEntities(User: SchemaLike): {
-  AuthSession: SchemaLike;
-  AuthAccount: SchemaLike;
+export function authEntities(User: SchemaView): {
+  AuthSession: SchemaView;
+  AuthAccount: SchemaView;
 } {
   const target = User as unknown as LiveEntity;
 

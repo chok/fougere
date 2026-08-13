@@ -1,12 +1,12 @@
 import { created } from './created.js';
-import { createField, type Field } from '../field/index.js';
+import { Field } from '../field/index.js';
 
 /**
  * `auto()`, plus the update stamp — the canonical `updatedAt` (Prisma
  * `@updatedAt`, Kysely-side `$onUpdate` equivalents). The only new fact is `update: 'now'`;
  * shape and creation rule are auto()'s, stated once there.
  */
-export function updated(): Field<Date, true> {
+export function updated(): Field<Date> {
   const base = created();
-  return createField<Date, true>({ ...base, lifecycle: { ...base.lifecycle, update: 'now' } });
+  return base.with({ lifecycle: { ...base.lifecycle, update: 'now' } });
 }

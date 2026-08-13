@@ -6,7 +6,7 @@
  * other — the entity never mentions a column type, the dialect never mentions a
  * field. Adding a dialect touches only the second half.
  */
-import { anatomy, fieldsOf, registrationKeyOf, uniqueMembers, type AnyField, type SchemaLike, type SchemaSource } from '@fougere/schema';
+import { anatomy, fieldsOf, registrationKeyOf, uniqueMembers, type Field, type SchemaView, type SchemaSource } from '@fougere/schema';
 import { boundsOf, type ShapeBounds } from './check.js';
 
 /** The shape keywords a dialect needs to choose a column type. */
@@ -69,7 +69,7 @@ export function toSnakeCase(str: string): string {
  * A `many` relation owns no column — the join lives on the other side. Every
  * other field becomes exactly one column.
  */
-function isStored(field: AnyField): boolean {
+function isStored(field: Field): boolean {
   return field.role?.relation?.kind !== 'many';
 }
 
@@ -79,7 +79,7 @@ function isStored(field: AnyField): boolean {
  * bundle — `packages/schema/src/projections/card.ts:18-22`) has lost it to a
  * name stand-in with no `getFields` — the convention there is to assume `id`.
  */
-function primaryColumnOf(target: Partial<SchemaLike>): string {
+function primaryColumnOf(target: Partial<SchemaView>): string {
   if (typeof target.getFields !== 'function') return 'id';
   for (const [name, field] of Object.entries(target.getFields())) {
     if (field.role?.primary) return toSnakeCase(name);
@@ -106,21 +106,21 @@ function primaryColumnOf(target: Partial<SchemaLike>): string {
  * the default convention, wrong if the app ALSO overrides `tableName` for it.
  */
 function referenceFor(
-  field: AnyField,
+  field: Field,
   resolve: (name: string) => string,
   tableNameOf?: Map<SchemaSource, string>,
 ): ColumnReference | undefined {
   const relation = field.role?.relation;
   if (!relation || relation.kind !== 'one') return undefined;
-  const target = relation.to() as Partial<SchemaLike> & { name?: string };
-  const table = tableNameOf?.get(target as SchemaLike) ?? resolve(registrationKeyOf(target.name ?? ''));
+  const target = relation.to() as Partial<SchemaView> & { name?: string };
+  const table = tableNameOf?.get(target as SchemaView) ?? resolve(registrationKeyOf(target.name ?? ''));
   const column = primaryColumnOf(target);
   return relation.onDelete ? { table, column, onDelete: relation.onDelete } : { table, column };
 }
 
 function toColumn(
   fieldName: string,
-  field: AnyField,
+  field: Field,
   resolve: (name: string) => string,
   tableNameOf?: Map<SchemaSource, string>,
 ): ColumnDef {

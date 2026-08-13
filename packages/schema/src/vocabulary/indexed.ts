@@ -1,4 +1,4 @@
-import { createField, type Field } from '../field/index.js';
+import { Field } from '../field/index.js';
 
 /**
  * Reads filter on this field often — `index: true` on the role axis.
@@ -16,6 +16,6 @@ import { createField, type Field } from '../field/index.js';
  * `unique()` already implies one — a uniqueness constraint is backed by an index on
  * every engine — so declaring both is redundant, not additive.
  */
-export function indexed<T, A extends boolean>(field: Field<T, A>): Field<T, A> {
-  return createField<T, A>({ ...field, role: { ...field.role, index: true } });
+export function indexed<T>(field: Field<T>): Field<T> {
+  return field.with({ role: { ...field.role, index: true } });
 }

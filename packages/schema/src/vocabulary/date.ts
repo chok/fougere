@@ -1,5 +1,5 @@
-import { createField, type Field } from '../field/index.js';
+import { Field } from '../field/index.js';
 
 export function date(): Field<Date> {
-  return createField<Date>({ shape: { type: 'string', format: 'date-time' } });
+  return new Field<Date>({ shape: { type: 'string', format: 'date-time' } });
 }

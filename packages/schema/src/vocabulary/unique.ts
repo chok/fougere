@@ -1,4 +1,4 @@
-import { createField, type Field } from '../field/index.js';
+import { Field } from '../field/index.js';
 
 /**
  * No two rows may carry the same value — a unique constraint of one, on the role axis.
@@ -20,6 +20,6 @@ import { createField, type Field } from '../field/index.js';
  * one call up. Keeping it empty rather than filling it in later means nothing to remap
  * when `rename()` moves the key, and one shape shared with the composite form.
  */
-export function unique<T, A extends boolean>(field: Field<T, A>): Field<T, A> {
-  return createField<T, A>({ ...field, role: { ...field.role, unique: [[]] } });
+export function unique<T>(field: Field<T>): Field<T> {
+  return field.with({ role: { ...field.role, unique: [[]] } });
 }

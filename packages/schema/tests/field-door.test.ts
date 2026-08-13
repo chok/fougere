@@ -1,0 +1,87 @@
+import { describe, expect, it } from 'vitest';
+import { Field, created, entity, list, oneOf, optional, primary, text, updated, validateField } from '../src/index.js';
+
+/**
+ * The constructor is the only way to obtain a field, so it is where a field is judged —
+ * and where hostile input stops. Both halves are pinned here because both were reachable:
+ * `new Field({})` used to be legal from any caller without a compiler, and assigning the
+ * slots wholesale used to be a one-line simplification with a prototype hole under it.
+ */
+describe('the field door', () => {
+  it('refuses what is not a field, and names the key when it was given one', () => {
+    expect(() => new Field({} as never)).toThrow(/shape: Every field states a shape/);
+    expect(() => new Field({} as never, 'vide')).toThrow(/Field 'vide': shape:/);
+    expect(() => entity({ id: primary(), vide: {} as never })).toThrow(/Field 'vide': shape:/);
+  });
+
+  it('judges every axis against its own vocabulary, and names the one that failed', () => {
+    const shape = { type: 'string' } as const;
+    const refused: ReadonlyArray<readonly [object, RegExp]> = [
+      [{ shape, lifecycle: 'nawak' }, /lifecycle: Expected an object/],
+      [{ shape, lifecycle: { create: 'nawak' } }, /lifecycle\.create: Expected 'now', 'optional'/],
+      [{ shape, lifecycle: { update: 'nawak' } }, /lifecycle\.update: Expected 'now' or 'forbidden'/],
+      [{ shape, role: 'nawak' }, /role: Expected an object/],
+      [{ shape, role: { relation: { kind: 'nawak', to: () => ({}) } } }, /role\.relation\.kind/],
+      [{ shape, role: { relation: { kind: 'one' } } }, /role\.relation\.to: Expected a thunk/],
+      [{ shape, role: { unique: ['not-a-group'] } }, /role\.unique/],
+      [{ shape, boundary: { in: { nawak: 'x' } } }, /boundary\.in/],
+      [{ shape, meta: 42 }, /meta: Expected an object/],
+    ];
+    for (const [init, message] of refused) {
+      expect(() => new Field(init as never)).toThrow(message);
+    }
+  });
+
+  it('reports every fault at once, not the first', () => {
+    const verdict = validateField({ shape: 42, lifecycle: { update: 'nawak' }, meta: 7 });
+    expect(verdict.success).toBe(false);
+    if (!verdict.success) {
+      expect(verdict.errors.map((e) => e.path)).toEqual(['shape', 'lifecycle.update', 'meta']);
+    }
+  });
+
+  it('accepts everything the vocabulary builds', () => {
+    expect(() => entity({
+      id: primary(),
+      title: text({ default: 'x' }),
+      note: optional(text()),
+      at: created(),
+      seen: updated(),
+      tags: list(text()),
+      status: oneOf('draft', 'live', { default: 'draft' }),
+    })).not.toThrow();
+  });
+
+  it('takes a plain object — a config, plain JS, a card another language wrote', () => {
+    const plain = { shape: { type: 'string', minLength: 3 } } as unknown as Field<string>;
+    const Foreign = entity({ id: primary(), title: plain });
+    const field = Foreign.getFields().title;
+    expect(field).toBeInstanceOf(Field);
+    expect(typeof field.with).toBe('function');
+
+    const short = Foreign.validate({ id: 'x', title: 'ab' });
+    expect(short.success).toBe(false);
+  });
+
+  it('keeps the five slots and nothing else', () => {
+    const f = new Field({ shape: { type: 'string' }, nawak: 42 } as never);
+    expect('nawak' in f).toBe(false);
+  });
+
+  it('survives a card carrying __proto__ — the input this door exists to accept', () => {
+    // `Object.assign(this, init)` would copy through [[Set]], firing the `__proto__`
+    // setter: the field would lose `with` and gain whatever the sender put there.
+    const hostile = JSON.parse('{"shape":{"type":"string"},"__proto__":{"polluted":true}}');
+    const f = new Field(hostile);
+
+    expect(Object.getPrototypeOf(f)).toBe(Field.prototype);
+    expect(typeof f.with).toBe('function');
+    expect((f as unknown as { polluted?: boolean }).polluted).toBeUndefined();
+    expect(({} as { polluted?: boolean }).polluted).toBeUndefined();  // nor globally
+  });
+
+  it('a field built from the vocabulary is the same thing', () => {
+    expect(text()).toBeInstanceOf(Field);
+    expect(text().with({ meta: { description: 'x' } }).shape).toEqual({ type: 'string' });
+  });
+});

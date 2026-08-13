@@ -3,31 +3,18 @@
  * from the entity's field axes. No Vue, no Nuxt: testable headless,
  * usable by any renderer (the page owns the widgets).
  */
-import { inputFields } from '@fougere/schema';
-import type { ValidationError } from '@fougere/schema';
+import { anatomy, inputFields } from '@fougere/schema';
+import type { Field, SchemaView, ValidationError, ValidationResult } from '@fougere/schema';
 
-/** What an entity class exposes to a form — the schema statics it already has. */
-export interface FormEntity {
-  name: string;
-  getFields(): Record<string, FieldLike>;
-  validate(input: unknown): { success: true; data: unknown } | { success: false; errors: ValidationError[] };
-}
-
-interface FieldLike {
-  shape?: {
-    type?: unknown;
-    enum?: readonly unknown[];
-    format?: string;
-    properties?: unknown;
-    minLength?: number;
-    maxLength?: number;
-    minimum?: number;
-    maximum?: number;
-    pattern?: string;
-  };
-  lifecycle?: { create?: unknown };
-  role?: { primary?: boolean; relation?: { kind: string } };
-}
+/**
+ * What an entity class exposes to a form — the schema statics it already has.
+ *
+ * `SchemaView` and the real `Field`, not a local re-description of the axes: this file
+ * used to declare its own `FieldLike` with `shape?` optional, so it kept judging by a
+ * looser contract than the schema's own and would never have seen `shape` become
+ * required.
+ */
+export type FormEntity = SchemaView;
 
 /**
  * The literal a field is born with, when it declares one.
@@ -37,7 +24,7 @@ interface FieldLike {
  * The other create rules ('now', { generate }, 'optional') name no literal: their value
  * is decided at write time, so a form has nothing to show for them.
  */
-function defaultOf(field: FieldLike): unknown {
+function defaultOf(field: Field): unknown {
   const create = field.lifecycle?.create;
   return create !== null && typeof create === 'object' && 'value' in create
     ? (create as { value: unknown }).value
@@ -109,30 +96,40 @@ const CONTROL_BY_FORMAT: Record<string, FormField['control']> = {
   uri: 'url',
 };
 
-function controlOf(field: FieldLike): FormField['control'] {
-  const shape = field.shape ?? {};
-  if (Array.isArray(shape.enum) && shape.enum.length) return 'select';
-  const base = baseType(shape.type);
-  if (base === 'number' || base === 'integer') return 'number';
-  if (base === 'boolean') return 'boolean';
-  if (base === 'string' && shape.format) return CONTROL_BY_FORMAT[shape.format] ?? 'text';
+function controlOf(field: Field): FormField['control'] {
+  // Through `anatomy`, never `shape.type` directly: the nullable form is the `[T,'null']`
+  // union, which a direct comparison misses in silence. It is also what narrows the shape
+  // union, so `enum` and `format` are only reachable on the branches that carry them.
+  const base = anatomy(field.shape).base;
+  if (base?.type === 'string' && base.enum?.length) return 'select';
+  if (base?.type === 'number' || base?.type === 'integer') return 'number';
+  if (base?.type === 'boolean') return 'boolean';
+  if (base?.type === 'string' && base.format) return CONTROL_BY_FORMAT[base.format] ?? 'text';
   return 'text';
+}
+
+/** A closed set's members, when the shape declares one — `oneOf('draft','live')`. */
+function enumOf(field: Field): readonly (string | null)[] | undefined {
+  const base = anatomy(field.shape).base;
+  return base?.type === 'string' ? base.enum : undefined;
 }
 
 /** Controls that ARE an `<input type>` — see the two absences on {@link FormField.attrs}. */
 const INPUT_TYPES = new Set(['text', 'email', 'url', 'number']);
 
 /** The shape's bounds, under the names a browser already enforces. */
-function attrsOf(field: FieldLike, control: FormField['control'], required: boolean): NonNullable<FormField['attrs']> {
-  const s = field.shape ?? {};
+function attrsOf(field: Field, control: FormField['control'], required: boolean): NonNullable<FormField['attrs']> {
+  const base = anatomy(field.shape).base;
+  const text = base?.type === 'string' ? base : undefined;
+  const numeric = base?.type === 'number' || base?.type === 'integer' ? base : undefined;
   const attrs = {
     type: INPUT_TYPES.has(control) ? control : undefined,
     required: (required && control !== 'boolean') || undefined,
-    minlength: s.minLength,
-    maxlength: s.maxLength,
-    min: s.minimum,
-    max: s.maximum,
-    pattern: s.pattern,
+    minlength: text?.minLength,
+    maxlength: text?.maxLength,
+    min: numeric?.minimum,
+    max: numeric?.maximum,
+    pattern: text?.pattern,
   };
   return Object.fromEntries(Object.entries(attrs).filter(([, v]) => v !== undefined));
 }
@@ -143,8 +140,8 @@ function attrsOf(field: FieldLike, control: FormField['control'], required: bool
  * lifecycle axis (any create rule makes absence legal).
  */
 export function formFieldsOf(entity: FormEntity, entityKey: string): FormField[] {
-  return Object.entries(inputFields(entity.getFields() as never)).map(([name, field]) => {
-    const f = field as FieldLike;
+  return Object.entries(inputFields(entity.getFields())).map(([name, field]) => {
+    const f = field;
     const control = controlOf(f);
     const required = f.lifecycle?.create === undefined;
     const attrs = attrsOf(f, control, required);
@@ -154,8 +151,8 @@ export function formFieldsOf(entity: FormEntity, entityKey: string): FormField[]
       required,
       labelKey: `${entityKey}.${name}`,
       label: name.charAt(0).toUpperCase() + name.slice(1),
-      ...(Array.isArray(f.shape?.enum)
-        ? { options: f.shape.enum.filter((value): value is string => typeof value === 'string') }
+      ...(Array.isArray(enumOf(f))
+        ? { options: enumOf(f)!.filter((value): value is string => typeof value === 'string') }
         : {}),
       ...(Object.keys(attrs).length ? { attrs } : {}),
       ...(defaultOf(f) !== undefined ? { default: defaultOf(f) } : {}),

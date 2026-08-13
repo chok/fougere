@@ -1,4 +1,4 @@
-import type { SchemaLike } from '@fougere/schema';
+import type { SchemaView } from '@fougere/schema';
 import type { BindingPlan } from './binding.js';
 import { computeBindingPlan } from './binding.js';
 import type { HandlerEntry, FrondDescriptor } from './types.js';
@@ -14,9 +14,9 @@ import type { ParsedMethod, ParsedType, ParsedParam } from './handler-parser.js'
  */
 export interface OperationContract {
   /** Judged on the way in. The view carries its own mode (`partial()` → patch). */
-  input?: SchemaLike;
+  input?: SchemaView;
   /** Projected on the way out. */
-  output?: SchemaLike;
+  output?: SchemaView;
   /** Where each argument is read from in the invocation. */
   binding?: BindingPlan;
   /**

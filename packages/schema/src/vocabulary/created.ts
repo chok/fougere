@@ -1,4 +1,5 @@
-import { createField, type Field } from '../field/index.js';
+import { Field } from "../field/index.js";
+import { date } from "./date.js";
 
 /**
  * The canonical `createdAt` — stamped at creation, optional in `new X(input)`.
@@ -10,9 +11,8 @@ import { createField, type Field } from '../field/index.js';
  * `updated()` next to it named its moment. Every template in the repo spelled it
  * `createdAt: auto()`: the field always had the name the constructor was missing.
  */
-export function created(): Field<Date, true> {
-  return createField<Date, true>({
-    shape: { type: 'string', format: 'date-time' },
-    lifecycle: { create: 'now', update: 'forbidden' },
+export function created(): Field<Date> {
+  return date().with({
+    lifecycle: { create: "now", update: "forbidden" },
   });
 }

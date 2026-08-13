@@ -3,6 +3,8 @@
 // package-internal (and index-level) view.
 export {
   type Shape,
+  SHAPE_TYPES,
+  isShape,
   type ShapeType,
   type BaseShape,
   type ShapeAnatomy,
@@ -13,14 +15,20 @@ export {
   isNullable,
   registerFormat,
   resolveFormat,
-} from './shape.js';
-export { type Role, type Relation, type EntityConstructor, toTargetThunk, uniqueMembers } from './role.js';
+} from "./shape.js";
+export {
+  type Role,
+  type Relation,
+  type EntityConstructor,
+  toTargetThunk,
+  uniqueMembers,
+} from "./role.js";
 export {
   type Lifecycle,
   type GeneratorRef,
   registerGenerator,
   resolveCustomGenerator,
-} from './lifecycle.js';
+} from "./lifecycle.js";
 export {
   type Boundary,
   type BoundaryRef,
@@ -32,15 +40,11 @@ export {
   registerDecoder,
   registerEncoder,
   registerBoundaryAlias,
-} from './boundary.js';
-export { type Meta } from './meta.js';
+} from "./boundary.js";
+export { type Meta } from "./meta.js";
 export {
-  type Field,
-  type AnyField,
+  Field,
   type Fields,
-  type FieldInit,
-  type SchemaLike,
-  createField,
-  cloneField,
-  isField,
-} from './field.js';
+  type FieldData,
+} from "./field.js";
+export { validateField, isField, assertDefaultsAreValid } from "./validate-field.js";

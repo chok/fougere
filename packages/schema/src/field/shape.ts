@@ -89,7 +89,11 @@ interface StringConstraints { minLength?: number; maxLength?: number; pattern?: 
 interface NumericConstraints { minimum?: number; maximum?: number }
 // A list of VALUES (`list(text())`) — `items` is the element's own shape, validated
 // natively by the engine. A `many()` relation is NOT this: it has no shape at all.
-interface ArrayConstraints { items: Shape; minItems?: number; maxItems?: number }
+// `items` is optional because `array` covers two things, exactly as the card already
+// spells them: a value list (`list(text())`) carries the element shape, a `many`
+// relation carries none — its elements live on the other side and the role names them.
+// `FieldDescriptor.items` was already optional; this is the same statement, in memory.
+interface ArrayConstraints { items?: Shape; minItems?: number; maxItems?: number }
 // `json()` → bare (opaque passthrough); `json(Entity)` → the embedded entity's own
 // shape projection (`properties`/`required` are JSON Schema's nesting, so the engine
 // validates the nested structure natively and the descriptor travels verbatim).
@@ -102,8 +106,26 @@ export type Shape =
   | ({ type: Nullably<'array'> } & ArrayConstraints)
   | ({ type: Nullably<'object'> } & ObjectConstraints);
 
-/** The BASE type names — what `anatomy(shape).base?.type` narrows to for a dispatch. */
-export type ShapeType = 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object';
+/**
+ * The BASE type names — what `anatomy(shape).base?.type` narrows to for a dispatch.
+ *
+ * The runtime list is the source and the type derives from it, not the reverse: a type
+ * union cannot be enumerated at runtime, so writing both by hand means two lists that
+ * drift. {@link isShape} needs the values, so it is the values that are declared.
+ */
+export const SHAPE_TYPES = ['string', 'number', 'integer', 'boolean', 'array', 'object'] as const;
+export type ShapeType = (typeof SHAPE_TYPES)[number];
+
+/** Is this a shape? Asked of its `type`, against {@link SHAPE_TYPES}. */
+export function isShape(value: unknown): value is Shape {
+  if (typeof value !== 'object' || value === null) return false;
+  const declared = (value as Shape).type;
+  const names = Array.isArray(declared) ? declared : [declared];
+  return (
+    names.some((name) => (SHAPE_TYPES as readonly unknown[]).includes(name)) &&
+    names.every((name) => name === 'null' || (SHAPE_TYPES as readonly unknown[]).includes(name))
+  );
+}
 
 /**
  * `Shape` with `type` guaranteed scalar — what `anatomy` returns as `base`, the

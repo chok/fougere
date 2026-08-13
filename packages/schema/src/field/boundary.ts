@@ -1,4 +1,4 @@
-import type { AnyField } from './field.js';
+import type { Field } from './field.js';
 import { anatomy, type Shape } from './shape.js';
 
 /**
@@ -96,7 +96,7 @@ function defaultBoundaryForShape(shape: Shape | undefined): Boundary {
 // ─── Resolution ──────────────────────────────────────
 
 /** The field's DECLARED boundary in normal form (alias resolved) — no derived default. */
-export function declaredBoundary(field: AnyField): Boundary {
+export function declaredBoundary(field: Field): Boundary {
   const ref = field.boundary;
   if (ref === undefined) return {};
   if (typeof ref === 'string') {
@@ -113,7 +113,7 @@ export function declaredBoundary(field: AnyField): Boundary {
  * the axis goes through — `boundaryOf(f).in === 'closed'` is the read-only
  * test, `.out === 'closed'` the write-only one.
  */
-export function boundaryOf(field: AnyField): Boundary {
+export function boundaryOf(field: Field): Boundary {
   const declared = declaredBoundary(field);
   const derived = defaultBoundaryForShape(field.shape);
   return { in: declared.in ?? derived.in, out: declared.out ?? derived.out };
@@ -135,7 +135,7 @@ export function boundaryOf(field: AnyField): Boundary {
  * It throws where the conversion is needed, not at boot: nothing walks every
  * field at startup. Loud and late beats silent and never.
  */
-export function resolveBoundary(field: AnyField): { decode: Decoder; encode: Encoder } {
+export function resolveBoundary(field: Field): { decode: Decoder; encode: Encoder } {
   const boundary = boundaryOf(field);
   return {
     decode: typeof boundary.in === 'object' ? named(decoders, boundary.in.decode, 'decoder') : identityDecoder,

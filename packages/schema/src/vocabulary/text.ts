@@ -1,4 +1,4 @@
-import { createField, type Field, type StringFormat } from '../field/index.js';
+import { Field, type StringFormat } from '../field/index.js';
 
 export interface TextOptions {
   min?: number;
@@ -11,7 +11,7 @@ export interface TextOptions {
 }
 
 export function text(opts?: TextOptions): Field<string> {
-  return createField<string>({
+  return new Field<string>({
     shape: { type: 'string', minLength: opts?.min, maxLength: opts?.max, pattern: opts?.pattern, format: opts?.format },
     lifecycle: opts?.default !== undefined ? { create: { value: opts.default } } : undefined,
     meta: opts?.description !== undefined ? { description: opts.description } : undefined,

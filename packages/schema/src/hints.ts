@@ -34,3 +34,27 @@ export type Hints<TFields extends Fields> = {
     Extract<keyof TFields, string>
   >[A];
 };
+
+/**
+ * Carry hints across a field-key transform — the schema-level twin of `cloneField`'s
+ * invariant: a derivation preserves everything it doesn't explicitly change. `transform`
+ * maps an old key to its new name, or to `undefined` when the field is dropped; each
+ * adapter's per-field hints follow their fields.
+ */
+export function deriveHints(
+  hints: Hints<Fields> | undefined,
+  transform: (key: string) => string | undefined,
+): Hints<Fields> | undefined {
+  if (!hints) return undefined;
+  const out: Record<string, Record<string, unknown>> = {};
+  for (const [adapter, perField] of Object.entries(hints as Record<string, Record<string, unknown> | undefined>)) {
+    if (!perField || typeof perField !== 'object') continue;
+    const mapped: Record<string, unknown> = {};
+    for (const [key, hint] of Object.entries(perField)) {
+      const next = transform(key);
+      if (next !== undefined) mapped[next] = hint;
+    }
+    if (Object.keys(mapped).length) out[adapter] = mapped;
+  }
+  return Object.keys(out).length ? (out as Hints<Fields>) : undefined;
+}

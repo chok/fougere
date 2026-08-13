@@ -19,7 +19,7 @@
 import { createApp, loadCascadedConfig, setModuleLoader, frondAliases, Logger } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import type { App, EntityOrm, FougereConfig, Transport } from '@fougere/core';
-import { applyCreate, applyUpdate, type SchemaLike } from '@fougere/schema';
+import { applyCreate, applyUpdate, type SchemaView } from '@fougere/schema';
 
 // ── Public types ─────────────────────────────────
 
@@ -27,7 +27,7 @@ export interface FougereServerConfig {
   /** Storage handle. Forwarded to the auth provider via AuthContext.db. */
   db?: unknown;
   /** Per-entity ORM factory. */
-  ormFactory?: (entity: SchemaLike, name: string) => EntityOrm;
+  ormFactory?: (entity: SchemaView, name: string) => EntityOrm;
   /** Called after app is created. Use for migrations, seeding, etc. */
   afterBoot?: (app: App) => void | Promise<void>;
   /**
@@ -167,7 +167,7 @@ async function boot(): Promise<App> {
  *
  * It reads the axes now, through the one realization every storage shares.
  */
-export function createMemoryOrm(entity: SchemaLike, name: string): EntityOrm {
+export function createMemoryOrm(entity: SchemaView, name: string): EntityOrm {
   const fields = entity.getFields();
   const pk = Object.entries(fields).find(([, field]) => field.role?.primary)?.[0] ?? 'id';
   const store = new Map<string, Record<string, unknown>>();
@@ -233,6 +233,6 @@ export function createMemoryOrm(entity: SchemaLike, name: string): EntityOrm {
       return updated;
     },
     async delete(id: string) { return store.delete(keyOf(id)); },
-    output(_schema: SchemaLike) { return this; },
+    output(_schema: SchemaView) { return this; },
   };
 }

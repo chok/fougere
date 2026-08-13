@@ -1,7 +1,7 @@
 import type { Container } from '@fougere/container';
 import type { ParsedParam } from './operation.js';
 import type { EntityOrm, OrmFactory } from './orm.js';
-import type { SchemaLike } from '@fougere/schema';
+import type { SchemaView } from '@fougere/schema';
 import type { OperationContract, OperationsMap } from './operation.js';
 import type { AppMiddleware } from './middleware.js';
 import type { PresenterViews } from './presenter.js';
@@ -31,7 +31,7 @@ export interface EntityEntry {
   /** Registration key: class name lowercased first char (e.g. 'product'). */
   name: string;
   /** The Entity class (has static getFields()). */
-  entityClass: SchemaLike;
+  entityClass: SchemaView;
   /** Absolute file path (for debugging). */
   filePath: string;
   /** Whether this entity is part of the frond's public contract. */
@@ -66,7 +66,7 @@ export interface HandlerEntry {
   /** Whether this handler is part of the frond's public contract. */
   exposed?: boolean;
   /** Output schema override — when Crud(Entity, Output), restricts ORM output. */
-  outputOverride?: SchemaLike;
+  outputOverride?: SchemaView;
   /** Surface name — subdirectory in handlers/ (e.g. 'admin', 'public'). */
   surface?: string;
 }
@@ -235,7 +235,7 @@ export interface AuthConfig {
    * Entities the provider will use. Optional metadata — useful for the core's
    * future migration registry to know which tables auth needs.
    */
-  entities?: Record<string, SchemaLike>;
+  entities?: Record<string, SchemaView>;
 }
 
 /**
@@ -255,7 +255,7 @@ export interface AuthContext {
  */
 export interface AuthRuntime {
   /** Entities used by the provider, including any defaults it filled in. */
-  entities: Record<string, SchemaLike>;
+  entities: Record<string, SchemaView>;
   /**
    * Per-entity ORMs the provider built for itself. Exposed so app code can
    * query auth tables (e.g. list active sessions for a user) without rebuilding
@@ -342,7 +342,7 @@ export interface App {
    * entity whose class may not be importable at all (another repo, another
    * language) — a card travelled, but until now its `schema` was thrown away.
    */
-  schemaFor(entity: string): Promise<SchemaLike>;
+  schemaFor(entity: string): Promise<SchemaView>;
   /**
    * The door a name exposes to one audience, or `undefined` when it exposes
    * none. A named surface is CLOSED: a name with no door of its own under that

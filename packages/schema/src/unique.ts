@@ -77,10 +77,7 @@ export function deriveUniqueRoles<TFields extends Fields>(
 
     if (carried.length === groups.length) continue;   // nothing lost, keep the field as is
     const { unique: _dropped, ...rest } = field.role!;
-    out[key] = {
-      ...field,
-      role: carried.length ? { ...rest, unique: carried } : rest,
-    };
+    out[key] = field.with({ role: carried.length ? { ...rest, unique: carried } : rest });
   }
   return out as TFields;
 }
@@ -113,10 +110,7 @@ export function projectUniqueOntoFields<TFields extends Fields>(
       const field = projected[key];
       if (!field) continue;   // a group naming an absent field states nothing here
       const already = field.role?.unique ?? [];
-      projected[key] = {
-        ...field,
-        role: { ...field.role, unique: [...already, members] },
-      };
+      projected[key] = field.with({ role: { ...field.role, unique: [...already, members] } });
     }
   }
   return projected as TFields;

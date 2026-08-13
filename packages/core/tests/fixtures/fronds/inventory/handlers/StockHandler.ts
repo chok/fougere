@@ -1,21 +1,16 @@
+import { entity, primary, text, number } from '@fougere/schema';
 import { Crud } from '../../../../../src/crud.js';
 import Item from '../entities/Item.js';
 
-export class StockSearchInput {
-  static getFields() {
-    return { name: { __brand: 'fougere_field' as const, type: 'text', options: {}, nullable: false } };
-  }
-}
+export class StockSearchInput extends entity({
+  name: text(),
+}) {}
 
-export class StockSearchOutput {
-  static getFields() {
-    return {
-      id: { __brand: 'fougere_field' as const, type: 'id', options: { primary: true }, nullable: false },
-      name: { __brand: 'fougere_field' as const, type: 'text', options: {}, nullable: false },
-      quantity: { __brand: 'fougere_field' as const, type: 'number', options: {}, nullable: false },
-    };
-  }
-}
+export class StockSearchOutput extends entity({
+  id: primary(),
+  name: text(),
+  quantity: number(),
+}) {}
 
 /** Handler that overrides list + adds a custom op. Tests child-wins merge. */
 export default class StockHandler extends Crud(Item) {

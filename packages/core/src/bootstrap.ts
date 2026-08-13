@@ -19,7 +19,7 @@ import { computeBindingPlan, resolveArgs, type CollectorResolver } from './bindi
 import type { OperationContract, OperationsMap } from './operation.js';
 import { resolveContracts } from './operation.js';
 import { EMPTY_INVOCATION, type InvocationContext } from './invocation.js';
-import { type SchemaLike, type Fields, validateFields, applyCreate } from '@fougere/schema';
+import { type SchemaView, type Fields, validateFields, applyCreate } from '@fougere/schema';
 import { projectEgress, presentEgress, guardStorage, type PresenterArgs } from './egress.js';
 
 
@@ -454,7 +454,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
             // patch is 'Immutable', a read-only field 'Read-only', every
             // system-stamped absence is legal via its lifecycle rule, and a
             // key outside the contract is 'Unknown field' (refused, not stripped).
-            const result = validateFields(schema.getFields(), inv.body, { patch: schema.getOpts?.().patch });
+            const result = validateFields(schema.getFields(), inv.body, { patch: schema.getOpts().patch });
             if (!result.success) {
               throw new FougereError({
                 code: ErrorCode.VALIDATION_FAILED,
@@ -743,7 +743,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
        *
        * **A typed emitter cannot reach this yet.** `Emit<T>` names the ROW type, where an
        * `created()` field is present and required, so `announce({ id, title })` is a
-       * compile error and the author writes `at: new Date()` anyway. `CtorInput`
+       * compile error and the author writes `at: new Date()` anyway. `PartialRow`
        * (`schema/src/entity.ts`) is exactly the shape wanted and derives from the FIELDS,
        * which the instance type has already thrown away. So this runs for a payload built
        * outside the type — a bridge, a replay, a test — and is inert for everyone else.
@@ -799,7 +799,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     }
   };
 
-  const schemaFor = async (entity: string): Promise<SchemaLike> => {
+  const schemaFor = async (entity: string): Promise<SchemaView> => {
     for (const frond of fronds) {
       const found = frond.entities.find((e) => e.name === entity);
       if (found) return found.entityClass;

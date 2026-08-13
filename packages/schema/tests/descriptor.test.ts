@@ -2,7 +2,7 @@ import { describe as group, it, expect } from 'vitest';
 import {
   entity, primary, text, number, optional, created, ref, many, json, list, email, readOnly,
   describe, reconstruct, describeSet, reconstructSet,
-  type SchemaLike, type EntityConstructor,
+  type SchemaView, type EntityConstructor,
 } from '../src/index.js';
 
 class Author extends entity({ id: primary() }) {}
@@ -116,8 +116,9 @@ group('reconstruct — card → working schema', () => {
     expect(Remote.validate({ mail: 'a@b.co', tags: ['x'] }).success).toBe(true);
     expect(Remote.validate({ mail: 'a@b.co', tags: [''] }).success).toBe(false);
     expect(Remote.validate({ mail: 'nope', tags: ['x'] }).success).toBe(false);
-    // a bare many() relation still reconstructs as shapeless (array without items)
-    expect(reconstruct(JSON.parse(JSON.stringify(describe(Post, 'post')))).getFields().tags.shape).toBeUndefined();
+    // a bare many() relation round-trips as an array WITHOUT items — the card always wrote
+    // `type: 'array'` for it, and now the field it rebuilds says the same thing it did.
+    expect(reconstruct(JSON.parse(JSON.stringify(describe(Post, 'post')))).getFields().tags.shape).toEqual({ type: 'array' });
   });
 
   it('an embedded value object (json(Entity)) travels and still validates after reconstruct', () => {
@@ -157,7 +158,7 @@ group('describeSet / reconstructSet — self-contained $defs bundle', () => {
     // `relation.to()` answers an `EntityConstructor` — a bare construct signature,
     // by design (role.ts must not depend on the carrier). Reading its fields means
     // saying, here, that the reconstructed target does carry them.
-    expect(Object.keys((authorTarget as unknown as SchemaLike).getFields())).toEqual(['id']);
+    expect(Object.keys((authorTarget as unknown as SchemaView).getFields())).toEqual(['id']);
   });
 
   it('a many relation resolves its element target too', () => {
