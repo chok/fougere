@@ -19,7 +19,6 @@ export {
   type Encoder,
   type Meta,
   isField,
-  normalizeFields,
   nullableShape,
   anatomy,
   // The constraint a `role.unique` member list denotes — `[]` means the field carrying it.

@@ -93,7 +93,7 @@ export function applyCreate(fields: Fields, input: Row): Row {
  *
  * Every default the vocabulary can express is a primitive (`text`, `number`, `bool`,
  * `oneOf`; `list` and `json` take none), so this only pays for itself under the escape
- * hatch — `new Field({ lifecycle: { create: { value: {…} } } })`. Cheap insurance
+ * hatch — `new Field({ shape, lifecycle: { create: { value: {…} } } })`. Cheap insurance
  * against the one failure mode nobody would ever debug from the symptom.
  */
 function freshValue(value: unknown): unknown {

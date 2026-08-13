@@ -40,5 +40,4 @@ export {
   type FieldData,
   type SchemaLike,
   isField,
-  normalizeFields,
 } from './field.js';

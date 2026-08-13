@@ -33,24 +33,37 @@ export class Field<T = unknown> {
   declare readonly _type?: T;
 
   /**
-   * The five slots, always the same five, whatever the caller passed — so the
-   * constructor IS the normaliser. `new Field(x)` on anything field-shaped answers a
-   * canonical field, which is why {@link normalizeFields} is a loop around this line
-   * and why nothing downstream has to ask where a field came from.
+   * Judges, then keeps the five slots — always the same five, whatever was passed in.
+   * So `new Field(x)` on anything field-shaped answers a canonical field, and on
+   * anything else refuses: there is no other way to obtain one, which is what lets
+   * every reader downstream stop asking where a field came from.
    *
-   * Where a plain object stands, exactly: the RUNTIME takes one — {@link normalizeFields}
-   * asks {@link isField}, which reads the shape and never the constructor, so a config, a
-   * plain-JS caller and a card another language wrote all get in and come out canonical.
+   * The refusal lives HERE and not in the caller's loop, because `new Field({})` is
+   * reachable without a compiler in front of it — plain JS, a `fougere.config.ts`, a
+   * card another language wrote. A check outside would have left that door open while
+   * looking closed.
+   *
+   * `key` is the only thing a caller knows that a field does not: the name it is filed
+   * under. It is a label for the message and is never stored — a field has no name of its
+   * own, the map does. Passing it is what makes the refusal read `Field 'vide': not a
+   * field` instead of leaving the author to hunt through twenty entries.
+   *
+   * Where a plain object stands, exactly: the RUNTIME takes one — {@link isField} reads
+   * the shape and never the constructor, so foreign data gets in and comes out canonical.
    * TypeScript does NOT: `with` is a member, and an object literal has no `with`, so
-   * `entity({ t: { shape } })` is a type error where the same call succeeds from JS.
-   *
-   * That asymmetry is the method's real price, and it is the affordable half — the untyped
-   * callers are precisely the ones no compiler was ever going to serve, and a TS caller has
-   * the vocabulary. What was NOT affordable is the runtime door, which is why it stays open.
-   * (No `private` member either, so nothing about the class is nominal: `instanceof` is
-   * never the question asked of a field, here or anywhere downstream.)
+   * `entity({ t: { shape } })` is a type error where the same call succeeds from JS. That
+   * asymmetry is the method's price, and it is the affordable half — the untyped callers
+   * are the ones no compiler was going to serve, and a TS caller has the vocabulary.
+   * (No `private` member either, so nothing here is nominal: `instanceof` is never the
+   * question asked of a field.)
    */
-  constructor(init: FieldData) {
+  constructor(init: FieldData, key?: string) {
+    if (!isField(init)) {
+      throw new Error(
+        `${key ? `Field '${key}': ` : ''}not a field — got ${JSON.stringify(init)}. `
+        + `Use the vocabulary (text(), number(), primary(), many()…); every field states a shape.`,
+      );
+    }
     this.shape = init.shape;
     this.role = init.role;
     this.lifecycle = init.lifecycle;
@@ -125,29 +138,3 @@ export function isField(value: unknown): value is Field {
   );
 }
 
-/**
- * Bring a field map into canonical form, refusing what is not a field — THE door.
- *
- * The dual of checking: rather than ask every reader downstream to trust a stamp, the
- * entry point REBUILDS what it was handed. So a map may legitimately arrive as plain
- * data — from a `fougere.config.ts`, from JS with no compiler in front of it, from a
- * card another language wrote — and what comes out is a field like any other, with the
- * same five slots and nothing extra riding along.
- *
- * A shapeless entry is named and refused here rather than three layers down: it used to
- * be legal, judged NOTHING (every value accepted), and reached `adapter/sql` as an
- * invented `text not null` column, so the failure surfaced at the driver on an insert.
- */
-export function normalizeFields(fields: Fields): Fields {
-  const out: Fields = {};
-  for (const [name, field] of Object.entries(fields)) {
-    if (!isField(field)) {
-      throw new Error(
-        `Field '${name}': not a field — got ${JSON.stringify(field)}. ` +
-          `Use the vocabulary (text(), number(), primary(), many()…); every field states a shape.`,
-      );
-    }
-    out[name] = new Field(field);
-  }
-  return out;
-}
