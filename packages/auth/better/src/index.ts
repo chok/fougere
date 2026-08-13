@@ -1,7 +1,7 @@
 import { betterAuth as betterAuthLib } from 'better-auth';
 import { createId } from '@paralleldrive/cuid2';
 import type { AuthConfig, AuthContext, AuthRuntime } from '@fougere/core';
-import type { SchemaLike } from '@fougere/schema';
+import type { SchemaView } from '@fougere/schema';
 import { AuthVerification, AuthUser, authEntities } from './entities.js';
 import { fougereAdapter, type OrmMap } from './adapter.js';
 import {
@@ -23,16 +23,16 @@ export type { FougereProviders, OIDCProviderConfig } from './translate.js';
  * shapes shipped by this package and can be overridden too.
  */
 export interface BetterAuthOptions {
-  user?: SchemaLike;
+  user?: SchemaView;
   secret: string;
   baseUrl?: string;
   basePath?: string;
   providers?: FougereProviders;
   trustedOrigins?: string[];
   sessionTtl?: number;
-  session?: SchemaLike;
-  account?: SchemaLike;
-  verification?: SchemaLike;
+  session?: SchemaView;
+  account?: SchemaView;
+  verification?: SchemaView;
 }
 
 /**

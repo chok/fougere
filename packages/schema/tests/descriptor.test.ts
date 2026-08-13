@@ -2,7 +2,7 @@ import { describe as group, it, expect } from 'vitest';
 import {
   entity, primary, text, number, optional, created, ref, many, json, list, email, readOnly,
   describe, reconstruct, describeSet, reconstructSet,
-  type SchemaLike, type EntityConstructor,
+  type SchemaView, type EntityConstructor,
 } from '../src/index.js';
 
 class Author extends entity({ id: primary() }) {}
@@ -158,7 +158,7 @@ group('describeSet / reconstructSet — self-contained $defs bundle', () => {
     // `relation.to()` answers an `EntityConstructor` — a bare construct signature,
     // by design (role.ts must not depend on the carrier). Reading its fields means
     // saying, here, that the reconstructed target does carry them.
-    expect(Object.keys((authorTarget as unknown as SchemaLike).getFields())).toEqual(['id']);
+    expect(Object.keys((authorTarget as unknown as SchemaView).getFields())).toEqual(['id']);
   });
 
   it('a many relation resolves its element target too', () => {

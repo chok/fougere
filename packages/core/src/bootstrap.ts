@@ -19,7 +19,7 @@ import { computeBindingPlan, resolveArgs, type CollectorResolver } from './bindi
 import type { OperationContract, OperationsMap } from './operation.js';
 import { resolveContracts } from './operation.js';
 import { EMPTY_INVOCATION, type InvocationContext } from './invocation.js';
-import { type SchemaLike, type Fields, validateFields, applyCreate } from '@fougere/schema';
+import { type SchemaView, type Fields, validateFields, applyCreate } from '@fougere/schema';
 import { projectEgress, presentEgress, guardStorage, type PresenterArgs } from './egress.js';
 
 
@@ -799,7 +799,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     }
   };
 
-  const schemaFor = async (entity: string): Promise<SchemaLike> => {
+  const schemaFor = async (entity: string): Promise<SchemaView> => {
     for (const frond of fronds) {
       const found = frond.entities.find((e) => e.name === entity);
       if (found) return found.entityClass;

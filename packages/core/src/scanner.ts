@@ -3,7 +3,7 @@ import { existsSync, type Dirent } from 'node:fs';
 import { join, dirname, basename, resolve as resolvePath } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { FrondDescriptor, ProviderEntry, EntityEntry, HandlerEntry, PresenterEntry, CollectorEntry, SeedEntry, ScanResult, ScanDiagnostic } from './types.js';
-import { ANONYMOUS_SCHEMA_NAME, type SchemaLike } from '@fougere/schema';
+import { ANONYMOUS_SCHEMA_NAME, type SchemaView } from '@fougere/schema';
 import type { OperationContract, OperationsMap } from './operation.js';
 import { cardinalityOf } from './operation.js';
 import { parseAllHandlerMethods, parsePresenterMethods, parseConstructorParams, type ParsedType } from './handler-parser.js';
@@ -103,7 +103,7 @@ async function loadClass(filePath: string): Promise<ProviderEntry['ctor']> {
   return ctor as ProviderEntry['ctor'];
 }
 
-function isEntityClass(value: unknown): value is SchemaLike {
+function isEntityClass(value: unknown): value is SchemaView {
   return typeof value === 'function' && 'getFields' in (value as any);
 }
 
@@ -244,7 +244,7 @@ async function toEntityEntry(filePath: string): Promise<EntityEntry | null> {
  * Resolve a ParsedType to a runtime schema if available in module exports.
  * Handles arrays, generics (uses base name), and simple references.
  */
-function resolveSchema(type: ParsedType, moduleExports: Record<string, unknown>): SchemaLike | undefined {
+function resolveSchema(type: ParsedType, moduleExports: Record<string, unknown>): SchemaView | undefined {
   // For arrays, resolve the element type
   const name = type.array ? type.name : type.name;
   // For generics like Pagination<Post>, also check inner types
@@ -256,15 +256,15 @@ function resolveSchema(type: ParsedType, moduleExports: Record<string, unknown>)
         // project it onto the schema view instead of dropping the wrapper, so
         // the facade validates in patch mode (absent field → untouched).
         if (type.name === 'Partial' && 'partial' in resolved && typeof (resolved as any).partial === 'function') {
-          return (resolved as any).partial() as SchemaLike;
+          return (resolved as any).partial() as SchemaView;
         }
-        return resolved as unknown as SchemaLike;
+        return resolved as unknown as SchemaView;
       }
     }
   }
   const resolved = moduleExports[name];
   if (resolved && typeof resolved === 'function' && 'getFields' in resolved) {
-    return resolved as unknown as SchemaLike;
+    return resolved as unknown as SchemaView;
   }
   return undefined;
 }
@@ -355,7 +355,7 @@ async function inferOperations(filePath: string, moduleExports: Record<string, u
 
 async function toHandlerEntry(
   filePath: string,
-  entityByClassName: Map<string, SchemaLike>,
+  entityByClassName: Map<string, SchemaView>,
   projectRoot?: string,
   surface?: string,
 ): Promise<HandlerEntry> {

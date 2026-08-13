@@ -8,7 +8,7 @@
  * Relations (ref/many) are auto-wired between registered types.
  */
 import type SchemaBuilder from '@pothos/core';
-import type { Fields, SchemaLike, SchemaSource } from '@fougere/schema';
+import type { Fields, SchemaView, SchemaSource } from '@fougere/schema';
 import { fieldsOf, isNullable } from '@fougere/schema';
 import { registerType, registerOperations } from './pothos.js';
 
@@ -52,8 +52,8 @@ function applyOperationOverrides(
 // ─── Types ──────────────────────────────────────
 
 interface OperationMeta {
-  input?: SchemaLike;
-  output?: SchemaLike;
+  input?: SchemaView;
+  output?: SchemaView;
   signature?: {
     name: string;
     params: { name: string; type: { raw: string; name: string; array?: boolean; nullable?: boolean; generics?: any[] }; optional?: boolean }[];
@@ -73,8 +73,8 @@ interface HandlerEntry {
   address: string;
   operations: Map<string, OperationMeta>;
   surface?: string;
-  outputOverride?: SchemaLike;
-  ctor?: { __output?: SchemaLike };
+  outputOverride?: SchemaView;
+  ctor?: { __output?: SchemaView };
 }
 
 interface PresenterFieldMeta {

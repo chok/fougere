@@ -2,12 +2,13 @@
  * @fougere/adapter-graphql — génère des types Pothos depuis les entités fougere
  */
 import type SchemaBuilder from '@pothos/core';
-import type { Field, Fields, SchemaLike, SchemaSource } from '@fougere/schema';
+import { createSchemaConstructor } from '@fougere/schema';
+import type { Field, Fields, SchemaView, SchemaSource } from '@fougere/schema';
 import { anatomy, boundaryOf, fieldsOf, inputFields, resolveBoundary, sourceNameOf } from '@fougere/schema';
 
 // ─── Types ─────────────────────────────────────────
 
-type EntityClass = SchemaLike & (abstract new (...args: any[]) => any);
+type EntityClass = SchemaView & (abstract new (...args: any[]) => any);
 
 /** Presenter instance — each method is a computed field resolver. */
 type PresenterInstance = Record<string, (parent: any) => any>;
@@ -51,7 +52,7 @@ export interface InputConfig {
   /** Nom de l'input GraphQL */
   name: string;
   /** SchemaView source (résultat de pick/omit/partial) */
-  schema: SchemaLike;
+  schema: SchemaView;
 }
 
 /** Parsed method signature (mirrors core OperationMeta.signature). */
@@ -63,8 +64,8 @@ interface ParsedSignature {
 
 /** Metadata for a handler operation (from scanner). */
 interface OperationMeta {
-  input?: SchemaLike;
-  output?: SchemaLike;
+  input?: SchemaView;
+  output?: SchemaView;
   signature?: ParsedSignature;
   /**
    * The operation in words. It reaches here already — `handler.operations` is core's
@@ -91,7 +92,7 @@ export interface OperationsConfig {
    * this because it alone knows whether the schema IS the entity's (then: the type
    * already registered) or something else (then: a new named type).
    */
-  viewType?: (view: SchemaLike, opName: string) => any;
+  viewType?: (view: SchemaView, opName: string) => any;
 }
 
 // Mirrors core's resolveIsReadOp (this package stays core-free, same as OperationMeta
@@ -484,7 +485,7 @@ export function registerType(builder: InstanceType<typeof SchemaBuilder>, config
   // Who owns the enum names: the schema a view came from, so `PostCard.status` and
   // `CreatePostInput.status` land on the one `PostStatus`. A card that travelled carries no
   // class name — the GraphQL type name is then the best owner available.
-  const enumOwner = sourceNameOf(config.entity as SchemaLike) ?? config.name;
+  const enumOwner = sourceNameOf(config.entity as SchemaView) ?? config.name;
 
   return (builder as any).objectRef(config.name).implement({
     fields: (t: any) => {
@@ -714,18 +715,11 @@ function buildArgsFromSignature(
     const opInputFields = isMutation ? inputFields(meta.input.getFields()) : meta.input.getFields();
     const inputName = `${capitalize(opName)}${entityName}Input`;
 
-    // Wrap fields as a SchemaLike for registerInput — an update input is the
-    // same fields seen through the patch mode, not a set of forged fields.
     inputRef = registerInput(builder, {
       name: inputName,
-      schema: {
-        getFields: () => opInputFields,
-        getOpts: () => ({ patch: opName === 'update' }),
-        // Stated, not omitted: an input view carries neither hints nor composite groups,
-        // and `SchemaLike` asks every reader to answer all four rather than guess.
-        getHints: () => undefined,
-        getUnique: () => undefined,
-      },
+      // A real schema over those fields, not a forged stand-in: an update input is the
+      // same fields seen through the patch mode.
+      schema: createSchemaConstructor(opInputFields, undefined, undefined, { patch: opName === 'update' }),
     });
   }
 

@@ -4,8 +4,6 @@ export {
   type Fields,
   type Shape,
   type ShapeType,
-  type BaseShape,
-  type ShapeAnatomy,
   type StringFormat,
   type FormatPredicate,
   type Role,
@@ -27,11 +25,9 @@ export {
   // The shape axis's own open registry — a NAMED predicate where JSON Schema
   // already declares its vocabulary open, so the rule travels as `format`.
   registerFormat,
-  resolveFormat,
   registerGenerator,
   resolveCustomGenerator,
   resolveBoundary,
-  declaredBoundary,
   boundaryOf,
   registerDecoder,
   registerEncoder,
@@ -50,7 +46,7 @@ export {
   createSchemaConstructor,
   ANONYMOUS_SCHEMA_NAME,
   type SchemaConstructor,
-  type SchemaLike,
+  type SchemaView,
   type SchemaViewInfer as InferView,
   type CtorInput,
 } from "./entity.js";
@@ -89,7 +85,6 @@ export { applyCreate, applyUpdate } from "./projections/lifecycle.js";
 export {
   type ValidationResult,
   type ValidationError,
-  type Checked,
   validateFields,
   checkValue,
 } from "./projections/validation.js";
@@ -116,14 +111,12 @@ export {
   type FieldExtension,
   type RoleDescriptor,
   type RelationDescriptor,
-  type JsonSchemaType,
 } from "./projections/card.js";
 // source: the one reader that takes a live class OR a card — what an adapter stands on
 export {
   type SchemaSource,
   schemaOf,
   fieldsOf,
-  uniqueOf,
 } from "./projections/source.js";
 // standard: the live Standard Schema interop surface (`~standard`)
 export type { StandardSchemaV1 } from "./projections/standard.js";

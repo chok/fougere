@@ -13,7 +13,7 @@
  * `RETURNING` clause.
  */
 import type { Kysely } from 'kysely';
-import { applyCreate, applyUpdate, schemaOf, type Fields, type SchemaLike, type SchemaSource } from '@fougere/schema';
+import { applyCreate, applyUpdate, schemaOf, type Fields, type SchemaView, type SchemaSource } from '@fougere/schema';
 import { toTable, toTableName, type TableDef } from './table.js';
 import { codecsOf, type ValueCodec } from './values.js';
 
@@ -35,7 +35,7 @@ interface ListResult<T> extends Array<T> {
 }
 
 interface SelectOption {
-  select?: SchemaLike;
+  select?: SchemaView;
 }
 
 interface PrimaryKeyInfo {
@@ -51,7 +51,7 @@ interface PrimaryKeyInfo {
  * moved to `applyCreate`/`applyUpdate` (`@fougere/schema`): nothing in them was about
  * SQL, and every other storage was re-deriving them from scratch.
  */
-function analyzeFields(entity: SchemaLike): { pk: PrimaryKeyInfo } {
+function analyzeFields(entity: SchemaView): { pk: PrimaryKeyInfo } {
   const pkNames = Object.entries(entity.getFields())
     .filter(([, field]) => field.role?.primary)
     .map(([name]) => name);
@@ -115,7 +115,7 @@ export class SqlEntityOrm {
   }
 
   /** Returns a scoped ORM that restricts all read results to the fields of the given schema. */
-  output(schema: SchemaLike): SqlEntityOrm {
+  output(schema: SchemaView): SqlEntityOrm {
     const scoped = Object.create(this) as SqlEntityOrm;
     (scoped as any).selectFields = new Set(Object.keys(schema.getFields()));
     return scoped;

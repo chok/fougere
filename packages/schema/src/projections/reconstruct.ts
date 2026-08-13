@@ -5,7 +5,7 @@ import {
   type Role,
   type Shape,
 } from '../field/index.js';
-import { createSchemaConstructor, type SchemaConstructor, type SchemaViewInfer } from '../entity.js';
+import { createSchemaConstructor, type SchemaConstructor, type SchemaView, type SchemaViewInfer } from '../entity.js';
 import {
   clean,
   type FieldDescriptor,
@@ -118,7 +118,7 @@ function compositeFromFields(fields: Fields): ReadonlyArray<ReadonlyArray<string
 }
 
 /** Build a live schema from a card; `resolve` wires relation targets when in a bundle. */
-function buildSchema(descriptor: SchemaDescriptor, resolve?: Resolver): SchemaConstructor<Fields> {
+function buildSchema(descriptor: SchemaDescriptor, resolve?: Resolver): SchemaView {
   const fields: Fields = {};
   for (const [key, prop] of Object.entries(descriptor.properties)) {
     fields[key] = reconstructField(prop, key, resolve);
@@ -174,10 +174,10 @@ export function reconstruct<T = SchemaViewInfer<Fields>>(
  * hands back the real reconstructed target (feeds adapters), not a name stand-in.
  * Targets absent from the set (external/cross-frond `$ref`) keep the stand-in.
  */
-export function reconstructSet(bundle: SchemaBundle): Record<string, SchemaConstructor<Fields>> {
+export function reconstructSet(bundle: SchemaBundle): Record<string, SchemaView> {
   const map: Record<string, EntityConstructor> = {};
   const resolve: Resolver = (name) => map[name.toLowerCase()];
-  const out: Record<string, SchemaConstructor<Fields>> = {};
+  const out: Record<string, SchemaView> = {};
   for (const [name, descriptor] of Object.entries(bundle.$defs)) {
     const schema = buildSchema(descriptor, resolve);
     // Name the rebuilt class after its key so re-describing it yields the same `to` name

@@ -1,5 +1,5 @@
 import type { Fields } from '../field/index.js';
-import type { SchemaLike } from '../entity.js';
+import type { SchemaView } from '../entity.js';
 import type { SchemaDescriptor } from './card.js';
 import { reconstruct } from './reconstruct.js';
 
@@ -15,11 +15,11 @@ import { reconstruct } from './reconstruct.js';
  * `getFields()` on the live class, so writing a Fougere adapter meant being inside the
  * repo, in TypeScript, with the class in hand.
  */
-export type SchemaSource = SchemaLike | SchemaDescriptor;
+export type SchemaSource = SchemaView | SchemaDescriptor;
 
 /** A card is the plain document — no behaviour, so no `getFields`. */
 function isDescriptor(source: SchemaSource): source is SchemaDescriptor {
-  return typeof (source as SchemaLike).getFields !== 'function';
+  return typeof (source as SchemaView).getFields !== 'function';
 }
 
 /**
@@ -31,7 +31,7 @@ function isDescriptor(source: SchemaSource): source is SchemaDescriptor {
  * unrelated field objects. Normalize at the edge, then nothing downstream knows the
  * difference — which is the point.
  */
-export function schemaOf(source: SchemaSource): SchemaLike {
+export function schemaOf(source: SchemaSource): SchemaView {
   return isDescriptor(source) ? reconstruct(source) : source;
 }
 

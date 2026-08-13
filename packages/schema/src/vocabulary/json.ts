@@ -1,5 +1,5 @@
-import { Field } from '../field/index.js';
-import type { SchemaLike } from '../entity.js';
+import { Field, type Fields } from '../field/index.js';
+import type { SchemaView } from '../entity.js';
 import { describe } from '../projections/describe.js';
 import type { FieldDescriptor } from '../projections/card.js';
 
@@ -18,8 +18,8 @@ import type { FieldDescriptor } from '../projections/card.js';
  * nested boundaries don't run — a nested date stays its wire string.
  */
 export function json<T = unknown>(): Field<T>;
-export function json<E extends SchemaLike & (new (...args: any[]) => any)>(of: E): Field<InstanceType<E>>;
-export function json(of?: SchemaLike): Field<unknown> {
+export function json<E extends SchemaView & (new (...args: any[]) => any)>(of: E): Field<InstanceType<E>>;
+export function json(of?: SchemaView): Field<unknown> {
   if (!of) return new Field({ shape: { type: 'object' } });
   const card = describe(of);
   const properties: Record<string, unknown> = {};

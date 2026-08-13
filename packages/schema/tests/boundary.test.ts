@@ -1,7 +1,8 @@
+import { resolveBoundary } from '../src/field/index.js';
 import { describe, it, expect } from 'vitest';
 import {
   entity, primary, text, date, optional, readOnly, writeOnly, boundaryOf,
-  resolveBoundary, encodeFields, validateFields,
+  encodeFields, validateFields,
   registerDecoder, registerEncoder, registerBoundaryAlias,
 } from '../src/index.js';
 import { Field } from '../src/field/index.js';

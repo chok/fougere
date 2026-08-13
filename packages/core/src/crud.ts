@@ -1,6 +1,6 @@
 import type { EntityOrm, ListOptions, ListResult } from './orm.js';
 import type { OperationContract } from './operation.js';
-import type { SchemaLike } from '@fougere/schema';
+import type { SchemaView } from '@fougere/schema';
 
 /** The id of the row an op acts on — a route segment, or a query fallback. */
 const byId = { name: 'id', source: { kind: 'param' as const, name: 'id' }, optional: false };
@@ -28,7 +28,7 @@ const fromBody = { name: 'input', source: { kind: 'body' as const }, optional: f
  * undefined`), so a named view still wins and a presenter's computed fields still ride
  * out. `delete` names none — a boolean is not a shape.
  */
-function crudOps(entity: SchemaLike & { partial?: () => SchemaLike }): Record<string, OperationContract> {
+function crudOps(entity: SchemaView & { partial?: () => SchemaView }): Record<string, OperationContract> {
   return {
     list: { output: entity, cardinality: 'page', binding: [{ name: 'options', source: { kind: 'query' }, optional: true }] },
     findById: { output: entity, cardinality: 'maybe', binding: [byId] },
@@ -139,7 +139,7 @@ export function Crud<E extends abstract new (...args: any[]) => any, V extends C
     static __output = wholeHandler ?? entity;
     static __opOutputs = perOp;
     /** What this prefab handler declares — read by the façade, merged under the author's own methods. */
-    static __ops: Record<string, OperationContract> = crudOps(entity as unknown as SchemaLike & { partial?: () => SchemaLike });
+    static __ops: Record<string, OperationContract> = crudOps(entity as unknown as SchemaView & { partial?: () => SchemaView });
 
     orm: EntityOrm<T>;
     constructor(orm: EntityOrm) {

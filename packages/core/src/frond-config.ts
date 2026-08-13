@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
-import type { SchemaLike } from '@fougere/schema';
+import type { SchemaView } from '@fougere/schema';
 import type { BindingPlan } from './binding.js';
 
 // ── Types ────────────────────────────────────────
@@ -53,7 +53,7 @@ export interface OperationOverride {
   // ── The contract itself — see the note above ──
 
   /** What judges the input. The view carries its own mode (`partial()` → patch). */
-  input?: SchemaLike;
+  input?: SchemaView;
   /**
    * Where each argument is read from — states what the scan would otherwise derive
    * from the method signature. An empty array is meaningful: "this op takes nothing".

@@ -1,5 +1,5 @@
-import type { Field, Role } from '../field/index.js';
-import type { SchemaLike } from '../entity.js';
+import type { Field, Fields, Role } from '../field/index.js';
+import type { SchemaView } from '../entity.js';
 import { anatomy, uniqueMembers, boundaryOf } from '../field/index.js';
 import { registrationKeyOf } from '../name.js';
 import {
@@ -82,7 +82,7 @@ function describeField(field: Field, key: string): FieldDescriptor {
  * (the hand-rolled copies in adapters call this). `name` titles the entity; it
  * falls back to the schema's source/class name when omitted.
  */
-export function describe(schema: SchemaLike, name?: string): SchemaDescriptor {
+export function describe(schema: SchemaView, name?: string): SchemaDescriptor {
   const properties: Record<string, FieldDescriptor> = {};
   const required: string[] = [];
   for (const [key, field] of Object.entries(schema.getFields())) {
@@ -109,7 +109,7 @@ export function describe(schema: SchemaLike, name?: string): SchemaDescriptor {
  * and GraphQL names a field's enum type with it — an enum named after the view would give
  * `Post.status` and `CreatePostInput.status` two incompatible types for one set of values.
  */
-export function sourceNameOf(schema: SchemaLike): string | undefined {
+export function sourceNameOf(schema: SchemaView): string | undefined {
   const s = schema as { source?: { name?: string }; name?: string };
   return s.source?.name ?? s.name;
 }
@@ -120,7 +120,7 @@ export function sourceNameOf(schema: SchemaLike): string | undefined {
  * schemas). Keys carry the registration key, the same spelling `describe` gives a
  * relation's `to`, so `$ref`-by-name resolves cleanly in {@link reconstructSet}.
  */
-export function describeSet(schemas: Record<string, SchemaLike> | SchemaLike[]): SchemaBundle {
+export function describeSet(schemas: Record<string, SchemaView> | SchemaView[]): SchemaBundle {
   const entries = Array.isArray(schemas)
     ? schemas.map((s) => [sourceNameOf(s) ?? '', s] as const)
     : Object.entries(schemas);

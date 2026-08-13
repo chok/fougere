@@ -4,20 +4,17 @@
  * usable by any renderer (the page owns the widgets).
  */
 import { anatomy, inputFields } from '@fougere/schema';
-import type { Field, SchemaLike, ValidationError, ValidationResult } from '@fougere/schema';
+import type { Field, SchemaView, ValidationError, ValidationResult } from '@fougere/schema';
 
 /**
  * What an entity class exposes to a form — the schema statics it already has.
  *
- * `SchemaLike` and the real `Field`, not a local re-description of the axes: this file
+ * `SchemaView` and the real `Field`, not a local re-description of the axes: this file
  * used to declare its own `FieldLike` with `shape?` optional, so it kept judging by a
  * looser contract than the schema's own and would never have seen `shape` become
  * required.
  */
-export type FormEntity = SchemaLike & {
-  name: string;
-  validate(input: unknown): ValidationResult<unknown>;
-};
+export type FormEntity = SchemaView;
 
 /**
  * The literal a field is born with, when it declares one.

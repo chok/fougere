@@ -30,31 +30,27 @@ export type SchemaViewInfer<TFields extends Fields> = {
 export type CtorInput<TFields extends Fields> = Partial<SchemaViewInfer<TFields>>;
 
 /**
- * The read-only view of a schema — for a reader that does not care which field map it
- * holds. `SchemaConstructor<Fields>` cannot serve that: `TFields` sits in contravariant
- * positions (`pick`, the constructor input), so a concrete schema is not assignable.
- *
- * All four are required. Two were optional, which cost nine defensive `?.` at call sites;
- * the one caller that really answered less (`pothos.ts`, an ad-hoc input view) now states
- * its two absences instead of leaving every reader to guess.
- */
-export interface SchemaLike {
-  getFields(): Fields;
-  getHints(): unknown;
-  getOpts(): { patch?: boolean };
-  getUnique(): ReadonlyArray<ReadonlyArray<string>> | undefined;
-}
-
-/**
  * A schema constructor returned by Entity.pick(), omit(), partial(), extend().
  *
  * - Usable as a base class: `class X extends Post.pick('id') {}`
  * - Instance type = the data shape (no Infer needed)
  * - Has static methods: getFields(), validate(), pick(), omit(), partial(), extend()
  */
-export interface SchemaConstructor<TFields extends Fields> {
-  new (data: CtorInput<TFields>): SchemaViewInfer<TFields>;
+/**
+ * What a schema ANSWERS — the read half, with no construct signature, so a class carrying
+ * a body satisfies it. `SchemaConstructor` extends it rather than restating it.
+ */
+export interface SchemaView {
   readonly name: string;
+  validate(input: unknown): ValidationResult<Record<string, unknown>>;
+  getFields(): Fields;
+  getHints(): unknown;
+  getOpts(): ValidateOptions;
+  getUnique(): ReadonlyArray<ReadonlyArray<string>> | undefined;
+}
+
+export interface SchemaConstructor<TFields extends Fields> extends SchemaView {
+  new (data: CtorInput<TFields>): SchemaViewInfer<TFields>;
   readonly '~standard': StandardSchemaV1.Props<Record<string, unknown>, SchemaViewInfer<TFields>>;
   /** The original Entity class this derivation was created from (undefined for compose() results). */
   readonly source?: abstract new (...args: never[]) => unknown;
@@ -383,7 +379,7 @@ type FieldsFrom<T> = T extends { getFields(): infer F } ? F : Fields;
  * right, later sources override earlier ones on conflict (hints merge per adapter,
  * per field key). Use .rename() before compose() to avoid field conflicts.
  */
-export function compose<T extends SchemaLike[]>(
+export function compose<T extends SchemaView[]>(
   ...sources: T
 ): SchemaConstructor<UnionToIntersection<FieldsFrom<T[number]>> & Fields> {
   const merged: Fields = {};
