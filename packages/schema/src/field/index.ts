@@ -7,9 +7,12 @@ export {
   type BaseShape,
   type ShapeAnatomy,
   type StringFormat,
+  type FormatPredicate,
   nullableShape,
   anatomy,
   isNullable,
+  registerFormat,
+  resolveFormat,
 } from './shape.js';
 export { type Role, type Relation, type EntityConstructor, toTargetThunk, uniqueMembers } from './role.js';
 export {
