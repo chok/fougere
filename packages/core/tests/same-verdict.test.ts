@@ -21,7 +21,7 @@ import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, FougereError } from '../src/index.js';
 import { EMPTY_INVOCATION } from '../src/invocation.js';
-import { inputFields, type AnyField, type SchemaLike } from '@fougere/schema';
+import { inputFields, type Field, type SchemaLike } from '@fougere/schema';
 import type { EntityOrm, OrmFactory } from '../src/orm.js';
 import Article from './fixtures-same-verdict/fronds/press/entities/Article.js';
 import { NewArticle } from './fixtures-same-verdict/fronds/press/handlers/ArticleHandler.js';
@@ -73,7 +73,7 @@ function decisionTable(schema: SchemaLike, baseline: Record<string, unknown>) {
   const writable = new Set(Object.keys(inputFields(all)));
   const cases: { why: string; body: Record<string, unknown> }[] = [];
 
-  for (const [name, field] of Object.entries(all) as [string, AnyField][]) {
+  for (const [name, field] of Object.entries(all) as [string, Field][]) {
     if (!field.lifecycle?.create && field.role?.relation?.kind !== 'many' && name in baseline) {
       const body = { ...baseline };
       delete body[name];

@@ -1,4 +1,4 @@
-import type { AnyField, Role, SchemaLike } from '../field/index.js';
+import type { Field, Role, SchemaLike } from '../field/index.js';
 import { anatomy, uniqueMembers, boundaryOf } from '../field/index.js';
 import { registrationKeyOf } from '../name.js';
 import {
@@ -19,7 +19,7 @@ import {
  * axis: a `nullable()` field stays required (the caller may supply `null`, not
  * omit the key), exactly what `validateFields` enforces.
  */
-function isRequired(field: AnyField): boolean {
+function isRequired(field: Field): boolean {
   // Read `boundary` for the same reason `validateFields` does: a server-owned
   // field is one a caller may never supply, so listing it as required states a
   // demand the door then refuses with `Read-only`. Same stance as OpenAPI's
@@ -48,7 +48,7 @@ function describeRole(role: Role, key: string): RoleDescriptor | undefined {
   return Object.keys(out).length ? out : undefined;
 }
 
-function describeExtension(field: AnyField, key: string): FieldExtension | undefined {
+function describeExtension(field: Field, key: string): FieldExtension | undefined {
   const ext: FieldExtension = {};
   if (field.role) ext.role = describeRole(field.role, key);
   // The normal forms are named tokens, pure JSON — they travel verbatim
@@ -61,7 +61,7 @@ function describeExtension(field: AnyField, key: string): FieldExtension | undef
   return Object.keys(ext).length ? ext : undefined;
 }
 
-function describeField(field: AnyField, key: string): FieldDescriptor {
+function describeField(field: Field, key: string): FieldDescriptor {
   const out: FieldDescriptor = {};
   // Shape is already JSON Schema's vocabulary — nullability included, as the
   // `[T,'null']` type union — so its keywords copy verbatim (an embedded object's

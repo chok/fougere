@@ -1,4 +1,4 @@
-import type { AnyField, Fields, FormatPredicate, Shape } from '../field/index.js';
+import type { Field, Fields, FormatPredicate, Shape } from '../field/index.js';
 import { anatomy, boundaryOf, resolveBoundary, resolveFormat } from '../field/index.js';
 import { Validator, format as engineFormats } from '@cfworker/json-schema';
 
@@ -98,7 +98,7 @@ function customFormatOf(name: string): FormatPredicate | undefined {
  * asking who is speaking. That is what makes it usable on the way OUT of the domain,
  * where the client-only axes (`boundary`, `lifecycle`) do not apply.
  */
-export function checkValue(field: AnyField, value: unknown): Checked {
+export function checkValue(field: Field, value: unknown): Checked {
   const shape = field.shape;
   // The pre-engine guards dispatch on the BASE type — `shape.type` itself may be
   // the nullable union. They only short-circuit NON-null values: null always goes

@@ -36,10 +36,9 @@ export {
 export { type Meta } from './meta.js';
 export {
   Field,
-  type AnyField,
   type Fields,
   type FieldData,
   type SchemaLike,
-    isField,
+  isField,
   normalizeFields,
 } from './field.js';

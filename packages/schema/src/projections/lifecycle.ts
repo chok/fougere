@@ -21,7 +21,7 @@
  * instead of re-deriving it. `update: 'forbidden'` is NOT here: refusing a value is a
  * judgment, and the façade already does it (`validation.ts`, patch mode).
  */
-import { resolveCustomGenerator, type AnyField, type Fields } from '../field/index.js';
+import { resolveCustomGenerator, type Field, type Fields } from '../field/index.js';
 import { createId } from '@paralleldrive/cuid2';
 
 type Row = Record<string, unknown>;
@@ -68,7 +68,7 @@ export function applyCreate(fields: Fields, input: Row): Row {
   const out: Row = { ...input };
   const instant = Date.now();
 
-  for (const [name, field] of Object.entries(fields) as [string, AnyField][]) {
+  for (const [name, field] of Object.entries(fields) as [string, Field][]) {
     if (name in out) continue;
     const create = field.lifecycle?.create;
     if (create === 'now') {
@@ -109,7 +109,7 @@ export function applyUpdate(fields: Fields, patch: Row): Row {
   const out: Row = { ...patch };
   const instant = Date.now();
 
-  for (const [name, field] of Object.entries(fields) as [string, AnyField][]) {
+  for (const [name, field] of Object.entries(fields) as [string, Field][]) {
     if (field.lifecycle?.update === 'now' && !(name in out)) out[name] = new Date(instant);
   }
 

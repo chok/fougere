@@ -1,7 +1,6 @@
 import {
-  type AnyField,
-  type EntityConstructor,
   Field,
+  type EntityConstructor,
   type Fields,
   type Role,
   type Shape,
@@ -76,7 +75,7 @@ function reconstructRole(role: RoleDescriptor, resolve?: Resolver): Role {
   return out;
 }
 
-function reconstructField(prop: FieldDescriptor, key: string, resolve?: Resolver): AnyField {
+function reconstructField(prop: FieldDescriptor, key: string, resolve?: Resolver): Field {
   const ext = prop['x-fougere'];
   const shape = reconstructShape(prop);
   // A card that names no type for a property cannot become a field: every field states a

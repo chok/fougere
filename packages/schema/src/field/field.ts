@@ -75,22 +75,8 @@ export class Field<T = unknown> {
   }
 }
 
-/**
- * Any field, regardless of its `T` — the correct generic bound.
- *
- * `unknown` and not `any`: the bound accepts every concrete field either way, and
- * the whole workspace typechecks either way. The difference shows where the field
- * map is no longer captured by a generic — `SchemaViewInfer<Fields>` reads this `T`,
- * so `any` handed a silent value to every consumer that lost the precise map.
- *
- * One parameter and not two: a second one carried "auto-supplied at creation", a
- * type-level copy of `lifecycle.create` that had to be restated by hand in every word
- * that could set the rule — and had drifted, on `default`. See {@link Fields}.
- */
-export type AnyField = Field<unknown>;
-
 /** A record of fields — the input to `entity()` and every derivation. */
-export type Fields = Record<string, AnyField>;
+export type Fields = Record<string, Field>;
 
 /**
  * A field's DATA — the class with its behaviour removed.
@@ -131,11 +117,11 @@ export interface SchemaLike {
  * `shape` answers both: every field states one, no non-field does, and it survives
  * `JSON.stringify` — the only place the question is ever really asked.
  */
-export function isField(value: unknown): value is AnyField {
+export function isField(value: unknown): value is Field {
   return (
     typeof value === "object" &&
     value !== null &&
-    Boolean((value as AnyField).shape)
+    Boolean((value as Field).shape)
   );
 }
 

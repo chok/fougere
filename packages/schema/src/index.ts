@@ -1,7 +1,6 @@
 // ─── The primitive — a Field on four orthogonal axes + meta ──
 export {
   Field,
-  type AnyField,
   type Fields,
   type Shape,
   type ShapeType,

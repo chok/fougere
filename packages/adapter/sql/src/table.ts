@@ -6,7 +6,7 @@
  * other — the entity never mentions a column type, the dialect never mentions a
  * field. Adding a dialect touches only the second half.
  */
-import { anatomy, fieldsOf, registrationKeyOf, uniqueMembers, type AnyField, type SchemaLike, type SchemaSource } from '@fougere/schema';
+import { anatomy, fieldsOf, registrationKeyOf, uniqueMembers, type Field, type SchemaLike, type SchemaSource } from '@fougere/schema';
 import { boundsOf, type ShapeBounds } from './check.js';
 
 /** The shape keywords a dialect needs to choose a column type. */
@@ -69,7 +69,7 @@ export function toSnakeCase(str: string): string {
  * A `many` relation owns no column — the join lives on the other side. Every
  * other field becomes exactly one column.
  */
-function isStored(field: AnyField): boolean {
+function isStored(field: Field): boolean {
   return field.role?.relation?.kind !== 'many';
 }
 
@@ -106,7 +106,7 @@ function primaryColumnOf(target: Partial<SchemaLike>): string {
  * the default convention, wrong if the app ALSO overrides `tableName` for it.
  */
 function referenceFor(
-  field: AnyField,
+  field: Field,
   resolve: (name: string) => string,
   tableNameOf?: Map<SchemaSource, string>,
 ): ColumnReference | undefined {
@@ -120,7 +120,7 @@ function referenceFor(
 
 function toColumn(
   fieldName: string,
-  field: AnyField,
+  field: Field,
   resolve: (name: string) => string,
   tableNameOf?: Map<SchemaSource, string>,
 ): ColumnDef {

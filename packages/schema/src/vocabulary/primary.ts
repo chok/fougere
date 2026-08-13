@@ -2,7 +2,6 @@ import {
   Field,
   isField,
   registerGenerator,
-  type AnyField,
   type GeneratorRef,
 } from '../field/index.js';
 
@@ -26,7 +25,7 @@ interface PrimaryOptions {
  */
 export function primary(opts?: PrimaryOptions): Field<string>;
 export function primary<T>(field: Field<T>): Field<T>;
-export function primary(fieldOrOptions?: AnyField | PrimaryOptions): AnyField {
+export function primary(fieldOrOptions?: Field | PrimaryOptions): Field {
   // primary(field) — promote an existing field to primary key. cloneField keeps
   // every axis (boundary, meta…); the role gains `primary`, and identity in the
   // graph implies immutability in time: `update: 'forbidden'` (decided 2026-07-15).

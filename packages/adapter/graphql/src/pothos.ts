@@ -2,7 +2,7 @@
  * @fougere/adapter-graphql — génère des types Pothos depuis les entités fougere
  */
 import type SchemaBuilder from '@pothos/core';
-import type { AnyField, Fields, SchemaLike, SchemaSource } from '@fougere/schema';
+import type { Field, Fields, SchemaLike, SchemaSource } from '@fougere/schema';
 import { anatomy, boundaryOf, fieldsOf, inputFields, resolveBoundary, sourceNameOf } from '@fougere/schema';
 
 // ─── Types ─────────────────────────────────────────
@@ -133,7 +133,7 @@ const SKIP_TYPES = new Set(['InvocationContext']);
 
 function fieldToGraphQL(
   t: any,
-  field: AnyField,
+  field: Field,
   fieldName: string,
   enumFor?: (values: string[]) => any | undefined,
 ): any {
@@ -322,7 +322,7 @@ function enumNameFor(owner: string | undefined, fieldName: string): string | und
 
 function fieldToInput(
   t: any,
-  field: AnyField,
+  field: Field,
   patch: boolean,
   nested?: (shape: Record<string, any>, suffix: string) => any,
   enumFor?: (values: string[]) => any | undefined,
