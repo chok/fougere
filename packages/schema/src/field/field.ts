@@ -50,7 +50,7 @@ export class Field<T = unknown> {
    * (No `private` member either, so nothing about the class is nominal: `instanceof` is
    * never the question asked of a field, here or anywhere downstream.)
    */
-  constructor(init: FieldInit) {
+  constructor(init: FieldData) {
     this.shape = init.shape;
     this.role = init.role;
     this.lifecycle = init.lifecycle;
@@ -70,7 +70,7 @@ export class Field<T = unknown> {
    * `nullable` and `optional` widen to `T | null`. Stating it in the call is the point —
    * the alternative was `as unknown as Field<…>`, a cast that can express anything.
    */
-  with<U = T>(overrides: FieldOverrides): Field<U> {
+  with<U = T>(overrides: Partial<FieldData>): Field<U> {
     return new Field<U>({ ...this, ...overrides });
   }
 }
@@ -93,21 +93,20 @@ export type AnyField = Field<unknown>;
 export type Fields = Record<string, AnyField>;
 
 /**
- * What it takes to BUILD a field — the class minus its one method.
+ * A field's DATA — the class with its behaviour removed.
  *
- * DERIVED and not restated: the five slots are declared once, on `Field`, and a 6th axis
- * lands here for free. A parallel interface listing the same five is the duplication this
- * package spends its comments warning about, and it is what `with` costs — an object
- * literal cannot satisfy `Field` itself, since it has no `with`.
+ * Derived, not restated: the five slots are declared once, on `Field`, so a 6th axis lands
+ * here for free — and so would a second method, which `Omit<Field, 'with'>` would have
+ * missed, naming what to drop instead of saying what to keep.
+ *
+ * One name and not two. Building states all of it (`constructor`), modifying states the
+ * difference (`Partial`, in `with`) — that is a `Partial` at one call site, not a second
+ * concept. And that this type has to exist at all is what `with` costs: an object literal
+ * cannot satisfy `Field` itself, having no method, so the data half needs its own name.
  */
-export type FieldInit = Omit<Field, 'with'>;
-
-/**
- * The axes a derivation CHANGES — the dual of {@link FieldInit}: build states everything,
- * modify states the difference. `with`'s parameter, and the reason `shape` can be required
- * on the way in without making every transform restate it.
- */
-export type FieldOverrides = Partial<FieldInit>;
+export type FieldData = {
+  [K in keyof Field as Field[K] extends (...args: never[]) => unknown ? never : K]: Field[K];
+};
 
 /** Duck type for anything with fields — Entity, SchemaConstructor. */
 export interface SchemaLike {

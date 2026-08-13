@@ -38,7 +38,7 @@ export {
   Field,
   type AnyField,
   type Fields,
-  type FieldInit,
+  type FieldData,
   type SchemaLike,
     isField,
   normalizeFields,
