@@ -3,6 +3,8 @@
 // package-internal (and index-level) view.
 export {
   type Shape,
+  SHAPE_TYPES,
+  isShape,
   type ShapeType,
   type BaseShape,
   type ShapeAnatomy,

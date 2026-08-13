@@ -106,8 +106,38 @@ export type Shape =
   | ({ type: Nullably<'array'> } & ArrayConstraints)
   | ({ type: Nullably<'object'> } & ObjectConstraints);
 
-/** The BASE type names — what `anatomy(shape).base?.type` narrows to for a dispatch. */
-export type ShapeType = 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object';
+/**
+ * The BASE type names — what `anatomy(shape).base?.type` narrows to for a dispatch.
+ *
+ * The runtime list is the source and the type derives from it, not the reverse: a type
+ * union cannot be enumerated at runtime, so writing both by hand means two lists that
+ * drift. {@link isShape} needs the values, so it is the values that are declared.
+ */
+export const SHAPE_TYPES = ['string', 'number', 'integer', 'boolean', 'array', 'object'] as const;
+export type ShapeType = (typeof SHAPE_TYPES)[number];
+
+/**
+ * Is this a shape? Asked of its `type`, which is the one thing every shape states and
+ * the one thing the engine dispatches on.
+ *
+ * The weaker question — "is there a `shape` key at all" — is the one this package spent a
+ * refactor removing elsewhere, and it was still being asked here: `{ shape: 42 }` built a
+ * field that crashed inside the validator (`Invalid value used as weak map key`), while
+ * `{ shape: {} }` built one that judged NOTHING and answered `true` to every value. Both
+ * are the shapeless field again, one level down.
+ *
+ * `null` is legal only inside the union — `['string','null']` is how nullability is
+ * spelled — never on its own: a field whose only type is `null` states no value.
+ */
+export function isShape(value: unknown): value is Shape {
+  if (typeof value !== 'object' || value === null) return false;
+  const declared = (value as Shape).type;
+  const names = Array.isArray(declared) ? declared : [declared];
+  return (
+    names.some((name) => (SHAPE_TYPES as readonly unknown[]).includes(name)) &&
+    names.every((name) => name === 'null' || (SHAPE_TYPES as readonly unknown[]).includes(name))
+  );
+}
 
 /**
  * `Shape` with `type` guaranteed scalar — what `anatomy` returns as `base`, the

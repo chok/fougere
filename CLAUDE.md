@@ -115,6 +115,12 @@ depth is encoded there: check it when a package moves families.
 - `resolveStorage()` (`@fougere/defaults`) is the **single** place that defaults a missing db path — never recompute it elsewhere
 - `graphql` deduplicated across the workspace (override + hoist)
 - `better-sqlite3` bindings may need `npx prebuild-install` in its pnpm dir
+- **Measure before concluding.** On a design question — should this be a class, is this type
+  read anywhere, does this flag earn its place — run the grep or the probe FIRST and answer
+  with the number. A position defended before it was measured has been wrong every time.
+- **A comment states the invariant, not the argument for it.** Two lines. Needing ten to
+  justify a design means the design is wrong, not under-documented.
+- **When the measurement decides, execute.** Do not ask again for what it already answered.
 - Commits: title + 1-3 lines. Never `git add -A` (parallel sessions)
 - **Everything committed to this repository is in English** — commit messages, PR bodies, code comments, doc comments, test names, `README.md`, `CLAUDE.md`. The repository is public and its readers are not assumed to read French. The one exception is `site/content/fr/`, which is a translation target and French by design; `site/content/en/` is its pair, and the two move together. Private design notes live outside this repo and are not covered by this rule.
 

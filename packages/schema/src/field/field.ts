@@ -1,4 +1,4 @@
-import type { Shape } from "./shape.js";
+import { isShape, type Shape } from "./shape.js";
 import type { Role } from "./role.js";
 import type { Lifecycle } from "./lifecycle.js";
 import type { BoundaryRef } from "./boundary.js";
@@ -56,6 +56,14 @@ export class Field<T = unknown> {
    * are the ones no compiler was going to serve, and a TS caller has the vocabulary.
    * (No `private` member either, so nothing here is nominal: `instanceof` is never the
    * question asked of a field.)
+   */
+  /*
+   * The five slots are assigned by NAME and not with `Object.assign(this, init)`, which
+   * would be one line and would carry a 6th axis for free. Measured, on the very input
+   * this door exists to accept — a card parsed from JSON, written by another language:
+   * `Object.assign` copies through `[[Set]]`, so an own `__proto__` key fires the setter
+   * and REPLACES the field's prototype. The field then has no `with`, and carries whatever
+   * the sender put there. Naming the slots is immune, and drops anything else riding along.
    */
   constructor(init: FieldData, key?: string) {
     if (!isField(init)) {
@@ -129,12 +137,13 @@ export interface SchemaLike {
  *
  * `shape` answers both: every field states one, no non-field does, and it survives
  * `JSON.stringify` — the only place the question is ever really asked.
+ *
+ * And it is asked of the shape's FORM, via {@link isShape}, not of its presence. Asking
+ * only whether the key was there admitted `{ shape: 42 }` and `{ shape: {} }` — the first
+ * crashed inside the validator, the second judged nothing — which is the same presence-
+ * versus-form mistake `__brand` made, one level down.
  */
 export function isField(value: unknown): value is Field {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    Boolean((value as Field).shape)
-  );
+  return typeof value === 'object' && value !== null && isShape((value as Field).shape);
 }
 
