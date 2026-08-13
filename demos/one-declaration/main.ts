@@ -6,7 +6,7 @@
  * wrote any of the four. Run it and read the arrows.
  */
 import { entity, primary, text, number, created, describe, inputFields, outputFields } from '@fougere/schema';
-import { toTable, createTableSQL } from '@fougere/schema-sql';
+import { toTable, createTableSQL } from '@fougere/adapter-sql';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // WHAT YOU WRITE

@@ -32,9 +32,9 @@ export interface FougereConfig {
 
 /** Protocol adapters, by the name of the package that provides them. */
 export interface AdapterConfig {
-  /** `@fougere/schema-rest` — REST under `/api/{frond}/{plural}`. */
+  /** `@fougere/adapter-rest` — REST under `/api/{frond}/{plural}`. */
   rest?: boolean;
-  /** `@fougere/schema-graphql` — a GraphQL schema over the same operations. */
+  /** `@fougere/adapter-graphql` — a GraphQL schema over the same operations. */
   graphql?: boolean;
   /** A surface of your own; the framework only records that you declared it. */
   [adapter: string]: boolean | undefined;

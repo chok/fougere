@@ -9,7 +9,7 @@
  */
 import { createJiti } from 'jiti';
 import { createLocalRunner, setModuleLoader, frondAliases, Logger } from '@fougere/core';
-import { bootAppFromConfig } from '@fougere/runtime';
+import { bootAppFromConfig } from '@fougere/defaults';
 import { serve } from '@fougere/transport-http';
 
 // `frondAliases` is what makes `@frond/<neighbour>/entities/X.js` resolve — the

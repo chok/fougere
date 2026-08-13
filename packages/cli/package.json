@@ -42,15 +42,16 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@fougere/cli-ui": "workspace:*",
+    "@clack/prompts": "^0.10.0",
+    "@fougere/container": "workspace:*",
     "@fougere/core": "workspace:*",
-    "@fougere/runtime": "workspace:*",
+    "@fougere/defaults": "workspace:*",
     "@fougere/schema": "workspace:*",
     "@fougere/transport-http": "workspace:*",
     "citty": "^0.2.1",
+    "consola": "^3.4.2",
     "jiti": "^2.4.2",
-    "picocolors": "^1.1.1",
-    "@fougere/container": "workspace:*"
+    "picocolors": "^1.1.1"
   },
   "devDependencies": {
     "vitest": "^4.1.0"

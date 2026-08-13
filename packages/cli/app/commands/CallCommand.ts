@@ -1,8 +1,8 @@
 import { createAppRunner } from '@fougere/core';
 import { toRegistrationName } from '@fougere/core/contract';
-import { bootAppFromConfig } from '@fougere/runtime';
+import { bootAppFromConfig } from '@fougere/defaults';
 import type { App } from '@fougere/core';
-import type { ui as createUi } from '@fougere/cli-ui';
+import type { ui as createUi } from '../../src/ui.js';
 
 type Ui = ReturnType<typeof createUi>;
 

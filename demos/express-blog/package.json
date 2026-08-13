@@ -10,11 +10,11 @@
     "@fougere/app": "workspace:*",
     "@fougere/core": "workspace:*",
     "@fougere/schema": "workspace:*",
-    "@fougere/schema-sql": "workspace:*",
+    "@fougere/adapter-sql": "workspace:*",
     "better-sqlite3": "^13.0.3",
     "express": "^5.2.1",
     "jiti": "^2.6.1",
-    "@fougere/schema-graphql": "workspace:*",
+    "@fougere/adapter-graphql": "workspace:*",
     "@pothos/core": "^4.12.0",
     "graphql": "^16.13.1"
   },

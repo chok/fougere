@@ -10,7 +10,7 @@ import type { App, FrondDescriptor, SeedEntry, SeedFactory } from './types.js';
  * wrong both times. A list seeded before its owner failed on the foreign key, and the
  * driver's error named neither the entity nor the file.
  *
- * Kahn, like `orderTables` in `@fougere/schema-sql` — the same shape one level up: there
+ * Kahn, like `orderTables` in `@fougere/adapter-sql` — the same shape one level up: there
  * the nodes are tables and the edges FK columns, here they are seeds and the edges the
  * `one` relations of the entities they target. A cycle cannot be satisfied by ordering,
  * so its remaining seeds keep their scan order and land last: the driver refuses what is

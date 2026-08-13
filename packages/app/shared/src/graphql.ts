@@ -8,7 +8,7 @@
  * there is no decision in them — so the app declaring the adapter is enough.
  *
  * The packages are imported LAZILY, and that is the same shape `db: 'sqlite'` uses
- * (`resolveStorage` pulls `@fougere/schema-sql` only when a database is declared).
+ * (`resolveStorage` pulls `@fougere/adapter-sql` only when a database is declared).
  * `graphql` and `@pothos/core` are heavy and most apps serve none, so a host must not
  * carry them to find out. Declaring the adapter without installing them is refused by
  * name, the way an unresolvable dialect is.
@@ -41,11 +41,11 @@ async function schemaFor(app: App, surface?: string): Promise<unknown> {
   let registerAll: any;
   try {
     ({ default: SchemaBuilder } = await import('@pothos/core'));
-    ({ registerAll } = await import('@fougere/schema-graphql'));
+    ({ registerAll } = await import('@fougere/adapter-graphql'));
   } catch (cause) {
     throw new Error(
       "adapters: { graphql: true } is declared, but the packages that serve it are not " +
-      "installed. Add `@fougere/schema-graphql` and `@pothos/core` — they are not " +
+      "installed. Add `@fougere/adapter-graphql` and `@pothos/core` — they are not " +
       'dependencies of the host, because an app that serves no GraphQL should not carry ' +
       'a schema builder to find that out.',
       { cause },

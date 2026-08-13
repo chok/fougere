@@ -12,7 +12,7 @@
     "@fougere/core": "workspace:*",
     "@fougere/react": "workspace:*",
     "@fougere/schema": "workspace:*",
-    "@fougere/schema-sql": "workspace:*",
+    "@fougere/adapter-sql": "workspace:*",
     "@tanstack/react-router": "^1.170.25",
     "@tanstack/react-start": "^1.168.42",
     "better-sqlite3": "^13.0.3",

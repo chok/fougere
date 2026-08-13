@@ -12,7 +12,7 @@ import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { fougereRest, fougereGraphQL } from '@fougere/app/web';
 import { useFougereApp } from '@fougere/app';
-import { generateRoutes } from '@fougere/schema-rest';
+import { generateRoutes } from '@fougere/adapter-rest';
 
 const app = await useFougereApp();
 

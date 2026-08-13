@@ -41,9 +41,12 @@ importers:
 
   demos/auth-better:
     dependencies:
+      '@fougere/adapter-sql':
+        specifier: workspace:*
+        version: link:../../packages/adapter/sql
       '@fougere/auth-better':
         specifier: workspace:*
-        version: link:../../packages/auth-better
+        version: link:../../packages/auth/better
       '@fougere/container':
         specifier: workspace:*
         version: link:../../packages/container
@@ -53,9 +56,6 @@ importers:
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
-      '@fougere/schema-sql':
-        specifier: workspace:*
-        version: link:../../packages/schema-sql
       '@hono/node-server':
         specifier: ^1.14.0
         version: 1.19.17(hono@4.13.0)
@@ -98,6 +98,15 @@ importers:
 
   demos/crud-auto:
     dependencies:
+      '@fougere/adapter-graphql':
+        specifier: workspace:*
+        version: link:../../packages/adapter/graphql
+      '@fougere/adapter-rest':
+        specifier: workspace:*
+        version: link:../../packages/adapter/rest
+      '@fougere/adapter-sql':
+        specifier: workspace:*
+        version: link:../../packages/adapter/sql
       '@fougere/app':
         specifier: workspace:*
         version: link:../../packages/app/shared
@@ -113,15 +122,6 @@ importers:
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
-      '@fougere/schema-graphql':
-        specifier: workspace:*
-        version: link:../../packages/schema-graphql
-      '@fougere/schema-rest':
-        specifier: workspace:*
-        version: link:../../packages/schema-rest
-      '@fougere/schema-sql':
-        specifier: workspace:*
-        version: link:../../packages/schema-sql
       '@hono/node-server':
         specifier: ^1.14.0
         version: 1.19.17(hono@4.13.0)
@@ -232,6 +232,12 @@ importers:
 
   demos/express-blog:
     dependencies:
+      '@fougere/adapter-graphql':
+        specifier: workspace:*
+        version: link:../../packages/adapter/graphql
+      '@fougere/adapter-sql':
+        specifier: workspace:*
+        version: link:../../packages/adapter/sql
       '@fougere/app':
         specifier: workspace:*
         version: link:../../packages/app/shared
@@ -241,12 +247,6 @@ importers:
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
-      '@fougere/schema-graphql':
-        specifier: workspace:*
-        version: link:../../packages/schema-graphql
-      '@fougere/schema-sql':
-        specifier: workspace:*
-        version: link:../../packages/schema-sql
       '@pothos/core':
         specifier: ^4.12.0
         version: 4.12.0(graphql@16.13.1)
@@ -275,6 +275,9 @@ importers:
 
   demos/multi-frond:
     dependencies:
+      '@fougere/adapter-rest':
+        specifier: workspace:*
+        version: link:../../packages/adapter/rest
       '@fougere/container':
         specifier: workspace:*
         version: link:../../packages/container
@@ -287,9 +290,6 @@ importers:
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
-      '@fougere/schema-rest':
-        specifier: workspace:*
-        version: link:../../packages/schema-rest
       '@hono/node-server':
         specifier: ^1.0.0
         version: 1.19.17(hono@4.13.0)
@@ -306,6 +306,9 @@ importers:
 
   demos/multi-frond/consumer:
     dependencies:
+      '@fougere/adapter-sql':
+        specifier: workspace:*
+        version: link:../../../packages/adapter/sql
       '@fougere/container':
         specifier: workspace:*
         version: link:../../../packages/container
@@ -318,15 +321,15 @@ importers:
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../../packages/schema
-      '@fougere/schema-sql':
-        specifier: workspace:*
-        version: link:../../../packages/schema-sql
       nuxt:
         specifier: ^4.5.1
         version: 4.5.1(@babel/plugin-syntax-jsx@7.29.7(@babel/core@7.29.7(supports-color@10.2.2)))(@babel/plugin-syntax-typescript@7.29.7(@babel/core@7.29.7(supports-color@10.2.2)))(@oxc-project/types@0.142.0)(@parcel/watcher@2.5.6)(@types/node@22.19.15)(@vue/compiler-sfc@3.5.40)(better-sqlite3@13.0.3)(cac@6.7.14)(db0@0.3.4(better-sqlite3@13.0.3))(esbuild@0.28.1)(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(ioredis@5.10.1(supports-color@10.2.2))(lightningcss@1.33.0)(magicast@0.5.4)(optionator@0.9.4)(oxc-parser@0.142.0)(oxlint@1.78.0)(rollup-plugin-visualizer@7.0.1(rolldown@1.2.2)(rollup@4.62.4))(rollup@4.62.4)(supports-color@10.2.2)(terser@5.46.1)(tsx@4.21.0)(typescript@7.0.2)(vite@8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))(vue-tsc@3.3.9(typescript@7.0.2))(webpack@5.109.2(@swc/core@1.15.21)(cssnano@8.0.2(postcss@8.5.25))(csso@5.0.5)(esbuild@0.28.1)(lightningcss@1.33.0)(postcss@8.5.25))(yaml@2.9.0)
 
   demos/multi-frond/remote-blog:
     dependencies:
+      '@fougere/adapter-rest':
+        specifier: workspace:*
+        version: link:../../../packages/adapter/rest
       '@fougere/container':
         specifier: workspace:*
         version: link:../../../packages/container
@@ -339,9 +342,6 @@ importers:
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../../packages/schema
-      '@fougere/schema-rest':
-        specifier: workspace:*
-        version: link:../../../packages/schema-rest
       '@fougere/transport-http':
         specifier: workspace:*
         version: link:../../../packages/transport/http
@@ -379,6 +379,9 @@ importers:
 
   demos/next-blog:
     dependencies:
+      '@fougere/adapter-sql':
+        specifier: workspace:*
+        version: link:../../packages/adapter/sql
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -391,9 +394,6 @@ importers:
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
-      '@fougere/schema-sql':
-        specifier: workspace:*
-        version: link:../../packages/schema-sql
       better-sqlite3:
         specifier: ^13.0.3
         version: 13.0.3
@@ -422,12 +422,18 @@ importers:
 
   demos/nuxt-blog:
     dependencies:
+      '@fougere/adapter-graphql':
+        specifier: workspace:*
+        version: link:../../packages/adapter/graphql
+      '@fougere/adapter-sql':
+        specifier: workspace:*
+        version: link:../../packages/adapter/sql
       '@fougere/app':
         specifier: workspace:*
         version: link:../../packages/app/shared
       '@fougere/auth-better':
         specifier: workspace:*
-        version: link:../../packages/auth-better
+        version: link:../../packages/auth/better
       '@fougere/container':
         specifier: workspace:*
         version: link:../../packages/container
@@ -443,12 +449,6 @@ importers:
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
-      '@fougere/schema-graphql':
-        specifier: workspace:*
-        version: link:../../packages/schema-graphql
-      '@fougere/schema-sql':
-        specifier: workspace:*
-        version: link:../../packages/schema-sql
       '@fougere/transport-http':
         specifier: workspace:*
         version: link:../../packages/transport/http
@@ -457,7 +457,7 @@ importers:
         version: 1.19.17(hono@4.13.0)
       '@nuxt/ui':
         specifier: ^4.6.0
-        version: 4.10.0(842109df575f9e943d20bf57acef488e)
+        version: 4.10.0(8351c0e4ab20daaf29f03baff54509e5)
       '@pothos/core':
         specifier: ^4.12.0
         version: 4.12.0(graphql@16.13.1)
@@ -498,12 +498,12 @@ importers:
 
   demos/one-declaration:
     dependencies:
+      '@fougere/adapter-sql':
+        specifier: workspace:*
+        version: link:../../packages/adapter/sql
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
-      '@fougere/schema-sql':
-        specifier: workspace:*
-        version: link:../../packages/schema-sql
     devDependencies:
       tsx:
         specifier: ^4.0.0
@@ -511,6 +511,9 @@ importers:
 
   demos/react-router-blog:
     dependencies:
+      '@fougere/adapter-sql':
+        specifier: workspace:*
+        version: link:../../packages/adapter/sql
       '@fougere/app':
         specifier: workspace:*
         version: link:../../packages/app/shared
@@ -523,9 +526,6 @@ importers:
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
-      '@fougere/schema-sql':
-        specifier: workspace:*
-        version: link:../../packages/schema-sql
       '@fougere/vite':
         specifier: workspace:*
         version: link:../../packages/app/vite
@@ -593,18 +593,18 @@ importers:
 
   demos/schema-ecommerce:
     dependencies:
+      '@fougere/adapter-graphql':
+        specifier: workspace:*
+        version: link:../../packages/adapter/graphql
+      '@fougere/adapter-sql':
+        specifier: workspace:*
+        version: link:../../packages/adapter/sql
       '@fougere/http':
         specifier: workspace:*
         version: link:../../packages/http
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
-      '@fougere/schema-graphql':
-        specifier: workspace:*
-        version: link:../../packages/schema-graphql
-      '@fougere/schema-sql':
-        specifier: workspace:*
-        version: link:../../packages/schema-sql
       '@hono/node-server':
         specifier: ^1.14.0
         version: 1.19.17(hono@4.13.0)
@@ -628,8 +628,30 @@ importers:
         specifier: ^4.21.0
         version: 4.21.0
 
+  demos/sse-live:
+    dependencies:
+      '@fougere/container':
+        specifier: workspace:*
+        version: link:../../packages/container
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
+      jiti:
+        specifier: ^2.0.0
+        version: 2.7.0
+    devDependencies:
+      tsx:
+        specifier: ^4.0.0
+        version: 4.21.0
+
   demos/sveltekit-blog:
     dependencies:
+      '@fougere/adapter-sql':
+        specifier: workspace:*
+        version: link:../../packages/adapter/sql
       '@fougere/app':
         specifier: workspace:*
         version: link:../../packages/app/shared
@@ -639,9 +661,6 @@ importers:
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
-      '@fougere/schema-sql':
-        specifier: workspace:*
-        version: link:../../packages/schema-sql
       '@fougere/svelte':
         specifier: workspace:*
         version: link:../../packages/app/svelte
@@ -679,6 +698,9 @@ importers:
 
   demos/tanstack-blog:
     dependencies:
+      '@fougere/adapter-sql':
+        specifier: workspace:*
+        version: link:../../packages/adapter/sql
       '@fougere/app':
         specifier: workspace:*
         version: link:../../packages/app/shared
@@ -691,9 +713,6 @@ importers:
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
-      '@fougere/schema-sql':
-        specifier: workspace:*
-        version: link:../../packages/schema-sql
       '@fougere/vite':
         specifier: workspace:*
         version: link:../../packages/app/vite
@@ -735,6 +754,56 @@ importers:
         specifier: ^8.0.0
         version: 8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0)
 
+  packages/adapter/graphql:
+    dependencies:
+      '@fougere/http':
+        specifier: workspace:*
+        version: link:../../http
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../schema
+    devDependencies:
+      '@pothos/core':
+        specifier: ^4.12.0
+        version: 4.12.0(graphql@16.13.1)
+      graphql:
+        specifier: ^16.13.1
+        version: 16.13.1
+
+  packages/adapter/rest:
+    dependencies:
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@fougere/http':
+        specifier: workspace:*
+        version: link:../../http
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../schema
+
+  packages/adapter/sql:
+    dependencies:
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../schema
+      better-sqlite3:
+        specifier: ^13.0.3
+        version: 13.0.3
+    devDependencies:
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@types/better-sqlite3':
+        specifier: ^7.6.13
+        version: 7.6.13
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.15
+      kysely:
+        specifier: ^0.28.17
+        version: 0.28.17
+
   packages/app/next:
     dependencies:
       '@fougere/app':
@@ -762,9 +831,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../core
-      '@fougere/runtime':
+      '@fougere/defaults':
         specifier: workspace:*
-        version: link:../../runtime
+        version: link:../../defaults
       '@nuxt/kit':
         specifier: ^4.5.1
         version: 4.5.1(magic-string@1.1.0)(magicast@0.5.4)(oxc-parser@0.142.0)(rolldown@1.2.2)(unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.2)(rollup@4.62.4)(vite@8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))(webpack@5.109.2(@swc/core@1.15.21)(cssnano@8.0.2(postcss@8.5.25))(csso@5.0.5)(esbuild@0.28.1)(lightningcss@1.33.0)(postcss@8.5.25)))
@@ -824,24 +893,24 @@ importers:
 
   packages/app/shared:
     dependencies:
+      '@fougere/adapter-rest':
+        specifier: workspace:*
+        version: link:../../adapter/rest
       '@fougere/container':
         specifier: workspace:*
         version: link:../../container
       '@fougere/core':
         specifier: workspace:*
         version: link:../../core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../../defaults
       '@fougere/http':
         specifier: workspace:*
         version: link:../../http
-      '@fougere/runtime':
-        specifier: workspace:*
-        version: link:../../runtime
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../schema
-      '@fougere/schema-rest':
-        specifier: workspace:*
-        version: link:../../schema-rest
       '@fougere/transport-http':
         specifier: workspace:*
         version: link:../../transport/http
@@ -849,9 +918,9 @@ importers:
         specifier: ^2.6.1
         version: 2.7.0
     devDependencies:
-      '@fougere/schema-graphql':
+      '@fougere/adapter-graphql':
         specifier: workspace:*
-        version: link:../../schema-graphql
+        version: link:../../adapter/graphql
       '@pothos/core':
         specifier: ^4.12.0
         version: 4.12.0(graphql@16.13.1)
@@ -894,42 +963,42 @@ importers:
         specifier: ^4.1.0
         version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(vite@8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))
 
-  packages/auth-better:
+  packages/auth/better:
     dependencies:
       '@fougere/core':
         specifier: workspace:*
-        version: link:../core
+        version: link:../../core
       '@fougere/schema':
         specifier: workspace:*
-        version: link:../schema
+        version: link:../../schema
       '@paralleldrive/cuid2':
         specifier: ^3.3.0
         version: 3.3.0
       better-auth:
         specifier: ^1.6.11
-        version: 1.6.25(8d099697b6f85cd2618c2a0ac0b63ba0)
+        version: 1.6.25(789110ce3d5654e5963210aa57b122dd)
     devDependencies:
-      '@fougere/schema-sql':
+      '@fougere/adapter-sql':
         specifier: workspace:*
-        version: link:../schema-sql
+        version: link:../../adapter/sql
       vitest:
         specifier: ^4.1.0
         version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(vite@8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))
 
   packages/cli:
     dependencies:
-      '@fougere/cli-ui':
-        specifier: workspace:*
-        version: link:../cli-ui
+      '@clack/prompts':
+        specifier: ^0.10.0
+        version: 0.10.1
       '@fougere/container':
         specifier: workspace:*
         version: link:../container
       '@fougere/core':
         specifier: workspace:*
         version: link:../core
-      '@fougere/runtime':
+      '@fougere/defaults':
         specifier: workspace:*
-        version: link:../runtime
+        version: link:../defaults
       '@fougere/schema':
         specifier: workspace:*
         version: link:../schema
@@ -938,29 +1007,20 @@ importers:
         version: link:../transport/http
       citty:
         specifier: ^0.2.1
-        version: 0.2.1
+        version: 0.2.2
+      consola:
+        specifier: ^3.4.2
+        version: 3.4.2
       jiti:
         specifier: ^2.4.2
-        version: 2.6.1
+        version: 2.7.0
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
     devDependencies:
       vitest:
         specifier: ^4.1.0
-        version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(vite@8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))
-
-  packages/cli-ui:
-    dependencies:
-      '@clack/prompts':
-        specifier: ^0.10.0
-        version: 0.10.1
-      consola:
-        specifier: ^3.4.2
-        version: 3.4.2
-      picocolors:
-        specifier: ^1.1.1
-        version: 1.1.1
+        version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(vite@8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))
 
   packages/container:
     devDependencies:
@@ -984,19 +1044,32 @@ importers:
         specifier: ^22.0.0
         version: 22.19.15
 
-  packages/create-fougere:
+  packages/defaults:
+    dependencies:
+      '@fougere/adapter-sql':
+        specifier: workspace:*
+        version: link:../adapter/sql
+      '@fougere/container':
+        specifier: workspace:*
+        version: link:../container
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../core
+      '@fougere/transport-http':
+        specifier: workspace:*
+        version: link:../transport/http
+
+  packages/entry/create:
     dependencies:
       '@fougere/cli':
         specifier: workspace:*
-        version: link:../cli
+        version: link:../../cli
 
-  packages/decorators: {}
-
-  packages/fougere:
+  packages/entry/fougere:
     dependencies:
       '@fougere/cli':
         specifier: workspace:*
-        version: link:../cli
+        version: link:../../cli
 
   packages/http:
     devDependencies:
@@ -1006,21 +1079,6 @@ importers:
       vitest:
         specifier: ^4.1.0
         version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(vite@8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))
-
-  packages/runtime:
-    dependencies:
-      '@fougere/container':
-        specifier: workspace:*
-        version: link:../container
-      '@fougere/core':
-        specifier: workspace:*
-        version: link:../core
-      '@fougere/schema-sql':
-        specifier: workspace:*
-        version: link:../schema-sql
-      '@fougere/transport-http':
-        specifier: workspace:*
-        version: link:../transport/http
 
   packages/schema:
     dependencies:
@@ -1034,56 +1092,6 @@ importers:
       '@types/json-schema':
         specifier: ^7.0.15
         version: 7.0.15
-
-  packages/schema-graphql:
-    dependencies:
-      '@fougere/http':
-        specifier: workspace:*
-        version: link:../http
-      '@fougere/schema':
-        specifier: workspace:*
-        version: link:../schema
-    devDependencies:
-      '@pothos/core':
-        specifier: ^4.12.0
-        version: 4.12.0(graphql@16.13.1)
-      graphql:
-        specifier: ^16.13.1
-        version: 16.13.1
-
-  packages/schema-rest:
-    dependencies:
-      '@fougere/core':
-        specifier: workspace:*
-        version: link:../core
-      '@fougere/http':
-        specifier: workspace:*
-        version: link:../http
-      '@fougere/schema':
-        specifier: workspace:*
-        version: link:../schema
-
-  packages/schema-sql:
-    dependencies:
-      '@fougere/schema':
-        specifier: workspace:*
-        version: link:../schema
-      better-sqlite3:
-        specifier: ^13.0.3
-        version: 13.0.3
-    devDependencies:
-      '@fougere/core':
-        specifier: workspace:*
-        version: link:../core
-      '@types/better-sqlite3':
-        specifier: ^7.6.13
-        version: 7.6.13
-      '@types/node':
-        specifier: ^22.0.0
-        version: 22.19.15
-      kysely:
-        specifier: ^0.28.17
-        version: 0.28.17
 
   packages/transport/http:
     dependencies:
@@ -1103,9 +1111,15 @@ importers:
 
   site:
     dependencies:
+      '@fougere/adapter-graphql':
+        specifier: workspace:*
+        version: link:../packages/adapter/graphql
+      '@fougere/adapter-sql':
+        specifier: workspace:*
+        version: link:../packages/adapter/sql
       '@fougere/auth-better':
         specifier: workspace:*
-        version: link:../packages/auth-better
+        version: link:../packages/auth/better
       '@fougere/container':
         specifier: workspace:*
         version: link:../packages/container
@@ -1121,12 +1135,6 @@ importers:
       '@fougere/schema':
         specifier: workspace:*
         version: link:../packages/schema
-      '@fougere/schema-graphql':
-        specifier: workspace:*
-        version: link:../packages/schema-graphql
-      '@fougere/schema-sql':
-        specifier: workspace:*
-        version: link:../packages/schema-sql
       '@fougere/transport-http':
         specifier: workspace:*
         version: link:../packages/transport/http
@@ -5766,9 +5774,6 @@ packages:
   citty@0.1.6:
     resolution: {integrity: sha512-tskPPKEs8D2KPafUypv2gxwJP8h/OaJmC82QQGGDQcHvXX43xF2VDACcJVmZ0EuSxkpO9Kc4MlrA3q0+FG58AQ==}
 
-  citty@0.2.1:
-    resolution: {integrity: sha512-kEV95lFBhQgtogAPlQfJJ0WGVSokvLr/UEoFPiKKOXF7pl98HfUVUD0ejsuTCld/9xH9vogSywZ5KqHzXrZpqg==}
-
   citty@0.2.2:
     resolution: {integrity: sha512-+6vJA3L98yv+IdfKGZHBNiGW5KHn22e/JwID0Strsz8h4S/csAu/OuICwxrg44k5MRiZHWIo8XXuJgQTriRP4w==}
 
@@ -10084,9 +10089,6 @@ packages:
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
-  zod@4.3.6:
-    resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
-
   zod@4.4.3:
     resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
@@ -10350,50 +10352,50 @@ snapshots:
 
   '@bcoe/v8-coverage@1.0.2': {}
 
-  '@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.3.6))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0)':
+  '@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0)':
     dependencies:
       '@better-auth/utils': 0.4.2
       '@better-fetch/fetch': 1.3.1
       '@opentelemetry/semantic-conventions': 1.40.0
       '@standard-schema/spec': 1.1.0
-      better-call: 1.3.7(zod@4.3.6)
+      better-call: 1.3.7(zod@4.4.3)
       jose: 6.2.2
       kysely: 0.28.17
       nanostores: 1.2.0
-      zod: 4.3.6
+      zod: 4.4.3
     optionalDependencies:
       '@opentelemetry/api': 1.9.1
 
-  '@better-auth/drizzle-adapter@1.6.25(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.3.6))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0))(@better-auth/utils@0.4.2)':
+  '@better-auth/drizzle-adapter@1.6.25(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0))(@better-auth/utils@0.4.2)':
     dependencies:
-      '@better-auth/core': 1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.3.6))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0)
+      '@better-auth/core': 1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0)
       '@better-auth/utils': 0.4.2
 
-  '@better-auth/kysely-adapter@1.6.25(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.3.6))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0))(@better-auth/utils@0.4.2)(kysely@0.28.17)':
+  '@better-auth/kysely-adapter@1.6.25(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0))(@better-auth/utils@0.4.2)(kysely@0.28.17)':
     dependencies:
-      '@better-auth/core': 1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.3.6))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0)
+      '@better-auth/core': 1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0)
       '@better-auth/utils': 0.4.2
     optionalDependencies:
       kysely: 0.28.17
 
-  '@better-auth/memory-adapter@1.6.25(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.3.6))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0))(@better-auth/utils@0.4.2)':
+  '@better-auth/memory-adapter@1.6.25(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0))(@better-auth/utils@0.4.2)':
     dependencies:
-      '@better-auth/core': 1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.3.6))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0)
+      '@better-auth/core': 1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0)
       '@better-auth/utils': 0.4.2
 
-  '@better-auth/mongo-adapter@1.6.25(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.3.6))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0))(@better-auth/utils@0.4.2)':
+  '@better-auth/mongo-adapter@1.6.25(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0))(@better-auth/utils@0.4.2)':
     dependencies:
-      '@better-auth/core': 1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.3.6))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0)
+      '@better-auth/core': 1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0)
       '@better-auth/utils': 0.4.2
 
-  '@better-auth/prisma-adapter@1.6.25(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.3.6))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0))(@better-auth/utils@0.4.2)':
+  '@better-auth/prisma-adapter@1.6.25(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0))(@better-auth/utils@0.4.2)':
     dependencies:
-      '@better-auth/core': 1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.3.6))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0)
+      '@better-auth/core': 1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0)
       '@better-auth/utils': 0.4.2
 
-  '@better-auth/telemetry@1.6.25(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.3.6))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)':
+  '@better-auth/telemetry@1.6.25(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)':
     dependencies:
-      '@better-auth/core': 1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.3.6))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0)
+      '@better-auth/core': 1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0)
       '@better-auth/utils': 0.4.2
       '@better-fetch/fetch': 1.3.1
 
@@ -12664,7 +12666,7 @@ snapshots:
       - vue
       - webpack
 
-  '@nuxt/ui@4.10.0(842109df575f9e943d20bf57acef488e)':
+  '@nuxt/ui@4.10.0(8351c0e4ab20daaf29f03baff54509e5)':
     dependencies:
       '@floating-ui/dom': 1.8.0
       '@iconify/vue': 5.0.1(vue@3.5.40(typescript@7.0.2))
@@ -12737,7 +12739,7 @@ snapshots:
       '@nuxt/content': 3.15.0(better-sqlite3@13.0.3)(esbuild@0.28.1)(magicast@0.5.4)(oxc-parser@0.142.0)(rolldown@1.2.2)(rollup@4.62.4)(supports-color@10.2.2)(valibot@1.4.2(typescript@7.0.2))(vite@7.3.6(@types/node@22.19.15)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))(webpack@5.109.2(@swc/core@1.15.21)(cssnano@8.0.2(postcss@8.5.25))(csso@5.0.5)(esbuild@0.28.1)(lightningcss@1.33.0)(postcss@8.5.25))
       valibot: 1.4.2(typescript@7.0.2)
       vue-router: 5.2.0(@vue/compiler-sfc@3.5.40)(esbuild@0.28.1)(rolldown@1.2.2)(rollup@4.62.4)(vite@7.3.6(@types/node@22.19.15)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))(vue@3.5.40(typescript@7.0.2))(webpack@5.109.2(@swc/core@1.15.21)(cssnano@8.0.2(postcss@8.5.25))(csso@5.0.5)(esbuild@0.28.1)(lightningcss@1.33.0)(postcss@8.5.25))
-      zod: 4.3.6
+      zod: 4.4.3
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -15395,14 +15397,6 @@ snapshots:
     optionalDependencies:
       vite: 8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0)
 
-  '@vitest/mocker@4.1.2(vite@8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))':
-    dependencies:
-      '@vitest/spy': 4.1.2
-      estree-walker: 3.0.3
-      magic-string: 0.30.21
-    optionalDependencies:
-      vite: 8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0)
-
   '@vitest/mocker@4.1.2(vite@8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))':
     dependencies:
       '@vitest/spy': 4.1.2
@@ -15969,31 +15963,31 @@ snapshots:
     dependencies:
       safe-buffer: 5.1.2
 
-  better-auth@1.6.25(8d099697b6f85cd2618c2a0ac0b63ba0):
+  better-auth@1.6.25(789110ce3d5654e5963210aa57b122dd):
     dependencies:
-      '@better-auth/core': 1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.3.6))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0)
-      '@better-auth/drizzle-adapter': 1.6.25(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.3.6))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0))(@better-auth/utils@0.4.2)
-      '@better-auth/kysely-adapter': 1.6.25(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.3.6))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0))(@better-auth/utils@0.4.2)(kysely@0.28.17)
-      '@better-auth/memory-adapter': 1.6.25(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.3.6))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0))(@better-auth/utils@0.4.2)
-      '@better-auth/mongo-adapter': 1.6.25(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.3.6))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0))(@better-auth/utils@0.4.2)
-      '@better-auth/prisma-adapter': 1.6.25(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.3.6))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0))(@better-auth/utils@0.4.2)
-      '@better-auth/telemetry': 1.6.25(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.3.6))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)
+      '@better-auth/core': 1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0)
+      '@better-auth/drizzle-adapter': 1.6.25(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0))(@better-auth/utils@0.4.2)
+      '@better-auth/kysely-adapter': 1.6.25(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0))(@better-auth/utils@0.4.2)(kysely@0.28.17)
+      '@better-auth/memory-adapter': 1.6.25(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0))(@better-auth/utils@0.4.2)
+      '@better-auth/mongo-adapter': 1.6.25(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0))(@better-auth/utils@0.4.2)
+      '@better-auth/prisma-adapter': 1.6.25(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0))(@better-auth/utils@0.4.2)
+      '@better-auth/telemetry': 1.6.25(@better-auth/core@1.6.25(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.2)(kysely@0.28.17)(nanostores@1.2.0))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)
       '@better-auth/utils': 0.4.2
       '@better-fetch/fetch': 1.3.1
       '@noble/ciphers': 2.2.0
       '@noble/hashes': 2.0.1
-      better-call: 1.3.7(zod@4.3.6)
+      better-call: 1.3.7(zod@4.4.3)
       defu: 6.1.7
       jose: 6.2.2
       kysely: 0.28.17
       nanostores: 1.2.0
-      zod: 4.3.6
+      zod: 4.4.3
     optionalDependencies:
       '@sveltejs/kit': 2.70.2(@opentelemetry/api@1.9.1)(@sveltejs/vite-plugin-svelte@7.3.0(svelte@5.56.8(@typescript-eslint/types@8.64.0))(vite@8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0)))(svelte@5.56.8(@typescript-eslint/types@8.64.0))(typescript@7.0.2)(vite@8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))
       '@tanstack/react-start': 1.168.42(crossws@0.4.10(srvx@0.11.22))(esbuild@0.28.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(rolldown@1.2.2)(rollup@4.62.4)(supports-color@10.2.2)(vite@8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))(webpack@5.109.2(@swc/core@1.15.21)(cssnano@8.0.2(postcss@8.5.25))(csso@5.0.5)(esbuild@0.28.1)(lightningcss@1.33.0)(postcss@8.5.25))
       better-sqlite3: 12.8.0
       next: 15.5.23(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      react: 19.2.4
+      react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
       svelte: 5.56.8(@typescript-eslint/types@8.64.0)
       vitest: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(vite@8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))
@@ -16002,14 +15996,14 @@ snapshots:
       - '@cloudflare/workers-types'
       - '@opentelemetry/api'
 
-  better-call@1.3.7(zod@4.3.6):
+  better-call@1.3.7(zod@4.4.3):
     dependencies:
       '@better-auth/utils': 0.4.2
       '@better-fetch/fetch': 1.3.1
       rou3: 0.7.12
       set-cookie-parser: 3.1.0
     optionalDependencies:
-      zod: 4.3.6
+      zod: 4.4.3
 
   better-path-resolve@1.0.0:
     dependencies:
@@ -16183,8 +16177,6 @@ snapshots:
   citty@0.1.6:
     dependencies:
       consola: 3.4.2
-
-  citty@0.2.1: {}
 
   citty@0.2.2: {}
 
@@ -21991,22 +21983,6 @@ snapshots:
       tsx: 4.21.0
       yaml: 2.9.0
 
-  vite@8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0):
-    dependencies:
-      lightningcss: 1.33.0
-      picomatch: 4.0.5
-      postcss: 8.5.25
-      rolldown: 1.2.2
-      tinyglobby: 0.2.17
-    optionalDependencies:
-      '@types/node': 22.19.15
-      esbuild: 0.28.1
-      fsevents: 2.3.3
-      jiti: 2.6.1
-      terser: 5.46.1
-      tsx: 4.21.0
-      yaml: 2.9.0
-
   vite@8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0):
     dependencies:
       lightningcss: 1.33.0
@@ -22048,35 +22024,6 @@ snapshots:
       tinyglobby: 0.2.15
       tinyrainbow: 3.1.0
       vite: 8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0)
-      why-is-node-running: 2.3.0
-    optionalDependencies:
-      '@opentelemetry/api': 1.9.1
-      '@types/node': 22.19.15
-      jsdom: 27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2)
-    transitivePeerDependencies:
-      - msw
-
-  vitest@4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(vite@8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0)):
-    dependencies:
-      '@vitest/expect': 4.1.2
-      '@vitest/mocker': 4.1.2(vite@8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))
-      '@vitest/pretty-format': 4.1.2
-      '@vitest/runner': 4.1.2
-      '@vitest/snapshot': 4.1.2
-      '@vitest/spy': 4.1.2
-      '@vitest/utils': 4.1.2
-      es-module-lexer: 2.0.0
-      expect-type: 1.3.0
-      magic-string: 0.30.21
-      obug: 2.1.1
-      pathe: 2.0.3
-      picomatch: 4.0.5
-      std-env: 4.2.0
-      tinybench: 2.9.0
-      tinyexec: 1.2.4
-      tinyglobby: 0.2.17
-      tinyrainbow: 3.1.0
-      vite: 8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@opentelemetry/api': 1.9.1
@@ -22441,8 +22388,6 @@ snapshots:
       zod: 3.25.76
 
   zod@3.25.76: {}
-
-  zod@4.3.6: {}
 
   zod@4.4.3: {}
 

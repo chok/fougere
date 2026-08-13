@@ -8,6 +8,7 @@ export {
   type BaseShape,
   type ShapeAnatomy,
   type StringFormat,
+  type FormatPredicate,
   type Role,
   type Relation,
   type Lifecycle,
@@ -25,6 +26,10 @@ export {
   // The constraint a `role.unique` member list denotes — `[]` means the field carrying it.
   uniqueMembers,
   isNullable,
+  // The shape axis's own open registry — a NAMED predicate where JSON Schema
+  // already declares its vocabulary open, so the rule travels as `format`.
+  registerFormat,
+  resolveFormat,
   registerGenerator,
   resolveCustomGenerator,
   resolveBoundary,

@@ -9,7 +9,7 @@
   "dependencies": {
     "@fougere/core": "workspace:*",
     "@fougere/schema": "workspace:*",
-    "@fougere/schema-sql": "workspace:*",
+    "@fougere/adapter-sql": "workspace:*",
     "@fougere/auth-better": "workspace:*",
     "hono": "^4.7.0",
     "@hono/node-server": "^1.14.0",

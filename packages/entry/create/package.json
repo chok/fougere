@@ -1,0 +1,37 @@
+{
+  "name": "create-fougere",
+  "version": "0.2.0-alpha.1",
+  "description": "Scaffold a Fougere workspace — `npm create fougere`.",
+  "keywords": [
+    "fougere",
+    "create",
+    "scaffold",
+    "starter",
+    "typescript",
+    "framework"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chok/fougere.git",
+    "directory": "packages/entry/create"
+  },
+  "type": "module",
+  "bin": {
+    "create-fougere": "dist/bin.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc && chmod +x dist/bin.js",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "@fougere/cli": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

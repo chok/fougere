@@ -8,7 +8,7 @@
   "dependencies": {
     "@fougere/core": "latest",
     "@fougere/schema": "latest",
-    "@fougere/runtime": "latest",
+    "@fougere/defaults": "latest",
     "@fougere/transport-http": "latest",
     "better-sqlite3": "^13.0.3",
     "kysely": "^0.28.17",
