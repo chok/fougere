@@ -1,33 +1,18 @@
-import { Field, resolveBoundary, type Fields } from "./field/index.js";
-import type { Hints } from "./hints.js";
+import { Field, assertDefaultsAreValid, resolveBoundary, type Fields } from "./field/index.js";
+import { deriveHints, type Hints } from "./hints.js";
 import { deriveUnique, deriveUniqueRoles, projectUniqueOntoFields, type CompositeUnique, type EntityDeclarations } from "./unique.js";
 import { checkValue, validateFields, type ValidationResult, type ValidateOptions } from "./projections/validation.js";
 import type { StandardSchemaV1 } from "./projections/standard.js";
 
 // ─── Types ──────────────────────────────────────
 
-/** The data shape an entity carries — every field present. */
-export type SchemaViewInfer<TFields extends Fields> = {
+/** The ROW an entity carries — its fields' value types, all present. */
+export type RowOf<TFields extends Fields> = {
   [K in keyof TFields]: TFields[K] extends Field<infer T> ? T : never;
 };
 
-/**
- * Constructor input — the data shape, every key omissible.
- *
- * It used to be exact: a second type parameter on `Field` carried "auto-supplied at
- * creation", `AutoKeys` collected them and only those became optional, so `new Post({})`
- * was refused while `new Post({ title })` passed without the generated id. That flag was a
- * type-level COPY of `lifecycle.create`, restated by hand in every word that could set the
- * rule — and it had drifted: `text({ default: 'x' })` answered "required" while
- * `validate({})` succeeded. One declaration, two answers.
- *
- * The copy is gone rather than repaired, and with it `_auto`, `AutoKeys` and the second
- * parameter on twenty signatures. What it bought — a compile error on `new Post({})` —
- * had no caller to protect: not one `new <Entity>(…)` exists in any package's sources, in
- * the demos, in the site or in the published docs. `lifecycle.create` remains, read by the
- * judge, which answers the same question about real input at the one moment it matters.
- */
-export type CtorInput<TFields extends Fields> = Partial<SchemaViewInfer<TFields>>;
+/** Constructor input — the data shape, every key omissible. */
+export type CtorInput<TFields extends Fields> = Partial<RowOf<TFields>>;
 
 /**
  * A schema constructor returned by Entity.pick(), omit(), partial(), extend().
@@ -50,8 +35,8 @@ export interface SchemaView {
 }
 
 export interface SchemaConstructor<TFields extends Fields> extends SchemaView {
-  new (data: CtorInput<TFields>): SchemaViewInfer<TFields>;
-  readonly '~standard': StandardSchemaV1.Props<Record<string, unknown>, SchemaViewInfer<TFields>>;
+  new (data: CtorInput<TFields>): RowOf<TFields>;
+  readonly '~standard': StandardSchemaV1.Props<Record<string, unknown>, RowOf<TFields>>;
   /** The original Entity class this derivation was created from (undefined for compose() results). */
   readonly source?: abstract new (...args: never[]) => unknown;
   getFields(): TFields;
@@ -67,8 +52,8 @@ export interface SchemaConstructor<TFields extends Fields> extends SchemaView {
   getUnique(): CompositeUnique<TFields> | undefined;
   /** Validation options of this view (e.g. `patch` set by `partial()`). Derivations carry them. */
   getOpts(): ValidateOptions;
-  validate(input: unknown): ValidationResult<SchemaViewInfer<TFields>>;
-  from(data: Record<string, unknown>): SchemaViewInfer<TFields>;
+  validate(input: unknown): ValidationResult<RowOf<TFields>>;
+  from(data: Record<string, unknown>): RowOf<TFields>;
   pick<K extends string & keyof TFields>(
     ...keys: K[]
   ): SchemaConstructor<Pick<TFields, K>>;
@@ -86,42 +71,6 @@ export interface SchemaConstructor<TFields extends Fields> extends SchemaView {
 
 // ─── Factory ────────────────────────────────────
 
-/**
- * The single "trust me" point. The schema class is built from a runtime field-map:
- * its instances get their shape from the constructor *data* (`Object.assign`), not
- * from members written in the class body, and its derivations rebuild maps on the
- * fly. TypeScript sees an empty class, so it cannot prove this matches the precise
- * generic type — one assertion declares that it does. Every schema/mixin library
- * (Effect's `Schema.Class`, ts-mixer, …) carries this same one line. Keeping it
- * here, named and explained, keeps it the *only* such assertion in the package.
- */
-function asSchemaConstructor<F extends Fields>(impl: object): SchemaConstructor<F> {
-  return impl as SchemaConstructor<F>;
-}
-
-/**
- * Carry hints across a field-key transform — the schema-level twin of `cloneField`'s
- * invariant: a derivation preserves everything it doesn't explicitly change. `transform`
- * maps an old key to its new name, or to `undefined` when the field is dropped; each
- * adapter's per-field hints follow their fields.
- */
-function deriveHints(
-  hints: Hints<Fields> | undefined,
-  transform: (key: string) => string | undefined,
-): Hints<Fields> | undefined {
-  if (!hints) return undefined;
-  const out: Record<string, Record<string, unknown>> = {};
-  for (const [adapter, perField] of Object.entries(hints as Record<string, Record<string, unknown> | undefined>)) {
-    if (!perField || typeof perField !== 'object') continue;
-    const mapped: Record<string, unknown> = {};
-    for (const [key, hint] of Object.entries(perField)) {
-      const next = transform(key);
-      if (next !== undefined) mapped[next] = hint;
-    }
-    if (Object.keys(mapped).length) out[adapter] = mapped;
-  }
-  return Object.keys(out).length ? (out as Hints<Fields>) : undefined;
-}
 
 /**
  * Refuse a key the schema does not carry, naming it and what was expected — the twin of
@@ -291,7 +240,9 @@ export function createSchemaConstructor<TFields extends Fields>(
   }
 
   Object.defineProperty(Schema, 'name', { value: ANONYMOUS_SCHEMA_NAME, configurable: true });
-  return asSchemaConstructor<TFields>(Schema);
+  // The class is built from a runtime field map, so TS sees an empty class and cannot
+  // prove it matches. Every schema library carries this line.
+  return Schema as unknown as SchemaConstructor<TFields>;
 }
 
 // ─── Public entry ───────────────────────────────
@@ -319,47 +270,16 @@ export function entity<TFields extends Fields>(
   fields: TFields,
   declarations?: EntityDeclarations<TFields>,
 ): SchemaConstructor<TFields> {
-  // THE door: every entry goes through the constructor, which judges it and hands back the
-  // canonical form. The key travels along purely so the refusal can name it.
+  // THE door: the constructor judges each entry; the key travels so it can be named.
   const own = {} as Record<string, Field>;
   for (const [key, field] of Object.entries(fields)) own[key] = new Field(field, key);
-  // This is the only place that knows both the field KEYS and the entity's declarations,
-  // so it is where a composite group becomes readable on each member's role axis. The
-  // declaration remains the source — `getUnique()` still answers it.
+  // The only place knowing both the keys and the declarations, so the composite group
+  // becomes readable on each member's role. `getUnique()` still answers the declaration.
   const projected = projectUniqueOntoFields(own as TFields, declarations?.unique);
   assertDefaultsAreValid(projected);
   return createSchemaConstructor(projected, undefined, declarations?.hints, {}, declarations?.unique);
 }
 
-/**
- * A declared default must satisfy its own shape — checked once, here.
- *
- * `applyCreate` writes it into every row without passing the client judge, which is
- * correct: the judge asks "is what the CALLER sent legal", and this value comes from the
- * author. But that means `text({ min: 5, default: 'ab' })` produced rows the entity's own
- * `validate` refuses — silently on a store that judges nothing, as a constraint violation
- * on SQL, as a validator error on MongoDB. Three symptoms, one cause, none of them naming
- * it.
- *
- * The value is static and so is the shape, so the answer is static: it belongs at the
- * declaration, not on every write. `oneOf` closes its own case in the type system; this
- * catches what no type can — a bound, a pattern, a format.
- */
-function assertDefaultsAreValid(fields: Fields): void {
-  for (const [name, field] of Object.entries(fields)) {
-    const create = field.lifecycle?.create;
-    if (typeof create !== 'object' || create === null || !('value' in create)) continue;
-
-    const checked = checkValue(field, (create as { value: unknown }).value);
-    if ('error' in checked) {
-      throw new Error(
-        `Field '${name}': the declared default ${JSON.stringify((create as { value: unknown }).value)} `
-        + `is not a legal value for it — ${checked.error}. It would be written into every row `
-        + `without passing the judge.`,
-      );
-    }
-  }
-}
 
 // ─── compose — the other entry of the derivation algebra ───
 
@@ -397,7 +317,7 @@ export function compose<T extends SchemaView[]>(
     mergedOpts = { ...mergedOpts, ...source.getOpts() };
   }
   const hints = Object.keys(mergedHints).length ? (mergedHints as Hints<Fields>) : undefined;
-  return asSchemaConstructor<UnionToIntersection<FieldsFrom<T[number]>> & Fields>(
-    createSchemaConstructor(merged, undefined, hints, mergedOpts),
-  );
+  return createSchemaConstructor(merged, undefined, hints, mergedOpts) as SchemaConstructor<
+    UnionToIntersection<FieldsFrom<T[number]>> & Fields
+  >;
 }

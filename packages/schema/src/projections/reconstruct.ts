@@ -5,7 +5,7 @@ import {
   type Role,
   type Shape,
 } from '../field/index.js';
-import { createSchemaConstructor, type SchemaConstructor, type SchemaView, type SchemaViewInfer } from '../entity.js';
+import { createSchemaConstructor, type SchemaConstructor, type SchemaView, type RowOf } from '../entity.js';
 import {
   clean,
   type FieldDescriptor,
@@ -162,7 +162,7 @@ type FieldsOf<T> = { [K in keyof T]-?: Field<T[K]> };
  * Without it the instance type is an index signature, so a synced entity validated
  * perfectly and taught the compiler nothing — `post.titel` compiled.
  */
-export function reconstruct<T = SchemaViewInfer<Fields>>(
+export function reconstruct<T = RowOf<Fields>>(
   descriptor: SchemaDescriptor,
 ): SchemaConstructor<FieldsOf<T>> {
   return buildSchema(descriptor) as unknown as SchemaConstructor<FieldsOf<T>>;

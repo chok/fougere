@@ -1,4 +1,5 @@
-import { Field } from '../field/index.js';
+import { Field } from "../field/index.js";
+import { date } from "./date.js";
 
 /**
  * The canonical `createdAt` — stamped at creation, optional in `new X(input)`.
@@ -11,8 +12,7 @@ import { Field } from '../field/index.js';
  * `createdAt: auto()`: the field always had the name the constructor was missing.
  */
 export function created(): Field<Date> {
-  return new Field<Date>({
-    shape: { type: 'string', format: 'date-time' },
-    lifecycle: { create: 'now', update: 'forbidden' },
+  return date().with({
+    lifecycle: { create: "now", update: "forbidden" },
   });
 }

@@ -47,7 +47,7 @@ export {
   ANONYMOUS_SCHEMA_NAME,
   type SchemaConstructor,
   type SchemaView,
-  type SchemaViewInfer as InferView,
+  type RowOf,
   type CtorInput,
 } from "./entity.js";
 export { type FougereHints, type Hints } from "./hints.js";

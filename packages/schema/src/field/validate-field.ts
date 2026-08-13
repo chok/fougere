@@ -1,18 +1,11 @@
 import { isShape } from "./shape.js";
-import type { Field } from "./field.js";
-import type { ValidationError, ValidationResult } from "../projections/validation.js";
+import type { Field, Fields } from "./field.js";
+import { checkValue, type ValidationError, type ValidationResult } from "../projections/validation.js";
 
 /**
- * Judge a field's own declaration — the five axes, each against its closed vocabulary.
- *
- * Same answer shape as `Entity.validate`: a list of `{ path, message }`, because "is this
- * a field" and "is this a legal value" are the same question asked of different data, and
- * a boolean says no without saying where. `{ shape: {}, lifecycle: 'nawak' }` used to build
- * a field that judged nothing and silently made a required key optional.
- *
- * `role.relation.to` is a FUNCTION, so no schema can describe a live field and this is
- * written by hand. The card's `FieldDescriptor` is pure JSON and is the half a schema
- * could one day judge.
+ * Judge a field declaration — the five axes against their closed vocabularies, answering
+ * like `Entity.validate`. Hand-written: `role.relation.to` is a function, so no schema
+ * describes a live field.
  */
 
 const CREATE_TOKENS = ["now", "optional"] as const;
@@ -205,4 +198,34 @@ export function validateField(value: unknown): ValidationResult<Field> {
 /** The same judgment, as a guard — for a caller that only needs the verdict. */
 export function isField(value: unknown): value is Field {
   return validateField(value).success;
+}
+
+/**
+ * A declared default must satisfy its own shape — checked once, here.
+ *
+ * `applyCreate` writes it into every row without passing the client judge, which is
+ * correct: the judge asks "is what the CALLER sent legal", and this value comes from the
+ * author. But that means `text({ min: 5, default: 'ab' })` produced rows the entity's own
+ * `validate` refuses — silently on a store that judges nothing, as a constraint violation
+ * on SQL, as a validator error on MongoDB. Three symptoms, one cause, none of them naming
+ * it.
+ *
+ * The value is static and so is the shape, so the answer is static: it belongs at the
+ * declaration, not on every write. `oneOf` closes its own case in the type system; this
+ * catches what no type can — a bound, a pattern, a format.
+ */
+export function assertDefaultsAreValid(fields: Fields): void {
+  for (const [name, field] of Object.entries(fields)) {
+    const create = field.lifecycle?.create;
+    if (typeof create !== 'object' || create === null || !('value' in create)) continue;
+
+    const checked = checkValue(field, (create as { value: unknown }).value);
+    if ('error' in checked) {
+      throw new Error(
+        `Field '${name}': the declared default ${JSON.stringify((create as { value: unknown }).value)} `
+        + `is not a legal value for it — ${checked.error}. It would be written into every row `
+        + `without passing the judge.`,
+      );
+    }
+  }
 }

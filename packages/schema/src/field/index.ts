@@ -47,4 +47,4 @@ export {
   type Fields,
   type FieldData,
 } from "./field.js";
-export { validateField, isField } from "./validate-field.js";
+export { validateField, isField, assertDefaultsAreValid } from "./validate-field.js";

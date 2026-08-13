@@ -116,19 +116,7 @@ export type Shape =
 export const SHAPE_TYPES = ['string', 'number', 'integer', 'boolean', 'array', 'object'] as const;
 export type ShapeType = (typeof SHAPE_TYPES)[number];
 
-/**
- * Is this a shape? Asked of its `type`, which is the one thing every shape states and
- * the one thing the engine dispatches on.
- *
- * The weaker question — "is there a `shape` key at all" — is the one this package spent a
- * refactor removing elsewhere, and it was still being asked here: `{ shape: 42 }` built a
- * field that crashed inside the validator (`Invalid value used as weak map key`), while
- * `{ shape: {} }` built one that judged NOTHING and answered `true` to every value. Both
- * are the shapeless field again, one level down.
- *
- * `null` is legal only inside the union — `['string','null']` is how nullability is
- * spelled — never on its own: a field whose only type is `null` states no value.
- */
+/** Is this a shape? Asked of its `type`, against {@link SHAPE_TYPES}. */
 export function isShape(value: unknown): value is Shape {
   if (typeof value !== 'object' || value === null) return false;
   const declared = (value as Shape).type;
