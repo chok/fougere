@@ -6,6 +6,6 @@ import { Field } from '../field/index.js';
  * error ("Immutable"). Derived views (`partial()`) keep the field for
  * introspection — the lifecycle rule, not the view, is what rejects it.
  */
-export function immutable<T, A extends boolean>(field: Field<T, A>): Field<T, A> {
+export function immutable<T>(field: Field<T>): Field<T> {
   return field.with({ lifecycle: { ...field.lifecycle, update: 'forbidden' } });
 }

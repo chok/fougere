@@ -10,8 +10,8 @@ import { Field } from '../field/index.js';
  * `updated()` next to it named its moment. Every template in the repo spelled it
  * `createdAt: auto()`: the field always had the name the constructor was missing.
  */
-export function created(): Field<Date, true> {
-  return new Field<Date, true>({
+export function created(): Field<Date> {
+  return new Field<Date>({
     shape: { type: 'string', format: 'date-time' },
     lifecycle: { create: 'now', update: 'forbidden' },
   });

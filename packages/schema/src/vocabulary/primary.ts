@@ -24,8 +24,8 @@ interface PrimaryOptions {
  * - `primary(field)` — promote any field to primary key (no auto-generation;
  *   the value must be supplied, so its `auto` flag is preserved)
  */
-export function primary(opts?: PrimaryOptions): Field<string, true>;
-export function primary<T, A extends boolean>(field: Field<T, A>): Field<T, A>;
+export function primary(opts?: PrimaryOptions): Field<string>;
+export function primary<T>(field: Field<T>): Field<T>;
 export function primary(fieldOrOptions?: AnyField | PrimaryOptions): AnyField {
   // primary(field) — promote an existing field to primary key. cloneField keeps
   // every axis (boundary, meta…); the role gains `primary`, and identity in the
@@ -50,7 +50,7 @@ export function primary(fieldOrOptions?: AnyField | PrimaryOptions): AnyField {
   } else {
     generate = opts.generate ?? 'cuid2';
   }
-  return new Field<string, true>({
+  return new Field<string>({
     shape: { type: 'string' },
     role: { primary: true },
     // An id is immutable by default: re-supplying it in a patch is an error.

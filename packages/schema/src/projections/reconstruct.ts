@@ -149,7 +149,7 @@ function buildSchema(descriptor: SchemaDescriptor, resolve?: Resolver): SchemaCo
  * different question — one `required` answers, and one a synced consumer never asks,
  * since it calls the host rather than constructing.
  */
-type FieldsOf<T> = { [K in keyof T]-?: Field<T[K], true> };
+type FieldsOf<T> = { [K in keyof T]-?: Field<T[K]> };
 
 /**
  * Read a lone card back into a working schema — THE single reconstructor. The result

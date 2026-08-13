@@ -7,8 +7,8 @@ import { nullableShape, type Field } from '../field/index.js';
  * An existing create rule (a default) wins over `'optional'` — it already
  * answers absence, and with a value rather than an omission.
  */
-export function optional<T>(field: Field<T>): Field<T | null, true> {
-  return field.with<T | null, true>({
+export function optional<T>(field: Field<T>): Field<T | null> {
+  return field.with<T | null>({
     shape: nullableShape(field.shape),
     lifecycle: { ...field.lifecycle, create: field.lifecycle?.create ?? 'optional' },
   });

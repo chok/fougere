@@ -18,7 +18,7 @@ export interface ListOptions {
  * DROPPED SILENTLY — `list(primary())` is accepted and loses the role. The guard below
  * only rejects a relation. Tightening it to reject a carried lifecycle/boundary is open.
  */
-export function list<T>(item: Field<T, boolean>, opts?: ListOptions): Field<T[]> {
+export function list<T>(item: Field<T>, opts?: ListOptions): Field<T[]> {
   // Reads the ROLE, not the absence of a shape: since every field carries one, `many(Post)`
   // now has an array shape too, and embedding it would claim the other side's rows are ours.
   if (item.role?.relation) throw new Error('list() takes a value field (text(), number()…) — a relation has no value shape');

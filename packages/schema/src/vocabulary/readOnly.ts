@@ -7,6 +7,6 @@ import { Field, declaredBoundary } from '../field/index.js';
  * never "Required" (the server provides it). Input types exclude it.
  * The outbound direction (and its conversion) is untouched.
  */
-export function readOnly<T, A extends boolean>(field: Field<T, A>): Field<T, A> {
+export function readOnly<T>(field: Field<T>): Field<T> {
   return field.with({ boundary: { ...declaredBoundary(field), in: 'closed' } });
 }

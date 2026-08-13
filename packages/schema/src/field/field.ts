@@ -1,8 +1,8 @@
-import type { Shape } from './shape.js';
-import type { Role } from './role.js';
-import type { Lifecycle } from './lifecycle.js';
-import type { BoundaryRef } from './boundary.js';
-import type { Meta } from './meta.js';
+import type { Shape } from "./shape.js";
+import type { Role } from "./role.js";
+import type { Lifecycle } from "./lifecycle.js";
+import type { BoundaryRef } from "./boundary.js";
+import type { Meta } from "./meta.js";
 
 /**
  * A field — the single source of truth, decomposed on four orthogonal axes
@@ -15,10 +15,8 @@ import type { Meta } from './meta.js';
  * `shape` and the slot only overrides it.
  *
  * @typeParam T - the data type this field carries (phantom, TS inference only)
- * @typeParam A - "auto-supplied at creation" (primary/auto/default/optional) →
- *   the field is optional in `new X(input)`. Phantom, type-level only.
  */
-export class Field<T = unknown, A extends boolean = false> {
+export class Field<T = unknown> {
   /**
    * REQUIRED — a field always says what its value looks like. It was optional, and
    * the one field that had no shape (`many`) forced five readers to re-derive "what
@@ -33,8 +31,6 @@ export class Field<T = unknown, A extends boolean = false> {
   readonly meta?: Meta;
   /** Phantom — data type, never read at runtime. `declare`: no slot, no emit. */
   declare readonly _type?: T;
-  /** Phantom — auto-at-creation flag, never read at runtime. */
-  declare readonly _auto?: A;
 
   /**
    * The five slots, always the same five, whatever the caller passed — so the
@@ -69,39 +65,42 @@ export class Field<T = unknown, A extends boolean = false> {
    * was added last — `codec` did exactly that. Spread + override, so a future 6th slot
    * travels for free.
    *
-   * `T`/`A` ride through by DEFAULT — an axis is not the data type, so the six words that
-   * only touch an axis (`indexed`, `unique`, `immutable`, `readOnly`, `writeOnly`,
-   * `updated`) name no type argument. The two that genuinely re-type say which:
-   * `nullable` widens to `T | null`, `optional` widens and turns auto-at-creation on.
-   * Stating it in the call is the point — the alternative was `as unknown as Field<…>`
-   * at both sites, which is a cast that can express anything, including a mistake.
+   * `T` rides through by DEFAULT — an axis is not the data type, so the words that only
+   * touch an axis name no type argument. The two that genuinely re-type say which:
+   * `nullable` and `optional` widen to `T | null`. Stating it in the call is the point —
+   * the alternative was `as unknown as Field<…>`, a cast that can express anything.
    */
-  with<U = T, B extends boolean = A>(overrides: FieldOverrides): Field<U, B> {
-    return new Field<U, B>({ ...this, ...overrides });
+  with<U = T>(overrides: FieldOverrides): Field<U> {
+    return new Field<U>({ ...this, ...overrides });
   }
 }
 
 /**
- * Any field, regardless of its T/A parameters — the correct generic bound.
+ * Any field, regardless of its `T` — the correct generic bound.
  *
  * `unknown` and not `any`: the bound accepts every concrete field either way, and
  * the whole workspace typechecks either way. The difference shows where the field
  * map is no longer captured by a generic — `SchemaViewInfer<Fields>` reads this `T`,
  * so `any` handed a silent value to every consumer that lost the precise map.
+ *
+ * One parameter and not two: a second one carried "auto-supplied at creation", a
+ * type-level copy of `lifecycle.create` that had to be restated by hand in every word
+ * that could set the rule — and had drifted, on `default`. See {@link Fields}.
  */
-export type AnyField = Field<unknown, boolean>;
+export type AnyField = Field<unknown>;
 
 /** A record of fields — the input to `entity()` and every derivation. */
 export type Fields = Record<string, AnyField>;
 
-/** What it takes to BUILD a field — a shape, plus whatever the other axes state. */
-export interface FieldInit {
-  shape: Shape;
-  role?: Role;
-  lifecycle?: Lifecycle;
-  boundary?: BoundaryRef;
-  meta?: Meta;
-}
+/**
+ * What it takes to BUILD a field — the class minus its one method.
+ *
+ * DERIVED and not restated: the five slots are declared once, on `Field`, and a 6th axis
+ * lands here for free. A parallel interface listing the same five is the duplication this
+ * package spends its comments warning about, and it is what `with` costs — an object
+ * literal cannot satisfy `Field` itself, since it has no `with`.
+ */
+export type FieldInit = Omit<Field, 'with'>;
 
 /**
  * The axes a derivation CHANGES — the dual of {@link FieldInit}: build states everything,
@@ -134,7 +133,11 @@ export interface SchemaLike {
  * `JSON.stringify` — the only place the question is ever really asked.
  */
 export function isField(value: unknown): value is AnyField {
-  return typeof value === 'object' && value !== null && Boolean((value as AnyField).shape);
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    Boolean((value as AnyField).shape)
+  );
 }
 
 /**
@@ -155,8 +158,8 @@ export function normalizeFields(fields: Fields): Fields {
   for (const [name, field] of Object.entries(fields)) {
     if (!isField(field)) {
       throw new Error(
-        `Field '${name}': not a field — got ${JSON.stringify(field)}. `
-        + `Use the vocabulary (text(), number(), primary(), many()…); every field states a shape.`,
+        `Field '${name}': not a field — got ${JSON.stringify(field)}. ` +
+          `Use the vocabulary (text(), number(), primary(), many()…); every field states a shape.`,
       );
     }
     out[name] = new Field(field);

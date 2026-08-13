@@ -8,31 +8,26 @@ import type { StandardSchemaV1 } from "./projections/standard.js";
 
 /** The data shape an entity carries — every field present. */
 export type SchemaViewInfer<TFields extends Fields> = {
-  [K in keyof TFields]: TFields[K] extends Field<infer T, any> ? T : never;
+  [K in keyof TFields]: TFields[K] extends Field<infer T> ? T : never;
 };
 
-/** Keys whose value is auto-supplied at creation (primary/auto/default/optional). */
-type AutoKeys<TFields extends Fields> = {
-  [K in keyof TFields]: TFields[K] extends Field<any, true> ? K : never;
-}[keyof TFields];
-
 /**
- * Constructor input — like the data shape, but auto-at-creation fields are
- * optional. `new Post({ title })` works without passing the generated id.
+ * Constructor input — the data shape, every key omissible.
+ *
+ * It used to be exact: a second type parameter on `Field` carried "auto-supplied at
+ * creation", `AutoKeys` collected them and only those became optional, so `new Post({})`
+ * was refused while `new Post({ title })` passed without the generated id. That flag was a
+ * type-level COPY of `lifecycle.create`, restated by hand in every word that could set the
+ * rule — and it had drifted: `text({ default: 'x' })` answered "required" while
+ * `validate({})` succeeded. One declaration, two answers.
+ *
+ * The copy is gone rather than repaired, and with it `_auto`, `AutoKeys` and the second
+ * parameter on twenty signatures. What it bought — a compile error on `new Post({})` —
+ * had no caller to protect: not one `new <Entity>(…)` exists in any package's sources, in
+ * the demos, in the site or in the published docs. `lifecycle.create` remains, read by the
+ * judge, which answers the same question about real input at the one moment it matters.
  */
-export type CtorInput<TFields extends Fields> =
-  Omit<SchemaViewInfer<TFields>, AutoKeys<TFields>> &
-  Partial<Pick<SchemaViewInfer<TFields>, AutoKeys<TFields>>>;
-
-/**
- * Fields as seen by a patch input: every field becomes OMISSIBLE (presence axis,
- * `A = true` → optional in the input), but its nullity does NOT change — `null`
- * stays governed by the base field (`optional()`). A patch may leave a field
- * untouched; it may not erase a non-nullable field.
- */
-type PatchFields<TFields extends Fields> = {
-  [K in keyof TFields]: TFields[K] extends Field<infer T, any> ? Field<T, true> : never;
-};
+export type CtorInput<TFields extends Fields> = Partial<SchemaViewInfer<TFields>>;
 
 /**
  * A schema constructor returned by Entity.pick(), omit(), partial(), extend().
@@ -68,7 +63,7 @@ export interface SchemaConstructor<TFields extends Fields> {
   omit<K extends string & keyof TFields>(
     ...keys: K[]
   ): SchemaConstructor<Omit<TFields, K>>;
-  partial(): SchemaConstructor<PatchFields<TFields>>;
+  partial(): SchemaConstructor<TFields>;
   extend<E extends Fields>(
     extra: E,
   ): SchemaConstructor<TFields & E>;
