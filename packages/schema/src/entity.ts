@@ -30,6 +30,22 @@ export type SchemaViewInfer<TFields extends Fields> = {
 export type CtorInput<TFields extends Fields> = Partial<SchemaViewInfer<TFields>>;
 
 /**
+ * The read-only view of a schema — for a reader that does not care which field map it
+ * holds. `SchemaConstructor<Fields>` cannot serve that: `TFields` sits in contravariant
+ * positions (`pick`, the constructor input), so a concrete schema is not assignable.
+ *
+ * All four are required. Two were optional, which cost nine defensive `?.` at call sites;
+ * the one caller that really answered less (`pothos.ts`, an ad-hoc input view) now states
+ * its two absences instead of leaving every reader to guess.
+ */
+export interface SchemaLike {
+  getFields(): Fields;
+  getHints(): unknown;
+  getOpts(): { patch?: boolean };
+  getUnique(): ReadonlyArray<ReadonlyArray<string>> | undefined;
+}
+
+/**
  * A schema constructor returned by Entity.pick(), omit(), partial(), extend().
  *
  * - Usable as a base class: `class X extends Post.pick('id') {}`
@@ -351,11 +367,6 @@ function assertDefaultsAreValid(fields: Fields): void {
 
 // ─── compose — the other entry of the derivation algebra ───
 
-/** Anything that exposes its fields — an `entity()` class or a SchemaConstructor. */
-interface HasFields {
-  getFields(): Fields;
-}
-
 type UnionToIntersection<U> = (U extends unknown ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
 
 type FieldsFrom<T> = T extends { getFields(): infer F } ? F : Fields;
@@ -372,7 +383,7 @@ type FieldsFrom<T> = T extends { getFields(): infer F } ? F : Fields;
  * right, later sources override earlier ones on conflict (hints merge per adapter,
  * per field key). Use .rename() before compose() to avoid field conflicts.
  */
-export function compose<T extends HasFields[]>(
+export function compose<T extends SchemaLike[]>(
   ...sources: T
 ): SchemaConstructor<UnionToIntersection<FieldsFrom<T[number]>> & Fields> {
   const merged: Fields = {};
@@ -380,15 +391,14 @@ export function compose<T extends HasFields[]>(
   let mergedOpts: ValidateOptions = {};
   for (const source of sources) {
     Object.assign(merged, source.getFields());
-    const carrier = source as Partial<SchemaConstructor<Fields>>;
-    const hints = carrier.getHints?.();
+    const hints = source.getHints();
     if (hints) {
       for (const [adapter, perField] of Object.entries(hints as Record<string, Record<string, unknown> | undefined>)) {
         if (!perField || typeof perField !== 'object') continue;
         mergedHints[adapter] = { ...mergedHints[adapter], ...perField };
       }
     }
-    mergedOpts = { ...mergedOpts, ...carrier.getOpts?.() };
+    mergedOpts = { ...mergedOpts, ...source.getOpts() };
   }
   const hints = Object.keys(mergedHints).length ? (mergedHints as Hints<Fields>) : undefined;
   return asSchemaConstructor<UnionToIntersection<FieldsFrom<T[number]>> & Fields>(

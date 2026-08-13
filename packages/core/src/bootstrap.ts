@@ -454,7 +454,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
             // patch is 'Immutable', a read-only field 'Read-only', every
             // system-stamped absence is legal via its lifecycle rule, and a
             // key outside the contract is 'Unknown field' (refused, not stripped).
-            const result = validateFields(schema.getFields(), inv.body, { patch: schema.getOpts?.().patch });
+            const result = validateFields(schema.getFields(), inv.body, { patch: schema.getOpts().patch });
             if (!result.success) {
               throw new FougereError({
                 code: ErrorCode.VALIDATION_FAILED,

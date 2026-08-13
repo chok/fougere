@@ -621,7 +621,7 @@ export function registerInput(builder: InstanceType<typeof SchemaBuilder>, confi
   const enumOwner = sourceNameOf(config.schema);
   // Input-field omissibility is a projection of the view's MODE (partial() → patch),
   // never of forged per-field flags — the fields themselves stay untouched.
-  const patch = config.schema.getOpts?.()?.patch ?? false;
+  const patch = config.schema.getOpts().patch ?? false;
 
   return (builder as any).inputType(config.name, {
     fields: (t: any) => {
@@ -718,7 +718,14 @@ function buildArgsFromSignature(
     // same fields seen through the patch mode, not a set of forged fields.
     inputRef = registerInput(builder, {
       name: inputName,
-      schema: { getFields: () => opInputFields, getOpts: () => ({ patch: opName === 'update' }) },
+      schema: {
+        getFields: () => opInputFields,
+        getOpts: () => ({ patch: opName === 'update' }),
+        // Stated, not omitted: an input view carries neither hints nor composite groups,
+        // and `SchemaLike` asks every reader to answer all four rather than guess.
+        getHints: () => undefined,
+        getUnique: () => undefined,
+      },
     });
   }
 

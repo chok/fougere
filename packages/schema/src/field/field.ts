@@ -15,12 +15,14 @@ export class Field<T = unknown> {
 
   constructor(init: FieldData, key?: string) {
     const verdict = validateField(init);
+
     if (!verdict.success) {
       throw new Error(
         `${key ? `Field '${key}': ` : ""}` +
           verdict.errors.map((e) => `${e.path}: ${e.message}`).join("; "),
       );
     }
+
     this.shape = init.shape;
     this.role = init.role;
     this.lifecycle = init.lifecycle;
@@ -41,10 +43,3 @@ export type FieldData = {
     ? never
     : K]: Field[K];
 };
-
-export interface SchemaLike {
-  getFields(): Fields;
-  getOpts?(): { patch?: boolean };
-  getUnique?(): ReadonlyArray<ReadonlyArray<string>> | undefined;
-}
-

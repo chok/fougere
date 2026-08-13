@@ -258,13 +258,13 @@ function resolveSchema(type: ParsedType, moduleExports: Record<string, unknown>)
         if (type.name === 'Partial' && 'partial' in resolved && typeof (resolved as any).partial === 'function') {
           return (resolved as any).partial() as SchemaLike;
         }
-        return resolved as SchemaLike;
+        return resolved as unknown as SchemaLike;
       }
     }
   }
   const resolved = moduleExports[name];
   if (resolved && typeof resolved === 'function' && 'getFields' in resolved) {
-    return resolved as SchemaLike;
+    return resolved as unknown as SchemaLike;
   }
   return undefined;
 }

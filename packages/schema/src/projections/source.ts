@@ -1,4 +1,5 @@
-import type { Fields, SchemaLike } from '../field/index.js';
+import type { Fields } from '../field/index.js';
+import type { SchemaLike } from '../entity.js';
 import type { SchemaDescriptor } from './card.js';
 import { reconstruct } from './reconstruct.js';
 
@@ -52,5 +53,5 @@ export function fieldsOf(source: SchemaSource): Fields {
  * its members carry, so `reconstruct` has already restored them by the time this reads.
  */
 export function uniqueOf(source: SchemaSource): ReadonlyArray<ReadonlyArray<string>> | undefined {
-  return schemaOf(source).getUnique?.();
+  return schemaOf(source).getUnique();
 }

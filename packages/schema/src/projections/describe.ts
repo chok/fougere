@@ -1,4 +1,5 @@
-import type { Field, Role, SchemaLike } from '../field/index.js';
+import type { Field, Role } from '../field/index.js';
+import type { SchemaLike } from '../entity.js';
 import { anatomy, uniqueMembers, boundaryOf } from '../field/index.js';
 import { registrationKeyOf } from '../name.js';
 import {

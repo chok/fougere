@@ -1,4 +1,5 @@
-import { Field, type SchemaLike } from '../field/index.js';
+import { Field } from '../field/index.js';
+import type { SchemaLike } from '../entity.js';
 import { describe } from '../projections/describe.js';
 import type { FieldDescriptor } from '../projections/card.js';
 

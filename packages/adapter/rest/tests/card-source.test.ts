@@ -137,7 +137,7 @@ suite('a card is a schema source', () => {
       docId: text(),
     }, { unique: [['listId', 'docId']] }) {}
 
-    expect(ListBook.getUnique?.()).toEqual([['listId', 'docId']]);
+    expect(ListBook.getUnique()).toEqual([['listId', 'docId']]);
 
     const card = describeCard(ListBook);
     for (const member of ['listId', 'docId'] as const) {
@@ -148,7 +148,7 @@ suite('a card is a schema source', () => {
     // …and a consumer rebuilding it recovers the entity-level declaration, de-duplicated:
     // the card states the group once per member, the author wrote it once.
     const rebuilt = reconstruct(card);
-    expect(rebuilt.getUnique?.()).toEqual([['listId', 'docId']]);
+    expect(rebuilt.getUnique()).toEqual([['listId', 'docId']]);
     expect(describeCard(rebuilt)).toEqual(card);
   });
 
@@ -162,13 +162,13 @@ suite('a card is a schema source', () => {
     // `(listId)` alone says nothing about the pair — keeping the remnant would state a
     // stronger fact than the author wrote, so both the declaration and the projection go.
     const amputated = ListBook.pick('id', 'listId');
-    expect(amputated.getUnique?.()).toBeUndefined();
+    expect(amputated.getUnique()).toBeUndefined();
     expect(amputated.getFields().listId!.role?.unique).toBeUndefined();
     // The rest of the role is untouched — dropping the group is not dropping the ref.
     expect((describeCard(amputated).properties.listId!['x-fougere'] as any).role)
       .toEqual({ relation: { to: 'author', kind: 'one' } });
 
     const whole = ListBook.pick('listId', 'docId');
-    expect(whole.getUnique?.()).toEqual([['listId', 'docId']]);
+    expect(whole.getUnique()).toEqual([['listId', 'docId']]);
   });
 });

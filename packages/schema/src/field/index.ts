@@ -15,14 +15,20 @@ export {
   isNullable,
   registerFormat,
   resolveFormat,
-} from './shape.js';
-export { type Role, type Relation, type EntityConstructor, toTargetThunk, uniqueMembers } from './role.js';
+} from "./shape.js";
+export {
+  type Role,
+  type Relation,
+  type EntityConstructor,
+  toTargetThunk,
+  uniqueMembers,
+} from "./role.js";
 export {
   type Lifecycle,
   type GeneratorRef,
   registerGenerator,
   resolveCustomGenerator,
-} from './lifecycle.js';
+} from "./lifecycle.js";
 export {
   type Boundary,
   type BoundaryRef,
@@ -34,12 +40,11 @@ export {
   registerDecoder,
   registerEncoder,
   registerBoundaryAlias,
-} from './boundary.js';
-export { type Meta } from './meta.js';
+} from "./boundary.js";
+export { type Meta } from "./meta.js";
 export {
   Field,
   type Fields,
   type FieldData,
-  type SchemaLike,
-} from './field.js';
-export { validateField, isField, type FieldError, type FieldVerdict } from './validate-field.js';
+} from "./field.js";
+export { validateField, isField } from "./validate-field.js";
