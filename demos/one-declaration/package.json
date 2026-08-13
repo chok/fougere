@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "@fougere/schema": "workspace:*",
-    "@fougere/schema-sql": "workspace:*"
+    "@fougere/adapter-sql": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.0.0"

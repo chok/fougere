@@ -35,8 +35,8 @@ Before adding a surface, reach for its **projection**:
 
 | surface | the call |
 |---|---|
-| REST | `generateRoutes(app)` then `registerRoutes(router, routes)` — `@fougere/schema-rest` |
-| GraphQL | `registerAll(builder, app)` then `registerGraphQL(router, builder.toSchema())` — `@fougere/schema-graphql` |
+| REST | `generateRoutes(app)` then `registerRoutes(router, routes)` — `@fougere/adapter-rest` |
+| GraphQL | `registerAll(builder, app)` then `registerGraphQL(router, builder.toSchema())` — `@fougere/adapter-graphql` |
 
 Hand-writing the types (`buildSchema`, raw SDL, one Pothos resolver per field) rebuilds what the
 projection already derives, and drops the judge on the way. `registerType` / `registerOperations`

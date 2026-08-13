@@ -1,7 +1,7 @@
 import type { GraphResult } from '../../fronds/analysis/handlers/GraphHandler.js';
 import type { EntityNode, DomainCluster, App } from '@fougere/core';
 import { createAppRunner } from '@fougere/core';
-import type { ui as createUi } from '@fougere/cli-ui';
+import type { ui as createUi } from '../../src/ui.js';
 import pc from 'picocolors';
 
 type Ui = ReturnType<typeof createUi>;

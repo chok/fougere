@@ -1,7 +1,7 @@
 /**
  * Storage — Kysely/SQLite wired from the entities, no hand-written DDL.
  */
-import { setupSqlite, migrate, toTableName } from '@fougere/schema-sql';
+import { setupSqlite, migrate, toTableName } from '@fougere/adapter-sql';
 import { Category, Product, Customer, OrderLine, Order } from './entities.js';
 
 // 'category' → 'categories' is the one irregular plural the default

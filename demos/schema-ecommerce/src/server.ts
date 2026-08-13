@@ -4,7 +4,7 @@
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { createHonoRouter } from '@fougere/http';
-import { registerGraphQL } from '@fougere/schema-graphql';
+import { registerGraphQL } from '@fougere/adapter-graphql';
 import { graphqlSchema } from './adapter-graphql.js';
 
 const hono = new Hono();

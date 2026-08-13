@@ -328,11 +328,13 @@ Known limits, stated plainly, because you'd find them anyway:
 | | |
 | --- | --- |
 | [`packages/schema`](./packages/schema) | `entity()`, the field vocabulary, the four axes, validation |
-| [`packages/schema-sql`](./packages/schema-sql) · [`-graphql`](./packages/schema-graphql) · [`-rest`](./packages/schema-rest) | the projections — Kysely tables, Pothos types, REST routes |
+| [`packages/adapter/`](./packages/adapter) | the projections — [`sql`](./packages/adapter/sql) Kysely tables, [`graphql`](./packages/adapter/graphql) Pothos types, [`rest`](./packages/adapter/rest) routes |
 | [`packages/core`](./packages/core) | the scanner, the call contract, `Crud`, bootstrap |
 | [`packages/transport`](./packages/transport) | the JSON-RPC 2.0 wire — it moves the call, never reshapes it |
-| [`packages/app/nuxt`](./packages/app/nuxt) | the client primitives and the server surface |
-| [`packages/auth-better`](./packages/auth-better) · [`container`](./packages/container) · [`cli`](./packages/cli) | auth translation, DI, the scaffolder |
+| [`packages/app/`](./packages/app) | the client primitives ([`shared`](./packages/app/shared)) and one binding per host — nuxt, next, react, svelte, vite |
+| [`packages/defaults`](./packages/defaults) · [`http`](./packages/http) | the conventional boot; the `HttpRouter` port and its adapters |
+| [`packages/auth/better`](./packages/auth/better) · [`container`](./packages/container) · [`cli`](./packages/cli) | auth translation, DI, the scaffolder |
+| [`packages/entry/`](./packages/entry) | `fougere` and `create-fougere` — the names you type, they hold no code |
 | [`site/`](./site) | the site of Fougere, built with Fougere |
 | [`demos/`](./demos) | `nuxt-blog` is the flagship; the others isolate one idea each |
 

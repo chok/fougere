@@ -5,7 +5,7 @@
  * the app's Note table. In a richer setup you'd generate this from entities via
  * `autoMigrate` but the demo keeps it explicit for readability.
  */
-import { setupSqlite } from '@fougere/schema-sql';
+import { setupSqlite } from '@fougere/adapter-sql';
 
 const setup = setupSqlite({ path: 'auth-better-demo.db' });
 const sqlite = setup.sqlite;

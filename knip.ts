@@ -43,9 +43,11 @@ const config: KnipConfig = {
   include: ['dependencies', 'devDependencies', 'unlisted', 'exports', 'types', 'duplicates'],
   workspaces: {
     '.': { entry },
+    // Both depths, like `pnpm-workspace.yaml` — a package sits at the root of
+    // `packages/` or inside its family. Naming each family was a second copy of
+    // the tree, and it went stale the day a family was added.
     'packages/*': { entry },
-    'packages/app/*': { entry },
-    'packages/transport/*': { entry },
+    'packages/*/*': { entry },
     // Loaded by the Nuxt module at runtime, never imported by the package.
     'packages/app/nuxt': { entry: [...entry, 'src/runtime/**/*.ts'] },
     // A command is resolved by name from the CLI's own frond, not imported.

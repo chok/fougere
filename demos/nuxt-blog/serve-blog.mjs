@@ -7,7 +7,7 @@
 import { createJiti } from 'jiti';
 import { createApp, createLocalRunner, setModuleLoader, frondAliases, Logger } from '@fougere/core';
 import { createContainer } from '@fougere/container';
-import { setupSqlite, migrate } from '@fougere/schema-sql';
+import { setupSqlite, migrate } from '@fougere/adapter-sql';
 import { serve } from '@fougere/transport-http';
 
 // `frondAliases` is what makes `@frond/user/entities/User.js` resolve — the named

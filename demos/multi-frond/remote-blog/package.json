@@ -8,7 +8,7 @@
   "dependencies": {
     "@fougere/core": "workspace:*",
     "@fougere/schema": "workspace:*",
-    "@fougere/schema-rest": "workspace:*",
+    "@fougere/adapter-rest": "workspace:*",
     "@fougere/transport-http": "workspace:*",
     "@fougere/http": "workspace:*",
     "hono": "^4.0.0",

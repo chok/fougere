@@ -1,7 +1,12 @@
+# A package sits at either depth: `packages/core`, or `packages/app/nuxt` when it
+# belongs to a family. Naming each family here made the list a second declaration
+# of the tree — and a stale one: the day `adapter/`, `cli/` and `entry/` appeared,
+# ten packages silently left the workspace. Two globs cover any family, present or
+# future; pnpm only reads a directory holding a package.json, so the wider glob
+# matches nothing extra.
 packages:
   - packages/*
-  - packages/app/*
-  - packages/transport/*
+  - packages/*/*
   - demos/*
   - site
   - demos/multi-frond/remote-blog

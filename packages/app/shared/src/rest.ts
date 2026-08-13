@@ -7,7 +7,7 @@
  * second REST projection that answered differently from `schema-rest` on all three counts
  * (verb, path, exposure).
  */
-import { generateRoutes } from '@fougere/schema-rest';
+import { generateRoutes } from '@fougere/adapter-rest';
 import type { App } from '@fougere/core';
 
 /** One row of the canonical table, in the form this door matches against. */

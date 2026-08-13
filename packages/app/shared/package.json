@@ -51,9 +51,9 @@
   },
   "dependencies": {
     "@fougere/core": "workspace:*",
-    "@fougere/runtime": "workspace:*",
+    "@fougere/defaults": "workspace:*",
     "@fougere/schema": "workspace:*",
-    "@fougere/schema-rest": "workspace:*",
+    "@fougere/adapter-rest": "workspace:*",
     "@fougere/transport-http": "workspace:*",
     "jiti": "^2.6.1",
     "@fougere/http": "workspace:*",
@@ -61,7 +61,7 @@
   },
   "devDependencies": {
     "vitest": "^4.1.0",
-    "@fougere/schema-graphql": "workspace:*",
+    "@fougere/adapter-graphql": "workspace:*",
     "@pothos/core": "^4.12.0",
     "graphql": "^16.13.1"
   },
@@ -69,12 +69,12 @@
     "access": "public"
   },
   "peerDependencies": {
-    "@fougere/schema-graphql": "^0.2.0-alpha.0",
+    "@fougere/adapter-graphql": "^0.2.0-alpha.0",
     "@pothos/core": "^4.0.0",
     "graphql": "^16.0.0"
   },
   "peerDependenciesMeta": {
-    "@fougere/schema-graphql": {
+    "@fougere/adapter-graphql": {
       "optional": true
     },
     "@pothos/core": {

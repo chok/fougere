@@ -87,13 +87,13 @@ async function boot(): Promise<App> {
   const fileConfig: FougereConfig = await loadCascadedConfig(root, configRoot);
 
   // Auto-resolve the data layer from config.db when the user didn't provide a
-  // custom one via configureFougere. The resolution itself lives in @fougere/runtime
+  // custom one via configureFougere. The resolution itself lives in @fougere/defaults
   // — this host must not know which storage package backs `db:`.
   let db = _config.db;
   let ormFactory = _config.ormFactory;
   let migrateSchema: ((app: never) => Promise<void> | void) | undefined;
   if (!ormFactory) {
-    const { resolveStorage } = await import('@fougere/runtime');
+    const { resolveStorage } = await import('@fougere/defaults');
     const storage = resolveStorage(fileConfig.db as never);
     if (storage.ormFactory) {
       log.debug('auto-resolving storage from config.db');

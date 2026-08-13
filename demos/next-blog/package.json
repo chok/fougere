@@ -13,7 +13,7 @@
     "@fougere/next": "workspace:*",
     "@fougere/react": "workspace:*",
     "@fougere/schema": "workspace:*",
-    "@fougere/schema-sql": "workspace:*",
+    "@fougere/adapter-sql": "workspace:*",
     "better-sqlite3": "^13.0.3",
     "jiti": "^2.6.1",
     "next": "^15.5.7",

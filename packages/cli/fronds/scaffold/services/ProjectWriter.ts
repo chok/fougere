@@ -1,6 +1,23 @@
 import { cpSync, existsSync, renameSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+/**
+ * The monorepo's `packages/`, found by its workspace marker rather than counted
+ * in `..` from this file. Counting encoded how deep the CLI itself sat, so the
+ * day `cli/` moved into a family, `--local` linked four packages instead of
+ * twenty-one — silently, because the scan below simply found less.
+ *
+ * Returns undefined outside the monorepo, which is every installed copy.
+ */
+function monorepoPackages(): string | undefined {
+  let d = fileURLToPath(new URL('.', import.meta.url));
+  while (d !== dirname(d)) {
+    if (existsSync(join(d, 'pnpm-workspace.yaml'))) return join(d, 'packages');
+    d = dirname(d);
+  }
+  return undefined;
+}
 
 /**
  * Scaffolds from real template files (create-vite pattern: stdlib copy, no
@@ -134,7 +151,8 @@ export default class ProjectWriter {
    * packages aren't on npm yet). No-op once the packages are published.
    */
   linkLocal(wsDir: string): void {
-    const packages = fileURLToPath(new URL('../../../../', import.meta.url));
+    const packages = monorepoPackages();
+    if (!packages) return;
     // Read off the monorepo rather than listed here: a hand-kept map knew the seven
     // packages the default templates use, so the first step beyond the default — a
     // GraphQL surface, auth — added a dependency it had never heard of, which stayed

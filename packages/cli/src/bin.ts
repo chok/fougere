@@ -8,7 +8,7 @@
  */
 import { createApp, setModuleLoader } from '@fougere/core';
 import { createContainer } from '@fougere/container';
-import { ui } from '@fougere/cli-ui';
+import { ui } from './ui.js';
 import { run } from './runner.js';
 
 const { createJiti } = await import('jiti');

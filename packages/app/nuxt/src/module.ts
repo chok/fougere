@@ -15,7 +15,7 @@ import {
 } from '@nuxt/kit';
 import type { Nuxt } from '@nuxt/schema';
 import { scanProject, frondAliases, FROND_DIRS, setModuleLoader, loadCascadedConfig, orderSeeds } from '@fougere/core';
-import { declaresStorage } from '@fougere/runtime';
+import { declaresStorage } from '@fougere/defaults';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
 import { createJiti } from 'jiti';
 import { resolve } from 'node:path';
@@ -246,8 +246,8 @@ export function generateBootPlugin(
   }
 
   // The generated plugin names no storage package — resolution lives in
-  // @fougere/runtime, the one place that knows which engine backs `db:`.
-  lines.push(`import { resolveStorage } from '@fougere/runtime';`);
+  // @fougere/defaults, the one place that knows which engine backs `db:`.
+  lines.push(`import { resolveStorage } from '@fougere/defaults';`);
   lines.push(``);
 
   // Seed imports
@@ -258,7 +258,7 @@ export function generateBootPlugin(
 
   // Wrap all init in the plugin callback to avoid top-level native calls
   lines.push(`export default defineNitroPlugin(async () => {`);
-  // Pass `db` through unchanged — resolveStorage (@fougere/runtime → setupSqlite)
+  // Pass `db` through unchanged — resolveStorage (@fougere/defaults → setupSqlite)
   // is the one place that defaults an absent path, so both call sites (this
   // codegen'd plugin and fougereApp.ts's own fallback) land on the same file.
   lines.push(`  const storage = resolveStorage(${JSON.stringify(db)});`);

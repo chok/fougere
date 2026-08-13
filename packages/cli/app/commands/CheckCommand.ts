@@ -1,7 +1,7 @@
 import type { CheckResult, Finding } from '../../fronds/analysis/handlers/CheckHandler.js';
 import type { App } from '@fougere/core';
 import { createAppRunner } from '@fougere/core';
-import type { ui as createUi } from '@fougere/cli-ui';
+import type { ui as createUi } from '../../src/ui.js';
 import pc from 'picocolors';
 import { relative } from 'node:path';
 

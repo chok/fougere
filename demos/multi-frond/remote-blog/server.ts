@@ -13,7 +13,7 @@ import { createApp, setModuleLoader, createLocalRunner, frondAliases } from '@fo
 import { createContainer } from '@fougere/container';
 import { createHonoRouter } from '@fougere/http';
 import { handleRpc } from '@fougere/transport-http';
-import { generateRoutes, registerRoutes } from '@fougere/schema-rest';
+import { generateRoutes, registerRoutes } from '@fougere/adapter-rest';
 
 const PORT = Number(process.env.PORT ?? 4001);
 

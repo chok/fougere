@@ -11,7 +11,7 @@ import type { App } from '@fougere/core';
 import { createAppRunner } from '@fougere/core';
 import { toRegistrationName } from '@fougere/core/contract';
 import { defineCommand, runMain } from 'citty';
-import { ui } from '@fougere/cli-ui';
+import { ui } from './ui.js';
 import { entityToArgs } from './bridge.js';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';

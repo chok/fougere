@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import ProjectWriter from '../../fronds/scaffold/services/ProjectWriter.js';
-import type { ui as createUi } from '@fougere/cli-ui';
+import type { ui as createUi } from '../../src/ui.js';
 import type { App } from '@fougere/core';
 
 type Ui = ReturnType<typeof createUi>;

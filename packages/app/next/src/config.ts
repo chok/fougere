@@ -39,7 +39,7 @@ const RUNTIME_PACKAGES = [
   '@fougere/app',
   '@fougere/core',
   '@fougere/next',
-  '@fougere/schema-sql',
+  '@fougere/adapter-sql',
   'better-sqlite3',
   'jiti',
   'typescript',

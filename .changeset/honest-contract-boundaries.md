@@ -1,16 +1,14 @@
 ---
 '@fougere/auth-better': minor
-'@fougere/cli-ui': minor
 '@fougere/cli': minor
 '@fougere/container': minor
 '@fougere/core': minor
-'@fougere/decorators': minor
 '@fougere/nuxt': minor
 '@fougere/http': minor
-'@fougere/runtime': minor
-'@fougere/schema-graphql': minor
-'@fougere/schema-rest': minor
-'@fougere/schema-sql': minor
+'@fougere/defaults': minor
+'@fougere/adapter-graphql': minor
+'@fougere/adapter-rest': minor
+'@fougere/adapter-sql': minor
 '@fougere/schema': minor
 '@fougere/transport-http': minor
 ---
