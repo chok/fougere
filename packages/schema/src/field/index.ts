@@ -41,5 +41,5 @@ export {
   type Fields,
   type FieldData,
   type SchemaLike,
-  isField,
 } from './field.js';
+export { validateField, isField, type FieldError, type FieldVerdict } from './validate-field.js';

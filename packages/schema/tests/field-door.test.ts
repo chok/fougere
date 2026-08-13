@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Field, entity, primary, text } from '../src/index.js';
+import { Field, created, entity, list, oneOf, optional, primary, text, updated, validateField } from '../src/index.js';
 
 /**
  * The constructor is the only way to obtain a field, so it is where a field is judged —
@@ -9,9 +9,47 @@ import { Field, entity, primary, text } from '../src/index.js';
  */
 describe('the field door', () => {
   it('refuses what is not a field, and names the key when it was given one', () => {
-    expect(() => new Field({} as never)).toThrow(/not a field/);
-    expect(() => new Field({} as never, 'vide')).toThrow(/Field 'vide': not a field/);
-    expect(() => entity({ id: primary(), vide: {} as never })).toThrow(/Field 'vide': not a field/);
+    expect(() => new Field({} as never)).toThrow(/shape: Every field states a shape/);
+    expect(() => new Field({} as never, 'vide')).toThrow(/Field 'vide': shape:/);
+    expect(() => entity({ id: primary(), vide: {} as never })).toThrow(/Field 'vide': shape:/);
+  });
+
+  it('judges every axis against its own vocabulary, and names the one that failed', () => {
+    const shape = { type: 'string' } as const;
+    const refused: ReadonlyArray<readonly [object, RegExp]> = [
+      [{ shape, lifecycle: 'nawak' }, /lifecycle: Expected an object/],
+      [{ shape, lifecycle: { create: 'nawak' } }, /lifecycle\.create: Expected 'now', 'optional'/],
+      [{ shape, lifecycle: { update: 'nawak' } }, /lifecycle\.update: Expected 'now' or 'forbidden'/],
+      [{ shape, role: 'nawak' }, /role: Expected an object/],
+      [{ shape, role: { relation: { kind: 'nawak', to: () => ({}) } } }, /role\.relation\.kind/],
+      [{ shape, role: { relation: { kind: 'one' } } }, /role\.relation\.to: Expected a thunk/],
+      [{ shape, role: { unique: ['not-a-group'] } }, /role\.unique/],
+      [{ shape, boundary: { in: { nawak: 'x' } } }, /boundary\.in/],
+      [{ shape, meta: 42 }, /meta: Expected an object/],
+    ];
+    for (const [init, message] of refused) {
+      expect(() => new Field(init as never)).toThrow(message);
+    }
+  });
+
+  it('reports every fault at once, not the first', () => {
+    const verdict = validateField({ shape: 42, lifecycle: { update: 'nawak' }, meta: 7 });
+    expect(verdict.success).toBe(false);
+    if (!verdict.success) {
+      expect(verdict.errors.map((e) => e.path)).toEqual(['shape', 'lifecycle.update', 'meta']);
+    }
+  });
+
+  it('accepts everything the vocabulary builds', () => {
+    expect(() => entity({
+      id: primary(),
+      title: text({ default: 'x' }),
+      note: optional(text()),
+      at: created(),
+      seen: updated(),
+      tags: list(text()),
+      status: oneOf('draft', 'live', { default: 'draft' }),
+    })).not.toThrow();
   });
 
   it('takes a plain object — a config, plain JS, a card another language wrote', () => {
