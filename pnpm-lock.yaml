@@ -1058,6 +1058,10 @@ importers:
       '@fougere/transport-http':
         specifier: workspace:*
         version: link:../transport/http
+    devDependencies:
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../schema
 
   packages/entry/create:
     dependencies:

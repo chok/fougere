@@ -109,11 +109,25 @@ function referenceFor(
   field: Field,
   resolve: (name: string) => string,
   tableNameOf?: Map<SchemaSource, string>,
+  elsewhere?: ReadonlySet<string>,
 ): ColumnReference | undefined {
   const relation = field.role?.relation;
   if (!relation || relation.kind !== 'one') return undefined;
   const target = relation.to() as Partial<SchemaView> & { name?: string };
-  const table = tableNameOf?.get(target as SchemaView) ?? resolve(registrationKeyOf(target.name ?? ''));
+  const known = tableNameOf?.get(target as SchemaView);
+  if (known === undefined && elsewhere !== undefined) {
+    // Three answers, and only the first two are ordinary. Two databases share no
+    // constraint, so a target that lives in another source gets a column and no
+    // foreign key — the relation survives, the pretence does not. A target in no
+    // source at all is a mistake, and staying silent about it would turn a bad
+    // registration into what reads exactly like a source boundary.
+    if (elsewhere.has(registrationKeyOf(target.name ?? ''))) return undefined;
+    throw new Error(
+      `ref(${target.name ?? '?'}): no source hosts it — it is in neither this batch nor another one. ` +
+      `Check the entity is scanned, and that \`sources\` spells its name the same way.`,
+    );
+  }
+  const table = known ?? resolve(registrationKeyOf(target.name ?? ''));
   const column = primaryColumnOf(target);
   return relation.onDelete ? { table, column, onDelete: relation.onDelete } : { table, column };
 }
@@ -123,6 +137,7 @@ function toColumn(
   field: Field,
   resolve: (name: string) => string,
   tableNameOf?: Map<SchemaSource, string>,
+  elsewhere?: ReadonlySet<string>,
 ): ColumnDef {
   // The column type comes from the `shape` axis alone. `anatomy` strips the
   // nullable union so a nullable integer stays an integer instead of falling
@@ -148,7 +163,7 @@ function toColumn(
   const soleUnique = (field.role?.unique ?? []).some((group) => group.length <= 1);
   if (soleUnique && !column.primary) column.unique = true;
   if (field.role?.index === true && !column.primary && !column.unique) column.index = true;
-  const references = referenceFor(field, resolve, tableNameOf);
+  const references = referenceFor(field, resolve, tableNameOf, elsewhere);
   if (references) column.references = references;
   return column;
 }
@@ -159,6 +174,8 @@ export interface RelationResolve {
   resolve: (name: string) => string;
   /** Live entity class → its already-resolved table name, reused instead of re-derived. */
   tableNameOf?: Map<SchemaSource, string>;
+  /** Registration names of entities hosted in another source — see {@link AppLike.elsewhere}. */
+  elsewhere?: ReadonlySet<string>;
 }
 
 /**
@@ -179,7 +196,7 @@ export function toTable(tableName: string, entity: SchemaSource, relations?: Rel
   const columns: ColumnDef[] = [];
   for (const [fieldName, field] of Object.entries(fields)) {
     if (!isStored(field)) continue;
-    columns.push(toColumn(fieldName, field, resolve, relations?.tableNameOf));
+    columns.push(toColumn(fieldName, field, resolve, relations?.tableNameOf, relations?.elsewhere));
   }
   const primaries = columns.filter((column) => column.primary).map((column) => column.name);
   const stored = new Set(columns.map((column) => column.name));
@@ -245,6 +262,14 @@ export interface AppLike {
   fronds: FrondLike[];
   /** Auth runtime entities are migrated alongside scanned fronds when present. */
   auth?: { entities: Record<string, SchemaSource> };
+  /**
+   * Entities this app hosts in ANOTHER source — named so a miss can be read.
+   *
+   * Without it every miss looked alike, so a `ref()` fell back to a derived table name
+   * and the constraint was emitted against a table that might not exist. Absent means
+   * one source, where a miss can only be a mistake.
+   */
+  elsewhere?: string[];
 }
 
 function collectEntities(app: AppLike): EntityEntry[] {
@@ -265,7 +290,10 @@ function collectEntities(app: AppLike): EntityEntry[] {
 export function toTables(app: AppLike, resolve: (name: string) => string): TableDef[] {
   const entries = collectEntities(app);
   const tableNameOf = new Map<SchemaSource, string>(entries.map((entry) => [entry.entityClass, resolve(entry.name)]));
-  return entries.map((entry) => toTable(resolve(entry.name), entry.entityClass, { resolve, tableNameOf }));
+  const elsewhere = app.elsewhere
+    ? new Set(app.elsewhere.map((name) => name.charAt(0).toLowerCase() + name.slice(1)))
+    : undefined;
+  return entries.map((entry) => toTable(resolve(entry.name), entry.entityClass, { resolve, tableNameOf, elsewhere }));
 }
 
 // ─── Ordering — a referenced table before its referrer ─────────────────────

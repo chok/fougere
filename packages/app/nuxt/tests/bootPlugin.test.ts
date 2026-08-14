@@ -43,6 +43,21 @@ describe('generateBootPlugin — db path convergence', () => {
     expect(out).not.toContain(':memory:');
   });
 
+  it('carries `sources:` through — where a row lives is not the host\u2019s business either', () => {
+    const out = generateBootPlugin(
+      {
+        db: 'sqlite',
+        sources: { archive: { path: '.data/archive.db', entities: ['Book'] } },
+      } as FougereConfig,
+      [],
+      '@fougere/nuxt/fougereApp',
+    );
+
+    // Same reason `db` passes through untouched: this host must not know which package
+    // backs a source, only that the declaration reaches the one place that resolves it.
+    expect(out).toContain('resolveStorage("sqlite", {"archive":{"path":".data/archive.db","entities":["Book"]}})');
+  });
+
   it('db: false skips storage entirely', () => {
     const out = generateBootPlugin({ db: false } as FougereConfig, [], '@fougere/nuxt/fougereApp');
     expect(out).not.toContain('resolveStorage');

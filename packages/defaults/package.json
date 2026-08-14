@@ -1,7 +1,7 @@
 {
   "name": "@fougere/defaults",
   "version": "0.2.0-alpha.1",
-  "description": "The conventional boot of a Fougere app — the one place storage is wired.",
+  "description": "The conventional boot of a Fougere app \u2014 the one place storage is wired.",
   "keywords": [
     "fougere",
     "typescript",
@@ -29,8 +29,10 @@
   ],
   "scripts": {
     "build": "rm -rf dist && tsc",
-    "typecheck": "tsc --noEmit",
-    "prepublishOnly": "pnpm run build"
+    "typecheck": "tsc --noEmit -p tsconfig.test.json",
+    "prepublishOnly": "pnpm run build",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@fougere/core": "workspace:*",
@@ -40,5 +42,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "devDependencies": {
+    "@fougere/schema": "workspace:*"
   }
 }

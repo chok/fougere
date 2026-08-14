@@ -7,8 +7,24 @@ import { getModuleLoader } from './scanner.js';
 // ── Types ────────────────────────────────────────
 
 export interface FougereConfig {
-  /** Database configuration. */
+  /** Database configuration — the DEFAULT source, the one an entity lands in unnamed. */
   db?: 'sqlite' | { dialect: 'sqlite'; path?: string } | false;
+  /**
+   * The other places rows live — a name, an engine, and the entities it holds.
+   *
+   * A fact about the APP, stated beside `remotes:` because it is the same kind of
+   * statement: `remotes:` says where a CALL goes, this says where a ROW is. Neither
+   * belongs on the entity, which describes itself and not its deployment.
+   *
+   * Only the exception is declared: everything unnamed stays in `db`. Membership is
+   * per ENTITY rather than per frond — two fronds may share a database, and one frond
+   * may hold entities in two — so the entity is the truth and a frond-wide shorthand
+   * waits for a case that needs it.
+   *
+   * A `ref()` across two sources gets no foreign key: two databases share no
+   * constraint. The DDL stops pretending rather than the `ref` being refused.
+   */
+  sources?: Record<string, { dialect?: 'sqlite'; path?: string; entities: string[] }>;
   /** Directory containing fronds. Defaults to 'fronds'. */
   frondsDir?: string;
   /** Remote fronds — frondName → base URL. */

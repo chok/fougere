@@ -94,7 +94,7 @@ async function boot(): Promise<App> {
   let migrateSchema: ((app: never) => Promise<void> | void) | undefined;
   if (!ormFactory) {
     const { resolveStorage } = await import('@fougere/defaults');
-    const storage = resolveStorage(fileConfig.db as never);
+    const storage = resolveStorage(fileConfig.db as never, (fileConfig as { sources?: unknown }).sources as never);
     if (storage.ormFactory) {
       log.debug('auto-resolving storage from config.db');
       db = storage.db;

@@ -235,6 +235,7 @@ export function generateBootPlugin(
   if (seeds.length) lines.push(`import { runSeeds } from '@fougere/core';`);
 
   const db = config.db ?? 'sqlite';
+  const sources = (config as { sources?: unknown }).sources;
 
   // `declaresStorage` is the canonical reader of `db:` — asked, not re-interpreted.
   // Reading `dialect` here made this codegen a SECOND reader, and the two disagreed:
@@ -261,7 +262,10 @@ export function generateBootPlugin(
   // Pass `db` through unchanged — resolveStorage (@fougere/defaults → setupSqlite)
   // is the one place that defaults an absent path, so both call sites (this
   // codegen'd plugin and fougereApp.ts's own fallback) land on the same file.
-  lines.push(`  const storage = resolveStorage(${JSON.stringify(db)});`);
+  // The second argument only appears when there is something to say: an app with one
+  // database generates exactly the line it generated before.
+  const sourcesArg = sources ? `, ${JSON.stringify(sources)}` : '';
+  lines.push(`  const storage = resolveStorage(${JSON.stringify(db)}${sourcesArg});`);
   lines.push(``);
   lines.push(`  configureFougere({`);
   lines.push(`    db: storage.db,`);
