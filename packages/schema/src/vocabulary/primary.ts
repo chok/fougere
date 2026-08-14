@@ -1,4 +1,5 @@
-import { Field, isField, registerGenerator, type GeneratorRef } from "../field/index.js";
+import { Field, registerGenerator, type GeneratorRef } from "../field/index.js";
+import { Judge } from "../validation/index.js";
 
 interface PrimaryOptions {
   /**
@@ -26,7 +27,7 @@ export function primary(fieldOrOptions?: Field | PrimaryOptions): Field {
   // immutability in time: `update: 'forbidden'` (decided 2026-07-15).
   // `isField` and not a brand: the two overloads are told apart by SHAPE, which a field
   // always states and `PrimaryOptions` (a lone `generate?`) never does.
-  if (isField(fieldOrOptions)) {
+  if (Judge.isField(fieldOrOptions)) {
     const field = fieldOrOptions;
     return field.with({
       role: { ...field.role, primary: true },

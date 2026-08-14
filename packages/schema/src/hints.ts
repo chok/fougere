@@ -1,12 +1,11 @@
 import type { Fields } from "./field/index.js";
 
 /**
- * Open registry of per-consumer hints — the escape hatch for the irreducible
- * bits a single neutral field can't carry (e.g. "store `body` as a `tsvector`
- * with a GIN index", which validation and the API must ignore).
+ * Per-consumer hints — the escape hatch for what a neutral field cannot carry ("store
+ * `body` as a `tsvector`"), which validation and the API ignore.
  *
- * EMPTY here on purpose: `@fougere/schema` names no adapter and depends on none.
- * Each adapter augments this from its OWN package via declaration merging —
+ * EMPTY here: this package names no adapter. Each augments it from its own package, and
+ * `K` — the entity's field-key union — constrains a hint's inner keys to real fields.
  *
  * ```ts
  * declare module '@fougere/schema' {
@@ -15,20 +14,11 @@ import type { Fields } from "./field/index.js";
  *   }
  * }
  * ```
- *
- * `K` is the entity's field-key union, so a hint's inner keys are constrained to
- * real fields. Until an adapter augments it the registry is `{}` — there is simply
- * nothing to hint against, and the constraint materialises once an adapter is in
- * the compilation. No dependency inversion: schema never names an adapter.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-object-type
 export interface FougereHints<K extends string> {}
 
-/**
- * Per-consumer hints for an entity, keyed by registered adapter. Only adapters
- * present in {@link FougereHints} are accepted; unknown adapters, unknown fields
- * and unknown options are all rejected at the call site.
- */
+/** Keyed by registered adapter — an unknown adapter, field or option is refused at the call site. */
 export type Hints<TFields extends Fields> = {
   [A in keyof FougereHints<Extract<keyof TFields, string>>]?: FougereHints<
     Extract<keyof TFields, string>
@@ -36,10 +26,8 @@ export type Hints<TFields extends Fields> = {
 };
 
 /**
- * Carry hints across a field-key transform — the schema-level twin of `cloneField`'s
- * invariant: a derivation preserves everything it doesn't explicitly change. `transform`
- * maps an old key to its new name, or to `undefined` when the field is dropped; each
- * adapter's per-field hints follow their fields.
+ * Carry hints across a key transform — a derivation preserves what it does not change.
+ * `transform` maps an old key to its new name, or to `undefined` when the field is dropped.
  */
 export function deriveHints(
   hints: Hints<Fields> | undefined,

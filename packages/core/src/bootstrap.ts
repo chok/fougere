@@ -1,3 +1,4 @@
+import { Judge } from '@fougere/schema';
 import type { Container } from '@fougere/container';
 import type { CreateAppOptions, App, AuthRuntime, HandlerEntry, PresenterEntry } from './types.js';
 import type { AppMiddleware } from './middleware.js';
@@ -19,7 +20,7 @@ import { computeBindingPlan, resolveArgs, type CollectorResolver } from './bindi
 import type { OperationContract, OperationsMap } from './operation.js';
 import { resolveContracts } from './operation.js';
 import { EMPTY_INVOCATION, type InvocationContext } from './invocation.js';
-import { type SchemaView, type Fields, validateFields, applyCreate } from '@fougere/schema';
+import { type SchemaView, type Fields, applyCreate } from '@fougere/schema';
 import { projectEgress, presentEgress, guardStorage, type PresenterArgs } from './egress.js';
 
 
@@ -454,7 +455,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
             // patch is 'Immutable', a read-only field 'Read-only', every
             // system-stamped absence is legal via its lifecycle rule, and a
             // key outside the contract is 'Unknown field' (refused, not stripped).
-            const result = validateFields(schema.getFields(), inv.body, { patch: schema.getOpts().patch });
+            const result = Judge.row(schema.getFields(), inv.body, { patch: schema.getOpts().patch });
             if (!result.success) {
               throw new FougereError({
                 code: ErrorCode.VALIDATION_FAILED,

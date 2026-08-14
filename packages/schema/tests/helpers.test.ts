@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
+import { Anatomy, Judge } from '../src/index.js';
 import {
-  entity, primary, text, number, bool, date, created, updated, immutable, oneOf, ref, many, optional, json, list, email, url, isField, isNullable,
-} from '../src/index.js';
+  entity, primary, text, number, bool, date, created, updated, immutable, oneOf, ref, many, optional, json, list, email, url, } from '../src/index.js';
 
 describe('helpers', () => {
   it('primary() creates an auto-generated id field (cuid2 default)', () => {
     const f = primary();
-    expect(isField(f)).toBe(true);
+    expect(Judge.isField(f)).toBe(true);
     expect(f.shape).toEqual({ type: 'string' });
     expect(f.role?.primary).toBe(true);
     // identity in the graph implies immutability in time (default 2026-07-15)
@@ -41,7 +41,7 @@ describe('helpers', () => {
   it('text() creates a string field without options', () => {
     const f = text();
     expect(f.shape?.type).toBe('string');
-    expect(isNullable(f.shape)).toBe(false);
+    expect(Anatomy.isNullable(f.shape)).toBe(false);
   });
 
   it('number() creates a number field with constraints', () => {
@@ -107,7 +107,7 @@ describe('helpers', () => {
   it('optional() puts null in the grammar and permits absence', () => {
     const f = optional(text());
     expect(f.shape?.type).toEqual(['string', 'null']);
-    expect(isNullable(f.shape)).toBe(true);
+    expect(Anatomy.isNullable(f.shape)).toBe(true);
     expect(f.lifecycle?.create).toBe('optional');
   });
 

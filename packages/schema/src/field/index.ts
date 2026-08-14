@@ -8,14 +8,10 @@ export {
   type ShapeType,
   type BaseShape,
   type ShapeAnatomy,
-  type StringFormat,
-  type FormatPredicate,
   nullableShape,
-  anatomy,
-  isNullable,
-  registerFormat,
-  resolveFormat,
+  Anatomy,
 } from "./shape.js";
+export { Formats, type FormatPredicate, type StringFormat } from "./format.js";
 export {
   type Role,
   type Relation,
@@ -37,9 +33,7 @@ export {
   resolveBoundary,
   declaredBoundary,
   boundaryOf,
-  registerDecoder,
-  registerEncoder,
-  registerBoundaryAlias,
+  Boundaries,
 } from "./boundary.js";
 export { type Meta } from "./meta.js";
 export {
@@ -47,4 +41,3 @@ export {
   type Fields,
   type FieldData,
 } from "./field.js";
-export { validateField, isField, assertDefaultsAreValid } from "./validate-field.js";

@@ -1,4 +1,5 @@
-import { Field, assertDefaultsAreValid, type Fields } from "./field/index.js";
+import { Field, type Fields } from "./field/index.js";
+import { Judge } from './validation/index.js';
 import { projectUniqueOntoFields, type EntityDeclarations } from "./unique.js";
 import { Schema, type SchemaConstructor } from "./schema/index.js";
 
@@ -8,18 +9,14 @@ import { Schema, type SchemaConstructor } from "./schema/index.js";
  * ```ts
  * class Post extends entity({ id: primary(), title: text({ min: 1 }) }) {}
  *
- * new Post({ id, title })   // real instance, data-typed (NOT a bag of Fields)
- * Post.getFields()          // metadata, no instantiation
- * Post.pick('title')        // derived view, same static API
- * function publish(p: Post) // `Post` IS the data type — no Infer needed
+ * new Post({ id, title })   // a real instance, data-typed
+ * Post.pick('title')        // a derived view, same static API
+ * function publish(p: Post) // `Post` IS the data type
  * ```
  *
- * The class carries data + schema metadata only. No business behaviour lives on
- * an entity — that belongs to handlers/commands (keeps form and behaviour apart).
- *
- * An optional 2nd argument carries per-consumer hints (see {@link Hints}) for the
- * irreducible bits a neutral field can't express — only adapters present in the
- * compilation are accepted; the field declarations themselves stay adapter-blind.
+ * Data and schema metadata only — no business behaviour lives on an entity. The 2nd
+ * argument carries what the entity states about itself: `unique` groups, and per-adapter
+ * hints for what a neutral field cannot express.
  */
 export function entity<TFields extends Fields>(
   fields: TFields,
@@ -33,4 +30,27 @@ export function entity<TFields extends Fields>(
   const projected = projectUniqueOntoFields(own as TFields, declarations?.unique);
   assertDefaultsAreValid(projected);
   return Schema.of(projected, undefined, declarations?.hints, {}, declarations?.unique);
+}
+
+/**
+ * A declared default must satisfy its own shape — checked once, here, because the value is
+ * static and so is the shape. `applyCreate` writes it into every row without passing the
+ * client judge (rightly: it comes from the author, not the caller), so
+ * `text({ min: 5, default: 'ab' })` used to produce rows the entity's own `validate`
+ * refuses — silently, or as a driver error three layers away.
+ */
+function assertDefaultsAreValid(fields: Fields): void {
+  for (const [name, field] of Object.entries(fields)) {
+    const create = field.lifecycle?.create;
+    if (typeof create !== 'object' || create === null || !('value' in create)) continue;
+
+    const checked = Judge.value(field, (create as { value: unknown }).value);
+    if ('error' in checked) {
+      throw new Error(
+        `Field '${name}': the declared default ${JSON.stringify((create as { value: unknown }).value)} `
+        + `is not a legal value for it — ${checked.error}. It would be written into every row `
+        + `without passing the judge.`,
+      );
+    }
+  }
 }

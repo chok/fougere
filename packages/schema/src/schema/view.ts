@@ -1,7 +1,7 @@
 import type { Field, Fields } from "../field/index.js";
 import type { Hints } from "../hints.js";
 import type { CompositeUnique } from "../unique.js";
-import type { ValidationResult, ValidateOptions } from "../projections/validation.js";
+import type { ValidationResult, ValidateOptions } from '../validation/index.js';
 import type { StandardSchemaV1 } from "../projections/standard.js";
 
 /** The row an entity carries — its fields' value types, all present. */

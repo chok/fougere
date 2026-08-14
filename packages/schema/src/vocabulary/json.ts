@@ -4,18 +4,12 @@ import { describe } from '../projections/describe.js';
 import type { FieldDescriptor } from '../projections/card.js';
 
 /**
- * A JSON value field.
+ * A JSON value field. `json()` is OPAQUE — it passes validation unchecked. `json(Entity)`
+ * inlines the entity's SHAPE as JSON Schema nesting, so the engine validates the structure
+ * and the card carries it verbatim.
  *
- * - `json()` — an OPAQUE value: passes validation unchecked.
- * - `json(Entity)` — an embedded value object: the entity's SHAPE projection is
- *   inlined as JSON Schema nesting (`properties`/`required`), so the engine
- *   validates the nested structure and the portable descriptor carries it verbatim.
- *
- * Entity-only on purpose: an arbitrary live validator could not serialise, an
- * entity's shape can. Only the value axis travels — `role`/`lifecycle`/`boundary` of
- * the embedded fields are stripped (identity, write rules and wire conversion belong
- * to the entity standing alone, not to its embedded VALUE form). Shallow consequence:
- * nested boundaries don't run — a nested date stays its wire string.
+ * Only the value axis travels: the embedded fields' role, lifecycle and boundary are
+ * stripped, so a nested date stays its wire string.
  */
 export function json<T = unknown>(): Field<T>;
 export function json<E extends SchemaView & (new (...args: any[]) => any)>(of: E): Field<InstanceType<E>>;

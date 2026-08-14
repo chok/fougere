@@ -1,30 +1,16 @@
 import type { Field } from './field.js';
-import { anatomy, type Shape } from './shape.js';
+import { Anatomy, type Shape } from './shape.js';
 
 /**
- * Axis 4 · boundary — HOW AND IN WHICH DIRECTION a value crosses the CLIENT frontier.
+ * Axis 4 · boundary — HOW and IN WHICH DIRECTION a value crosses the CLIENT frontier.
  *
- * ⚠️ SCOPE — this axis covers the client frontier ONLY. A direction is meaningless
- * unless stated relative to a centre, and this one is relative to the domain facing a
- * client: `in` parses a request, `out` renders a response. It does NOT cover storage —
- * no storage adapter reads it, which is exactly why `bool`, `list`, `json` and a judged
- * `date` cannot be written today (they reach the driver unconverted). The domain↔column
- * conversion belongs to the storage adapter, and naming that second frontier is an open
- * design question — see the axes study.
+ * ⚠️ The client frontier ONLY: `in` parses a request, `out` renders a response. No storage
+ * adapter reads it, so the domain↔column conversion is a second frontier, unnamed today.
  *
- * The normal form is indexed by DIRECTION. Each direction carries one of the two facets
- * of the same frontier:
- * a conversion (`{ decode }` / `{ encode }`, a NAMED rule) or the permission
- * token `'closed'` — read-only closes `in` (never accepted from a client),
- * write-only closes `out` (never emitted, e.g. a password). A key absent →
- * that direction is open, identity conversion. Declarative and named — never
- * an opaque closure, so adapters stay able to read what a field does.
- *
- * Two directional registries (decoders, encoders) are the pure base; an alias is
- * just a named pair. A field rarely declares a boundary: the default is DERIVED
- * from `shape` (convention over config). A declared boundary overrides that
- * default PER DIRECTION — closing `out` on a date field leaves the derived
- * isoDate decode on `in` intact.
+ * Each direction carries one of two facets: a NAMED conversion (`{ decode }`/`{ encode }`)
+ * or the permission token `'closed'`. Absent → open, identity. Named and never a closure,
+ * so an adapter can read what a field does. The default is derived from `shape`; a
+ * declared boundary overrides it per direction.
  */
 
 /** Inbound: a supplied wire value → domain value. May fail (transformOrFail-style). */
@@ -50,22 +36,33 @@ export type BoundaryRef = 'isoDate' | (string & {}) | Boundary;
 
 // ─── Registries (open, extensible — same spirit as FougereHints) ──
 
-const decoders = new Map<string, Decoder>();
-const encoders = new Map<string, Encoder>();
-const aliases = new Map<string, Boundary>();
+export class Boundaries {
+  private static readonly decoders = new Map<string, Decoder>();
+  private static readonly encoders = new Map<string, Encoder>();
+  private static readonly aliases = new Map<string, Boundary>();
 
-export function registerDecoder(name: string, fn: Decoder): void {
-  decoders.set(name, fn);
-}
-export function registerEncoder(name: string, fn: Encoder): void {
-  encoders.set(name, fn);
-}
-/** Register a named boundary — the alias a field can reference. */
-export function registerBoundaryAlias(name: string, boundary: Boundary): void {
-  aliases.set(name, boundary);
-}
+  static registerDecoder(name: string, fn: Decoder): void { this.decoders.set(name, fn); }
+  static registerEncoder(name: string, fn: Encoder): void { this.encoders.set(name, fn); }
 
-// ─── Built-ins ───────────────────────────────────────
+  /** Name a pair of directional rules, so a field declares `boundary: 'moneyCents'`. */
+  static registerAlias(name: string, boundary: Boundary): void { this.aliases.set(name, boundary); }
+
+  static alias(name: string): Boundary | undefined { return this.aliases.get(name); }
+
+  static decoder(name: string): Decoder { return this.named(this.decoders, name, 'decoder'); }
+  static encoder(name: string): Encoder { return this.named(this.encoders, name, 'encoder'); }
+
+  private static named<T>(registry: Map<string, T>, name: string, kind: string): T {
+    const fn = registry.get(name);
+    if (!fn) {
+      throw new Error(
+        `Unknown boundary ${kind}: '${name}'. Register it with ` +
+          `Boundaries.register${kind[0].toUpperCase()}${kind.slice(1)}('${name}', …).`,
+      );
+    }
+    return fn;
+  }
+}
 
 const identityDecoder: Decoder = (value) => ({ value });
 const identityEncoder: Encoder = (value) => value;
@@ -73,7 +70,7 @@ const identityEncoder: Encoder = (value) => value;
 // `isoDate`: the only non-identity built-in. Inbound accepts a Date or an ISO-ish
 // string and yields a Date; outbound yields an ISO string. Validity is already
 // guaranteed by `shape` (the date predicate) before decode runs.
-registerDecoder('isoDate', (value) => {
+Boundaries.registerDecoder('isoDate', (value) => {
   if (value instanceof Date) return { value };
   if (typeof value === 'string') {
     const d = new Date(value);
@@ -81,15 +78,15 @@ registerDecoder('isoDate', (value) => {
   }
   return { error: 'Expected a date' };
 });
-registerEncoder('isoDate', (value) =>
+Boundaries.registerEncoder('isoDate', (value) =>
   value instanceof Date ? value.toISOString() : value,
 );
-registerBoundaryAlias('isoDate', { in: { decode: 'isoDate' }, out: { encode: 'isoDate' } });
+Boundaries.registerAlias('isoDate', { in: { decode: 'isoDate' }, out: { encode: 'isoDate' } });
 
 /** Default boundary derived from a field's shape. A date-time string → isoDate, else identity. */
 function defaultBoundaryForShape(shape: Shape | undefined): Boundary {
-  const base = anatomy(shape).base;
-  if (base && base.type === 'string' && base.format === 'date-time') return aliases.get('isoDate')!;
+  const base = Anatomy.of(shape).base;
+  if (base && base.type === 'string' && base.format === 'date-time') return Boundaries.alias('isoDate')!;
   return {};
 }
 
@@ -100,7 +97,7 @@ export function declaredBoundary(field: Field): Boundary {
   const ref = field.boundary;
   if (ref === undefined) return {};
   if (typeof ref === 'string') {
-    const alias = aliases.get(ref);
+    const alias = Boundaries.alias(ref);
     if (!alias) throw new Error(`Unknown boundary alias: '${ref}'`);
     return alias;
   }
@@ -120,31 +117,14 @@ export function boundaryOf(field: Field): Boundary {
 }
 
 /**
- * A field's effective conversion functions. The permission facet is not read
- * here: a `'closed'` direction converts as identity — its rejection/omission
- * happens in the readers (validation, encode) BEFORE any conversion.
- *
- * A NAMED codec that no one registered throws, exactly like an unknown alias
- * (`declaredBoundary`). It used to fall back to identity: a frond declared
- * `{ decode: 'celsius' }`, the consumer never called `registerDecoder`, and the
- * value arrived unconverted while the card said it had been converted — the same
- * silent loss this repo measured on Remult (`validate: [null, null]`) and on
- * zod v4 (a computed default frozen at export). One axis, two spellings, one
- * failure mode.
- *
- * It throws where the conversion is needed, not at boot: nothing walks every
- * field at startup. Loud and late beats silent and never.
+ * A field's effective conversion functions. A closed direction converts as identity — the
+ * permission facet is judged by the façade, not here.
  */
 export function resolveBoundary(field: Field): { decode: Decoder; encode: Encoder } {
   const boundary = boundaryOf(field);
   return {
-    decode: typeof boundary.in === 'object' ? named(decoders, boundary.in.decode, 'decoder') : identityDecoder,
-    encode: typeof boundary.out === 'object' ? named(encoders, boundary.out.encode, 'encoder') : identityEncoder,
+    decode: typeof boundary.in === 'object' ? Boundaries.decoder(boundary.in.decode) : identityDecoder,
+    encode: typeof boundary.out === 'object' ? Boundaries.encoder(boundary.out.encode) : identityEncoder,
   };
 }
 
-function named<T>(registry: Map<string, T>, name: string, kind: string): T {
-  const fn = registry.get(name);
-  if (!fn) throw new Error(`Unknown boundary ${kind}: '${name}'. Register it with register${kind[0].toUpperCase()}${kind.slice(1)}('${name}', …).`);
-  return fn;
-}

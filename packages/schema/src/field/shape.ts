@@ -1,23 +1,17 @@
 import type { JSONSchema7 } from 'json-schema';
+import type { StringFormat } from './format.js';
 
 // ─── Axis 1 · shape — the VALUE ──────────────────────────────
-// What a stand-alone value validator (zod, typebox) would cover: the kind of
-// value and its intrinsic constraints. Nothing here knows about a database or
-// a domain. Absent for relation-only fields (`many`), which carry no value of
-// their own.
+// What a stand-alone value validator covers: the kind of value and its constraints.
+// Every field states one — `many` says `array` without `items`.
 //
-// The vocabulary is JSON Schema's own (`type` + `minLength`/`minimum`/`format`…),
-// so the portable descriptor is a near-identity projection — no shape↔JSON-Schema
-// mapping to maintain. A date is JSON Schema's `{ type: 'string', format: 'date-time' }`;
-// an integer is the `integer` type, not a flag.
+// The vocabulary IS JSON Schema's, so the portable descriptor is a near-identity
+// projection: a date is `{ type: 'string', format: 'date-time' }`, an integer is a type.
 //
-// NULLABILITY lives in the grammar, not beside it: a nullable value's `type` is
-// the union `[T, 'null']` (and `null` joins `enum` when present) — the standard's
-// own idiom, judged natively by the engine. A flat `nullable` flag would put a
-// second source of truth next to the grammar (flag says yes, enum says no —
-// OpenAPI 3.0's exact bug, fixed in 3.1 by this same move). Writers go through
-// {@link nullableShape}; readers go through {@link anatomy} — NEVER compare
-// `shape.type === '...'` directly, the union breaks it silently.
+// NULLABILITY lives in the grammar: a nullable type is the union `[T, 'null']` (and `null`
+// joins `enum`). A flat flag would be a second source of truth next to it — OpenAPI 3.0's
+// bug, fixed in 3.1 by this same move. Writers go through `nullableShape`, readers through
+// `Anatomy` — NEVER compare `shape.type` directly, the union breaks it silently.
 
 // JSON Schema's own format names (assertion supported by the cfworker engine).
 // `date-time` is special: it derives the isoDate boundary; the others are pure predicates.
@@ -29,57 +23,6 @@ import type { JSONSchema7 } from 'json-schema';
 // custom predicate rides here and not in a keyword of our own: a key outside
 // `keyof JSONSchema7` would fail the conformance assertion at the bottom of this
 // file, and rightly so.
-export type StringFormat =
-  | 'date-time'
-  | 'date'
-  | 'time'
-  | 'email'
-  | 'uuid'
-  | 'uri'
-  | (string & {});
-
-// ─── Custom formats (open registry — same spirit as the other two axes) ─────
-
-/**
- * A custom format's predicate: one value, one verdict.
- *
- * No message, deliberately — a custom format fails exactly like `email` does,
- * because the NAME is the contract and a consumer reading the card cannot tell
- * ours from the standard's.
- */
-export type FormatPredicate = (value: string) => boolean;
-
-const formats = new Map<string, FormatPredicate>();
-
-/**
- * Register a format the engine does not ship — `registerFormat('siret', luhn)`
- * makes `text({ format: 'siret' })` judged.
- *
- * Same shape as {@link registerGenerator} and {@link registerDecoder}: the field
- * declares a NAME, a module supplies the realization. That is what lets the rule
- * cross a process or a language — the card carries `"format": "siret"`, which is
- * legal JSON Schema, and each runtime registers its own implementation under that
- * name. The truth travels; the realization varies.
- *
- * The registry is OURS, not the engine's. Writing into `@cfworker/json-schema`'s
- * own `format` table would work and be one line shorter, but nothing documents it
- * as an extension point, and it would weld the framework to one engine — the very
- * thing this dependency is meant to keep replaceable (it was chosen for having no
- * `eval`, not for its API).
- *
- * Registering a name the engine ALREADY judges is legal and cumulative: both
- * predicates run and both must pass, so `registerFormat('email', stricter)` makes
- * e-mails stricter and never replaces the standard rule.
- */
-export function registerFormat(name: string, predicate: FormatPredicate): void {
-  formats.set(name, predicate);
-}
-
-/** A registered custom format, or undefined — the reader the judge goes through. */
-export function resolveFormat(name: string): FormatPredicate | undefined {
-  return formats.get(name);
-}
-
 /** A base type name, alone or in the nullable union form. */
 type Nullably<T extends string> = T | readonly [T, 'null'];
 
@@ -107,7 +50,7 @@ export type Shape =
   | ({ type: Nullably<'object'> } & ObjectConstraints);
 
 /**
- * The BASE type names — what `anatomy(shape).base?.type` narrows to for a dispatch.
+ * The BASE type names — what `Anatomy.of(shape).base?.type` narrows to for a dispatch.
  *
  * The runtime list is the source and the type derives from it, not the reverse: a type
  * union cannot be enumerated at runtime, so writing both by hand means two lists that
@@ -163,38 +106,39 @@ export interface ShapeAnatomy {
   nullable: boolean;
 }
 
-const anatomies = new WeakMap<object, ShapeAnatomy>();
-const NO_SHAPE: ShapeAnatomy = { base: undefined, nullable: false };
-
 /**
- * Read side — the single customs post at the standard's border. Every consumer
- * that dispatches on a shape's type MUST come through here: `shape.type` may be
- * the union `[T, 'null']`, and a direct `shape.type === 'string'` comparison
- * fails silently on it. Cached per shape reference (shapes are stable — the
- * derivations copy field refs, they never rebuild shapes).
+ * The read side — the single customs post at the standard's border. Every consumer that
+ * dispatches on a shape's type comes through here: `shape.type` may be the union
+ * `[T,'null']`, and a direct comparison fails silently on it.
  */
-export function anatomy(shape?: Shape): ShapeAnatomy {
-  if (!shape) return NO_SHAPE;
-  let a = anatomies.get(shape);
-  if (!a) {
-    if (Array.isArray(shape.type)) {
-      const baseType = shape.type.find((t) => t !== 'null');
-      const base = { ...shape, type: baseType } as BaseShape;
-      if ('enum' in base && base.enum) {
-        (base as { enum: readonly (string | null)[] }).enum = base.enum.filter((v) => v !== null);
-      }
-      a = { base, nullable: true };
-    } else {
-      a = { base: shape as BaseShape, nullable: false };
-    }
-    anatomies.set(shape, a);
-  }
-  return a;
-}
+export class Anatomy {
+  /** Cached per shape reference — derivations copy field refs, they never rebuild shapes. */
+  private static readonly cache = new WeakMap<object, ShapeAnatomy>();
+  private static readonly none: ShapeAnatomy = { base: undefined, nullable: false };
 
-/** Sugar for the most common read: does this shape's grammar accept `null`? */
-export function isNullable(shape?: Shape): boolean {
-  return anatomy(shape).nullable;
+  static of(shape?: Shape): ShapeAnatomy {
+    if (!shape) return this.none;
+    let a = this.cache.get(shape);
+    if (!a) {
+      if (Array.isArray(shape.type)) {
+        const baseType = shape.type.find((t) => t !== 'null');
+        const base = { ...shape, type: baseType } as BaseShape;
+        if ('enum' in base && base.enum) {
+          (base as { enum: readonly (string | null)[] }).enum = base.enum.filter((v) => v !== null);
+        }
+        a = { base, nullable: true };
+      } else {
+        a = { base: shape as BaseShape, nullable: false };
+      }
+      this.cache.set(shape, a);
+    }
+    return a;
+  }
+
+  /** Sugar for the most common read: does this shape's grammar accept `null`? */
+  static isNullable(shape?: Shape): boolean {
+    return this.of(shape).nullable;
+  }
 }
 
 // ─── Garde-fou : `Shape` reste un sous-ensemble de JSON Schema ──────

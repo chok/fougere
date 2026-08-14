@@ -108,9 +108,7 @@ function compositeFromFields(fields: Fields): ReadonlyArray<ReadonlyArray<string
   for (const field of Object.values(fields)) {
     for (const group of field.role?.unique ?? []) {
       if (group.length < 2) continue;
-      // A key that cannot collide with a field name — `JSON.stringify` rather than a
-      // separator byte: a NUL in the source made every `grep` read this whole file as
-      // binary and skip it silently, a poor price for a de-duplication key.
+      // `JSON.stringify` and not a separator byte: a NUL made `grep` read the file as binary.
       seen.set(JSON.stringify(group), [...group]);
     }
   }
@@ -123,17 +121,12 @@ function buildSchema(descriptor: SchemaDescriptor, resolve?: Resolver): SchemaVi
   for (const [key, prop] of Object.entries(descriptor.properties)) {
     fields[key] = reconstructField(prop, key, resolve);
   }
-  // Recover the entity-level declaration from what the members carry. The card holds the
-  // fact once per member; a group of two arrives twice, so the set is de-duplicated —
-  // `getUnique()` then answers what the original author wrote, and the DDL on this side
-  // emits the same constraint as the DDL on the other.
+  // The card holds the fact once per MEMBER, so a group of two arrives twice — de-duplicate
+  // it and `getUnique()` answers what the author wrote.
   const schema = Schema.of(fields, undefined, undefined, {}, compositeFromFields(fields));
 
-  // The name is the identity everything downstream keys on — the registration key, the
-  // table, the GraphQL type, what a relation's `to` points at. `describe` writes it as
-  // `title`; dropping it here left a rebuilt schema called `Schema`, so a card could not
-  // round-trip and an adapter standing on one had no entity name to work from.
-  // `reconstructSet` still overrides with the bundle key, which is the more specific truth.
+  // The name is what everything downstream keys on — the table, the GraphQL type, a
+  // relation's `to`. `reconstructSet` overrides it with the bundle key, more specific.
   if (descriptor.title) {
     Object.defineProperty(schema, 'name', { value: descriptor.title, configurable: true });
   }
@@ -141,12 +134,9 @@ function buildSchema(descriptor: SchemaDescriptor, resolve?: Resolver): SchemaVi
 }
 
 /**
- * The field map a stated row shape implies.
- *
- * Every member is marked auto-at-creation, so `PartialRow` asks for nothing: a card
- * describes rows as they are READ, and "what a caller must supply at creation" is a
- * different question — one `required` answers, and one a synced consumer never asks,
- * since it calls the host rather than constructing.
+ * The field map a stated row shape implies. A card describes rows as they are READ, so
+ * `required` answers what a creation payload must carry — a question a synced consumer
+ * never asks, since it calls the host rather than constructing.
  */
 type FieldsOf<T> = { [K in keyof T]-?: Field<T[K]> };
 
@@ -156,11 +146,9 @@ type FieldsOf<T> = { [K in keyof T]-?: Field<T[K]> };
  * the wire as data, the behaviour is reconstituted here. Relations stay name stand-ins
  * (no set to resolve against — use {@link reconstructSet} for live targets).
  *
- * `T` states the shape of a row, and that is what makes a rebuilt schema a CLASS rather
- * than a type and a value declared side by side: `class Post extends reconstruct<{…}>(card) {}`
- * is one declaration carrying both, exactly like `class Post extends entity({…}) {}`.
- * Without it the instance type is an index signature, so a synced entity validated
- * perfectly and taught the compiler nothing — `post.titel` compiled.
+ * `T` states the row, which is what makes a rebuilt schema a CLASS and not a type beside a
+ * value: `class Post extends reconstruct<{…}>(card) {}`, one declaration carrying both.
+ * Without it the instance type is an index signature, so `post.titel` compiled.
  */
 export function reconstruct<T = Row<Fields>>(
   descriptor: SchemaDescriptor,
@@ -180,9 +168,8 @@ export function reconstructSet(bundle: SchemaBundle): Record<string, SchemaView>
   const out: Record<string, SchemaView> = {};
   for (const [name, descriptor] of Object.entries(bundle.$defs)) {
     const schema = buildSchema(descriptor, resolve);
-    // Name the rebuilt class after its key so re-describing it yields the same `to` name
-    // (describe reads `relation.to().name`). Lazy `to` means the map need only be full
-    // before any `.to()` call — true once this loop ends.
+    // Named after its key so re-describing yields the same `to`. `to` is lazy, so the map
+    // need only be full before the first call — true once this loop ends.
     Object.defineProperty(schema, 'name', { value: name, configurable: true });
     map[name.toLowerCase()] = schema as unknown as EntityConstructor;
     out[name] = schema;

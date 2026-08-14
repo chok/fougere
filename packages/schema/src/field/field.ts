@@ -1,5 +1,5 @@
 import type { Shape } from "./shape.js";
-import { validateField } from "./validate-field.js";
+import { Judge } from "../validation/index.js";
 import type { Role } from "./role.js";
 import type { Lifecycle } from "./lifecycle.js";
 import type { BoundaryRef } from "./boundary.js";
@@ -14,7 +14,7 @@ export class Field<T = unknown> {
   declare readonly _type?: T;
 
   constructor(init: FieldData, key?: string) {
-    const verdict = validateField(init);
+    const verdict = Judge.field(init);
 
     if (!verdict.success) {
       throw new Error(

@@ -1,11 +1,8 @@
 import { Field, declaredBoundary } from '../field/index.js';
 
 /**
- * Close the field's INBOUND direction — emitted normally, never accepted from
- * a client (a server-owned field, e.g. a computed counter). Supplying it in a
- * create or patch input is a validation error ("Read-only"); its absence is
- * never "Required" (the server provides it). Input types exclude it.
- * The outbound direction (and its conversion) is untouched.
+ * Close the INBOUND direction — emitted normally, never accepted from a client. Supplying
+ * it is a "Read-only" error; its absence is never "Required". Outbound is untouched.
  */
 export function readOnly<T>(field: Field<T>): Field<T> {
   return field.with({ boundary: { ...declaredBoundary(field), in: 'closed' } });

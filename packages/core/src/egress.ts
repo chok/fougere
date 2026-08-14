@@ -24,7 +24,8 @@
  * Shallow, like `encodeFields` it stands on: a relation's nested rows are not reached.
  * A handler that hand-rolls its own envelope owns its own egress.
  */
-import { checkValue, encodeFields, type Fields } from '@fougere/schema';
+import { Judge } from '@fougere/schema';
+import { encodeFields, type Fields } from '@fougere/schema';
 import { ErrorCode, FougereError } from './middleware.js';
 import { assertListOptions } from './orm.js';
 
@@ -45,7 +46,7 @@ export function judgeEgress(fields: Fields, value: unknown, entity: string, oper
   for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
     const field = fields[key];
     if (!field || item === undefined) continue;
-    const checked = checkValue(field, item);
+    const checked = Judge.value(field, item);
     if ('error' in checked) errors.push(`${key}: ${checked.error}`);
   }
 

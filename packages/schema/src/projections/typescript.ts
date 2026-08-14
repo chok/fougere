@@ -1,24 +1,13 @@
 import type { FieldDescriptor, SchemaDescriptor } from './card.js';
 
 /**
- * card → TypeScript source — the projection that was missing.
+ * card → TypeScript source. `reconstruct` gives a consumer a living judge; this gives it
+ * the type, so `post.title` is `string` rather than `any` and `post.titel` fails.
  *
- * `describe` turns a schema into a card and `reconstruct` turns it back into a
- * living judge, so a consumer in another repository validates by the host's rules
- * without holding its code. What it did NOT get is a type: left to infer, a rebuilt
- * schema has an index signature for an instance type, so `post.title` was `any` and
- * `post.titel` compiled. The declaration travelled and the compiler learned nothing.
- *
- * So the card gets a third reader, and it writes the shape where `reconstruct` now
- * accepts it — as the type argument of the class's own base expression, one
- * declaration for the judge and the rows it judges. Same input as the other two
- * readers, same rule: the shape IS JSON Schema, and JSON Schema has a type form.
- *
- * Deliberately NOT a JSON Schema→TS library: the input is not arbitrary JSON Schema,
- * it is a Fougère card, whose vocabulary is closed (`describe` writes it). A general
- * library would carry `$ref`, `allOf`, tuple `items`, `additionalProperties` and the
- * rest of a spec we never emit, and would still need this file to know that
- * `format: date-time` means `Date` here — a fact about our boundary, not about JSON.
+ * Deliberately NOT a JSON Schema→TS library: the input is a Fougère card, whose vocabulary
+ * is closed. A general one would carry `$ref`, `allOf` and the rest we never emit, and
+ * would still need this file to know `format: date-time` means `Date` — a fact about our
+ * boundary, not about JSON.
  */
 
 /** What a field's value looks like once `reconstruct` has decoded it. */
@@ -37,8 +26,8 @@ function baseTypeOf(base: string | undefined, field: FieldDescriptor): string {
   }
   switch (base) {
     case 'string':
-      // `date-time` is the wire form of a value the boundary decodes to a Date, and
-      // the façade now hands the decoded value on. The type says what you receive.
+      // `date-time` is the wire form of a value the boundary decodes; the type says what
+      // you receive, not what travelled.
       return field.format === 'date-time' ? 'Date' : 'string';
     case 'number':
     case 'integer':
@@ -46,9 +35,8 @@ function baseTypeOf(base: string | undefined, field: FieldDescriptor): string {
     case 'boolean':
       return 'boolean';
     case 'array':
-      // Two distinct things share `array`: a value list carries `items`, a bare `many`
-      // relation carries none — the ids of the other side, which the card names as a
-      // relation rather than a shape.
+      // `array` covers two things: a value list carries `items`, a `many` relation carries
+      // none — the ids of the other side.
       return field.items ? `${typeOf(field.items)}[]` : 'string[]';
     case 'object':
       return field.properties ? objectTypeOf(field.properties, field.required ?? []) : 'Record<string, unknown>';
@@ -91,7 +79,6 @@ function docCommentOf(text: string | undefined, indent: string): string {
 export interface TypeSourceOptions {
   /** Name of the emitted interface. Defaults to the card's `title`, capitalized. */
   name?: string;
-  /** Emit `export` before the declaration. Default: true. */
   exported?: boolean;
 }
 
@@ -115,18 +102,11 @@ export function shapeTypeOf(descriptor: SchemaDescriptor, indent = ''): string {
 }
 
 /**
- * Emit the entity a card describes — ONE class, judge and shape together.
+ * Emit the entity a card describes — ONE class, judge and shape together, because a class
+ * is the language's own answer to "a name that is both a value and a type".
  *
- * An entity is a class here (`class Post extends entity({…}) {}`), and a class is the
- * language's own answer to "a name that is both a value and a type". Emitting an
- * interface next to a const said the same thing twice and relied on declaration
- * merging to look like a class; this IS one.
- *
- * The card travels inline, so the rebuilt judge is exact — the shape written above it
- * is read off that same card, never a second source to keep in step.
- *
- * Requires `reconstruct` in scope: the caller writes the import, since only it knows
- * whether the consumer says `@fougere/schema` or a path.
+ * The card travels inline, so the rebuilt judge and the shape above it read off the same
+ * source. Requires `reconstruct` in scope: only the caller knows how the consumer imports.
  */
 export function entitySourceOf(descriptor: SchemaDescriptor, options: TypeSourceOptions = {}): string {
   const name = identifierOf(options.name ?? capitalize(descriptor.title ?? 'Schema'));
@@ -188,16 +168,7 @@ function returnTypeOf(op: OpDescriptor, rowType: string): string {
   }
 }
 
-/**
- * Emit the type of a façade — every operation an entity serves, as a caller meets it.
- *
- * This is what `Facade<T>` needs and what no consumer in another repository could have:
- * writing `Facade<ArticleHandler>` used to require importing the handler's class, which
- * `sync` does not carry and should not. The card carries the operations; this reads them.
- *
- * Each op takes an optional invocation and returns a promise — the door's signature, not
- * the handler's. A handler's method takes positional arguments; its door takes the call.
- */
+/** Emit the type of a façade — every operation an entity serves, as a callable surface. */
 export function facadeTypeSourceOf(
   ops: readonly OpDescriptor[],
   options: TypeSourceOptions & { rowType?: string } = {},

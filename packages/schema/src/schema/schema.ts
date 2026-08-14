@@ -1,7 +1,7 @@
 import { resolveBoundary, type Fields } from "../field/index.js";
 import { deriveHints, type Hints } from "../hints.js";
 import { deriveUnique, deriveUniqueRoles, type CompositeUnique } from "../unique.js";
-import { validateFields, type ValidateOptions } from "../projections/validation.js";
+import { Judge, type ValidateOptions } from '../validation/index.js';
 import type { StandardSchemaV1 } from "../projections/standard.js";
 import type { PartialRow, Row, SchemaView } from "./view.js";
 
@@ -35,20 +35,23 @@ export class Schema {
   static opts: ValidateOptions = {};
   static source: (abstract new (...args: never[]) => unknown) | undefined;
 
-  /** Trusted: assigns already-shaped data. Untrusted input goes through `validate`/`from`. */
+  /** Trusted: takes already-shaped data. Untrusted input goes through `validate`/`from`. */
   constructor(data?: Record<string, unknown>) {
-    if (data) Object.assign(this, data);
+    if (!data) return;
+    // Define, never assign: `Object.assign` writes through [[Set]], so a `__proto__` key
+    // from a parsed JSON row fires the setter and replaces this instance's prototype.
+    for (const [key, value] of Object.entries(data)) {
+      Object.defineProperty(this, key, { value, writable: true, enumerable: true, configurable: true });
+    }
   }
 
-  // ─── The source ───
   static getFields() { return this.fields; }
   static getHints() { return this.hints; }
   static getUnique() { return this.unique; }
   static getOpts() { return this.opts; }
 
-  // ─── Projections ───
   static validate(input: unknown) {
-    return validateFields(this.fields, input, this.opts);
+    return Judge.row(this.fields, input, this.opts);
   }
 
   /** Trusted: keeps known keys, decodes each through its boundary, leaves the rest. */
@@ -70,7 +73,7 @@ export class Schema {
       version: 1,
       vendor: "fougere",
       validate(value: unknown) {
-        const result = validateFields(fields, value, opts);
+        const result = Judge.row(fields, value, opts);
         if (result.success) return { value: result.data };
         // ONE segment, not a split: a path is always a single field name until nested
         // objects report their own, so splitting invented segments for a name like `a.b`.

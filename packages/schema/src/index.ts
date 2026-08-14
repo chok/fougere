@@ -15,23 +15,18 @@ export {
   type Decoder,
   type Encoder,
   type Meta,
-  validateField,
-  isField,
   nullableShape,
-  anatomy,
   // The constraint a `role.unique` member list denotes — `[]` means the field carrying it.
   uniqueMembers,
-  isNullable,
   // The shape axis's own open registry — a NAMED predicate where JSON Schema
   // already declares its vocabulary open, so the rule travels as `format`.
-  registerFormat,
   registerGenerator,
   resolveCustomGenerator,
   resolveBoundary,
   boundaryOf,
-  registerDecoder,
-  registerEncoder,
-  registerBoundaryAlias,
+  Anatomy,
+  Formats,
+  Boundaries,
   // Public because a relation CYCLE needs it: `ref(() => Captain)` defers the value,
   // not the type, so inferring one entity still requires the other. Annotating the
   // thunk with this cuts the inference loop — and `ref()` returns `Field<string>`
@@ -80,18 +75,11 @@ export { json } from "./vocabulary/json.js";
 // judge never fills a hole, this is what fills it, and a storage adapter calls it
 // instead of re-deriving the rule.
 export { applyCreate, applyUpdate } from "./projections/lifecycle.js";
-// validation: shape → ingress predicate (+ boundary decode)
 export {
-  type ValidationResult,
-  type ValidationError,
-  validateFields,
-  checkValue,
-} from "./projections/validation.js";
-// encode: boundary → egress wire form (the dual of validation)
+} from './validation/index.js';
 export { encodeFields } from "./projections/encode.js";
 // io: the dual client-surface projections — ingress (may supply) / egress (may read)
 export { inputFields, outputFields } from "./projections/io.js";
-// name: the one spelling a schema is filed under, everywhere
 export { registrationKeyOf } from "./name.js";
 // descriptor (the card): the portable, serialisable identity of a schema
 export { describe, describeSet, sourceNameOf } from "./projections/describe.js";
@@ -117,7 +105,8 @@ export {
   schemaOf,
   fieldsOf,
 } from "./projections/source.js";
-// standard: the live Standard Schema interop surface (`~standard`)
 export type { StandardSchemaV1 } from "./projections/standard.js";
 
 export { entity } from "./entity.js";
+
+export { Judge, type ValidateOptions, type ValidationError, type ValidationResult, type Checked } from "./validation/index.js";

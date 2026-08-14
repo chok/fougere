@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { HttpRouter, HttpMethod, Handler, RequestContext } from '@fougere/http';
-import { number, registerBoundaryAlias, registerEncoder, type Fields } from '@fougere/schema';
+import { Boundaries, number, type Fields } from '@fougere/schema';
 import { registerRoutes, type RouteDefinition } from '../src/index.js';
 
 function fakeRouter() {
@@ -146,8 +146,8 @@ describe('registerRoutes', () => {
   });
 
   it('does not encode a facade result a second time', async () => {
-    registerEncoder('rest-test-increment', (value) => typeof value === 'number' ? value + 1 : value);
-    registerBoundaryAlias('rest-test-increment', { out: { encode: 'rest-test-increment' } });
+    Boundaries.registerEncoder('rest-test-increment', (value) => typeof value === 'number' ? value + 1 : value);
+    Boundaries.registerAlias('rest-test-increment', { out: { encode: 'rest-test-increment' } });
     const outputFields: Fields = {
       value: number().with({ boundary: 'rest-test-increment' }),
     };

@@ -1,6 +1,6 @@
 import type { Field, Fields, Role } from '../field/index.js';
 import type { SchemaView } from '../schema/index.js';
-import { anatomy, uniqueMembers, boundaryOf } from '../field/index.js';
+import { Anatomy, uniqueMembers, boundaryOf } from '../field/index.js';
 import { registrationKeyOf } from '../name.js';
 import {
   clean,

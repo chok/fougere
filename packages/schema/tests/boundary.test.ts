@@ -1,10 +1,10 @@
+import { Boundaries, Judge } from '../src/index.js';
 import { resolveBoundary } from '../src/field/index.js';
 import { describe, it, expect } from 'vitest';
 import {
   entity, primary, text, date, optional, readOnly, writeOnly, boundaryOf,
-  encodeFields, validateFields,
-  registerDecoder, registerEncoder, registerBoundaryAlias,
-} from '../src/index.js';
+  encodeFields,
+  } from '../src/index.js';
 import { Field } from '../src/field/index.js';
 
 class Event extends entity({
@@ -52,9 +52,9 @@ describe('boundary · non-date kinds are identity', () => {
 
 describe('boundary · override slot', () => {
   it('a registered alias overrides the shape-derived default', () => {
-    registerDecoder('fromCents', (v) => ({ value: typeof v === 'number' ? v / 100 : v }));
-    registerEncoder('toCents', (v) => (typeof v === 'number' ? Math.round(v * 100) : v));
-    registerBoundaryAlias('moneyCents', { in: { decode: 'fromCents' }, out: { encode: 'toCents' } });
+    Boundaries.registerDecoder('fromCents', (v) => ({ value: typeof v === 'number' ? v / 100 : v }));
+    Boundaries.registerEncoder('toCents', (v) => (typeof v === 'number' ? Math.round(v * 100) : v));
+    Boundaries.registerAlias('moneyCents', { in: { decode: 'fromCents' }, out: { encode: 'toCents' } });
 
     const price = new Field<number>({ shape: { type: 'number' }, boundary: 'moneyCents' });
     const { decode, encode } = resolveBoundary(price);
@@ -88,18 +88,18 @@ describe('boundary · override slot', () => {
 describe("boundary · 'closed' permissions (readOnly / writeOnly)", () => {
   it("readOnly() closes in — present in an input is 'Read-only', absent is never 'Required'", () => {
     const fields = { views: readOnly(text()), title: text() };
-    const present = validateFields(fields, { views: '9', title: 'x' });
+    const present = Judge.row(fields, { views: '9', title: 'x' });
     expect(present.success).toBe(false);
     if (!present.success) expect(present.errors[0]).toEqual({ path: 'views', message: 'Read-only' });
     // absent: the server owns it — no Required error despite no create rule
-    expect(validateFields(fields, { title: 'x' }).success).toBe(true);
+    expect(Judge.row(fields, { title: 'x' }).success).toBe(true);
     // rejected in patch mode too
-    expect(validateFields(fields, { views: '9' }, { patch: true }).success).toBe(false);
+    expect(Judge.row(fields, { views: '9' }, { patch: true }).success).toBe(false);
   });
 
   it('writeOnly() closes out — accepted at ingress, omitted at egress', () => {
     const fields = { password: writeOnly(text({ min: 8 })), name: text() };
-    const v = validateFields(fields, { password: 'hunter22', name: 'Ada' });
+    const v = Judge.row(fields, { password: 'hunter22', name: 'Ada' });
     expect(v.success).toBe(true);
     if (v.success) expect(v.data.password).toBe('hunter22'); // ingress open, shape judged
     const wire = encodeFields(fields, { password: 'hunter22', name: 'Ada' });
@@ -115,9 +115,9 @@ describe("boundary · 'closed' permissions (readOnly / writeOnly)", () => {
 });
 
 describe('boundary · survit aux transforms de field (cloneField)', () => {
-  registerDecoder('fromCents', (v) => ({ value: typeof v === 'number' ? v / 100 : v }));
-  registerEncoder('toCents', (v) => (typeof v === 'number' ? Math.round(v * 100) : v));
-  registerBoundaryAlias('moneyCents', { in: { decode: 'fromCents' }, out: { encode: 'toCents' } });
+  Boundaries.registerDecoder('fromCents', (v) => ({ value: typeof v === 'number' ? v / 100 : v }));
+  Boundaries.registerEncoder('toCents', (v) => (typeof v === 'number' ? Math.round(v * 100) : v));
+  Boundaries.registerAlias('moneyCents', { in: { decode: 'fromCents' }, out: { encode: 'toCents' } });
   const money = () => new Field<number>({ shape: { type: 'number' }, boundary: 'moneyCents' });
 
   it('optional() préserve le boundary', () => {

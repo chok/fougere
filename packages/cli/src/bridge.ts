@@ -5,7 +5,7 @@
  * The Entity IS the CLI definition — no duplicate schema.
  */
 import type { Fields } from '@fougere/schema';
-import { anatomy, inputFields } from '@fougere/schema';
+import { Anatomy, inputFields } from '@fougere/schema';
 import type { ArgsDef, ArgDef } from 'citty';
 
 function toKebab(name: string): string {
@@ -25,7 +25,7 @@ export function entityToArgs(fields: Fields): ArgsDef {
     // A `default(v)` travels as the create rule `{ value }` — citty shows it.
     const create = field.lifecycle?.create;
     const defaultValue = typeof create === 'object' && 'value' in create ? create.value : undefined;
-    const { base: shape, nullable } = anatomy(field.shape);
+    const { base: shape, nullable } = Anatomy.of(field.shape);
 
     const kebab = toKebab(key);
     const def: ArgDef = {
