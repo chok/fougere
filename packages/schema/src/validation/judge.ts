@@ -1,4 +1,6 @@
 import type { Field, Fields, FormatPredicate, Shape } from '../field/index.js';
+import { CREATE_TOKENS, UPDATE_TOKENS } from '../field/lifecycle.js';
+import { ON_DELETE, RELATION_KINDS } from '../field/role.js';
 import { Anatomy, Formats, boundaryOf, isShape, resolveBoundary, } from '../field/index.js';
 import { Validator, format as engineFormats } from '@cfworker/json-schema';
 import type { Checked, ValidationError, ValidationResult } from './result.js';
@@ -16,10 +18,6 @@ export interface ValidateOptions {
   patch?: boolean;
 }
 
-const CREATE_TOKENS = ['now', 'optional'] as const;
-const UPDATE_TOKENS = ['now', 'forbidden'] as const;
-const RELATION_KINDS = ['one', 'many'] as const;
-const ON_DELETE = ['cascade', 'restrict', 'set null'] as const;
 
 const isObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v);

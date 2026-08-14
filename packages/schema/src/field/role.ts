@@ -30,10 +30,14 @@ export function toTargetThunk<E extends EntityConstructor>(target: E | (() => E)
   return 'getFields' in target ? () => target as E : (target as () => E);
 }
 
+/** A relation's closed vocabularies — the runtime lists the types derive from. */
+export const RELATION_KINDS = ['one', 'many'] as const;
+export const ON_DELETE = ['cascade', 'restrict', 'set null'] as const;
+
 export interface Relation {
   to: () => EntityConstructor;
-  kind: 'one' | 'many';
-  onDelete?: 'cascade' | 'restrict' | 'set null';
+  kind: (typeof RELATION_KINDS)[number];
+  onDelete?: (typeof ON_DELETE)[number];
 }
 
 export interface Role {
