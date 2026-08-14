@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { entity, compose, primary, text, number, oneOf, created, optional, isNullable } from '../src/index.js';
+import { Anatomy, entity, compose, primary, text, number, oneOf, created, optional, } from '../src/index.js';
 
 class Order extends entity({
   id: primary(),
@@ -44,7 +44,7 @@ describe('derivation', () => {
       // patch mode is carried by the view's opts, not by mutated fields
       expect(view.getOpts().patch).toBe(true);
       // base fields are untouched — note: text() stays non-nullable
-      expect(isNullable(view.getFields().note.shape)).toBe(false);
+      expect(Anatomy.isNullable(view.getFields().note.shape)).toBe(false);
     });
 
     it('omits an absent field instead of touching it', () => {

@@ -16,20 +16,17 @@ export {
   type Encoder,
   type Meta,
   nullableShape,
-  anatomy,
   // The constraint a `role.unique` member list denotes — `[]` means the field carrying it.
   uniqueMembers,
-  isNullable,
   // The shape axis's own open registry — a NAMED predicate where JSON Schema
   // already declares its vocabulary open, so the rule travels as `format`.
-  registerFormat,
   registerGenerator,
   resolveCustomGenerator,
   resolveBoundary,
   boundaryOf,
-  registerDecoder,
-  registerEncoder,
-  registerBoundaryAlias,
+  Anatomy,
+  Formats,
+  Boundaries,
   // Public because a relation CYCLE needs it: `ref(() => Captain)` defers the value,
   // not the type, so inferring one entity still requires the other. Annotating the
   // thunk with this cuts the inference loop — and `ref()` returns `Field<string>`

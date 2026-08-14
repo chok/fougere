@@ -9,7 +9,7 @@
  */
 import type SchemaBuilder from '@pothos/core';
 import type { Fields, SchemaView, SchemaSource } from '@fougere/schema';
-import { fieldsOf, isNullable } from '@fougere/schema';
+import { Anatomy, fieldsOf, } from '@fougere/schema';
 import { registerType, registerOperations } from './pothos.js';
 
 type HandlerFacade = Record<string, Function>;
@@ -301,7 +301,7 @@ export function registerAll(
         // a presenter's computed field: the author named it, the author wins. Deriving
         // over it would either crash the build or shadow what they wrote.
         if (!relationName || relationName in fields || presenterFields.has(relationName)) continue;
-        const nullable = isNullable(field.shape);
+        const nullable = Anatomy.isNullable(field.shape);
 
         relationFields[relationName] = (t: any) => t.field({
           type: targetEntry.type,

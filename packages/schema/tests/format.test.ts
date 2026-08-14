@@ -1,17 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import {
+import { Formats,
   entity,
   text,
   email,
   optional,
-  registerFormat,
   describe as describeSchema,
   reconstruct,
 } from '../src/index.js';
 
 // A deliberately trivial predicate — what matters is that the NAME is what the
 // field declares and what the card carries, not what the closure does.
-registerFormat('siret', (v) => /^\d{14}$/.test(v));
+Formats.register('siret', (v) => /^\d{14}$/.test(v));
 
 describe('registerFormat — a named predicate on the shape axis', () => {
   it('judges a value the built-in vocabulary cannot express', () => {
@@ -67,7 +66,7 @@ describe('an unregistered format is refused, never ignored', () => {
     class Broken extends entity({ n: text({ format: 'siren' }) }) {}
 
     expect(() => Broken.validate({ n: 'whatever' })).toThrow(
-      /Unknown format: 'siren'\. Register it with registerFormat\('siren', …\)/,
+      /Unknown format: 'siren'\. Register it with Formats.register\('siren', …\)/,
     );
   });
 
@@ -80,7 +79,7 @@ describe('an unregistered format is refused, never ignored', () => {
 
 describe('registering over a built-in is cumulative', () => {
   it('adds a rule to the standard one instead of replacing it', () => {
-    registerFormat('email', (v) => v.endsWith('@fougere.dev'));
+    Formats.register('email', (v) => v.endsWith('@fougere.dev'));
     class Staff extends entity({ mail: email() }) {}
 
     // Still an e-mail by the engine's rule…

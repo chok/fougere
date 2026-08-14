@@ -1,8 +1,8 @@
-import { Judge } from '../src/index.js';
+import { Anatomy, Judge } from '../src/index.js';
 import { describe, it, expect } from 'vitest';
 import {
   entity, primary, text, number, oneOf, list, optional, nullable,
-  nullableShape, anatomy, isNullable, registerGenerator, resolveCustomGenerator, unique, indexed, describe as describeSchema, reconstruct,
+  nullableShape, registerGenerator, resolveCustomGenerator, unique, indexed, describe as describeSchema, reconstruct,
 } from '../src/index.js';
 
 // ─── nullableShape / anatomy — the two gates of the union, per shape genre ──
@@ -39,31 +39,31 @@ describe('nullableShape — null enters the grammar', () => {
 
 describe('anatomy — the single customs post for readers', () => {
   it('splits the union back into base + nullable', () => {
-    const { base, nullable } = anatomy({ type: ['integer', 'null'], minimum: 0 } as never);
+    const { base, nullable } = Anatomy.of({ type: ['integer', 'null'], minimum: 0 } as never);
     expect(nullable).toBe(true);
     expect(base).toEqual({ type: 'integer', minimum: 0 });
   });
 
   it('a scalar shape is its own base, not nullable', () => {
     const shape = { type: 'string' as const };
-    const { base, nullable } = anatomy(shape);
+    const { base, nullable } = Anatomy.of(shape);
     expect(nullable).toBe(false);
     expect(base).toBe(shape);
   });
 
   it('strips null from enum in the base', () => {
-    const { base } = anatomy(nullableShape({ type: 'string', enum: ['a', 'b'] }));
+    const { base } = Anatomy.of(nullableShape({ type: 'string', enum: ['a', 'b'] }));
     expect((base as { enum?: readonly (string | null)[] }).enum).toEqual(['a', 'b']);
   });
 
   it('no shape → no base, not nullable (a many relation)', () => {
-    expect(anatomy(undefined)).toEqual({ base: undefined, nullable: false });
+    expect(Anatomy.of(undefined)).toEqual({ base: undefined, nullable: false });
   });
 
   it('isNullable is the sugar for the flag', () => {
-    expect(isNullable(nullableShape({ type: 'string' }))).toBe(true);
-    expect(isNullable({ type: 'string' })).toBe(false);
-    expect(isNullable(undefined)).toBe(false);
+    expect(Anatomy.isNullable(nullableShape({ type: 'string' }))).toBe(true);
+    expect(Anatomy.isNullable({ type: 'string' })).toBe(false);
+    expect(Anatomy.isNullable(undefined)).toBe(false);
   });
 });
 

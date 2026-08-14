@@ -6,7 +6,7 @@
  * other — the entity never mentions a column type, the dialect never mentions a
  * field. Adding a dialect touches only the second half.
  */
-import { anatomy, fieldsOf, registrationKeyOf, uniqueMembers, type Field, type SchemaView, type SchemaSource } from '@fougere/schema';
+import { Anatomy, fieldsOf, registrationKeyOf, uniqueMembers, type Field, type SchemaView, type SchemaSource } from '@fougere/schema';
 import { boundsOf, type ShapeBounds } from './check.js';
 
 /** The shape keywords a dialect needs to choose a column type. */
@@ -127,7 +127,7 @@ function toColumn(
   // The column type comes from the `shape` axis alone. `anatomy` strips the
   // nullable union so a nullable integer stays an integer instead of falling
   // through to text.
-  const { base, nullable } = anatomy(field.shape);
+  const { base, nullable } = Anatomy.of(field.shape);
   const create = field.lifecycle?.create;
   const column: ColumnDef = {
     field: fieldName,

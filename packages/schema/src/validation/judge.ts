@@ -1,5 +1,5 @@
 import type { Field, Fields, FormatPredicate, Shape } from '../field/index.js';
-import { anatomy, boundaryOf, isShape, resolveBoundary, resolveFormat } from '../field/index.js';
+import { Anatomy, Formats, boundaryOf, isShape, resolveBoundary, } from '../field/index.js';
 import { Validator, format as engineFormats } from '@cfworker/json-schema';
 import type { Checked, ValidationError, ValidationResult } from './result.js';
 
@@ -47,7 +47,7 @@ export class Judge {
   private static planFor(shape: Shape): ShapePlan {
     let p = this.plans.get(shape);
     if (!p) {
-      const base = anatomy(shape).base;
+      const base = Anatomy.of(shape).base;
       const formatName = base?.type === 'string' ? base.format : undefined;
       p = {
         validator: new Validator(shape as object, '2020-12', true),
@@ -76,10 +76,10 @@ export class Judge {
    * reached, the same boundary as the nested-path limit documented on validation.
    */
   private static customFormatOf(name: string): FormatPredicate | undefined {
-    const custom = resolveFormat(name);
+    const custom = Formats.resolve(name);
     if (!custom && !(name in engineFormats)) {
       throw new Error(
-        `Unknown format: '${name}'. Register it with registerFormat('${name}', …) — ` +
+        `Unknown format: '${name}'. Register it with Formats.register('${name}', …) — ` +
           `the engine judges ${Object.keys(engineFormats).length} formats natively and this is not one of them.`,
       );
     }
@@ -99,7 +99,7 @@ export class Judge {
     // The pre-engine guards dispatch on the BASE type — `shape.type` itself may be
     // the nullable union. They only short-circuit NON-null values: null always goes
     // to the engine, whose union judges it (that is the whole nullability model).
-    const base = anatomy(shape).base;
+    const base = Anatomy.of(shape).base;
     if (value !== null) {
       // Opaque JSON (`json()`): no nested shape → passes through unchecked.
       // `json(Entity)` carries `properties` and falls through to the engine,

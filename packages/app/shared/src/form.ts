@@ -3,7 +3,7 @@
  * from the entity's field axes. No Vue, no Nuxt: testable headless,
  * usable by any renderer (the page owns the widgets).
  */
-import { anatomy, inputFields } from '@fougere/schema';
+import { Anatomy, inputFields } from '@fougere/schema';
 import type { Field, SchemaView, ValidationError, ValidationResult } from '@fougere/schema';
 
 /**
@@ -100,7 +100,7 @@ function controlOf(field: Field): FormField['control'] {
   // Through `anatomy`, never `shape.type` directly: the nullable form is the `[T,'null']`
   // union, which a direct comparison misses in silence. It is also what narrows the shape
   // union, so `enum` and `format` are only reachable on the branches that carry them.
-  const base = anatomy(field.shape).base;
+  const base = Anatomy.of(field.shape).base;
   if (base?.type === 'string' && base.enum?.length) return 'select';
   if (base?.type === 'number' || base?.type === 'integer') return 'number';
   if (base?.type === 'boolean') return 'boolean';
@@ -110,7 +110,7 @@ function controlOf(field: Field): FormField['control'] {
 
 /** A closed set's members, when the shape declares one — `oneOf('draft','live')`. */
 function enumOf(field: Field): readonly (string | null)[] | undefined {
-  const base = anatomy(field.shape).base;
+  const base = Anatomy.of(field.shape).base;
   return base?.type === 'string' ? base.enum : undefined;
 }
 
@@ -119,7 +119,7 @@ const INPUT_TYPES = new Set(['text', 'email', 'url', 'number']);
 
 /** The shape's bounds, under the names a browser already enforces. */
 function attrsOf(field: Field, control: FormField['control'], required: boolean): NonNullable<FormField['attrs']> {
-  const base = anatomy(field.shape).base;
+  const base = Anatomy.of(field.shape).base;
   const text = base?.type === 'string' ? base : undefined;
   const numeric = base?.type === 'number' || base?.type === 'integer' ? base : undefined;
   const attrs = {

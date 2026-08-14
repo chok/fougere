@@ -1,5 +1,5 @@
 import type { Field } from './field.js';
-import { anatomy, type Shape } from './shape.js';
+import { Anatomy, type Shape } from './shape.js';
 
 /**
  * Axis 4 · boundary — HOW AND IN WHICH DIRECTION a value crosses the CLIENT frontier.
@@ -50,22 +50,33 @@ export type BoundaryRef = 'isoDate' | (string & {}) | Boundary;
 
 // ─── Registries (open, extensible — same spirit as FougereHints) ──
 
-const decoders = new Map<string, Decoder>();
-const encoders = new Map<string, Encoder>();
-const aliases = new Map<string, Boundary>();
+export class Boundaries {
+  private static readonly decoders = new Map<string, Decoder>();
+  private static readonly encoders = new Map<string, Encoder>();
+  private static readonly aliases = new Map<string, Boundary>();
 
-export function registerDecoder(name: string, fn: Decoder): void {
-  decoders.set(name, fn);
-}
-export function registerEncoder(name: string, fn: Encoder): void {
-  encoders.set(name, fn);
-}
-/** Register a named boundary — the alias a field can reference. */
-export function registerBoundaryAlias(name: string, boundary: Boundary): void {
-  aliases.set(name, boundary);
-}
+  static registerDecoder(name: string, fn: Decoder): void { this.decoders.set(name, fn); }
+  static registerEncoder(name: string, fn: Encoder): void { this.encoders.set(name, fn); }
 
-// ─── Built-ins ───────────────────────────────────────
+  /** Name a pair of directional rules, so a field declares `boundary: 'moneyCents'`. */
+  static registerAlias(name: string, boundary: Boundary): void { this.aliases.set(name, boundary); }
+
+  static alias(name: string): Boundary | undefined { return this.aliases.get(name); }
+
+  static decoder(name: string): Decoder { return this.named(this.decoders, name, 'decoder'); }
+  static encoder(name: string): Encoder { return this.named(this.encoders, name, 'encoder'); }
+
+  private static named<T>(registry: Map<string, T>, name: string, kind: string): T {
+    const fn = registry.get(name);
+    if (!fn) {
+      throw new Error(
+        `Unknown boundary ${kind}: '${name}'. Register it with ` +
+          `Boundaries.register${kind[0].toUpperCase()}${kind.slice(1)}('${name}', …).`,
+      );
+    }
+    return fn;
+  }
+}
 
 const identityDecoder: Decoder = (value) => ({ value });
 const identityEncoder: Encoder = (value) => value;
@@ -73,7 +84,7 @@ const identityEncoder: Encoder = (value) => value;
 // `isoDate`: the only non-identity built-in. Inbound accepts a Date or an ISO-ish
 // string and yields a Date; outbound yields an ISO string. Validity is already
 // guaranteed by `shape` (the date predicate) before decode runs.
-registerDecoder('isoDate', (value) => {
+Boundaries.registerDecoder('isoDate', (value) => {
   if (value instanceof Date) return { value };
   if (typeof value === 'string') {
     const d = new Date(value);
@@ -81,15 +92,15 @@ registerDecoder('isoDate', (value) => {
   }
   return { error: 'Expected a date' };
 });
-registerEncoder('isoDate', (value) =>
+Boundaries.registerEncoder('isoDate', (value) =>
   value instanceof Date ? value.toISOString() : value,
 );
-registerBoundaryAlias('isoDate', { in: { decode: 'isoDate' }, out: { encode: 'isoDate' } });
+Boundaries.registerAlias('isoDate', { in: { decode: 'isoDate' }, out: { encode: 'isoDate' } });
 
 /** Default boundary derived from a field's shape. A date-time string → isoDate, else identity. */
 function defaultBoundaryForShape(shape: Shape | undefined): Boundary {
-  const base = anatomy(shape).base;
-  if (base && base.type === 'string' && base.format === 'date-time') return aliases.get('isoDate')!;
+  const base = Anatomy.of(shape).base;
+  if (base && base.type === 'string' && base.format === 'date-time') return Boundaries.alias('isoDate')!;
   return {};
 }
 
@@ -100,7 +111,7 @@ export function declaredBoundary(field: Field): Boundary {
   const ref = field.boundary;
   if (ref === undefined) return {};
   if (typeof ref === 'string') {
-    const alias = aliases.get(ref);
+    const alias = Boundaries.alias(ref);
     if (!alias) throw new Error(`Unknown boundary alias: '${ref}'`);
     return alias;
   }
@@ -126,13 +137,8 @@ export function boundaryOf(field: Field): Boundary {
 export function resolveBoundary(field: Field): { decode: Decoder; encode: Encoder } {
   const boundary = boundaryOf(field);
   return {
-    decode: typeof boundary.in === 'object' ? named(decoders, boundary.in.decode, 'decoder') : identityDecoder,
-    encode: typeof boundary.out === 'object' ? named(encoders, boundary.out.encode, 'encoder') : identityEncoder,
+    decode: typeof boundary.in === 'object' ? Boundaries.decoder(boundary.in.decode) : identityDecoder,
+    encode: typeof boundary.out === 'object' ? Boundaries.encoder(boundary.out.encode) : identityEncoder,
   };
 }
 
-function named<T>(registry: Map<string, T>, name: string, kind: string): T {
-  const fn = registry.get(name);
-  if (!fn) throw new Error(`Unknown boundary ${kind}: '${name}'. Register it with register${kind[0].toUpperCase()}${kind.slice(1)}('${name}', …).`);
-  return fn;
-}

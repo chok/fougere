@@ -1,11 +1,10 @@
-import { Judge } from '../src/index.js';
+import { Boundaries, Judge } from '../src/index.js';
 import { resolveBoundary } from '../src/field/index.js';
 import { describe, it, expect } from 'vitest';
 import {
   entity, primary, text, date, optional, readOnly, writeOnly, boundaryOf,
   encodeFields,
-  registerDecoder, registerEncoder, registerBoundaryAlias,
-} from '../src/index.js';
+  } from '../src/index.js';
 import { Field } from '../src/field/index.js';
 
 class Event extends entity({
@@ -53,9 +52,9 @@ describe('boundary · non-date kinds are identity', () => {
 
 describe('boundary · override slot', () => {
   it('a registered alias overrides the shape-derived default', () => {
-    registerDecoder('fromCents', (v) => ({ value: typeof v === 'number' ? v / 100 : v }));
-    registerEncoder('toCents', (v) => (typeof v === 'number' ? Math.round(v * 100) : v));
-    registerBoundaryAlias('moneyCents', { in: { decode: 'fromCents' }, out: { encode: 'toCents' } });
+    Boundaries.registerDecoder('fromCents', (v) => ({ value: typeof v === 'number' ? v / 100 : v }));
+    Boundaries.registerEncoder('toCents', (v) => (typeof v === 'number' ? Math.round(v * 100) : v));
+    Boundaries.registerAlias('moneyCents', { in: { decode: 'fromCents' }, out: { encode: 'toCents' } });
 
     const price = new Field<number>({ shape: { type: 'number' }, boundary: 'moneyCents' });
     const { decode, encode } = resolveBoundary(price);
@@ -116,9 +115,9 @@ describe("boundary · 'closed' permissions (readOnly / writeOnly)", () => {
 });
 
 describe('boundary · survit aux transforms de field (cloneField)', () => {
-  registerDecoder('fromCents', (v) => ({ value: typeof v === 'number' ? v / 100 : v }));
-  registerEncoder('toCents', (v) => (typeof v === 'number' ? Math.round(v * 100) : v));
-  registerBoundaryAlias('moneyCents', { in: { decode: 'fromCents' }, out: { encode: 'toCents' } });
+  Boundaries.registerDecoder('fromCents', (v) => ({ value: typeof v === 'number' ? v / 100 : v }));
+  Boundaries.registerEncoder('toCents', (v) => (typeof v === 'number' ? Math.round(v * 100) : v));
+  Boundaries.registerAlias('moneyCents', { in: { decode: 'fromCents' }, out: { encode: 'toCents' } });
   const money = () => new Field<number>({ shape: { type: 'number' }, boundary: 'moneyCents' });
 
   it('optional() préserve le boundary', () => {
