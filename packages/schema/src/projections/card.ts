@@ -1,4 +1,4 @@
-import type { BoundaryRef, Lifecycle, Relation, Role } from '../field/index.js';
+import type { BoundaryRef, Lifecycle, Relation, Role, Shape } from '../field/index.js';
 
 /**
  * The portable schema descriptor — Fougère's "carte d'identité" of an entity.
@@ -37,28 +37,33 @@ export type JsonSchemaType =
  * (so an external JSON Schema tool reads them directly); the Fougère-only axes
  * live under `x-fougere`. A nullable field folds into the union `type: ['T','null']`.
  */
-export interface FieldDescriptor {
+/**
+ * A shape's constraint keywords, all optional and flattened — the union's branches merged.
+ * `type` is NOT here: intersecting the branches would make the discriminant impossible,
+ * and the wire genuinely allows a form memory never produces (see below).
+ */
+type ShapeKeywords = UnionToIntersection<KeywordsOf<Shape>>;
+
+// The naked parameter is what distributes: `Omit<Shape, …>` on the union itself collapses
+// to the common keys, since `keyof (A | B)` is the intersection.
+type KeywordsOf<S> = S extends unknown ? Partial<Omit<S, 'type' | 'items' | 'properties'>> : never;
+type UnionToIntersection<U> = (U extends unknown ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
+
+export type FieldDescriptor = ShapeKeywords & {
+  /**
+   * WIDER than `Shape`, which only ever emits `T` or the canonical `[T,'null']` tuple.
+   * A card can come from another language, so the door judges the form; `reconstruct`
+   * refuses what it cannot represent rather than pretending it read it.
+   */
   type?: JsonSchemaType | JsonSchemaType[];
-  /** JSON Schema format predicate (`date-time` for a date value, email, uuid, uri…). */
-  format?: 'date-time' | 'date' | 'time' | 'email' | 'uuid' | 'uri';
-  enum?: readonly (string | null)[];
-  minLength?: number;
-  maxLength?: number;
-  pattern?: string;
-  minimum?: number;
-  maximum?: number;
   /** A value list's element shape (`list(text())`). A bare `many` relation has none. */
   items?: FieldDescriptor;
-  minItems?: number;
-  maxItems?: number;
   /** An embedded value object (`json(Entity)`): the nested shape-only properties. */
   properties?: Record<string, FieldDescriptor>;
-  /** The embedded object's required keys (JSON Schema nesting, travels verbatim). */
-  required?: readonly string[];
   /** JSON Schema standard keyword — mirrors the field's `description`. */
   description?: string;
   'x-fougere'?: FieldExtension;
-}
+};
 
 /** The three axes JSON Schema can't express, namespaced under a field's `x-fougere`. */
 export interface FieldExtension {
