@@ -1,4 +1,4 @@
-import { resolveContracts, crossFrondImports, type ScanDiagnostic } from '@fougere/core';
+import { buildGraph, clusterEntities, crossFrondImports, resolveContracts, type ScanDiagnostic } from '@fougere/core';
 import ProjectScan from '../services/ProjectScan.js';
 
 /** One thing that does not hold, in the terms of whoever has to fix it. */
@@ -35,6 +35,9 @@ export interface CheckResult {
  * A rule about an ABSENCE is only sound if the analysis attests it looked, which
  * is why the first bullet had to exist before this command could.
  */
+/** Shared with `fougere graph` — one threshold, so the two never disagree. */
+const DOMAIN_SPLIT_MIN_ENTITIES = 6;
+
 export default class CheckHandler {
   constructor(private projectScan: ProjectScan) {}
 
@@ -64,6 +67,30 @@ export default class CheckHandler {
             });
           }
         }
+      }
+    }
+
+    /**
+     * Entity groups with no `ref()` between them, in one frond. Reported as a FACT, not a
+     * verdict: it means either a missing relation or a frond that has not been named, and
+     * nothing here can tell which. `fougere graph` shows the groups.
+     */
+    if (fronds.length === 1) {
+      // `clusterEntities`, not `suggestSplit`: the latter invents a cut on a connected
+      // graph, which is its job and not this question. Here only real components count.
+      const nodes = buildGraph(fronds);
+      const clusters = clusterEntities(nodes);
+      // Same threshold as `fougere graph`'s own tip: below it, two components are a small
+      // app that has not grown its links yet, not a frond holding two domains.
+      if (clusters.length > 1 && nodes.size >= DOMAIN_SPLIT_MIN_ENTITIES) {
+        findings.push({
+          severity: 'warning',
+          code: 'frond-holds-several-domains',
+          filePath: fronds[0].source.path,
+          message: `'${fronds[0].name}': ${clusters.length} entity groups with no relation between `
+            + `them (${clusters.map((c) => c.name).join(', ')}). Either a relation is missing, or `
+            + `they are separate fronds — see \`fougere graph\`.`,
+        });
       }
     }
 
