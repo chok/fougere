@@ -35,9 +35,14 @@ export class Schema {
   static opts: ValidateOptions = {};
   static source: (abstract new (...args: never[]) => unknown) | undefined;
 
-  /** Trusted: assigns already-shaped data. Untrusted input goes through `validate`/`from`. */
+  /** Trusted: takes already-shaped data. Untrusted input goes through `validate`/`from`. */
   constructor(data?: Record<string, unknown>) {
-    if (data) Object.assign(this, data);
+    if (!data) return;
+    // Define, never assign: `Object.assign` writes through [[Set]], so a `__proto__` key
+    // from a parsed JSON row fires the setter and replaces this instance's prototype.
+    for (const [key, value] of Object.entries(data)) {
+      Object.defineProperty(this, key, { value, writable: true, enumerable: true, configurable: true });
+    }
   }
 
   // ─── The source ───

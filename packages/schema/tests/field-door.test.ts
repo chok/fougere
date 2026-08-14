@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Field, created, entity, list, oneOf, optional, primary, text, updated, validateField } from '../src/index.js';
+import { Field, Schema, created, entity, list, oneOf, optional, primary, text, updated, validateField } from '../src/index.js';
 
 /**
  * The constructor is the only way to obtain a field, so it is where a field is judged —
@@ -83,5 +83,31 @@ describe('the field door', () => {
   it('a field built from the vocabulary is the same thing', () => {
     expect(text()).toBeInstanceOf(Field);
     expect(text().with({ meta: { description: 'x' } }).shape).toEqual({ type: 'string' });
+  });
+});
+
+describe('the schema door', () => {
+  class Post extends entity({ id: primary(), title: text() }) {}
+
+  it('survives a row carrying __proto__ — the same hole `Field` closed', () => {
+    // `Object.assign(this, data)` writes through [[Set]]: a `__proto__` key from a parsed
+    // JSON row fires the setter and replaces the instance's prototype.
+    const hostile = JSON.parse('{"title":"x","__proto__":{"polluted":true}}');
+    const post = new Post(hostile);
+
+    expect(Object.getPrototypeOf(post)).toBe(Post.prototype);
+    expect((post as unknown as { polluted?: boolean }).polluted).toBeUndefined();
+    expect(({} as { polluted?: boolean }).polluted).toBeUndefined();
+    expect(post.title).toBe('x');
+  });
+
+  it('takes the row it is given', () => {
+    expect(new Post({ id: 'p1', title: 'Hi' }).title).toBe('Hi');
+    expect(Object.keys(new Post({ title: 'Hi' }))).toEqual(['title']);
+  });
+
+  it('every entity is a Schema — the derivation chain ends there', () => {
+    expect(new Post({ title: 'x' })).toBeInstanceOf(Schema);
+    expect(new (Post.pick('title'))({ title: 'x' })).toBeInstanceOf(Schema);
   });
 });
