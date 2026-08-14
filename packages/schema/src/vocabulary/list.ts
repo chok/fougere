@@ -1,9 +1,7 @@
 import { Field } from '../field/index.js';
 
 export interface ListOptions {
-  /** Minimum number of elements. */
   min?: number;
-  /** Maximum number of elements. */
   max?: number;
 }
 

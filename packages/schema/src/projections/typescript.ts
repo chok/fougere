@@ -26,8 +26,8 @@ function baseTypeOf(base: string | undefined, field: FieldDescriptor): string {
   }
   switch (base) {
     case 'string':
-      // `date-time` is the wire form of a value the boundary decodes to a Date, and
-      // the façade now hands the decoded value on. The type says what you receive.
+      // `date-time` is the wire form of a value the boundary decodes; the type says what
+      // you receive, not what travelled.
       return field.format === 'date-time' ? 'Date' : 'string';
     case 'number':
     case 'integer':
@@ -35,9 +35,8 @@ function baseTypeOf(base: string | undefined, field: FieldDescriptor): string {
     case 'boolean':
       return 'boolean';
     case 'array':
-      // Two distinct things share `array`: a value list carries `items`, a bare `many`
-      // relation carries none — the ids of the other side, which the card names as a
-      // relation rather than a shape.
+      // `array` covers two things: a value list carries `items`, a `many` relation carries
+      // none — the ids of the other side.
       return field.items ? `${typeOf(field.items)}[]` : 'string[]';
     case 'object':
       return field.properties ? objectTypeOf(field.properties, field.required ?? []) : 'Record<string, unknown>';
@@ -80,7 +79,6 @@ function docCommentOf(text: string | undefined, indent: string): string {
 export interface TypeSourceOptions {
   /** Name of the emitted interface. Defaults to the card's `title`, capitalized. */
   name?: string;
-  /** Emit `export` before the declaration. Default: true. */
   exported?: boolean;
 }
 

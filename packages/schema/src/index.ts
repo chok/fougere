@@ -75,14 +75,11 @@ export { json } from "./vocabulary/json.js";
 // judge never fills a hole, this is what fills it, and a storage adapter calls it
 // instead of re-deriving the rule.
 export { applyCreate, applyUpdate } from "./projections/lifecycle.js";
-// validation: shape → ingress predicate (+ boundary decode)
 export {
 } from './validation/index.js';
-// encode: boundary → egress wire form (the dual of validation)
 export { encodeFields } from "./projections/encode.js";
 // io: the dual client-surface projections — ingress (may supply) / egress (may read)
 export { inputFields, outputFields } from "./projections/io.js";
-// name: the one spelling a schema is filed under, everywhere
 export { registrationKeyOf } from "./name.js";
 // descriptor (the card): the portable, serialisable identity of a schema
 export { describe, describeSet, sourceNameOf } from "./projections/describe.js";
@@ -108,7 +105,6 @@ export {
   schemaOf,
   fieldsOf,
 } from "./projections/source.js";
-// standard: the live Standard Schema interop surface (`~standard`)
 export type { StandardSchemaV1 } from "./projections/standard.js";
 
 export { entity } from "./entity.js";

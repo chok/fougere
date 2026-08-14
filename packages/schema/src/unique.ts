@@ -2,16 +2,9 @@ import type { Fields } from './field/index.js';
 import type { Hints } from './hints.js';
 
 /**
- * Field names that identify at most one row when taken together.
- *
- * `unique(field)` states a fact about one column; some facts are about a pair.
- * "A book appears once in a list" is true of `(listId, docId)` and of neither
- * alone, and there is no shape that can express it — judging one value never
- * sees the other rows. So it is declared on the entity and realized by storage.
- *
- * Held here rather than in a handler because a handler cannot hold it: a check
- * followed by a write is two round trips, and a concurrent request fits between
- * them. The database is the only place where the promise is keepable.
+ * Field names that identify at most one row when taken together. No shape can express it —
+ * judging one value never sees the other rows — and no handler either: a check then a write
+ * is two round trips with room for a concurrent one between them. Only the database keeps it.
  */
 export type CompositeUnique<TFields extends Fields> = ReadonlyArray<
   ReadonlyArray<Extract<keyof TFields, string>>
@@ -25,19 +18,14 @@ export type CompositeUnique<TFields extends Fields> = ReadonlyArray<
  * adds a key here, never a positional argument.
  */
 export interface EntityDeclarations<TFields extends Fields> {
-  /** Field groups that must be unique together. */
   unique?: CompositeUnique<TFields>;
   /** Per-consumer hints, keyed by registered adapter. See {@link Hints}. */
   hints?: Hints<TFields>;
 }
 
 /**
- * Carry composite groups across a field-key transform — the entity-level twin of
- * `deriveHints`.
- *
- * A group whose members did not all survive is dropped rather than narrowed: the
- * pair `(listId, docId)` says nothing about `listId` alone, and keeping the
- * remnant would silently state a stronger fact than the author ever wrote.
+ * Carry composite groups across a key transform. A group that lost a member is DROPPED,
+ * not narrowed: `(listId, docId)` says nothing about `listId` alone.
  */
 export function deriveUnique(
   groups: CompositeUnique<Fields> | undefined,
@@ -53,14 +41,9 @@ export function deriveUnique(
 }
 
 /**
- * Carry the projected groups across the same key transform — the field-level twin of
- * {@link deriveUnique}, and it has to run with it: the group lives in TWO places once
- * projected (the declaration and each member's role), so remapping one alone left
- * `pick('id','listId')` with a role still claiming a pair whose other member was gone.
- *
- * Same rule as the declaration — a group that lost a member is dropped, not narrowed.
- * The empty self-reference needs no remapping: it names no key, which is exactly why it
- * survives a `rename()` for free.
+ * The same, on each member's role — it must run WITH {@link deriveUnique}: once projected
+ * the group lives in two places, so remapping one alone left a role claiming a pair whose
+ * other member was gone. The empty self-reference names no key, so it needs no remapping.
  */
 export function deriveUniqueRoles<TFields extends Fields>(
   fields: TFields,

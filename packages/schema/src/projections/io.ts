@@ -3,12 +3,11 @@ import { boundaryOf } from '../field/index.js';
 
 /**
  * The two dual projections of a field set onto a client surface — membership only. The
- * create/patch MODE never changes it, only omissibility, which the view carries.
+ * create/patch MODE changes omissibility, which the view carries, never membership.
  *
- * ⚠️ The audience lives in this comment, not in the data: no axis says "client". Surfaces
- * are supposed to read these two functions, and several restate the rules instead — the
- * GraphQL input, the runtime judge and the CLI each answer with a different set, the judge
- * being the most permissive. Reconciling them needs the audience to become data.
+ * ⚠️ The audience lives here and not in the data: no axis says "client". Surfaces are
+ * supposed to read these two functions, and the GraphQL input, the judge and the CLI each
+ * restate the rules with a different set — the judge being the most permissive.
  */
 
 /**

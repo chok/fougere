@@ -255,7 +255,7 @@ export class Judge {
     }
   }
 
-  /** Judge a field declaration. `success` alone is {@link isField}; the errors say where. */
+  /** Judge a field's declaration — the five axes against their closed vocabularies. */
 
   static field(value: unknown): ValidationResult<Field> {
     if (!isObject(value)) {
@@ -297,15 +297,14 @@ export class Judge {
     return errors.length ? { success: false, errors } : { success: true, data: value as unknown as Field };
   }
 
-  /** The same judgment, as a guard — for a caller that only needs the verdict. */
-
+  /** Judge an input object against a field map — membership, absence, and who may speak. */
   static row(
-      fields: Fields,
-      input: unknown,
-      opts: ValidateOptions = {},
+    fields: Fields,
+    input: unknown,
+    opts: ValidateOptions = {},
     ): ValidationResult<Record<string, unknown>> {
     if (typeof input !== 'object' || input === null) {
-      return { success: false, errors: [{ path: '.', message: 'Expected an object' }] };
+    return { success: false, errors: [{ path: '.', message: 'Expected an object' }] };
     }
 
     const data = input as Record<string, unknown>;
@@ -324,66 +323,66 @@ export class Judge {
     // silently ignoring a field it was supposed to handle. If the judge refuses, that is
     // the end of it: the sender re-syncs its readers before it ships.
     for (const key of Object.keys(data)) {
-      if (!(key in fields)) {
-        errors.push({ path: key, message: 'Unknown field' });
-      }
+    if (!(key in fields)) {
+      errors.push({ path: key, message: 'Unknown field' });
+    }
     }
 
     for (const [key, field] of Object.entries(fields)) {
-      const path = key;
-      const value = data[key];
+    const path = key;
+    const value = data[key];
 
-      if (value === undefined) {
-        if (opts.patch) continue; // patch: an unsent field is left untouched
-        // A read-only field is server-owned: its absence from a client input is
-        // never "Required" (same stance as OpenAPI readOnly+required).
-        if (boundaryOf(field).in === 'closed') continue;
-        // Absence is answered by `lifecycle.create` — a key access on the normal
-        // form. The judge only asks "is there a rule?": any rule ('now',
-        // 'optional', { value }, { generate }) makes absence legal, and the field
-        // is omitted from the result. Realisation is the storage adapter's role.
-        if (field.lifecycle?.create !== undefined) continue;
-        // No create rule: a `many` relation defaults to the empty collection
-        // (graph semantics, read on `role` — never a shared `{ value: [] }`).
-        if (field.role?.relation?.kind === 'many') { out[key] = []; continue; }
-        errors.push({ path, message: 'Required' });
-        continue;
-      }
+    if (value === undefined) {
+      if (opts.patch) continue; // patch: an unsent field is left untouched
+      // A read-only field is server-owned: its absence from a client input is
+      // never "Required" (same stance as OpenAPI readOnly+required).
+      if (boundaryOf(field).in === 'closed') continue;
+      // Absence is answered by `lifecycle.create` — a key access on the normal
+      // form. The judge only asks "is there a rule?": any rule ('now',
+      // 'optional', { value }, { generate }) makes absence legal, and the field
+      // is omitted from the result. Realisation is the storage adapter's role.
+      if (field.lifecycle?.create !== undefined) continue;
+      // No create rule: a `many` relation defaults to the empty collection
+      // (graph semantics, read on `role` — never a shared `{ value: [] }`).
+      if (field.role?.relation?.kind === 'many') { out[key] = []; continue; }
+      errors.push({ path, message: 'Required' });
+      continue;
+    }
 
-      // A PRESENT value can be illegal by an axis other than shape:
-      // boundary `in: 'closed'` — a read-only field never crosses inbound;
-      // lifecycle `update: 'forbidden'` — re-supplying an immutable field in a patch.
-      if (boundaryOf(field).in === 'closed') {
-        errors.push({ path, message: 'Read-only' });
-        continue;
-      }
-      if (opts.patch && field.lifecycle?.update === 'forbidden') {
-        errors.push({ path, message: 'Immutable' });
-        continue;
-      }
+    // A PRESENT value can be illegal by an axis other than shape:
+    // boundary `in: 'closed'` — a read-only field never crosses inbound;
+    // lifecycle `update: 'forbidden'` — re-supplying an immutable field in a patch.
+    if (boundaryOf(field).in === 'closed') {
+      errors.push({ path, message: 'Read-only' });
+      continue;
+    }
+    if (opts.patch && field.lifecycle?.update === 'forbidden') {
+      errors.push({ path, message: 'Immutable' });
+      continue;
+    }
 
-      // The shape predicate judges the value — null included, via the `[T,'null']`
-      // union. Then the boundary's decode converts wire→domain; null skips decode
-      // (a legal null is already the domain value, there is nothing to convert).
-      const checked = this.value(field, value);
-      if ('error' in checked) {
-        errors.push({ path, message: checked.error });
-        continue;
-      }
-      if (checked.value === null) {
-        out[key] = null;
-        continue;
-      }
-      const decoded = resolveBoundary(field).decode(checked.value);
-      if ('error' in decoded) errors.push({ path, message: decoded.error });
-      else out[key] = decoded.value;
+    // The shape predicate judges the value — null included, via the `[T,'null']`
+    // union. Then the boundary's decode converts wire→domain; null skips decode
+    // (a legal null is already the domain value, there is nothing to convert).
+    const checked = this.value(field, value);
+    if ('error' in checked) {
+      errors.push({ path, message: checked.error });
+      continue;
+    }
+    if (checked.value === null) {
+      out[key] = null;
+      continue;
+    }
+    const decoded = resolveBoundary(field).decode(checked.value);
+    if ('error' in decoded) errors.push({ path, message: decoded.error });
+    else out[key] = decoded.value;
     }
 
     if (errors.length > 0) return { success: false, errors };
     return { success: true, data: out };
   }
 
-  /** The same judgment, as a guard. */
+  /** The same judgment, as a boolean. */
   static isField(value: unknown): value is Field {
     return this.field(value).success;
   }

@@ -45,13 +45,11 @@ export class Schema {
     }
   }
 
-  // ─── The source ───
   static getFields() { return this.fields; }
   static getHints() { return this.hints; }
   static getUnique() { return this.unique; }
   static getOpts() { return this.opts; }
 
-  // ─── Projections ───
   static validate(input: unknown) {
     return Judge.row(this.fields, input, this.opts);
   }

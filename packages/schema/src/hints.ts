@@ -18,11 +18,7 @@ import type { Fields } from "./field/index.js";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-object-type
 export interface FougereHints<K extends string> {}
 
-/**
- * Per-consumer hints for an entity, keyed by registered adapter. Only adapters
- * present in {@link FougereHints} are accepted; unknown adapters, unknown fields
- * and unknown options are all rejected at the call site.
- */
+/** Keyed by registered adapter — an unknown adapter, field or option is refused at the call site. */
 export type Hints<TFields extends Fields> = {
   [A in keyof FougereHints<Extract<keyof TFields, string>>]?: FougereHints<
     Extract<keyof TFields, string>
@@ -30,10 +26,8 @@ export type Hints<TFields extends Fields> = {
 };
 
 /**
- * Carry hints across a field-key transform — the schema-level twin of `cloneField`'s
- * invariant: a derivation preserves everything it doesn't explicitly change. `transform`
- * maps an old key to its new name, or to `undefined` when the field is dropped; each
- * adapter's per-field hints follow their fields.
+ * Carry hints across a key transform — a derivation preserves what it does not change.
+ * `transform` maps an old key to its new name, or to `undefined` when the field is dropped.
  */
 export function deriveHints(
   hints: Hints<Fields> | undefined,

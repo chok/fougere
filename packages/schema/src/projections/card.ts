@@ -81,7 +81,6 @@ export type RelationDescriptor = Omit<Relation, 'to'> & { to: string };
  * stays a valid JSON Schema for external tooling.
  */
 export interface SchemaDescriptor {
-  /** The entity name. */
   title?: string;
   type: 'object';
   properties: Record<string, FieldDescriptor>;
@@ -98,12 +97,9 @@ export interface SchemaDescriptor {
 }
 
 /**
- * A self-contained set of entity cards — a JSON Schema bundle. Every entity lives
- * under `$defs`, keyed by name; a relation's `to` is that name — the `$ref` into
- * `$defs`. The document is portable AND circular-safe: a relation is a pointer, never
- * an inlined sub-schema, so `Post → Author → Post` is two references, not infinite
- * nesting. `reconstructSet` resolves those `$ref`s so a synced relation hands back the
- * real reconstructed target (it feeds adapters), not just a name.
+ * A self-contained set of entity cards. Every entity lives under `$defs`, keyed by name,
+ * and a relation's `to` is that key — a pointer, never an inlined sub-schema, so
+ * `Post → Author → Post` is two references and not infinite nesting.
  */
 export interface SchemaBundle {
   $defs: Record<string, SchemaDescriptor>;
