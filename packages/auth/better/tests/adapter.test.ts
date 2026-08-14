@@ -61,7 +61,7 @@ function makeMemoryOrm(): EntityOrm & {
     async findAllBy(criteria) {
       return [...store.values()].filter((r) => matches(r, criteria));
     },
-    async findByIds(ids: readonly string[]) { return (await this.findAllBy({})).filter((r: any) => ids.includes(r.id)); },
+    async findByKeys(ids: readonly string[]) { return new Map((await this.findAllBy({})).filter((r: any) => ids.includes(r.id)).map((r: any) => [r.id, r])); },
     /** What this ORM wraps — the Kysely instance for the SQL one, the Map here. */
     client: store,
   };

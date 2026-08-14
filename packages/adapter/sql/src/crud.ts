@@ -238,19 +238,17 @@ export class SqlEntityOrm {
   }
 
   /**
-   * Une requête pour N clés, jamais N requêtes. C'est le socle de tout ce qui se lit
-   * par page — un champ calculé, une relation, un résolveur distant.
+   * One query for N keys, never N queries — what every page-level read stands on:
+   * a computed field, a relation, a resolver on the other side of a wire.
    *
-   * L'ordre de la réponse suit celui des `ids` et une clé absente est simplement
-   * absente, ce qui permet de la faire correspondre à une page sans seconde recherche.
-   * Une clé composite n'a pas de forme de liste : elle est refusée en le disant, plutôt
-   * que de rendre un résultat partiel qu'on lirait comme complet.
+   * A composite key has no list form: it is refused by name rather than answering a
+   * partial result that reads as complete.
    */
-  async findByIds(ids: readonly string[], options?: SelectOption): Promise<Record<string, unknown>[]> {
+  async findByKeys(ids: readonly string[], options?: SelectOption): Promise<Map<string, Record<string, unknown>>> {
     if (this.pk.isComposite) {
-      throw new Error(`${this.table.name}.findByIds: the primary key is composite (${this.pk.names.join(', ')}) — read them one by one, or filter with \`findAllBy\`.`);
+      throw new Error(`${this.table.name}.findByKeys: the primary key is composite (${this.pk.names.join(', ')}) — read them one by one, or filter with \`findAllBy\`.`);
     }
-    if (ids.length === 0) return [];
+    if (ids.length === 0) return new Map();
     const name = this.pk.names[0]!;
     const rows = await this.db
       .selectFrom(this.table.name)
@@ -259,15 +257,10 @@ export class SqlEntityOrm {
       .execute();
 
     const sel = this.resolveSelect(options);
-    const byKey = new Map(rows.map((row: any) => {
+    return new Map(rows.map((row: any) => {
       const data = this.fromRow(row);
       return [String(data[name]), sel ? pick(data, sel) : data];
     }));
-    // L'ordre demandé, pas celui que la base a rendu.
-    return ids.flatMap((id) => {
-      const row = byKey.get(String(id));
-      return row ? [row] : [];
-    });
   }
 
   async findById(id: string | Record<string, unknown>, options?: SelectOption): Promise<Record<string, unknown> | undefined> {

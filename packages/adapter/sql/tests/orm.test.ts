@@ -181,36 +181,39 @@ describe('output()', () => {
   });
 });
 
-// ── findByIds : une requête pour N clés ──────────────────────────────────────
+// ── findByKeys: one query for N keys ─────────────────────────────────────────
 
-describe('findByIds', () => {
-  it('rend les lignes dans l’ordre DEMANDÉ, pas celui de la base', async () => {
-    await orm.create({ title: 'un', body: 'a', secret: 's' });
-    const b = await orm.create({ title: 'deux', body: 'b', secret: 's' });
-    const c = await orm.create({ title: 'trois', body: 'c', secret: 's' });
+describe('findByKeys', () => {
+  it('answers a map keyed by the primary key — a page zips by key, not by position', async () => {
+    await orm.create({ title: 'one', body: 'a', secret: 's' });
+    const b = await orm.create({ title: 'two', body: 'b', secret: 's' });
+    const c = await orm.create({ title: 'three', body: 'c', secret: 's' });
 
-    const rows = await orm.findByIds([c.id, b.id]);
-    // Zipper une page contre le résultat n'a de sens que si l'ordre est celui demandé.
-    expect(rows.map((r: any) => r.title)).toEqual(['trois', 'deux']);
+    const found = await orm.findByKeys([c.id, b.id]);
+    expect(found.get(c.id)?.title).toBe('three');
+    expect(found.get(b.id)?.title).toBe('two');
   });
 
-  it('une clé absente est absente — pas un trou, pas une erreur', async () => {
-    const a = await orm.create({ title: 'un', body: 'a', secret: 's' });
+  it('a miss is an absent key — not a hole, not an error', async () => {
+    const a = await orm.create({ title: 'one', body: 'a', secret: 's' });
 
-    expect(await orm.findByIds([a.id, 'jamais-créé'])).toHaveLength(1);
-    expect(await orm.findByIds([])).toEqual([]);
+    const found = await orm.findByKeys([a.id, 'never-created']);
+    expect(found.size).toBe(1);
+    expect(found.has('never-created')).toBe(false);
+    expect((await orm.findByKeys([])).size).toBe(0);
   });
 
-  it('une clé répétée n’interroge qu’une fois et rend une ligne par demande', async () => {
-    const a = await orm.create({ title: 'un', body: 'a', secret: 's' });
-    // Le SELECT dédoublonne ; la réponse suit la demande.
-    expect((await orm.findByIds([a.id, a.id])).map((r: any) => r.title)).toEqual(['un', 'un']);
+  it('a repeated key is queried once and is one entry — a map cannot hold it twice', async () => {
+    const a = await orm.create({ title: 'one', body: 'a', secret: 's' });
+    const found = await orm.findByKeys([a.id, a.id]);
+    expect(found.size).toBe(1);
+    expect(found.get(a.id)?.title).toBe('one');
   });
 
-  it('les valeurs traversent le codec, comme par tout autre chemin de lecture', async () => {
-    const a = await orm.create({ title: 'un', body: 'a', secret: 's' });
-    const [row] = await orm.findByIds([a.id]);
-    // Une date relue par ici doit être une Date, pas la chaîne de la colonne.
-    expect(row).toEqual(await orm.findById(a.id));
+  it('values cross the codec, as they do on every other read path', async () => {
+    const a = await orm.create({ title: 'one', body: 'a', secret: 's' });
+    const found = await orm.findByKeys([a.id]);
+    // A date read through here must be a Date, not the column's string.
+    expect(found.get(a.id)).toEqual(await orm.findById(a.id));
   });
 });

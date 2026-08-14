@@ -205,12 +205,14 @@ export function createMemoryOrm(entity: SchemaView, name: string): EntityOrm {
     async findAllBy(criteria: Record<string, unknown>) {
       return [...store.values()].filter((row) => matches(row, criteria));
     },
-    // Même contrat que le SQL : l'ordre des ids, et une clé absente est absente.
-    async findByIds(ids: readonly string[]) {
-      return ids.flatMap((id) => {
+    // Same contract as SQL: a map keyed by the primary key, a miss being an absent key.
+    async findByKeys(ids: readonly string[]) {
+      const found = new Map<string, Record<string, unknown>>();
+      for (const id of ids) {
         const row = store.get(keyOf(id));
-        return row ? [row] : [];
-      });
+        if (row) found.set(String(id), row);
+      }
+      return found;
     },
     async create(input: Partial<Record<string, unknown>>) {
       const record = applyCreate(fields, input);

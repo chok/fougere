@@ -93,12 +93,13 @@ export interface EntityOrm<T = Record<string, unknown>> {
    * 14 handlers of a real app measured on 2026-08-14 were doing. It is invisible on
    * SQLite and it is the whole table the day the rows are not local.
    *
-   * The order of the answer follows the order of `ids`, and a miss is simply absent —
-   * so the caller can zip it against a page without a second lookup. It is therefore
-   * the shape a page-level resolver needs, whether the rows come from this table or
-   * from a frond on the other side of a wire.
+   * It answers a MAP, because the caller holds keys and not positions: a page zips
+   * against it by `get(row.authorId)`, a miss is the absence of a key, and a repeated
+   * key is one entry. The list form this replaced promised that zip and could not
+   * keep it — dropping a miss shifts every later position — so each caller rebuilt
+   * the very index the implementation had just thrown away.
    */
-  findByIds(ids: readonly string[], options?: SelectOption): Promise<T[]>;
+  findByKeys(ids: readonly string[], options?: SelectOption): Promise<Map<string, T>>;
   create(input: Partial<T>, options?: SelectOption): Promise<T>;
   update(id: string, input: Partial<T>, options?: SelectOption): Promise<T>;
   delete(id: string): Promise<boolean>;
