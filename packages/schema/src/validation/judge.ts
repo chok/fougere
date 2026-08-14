@@ -29,8 +29,8 @@ const oneOfTokens = (v: unknown, tokens: readonly string[]) =>
  * The one judge, at the three levels anything is judged: a field's DECLARATION, one VALUE
  * against its shape, a ROW against a field map. Same answer shape at all three.
  *
- * A class and not three functions because it holds state — the per-shape plan cache, and
- * the closed vocabularies each axis is judged against.
+ * A class and not three functions because it holds state: the per-shape plan cache. The
+ * closed vocabularies belong to the axes that close them — this file imports them.
  */
 export class Judge {
   /**
