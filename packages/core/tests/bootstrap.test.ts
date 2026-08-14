@@ -20,6 +20,7 @@ function fakeOrm(overrides: Partial<EntityOrm> = {}): EntityOrm {
     findBy: vi.fn(async () => undefined),
     findAllBy: vi.fn(async () => []),
     findByKeys: vi.fn(async () => new Map()),
+    findAllByKeys: vi.fn(async () => new Map()),
     create: vi.fn(async () => ({})),
     update: vi.fn(async () => ({})),
     delete: vi.fn(async () => true),

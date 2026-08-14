@@ -245,3 +245,31 @@ describe('findByKeys', () => {
     expect(found.get(a.id)).toEqual(await orm.findById(a.id));
   });
 });
+
+// ── the dual: the rows that point at these keys ───────────────────────────────
+
+describe('findAllByKeys — the other direction of a relation', () => {
+  it('groups by the key each row points at, in one query', async () => {
+    await orm.create({ title: 'a1', body: 'shared', secret: 's' });
+    await orm.create({ title: 'a2', body: 'shared', secret: 's' });
+    await orm.create({ title: 'b1', body: 'other', secret: 's' });
+
+    const grouped = await orm.findAllByKeys('body', ['shared', 'other']);
+    expect(grouped.get('shared')!.map((r: any) => r.title).sort()).toEqual(['a1', 'a2']);
+    expect(grouped.get('other')!.map((r: any) => r.title)).toEqual(['b1']);
+  });
+
+  it('a key with no row is absent — never an empty array to be told apart', async () => {
+    await orm.create({ title: 'a1', body: 'shared', secret: 's' });
+    const grouped = await orm.findAllByKeys('body', ['shared', 'nobody']);
+    expect(grouped.has('nobody')).toBe(false);
+    expect((await orm.findAllByKeys('body', [])).size).toBe(0);
+  });
+
+  it('asks nothing outside the keys — the whole table is never the answer', async () => {
+    await orm.create({ title: 'a1', body: 'shared', secret: 's' });
+    await orm.create({ title: 'z', body: 'unasked', secret: 's' });
+    const grouped = await orm.findAllByKeys('body', ['shared']);
+    expect([...grouped.keys()]).toEqual(['shared']);
+  });
+});

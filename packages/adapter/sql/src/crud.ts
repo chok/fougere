@@ -271,6 +271,29 @@ export class SqlEntityOrm {
     }));
   }
 
+  /**
+   * The other direction of a relation, in one query — see the port's `findAllByKeys`.
+   *
+   * The grouping key is read off the ROW rather than trusted from the request: a codec
+   * may write a value one way and read it back another, and a group keyed on the
+   * request's spelling would then be empty while the rows sit there.
+   */
+  async findAllByKeys(
+    field: string,
+    keys: readonly string[],
+    options?: SelectOption,
+  ): Promise<Map<string, Record<string, unknown>[]>> {
+    const grouped = new Map<string, Record<string, unknown>[]>();
+    if (keys.length === 0) return grouped;
+    const rows = await this.findAllBy({ [field]: [...keys] }, options);
+    for (const row of rows) {
+      const key = String(row[field]);
+      const held = grouped.get(key);
+      if (held) held.push(row); else grouped.set(key, [row]);
+    }
+    return grouped;
+  }
+
   async findById(id: string | Record<string, unknown>, options?: SelectOption): Promise<Record<string, unknown> | undefined> {
     const row = await this.wherePk(this.db.selectFrom(this.table.name).selectAll() as any, id).executeTakeFirst();
     if (!row) return undefined;

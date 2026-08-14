@@ -100,6 +100,19 @@ export interface EntityOrm<T = Record<string, unknown>> {
    * the very index the implementation had just thrown away.
    */
   findByKeys(ids: readonly string[], options?: SelectOption): Promise<Map<string, T>>;
+  /**
+   * Its dual: the rows that point AT each of these keys, grouped by the one they point at.
+   *
+   * `findByKeys` answers the side a row designates — one each, at most. This answers the
+   * side that designates the row — several each, and a key with none is simply absent.
+   * Together they are both directions of a relation, each in one query.
+   *
+   * Written because the page-shaped gesture only covered one of them: a presenter holding
+   * its page and wanting "the items of these lists" had no vocabulary for it and read the
+   * whole table instead, measured on a real app. `field` names the foreign key on THIS
+   * entity, the one carrying the value.
+   */
+  findAllByKeys(field: string, keys: readonly string[], options?: SelectOption): Promise<Map<string, T[]>>;
   create(input: Partial<T>, options?: SelectOption): Promise<T>;
   update(id: string, input: Partial<T>, options?: SelectOption): Promise<T>;
   delete(id: string): Promise<boolean>;

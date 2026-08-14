@@ -217,6 +217,19 @@ export function createMemoryOrm(entity: SchemaView, name: string): EntityOrm {
       }
       return found;
     },
+    // The dual, same contract as SQL: grouped by the value read off the ROW.
+    async findAllByKeys(field: string, keys: readonly string[]) {
+      const grouped = new Map<string, Record<string, unknown>[]>();
+      if (keys.length === 0) return grouped;
+      const wanted = new Set(keys.map(String));
+      for (const row of store.values()) {
+        const key = String(row[field]);
+        if (!wanted.has(key)) continue;
+        const held = grouped.get(key);
+        if (held) held.push(row); else grouped.set(key, [row]);
+      }
+      return grouped;
+    },
     async create(input: Partial<Record<string, unknown>>) {
       const record = applyCreate(fields, input);
       const id = record[pk] as string | undefined;

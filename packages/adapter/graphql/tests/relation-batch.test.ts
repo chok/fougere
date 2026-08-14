@@ -1,6 +1,6 @@
 import SchemaBuilder from '@pothos/core';
 import { describe, expect, it } from 'vitest';
-import { entity, primary, ref, text } from '@fougere/schema';
+import { entity, many, primary, ref, text } from '@fougere/schema';
 import { registerAll } from '../src/auto-register.js';
 
 /**
@@ -114,5 +114,59 @@ describe('a relation is read by the page', () => {
 
     expect(perRow).toBe(PAGE);
     expect(users[0].name).toBe('one by one');
+  });
+});
+
+/**
+ * The other direction, batched the same way — and not out of the same read.
+ *
+ * `one` and `many` walk the same relation from opposite ends, so they must not share
+ * a batch: a key answers ONE row on one side and a GROUP on the other.
+ */
+class Slot extends entity({ id: primary(), shelfId: ref(class Shelf extends entity({ id: primary() }) {}), title: text() }) {}
+
+describe('the many side of a relation', () => {
+  it('reads every parent\u2019s children in one query, grouped', async () => {
+    const slots = Array.from({ length: 30 }, (_, i) => ({ id: `s${i}`, shelfId: `sh${i % 3}`, title: `t${i}` }));
+    const calls: string[][] = [];
+    class Shelf extends entity({ id: primary(), label: text(), slots: many(Slot) }) {}
+    const app = {
+      fronds: [{
+        name: 'lib',
+        entities: [{ name: 'shelf', entityClass: Shelf }, { name: 'slot', entityClass: Slot }],
+        handlers: [{ address: 'shelf', operations: new Map() }, { address: 'slot', operations: new Map() }],
+        presenters: [],
+      }],
+      presenterFor: () => undefined,
+      resolve: () => { throw new Error('no such registration'); },
+      facadeFor: (name: string) => (name === 'slot'
+        ? {
+          list: async (inv: any) => {
+            const keys = inv.query.where.shelfId;
+            calls.push(keys);
+            return slots.filter((s) => keys.includes(s.shelfId));
+          },
+        }
+        : { list: async () => [] }),
+    } as never;
+
+    const builder = new SchemaBuilder({});
+    builder.queryType({});
+    builder.mutationType({});
+    registerAll(builder, app);
+    const schema = builder.toSchema();
+    const relation = (schema.getTypeMap()['Shelf'] as any).getFields().slots;
+
+    const shelves = [{ id: 'sh0' }, { id: 'sh1' }, { id: 'sh2' }];
+    // ONE context object for the page — what graphql-js hands every resolver of a
+    // request. A fresh one per call is a different caller, and gets its own read.
+    const ctx = {};
+    const groups = await Promise.all(shelves.map((sh) => relation.resolve(sh, {}, ctx, {})));
+
+    expect(calls).toHaveLength(1);
+    expect([...calls[0]].sort()).toEqual(['sh0', 'sh1', 'sh2']);
+    expect(groups.map((g: any[]) => g.length)).toEqual([10, 10, 10]);
+    // A parent with no child gets an empty list, never the whole table.
+    expect(await relation.resolve({ id: 'nobody' }, {}, {}, {})).toEqual([]);
   });
 });

@@ -35,6 +35,9 @@ interface Batch {
   rows: Promise<Map<string, any>>;
 }
 
+/** The batch of ONE direction — the two sides of a relation must not share a read. */
+const directionKey = (entity: string, field: string) => `${entity}#${field}`;
+
 /**
  * The keys asked for during one tick, answered by one read.
  *
@@ -51,12 +54,13 @@ interface Batch {
 const batches = new WeakMap<object, Map<string, Batch>>();
 const NO_CONTEXT: object = {};
 
-function loadByKey(
+function loadByKey<R>(
   ctx: unknown,
   entityKey: string,
   id: string,
-  read: (ids: string[]) => Promise<Map<string, any>>,
-): Promise<any> {
+  read: (ids: string[]) => Promise<Map<string, R>>,
+  absent: () => R,
+): Promise<R> {
   const scope = ctx && typeof ctx === 'object' ? (ctx as object) : NO_CONTEXT;
   let open = batches.get(scope);
   if (!open) { open = new Map(); batches.set(scope, open); }
@@ -74,7 +78,7 @@ function loadByKey(
     open.set(entityKey, batch);
   }
   batch.keys.add(id);
-  return batch.rows.then((found) => found.get(id) ?? null);
+  return batch.rows.then((found) => found.get(id) ?? absent());
 }
 
 /**
@@ -369,7 +373,7 @@ export function registerAll(
             if (typeof targetList !== 'function') {
               return targetEntry.facade.findById({ params: { id: fk }, query: {}, body: undefined, state: {} });
             }
-            return loadByKey(ctx, targetKey(target), String(fk), async (ids) => {
+            return loadByKey(ctx, directionKey(targetKey(target), targetKeyName), String(fk), async (ids) => {
               // The door the `many` dual already uses, with a SET where it names one
               // value. Nothing new is published: a criterion learned to name several.
               const result = await targetList.call(targetEntry.facade, {
@@ -377,7 +381,7 @@ export function registerAll(
               }) as any;
               const rows = Array.isArray(result) ? result : result?.items ?? result?.data ?? [];
               return new Map(rows.map((row: any) => [String(row?.[targetKeyName]), row]));
-            });
+            }, () => null);
           },
         });
       }
@@ -401,15 +405,28 @@ export function registerAll(
 
         relationFields[fieldName] = (t: any) => t.field({
           type: [targetEntry.type],
-          resolve: (parent: any) => {
+          resolve: (parent: any, _args: unknown, ctx: unknown) => {
             const id = parent.id;
             if (id == null) return [];
+            // The same batch as its `one` dual, one query for the whole page — the two
+            // directions differ only in what a key answers: one row there, a group here.
+            //
             // `where` — un critère se nomme. Passé à la racine de la query, il retombait
             // dans les options de `list()`, qui ignore ce qu'elle ne connaît pas : la
             // relation rendait alors TOUTE la table cible, sans un mot.
-            return targetEntry.facade.list({
-              params: {}, query: { where: { [reverseFkName]: id } }, body: undefined, state: {},
-            }).then((result: any) => Array.isArray(result) ? result : result?.items ?? result);
+            return loadByKey(ctx, directionKey(targetKey(target), reverseFkName), String(id), async (ids) => {
+              const result = await targetEntry.facade.list({
+                params: {}, query: { where: { [reverseFkName]: ids } }, body: undefined, state: {},
+              }) as any;
+              const rows = Array.isArray(result) ? result : result?.items ?? result?.data ?? [];
+              const grouped = new Map<string, any[]>();
+              for (const row of rows) {
+                const key = String(row?.[reverseFkName]);
+                const held = grouped.get(key);
+                if (held) held.push(row); else grouped.set(key, [row]);
+              }
+              return grouped;
+            }, () => []);
           },
         });
       }
