@@ -175,8 +175,11 @@ export function createMemoryOrm(entity: SchemaView, name: string): EntityOrm {
   // `1` does not answer `'1'`. SQL never had the question; here the divergence was
   // silent and only on this storage.
   const keyOf = (value: unknown) => String(value);
+  // Same contract as SQL: a criterion may name a SET, and an empty set matches nothing.
   const matches = (row: Record<string, unknown>, criteria: Record<string, unknown>) =>
-    Object.entries(criteria).every(([key, value]) => Object.is(row[key], value));
+    Object.entries(criteria).every(([key, value]) => Array.isArray(value)
+      ? value.some((v) => Object.is(row[key], v))
+      : Object.is(row[key], value));
   return {
     client: store,
     async list(options?: any) {

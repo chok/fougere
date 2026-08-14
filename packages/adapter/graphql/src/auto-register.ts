@@ -24,6 +24,59 @@ function relationNameFor(fieldName: string): string | undefined {
   return stripped && stripped !== fieldName ? stripped : undefined;
 }
 
+/** The field a target is keyed by — what a batch read indexes its answer on. */
+function primaryNameOf(fields: Fields): string {
+  for (const [name, field] of Object.entries(fields)) if (field.role?.primary) return name;
+  return 'id';
+}
+
+interface Batch {
+  keys: Set<string>;
+  rows: Promise<Map<string, any>>;
+}
+
+/**
+ * The keys asked for during one tick, answered by one read.
+ *
+ * graphql-js calls a field resolver once per parent, so a page of 50 rows asked for
+ * its relation 50 times — measured, with 5 distinct keys behind those 50 calls. The
+ * keys of a tick are collected and answered together, which is the shape the framework
+ * already imposes one level up: a presenter receives the PAGE (`egress.ts`).
+ *
+ * Scoped by the request's context object, which graphql-js hands identically to every
+ * resolver of one request and never shares with another — two callers must never be
+ * answered out of one read. When there is no context (a resolver called directly, as
+ * the tests do), the scope is a shared object and the tick alone bounds the batch.
+ */
+const batches = new WeakMap<object, Map<string, Batch>>();
+const NO_CONTEXT: object = {};
+
+function loadByKey(
+  ctx: unknown,
+  entityKey: string,
+  id: string,
+  read: (ids: string[]) => Promise<Map<string, any>>,
+): Promise<any> {
+  const scope = ctx && typeof ctx === 'object' ? (ctx as object) : NO_CONTEXT;
+  let open = batches.get(scope);
+  if (!open) { open = new Map(); batches.set(scope, open); }
+
+  let batch = open.get(entityKey);
+  if (!batch) {
+    const keys = new Set<string>();
+    // The next microtask: every sibling resolver of the page has run by then, so
+    // their keys travel together. Closed first, so the following tick opens a new one.
+    const rows = Promise.resolve().then(() => {
+      open!.delete(entityKey);
+      return read([...keys]);
+    });
+    batch = { keys, rows };
+    open.set(entityKey, batch);
+  }
+  batch.keys.add(id);
+  return batch.rows.then((found) => found.get(id) ?? null);
+}
+
 /**
  * Redirect specific ops to alternate handlers based on frond.config.ts overrides.
  * For ops declaring `handler: OtherClass, method?: 'name'`, replaces the facade entry
@@ -303,13 +356,28 @@ export function registerAll(
         if (!relationName || relationName in fields || presenterFields.has(relationName)) continue;
         const nullable = Anatomy.isNullable(field.shape);
 
+        const targetKeyName = primaryNameOf(targetEntry.fields);
+        const targetList = targetEntry.facade.list;
         relationFields[relationName] = (t: any) => t.field({
           type: targetEntry.type,
           nullable,
-          resolve: (parent: any) => {
+          resolve: (parent: any, _args: unknown, ctx: unknown) => {
             const fk = parent[fieldName];
             if (fk == null) return null;
-            return targetEntry.facade.findById({ params: { id: fk }, query: {}, body: undefined, state: {} });
+            // A door that serves no list — a handler narrowed to `findById` — keeps the
+            // row-at-a-time path rather than losing the relation entirely.
+            if (typeof targetList !== 'function') {
+              return targetEntry.facade.findById({ params: { id: fk }, query: {}, body: undefined, state: {} });
+            }
+            return loadByKey(ctx, targetKey(target), String(fk), async (ids) => {
+              // The door the `many` dual already uses, with a SET where it names one
+              // value. Nothing new is published: a criterion learned to name several.
+              const result = await targetList.call(targetEntry.facade, {
+                params: {}, query: { where: { [targetKeyName]: ids } }, body: undefined, state: {},
+              }) as any;
+              const rows = Array.isArray(result) ? result : result?.items ?? result?.data ?? [];
+              return new Map(rows.map((row: any) => [String(row?.[targetKeyName]), row]));
+            });
           },
         });
       }

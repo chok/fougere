@@ -181,6 +181,34 @@ describe('output()', () => {
   });
 });
 
+// ── a criterion may name a SET ────────────────────────────────────────────────
+
+describe('a criterion naming a set', () => {
+  it('reads them all in one query — the batch form a relation needs', async () => {
+    const a = await orm.create({ title: 'one', body: 'a', secret: 's' });
+    await orm.create({ title: 'two', body: 'b', secret: 's' });
+    const c = await orm.create({ title: 'three', body: 'c', secret: 's' });
+
+    const rows = await orm.findAllBy({ id: [a.id, c.id] });
+    expect(rows.map((r: any) => r.title).sort()).toEqual(['one', 'three']);
+  });
+
+  it('an empty set matches nothing — never the whole table', async () => {
+    await orm.create({ title: 'one', body: 'a', secret: 's' });
+    expect(await orm.findAllBy({ id: [] })).toEqual([]);
+  });
+
+  it('a repeated value is asked once, and one row comes back', async () => {
+    const a = await orm.create({ title: 'one', body: 'a', secret: 's' });
+    expect(await orm.findAllBy({ id: [a.id, a.id] })).toHaveLength(1);
+  });
+
+  it('values cross the codec, as a single criterion already does', async () => {
+    const a = await orm.create({ title: 'one', body: 'a', secret: 's' });
+    expect(await orm.findAllBy({ id: [a.id] })).toEqual([await orm.findById(a.id)]);
+  });
+});
+
 // ── findByKeys: one query for N keys ─────────────────────────────────────────
 
 describe('findByKeys', () => {

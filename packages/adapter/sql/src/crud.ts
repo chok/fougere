@@ -171,9 +171,17 @@ export class SqlEntityOrm {
 
   // A filter compares against the COLUMN, so its value crosses the same way a write
   // does: `findBy({ done: true })` has to look for 1, not for `true`.
+  //
+  // A criterion may name a SET — `where: { id: [a, b, c] }` is `IN`, one query for a
+  // whole page. Without it a relation had no batch form at all: the GraphQL `one`
+  // resolver read row by row (50 calls for a page of 50, measured), while its `many`
+  // dual already went through this same door. An empty set matches nothing, said in
+  // SQL rather than by returning the whole table.
   private whereAll<Q extends { where(a: any, b: any, c: any): Q }>(query: Q, criteria: Record<string, unknown>): Q {
     return Object.entries(criteria).reduce(
-      (q, [key, value]) => q.where(this.column(key), '=', this.write(key, value)),
+      (q, [key, value]) => Array.isArray(value)
+        ? q.where(this.column(key), 'in', [...new Set(value)].map((v) => this.write(key, v)))
+        : q.where(this.column(key), '=', this.write(key, value)),
       query,
     );
   }
