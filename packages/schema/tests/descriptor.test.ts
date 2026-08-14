@@ -3,6 +3,7 @@ import {
   entity, primary, text, number, optional, created, ref, many, json, list, email, readOnly,
   describe, reconstruct, describeSet, reconstructSet,
   type SchemaView, type EntityConstructor,
+  type Role, type Relation, type RoleDescriptor, type RelationDescriptor,
 } from '../src/index.js';
 
 class Author extends entity({ id: primary() }) {}
@@ -205,5 +206,23 @@ group('required and the judge answer the same question', () => {
   it('leaves a read-only field out of required, like the judge does', () => {
     expect(Owned.validate({ title: 'hello' }).success).toBe(true);
     expect(describe(Owned, 'owned').required).toEqual(['title']);
+  });
+});
+
+/**
+ * The card names what it KEEPS from a role, and so do the two functions that write and
+ * read it. A member added to `Role` must be decided on, not carried by a subtraction:
+ * `describeRole` enumerates its members, so a type saying otherwise would promise a key
+ * the card never carries — across a process and a language, where nothing checks back.
+ */
+group('every member of a role is accounted for on the wire', () => {
+  type Accounted<Live, Wire> = Exclude<keyof Live, keyof Wire> extends never
+    ? true
+    : ['this member reaches no card:', Exclude<keyof Live, keyof Wire>];
+
+  it('leaves no member of Role or Relation unaccounted for', () => {
+    const role: Accounted<Role, RoleDescriptor> = true;
+    const relation: Accounted<Relation, RelationDescriptor> = true;
+    expect([role, relation]).toEqual([true, true]);
   });
 });

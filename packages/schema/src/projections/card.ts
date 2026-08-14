@@ -66,14 +66,17 @@ export interface FieldExtension {
  * The role, with its one unportable member replaced: `unique` names its members on the
  * wire, where in memory a lone `unique()` holds `[]` — a field does not know its own key,
  * a reader of the card must not have to guess it.
+ *
+ * Names what it KEEPS, like `describeRole` and `reconstructRole` do. Two of the four
+ * members do not travel as they are, so portability is not the default a new one gets.
  */
-export type RoleDescriptor = Omit<Role, 'unique' | 'relation'> & {
+export type RoleDescriptor = Pick<Role, 'primary' | 'index'> & {
   unique?: string[][];
   relation?: RelationDescriptor;
 };
 
 /** The relation, with its thunk replaced: the target is a NAME. */
-export type RelationDescriptor = Omit<Relation, 'to'> & { to: string };
+export type RelationDescriptor = Pick<Relation, 'kind' | 'onDelete'> & { to: string };
 
 /**
  * A whole entity as a JSON Schema object document. `version`/`vendor` mirror Standard
