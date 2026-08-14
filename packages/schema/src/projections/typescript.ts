@@ -1,24 +1,13 @@
 import type { FieldDescriptor, SchemaDescriptor } from './card.js';
 
 /**
- * card → TypeScript source — the projection that was missing.
+ * card → TypeScript source. `reconstruct` gives a consumer a living judge; this gives it
+ * the type, so `post.title` is `string` rather than `any` and `post.titel` fails.
  *
- * `describe` turns a schema into a card and `reconstruct` turns it back into a
- * living judge, so a consumer in another repository validates by the host's rules
- * without holding its code. What it did NOT get is a type: left to infer, a rebuilt
- * schema has an index signature for an instance type, so `post.title` was `any` and
- * `post.titel` compiled. The declaration travelled and the compiler learned nothing.
- *
- * So the card gets a third reader, and it writes the shape where `reconstruct` now
- * accepts it — as the type argument of the class's own base expression, one
- * declaration for the judge and the rows it judges. Same input as the other two
- * readers, same rule: the shape IS JSON Schema, and JSON Schema has a type form.
- *
- * Deliberately NOT a JSON Schema→TS library: the input is not arbitrary JSON Schema,
- * it is a Fougère card, whose vocabulary is closed (`describe` writes it). A general
- * library would carry `$ref`, `allOf`, tuple `items`, `additionalProperties` and the
- * rest of a spec we never emit, and would still need this file to know that
- * `format: date-time` means `Date` here — a fact about our boundary, not about JSON.
+ * Deliberately NOT a JSON Schema→TS library: the input is a Fougère card, whose vocabulary
+ * is closed. A general one would carry `$ref`, `allOf` and the rest we never emit, and
+ * would still need this file to know `format: date-time` means `Date` — a fact about our
+ * boundary, not about JSON.
  */
 
 /** What a field's value looks like once `reconstruct` has decoded it. */
@@ -115,18 +104,11 @@ export function shapeTypeOf(descriptor: SchemaDescriptor, indent = ''): string {
 }
 
 /**
- * Emit the entity a card describes — ONE class, judge and shape together.
+ * Emit the entity a card describes — ONE class, judge and shape together, because a class
+ * is the language's own answer to "a name that is both a value and a type".
  *
- * An entity is a class here (`class Post extends entity({…}) {}`), and a class is the
- * language's own answer to "a name that is both a value and a type". Emitting an
- * interface next to a const said the same thing twice and relied on declaration
- * merging to look like a class; this IS one.
- *
- * The card travels inline, so the rebuilt judge is exact — the shape written above it
- * is read off that same card, never a second source to keep in step.
- *
- * Requires `reconstruct` in scope: the caller writes the import, since only it knows
- * whether the consumer says `@fougere/schema` or a path.
+ * The card travels inline, so the rebuilt judge and the shape above it read off the same
+ * source. Requires `reconstruct` in scope: only the caller knows how the consumer imports.
  */
 export function entitySourceOf(descriptor: SchemaDescriptor, options: TypeSourceOptions = {}): string {
   const name = identifierOf(options.name ?? capitalize(descriptor.title ?? 'Schema'));

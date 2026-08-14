@@ -2,29 +2,15 @@ import type { Field } from './field.js';
 import { Anatomy, type Shape } from './shape.js';
 
 /**
- * Axis 4 · boundary — HOW AND IN WHICH DIRECTION a value crosses the CLIENT frontier.
+ * Axis 4 · boundary — HOW and IN WHICH DIRECTION a value crosses the CLIENT frontier.
  *
- * ⚠️ SCOPE — this axis covers the client frontier ONLY. A direction is meaningless
- * unless stated relative to a centre, and this one is relative to the domain facing a
- * client: `in` parses a request, `out` renders a response. It does NOT cover storage —
- * no storage adapter reads it, which is exactly why `bool`, `list`, `json` and a judged
- * `date` cannot be written today (they reach the driver unconverted). The domain↔column
- * conversion belongs to the storage adapter, and naming that second frontier is an open
- * design question — see the axes study.
+ * ⚠️ The client frontier ONLY: `in` parses a request, `out` renders a response. No storage
+ * adapter reads it, so the domain↔column conversion is a second frontier, unnamed today.
  *
- * The normal form is indexed by DIRECTION. Each direction carries one of the two facets
- * of the same frontier:
- * a conversion (`{ decode }` / `{ encode }`, a NAMED rule) or the permission
- * token `'closed'` — read-only closes `in` (never accepted from a client),
- * write-only closes `out` (never emitted, e.g. a password). A key absent →
- * that direction is open, identity conversion. Declarative and named — never
- * an opaque closure, so adapters stay able to read what a field does.
- *
- * Two directional registries (decoders, encoders) are the pure base; an alias is
- * just a named pair. A field rarely declares a boundary: the default is DERIVED
- * from `shape` (convention over config). A declared boundary overrides that
- * default PER DIRECTION — closing `out` on a date field leaves the derived
- * isoDate decode on `in` intact.
+ * Each direction carries one of two facets: a NAMED conversion (`{ decode }`/`{ encode }`)
+ * or the permission token `'closed'`. Absent → open, identity. Named and never a closure,
+ * so an adapter can read what a field does. The default is derived from `shape`; a
+ * declared boundary overrides it per direction.
  */
 
 /** Inbound: a supplied wire value → domain value. May fail (transformOrFail-style). */

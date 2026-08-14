@@ -1,25 +1,14 @@
 import type { BoundaryRef, Lifecycle, Relation, Role, Shape } from '../field/index.js';
 
 /**
- * The portable schema descriptor — Fougère's "carte d'identité" of an entity.
+ * The portable schema descriptor — an entity's "carte d'identité".
  *
- * It is a JSON Schema document (the `shape` axis, a near-identity projection now
- * that {@link FieldDescriptor} already speaks JSON Schema) carrying the three axes JSON
- * Schema cannot express under a single `x-fougere` extension key per field: `role`
- * (identity/relations), `lifecycle` (write rules), `boundary` (wire↔domain).
- * The normal forms (named tokens, pure JSON) ARE the wire form — lifecycle and
- * boundary travel verbatim, no descriptor twin to maintain.
+ * A JSON Schema document: the `shape` axis at the top level, the three axes JSON Schema
+ * cannot express under one `x-fougere` key per field. The normal forms ARE the wire form —
+ * lifecycle and boundary travel verbatim, no descriptor twin to maintain.
  *
- * It is the structural counterpart of Standard Schema (`~standard`): where
- * `~standard` is the live, opaque "I can validate" interface, the descriptor is the
- * transparent, serialisable description that crosses the wire. `describe()` produces
- * it; a single `reconstruct()` reads it back into a working schema (validate + from).
- *
- * Honest losses vs the live field map — a reference becomes a name, a live function
- * does not travel:
- * - `role.relation.to` (a `() => Entity` thunk) → {@link RelationDescriptor.to}, a name.
- * - a custom generator or boundary decoder/encoder travels by NAME, re-resolved
- *   against the consumer's registry ("unknown generator/alias" is loud and local).
+ * What cannot travel becomes a NAME, re-resolved against the consumer's registry: a
+ * relation's thunk, a custom generator, a boundary codec.
  */
 
 /** JSON Schema's `type` values, plus `null` for the nullable union form. */

@@ -1,12 +1,11 @@
 import type { Fields } from "./field/index.js";
 
 /**
- * Open registry of per-consumer hints — the escape hatch for the irreducible
- * bits a single neutral field can't carry (e.g. "store `body` as a `tsvector`
- * with a GIN index", which validation and the API must ignore).
+ * Per-consumer hints — the escape hatch for what a neutral field cannot carry ("store
+ * `body` as a `tsvector`"), which validation and the API ignore.
  *
- * EMPTY here on purpose: `@fougere/schema` names no adapter and depends on none.
- * Each adapter augments this from its OWN package via declaration merging —
+ * EMPTY here: this package names no adapter. Each augments it from its own package, and
+ * `K` — the entity's field-key union — constrains a hint's inner keys to real fields.
  *
  * ```ts
  * declare module '@fougere/schema' {
@@ -15,11 +14,6 @@ import type { Fields } from "./field/index.js";
  *   }
  * }
  * ```
- *
- * `K` is the entity's field-key union, so a hint's inner keys are constrained to
- * real fields. Until an adapter augments it the registry is `{}` — there is simply
- * nothing to hint against, and the constraint materialises once an adapter is in
- * the compilation. No dependency inversion: schema never names an adapter.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-object-type
 export interface FougereHints<K extends string> {}

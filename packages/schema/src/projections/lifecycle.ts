@@ -1,25 +1,11 @@
 /**
  * The lifecycle axis, realized — once, for every storage.
  *
- * `validation.ts` states the split: the judge answers "is this value legal?" and never
- * fills a hole; filling it — stamp `'now'`, apply `{ value }`, call `{ generate }` — is
- * the storage's role at the point of persistence. The split is right. What was missing
- * is that the framework shipped the RULE and never its realization, so each storage
- * rewrote it and they drifted:
- *
- * - `schema-sql` realized `{ generate }` and `'now'` in its ORM, and `{ value }` in its
- *   DDL — as a column `DEFAULT` the database fills. A mechanism only SQL has.
- * - The Nuxt module's fallback ORM realized none of the three: its signature is
- *   `(_entity, _name)`, both ignored, so it forces the name `id` and a random uuid.
- * - A third-party adapter (MongoDB, written outside the repo on 2026-08-08) found the
- *   gap the only way available: a test that expected `'draft'` and got `undefined`.
- *
- * Measured, one entity, `oneOf('draft','published',{ default:'draft' })`: SQLite answered
- * `'draft'`, MongoDB answered `undefined`. Same declaration, same port, two answers.
- *
- * So the rule and its realization live together now, and a storage adapter calls this
- * instead of re-deriving it. `update: 'forbidden'` is NOT here: refusing a value is a
- * judgment, and the façade already does it (`validation.ts`, patch mode).
+ * The judge answers "is this value legal" and never fills a hole; filling it — stamp
+ * `'now'`, apply `{ value }`, call `{ generate }` — belongs to the storage at the point of
+ * persistence. Shipping the rule without its realization made each storage rewrite it, and
+ * they drifted: one entity with a `default` answered `'draft'` on SQL and `undefined` on
+ * Mongo. `update: 'forbidden'` is NOT here — refusing is a judgment.
  */
 import { resolveCustomGenerator, type Field, type Fields } from '../field/index.js';
 import { createId } from '@paralleldrive/cuid2';

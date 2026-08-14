@@ -83,19 +83,11 @@ export function deriveUniqueRoles<TFields extends Fields>(
 }
 
 /**
- * Project the entity's composite groups onto the role of every member — the single
- * place the two ways of stating uniqueness meet.
+ * Project the entity's composite groups onto every member's role — the single place the
+ * two ways of stating uniqueness meet, so every consumer has one shape to handle.
  *
- * The author writes each fact where it lives: `unique(slug)` on the field it is about,
- * `entity(fields, { unique: [['listId','docId']] })` on the entity, because a fact about
- * a pair is held by neither field alone. Both then read as ONE normal form on the role
- * axis, so every consumer — the DDL, the card, a foreign adapter — has a single shape to
- * handle, and a field belonging to two constraints simply carries two member lists.
- *
- * The entity declaration stays the source (`getUnique()` keeps answering it); this is a
- * projection of it, never a second place to edit. A named member group is spelled out
- * here, while a lone `unique()` keeps its `[]` self-reference — resolved by whoever reads
- * it, which is what makes `rename()` free.
+ * The entity declaration stays the source (`getUnique()` answers it); this is a projection,
+ * never a second place to edit.
  */
 export function projectUniqueOntoFields<TFields extends Fields>(
   fields: TFields,

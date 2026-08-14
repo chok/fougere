@@ -2,23 +2,16 @@ import type { JSONSchema7 } from 'json-schema';
 import type { StringFormat } from './format.js';
 
 // ─── Axis 1 · shape — the VALUE ──────────────────────────────
-// What a stand-alone value validator (zod, typebox) would cover: the kind of
-// value and its intrinsic constraints. Nothing here knows about a database or
-// a domain. Every field states one — `many` says `array` without `items`, its
-// elements living on the other side.
+// What a stand-alone value validator covers: the kind of value and its constraints.
+// Every field states one — `many` says `array` without `items`.
 //
-// The vocabulary is JSON Schema's own (`type` + `minLength`/`minimum`/`format`…),
-// so the portable descriptor is a near-identity projection — no shape↔JSON-Schema
-// mapping to maintain. A date is JSON Schema's `{ type: 'string', format: 'date-time' }`;
-// an integer is the `integer` type, not a flag.
+// The vocabulary IS JSON Schema's, so the portable descriptor is a near-identity
+// projection: a date is `{ type: 'string', format: 'date-time' }`, an integer is a type.
 //
-// NULLABILITY lives in the grammar, not beside it: a nullable value's `type` is
-// the union `[T, 'null']` (and `null` joins `enum` when present) — the standard's
-// own idiom, judged natively by the engine. A flat `nullable` flag would put a
-// second source of truth next to the grammar (flag says yes, enum says no —
-// OpenAPI 3.0's exact bug, fixed in 3.1 by this same move). Writers go through
-// {@link nullableShape}; readers go through {@link anatomy} — NEVER compare
-// `shape.type === '...'` directly, the union breaks it silently.
+// NULLABILITY lives in the grammar: a nullable type is the union `[T, 'null']` (and `null`
+// joins `enum`). A flat flag would be a second source of truth next to it — OpenAPI 3.0's
+// bug, fixed in 3.1 by this same move. Writers go through `nullableShape`, readers through
+// `Anatomy` — NEVER compare `shape.type` directly, the union breaks it silently.
 
 // JSON Schema's own format names (assertion supported by the cfworker engine).
 // `date-time` is special: it derives the isoDate boundary; the others are pure predicates.

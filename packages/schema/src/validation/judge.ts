@@ -60,20 +60,11 @@ export class Judge {
   }
 
   /**
-   * Resolve a declared format against the engine's built-ins and our registry, and
-   * REFUSE a name neither knows.
+   * Resolve a declared format, and REFUSE a name neither the engine nor the registry
+   * knows: the engine ignores an unknown format in silence, so a typo would let every
+   * value through while the card claims the field is constrained.
    *
-   * The engine ignores an unknown format in silence — `format[$format] && …`, so a
-   * typo or a predicate nobody registered would let every value through while the
-   * card claims the field is constrained. That is the exact loss this repo refuses
-   * elsewhere: an unregistered boundary codec throws for the same reason, on the
-   * same grounds ("loud and late beats silent and never").
-   *
-   * Returns the custom predicate, or undefined when the engine already judges the
-   * name. Both may exist — then both run.
-   *
-   * SCOPE: the field's own shape. A format nested inside `json(Entity)` is not
-   * reached, the same boundary as the nested-path limit documented on validation.
+   * SCOPE: the field's own shape — a format nested inside `json(Entity)` is not reached.
    */
   private static customFormatOf(name: string): FormatPredicate | undefined {
     const custom = Formats.resolve(name);

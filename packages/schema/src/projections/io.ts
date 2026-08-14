@@ -2,18 +2,13 @@ import type { Fields } from '../field/index.js';
 import { boundaryOf } from '../field/index.js';
 
 /**
- * The two dual projections of a field set onto a client surface — membership
- * only, derived from the axes.
+ * The two dual projections of a field set onto a client surface — membership only. The
+ * create/patch MODE never changes it, only omissibility, which the view carries.
  *
- * The create/patch MODE never changes membership, it only changes omissibility, which
- * the view (`partial()`) carries.
- *
- * ⚠️ The audience lives in this comment, not in the data — no axis says "client", so
- * these two functions are the only place the word exists. Surfaces are SUPPOSED to read
- * them instead of restating the rules, and several don't: the GraphQL public
- * `registerInput`, the runtime judge and the CLI each answer "what may a client supply"
- * with a different set. The judge is the most permissive — a client-forged primary key
- * reaches the ORM. Reconciling them needs the audience to become data.
+ * ⚠️ The audience lives in this comment, not in the data: no axis says "client". Surfaces
+ * are supposed to read these two functions, and several restate the rules instead — the
+ * GraphQL input, the runtime judge and the CLI each answer with a different set, the judge
+ * being the most permissive. Reconciling them needs the audience to become data.
  */
 
 /**
