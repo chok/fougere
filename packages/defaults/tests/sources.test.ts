@@ -11,8 +11,10 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { entity, primary, ref, text } from '@fougere/schema';
-import { toTables } from '@fougere/adapter-sql';
-import { resolveStorage } from '../src/storage.js';
+import { toTables, setupKysely, setupSqlite } from '@fougere/adapter-sql';
+import { SqliteDialect } from 'kysely';
+import Database from 'better-sqlite3';
+import { resolveStorage, storageFrom } from '../src/storage.js';
 
 class Reader extends entity({ id: primary(), name: text() }) {}
 class Book extends entity({ id: primary(), title: text() }) {}
@@ -109,5 +111,45 @@ describe('resolveStorage with a second source', () => {
     const storage = resolveStorage({ dialect: 'sqlite', path: ':memory:' });
     expect(storage.ormFactory).toBeDefined();
     expect(storage.dialect).toBe('sqlite');
+  });
+});
+
+describe('storageFrom — an engine the caller built', () => {
+  it('places an entity on a hand-built Kysely dialect, and migrates it there', async () => {
+    // The escape hatch `resolveStorage` cannot offer: a config file holds no live
+    // dialect, so a name resolves to sqlite and nothing else. Here the caller brings
+    // the engine — this one happens to be sqlite so the test can read it back, but
+    // nothing in the routing knows or asks.
+    const archive = setupKysely(
+      new SqliteDialect({ database: new Database(':memory:') }),
+      'sqlite',
+    );
+    const storage = storageFrom({
+      db: setupSqlite({ path: ':memory:' }),
+      sources: { archive: { setup: archive, entities: ['Book'] } },
+    });
+
+    await storage.afterBoot!(app as never);
+    const bookOrm = storage.ormFactory!(Book, 'book');
+    await bookOrm.create({ title: 'brought my own engine' });
+
+    const held = async (client: any, table: string) => client
+      .selectFrom('sqlite_master').select('name').where('name', '=', table).executeTakeFirst();
+
+    expect(await held(archive.db, 'books')).toBeDefined();
+    expect(await held(archive.db, 'readers')).toBeUndefined();
+    expect(await held(storage.db as any, 'readers')).toBeDefined();
+    expect(await held(storage.db as any, 'books')).toBeUndefined();
+  });
+
+  it('refuses the same double claim, whoever built the engines', () => {
+    const twice = () => storageFrom({
+      db: setupSqlite({ path: ':memory:' }),
+      sources: {
+        archive: { setup: setupSqlite({ path: ':memory:' }), entities: ['Book'] },
+        cold: { setup: setupSqlite({ path: ':memory:' }), entities: ['Book'] },
+      },
+    });
+    expect(twice).toThrow(/claimed by both 'archive' and 'cold'/);
   });
 });

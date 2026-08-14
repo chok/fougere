@@ -44,6 +44,9 @@
     "access": "public"
   },
   "devDependencies": {
-    "@fougere/schema": "workspace:*"
+    "@fougere/schema": "workspace:*",
+    "kysely": "^0.28.17",
+    "better-sqlite3": "^13.0.3",
+    "@types/better-sqlite3": "^7.6.13"
   }
 }

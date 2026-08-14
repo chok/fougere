@@ -1062,6 +1062,15 @@ importers:
       '@fougere/schema':
         specifier: workspace:*
         version: link:../schema
+      '@types/better-sqlite3':
+        specifier: ^7.6.13
+        version: 7.6.13
+      better-sqlite3:
+        specifier: ^13.0.3
+        version: 13.0.3
+      kysely:
+        specifier: ^0.28.17
+        version: 0.28.17
 
   packages/entry/create:
     dependencies:

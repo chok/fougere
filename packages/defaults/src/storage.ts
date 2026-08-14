@@ -9,7 +9,7 @@
  * why an engine change looked like it touched seven files.
  */
 import type { App } from '@fougere/core';
-import { setupSqlite, migrate, type DialectName } from '@fougere/adapter-sql';
+import { setupSqlite, migrate, type DialectName, type Setup } from '@fougere/adapter-sql';
 
 /** The `db` field of fougere.config.ts, read structurally. */
 export type DbConfig =
@@ -104,17 +104,62 @@ export function resolveStorage(dbConf: DbConfig, sources?: SourcesConfig): Resol
   if (!declaresStorage(dbConf)) return { ormFactory: undefined };
 
   refuseUnresolvable(typeof dbConf === 'object' ? dbConf.dialect : (dbConf || undefined), 'db.dialect');
-  const setup = setupSqlite({ path: typeof dbConf === 'object' ? dbConf.path : undefined });
+  const named: Record<string, Placement> = {};
+  for (const [name, conf] of Object.entries(sources ?? {})) {
+    refuseUnresolvable(conf.dialect, `sources.${name}.dialect`);
+    named[name] = { setup: setupSqlite({ path: conf.path }), entities: conf.entities };
+  }
+  return storageFrom({
+    db: setupSqlite({ path: typeof dbConf === 'object' ? dbConf.path : undefined }),
+    sources: named,
+  });
+}
+
+/** One source: the engine that holds it, and the entities that live there. */
+export interface Placement {
+  setup: Setup;
+  entities: string[];
+}
+
+export interface DeclaredStorage {
+  /** The default source — where an entity no placement names lands. */
+  db: Setup;
+  /** The other places. Absent means one source, the way it always was. */
+  sources?: Record<string, Placement>;
+}
+
+/**
+ * The same routing `resolveStorage` performs, over engines the CALLER built.
+ *
+ * `resolveStorage` reads a config file, and a config file cannot hold a live Kysely
+ * dialect — so it can only ever resolve sqlite, the one driver this package depends
+ * on. That was fine while `db:` was alone, because the escape hatch was to abandon
+ * the convention entirely and hand `configureFougere` your own factory. With several
+ * sources that stopped being an escape: a user wanting Postgres for ONE of them had
+ * to re-implement the routing and the per-source migration to keep the other.
+ *
+ * So the two jobs are separated. Resolving a NAME into an engine is sqlite-only and
+ * stays there; placing entities and migrating each source is engine-agnostic and
+ * lives here, where any `Setup` is welcome:
+ *
+ * ```ts
+ * configureFougere(storageFrom({
+ *   db: setupSqlite({ path: '.data/app.db' }),
+ *   sources: { legacy: { setup: setupKysely(pgDialect, 'postgres'), entities: ['Book'] } },
+ * }));
+ * ```
+ */
+export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
+  const { db: base, sources } = declared;
 
   // Where each named entity lives. An entity claimed by two sources is refused naming
   // both: the rows would be read from one and written to the other, by whichever
   // registration ran last — the same silent duplicate `remotes:` refuses one level up.
   const home = new Map<string, string>();
-  const engines = new Map<string, ReturnType<typeof setupSqlite>>();
-  for (const [name, conf] of Object.entries(sources ?? {})) {
-    refuseUnresolvable(conf.dialect, `sources.${name}.dialect`);
-    engines.set(name, setupSqlite({ path: conf.path }));
-    for (const entity of conf.entities) {
+  const engines = new Map<string, Setup>();
+  for (const [name, placement] of Object.entries(sources ?? {})) {
+    engines.set(name, placement.setup);
+    for (const entity of placement.entities) {
       const key = keyOf(entity);
       const claimed = home.get(key);
       if (claimed) {
@@ -128,19 +173,19 @@ export function resolveStorage(dbConf: DbConfig, sources?: SourcesConfig): Resol
 
   const engineFor = (entityName: string) => {
     const source = home.get(keyOf(entityName));
-    return (source && engines.get(source)) || setup;
+    return (source && engines.get(source)) || base;
   };
 
   return {
-    db: setup.db,
+    db: base.db,
     ormFactory: (entity: any, name: string) => engineFor(name).ormFactory(entity, name),
-    raw: setup.sqlite,
-    dialect: setup.dialect,
+    raw: (base as { sqlite?: { exec(sql: string): void } }).sqlite,
+    dialect: base.dialect,
     // Additive migration: creates missing tables AND adds columns an entity gained.
     // One pass per source, each seeing only its own tables — which is what makes a
     // cross-source `ref()` a miss rather than a constraint against a stranger.
     afterBoot: async (app) => {
-      await migrate(partition(app, (name) => !home.has(keyOf(name)), true) as never, setup.db);
+      await migrate(partition(app, (name) => !home.has(keyOf(name)), true) as never, base.db);
       for (const [name, engine] of engines) {
         await migrate(partition(app, (e) => home.get(keyOf(e)) === name, false) as never, engine.db);
       }

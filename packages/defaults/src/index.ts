@@ -13,8 +13,8 @@ import { createContainer } from '@fougere/container';
 import { createHttpTransport } from '@fougere/transport-http';
 import { resolveStorage, type DbConfig } from './storage.js';
 
-export { resolveStorage, declaresStorage } from './storage.js';
-export type { DbConfig, ResolvedStorage } from './storage.js';
+export { resolveStorage, declaresStorage, storageFrom } from './storage.js';
+export type { DbConfig, SourcesConfig, DeclaredStorage, Placement, ResolvedStorage } from './storage.js';
 
 export interface BootAppOptions {
   /** Boot only these fronds (by name). Absent = every discovered frond. */
