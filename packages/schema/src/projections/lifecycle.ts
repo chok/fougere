@@ -26,15 +26,7 @@ import { createId } from '@paralleldrive/cuid2';
 
 type Row = Record<string, unknown>;
 
-/**
- * Resolve a generator TOKEN to a function: a custom name registered via
- * `registerGenerator` wins, then the built-ins. An unknown name throws — loud and
- * local, instead of a silent divergence between two storages.
- *
- * The built-ins used to live storage-side, which put the inversion in plain sight: a
- * generator YOU invent travelled to every adapter, and the three the framework ships
- * did not.
- */
+/** Resolve a generator TOKEN to a function — a registered name wins over a built-in. */
 function generatorFor(ref: string): () => string {
   const custom = resolveCustomGenerator(ref);
   if (custom) return custom;

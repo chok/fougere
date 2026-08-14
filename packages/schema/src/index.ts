@@ -85,8 +85,8 @@ export {
   type ValidationResult,
   type ValidationError,
   validateFields,
-  checkValue,
 } from "./projections/validation.js";
+export { checkValue, type Checked } from "./projections/check-value.js";
 // encode: boundary → egress wire form (the dual of validation)
 export { encodeFields } from "./projections/encode.js";
 // io: the dual client-surface projections — ingress (may supply) / egress (may read)

@@ -3,8 +3,8 @@ import type { JSONSchema7 } from 'json-schema';
 // ─── Axis 1 · shape — the VALUE ──────────────────────────────
 // What a stand-alone value validator (zod, typebox) would cover: the kind of
 // value and its intrinsic constraints. Nothing here knows about a database or
-// a domain. Absent for relation-only fields (`many`), which carry no value of
-// their own.
+// a domain. Every field states one — `many` says `array` without `items`, its
+// elements living on the other side.
 //
 // The vocabulary is JSON Schema's own (`type` + `minLength`/`minimum`/`format`…),
 // so the portable descriptor is a near-identity projection — no shape↔JSON-Schema

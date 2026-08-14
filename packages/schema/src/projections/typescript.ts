@@ -188,16 +188,7 @@ function returnTypeOf(op: OpDescriptor, rowType: string): string {
   }
 }
 
-/**
- * Emit the type of a façade — every operation an entity serves, as a caller meets it.
- *
- * This is what `Facade<T>` needs and what no consumer in another repository could have:
- * writing `Facade<ArticleHandler>` used to require importing the handler's class, which
- * `sync` does not carry and should not. The card carries the operations; this reads them.
- *
- * Each op takes an optional invocation and returns a promise — the door's signature, not
- * the handler's. A handler's method takes positional arguments; its door takes the call.
- */
+/** Emit the type of a façade — every operation an entity serves, as a callable surface. */
 export function facadeTypeSourceOf(
   ops: readonly OpDescriptor[],
   options: TypeSourceOptions & { rowType?: string } = {},

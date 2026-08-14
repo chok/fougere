@@ -120,20 +120,8 @@ export function boundaryOf(field: Field): Boundary {
 }
 
 /**
- * A field's effective conversion functions. The permission facet is not read
- * here: a `'closed'` direction converts as identity — its rejection/omission
- * happens in the readers (validation, encode) BEFORE any conversion.
- *
- * A NAMED codec that no one registered throws, exactly like an unknown alias
- * (`declaredBoundary`). It used to fall back to identity: a frond declared
- * `{ decode: 'celsius' }`, the consumer never called `registerDecoder`, and the
- * value arrived unconverted while the card said it had been converted — the same
- * silent loss this repo measured on Remult (`validate: [null, null]`) and on
- * zod v4 (a computed default frozen at export). One axis, two spellings, one
- * failure mode.
- *
- * It throws where the conversion is needed, not at boot: nothing walks every
- * field at startup. Loud and late beats silent and never.
+ * A field's effective conversion functions. A closed direction converts as identity — the
+ * permission facet is judged by the façade, not here.
  */
 export function resolveBoundary(field: Field): { decode: Decoder; encode: Encoder } {
   const boundary = boundaryOf(field);

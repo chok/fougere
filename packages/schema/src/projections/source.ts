@@ -35,14 +35,7 @@ export function schemaOf(source: SchemaSource): SchemaView {
   return isDescriptor(source) ? reconstruct(source) : source;
 }
 
-/**
- * The fields an adapter projects from, whichever form it was handed — {@link schemaOf}
- * for the single-read case.
- *
- * Cost: nothing for a class. For a card, one `reconstruct` — measured at 6.5 µs for a
- * 17-field entity, paid once per entity when the adapter builds, never per request. Read
- * twice and you pay twice: hold the result, or normalize with `schemaOf` instead.
- */
+/** The fields an adapter projects from, whichever form it was handed. */
 export function fieldsOf(source: SchemaSource): Fields {
   return schemaOf(source).getFields();
 }
