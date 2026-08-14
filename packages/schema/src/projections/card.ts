@@ -1,4 +1,4 @@
-import type { BoundaryRef, Lifecycle } from '../field/index.js';
+import type { BoundaryRef, Lifecycle, Relation, Role } from '../field/index.js';
 
 /**
  * The portable schema descriptor — Fougère's "carte d'identité" of an entity.
@@ -68,29 +68,18 @@ export interface FieldExtension {
   boundary?: BoundaryRef;
 }
 
-export interface RoleDescriptor {
-  primary?: boolean;
-  /**
-   * The unique constraints this field is a member of — one member list each, member
-   * names spelled out. `[["slug"]]` is unique on its own; `[["listId","docId"]]` on both
-   * members says the pair is unique together, which is the fact a foreign consumer could
-   * not read before: the card carried one boolean per field and the pair vanished.
-   *
-   * Self-reference is resolved on the way out (a lone `unique()` holds `[]` in memory,
-   * because a field does not know its own key) — a card always names its members, so a
-   * reader never has to know which field a group hangs on.
-   */
+/**
+ * The role, with its one unportable member replaced: `unique` names its members on the
+ * wire, where in memory a lone `unique()` holds `[]` — a field does not know its own key,
+ * a reader of the card must not have to guess it.
+ */
+export type RoleDescriptor = Omit<Role, 'unique' | 'relation'> & {
   unique?: string[][];
-  index?: boolean;
   relation?: RelationDescriptor;
-}
+};
 
-/** A relation as portable data: the target is a NAME, not a live entity thunk. */
-export interface RelationDescriptor {
-  to: string;
-  kind: 'one' | 'many';
-  onDelete?: 'cascade' | 'restrict' | 'set null';
-}
+/** The relation, with its thunk replaced: the target is a NAME. */
+export type RelationDescriptor = Omit<Relation, 'to'> & { to: string };
 
 /**
  * A whole entity as a JSON Schema object document. `version`/`vendor` mirror Standard

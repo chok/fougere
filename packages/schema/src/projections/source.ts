@@ -46,12 +46,3 @@ export function schemaOf(source: SchemaSource): SchemaView {
 export function fieldsOf(source: SchemaSource): Fields {
   return schemaOf(source).getFields();
 }
-
-/**
- * The composite unique groups, whichever form. A bare wrapper (a view mid-derivation)
- * carries no `getUnique` and answers `undefined`; a card's groups are recovered from what
- * its members carry, so `reconstruct` has already restored them by the time this reads.
- */
-export function uniqueOf(source: SchemaSource): ReadonlyArray<ReadonlyArray<string>> | undefined {
-  return schemaOf(source).getUnique();
-}
