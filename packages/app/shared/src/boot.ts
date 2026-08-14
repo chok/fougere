@@ -205,6 +205,13 @@ export function createMemoryOrm(entity: SchemaView, name: string): EntityOrm {
     async findAllBy(criteria: Record<string, unknown>) {
       return [...store.values()].filter((row) => matches(row, criteria));
     },
+    // Même contrat que le SQL : l'ordre des ids, et une clé absente est absente.
+    async findByIds(ids: readonly string[]) {
+      return ids.flatMap((id) => {
+        const row = store.get(keyOf(id));
+        return row ? [row] : [];
+      });
+    },
     async create(input: Partial<Record<string, unknown>>) {
       const record = applyCreate(fields, input);
       const id = record[pk] as string | undefined;

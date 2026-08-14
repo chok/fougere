@@ -237,6 +237,39 @@ export class SqlEntityOrm {
     return sel ? pickList(result, sel) : result;
   }
 
+  /**
+   * Une requête pour N clés, jamais N requêtes. C'est le socle de tout ce qui se lit
+   * par page — un champ calculé, une relation, un résolveur distant.
+   *
+   * L'ordre de la réponse suit celui des `ids` et une clé absente est simplement
+   * absente, ce qui permet de la faire correspondre à une page sans seconde recherche.
+   * Une clé composite n'a pas de forme de liste : elle est refusée en le disant, plutôt
+   * que de rendre un résultat partiel qu'on lirait comme complet.
+   */
+  async findByIds(ids: readonly string[], options?: SelectOption): Promise<Record<string, unknown>[]> {
+    if (this.pk.isComposite) {
+      throw new Error(`${this.table.name}.findByIds: the primary key is composite (${this.pk.names.join(', ')}) — read them one by one, or filter with \`findAllBy\`.`);
+    }
+    if (ids.length === 0) return [];
+    const name = this.pk.names[0]!;
+    const rows = await this.db
+      .selectFrom(this.table.name)
+      .selectAll()
+      .where(this.column(name), 'in', [...new Set(ids)].map((id) => this.write(name, id)))
+      .execute();
+
+    const sel = this.resolveSelect(options);
+    const byKey = new Map(rows.map((row: any) => {
+      const data = this.fromRow(row);
+      return [String(data[name]), sel ? pick(data, sel) : data];
+    }));
+    // L'ordre demandé, pas celui que la base a rendu.
+    return ids.flatMap((id) => {
+      const row = byKey.get(String(id));
+      return row ? [row] : [];
+    });
+  }
+
   async findById(id: string | Record<string, unknown>, options?: SelectOption): Promise<Record<string, unknown> | undefined> {
     const row = await this.wherePk(this.db.selectFrom(this.table.name).selectAll() as any, id).executeTakeFirst();
     if (!row) return undefined;

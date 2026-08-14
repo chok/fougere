@@ -180,3 +180,37 @@ describe('output()', () => {
     expect(await orm.findById(id)).toHaveProperty('secret');
   });
 });
+
+// ── findByIds : une requête pour N clés ──────────────────────────────────────
+
+describe('findByIds', () => {
+  it('rend les lignes dans l’ordre DEMANDÉ, pas celui de la base', async () => {
+    await orm.create({ title: 'un', body: 'a', secret: 's' });
+    const b = await orm.create({ title: 'deux', body: 'b', secret: 's' });
+    const c = await orm.create({ title: 'trois', body: 'c', secret: 's' });
+
+    const rows = await orm.findByIds([c.id, b.id]);
+    // Zipper une page contre le résultat n'a de sens que si l'ordre est celui demandé.
+    expect(rows.map((r: any) => r.title)).toEqual(['trois', 'deux']);
+  });
+
+  it('une clé absente est absente — pas un trou, pas une erreur', async () => {
+    const a = await orm.create({ title: 'un', body: 'a', secret: 's' });
+
+    expect(await orm.findByIds([a.id, 'jamais-créé'])).toHaveLength(1);
+    expect(await orm.findByIds([])).toEqual([]);
+  });
+
+  it('une clé répétée n’interroge qu’une fois et rend une ligne par demande', async () => {
+    const a = await orm.create({ title: 'un', body: 'a', secret: 's' });
+    // Le SELECT dédoublonne ; la réponse suit la demande.
+    expect((await orm.findByIds([a.id, a.id])).map((r: any) => r.title)).toEqual(['un', 'un']);
+  });
+
+  it('les valeurs traversent le codec, comme par tout autre chemin de lecture', async () => {
+    const a = await orm.create({ title: 'un', body: 'a', secret: 's' });
+    const [row] = await orm.findByIds([a.id]);
+    // Une date relue par ici doit être une Date, pas la chaîne de la colonne.
+    expect(row).toEqual(await orm.findById(a.id));
+  });
+});

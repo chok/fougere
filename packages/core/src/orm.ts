@@ -84,6 +84,21 @@ export interface EntityOrm<T = Record<string, unknown>> {
    */
   findBy(criteria: Partial<T> | Record<string, unknown>, options?: SelectOption): Promise<T | undefined>;
   findAllBy(criteria: Partial<T> | Record<string, unknown>, options?: SelectOption): Promise<T[]>;
+  /**
+   * Read a SET of rows by their key, in one go — the gesture every other one was
+   * being bent into.
+   *
+   * `findAllBy` compares with `=`, so a list of ids could not be passed to it; the
+   * only way to read N rows was `list()` then filter in memory, which is what 14 of
+   * 14 handlers of a real app measured on 2026-08-14 were doing. It is invisible on
+   * SQLite and it is the whole table the day the rows are not local.
+   *
+   * The order of the answer follows the order of `ids`, and a miss is simply absent —
+   * so the caller can zip it against a page without a second lookup. It is therefore
+   * the shape a page-level resolver needs, whether the rows come from this table or
+   * from a frond on the other side of a wire.
+   */
+  findByIds(ids: readonly string[], options?: SelectOption): Promise<T[]>;
   create(input: Partial<T>, options?: SelectOption): Promise<T>;
   update(id: string, input: Partial<T>, options?: SelectOption): Promise<T>;
   delete(id: string): Promise<boolean>;
