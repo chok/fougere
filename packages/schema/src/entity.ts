@@ -1,5 +1,5 @@
 import { Field, type Fields } from "./field/index.js";
-import { checkValue } from "./projections/check-value.js";
+import { Judge } from './validation/index.js';
 import { projectUniqueOntoFields, type EntityDeclarations } from "./unique.js";
 import { Schema, type SchemaConstructor } from "./schema/index.js";
 
@@ -55,7 +55,7 @@ function assertDefaultsAreValid(fields: Fields): void {
     const create = field.lifecycle?.create;
     if (typeof create !== 'object' || create === null || !('value' in create)) continue;
 
-    const checked = checkValue(field, (create as { value: unknown }).value);
+    const checked = Judge.value(field, (create as { value: unknown }).value);
     if ('error' in checked) {
       throw new Error(
         `Field '${name}': the declared default ${JSON.stringify((create as { value: unknown }).value)} `

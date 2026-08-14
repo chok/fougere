@@ -47,4 +47,3 @@ export {
   type Fields,
   type FieldData,
 } from "./field.js";
-export { validateField, isField } from "./validate-field.js";

@@ -1,8 +1,9 @@
+import { Judge } from '../src/index.js';
 import { resolveBoundary } from '../src/field/index.js';
 import { describe, it, expect } from 'vitest';
 import {
   entity, primary, text, date, optional, readOnly, writeOnly, boundaryOf,
-  encodeFields, validateFields,
+  encodeFields,
   registerDecoder, registerEncoder, registerBoundaryAlias,
 } from '../src/index.js';
 import { Field } from '../src/field/index.js';
@@ -88,18 +89,18 @@ describe('boundary · override slot', () => {
 describe("boundary · 'closed' permissions (readOnly / writeOnly)", () => {
   it("readOnly() closes in — present in an input is 'Read-only', absent is never 'Required'", () => {
     const fields = { views: readOnly(text()), title: text() };
-    const present = validateFields(fields, { views: '9', title: 'x' });
+    const present = Judge.row(fields, { views: '9', title: 'x' });
     expect(present.success).toBe(false);
     if (!present.success) expect(present.errors[0]).toEqual({ path: 'views', message: 'Read-only' });
     // absent: the server owns it — no Required error despite no create rule
-    expect(validateFields(fields, { title: 'x' }).success).toBe(true);
+    expect(Judge.row(fields, { title: 'x' }).success).toBe(true);
     // rejected in patch mode too
-    expect(validateFields(fields, { views: '9' }, { patch: true }).success).toBe(false);
+    expect(Judge.row(fields, { views: '9' }, { patch: true }).success).toBe(false);
   });
 
   it('writeOnly() closes out — accepted at ingress, omitted at egress', () => {
     const fields = { password: writeOnly(text({ min: 8 })), name: text() };
-    const v = validateFields(fields, { password: 'hunter22', name: 'Ada' });
+    const v = Judge.row(fields, { password: 'hunter22', name: 'Ada' });
     expect(v.success).toBe(true);
     if (v.success) expect(v.data.password).toBe('hunter22'); // ingress open, shape judged
     const wire = encodeFields(fields, { password: 'hunter22', name: 'Ada' });

@@ -1,8 +1,8 @@
+import { Judge } from '../src/index.js';
 import { describe, it, expect } from 'vitest';
 import {
   entity, primary, text, number, oneOf, list, optional, nullable,
-  nullableShape, anatomy, isNullable, registerGenerator, resolveCustomGenerator,
-  validateFields, unique, indexed, describe as describeSchema, reconstruct,
+  nullableShape, anatomy, isNullable, registerGenerator, resolveCustomGenerator, unique, indexed, describe as describeSchema, reconstruct,
 } from '../src/index.js';
 
 // ─── nullableShape / anatomy — the two gates of the union, per shape genre ──
@@ -72,44 +72,44 @@ describe('anatomy — the single customs post for readers', () => {
 describe('quadrant présence × nullité', () => {
   it('nullable(): null legal, field still REQUIRED (the new quadrant)', () => {
     const fields = { note: nullable(text()) };
-    expect(validateFields(fields, {}).success).toBe(false); // absent → Required
-    expect(validateFields(fields, { note: null }).success).toBe(true); // explicit null legal
-    expect(validateFields(fields, { note: 'x' }).success).toBe(true);
+    expect(Judge.row(fields, {}).success).toBe(false); // absent → Required
+    expect(Judge.row(fields, { note: null }).success).toBe(true); // explicit null legal
+    expect(Judge.row(fields, { note: 'x' }).success).toBe(true);
   });
 
   it('optional(): null legal AND absence permitted', () => {
     const fields = { note: optional(text()) };
-    const absent = validateFields(fields, {});
+    const absent = Judge.row(fields, {});
     expect(absent.success).toBe(true);
     if (absent.success) expect('note' in absent.data).toBe(false); // omitted, not nulled
-    expect(validateFields(fields, { note: null }).success).toBe(true);
+    expect(Judge.row(fields, { note: null }).success).toBe(true);
   });
 
   it('bare field: null illegal, absence illegal', () => {
     const fields = { note: text() };
-    expect(validateFields(fields, {}).success).toBe(false);
-    expect(validateFields(fields, { note: null }).success).toBe(false);
+    expect(Judge.row(fields, {}).success).toBe(false);
+    expect(Judge.row(fields, { note: null }).success).toBe(false);
   });
 
   it('nullable(oneOf(...)): null joins the enum, other values stay constrained', () => {
     const fields = { status: nullable(oneOf('pending', 'paid')) };
-    expect(validateFields(fields, { status: null }).success).toBe(true);
-    expect(validateFields(fields, { status: 'paid' }).success).toBe(true);
-    expect(validateFields(fields, { status: 'nope' }).success).toBe(false);
+    expect(Judge.row(fields, { status: null }).success).toBe(true);
+    expect(Judge.row(fields, { status: 'paid' }).success).toBe(true);
+    expect(Judge.row(fields, { status: 'nope' }).success).toBe(false);
   });
 
   it('nullable(number(...)): constraints apply to the base type only, null passes', () => {
     const fields = { n: nullable(number({ min: 0, integer: true })) };
-    expect(validateFields(fields, { n: null }).success).toBe(true);
-    expect(validateFields(fields, { n: 3 }).success).toBe(true);
-    expect(validateFields(fields, { n: -1 }).success).toBe(false);
-    expect(validateFields(fields, { n: 1.5 }).success).toBe(false);
+    expect(Judge.row(fields, { n: null }).success).toBe(true);
+    expect(Judge.row(fields, { n: 3 }).success).toBe(true);
+    expect(Judge.row(fields, { n: -1 }).success).toBe(false);
+    expect(Judge.row(fields, { n: 1.5 }).success).toBe(false);
   });
 
   it('nullable elements inside a list validate natively', () => {
     const fields = { tags: list(nullable(text({ min: 1 }))) };
-    expect(validateFields(fields, { tags: ['a', null] }).success).toBe(true);
-    expect(validateFields(fields, { tags: [''] }).success).toBe(false);
+    expect(Judge.row(fields, { tags: ['a', null] }).success).toBe(true);
+    expect(Judge.row(fields, { tags: [''] }).success).toBe(false);
   });
 });
 

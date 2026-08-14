@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Field, Schema, created, entity, list, oneOf, optional, primary, text, updated, validateField } from '../src/index.js';
+import { Field, Schema, created, entity, list, oneOf, optional, primary, text, updated, Judge } from '../src/index.js';
 
 /**
  * The constructor is the only way to obtain a field, so it is where a field is judged —
@@ -33,7 +33,7 @@ describe('the field door', () => {
   });
 
   it('reports every fault at once, not the first', () => {
-    const verdict = validateField({ shape: 42, lifecycle: { update: 'nawak' }, meta: 7 });
+    const verdict = Judge.field({ shape: 42, lifecycle: { update: 'nawak' }, meta: 7 });
     expect(verdict.success).toBe(false);
     if (!verdict.success) {
       expect(verdict.errors.map((e) => e.path)).toEqual(['shape', 'lifecycle.update', 'meta']);

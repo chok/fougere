@@ -1,12 +1,13 @@
 import { describe, it, expect } from 'vitest';
+import { Judge } from '../src/index.js';
 import {
-  entity, primary, text, number, bool, date, created, updated, immutable, oneOf, ref, many, optional, json, list, email, url, isField, isNullable,
+  entity, primary, text, number, bool, date, created, updated, immutable, oneOf, ref, many, optional, json, list, email, url, isNullable,
 } from '../src/index.js';
 
 describe('helpers', () => {
   it('primary() creates an auto-generated id field (cuid2 default)', () => {
     const f = primary();
-    expect(isField(f)).toBe(true);
+    expect(Judge.isField(f)).toBe(true);
     expect(f.shape).toEqual({ type: 'string' });
     expect(f.role?.primary).toBe(true);
     // identity in the graph implies immutability in time (default 2026-07-15)

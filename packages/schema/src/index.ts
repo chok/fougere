@@ -15,8 +15,6 @@ export {
   type Decoder,
   type Encoder,
   type Meta,
-  validateField,
-  isField,
   nullableShape,
   anatomy,
   // The constraint a `role.unique` member list denotes — `[]` means the field carrying it.
@@ -82,11 +80,7 @@ export { json } from "./vocabulary/json.js";
 export { applyCreate, applyUpdate } from "./projections/lifecycle.js";
 // validation: shape → ingress predicate (+ boundary decode)
 export {
-  type ValidationResult,
-  type ValidationError,
-  validateFields,
-} from "./projections/validation.js";
-export { checkValue, type Checked } from "./projections/check-value.js";
+} from './validation/index.js';
 // encode: boundary → egress wire form (the dual of validation)
 export { encodeFields } from "./projections/encode.js";
 // io: the dual client-surface projections — ingress (may supply) / egress (may read)
@@ -121,3 +115,5 @@ export {
 export type { StandardSchemaV1 } from "./projections/standard.js";
 
 export { entity } from "./entity.js";
+
+export { Judge, type ValidateOptions, type ValidationError, type ValidationResult, type Checked } from "./validation/index.js";
