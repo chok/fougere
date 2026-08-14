@@ -22,11 +22,6 @@ export type JsonSchemaType =
   | 'null';
 
 /**
- * One field as a JSON Schema property. The shape keywords sit at the top level
- * (so an external JSON Schema tool reads them directly); the Fougère-only axes
- * live under `x-fougere`. A nullable field folds into the union `type: ['T','null']`.
- */
-/**
  * A shape's constraint keywords, all optional and flattened — the union's branches merged.
  * `type` is NOT here: intersecting the branches would make the discriminant impossible,
  * and the wire genuinely allows a form memory never produces (see below).
@@ -38,6 +33,11 @@ type ShapeKeywords = UnionToIntersection<KeywordsOf<Shape>>;
 type KeywordsOf<S> = S extends unknown ? Partial<Omit<S, 'type' | 'items' | 'properties'>> : never;
 type UnionToIntersection<U> = (U extends unknown ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
 
+/**
+ * One field as a JSON Schema property. The shape keywords sit at the top level
+ * (so an external JSON Schema tool reads them directly); the Fougère-only axes
+ * live under `x-fougere`. A nullable field folds into the union `type: ['T','null']`.
+ */
 export type FieldDescriptor = ShapeKeywords & {
   /**
    * WIDER than `Shape`, which only ever emits `T` or the canonical `[T,'null']` tuple.
