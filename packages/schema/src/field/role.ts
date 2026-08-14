@@ -5,17 +5,6 @@
 // `unique` and `index` are the only axis members realized OUTSIDE the framework — the DDL
 // emits them and the database enforces them, so a collision surfaces as the driver's
 // error, never as a `validate()` failure.
-//
-// ⚠️ A `unique` member list may be EMPTY, denoting the field that carries it — a field
-// does not know its own key. Every reader goes through `uniqueMembers(group, key)`.
-// `describe` resolves it on the way out, so a card always names its members; keeping it
-// unresolved in memory is what makes `rename()` free.
-//
-// The in-repo readers do this (`schema-sql/src/table.ts`, `projections/describe.ts`). A
-// consumer reading a CARD never meets the empty form: `describe` resolves it on the way
-// out, so the wire always names its members — which is the point of resolving it there
-// and not in `entity()`. Keeping it unresolved in memory is what makes `rename()` free:
-// a self-reference names no key, so there is nothing to remap when the key moves.
 
 export type EntityConstructor = abstract new (...args: any[]) => any;
 
@@ -49,6 +38,9 @@ export interface Role {
    * **An empty list denotes the field carrying it** — it does not know its own key. A named
    * group comes from the entity's own declaration, where a fact about a pair belongs.
    * NEVER read a group directly: {@link uniqueMembers} is the accessor.
+   *
+   * `describe` resolves it on the way out, so a card always names its members. Keeping it
+   * unresolved in memory is what makes `rename()` free: nothing to remap.
    */
   unique?: ReadonlyArray<ReadonlyArray<string>>;
   index?: boolean;
