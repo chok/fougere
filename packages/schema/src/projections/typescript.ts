@@ -84,6 +84,7 @@ export interface TypeSourceOptions {
 
 /**
  * The anonymous object type one card describes — the members, nothing around them.
+ * Internal: `entitySourceOf` is what a consumer calls, and it emits this above the judge.
  *
  * Every property is present: `required` on a Fougère card answers "what must a CALLER
  * supply at creation", not "what is always there when read" — an `id` the system

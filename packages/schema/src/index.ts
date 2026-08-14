@@ -83,7 +83,6 @@ export { registrationKeyOf } from "./name.js";
 export { describe, describeSet, sourceNameOf } from "./projections/describe.js";
 export { reconstruct, reconstructSet } from "./projections/reconstruct.js";
 export {
-  shapeTypeOf,
   entitySourceOf,
   facadeTypeSourceOf,
   type TypeSourceOptions,
