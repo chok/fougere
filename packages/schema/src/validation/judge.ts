@@ -4,6 +4,7 @@ import { ON_DELETE, RELATION_KINDS } from '../field/role.js';
 import { Anatomy, Formats, boundaryOf, isShape, resolveBoundary, } from '../field/index.js';
 import { Validator, format as engineFormats } from '@cfworker/json-schema';
 import type { Checked, ValidationError, ValidationResult } from './result.js';
+import type { ValidateOptions } from './options.js';
 
 interface ShapePlan {
   validator: Validator;
@@ -12,12 +13,6 @@ interface ShapePlan {
   /** The declared format name, kept for the error message. */
   formatName?: string;
 }
-
-/** Patch mode: an unsent field is untouched. Distinguishes "absent, don't touch" from "absent → null". */
-export interface ValidateOptions {
-  patch?: boolean;
-}
-
 
 const isObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v);
