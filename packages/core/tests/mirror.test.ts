@@ -87,4 +87,11 @@ describe('what a mirror states about itself', () => {
     class Undated extends entity({ id: primary(), title: text() }) {}
     expect(ageFieldOf(Undated)).toBeUndefined();
   });
+
+  it('refuses a shape that cannot say its age, at the declaration', () => {
+    // The DDL states this for a stored DERIVATION; an entity used as a mirror — a flat
+    // search index copying rather than referencing — reaches no such rule.
+    class Undated extends entity({ id: primary(), title: text() }) {}
+    expect(() => Mirror(Undated)).toThrow(/carries no `updated\(\)` field/);
+  });
 });
