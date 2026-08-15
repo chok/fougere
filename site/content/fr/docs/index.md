@@ -66,13 +66,14 @@ sérialisation que le chemin local éviterait, aucun impôt du framework par-des
 [Entités](/fr/docs/schema/entities) · [Vues](/fr/docs/schema/views) ·
 [Standard Schema](/fr/docs/schema/standard-schema) · [Handlers](/fr/docs/business/handlers) ·
 [Presenters](/fr/docs/business/presenters) · [Collectors](/fr/docs/business/collectors) · [Erreurs](/fr/docs/business/errors) · [Seeds](/fr/docs/business/seeds) ·
-[Les faits](/fr/docs/business/facts)
+[Les faits](/fr/docs/business/facts) · [Le port ORM](/fr/docs/business/orm)
 
 **Côté client** — [Queries & commands](/fr/docs/client/queries-commands) ·
 [Formulaires](/fr/docs/client/forms) · [Session](/fr/docs/client/session) · [invoke](/fr/docs/client/invoke)
 
 **Topologie** — [Le gradient](/fr/docs/infra/gradient) · [Surfaces](/fr/docs/infra/surfaces) ·
-[Déploiement](/fr/docs/infra/deployment)
+[Déploiement](/fr/docs/infra/deployment) · [Les hôtes](/fr/docs/infra/hosts) ·
+[Les sources](/fr/docs/infra/sources)
 
 > **Statut.** Fougere est en alpha : les paquets `@fougere/*` sont sur npm sous le tag
 > `alpha`, et cette documentation décrit l'API telle qu'elle existe dans le dépôt

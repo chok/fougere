@@ -65,13 +65,14 @@ the local path avoids, no framework tax layered on top of the network.
 [Entities](/docs/schema/entities) · [Views](/docs/schema/views) ·
 [Standard Schema](/docs/schema/standard-schema) · [Handlers](/docs/business/handlers) ·
 [Presenters](/docs/business/presenters) · [Collectors](/docs/business/collectors) · [Errors](/docs/business/errors) · [Seeds](/docs/business/seeds) ·
-[Facts](/docs/business/facts)
+[Facts](/docs/business/facts) · [The ORM port](/docs/business/orm)
 
 **Client side** — [Queries & commands](/docs/client/queries-commands) ·
 [Forms](/docs/client/forms) · [Session](/docs/client/session) · [invoke](/docs/client/invoke)
 
 **Topology** — [The gradient](/docs/infra/gradient) · [Surfaces](/docs/infra/surfaces) ·
-[Deployment](/docs/infra/deployment)
+[Deployment](/docs/infra/deployment) · [Hosts](/docs/infra/hosts) ·
+[Sources](/docs/infra/sources)
 
 > **Status.** Fougere is in alpha: the `@fougere/*` packages are on npm under the `alpha`
 > tag, and this documentation describes the API as it exists in the repository today.
