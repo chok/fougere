@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { entity, primary, text, number, bool, created, updated, optional } from '@fougere/schema';
-import { setupSqlite, autoMigrate, type SqliteSetup } from '../src/index.js';
+import { setupSqlite, autoMigrate, codecFor, type SqliteSetup } from '../src/index.js';
 
 class Post extends entity({
   id: primary(),
@@ -271,5 +271,31 @@ describe('findAllByKeys — the other direction of a relation', () => {
     await orm.create({ title: 'z', body: 'unasked', secret: 's' });
     const grouped = await orm.findAllByKeys('body', ['shared']);
     expect([...grouped.keys()]).toEqual(['shared']);
+  });
+});
+
+// ── a driver that answers a BigInt ────────────────────────────────────────────
+
+describe('a number the driver hands back as a BigInt', () => {
+  it('comes back a number, because that is what the field declares', () => {
+    // Postgres does it for `count(*)` and for `bigint` columns, DuckDB for every count.
+    // Untouched, the value does not even leave: `JSON.stringify` refuses a BigInt.
+    const codec = codecFor({ type: 'integer' });
+    expect(codec.read(42n)).toBe(42);
+    expect(typeof codec.read(42n)).toBe('number');
+    expect(JSON.stringify({ n: codec.read(42n) })).toBe('{"n":42}');
+  });
+
+  it('refuses one too large rather than rounding it', () => {
+    // Number(9007199254740993n) is 9007199254740992 — a wrong answer, silently.
+    expect(() => codecFor({ type: 'integer' }).read(9007199254740993n))
+      .toThrow(/does not fit a JavaScript number/);
+  });
+
+  it('leaves a plain number and a null alone', () => {
+    const codec = codecFor({ type: 'number' });
+    expect(codec.read(1.5)).toBe(1.5);
+    expect(codec.read(null)).toBeNull();
+    expect(codec.read(undefined)).toBeUndefined();
   });
 });
