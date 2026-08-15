@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { entity, primary, text, number, bool, created, updated, optional } from '@fougere/schema';
-import { setupSqlite, autoMigrate, type SqliteSetup } from '../src/index.js';
+import { setupSqlite, autoMigrate, codecFor, type SqliteSetup } from '../src/index.js';
 
 class Post extends entity({
   id: primary(),
@@ -178,5 +178,250 @@ describe('output()', () => {
     const { id } = await seed('Hello');
     orm.output(PostPublic);
     expect(await orm.findById(id)).toHaveProperty('secret');
+  });
+});
+
+// ── a criterion may name a SET ────────────────────────────────────────────────
+
+describe('a criterion naming a set', () => {
+  it('reads them all in one query — the batch form a relation needs', async () => {
+    const a = await orm.create({ title: 'one', body: 'a', secret: 's' });
+    await orm.create({ title: 'two', body: 'b', secret: 's' });
+    const c = await orm.create({ title: 'three', body: 'c', secret: 's' });
+
+    const rows = await orm.findAllBy({ id: [a.id, c.id] });
+    expect(rows.map((r: any) => r.title).sort()).toEqual(['one', 'three']);
+  });
+
+  it('an empty set matches nothing — never the whole table', async () => {
+    await orm.create({ title: 'one', body: 'a', secret: 's' });
+    expect(await orm.findAllBy({ id: [] })).toEqual([]);
+  });
+
+  it('a repeated value is asked once, and one row comes back', async () => {
+    const a = await orm.create({ title: 'one', body: 'a', secret: 's' });
+    expect(await orm.findAllBy({ id: [a.id, a.id] })).toHaveLength(1);
+  });
+
+  it('values cross the codec, as a single criterion already does', async () => {
+    const a = await orm.create({ title: 'one', body: 'a', secret: 's' });
+    expect(await orm.findAllBy({ id: [a.id] })).toEqual([await orm.findById(a.id)]);
+  });
+});
+
+// ── findByKeys: one query for N keys ─────────────────────────────────────────
+
+describe('findByKeys', () => {
+  it('answers a map keyed by the primary key — a page zips by key, not by position', async () => {
+    await orm.create({ title: 'one', body: 'a', secret: 's' });
+    const b = await orm.create({ title: 'two', body: 'b', secret: 's' });
+    const c = await orm.create({ title: 'three', body: 'c', secret: 's' });
+
+    const found = await orm.findByKeys([c.id, b.id]);
+    expect(found.get(c.id)?.title).toBe('three');
+    expect(found.get(b.id)?.title).toBe('two');
+  });
+
+  it('a miss is an absent key — not a hole, not an error', async () => {
+    const a = await orm.create({ title: 'one', body: 'a', secret: 's' });
+
+    const found = await orm.findByKeys([a.id, 'never-created']);
+    expect(found.size).toBe(1);
+    expect(found.has('never-created')).toBe(false);
+    expect((await orm.findByKeys([])).size).toBe(0);
+  });
+
+  it('a repeated key is queried once and is one entry — a map cannot hold it twice', async () => {
+    const a = await orm.create({ title: 'one', body: 'a', secret: 's' });
+    const found = await orm.findByKeys([a.id, a.id]);
+    expect(found.size).toBe(1);
+    expect(found.get(a.id)?.title).toBe('one');
+  });
+
+  it('values cross the codec, as they do on every other read path', async () => {
+    const a = await orm.create({ title: 'one', body: 'a', secret: 's' });
+    const found = await orm.findByKeys([a.id]);
+    // A date read through here must be a Date, not the column's string.
+    expect(found.get(a.id)).toEqual(await orm.findById(a.id));
+  });
+});
+
+// ── the dual: the rows that point at these keys ───────────────────────────────
+
+describe('findAllByKeys — the other direction of a relation', () => {
+  it('groups by the key each row points at, in one query', async () => {
+    await orm.create({ title: 'a1', body: 'shared', secret: 's' });
+    await orm.create({ title: 'a2', body: 'shared', secret: 's' });
+    await orm.create({ title: 'b1', body: 'other', secret: 's' });
+
+    const grouped = await orm.findAllByKeys('body', ['shared', 'other']);
+    expect(grouped.get('shared')!.map((r: any) => r.title).sort()).toEqual(['a1', 'a2']);
+    expect(grouped.get('other')!.map((r: any) => r.title)).toEqual(['b1']);
+  });
+
+  it('a key with no row is absent — never an empty array to be told apart', async () => {
+    await orm.create({ title: 'a1', body: 'shared', secret: 's' });
+    const grouped = await orm.findAllByKeys('body', ['shared', 'nobody']);
+    expect(grouped.has('nobody')).toBe(false);
+    expect((await orm.findAllByKeys('body', [])).size).toBe(0);
+  });
+
+  it('asks nothing outside the keys — the whole table is never the answer', async () => {
+    await orm.create({ title: 'a1', body: 'shared', secret: 's' });
+    await orm.create({ title: 'z', body: 'unasked', secret: 's' });
+    const grouped = await orm.findAllByKeys('body', ['shared']);
+    expect([...grouped.keys()]).toEqual(['shared']);
+  });
+});
+
+// ── a driver that answers a BigInt ────────────────────────────────────────────
+
+describe('a number the driver hands back as a BigInt', () => {
+  it('comes back a number, because that is what the field declares', () => {
+    // Postgres does it for `count(*)` and for `bigint` columns, DuckDB for every count.
+    // Untouched, the value does not even leave: `JSON.stringify` refuses a BigInt.
+    const codec = codecFor({ type: 'integer' });
+    expect(codec.read(42n)).toBe(42);
+    expect(typeof codec.read(42n)).toBe('number');
+    expect(JSON.stringify({ n: codec.read(42n) })).toBe('{"n":42}');
+  });
+
+  it('refuses one too large rather than rounding it', () => {
+    // Number(9007199254740993n) is 9007199254740992 — a wrong answer, silently.
+    expect(() => codecFor({ type: 'integer' }).read(9007199254740993n))
+      .toThrow(/does not fit a JavaScript number/);
+  });
+
+  it('leaves a plain number and a null alone', () => {
+    const codec = codecFor({ type: 'number' });
+    expect(codec.read(1.5)).toBe(1.5);
+    expect(codec.read(null)).toBeNull();
+    expect(codec.read(undefined)).toBeUndefined();
+  });
+});
+
+// ── more keys than the engine can bind ────────────────────────────────────────
+
+/**
+ * A key set comes from a PAGE, and `list()` with no limit reads the table — so the
+ * set has no ceiling while the engine does. Measured on better-sqlite3: 32 766 binds
+ * pass, 32 767 answers `too many SQL variables`. SQL Server is the low one at 2100.
+ *
+ * A batch read that dies at a certain data size is the worst kind: it works in dev.
+ */
+describe('a key set larger than one statement can bind', () => {
+  const MANY = 40_000;
+
+  beforeEach(async () => {
+    // Fifty real rows; the rest of the keys match nothing, which is the ordinary case
+    // (a page of foreign keys pointing at a table that holds far fewer of them).
+    for (let i = 0; i < 50; i++) await orm.create({ title: `t${i}`, body: 'b', secret: 's' });
+  });
+
+  it('reads them all — sliced, and the caller never learns there were several', async () => {
+    const real = (await orm.list()).map((r: any) => r.id);
+    const keys = [...real, ...Array.from({ length: MANY }, (_, i) => `absent-${i}`)];
+
+    const found = await orm.findByKeys(keys);
+    expect(found.size).toBe(50);
+    expect(found.get(real[0])!.title).toBe('t0');
+  });
+
+  it('groups them all on the dual, slices concatenated', async () => {
+    const keys = ['b', ...Array.from({ length: MANY }, (_, i) => `absent-${i}`)];
+    const grouped = await orm.findAllByKeys('body', keys);
+    expect(grouped.get('b')).toHaveLength(50);
+  });
+
+  it('refuses on `list`, naming the gesture that handles it', async () => {
+    // A limit and an order do not recompose across statements, so this one cannot be
+    // split — and truncating in silence would be the failure this whole test exists for.
+    const keys = Array.from({ length: MANY }, (_, i) => `k${i}`);
+    await expect(orm.list({ where: { id: keys } }))
+      .rejects.toThrow(/binds 30000 — a page and an order cannot be split.*findAllByKeys/s);
+  });
+
+  it('refuses two oversized criteria rather than guessing their cross product', async () => {
+    const keys = Array.from({ length: MANY }, (_, i) => `k${i}`);
+    await expect(orm.findAllBy({ id: keys, title: keys }))
+      .rejects.toThrow(/each hold more than 30000 values/);
+  });
+});
+
+// ── upsert : écrire, ou remplacer ce qui est là ───────────────────────────────
+
+describe('upsert', () => {
+  it('writes when the row is absent, exactly like create', async () => {
+    const row = await orm.upsert({ id: 'p1', title: 'first', body: 'b', secret: 's' });
+    expect(row.title).toBe('first');
+    // The lifecycle a first write owes is realized: a declared default, a stamp.
+    expect(row.views).toBe(0);
+    expect(row.createdAt).toBeInstanceOf(Date);
+  });
+
+  it('replaces when it is there — the second run of an import must not throw', async () => {
+    await orm.upsert({ id: 'p1', title: 'first', body: 'b', secret: 's' });
+    const again = await orm.upsert({ id: 'p1', title: 'revised', body: 'b2', secret: 's' });
+
+    expect(again.title).toBe('revised');
+    expect(again.body).toBe('b2');
+    expect(await orm.list()).toHaveLength(1);
+  });
+
+  it('keeps the moment the row appeared, whatever a later write says', async () => {
+    const first = await orm.upsert({ id: 'p1', title: 'first', body: 'b', secret: 's' });
+    await new Promise((r) => setTimeout(r, 5));
+    const again = await orm.upsert({ id: 'p1', title: 'revised', body: 'b', secret: 's' });
+
+    // A row keeps its creation stamp — replacing it would erase when it appeared.
+    expect(again.createdAt).toEqual(first.createdAt);
+    // And it carries when it last changed.
+    expect(new Date(again.updatedAt).getTime()).toBeGreaterThan(new Date(first.updatedAt).getTime());
+  });
+
+  it('generates the key when the caller brings none', async () => {
+    const row = await orm.upsert({ title: 'no key of mine', body: 'b', secret: 's' });
+    expect(row.id).toMatch(/.+/);
+  });
+});
+
+// ── upsertAll : une page, une écriture ────────────────────────────────────────
+
+describe('upsertAll', () => {
+  it('writes a page in one statement, and says how many', async () => {
+    const page = Array.from({ length: 200 }, (_, i) => ({ id: `p${i}`, title: `t${i}`, body: 'b', secret: 's' }));
+    expect(await orm.upsertAll(page)).toBe(200);
+    expect(await orm.list()).toHaveLength(200);
+  });
+
+  it('replaces on a second pass — the shape of a re-import', async () => {
+    const page = Array.from({ length: 50 }, (_, i) => ({ id: `p${i}`, title: `t${i}`, body: 'b', secret: 's' }));
+    await orm.upsertAll(page);
+    await orm.upsertAll(page.map((r) => ({ ...r, title: `${r.title} révisé` })));
+
+    expect(await orm.list()).toHaveLength(50);
+    expect((await orm.findById('p0')).title).toBe('t0 révisé');
+  });
+
+  it('slices by rows × COLUMNS — a statement binds values, not rows', async () => {
+    // 9 columns each: 30000 bindings is ~3300 rows per statement, so this spans several.
+    const many = Array.from({ length: 8_000 }, (_, i) => ({ id: `p${i}`, title: `t${i}`, body: 'b', secret: 's' }));
+    expect(await orm.upsertAll(many)).toBe(8_000);
+    expect(await orm.list()).toHaveLength(8_000);
+  });
+
+  it('keeps the moment each row appeared', async () => {
+    await orm.upsertAll([{ id: 'p1', title: 'first', body: 'b', secret: 's' }]);
+    const first = await orm.findById('p1');
+    await new Promise((r) => setTimeout(r, 5));
+    await orm.upsertAll([{ id: 'p1', title: 'revised', body: 'b', secret: 's' }]);
+    const again = await orm.findById('p1');
+
+    expect(again.createdAt).toEqual(first.createdAt);
+    expect(new Date(again.updatedAt).getTime()).toBeGreaterThan(new Date(first.updatedAt).getTime());
+  });
+
+  it('writes nothing for an empty page', async () => {
+    expect(await orm.upsertAll([])).toBe(0);
   });
 });

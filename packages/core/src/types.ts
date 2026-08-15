@@ -165,6 +165,8 @@ export interface FrondDescriptor {
   seeds: SeedEntry[];
   /** Per-surface entity lists from frond.config.ts (e.g. { graphql: ['Post'], rest: ['Post', 'Author'] }). */
   surfaces?: Record<string, string[]>;
+  /** Entities this frond may read across sources — see `FrondConfig.reads`. */
+  reads?: string[];
   /**
    * Per-operation overrides from frond.config.ts. Key = operation name.
    *
@@ -278,6 +280,18 @@ export interface CreateAppOptions {
   createContainer: () => Container;
   /** Factory to auto-generate EntityOrm for each scanned entity. */
   ormFactory?: OrmFactory;
+  /**
+   * Builds the cross-source reader a frond gets when it declares `reads:`.
+   *
+   * A factory rather than a value, for the same reason `ormFactory` is one: core must
+   * not name a storage package, and this one costs 71 MB of downloaded extensions and a
+   * native module — nothing a first run that only wanted sqlite should carry. The host
+   * decides what backs it; `@fougere/adapter-duckdb` is one answer, not the contract.
+   *
+   * Called once per frond that asks, with the entity CLASSES its `reads:` named — a
+   * name would make the reader resolve the schema a second time.
+   */
+  sourcesFactory?: (reads: unknown[], frond: string) => Promise<unknown> | unknown;
   /** Only load these fronds (by name). If absent, load all. */
   fronds?: string[];
   /**

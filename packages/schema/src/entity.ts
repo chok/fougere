@@ -22,23 +22,13 @@ export function entity<TFields extends Fields>(
   fields: TFields,
   declarations?: EntityDeclarations<TFields>,
 ): SchemaConstructor<TFields> {
-  // THE door: the constructor judges each entry; the key travels so it can be named.
   const own = {} as Record<string, Field>;
   for (const [key, field] of Object.entries(fields)) own[key] = new Field(field, key);
-  // The only place knowing both the keys and the declarations, so the composite group
-  // becomes readable on each member's role. `getUnique()` still answers the declaration.
   const projected = projectUniqueOntoFields(own as TFields, declarations?.unique);
   assertDefaultsAreValid(projected);
   return Schema.of(projected, undefined, declarations?.hints, {}, declarations?.unique);
 }
 
-/**
- * A declared default must satisfy its own shape — checked once, here, because the value is
- * static and so is the shape. `applyCreate` writes it into every row without passing the
- * client judge (rightly: it comes from the author, not the caller), so
- * `text({ min: 5, default: 'ab' })` used to produce rows the entity's own `validate`
- * refuses — silently, or as a driver error three layers away.
- */
 function assertDefaultsAreValid(fields: Fields): void {
   for (const [name, field] of Object.entries(fields)) {
     const create = field.lifecycle?.create;

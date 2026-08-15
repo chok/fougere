@@ -13,8 +13,8 @@ import { createContainer } from '@fougere/container';
 import { createHttpTransport } from '@fougere/transport-http';
 import { resolveStorage, type DbConfig } from './storage.js';
 
-export { resolveStorage, declaresStorage } from './storage.js';
-export type { DbConfig, ResolvedStorage } from './storage.js';
+export { resolveStorage, declaresStorage, storageFrom } from './storage.js';
+export type { DbConfig, SourcesConfig, DeclaredStorage, Placement, ResolvedStorage } from './storage.js';
 
 export interface BootAppOptions {
   /** Boot only these fronds (by name). Absent = every discovered frond. */
@@ -42,6 +42,6 @@ export async function bootAppFromConfig(root: string, opts: BootAppOptions = {})
     remotes: useRemotes ? remotes : undefined,
     remoteTransport: useRemotes ? (url) => createHttpTransport(url) : undefined,
     // One resolver, one place that knows a storage package.
-    db: (cfg) => resolveStorage(cfg.db as DbConfig),
+    db: (cfg) => resolveStorage(cfg.db as DbConfig, (cfg as { sources?: unknown }).sources as never),
   });
 }

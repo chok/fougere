@@ -22,6 +22,30 @@ export interface Dialect {
    * spells it `OUTPUT`; both take the insert-then-select path instead.
    */
   supportsReturning: boolean;
+  /**
+   * How many values one statement may bind — what splits a batch read into several.
+   *
+   * A key set comes from a PAGE, and a page has no ceiling (`list()` with no limit
+   * reads the table), so `where id in (…)` eventually meets the engine's limit.
+   * Measured on SQLite: 32 766 binds, and 32 767 answers `too many SQL variables`.
+   * SQL Server is the low one at 2100, which is why this is per dialect and not one
+   * constant — a batch that works on SQLite and dies on SQL Server is the same value
+   * behaving differently per engine, the thing this file exists to absorb.
+   *
+   * The number below is the limit MINUS a margin for the other values a statement
+   * carries (a filter, a cursor): a batch read is never the only thing in the query.
+   */
+  maxBindings: number;
+  /**
+   * How this engine spells "write it, or replace what is there".
+   *
+   * `'on conflict'` is the standard clause (SQLite, Postgres); MySQL spells the same
+   * thing `ON DUPLICATE KEY UPDATE`; SQL Server has only `MERGE`, a different statement
+   * with different semantics — so it answers `false` and the port refuses by name
+   * rather than emulating a write with a read in front of it, which would be a lie
+   * about atomicity in an engine that has no transaction here either.
+   */
+  upsert: 'on conflict' | 'on duplicate key' | false;
 }
 
 /** Bounded length for a key column, when the shape doesn't state its own. */
@@ -33,6 +57,9 @@ function keyLength(column: ColumnDef): number {
 }
 
 export const sqliteDialect: Dialect = {
+  upsert: 'on conflict',
+  // SQLITE_MAX_VARIABLE_NUMBER is 32766 on any build since 3.32 (measured on better-sqlite3).
+  maxBindings: 30000,
   name: 'sqlite',
   supportsReturning: true,
   // SQLite has one integer, one float and one text type — a boolean is an int,
@@ -51,6 +78,9 @@ export const sqliteDialect: Dialect = {
 };
 
 export const pgDialect: Dialect = {
+  upsert: 'on conflict',
+  // the wire protocol counts parameters in an int16 — 65535.
+  maxBindings: 60000,
   name: 'pg',
   supportsReturning: true,
   // Postgres has real types for everything, and `text` is indexable — so a key
@@ -73,6 +103,9 @@ export const pgDialect: Dialect = {
 };
 
 export const mysqlDialect: Dialect = {
+  upsert: 'on duplicate key',
+  // no parameter ceiling of its own; max_allowed_packet is what gives way, and it grows with the VALUES not the count.
+  maxBindings: 60000,
   name: 'mysql',
   supportsReturning: false,
   columnType(column, keyed) {
@@ -94,6 +127,9 @@ export const mysqlDialect: Dialect = {
 };
 
 export const mssqlDialect: Dialect = {
+  upsert: false,
+  // 2100 parameters per statement, the lowest of the four by a wide margin.
+  maxBindings: 2000,
   name: 'mssql',
   supportsReturning: false,
   columnType(column, keyed) {

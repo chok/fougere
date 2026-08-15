@@ -22,11 +22,6 @@ export type JsonSchemaType =
   | 'null';
 
 /**
- * One field as a JSON Schema property. The shape keywords sit at the top level
- * (so an external JSON Schema tool reads them directly); the Fougère-only axes
- * live under `x-fougere`. A nullable field folds into the union `type: ['T','null']`.
- */
-/**
  * A shape's constraint keywords, all optional and flattened — the union's branches merged.
  * `type` is NOT here: intersecting the branches would make the discriminant impossible,
  * and the wire genuinely allows a form memory never produces (see below).
@@ -38,6 +33,11 @@ type ShapeKeywords = UnionToIntersection<KeywordsOf<Shape>>;
 type KeywordsOf<S> = S extends unknown ? Partial<Omit<S, 'type' | 'items' | 'properties'>> : never;
 type UnionToIntersection<U> = (U extends unknown ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
 
+/**
+ * One field as a JSON Schema property. The shape keywords sit at the top level
+ * (so an external JSON Schema tool reads them directly); the Fougère-only axes
+ * live under `x-fougere`. A nullable field folds into the union `type: ['T','null']`.
+ */
 export type FieldDescriptor = ShapeKeywords & {
   /**
    * WIDER than `Shape`, which only ever emits `T` or the canonical `[T,'null']` tuple.
@@ -66,14 +66,17 @@ export interface FieldExtension {
  * The role, with its one unportable member replaced: `unique` names its members on the
  * wire, where in memory a lone `unique()` holds `[]` — a field does not know its own key,
  * a reader of the card must not have to guess it.
+ *
+ * Names what it KEEPS, like `describeRole` and `reconstructRole` do. Two of the four
+ * members do not travel as they are, so portability is not the default a new one gets.
  */
-export type RoleDescriptor = Omit<Role, 'unique' | 'relation'> & {
+export type RoleDescriptor = Pick<Role, 'primary' | 'index'> & {
   unique?: string[][];
   relation?: RelationDescriptor;
 };
 
 /** The relation, with its thunk replaced: the target is a NAME. */
-export type RelationDescriptor = Omit<Relation, 'to'> & { to: string };
+export type RelationDescriptor = Pick<Relation, 'kind' | 'onDelete'> & { to: string };
 
 /**
  * A whole entity as a JSON Schema object document. `version`/`vendor` mirror Standard

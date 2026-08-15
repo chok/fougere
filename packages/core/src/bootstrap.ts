@@ -20,6 +20,7 @@ import { computeBindingPlan, resolveArgs, type CollectorResolver } from './bindi
 import type { OperationContract, OperationsMap } from './operation.js';
 import { resolveContracts } from './operation.js';
 import { EMPTY_INVOCATION, type InvocationContext } from './invocation.js';
+import { toRegistrationName } from './contract.js';
 import { type SchemaView, type Fields, applyCreate } from '@fougere/schema';
 import { projectEgress, presentEgress, guardStorage, type PresenterArgs } from './egress.js';
 
@@ -230,6 +231,30 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     }
     const scope = container.createScope();
     const frondLog = log.child(frond.name);
+
+    // `reads:` is what makes a cross-source reader exist here, and the list IS its
+    // environment — a source holding none of these is never opened. Registered under
+    // the type's own name, which is the key `depKeyOf` already derives for a plain
+    // parameter: `constructor(private sources: Sources)` and nothing else to say.
+    if (frond.reads?.length && options.sourcesFactory) {
+      // Resolved across the WHOLE app, not this frond's own entities: a cross-source
+      // query joins entities from different fronds by definition — `Progress` here,
+      // `Book` next door — so restricting the list to its own would make it useless.
+      // Naming one IS the authorization; that is what the declaration is for.
+      const hosted = new Map(fronds.flatMap((f) => f.entities.map((e) => [e.name, e.entityClass] as const)));
+      const named = frond.reads
+        .map((name) => hosted.get(toRegistrationName(name)))
+        .filter((entity): entity is NonNullable<typeof entity> => entity !== undefined);
+      if (named.length !== frond.reads.length) {
+        const missing = frond.reads.filter((name) => !hosted.has(toRegistrationName(name)));
+        frondLog.warn(
+          `[reads] ${missing.join(', ')} — named in frond.config.ts but scanned nowhere in this app, `
+          + 'so a query naming one would find no table. Check the spelling, or the entity file.',
+        );
+      }
+      scope.registerValue('Sources', await options.sourcesFactory(named, frond.name));
+      frondLog.debug(`cross-source reader over ${named.length} entit(ies)`);
+    }
 
     for (const provider of frond.providers) {
       scope.register(provider.ctor.name, provider.ctor, { deps: provider.deps });

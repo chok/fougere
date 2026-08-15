@@ -1,0 +1,13 @@
+{
+  // The build config emits `dist` from `src` alone; the tests are not shipped but
+  // still have to compile — this package resolves a storage engine, and a signature
+  // that drifts there is only caught by a compiler.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".",
+    "declaration": false,
+    "declarationMap": false
+  },
+  "include": ["src", "tests"]
+}

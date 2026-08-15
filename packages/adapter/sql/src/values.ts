@@ -45,6 +45,30 @@ const json: ValueCodec = {
   read: (v) => (typeof v === 'string' ? JSON.parse(v) : v),
 };
 
+/**
+ * A driver may answer a number as a BigInt — Postgres does it for `count(*)` and for
+ * `bigint` columns, DuckDB for every count. The entity declares a number, so that is
+ * what comes back.
+ *
+ * Out of range it REFUSES rather than rounding. `Number(9007199254740993n)` is
+ * `9007199254740992` — a wrong answer, silently, and the row would look fine. A value
+ * that large is a real identifier somewhere, and its field should say `text()`.
+ */
+const numeric: ValueCodec = {
+  write: (v) => (typeof v === 'bigint' ? fits(v) : v),
+  read: (v) => (typeof v === 'bigint' ? fits(v) : v),
+};
+
+function fits(value: bigint): number {
+  if (value >= MIN_SAFE && value <= MAX_SAFE) return Number(value);
+  throw new Error(
+    `${value} does not fit a JavaScript number — declare the field as \`text()\` to keep it whole.`,
+  );
+}
+
+const MIN_SAFE = BigInt(Number.MIN_SAFE_INTEGER);
+const MAX_SAFE = BigInt(Number.MAX_SAFE_INTEGER);
+
 /** Absent stays absent, null stays null — a codec never invents a value. */
 function nullSafe(codec: ValueCodec): ValueCodec {
   const pass = (fn: (v: unknown) => unknown) => (v: unknown) =>
@@ -57,6 +81,9 @@ export function codecFor(shape?: ColumnShape): ValueCodec {
   switch (shape?.type) {
     case 'boolean':
       return nullSafe(boolean);
+    case 'integer':
+    case 'number':
+      return nullSafe(numeric);
     case 'string':
       return shape.format === 'date-time' ? nullSafe(dateTime) : identity;
     case 'array':

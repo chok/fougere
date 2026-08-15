@@ -600,7 +600,7 @@ describe('registerAll', () => {
       expect(authorFields['posts']).toBeDefined();
     });
 
-    it('ref resolver calls target facade.findById with the FK value', async () => {
+    it('ref resolver reads the target through its list door, by a criterion naming the keys', async () => {
       const builder = new SchemaBuilder({});
       builder.queryType({});
       builder.mutationType({});
@@ -608,9 +608,15 @@ describe('registerAll', () => {
       const authorData = [{ id: 'a1', name: 'Alice' }];
       const postData = [{ id: 'p1', title: 'Hello', authorId: 'a1' }];
 
-      // Facade functions receive InvocationContext (not raw args)
+      // Facade functions receive InvocationContext (not raw args). The relation reads
+      // by the PAGE now, so the door it uses is `list` with `where: { id: [...] }` —
+      // the very one the `many` dual already used with a single value.
       const authorCrud = {
         ...fakeCrud(authorData),
+        list: vi.fn(async (ctx: any) => {
+          const ids = ctx?.query?.where?.id;
+          return ids ? authorData.filter((d) => ids.includes(d.id)) : authorData;
+        }),
         findById: vi.fn(async (ctx: any) => authorData.find((d) => d.id === ctx.params.id)),
       };
       const postCrud = fakeCrud(postData);
@@ -630,9 +636,10 @@ describe('registerAll', () => {
       const postType = schema.getTypeMap()['BlogPost'] as any;
       const authorField = postType.getFields()['author'];
       const result = await authorField.resolve({ id: 'p1', authorId: 'a1' }, {}, {});
-      expect(authorCrud.findById).toHaveBeenCalledWith(
-        expect.objectContaining({ params: { id: 'a1' } }),
+      expect(authorCrud.list).toHaveBeenCalledWith(
+        expect.objectContaining({ query: { where: { id: ['a1'] } } }),
       );
+      expect(authorCrud.findById).not.toHaveBeenCalled();
       expect(result).toEqual({ id: 'a1', name: 'Alice' });
     });
   });

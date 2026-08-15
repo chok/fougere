@@ -84,7 +84,57 @@ export interface EntityOrm<T = Record<string, unknown>> {
    */
   findBy(criteria: Partial<T> | Record<string, unknown>, options?: SelectOption): Promise<T | undefined>;
   findAllBy(criteria: Partial<T> | Record<string, unknown>, options?: SelectOption): Promise<T[]>;
+  /**
+   * Read a SET of rows by their key, in one go — the gesture every other one was
+   * being bent into.
+   *
+   * `findAllBy` compares with `=`, so a list of ids could not be passed to it; the
+   * only way to read N rows was `list()` then filter in memory, which is what 14 of
+   * 14 handlers of a real app measured on 2026-08-14 were doing. It is invisible on
+   * SQLite and it is the whole table the day the rows are not local.
+   *
+   * It answers a MAP, because the caller holds keys and not positions: a page zips
+   * against it by `get(row.authorId)`, a miss is the absence of a key, and a repeated
+   * key is one entry. The list form this replaced promised that zip and could not
+   * keep it — dropping a miss shifts every later position — so each caller rebuilt
+   * the very index the implementation had just thrown away.
+   */
+  findByKeys(ids: readonly string[], options?: SelectOption): Promise<Map<string, T>>;
+  /**
+   * Its dual: the rows that point AT each of these keys, grouped by the one they point at.
+   *
+   * `findByKeys` answers the side a row designates — one each, at most. This answers the
+   * side that designates the row — several each, and a key with none is simply absent.
+   * Together they are both directions of a relation, each in one query.
+   *
+   * Written because the page-shaped gesture only covered one of them: a presenter holding
+   * its page and wanting "the items of these lists" had no vocabulary for it and read the
+   * whole table instead, measured on a real app. `field` names the foreign key on THIS
+   * entity, the one carrying the value.
+   */
+  findAllByKeys(field: string, keys: readonly string[], options?: SelectOption): Promise<Map<string, T[]>>;
   create(input: Partial<T>, options?: SelectOption): Promise<T>;
+  /**
+   * Write the row, or make the existing one look like this — one statement.
+   *
+   * What an import needs and the port did not have: `create` throws on the second run,
+   * so re-reading a source meant deleting first. Measured pulling an API twice.
+   *
+   * The key and the creation stamps survive an overwrite — a row keeps the moment it
+   * appeared. An engine with no upsert clause refuses by name rather than emulating
+   * one with a read in front, which would promise an atomicity it has not got.
+   */
+  upsert(input: Partial<T>, options?: SelectOption): Promise<T>;
+  /**
+   * A whole page in one statement — what an import writes through.
+   *
+   * Row by row, 500 rows were 500 statements (measured); the shape of an import is a
+   * page, so the write is one too. Answers how many rows were written rather than the
+   * rows: `create` hands back the complete row because a caller acts on it, and an
+   * import acts on none of them — re-reading a page for a symmetry nobody uses would
+   * double the work.
+   */
+  upsertAll(inputs: readonly Partial<T>[], options?: SelectOption): Promise<number>;
   update(id: string, input: Partial<T>, options?: SelectOption): Promise<T>;
   delete(id: string): Promise<boolean>;
   /** Returns a scoped ORM that restricts all read results to the fields of the given schema. */

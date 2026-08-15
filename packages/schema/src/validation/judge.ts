@@ -1,7 +1,10 @@
 import type { Field, Fields, FormatPredicate, Shape } from '../field/index.js';
+import { CREATE_TOKENS, UPDATE_TOKENS } from '../field/lifecycle.js';
+import { ON_DELETE, RELATION_KINDS } from '../field/role.js';
 import { Anatomy, Formats, boundaryOf, isShape, resolveBoundary, } from '../field/index.js';
 import { Validator, format as engineFormats } from '@cfworker/json-schema';
 import type { Checked, ValidationError, ValidationResult } from './result.js';
+import type { ValidateOptions } from './options.js';
 
 interface ShapePlan {
   validator: Validator;
@@ -10,16 +13,6 @@ interface ShapePlan {
   /** The declared format name, kept for the error message. */
   formatName?: string;
 }
-
-/** Patch mode: an unsent field is untouched. Distinguishes "absent, don't touch" from "absent → null". */
-export interface ValidateOptions {
-  patch?: boolean;
-}
-
-const CREATE_TOKENS = ['now', 'optional'] as const;
-const UPDATE_TOKENS = ['now', 'forbidden'] as const;
-const RELATION_KINDS = ['one', 'many'] as const;
-const ON_DELETE = ['cascade', 'restrict', 'set null'] as const;
 
 const isObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -31,8 +24,8 @@ const oneOfTokens = (v: unknown, tokens: readonly string[]) =>
  * The one judge, at the three levels anything is judged: a field's DECLARATION, one VALUE
  * against its shape, a ROW against a field map. Same answer shape at all three.
  *
- * A class and not three functions because it holds state — the per-shape plan cache, and
- * the closed vocabularies each axis is judged against.
+ * A class and not three functions because it holds state: the per-shape plan cache. The
+ * closed vocabularies belong to the axes that close them — this file imports them.
  */
 export class Judge {
   /**

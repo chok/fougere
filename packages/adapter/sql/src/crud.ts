@@ -12,9 +12,10 @@
  * That also makes the code identical on MySQL and SQL Server, which have no
  * `RETURNING` clause.
  */
-import type { Kysely } from 'kysely';
+import { sql, type Kysely } from 'kysely';
 import { applyCreate, applyUpdate, schemaOf, type Fields, type SchemaView, type SchemaSource } from '@fougere/schema';
 import { toTable, toTableName, type TableDef } from './table.js';
+import { resolveDialect, type DialectName } from './dialect.js';
 import { codecsOf, type ValueCodec } from './values.js';
 
 /** ListOptions — duplicated from @fougere/core to avoid a runtime dep. */
@@ -59,6 +60,14 @@ function analyzeFields(entity: SchemaView): { pk: PrimaryKeyInfo } {
   return { pk: { names: pkNames, isComposite: pkNames.length > 1 } };
 }
 
+/** Slice a key set into what one statement may bind. One slice when it already fits. */
+function chunks<T>(values: T[], size: number): T[][] {
+  if (values.length <= size) return [values];
+  const out: T[][] = [];
+  for (let i = 0; i < values.length; i += size) out.push(values.slice(i, i + size));
+  return out;
+}
+
 /** Stand-in for "no upper bound", where the engine still demands a LIMIT. */
 const UNBOUNDED = 1_000_000_000;
 
@@ -88,12 +97,21 @@ export class SqlEntityOrm {
   /** field → the value pair a driver needs; only for the shapes a driver can't bind. */
   private codecs: Map<string, ValueCodec>;
 
+  /** How many keys one statement may carry here — see `Dialect.maxBindings`. */
+  private maxBindings: number;
+  /** How this engine spells an upsert, or `false` when it cannot — see `Dialect.upsert`. */
+  private upsertClause: 'on conflict' | 'on duplicate key' | false;
+
   constructor(
     private db: Kysely<any>,
     source: SchemaSource,
     tableName: string,
     selectFields?: Set<string>,
+    dialect: DialectName = 'sqlite',
   ) {
+    const resolved = resolveDialect(dialect);
+    this.maxBindings = resolved.maxBindings;
+    this.upsertClause = resolved.upsert;
     // Normalized once: the table projection and the axis analysis below both read the
     // schema, and a card handed to each separately would be rebuilt twice into two
     // unrelated field objects. Past this line nothing knows which form arrived.
@@ -171,9 +189,17 @@ export class SqlEntityOrm {
 
   // A filter compares against the COLUMN, so its value crosses the same way a write
   // does: `findBy({ done: true })` has to look for 1, not for `true`.
+  //
+  // A criterion may name a SET — `where: { id: [a, b, c] }` is `IN`, one query for a
+  // whole page. Without it a relation had no batch form at all: the GraphQL `one`
+  // resolver read row by row (50 calls for a page of 50, measured), while its `many`
+  // dual already went through this same door. An empty set matches nothing, said in
+  // SQL rather than by returning the whole table.
   private whereAll<Q extends { where(a: any, b: any, c: any): Q }>(query: Q, criteria: Record<string, unknown>): Q {
     return Object.entries(criteria).reduce(
-      (q, [key, value]) => q.where(this.column(key), '=', this.write(key, value)),
+      (q, [key, value]) => Array.isArray(value)
+        ? q.where(this.column(key), 'in', [...new Set(value)].map((v) => this.write(key, v)))
+        : q.where(this.column(key), '=', this.write(key, value)),
       query,
     );
   }
@@ -184,7 +210,13 @@ export class SqlEntityOrm {
     // The criteria a caller states — `list({ where: { orderId } })`, and the whole of
     // `listBy`. Named `where` rather than spread across the options so an unknown key
     // stays what it always was (ignored) instead of silently becoming a filter.
-    if (options?.where) query = this.whereAll(query as any, options.where) as any;
+    if (options?.where) {
+      // `list` is the ONE read that cannot be split: a limit and an order do not
+      // recompose across slices, so an oversized set here is refused rather than
+      // truncated — and the gesture that does handle it is named.
+      this.refuseOversized(options.where, 'list');
+      query = this.whereAll(query as any, options.where) as any;
+    }
 
     // Cursor-based: fetch after a given id (uses the first PK field).
     if (options?.after) {
@@ -237,6 +269,157 @@ export class SqlEntityOrm {
     return sel ? pickList(result, sel) : result;
   }
 
+  /**
+   * One query for N keys, never N queries — what every page-level read stands on:
+   * a computed field, a relation, a resolver on the other side of a wire.
+   *
+   * A composite key has no list form: it is refused by name rather than answering a
+   * partial result that reads as complete.
+   */
+  async findByKeys(ids: readonly string[], options?: SelectOption): Promise<Map<string, Record<string, unknown>>> {
+    if (this.pk.isComposite) {
+      throw new Error(`${this.table.name}.findByKeys: the primary key is composite (${this.pk.names.join(', ')}) — read them one by one, or filter with \`findAllBy\`.`);
+    }
+    if (ids.length === 0) return new Map();
+    const name = this.pk.names[0]!;
+    const sel = this.resolveSelect(options);
+    const found = new Map<string, Record<string, unknown>>();
+    // Split, because a key set comes from a page and a page has no ceiling. One
+    // statement per slice, merged here — the caller never learns there were several.
+    for (const slice of chunks([...new Set(ids)], this.maxBindings)) {
+      const rows = await this.db
+        .selectFrom(this.table.name)
+        .selectAll()
+        .where(this.column(name), 'in', slice.map((id) => this.write(name, id)))
+        .execute();
+      for (const row of rows as any[]) {
+        const data = this.fromRow(row);
+        found.set(String(data[name]), sel ? pick(data, sel) : data);
+      }
+    }
+    return found;
+  }
+
+  /**
+   * The other direction of a relation, in one query — see the port's `findAllByKeys`.
+   *
+   * The grouping key is read off the ROW rather than trusted from the request: a codec
+   * may write a value one way and read it back another, and a group keyed on the
+   * request's spelling would then be empty while the rows sit there.
+   */
+  async findAllByKeys(
+    field: string,
+    keys: readonly string[],
+    options?: SelectOption,
+  ): Promise<Map<string, Record<string, unknown>[]>> {
+    const grouped = new Map<string, Record<string, unknown>[]>();
+    if (keys.length === 0) return grouped;
+    const rows = await this.findAllBy({ [field]: [...keys] }, options);
+    for (const row of rows) {
+      const key = String(row[field]);
+      const held = grouped.get(key);
+      if (held) held.push(row); else grouped.set(key, [row]);
+    }
+    return grouped;
+  }
+
+  /**
+   * Write the row, or make the existing one look like this — one statement.
+   *
+   * The gesture an import needs and the port did not have: `create` throws on the
+   * second run (`UNIQUE constraint failed`), so re-reading anything meant deleting
+   * first. Measured pulling 500 rows from an API twice.
+   *
+   * Both lifecycles are realized, each on the side it belongs to: `applyCreate` fills
+   * what a first write owes (a generated key, `created()`, a declared default) and
+   * `applyUpdate` stamps what every write owes (`updated()`). On conflict the key and
+   * the creation stamps are left alone — a row keeps the moment it appeared, whatever
+   * later overwrites say.
+   */
+  async upsert(input: Record<string, unknown>, options?: SelectOption): Promise<Record<string, unknown>> {
+    if (this.upsertClause === false) {
+      throw new Error(
+        `${this.table.name}.upsert(): this engine has no upsert clause — read with findById ` +
+        `and call create or update, and know that the pair is not atomic.`,
+      );
+    }
+    // `applyUpdate` FIRST: `updated()` declares both `create: 'now'` and
+    // `update: 'now'`, so filling the creation side first leaves nothing for the
+    // update side to stamp — the row would carry the moment it was inserted forever.
+    const data = applyCreate(this.fields, applyUpdate(this.fields, input));
+    // Never overwritten by a later write: the key identifies the row, and a stamp that
+    // is create-ONLY records when it appeared. One that is also `update: 'now'` is the
+    // opposite — it exists to move.
+    const frozen = this.frozenColumns();
+    const row = this.toRow(data);
+    const replaced = Object.fromEntries(Object.entries(row).filter(([column]) => !frozen.has(column)));
+
+    const insert = this.db.insertInto(this.table.name).values(row);
+    await (this.upsertClause === 'on conflict'
+      ? insert.onConflict((oc: any) => oc.columns(this.pk.names.map((n) => this.column(n))).doUpdateSet(replaced))
+      : (insert as any).onDuplicateKeyUpdate(replaced)
+    ).execute();
+
+    const id = this.pk.isComposite
+      ? Object.fromEntries(this.pk.names.map((n) => [n, data[n]]))
+      : (data[this.pk.names[0]!] as string);
+    return (await this.findById(id as never, options))!;
+  }
+
+  /**
+   * Upsert a whole page in one statement — what an import writes through.
+   *
+   * Row by row, 500 rows were 500 statements (measured pulling an API); the shape of
+   * an import is a page, so the write should be one too. Sliced like every other batch,
+   * but by rows × COLUMNS: a statement binds values, not rows, so the ceiling divides.
+   *
+   * Answers how many rows were written and not the rows themselves. `create` hands back
+   * the complete row because a caller acts on it; an import acts on none of them, and
+   * re-reading a page to satisfy a symmetry nobody uses would double the work.
+   */
+  async upsertAll(inputs: readonly Record<string, unknown>[], _options?: SelectOption): Promise<number> {
+    if (this.upsertClause === false) {
+      throw new Error(
+        `${this.table.name}.upsertAll(): this engine has no upsert clause — write the rows ` +
+        `one by one with create or update, and know that the pair is not atomic.`,
+      );
+    }
+    if (inputs.length === 0) return 0;
+
+    const rows = inputs.map((input) => this.toRow(applyCreate(this.fields, applyUpdate(this.fields, input))));
+    const frozen = this.frozenColumns();
+    const columns = new Set(rows.flatMap((row) => Object.keys(row)));
+    const replaced = Object.fromEntries(
+      [...columns].filter((column) => !frozen.has(column)).map((column) => [column, sql.ref(`excluded.${column}`)]),
+    );
+    // A statement binds VALUES: one row costs as many as it has columns.
+    const perStatement = Math.max(1, Math.floor(this.maxBindings / Math.max(1, columns.size)));
+
+    let written = 0;
+    for (const slice of chunks([...rows], perStatement)) {
+      const insert = this.db.insertInto(this.table.name).values(slice);
+      await (this.upsertClause === 'on conflict'
+        ? insert.onConflict((oc: any) => oc.columns(this.pk.names.map((n) => this.column(n))).doUpdateSet(replaced))
+        : (insert as any).onDuplicateKeyUpdate(replaced)
+      ).execute();
+      written += slice.length;
+    }
+    return written;
+  }
+
+  /**
+   * The COLUMNS a later write must not touch: the key, and a stamp that is create-only.
+   * One that is also `update: 'now'` is the opposite — it exists to move.
+   */
+  private frozenColumns(): Set<string> {
+    return new Set([
+      ...this.pk.names.map((name) => this.column(name)),
+      ...Object.entries(this.fields)
+        .filter(([, field]) => field.lifecycle?.create === 'now' && field.lifecycle?.update !== 'now')
+        .map(([name]) => this.column(name)),
+    ]);
+  }
+
   async findById(id: string | Record<string, unknown>, options?: SelectOption): Promise<Record<string, unknown> | undefined> {
     const row = await this.wherePk(this.db.selectFrom(this.table.name).selectAll() as any, id).executeTakeFirst();
     if (!row) return undefined;
@@ -256,10 +439,50 @@ export class SqlEntityOrm {
   }
 
   async findAllBy(criteria: Record<string, unknown>, options?: SelectOption): Promise<Record<string, unknown>[]> {
-    const rows = await this.whereAll(this.db.selectFrom(this.table.name).selectAll() as any, criteria).execute();
-    const data = rows.map((row: any) => this.fromRow(row));
     const sel = this.resolveSelect(options);
-    return sel ? data.map((r: any) => pick(r, sel)) : data;
+    const out: Record<string, unknown>[] = [];
+    // A set criterion may hold more values than the engine binds. Splitting is safe
+    // HERE because this read has no page and no order: the slices simply concatenate.
+    for (const slice of this.splitCriteria(criteria)) {
+      const rows = await this.whereAll(this.db.selectFrom(this.table.name).selectAll() as any, slice).execute();
+      for (const row of rows as any[]) {
+        const data = this.fromRow(row);
+        out.push(sel ? pick(data, sel) : data);
+      }
+    }
+    return out;
+  }
+
+  /**
+   * One criteria object per statement — the oversized set is the one that splits.
+   *
+   * Only ONE criterion may be split: two split sets would need their cross product,
+   * which is a different query, so the second is refused rather than silently wrong.
+   */
+  private refuseOversized(criteria: Record<string, unknown>, op: string): void {
+    for (const [key, value] of Object.entries(criteria)) {
+      if (!Array.isArray(value) || new Set(value).size <= this.maxBindings) continue;
+      throw new Error(
+        `${this.table.name}.${op}(): \`${key}\` holds ${new Set(value).size} values and this engine ` +
+        `binds ${this.maxBindings} — a page and an order cannot be split across statements. ` +
+        `Use \`findAllByKeys('${key}', keys)\`, which reads them in slices and groups the answer.`,
+      );
+    }
+  }
+
+  private splitCriteria(criteria: Record<string, unknown>): Record<string, unknown>[] {
+    const oversized = Object.entries(criteria)
+      .filter(([, value]) => Array.isArray(value) && new Set(value).size > this.maxBindings);
+    if (oversized.length === 0) return [criteria];
+    if (oversized.length > 1) {
+      throw new Error(
+        `${this.table.name}: ${oversized.map(([key]) => `\`${key}\``).join(' and ')} each hold more than ` +
+        `${this.maxBindings} values — split one of them at the call site, they cannot both be sliced.`,
+      );
+    }
+    const [key, values] = oversized[0]!;
+    return chunks([...new Set(values as unknown[])], this.maxBindings)
+      .map((slice) => ({ ...criteria, [key]: slice }));
   }
 
   async create(input: Record<string, unknown>, options?: SelectOption): Promise<Record<string, unknown>> {
@@ -313,7 +536,7 @@ export interface OrmFactoryOptions {
  * const app = await createApp({ createContainer, ormFactory: createOrmFactory(db) });
  * ```
  */
-export function createOrmFactory(db: Kysely<any>, options?: OrmFactoryOptions) {
+export function createOrmFactory(db: Kysely<any>, options?: OrmFactoryOptions, dialect: DialectName = 'sqlite') {
   const resolve = options?.tableName ?? toTableName;
-  return (entity: SchemaSource, name: string) => new SqlEntityOrm(db, entity, resolve(name));
+  return (entity: SchemaSource, name: string) => new SqlEntityOrm(db, entity, resolve(name), undefined, dialect);
 }

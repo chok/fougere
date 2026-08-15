@@ -10,19 +10,23 @@
  */
 export type GeneratorRef = 'cuid2' | 'uuid' | 'nanoid' | (string & {});
 
+/** The moments a value can be written at — the runtime list, from which the types derive. */
+export const CREATE_TOKENS = ['now', 'optional'] as const;
+export const UPDATE_TOKENS = ['now', 'forbidden'] as const;
+
 export interface Lifecycle {
   /**
    * What happens when the input omits the value. Absent → required. `{ value }` fills a
    * literal, `'now'` stamps, `{ generate }` has the storage stamp an id, `'optional'`
    * permits absence and produces nothing. A supplied value is always accepted.
    */
-  create?: { value: unknown } | 'now' | { generate: GeneratorRef } | 'optional';
+  create?: { value: unknown } | { generate: GeneratorRef } | (typeof CREATE_TOKENS)[number];
   /**
    * What happens on a patch. Absent → written only if supplied. `'now'` stamps at every
    * update (the canonical `updatedAt`). `'forbidden'` makes supplying it an error.
    * The judge only JUDGES; stamping is the storage's, at the point of persistence.
    */
-  update?: 'now' | 'forbidden';
+  update?: (typeof UPDATE_TOKENS)[number];
 }
 
 // ─── Generator registry ──────────────────────────────────

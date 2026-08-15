@@ -24,6 +24,101 @@ function relationNameFor(fieldName: string): string | undefined {
   return stripped && stripped !== fieldName ? stripped : undefined;
 }
 
+/** The field a target is keyed by — what a batch read indexes its answer on. */
+function primaryNameOf(fields: Fields): string {
+  for (const [name, field] of Object.entries(fields)) if (field.role?.primary) return name;
+  return 'id';
+}
+
+interface Batch {
+  keys: Set<string>;
+  rows: Promise<Map<string, any>>;
+}
+
+/** The batch of ONE direction — the two sides of a relation must not share a read. */
+const directionKey = (entity: string, field: string) => `${entity}#${field}`;
+
+/**
+ * How many keys go into one `list` call.
+ *
+ * A page has no ceiling, and `list` is the one read the ORM refuses to split (a limit
+ * and an order do not recompose across statements). So the slicing happens HERE, where
+ * the answer is a map being assembled and slices merge for free. Below SQL Server's
+ * 2100 bindings, the lowest of the four engines — this side does not know the dialect,
+ * so it takes the floor rather than guessing.
+ */
+const KEYS_PER_READ = 1000;
+
+/** Read a key set in slices, merging what each answers. */
+async function readInSlices<R>(
+  keys: string[],
+  read: (slice: string[]) => Promise<Map<string, R>>,
+  merge: (into: Map<string, R>, from: Map<string, R>) => void,
+): Promise<Map<string, R>> {
+  if (keys.length <= KEYS_PER_READ) return read(keys);
+  const all = new Map<string, R>();
+  for (let i = 0; i < keys.length; i += KEYS_PER_READ) {
+    merge(all, await read(keys.slice(i, i + KEYS_PER_READ)));
+  }
+  return all;
+}
+
+/** A key answers one row: a later slice never contradicts an earlier one. */
+const keepEach = <R>(into: Map<string, R>, from: Map<string, R>) => {
+  for (const [key, value] of from) into.set(key, value);
+};
+
+/** A key answers a group: slices of the SAME key concatenate. */
+const concatEach = (into: Map<string, any[]>, from: Map<string, any[]>) => {
+  for (const [key, rows] of from) {
+    const held = into.get(key);
+    if (held) held.push(...rows); else into.set(key, rows);
+  }
+};
+
+/**
+ * The keys asked for during one tick, answered by one read.
+ *
+ * graphql-js calls a field resolver once per parent, so a page of 50 rows asked for
+ * its relation 50 times — measured, with 5 distinct keys behind those 50 calls. The
+ * keys of a tick are collected and answered together, which is the shape the framework
+ * already imposes one level up: a presenter receives the PAGE (`egress.ts`).
+ *
+ * Scoped by the request's context object, which graphql-js hands identically to every
+ * resolver of one request and never shares with another — two callers must never be
+ * answered out of one read. When there is no context (a resolver called directly, as
+ * the tests do), the scope is a shared object and the tick alone bounds the batch.
+ */
+const batches = new WeakMap<object, Map<string, Batch>>();
+const NO_CONTEXT: object = {};
+
+function loadByKey<R>(
+  ctx: unknown,
+  entityKey: string,
+  id: string,
+  read: (ids: string[]) => Promise<Map<string, R>>,
+  absent: () => R,
+): Promise<R> {
+  const scope = ctx && typeof ctx === 'object' ? (ctx as object) : NO_CONTEXT;
+  let open = batches.get(scope);
+  if (!open) { open = new Map(); batches.set(scope, open); }
+
+  let batch = open.get(entityKey);
+  if (!batch) {
+    const keys = new Set<string>();
+    // The next microtask: every sibling resolver of the page has run by then, so
+    // their keys travel together. Closed first, so the following tick opens a new one.
+    const rows = Promise.resolve().then(() => {
+      open!.delete(entityKey);
+      return read([...keys]);
+    });
+    batch = { keys, rows };
+    open.set(entityKey, batch);
+  }
+  batch.keys.add(id);
+  return batch.rows.then((found) => found.get(id) ?? absent());
+}
+
 /**
  * Redirect specific ops to alternate handlers based on frond.config.ts overrides.
  * For ops declaring `handler: OtherClass, method?: 'name'`, replaces the facade entry
@@ -303,13 +398,30 @@ export function registerAll(
         if (!relationName || relationName in fields || presenterFields.has(relationName)) continue;
         const nullable = Anatomy.isNullable(field.shape);
 
+        const targetKeyName = primaryNameOf(targetEntry.fields);
+        const targetList = targetEntry.facade.list;
         relationFields[relationName] = (t: any) => t.field({
           type: targetEntry.type,
           nullable,
-          resolve: (parent: any) => {
+          resolve: (parent: any, _args: unknown, ctx: unknown) => {
             const fk = parent[fieldName];
             if (fk == null) return null;
-            return targetEntry.facade.findById({ params: { id: fk }, query: {}, body: undefined, state: {} });
+            // A door that serves no list — a handler narrowed to `findById` — keeps the
+            // row-at-a-time path rather than losing the relation entirely.
+            if (typeof targetList !== 'function') {
+              return targetEntry.facade.findById({ params: { id: fk }, query: {}, body: undefined, state: {} });
+            }
+            return loadByKey(ctx, directionKey(targetKey(target), targetKeyName), String(fk), (ids) =>
+              // The door the `many` dual already uses, with a SET where it names one
+              // value. Nothing new is published: a criterion learned to name several.
+              readInSlices(ids, async (slice) => {
+                const result = await targetList.call(targetEntry.facade, {
+                  params: {}, query: { where: { [targetKeyName]: slice } }, body: undefined, state: {},
+                }) as any;
+                const rows = Array.isArray(result) ? result : result?.items ?? result?.data ?? [];
+                return new Map<string, any>(rows.map((row: any) => [String(row?.[targetKeyName]), row]));
+              }, keepEach),
+            () => null);
           },
         });
       }
@@ -333,15 +445,30 @@ export function registerAll(
 
         relationFields[fieldName] = (t: any) => t.field({
           type: [targetEntry.type],
-          resolve: (parent: any) => {
+          resolve: (parent: any, _args: unknown, ctx: unknown) => {
             const id = parent.id;
             if (id == null) return [];
+            // The same batch as its `one` dual, one query for the whole page — the two
+            // directions differ only in what a key answers: one row there, a group here.
+            //
             // `where` — un critère se nomme. Passé à la racine de la query, il retombait
             // dans les options de `list()`, qui ignore ce qu'elle ne connaît pas : la
             // relation rendait alors TOUTE la table cible, sans un mot.
-            return targetEntry.facade.list({
-              params: {}, query: { where: { [reverseFkName]: id } }, body: undefined, state: {},
-            }).then((result: any) => Array.isArray(result) ? result : result?.items ?? result);
+            return loadByKey(ctx, directionKey(targetKey(target), reverseFkName), String(id), (ids) =>
+              readInSlices(ids, async (slice) => {
+                const result = await targetEntry.facade.list({
+                  params: {}, query: { where: { [reverseFkName]: slice } }, body: undefined, state: {},
+                }) as any;
+                const rows = Array.isArray(result) ? result : result?.items ?? result?.data ?? [];
+                const grouped = new Map<string, any[]>();
+                for (const row of rows) {
+                  const key = String(row?.[reverseFkName]);
+                  const held = grouped.get(key);
+                  if (held) held.push(row); else grouped.set(key, [row]);
+                }
+                return grouped;
+              }, concatEach),
+            () => []);
           },
         });
       }

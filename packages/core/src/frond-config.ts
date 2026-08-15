@@ -70,6 +70,19 @@ export interface OperationOverride {
 export interface FrondConfig {
   /** Class names exposed as the frond's public contract (all surfaces). */
   expose?: string[];
+  /**
+   * The entities this frond may read ACROSS sources, by name.
+   *
+   * It is not a permission checked after the fact: the list IS the environment a
+   * cross-source query runs in — a source holding none of these is never opened, so
+   * its tables do not exist in that connection. `facadeFor` excludes an entity with no
+   * door on purpose ("it would publish the auth tables to anyone who asks"), and a SQL
+   * door at app scope would hand them over; this is what keeps it shut.
+   *
+   * Declaring it is what makes `Sources` injectable here. A frond that declares none
+   * asks for none, and nothing is attached on its behalf.
+   */
+  reads?: string[];
   /** Per-surface entity lists. Overrides default deduction for each named surface. */
   surfaces?: Record<string, string[]>;
   /** Interface → implementation bindings for DI (e.g. { Database: 'SqliteDatabase' }). */

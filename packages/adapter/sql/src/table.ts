@@ -109,11 +109,36 @@ function referenceFor(
   field: Field,
   resolve: (name: string) => string,
   tableNameOf?: Map<SchemaSource, string>,
+  hosted?: HostedNames,
 ): ColumnReference | undefined {
   const relation = field.role?.relation;
   if (!relation || relation.kind !== 'one') return undefined;
   const target = relation.to() as Partial<SchemaView> & { name?: string };
-  const table = tableNameOf?.get(target as SchemaView) ?? resolve(registrationKeyOf(target.name ?? ''));
+  const mapped = tableNameOf?.get(target as SchemaView);
+  if (mapped === undefined && hosted !== undefined) {
+    // Three answers, and only the first two are ordinary. Two databases share no
+    // constraint, so a target that lives in another source gets a column and no
+    // foreign key — the relation survives, the pretence does not. A target no source
+    // hosts is a mistake, and staying silent would turn a bad registration into what
+    // reads exactly like a source boundary.
+    //
+    // Decided on the NAME and never on object identity: a target reached through two
+    // specifiers (`./Subscription.js` from a sibling entity, `Subscription.ts` from
+    // the scan) is TWO class objects for one entity, so the identity map misses on an
+    // entity that is right there. Measured on a real app, where this threw on
+    // `ref(Subscription)` while the table was in the very batch being built. Everything
+    // else that resolves a relation target already resolves it by name, for the same
+    // reason — a target rebuilt from a card is a `{ name }` stand-in.
+    const key = registrationKeyOf(target.name ?? '');
+    if (hosted.elsewhere.has(key)) return undefined;
+    if (!hosted.here.has(key)) {
+      throw new Error(
+        `ref(${target.name ?? '?'}): no source hosts it — it is in neither this batch nor another one. ` +
+        `Check the entity is scanned, and that \`sources\` spells its name the same way.`,
+      );
+    }
+  }
+  const table = mapped ?? resolve(registrationKeyOf(target.name ?? ''));
   const column = primaryColumnOf(target);
   return relation.onDelete ? { table, column, onDelete: relation.onDelete } : { table, column };
 }
@@ -123,6 +148,7 @@ function toColumn(
   field: Field,
   resolve: (name: string) => string,
   tableNameOf?: Map<SchemaSource, string>,
+  hosted?: HostedNames,
 ): ColumnDef {
   // The column type comes from the `shape` axis alone. `anatomy` strips the
   // nullable union so a nullable integer stays an integer instead of falling
@@ -148,7 +174,7 @@ function toColumn(
   const soleUnique = (field.role?.unique ?? []).some((group) => group.length <= 1);
   if (soleUnique && !column.primary) column.unique = true;
   if (field.role?.index === true && !column.primary && !column.unique) column.index = true;
-  const references = referenceFor(field, resolve, tableNameOf);
+  const references = referenceFor(field, resolve, tableNameOf, hosted);
   if (references) column.references = references;
   return column;
 }
@@ -159,6 +185,16 @@ export interface RelationResolve {
   resolve: (name: string) => string;
   /** Live entity class → its already-resolved table name, reused instead of re-derived. */
   tableNameOf?: Map<SchemaSource, string>;
+  /** Which entities this batch holds and which live in another source — decided by NAME. */
+  hosted?: HostedNames;
+}
+
+/** The two name sets a cross-source batch is read against — see {@link referenceFor}. */
+export interface HostedNames {
+  /** Registration names in THIS batch. */
+  here: ReadonlySet<string>;
+  /** Registration names the app hosts in another source — see {@link AppLike.elsewhere}. */
+  elsewhere: ReadonlySet<string>;
 }
 
 /**
@@ -179,7 +215,7 @@ export function toTable(tableName: string, entity: SchemaSource, relations?: Rel
   const columns: ColumnDef[] = [];
   for (const [fieldName, field] of Object.entries(fields)) {
     if (!isStored(field)) continue;
-    columns.push(toColumn(fieldName, field, resolve, relations?.tableNameOf));
+    columns.push(toColumn(fieldName, field, resolve, relations?.tableNameOf, relations?.hosted));
   }
   const primaries = columns.filter((column) => column.primary).map((column) => column.name);
   const stored = new Set(columns.map((column) => column.name));
@@ -245,11 +281,70 @@ export interface AppLike {
   fronds: FrondLike[];
   /** Auth runtime entities are migrated alongside scanned fronds when present. */
   auth?: { entities: Record<string, SchemaSource> };
+  /**
+   * Entities this app hosts in ANOTHER source — named so a miss can be read.
+   *
+   * Without it every miss looked alike, so a `ref()` fell back to a derived table name
+   * and the constraint was emitted against a table that might not exist. Absent means
+   * one source, where a miss can only be a mistake.
+   */
+  elsewhere?: string[];
+  /**
+   * The DERIVATIONS this app stores — registration names.
+   *
+   * A derivation makes no table by default: `Post.pick('id','title')` describes an
+   * answer, not a place rows live, and one dropped under `entities/` used to get a
+   * table of its own — measured on a real app, where a projection of an archived
+   * entity created a duplicate in the OTHER database.
+   *
+   * Naming it in `sources:` is the opt-in, and it changes what the thing is: a stored
+   * derivation is a dated COPY, not a projection, and it owes what any copy owes —
+   * who fills it, and how old it is.
+   */
+  materialize?: string[];
+}
+
+/**
+ * Does this schema come from another one? `Post` answers no, `Post.pick(…)` answers
+ * `Post` — a derivation carries its origin, which `sourceNameOf` already reads for two
+ * other projections. Recognised by that FORM, never by a brand.
+ */
+function isDerivation(source: SchemaSource): boolean {
+  return (source as { source?: unknown }).source !== undefined;
+}
+
+/**
+ * A stored derivation must be able to say HOW OLD it is.
+ *
+ * It is a copy, and a copy read as if it were live is the silent loss this whole
+ * design exists to refuse: rows from yesterday typed exactly like rows from now. The
+ * vocabulary already carries the answer — a field with `update: 'now'` records when
+ * this row last changed HERE, which for a copy is when it was last pulled. So nothing
+ * new is declared; what is new is that forgetting it is refused, at boot, by name.
+ *
+ * An entity is untouched: it is not a copy of anything, and its rows are the truth.
+ */
+function refuseUndated(name: string, source: SchemaSource): void {
+  const dated = Object.values(fieldsOf(source)).some((field) => field.lifecycle?.update === 'now');
+  if (dated) return;
+  throw new Error(
+    `${name} is stored as a derivation but carries no \`updated()\` field — a copy that ` +
+    `cannot say when it was pulled reads exactly like live rows. Add one, or drop it from \`sources\`.`,
+  );
 }
 
 function collectEntities(app: AppLike): EntityEntry[] {
+  const stored = new Set((app.materialize ?? []).map((name) => registrationKeyOf(name)));
   const entries: EntityEntry[] = [];
-  for (const frond of app.fronds) entries.push(...frond.entities);
+  for (const frond of app.fronds) {
+    for (const entry of frond.entities) {
+      if (isDerivation(entry.entityClass)) {
+        if (!stored.has(registrationKeyOf(entry.name))) continue;
+        refuseUndated(entry.name, entry.entityClass);
+      }
+      entries.push(entry);
+    }
+  }
   if (app.auth?.entities) {
     for (const [name, entityClass] of Object.entries(app.auth.entities)) entries.push({ name, entityClass });
   }
@@ -265,7 +360,11 @@ function collectEntities(app: AppLike): EntityEntry[] {
 export function toTables(app: AppLike, resolve: (name: string) => string): TableDef[] {
   const entries = collectEntities(app);
   const tableNameOf = new Map<SchemaSource, string>(entries.map((entry) => [entry.entityClass, resolve(entry.name)]));
-  return entries.map((entry) => toTable(resolve(entry.name), entry.entityClass, { resolve, tableNameOf }));
+  const lower = (name: string) => name.charAt(0).toLowerCase() + name.slice(1);
+  const hosted = app.elsewhere
+    ? { here: new Set(entries.map((entry) => lower(entry.name))), elsewhere: new Set(app.elsewhere.map(lower)) }
+    : undefined;
+  return entries.map((entry) => toTable(resolve(entry.name), entry.entityClass, { resolve, tableNameOf, hosted }));
 }
 
 // ─── Ordering — a referenced table before its referrer ─────────────────────

@@ -94,7 +94,7 @@ async function boot(): Promise<App> {
   let migrateSchema: ((app: never) => Promise<void> | void) | undefined;
   if (!ormFactory) {
     const { resolveStorage } = await import('@fougere/defaults');
-    const storage = resolveStorage(fileConfig.db as never);
+    const storage = resolveStorage(fileConfig.db as never, (fileConfig as { sources?: unknown }).sources as never);
     if (storage.ormFactory) {
       log.debug('auto-resolving storage from config.db');
       db = storage.db;
@@ -175,8 +175,11 @@ export function createMemoryOrm(entity: SchemaView, name: string): EntityOrm {
   // `1` does not answer `'1'`. SQL never had the question; here the divergence was
   // silent and only on this storage.
   const keyOf = (value: unknown) => String(value);
+  // Same contract as SQL: a criterion may name a SET, and an empty set matches nothing.
   const matches = (row: Record<string, unknown>, criteria: Record<string, unknown>) =>
-    Object.entries(criteria).every(([key, value]) => Object.is(row[key], value));
+    Object.entries(criteria).every(([key, value]) => Array.isArray(value)
+      ? value.some((v) => Object.is(row[key], v))
+      : Object.is(row[key], value));
   return {
     client: store,
     async list(options?: any) {
@@ -204,6 +207,46 @@ export function createMemoryOrm(entity: SchemaView, name: string): EntityOrm {
     },
     async findAllBy(criteria: Record<string, unknown>) {
       return [...store.values()].filter((row) => matches(row, criteria));
+    },
+    // Same contract as SQL: a map keyed by the primary key, a miss being an absent key.
+    async findByKeys(ids: readonly string[]) {
+      const found = new Map<string, Record<string, unknown>>();
+      for (const id of ids) {
+        const row = store.get(keyOf(id));
+        if (row) found.set(String(id), row);
+      }
+      return found;
+    },
+    // The dual, same contract as SQL: grouped by the value read off the ROW.
+    async findAllByKeys(field: string, keys: readonly string[]) {
+      const grouped = new Map<string, Record<string, unknown>[]>();
+      if (keys.length === 0) return grouped;
+      const wanted = new Set(keys.map(String));
+      for (const row of store.values()) {
+        const key = String(row[field]);
+        if (!wanted.has(key)) continue;
+        const held = grouped.get(key);
+        if (held) held.push(row); else grouped.set(key, [row]);
+      }
+      return grouped;
+    },
+    // Same contract as SQL: the key and the creation stamps survive an overwrite.
+    async upsert(input: Partial<Record<string, unknown>>) {
+      const record = applyCreate(fields, applyUpdate(fields, input));
+      const id = record[pk] as string | undefined;
+      if (id === undefined) throw new Error(`${name}.upsert(): no \`${pk}\` — an upsert needs the key it writes at.`);
+      const held = store.get(keyOf(id));
+      if (held) {
+        for (const [key, field] of Object.entries(fields)) {
+          if (key === pk || (field.lifecycle?.create === 'now' && field.lifecycle?.update !== 'now')) record[key] = held[key];
+        }
+      }
+      store.set(keyOf(id), record);
+      return record;
+    },
+    async upsertAll(inputs: readonly Partial<Record<string, unknown>>[]) {
+      for (const input of inputs) await (this as any).upsert(input);
+      return inputs.length;
     },
     async create(input: Partial<Record<string, unknown>>) {
       const record = applyCreate(fields, input);
