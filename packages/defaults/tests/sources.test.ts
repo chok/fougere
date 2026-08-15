@@ -153,3 +153,31 @@ describe('storageFrom — an engine the caller built', () => {
     expect(twice).toThrow(/claimed by both 'archive' and 'cold'/);
   });
 });
+
+/**
+ * The identity map misses on an entity that IS in the batch.
+ *
+ * A sibling entity importing `./Reader.js` and the scan loading `Reader.ts` are two
+ * module instances, so `ref(Reader)` yields a class object the map was never keyed on.
+ * Measured on a real app, where the refusal fired on an entity right there in the
+ * batch — which is why the three answers are decided on the NAME.
+ */
+describe('the same entity reached as two class objects', () => {
+  it('is still recognised as hosted here, and keeps its constraint', () => {
+    // A second declaration of the same entity: same name, different object — exactly
+    // what two module instances produce.
+    class ReaderTwin extends entity({ id: primary(), name: text() }) {}
+    Object.defineProperty(ReaderTwin, 'name', { value: 'Reader' });
+    class Visit extends entity({ id: primary(), readerId: ref(ReaderTwin) }) {}
+
+    const tables = toTables({
+      fronds: [
+        { name: 'people', entities: [{ name: 'reader', entityClass: Reader }] },
+        { name: 'visits', entities: [{ name: 'visit', entityClass: Visit }] },
+      ],
+      elsewhere: [],
+    } as never, (name) => `${name}s`);
+
+    expect(fkOf(tables, 'visits', 'reader_id')).toEqual({ table: 'readers', column: 'id' });
+  });
+});

@@ -109,25 +109,36 @@ function referenceFor(
   field: Field,
   resolve: (name: string) => string,
   tableNameOf?: Map<SchemaSource, string>,
-  elsewhere?: ReadonlySet<string>,
+  hosted?: HostedNames,
 ): ColumnReference | undefined {
   const relation = field.role?.relation;
   if (!relation || relation.kind !== 'one') return undefined;
   const target = relation.to() as Partial<SchemaView> & { name?: string };
-  const known = tableNameOf?.get(target as SchemaView);
-  if (known === undefined && elsewhere !== undefined) {
+  const mapped = tableNameOf?.get(target as SchemaView);
+  if (mapped === undefined && hosted !== undefined) {
     // Three answers, and only the first two are ordinary. Two databases share no
     // constraint, so a target that lives in another source gets a column and no
-    // foreign key — the relation survives, the pretence does not. A target in no
-    // source at all is a mistake, and staying silent about it would turn a bad
-    // registration into what reads exactly like a source boundary.
-    if (elsewhere.has(registrationKeyOf(target.name ?? ''))) return undefined;
-    throw new Error(
-      `ref(${target.name ?? '?'}): no source hosts it — it is in neither this batch nor another one. ` +
-      `Check the entity is scanned, and that \`sources\` spells its name the same way.`,
-    );
+    // foreign key — the relation survives, the pretence does not. A target no source
+    // hosts is a mistake, and staying silent would turn a bad registration into what
+    // reads exactly like a source boundary.
+    //
+    // Decided on the NAME and never on object identity: a target reached through two
+    // specifiers (`./Subscription.js` from a sibling entity, `Subscription.ts` from
+    // the scan) is TWO class objects for one entity, so the identity map misses on an
+    // entity that is right there. Measured on a real app, where this threw on
+    // `ref(Subscription)` while the table was in the very batch being built. Everything
+    // else that resolves a relation target already resolves it by name, for the same
+    // reason — a target rebuilt from a card is a `{ name }` stand-in.
+    const key = registrationKeyOf(target.name ?? '');
+    if (hosted.elsewhere.has(key)) return undefined;
+    if (!hosted.here.has(key)) {
+      throw new Error(
+        `ref(${target.name ?? '?'}): no source hosts it — it is in neither this batch nor another one. ` +
+        `Check the entity is scanned, and that \`sources\` spells its name the same way.`,
+      );
+    }
   }
-  const table = known ?? resolve(registrationKeyOf(target.name ?? ''));
+  const table = mapped ?? resolve(registrationKeyOf(target.name ?? ''));
   const column = primaryColumnOf(target);
   return relation.onDelete ? { table, column, onDelete: relation.onDelete } : { table, column };
 }
@@ -137,7 +148,7 @@ function toColumn(
   field: Field,
   resolve: (name: string) => string,
   tableNameOf?: Map<SchemaSource, string>,
-  elsewhere?: ReadonlySet<string>,
+  hosted?: HostedNames,
 ): ColumnDef {
   // The column type comes from the `shape` axis alone. `anatomy` strips the
   // nullable union so a nullable integer stays an integer instead of falling
@@ -163,7 +174,7 @@ function toColumn(
   const soleUnique = (field.role?.unique ?? []).some((group) => group.length <= 1);
   if (soleUnique && !column.primary) column.unique = true;
   if (field.role?.index === true && !column.primary && !column.unique) column.index = true;
-  const references = referenceFor(field, resolve, tableNameOf, elsewhere);
+  const references = referenceFor(field, resolve, tableNameOf, hosted);
   if (references) column.references = references;
   return column;
 }
@@ -174,8 +185,16 @@ export interface RelationResolve {
   resolve: (name: string) => string;
   /** Live entity class → its already-resolved table name, reused instead of re-derived. */
   tableNameOf?: Map<SchemaSource, string>;
-  /** Registration names of entities hosted in another source — see {@link AppLike.elsewhere}. */
-  elsewhere?: ReadonlySet<string>;
+  /** Which entities this batch holds and which live in another source — decided by NAME. */
+  hosted?: HostedNames;
+}
+
+/** The two name sets a cross-source batch is read against — see {@link referenceFor}. */
+export interface HostedNames {
+  /** Registration names in THIS batch. */
+  here: ReadonlySet<string>;
+  /** Registration names the app hosts in another source — see {@link AppLike.elsewhere}. */
+  elsewhere: ReadonlySet<string>;
 }
 
 /**
@@ -196,7 +215,7 @@ export function toTable(tableName: string, entity: SchemaSource, relations?: Rel
   const columns: ColumnDef[] = [];
   for (const [fieldName, field] of Object.entries(fields)) {
     if (!isStored(field)) continue;
-    columns.push(toColumn(fieldName, field, resolve, relations?.tableNameOf, relations?.elsewhere));
+    columns.push(toColumn(fieldName, field, resolve, relations?.tableNameOf, relations?.hosted));
   }
   const primaries = columns.filter((column) => column.primary).map((column) => column.name);
   const stored = new Set(columns.map((column) => column.name));
@@ -290,10 +309,11 @@ function collectEntities(app: AppLike): EntityEntry[] {
 export function toTables(app: AppLike, resolve: (name: string) => string): TableDef[] {
   const entries = collectEntities(app);
   const tableNameOf = new Map<SchemaSource, string>(entries.map((entry) => [entry.entityClass, resolve(entry.name)]));
-  const elsewhere = app.elsewhere
-    ? new Set(app.elsewhere.map((name) => name.charAt(0).toLowerCase() + name.slice(1)))
+  const lower = (name: string) => name.charAt(0).toLowerCase() + name.slice(1);
+  const hosted = app.elsewhere
+    ? { here: new Set(entries.map((entry) => lower(entry.name))), elsewhere: new Set(app.elsewhere.map(lower)) }
     : undefined;
-  return entries.map((entry) => toTable(resolve(entry.name), entry.entityClass, { resolve, tableNameOf, elsewhere }));
+  return entries.map((entry) => toTable(resolve(entry.name), entry.entityClass, { resolve, tableNameOf, hosted }));
 }
 
 // ─── Ordering — a referenced table before its referrer ─────────────────────
