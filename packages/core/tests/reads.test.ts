@@ -94,3 +94,31 @@ describe('a name `reads:` gets wrong', () => {
     await app.dispose();
   });
 });
+
+describe('an entity of ANOTHER frond', () => {
+  let root: string;
+  beforeAll(() => {
+    root = mkdtempSync(join(tmpdir(), 'fougere-reads-cross-'));
+    for (const [frond, entity] of [['shop', 'Order'], ['catalog', 'Book']]) {
+      const dir = join(root, 'fronds', frond, 'entities');
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(join(dir, `${entity}.js`), `
+import { entity, primary, text } from ${JSON.stringify(schemaDist)};
+export default class ${entity} extends entity({ id: primary(), label: text() }) {}
+`);
+    }
+    writeFileSync(join(root, 'fronds', 'shop', 'frond.config.js'),
+      `export default { reads: ['Order', 'Book'] };`);
+  });
+  afterAll(() => { rmSync(root, { recursive: true, force: true }); });
+
+  it('may be named — a cross-source query joins fronds by definition', async () => {
+    const built: unknown[][] = [];
+    const app = await createApp({
+      root, createContainer,
+      sourcesFactory: async (reads: unknown[]) => { built.push(reads); return {}; },
+    });
+    expect(built[0]!.map((c: any) => c.name).sort()).toEqual(['Book', 'Order']);
+    await app.dispose();
+  });
+});
