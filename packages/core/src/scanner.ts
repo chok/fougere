@@ -541,6 +541,7 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
     collectors,
     seeds,
     surfaces: frondConfig?.surfaces,
+    reads: frondConfig?.reads,
     operationsOverrides,
   };
 }

@@ -20,6 +20,7 @@ import { computeBindingPlan, resolveArgs, type CollectorResolver } from './bindi
 import type { OperationContract, OperationsMap } from './operation.js';
 import { resolveContracts } from './operation.js';
 import { EMPTY_INVOCATION, type InvocationContext } from './invocation.js';
+import { toRegistrationName } from './contract.js';
 import { type SchemaView, type Fields, applyCreate } from '@fougere/schema';
 import { projectEgress, presentEgress, guardStorage, type PresenterArgs } from './egress.js';
 
@@ -230,6 +231,26 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     }
     const scope = container.createScope();
     const frondLog = log.child(frond.name);
+
+    // `reads:` is what makes a cross-source reader exist here, and the list IS its
+    // environment — a source holding none of these is never opened. Registered under
+    // the type's own name, which is the key `depKeyOf` already derives for a plain
+    // parameter: `constructor(private sources: Sources)` and nothing else to say.
+    if (frond.reads?.length && options.sourcesFactory) {
+      const named = frond.reads
+        .map((name) => frond.entities.find((e) => e.name === toRegistrationName(name))?.entityClass)
+        .filter((entity): entity is NonNullable<typeof entity> => entity !== undefined);
+      if (named.length !== frond.reads.length) {
+        const missing = frond.reads.filter((name) =>
+          !frond.entities.some((e) => e.name === toRegistrationName(name)));
+        frondLog.warn(
+          `[reads] ${missing.join(', ')} — named in frond.config.ts but not scanned in this frond, `
+          + 'so a query naming one would find no table. Check the spelling, or the entity file.',
+        );
+      }
+      scope.registerValue('Sources', await options.sourcesFactory(named, frond.name));
+      frondLog.debug(`cross-source reader over ${named.length} entit(ies)`);
+    }
 
     for (const provider of frond.providers) {
       scope.register(provider.ctor.name, provider.ctor, { deps: provider.deps });
