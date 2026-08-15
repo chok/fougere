@@ -26,11 +26,13 @@
     "@fougere/svelte": "0.2.0-alpha.0",
     "@fougere/vite": "0.2.0-alpha.0",
     "create-fougere": "0.2.0-alpha.0",
-    "fougere": "0.2.0-alpha.0"
+    "fougere": "0.2.0-alpha.0",
+    "@fougere/adapter-duckdb": "0.2.0-alpha.1"
   },
   "changesets": [
     "five-hosts-one-frond",
     "honest-contract-boundaries",
-    "prebuilt-sqlite"
+    "prebuilt-sqlite",
+    "rows-live-where-the-app-says"
   ]
 }
