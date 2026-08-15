@@ -236,6 +236,16 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // environment — a source holding none of these is never opened. Registered under
     // the type's own name, which is the key `depKeyOf` already derives for a plain
     // parameter: `constructor(private sources: Sources)` and nothing else to say.
+    // Declaring `reads:` with nothing to build the reader is a boot that ignores a
+    // clause: the handler asking for `Sources` then dies at its first call, on a
+    // container message that names neither the clause nor what is missing.
+    if (frond.reads?.length && !options.sourcesFactory) {
+      frondLog.warn(
+        `[reads] ${frond.reads.join(', ')} — declared in frond.config.ts, but this boot passes no `
+        + '`sourcesFactory`, so no reader is registered and a handler asking for `Sources` will fail '
+        + 'at its first call. Pass one (`@fougere/adapter-duckdb`), or drop the clause.',
+      );
+    }
     if (frond.reads?.length && options.sourcesFactory) {
       // Resolved across the WHOLE app, not this frond's own entities: a cross-source
       // query joins entities from different fronds by definition — `Progress` here,

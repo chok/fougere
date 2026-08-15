@@ -78,6 +78,25 @@ describe('a frond that declares none', () => {
   });
 });
 
+describe('a boot that ignores the clause', () => {
+  let root: string;
+  beforeAll(() => { root = writeApp(`['Order', 'Line']`); });
+  afterAll(() => { rmSync(root, { recursive: true, force: true }); });
+
+  it('says so — otherwise the handler dies later on a message naming neither', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    // No `sourcesFactory`: legitimate — a boot that hosts no reader is ordinary, and
+    // refusing it would make the clause a hard dependency on a storage package.
+    const app = await createApp({ root, createContainer });
+
+    const said = warn.mock.calls.map((c) => c.join(' ')).join('\n');
+    expect(said).toMatch(/\[reads\] Order, Line/);
+    expect(said).toMatch(/sourcesFactory/);
+    warn.mockRestore();
+    await app.dispose();
+  });
+});
+
 describe('a name `reads:` gets wrong', () => {
   let root: string;
   beforeAll(() => { root = writeApp(`['Order', 'Ghost']`); });
