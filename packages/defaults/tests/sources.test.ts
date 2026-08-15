@@ -194,7 +194,10 @@ describe('the same entity reached as two class objects', () => {
  * static, so it survives two derivations and still names the ROOT.
  */
 describe('a derivation', () => {
-  const BookCard = Book.pick('id', 'title');
+  // A CLASS, never `const Card = Book.pick(…)`: a derivation held in a const answers
+  // `Schema` to `.name`, and the name is what registers it, names its table and titles
+  // it on the card. Extending is what gives the shape an identity.
+  class BookCard extends Book.pick('id', 'title') {}
   const withCard = {
     fronds: [
       ...app.fronds,
