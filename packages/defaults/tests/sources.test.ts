@@ -10,7 +10,7 @@ import { describe, it, expect } from 'vitest';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { entity, primary, ref, text } from '@fougere/schema';
+import { entity, primary, ref, text, updated } from '@fougere/schema';
 import { toTables, setupKysely, setupSqlite } from '@fougere/adapter-sql';
 import { SqliteDialect } from 'kysely';
 import Database from 'better-sqlite3';
@@ -197,7 +197,10 @@ describe('a derivation', () => {
   // A CLASS, never `const Card = Book.pick(…)`: a derivation held in a const answers
   // `Schema` to `.name`, and the name is what registers it, names its table and titles
   // it on the card. Extending is what gives the shape an identity.
-  class BookCard extends Book.pick('id', 'title') {}
+  //
+  // And it carries `pulledAt`, because a stored copy has to be able to say its age —
+  // `toTables` refuses one that cannot.
+  class BookCard extends Book.pick('id', 'title').extend({ pulledAt: updated() }) {}
   const withCard = {
     fronds: [
       ...app.fronds,
@@ -223,5 +226,36 @@ describe('a derivation', () => {
 
   it('leaves an entity alone — it inherits from entity() directly and carries no origin', () => {
     expect(named(toTables(app as never, (n) => `${n}s`))).toEqual(['books', 'loans', 'readers']);
+  });
+});
+
+/**
+ * A copy that cannot say when it was pulled reads exactly like live rows.
+ *
+ * Nothing new is declared for it: a field with `update: 'now'` already records when a
+ * row last changed HERE, which for a copy is its age. What is new is that forgetting
+ * it is refused — at boot, by name, rather than discovered the day a report is wrong.
+ */
+describe('a stored derivation must be able to say how old it is', () => {
+  class Undated extends Book.pick('id', 'title') {}
+  class Dated extends entity({ id: primary(), title: text(), pulledAt: updated() }) {}
+
+  const withView = (View: unknown) => ({
+    fronds: [{ name: 'views', entities: [{ name: 'view', entityClass: View }] }],
+    materialize: ['view'],
+  });
+
+  it('refuses one with no updated() field, naming the remedy', () => {
+    expect(() => toTables(withView(Undated) as never, (n) => `${n}s`))
+      .toThrow(/carries no `updated\(\)` field/);
+  });
+
+  it('accepts one that carries it', () => {
+    expect(toTables(withView(Dated) as never, (n) => `${n}s`)).toHaveLength(1);
+  });
+
+  it('leaves an ENTITY alone — it is not a copy of anything', () => {
+    // `Reader` declares no `updated()` either, and never needed to: its rows are the truth.
+    expect(toTables(app as never, (n) => `${n}s`)).toHaveLength(3);
   });
 });

@@ -313,12 +313,35 @@ function isDerivation(source: SchemaSource): boolean {
   return (source as { source?: unknown }).source !== undefined;
 }
 
+/**
+ * A stored derivation must be able to say HOW OLD it is.
+ *
+ * It is a copy, and a copy read as if it were live is the silent loss this whole
+ * design exists to refuse: rows from yesterday typed exactly like rows from now. The
+ * vocabulary already carries the answer — a field with `update: 'now'` records when
+ * this row last changed HERE, which for a copy is when it was last pulled. So nothing
+ * new is declared; what is new is that forgetting it is refused, at boot, by name.
+ *
+ * An entity is untouched: it is not a copy of anything, and its rows are the truth.
+ */
+function refuseUndated(name: string, source: SchemaSource): void {
+  const dated = Object.values(fieldsOf(source)).some((field) => field.lifecycle?.update === 'now');
+  if (dated) return;
+  throw new Error(
+    `${name} is stored as a derivation but carries no \`updated()\` field — a copy that ` +
+    `cannot say when it was pulled reads exactly like live rows. Add one, or drop it from \`sources\`.`,
+  );
+}
+
 function collectEntities(app: AppLike): EntityEntry[] {
   const stored = new Set((app.materialize ?? []).map((name) => registrationKeyOf(name)));
   const entries: EntityEntry[] = [];
   for (const frond of app.fronds) {
     for (const entry of frond.entities) {
-      if (isDerivation(entry.entityClass) && !stored.has(registrationKeyOf(entry.name))) continue;
+      if (isDerivation(entry.entityClass)) {
+        if (!stored.has(registrationKeyOf(entry.name))) continue;
+        refuseUndated(entry.name, entry.entityClass);
+      }
       entries.push(entry);
     }
   }

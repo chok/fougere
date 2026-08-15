@@ -384,3 +384,44 @@ describe('upsert', () => {
     expect(row.id).toMatch(/.+/);
   });
 });
+
+// ── upsertAll : une page, une écriture ────────────────────────────────────────
+
+describe('upsertAll', () => {
+  it('writes a page in one statement, and says how many', async () => {
+    const page = Array.from({ length: 200 }, (_, i) => ({ id: `p${i}`, title: `t${i}`, body: 'b', secret: 's' }));
+    expect(await orm.upsertAll(page)).toBe(200);
+    expect(await orm.list()).toHaveLength(200);
+  });
+
+  it('replaces on a second pass — the shape of a re-import', async () => {
+    const page = Array.from({ length: 50 }, (_, i) => ({ id: `p${i}`, title: `t${i}`, body: 'b', secret: 's' }));
+    await orm.upsertAll(page);
+    await orm.upsertAll(page.map((r) => ({ ...r, title: `${r.title} révisé` })));
+
+    expect(await orm.list()).toHaveLength(50);
+    expect((await orm.findById('p0')).title).toBe('t0 révisé');
+  });
+
+  it('slices by rows × COLUMNS — a statement binds values, not rows', async () => {
+    // 9 columns each: 30000 bindings is ~3300 rows per statement, so this spans several.
+    const many = Array.from({ length: 8_000 }, (_, i) => ({ id: `p${i}`, title: `t${i}`, body: 'b', secret: 's' }));
+    expect(await orm.upsertAll(many)).toBe(8_000);
+    expect(await orm.list()).toHaveLength(8_000);
+  });
+
+  it('keeps the moment each row appeared', async () => {
+    await orm.upsertAll([{ id: 'p1', title: 'first', body: 'b', secret: 's' }]);
+    const first = await orm.findById('p1');
+    await new Promise((r) => setTimeout(r, 5));
+    await orm.upsertAll([{ id: 'p1', title: 'revised', body: 'b', secret: 's' }]);
+    const again = await orm.findById('p1');
+
+    expect(again.createdAt).toEqual(first.createdAt);
+    expect(new Date(again.updatedAt).getTime()).toBeGreaterThan(new Date(first.updatedAt).getTime());
+  });
+
+  it('writes nothing for an empty page', async () => {
+    expect(await orm.upsertAll([])).toBe(0);
+  });
+});

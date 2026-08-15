@@ -12,7 +12,7 @@
  * That also makes the code identical on MySQL and SQL Server, which have no
  * `RETURNING` clause.
  */
-import type { Kysely } from 'kysely';
+import { sql, type Kysely } from 'kysely';
 import { applyCreate, applyUpdate, schemaOf, type Fields, type SchemaView, type SchemaSource } from '@fougere/schema';
 import { toTable, toTableName, type TableDef } from './table.js';
 import { resolveDialect, type DialectName } from './dialect.js';
@@ -350,16 +350,9 @@ export class SqlEntityOrm {
     // Never overwritten by a later write: the key identifies the row, and a stamp that
     // is create-ONLY records when it appeared. One that is also `update: 'now'` is the
     // opposite — it exists to move.
-    const frozen = new Set([
-      ...this.pk.names,
-      ...Object.entries(this.fields)
-        .filter(([, field]) => field.lifecycle?.create === 'now' && field.lifecycle?.update !== 'now')
-        .map(([name]) => name),
-    ]);
+    const frozen = this.frozenColumns();
     const row = this.toRow(data);
-    const replaced = Object.fromEntries(
-      Object.entries(row).filter(([column]) => !frozen.has(this.toField.get(column) ?? column)),
-    );
+    const replaced = Object.fromEntries(Object.entries(row).filter(([column]) => !frozen.has(column)));
 
     const insert = this.db.insertInto(this.table.name).values(row);
     await (this.upsertClause === 'on conflict'
@@ -371,6 +364,60 @@ export class SqlEntityOrm {
       ? Object.fromEntries(this.pk.names.map((n) => [n, data[n]]))
       : (data[this.pk.names[0]!] as string);
     return (await this.findById(id as never, options))!;
+  }
+
+  /**
+   * Upsert a whole page in one statement — what an import writes through.
+   *
+   * Row by row, 500 rows were 500 statements (measured pulling an API); the shape of
+   * an import is a page, so the write should be one too. Sliced like every other batch,
+   * but by rows × COLUMNS: a statement binds values, not rows, so the ceiling divides.
+   *
+   * Answers how many rows were written and not the rows themselves. `create` hands back
+   * the complete row because a caller acts on it; an import acts on none of them, and
+   * re-reading a page to satisfy a symmetry nobody uses would double the work.
+   */
+  async upsertAll(inputs: readonly Record<string, unknown>[], _options?: SelectOption): Promise<number> {
+    if (this.upsertClause === false) {
+      throw new Error(
+        `${this.table.name}.upsertAll(): this engine has no upsert clause — write the rows ` +
+        `one by one with create or update, and know that the pair is not atomic.`,
+      );
+    }
+    if (inputs.length === 0) return 0;
+
+    const rows = inputs.map((input) => this.toRow(applyCreate(this.fields, applyUpdate(this.fields, input))));
+    const frozen = this.frozenColumns();
+    const columns = new Set(rows.flatMap((row) => Object.keys(row)));
+    const replaced = Object.fromEntries(
+      [...columns].filter((column) => !frozen.has(column)).map((column) => [column, sql.ref(`excluded.${column}`)]),
+    );
+    // A statement binds VALUES: one row costs as many as it has columns.
+    const perStatement = Math.max(1, Math.floor(this.maxBindings / Math.max(1, columns.size)));
+
+    let written = 0;
+    for (const slice of chunks([...rows], perStatement)) {
+      const insert = this.db.insertInto(this.table.name).values(slice);
+      await (this.upsertClause === 'on conflict'
+        ? insert.onConflict((oc: any) => oc.columns(this.pk.names.map((n) => this.column(n))).doUpdateSet(replaced))
+        : (insert as any).onDuplicateKeyUpdate(replaced)
+      ).execute();
+      written += slice.length;
+    }
+    return written;
+  }
+
+  /**
+   * The COLUMNS a later write must not touch: the key, and a stamp that is create-only.
+   * One that is also `update: 'now'` is the opposite — it exists to move.
+   */
+  private frozenColumns(): Set<string> {
+    return new Set([
+      ...this.pk.names.map((name) => this.column(name)),
+      ...Object.entries(this.fields)
+        .filter(([, field]) => field.lifecycle?.create === 'now' && field.lifecycle?.update !== 'now')
+        .map(([name]) => this.column(name)),
+    ]);
   }
 
   async findById(id: string | Record<string, unknown>, options?: SelectOption): Promise<Record<string, unknown> | undefined> {
