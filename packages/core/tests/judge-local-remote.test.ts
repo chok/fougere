@@ -33,6 +33,7 @@ const ormFactory: OrmFactory = () => {
     findAllBy: async () => [],
     findByKeys: async () => new Map(),
     findAllByKeys: async () => new Map(),
+    upsert: async (i: any) => i,
     create: async (input: unknown) => ({ id: 'p-1', slug: 'lampe', ...(input as object) }),
     update: async (_id: unknown, input: unknown) => ({ id: 'p-1', ...(input as object) }),
     delete: async () => true,

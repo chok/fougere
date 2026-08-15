@@ -347,3 +347,40 @@ describe('a key set larger than one statement can bind', () => {
       .rejects.toThrow(/each hold more than 30000 values/);
   });
 });
+
+// ── upsert : écrire, ou remplacer ce qui est là ───────────────────────────────
+
+describe('upsert', () => {
+  it('writes when the row is absent, exactly like create', async () => {
+    const row = await orm.upsert({ id: 'p1', title: 'first', body: 'b', secret: 's' });
+    expect(row.title).toBe('first');
+    // The lifecycle a first write owes is realized: a declared default, a stamp.
+    expect(row.views).toBe(0);
+    expect(row.createdAt).toBeInstanceOf(Date);
+  });
+
+  it('replaces when it is there — the second run of an import must not throw', async () => {
+    await orm.upsert({ id: 'p1', title: 'first', body: 'b', secret: 's' });
+    const again = await orm.upsert({ id: 'p1', title: 'revised', body: 'b2', secret: 's' });
+
+    expect(again.title).toBe('revised');
+    expect(again.body).toBe('b2');
+    expect(await orm.list()).toHaveLength(1);
+  });
+
+  it('keeps the moment the row appeared, whatever a later write says', async () => {
+    const first = await orm.upsert({ id: 'p1', title: 'first', body: 'b', secret: 's' });
+    await new Promise((r) => setTimeout(r, 5));
+    const again = await orm.upsert({ id: 'p1', title: 'revised', body: 'b', secret: 's' });
+
+    // A row keeps its creation stamp — replacing it would erase when it appeared.
+    expect(again.createdAt).toEqual(first.createdAt);
+    // And it carries when it last changed.
+    expect(new Date(again.updatedAt).getTime()).toBeGreaterThan(new Date(first.updatedAt).getTime());
+  });
+
+  it('generates the key when the caller brings none', async () => {
+    const row = await orm.upsert({ title: 'no key of mine', body: 'b', secret: 's' });
+    expect(row.id).toMatch(/.+/);
+  });
+});

@@ -36,6 +36,16 @@ export interface Dialect {
    * carries (a filter, a cursor): a batch read is never the only thing in the query.
    */
   maxBindings: number;
+  /**
+   * How this engine spells "write it, or replace what is there".
+   *
+   * `'on conflict'` is the standard clause (SQLite, Postgres); MySQL spells the same
+   * thing `ON DUPLICATE KEY UPDATE`; SQL Server has only `MERGE`, a different statement
+   * with different semantics — so it answers `false` and the port refuses by name
+   * rather than emulating a write with a read in front of it, which would be a lie
+   * about atomicity in an engine that has no transaction here either.
+   */
+  upsert: 'on conflict' | 'on duplicate key' | false;
 }
 
 /** Bounded length for a key column, when the shape doesn't state its own. */
@@ -47,6 +57,7 @@ function keyLength(column: ColumnDef): number {
 }
 
 export const sqliteDialect: Dialect = {
+  upsert: 'on conflict',
   // SQLITE_MAX_VARIABLE_NUMBER is 32766 on any build since 3.32 (measured on better-sqlite3).
   maxBindings: 30000,
   name: 'sqlite',
@@ -67,6 +78,7 @@ export const sqliteDialect: Dialect = {
 };
 
 export const pgDialect: Dialect = {
+  upsert: 'on conflict',
   // the wire protocol counts parameters in an int16 — 65535.
   maxBindings: 60000,
   name: 'pg',
@@ -91,6 +103,7 @@ export const pgDialect: Dialect = {
 };
 
 export const mysqlDialect: Dialect = {
+  upsert: 'on duplicate key',
   // no parameter ceiling of its own; max_allowed_packet is what gives way, and it grows with the VALUES not the count.
   maxBindings: 60000,
   name: 'mysql',
@@ -114,6 +127,7 @@ export const mysqlDialect: Dialect = {
 };
 
 export const mssqlDialect: Dialect = {
+  upsert: false,
   // 2100 parameters per statement, the lowest of the four by a wide margin.
   maxBindings: 2000,
   name: 'mssql',

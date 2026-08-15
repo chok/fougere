@@ -230,6 +230,20 @@ export function createMemoryOrm(entity: SchemaView, name: string): EntityOrm {
       }
       return grouped;
     },
+    // Same contract as SQL: the key and the creation stamps survive an overwrite.
+    async upsert(input: Partial<Record<string, unknown>>) {
+      const record = applyCreate(fields, applyUpdate(fields, input));
+      const id = record[pk] as string | undefined;
+      if (id === undefined) throw new Error(`${name}.upsert(): no \`${pk}\` — an upsert needs the key it writes at.`);
+      const held = store.get(keyOf(id));
+      if (held) {
+        for (const [key, field] of Object.entries(fields)) {
+          if (key === pk || (field.lifecycle?.create === 'now' && field.lifecycle?.update !== 'now')) record[key] = held[key];
+        }
+      }
+      store.set(keyOf(id), record);
+      return record;
+    },
     async create(input: Partial<Record<string, unknown>>) {
       const record = applyCreate(fields, input);
       const id = record[pk] as string | undefined;

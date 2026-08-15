@@ -114,6 +114,17 @@ export interface EntityOrm<T = Record<string, unknown>> {
    */
   findAllByKeys(field: string, keys: readonly string[], options?: SelectOption): Promise<Map<string, T[]>>;
   create(input: Partial<T>, options?: SelectOption): Promise<T>;
+  /**
+   * Write the row, or make the existing one look like this — one statement.
+   *
+   * What an import needs and the port did not have: `create` throws on the second run,
+   * so re-reading a source meant deleting first. Measured pulling an API twice.
+   *
+   * The key and the creation stamps survive an overwrite — a row keeps the moment it
+   * appeared. An engine with no upsert clause refuses by name rather than emulating
+   * one with a read in front, which would promise an atomicity it has not got.
+   */
+  upsert(input: Partial<T>, options?: SelectOption): Promise<T>;
   update(id: string, input: Partial<T>, options?: SelectOption): Promise<T>;
   delete(id: string): Promise<boolean>;
   /** Returns a scoped ORM that restricts all read results to the fields of the given schema. */

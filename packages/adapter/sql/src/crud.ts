@@ -99,6 +99,8 @@ export class SqlEntityOrm {
 
   /** How many keys one statement may carry here — see `Dialect.maxBindings`. */
   private maxBindings: number;
+  /** How this engine spells an upsert, or `false` when it cannot — see `Dialect.upsert`. */
+  private upsertClause: 'on conflict' | 'on duplicate key' | false;
 
   constructor(
     private db: Kysely<any>,
@@ -107,7 +109,9 @@ export class SqlEntityOrm {
     selectFields?: Set<string>,
     dialect: DialectName = 'sqlite',
   ) {
-    this.maxBindings = resolveDialect(dialect).maxBindings;
+    const resolved = resolveDialect(dialect);
+    this.maxBindings = resolved.maxBindings;
+    this.upsertClause = resolved.upsert;
     // Normalized once: the table projection and the axis analysis below both read the
     // schema, and a card handed to each separately would be rebuilt twice into two
     // unrelated field objects. Past this line nothing knows which form arrived.
@@ -317,6 +321,56 @@ export class SqlEntityOrm {
       if (held) held.push(row); else grouped.set(key, [row]);
     }
     return grouped;
+  }
+
+  /**
+   * Write the row, or make the existing one look like this — one statement.
+   *
+   * The gesture an import needs and the port did not have: `create` throws on the
+   * second run (`UNIQUE constraint failed`), so re-reading anything meant deleting
+   * first. Measured pulling 500 rows from an API twice.
+   *
+   * Both lifecycles are realized, each on the side it belongs to: `applyCreate` fills
+   * what a first write owes (a generated key, `created()`, a declared default) and
+   * `applyUpdate` stamps what every write owes (`updated()`). On conflict the key and
+   * the creation stamps are left alone — a row keeps the moment it appeared, whatever
+   * later overwrites say.
+   */
+  async upsert(input: Record<string, unknown>, options?: SelectOption): Promise<Record<string, unknown>> {
+    if (this.upsertClause === false) {
+      throw new Error(
+        `${this.table.name}.upsert(): this engine has no upsert clause — read with findById ` +
+        `and call create or update, and know that the pair is not atomic.`,
+      );
+    }
+    // `applyUpdate` FIRST: `updated()` declares both `create: 'now'` and
+    // `update: 'now'`, so filling the creation side first leaves nothing for the
+    // update side to stamp — the row would carry the moment it was inserted forever.
+    const data = applyCreate(this.fields, applyUpdate(this.fields, input));
+    // Never overwritten by a later write: the key identifies the row, and a stamp that
+    // is create-ONLY records when it appeared. One that is also `update: 'now'` is the
+    // opposite — it exists to move.
+    const frozen = new Set([
+      ...this.pk.names,
+      ...Object.entries(this.fields)
+        .filter(([, field]) => field.lifecycle?.create === 'now' && field.lifecycle?.update !== 'now')
+        .map(([name]) => name),
+    ]);
+    const row = this.toRow(data);
+    const replaced = Object.fromEntries(
+      Object.entries(row).filter(([column]) => !frozen.has(this.toField.get(column) ?? column)),
+    );
+
+    const insert = this.db.insertInto(this.table.name).values(row);
+    await (this.upsertClause === 'on conflict'
+      ? insert.onConflict((oc: any) => oc.columns(this.pk.names.map((n) => this.column(n))).doUpdateSet(replaced))
+      : (insert as any).onDuplicateKeyUpdate(replaced)
+    ).execute();
+
+    const id = this.pk.isComposite
+      ? Object.fromEntries(this.pk.names.map((n) => [n, data[n]]))
+      : (data[this.pk.names[0]!] as string);
+    return (await this.findById(id as never, options))!;
   }
 
   async findById(id: string | Record<string, unknown>, options?: SelectOption): Promise<Record<string, unknown> | undefined> {
