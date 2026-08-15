@@ -57,7 +57,8 @@ the local path avoids, no framework tax layered on top of the network.
 
 ## Reading order
 
-**Concepts** — [Philosophy](/docs/concepts/philosophy) · [The Frond](/docs/concepts/frond)
+**Concepts** — [Philosophy](/docs/concepts/philosophy) · [The Frond](/docs/concepts/frond) ·
+[The base](/docs/concepts/the-base)
 
 **Server side** — [Getting started](/docs/getting-started) · [Existing Nuxt app](/docs/existing-app) ·
 [The CLI](/docs/cli) ·

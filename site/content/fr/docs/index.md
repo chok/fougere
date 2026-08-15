@@ -58,7 +58,8 @@ sérialisation que le chemin local éviterait, aucun impôt du framework par-des
 
 ## Ordre de lecture
 
-**Concepts** — [Philosophie](/fr/docs/concepts/philosophy) · [La Frond](/fr/docs/concepts/frond)
+**Concepts** — [Philosophie](/fr/docs/concepts/philosophy) · [La Frond](/fr/docs/concepts/frond) ·
+[Le socle](/fr/docs/concepts/the-base)
 
 **Côté serveur** — [Démarrer](/fr/docs/getting-started) · [App Nuxt existante](/fr/docs/existing-app) ·
 [La CLI](/fr/docs/cli) ·
