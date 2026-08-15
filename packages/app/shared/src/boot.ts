@@ -244,6 +244,10 @@ export function createMemoryOrm(entity: SchemaView, name: string): EntityOrm {
       store.set(keyOf(id), record);
       return record;
     },
+    async upsertAll(inputs: readonly Partial<Record<string, unknown>>[]) {
+      for (const input of inputs) await (this as any).upsert(input);
+      return inputs.length;
+    },
     async create(input: Partial<Record<string, unknown>>) {
       const record = applyCreate(fields, input);
       const id = record[pk] as string | undefined;

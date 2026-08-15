@@ -125,6 +125,16 @@ export interface EntityOrm<T = Record<string, unknown>> {
    * one with a read in front, which would promise an atomicity it has not got.
    */
   upsert(input: Partial<T>, options?: SelectOption): Promise<T>;
+  /**
+   * A whole page in one statement — what an import writes through.
+   *
+   * Row by row, 500 rows were 500 statements (measured); the shape of an import is a
+   * page, so the write is one too. Answers how many rows were written rather than the
+   * rows: `create` hands back the complete row because a caller acts on it, and an
+   * import acts on none of them — re-reading a page for a symmetry nobody uses would
+   * double the work.
+   */
+  upsertAll(inputs: readonly Partial<T>[], options?: SelectOption): Promise<number>;
   update(id: string, input: Partial<T>, options?: SelectOption): Promise<T>;
   delete(id: string): Promise<boolean>;
   /** Returns a scoped ORM that restricts all read results to the fields of the given schema. */

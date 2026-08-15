@@ -7,6 +7,8 @@ export { defineFrond, loadFrondConfig, type FrondConfig, type OperationOverride 
 export { buildGraph, clusterEntities, suggestSplit, type EntityNode, type DomainCluster } from './graph.js';
 export { Crud } from './crud.js';
 export type { CrudOps, CrudOpName, CrudViews, CrudConstructor } from './crud.js';
+export { Mirror, getMirrorTarget, ageFieldOf } from './mirror.js';
+export type { MirrorOf, MirrorConstructor, Refreshed } from './mirror.js';
 export { Presenter, getPresenterTarget, getPresenterFields, getPresenterViews } from './presenter.js';
 export type { PresenterViews } from './presenter.js';
 export { Collector, getCollectorTarget } from './collector.js';
