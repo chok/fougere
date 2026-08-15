@@ -56,7 +56,7 @@ export function setupKysely(
   opts: SetupOptions = {},
 ): Setup {
   const db = new Kysely<any>({ dialect: kyselyDialect });
-  return { db, dialect, ormFactory: createOrmFactory(db, opts.ormFactoryOptions), sink: sqlSink(db) };
+  return { db, dialect, ormFactory: createOrmFactory(db, opts.ormFactoryOptions, dialect), sink: sqlSink(db) };
 }
 
 export function setupSqlite(opts: SqliteSetupOptions = {}): SqliteSetup {
@@ -71,7 +71,7 @@ export function setupSqlite(opts: SqliteSetupOptions = {}): SqliteSetup {
     db,
     sqlite,
     dialect: 'sqlite',
-    ormFactory: createOrmFactory(db, opts.ormFactoryOptions),
+    ormFactory: createOrmFactory(db, opts.ormFactoryOptions, 'sqlite'),
     sink: sqlSink(db),
   };
 }

@@ -39,6 +39,44 @@ interface Batch {
 const directionKey = (entity: string, field: string) => `${entity}#${field}`;
 
 /**
+ * How many keys go into one `list` call.
+ *
+ * A page has no ceiling, and `list` is the one read the ORM refuses to split (a limit
+ * and an order do not recompose across statements). So the slicing happens HERE, where
+ * the answer is a map being assembled and slices merge for free. Below SQL Server's
+ * 2100 bindings, the lowest of the four engines — this side does not know the dialect,
+ * so it takes the floor rather than guessing.
+ */
+const KEYS_PER_READ = 1000;
+
+/** Read a key set in slices, merging what each answers. */
+async function readInSlices<R>(
+  keys: string[],
+  read: (slice: string[]) => Promise<Map<string, R>>,
+  merge: (into: Map<string, R>, from: Map<string, R>) => void,
+): Promise<Map<string, R>> {
+  if (keys.length <= KEYS_PER_READ) return read(keys);
+  const all = new Map<string, R>();
+  for (let i = 0; i < keys.length; i += KEYS_PER_READ) {
+    merge(all, await read(keys.slice(i, i + KEYS_PER_READ)));
+  }
+  return all;
+}
+
+/** A key answers one row: a later slice never contradicts an earlier one. */
+const keepEach = <R>(into: Map<string, R>, from: Map<string, R>) => {
+  for (const [key, value] of from) into.set(key, value);
+};
+
+/** A key answers a group: slices of the SAME key concatenate. */
+const concatEach = (into: Map<string, any[]>, from: Map<string, any[]>) => {
+  for (const [key, rows] of from) {
+    const held = into.get(key);
+    if (held) held.push(...rows); else into.set(key, rows);
+  }
+};
+
+/**
  * The keys asked for during one tick, answered by one read.
  *
  * graphql-js calls a field resolver once per parent, so a page of 50 rows asked for
@@ -373,15 +411,17 @@ export function registerAll(
             if (typeof targetList !== 'function') {
               return targetEntry.facade.findById({ params: { id: fk }, query: {}, body: undefined, state: {} });
             }
-            return loadByKey(ctx, directionKey(targetKey(target), targetKeyName), String(fk), async (ids) => {
+            return loadByKey(ctx, directionKey(targetKey(target), targetKeyName), String(fk), (ids) =>
               // The door the `many` dual already uses, with a SET where it names one
               // value. Nothing new is published: a criterion learned to name several.
-              const result = await targetList.call(targetEntry.facade, {
-                params: {}, query: { where: { [targetKeyName]: ids } }, body: undefined, state: {},
-              }) as any;
-              const rows = Array.isArray(result) ? result : result?.items ?? result?.data ?? [];
-              return new Map(rows.map((row: any) => [String(row?.[targetKeyName]), row]));
-            }, () => null);
+              readInSlices(ids, async (slice) => {
+                const result = await targetList.call(targetEntry.facade, {
+                  params: {}, query: { where: { [targetKeyName]: slice } }, body: undefined, state: {},
+                }) as any;
+                const rows = Array.isArray(result) ? result : result?.items ?? result?.data ?? [];
+                return new Map<string, any>(rows.map((row: any) => [String(row?.[targetKeyName]), row]));
+              }, keepEach),
+            () => null);
           },
         });
       }
@@ -414,19 +454,21 @@ export function registerAll(
             // `where` — un critère se nomme. Passé à la racine de la query, il retombait
             // dans les options de `list()`, qui ignore ce qu'elle ne connaît pas : la
             // relation rendait alors TOUTE la table cible, sans un mot.
-            return loadByKey(ctx, directionKey(targetKey(target), reverseFkName), String(id), async (ids) => {
-              const result = await targetEntry.facade.list({
-                params: {}, query: { where: { [reverseFkName]: ids } }, body: undefined, state: {},
-              }) as any;
-              const rows = Array.isArray(result) ? result : result?.items ?? result?.data ?? [];
-              const grouped = new Map<string, any[]>();
-              for (const row of rows) {
-                const key = String(row?.[reverseFkName]);
-                const held = grouped.get(key);
-                if (held) held.push(row); else grouped.set(key, [row]);
-              }
-              return grouped;
-            }, () => []);
+            return loadByKey(ctx, directionKey(targetKey(target), reverseFkName), String(id), (ids) =>
+              readInSlices(ids, async (slice) => {
+                const result = await targetEntry.facade.list({
+                  params: {}, query: { where: { [reverseFkName]: slice } }, body: undefined, state: {},
+                }) as any;
+                const rows = Array.isArray(result) ? result : result?.items ?? result?.data ?? [];
+                const grouped = new Map<string, any[]>();
+                for (const row of rows) {
+                  const key = String(row?.[reverseFkName]);
+                  const held = grouped.get(key);
+                  if (held) held.push(row); else grouped.set(key, [row]);
+                }
+                return grouped;
+              }, concatEach),
+            () => []);
           },
         });
       }

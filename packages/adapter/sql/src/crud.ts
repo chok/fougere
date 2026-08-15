@@ -15,6 +15,7 @@
 import type { Kysely } from 'kysely';
 import { applyCreate, applyUpdate, schemaOf, type Fields, type SchemaView, type SchemaSource } from '@fougere/schema';
 import { toTable, toTableName, type TableDef } from './table.js';
+import { resolveDialect, type DialectName } from './dialect.js';
 import { codecsOf, type ValueCodec } from './values.js';
 
 /** ListOptions — duplicated from @fougere/core to avoid a runtime dep. */
@@ -59,6 +60,14 @@ function analyzeFields(entity: SchemaView): { pk: PrimaryKeyInfo } {
   return { pk: { names: pkNames, isComposite: pkNames.length > 1 } };
 }
 
+/** Slice a key set into what one statement may bind. One slice when it already fits. */
+function chunks<T>(values: T[], size: number): T[][] {
+  if (values.length <= size) return [values];
+  const out: T[][] = [];
+  for (let i = 0; i < values.length; i += size) out.push(values.slice(i, i + size));
+  return out;
+}
+
 /** Stand-in for "no upper bound", where the engine still demands a LIMIT. */
 const UNBOUNDED = 1_000_000_000;
 
@@ -88,12 +97,17 @@ export class SqlEntityOrm {
   /** field → the value pair a driver needs; only for the shapes a driver can't bind. */
   private codecs: Map<string, ValueCodec>;
 
+  /** How many keys one statement may carry here — see `Dialect.maxBindings`. */
+  private maxBindings: number;
+
   constructor(
     private db: Kysely<any>,
     source: SchemaSource,
     tableName: string,
     selectFields?: Set<string>,
+    dialect: DialectName = 'sqlite',
   ) {
+    this.maxBindings = resolveDialect(dialect).maxBindings;
     // Normalized once: the table projection and the axis analysis below both read the
     // schema, and a card handed to each separately would be rebuilt twice into two
     // unrelated field objects. Past this line nothing knows which form arrived.
@@ -192,7 +206,13 @@ export class SqlEntityOrm {
     // The criteria a caller states — `list({ where: { orderId } })`, and the whole of
     // `listBy`. Named `where` rather than spread across the options so an unknown key
     // stays what it always was (ignored) instead of silently becoming a filter.
-    if (options?.where) query = this.whereAll(query as any, options.where) as any;
+    if (options?.where) {
+      // `list` is the ONE read that cannot be split: a limit and an order do not
+      // recompose across slices, so an oversized set here is refused rather than
+      // truncated — and the gesture that does handle it is named.
+      this.refuseOversized(options.where, 'list');
+      query = this.whereAll(query as any, options.where) as any;
+    }
 
     // Cursor-based: fetch after a given id (uses the first PK field).
     if (options?.after) {
@@ -258,17 +278,22 @@ export class SqlEntityOrm {
     }
     if (ids.length === 0) return new Map();
     const name = this.pk.names[0]!;
-    const rows = await this.db
-      .selectFrom(this.table.name)
-      .selectAll()
-      .where(this.column(name), 'in', [...new Set(ids)].map((id) => this.write(name, id)))
-      .execute();
-
     const sel = this.resolveSelect(options);
-    return new Map(rows.map((row: any) => {
-      const data = this.fromRow(row);
-      return [String(data[name]), sel ? pick(data, sel) : data];
-    }));
+    const found = new Map<string, Record<string, unknown>>();
+    // Split, because a key set comes from a page and a page has no ceiling. One
+    // statement per slice, merged here — the caller never learns there were several.
+    for (const slice of chunks([...new Set(ids)], this.maxBindings)) {
+      const rows = await this.db
+        .selectFrom(this.table.name)
+        .selectAll()
+        .where(this.column(name), 'in', slice.map((id) => this.write(name, id)))
+        .execute();
+      for (const row of rows as any[]) {
+        const data = this.fromRow(row);
+        found.set(String(data[name]), sel ? pick(data, sel) : data);
+      }
+    }
+    return found;
   }
 
   /**
@@ -313,10 +338,50 @@ export class SqlEntityOrm {
   }
 
   async findAllBy(criteria: Record<string, unknown>, options?: SelectOption): Promise<Record<string, unknown>[]> {
-    const rows = await this.whereAll(this.db.selectFrom(this.table.name).selectAll() as any, criteria).execute();
-    const data = rows.map((row: any) => this.fromRow(row));
     const sel = this.resolveSelect(options);
-    return sel ? data.map((r: any) => pick(r, sel)) : data;
+    const out: Record<string, unknown>[] = [];
+    // A set criterion may hold more values than the engine binds. Splitting is safe
+    // HERE because this read has no page and no order: the slices simply concatenate.
+    for (const slice of this.splitCriteria(criteria)) {
+      const rows = await this.whereAll(this.db.selectFrom(this.table.name).selectAll() as any, slice).execute();
+      for (const row of rows as any[]) {
+        const data = this.fromRow(row);
+        out.push(sel ? pick(data, sel) : data);
+      }
+    }
+    return out;
+  }
+
+  /**
+   * One criteria object per statement — the oversized set is the one that splits.
+   *
+   * Only ONE criterion may be split: two split sets would need their cross product,
+   * which is a different query, so the second is refused rather than silently wrong.
+   */
+  private refuseOversized(criteria: Record<string, unknown>, op: string): void {
+    for (const [key, value] of Object.entries(criteria)) {
+      if (!Array.isArray(value) || new Set(value).size <= this.maxBindings) continue;
+      throw new Error(
+        `${this.table.name}.${op}(): \`${key}\` holds ${new Set(value).size} values and this engine ` +
+        `binds ${this.maxBindings} — a page and an order cannot be split across statements. ` +
+        `Use \`findAllByKeys('${key}', keys)\`, which reads them in slices and groups the answer.`,
+      );
+    }
+  }
+
+  private splitCriteria(criteria: Record<string, unknown>): Record<string, unknown>[] {
+    const oversized = Object.entries(criteria)
+      .filter(([, value]) => Array.isArray(value) && new Set(value).size > this.maxBindings);
+    if (oversized.length === 0) return [criteria];
+    if (oversized.length > 1) {
+      throw new Error(
+        `${this.table.name}: ${oversized.map(([key]) => `\`${key}\``).join(' and ')} each hold more than ` +
+        `${this.maxBindings} values — split one of them at the call site, they cannot both be sliced.`,
+      );
+    }
+    const [key, values] = oversized[0]!;
+    return chunks([...new Set(values as unknown[])], this.maxBindings)
+      .map((slice) => ({ ...criteria, [key]: slice }));
   }
 
   async create(input: Record<string, unknown>, options?: SelectOption): Promise<Record<string, unknown>> {
@@ -370,7 +435,7 @@ export interface OrmFactoryOptions {
  * const app = await createApp({ createContainer, ormFactory: createOrmFactory(db) });
  * ```
  */
-export function createOrmFactory(db: Kysely<any>, options?: OrmFactoryOptions) {
+export function createOrmFactory(db: Kysely<any>, options?: OrmFactoryOptions, dialect: DialectName = 'sqlite') {
   const resolve = options?.tableName ?? toTableName;
-  return (entity: SchemaSource, name: string) => new SqlEntityOrm(db, entity, resolve(name));
+  return (entity: SchemaSource, name: string) => new SqlEntityOrm(db, entity, resolve(name), undefined, dialect);
 }

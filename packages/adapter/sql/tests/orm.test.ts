@@ -299,3 +299,51 @@ describe('a number the driver hands back as a BigInt', () => {
     expect(codec.read(undefined)).toBeUndefined();
   });
 });
+
+// ── more keys than the engine can bind ────────────────────────────────────────
+
+/**
+ * A key set comes from a PAGE, and `list()` with no limit reads the table — so the
+ * set has no ceiling while the engine does. Measured on better-sqlite3: 32 766 binds
+ * pass, 32 767 answers `too many SQL variables`. SQL Server is the low one at 2100.
+ *
+ * A batch read that dies at a certain data size is the worst kind: it works in dev.
+ */
+describe('a key set larger than one statement can bind', () => {
+  const MANY = 40_000;
+
+  beforeEach(async () => {
+    // Fifty real rows; the rest of the keys match nothing, which is the ordinary case
+    // (a page of foreign keys pointing at a table that holds far fewer of them).
+    for (let i = 0; i < 50; i++) await orm.create({ title: `t${i}`, body: 'b', secret: 's' });
+  });
+
+  it('reads them all — sliced, and the caller never learns there were several', async () => {
+    const real = (await orm.list()).map((r: any) => r.id);
+    const keys = [...real, ...Array.from({ length: MANY }, (_, i) => `absent-${i}`)];
+
+    const found = await orm.findByKeys(keys);
+    expect(found.size).toBe(50);
+    expect(found.get(real[0])!.title).toBe('t0');
+  });
+
+  it('groups them all on the dual, slices concatenated', async () => {
+    const keys = ['b', ...Array.from({ length: MANY }, (_, i) => `absent-${i}`)];
+    const grouped = await orm.findAllByKeys('body', keys);
+    expect(grouped.get('b')).toHaveLength(50);
+  });
+
+  it('refuses on `list`, naming the gesture that handles it', async () => {
+    // A limit and an order do not recompose across statements, so this one cannot be
+    // split — and truncating in silence would be the failure this whole test exists for.
+    const keys = Array.from({ length: MANY }, (_, i) => `k${i}`);
+    await expect(orm.list({ where: { id: keys } }))
+      .rejects.toThrow(/binds 30000 — a page and an order cannot be split.*findAllByKeys/s);
+  });
+
+  it('refuses two oversized criteria rather than guessing their cross product', async () => {
+    const keys = Array.from({ length: MANY }, (_, i) => `k${i}`);
+    await expect(orm.findAllBy({ id: keys, title: keys }))
+      .rejects.toThrow(/each hold more than 30000 values/);
+  });
+});
