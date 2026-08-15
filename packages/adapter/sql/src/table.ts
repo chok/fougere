@@ -289,11 +289,39 @@ export interface AppLike {
    * one source, where a miss can only be a mistake.
    */
   elsewhere?: string[];
+  /**
+   * The DERIVATIONS this app stores — registration names.
+   *
+   * A derivation makes no table by default: `Post.pick('id','title')` describes an
+   * answer, not a place rows live, and one dropped under `entities/` used to get a
+   * table of its own — measured on a real app, where a projection of an archived
+   * entity created a duplicate in the OTHER database.
+   *
+   * Naming it in `sources:` is the opt-in, and it changes what the thing is: a stored
+   * derivation is a dated COPY, not a projection, and it owes what any copy owes —
+   * who fills it, and how old it is.
+   */
+  materialize?: string[];
+}
+
+/**
+ * Does this schema come from another one? `Post` answers no, `Post.pick(…)` answers
+ * `Post` — a derivation carries its origin, which `sourceNameOf` already reads for two
+ * other projections. Recognised by that FORM, never by a brand.
+ */
+function isDerivation(source: SchemaSource): boolean {
+  return (source as { source?: unknown }).source !== undefined;
 }
 
 function collectEntities(app: AppLike): EntityEntry[] {
+  const stored = new Set((app.materialize ?? []).map((name) => registrationKeyOf(name)));
   const entries: EntityEntry[] = [];
-  for (const frond of app.fronds) entries.push(...frond.entities);
+  for (const frond of app.fronds) {
+    for (const entry of frond.entities) {
+      if (isDerivation(entry.entityClass) && !stored.has(registrationKeyOf(entry.name))) continue;
+      entries.push(entry);
+    }
+  }
   if (app.auth?.entities) {
     for (const [name, entityClass] of Object.entries(app.auth.entities)) entries.push({ name, entityClass });
   }

@@ -77,7 +77,12 @@ function entityNames(app: App): string[] {
  * Auth entities ride with the default source: a provider's tables are the app's own,
  * and nothing yet lets one declare where it lives.
  */
-function partition(app: App, holds: (name: string) => boolean, withAuth: boolean): unknown {
+function partition(
+  app: App,
+  holds: (name: string) => boolean,
+  withAuth: boolean,
+  materialize: string[],
+): unknown {
   const typed = app as unknown as {
     fronds: Array<{ name: string; entities: Array<{ name: string }> }>;
     auth?: unknown;
@@ -89,6 +94,8 @@ function partition(app: App, holds: (name: string) => boolean, withAuth: boolean
     fronds,
     auth: withAuth ? typed.auth : undefined,
     elsewhere: entityNames(app).filter((name) => !holds(name)),
+    // A derivation makes no table unless a source names it — see AppLike.materialize.
+    materialize,
   };
 }
 
@@ -157,6 +164,8 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
   // registration ran last — the same silent duplicate `remotes:` refuses one level up.
   const home = new Map<string, string>();
   const engines = new Map<string, Setup>();
+  /** Everything a source names — the opt-in that turns a derivation into stored rows. */
+  const named: string[] = [];
   for (const [name, placement] of Object.entries(sources ?? {})) {
     engines.set(name, placement.setup);
     for (const entity of placement.entities) {
@@ -168,6 +177,7 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
         );
       }
       home.set(key, name);
+      named.push(entity);
     }
   }
 
@@ -185,9 +195,9 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
     // One pass per source, each seeing only its own tables — which is what makes a
     // cross-source `ref()` a miss rather than a constraint against a stranger.
     afterBoot: async (app) => {
-      await migrate(partition(app, (name) => !home.has(keyOf(name)), true) as never, base.db);
+      await migrate(partition(app, (name) => !home.has(keyOf(name)), true, named) as never, base.db);
       for (const [name, engine] of engines) {
-        await migrate(partition(app, (e) => home.get(keyOf(e)) === name, false) as never, engine.db);
+        await migrate(partition(app, (e) => home.get(keyOf(e)) === name, false, named) as never, engine.db);
       }
     },
   };

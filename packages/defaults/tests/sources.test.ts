@@ -181,3 +181,44 @@ describe('the same entity reached as two class objects', () => {
     expect(fkOf(tables, 'visits', 'reader_id')).toEqual({ table: 'readers', column: 'id' });
   });
 });
+
+/**
+ * A derivation describes an ANSWER, not a place rows live.
+ *
+ * Measured on a real app: `Book.pick('id','title')` dropped under `entities/` created
+ * a table of its own — and in the DEFAULT database, while `Book` itself lived in
+ * another source. A projection of archived rows quietly grew a duplicate elsewhere.
+ *
+ * Recognised by the inheritance chain and not by where the file sits: a class extending
+ * `entity({…})` carries no origin, everything derived from it carries one — an inherited
+ * static, so it survives two derivations and still names the ROOT.
+ */
+describe('a derivation', () => {
+  const BookCard = Book.pick('id', 'title');
+  const withCard = {
+    fronds: [
+      ...app.fronds,
+      { name: 'views', entities: [{ name: 'bookCard', entityClass: BookCard }] },
+    ],
+  };
+  const named = (tables: any[]) => tables.map((t) => t.name).sort();
+
+  it('makes no table — it is a shape, not a source', () => {
+    expect(named(toTables(withCard as never, (n) => `${n}s`))).not.toContain('bookCards');
+  });
+
+  it('makes one when a source names it — the opt-in that turns it into stored rows', () => {
+    const tables = toTables({ ...withCard, materialize: ['BookCard'] } as never, (n) => `${n}s`);
+    expect(named(tables)).toContain('bookCards');
+  });
+
+  it('is recognised through the chain, not the file — a class extending one is one too', () => {
+    class Deeper extends BookCard.pick('id') {}
+    const deep = { fronds: [{ name: 'views', entities: [{ name: 'deeper', entityClass: Deeper }] }] };
+    expect(toTables(deep as never, (n) => `${n}s`)).toHaveLength(0);
+  });
+
+  it('leaves an entity alone — it inherits from entity() directly and carries no origin', () => {
+    expect(named(toTables(app as never, (n) => `${n}s`))).toEqual(['books', 'loans', 'readers']);
+  });
+});
