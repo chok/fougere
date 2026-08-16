@@ -17,18 +17,11 @@
 
 import { classNameOf, type EntityConstructor } from '@fougere/schema';
 
-const COLLECTOR_TARGET = Symbol.for('fougere:collector_target');
-
 export function Collector<E extends EntityConstructor>(entity: E) {
   class CollectorBase {
-    static [COLLECTOR_TARGET] = entity;
+    static readonly __entity = entity;
   }
   return CollectorBase;
-}
-
-/** Get the entity class a collector targets. */
-export function getCollectorTarget(ctor: Function): EntityConstructor | undefined {
-  return (ctor as any)[COLLECTOR_TARGET];
 }
 
 /** Container key of an entity's collector — 'user' → 'UserCollector'. */

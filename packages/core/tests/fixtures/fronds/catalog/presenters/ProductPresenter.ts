@@ -1,11 +1,8 @@
 import Product from '../entities/Product.js';
-
-const PRESENTER_TARGET = Symbol.for('fougere:presenter_target');
+import { Presenter } from '@fougere/core';
 
 /** Presenter fixture — adds computed fields to Product. */
-export default class ProductPresenter {
-  static [PRESENTER_TARGET] = Product;
-
+export default class ProductPresenter extends Presenter(Product) {
   displayPrice(products: { price: number }[]): string[] {
     return products.map((product) => `$${product.price.toFixed(2)}`);
   }

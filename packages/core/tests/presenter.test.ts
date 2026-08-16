@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { Presenter, getPresenterTarget, getPresenterFields } from '../src/presenter.js';
+import { Presenter, getPresenterFields } from '../src/presenter.js';
+import { targetOf } from '../src/prefab.js';
 
 class FakeEntity {
   static getFields() {
@@ -19,12 +20,12 @@ class ProductPresenter extends Presenter(FakeEntity) {
 
 describe('Presenter', () => {
   it('stores the target entity on the class', () => {
-    expect(getPresenterTarget(ProductPresenter)).toBe(FakeEntity);
+    expect(targetOf(ProductPresenter)).toBe(FakeEntity);
   });
 
   it('returns undefined for non-presenter classes', () => {
     class NotAPresenter {}
-    expect(getPresenterTarget(NotAPresenter)).toBeUndefined();
+    expect(targetOf(NotAPresenter)).toBeUndefined();
   });
 
   it('lists computed field names (methods only, no constructor)', () => {

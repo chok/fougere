@@ -24,9 +24,6 @@
 
 import { classNameOf, type EntityConstructor } from '@fougere/schema';
 
-const PRESENTER_TARGET = Symbol.for('fougere:presenter_target');
-const PRESENTER_VIEWS = Symbol.for('fougere:presenter_views');
-
 /**
  * The view a computed field emits — `OrderItemView` for one, `[OrderItemView]` for many.
  * A view is a schema, so it derives: `Order.pick('id', 'status')`, never a hand-written type.
@@ -48,28 +45,10 @@ export type PresenterViews = Record<string, EntityConstructor | [EntityConstruct
  */
 export function Presenter<E extends EntityConstructor>(entity: E, views?: PresenterViews) {
   class PresenterBase {
-    static [PRESENTER_TARGET] = entity;
-    static [PRESENTER_VIEWS] = views;
+    static readonly __entity = entity;
+    static readonly __views = views;
   }
   return PresenterBase;
-}
-
-/** Get the entity class a presenter targets. */
-export function getPresenterTarget(ctor: Function): EntityConstructor | undefined {
-  return (ctor as any)[PRESENTER_TARGET];
-}
-
-/**
- * The views a presenter declares, walked up the prototype chain so a subclass of a
- * presenter keeps what its base stated. Runtime, like `Crud.__ops`: an installed app whose
- * source the scan cannot read still carries its contract.
- */
-export function getPresenterViews(ctor: Function): PresenterViews | undefined {
-  for (let cur: any = ctor; cur; cur = Object.getPrototypeOf(cur)) {
-    const views = cur[PRESENTER_VIEWS];
-    if (views) return views;
-  }
-  return undefined;
 }
 
 /** List computed field names from a presenter class (own methods minus constructor). */

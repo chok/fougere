@@ -10,10 +10,9 @@ import { parseAllHandlerMethods, parsePresenterMethods, parseConstructorParams, 
 import { cachedParse, flushCache, setCacheRoot } from './scan-cache.js';
 import { loadFrondConfig } from './frond-config.js';
 import { emitKeyOf } from './emit.js';
-import { getPresenterTarget, getPresenterFields, getPresenterViews } from './presenter.js';
-import { getRepositoryTarget } from './repository.js';
+import { getPresenterFields } from './presenter.js';
 import { ormKeyOf } from './orm.js';
-import { getCollectorTarget } from './collector.js';
+import { targetOf, viewsOf, outputOf } from './prefab.js';
 import { registrationKeyOf } from './contract.js';
 import { Fronds } from './Fronds.js';
 
@@ -208,7 +207,7 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
   // declares none and the scan reads no parameter. The mixin knows which entity it
   // was built for and says so at runtime — same escape as `Crud.__ops`, and the same
   // reason: what a prefab fabricates, only the prefab can describe.
-  const target = getRepositoryTarget(ctor);
+  const target = targetOf(ctor);
   if (target && deps.length === 0) {
     deps.push(ormKeyOf(registrationKeyOf((target as { name: string }).name)));
   }
@@ -360,9 +359,13 @@ async function toHandlerEntry(
   const deps = ctorParams.map((p) => depKeyOf(p.type));
 
   // Read output override from Crud(Entity, Output) — static __output property
-  const __entity = (ctor as any).__entity;
-  const __output = (ctor as any).__output;
-  const outputOverride = __output && __entity && __output !== __entity ? __output : undefined;
+  // A handler-wide view, when it is not simply the entity — the two are compared by
+  // identity, which is why both slots are read through the same door.
+  const subject = targetOf(ctor);
+  const declared = outputOf(ctor);
+  const outputOverride = declared && subject && declared !== subject
+    ? (declared as unknown as SchemaView)
+    : undefined;
 
   return {
     name: registrationKeyOf(ctor.name),
@@ -393,7 +396,7 @@ async function toSeedEntry(filePath: string): Promise<SeedEntry | null> {
 
 async function toPresenterEntry(filePath: string): Promise<PresenterEntry | null> {
   const ctor = await loadClass(filePath);
-  const target = getPresenterTarget(ctor);
+  const target = targetOf(ctor);
   if (!target) return null;
   const entityName = registrationKeyOf((target as any).name);
   const fields = getPresenterFields(ctor);
@@ -417,12 +420,12 @@ async function toPresenterEntry(filePath: string): Promise<PresenterEntry | null
   } catch { /* parse failure — fall back to untyped */ }
 
   // Declared at runtime on the class, so it survives a scan that resolved nothing.
-  return { entityName, ctor, fields, fieldMeta, views: getPresenterViews(ctor), deps, filePath };
+  return { entityName, ctor, fields, fieldMeta, views: viewsOf(ctor), deps, filePath };
 }
 
 async function toCollectorEntry(filePath: string): Promise<CollectorEntry | null> {
   const ctor = await loadClass(filePath);
-  const target = getCollectorTarget(ctor);
+  const target = targetOf(ctor);
   if (!target) return null;
   const entityName = registrationKeyOf((target as any).name);
   const collectorParams = await ctorParamsOf(filePath);

@@ -12,6 +12,7 @@ import { Config } from './builtins/config.js';
 import { createRemoteRouter, createRemoteFacade } from './remote.js';
 import { Emissions } from './Emissions.js';
 import { HandlerFacade } from './HandlerFacade.js';
+import { targetOf } from './prefab.js';
 import { facadeKeyOf, contractsKeyOf } from './call.js';
 import { repositoryKeyOf } from './repository.js';
 // The keys, each read from where its concept is declared — never respelled here.
@@ -329,7 +330,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       // By NAME, not by identity: the scanner loads an entity through its own loader and
       // the handler imports it through the runtime's, so the same class arrives as two
       // objects. `===` compares module instances, which is not the question being asked.
-      const crudTarget = (handler.ctor as { __entity?: { name?: string } }).__entity;
+      const crudTarget = targetOf(handler.ctor);
       const subject = crudTarget?.name ? registrationKeyOf(crudTarget.name) : handler.address;
       const entity = frond.entities.find((e) => e.name === subject);
       const facadeKey = facadeKeyOf(handler.address);

@@ -38,8 +38,6 @@ import type { EntityOrm } from './orm.js';
  * wire. A judge still lives in the handler, which is the only place a refusal cannot
  * be walked around.
  */
-const REPOSITORY_TARGET = Symbol.for('fougere:repository_target');
-
 /** What a repository is handed, and what it exposes to whoever holds it. */
 export interface RepositoryOf<T> {
   /** The entity's port, already guarded — a value the shape forbids is refused here too. */
@@ -55,23 +53,12 @@ export function Repository<E extends EntityConstructor>(entity: E): RepositoryCo
   type T = InstanceType<E>;
 
   class RepositoryBase implements RepositoryOf<T> {
-    static [REPOSITORY_TARGET] = entity;
     static readonly __entity = entity;
 
     constructor(public orm: EntityOrm<T>) {}
   }
 
   return RepositoryBase as unknown as RepositoryConstructor<T>;
-}
-
-/** Get the entity class a repository targets. */
-export function getRepositoryTarget(ctor: Function): EntityConstructor | undefined {
-  for (let cur: any = ctor; cur; cur = Object.getPrototypeOf(cur)) {
-    const target = cur[REPOSITORY_TARGET];
-    if (target) return target;
-  }
-
-  return undefined;
 }
 
 /** Container key of an entity's repository — 'reading' → 'ReadingRepository'. */

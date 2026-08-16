@@ -57,8 +57,6 @@ import type { EntityOrm } from './orm.js';
  * a boot hook, a cron, an op behind a door are all legitimate and none of them is this
  * class's business. It refreshes when someone says so, and reports what it wrote.
  */
-const MIRROR_TARGET = Symbol.for('fougere:mirror_target');
-
 /** What one refresh did — enough to log it, and to decide whether to run again. */
 export interface Refreshed {
   /** Rows written, counting a replaced row once. */
@@ -103,7 +101,6 @@ export function Mirror<E extends EntityConstructor>(shape: E): MirrorConstructor
   const age: string = declared;
 
   abstract class MirrorBase implements MirrorOf<T> {
-    static [MIRROR_TARGET] = shape;
     static readonly __entity = shape;
 
     constructor(public orm: EntityOrm<T>) {}
@@ -138,15 +135,6 @@ export function Mirror<E extends EntityConstructor>(shape: E): MirrorConstructor
   }
 
   return MirrorBase as unknown as MirrorConstructor<T>;
-}
-
-/** Get the shape a mirror copies — the runtime half of what its signature also says. */
-export function getMirrorTarget(ctor: Function): EntityConstructor | undefined {
-  for (let cur: any = ctor; cur; cur = Object.getPrototypeOf(cur)) {
-    const target = cur[MIRROR_TARGET];
-    if (target) return target;
-  }
-  return undefined;
 }
 
 /**
