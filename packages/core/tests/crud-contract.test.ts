@@ -92,10 +92,21 @@ describe('as an installed app — the scan finds nothing, the façade judges any
   beforeAll(() => { root = writeInstalledApp(); });
   afterAll(() => { rmSync(root, { recursive: true, force: true }); });
 
-  it('stands on the real case: no operation is discovered at all', async () => {
+  /**
+   * The scan discovers nothing here — that is the real case, and the prefab answers it.
+   *
+   * The boot hands the RESOLVED contracts back onto the handler, so the five are there
+   * for every reader and not only for the façade. They used to be `0`, and this file
+   * asserted the `0`: an adapter reading `handler.operations` (both do) then published
+   * a schema missing four of the five CRUD ops while the façade served them.
+   */
+  it('stands on the real case: the scan finds none, and the prefab supplies the five', async () => {
     const { app } = await boot(root);
-    expect(app.fronds[0].handlers[0].operations.size).toBe(0);
-    // The ops still exist — they arrive by prototype.
+    const ops = app.fronds[0].handlers[0].operations;
+    expect([...ops.keys()].sort()).toEqual(['create', 'delete', 'findById', 'list', 'update']);
+    // Each carries the TYPES a GraphQL argument needs — `binding` only says where from.
+    expect(ops.get('findById')!.signature!.params).toEqual([{ name: 'id', type: { raw: 'string', name: 'string' } }]);
+    // The ops themselves still arrive by prototype, as they always did.
     expect(Object.keys(app.resolve('noteHandler') as object).sort())
       .toEqual(['create', 'delete', 'findById', 'list', 'update']);
     await app.dispose();

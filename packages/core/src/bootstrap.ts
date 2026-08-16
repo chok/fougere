@@ -404,6 +404,11 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
        * reader, so nobody re-derives the three producers and drifts.
        */
       const contracts = resolveContracts(handler, frond.operationsOverrides, collectorEntityNames);
+      // Handed BACK, because "every other reader" was not true: the adapters read
+      // `handler.operations` — the scan's raw map — so an op a prefab declared and the
+      // scan never saw reached the façade and no projection. Four of the five CRUD ops
+      // were absent from GraphQL on any installed app.
+      handler.operations = contracts;
 
       /**
        * Who listens to what — read HERE because this is where a contract becomes real,

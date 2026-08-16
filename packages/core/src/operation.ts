@@ -38,7 +38,14 @@ export interface OperationContract {
    * returns nothing.
    */
   cardinality?: 'one' | 'maybe' | 'many' | 'page' | 'none';
-  /** The scan's raw material, when it produced this contract. `binding` wins. */
+  /**
+   * The argument names and TYPES — the one thing `binding` cannot say.
+   *
+   * `binding` says where an argument is read from, `cardinality` how much comes back;
+   * neither gives a type, and a GraphQL argument needs one. So this is not the scan's
+   * private material: a prefab fills it too, from signatures it wrote itself. `binding`
+   * still wins on where an argument comes from.
+   */
   signature?: ParsedMethod;
 }
 
@@ -81,15 +88,21 @@ export function isReadOp(name: string): boolean {
 }
 
 /**
- * Resolve operation kind honoring per-op overrides (from frond.config.ts).
- * Precedence: explicit override wins over convention.
+ * Resolve operation kind. Precedence: the author states, the body proves, the name suggests.
+ *
+ * `readOnly` is what the scan SAW (`ParsedMethod.readOnly`) and it outranks the prefix
+ * convention, because a name is a naming choice and a write is a fact. It never
+ * outranks the config: an op may write through something the parse cannot follow, and
+ * saying so is the escape hatch.
  */
 export function resolveIsReadOp(
   name: string,
   overrides?: Record<string, { kind?: 'query' | 'command' }>,
+  readOnly?: boolean,
 ): boolean {
   const kind = overrides?.[name]?.kind;
   if (kind) return kind === 'query';
+  if (readOnly !== undefined) return readOnly;
   return isReadOp(name);
 }
 

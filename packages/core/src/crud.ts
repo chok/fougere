@@ -7,6 +7,21 @@ const byId = { name: 'id', source: { kind: 'param' as const, name: 'id' }, optio
 const fromBody = { name: 'input', source: { kind: 'body' as const }, optional: false };
 
 /**
+ * The same five, written as the scan would have written them.
+ *
+ * `binding` says WHERE an argument is read from; it never says of what type, and a
+ * GraphQL argument needs the type. So a producer that fills only `binding` leaves
+ * `adapter/graphql` with nothing to declare — it drops the op (`registerOperations`,
+ * `if (!sig) continue`) and four of the five CRUD ops vanish from the schema while
+ * the façade and REST still serve them. Measured on an installed app: 16 handlers,
+ * 14 with unresolvable heritage, zero `createX` in the schema.
+ */
+const idParam = { name: 'id', type: { raw: 'string', name: 'string' } };
+const inputParam = (entity: string) => ({ name: 'input', type: { raw: `Partial<${entity}>`, name: entity } });
+const returns = (raw: string, name: string, extra?: { array?: boolean; nullable?: boolean }) =>
+  ({ raw, name, ...extra });
+
+/**
  * The five ops a Crud handler brings, declared rather than discovered.
  *
  * The mixin built them, so it alone knows their contract in full: what judges
@@ -29,14 +44,35 @@ const fromBody = { name: 'input', source: { kind: 'body' as const }, optional: f
  * out. `delete` names none — a boolean is not a shape.
  */
 function crudOps(entity: SchemaView & { partial?: () => SchemaView }): Record<string, OperationContract> {
+  const name = (entity as { name?: string }).name ?? 'Entity';
+  const input = inputParam(name);
   return {
-    list: { output: entity, cardinality: 'page', binding: [{ name: 'options', source: { kind: 'query' }, optional: true }] },
-    findById: { output: entity, cardinality: 'maybe', binding: [byId] },
-    create: { input: entity, output: entity, cardinality: 'one', binding: [fromBody] },
+    list: {
+      output: entity, cardinality: 'page',
+      binding: [{ name: 'options', source: { kind: 'query' }, optional: true }],
+      signature: {
+        name: 'list', returnType: returns(`ListResult<${name}>`, 'ListResult'),
+        params: [{ name: 'options', type: { raw: 'ListOptions', name: 'ListOptions' }, optional: true }],
+      },
+    },
+    findById: {
+      output: entity, cardinality: 'maybe', binding: [byId],
+      signature: { name: 'findById', returnType: returns(`${name} | undefined`, name, { nullable: true }), params: [idParam] },
+    },
+    create: {
+      input: entity, output: entity, cardinality: 'one', binding: [fromBody],
+      signature: { name: 'create', returnType: returns(name, name), params: [input] },
+    },
     // The patch view carries its own mode: an absent field is untouched, an
     // immutable one re-supplied is refused.
-    update: { input: entity.partial?.(), output: entity, cardinality: 'one', binding: [byId, fromBody] },
-    delete: { cardinality: 'none', binding: [byId] },
+    update: {
+      input: entity.partial?.(), output: entity, cardinality: 'one', binding: [byId, fromBody],
+      signature: { name: 'update', returnType: returns(name, name), params: [idParam, input] },
+    },
+    delete: {
+      cardinality: 'none', binding: [byId],
+      signature: { name: 'delete', returnType: returns('boolean', 'boolean'), params: [idParam] },
+    },
   };
 }
 
