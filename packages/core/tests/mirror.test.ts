@@ -4,7 +4,8 @@
  */
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text, updated } from '@fougere/schema';
-import { Mirror, getMirrorTarget, ageFieldOf } from '../src/mirror.js';
+import { Mirror, ageFieldOf } from '../src/prefab/mirror.js';
+import { targetOf } from '../src/prefab/prefab.js';
 
 class Card extends entity({ id: primary(), title: text({ min: 1 }), pulledAt: updated() }) {}
 
@@ -79,7 +80,7 @@ describe('a mirror refreshes', () => {
 describe('what a mirror states about itself', () => {
   it('names the shape it copies, at runtime — an installed app resolves no AST', () => {
     class M extends Mirror(Card) { async *pull() { yield []; } }
-    expect(getMirrorTarget(M)).toBe(Card);
+    expect(targetOf(M)).toBe(Card);
   });
 
   it('finds the field a copy states its age with', () => {

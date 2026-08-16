@@ -1,14 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
-import { scanProject, toRegistrationName } from '../src/index.js';
+import { scanProject } from '../src/index.js';
+import { registrationKeyOf } from '../src/contract.js';
 
 const fixturesRoot = join(import.meta.dirname, 'fixtures');
 
-describe('toRegistrationName', () => {
+describe('registrationKeyOf', () => {
   it('lowercases the first character', () => {
-    expect(toRegistrationName('OrderService')).toBe('orderService');
-    expect(toRegistrationName('X')).toBe('x');
-    expect(toRegistrationName('ProductRepository')).toBe('productRepository');
+    expect(registrationKeyOf('OrderService')).toBe('orderService');
+    expect(registrationKeyOf('X')).toBe('x');
+    expect(registrationKeyOf('ProductRepository')).toBe('productRepository');
   });
 });
 

@@ -1,11 +1,11 @@
 /**
- * HTTP error mapping — used by HTTP bridges (REST, Next, Inertia).
+ * HTTP reading of an error — used by HTTP bridges (REST, Next, Inertia).
  *
- * Not imported by GraphQL, CLI, or event bus bridges.
+ * Not imported by GraphQL, CLI, or event bus bridges. The vocabulary it projects
+ * is in `errors.ts` and knows nothing of this file.
  */
-import { FougereError, ErrorCode } from './middleware.js';
-import { Logger } from './builtins/logger.js';
-
+import { FougereError, ErrorCode } from './errors.js';
+import { Logger } from '../builtins/logger.js';
 /**
  * An INTERNAL_ERROR is the one class of error whose message never leaves: it was not
  * written for a caller and may quote a path, a query or a row. Masking it is right, and
@@ -38,7 +38,7 @@ const HTTP_STATUS: Record<ErrorCode, number> = {
 };
 
 /** Map a FougereError code to its HTTP status. */
-export function httpStatusFor(code: ErrorCode): number {
+function httpStatusFor(code: ErrorCode): number {
   return HTTP_STATUS[code] ?? 500;
 }
 

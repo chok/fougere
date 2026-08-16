@@ -26,8 +26,8 @@
  */
 import { Judge } from '@fougere/schema';
 import { encodeFields, type Fields } from '@fougere/schema';
-import { ErrorCode, FougereError } from './middleware.js';
-import { assertListOptions } from './orm.js';
+import { ErrorCode, FougereError } from '../wire/errors.js';
+import { assertListOptions } from '../orm.js';
 
 // ─── 1 · Judge ──────────────────────────────────────────────
 
@@ -39,7 +39,7 @@ import { assertListOptions } from './orm.js';
  * judge's business — the receiver fails on its own (an unknown column), and a client
  * input already met `validateFields`, which refuses strangers.
  */
-export function judgeEgress(fields: Fields, value: unknown, entity: string, operation: string): void {
+function judgeEgress(fields: Fields, value: unknown, entity: string, operation: string): void {
   if (typeof value !== 'object' || value === null) return;
 
   const errors: string[] = [];

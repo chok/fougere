@@ -1,8 +1,8 @@
 import type { SchemaView } from '@fougere/schema';
-import type { BindingPlan } from './binding.js';
-import { computeBindingPlan } from './binding.js';
-import type { HandlerEntry, FrondDescriptor } from './types.js';
-import type { ParsedMethod, ParsedType, ParsedParam } from './handler-parser.js';
+import type { BindingPlan } from '../boot/binding.js';
+import { computeBindingPlan } from '../boot/binding.js';
+import type { HandlerEntry, FrondDescriptor } from '../scan/frond.js';
+import type { ParsedMethod, ParsedType, ParsedParam } from '../scan/handler-parser.js';
 
 /**
  * The contract of one operation — everything the façade needs to serve a call.

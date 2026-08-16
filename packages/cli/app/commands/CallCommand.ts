@@ -1,5 +1,5 @@
 import { createAppRunner } from '@fougere/core';
-import { toRegistrationName } from '@fougere/core/contract';
+import { registrationKeyOf } from '@fougere/core/contract';
 import { bootAppFromConfig } from '@fougere/defaults';
 import type { App } from '@fougere/core';
 import type { ui as createUi } from '../../src/ui.js';
@@ -57,7 +57,7 @@ export default class CallCommand {
     const app = await bootAppFromConfig(process.cwd(), {});
     try {
       const result = await createAppRunner(app)(
-        { entity: toRegistrationName(entityName), op },
+        { entity: registrationKeyOf(entityName), op },
         { params, query: {}, body, state: {} },
       );
       this.ui.note(JSON.stringify(result, null, 2), target);

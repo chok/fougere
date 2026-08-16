@@ -10,13 +10,13 @@
  * 3. Primitive (string, number, boolean) → matched by name from params then query
  * 4. Object/entity type → matched from body
  */
-import type { ParsedParam } from './handler-parser.js';
-import type { InvocationContext } from './invocation.js';
-import { toRegistrationName } from './contract.js';
+import type { ParsedParam } from '../scan/handler-parser.js';
+import type { InvocationContext } from '../wire/invocation.js';
+import { registrationKeyOf } from '@fougere/schema';
 
 // ── Types ─────────────────────────────────────
 
-export type ParamSource =
+type ParamSource =
   | { kind: 'collector'; entityName: string }
   /**
    * `Fact<PostPublished>` — something that happened, not something a caller typed.
@@ -33,7 +33,7 @@ export type ParamSource =
   /** The whole query bag, for an op whose argument IS the options (list). */
   | { kind: 'query' };
 
-export interface ParamBinding {
+interface ParamBinding {
   name: string;
   source: ParamSource;
   optional: boolean;
@@ -74,7 +74,7 @@ export function computeBindingPlan(
     if (factOf) {
       return {
         name: param.name,
-        source: { kind: 'fact' as const, factName: toRegistrationName(factOf) },
+        source: { kind: 'fact' as const, factName: registrationKeyOf(factOf) },
         optional: param.optional ?? false,
       };
     }

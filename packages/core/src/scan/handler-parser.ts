@@ -19,6 +19,22 @@ function getTS(): typeof ts {
   return _ts;
 }
 
+/** A file, opened. Five places read and parsed one, each spelling the same two calls. */
+function sourceOf(filePath: string): ts.SourceFile {
+  const ts = getTS();
+  return ts.createSourceFile(filePath, readFileSync(filePath, 'utf-8'), ts.ScriptTarget.Latest, true);
+}
+
+/** One declared parameter — a constructor's and a method's are read the same way. */
+function parsedParam(param: ts.ParameterDeclaration, source: ts.SourceFile): ParsedParam {
+  const ts = getTS();
+  return {
+    name: ts.isIdentifier(param.name) ? param.name.text : param.name.getText(source),
+    type: param.type ? parseTypeNode(param.type, source) : { raw: 'unknown', name: 'unknown' },
+    optional: param.questionToken !== undefined || param.initializer !== undefined,
+  };
+}
+
 /** A parsed type reference — supports primitives, entities, arrays, generics. */
 export interface ParsedType {
   /** Raw type text as written in source (e.g. 'Pagination<Post>'). */
@@ -212,7 +228,7 @@ function resolveSpecifier(specifier: string, fromFile: string, projectRoot: stri
 
 /**
  * Follow re-exports in an index file to find the source of a named export.
- * e.g. `export { Crud } from './crud.js'` → resolves to crud.ts
+ * e.g. `export { Crud } from '../prefab/crud.js'` → resolves to crud.ts
  */
 function followReExport(
   indexPath: string,
@@ -220,14 +236,13 @@ function followReExport(
   projectRoot: string,
 ): string | undefined {
   const ts = getTS();
-  const content = readFileSync(indexPath, 'utf-8');
-  const source = ts.createSourceFile(indexPath, content, ts.ScriptTarget.Latest, true);
+  const source = sourceOf(indexPath);
 
   for (const stmt of source.statements) {
     if (!ts.isExportDeclaration(stmt)) continue;
     if (!stmt.moduleSpecifier || !ts.isStringLiteral(stmt.moduleSpecifier)) continue;
 
-    // export { Crud } from './crud.js'
+    // export { Crud } from '../prefab/crud.js'
     if (stmt.exportClause && ts.isNamedExports(stmt.exportClause)) {
       const found = stmt.exportClause.elements.some((e) => {
         const exportedName = e.name.text;
@@ -237,7 +252,7 @@ function followReExport(
       if (!found) continue;
     }
 
-    // export * from './crud.js' — also follow (could contain the identifier)
+    // export * from '../prefab/crud.js' — also follow (could contain the identifier)
     const resolved = resolveSpecifier(stmt.moduleSpecifier.text, indexPath, projectRoot);
     if (resolved) return resolved;
   }
@@ -325,12 +340,7 @@ function substituteType(type: ParsedType, sub: Map<string, string>): ParsedType 
   const newName = sub.get(type.name) ?? type.name;
   const newGenerics = type.generics?.map((g) => substituteType(g, sub));
   if (newName === type.name && !newGenerics) return type;
-  return {
-    ...type,
-    name: newName,
-    raw: type.raw, // keep original raw for debugging
-    generics: newGenerics ?? type.generics,
-  };
+  return { ...type, name: newName, generics: newGenerics ?? type.generics };
 }
 
 /** Substitute all type references in parsed methods. */
@@ -399,12 +409,7 @@ function extractClassMethods(cls: ts.ClassDeclaration | ts.ClassExpression, sour
     const name = member.name.text;
     if (skip.has(name)) continue;
 
-    const params: ParsedParam[] = member.parameters.map((p) => ({
-      name: ts.isIdentifier(p.name) ? p.name.text : p.name.getText(source),
-      type: p.type ? parseTypeNode(p.type, source) : { raw: 'unknown', name: 'unknown' },
-      optional: p.questionToken !== undefined || p.initializer !== undefined,
-    }));
-
+    const params = member.parameters.map((p) => parsedParam(p, source));
     const returnType = member.type ? parseTypeNode(member.type, source) : undefined;
     results.push({
       name, params, returnType,
@@ -479,8 +484,7 @@ function parseInheritedMethods(
         const mixinFile = resolveIdentifierSource(source, mixinName, filePath, projectRoot);
         if (!mixinFile) { unresolved.push(`${mixinName}(…)`); continue; }
 
-        const mixinContent = readFileSync(mixinFile, 'utf-8');
-        const mixinSource = ts.createSourceFile(mixinFile, mixinContent, ts.ScriptTarget.Latest, true);
+        const mixinSource = sourceOf(mixinFile);
 
         const innerClass = findClassInFunction(mixinSource, mixinName);
         if (!innerClass) { unresolved.push(`${mixinName}(…)`); continue; }
@@ -508,8 +512,7 @@ function parseInheritedMethods(
         const parentFile = resolveIdentifierSource(source, parentName, filePath, projectRoot);
         if (!parentFile) { unresolved.push(parentName); continue; }
 
-        const parentContent = readFileSync(parentFile, 'utf-8');
-        const parentSource = ts.createSourceFile(parentFile, parentContent, ts.ScriptTarget.Latest, true);
+        const parentSource = sourceOf(parentFile);
         const parentClass = findDefaultClass(parentSource);
         if (!parentClass) { unresolved.push(parentName); continue; }
 
@@ -551,12 +554,6 @@ function findDefaultClass(source: ts.SourceFile): ts.ClassDeclaration | undefine
 }
 
 /**
- * Parse ALL method signatures from a handler source file (CRUD included).
- *
- * Used by the binding algorithm — every operation gets a BindingPlan.
- * When projectRoot is provided, follows heritage clauses to parse parent methods.
- */
-/**
  * What a handler file yielded — its methods, AND what the pass could not open.
  *
  * The second half is why this is a pair rather than an array: an unresolvable base
@@ -570,6 +567,10 @@ export interface HandlerParse {
   unresolvedHeritage: string[];
 }
 
+/**
+ * Every method a handler declares, its inherited ones included — the raw material of a
+ * binding plan. With a `projectRoot`, the heritage clause is followed too.
+ */
 export async function parseAllHandlerMethods(filePath: string, projectRoot?: string): Promise<HandlerParse> {
   await loadTS();
   return parseClassMethods(filePath, CONSTRUCTOR_ONLY, projectRoot);
@@ -593,21 +594,12 @@ export async function parsePresenterMethods(filePath: string): Promise<ParsedMet
  */
 export async function parseConstructorParams(filePath: string): Promise<ParsedParam[]> {
   const ts = await loadTS();
-  const content = readFileSync(filePath, 'utf-8');
-  const source = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true);
+  const source = sourceOf(filePath);
   const cls = findDefaultClass(source);
   if (!cls) return [];
 
-  for (const member of cls.members) {
-    if (ts.isConstructorDeclaration(member)) {
-      return member.parameters.map((p) => ({
-        name: ts.isIdentifier(p.name) ? p.name.text : p.name.getText(source),
-        type: p.type ? parseTypeNode(p.type, source) : { raw: 'unknown', name: 'unknown' },
-        optional: p.questionToken !== undefined || p.initializer !== undefined,
-      }));
-    }
-  }
-  return [];
+  const ctor = cls.members.find(ts.isConstructorDeclaration);
+  return ctor ? ctor.parameters.map((p) => parsedParam(p, source)) : [];
 }
 
 const CONSTRUCTOR_ONLY = new Set(['constructor']);
@@ -615,8 +607,7 @@ const CONSTRUCTOR_ONLY = new Set(['constructor']);
 function parseClassMethods(filePath: string, skip: Set<string>, projectRoot?: string): HandlerParse {
   const ts = getTS();
   const unresolved: string[] = [];
-  const content = readFileSync(filePath, 'utf-8');
-  const source = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true);
+  const source = sourceOf(filePath);
   const cls = findDefaultClass(source);
   if (!cls) return { methods: [], unresolvedHeritage: unresolved };
 

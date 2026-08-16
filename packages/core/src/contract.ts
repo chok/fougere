@@ -5,16 +5,18 @@
  *
  * Browser-safe by design: no node builtin may enter this module's import
  * graph. Published as the `@fougere/core/contract` subpath so client
- * bundles never touch the full index (scanner, config loader).
+ * bundles never touch the full index (scanner, config loader). `@fougere/schema`
+ * is allowed in — measured, it imports no node builtin either.
  */
-import { EMPTY_INVOCATION, type InvocationContext } from './invocation.js';
-import type { FrondCall } from './call.js';
+import { registrationKeyOf } from '@fougere/schema';
+import { EMPTY_INVOCATION, type InvocationContext } from './wire/invocation.js';
+import type { FrondCall } from './wire/call.js';
 
-export { FougereError, ErrorCode } from './middleware.js';
-export type { FougereErrorOptions } from './middleware.js';
-export { EMPTY_INVOCATION } from './invocation.js';
-export type { InvocationContext } from './invocation.js';
-export type { FrondCall, Transport } from './call.js';
+export { FougereError, ErrorCode } from './wire/errors.js';
+export type { FougereErrorOptions } from './wire/errors.js';
+export { EMPTY_INVOCATION } from './wire/invocation.js';
+export type { InvocationContext } from './wire/invocation.js';
+export type { FrondCall, Transport } from './wire/call.js';
 /**
  * What `rpc.discover` answers. It belongs here and not to the runtime: the
  * reserved op travels on the same wire as every other call, so a consumer that
@@ -24,12 +26,18 @@ export type { FrondCall, Transport } from './call.js';
  * Stated once, on purpose: two private copies of this interface have already gone
  * stale (the CLI's, then the Rust demo's) the day an op stopped being a bare name.
  */
-export type { IdentityCard, CardOp } from './call.js';
+export type { IdentityCard, CardOp } from './wire/call.js';
 
-/** Registration key of a class — 'Post' → 'post', 'PostHandler' → 'postHandler'. */
-export function toRegistrationName(name: string): string {
-  return name[0].toLowerCase() + name.slice(1);
-}
+/**
+ * The key a class name is filed under — 'Post' → 'post'. Re-exported rather than
+ * respelled: a card writes it and a foreign key derives from it, so the convention
+ * belongs to the schema, and a second copy here is a second opinion. It travels
+ * through this subpath because a consumer of the wire (a browser bundle) may hold no
+ * schema dependency of its own — that audience only. Inside the package it is read from
+ * `@fougere/schema` directly: routing four modules through here bought nothing and put
+ * this file inside a cycle.
+ */
+export { registrationKeyOf } from '@fougere/schema';
 
 /** A call, fully fabricated: the designation and its completed invocation. */
 export interface CallValue {
@@ -50,7 +58,7 @@ export function callValueOf(
 ): CallValue {
   const [call, given] =
     typeof opOrInput === 'string'
-      ? [{ entity: toRegistrationName((target as { name: string }).name), op: opOrInput }, input]
+      ? [{ entity: registrationKeyOf((target as { name: string }).name), op: opOrInput }, input]
       : [target as FrondCall, opOrInput];
   return { call, invocation: { ...EMPTY_INVOCATION, ...given } };
 }

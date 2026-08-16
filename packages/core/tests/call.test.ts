@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, callValueOf, FougereError, ErrorCode } from '../src/index.js';
 import type { IdentityCard, OrmFactory } from '../src/index.js';
-import { EMPTY_INVOCATION } from '../src/invocation.js';
+import { EMPTY_INVOCATION } from '../src/wire/invocation.js';
 
 const fixturesRoot = join(import.meta.dirname, 'fixtures');
 

@@ -7,3 +7,14 @@
 export function registrationKeyOf(className: string): string {
   return className ? className[0].toLowerCase() + className.slice(1) : className;
 }
+
+/**
+ * Its dual — `authorUser` → `AuthorUser`, the class name a key was made from.
+ *
+ * A convention that only goes one way gets respelled the other: `@fougere/core` builds
+ * four container keys (`PostOrm`, `PostPresenter`, `PostCollector`, `PostRepository`)
+ * and each wrote this line out for itself.
+ */
+export function classNameOf(registrationKey: string): string {
+  return registrationKey ? registrationKey[0].toUpperCase() + registrationKey.slice(1) : registrationKey;
+}

@@ -11,9 +11,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
-import { createApp, createLocalRunner, Repository, getRepositoryTarget, repositoryKeyOf } from '../src/index.js';
+import { createApp, createLocalRunner, Repository } from '../src/index.js';
+import { repositoryKeyOf } from '../src/prefab/repository.js';
+import { targetOf } from '../src/prefab/prefab.js';
 import type { OrmFactory } from '../src/index.js';
-import { EMPTY_INVOCATION } from '../src/invocation.js';
+import { EMPTY_INVOCATION } from '../src/wire/invocation.js';
 
 const root = join(import.meta.dirname, 'fixtures-repository');
 
@@ -41,7 +43,7 @@ describe('Repository(Entity)', () => {
     class Thing {}
     class ThingRepository extends Repository(Thing) {}
 
-    expect(getRepositoryTarget(ThingRepository)).toBe(Thing);
+    expect(targetOf(ThingRepository)).toBe(Thing);
   });
 
   it('names its container key from the entity', () => {

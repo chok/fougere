@@ -1,7 +1,7 @@
 /**
  * Logger middleware — logs every operation with timing.
  */
-import type { AppMiddleware } from '../middleware.js';
+import type { AppMiddleware } from './middleware.js';
 import type { Logger } from '../builtins/logger.js';
 
 /**

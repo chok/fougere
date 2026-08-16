@@ -49,7 +49,7 @@ export { applyCreate, applyUpdate } from './axis/lifecycle/apply.js';
 export { encodeFields } from './projection/encode.js';
 // io: the dual client-surface projections — ingress (may supply) / egress (may read)
 export { inputFields, outputFields } from './projection/io.js';
-export { registrationKeyOf } from './name.js';
+export { registrationKeyOf, classNameOf } from './name.js';
 // descriptor (the card): the portable, serialisable identity of a schema
 export { describe, describeSet, sourceNameOf } from './card/describe.js';
 export { reconstruct, reconstructSet } from './card/reconstruct.js';

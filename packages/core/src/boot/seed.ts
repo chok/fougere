@@ -1,5 +1,7 @@
 import { Role } from '@fougere/schema';
-import type { App, FrondDescriptor, SeedEntry, SeedFactory } from './types.js';
+import { facadeKeyOf } from '../wire/call.js';
+import type { FrondDescriptor, SeedEntry, SeedFactory } from '../scan/frond.js';
+import type { App } from './types.js';
 
 /**
  * Seeds in dependency order — a `ref()` target is planted before its referrer.
@@ -118,7 +120,7 @@ export async function runSeeds(
  */
 function doorFor(app: App, entityName: string): SeedDoor | undefined {
   let handler: Record<string, Function> | undefined;
-  try { handler = app.resolve<Record<string, Function>>(`${entityName}Handler`); } catch {}
+  try { handler = app.resolve<Record<string, Function>>(facadeKeyOf(entityName)); } catch {}
 
   if (typeof handler?.list === 'function' && typeof handler.create === 'function') {
     return {

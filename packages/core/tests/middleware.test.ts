@@ -1,13 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
-import {
-  runMiddlewares,
-  FougereError,
-  ErrorCode,
-  type AppMiddleware,
-  type OperationContext,
-} from '../src/middleware.js';
-import { loggerMiddleware } from '../src/middleware/logger.js';
-import { errorMiddleware } from '../src/middleware/error-handler.js';
+import { runMiddlewares, type AppMiddleware, type OperationContext } from '../src/wire/middleware.js';
+import { FougereError, ErrorCode } from '../src/wire/errors.js';
+import { loggerMiddleware } from '../src/wire/loggerMiddleware.js';
+import { errorMiddleware } from '../src/wire/errorMiddleware.js';
 import { Logger } from '../src/builtins/logger.js';
 
 function ctx(overrides?: Partial<OperationContext>): OperationContext {

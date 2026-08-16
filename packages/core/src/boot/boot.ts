@@ -1,12 +1,12 @@
 import { createApp } from './bootstrap.js';
 import { orderSeeds, runSeeds } from './seed.js';
-import { loadConfig, type FougereConfig } from './config-loader.js';
-import { Logger, type LogLevel } from './builtins/logger.js';
+import { loadConfig, type FougereConfig } from '../config-loader.js';
+import { Logger, type LogLevel } from '../builtins/logger.js';
 import type { App, CreateAppOptions } from './types.js';
-import type { Transport } from './call.js';
+import type { Transport } from '../wire/call.js';
 import type { Container } from '@fougere/container';
 
-export interface BootOptions {
+interface BootOptions {
   /** Project root. Defaults to process.cwd(). */
   root?: string;
   /** Override config (merged with fougere.config.ts). */

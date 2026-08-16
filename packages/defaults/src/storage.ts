@@ -9,6 +9,8 @@
  * why an engine change looked like it touched seven files.
  */
 import type { App } from '@fougere/core';
+import { Fronds, type FrondDescriptor } from '@fougere/core';
+import { registrationKeyOf } from '@fougere/core/contract';
 import { setupSqlite, migrate, type DialectName, type Setup } from '@fougere/adapter-sql';
 
 /** The `db` field of fougere.config.ts, read structurally. */
@@ -56,15 +58,6 @@ function refuseUnresolvable(declared: string | undefined, field: string): void {
   );
 }
 
-/** The name an entity is registered under — 'Book' and 'book' name the same rows. */
-const keyOf = (name: string): string => name.charAt(0).toLowerCase() + name.slice(1);
-
-/** Every entity the app hosts, wherever its rows are — what a partition is cut from. */
-function entityNames(app: App): string[] {
-  return (app as { fronds: Array<{ entities: Array<{ name: string }> }> })
-    .fronds.flatMap((frond) => frond.entities.map((entry) => entry.name));
-}
-
 /**
  * The app as ONE source sees it: the entities that live there, and the names of those
  * that do not.
@@ -93,7 +86,9 @@ function partition(
   return {
     fronds,
     auth: withAuth ? typed.auth : undefined,
-    elsewhere: entityNames(app).filter((name) => !holds(name)),
+    // Lifted, because this function reads its app structurally on purpose — a caller
+    // may hand it a shape that is app-LIKE, and the question is still the same one.
+    elsewhere: Fronds.scanned(typed.fronds as FrondDescriptor[]).entityNames().filter((name) => !holds(name)),
     // A derivation makes no table unless a source names it — see AppLike.materialize.
     materialize,
   };
@@ -169,7 +164,7 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
   for (const [name, placement] of Object.entries(sources ?? {})) {
     engines.set(name, placement.setup);
     for (const entity of placement.entities) {
-      const key = keyOf(entity);
+      const key = registrationKeyOf(entity);
       const claimed = home.get(key);
       if (claimed) {
         throw new Error(
@@ -182,7 +177,7 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
   }
 
   const engineFor = (entityName: string) => {
-    const source = home.get(keyOf(entityName));
+    const source = home.get(registrationKeyOf(entityName));
     return (source && engines.get(source)) || base;
   };
 
@@ -195,9 +190,9 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
     // One pass per source, each seeing only its own tables — which is what makes a
     // cross-source `ref()` a miss rather than a constraint against a stranger.
     afterBoot: async (app) => {
-      await migrate(partition(app, (name) => !home.has(keyOf(name)), true, named) as never, base.db);
+      await migrate(partition(app, (name) => !home.has(registrationKeyOf(name)), true, named) as never, base.db);
       for (const [name, engine] of engines) {
-        await migrate(partition(app, (e) => home.get(keyOf(e)) === name, false, named) as never, engine.db);
+        await migrate(partition(app, (e) => home.get(registrationKeyOf(e)) === name, false, named) as never, engine.db);
       }
     },
   };

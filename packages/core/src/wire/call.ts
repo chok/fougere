@@ -7,11 +7,11 @@
  * they never reshape it.
  */
 import { describe as describeSchema, type SchemaDescriptor } from '@fougere/schema';
-import { factsAnnouncedBy } from './emit.js';
+import { factsAnnouncedBy } from '../emit.js';
 import type { InvocationContext } from './invocation.js';
-import { FougereError, ErrorCode } from './middleware.js';
+import { FougereError, ErrorCode } from './errors.js';
 import { resolveIsReadOp, type OperationsMap } from './operation.js';
-import type { App } from './types.js';
+import type { App } from '../boot/types.js';
 
 /** Target of a call — which façade operation, wherever it lives. */
 export interface FrondCall {
@@ -167,13 +167,7 @@ export function contractsKeyOf(entityName: string, surface?: string): string {
  * named surface, an entity with no façade of its own is simply not there.
  */
 export function identityCardOf(app: App, surface?: string): IdentityCard {
-  /**
-   * Every entity of every frond, by name — a fact is announced where it is USED, which is
-   * not always where it is declared. Same reason the boot builds this map to judge one.
-   */
-  const declared = new Map(
-    app.fronds.flatMap((frond) => frond.entities.map((entity) => [entity.name, entity.entityClass] as const)),
-  );
+  const declared = app.fronds.schemas();
 
   return {
     fronds: app.fronds.map((frond) => {
@@ -240,7 +234,7 @@ function facadeOps(app: App, entityName: string, surface?: string): CardOp[] {
   // frond.config.ts exists to state, for the op whose name the convention reads wrong.
   // Called without them, the card announced `query` for an op its own author had
   // declared a command — and the card is what a remote consumer builds its calls on.
-  const overrides = app.fronds.find((f) => f.entities.some((e) => e.name === entityName))?.operationsOverrides;
+  const overrides = app.fronds.owner(entityName)?.operationsOverrides;
 
   return Object.keys(facade).map((name) => {
     const contract = contracts?.get(name);
@@ -299,7 +293,7 @@ function runnerFor(app: App, resolveFacade: (key: string) => AnyFacade, surface?
       facade = resolveFacade(facadeKeyOf(call.entity, surface));
     } catch {
       // What IS hosted, so a wrong entity name (or a missing frond) reads at a glance.
-      const hosted = app.fronds.flatMap((frond) => frond.entities.map((e) => e.name)).sort();
+      const hosted = app.fronds.entityNames();
       throw new FougereError({
         code: ErrorCode.NOT_FOUND,
         message: (surface

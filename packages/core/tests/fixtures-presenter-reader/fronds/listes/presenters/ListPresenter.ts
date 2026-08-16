@@ -1,12 +1,9 @@
 import List from '../entities/List.js';
 import User from '../entities/User.js';
-
-const PRESENTER_TARGET = Symbol.for('fougere:presenter_target');
+import { Presenter } from '@fougere/core';
 
 /** Computed fields that depend on WHO is asking — the whole point. */
-export default class ListPresenter {
-  static [PRESENTER_TARGET] = List;
-
+export default class ListPresenter extends Presenter(List) {
   /** Counts its own calls, so a test can prove it ran once for the page. */
   static calls = 0;
 

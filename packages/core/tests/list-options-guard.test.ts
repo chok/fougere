@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
-import { guardStorage } from '../src/egress.js';
+import { guardStorage } from '../src/boot/egress.js';
 import type { ListOptions } from '../src/orm.js';
 
 /**

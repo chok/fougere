@@ -16,7 +16,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
-import { scanProject } from '../src/scanner.js';
+import { scanProject } from '../src/scan/scanner.js';
 
 const blind = join(import.meta.dirname, 'fixtures-scan-blind');
 const seeing = join(import.meta.dirname, 'fixtures-same-verdict');

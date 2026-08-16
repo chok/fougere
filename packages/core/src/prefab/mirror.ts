@@ -1,5 +1,5 @@
-import { Lifecycle, type Fields } from '@fougere/schema';
-import type { EntityOrm } from './orm.js';
+import { Lifecycle, type EntityConstructor, type Fields } from '@fougere/schema';
+import type { EntityOrm } from '../orm.js';
 
 /**
  * Mirror(Shape) — a local copy of rows that live somewhere this app cannot query.
@@ -57,11 +57,6 @@ import type { EntityOrm } from './orm.js';
  * a boot hook, a cron, an op behind a door are all legitimate and none of them is this
  * class's business. It refreshes when someone says so, and reports what it wrote.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ShapeClass = abstract new (...args: any[]) => any;
-
-const MIRROR_TARGET = Symbol.for('fougere:mirror_target');
-
 /** What one refresh did — enough to log it, and to decide whether to run again. */
 export interface Refreshed {
   /** Rows written, counting a replaced row once. */
@@ -88,7 +83,7 @@ export interface MirrorConstructor<T> {
   readonly __entity: unknown;
 }
 
-export function Mirror<E extends ShapeClass>(shape: E): MirrorConstructor<InstanceType<E>> {
+export function Mirror<E extends EntityConstructor>(shape: E): MirrorConstructor<InstanceType<E>> {
   type T = InstanceType<E>;
 
   // Refused here rather than at the first refresh: a copy that cannot say when it was
@@ -106,7 +101,6 @@ export function Mirror<E extends ShapeClass>(shape: E): MirrorConstructor<Instan
   const age: string = declared;
 
   abstract class MirrorBase implements MirrorOf<T> {
-    static [MIRROR_TARGET] = shape;
     static readonly __entity = shape;
 
     constructor(public orm: EntityOrm<T>) {}
@@ -141,15 +135,6 @@ export function Mirror<E extends ShapeClass>(shape: E): MirrorConstructor<Instan
   }
 
   return MirrorBase as unknown as MirrorConstructor<T>;
-}
-
-/** Get the shape a mirror copies — the runtime half of what its signature also says. */
-export function getMirrorTarget(ctor: Function): ShapeClass | undefined {
-  for (let cur: any = ctor; cur; cur = Object.getPrototypeOf(cur)) {
-    const target = cur[MIRROR_TARGET];
-    if (target) return target;
-  }
-  return undefined;
 }
 
 /**

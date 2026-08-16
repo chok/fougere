@@ -1,26 +1,11 @@
 /**
- * App-level middleware — intercepts handler facade operations.
+ * The error vocabulary — what a refusal IS, independently of who hears it.
  *
- * Works regardless of entry point (HTTP, Nitro, event bus, CLI, tests).
+ * It travels on the wire (`toJSON`/`fromJSON`) and through the browser-safe
+ * `@fougere/core/contract`, so nothing here may know about HTTP, a logger, or a
+ * middleware chain. Its HTTP reading is one file over, in `http-error.ts`; it used
+ * to live in `middleware.ts`, which named the one concept this is not.
  */
-
-// ── Types ───────────────────────────────────────
-
-export interface OperationContext {
-  /** Entity name (e.g. 'product'). */
-  entity: string;
-  /** Operation name (e.g. 'create', 'findById', 'searchByTitle'). */
-  operation: string;
-  /** Arguments passed to the operation. */
-  args: unknown[];
-  /** Extensible bag — middlewares deposit data here (user, permissions, etc.). */
-  state: Record<string, unknown>;
-  /** Transport-agnostic invocation context (params, query, body, state). */
-  invocation?: import('./invocation.js').InvocationContext;
-}
-
-export type AppNext = () => Promise<unknown>;
-export type AppMiddleware = (ctx: OperationContext, next: AppNext) => Promise<unknown>;
 
 // ── ErrorCode ──────────────────────────────────
 
@@ -109,24 +94,4 @@ export class FougereError extends Error {
       details: known ? raw.details : { originalCode: raw.code, details: raw.details },
     });
   }
-}
-
-// ── Runner ──────────────────────────────────────
-
-/**
- * Execute a middleware chain (onion model) then the handler.
- */
-export function runMiddlewares(
-  middlewares: AppMiddleware[],
-  ctx: OperationContext,
-  handler: AppNext,
-): Promise<unknown> {
-  let index = 0;
-  const next = (): Promise<unknown> => {
-    if (index < middlewares.length) {
-      return middlewares[index++](ctx, next);
-    }
-    return handler();
-  };
-  return next();
 }

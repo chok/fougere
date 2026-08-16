@@ -1,4 +1,5 @@
-import type { EntityOrm } from './orm.js';
+import { classNameOf, type EntityConstructor } from '@fougere/schema';
+import type { EntityOrm } from '../orm.js';
 
 /**
  * Repository(Entity) — where an entity's reads and writes are named.
@@ -37,11 +38,6 @@ import type { EntityOrm } from './orm.js';
  * wire. A judge still lives in the handler, which is the only place a refusal cannot
  * be walked around.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type EntityClass = abstract new (...args: any[]) => any;
-
-const REPOSITORY_TARGET = Symbol.for('fougere:repository_target');
-
 /** What a repository is handed, and what it exposes to whoever holds it. */
 export interface RepositoryOf<T> {
   /** The entity's port, already guarded — a value the shape forbids is refused here too. */
@@ -53,11 +49,10 @@ export interface RepositoryConstructor<T> {
   readonly __entity: unknown;
 }
 
-export function Repository<E extends EntityClass>(entity: E): RepositoryConstructor<InstanceType<E>> {
+export function Repository<E extends EntityConstructor>(entity: E): RepositoryConstructor<InstanceType<E>> {
   type T = InstanceType<E>;
 
   class RepositoryBase implements RepositoryOf<T> {
-    static [REPOSITORY_TARGET] = entity;
     static readonly __entity = entity;
 
     constructor(public orm: EntityOrm<T>) {}
@@ -66,17 +61,7 @@ export function Repository<E extends EntityClass>(entity: E): RepositoryConstruc
   return RepositoryBase as unknown as RepositoryConstructor<T>;
 }
 
-/** Get the entity class a repository targets. */
-export function getRepositoryTarget(ctor: Function): EntityClass | undefined {
-  for (let cur: any = ctor; cur; cur = Object.getPrototypeOf(cur)) {
-    const target = cur[REPOSITORY_TARGET];
-    if (target) return target;
-  }
-
-  return undefined;
-}
-
 /** Container key of an entity's repository — 'reading' → 'ReadingRepository'. */
 export function repositoryKeyOf(entity: string): string {
-  return `${entity[0].toUpperCase()}${entity.slice(1)}Repository`;
+  return `${classNameOf(entity)}Repository`;
 }
