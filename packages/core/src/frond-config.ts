@@ -1,7 +1,7 @@
 import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
 import type { EntityConstructor, SchemaView } from '@fougere/schema';
-import type { BindingPlan } from './binding.js';
+import type { BindingPlan } from './boot/binding.js';
 
 // ── Types ────────────────────────────────────────
 

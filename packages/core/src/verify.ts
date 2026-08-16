@@ -1,9 +1,9 @@
-import type { FrondDescriptor } from './frond.js';
-import type { App } from './types.js';
-import { repositoryKeyOf } from './repository.js';
+import type { FrondDescriptor } from './scan/frond.js';
+import type { App } from './boot/types.js';
+import { repositoryKeyOf } from './prefab/repository.js';
 import { ormKeyOf } from './orm.js';
-import { presenterKeyOf } from './presenter.js';
-import { collectorKeyOf } from './collector.js';
+import { presenterKeyOf } from './prefab/presenter.js';
+import { collectorKeyOf } from './prefab/collector.js';
 
 /**
  * What a rule found in an app.

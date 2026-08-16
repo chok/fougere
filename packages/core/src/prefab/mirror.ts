@@ -1,5 +1,5 @@
 import { Lifecycle, type EntityConstructor, type Fields } from '@fougere/schema';
-import type { EntityOrm } from './orm.js';
+import type { EntityOrm } from '../orm.js';
 
 /**
  * Mirror(Shape) — a local copy of rows that live somewhere this app cannot query.

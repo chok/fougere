@@ -11,8 +11,8 @@ import { describe, it, expect } from 'vitest';
 import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { parseAllHandlerMethods } from '../src/handler-parser.js';
-import { setCacheRoot, cachedParse, flushCache } from '../src/scan-cache.js';
+import { parseAllHandlerMethods } from '../src/scan/handler-parser.js';
+import { setCacheRoot, cachedParse, flushCache } from '../src/scan/scan-cache.js';
 
 /** A mixin file plus a handler extending it — the smallest thing the parser reads. */
 function fixture(mixinBody: string): { dir: string; handler: string } {

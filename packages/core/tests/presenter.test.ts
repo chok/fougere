@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { Presenter, getPresenterFields } from '../src/presenter.js';
-import { targetOf } from '../src/prefab.js';
+import { Presenter, getPresenterFields } from '../src/prefab/presenter.js';
+import { targetOf } from '../src/prefab/prefab.js';
 
 class FakeEntity {
   static getFields() {

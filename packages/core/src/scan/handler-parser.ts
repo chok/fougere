@@ -228,7 +228,7 @@ function resolveSpecifier(specifier: string, fromFile: string, projectRoot: stri
 
 /**
  * Follow re-exports in an index file to find the source of a named export.
- * e.g. `export { Crud } from './crud.js'` → resolves to crud.ts
+ * e.g. `export { Crud } from '../prefab/crud.js'` → resolves to crud.ts
  */
 function followReExport(
   indexPath: string,
@@ -242,7 +242,7 @@ function followReExport(
     if (!ts.isExportDeclaration(stmt)) continue;
     if (!stmt.moduleSpecifier || !ts.isStringLiteral(stmt.moduleSpecifier)) continue;
 
-    // export { Crud } from './crud.js'
+    // export { Crud } from '../prefab/crud.js'
     if (stmt.exportClause && ts.isNamedExports(stmt.exportClause)) {
       const found = stmt.exportClause.elements.some((e) => {
         const exportedName = e.name.text;
@@ -252,7 +252,7 @@ function followReExport(
       if (!found) continue;
     }
 
-    // export * from './crud.js' — also follow (could contain the identifier)
+    // export * from '../prefab/crud.js' — also follow (could contain the identifier)
     const resolved = resolveSpecifier(stmt.moduleSpecifier.text, indexPath, projectRoot);
     if (resolved) return resolved;
   }

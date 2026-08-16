@@ -3,7 +3,7 @@
  * the contract between core and an `@fougere/auth-*` package.
  */
 import type { SchemaView } from '@fougere/schema';
-import type { EntityOrm, OrmFactory } from './orm.js';
+import type { EntityOrm, OrmFactory } from '../orm.js';
 
 /**
  * Lazy auth declaration written in fougere.config.ts.

@@ -17,7 +17,7 @@ import { tmpdir } from 'node:os';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner } from '../src/index.js';
 import type { OrmFactory } from '../src/index.js';
-import type { InvocationContext } from '../src/invocation.js';
+import type { InvocationContext } from '../src/wire/invocation.js';
 
 const packagesDir = join(import.meta.dirname, '..', '..');
 const coreDist = join(packagesDir, 'core', 'dist', 'index.js');

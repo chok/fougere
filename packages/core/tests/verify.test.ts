@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { verify, assertSplittable } from '../src/verify.js';
-import type { FrondDescriptor } from '../src/frond.js';
+import type { FrondDescriptor } from '../src/scan/frond.js';
 
 // No fixture tree, no mount, no disk. `verify` is a pure function of the graph
 // the scan produces, so its test builds that graph directly — which is also the
@@ -117,7 +117,7 @@ describe('verify — cross-frond dependency', () => {
 
 describe('verify — collector in another frond', () => {
   it('names the parameter that will take the request body', async () => {
-    const { scanProject } = await import('../src/scanner.js');
+    const { scanProject } = await import('../src/scan/scanner.js');
     const scan = await scanProject(new URL('./fixtures-collector-split', import.meta.url).pathname);
 
     const violations = verify({ fronds: scan.fronds }).filter((v) => v.rule === 'collector-in-another-frond');

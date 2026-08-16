@@ -1,5 +1,5 @@
 import { classNameOf, type EntityConstructor } from '@fougere/schema';
-import type { EntityOrm } from './orm.js';
+import type { EntityOrm } from '../orm.js';
 
 /**
  * Repository(Entity) — where an entity's reads and writes are named.

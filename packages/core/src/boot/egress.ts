@@ -26,8 +26,8 @@
  */
 import { Judge } from '@fougere/schema';
 import { encodeFields, type Fields } from '@fougere/schema';
-import { ErrorCode, FougereError } from './errors.js';
-import { assertListOptions } from './orm.js';
+import { ErrorCode, FougereError } from '../wire/errors.js';
+import { assertListOptions } from '../orm.js';
 
 // ─── 1 · Judge ──────────────────────────────────────────────
 

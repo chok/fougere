@@ -12,7 +12,7 @@ import { tmpdir } from 'node:os';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner } from '../src/index.js';
 import type { OrmFactory } from '../src/index.js';
-import { presentEgress } from '../src/egress.js';
+import { presentEgress } from '../src/boot/egress.js';
 
 const packagesDir = join(import.meta.dirname, '..', '..');
 const coreDist = join(packagesDir, 'core', 'dist', 'index.js');

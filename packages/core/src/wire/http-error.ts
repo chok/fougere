@@ -5,7 +5,7 @@
  * is in `errors.ts` and knows nothing of this file.
  */
 import { FougereError, ErrorCode } from './errors.js';
-import { Logger } from './builtins/logger.js';
+import { Logger } from '../builtins/logger.js';
 /**
  * An INTERNAL_ERROR is the one class of error whose message never leaves: it was not
  * written for a caller and may quote a path, a query or a row. Masking it is right, and

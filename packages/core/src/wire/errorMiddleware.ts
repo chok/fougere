@@ -1,8 +1,8 @@
 /**
  * Error handler middleware — normalizes errors into FougereError.
  */
-import type { AppMiddleware } from '../middleware.js';
-import { FougereError, ErrorCode } from '../errors.js';
+import type { AppMiddleware } from './middleware.js';
+import { FougereError, ErrorCode } from './errors.js';
 
 /**
  * Create an error handler middleware that wraps thrown errors into FougereError.

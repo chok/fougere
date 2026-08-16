@@ -21,7 +21,7 @@ import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, FougereError } from '../src/index.js';
-import { EMPTY_INVOCATION } from '../src/invocation.js';
+import { EMPTY_INVOCATION } from '../src/wire/invocation.js';
 import { inputFields, type Field, type SchemaView } from '@fougere/schema';
 import type { EntityOrm, OrmFactory } from '../src/orm.js';
 import Article from './fixtures-same-verdict/fronds/press/entities/Article.js';

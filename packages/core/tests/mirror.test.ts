@@ -4,8 +4,8 @@
  */
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text, updated } from '@fougere/schema';
-import { Mirror, ageFieldOf } from '../src/mirror.js';
-import { targetOf } from '../src/prefab.js';
+import { Mirror, ageFieldOf } from '../src/prefab/mirror.js';
+import { targetOf } from '../src/prefab/prefab.js';
 
 class Card extends entity({ id: primary(), title: text({ min: 1 }), pulledAt: updated() }) {}
 

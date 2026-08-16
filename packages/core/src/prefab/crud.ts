@@ -1,5 +1,5 @@
-import type { EntityOrm, ListOptions, ListResult } from './orm.js';
-import type { OperationContract } from './operation.js';
+import type { EntityOrm, ListOptions, ListResult } from '../orm.js';
+import type { OperationContract } from '../wire/operation.js';
 import type { EntityConstructor, SchemaView } from '@fougere/schema';
 
 /** The id of the row an op acts on — a route segment, or a query fallback. */

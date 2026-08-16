@@ -1,17 +1,17 @@
 import { Judge, type Fields, type SchemaView } from '@fougere/schema';
 import type { Container } from '@fougere/container';
-import { ErrorCode, FougereError } from './errors.js';
-import { runMiddlewares, type AppMiddleware } from './middleware.js';
+import { ErrorCode, FougereError } from '../wire/errors.js';
+import { runMiddlewares, type AppMiddleware } from '../wire/middleware.js';
 import { computeBindingPlan, resolveArgs, type CollectorResolver } from './binding.js';
-import { collectorKeyOf } from './collector.js';
-import { presenterKeyOf } from './presenter.js';
-import { ormKeyOf } from './orm.js';
-import { resolveContracts, type OperationsMap } from './operation.js';
+import { collectorKeyOf } from '../prefab/collector.js';
+import { presenterKeyOf } from '../prefab/presenter.js';
+import { ormKeyOf } from '../orm.js';
+import { resolveContracts, type OperationsMap } from '../wire/operation.js';
 import { projectEgress, presentEgress, type PresenterArgs } from './egress.js';
-import { EMPTY_INVOCATION, type InvocationContext } from './invocation.js';
+import { EMPTY_INVOCATION, type InvocationContext } from '../wire/invocation.js';
 import type { Emissions } from './Emissions.js';
-import type { Logger } from './builtins/logger.js';
-import type { EntityEntry, FrondDescriptor, HandlerEntry, PresenterEntry } from './frond.js';
+import type { Logger } from '../builtins/logger.js';
+import type { EntityEntry, FrondDescriptor, HandlerEntry, PresenterEntry } from '../scan/frond.js';
 
 /** What this door is about: a handler, the entity behind it when there is one, and where it resolves. */
 export interface Doorway {

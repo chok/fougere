@@ -9,14 +9,14 @@
  * is allowed in — measured, it imports no node builtin either.
  */
 import { registrationKeyOf } from '@fougere/schema';
-import { EMPTY_INVOCATION, type InvocationContext } from './invocation.js';
-import type { FrondCall } from './call.js';
+import { EMPTY_INVOCATION, type InvocationContext } from './wire/invocation.js';
+import type { FrondCall } from './wire/call.js';
 
-export { FougereError, ErrorCode } from './errors.js';
-export type { FougereErrorOptions } from './errors.js';
-export { EMPTY_INVOCATION } from './invocation.js';
-export type { InvocationContext } from './invocation.js';
-export type { FrondCall, Transport } from './call.js';
+export { FougereError, ErrorCode } from './wire/errors.js';
+export type { FougereErrorOptions } from './wire/errors.js';
+export { EMPTY_INVOCATION } from './wire/invocation.js';
+export type { InvocationContext } from './wire/invocation.js';
+export type { FrondCall, Transport } from './wire/call.js';
 /**
  * What `rpc.discover` answers. It belongs here and not to the runtime: the
  * reserved op travels on the same wire as every other call, so a consumer that
@@ -26,7 +26,7 @@ export type { FrondCall, Transport } from './call.js';
  * Stated once, on purpose: two private copies of this interface have already gone
  * stale (the CLI's, then the Rust demo's) the day an op stopped being a bare name.
  */
-export type { IdentityCard, CardOp } from './call.js';
+export type { IdentityCard, CardOp } from './wire/call.js';
 
 /**
  * The key a class name is filed under — 'Post' → 'post'. Re-exported rather than

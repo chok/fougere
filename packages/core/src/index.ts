@@ -8,40 +8,40 @@
  * accessors, the config merge. Measured on 2026-08-16, none of them had a single
  * importer anywhere in the workspace.
  */
-export { createApp } from './bootstrap.js';
-export { boot } from './boot.js';
-export { orderSeeds, runSeeds } from './seed.js';
+export { createApp } from './boot/bootstrap.js';
+export { boot } from './boot/boot.js';
+export { orderSeeds, runSeeds } from './boot/seed.js';
 export { defineFougere } from './define.js';
 export { loadConfig, loadCascadedConfig, type AdapterConfig, type FougereConfig } from './config-loader.js';
 export { defineFrond, type FrondConfig, type OperationOverride } from './frond-config.js';
 export { buildGraph, clusterEntities, suggestSplit, type EntityNode, type DomainCluster } from './graph.js';
-export { Crud } from './crud.js';
-export type { CrudOps, CrudOpName, CrudViews, CrudConstructor } from './crud.js';
-export { Mirror } from './mirror.js';
-export type { MirrorOf, MirrorConstructor, Refreshed } from './mirror.js';
-export { Presenter } from './presenter.js';
-export type { PresenterViews } from './presenter.js';
-export { Collector } from './collector.js';
-export { Repository, type RepositoryOf, type RepositoryConstructor } from './repository.js';
-export type { InvocationContext } from './invocation.js';
-export { EMPTY_INVOCATION } from './invocation.js';
-export { resolveIsReadOp, resolveContracts } from './operation.js';
-export type { OperationContract, OperationsMap } from './operation.js';
-export { scanProject, frondAliases, FROND_DIRS, setModuleLoader, type ModuleLoader } from './scanner.js';
-export { FougereError, ErrorCode, type FougereErrorOptions } from './errors.js';
-export type { OperationContext, AppNext, AppMiddleware } from './middleware.js';
-export { createLocalRunner, createAppRunner } from './call.js';
-export type { FrondCall, Transport, IdentityCard, CardOp, Facade } from './call.js';
+export { Crud } from './prefab/crud.js';
+export type { CrudOps, CrudOpName, CrudViews, CrudConstructor } from './prefab/crud.js';
+export { Mirror } from './prefab/mirror.js';
+export type { MirrorOf, MirrorConstructor, Refreshed } from './prefab/mirror.js';
+export { Presenter } from './prefab/presenter.js';
+export type { PresenterViews } from './prefab/presenter.js';
+export { Collector } from './prefab/collector.js';
+export { Repository, type RepositoryOf, type RepositoryConstructor } from './prefab/repository.js';
+export type { InvocationContext } from './wire/invocation.js';
+export { EMPTY_INVOCATION } from './wire/invocation.js';
+export { resolveIsReadOp, resolveContracts } from './wire/operation.js';
+export type { OperationContract, OperationsMap } from './wire/operation.js';
+export { scanProject, frondAliases, FROND_DIRS, setModuleLoader, type ModuleLoader } from './scan/scanner.js';
+export { FougereError, ErrorCode, type FougereErrorOptions } from './wire/errors.js';
+export type { OperationContext, AppNext, AppMiddleware } from './wire/middleware.js';
+export { createLocalRunner, createAppRunner } from './wire/call.js';
+export type { FrondCall, Transport, IdentityCard, CardOp, Facade } from './wire/call.js';
 export { type Emit, type Fact } from './emit.js';
 export { callValueOf } from './contract.js';
 export type { CallValue } from './contract.js';
-export { toHttpError, toPublicError } from './http-error.js';
-export { loggerMiddleware } from './middleware/logger.js';
-export { errorMiddleware } from './middleware/error-handler.js';
+export { toHttpError, toPublicError } from './wire/http-error.js';
+export { loggerMiddleware } from './wire/loggerMiddleware.js';
+export { errorMiddleware } from './wire/errorMiddleware.js';
 export { Logger } from './builtins/logger.js';
 export { Config } from './builtins/config.js';
 export type { EntityOrm, OrmFactory, ListOptions, ListResult } from './orm.js';
-export type { App, CreateAppOptions } from './types.js';
+export type { App, CreateAppOptions } from './boot/types.js';
 export type {
   ScanResult,
   ScanDiagnostic,
@@ -55,9 +55,9 @@ export type {
   PresenterEntry,
   PresenterFieldMeta,
   CollectorEntry,
-} from './frond.js';
-export type { AuthConfig, AuthContext, AuthRuntime } from './auth.js';
-export { Fronds } from './Fronds.js';
+} from './scan/frond.js';
+export type { AuthConfig, AuthContext, AuthRuntime } from './boot/auth.js';
+export { Fronds } from './scan/Fronds.js';
 export { verify, assertSplittable, type Violation } from './verify.js';
 // Same question as verify(), answered from the source text instead of the model.
 export { crossFrondImports, type CrossFrondImport } from './imports.js';

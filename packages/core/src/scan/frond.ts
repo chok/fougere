@@ -6,8 +6,8 @@
  * `FrondDescriptor.operationsOverrides`, where a declaration reaches the façade.
  */
 import type { SchemaView } from '@fougere/schema';
-import type { ParsedParam, OperationContract, OperationsMap } from './operation.js';
-import type { PresenterViews } from './presenter.js';
+import type { ParsedParam, OperationContract, OperationsMap } from '../wire/operation.js';
+import type { PresenterViews } from '../prefab/presenter.js';
 import type { Fronds } from './Fronds.js';
 
 /**

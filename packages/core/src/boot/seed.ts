@@ -1,6 +1,6 @@
 import { Role } from '@fougere/schema';
-import { facadeKeyOf } from './call.js';
-import type { FrondDescriptor, SeedEntry, SeedFactory } from './frond.js';
+import { facadeKeyOf } from '../wire/call.js';
+import type { FrondDescriptor, SeedEntry, SeedFactory } from '../scan/frond.js';
 import type { App } from './types.js';
 
 /**

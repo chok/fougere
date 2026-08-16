@@ -7,11 +7,11 @@
  * they never reshape it.
  */
 import { describe as describeSchema, type SchemaDescriptor } from '@fougere/schema';
-import { factsAnnouncedBy } from './emit.js';
+import { factsAnnouncedBy } from '../emit.js';
 import type { InvocationContext } from './invocation.js';
 import { FougereError, ErrorCode } from './errors.js';
 import { resolveIsReadOp, type OperationsMap } from './operation.js';
-import type { App } from './types.js';
+import type { App } from '../boot/types.js';
 
 /** Target of a call — which façade operation, wherever it lives. */
 export interface FrondCall {

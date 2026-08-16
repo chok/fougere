@@ -10,8 +10,8 @@
  * 3. Primitive (string, number, boolean) → matched by name from params then query
  * 4. Object/entity type → matched from body
  */
-import type { ParsedParam } from './handler-parser.js';
-import type { InvocationContext } from './invocation.js';
+import type { ParsedParam } from '../scan/handler-parser.js';
+import type { InvocationContext } from '../wire/invocation.js';
 import { registrationKeyOf } from '@fougere/schema';
 
 // ── Types ─────────────────────────────────────

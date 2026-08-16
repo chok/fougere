@@ -1,5 +1,5 @@
 import { entity, primary, text, number } from '@fougere/schema';
-import { Crud } from '../../../../../src/crud.js';
+import { Crud } from '../../../../../src/prefab/crud.js';
 import Item from '../entities/Item.js';
 
 export class StockSearchInput extends entity({

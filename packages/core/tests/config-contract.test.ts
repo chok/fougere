@@ -11,7 +11,7 @@ import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, FougereError, ErrorCode } from '../src/index.js';
 import type { OrmFactory } from '../src/index.js';
-import type { InvocationContext } from '../src/invocation.js';
+import type { InvocationContext } from '../src/wire/invocation.js';
 
 const root = join(import.meta.dirname, 'fixtures-config-contract');
 

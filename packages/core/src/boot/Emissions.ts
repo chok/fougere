@@ -1,12 +1,12 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { applyCreate, type SchemaView } from '@fougere/schema';
 import type { Container } from '@fougere/container';
-import { ErrorCode } from './errors.js';
-import { emitKeyOf, factsAnnouncedBy } from './emit.js';
-import { EMPTY_INVOCATION } from './invocation.js';
-import type { Logger } from './builtins/logger.js';
-import type { Fronds } from './Fronds.js';
-import type { OperationsMap } from './operation.js';
+import { ErrorCode } from '../wire/errors.js';
+import { emitKeyOf, factsAnnouncedBy } from '../emit.js';
+import { EMPTY_INVOCATION } from '../wire/invocation.js';
+import type { Logger } from '../builtins/logger.js';
+import type { Fronds } from '../scan/Fronds.js';
+import type { OperationsMap } from '../wire/operation.js';
 
 /** A door and the op on it that accepts a fact. */
 interface Listener {

@@ -4,7 +4,7 @@ import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner } from '../src/index.js';
 import type { Container } from '@fougere/container';
 import type { OrmFactory, EntityOrm } from '../src/index.js';
-import { EMPTY_INVOCATION } from '../src/invocation.js';
+import { EMPTY_INVOCATION } from '../src/wire/invocation.js';
 
 const fixturesRoot = join(import.meta.dirname, 'fixtures');
 
