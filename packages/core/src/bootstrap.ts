@@ -165,16 +165,8 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   const emitted = new Set(fronds.flatMap((frond) => factsAnnouncedBy(frond.handlers)));
   const subscribers = new Map<string, Array<{ door: string; op: string }>>();
 
-  /**
-   * Every entity of every frond, by name — so a fact can be judged where it LANDS.
-   *
-   * A fact usually lives in the frond that announces it and is heard in another, so the
-   * subscriber's own frond does not hold it. Across all fronds and not per-frond for that
-   * one reason.
-   */
-  const entityByName = new Map(
-    fronds.flatMap((f) => f.entities.map((e) => [e.name, e.entityClass] as const)),
-  );
+  // Every entity of every frond, by name — so a fact can be judged where it LANDS.
+  const entityByName = fronds.schemas();
 
   /**
    * Who listens to what — read from the PLAN, where `{ kind: 'fact' }` is a sentence
@@ -252,12 +244,11 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       // query joins entities from different fronds by definition — `Progress` here,
       // `Book` next door — so restricting the list to its own would make it useless.
       // Naming one IS the authorization; that is what the declaration is for.
-      const hosted = new Map(fronds.flatMap((f) => f.entities.map((e) => [e.name, e.entityClass] as const)));
       const named = frond.reads
-        .map((name) => hosted.get(registrationKeyOf(name)))
+        .map((name) => entityByName.get(registrationKeyOf(name)))
         .filter((entity): entity is NonNullable<typeof entity> => entity !== undefined);
       if (named.length !== frond.reads.length) {
-        const missing = frond.reads.filter((name) => !hosted.has(registrationKeyOf(name)));
+        const missing = frond.reads.filter((name) => !entityByName.has(registrationKeyOf(name)));
         frondLog.warn(
           `[reads] ${missing.join(', ')} — named in frond.config.ts but scanned nowhere in this app, `
           + 'so a query naming one would find no table. Check the spelling, or the entity file.',
@@ -840,10 +831,8 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   };
 
   const schemaFor = async (entity: string): Promise<SchemaView> => {
-    for (const frond of fronds) {
-      const found = frond.entities.find((e) => e.name === entity);
-      if (found) return found.entityClass;
-    }
+    const found = fronds.entity(entity);
+    if (found) return found.entityClass;
     if (remoteRouter) {
       const route = await remoteRouter.route(entity);
       // A remote door that stores nothing publishes ops and no shape. Saying so beats
@@ -894,7 +883,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     if (!surface) return facadeAt(facadeKeyOf(entity), true);
 
     const own = facadeAt(facadeKeyOf(entity, surface), false);
-    const declared = fronds.find((f) => f.entities.some((e) => e.name === entity))?.surfaces?.[surface];
+    const declared = fronds.owner(entity)?.surfaces?.[surface];
     if (!declared) return own;
     return declared.some((n) => n.toLowerCase() === entity.toLowerCase())
       ? (own ?? facadeAt(facadeKeyOf(entity), false))
@@ -911,7 +900,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
    * every entity with no façade — the one case its own fallback existed for.
    */
   const ormFor = (entity: string): unknown | undefined => {
-    const owner = fronds.find((f) => f.entities.some((e) => e.name === entity));
+    const owner = fronds.owner(entity);
     if (!owner) return undefined;
 
     const key = ormKeyOf(entity);
@@ -931,7 +920,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
    * the day the convention moves, which is exactly the failure `verify.ts` refuses.
    */
   const presenterFor = (entity: string): unknown | undefined => {
-    const owner = fronds.find((f) => f.entities.some((e) => e.name === entity));
+    const owner = fronds.owner(entity);
     if (!owner) return undefined;
 
     try {

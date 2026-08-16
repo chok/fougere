@@ -88,7 +88,7 @@ function injectablesOf(frond: FrondDescriptor) {
  *
  * Pure over `app.fronds`: no mount, no process, no file. Call it from a test.
  */
-export function verify(app: Pick<App, 'fronds'>): Violation[] {
+export function verify(app: { fronds: readonly FrondDescriptor[] }): Violation[] {
   const index = new Map<string, Registration>();
   for (const frond of app.fronds) {
     for (const [key, reg] of registrationsOf(frond)) index.set(key, reg);
@@ -173,7 +173,7 @@ export function verify(app: Pick<App, 'fronds'>): Violation[] {
  * The same verdict, as an assertion. Throws naming every rule that failed, so a
  * test is one line and its output is the sentence — not a diff of two objects.
  */
-export function assertSplittable(app: Pick<App, 'fronds'>): void {
+export function assertSplittable(app: { fronds: readonly FrondDescriptor[] }): void {
   const violations = verify(app);
   if (violations.length === 0) return;
   const lines = violations.map((v) => `  [${v.rule}] ${v.frond}/${v.subject}\n    ${v.message}\n    ${v.filePath}`);

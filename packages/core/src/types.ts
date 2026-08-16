@@ -1,4 +1,5 @@
 import type { Container } from '@fougere/container';
+import type { Fronds } from './Fronds.js';
 import type { ParsedParam } from './operation.js';
 import type { EntityOrm, OrmFactory } from './orm.js';
 import type { SchemaView } from '@fougere/schema';
@@ -218,7 +219,7 @@ export interface ScanDiagnostic {
 }
 
 export interface ScanResult {
-  fronds: FrondDescriptor[];
+  fronds: Fronds;
   /** What the scan could not do. Empty is a claim, not a default — see {@link ScanDiagnostic}. */
   diagnostics: ScanDiagnostic[];
 }
@@ -346,7 +347,7 @@ export interface App {
    */
   adapters: Record<string, boolean | undefined>;
   /** Discovered fronds metadata. */
-  fronds: FrondDescriptor[];
+  fronds: Fronds;
   /** Resolve from root container (shortcut). */
   resolve<T>(name: string): T;
   /**

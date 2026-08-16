@@ -15,6 +15,7 @@ import { getRepositoryTarget } from './repository.js';
 import { ormKeyOf } from './orm.js';
 import { getCollectorTarget } from './collector.js';
 import { registrationKeyOf } from './contract.js';
+import { Fronds } from './Fronds.js';
 
 /** Module loader — can be swapped (e.g. jiti for TS files in Nuxt context). */
 export type ModuleLoader = (filePath: string) => Promise<Record<string, unknown>>;
@@ -665,7 +666,7 @@ export async function scanProject(root: string, filter?: string[]): Promise<Scan
 
   // The app's own domain first, then the ones it took in.
   const all = rootFrond ? [rootFrond, ...under] : under;
-  const fronds = filter ? all.filter((f) => filter.includes(f.name)) : all;
+  const fronds = Fronds.scanned(filter ? all.filter((f) => filter.includes(f.name)) : all);
 
   flushCache();
   return { fronds, diagnostics };

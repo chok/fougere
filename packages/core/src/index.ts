@@ -60,6 +60,7 @@ export type {
   AuthContext,
   AuthRuntime,
 } from './types.js';
+export { Fronds } from './Fronds.js';
 export { verify, assertSplittable, type Violation } from './verify.js';
 // Same question as verify(), answered from the source text instead of the model.
 export { crossFrondImports, type CrossFrondImport } from './imports.js';
