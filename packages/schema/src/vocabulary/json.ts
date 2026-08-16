@@ -1,7 +1,7 @@
-import { Field, type Fields } from '../field/index.js';
-import type { SchemaView } from '../schema/index.js';
-import { describe } from '../projections/describe.js';
-import type { FieldDescriptor } from '../projections/card.js';
+import { Field, type Fields } from '../Field.js';
+import type { SchemaView } from '../SchemaView.js';
+import { describe } from '../card/describe.js';
+import type { FieldDescriptor } from '../card/Descriptor.js';
 
 /**
  * A JSON value field. `json()` is OPAQUE — it passes validation unchecked. `json(Entity)`

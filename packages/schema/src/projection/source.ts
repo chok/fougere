@@ -1,7 +1,7 @@
-import type { Fields } from '../field/index.js';
-import type { SchemaView } from '../schema/index.js';
-import type { SchemaDescriptor } from './card.js';
-import { reconstruct } from './reconstruct.js';
+import type { Fields } from '../Field.js';
+import type { SchemaView } from '../SchemaView.js';
+import type { SchemaDescriptor } from '../card/Descriptor.js';
+import { reconstruct } from '../card/reconstruct.js';
 
 /**
  * The two forms a schema reaches an adapter in. In-process it gets the class; from a

@@ -1,6 +1,6 @@
-import type { Axis } from '../axis.js';
-import { isObject } from '../../validation/form.js';
-import type { BoundaryRef } from './boundary.js';
+import type { Axis } from './Axis.js';
+import { isObject } from '../judge/form.js';
+import type { BoundaryRef } from './Boundary.js';
 
 /**
  * How and in which direction a value crosses the client frontier. Only the FORM is judged:

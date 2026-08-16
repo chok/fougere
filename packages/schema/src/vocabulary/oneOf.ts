@@ -1,4 +1,4 @@
-import { Field } from '../field/index.js';
+import { Field } from '../Field.js';
 
 interface OneOfOptions<V extends string = string> {
   description?: string;

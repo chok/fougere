@@ -1,11 +1,11 @@
-import type { Shape } from "./shape.js";
-import { Judge } from "../validation/index.js";
-import type { Role } from "./role/role.js";
-import { FieldGroup } from "./role/group.js";
-import { Unique } from "./role/unique.js";
-import type { LifecycleRules } from "./lifecycle/lifecycle.js";
-import type { BoundaryRef } from "./boundary/boundary.js";
-import type { Meta } from "./meta.js";
+import type { Shape } from './axis/Shape.js';
+import { Judge } from './judge/Judge.js';
+import type { Role } from './axis/Role.js';
+import { FieldGroup } from './axis/FieldGroup.js';
+import { Unique } from './axis/Unique.js';
+import type { LifecycleRules } from './axis/Lifecycle.js';
+import type { BoundaryRef } from './axis/Boundary.js';
+import type { Meta } from './axis/Meta.js';
 
 /**
  * One field — a `shape`, plus the three optional axes (`role`, `lifecycle`, `boundary`) and

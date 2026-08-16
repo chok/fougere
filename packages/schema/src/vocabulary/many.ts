@@ -1,4 +1,5 @@
-import { toTargetThunk, Field, type EntityConstructor } from '../field/index.js';
+import { toTargetThunk, type EntityConstructor } from '../axis/Role.js';
+import { Field } from '../Field.js';
 
 /**
  * A collection of related entities — `many(Post)`, or `many(() => Post)` for a cycle.

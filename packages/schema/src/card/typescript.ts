@@ -1,4 +1,4 @@
-import type { FieldDescriptor, SchemaDescriptor } from './card.js';
+import type { FieldDescriptor, SchemaDescriptor } from './Descriptor.js';
 
 /**
  * card → TypeScript source. `reconstruct` gives a consumer a living judge; this gives it

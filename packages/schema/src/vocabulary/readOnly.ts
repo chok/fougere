@@ -1,5 +1,6 @@
 import { vocabulary } from './vocabulary.js';
-import { Boundary, Field } from '../field/index.js';
+import { Boundary } from '../axis/Boundary.js';
+import { Field } from '../Field.js';
 
 /**
  * Close the INBOUND direction — emitted normally, never accepted from a client. Supplying

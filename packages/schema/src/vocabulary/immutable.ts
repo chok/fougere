@@ -1,5 +1,5 @@
 import { vocabulary } from './vocabulary.js';
-import { Field } from '../field/index.js';
+import { Field } from '../Field.js';
 
 /**
  * Forbid re-writing after creation — `update: 'forbidden'`. Creation is untouched;

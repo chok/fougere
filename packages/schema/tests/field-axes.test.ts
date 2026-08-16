@@ -1,4 +1,7 @@
-import { Anatomy, Judge, FieldGroup, Unique } from '../src/index.js';
+import { Anatomy } from '../src/axis/Shape.js';
+import { Judge } from '../src/judge/Judge.js';
+import { FieldGroup } from '../src/axis/FieldGroup.js';
+import { Unique } from '../src/axis/Unique.js';
 import { describe, it, expect } from 'vitest';
 import {
   entity, primary, text, number, oneOf, list, optional, nullable,

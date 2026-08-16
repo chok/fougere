@@ -1,5 +1,5 @@
 import { vocabulary } from './vocabulary.js';
-import { Field } from '../field/index.js';
+import { Field } from '../Field.js';
 
 /**
  * Reads filter on this field often — `index: true` on the role axis. It changes no answer,

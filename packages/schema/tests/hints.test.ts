@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { entity, primary, text } from '../src/index.js';
+import { entity } from '../src/entity.js';
+import { primary } from '../src/vocabulary/primary.js';
+import { text } from '../src/vocabulary/text.js';
 
 // Stand in for an adapter package: augment the open registry exactly as an SQL
 // adapter would, from outside the core, via declaration merging. The 'sql'

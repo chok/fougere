@@ -1,6 +1,6 @@
-import type { Fields } from "../field.js";
-import type { Hints } from "../../hints.js";
-import { FieldGroup } from "./group.js";
+import type { Fields } from '../Field.js';
+import type { Hints } from '../hints.js';
+import { FieldGroup } from './FieldGroup.js';
 
 /**
  * Field names that identify at most one row when taken together. No shape can express it —

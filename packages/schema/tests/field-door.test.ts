@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { Field, Schema, Unique, created, entity, list, oneOf, optional, primary, text, updated, Judge } from '../src/index.js';
+import { Field } from '../src/Field.js';
+import { Schema } from '../src/Schema.js';
+import { Unique } from '../src/axis/Unique.js';
+import { created } from '../src/vocabulary/created.js';
+import { entity } from '../src/entity.js';
+import { list } from '../src/vocabulary/list.js';
+import { oneOf } from '../src/vocabulary/oneOf.js';
+import { optional } from '../src/vocabulary/optional.js';
+import { primary } from '../src/vocabulary/primary.js';
+import { text } from '../src/vocabulary/text.js';
+import { updated } from '../src/vocabulary/updated.js';
+import { Judge } from '../src/judge/Judge.js';
 
 /**
  * The constructor is the only way to obtain a field, so it is where a field is judged —

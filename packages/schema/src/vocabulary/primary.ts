@@ -1,5 +1,6 @@
-import { Field, registerGenerator, type GeneratorRef } from "../field/index.js";
-import { Judge } from "../validation/index.js";
+import { Field } from '../Field.js';
+import { registerGenerator, type GeneratorRef } from '../axis/Lifecycle.js';
+import { Judge } from '../judge/Judge.js';
 
 interface PrimaryOptions {
   /**

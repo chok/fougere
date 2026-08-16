@@ -1,4 +1,4 @@
-import { Field } from '../field/index.js';
+import { Field } from '../Field.js';
 
 export interface ListOptions {
   min?: number;

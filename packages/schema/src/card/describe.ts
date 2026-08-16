@@ -1,7 +1,10 @@
-import { EXTENSION_AXES } from '../field/axes.js';
-import type { Field, Fields, Role } from '../field/index.js';
-import type { SchemaView } from '../schema/index.js';
-import { Boundary, Anatomy, Unique } from '../field/index.js';
+import { EXTENSION_AXES } from '../axis/Axis.js';
+import type { Field, Fields } from '../Field.js';
+import type { Role } from '../axis/Role.js';
+import type { SchemaView } from '../SchemaView.js';
+import { Boundary } from '../axis/Boundary.js';
+import { Anatomy } from '../axis/Shape.js';
+import { Unique } from '../axis/Unique.js';
 import { registrationKeyOf } from '../name.js';
 import {
   clean,
@@ -11,7 +14,7 @@ import {
   type RoleDescriptor,
   type SchemaBundle,
   type SchemaDescriptor,
-} from './card.js';
+} from './Descriptor.js';
 
 // ─── describe — schema → card (the single canonical serialiser) ────
 

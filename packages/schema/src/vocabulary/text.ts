@@ -1,4 +1,5 @@
-import { Field, type StringFormat } from '../field/index.js';
+import { Field } from '../Field.js';
+import { type StringFormat } from '../Formats.js';
 
 export interface TextOptions {
   min?: number;

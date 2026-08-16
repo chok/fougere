@@ -1,8 +1,9 @@
-import type { Field, Fields } from "../field/index.js";
-import type { Hints } from "../hints.js";
-import type { CompositeUnique } from "../field/index.js";
-import type { ValidationResult, ValidateOptions } from '../validation/index.js';
-import type { StandardSchemaV1 } from "../projections/standard.js";
+import type { Field, Fields } from './Field.js';
+import type { Hints } from './hints.js';
+import type { CompositeUnique } from './axis/Unique.js';
+import type { ValidationResult } from './judge/result.js';
+import type { ValidateOptions } from './judge/options.js';
+import type { StandardSchemaV1 } from './projection/standard.js';
 
 /** The row an entity carries — its fields' value types, all present. */
 export type Row<TFields extends Fields> = {

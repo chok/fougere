@@ -1,49 +1,17 @@
 // ─── The primitive — a Field on four orthogonal axes + meta ──
-export {
-  Field,
-  type Fields,
-  type Shape,
-  type ShapeType,
-  type StringFormat,
-  type FormatPredicate,
-  type Role,
-  type Relation,
-  Lifecycle,
-  type LifecycleRules,
-  type GeneratorRef,
-  Boundary,
-  type BoundaryRules,
-  type BoundaryRef,
-  type Decoder,
-  type Encoder,
-  type Meta,
-  // A rule stated over a set of fields and realized by the storage — `Unique` is the first.
-  FieldGroup,
-  Unique,
-  // The shape axis's own open registry — a NAMED predicate where JSON Schema
-  // already declares its vocabulary open, so the rule travels as `format`.
-  registerGenerator,
-  resolveCustomGenerator,
-  Anatomy,
-  Formats,
-  Boundaries,
-  // Public because a relation CYCLE needs it: `ref(() => Captain)` defers the value,
-  // not the type, so inferring one entity still requires the other. Annotating the
-  // thunk with this cuts the inference loop — and `ref()` returns `Field<string>`
-  // whatever its target, so nothing is lost.
-  type EntityConstructor,
-} from "./field/index.js";
+export { Field, type Fields } from './Field.js';
+export { type Shape, type ShapeType, Anatomy } from './axis/Shape.js';
+export { type StringFormat, type FormatPredicate, Formats } from './Formats.js';
+export { type Role, type Relation, type EntityConstructor } from './axis/Role.js';
+export { Lifecycle, type LifecycleRules, type GeneratorRef, registerGenerator, resolveCustomGenerator } from './axis/Lifecycle.js';
+export { Boundary, type BoundaryRules, type BoundaryRef, type Decoder, type Encoder, Boundaries } from './axis/Boundary.js';
+export { type Meta } from './axis/Meta.js';
+export { FieldGroup } from './axis/FieldGroup.js';
+export { Unique } from './axis/Unique.js';
 
 // ─── The carrier and its derivation algebra ──────────────────
-export {
-  compose,
-  Schema,
-  ANONYMOUS_SCHEMA_NAME,
-  type SchemaConstructor,
-  type SchemaView,
-  type Row,
-  type PartialRow,
-} from "./schema/index.js";
+export { compose, Schema, ANONYMOUS_SCHEMA_NAME, type SchemaConstructor } from './Schema.js';
+export { type SchemaView, type Row, type PartialRow } from './SchemaView.js';
 export { type FougereHints, type Hints } from "./hints.js";
 
 
@@ -74,36 +42,22 @@ export { json } from "./vocabulary/json.js";
 // lifecycle: the axis → the values the system writes. The dual of validation — the
 // judge never fills a hole, this is what fills it, and a storage adapter calls it
 // instead of re-deriving the rule.
-export { applyCreate, applyUpdate } from "./field/lifecycle/apply.js";
-export { encodeFields } from "./projections/encode.js";
+export { applyCreate, applyUpdate } from './axis/applyLifecycle.js';
+export { encodeFields } from './projection/encode.js';
 // io: the dual client-surface projections — ingress (may supply) / egress (may read)
-export { inputFields, outputFields } from "./projections/io.js";
+export { inputFields, outputFields } from './projection/io.js';
 export { registrationKeyOf } from "./name.js";
 // descriptor (the card): the portable, serialisable identity of a schema
-export { describe, describeSet, sourceNameOf } from "./projections/describe.js";
-export { reconstruct, reconstructSet } from "./projections/reconstruct.js";
-export {
-  entitySourceOf,
-  facadeTypeSourceOf,
-  type TypeSourceOptions,
-  type OpDescriptor,
-} from "./projections/typescript.js";
-export {
-  type SchemaBundle,
-  type SchemaDescriptor,
-  type FieldDescriptor,
-  type FieldExtension,
-  type RoleDescriptor,
-  type RelationDescriptor,
-} from "./projections/card.js";
+export { describe, describeSet, sourceNameOf } from './card/describe.js';
+export { reconstruct, reconstructSet } from './card/reconstruct.js';
+export { entitySourceOf, facadeTypeSourceOf, type TypeSourceOptions, type OpDescriptor } from './card/typescript.js';
+export { type SchemaBundle, type SchemaDescriptor, type FieldDescriptor, type FieldExtension, type RoleDescriptor, type RelationDescriptor } from './card/Descriptor.js';
 // source: the one reader that takes a live class OR a card — what an adapter stands on
-export {
-  type SchemaSource,
-  schemaOf,
-  fieldsOf,
-} from "./projections/source.js";
-export type { StandardSchemaV1 } from "./projections/standard.js";
+export { type SchemaSource, schemaOf, fieldsOf } from './projection/source.js';
+export type { StandardSchemaV1 } from './projection/standard.js';
 
 export { entity } from "./entity.js";
 
-export { Judge, type ValidateOptions, type ValidationError, type ValidationResult, type Checked } from "./validation/index.js";
+export { Judge } from './judge/Judge.js';
+export { type ValidateOptions } from './judge/options.js';
+export { type ValidationError, type ValidationResult, type Checked } from './judge/result.js';

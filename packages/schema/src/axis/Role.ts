@@ -6,7 +6,7 @@
 // emits them and the database enforces them, so a collision surfaces as the driver's
 // error, never as a `validate()` failure.
 
-import type { FieldGroup } from './group.js';
+import type { FieldGroup } from './FieldGroup.js';
 
 export type EntityConstructor = abstract new (...args: any[]) => any;
 

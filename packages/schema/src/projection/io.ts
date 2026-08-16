@@ -1,6 +1,6 @@
-import { Lifecycle } from '../field/index.js';
-import { Boundary } from '../field/index.js';
-import type { Fields } from '../field/index.js';
+import { Lifecycle } from '../axis/Lifecycle.js';
+import { Boundary } from '../axis/Boundary.js';
+import type { Fields } from '../Field.js';
 
 /**
  * The two dual projections of a field set onto a client surface — membership only. The

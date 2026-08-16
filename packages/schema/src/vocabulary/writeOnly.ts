@@ -1,5 +1,6 @@
 import { vocabulary } from './vocabulary.js';
-import { Boundary, Field } from '../field/index.js';
+import { Boundary } from '../axis/Boundary.js';
+import { Field } from '../Field.js';
 
 /**
  * Close the OUTBOUND direction — accepted at create/patch, never emitted (the canonical

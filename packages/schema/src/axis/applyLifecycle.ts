@@ -7,7 +7,8 @@
  * they drifted: one entity with a `default` answered `'draft'` on SQL and `undefined` on
  * Mongo. `update: 'forbidden'` is NOT here — refusing is a judgment.
  */
-import { Lifecycle, resolveCustomGenerator, type Field, type Fields } from '../index.js';
+import { Lifecycle, resolveCustomGenerator } from './Lifecycle.js';
+import { type Field, type Fields } from '../Field.js';
 import { createId } from '@paralleldrive/cuid2';
 
 type Row = Record<string, unknown>;

@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { Anatomy, entity, compose, primary, text, number, oneOf, created, optional, } from '../src/index.js';
+import { Anatomy } from '../src/axis/Shape.js';
+import { entity } from '../src/entity.js';
+import { compose } from '../src/Schema.js';
+import { primary } from '../src/vocabulary/primary.js';
+import { text } from '../src/vocabulary/text.js';
+import { number } from '../src/vocabulary/number.js';
+import { oneOf } from '../src/vocabulary/oneOf.js';
+import { created } from '../src/vocabulary/created.js';
+import { optional } from '../src/vocabulary/optional.js';
 
 class Order extends entity({
   id: primary(),

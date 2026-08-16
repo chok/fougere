@@ -1,10 +1,12 @@
-import { Boundary } from '../field/index.js';
-import { type Fields } from "../field/index.js";
-import { deriveHints, type Hints } from "../hints.js";
-import { FieldGroup, Unique, type CompositeUnique } from "../field/index.js";
-import { Judge, type ValidateOptions } from '../validation/index.js';
-import type { StandardSchemaV1 } from "../projections/standard.js";
-import type { PartialRow, Row, SchemaView } from "./view.js";
+import { Boundary } from './axis/Boundary.js';
+import { type Fields } from './Field.js';
+import { deriveHints, type Hints } from './hints.js';
+import { FieldGroup } from './axis/FieldGroup.js';
+import { Unique, type CompositeUnique } from './axis/Unique.js';
+import { Judge } from './judge/Judge.js';
+import { type ValidateOptions } from './judge/options.js';
+import type { StandardSchemaV1 } from './projection/standard.js';
+import type { PartialRow, Row, SchemaView } from './SchemaView.js';
 
 /** The name a derivation carries when no class declaration named it. */
 export const ANONYMOUS_SCHEMA_NAME = "Schema";

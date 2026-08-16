@@ -1,5 +1,5 @@
-import type { Field } from '../field.js';
-import { Anatomy, type Shape } from '../shape.js';
+import type { Field } from '../Field.js';
+import { Anatomy, type Shape } from './Shape.js';
 
 /**
  * Axis 4 · boundary — HOW and IN WHICH DIRECTION a value crosses the CLIENT frontier.

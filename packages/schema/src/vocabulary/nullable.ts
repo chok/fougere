@@ -1,6 +1,6 @@
 import { vocabulary } from './vocabulary.js';
-import { Anatomy } from '../field/index.js';
-import { type Field } from '../field/index.js';
+import { Anatomy } from '../axis/Shape.js';
+import { type Field } from '../Field.js';
 
 /**
  * Make `null` a legal VALUE without touching presence — the missing quadrant, "nullable

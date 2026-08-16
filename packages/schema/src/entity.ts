@@ -1,5 +1,7 @@
-import { Field, FieldGroup, Unique, type Fields, type EntityDeclarations } from "./field/index.js";
-import { Schema, type SchemaConstructor } from "./schema/index.js";
+import { Field, type Fields } from './Field.js';
+import { FieldGroup } from './axis/FieldGroup.js';
+import { Unique, type EntityDeclarations } from './axis/Unique.js';
+import { Schema, type SchemaConstructor } from './Schema.js';
 
 /**
  * Builds the class an entity extends. `fields` becomes its schema; `declarations` states

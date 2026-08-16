@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { Anatomy, Judge } from '../src/index.js';
+import { Anatomy } from '../src/axis/Shape.js';
+import { Judge } from '../src/judge/Judge.js';
 import {
   entity, primary, text, number, bool, date, created, updated, immutable, oneOf, ref, many, optional, json, list, email, url, } from '../src/index.js';
 

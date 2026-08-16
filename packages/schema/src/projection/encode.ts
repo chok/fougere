@@ -1,5 +1,5 @@
-import { Boundary } from '../field/index.js';
-import type { Fields } from '../field/index.js';
+import { Boundary } from '../axis/Boundary.js';
+import type { Fields } from '../Field.js';
 
 /**
  * Egress: encode a domain record into its wire form, field by field — the dual of

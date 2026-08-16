@@ -1,4 +1,7 @@
-import type { BoundaryRef, LifecycleRules, Relation, Role, Shape } from '../field/index.js';
+import type { BoundaryRef } from '../axis/Boundary.js';
+import type { LifecycleRules } from '../axis/Lifecycle.js';
+import type { Relation, Role } from '../axis/Role.js';
+import type { Shape } from '../axis/Shape.js';
 
 /**
  * The portable schema descriptor — an entity's "carte d'identité".

@@ -6,7 +6,13 @@
  * at the declaration, because a static value against a static shape has a static answer.
  */
 import { describe, it, expect } from 'vitest';
-import { entity, primary, text, number, created, updated, applyCreate, applyUpdate } from '../src/index.js';
+import { entity } from '../src/entity.js';
+import { primary } from '../src/vocabulary/primary.js';
+import { text } from '../src/vocabulary/text.js';
+import { number } from '../src/vocabulary/number.js';
+import { created } from '../src/vocabulary/created.js';
+import { updated } from '../src/vocabulary/updated.js';
+import { applyCreate, applyUpdate } from '../src/axis/applyLifecycle.js';
 
 class Doc extends entity({
   id: primary(),

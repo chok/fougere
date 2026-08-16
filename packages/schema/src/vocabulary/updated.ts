@@ -1,5 +1,5 @@
 import { created } from './created.js';
-import { Field } from '../field/index.js';
+import { Field } from '../Field.js';
 
 /**
  * `auto()`, plus the update stamp — the canonical `updatedAt` (Prisma

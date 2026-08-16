@@ -1,4 +1,5 @@
-import { toTargetThunk, Field, type EntityConstructor } from '../field/index.js';
+import { toTargetThunk, type EntityConstructor } from '../axis/Role.js';
+import { Field } from '../Field.js';
 
 export interface RefOptions {
   cascade?: boolean;

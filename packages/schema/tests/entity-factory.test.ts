@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { entity, primary, text, number, oneOf, bool, type StandardSchemaV1 } from '../src/index.js';
+import { entity } from '../src/entity.js';
+import { primary } from '../src/vocabulary/primary.js';
+import { text } from '../src/vocabulary/text.js';
+import { number } from '../src/vocabulary/number.js';
+import { oneOf } from '../src/vocabulary/oneOf.js';
+import { bool } from '../src/vocabulary/bool.js';
+import { type StandardSchemaV1 } from '../src/projection/standard.js';
 
 // The new carrier: `class X extends entity({...})`. Proves the factory replaces
 // the field-bag (no `new` to read metadata, real data instances, honest types).

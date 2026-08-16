@@ -9,7 +9,13 @@
  *      (describe / reconstruct / adapters). C'est ça l'arbitrage.
  */
 import { describe as group, it, expect } from 'vitest';
-import { entity, primary, text, number, oneOf, describe, reconstruct } from '../src/index.js';
+import { entity } from '../src/entity.js';
+import { primary } from '../src/vocabulary/primary.js';
+import { text } from '../src/vocabulary/text.js';
+import { number } from '../src/vocabulary/number.js';
+import { oneOf } from '../src/vocabulary/oneOf.js';
+import { describe } from '../src/card/describe.js';
+import { reconstruct } from '../src/card/reconstruct.js';
 
 // ─── 1 · Le payoff de la classe : un nom = type + valeur ──────────────
 

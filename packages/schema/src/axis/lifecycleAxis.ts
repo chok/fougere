@@ -1,7 +1,7 @@
-import type { Axis } from '../axis.js';
-import type { ValidationError } from '../../validation/result.js';
-import { isObject, oneOfTokens } from '../../validation/form.js';
-import { CREATE_TOKENS, UPDATE_TOKENS, type LifecycleRules } from './lifecycle.js';
+import type { Axis } from './Axis.js';
+import type { ValidationError } from '../judge/result.js';
+import { isObject, oneOfTokens } from '../judge/form.js';
+import { CREATE_TOKENS, UPDATE_TOKENS, type LifecycleRules } from './Lifecycle.js';
 
 /**
  * Who writes the value, and when. Its normal forms are named tokens and plain JSON, so both

@@ -1,4 +1,4 @@
-import type { Fields } from "./field/index.js";
+import type { Fields } from './Field.js';
 
 /**
  * Per-consumer hints — the escape hatch for what a neutral field cannot carry ("store

@@ -1,10 +1,11 @@
-import { Boundaries, Judge, Boundary } from '../src/index.js';
+import { Boundaries, Boundary } from '../src/axis/Boundary.js';
+import { Judge } from '../src/judge/Judge.js';
 import { describe, it, expect } from 'vitest';
 import {
   entity, primary, text, date, optional, readOnly, writeOnly,
   encodeFields,
   } from '../src/index.js';
-import { Field } from '../src/field/index.js';
+import { Field } from '../src/Field.js';
 
 class Event extends entity({
   id: primary(),

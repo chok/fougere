@@ -1,4 +1,7 @@
-import type { ValidationError } from '../validation/result.js';
+import { roleAxis } from './roleAxis.js';
+import { lifecycleAxis } from './lifecycleAxis.js';
+import { boundaryAxis } from './boundaryAxis.js';
+import type { ValidationError } from '../judge/result.js';
 
 /**
  * An axis that JSON Schema cannot express, and therefore rides in a card's `x-fougere`.
@@ -27,3 +30,18 @@ export interface Axis<Declared = unknown, Wire = unknown> {
 
 /** Resolve a relation's `to` name to a live target — a bundle supplies one, a lone card none. */
 export type Resolver = (name: string) => (abstract new (...args: never[]) => unknown) | undefined;
+
+
+/**
+ * The three axes a card carries under `x-fougere`, in wire order. THE list — the judge, the
+ * describer and the reconstructor all fold it, so a fourth extension axis is one file and
+ * one entry here.
+ *
+ * `shape` is absent on purpose: it is the card's body, not an extension. So is `meta`, whose
+ * only member maps to JSON Schema's own `description`.
+ */
+export const EXTENSION_AXES: readonly Axis<never, never>[] = [
+  roleAxis,
+  lifecycleAxis,
+  boundaryAxis,
+] as unknown as readonly Axis<never, never>[];

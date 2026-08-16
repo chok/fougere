@@ -6,9 +6,20 @@
  * one you would have written by hand.
  */
 import { describe, it, expect } from 'vitest';
-import { entity, primary, text, number, bool, date, oneOf, list, optional, nullable, ref, many } from '../src/index.js';
+import { entity } from '../src/entity.js';
+import { primary } from '../src/vocabulary/primary.js';
+import { text } from '../src/vocabulary/text.js';
+import { number } from '../src/vocabulary/number.js';
+import { bool } from '../src/vocabulary/bool.js';
+import { date } from '../src/vocabulary/date.js';
+import { oneOf } from '../src/vocabulary/oneOf.js';
+import { list } from '../src/vocabulary/list.js';
+import { optional } from '../src/vocabulary/optional.js';
+import { nullable } from '../src/vocabulary/nullable.js';
+import { ref } from '../src/vocabulary/ref.js';
+import { many } from '../src/vocabulary/many.js';
 import { describe as describeSchema } from '../src/index.js';
-import { shapeTypeOf, entitySourceOf, facadeTypeSourceOf } from '../src/projections/typescript.js';
+import { shapeTypeOf, entitySourceOf, facadeTypeSourceOf } from '../src/card/typescript.js';
 
 class Author extends entity({ id: primary(), name: text() }) {}
 

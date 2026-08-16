@@ -1,5 +1,5 @@
-import { Field } from '../field/index.js';
-import type { FieldData } from '../field/field.js';
+import { Field } from '../Field.js';
+import type { FieldData } from '../Field.js';
 
 /** The axes held as member maps. `shape` is the carrier — a word replaces it whole. */
 const MEMBER_SLOTS = ['role', 'lifecycle', 'boundary', 'meta'] as const;

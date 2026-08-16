@@ -1,5 +1,5 @@
-import { Field } from "../field/index.js";
-import { date } from "./date.js";
+import { Field } from '../Field.js';
+import { date } from './date.js';
 
 /**
  * The canonical `createdAt` — stamped at creation, immutable after: a creation timestamp
