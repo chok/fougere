@@ -6,7 +6,7 @@ import { text } from '../src/vocabulary/text.js';
 // Stand in for an adapter package: augment the open registry exactly as an SQL
 // adapter would, from outside the core, via declaration merging. The 'sql'
 // namespace below is arbitrary — any adapter-chosen key works the same way.
-declare module '../src/hints.js' {
+declare module '../src/EntityDeclarations.js' {
   interface FougereHints<K extends string> {
     sql?: Partial<Record<K, { columnType?: string; index?: string }>>;
     graphql?: Partial<Record<K, { description?: string }>>;
