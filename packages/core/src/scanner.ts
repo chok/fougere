@@ -40,9 +40,9 @@ export function getModuleLoader(): ModuleLoader {
 /**
  * What this scan run could not do. Reset by {@link scanProject}, which owns a run.
  *
- * Module-scoped like the loader and the cache root above: the scanner already has
- * a notion of "the current run", and threading a collector through twenty call
- * sites would state the same thing more loudly and less clearly.
+ * Module-scoped like the loader and the cache root above: the scanner already has a
+ * notion of "the current run". Three sites record — measured — so a per-run object
+ * would carry twenty methods to spare one line of reset.
  */
 let diagnostics: ScanDiagnostic[] = [];
 
