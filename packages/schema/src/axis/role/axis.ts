@@ -5,23 +5,15 @@ import { ON_DELETE, RELATION_KINDS, type EntityConstructor } from './Relation.js
 import { type Role } from './Role.js';
 import { FieldGroup } from './FieldGroup.js';
 import { Unique } from './Unique.js';
+import type { RoleDescriptor } from '../../card/Descriptor.js';
 import { registrationKeyOf } from '../../name.js';
-
-/** What a role looks like on the wire — members named, the relation target a `$ref` name. */
-export interface RoleWire {
-  primary?: boolean;
-  /** Members are SPELLED OUT here: a reader of the card must not guess which field carries them. */
-  unique?: string[][];
-  index?: boolean;
-  relation?: { to: string; kind: string; onDelete?: string };
-}
 
 /**
  * Identity and relations — the axis the storage realizes. It is the only one of the three
  * whose projections are not the identity, because two of its members cannot travel as they
  * are held: a group's members are implicit in memory, and a relation's target is a thunk.
  */
-export const roleAxis: Axis<Role, RoleWire> = {
+export const roleAxis: Axis<Role, RoleDescriptor> = {
   slot: 'role',
 
   judge(value, errors) {
@@ -58,7 +50,7 @@ export const roleAxis: Axis<Role, RoleWire> = {
   },
 
   describe(role, key) {
-    const out: RoleWire = {};
+    const out: Mutable<RoleDescriptor> = {};
     if (role.primary) out.primary = true;
     const unique = (role.rules ?? []).filter((rule) => rule instanceof Unique);
     if (unique.length) out.unique = unique.map((rule) => [...rule.resolvedOn(key).members]);
@@ -119,3 +111,6 @@ function judgeRelation(relation: unknown, errors: ValidationError[]): void {
     });
   }
 }
+
+/** The descriptor is read-only for consumers; the axis is the one place that BUILDS it. */
+type Mutable<T> = { -readonly [K in keyof T]: T[K] };
