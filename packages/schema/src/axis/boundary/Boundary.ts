@@ -30,7 +30,7 @@ export interface BoundaryRules {
  * - a {@link Boundary} — directional rules directly (allows asymmetry)
  *
  * The bare string literals are the built-in aliases; `(string & {})` keeps
- * autocomplete on them while leaving the set open to `registerBoundaryAlias`.
+ * autocomplete on them while leaving the set open to `Boundaries.registerAlias`.
  */
 export type BoundaryRef = 'isoDate' | (string & {}) | BoundaryRules;
 

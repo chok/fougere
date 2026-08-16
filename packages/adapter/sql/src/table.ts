@@ -71,7 +71,7 @@ export function toSnakeCase(str: string): string {
  * other field becomes exactly one column.
  */
 function isStored(field: Field): boolean {
-  return field.role?.relation?.kind !== 'many';
+  return !Role.of(field).isCollection;
 }
 
 /**

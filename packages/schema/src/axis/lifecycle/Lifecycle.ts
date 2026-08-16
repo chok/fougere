@@ -24,17 +24,13 @@ export interface LifecycleRules {
   update?: (typeof UPDATE_TOKENS)[number];
 }
 
-// `registerGenerator('monId', fn)` → `primary({ generate: 'monId' })`. The built-in
-// presets live with the realization (`projections/lifecycle.ts`), which consults this
-// first — resolving them per adapter is what made two adapters honour `cuid2` differently.
-
 /**
  * A field's lifecycle, resolved — the rules it declares, plus the questions its readers kept
  * asking by hand. Measured before writing: `create === undefined` was re-derived in four
  * packages, and `create === 'now' && update !== 'now'` was written twice, in two.
  *
  * Producing the value is NOT here — that is the storage's, at the point of persistence
- * (`projections/lifecycle.ts`). This says what the rule IS, not when it fires.
+ * (`apply.ts`). This says what the rule IS, not when it fires.
  *
  * ```ts
  * Lifecycle.of(text()).requiredAtCreate       // → true

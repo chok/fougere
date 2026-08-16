@@ -10,14 +10,14 @@ import type { StringFormat } from './Formats.js';
 //
 // NULLABILITY lives in the grammar: a nullable type is the union `[T, 'null']` (and `null`
 // joins `enum`). A flat flag would be a second source of truth next to it — OpenAPI 3.0's
-// bug, fixed in 3.1 by this same move. Writers go through `nullableShape`, readers through
+// bug, fixed in 3.1 by this same move. Writers go through `Anatomy.nullable`, readers through
 // `Anatomy` — NEVER compare `shape.type` directly, the union breaks it silently.
 
 // JSON Schema's own format names (assertion supported by the cfworker engine).
 // `date-time` is special: it derives the isoDate boundary; the others are pure predicates.
 //
 // The union is OPEN — `(string & {})` keeps autocomplete on the built-ins while
-// leaving room for {@link registerFormat}, exactly as `GeneratorRef` and
+// leaving room for {@link Formats.register}, exactly as `GeneratorRef` and
 // `BoundaryRef` already do on their own axes. `format` is the one JSON Schema
 // keyword whose vocabulary the standard itself declares open, which is why a
 // custom predicate rides here and not in a keyword of our own: a key outside

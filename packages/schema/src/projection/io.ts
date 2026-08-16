@@ -7,9 +7,13 @@ import type { Fields } from '../Field.js';
  * The two dual projections of a field set onto a client surface — membership only. The
  * create/patch MODE changes omissibility, which the view carries, never membership.
  *
- * ⚠️ The audience lives here and not in the data: no axis says "client". Surfaces are
- * supposed to read these two functions, and the GraphQL input, the judge and the CLI each
- * restate the rules with a different set — the judge being the most permissive.
+ * ⚠️ The audience lives here and not in the data: no axis says "client".
+ *
+ * The judge is deliberately more permissive: these two answer "what do we ASK for", the
+ * judge answers "what do we REFUSE", and a supplied id is legal. But `adapter/graphql`
+ * restates the ingress rule with two of the four (`registerInput`, not the op path, which
+ * does read `inputFields`) — measured 2026-08-16 on `{ id, title, createdAt }`: the GraphQL
+ * input asks for all three, `inputFields` answers `title`. One entity, two forms.
  */
 
 /**

@@ -1,6 +1,6 @@
 // ─── The generator registry — an open vocabulary, like Formats and Boundaries ────
 // `registerGenerator('monId', fn)` → `primary({ generate: 'monId' })`. The built-in presets
-// live with the realization (`applyLifecycle.ts`), which consults this FIRST — resolving
+// live with the realization (`apply.ts`), which consults this FIRST — resolving
 // them per adapter is what made two adapters honour `cuid2` differently.
 
 /**

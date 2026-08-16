@@ -16,10 +16,10 @@ import { type FieldDescriptor, type FieldExtension, type RelationDescriptor, typ
  * A caller must supply this field: no create rule answers absence, and it is not
  * a `many` relation (absent → `[]`). Presence only — nullability is the OTHER
  * axis: a `nullable()` field stays required (the caller may supply `null`, not
- * omit the key), exactly what `validateFields` enforces.
+ * omit the key), exactly what `Judge.row` enforces.
  */
 function isRequired(field: Field): boolean {
-  // Read `boundary` for the same reason `validateFields` does: a server-owned
+  // Read `boundary` for the same reason `Judge.row` does: a server-owned
   // field is one a caller may never supply, so listing it as required states a
   // demand the door then refuses with `Read-only`. Same stance as OpenAPI's
   // readOnly+required, and the two readers now answer from the same axis.

@@ -71,7 +71,7 @@ export interface FieldExtension {
  * wire, where in memory a lone `unique()` holds `[]` — a field does not know its own key,
  * a reader of the card must not have to guess it.
  *
- * Names what it KEEPS, like `describeRole` and `reconstructRole` do. Two of the four
+ * Names what it KEEPS, like `roleAxis.describe` and `roleAxis.reconstruct` do. Two of the four
  * members do not travel as they are, so portability is not the default a new one gets.
  */
 export type RoleDescriptor = Pick<RoleRules, 'primary' | 'index'> & {

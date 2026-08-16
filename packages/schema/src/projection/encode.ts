@@ -3,7 +3,7 @@ import type { Fields } from '../Field.js';
 
 /**
  * Egress: encode a domain record into its wire form, field by field — the dual of
- * `validateFields` (which decodes on ingress). A write-only field (boundary
+ * `Judge.row` (which decodes on ingress). A write-only field (boundary
  * `out: 'closed'`, e.g. a password) is OMITTED — it never crosses outbound.
  * Keys absent from `fields` (e.g. presenter computed fields) pass through
  * untouched; null/undefined are left as-is.

@@ -41,7 +41,7 @@ function generatorFor(ref: string): () => string {
  * test, not truthiness, so `archivedAt: null` stays null rather than being re-filled.
  *
  * `'now'` produces a `Date`, the value the field declares. The storage converts it if
- * its driver needs something else (`schema-sql/src/values.ts` does exactly that) —
+ * its driver needs something else (`adapter/sql/src/values.ts` does exactly that) —
  * which is the same direction every other value travels.
  */
 export function applyCreate(fields: Fields, input: Row): Row {
