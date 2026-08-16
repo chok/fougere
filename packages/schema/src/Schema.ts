@@ -16,7 +16,7 @@ export const ANONYMOUS_SCHEMA_NAME = "Schema";
 export interface SchemaConstructor<TFields extends Fields> extends SchemaView<TFields> {
   new (data: PartialRow<TFields>): Row<TFields>;
   readonly "~standard": StandardSchemaV1.Props<Record<string, unknown>, Row<TFields>>;
-  /** The Entity class this derivation came from — absent on a `compose()` result. */
+  /** The Entity class this derivation came from — absent on a `Schema.compose()` result. */
   readonly source?: abstract new (...args: never[]) => unknown;
   from(data: Record<string, unknown>): Row<TFields>;
   pick<K extends string & keyof TFields>(...keys: K[]): SchemaConstructor<Pick<TFields, K>>;
@@ -143,6 +143,32 @@ export class Schema {
   }
 
   /**
+   * Merge schemas into one — `class User extends Schema.compose(UserBase, Timestamps) {}`.
+   * Left to right, later sources win on conflict. Use `.rename()` first to avoid one.
+   *
+   * A static and not a free function: it FABRICATES a schema, like {@link Schema.of}, and
+   * what fabricates belongs to what it fabricates.
+   */
+  static compose<T extends SchemaView[]>(...sources: T): SchemaConstructor<Merged<T>> {
+  const merged: Fields = {};
+  const mergedHints: Record<string, Record<string, unknown>> = {};
+  let mergedOpts: ValidateOptions = {};
+  for (const source of sources) {
+    Object.assign(merged, source.getFields());
+    const hints = source.getHints();
+    if (hints) {
+      for (const [adapter, perField] of Object.entries(hints as Record<string, Record<string, unknown> | undefined>)) {
+        if (!perField || typeof perField !== "object") continue;
+        mergedHints[adapter] = { ...mergedHints[adapter], ...perField };
+      }
+    }
+    mergedOpts = { ...mergedOpts, ...source.getOpts() };
+  }
+  const hints = Object.keys(mergedHints).length ? (mergedHints as Hints<Fields>) : undefined;
+  return Schema.of(merged, undefined, hints, mergedOpts) as unknown as SchemaConstructor<Merged<T>>;
+  }
+
+  /**
    * The subclass every entity and every derivation is made of — the only way a schema
    * exists. The map and the declarations become statics; the instance side is the row.
    *
@@ -190,25 +216,3 @@ function assertKnownKeys(operation: string, keys: string[], fields: Fields): voi
 type UnionToIntersection<U> = (U extends unknown ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
 type Merged<T extends SchemaView[]> = UnionToIntersection<T[number] extends { getFields(): infer F } ? F : Fields> & Fields;
 
-/**
- * Merge schemas into one — `class User extends compose(UserBase, Timestamps) {}`.
- * Left to right, later sources win on conflict. Use `.rename()` first to avoid one.
- */
-export function compose<T extends SchemaView[]>(...sources: T): SchemaConstructor<Merged<T>> {
-  const merged: Fields = {};
-  const mergedHints: Record<string, Record<string, unknown>> = {};
-  let mergedOpts: ValidateOptions = {};
-  for (const source of sources) {
-    Object.assign(merged, source.getFields());
-    const hints = source.getHints();
-    if (hints) {
-      for (const [adapter, perField] of Object.entries(hints as Record<string, Record<string, unknown> | undefined>)) {
-        if (!perField || typeof perField !== "object") continue;
-        mergedHints[adapter] = { ...mergedHints[adapter], ...perField };
-      }
-    }
-    mergedOpts = { ...mergedOpts, ...source.getOpts() };
-  }
-  const hints = Object.keys(mergedHints).length ? (mergedHints as Hints<Fields>) : undefined;
-  return Schema.of(merged, undefined, hints, mergedOpts) as unknown as SchemaConstructor<Merged<T>>;
-}

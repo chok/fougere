@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Anatomy } from '../src/axis/shape/Shape.js';
 import { entity } from '../src/entity.js';
-import { compose } from '../src/Schema.js';
+import { Schema } from '../src/Schema.js';
 import { primary } from '../src/vocabulary/primary.js';
 import { text } from '../src/vocabulary/text.js';
 import { number } from '../src/vocabulary/number.js';
@@ -158,18 +158,18 @@ describe('derivation', () => {
     });
   });
 
-  describe('compose()', () => {
+  describe('Schema.compose()', () => {
     class Pagination extends entity({ page: number({ min: 1, default: 1 }) }) {}
 
     it('merges fields left to right, later wins', () => {
-      const view = compose(Order.pick('status'), Pagination);
+      const view = Schema.compose(Order.pick('status'), Pagination);
       expect(Object.keys(view.getFields())).toEqual(['status', 'page']);
-      const conflict = compose(Order.pick('note'), entity({ note: number() }));
+      const conflict = Schema.compose(Order.pick('note'), entity({ note: number() }));
       expect(conflict.getFields().note.shape?.type).toBe('number');
     });
 
     it('applies the same merge law to opts — a patch view stays patch', () => {
-      const view = compose(Order.pick('status', 'note').partial(), Pagination);
+      const view = Schema.compose(Order.pick('status', 'note').partial(), Pagination);
       expect(view.getOpts().patch).toBe(true);
       const result = view.validate({ status: 'paid' });
       expect(result.success).toBe(true);
@@ -179,7 +179,7 @@ describe('derivation', () => {
     it('applies the same merge law to hints — per adapter, per field, later wins', () => {
       const A = entity({ a: text(), shared: text() }, { hints: { sql: { a: { columnType: 'x' }, shared: { columnType: 'old' } } } } as never);
       const B = entity({ b: text(), shared: text() }, { hints: { sql: { shared: { columnType: 'new' } } } } as never);
-      const h = compose(A, B).getHints() as Record<string, Record<string, { columnType: string }>> | undefined;
+      const h = Schema.compose(A, B).getHints() as Record<string, Record<string, { columnType: string }>> | undefined;
       expect(h?.sql?.a?.columnType).toBe('x');
       expect(h?.sql?.shared?.columnType).toBe('new');
     });

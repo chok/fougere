@@ -13,7 +13,7 @@ export { FieldGroup } from './axis/role/FieldGroup.js';
 export { Unique } from './axis/role/Unique.js';
 
 // ─── The carrier and its derivation algebra ──────────────────
-export { compose, Schema, ANONYMOUS_SCHEMA_NAME, type SchemaConstructor } from './Schema.js';
+export { Schema, ANONYMOUS_SCHEMA_NAME, type SchemaConstructor } from './Schema.js';
 export { type SchemaView, type Row, type PartialRow } from './SchemaView.js';
 export { type FougereHints, type Hints } from './EntityDeclarations.js';
 
