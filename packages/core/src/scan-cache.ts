@@ -27,8 +27,10 @@ import { join } from 'node:path';
  *     returning scalar fields from one returning list fields.
  */
 // 4 — the parse became a pair (methods + unresolvedHeritage); a v3 entry
-// would answer with an array and lose the half that reports what it could not open.
-const PARSER_VERSION = 4;
+//     would answer with an array and lose the half that reports what it could not open.
+// 5 — a method carries `readOnly`, read off its body; a v4 entry has none, and an op
+//     with no evidence falls back to the prefix convention — a read announced as a write.
+const PARSER_VERSION = 5;
 
 interface CacheEntry {
   hash: string;

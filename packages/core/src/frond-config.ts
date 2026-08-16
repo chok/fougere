@@ -28,8 +28,21 @@ import type { BindingPlan } from './binding.js';
  * conventions.
  */
 export interface OperationOverride {
-  /** Force operation kind (overrides isReadOp-based default). */
+  /**
+   * Force operation kind — over the body evidence AND the naming convention.
+   *
+   * The scan reads the method body and a proven read becomes a query; state it here when
+   * the op writes through something the parse cannot follow, or when it reads through one.
+   */
   kind?: 'query' | 'command';
+  /**
+   * The GraphQL root field this op answers to. Defaults to the method name.
+   *
+   * A GraphQL root is flat, so two handlers naming a method `ofBook` claim one field and
+   * the build is refused, naming both. Nothing is renamed for you: the root vocabulary is
+   * the app's, and a derived name would move the day a distant frond gained an entity.
+   */
+  graphql?: string;
   /**
    * Handler class to delegate to (overrides the default `{Entity}Handler` lookup).
    * Class name is used to resolve from DI. E.g. `ArchiveHandler` → `app.resolve('ArchiveHandler')`.

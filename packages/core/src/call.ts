@@ -251,7 +251,7 @@ function facadeOps(app: App, entityName: string, surface?: string): CardOp[] {
       ...(contract?.input && { input: describeSchema(contract.input, name) }),
       ...(contract?.output && { output: describeSchema(contract.output, name) }),
       ...(contract?.cardinality && { cardinality: contract.cardinality }),
-      kind: resolveIsReadOp(name, overrides) ? 'query' as const : 'command' as const,
+      kind: resolveIsReadOp(name, overrides, contract?.signature?.readOnly) ? 'query' as const : 'command' as const,
     };
   });
 }
