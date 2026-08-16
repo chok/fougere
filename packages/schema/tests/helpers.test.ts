@@ -1,8 +1,23 @@
 import { describe, it, expect } from 'vitest';
-import { Anatomy } from '../src/axis/Shape.js';
+import { Anatomy } from '../src/axis/shape/Shape.js';
 import { Judge } from '../src/judge/Judge.js';
-import {
-  entity, primary, text, number, bool, date, created, updated, immutable, oneOf, ref, many, optional, json, list, email, url, } from '../src/index.js';
+import { entity } from '../src/entity.js';
+import { primary } from '../src/vocabulary/primary.js';
+import { text } from '../src/vocabulary/text.js';
+import { number } from '../src/vocabulary/number.js';
+import { bool } from '../src/vocabulary/bool.js';
+import { date } from '../src/vocabulary/date.js';
+import { created } from '../src/vocabulary/created.js';
+import { updated } from '../src/vocabulary/updated.js';
+import { immutable } from '../src/vocabulary/immutable.js';
+import { oneOf } from '../src/vocabulary/oneOf.js';
+import { ref } from '../src/vocabulary/ref.js';
+import { many } from '../src/vocabulary/many.js';
+import { optional } from '../src/vocabulary/optional.js';
+import { json } from '../src/vocabulary/json.js';
+import { list } from '../src/vocabulary/list.js';
+import { email } from '../src/vocabulary/email.js';
+import { url } from '../src/vocabulary/url.js';
 
 describe('helpers', () => {
   it('primary() creates an auto-generated id field (cuid2 default)', () => {

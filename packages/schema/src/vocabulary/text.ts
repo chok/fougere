@@ -1,5 +1,5 @@
 import { Field } from '../Field.js';
-import { type StringFormat } from '../Formats.js';
+import { type StringFormat } from '../axis/shape/Formats.js';
 
 export interface TextOptions {
   min?: number;

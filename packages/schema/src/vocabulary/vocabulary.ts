@@ -41,7 +41,7 @@ export type FieldWord = (field: Field<any>) => Field<any>;
  * The merge every modifier shares — and the refusal. Public so an overloaded word
  * (`primary`, which both creates and modifies) states its members the same way.
  */
-export function merge(name: string, field: Field, stated: Partial<FieldData>): Partial<FieldData> {
+function merge(name: string, field: Field, stated: Partial<FieldData>): Partial<FieldData> {
   const out: Record<string, unknown> = {};
   if ('shape' in stated) out.shape = stated.shape;
 

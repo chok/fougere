@@ -1,6 +1,6 @@
 import { vocabulary } from './vocabulary.js';
 import { Field } from '../Field.js';
-import { Unique } from '../axis/Unique.js';
+import { Unique } from '../axis/role/Unique.js';
 
 /**
  * No two rows carry the same value — a unique constraint of one, on the role axis.

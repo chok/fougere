@@ -1,5 +1,5 @@
 import { vocabulary } from './vocabulary.js';
-import { Anatomy } from '../axis/Shape.js';
+import { Anatomy } from '../axis/shape/Shape.js';
 import { type Field } from '../Field.js';
 
 /**

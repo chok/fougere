@@ -1,5 +1,5 @@
-import type { Axis } from './Axis.js';
-import { isObject } from '../judge/form.js';
+import type { Axis } from '../Axis.js';
+import { isObject } from '../../judge/form.js';
 import type { BoundaryRef } from './Boundary.js';
 
 /**

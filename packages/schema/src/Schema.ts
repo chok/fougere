@@ -1,8 +1,9 @@
-import { Boundary } from './axis/Boundary.js';
+import { Boundary } from './axis/boundary/Boundary.js';
 import { type Fields } from './Field.js';
-import { deriveHints, type Hints } from './hints.js';
-import { FieldGroup } from './axis/FieldGroup.js';
-import { Unique, type CompositeUnique } from './axis/Unique.js';
+import { deriveHints, type Hints } from './EntityDeclarations.js';
+import { FieldGroup } from './axis/role/FieldGroup.js';
+import { Unique } from './axis/role/Unique.js';
+import { type CompositeUnique } from './EntityDeclarations.js';
 import { Judge } from './judge/Judge.js';
 import { type ValidateOptions } from './judge/options.js';
 import type { StandardSchemaV1 } from './projection/standard.js';

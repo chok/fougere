@@ -1,5 +1,5 @@
 import { Field } from '../Field.js';
-import { registerGenerator, type GeneratorRef } from '../axis/Lifecycle.js';
+import { registerGenerator, type GeneratorRef } from '../axis/lifecycle/Generators.js';
 import { Judge } from '../judge/Judge.js';
 
 interface PrimaryOptions {

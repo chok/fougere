@@ -1,5 +1,5 @@
-import { Lifecycle } from '../axis/Lifecycle.js';
-import { Boundary } from '../axis/Boundary.js';
+import { Lifecycle } from '../axis/lifecycle/Lifecycle.js';
+import { Boundary } from '../axis/boundary/Boundary.js';
 import type { Fields } from '../Field.js';
 
 /**

@@ -1,10 +1,10 @@
-import type { Shape } from './axis/Shape.js';
+import type { Shape } from './axis/shape/Shape.js';
 import { Judge } from './judge/Judge.js';
-import type { Role } from './axis/Role.js';
-import { FieldGroup } from './axis/FieldGroup.js';
-import { Unique } from './axis/Unique.js';
-import type { LifecycleRules } from './axis/Lifecycle.js';
-import type { BoundaryRef } from './axis/Boundary.js';
+import type { Role } from './axis/role/Role.js';
+import { FieldGroup } from './axis/role/FieldGroup.js';
+import { Unique } from './axis/role/Unique.js';
+import type { LifecycleRules } from './axis/lifecycle/Lifecycle.js';
+import type { BoundaryRef } from './axis/boundary/Boundary.js';
 import type { Meta } from './axis/Meta.js';
 
 /**

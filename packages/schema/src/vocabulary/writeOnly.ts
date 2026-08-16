@@ -1,5 +1,5 @@
 import { vocabulary } from './vocabulary.js';
-import { Boundary } from '../axis/Boundary.js';
+import { Boundary } from '../axis/boundary/Boundary.js';
 import { Field } from '../Field.js';
 
 /**

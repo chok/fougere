@@ -1,9 +1,9 @@
 import type { Field, Fields } from '../Field.js';
-import type { FormatPredicate } from '../Formats.js';
-import type { Shape } from '../axis/Shape.js';
-import { Boundary } from '../axis/Boundary.js';
-import { Anatomy } from '../axis/Shape.js';
-import { Formats } from '../Formats.js';
+import type { FormatPredicate } from '../axis/shape/Formats.js';
+import type { Shape } from '../axis/shape/Shape.js';
+import { Boundary } from '../axis/boundary/Boundary.js';
+import { Anatomy } from '../axis/shape/Shape.js';
+import { Formats } from '../axis/shape/Formats.js';
 import { Validator, format as engineFormats } from '@cfworker/json-schema';
 import type { Checked, ValidationError, ValidationResult } from './result.js';
 import type { ValidateOptions } from './options.js';

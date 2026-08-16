@@ -1,10 +1,22 @@
 import { describe as group, it, expect } from 'vitest';
-import {
-  entity, primary, text, number, optional, created, ref, many, json, list, email, readOnly,
-  describe, reconstruct, describeSet, reconstructSet,
-  type SchemaView, type EntityConstructor,
-  type Role, type Relation, type RoleDescriptor, type RelationDescriptor,
-} from '../src/index.js';
+import { entity } from '../src/entity.js';
+import { primary } from '../src/vocabulary/primary.js';
+import { text } from '../src/vocabulary/text.js';
+import { number } from '../src/vocabulary/number.js';
+import { optional } from '../src/vocabulary/optional.js';
+import { created } from '../src/vocabulary/created.js';
+import { ref } from '../src/vocabulary/ref.js';
+import { many } from '../src/vocabulary/many.js';
+import { json } from '../src/vocabulary/json.js';
+import { list } from '../src/vocabulary/list.js';
+import { email } from '../src/vocabulary/email.js';
+import { readOnly } from '../src/vocabulary/readOnly.js';
+import { describe, describeSet } from '../src/card/describe.js';
+import { reconstruct, reconstructSet } from '../src/card/reconstruct.js';
+import { type SchemaView } from '../src/SchemaView.js';
+import { type EntityConstructor, type Relation } from '../src/axis/role/Relation.js';
+import { type Role } from '../src/axis/role/Role.js';
+import { type RoleDescriptor, type RelationDescriptor } from '../src/card/Descriptor.js';
 
 class Author extends entity({ id: primary() }) {}
 class Tag extends entity({ id: primary() }) {}

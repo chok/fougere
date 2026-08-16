@@ -1,6 +1,6 @@
-import type { Axis } from './Axis.js';
-import type { ValidationError } from '../judge/result.js';
-import { isObject, oneOfTokens } from '../judge/form.js';
+import type { Axis } from '../Axis.js';
+import type { ValidationError } from '../../judge/result.js';
+import { isObject, oneOfTokens } from '../../judge/form.js';
 import { CREATE_TOKENS, UPDATE_TOKENS, type LifecycleRules } from './Lifecycle.js';
 
 /**

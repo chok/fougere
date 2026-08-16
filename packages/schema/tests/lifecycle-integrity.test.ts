@@ -12,7 +12,7 @@ import { text } from '../src/vocabulary/text.js';
 import { number } from '../src/vocabulary/number.js';
 import { created } from '../src/vocabulary/created.js';
 import { updated } from '../src/vocabulary/updated.js';
-import { applyCreate, applyUpdate } from '../src/axis/applyLifecycle.js';
+import { applyCreate, applyUpdate } from '../src/axis/lifecycle/apply.js';
 
 class Doc extends entity({
   id: primary(),

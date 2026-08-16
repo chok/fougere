@@ -1,4 +1,34 @@
+// ─── What an entity declares ABOUT ITSELF — the 2nd argument of `entity()` ────
+// Two things, and they have nothing in common but the place they are written: uniqueness
+// groups, which the database enforces, and per-adapter hints, which the framework ignores.
+// Not abstracted into one notion for that reason — being written side by side is a fact of
+// syntax, not an invariant.
+//
+// It is SYNTAX: `entity()` realizes the groups onto the fields and keeps no copy beside them.
+
 import type { Fields } from './Field.js';
+
+/**
+ * Field names that identify at most one row when taken together. No shape can express it —
+ * judging one value never sees the other rows — and no handler either: a check then a write
+ * is two round trips with room for a concurrent one between them. Only the database keeps it.
+ */
+export type CompositeUnique<TFields extends Fields> = ReadonlyArray<
+  ReadonlyArray<Extract<keyof TFields, string>>
+>;
+
+/**
+ * What an entity declares about itself, beyond its fields — the 2nd argument of `entity()`.
+ *
+ * One object rather than a growing parameter list: a second fact about an entity adds a key
+ * here, never a positional argument. It is SYNTAX: `entity()` realizes it onto the fields
+ * and keeps no copy beside them.
+ */
+export interface EntityDeclarations<TFields extends Fields> {
+  unique?: CompositeUnique<TFields>;
+  /** Per-consumer hints, keyed by registered adapter. See {@link Hints}. */
+  hints?: Hints<TFields>;
+}
 
 /**
  * Per-consumer hints — the escape hatch for what a neutral field cannot carry ("store

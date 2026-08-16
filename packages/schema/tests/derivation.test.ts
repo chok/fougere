@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Anatomy } from '../src/axis/Shape.js';
+import { Anatomy } from '../src/axis/shape/Shape.js';
 import { entity } from '../src/entity.js';
 import { compose } from '../src/Schema.js';
 import { primary } from '../src/vocabulary/primary.js';

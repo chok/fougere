@@ -1,6 +1,7 @@
 import { Field, type Fields } from './Field.js';
-import { FieldGroup } from './axis/FieldGroup.js';
-import { Unique, type EntityDeclarations } from './axis/Unique.js';
+import { FieldGroup } from './axis/role/FieldGroup.js';
+import { Unique } from './axis/role/Unique.js';
+import { type EntityDeclarations } from './EntityDeclarations.js';
 import { Schema, type SchemaConstructor } from './Schema.js';
 
 /**

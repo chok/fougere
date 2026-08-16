@@ -1,10 +1,11 @@
-import type { Axis, Resolver } from './Axis.js';
-import { isObject, oneOfTokens } from '../judge/form.js';
-import type { ValidationError } from '../judge/result.js';
-import { ON_DELETE, RELATION_KINDS, type EntityConstructor, type Role } from './Role.js';
+import type { Axis, Resolver } from '../Axis.js';
+import { isObject, oneOfTokens } from '../../judge/form.js';
+import type { ValidationError } from '../../judge/result.js';
+import { ON_DELETE, RELATION_KINDS, type EntityConstructor } from './Relation.js';
+import { type Role } from './Role.js';
 import { FieldGroup } from './FieldGroup.js';
 import { Unique } from './Unique.js';
-import { registrationKeyOf } from '../name.js';
+import { registrationKeyOf } from '../../name.js';
 
 /** What a role looks like on the wire — members named, the relation target a `$ref` name. */
 export interface RoleWire {

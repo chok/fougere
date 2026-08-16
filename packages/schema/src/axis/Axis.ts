@@ -1,6 +1,6 @@
-import { roleAxis } from './roleAxis.js';
-import { lifecycleAxis } from './lifecycleAxis.js';
-import { boundaryAxis } from './boundaryAxis.js';
+import { roleAxis } from './role/axis.js';
+import { lifecycleAxis } from './lifecycle/axis.js';
+import { boundaryAxis } from './boundary/axis.js';
 import type { ValidationError } from '../judge/result.js';
 
 /**

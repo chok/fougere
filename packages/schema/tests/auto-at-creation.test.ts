@@ -1,8 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import {
-  bool, created, date, entity, immutable, json, list, many, number, oneOf,
-  optional, primary, ref, text, updated,
-} from '../src/index.js';
+import { bool } from '../src/vocabulary/bool.js';
+import { created } from '../src/vocabulary/created.js';
+import { date } from '../src/vocabulary/date.js';
+import { entity } from '../src/entity.js';
+import { immutable } from '../src/vocabulary/immutable.js';
+import { json } from '../src/vocabulary/json.js';
+import { list } from '../src/vocabulary/list.js';
+import { many } from '../src/vocabulary/many.js';
+import { number } from '../src/vocabulary/number.js';
+import { oneOf } from '../src/vocabulary/oneOf.js';
+import { optional } from '../src/vocabulary/optional.js';
+import { primary } from '../src/vocabulary/primary.js';
+import { ref } from '../src/vocabulary/ref.js';
+import { text } from '../src/vocabulary/text.js';
+import { updated } from '../src/vocabulary/updated.js';
 
 /**
  * ONE statement of "absence is legal here", and it lives on the lifecycle:

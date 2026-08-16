@@ -1,18 +1,13 @@
 import { EXTENSION_AXES } from '../axis/Axis.js';
 import type { Resolver } from '../axis/Axis.js';
 import { Field, type Fields } from '../Field.js';
-import { type EntityConstructor, type Role } from '../axis/Role.js';
-import { type Shape } from '../axis/Shape.js';
-import { Unique } from '../axis/Unique.js';
+import { type EntityConstructor } from '../axis/role/Relation.js';
+import { type Role } from '../axis/role/Role.js';
+import { type Shape } from '../axis/shape/Shape.js';
+import { Unique } from '../axis/role/Unique.js';
 import { Schema, type SchemaConstructor } from '../Schema.js';
 import { type SchemaView, type Row } from '../SchemaView.js';
-import {
-  clean,
-  type FieldDescriptor,
-  type RoleDescriptor,
-  type SchemaBundle,
-  type SchemaDescriptor,
-} from './Descriptor.js';
+import { clean, type FieldDescriptor, type RoleDescriptor, type SchemaBundle, type SchemaDescriptor } from './Descriptor.js';
 
 // ─── reconstruct — card → schema (the single reconstructor) ────────
 

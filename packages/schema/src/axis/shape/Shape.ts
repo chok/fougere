@@ -1,5 +1,5 @@
 import type { JSONSchema7 } from 'json-schema';
-import type { StringFormat } from '../Formats.js';
+import type { StringFormat } from './Formats.js';
 
 // ─── Axis 1 · shape — the VALUE ──────────────────────────────
 // What a stand-alone value validator covers: the kind of value and its constraints.

@@ -1,4 +1,4 @@
-import { toTargetThunk, type EntityConstructor } from '../axis/Role.js';
+import { toTargetThunk, type EntityConstructor } from '../axis/role/Relation.js';
 import { Field } from '../Field.js';
 
 export interface RefOptions {
