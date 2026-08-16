@@ -1,11 +1,10 @@
 import type { Field, Fields, FormatPredicate, Shape } from '../field/index.js';
-import { CREATE_TOKENS, UPDATE_TOKENS } from '../field/lifecycle.js';
-import { ON_DELETE, RELATION_KINDS } from '../field/role.js';
-import { FieldGroup } from '../field/group.js';
 import { Boundary, Anatomy, Formats, } from '../field/index.js';
 import { Validator, format as engineFormats } from '@cfworker/json-schema';
 import type { Checked, ValidationError, ValidationResult } from './result.js';
 import type { ValidateOptions } from './options.js';
+import { EXTENSION_AXES } from '../field/axes.js';
+import { isObject, oneOfTokens } from './form.js';
 
 interface ShapePlan {
   validator: Validator;
@@ -15,11 +14,7 @@ interface ShapePlan {
   formatName?: string;
 }
 
-const isObject = (v: unknown): v is Record<string, unknown> =>
-  typeof v === 'object' && v !== null && !Array.isArray(v);
 
-const oneOfTokens = (v: unknown, tokens: readonly string[]) =>
-  typeof v === 'string' && tokens.includes(v);
 
 /**
  * The one judge, at the three levels anything is judged: a field's DECLARATION, one VALUE
@@ -114,145 +109,7 @@ export class Judge {
     return { value };
   }
 
-  /** `'now' | 'optional' | { value } | { generate: <name> }` — the four ways absence is answered. */
-  private static checkCreate(rule: unknown, errors: ValidationError[]): void {
-    if (oneOfTokens(rule, CREATE_TOKENS)) return;
-    if (isObject(rule)) {
-      if ("value" in rule) return; // any value — the shape judges it (`assertDefaultsAreValid`)
-      if ("generate" in rule) {
-        if (typeof rule.generate !== "string") {
-          errors.push({
-            path: "lifecycle.create.generate",
-            message: "Expected a generator name",
-          });
-        }
-        return;
-      }
-    }
-    errors.push({
-      path: "lifecycle.create",
-      message: `Expected 'now', 'optional', { value } or { generate } — got ${JSON.stringify(rule)}`,
-    });
-  }
-
-  private static checkLifecycle(lifecycle: unknown, errors: ValidationError[]): void {
-    if (!isObject(lifecycle)) {
-      errors.push({
-        path: "lifecycle",
-        message: `Expected an object — got ${JSON.stringify(lifecycle)}`,
-      });
-      return;
-    }
-    if (lifecycle.create !== undefined) this.checkCreate(lifecycle.create, errors);
-    if (
-      lifecycle.update !== undefined &&
-      !oneOfTokens(lifecycle.update, UPDATE_TOKENS)
-    ) {
-      errors.push({
-        path: "lifecycle.update",
-        message: `Expected 'now' or 'forbidden' — got ${JSON.stringify(lifecycle.update)}`,
-      });
-    }
-  }
-
-  private static checkRelation(relation: unknown, errors: ValidationError[]): void {
-    if (!isObject(relation)) {
-      errors.push({
-        path: "role.relation",
-        message: `Expected an object — got ${JSON.stringify(relation)}`,
-      });
-      return;
-    }
-    if (!oneOfTokens(relation.kind, RELATION_KINDS)) {
-      errors.push({
-        path: "role.relation.kind",
-        message: `Expected 'one' or 'many' — got ${JSON.stringify(relation.kind)}`,
-      });
-    }
-    // A thunk, never the class: it is what lets a circular relation resolve lazily.
-    if (typeof relation.to !== "function") {
-      errors.push({
-        path: "role.relation.to",
-        message: "Expected a thunk returning the target entity",
-      });
-    }
-    if (
-      relation.onDelete !== undefined &&
-      !oneOfTokens(relation.onDelete, ON_DELETE)
-    ) {
-      errors.push({
-        path: "role.relation.onDelete",
-        message: `Expected 'cascade', 'restrict' or 'set null' — got ${JSON.stringify(relation.onDelete)}`,
-      });
-    }
-  }
-
-  private static checkRole(role: unknown, errors: ValidationError[]): void {
-    if (!isObject(role)) {
-      errors.push({
-        path: "role",
-        message: `Expected an object — got ${JSON.stringify(role)}`,
-      });
-      return;
-    }
-    for (const flag of ["primary", "index"] as const) {
-      if (role[flag] !== undefined && typeof role[flag] !== "boolean") {
-        errors.push({
-          path: `role.${flag}`,
-          message: `Expected a boolean — got ${JSON.stringify(role[flag])}`,
-        });
-      }
-    }
-    if (role.rules !== undefined) {
-      // By FORM: a built group, or the plain member list one denotes — the door normalizes
-      // the second into the first, so a card or a config is judged like anything else.
-      const legal =
-        Array.isArray(role.rules) &&
-        role.rules.every(
-          (rule) =>
-            rule instanceof FieldGroup ||
-            (Array.isArray(rule) && rule.every((member) => typeof member === "string")),
-        );
-      if (!legal) {
-        errors.push({
-          path: "role.rules",
-          message: "Expected field groups, or the member lists they denote — string[][]",
-        });
-      }
-    }
-    if (role.relation !== undefined) this.checkRelation(role.relation, errors);
-  }
-
-  /**
-   * The registry is OPEN, so a name cannot be checked here — `Boundary.declared` resolves it
-   * and throws `Unknown boundary alias` at the one place that can know. Only the FORM is
-   * judged: a name, or a pair of directional rules.
-   */
-  private static checkBoundary(boundary: unknown, errors: ValidationError[]): void {
-    if (typeof boundary === "string") return;
-    if (!isObject(boundary)) {
-      errors.push({
-        path: "boundary",
-        message: `Expected an alias name or { in, out } — got ${JSON.stringify(boundary)}`,
-      });
-      return;
-    }
-    for (const [side, verb] of [
-      ["in", "decode"],
-      ["out", "encode"],
-    ] as const) {
-      const rule = boundary[side];
-      if (rule === undefined || rule === "closed") continue;
-      if (!isObject(rule) || typeof rule[verb] !== "string") {
-        errors.push({
-          path: `boundary.${side}`,
-          message: `Expected 'closed' or { ${verb}: <name> }`,
-        });
-      }
-    }
-  }
-
-  /** Judge a field's declaration — the five axes against their closed vocabularies. */
+  /** Judge a field's declaration — the shape by the engine, each extension axis by itself. */
 
   static field(value: unknown): ValidationResult<Field> {
     if (!isObject(value)) {
@@ -274,9 +131,12 @@ export class Judge {
         message: `Every field states a shape — got ${JSON.stringify(value.shape)}`,
       });
     }
-    if (value.lifecycle !== undefined) this.checkLifecycle(value.lifecycle, errors);
-    if (value.role !== undefined) this.checkRole(value.role, errors);
-    if (value.boundary !== undefined) this.checkBoundary(value.boundary, errors);
+    // The three extension axes judge themselves — one entry in `EXTENSION_AXES` is the whole
+    // cost of a fourth. `shape` is not one of them: it is the card's body, judged above.
+    for (const axis of EXTENSION_AXES) {
+      const declared = (value as Record<string, unknown>)[axis.slot];
+      if (declared !== undefined) axis.judge(declared, errors);
+    }
     if (value.meta !== undefined) {
       if (!isObject(value.meta)) {
         errors.push({

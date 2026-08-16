@@ -1,3 +1,5 @@
+import { EXTENSION_AXES } from '../field/axes.js';
+import type { Resolver } from '../field/axis.js';
 import {
   Field,
   type EntityConstructor,
@@ -47,34 +49,7 @@ function reconstructShape(prop: FieldDescriptor): Shape | undefined {
   }
 }
 
-/**
- * Resolve a relation's `to` name to a live target. A bundle supplies one (look up the
- * `$defs` map); a lone card has none, so the relation falls back to a name stand-in.
- */
-type Resolver = (name: string) => EntityConstructor | undefined;
 
-function reconstructRole(role: RoleDescriptor, resolve?: Resolver): Role {
-  const out: Role = {};
-  if (role.primary) out.primary = true;
-  // Members arrive spelled out and stay that way — a single-member group read back as the
-  // empty self-reference would re-describe identically but lose the distinction for no
-  // gain. `uniqueMembers` treats a named group as already resolved.
-  if (role.unique?.length) out.rules = role.unique.map((group) => Unique.of(...group));
-  if (role.index) out.index = true;
-  if (role.relation) {
-    const name = role.relation.to;
-    out.relation = {
-      // `to` is the `$ref` (a name). With a resolver (a bundle), it hands back the real
-      // reconstructed target — adapters can read its fields. Lazy, so circular relations
-      // resolve fine. Without one (a lone card), a name-only stand-in: enough to validate
-      // (`kind`) and re-describe identically, but not to feed an adapter.
-      to: () => resolve?.(name) ?? ({ name } as unknown as EntityConstructor),
-      kind: role.relation.kind,
-      ...(role.relation.onDelete ? { onDelete: role.relation.onDelete } : {}),
-    };
-  }
-  return out;
-}
 
 function reconstructField(prop: FieldDescriptor, key: string, resolve?: Resolver): Field {
   const ext = prop['x-fougere'];
@@ -88,14 +63,20 @@ function reconstructField(prop: FieldDescriptor, key: string, resolve?: Resolver
       + `A field always states one.`,
     );
   }
+  // Each axis rebuilds itself from what it wrote — the mirror of `describeExtension`.
+  const axes: Record<string, unknown> = {};
+  for (const axis of EXTENSION_AXES) {
+    const wire = (ext as Record<string, unknown> | undefined)?.[axis.slot];
+    if (wire !== undefined) {
+      axes[axis.slot] = (axis.reconstruct as unknown as (w: unknown, r?: Resolver) => unknown)(wire, resolve);
+    }
+  }
+
   return new Field({
     shape,
-    role: ext?.role ? reconstructRole(ext.role, resolve) : undefined,
-    // The normal forms are pure JSON — they travelled verbatim, they read back verbatim.
-    lifecycle: ext?.lifecycle,
-    boundary: ext?.boundary,
+    ...axes,
     meta: prop.description !== undefined ? { description: prop.description } : undefined,
-  });
+  } as never);
 }
 
 /** Build a live schema from a card; `resolve` wires relation targets when in a bundle. */

@@ -1,10 +1,10 @@
 import type { Shape } from "./shape.js";
 import { Judge } from "../validation/index.js";
-import type { Role } from "./role.js";
-import { FieldGroup } from "./group.js";
-import { Unique } from "./unique.js";
-import type { LifecycleRules } from "./lifecycle.js";
-import type { BoundaryRef } from "./boundary.js";
+import type { Role } from "./role/role.js";
+import { FieldGroup } from "./role/group.js";
+import { Unique } from "./role/unique.js";
+import type { LifecycleRules } from "./lifecycle/lifecycle.js";
+import type { BoundaryRef } from "./boundary/boundary.js";
 import type { Meta } from "./meta.js";
 
 /**

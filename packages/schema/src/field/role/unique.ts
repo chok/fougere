@@ -1,5 +1,5 @@
-import type { Fields } from "./field.js";
-import type { Hints } from "../hints.js";
+import type { Fields } from "../field.js";
+import type { Hints } from "../../hints.js";
 import { FieldGroup } from "./group.js";
 
 /**

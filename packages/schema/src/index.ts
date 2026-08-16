@@ -74,7 +74,7 @@ export { json } from "./vocabulary/json.js";
 // lifecycle: the axis → the values the system writes. The dual of validation — the
 // judge never fills a hole, this is what fills it, and a storage adapter calls it
 // instead of re-deriving the rule.
-export { applyCreate, applyUpdate } from "./projections/lifecycle.js";
+export { applyCreate, applyUpdate } from "./field/lifecycle/apply.js";
 export { encodeFields } from "./projections/encode.js";
 // io: the dual client-surface projections — ingress (may supply) / egress (may read)
 export { inputFields, outputFields } from "./projections/io.js";

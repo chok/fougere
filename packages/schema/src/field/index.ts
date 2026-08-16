@@ -12,20 +12,20 @@ export {
   type Relation,
   type EntityConstructor,
   toTargetThunk,
-} from "./role.js";
-export { FieldGroup } from "./group.js";
+} from "./role/role.js";
+export { FieldGroup } from "./role/group.js";
 export {
   Unique,
   type CompositeUnique,
   type EntityDeclarations,
-} from "./unique.js";
+} from "./role/unique.js";
 export {
   Lifecycle,
   type LifecycleRules,
   type GeneratorRef,
   registerGenerator,
   resolveCustomGenerator,
-} from "./lifecycle.js";
+} from "./lifecycle/lifecycle.js";
 export {
   Boundary,
   type BoundaryRules,
@@ -33,9 +33,13 @@ export {
   type Decoder,
   type Encoder,
   Boundaries,
-} from "./boundary.js";
+} from "./boundary/boundary.js";
 export { type Meta } from "./meta.js";
 export {
   Field,
   type Fields,
 } from "./field.js";
+
+export { type Axis, type Resolver } from "./axis.js";
+export { EXTENSION_AXES } from "./axes.js";
+export { applyCreate, applyUpdate } from "./lifecycle/apply.js";

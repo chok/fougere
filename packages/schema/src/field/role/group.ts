@@ -1,4 +1,4 @@
-import type { Field, Fields } from "./field.js";
+import type { Field, Fields } from "../field.js";
 
 /**
  * A named set of field keys carrying a fact about them TOGETHER. Everything here is set

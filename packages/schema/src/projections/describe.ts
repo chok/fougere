@@ -1,3 +1,4 @@
+import { EXTENSION_AXES } from '../field/axes.js';
 import type { Field, Fields, Role } from '../field/index.js';
 import type { SchemaView } from '../schema/index.js';
 import { Boundary, Anatomy, Unique } from '../field/index.js';
@@ -31,35 +32,18 @@ function isRequired(field: Field): boolean {
   return true;
 }
 
-function describeRole(role: Role, key: string): RoleDescriptor | undefined {
-  const out: RoleDescriptor = {};
-  if (role.primary) out.primary = true;
-  // Members are spelled out on the wire: a consumer has no way to know which field a rule
-  // hangs on. Past `entity()` they are already named; `key` covers a field built by hand.
-  const unique = (role.rules ?? []).filter((rule) => rule instanceof Unique);
-  if (unique.length) out.unique = unique.map((rule) => [...rule.resolvedOn(key).members]);
-  if (role.index) out.index = true;
-  if (role.relation) {
-    out.relation = clean({
-      to: registrationKeyOf((role.relation.to() as { name?: string }).name ?? ''), // thunk → name
-      kind: role.relation.kind,
-      onDelete: role.relation.onDelete,
-    }) as RelationDescriptor;
-  }
-  return Object.keys(out).length ? out : undefined;
-}
 
+/** Each axis describes itself; this only decides that an empty extension is no extension. */
 function describeExtension(field: Field, key: string): FieldExtension | undefined {
-  const ext: FieldExtension = {};
-  if (field.role) ext.role = describeRole(field.role, key);
-  // The normal forms are named tokens, pure JSON — they travel verbatim
-  // (a custom generator travels by NAME, re-resolved against the consumer's registry).
-  if (field.lifecycle) ext.lifecycle = field.lifecycle;
-  // Carry only an explicit override; the derived default (date → isoDate) is
-  // re-derived from `shape.format` on reconstruction (convention over config).
-  if (field.boundary !== undefined) ext.boundary = field.boundary;
-  clean(ext as Record<string, unknown>);
-  return Object.keys(ext).length ? ext : undefined;
+  const ext: Record<string, unknown> = {};
+  for (const axis of EXTENSION_AXES) {
+    const declared = (field as unknown as Record<string, unknown>)[axis.slot];
+    if (declared === undefined) continue;
+    const wire = (axis.describe as (v: unknown, k: string) => unknown)(declared, key);
+    if (wire !== undefined) ext[axis.slot] = wire;
+  }
+  clean(ext);
+  return Object.keys(ext).length ? (ext as FieldExtension) : undefined;
 }
 
 function describeField(field: Field, key: string): FieldDescriptor {
