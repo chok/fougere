@@ -15,12 +15,11 @@
  * ```
  */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type EntityClass = abstract new (...args: any[]) => any;
+import type { EntityConstructor } from '@fougere/schema';
 
 const COLLECTOR_TARGET = Symbol.for('fougere:collector_target');
 
-export function Collector<E extends EntityClass>(entity: E) {
+export function Collector<E extends EntityConstructor>(entity: E) {
   class CollectorBase {
     static [COLLECTOR_TARGET] = entity;
   }
@@ -28,7 +27,7 @@ export function Collector<E extends EntityClass>(entity: E) {
 }
 
 /** Get the entity class a collector targets. */
-export function getCollectorTarget(ctor: Function): EntityClass | undefined {
+export function getCollectorTarget(ctor: Function): EntityConstructor | undefined {
   return (ctor as any)[COLLECTOR_TARGET];
 }
 

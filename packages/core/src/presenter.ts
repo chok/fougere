@@ -22,8 +22,7 @@
  * ```
  */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type EntityClass = abstract new (...args: any[]) => any;
+import type { EntityConstructor } from '@fougere/schema';
 
 const PRESENTER_TARGET = Symbol.for('fougere:presenter_target');
 const PRESENTER_VIEWS = Symbol.for('fougere:presenter_views');
@@ -32,7 +31,7 @@ const PRESENTER_VIEWS = Symbol.for('fougere:presenter_views');
  * The view a computed field emits — `OrderItemView` for one, `[OrderItemView]` for many.
  * A view is a schema, so it derives: `Order.pick('id', 'status')`, never a hand-written type.
  */
-export type PresenterViews = Record<string, EntityClass | [EntityClass]>;
+export type PresenterViews = Record<string, EntityConstructor | [EntityConstructor]>;
 
 /**
  * `Presenter(Order, { items: [OrderItemView], user: UserCard })` — the second argument names
@@ -47,7 +46,7 @@ export type PresenterViews = Record<string, EntityClass | [EntityClass]>;
  * error on a field REST served whole. Declaring is optional — a scalar field needs nothing,
  * and an undeclared object keeps the old behaviour.
  */
-export function Presenter<E extends EntityClass>(entity: E, views?: PresenterViews) {
+export function Presenter<E extends EntityConstructor>(entity: E, views?: PresenterViews) {
   class PresenterBase {
     static [PRESENTER_TARGET] = entity;
     static [PRESENTER_VIEWS] = views;
@@ -56,7 +55,7 @@ export function Presenter<E extends EntityClass>(entity: E, views?: PresenterVie
 }
 
 /** Get the entity class a presenter targets. */
-export function getPresenterTarget(ctor: Function): EntityClass | undefined {
+export function getPresenterTarget(ctor: Function): EntityConstructor | undefined {
   return (ctor as any)[PRESENTER_TARGET];
 }
 

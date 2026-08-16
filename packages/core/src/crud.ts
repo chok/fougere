@@ -1,6 +1,6 @@
 import type { EntityOrm, ListOptions, ListResult } from './orm.js';
 import type { OperationContract } from './operation.js';
-import type { SchemaView } from '@fougere/schema';
+import type { EntityConstructor, SchemaView } from '@fougere/schema';
 
 /** The id of the row an op acts on — a route segment, or a query fallback. */
 const byId = { name: 'id', source: { kind: 'param' as const, name: 'id' }, optional: false };
@@ -76,9 +76,6 @@ function crudOps(entity: SchemaView & { partial?: () => SchemaView }): Record<st
   };
 }
 
-/** Anything the derivation algebra produces — an entity class or one of its views. */
-type SchemaCtor = abstract new (...args: any[]) => any;
-
 /**
  * The mixin's single "trust me" point — the twin of `asSchemaConstructor` in @fougere/schema.
  *
@@ -96,7 +93,7 @@ function asCrudConstructor<T, V>(impl: object): CrudConstructor<T, V> {
 export type CrudOpName = 'list' | 'findById' | 'create' | 'update' | 'delete';
 
 /** Which view each op speaks — omitted ops speak the entity, the trivial view. */
-export type CrudViews = Partial<Record<CrudOpName, SchemaCtor>>;
+export type CrudViews = Partial<Record<CrudOpName, EntityConstructor>>;
 
 /**
  * The view an op emits, fabricated: the one declared for it, the single view when the
@@ -108,8 +105,8 @@ type OutOf<V, K extends CrudOpName, T> =
   // Bracketed on purpose: a naked `V extends …` DISTRIBUTES, and the no-view default
   // is the empty map, whose `keyof` is `never` — distribution would then collapse
   // every op's output to `never` instead of falling through to the entity.
-  [V] extends [SchemaCtor] ? InstanceType<V & SchemaCtor>
-  : K extends keyof V ? (V[K] extends SchemaCtor ? InstanceType<V[K]> : T)
+  [V] extends [EntityConstructor] ? InstanceType<V & EntityConstructor>
+  : K extends keyof V ? (V[K] extends EntityConstructor ? InstanceType<V[K]> : T)
   : T;
 
 /**
@@ -158,7 +155,7 @@ export interface CrudConstructor<T, V = {}> {
  *                                   scopes the injected ORM via .output(PostPublic) —
  *                                   the whole handler speaks the restricted view.
  */
-export function Crud<E extends abstract new (...args: any[]) => any, V extends CrudViews | SchemaCtor = {}>(
+export function Crud<E extends EntityConstructor, V extends CrudViews | EntityConstructor = {}>(
   entity: E,
   output?: V,
 ): CrudConstructor<InstanceType<E>, V> {
@@ -167,7 +164,7 @@ export function Crud<E extends abstract new (...args: any[]) => any, V extends C
 
   // A view is a class (it carries fields) ; a map of views is a plain object.
   const perOp = typeof output === 'object' && output !== null ? (output as CrudViews) : undefined;
-  const wholeHandler = typeof output === 'function' ? (output as SchemaCtor) : undefined;
+  const wholeHandler = typeof output === 'function' ? (output as EntityConstructor) : undefined;
 
   return asCrudConstructor<T, V>(class CrudHandler {
     static __entity = entity;

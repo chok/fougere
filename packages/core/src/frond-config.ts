@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
-import type { SchemaView } from '@fougere/schema';
+import type { EntityConstructor, SchemaView } from '@fougere/schema';
 import type { BindingPlan } from './binding.js';
 
 // ── Types ────────────────────────────────────────
@@ -48,7 +48,7 @@ export interface OperationOverride {
    * Handler class to delegate to (overrides the default `{Entity}Handler` lookup).
    * Class name is used to resolve from DI. E.g. `ArchiveHandler` → `app.resolve('ArchiveHandler')`.
    */
-  handler?: abstract new (...args: any[]) => any;
+  handler?: EntityConstructor;
   /** Method name on `handler` (defaults to the operation name). */
   method?: string;
   /**

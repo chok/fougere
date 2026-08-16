@@ -1,3 +1,4 @@
+import type { EntityConstructor } from '@fougere/schema';
 import type { EntityOrm } from './orm.js';
 
 /**
@@ -37,9 +38,6 @@ import type { EntityOrm } from './orm.js';
  * wire. A judge still lives in the handler, which is the only place a refusal cannot
  * be walked around.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type EntityClass = abstract new (...args: any[]) => any;
-
 const REPOSITORY_TARGET = Symbol.for('fougere:repository_target');
 
 /** What a repository is handed, and what it exposes to whoever holds it. */
@@ -53,7 +51,7 @@ export interface RepositoryConstructor<T> {
   readonly __entity: unknown;
 }
 
-export function Repository<E extends EntityClass>(entity: E): RepositoryConstructor<InstanceType<E>> {
+export function Repository<E extends EntityConstructor>(entity: E): RepositoryConstructor<InstanceType<E>> {
   type T = InstanceType<E>;
 
   class RepositoryBase implements RepositoryOf<T> {
@@ -67,7 +65,7 @@ export function Repository<E extends EntityClass>(entity: E): RepositoryConstruc
 }
 
 /** Get the entity class a repository targets. */
-export function getRepositoryTarget(ctor: Function): EntityClass | undefined {
+export function getRepositoryTarget(ctor: Function): EntityConstructor | undefined {
   for (let cur: any = ctor; cur; cur = Object.getPrototypeOf(cur)) {
     const target = cur[REPOSITORY_TARGET];
     if (target) return target;
