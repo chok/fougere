@@ -7,7 +7,7 @@ import { ANONYMOUS_SCHEMA_NAME, type SchemaView } from '@fougere/schema';
 import type { OperationContract, OperationsMap } from './operation.js';
 import { cardinalityOf } from './operation.js';
 import { parseAllHandlerMethods, parsePresenterMethods, parseConstructorParams, type ParsedType } from './handler-parser.js';
-import { hashFile, getCached, setCached, flushCache, setCacheRoot } from './scan-cache.js';
+import { cachedParse, flushCache, setCacheRoot } from './scan-cache.js';
 import { loadFrondConfig } from './frond-config.js';
 import { emitKeyOf } from './emit.js';
 import { getPresenterTarget, getPresenterFields, getPresenterViews } from './presenter.js';
@@ -185,31 +185,23 @@ function depKeyOf(type: ParsedType): string {
   return ormKeyOf(target);
 }
 
-/** Cached parseConstructorParams — skips TS loading when cache is warm. */
-async function cachedCtorParams(filePath: string) {
-  const hash = hashFile(filePath);
-  const key = filePath + ':ctor';
-  const cached = getCached<Awaited<ReturnType<typeof parseConstructorParams>>>(key, hash);
-  if (cached) return cached;
-  const params = await parseConstructorParams(filePath);
-  setCached(key, hash, params);
-  return params;
-}
+/** The three readings of one file, each cached under its own key. */
+const ctorParamsOf = (filePath: string) =>
+  cachedParse(`${filePath}:ctor`, filePath, () => parseConstructorParams(filePath));
 
-/** Cached parsePresenterMethods — skips TS loading when cache is warm. */
-async function cachedPresenterMethods(filePath: string) {
-  const hash = hashFile(filePath);
-  const key = filePath + ':presenter';
-  const cached = getCached<Awaited<ReturnType<typeof parsePresenterMethods>>>(key, hash);
-  if (cached) return cached;
-  const methods = await parsePresenterMethods(filePath);
-  setCached(key, hash, methods);
-  return methods;
-}
+const presenterMethodsOf = (filePath: string) =>
+  cachedParse(`${filePath}:presenter`, filePath, () => parsePresenterMethods(filePath));
+
+const handlerMethodsOf = (filePath: string, projectRoot?: string) =>
+  cachedParse(
+    `${filePath}:all${projectRoot ? ':inherited' : ''}`,
+    filePath,
+    () => parseAllHandlerMethods(filePath, projectRoot),
+  );
 
 async function toProvider(filePath: string): Promise<ProviderEntry> {
   const ctor = await loadClass(filePath);
-  const params = await cachedCtorParams(filePath);
+  const params = await ctorParamsOf(filePath);
   const deps = params.map((p) => depKeyOf(p.type));
 
   // A repository inherits its constructor from `Repository(Entity)`, so the file
@@ -244,8 +236,8 @@ async function toEntityEntry(filePath: string): Promise<EntityEntry | null> {
  * Handles arrays, generics (uses base name), and simple references.
  */
 function resolveSchema(type: ParsedType, moduleExports: Record<string, unknown>): SchemaView | undefined {
-  // For arrays, resolve the element type
-  const name = type.array ? type.name : type.name;
+  // An array's element type IS `type.name` — the arity rides beside it, so nothing has
+  // to be unwrapped here.
   // For generics like Pagination<Post>, also check inner types
   if (type.generics) {
     for (const g of type.generics) {
@@ -261,7 +253,7 @@ function resolveSchema(type: ParsedType, moduleExports: Record<string, unknown>)
       }
     }
   }
-  const resolved = moduleExports[name];
+  const resolved = moduleExports[type.name];
   if (resolved && typeof resolved === 'function' && 'getFields' in resolved) {
     return resolved as unknown as SchemaView;
   }
@@ -278,15 +270,7 @@ async function inferOperations(filePath: string, moduleExports: Record<string, u
   const map = new Map<string, OperationContract>();
   let parsed: Awaited<ReturnType<typeof parseAllHandlerMethods>>;
   try {
-    const hash = hashFile(filePath);
-    const cacheKey = filePath + ':all' + (projectRoot ? ':inherited' : '');
-    const cached = getCached<Awaited<ReturnType<typeof parseAllHandlerMethods>>>(cacheKey, hash);
-    if (cached) {
-      parsed = cached;
-    } else {
-      parsed = await parseAllHandlerMethods(filePath, projectRoot);
-      setCached(cacheKey, hash, parsed);
-    }
+    parsed = await handlerMethodsOf(filePath, projectRoot);
   } catch (cause) {
     // The handler still gets a façade — its methods exist at runtime — but with no
     // contract: no binding plan, no input schema, no doc sentence. It used to
@@ -372,7 +356,7 @@ async function toHandlerEntry(
 
   const address = toAddress(ctor.name);
   const operations = await inferOperations(filePath, augmented, projectRoot);
-  const ctorParams = await cachedCtorParams(filePath);
+  const ctorParams = await ctorParamsOf(filePath);
   const deps = ctorParams.map((p) => depKeyOf(p.type));
 
   // Read output override from Crud(Entity, Output) — static __output property
@@ -413,13 +397,13 @@ async function toPresenterEntry(filePath: string): Promise<PresenterEntry | null
   if (!target) return null;
   const entityName = registrationKeyOf((target as any).name);
   const fields = getPresenterFields(ctor);
-  const presenterParams = await cachedCtorParams(filePath);
+  const presenterParams = await ctorParamsOf(filePath);
   const deps = presenterParams.map((p) => depKeyOf(p.type));
 
   // Parse method return types from source
   let fieldMeta: PresenterEntry['fieldMeta'] = [];
   try {
-    const parsed = await cachedPresenterMethods(filePath);
+    const parsed = await presenterMethodsOf(filePath);
     fieldMeta = parsed.map((m) => ({
       name: m.name,
       returnType: m.returnType?.name,
@@ -441,59 +425,47 @@ async function toCollectorEntry(filePath: string): Promise<CollectorEntry | null
   const target = getCollectorTarget(ctor);
   if (!target) return null;
   const entityName = registrationKeyOf((target as any).name);
-  const collectorParams = await cachedCtorParams(filePath);
+  const collectorParams = await ctorParamsOf(filePath);
   const deps = collectorParams.map((p) => depKeyOf(p.type));
   return { entityName, ctor, deps, filePath };
 }
 
 async function scanFrond(frondPath: string, name: string, source: FrondDescriptor['source'], projectRoot?: string): Promise<FrondDescriptor> {
-  const providers: ProviderEntry[] = [];
-  const entities: EntityEntry[] = [];
-  const handlers: HandlerEntry[] = [];
-  const presenters: PresenterEntry[] = [];
-  const collectors: CollectorEntry[] = [];
-  const seeds: SeedEntry[] = [];
+  /**
+   * A convention directory, read by whoever knows the shape it holds.
+   *
+   * The same three lines were written six times — list, read in parallel, drop what the
+   * reader refused — which is what made `handlers/` quietly special: it grew a second
+   * pass for its surfaces and nothing else could.
+   */
+  const collect = async <T extends object>(
+    dir: string,
+    read: (filePath: string) => Promise<T | null>,
+  ): Promise<T[]> => {
+    const entries: Array<T | null> = await Promise.all((await files(join(frondPath, dir))).map(read));
+    return entries.filter((entry): entry is T => entry !== null);
+  };
 
-  // Scan services/ and repositories/ — both land in the same provider list.
-  for (const dir of PROVIDER_DIRS) {
-    const paths = await files(join(frondPath, dir));
-    providers.push(...await Promise.all(paths.map((f) => toProvider(f))));
-  }
+  // services/ and repositories/ — two spellings, one provider list.
+  const providers = (await Promise.all(PROVIDER_DIRS.map((dir) => collect(dir, toProvider)))).flat();
+  const entities = await collect('entities', toEntityEntry);
 
-  // Scan entities/
-  const entityPaths = await files(join(frondPath, 'entities'));
-  const entityEntries = await Promise.all(entityPaths.map((f) => toEntityEntry(f)));
-  entities.push(...entityEntries.filter((e): e is EntityEntry => e !== null));
-
-  // Build entity class map for schema resolution in handlers (T → entity class)
+  // Handlers resolve `T` against the entities, so those come first.
   const entityByClassName = new Map(
-    entities.map((e) => [(e.entityClass as any).name as string, e.entityClass]),
+    entities.map((e) => [(e.entityClass as { name: string }).name, e.entityClass]),
   );
+  const handlers = await collect('handlers', (f) => toHandlerEntry(f, entityByClassName, projectRoot));
 
-  // Scan handlers/ (root = default surface, subdirectories = named surfaces)
-  const handlerPaths = await files(join(frondPath, 'handlers'));
-  handlers.push(...await Promise.all(handlerPaths.map((f) => toHandlerEntry(f, entityByClassName, projectRoot))));
-
-  const surfaceDirs = await dirs(join(frondPath, 'handlers'));
-  for (const surfaceName of surfaceDirs) {
-    const surfacePaths = await files(join(frondPath, 'handlers', surfaceName));
-    handlers.push(...await Promise.all(surfacePaths.map((f) => toHandlerEntry(f, entityByClassName, projectRoot, surfaceName))));
+  // A subdirectory of handlers/ is a named surface — the one directory whose CHILDREN
+  // are part of the convention too.
+  for (const surface of await dirs(join(frondPath, 'handlers'))) {
+    handlers.push(...await collect(join('handlers', surface), (f) =>
+      toHandlerEntry(f, entityByClassName, projectRoot, surface)));
   }
 
-  // Scan presenters/
-  const presenterPaths = await files(join(frondPath, 'presenters'));
-  const presenterEntries = await Promise.all(presenterPaths.map((f) => toPresenterEntry(f)));
-  presenters.push(...presenterEntries.filter((p): p is PresenterEntry => p !== null));
-
-  // Scan collectors/
-  const collectorPaths = await files(join(frondPath, 'collectors'));
-  const collectorEntries = await Promise.all(collectorPaths.map((f) => toCollectorEntry(f)));
-  collectors.push(...collectorEntries.filter((c): c is CollectorEntry => c !== null));
-
-  // Scan seeds/
-  const seedPaths = await files(join(frondPath, 'seeds'));
-  const seedEntries = await Promise.all(seedPaths.map((f) => toSeedEntry(f)));
-  seeds.push(...seedEntries.filter((s): s is SeedEntry => s !== null));
+  const presenters = await collect('presenters', toPresenterEntry);
+  const collectors = await collect('collectors', toCollectorEntry);
+  const seeds = await collect('seeds', toSeedEntry);
 
   // Mark exposed entries: frond.config.ts takes precedence, then @expose decorator
   const frondConfig = await loadFrondConfig(frondPath);

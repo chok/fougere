@@ -79,24 +79,32 @@ function load(): CacheData {
   return cache;
 }
 
-export function hashFile(filePath: string): string {
+function hashFile(filePath: string): string {
   const content = readFileSync(filePath, 'utf-8');
   return createHash('sha1').update(content).digest('hex').slice(0, 16);
 }
 
-/** Get cached parse result. Returns null if cache miss. */
-export function getCached<T>(key: string, hash: string): T | null {
-  const data = load();
-  const entry = data[key];
-  if (entry && entry.hash === hash) return entry.data as T;
-  return null;
-}
-
-/** Store parse result in cache. */
-export function setCached(key: string, hash: string, data: unknown): void {
+/**
+ * The parse of a file, or the parse again if the file changed — the one gesture, so a
+ * caller never assembles the pieces.
+ *
+ * It handed out `hashFile` + `getCached` + `setCached` and every caller wrote the same
+ * five lines in the same order; the scanner wrote them three times, once inline inside a
+ * `try`. Three assemblies of one question, each free to forget the half that stores.
+ *
+ * `key` and not the path alone: one file is parsed several ways (its constructor, its
+ * methods, its methods with heritage resolved) and each reading is its own entry.
+ */
+export async function cachedParse<T>(key: string, filePath: string, parse: () => Promise<T>): Promise<T> {
+  const hash = hashFile(filePath);
   const store = load();
+  const entry = store[key];
+  if (entry && entry.hash === hash) return entry.data as T;
+
+  const data = await parse();
   store[key] = { hash, data };
   dirty = true;
+  return data;
 }
 
 /** Write cache to disk if modified. */

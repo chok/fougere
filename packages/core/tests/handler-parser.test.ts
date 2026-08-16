@@ -12,7 +12,7 @@ import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { parseAllHandlerMethods } from '../src/handler-parser.js';
-import { setCacheRoot, getCached, setCached, flushCache, hashFile } from '../src/scan-cache.js';
+import { setCacheRoot, cachedParse, flushCache } from '../src/scan-cache.js';
 
 /** A mixin file plus a handler extending it — the smallest thing the parser reads. */
 function fixture(mixinBody: string): { dir: string; handler: string } {
@@ -93,21 +93,28 @@ describe('the scan cache carries the parser version', () => {
     const target = join(dir, 'source.ts');
     writeFileSync(target, 'export default class X {}\n');
 
+    // Counted rather than inspected: what matters is whether the file is READ again,
+    // which is the whole point of the stamp.
+    let parses = 0;
+    const parse = async () => { parses += 1; return 'fresh'; };
+
     try {
       setCacheRoot(dir);
       mkdirSync(join(dir, '.fougere'), { recursive: true });
       // A cache from a previous parser, claiming a result for this exact source.
       writeFileSync(
         join(dir, '.fougere', 'scan-cache.json'),
-        JSON.stringify({ parser: 0, entries: { 'k': { hash: hashFile(target), data: 'stale' } } }),
+        JSON.stringify({ parser: 0, entries: { k: { hash: 'whatever', data: 'stale' } } }),
       );
 
-      expect(getCached('k', hashFile(target))).toBeNull();
+      expect(await cachedParse('k', target, parse)).toBe('fresh');
+      expect(parses).toBe(1);
 
-      setCached('k', hashFile(target), 'fresh');
       flushCache();
       setCacheRoot(dir);
-      expect(getCached('k', hashFile(target))).toBe('fresh');
+      // Re-read from disk under the current stamp: the entry is honoured, nothing re-parses.
+      expect(await cachedParse('k', target, parse)).toBe('fresh');
+      expect(parses).toBe(1);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
