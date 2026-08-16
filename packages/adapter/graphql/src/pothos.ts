@@ -4,7 +4,7 @@
 import type SchemaBuilder from '@pothos/core';
 import { Anatomy, Schema } from '@fougere/schema';
 import type { Field, Fields, SchemaView, SchemaSource } from '@fougere/schema';
-import { boundaryOf, fieldsOf, inputFields, resolveBoundary, sourceNameOf } from '@fougere/schema';
+import { Boundary, Lifecycle, fieldsOf, inputFields, sourceNameOf } from '@fougere/schema';
 
 // ─── Types ─────────────────────────────────────────
 
@@ -216,7 +216,7 @@ function fieldToGraphQL(
           nullable,
           resolve: (parent: any) => {
             const val = parent[fieldName];
-            return val != null ? resolveBoundary(field).encode(val) : null;
+            return val != null ? Boundary.of(field).encode(val) : null;
           },
         });
       }
@@ -337,7 +337,7 @@ function fieldToInput(
   // caller must supply it (no `lifecycle.create` rule answers absence), null is
   // not legal, and the view is not in patch mode (a patch omits freely).
   const { base: shape, nullable } = Anatomy.of(field.shape);
-  const required = !patch && !nullable && field.lifecycle?.create === undefined;
+  const required = !patch && !nullable && Lifecycle.of(field).requiredAtCreate;
 
   // The dual of the output side, and it must be the SAME type: an input left as `String`
   // would refuse nothing the enum refuses, and a client could not hand back the value a
@@ -503,7 +503,7 @@ export function registerType(builder: InstanceType<typeof SchemaBuilder>, config
         // Skip fields that have a relation override
         if (config.relations?.[fieldName]) continue;
         // Write-only (boundary out: 'closed', e.g. password): never emitted
-        if (boundaryOf(field).out === 'closed') continue;
+        if (Boundary.of(field).writeOnly) continue;
 
         result[fieldName] = fieldToGraphQL(t, field, fieldName, (values) => {
           const name = enumNameFor(enumOwner, fieldName);
@@ -637,7 +637,7 @@ export function registerInput(builder: InstanceType<typeof SchemaBuilder>, confi
         // Skip virtual fields
         if (field.role?.relation?.kind === 'many') continue;
         // Read-only (boundary in: 'closed'): never accepted from a client
-        if (boundaryOf(field).in === 'closed') continue;
+        if (Boundary.of(field).readOnly) continue;
 
         result[fieldName] = fieldToInput(
           t, field, patch,

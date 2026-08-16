@@ -12,7 +12,7 @@ import {
   entity, primary, text, email, number, bool, date, list, json,
   oneOf, ref, many, created, updated, immutable, optional, nullable,
   unique, indexed, readOnly, writeOnly,
-  describe as describeCard, reconstruct, inputFields, outputFields, uniqueMembers,
+  describe as describeCard, reconstruct, inputFields, outputFields, FieldGroup, Unique,
   type Fields,
 } from '@fougere/schema';
 import { generateRoutes } from '../src/index.js';
@@ -61,14 +61,15 @@ const axesOf = (fields: Fields) =>
           shape: (f as any).shape ?? null,
           // Self-references resolved before comparing: in memory a lone `unique()` holds
           // `[]` (no key to name yet), while one read back from a card holds `["slug"]`.
-          // Same constraint, two spellings — `uniqueMembers` is what makes them one.
+          // Same constraint whichever way it was stated — the group carries its members.
           role: role
-            ? {
-                ...role,
-                ...(role.unique?.length
-                  ? { unique: role.unique.map((g: string[]) => uniqueMembers(g, key)) }
-                  : {}),
-              }
+            ? (() => {
+                const groups = FieldGroup.on(f as never, Unique);
+                const { rules: _rules, ...rest } = role;
+                return groups.length
+                  ? { ...rest, unique: groups.map((g) => g.resolvedOn(key).members) }
+                  : rest;
+              })()
             : null,
           lifecycle: (f as any).lifecycle ?? null,
           boundary: (f as any).boundary ?? null,
@@ -163,7 +164,7 @@ suite('a card is a schema source', () => {
     // stronger fact than the author wrote, so both the declaration and the projection go.
     const amputated = ListBook.pick('id', 'listId');
     expect(amputated.getUnique()).toBeUndefined();
-    expect(amputated.getFields().listId!.role?.unique).toBeUndefined();
+    expect(amputated.getFields().listId!.role?.rules).toBeUndefined();
     // The rest of the role is untouched — dropping the group is not dropping the ref.
     expect((describeCard(amputated).properties.listId!['x-fougere'] as any).role)
       .toEqual({ relation: { to: 'author', kind: 'one' } });

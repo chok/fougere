@@ -1,3 +1,4 @@
+import { Lifecycle } from '@fougere/schema';
 /**
  * Entity → citty bridge.
  *
@@ -30,7 +31,7 @@ export function entityToArgs(fields: Fields): ArgsDef {
     const kebab = toKebab(key);
     const def: ArgDef = {
       description: field.meta?.description,
-      required: !nullable && field.lifecycle?.create === undefined,
+      required: !nullable && Lifecycle.of(field).requiredAtCreate,
     };
 
     switch (shape?.type) {

@@ -1,4 +1,4 @@
-import { Field } from '../field/index.js';
+import { Field, Unique } from '../field/index.js';
 
 /**
  * No two rows carry the same value — a unique constraint of one, on the role axis.
@@ -7,9 +7,9 @@ import { Field } from '../field/index.js';
  * storage realizes it, and a collision surfaces as the driver's error. It travels on the
  * card, so a consumer in another language reads the same promise.
  *
- * The group is `[]` — the empty list denoting THIS field, which does not know its own key.
- * See the ⚠️ on the role axis.
+ * Its members are empty until `entity()` names the carrier — a field does not know its own
+ * key. See {@link Unique}.
  */
 export function unique<T>(field: Field<T>): Field<T> {
-  return field.with({ role: { ...field.role, unique: [[]] } });
+  return field.with({ role: { ...field.role, rules: [...(field.role?.rules ?? []), Unique.self()] } });
 }

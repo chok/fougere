@@ -1,6 +1,6 @@
 import type { Field, Fields } from "../field/index.js";
 import type { Hints } from "../hints.js";
-import type { CompositeUnique } from "../unique.js";
+import type { CompositeUnique } from "../field/index.js";
 import type { ValidationResult, ValidateOptions } from '../validation/index.js';
 import type { StandardSchemaV1 } from "../projections/standard.js";
 

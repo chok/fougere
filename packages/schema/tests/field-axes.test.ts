@@ -1,39 +1,39 @@
-import { Anatomy, Judge } from '../src/index.js';
+import { Anatomy, Judge, FieldGroup, Unique } from '../src/index.js';
 import { describe, it, expect } from 'vitest';
 import {
   entity, primary, text, number, oneOf, list, optional, nullable,
-  nullableShape, registerGenerator, resolveCustomGenerator, unique, indexed, describe as describeSchema, reconstruct,
+  registerGenerator, resolveCustomGenerator, unique, indexed, describe as describeSchema, reconstruct,
 } from '../src/index.js';
 
 // ─── nullableShape / anatomy — the two gates of the union, per shape genre ──
 
 describe('nullableShape — null enters the grammar', () => {
   it('scalar: the type becomes the [T, null] union', () => {
-    expect(nullableShape({ type: 'string' }).type).toEqual(['string', 'null']);
-    expect(nullableShape({ type: 'integer' }).type).toEqual(['integer', 'null']);
-    expect(nullableShape({ type: 'boolean' }).type).toEqual(['boolean', 'null']);
+    expect(Anatomy.nullable({ type: 'string' }).type).toEqual(['string', 'null']);
+    expect(Anatomy.nullable({ type: 'integer' }).type).toEqual(['integer', 'null']);
+    expect(Anatomy.nullable({ type: 'boolean' }).type).toEqual(['boolean', 'null']);
   });
 
   it('enum: null joins the closed value set too', () => {
-    const s = nullableShape({ type: 'string', enum: ['a', 'b'] });
+    const s = Anatomy.nullable({ type: 'string', enum: ['a', 'b'] });
     expect(s.type).toEqual(['string', 'null']);
     expect((s as { enum?: readonly (string | null)[] }).enum).toEqual(['a', 'b', null]);
   });
 
   it('array/object: the union wraps the container, items/properties untouched', () => {
-    const arr = nullableShape({ type: 'array', items: { type: 'string' } });
+    const arr = Anatomy.nullable({ type: 'array', items: { type: 'string' } });
     expect(arr.type).toEqual(['array', 'null']);
     expect((arr as { items: object }).items).toEqual({ type: 'string' });
   });
 
   it('is idempotent', () => {
-    const once = nullableShape({ type: 'string', enum: ['a'] });
-    const twice = nullableShape(once);
+    const once = Anatomy.nullable({ type: 'string', enum: ['a'] });
+    const twice = Anatomy.nullable(once);
     expect(twice).toBe(once);
   });
 
   it('keeps constraints on the base type', () => {
-    expect(nullableShape({ type: 'string', minLength: 3 })).toEqual({ type: ['string', 'null'], minLength: 3 });
+    expect(Anatomy.nullable({ type: 'string', minLength: 3 })).toEqual({ type: ['string', 'null'], minLength: 3 });
   });
 });
 
@@ -52,7 +52,7 @@ describe('anatomy — the single customs post for readers', () => {
   });
 
   it('strips null from enum in the base', () => {
-    const { base } = Anatomy.of(nullableShape({ type: 'string', enum: ['a', 'b'] }));
+    const { base } = Anatomy.of(Anatomy.nullable({ type: 'string', enum: ['a', 'b'] }));
     expect((base as { enum?: readonly (string | null)[] }).enum).toEqual(['a', 'b']);
   });
 
@@ -61,7 +61,7 @@ describe('anatomy — the single customs post for readers', () => {
   });
 
   it('isNullable is the sugar for the flag', () => {
-    expect(Anatomy.isNullable(nullableShape({ type: 'string' }))).toBe(true);
+    expect(Anatomy.isNullable(Anatomy.nullable({ type: 'string' }))).toBe(true);
     expect(Anatomy.isNullable({ type: 'string' })).toBe(false);
     expect(Anatomy.isNullable(undefined)).toBe(false);
   });
@@ -157,13 +157,13 @@ describe('unique / indexed — declared here, enforced by the storage', () => {
   const fields = Account.getFields();
 
   it('sets the role flag and leaves every other axis alone', () => {
-    // A constraint of one, written as the empty self-reference: a field does not know its
-    // own key, so `[]` denotes whichever field carries it (resolved by the reader).
-    expect(fields.email.role?.unique).toEqual([[]]);
+    // `entity()` names the carrier, so a group of one arrives already resolved — the live
+    // schema and a reconstructed one now answer the same thing.
+    expect(FieldGroup.on(fields.email!, Unique).map((g) => g.members)).toEqual([['email']]);
     expect(fields.city.role?.index).toBe(true);
     // The wrapper composes: `indexed(optional(...))` keeps the optionality.
     expect(fields.city.lifecycle?.create).toBe('optional');
-    expect(fields.bio.role?.unique).toBeUndefined();
+    expect(fields.bio.role?.rules).toBeUndefined();
   });
 
   /**
@@ -184,7 +184,7 @@ describe('unique / indexed — declared here, enforced by the storage', () => {
     expect(card.properties.city['x-fougere']).toMatchObject({ role: { index: true } });
 
     const rebuilt = reconstruct(card);
-    expect(rebuilt.getFields().email.role?.unique).toEqual([['email']]);
+    expect(FieldGroup.on(rebuilt.getFields().email!, Unique).map((g) => g.members)).toEqual([['email']]);
     expect(rebuilt.getFields().city.role?.index).toBe(true);
     // A constraint of one is not a composite — it is fully stated by the field itself.
     expect(rebuilt.getUnique()).toBeUndefined();

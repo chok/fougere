@@ -1,5 +1,5 @@
+import { Boundary } from '../field/index.js';
 import type { Fields } from '../field/index.js';
-import { boundaryOf, resolveBoundary } from '../field/index.js';
 
 /**
  * Egress: encode a domain record into its wire form, field by field — the dual of
@@ -13,10 +13,10 @@ export function encodeFields(fields: Fields, record: Record<string, unknown>): R
   const out: Record<string, unknown> = { ...record };
   for (const [key, field] of Object.entries(fields)) {
     if (!(key in record)) continue;
-    if (boundaryOf(field).out === 'closed') { delete out[key]; continue; }
+    if (Boundary.of(field).writeOnly) { delete out[key]; continue; }
     const value = record[key];
     if (value === null || value === undefined) continue;
-    out[key] = resolveBoundary(field).encode(value);
+    out[key] = Boundary.of(field).encode(value);
   }
   return out;
 }

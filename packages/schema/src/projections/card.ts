@@ -1,4 +1,4 @@
-import type { BoundaryRef, Lifecycle, Relation, Role, Shape } from '../field/index.js';
+import type { BoundaryRef, LifecycleRules, Relation, Role, Shape } from '../field/index.js';
 
 /**
  * The portable schema descriptor — an entity's "carte d'identité".
@@ -58,7 +58,7 @@ export type FieldDescriptor = ShapeKeywords & {
 export interface FieldExtension {
   role?: RoleDescriptor;
   /** The normal form travels verbatim — named tokens, pure JSON. */
-  lifecycle?: Lifecycle;
+  lifecycle?: LifecycleRules;
   boundary?: BoundaryRef;
 }
 

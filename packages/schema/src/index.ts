@@ -8,22 +8,22 @@ export {
   type FormatPredicate,
   type Role,
   type Relation,
-  type Lifecycle,
+  Lifecycle,
+  type LifecycleRules,
   type GeneratorRef,
-  type Boundary,
+  Boundary,
+  type BoundaryRules,
   type BoundaryRef,
   type Decoder,
   type Encoder,
   type Meta,
-  nullableShape,
-  // The constraint a `role.unique` member list denotes — `[]` means the field carrying it.
-  uniqueMembers,
+  // A rule stated over a set of fields and realized by the storage — `Unique` is the first.
+  FieldGroup,
+  Unique,
   // The shape axis's own open registry — a NAMED predicate where JSON Schema
   // already declares its vocabulary open, so the rule travels as `format`.
   registerGenerator,
   resolveCustomGenerator,
-  resolveBoundary,
-  boundaryOf,
   Anatomy,
   Formats,
   Boundaries,
@@ -45,7 +45,7 @@ export {
   type PartialRow,
 } from "./schema/index.js";
 export { type FougereHints, type Hints } from "./hints.js";
-export { type CompositeUnique, type EntityDeclarations } from "./unique.js";
+
 
 // ─── The vocabulary — field constructors and transforms ──────
 export { primary } from "./vocabulary/primary.js";

@@ -6,7 +6,7 @@
  * other — the entity never mentions a column type, the dialect never mentions a
  * field. Adding a dialect touches only the second half.
  */
-import { Anatomy, fieldsOf, registrationKeyOf, uniqueMembers, type Field, type SchemaView, type SchemaSource } from '@fougere/schema';
+import { Anatomy, FieldGroup, Unique, fieldsOf, registrationKeyOf, type Field, type SchemaView, type SchemaSource } from '@fougere/schema';
 import { boundsOf, type ShapeBounds } from './check.js';
 
 /** The shape keywords a dialect needs to choose a column type. */
@@ -28,7 +28,7 @@ export interface ColumnDef {
   primary: boolean;
   /** A literal default (`lifecycle.create.value`), when the field declares one. */
   default?: unknown;
-  /** `role.unique` — realized as a column constraint the database enforces. */
+  /** A {@link Unique} of one — realized as a column constraint the database enforces. */
   unique?: boolean;
   /** `role.index` — realized as a separate `CREATE INDEX`, never a constraint. */
   index?: boolean;
@@ -171,7 +171,7 @@ function toColumn(
   // redundant constraint on every engine. So would indexing what `unique` constrains.
   // Only a constraint of ONE becomes a column constraint; a group of several is a table
   // constraint, emitted once from `uniqueGroups` rather than once per member column.
-  const soleUnique = (field.role?.unique ?? []).some((group) => group.length <= 1);
+  const soleUnique = FieldGroup.on(field, Unique).some((group) => group.members.length <= 1);
   if (soleUnique && !column.primary) column.unique = true;
   if (field.role?.index === true && !column.primary && !column.unique) column.index = true;
   const references = referenceFor(field, resolve, tableNameOf, hosted);
@@ -227,8 +227,8 @@ export function toTable(tableName: string, entity: SchemaSource, relations?: Rel
   // against a column that will not exist.
   const groups = new Map<string, string[]>();
   for (const [fieldName, field] of Object.entries(fields)) {
-    for (const group of field.role?.unique ?? []) {
-      const members = uniqueMembers(group, fieldName).map(toSnakeCase);
+    for (const group of FieldGroup.on(field, Unique)) {
+      const members = group.resolvedOn(fieldName).members.map(toSnakeCase);
       if (members.length > 1 && members.every((column) => stored.has(column))) {
         groups.set(members.join(' '), members);
       }

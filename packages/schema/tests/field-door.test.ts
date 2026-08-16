@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Field, Schema, created, entity, list, oneOf, optional, primary, text, updated, Judge } from '../src/index.js';
+import { Field, Schema, Unique, created, entity, list, oneOf, optional, primary, text, updated, Judge } from '../src/index.js';
 
 /**
  * The constructor is the only way to obtain a field, so it is where a field is judged —
@@ -23,7 +23,7 @@ describe('the field door', () => {
       [{ shape, role: 'nawak' }, /role: Expected an object/],
       [{ shape, role: { relation: { kind: 'nawak', to: () => ({}) } } }, /role\.relation\.kind/],
       [{ shape, role: { relation: { kind: 'one' } } }, /role\.relation\.to: Expected a thunk/],
-      [{ shape, role: { unique: ['not-a-group'] } }, /role\.unique/],
+      [{ shape, role: { rules: ['not-a-group'] } }, /role\.rules/],
       [{ shape, boundary: { in: { nawak: 'x' } } }, /boundary\.in/],
       [{ shape, meta: 42 }, /meta: Expected an object/],
     ];
@@ -50,6 +50,12 @@ describe('the field door', () => {
       tags: list(text()),
       status: oneOf('draft', 'live', { default: 'draft' }),
     })).not.toThrow();
+  });
+
+  it('normalizes a plain role — the member list a config or another language writes', () => {
+    const f = new Field({ shape: { type: 'string' }, role: { rules: [['slug']] } } as never, 'slug');
+    expect(f.role!.rules![0]).toBeInstanceOf(Unique);
+    expect(f.role!.rules![0]!.members).toEqual(['slug']);
   });
 
   it('takes a plain object — a config, plain JS, a card another language wrote', () => {

@@ -216,9 +216,12 @@ group('required and the judge answer the same question', () => {
  * the card never carries — across a process and a language, where nothing checks back.
  */
 group('every member of a role is accounted for on the wire', () => {
-  type Accounted<Live, Wire> = Exclude<keyof Live, keyof Wire> extends never
+  // The wire names groups BY KIND (`unique`), memory holds them in one list (`rules`) —
+  // `describeRole` is that projection. The alias is stated here so the check stays total.
+  type OnTheWire<K> = K extends 'rules' ? 'unique' : K;
+  type Accounted<Live, Wire> = Exclude<OnTheWire<keyof Live>, keyof Wire> extends never
     ? true
-    : ['this member reaches no card:', Exclude<keyof Live, keyof Wire>];
+    : ['this member reaches no card:', Exclude<OnTheWire<keyof Live>, keyof Wire>];
 
   it('leaves no member of Role or Relation unaccounted for', () => {
     const role: Accounted<Role, RoleDescriptor> = true;

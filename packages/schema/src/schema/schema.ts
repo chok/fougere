@@ -1,6 +1,7 @@
-import { resolveBoundary, type Fields } from "../field/index.js";
+import { Boundary } from '../field/index.js';
+import { type Fields } from "../field/index.js";
 import { deriveHints, type Hints } from "../hints.js";
-import { deriveUnique, deriveUniqueRoles, type CompositeUnique } from "../unique.js";
+import { FieldGroup, Unique, type CompositeUnique } from "../field/index.js";
 import { Judge, type ValidateOptions } from '../validation/index.js';
 import type { StandardSchemaV1 } from "../projections/standard.js";
 import type { PartialRow, Row, SchemaView } from "./view.js";
@@ -31,7 +32,6 @@ export interface SchemaConstructor<TFields extends Fields> extends SchemaView<TF
 export class Schema {
   static fields: Fields = {};
   static hints: Hints<Fields> | undefined;
-  static unique: CompositeUnique<Fields> | undefined;
   static opts: ValidateOptions = {};
   static source: (abstract new (...args: never[]) => unknown) | undefined;
 
@@ -47,7 +47,11 @@ export class Schema {
 
   static getFields() { return this.fields; }
   static getHints() { return this.hints; }
-  static getUnique() { return this.unique; }
+  /** Derived: the composite groups the fields state together — no second copy to keep in step. */
+  static getUnique(): CompositeUnique<Fields> | undefined {
+    const groups = FieldGroup.groupsOf(this.fields, Unique);
+    return groups.length ? groups.map((group) => [...group.members]) : undefined;
+  }
   static getOpts() { return this.opts; }
 
   static validate(input: unknown) {
@@ -61,7 +65,7 @@ export class Schema {
       if (!(key in data)) continue;
       const value = data[key];
       if (value === null || value === undefined) { out[key] = value; continue; }
-      const decoded = resolveBoundary(field).decode(value);
+      const decoded = Boundary.of(field).decode(value);
       out[key] = "error" in decoded ? value : decoded.value;
     }
     return out;
@@ -113,11 +117,11 @@ export class Schema {
 
   /** Patch mode: an unsent field is untouched. Moves the presence axis, never nullity. */
   static partial() {
-    return Schema.of({ ...this.fields }, this.source ?? this, this.hints, { ...this.opts, patch: true }, this.unique);
+    return Schema.of({ ...this.fields }, this.source ?? this, this.hints, { ...this.opts, patch: true });
   }
 
   static extend(extra: Fields) {
-    return Schema.of({ ...this.fields, ...extra }, this.source ?? this, this.hints, this.opts, this.unique);
+    return Schema.of({ ...this.fields, ...extra }, this.source ?? this, this.hints, this.opts);
   }
 
   /**
@@ -135,30 +139,38 @@ export class Schema {
     return this;
   }
 
-  /** A subclass carrying its own map — the only way a schema is made. */
+  /**
+   * The subclass every entity and every derivation is made of — the only way a schema
+   * exists. The map and the declarations become statics; the instance side is the row.
+   *
+   * ```ts
+   * const C = Schema.of({ title: text() })
+   * C.getFields()          // → { title: Field }
+   * C.name                 // → 'Schema', until `class Post extends …` or `named()`
+   * new C({ title: 'A' })  // → a row
+   * ```
+   */
   static of<TFields extends Fields>(
     fields: TFields,
     source?: abstract new (...args: never[]) => unknown,
     hints?: Hints<TFields>,
     opts: ValidateOptions = {},
-    unique?: CompositeUnique<Fields>,
   ): SchemaConstructor<TFields> {
     class Derived extends Schema {}
-    Object.assign(Derived, { fields, source, hints, opts, unique });
+    Object.assign(Derived, { fields, source, hints, opts });
     Object.defineProperty(Derived, "name", { value: ANONYMOUS_SCHEMA_NAME, configurable: true });
     // TS sees an empty subclass and cannot prove it matches the precise map.
     return Derived as unknown as SchemaConstructor<TFields>;
   }
 
-  /** A key transform applied to the fields, the hints and the unique groups at once. */
+  /**
+   * A key transform. Each field renames what it carries — the storage rules travel with the
+   * fields they name, so there is one carry here and not one per kind of declaration.
+   */
   private static derive(fields: Fields, survives: (key: string) => string | undefined) {
-    return Schema.of(
-      deriveUniqueRoles(fields, survives),
-      this.source ?? this,
-      deriveHints(this.hints, survives),
-      this.opts,
-      deriveUnique(this.unique, survives),
-    );
+    const renamed: Fields = {};
+    for (const [key, field] of Object.entries(fields)) renamed[key] = field.rename(survives);
+    return Schema.of(renamed, this.source ?? this, deriveHints(this.hints, survives), this.opts);
   }
 }
 

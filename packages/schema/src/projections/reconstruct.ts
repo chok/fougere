@@ -5,6 +5,7 @@ import {
   type Role,
   type Shape,
 } from '../field/index.js';
+import { Unique } from '../field/index.js';
 import { Schema, type SchemaConstructor, type SchemaView, type Row } from '../schema/index.js';
 import {
   clean,
@@ -58,7 +59,7 @@ function reconstructRole(role: RoleDescriptor, resolve?: Resolver): Role {
   // Members arrive spelled out and stay that way — a single-member group read back as the
   // empty self-reference would re-describe identically but lose the distinction for no
   // gain. `uniqueMembers` treats a named group as already resolved.
-  if (role.unique?.length) out.unique = role.unique.map((group) => [...group]);
+  if (role.unique?.length) out.rules = role.unique.map((group) => Unique.of(...group));
   if (role.index) out.index = true;
   if (role.relation) {
     const name = role.relation.to;
@@ -97,33 +98,15 @@ function reconstructField(prop: FieldDescriptor, key: string, resolve?: Resolver
   });
 }
 
-/**
- * The entity-level groups implied by the fields — the inverse of
- * `projectUniqueOntoFields`. Only groups of more than one member: a lone `unique(slug)`
- * is fully stated by the field's own role, and listing it here would make `getUnique()`
- * answer a composite the author never declared.
- */
-function compositeFromFields(fields: Fields): ReadonlyArray<ReadonlyArray<string>> | undefined {
-  const seen = new Map<string, string[]>();
-  for (const field of Object.values(fields)) {
-    for (const group of field.role?.unique ?? []) {
-      if (group.length < 2) continue;
-      // `JSON.stringify` and not a separator byte: a NUL made `grep` read the file as binary.
-      seen.set(JSON.stringify(group), [...group]);
-    }
-  }
-  return seen.size ? [...seen.values()] : undefined;
-}
-
 /** Build a live schema from a card; `resolve` wires relation targets when in a bundle. */
 function buildSchema(descriptor: SchemaDescriptor, resolve?: Resolver): SchemaView {
   const fields: Fields = {};
   for (const [key, prop] of Object.entries(descriptor.properties)) {
     fields[key] = reconstructField(prop, key, resolve);
   }
-  // The card holds the fact once per MEMBER, so a group of two arrives twice — de-duplicate
-  // it and `getUnique()` answers what the author wrote.
-  const schema = Schema.of(fields, undefined, undefined, {}, compositeFromFields(fields));
+  // The card holds the fact once per MEMBER, so a group of two arrives twice. Nothing to
+  // de-duplicate here: `getUnique()` reads the fields and does it.
+  const schema = Schema.of(fields, undefined, undefined, {});
 
   // The name is what everything downstream keys on — the table, the GraphQL type, a
   // relation's `to`. `reconstructSet` overrides it with the bundle key, more specific.

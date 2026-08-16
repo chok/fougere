@@ -1,46 +1,41 @@
-import { Field, type Fields } from "./field/index.js";
-import { Judge } from './validation/index.js';
-import { projectUniqueOntoFields, type EntityDeclarations } from "./unique.js";
+import { Field, FieldGroup, Unique, type Fields, type EntityDeclarations } from "./field/index.js";
 import { Schema, type SchemaConstructor } from "./schema/index.js";
 
 /**
- * Define an entity — the factory that produces a schema-carrying class.
+ * Builds the class an entity extends. `fields` becomes its schema; `declarations` states
+ * what the entity says about itself — `unique` groups and per-adapter `hints`.
  *
  * ```ts
- * class Post extends entity({ id: primary(), title: text({ min: 1 }) }) {}
+ * class Post extends entity(
+ *   { id: primary(), slug: text(), title: text({ min: 1 }) },
+ *   { unique: [['slug']] },
+ * ) {}
  *
- * new Post({ id, title })   // a real instance, data-typed
- * Post.pick('title')        // a derived view, same static API
- * function publish(p: Post) // `Post` IS the data type
+ * new Post({ slug: 'a', title: 'A' })    // → a Post; `Post` IS the data type
+ * Post.validate({ slug: 'a', title: '' })
+ * //   → { success: false,
+ * //       errors: [{ path: 'title', message: 'String is too short (0 < 1).' }] }
+ * Post.getFields()                       // → { id: Field, slug: Field, title: Field }
+ * Post.pick('title')                     // → a one-field class, same static API
  * ```
  *
- * Data and schema metadata only — no business behaviour lives on an entity. The 2nd
- * argument carries what the entity states about itself: `unique` groups, and per-adapter
- * hints for what a neutral field cannot express.
+ * Data and schema metadata only — no business behaviour lives on an entity.
  */
 export function entity<TFields extends Fields>(
   fields: TFields,
   declarations?: EntityDeclarations<TFields>,
 ): SchemaConstructor<TFields> {
-  const own = {} as Record<string, Field>;
-  for (const [key, field] of Object.entries(fields)) own[key] = new Field(field, key);
-  const projected = projectUniqueOntoFields(own as TFields, declarations?.unique);
-  assertDefaultsAreValid(projected);
-  return Schema.of(projected, undefined, declarations?.hints, {}, declarations?.unique);
+  const own: Record<string, Field> = {};
+
+  for (const [key, field] of Object.entries(fields))
+    own[key] = new Field(field, key);
+
+  // The declarations are syntax: realized onto the fields here, never kept beside them.
+  let realized: Fields = own;
+  for (const group of declarations?.unique ?? [])
+    realized = Unique.of(...group).onto(realized);
+  realized = FieldGroup.resolveSelf(realized);
+
+  return Schema.of(realized as TFields, undefined, declarations?.hints, {});
 }
 
-function assertDefaultsAreValid(fields: Fields): void {
-  for (const [name, field] of Object.entries(fields)) {
-    const create = field.lifecycle?.create;
-    if (typeof create !== 'object' || create === null || !('value' in create)) continue;
-
-    const checked = Judge.value(field, (create as { value: unknown }).value);
-    if ('error' in checked) {
-      throw new Error(
-        `Field '${name}': the declared default ${JSON.stringify((create as { value: unknown }).value)} `
-        + `is not a legal value for it — ${checked.error}. It would be written into every row `
-        + `without passing the judge.`,
-      );
-    }
-  }
-}

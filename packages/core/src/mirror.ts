@@ -1,3 +1,4 @@
+import { Lifecycle, type Fields } from '@fougere/schema';
 import type { EntityOrm } from './orm.js';
 
 /**
@@ -158,10 +159,10 @@ export function getMirrorTarget(ctor: Function): ShapeClass | undefined {
  * "when this row last changed here", which for a copy is when it was last pulled.
  */
 export function ageFieldOf(shape: unknown): string | undefined {
-  const fields = (shape as { getFields?: () => Record<string, { lifecycle?: { update?: unknown } }> }).getFields?.();
+  const fields = (shape as { getFields?: () => Fields }).getFields?.();
   if (!fields) return undefined;
   for (const [name, field] of Object.entries(fields)) {
-    if (field.lifecycle?.update === 'now') return name;
+    if (Lifecycle.of(field).stampedOnUpdate) return name;
   }
   return undefined;
 }

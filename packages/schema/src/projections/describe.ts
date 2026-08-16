@@ -1,6 +1,6 @@
 import type { Field, Fields, Role } from '../field/index.js';
 import type { SchemaView } from '../schema/index.js';
-import { Anatomy, uniqueMembers, boundaryOf } from '../field/index.js';
+import { Boundary, Anatomy, Unique } from '../field/index.js';
 import { registrationKeyOf } from '../name.js';
 import {
   clean,
@@ -25,7 +25,7 @@ function isRequired(field: Field): boolean {
   // field is one a caller may never supply, so listing it as required states a
   // demand the door then refuses with `Read-only`. Same stance as OpenAPI's
   // readOnly+required, and the two readers now answer from the same axis.
-  if (boundaryOf(field).in === 'closed') return false;
+  if (Boundary.of(field).readOnly) return false;
   if (field.lifecycle?.create !== undefined) return false;
   if (field.role?.relation?.kind === 'many') return false;
   return true;
@@ -34,10 +34,10 @@ function isRequired(field: Field): boolean {
 function describeRole(role: Role, key: string): RoleDescriptor | undefined {
   const out: RoleDescriptor = {};
   if (role.primary) out.primary = true;
-  // Members are spelled out on the wire: in memory a lone `unique()` holds the empty
-  // self-reference (a field cannot name its own key), and a consumer has no way to know
-  // which field a group hangs on. `key` is that missing half, so it is resolved here.
-  if (role.unique?.length) out.unique = role.unique.map((group) => uniqueMembers(group, key));
+  // Members are spelled out on the wire: a consumer has no way to know which field a rule
+  // hangs on. Past `entity()` they are already named; `key` covers a field built by hand.
+  const unique = (role.rules ?? []).filter((rule) => rule instanceof Unique);
+  if (unique.length) out.unique = unique.map((rule) => [...rule.resolvedOn(key).members]);
   if (role.index) out.index = true;
   if (role.relation) {
     out.relation = clean({

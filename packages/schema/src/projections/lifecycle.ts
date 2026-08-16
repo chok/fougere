@@ -7,7 +7,7 @@
  * they drifted: one entity with a `default` answered `'draft'` on SQL and `undefined` on
  * Mongo. `update: 'forbidden'` is NOT here — refusing is a judgment.
  */
-import { resolveCustomGenerator, type Field, type Fields } from '../field/index.js';
+import { Lifecycle, resolveCustomGenerator, type Field, type Fields } from '../field/index.js';
 import { createId } from '@paralleldrive/cuid2';
 
 type Row = Record<string, unknown>;
@@ -48,17 +48,15 @@ export function applyCreate(fields: Fields, input: Row): Row {
 
   for (const [name, field] of Object.entries(fields) as [string, Field][]) {
     if (name in out) continue;
-    const create = field.lifecycle?.create;
-    if (create === 'now') {
-      // One instant, one Date PER FIELD. `created()` and `updated()` on the same entity
-      // would otherwise hold the same object, so mutating `updatedAt` would move an
-      // immutable `createdAt` with it — invisible where a storage serializes on write
-      // (SQL), lasting where it does not (an in-memory store keeps the row as handed).
-      out[name] = new Date(instant);
-    } else if (typeof create === 'object' && create !== null) {
-      if ('value' in create) out[name] = freshValue((create as { value: unknown }).value);
-      else if ('generate' in create) out[name] = generatorFor(String((create as { generate: unknown }).generate))();
-    }
+    const rule = Lifecycle.of(field);
+
+    // One instant, one Date PER FIELD. `created()` and `updated()` on the same entity
+    // would otherwise hold the same object, so mutating `updatedAt` would move an
+    // immutable `createdAt` with it — invisible where a storage serializes on write
+    // (SQL), lasting where it does not (an in-memory store keeps the row as handed).
+    if (rule.create === 'now') out[name] = new Date(instant);
+    else if (rule.literal) out[name] = freshValue(rule.literal.value);
+    else if (rule.generator) out[name] = generatorFor(rule.generator)();
     // `'optional'` and an absent rule both mean: the system writes nothing here.
   }
 
@@ -88,7 +86,7 @@ export function applyUpdate(fields: Fields, patch: Row): Row {
   const instant = Date.now();
 
   for (const [name, field] of Object.entries(fields) as [string, Field][]) {
-    if (field.lifecycle?.update === 'now' && !(name in out)) out[name] = new Date(instant);
+    if (Lifecycle.of(field).stampedOnUpdate && !(name in out)) out[name] = new Date(instant);
   }
 
   return out;

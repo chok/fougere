@@ -18,8 +18,8 @@ export type Decoder = (value: unknown) => { value: unknown } | { error: string }
 /** Outbound: a domain value → wire value. Total — a valid domain value always encodes. */
 export type Encoder = (value: unknown) => unknown;
 
-/** The normal form, indexed by direction. Either direction absent → open, identity. */
-export interface Boundary {
+/** The normal form a field DECLARES, indexed by direction. Either absent → open, identity. */
+export interface BoundaryRules {
   in?: 'closed' | { decode: string };
   out?: 'closed' | { encode: string };
 }
@@ -32,22 +32,22 @@ export interface Boundary {
  * The bare string literals are the built-in aliases; `(string & {})` keeps
  * autocomplete on them while leaving the set open to `registerBoundaryAlias`.
  */
-export type BoundaryRef = 'isoDate' | (string & {}) | Boundary;
+export type BoundaryRef = 'isoDate' | (string & {}) | BoundaryRules;
 
 // ─── Registries (open, extensible — same spirit as FougereHints) ──
 
 export class Boundaries {
   private static readonly decoders = new Map<string, Decoder>();
   private static readonly encoders = new Map<string, Encoder>();
-  private static readonly aliases = new Map<string, Boundary>();
+  private static readonly aliases = new Map<string, BoundaryRules>();
 
   static registerDecoder(name: string, fn: Decoder): void { this.decoders.set(name, fn); }
   static registerEncoder(name: string, fn: Encoder): void { this.encoders.set(name, fn); }
 
   /** Name a pair of directional rules, so a field declares `boundary: 'moneyCents'`. */
-  static registerAlias(name: string, boundary: Boundary): void { this.aliases.set(name, boundary); }
+  static registerAlias(name: string, boundary: BoundaryRules): void { this.aliases.set(name, boundary); }
 
-  static alias(name: string): Boundary | undefined { return this.aliases.get(name); }
+  static alias(name: string): BoundaryRules | undefined { return this.aliases.get(name); }
 
   static decoder(name: string): Decoder { return this.named(this.decoders, name, 'decoder'); }
   static encoder(name: string): Encoder { return this.named(this.encoders, name, 'encoder'); }
@@ -63,9 +63,6 @@ export class Boundaries {
     return fn;
   }
 }
-
-const identityDecoder: Decoder = (value) => ({ value });
-const identityEncoder: Encoder = (value) => value;
 
 // `isoDate`: the only non-identity built-in. Inbound accepts a Date or an ISO-ish
 // string and yields a Date; outbound yields an ISO string. Validity is already
@@ -83,48 +80,85 @@ Boundaries.registerEncoder('isoDate', (value) =>
 );
 Boundaries.registerAlias('isoDate', { in: { decode: 'isoDate' }, out: { encode: 'isoDate' } });
 
-/** Default boundary derived from a field's shape. A date-time string → isoDate, else identity. */
-function defaultBoundaryForShape(shape: Shape | undefined): Boundary {
-  const base = Anatomy.of(shape).base;
-  if (base && base.type === 'string' && base.format === 'date-time') return Boundaries.alias('isoDate')!;
-  return {};
-}
+/**
+ * A field's boundary, resolved: the rules it declares, each direction filled in by the
+ * default its shape implies. One accessor — `Boundary.of(field)` — answers the permission
+ * question and carries the conversion, where three free functions used to.
+ *
+ * ```ts
+ * Boundary.of(text()).readOnly              // → false
+ * Boundary.of(date()).decode('2026-08-16')  // → { value: Date }
+ * Boundary.of(text({ boundary: { in: 'closed' } })).readOnly   // → true
+ * ```
+ */
+const identityDecoder: Decoder = (value) => ({ value });
+const identityEncoder: Encoder = (value) => value;
 
-// ─── Resolution ──────────────────────────────────────
+export class Boundary implements BoundaryRules {
+  readonly in?: BoundaryRules['in'];
+  readonly out?: BoundaryRules['out'];
+  /** Bound, so `const { decode, encode } = Boundary.of(f)` keeps working. */
+  readonly decode: Decoder;
+  readonly encode: Encoder;
 
-/** The field's DECLARED boundary in normal form (alias resolved) — no derived default. */
-export function declaredBoundary(field: Field): Boundary {
-  const ref = field.boundary;
-  if (ref === undefined) return {};
-  if (typeof ref === 'string') {
+  // `in` is a reserved word in a parameter property, so the slots are assigned here.
+  private constructor(rules: BoundaryRules = {}, codecs?: { decode: Decoder; encode: Encoder }) {
+    this.in = rules.in;
+    this.out = rules.out;
+    this.decode = codecs?.decode ?? identityDecoder;
+    this.encode = codecs?.encode ?? identityEncoder;
+  }
+
+  /** What the field STATES, alias resolved — no shape-derived default. */
+  static declared(field: Field): Boundary {
+    const ref = field.boundary;
+    if (ref === undefined) return new Boundary();
+    if (typeof ref !== 'string') return new Boundary(ref);
+
     const alias = Boundaries.alias(ref);
     if (!alias) throw new Error(`Unknown boundary alias: '${ref}'`);
-    return alias;
+    return new Boundary(alias);
   }
-  return ref;
-}
 
-/**
- * The field's EFFECTIVE boundary: declared rules win per direction, the
- * shape-derived default fills the rest. This is the reader every consumer of
- * the axis goes through — `boundaryOf(f).in === 'closed'` is the read-only
- * test, `.out === 'closed'` the write-only one.
- */
-export function boundaryOf(field: Field): Boundary {
-  const declared = declaredBoundary(field);
-  const derived = defaultBoundaryForShape(field.shape);
-  return { in: declared.in ?? derived.in, out: declared.out ?? derived.out };
-}
+  /**
+   * What the field EFFECTIVELY does — declared rules win per direction, and the codecs are
+   * resolved HERE rather than at conversion time. That is what makes the two spellings of
+   * the axis fail alike: an unregistered `{ decode: 'celsius' }` throws where an unknown
+   * alias throws, instead of converting as identity while the card says it converted.
+   */
+  static of(field: Field): Boundary {
+    const declared = Boundary.declared(field);
+    const derived = Boundary.forShape(field.shape);
+    const rules: BoundaryRules = { in: declared.in ?? derived.in, out: declared.out ?? derived.out };
+    return new Boundary(rules, {
+      decode: typeof rules.in === 'object' ? Boundaries.decoder(rules.in.decode) : identityDecoder,
+      encode: typeof rules.out === 'object' ? Boundaries.encoder(rules.out.encode) : identityEncoder,
+    });
+  }
 
-/**
- * A field's effective conversion functions. A closed direction converts as identity — the
- * permission facet is judged by the façade, not here.
- */
-export function resolveBoundary(field: Field): { decode: Decoder; encode: Encoder } {
-  const boundary = boundaryOf(field);
-  return {
-    decode: typeof boundary.in === 'object' ? Boundaries.decoder(boundary.in.decode) : identityDecoder,
-    encode: typeof boundary.out === 'object' ? Boundaries.encoder(boundary.out.encode) : identityEncoder,
-  };
+  /** The default a shape implies. A date-time string converts through isoDate, else identity. */
+  static forShape(shape: Shape | undefined): Boundary {
+    const base = Anatomy.of(shape).base;
+    if (base?.type === 'string' && base.format === 'date-time') {
+      return new Boundary(Boundaries.alias('isoDate')!);
+    }
+    return new Boundary();
+  }
+
+  /** The same rules with one direction replaced — how `readOnly()`/`writeOnly()` are built. */
+  with(overrides: BoundaryRules): Boundary {
+    return new Boundary({ in: overrides.in ?? this.in, out: overrides.out ?? this.out });
+  }
+
+  /** The client may not send it. A closed direction converts as identity. */
+  get readOnly(): boolean {
+    return this.in === 'closed';
+  }
+
+  /** The client never sees it — a password hash on the way out. */
+  get writeOnly(): boolean {
+    return this.out === 'closed';
+  }
+
 }
 

@@ -4,11 +4,9 @@
 export {
   type Shape,
   SHAPE_TYPES,
-  isShape,
   type ShapeType,
   type BaseShape,
   type ShapeAnatomy,
-  nullableShape,
   Anatomy,
 } from "./shape.js";
 export { Formats, type FormatPredicate, type StringFormat } from "./format.js";
@@ -17,22 +15,26 @@ export {
   type Relation,
   type EntityConstructor,
   toTargetThunk,
-  uniqueMembers,
 } from "./role.js";
+export { FieldGroup } from "./group.js";
 export {
-  type Lifecycle,
+  Unique,
+  type CompositeUnique,
+  type EntityDeclarations,
+} from "./unique.js";
+export {
+  Lifecycle,
+  type LifecycleRules,
   type GeneratorRef,
   registerGenerator,
   resolveCustomGenerator,
 } from "./lifecycle.js";
 export {
-  type Boundary,
+  Boundary,
+  type BoundaryRules,
   type BoundaryRef,
   type Decoder,
   type Encoder,
-  resolveBoundary,
-  declaredBoundary,
-  boundaryOf,
   Boundaries,
 } from "./boundary.js";
 export { type Meta } from "./meta.js";

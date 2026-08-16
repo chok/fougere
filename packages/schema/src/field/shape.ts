@@ -60,7 +60,7 @@ export const SHAPE_TYPES = ['string', 'number', 'integer', 'boolean', 'array', '
 export type ShapeType = (typeof SHAPE_TYPES)[number];
 
 /** Is this a shape? Asked of its `type`, against {@link SHAPE_TYPES}. */
-export function isShape(value: unknown): value is Shape {
+function isShapeImpl(value: unknown): value is Shape {
   if (typeof value !== 'object' || value === null) return false;
   const declared = (value as Shape).type;
   const names = Array.isArray(declared) ? declared : [declared];
@@ -90,7 +90,7 @@ export type BaseShape =
  * `[T, 'null']`, and `null` joins `enum` when present (an enum is a closed value
  * set; null must be IN it to be legal). Idempotent.
  */
-export function nullableShape(shape: Shape): Shape {
+function nullableShapeImpl(shape: Shape): Shape {
   if (Array.isArray(shape.type)) return shape;
   const out = { ...shape, type: [shape.type, 'null'] } as unknown as Shape;
   if ('enum' in out && out.enum && !out.enum.includes(null)) {
@@ -112,6 +112,35 @@ export interface ShapeAnatomy {
  * `[T,'null']`, and a direct comparison fails silently on it.
  */
 export class Anatomy {
+  /**
+   * Is this a shape? Asked of its `type`, against {@link SHAPE_TYPES} — the recognition a
+   * field's door runs. By FORM and never by a brand, so a plain object from a card, a
+   * config or another language passes.
+   *
+   * ```ts
+   * Anatomy.is({ type: 'string' })            // → true
+   * Anatomy.is({ type: ['string', 'null'] })  // → true
+   * Anatomy.is({ type: 'nope' })              // → false
+   * ```
+   */
+  static is(value: unknown): value is Shape {
+    return isShapeImpl(value);
+  }
+
+  /**
+   * The WRITE side, paired with {@link Anatomy.of}: a shape's grammar made to accept `null`.
+   * The type becomes the union `[T, 'null']`, and `null` joins `enum` when present — an enum
+   * is a closed value set, so null must be IN it to be legal. Idempotent.
+   *
+   * ```ts
+   * Anatomy.nullable({ type: 'string' })                 // → { type: ['string', 'null'] }
+   * Anatomy.nullable({ type: 'string', enum: ['a'] })    // → enum: ['a', null]
+   * ```
+   */
+  static nullable(shape: Shape): Shape {
+    return nullableShapeImpl(shape);
+  }
+
   /** Cached per shape reference — derivations copy field refs, they never rebuild shapes. */
   private static readonly cache = new WeakMap<object, ShapeAnatomy>();
   private static readonly none: ShapeAnatomy = { base: undefined, nullable: false };

@@ -1,3 +1,4 @@
+import { Lifecycle } from '@fougere/schema';
 /**
  * Form contract, pure part — derives what a create/edit form is made of
  * from the entity's field axes. No Vue, no Nuxt: testable headless,
@@ -143,7 +144,7 @@ export function formFieldsOf(entity: FormEntity, entityKey: string): FormField[]
   return Object.entries(inputFields(entity.getFields())).map(([name, field]) => {
     const f = field;
     const control = controlOf(f);
-    const required = f.lifecycle?.create === undefined;
+    const required = Lifecycle.of(f).requiredAtCreate;
     const attrs = attrsOf(f, control, required);
     return {
       name,

@@ -1,4 +1,5 @@
-import { nullableShape, type Field } from '../field/index.js';
+import { Anatomy } from '../field/index.js';
+import { type Field } from '../field/index.js';
 
 /**
  * Make a field nullable AND omissible at creation — `null` enters the shape's
@@ -9,7 +10,7 @@ import { nullableShape, type Field } from '../field/index.js';
  */
 export function optional<T>(field: Field<T>): Field<T | null> {
   return field.with<T | null>({
-    shape: nullableShape(field.shape),
+    shape: Anatomy.nullable(field.shape),
     lifecycle: { ...field.lifecycle, create: field.lifecycle?.create ?? 'optional' },
   });
 }

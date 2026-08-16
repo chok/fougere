@@ -1,3 +1,4 @@
+import { Lifecycle } from '@fougere/schema';
 /**
  * Fougere server bootstrap — single entry point for an app's lifecycle,
  * whatever hosts it.
@@ -238,7 +239,7 @@ export function createMemoryOrm(entity: SchemaView, name: string): EntityOrm {
       const held = store.get(keyOf(id));
       if (held) {
         for (const [key, field] of Object.entries(fields)) {
-          if (key === pk || (field.lifecycle?.create === 'now' && field.lifecycle?.update !== 'now')) record[key] = held[key];
+          if (key === pk || Lifecycle.of(field).stampedOnce) record[key] = held[key];
         }
       }
       store.set(keyOf(id), record);

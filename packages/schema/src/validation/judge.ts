@@ -1,7 +1,8 @@
 import type { Field, Fields, FormatPredicate, Shape } from '../field/index.js';
 import { CREATE_TOKENS, UPDATE_TOKENS } from '../field/lifecycle.js';
 import { ON_DELETE, RELATION_KINDS } from '../field/role.js';
-import { Anatomy, Formats, boundaryOf, isShape, resolveBoundary, } from '../field/index.js';
+import { FieldGroup } from '../field/group.js';
+import { Boundary, Anatomy, Formats, } from '../field/index.js';
 import { Validator, format as engineFormats } from '@cfworker/json-schema';
 import type { Checked, ValidationError, ValidationResult } from './result.js';
 import type { ValidateOptions } from './options.js';
@@ -202,17 +203,20 @@ export class Judge {
         });
       }
     }
-    if (role.unique !== undefined) {
-      const groups = role.unique;
+    if (role.rules !== undefined) {
+      // By FORM: a built group, or the plain member list one denotes — the door normalizes
+      // the second into the first, so a card or a config is judged like anything else.
       const legal =
-        Array.isArray(groups) &&
-        groups.every(
-          (g) => Array.isArray(g) && g.every((m) => typeof m === "string"),
+        Array.isArray(role.rules) &&
+        role.rules.every(
+          (rule) =>
+            rule instanceof FieldGroup ||
+            (Array.isArray(rule) && rule.every((member) => typeof member === "string")),
         );
       if (!legal) {
         errors.push({
-          path: "role.unique",
-          message: "Expected groups of field names — string[][]",
+          path: "role.rules",
+          message: "Expected field groups, or the member lists they denote — string[][]",
         });
       }
     }
@@ -220,7 +224,7 @@ export class Judge {
   }
 
   /**
-   * The registry is OPEN, so a name cannot be checked here — `declaredBoundary` resolves it
+   * The registry is OPEN, so a name cannot be checked here — `Boundary.declared` resolves it
    * and throws `Unknown boundary alias` at the one place that can know. Only the FORM is
    * judged: a name, or a pair of directional rules.
    */
@@ -264,7 +268,7 @@ export class Judge {
     }
     const errors: ValidationError[] = [];
 
-    if (!isShape(value.shape)) {
+    if (!Anatomy.is(value.shape)) {
       errors.push({
         path: "shape",
         message: `Every field states a shape — got ${JSON.stringify(value.shape)}`,
@@ -329,7 +333,7 @@ export class Judge {
       if (opts.patch) continue; // patch: an unsent field is left untouched
       // A read-only field is server-owned: its absence from a client input is
       // never "Required" (same stance as OpenAPI readOnly+required).
-      if (boundaryOf(field).in === 'closed') continue;
+      if (Boundary.of(field).readOnly) continue;
       // Absence is answered by `lifecycle.create` — a key access on the normal
       // form. The judge only asks "is there a rule?": any rule ('now',
       // 'optional', { value }, { generate }) makes absence legal, and the field
@@ -345,7 +349,7 @@ export class Judge {
     // A PRESENT value can be illegal by an axis other than shape:
     // boundary `in: 'closed'` — a read-only field never crosses inbound;
     // lifecycle `update: 'forbidden'` — re-supplying an immutable field in a patch.
-    if (boundaryOf(field).in === 'closed') {
+    if (Boundary.of(field).readOnly) {
       errors.push({ path, message: 'Read-only' });
       continue;
     }
@@ -366,7 +370,7 @@ export class Judge {
       out[key] = null;
       continue;
     }
-    const decoded = resolveBoundary(field).decode(checked.value);
+    const decoded = Boundary.of(field).decode(checked.value);
     if ('error' in decoded) errors.push({ path, message: decoded.error });
     else out[key] = decoded.value;
     }
@@ -376,6 +380,7 @@ export class Judge {
   }
 
   /** The same judgment, as a boolean. */
+
   static isField(value: unknown): value is Field {
     return this.field(value).success;
   }

@@ -6,6 +6,8 @@
 // emits them and the database enforces them, so a collision surfaces as the driver's
 // error, never as a `validate()` failure.
 
+import type { FieldGroup } from './group.js';
+
 export type EntityConstructor = abstract new (...args: any[]) => any;
 
 /**
@@ -31,33 +33,13 @@ export interface Relation {
 
 export interface Role {
   primary?: boolean;
-  /**
-   * The constraints this field belongs to — one member list each. A lone `unique(slug)` is
-   * the degenerate case, a set of one, so there is one shape and not two.
-   *
-   * **An empty list denotes the field carrying it** — it does not know its own key. A named
-   * group comes from the entity's own declaration, where a fact about a pair belongs.
-   * NEVER read a group directly: {@link uniqueMembers} is the accessor.
-   *
-   * `describe` resolves it on the way out, so a card always names its members. Keeping it
-   * unresolved in memory is what makes `rename()` free: nothing to remap.
-   */
-  unique?: ReadonlyArray<ReadonlyArray<string>>;
   index?: boolean;
   relation?: Relation;
+  /**
+   * Every {@link FieldGroup} that names this field, of whatever kind — one list, so a new
+   * kind is a subclass and this type does not move. `index` is still a bare boolean: a rule
+   * of the same family that cannot yet name several fields.
+   */
+  rules?: ReadonlyArray<FieldGroup>;
 }
 
-/**
- * The constraint a member list denotes, resolved against the field carrying it — the
- * accessor every reader of `role.unique` goes through.
- *
- * ```ts
- * uniqueMembers([], 'slug')                    // ['slug']            — the self-reference
- * uniqueMembers(['listId', 'docId'], 'docId')  // ['listId','docId']  — already named
- * ```
- *
- * `ownKey` is the half the field is missing: iterate `Object.entries(getFields())`.
- */
-export function uniqueMembers(group: ReadonlyArray<string>, ownKey: string): string[] {
-  return group.length === 0 ? [ownKey] : [...group];
-}

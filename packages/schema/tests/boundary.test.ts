@@ -1,8 +1,7 @@
-import { Boundaries, Judge } from '../src/index.js';
-import { resolveBoundary } from '../src/field/index.js';
+import { Boundaries, Judge, Boundary } from '../src/index.js';
 import { describe, it, expect } from 'vitest';
 import {
-  entity, primary, text, date, optional, readOnly, writeOnly, boundaryOf,
+  entity, primary, text, date, optional, readOnly, writeOnly,
   encodeFields,
   } from '../src/index.js';
 import { Field } from '../src/field/index.js';
@@ -27,7 +26,7 @@ describe('boundary · date default (derived from shape)', () => {
 
   it('encode (egress) turns a Date back into an ISO string', () => {
     const field = Event.getFields().startsAt;
-    const wire = resolveBoundary(field).encode(new Date('2026-05-31T10:00:00.000Z'));
+    const wire = Boundary.of(field).encode(new Date('2026-05-31T10:00:00.000Z'));
     expect(wire).toBe('2026-05-31T10:00:00.000Z');
   });
 
@@ -46,7 +45,7 @@ describe('boundary · date default (derived from shape)', () => {
 describe('boundary · non-date kinds are identity', () => {
   it('a string field decodes to itself', () => {
     const field = Event.getFields().name;
-    expect(resolveBoundary(field).decode('hi')).toEqual({ value: 'hi' });
+    expect(Boundary.of(field).decode('hi')).toEqual({ value: 'hi' });
   });
 });
 
@@ -57,20 +56,20 @@ describe('boundary · override slot', () => {
     Boundaries.registerAlias('moneyCents', { in: { decode: 'fromCents' }, out: { encode: 'toCents' } });
 
     const price = new Field<number>({ shape: { type: 'number' }, boundary: 'moneyCents' });
-    const { decode, encode } = resolveBoundary(price);
+    const { decode, encode } = Boundary.of(price);
     expect(decode(1099)).toEqual({ value: 10.99 });
     expect(encode(10.99)).toBe(1099);
   });
 
   it('directional form allows asymmetry — an absent direction is identity', () => {
     const f = new Field<number>({ shape: { type: 'number' }, boundary: { in: { decode: 'fromCents' } } });
-    expect(resolveBoundary(f).decode(500)).toEqual({ value: 5 });
-    expect(resolveBoundary(f).encode(5)).toBe(5); // no out rule → identity
+    expect(Boundary.of(f).decode(500)).toEqual({ value: 5 });
+    expect(Boundary.of(f).encode(5)).toBe(5); // no out rule → identity
   });
 
   it('an unknown alias throws at resolve time', () => {
     const f = new Field<number>({ shape: { type: 'number' }, boundary: 'nope' });
-    expect(() => resolveBoundary(f)).toThrow(/Unknown boundary alias/);
+    expect(() => Boundary.of(f)).toThrow(/Unknown boundary alias/);
   });
 
   // The two spellings of one axis must fail the same way. The direct form used to
@@ -78,10 +77,10 @@ describe('boundary · override slot', () => {
   // been converted, and nothing said a word.
   it('an unregistered NAMED codec throws too, in both directions', () => {
     const inbound = new Field<number>({ shape: { type: 'number' }, boundary: { in: { decode: 'celsius' } } });
-    expect(() => resolveBoundary(inbound)).toThrow(/Unknown boundary decoder: 'celsius'/);
+    expect(() => Boundary.of(inbound)).toThrow(/Unknown boundary decoder: 'celsius'/);
 
     const outbound = new Field<number>({ shape: { type: 'number' }, boundary: { out: { encode: 'celsius' } } });
-    expect(() => resolveBoundary(outbound)).toThrow(/Unknown boundary encoder: 'celsius'/);
+    expect(() => Boundary.of(outbound)).toThrow(/Unknown boundary encoder: 'celsius'/);
   });
 });
 
@@ -109,29 +108,29 @@ describe("boundary · 'closed' permissions (readOnly / writeOnly)", () => {
 
   it('closing one direction keeps the derived conversion of the other (writeOnly date)', () => {
     const f = writeOnly(date());
-    expect(boundaryOf(f).out).toBe('closed');
-    expect(resolveBoundary(f).decode('2026-05-31T10:00:00.000Z')).toEqual({ value: new Date('2026-05-31T10:00:00.000Z') });
+    expect(Boundary.of(f).out).toBe('closed');
+    expect(Boundary.of(f).decode('2026-05-31T10:00:00.000Z')).toEqual({ value: new Date('2026-05-31T10:00:00.000Z') });
   });
 });
 
-describe('boundary · survit aux transforms de field (cloneField)', () => {
+describe('boundary · survives every field transform', () => {
   Boundaries.registerDecoder('fromCents', (v) => ({ value: typeof v === 'number' ? v / 100 : v }));
   Boundaries.registerEncoder('toCents', (v) => (typeof v === 'number' ? Math.round(v * 100) : v));
   Boundaries.registerAlias('moneyCents', { in: { decode: 'fromCents' }, out: { encode: 'toCents' } });
   const money = () => new Field<number>({ shape: { type: 'number' }, boundary: 'moneyCents' });
 
-  it('optional() préserve le boundary', () => {
-    expect(resolveBoundary(optional(money())).decode(1099)).toEqual({ value: 10.99 });
+  it('optional() keeps the boundary', () => {
+    expect(Boundary.of(optional(money())).decode(1099)).toEqual({ value: 10.99 });
   });
 
-  it('primary(field) préserve le boundary ET la description', () => {
+  it('primary(field) keeps the boundary AND the description', () => {
     const f = primary(new Field<string>({ shape: { type: 'string' }, boundary: 'moneyCents', meta: { description: 'id' } }));
-    expect(resolveBoundary(f).decode(1099)).toEqual({ value: 10.99 });
+    expect(Boundary.of(f).decode(1099)).toEqual({ value: 10.99 });
     expect(f.meta?.description).toBe('id');
   });
 
-  it('partial() préserve le boundary', () => {
+  it('partial() keeps the boundary', () => {
     class M extends entity({ price: money() }) {}
-    expect(resolveBoundary(M.partial().getFields().price).decode(1099)).toEqual({ value: 10.99 });
+    expect(Boundary.of(M.partial().getFields().price).decode(1099)).toEqual({ value: 10.99 });
   });
 });

@@ -71,11 +71,11 @@ group('2 · class body conveniences', () => {
 // ─── 3 · "étendre validate" — l'escape hatch cross-champ, et son coût ──
 
 class DateRange extends entity({
-  start: number(),   // timestamps, pour rester simple
+  start: number(),   // timestamps, to keep it simple
   end: number(),
 }) {
-  // Règle cross-champ que la vocabulaire des fields NE PEUT PAS exprimer
-  // (shape valide un champ à la fois). Le corps est le seul endroit pour ça.
+  // A cross-field rule the field vocabulary CANNOT express (a shape judges one field at
+  // a time). The class body is the only place for it.
   static validate(input: unknown) {
     const base = super.validate(input);
     if (base.success && base.data.start > base.data.end) {

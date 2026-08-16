@@ -1,5 +1,6 @@
+import { Lifecycle } from '../field/index.js';
+import { Boundary } from '../field/index.js';
 import type { Fields } from '../field/index.js';
-import { boundaryOf } from '../field/index.js';
 
 /**
  * The two dual projections of a field set onto a client surface — membership only. The
@@ -21,9 +22,9 @@ export function inputFields(fields: Fields): Fields {
   const result: Fields = {};
   for (const [name, field] of Object.entries(fields)) {
     if (field.role?.primary) continue;
-    if (field.lifecycle?.create === 'now') continue;
+    if (Lifecycle.of(field).create === 'now') continue;
     if (field.role?.relation?.kind === 'many') continue;
-    if (boundaryOf(field).in === 'closed') continue;
+    if (Boundary.of(field).readOnly) continue;
     result[name] = field;
   }
   return result;
@@ -37,7 +38,7 @@ export function inputFields(fields: Fields): Fields {
 export function outputFields(fields: Fields): Fields {
   const result: Fields = {};
   for (const [name, field] of Object.entries(fields)) {
-    if (boundaryOf(field).out === 'closed') continue;
+    if (Boundary.of(field).writeOnly) continue;
     result[name] = field;
   }
   return result;
