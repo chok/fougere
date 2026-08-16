@@ -1,7 +1,8 @@
+import { Role } from '../axis/role/Role.js';
 import { clean } from '../clean.js';
 import { EXTENSION_AXES } from '../axis/Axis.js';
 import type { Field, Fields } from '../Field.js';
-import type { Role } from '../axis/role/Role.js';
+import type { RoleRules } from '../axis/role/Role.js';
 import type { SchemaView } from '../SchemaView.js';
 import { Boundary } from '../axis/boundary/Boundary.js';
 import { Anatomy } from '../axis/shape/Shape.js';
@@ -24,7 +25,7 @@ function isRequired(field: Field): boolean {
   // readOnly+required, and the two readers now answer from the same axis.
   if (Boundary.of(field).readOnly) return false;
   if (field.lifecycle?.create !== undefined) return false;
-  if (field.role?.relation?.kind === 'many') return false;
+  if (Role.of(field).isCollection) return false;
   return true;
 }
 

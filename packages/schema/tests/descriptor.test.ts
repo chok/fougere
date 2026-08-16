@@ -15,7 +15,7 @@ import { describe, describeSet } from '../src/card/describe.js';
 import { reconstruct, reconstructSet } from '../src/card/reconstruct.js';
 import { type SchemaView } from '../src/SchemaView.js';
 import { type EntityConstructor, type Relation } from '../src/axis/role/Relation.js';
-import { type Role } from '../src/axis/role/Role.js';
+import { type RoleRules } from '../src/axis/role/Role.js';
 import { type RoleDescriptor, type RelationDescriptor } from '../src/card/Descriptor.js';
 
 class Author extends entity({ id: primary() }) {}
@@ -223,7 +223,7 @@ group('required and the judge answer the same question', () => {
 
 /**
  * The card names what it KEEPS from a role, and so do the two functions that write and
- * read it. A member added to `Role` must be decided on, not carried by a subtraction:
+ * read it. A member added to `RoleRules` must be decided on, not carried by a subtraction:
  * `describeRole` enumerates its members, so a type saying otherwise would promise a key
  * the card never carries — across a process and a language, where nothing checks back.
  */
@@ -235,8 +235,8 @@ group('every member of a role is accounted for on the wire', () => {
     ? true
     : ['this member reaches no card:', Exclude<OnTheWire<keyof Live>, keyof Wire>];
 
-  it('leaves no member of Role or Relation unaccounted for', () => {
-    const role: Accounted<Role, RoleDescriptor> = true;
+  it('leaves no member of RoleRules or Relation unaccounted for', () => {
+    const role: Accounted<RoleRules, RoleDescriptor> = true;
     const relation: Accounted<Relation, RelationDescriptor> = true;
     expect([role, relation]).toEqual([true, true]);
   });

@@ -1,3 +1,4 @@
+import { Role } from '@fougere/schema';
 import type { App, FrondDescriptor, SeedEntry, SeedFactory } from './types.js';
 
 /**
@@ -22,8 +23,8 @@ export function orderSeeds(fronds: FrondDescriptor[]): SeedEntry[] {
     for (const entity of frond.entities) {
       const targets = new Set<string>();
       for (const field of Object.values(entity.entityClass.getFields())) {
-        if (field.role?.relation?.kind !== 'one') continue;
-        const target = (field.role.relation.to() as { name?: string }).name?.toLowerCase();
+        if (!Role.of(field).isReference) continue;
+        const target = (Role.of(field).target as { name?: string }).name?.toLowerCase();
         if (target && target !== entity.name.toLowerCase()) targets.add(target);
       }
       refs.set(entity.name.toLowerCase(), targets);

@@ -1,6 +1,6 @@
 import type { Shape } from './axis/shape/Shape.js';
 import { Judge } from './judge/Judge.js';
-import type { Role } from './axis/role/Role.js';
+import type { RoleRules } from './axis/role/Role.js';
 import { FieldGroup } from './axis/role/FieldGroup.js';
 import { Unique } from './axis/role/Unique.js';
 import type { LifecycleRules } from './axis/lifecycle/Lifecycle.js';
@@ -25,7 +25,7 @@ import type { Meta } from './axis/Meta.js';
  */
 export class Field<T = unknown> {
   readonly shape: Shape;
-  readonly role?: Role;
+  readonly role?: RoleRules;
   readonly lifecycle?: LifecycleRules;
   readonly boundary?: BoundaryRef;
   readonly meta?: Meta;
@@ -109,7 +109,7 @@ export class Field<T = unknown> {
  * canonical. `Unique` is the only kind a bare list can denote today — a second kind would
  * need the list to say which, and that is the day this stops being derivable.
  */
-function normalizeRole(role: Role | undefined): Role | undefined {
+function normalizeRole(role: RoleRules | undefined): RoleRules | undefined {
   const rules = FieldGroup.normalize(role?.rules, (members) => Unique.of(...members));
   return rules === role?.rules ? role : { ...role, rules };
 }

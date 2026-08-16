@@ -1,3 +1,4 @@
+import { Role } from '@fougere/schema';
 /**
  * Auto-register GraphQL types and operations from a fougere App.
  *
@@ -26,7 +27,7 @@ function relationNameFor(fieldName: string): string | undefined {
 
 /** The field a target is keyed by — what a batch read indexes its answer on. */
 function primaryNameOf(fields: Fields): string {
-  for (const [name, field] of Object.entries(fields)) if (field.role?.primary) return name;
+  for (const [name, field] of Object.entries(fields)) if (Role.of(field).isPrimary) return name;
   return 'id';
 }
 
@@ -384,8 +385,8 @@ export function registerAll(
     const relationFields: Record<string, (t: any) => any> = {};
 
     for (const [fieldName, field] of Object.entries(fields)) {
-      if (field.role?.relation?.kind === 'one') {
-        const target = field.role.relation.to();
+      if (Role.of(field).isReference) {
+        const target = Role.of(field).target;
         if (!target) continue;
         const targetEntry = typeRegistry.get(targetKey(target));
         if (!targetEntry) continue;
@@ -429,8 +430,8 @@ export function registerAll(
         });
       }
 
-      if (field.role?.relation?.kind === 'many') {
-        const target = field.role.relation.to();
+      if (Role.of(field).isCollection) {
+        const target = Role.of(field).target;
         if (!target) continue;
         const targetEntry = typeRegistry.get(targetKey(target));
         if (!targetEntry) continue;
@@ -439,8 +440,8 @@ export function registerAll(
         // Read off the registry, not off the target object: a target rebuilt from a card is
         // a `{ name }` stand-in with no fields to walk, and the registry already holds them.
         const reverseFk = Object.entries(targetEntry.fields).find(
-          ([, f]) => f.role?.relation?.kind === 'one'
-            && targetKey(f.role.relation.to()) === entityName,
+          ([, f]) => Role.of(f).isReference
+            && targetKey(Role.of(f).target) === entityName,
         );
         if (!reverseFk) continue;
 

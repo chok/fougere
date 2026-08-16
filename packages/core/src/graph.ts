@@ -1,3 +1,4 @@
+import { Role } from '@fougere/schema';
 /**
  * Entity dependency graph — analyzes ref() links between entities
  * to suggest domain boundaries for splitting fronds.
@@ -26,8 +27,8 @@ export function buildGraph(fronds: FrondDescriptor[]): Map<string, EntityNode> {
     for (const entity of frond.entities) {
       const refs: string[] = [];
       for (const [, field] of Object.entries(entity.entityClass.getFields())) {
-        if (field.role?.relation?.kind === 'one') {
-          const resolved = field.role.relation.to();
+        if (Role.of(field).isReference) {
+          const resolved = Role.of(field).target;
           const targetName = typeof resolved === 'function' && 'name' in resolved
             ? (resolved.name as string).toLowerCase()
             : undefined;

@@ -1,3 +1,4 @@
+import { Role } from '@fougere/schema';
 /**
  * SqlEntityOrm — per-entity ORM over Kysely, one implementation for every engine.
  *
@@ -54,7 +55,7 @@ interface PrimaryKeyInfo {
  */
 function analyzeFields(entity: SchemaView): { pk: PrimaryKeyInfo } {
   const pkNames = Object.entries(entity.getFields())
-    .filter(([, field]) => field.role?.primary)
+    .filter(([, field]) => Role.of(field).isPrimary)
     .map(([name]) => name);
 
   return { pk: { names: pkNames, isComposite: pkNames.length > 1 } };

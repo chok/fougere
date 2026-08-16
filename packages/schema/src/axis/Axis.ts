@@ -15,7 +15,7 @@ import type { ValidationError } from '../judge/result.js';
  * it is applied to the source's own structure and not only to its data.
  */
 export interface Axis<Declared = unknown, Wire = unknown> {
-  /** The key it occupies on a `Role`-style slot of `Field`, and on `FieldExtension`. */
+  /** The key it occupies on a `RoleRules`-style slot of `Field`, and on `FieldExtension`. */
   readonly slot: 'role' | 'lifecycle' | 'boundary';
 
   /** Judge the DECLARED form. By form, never by a brand — a card may come from anywhere. */

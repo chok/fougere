@@ -3,7 +3,7 @@ import { EXTENSION_AXES } from '../axis/Axis.js';
 import type { Resolver } from '../axis/Axis.js';
 import { Field, type Fields } from '../Field.js';
 import { type EntityConstructor } from '../axis/role/Relation.js';
-import { type Role } from '../axis/role/Role.js';
+import { type RoleRules } from '../axis/role/Role.js';
 import { type Shape } from '../axis/shape/Shape.js';
 import { Unique } from '../axis/role/Unique.js';
 import { Schema, type SchemaConstructor } from '../Schema.js';

@@ -1,3 +1,4 @@
+import { Role } from '@fougere/schema';
 /**
  * Entity → table description, with no SQL in sight.
  *
@@ -82,7 +83,7 @@ function isStored(field: Field): boolean {
 function primaryColumnOf(target: Partial<SchemaView>): string {
   if (typeof target.getFields !== 'function') return 'id';
   for (const [name, field] of Object.entries(target.getFields())) {
-    if (field.role?.primary) return toSnakeCase(name);
+    if (Role.of(field).isPrimary) return toSnakeCase(name);
   }
   return 'id'; // declared no primary() field — defensive, shouldn't happen
 }
@@ -160,7 +161,7 @@ function toColumn(
     name: toSnakeCase(fieldName),
     shape: base as ColumnShape | undefined,
     nullable,
-    primary: field.role?.primary === true,
+    primary: Role.of(field).isPrimary,
   };
   const bounds = boundsOf(base as Record<string, unknown> | undefined);
   if (bounds) column.bounds = bounds;
@@ -173,7 +174,7 @@ function toColumn(
   // constraint, emitted once from `uniqueGroups` rather than once per member column.
   const soleUnique = FieldGroup.on(field, Unique).some((group) => group.members.length <= 1);
   if (soleUnique && !column.primary) column.unique = true;
-  if (field.role?.index === true && !column.primary && !column.unique) column.index = true;
+  if (Role.of(field).isIndexed && !column.primary && !column.unique) column.index = true;
   const references = referenceFor(field, resolve, tableNameOf, hosted);
   if (references) column.references = references;
   return column;

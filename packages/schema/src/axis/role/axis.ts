@@ -2,7 +2,7 @@ import type { Axis, Resolver } from '../Axis.js';
 import { isObject, oneOfTokens } from '../../judge/form.js';
 import type { ValidationError } from '../../judge/result.js';
 import { ON_DELETE, RELATION_KINDS, type EntityConstructor } from './Relation.js';
-import { type Role } from './Role.js';
+import { type RoleRules } from './Role.js';
 import { FieldGroup } from './FieldGroup.js';
 import { Unique } from './Unique.js';
 import type { RoleDescriptor } from '../../card/Descriptor.js';
@@ -13,7 +13,7 @@ import { registrationKeyOf } from '../../name.js';
  * whose projections are not the identity, because two of its members cannot travel as they
  * are held: a group's members are implicit in memory, and a relation's target is a thunk.
  */
-export const roleAxis: Axis<Role, RoleDescriptor> = {
+export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
   slot: 'role',
 
   judge(value, errors) {
@@ -69,7 +69,7 @@ export const roleAxis: Axis<Role, RoleDescriptor> = {
   },
 
   reconstruct(wire, resolve?: Resolver) {
-    const out: Role = {};
+    const out: RoleRules = {};
     if (wire.primary) out.primary = true;
     // Members arrive spelled out and stay that way — reading a single-member group back as
     // the empty self-reference would re-describe identically and lose the distinction.
@@ -81,9 +81,9 @@ export const roleAxis: Axis<Role, RoleDescriptor> = {
         // Lazy, so a circular relation resolves. Without a resolver (a lone card), a
         // name-only stand-in: enough to validate and re-describe, not to feed an adapter.
         to: () => (resolve?.(name) ?? ({ name } as unknown)) as EntityConstructor,
-        kind: wire.relation.kind as Role['relation'] extends infer R ? never : never extends never ? 'one' | 'many' : never,
+        kind: wire.relation.kind as RoleRules['relation'] extends infer R ? never : never extends never ? 'one' | 'many' : never,
         ...(wire.relation.onDelete ? { onDelete: wire.relation.onDelete as 'cascade' } : {}),
-      } as Role['relation'];
+      } as RoleRules['relation'];
     }
     return out;
   },

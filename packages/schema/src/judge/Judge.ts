@@ -1,3 +1,4 @@
+import { Role } from '../axis/role/Role.js';
 import type { Field, Fields } from '../Field.js';
 import type { FormatPredicate } from '../axis/shape/Formats.js';
 import type { Shape } from '../axis/shape/Shape.js';
@@ -205,7 +206,7 @@ export class Judge {
       if (field.lifecycle?.create !== undefined) continue;
       // No create rule: a `many` relation defaults to the empty collection
       // (graph semantics, read on `role` — never a shared `{ value: [] }`).
-      if (field.role?.relation?.kind === 'many') { out[key] = []; continue; }
+      if (Role.of(field).isCollection) { out[key] = []; continue; }
       errors.push({ path, message: 'Required' });
       continue;
     }

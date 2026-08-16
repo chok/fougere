@@ -2,7 +2,7 @@
 export { Field, type Fields } from './Field.js';
 export { type Shape, type ShapeType, Anatomy } from './axis/shape/Shape.js';
 export { type StringFormat, type FormatPredicate, Formats } from './axis/shape/Formats.js';
-export { type Role } from './axis/role/Role.js';
+export { Role, type RoleRules } from './axis/role/Role.js';
 export { type Relation, type EntityConstructor } from './axis/role/Relation.js';
 export { Lifecycle, type LifecycleRules } from './axis/lifecycle/Lifecycle.js';
 export { type GeneratorRef, registerGenerator, resolveCustomGenerator } from './axis/lifecycle/Generators.js';

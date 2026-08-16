@@ -1,7 +1,7 @@
 import type { BoundaryRef } from '../axis/boundary/Boundary.js';
 import type { LifecycleRules } from '../axis/lifecycle/Lifecycle.js';
 import type { Relation } from '../axis/role/Relation.js';
-import type { Role } from '../axis/role/Role.js';
+import type { RoleRules } from '../axis/role/Role.js';
 import type { Shape } from '../axis/shape/Shape.js';
 
 /**
@@ -74,7 +74,7 @@ export interface FieldExtension {
  * Names what it KEEPS, like `describeRole` and `reconstructRole` do. Two of the four
  * members do not travel as they are, so portability is not the default a new one gets.
  */
-export type RoleDescriptor = Pick<Role, 'primary' | 'index'> & {
+export type RoleDescriptor = Pick<RoleRules, 'primary' | 'index'> & {
   unique?: string[][];
   relation?: RelationDescriptor;
 };

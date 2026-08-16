@@ -1,3 +1,4 @@
+import { Role } from '@fougere/schema';
 /**
  * @fougere/adapter-graphql — génère des types Pothos depuis les entités fougere
  */
@@ -499,7 +500,7 @@ export function registerType(builder: InstanceType<typeof SchemaBuilder>, config
       for (const [fieldName, field] of Object.entries(fields)) {
         if (exclude.has(fieldName)) continue;
         // Skip 'many' fields — handled by relations
-        if (field.role?.relation?.kind === 'many') continue;
+        if (Role.of(field).isCollection) continue;
         // Skip fields that have a relation override
         if (config.relations?.[fieldName]) continue;
         // Write-only (boundary out: 'closed', e.g. password): never emitted
@@ -635,7 +636,7 @@ export function registerInput(builder: InstanceType<typeof SchemaBuilder>, confi
 
       for (const [fieldName, field] of Object.entries(fields)) {
         // Skip virtual fields
-        if (field.role?.relation?.kind === 'many') continue;
+        if (Role.of(field).isCollection) continue;
         // Read-only (boundary in: 'closed'): never accepted from a client
         if (Boundary.of(field).readOnly) continue;
 

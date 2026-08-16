@@ -1,3 +1,4 @@
+import { Role } from '../axis/role/Role.js';
 import { Lifecycle } from '../axis/lifecycle/Lifecycle.js';
 import { Boundary } from '../axis/boundary/Boundary.js';
 import type { Fields } from '../Field.js';
@@ -21,9 +22,9 @@ import type { Fields } from '../Field.js';
 export function inputFields(fields: Fields): Fields {
   const result: Fields = {};
   for (const [name, field] of Object.entries(fields)) {
-    if (field.role?.primary) continue;
+    if (Role.of(field).isPrimary) continue;
     if (Lifecycle.of(field).create === 'now') continue;
-    if (field.role?.relation?.kind === 'many') continue;
+    if (Role.of(field).isCollection) continue;
     if (Boundary.of(field).readOnly) continue;
     result[name] = field;
   }

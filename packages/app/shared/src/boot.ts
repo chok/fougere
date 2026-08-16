@@ -1,3 +1,4 @@
+import { Role } from '@fougere/schema';
 import { Lifecycle } from '@fougere/schema';
 /**
  * Fougere server bootstrap — single entry point for an app's lifecycle,
@@ -170,7 +171,7 @@ async function boot(): Promise<App> {
  */
 export function createMemoryOrm(entity: SchemaView, name: string): EntityOrm {
   const fields = entity.getFields();
-  const pk = Object.entries(fields).find(([, field]) => field.role?.primary)?.[0] ?? 'id';
+  const pk = Object.entries(fields).find(([, field]) => Role.of(field).isPrimary)?.[0] ?? 'id';
   const store = new Map<string, Record<string, unknown>>();
   // `EntityOrm.findById(id: string)` — but a key can hold a number, and a Map keyed on
   // `1` does not answer `'1'`. SQL never had the question; here the divergence was
