@@ -48,11 +48,6 @@ interface OperationMeta {
   output?: SchemaSource;
   /** The operation in words — see `RouteDefinition.description`. */
   description?: string;
-  /**
-   * What the scan read off the method. Only `readOnly` matters here, and it decides
-   * GET: a name is a naming choice, a write is a fact.
-   */
-  signature?: { readOnly?: boolean };
 }
 
 interface EntityEntry {
@@ -129,9 +124,8 @@ function pluralize(name: string): string {
 function deriveMethod(
   opName: string,
   overrides?: Record<string, { kind?: 'query' | 'command' }>,
-  readOnly?: boolean,
 ): HttpMethod {
-  if (resolveIsReadOp(opName, overrides, readOnly)) return 'GET';
+  if (resolveIsReadOp(opName, overrides)) return 'GET';
   if (opName.startsWith('create')) return 'POST';
   if (opName.startsWith('update') || opName.startsWith('edit')) return 'PUT';
   if (opName.startsWith('delete') || opName.startsWith('remove')) return 'DELETE';
@@ -225,7 +219,7 @@ export function generateRoutes(app: AppLike, options?: GenerateRoutesOptions): R
       for (const opName of opNames) {
         const meta = handler?.operations.get(opName);
         const override = entityOverrides[opName];
-        const method = override?.method ?? deriveMethod(opName, frond.operationsOverrides, meta?.signature?.readOnly);
+        const method = override?.method ?? deriveMethod(opName, frond.operationsOverrides);
         const path = prefix + (override?.path ?? derivePath(entity.name, opName));
 
         // Input/output fields: use meta if available, fallback to entity fields for CRUD.

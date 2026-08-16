@@ -88,21 +88,22 @@ export function isReadOp(name: string): boolean {
 }
 
 /**
- * Resolve operation kind. Precedence: the author states, the body proves, the name suggests.
+ * Resolve operation kind honoring per-op overrides (from frond.config.ts).
+ * Precedence: explicit override wins over convention.
  *
- * `readOnly` is what the scan SAW (`ParsedMethod.readOnly`) and it outranks the prefix
- * convention, because a name is a naming choice and a write is a fact. It never
- * outranks the config: an op may write through something the parse cannot follow, and
- * saying so is the escape hatch.
+ * The convention is the NAME, and it is a weak signal: an app naming its reads in domain
+ * terms (`ofBook`, `roots`, `bySlug`) matches no prefix and every one of them is published
+ * as a mutation. Reading the method body instead was built and removed (2026-08-16): it
+ * answers "does this touch storage", not "is this a read", and the two part company on
+ * logging — a read that writes an audit row became a mutation, so adding a log line moved
+ * a field from Query to Mutation. The shape of an API must not depend on that.
  */
 export function resolveIsReadOp(
   name: string,
   overrides?: Record<string, { kind?: 'query' | 'command' }>,
-  readOnly?: boolean,
 ): boolean {
   const kind = overrides?.[name]?.kind;
   if (kind) return kind === 'query';
-  if (readOnly !== undefined) return readOnly;
   return isReadOp(name);
 }
 

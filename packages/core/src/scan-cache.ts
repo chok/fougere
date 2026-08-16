@@ -28,9 +28,11 @@ import { join } from 'node:path';
  */
 // 4 — the parse became a pair (methods + unresolvedHeritage); a v3 entry
 //     would answer with an array and lose the half that reports what it could not open.
-// 5 — a method carries `readOnly`, read off its body; a v4 entry has none, and an op
-//     with no evidence falls back to the prefix convention — a read announced as a write.
-const PARSER_VERSION = 5;
+// 5 — a method carried `readOnly`, read off its body. REMOVED (2026-08-16): it answered
+//     "does this touch storage", not "is this a read", so a read that wrote an audit row
+//     was published as a mutation. The number stays taken; going back to 4 would revive
+//     a v4 cache written before 5, which is the same shape but not the same history.
+const PARSER_VERSION = 6;
 
 interface CacheEntry {
   hash: string;

@@ -70,36 +70,7 @@ export interface ParsedMethod {
    * operation is FOR lived only in the source.
    */
   description?: string;
-  /**
-   * The body was read and makes no write — the op is a query.
-   *
-   * `true` is PROOF, not a guess: every call the method makes on `this` names a read
-   * gesture. `false` means a write was seen, or a call this cannot classify — a façade,
-   * an emission, an injected function. `undefined` means there was no body to read.
-   *
-   * It exists because the name never said this. `isReadOp` matches seven prefixes, and
-   * an app that names its reads in domain terms — `ofBook`, `roots`, `bySlug` — had all
-   * of them announced as mutations. Naming is the author's; writing is a fact.
-   */
-  readOnly?: boolean;
 }
-
-/** Seeing one of these is proof the op writes, whatever it is called. */
-const WRITE_GESTURES = new Set([
-  'create', 'createAll', 'update', 'updateAll', 'upsert', 'upsertAll', 'delete', 'deleteAll', 'refresh',
-]);
-
-/**
- * The only calls on `this` a query may make.
- *
- * Not a list of what reads — a list of what this can RECOGNIZE as reading. Anything
- * else rooted at `this` (a façade, an emission, a service) leaves the question open,
- * and an open question answers `mutation`: announcing a write as a query would let it
- * be cached and sent over GET.
- */
-const READ_GESTURES = new Set([
-  'list', 'findById', 'findBy', 'findAllBy', 'findByKeys', 'findAllByKeys', 'count', 'exists', 'read',
-]);
 
 /** Parse a TypeScript type node into a ParsedType. */
 function parseTypeNode(node: ts.TypeNode, source: ts.SourceFile): ParsedType {
@@ -438,47 +409,10 @@ function extractClassMethods(cls: ts.ClassDeclaration | ts.ClassExpression, sour
     results.push({
       name, params, returnType,
       description: docSentenceOf(member, source),
-      readOnly: readOnlyBody(member),
     });
   }
 
   return results;
-}
-
-/**
- * Whether the body proves the op writes nothing.
- *
- * One pass over the calls. A write gesture anywhere settles it; otherwise every call
- * whose receiver bottoms out at `this` must name a read gesture. Calls on anything
- * else — an array, a promise, a local — are not the port and are left alone.
- */
-function readOnlyBody(member: ts.MethodDeclaration): boolean | undefined {
-  const ts = getTS();
-  if (!member.body) return undefined;
-
-  const rootsAtThis = (node: ts.Expression): boolean => {
-    let cur: ts.Node = node;
-    while (ts.isPropertyAccessExpression(cur) || ts.isElementAccessExpression(cur)) cur = cur.expression;
-    return cur.kind === ts.SyntaxKind.ThisKeyword;
-  };
-
-  let proven = true;
-  const visit = (node: ts.Node): void => {
-    if (ts.isCallExpression(node)) {
-      const callee = node.expression;
-      if (ts.isPropertyAccessExpression(callee)) {
-        const gesture = callee.name.text;
-        // `this.published({…})` lands here too — an injected `Emit<T>` is a property of
-        // `this` called as a function, and an emission is a write on someone else's
-        // storage. It is not in READ_GESTURES, which is the whole answer.
-        if (WRITE_GESTURES.has(gesture)) proven = false;
-        else if (rootsAtThis(callee.expression) && !READ_GESTURES.has(gesture)) proven = false;
-      }
-    }
-    ts.forEachChild(node, visit);
-  };
-  visit(member.body);
-  return proven;
 }
 
 /**

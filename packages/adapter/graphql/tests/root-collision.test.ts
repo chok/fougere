@@ -22,7 +22,6 @@ const ofBook = {
   name: 'ofBook',
   params: [{ name: 'bookId', type: { raw: 'string', name: 'string' } }],
   returnType: { raw: 'Promise<Note[]>', name: 'Note', array: true },
-  readOnly: true,
 };
 
 function build(fronds: { name: string; handler: string; overrides?: Record<string, unknown> }[]) {
@@ -96,9 +95,13 @@ describe('two operations claiming one root field', () => {
       { name: 'annotation', handler: 'NoteHandler' },
       { name: 'catalog', handler: 'ChapterHandler', overrides: { ofBook: { graphql: 'chaptersOfBook' } } },
     ]);
-    const query = (schema.getTypeMap().Query as any).getFields();
+    // Whichever root they land on — `ofBook` matches no read prefix, so both are
+    // mutations here. What this pins is the NAME, not the kind.
+    const roots = ['Query', 'Mutation'].flatMap(
+      (t) => Object.keys((schema.getTypeMap()[t] as any).getFields()),
+    );
 
-    expect(Object.keys(query)).toContain('ofBook');
-    expect(Object.keys(query)).toContain('chaptersOfBook');
+    expect(roots).toContain('ofBook');
+    expect(roots).toContain('chaptersOfBook');
   });
 });

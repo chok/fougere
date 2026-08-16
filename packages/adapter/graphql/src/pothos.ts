@@ -60,8 +60,6 @@ interface ParsedSignature {
   name: string;
   params: { name: string; type: { raw: string; name: string; array?: boolean; nullable?: boolean; generics?: ParsedSignature['params'][0]['type'][] }; optional?: boolean }[];
   returnType?: { raw: string; name: string; array?: boolean; nullable?: boolean; generics?: ParsedSignature['params'][0]['type'][] };
-  /** The body was read and makes no write — see `ParsedMethod.readOnly` in core. */
-  readOnly?: boolean;
 }
 
 /** Metadata for a handler operation (from scanner). */
@@ -108,11 +106,9 @@ const READ_PREFIXES = ['list', 'find', 'get', 'search', 'count', 'exists', 'stat
 function resolveIsReadOp(
   name: string,
   overrides?: Record<string, { kind?: 'query' | 'command' }>,
-  readOnly?: boolean,
 ): boolean {
   const kind = overrides?.[name]?.kind;
   if (kind) return kind === 'query';
-  if (readOnly !== undefined) return readOnly;
   return READ_PREFIXES.some((p) => name.startsWith(p));
 }
 
@@ -944,7 +940,7 @@ export function registerOperations(builder: InstanceType<typeof SchemaBuilder>, 
       }),
     });
 
-    if (resolveIsReadOp(opName, config.operationsOverrides, sig.readOnly)) {
+    if (resolveIsReadOp(opName, config.operationsOverrides)) {
       (builder as any).queryFields(fieldDef);
     } else {
       (builder as any).mutationFields(fieldDef);

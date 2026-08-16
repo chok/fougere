@@ -29,10 +29,11 @@ import type { BindingPlan } from './binding.js';
  */
 export interface OperationOverride {
   /**
-   * Force operation kind — over the body evidence AND the naming convention.
+   * Force operation kind, over the naming convention (`isReadOp`).
    *
-   * The scan reads the method body and a proven read becomes a query; state it here when
-   * the op writes through something the parse cannot follow, or when it reads through one.
+   * The convention reads the NAME, which is a weak signal — an app naming its reads in
+   * domain terms (`ofBook`, `roots`, `bySlug`) matches no prefix and every one of them is
+   * published as a mutation and a POST. This is the only place that fixes it.
    */
   kind?: 'query' | 'command';
   /**
