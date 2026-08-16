@@ -1,6 +1,6 @@
 import { Judge } from '@fougere/schema';
 import type { Container } from '@fougere/container';
-import type { CreateAppOptions, App, AuthRuntime, HandlerEntry, PresenterEntry } from './types.js';
+import type { CreateAppOptions, App, AuthRuntime, EntityEntry, HandlerEntry, PresenterEntry } from './types.js';
 import type { AppMiddleware } from './middleware.js';
 import { runMiddlewares } from './middleware.js';
 import { FougereError, ErrorCode } from './errors.js';
@@ -8,9 +8,9 @@ import { scanProject } from './scanner.js';
 import { Logger, type LogLevel } from './builtins/logger.js';
 import { Config } from './builtins/config.js';
 import { createRemoteRouter, createRemoteFacade } from './remote.js';
-import { AsyncLocalStorage } from 'node:async_hooks';
-import { facadeKeyOf } from './call.js';
-import { emitKeyOf, factsAnnouncedBy } from './emit.js';
+import { Emissions } from './Emissions.js';
+import { HandlerFacade } from './HandlerFacade.js';
+import { facadeKeyOf, contractsKeyOf } from './call.js';
 import { repositoryKeyOf } from './repository.js';
 // The keys, each read from where its concept is declared — never respelled here.
 import { ormKeyOf } from './orm.js';
@@ -22,7 +22,7 @@ import type { OperationContract, OperationsMap } from './operation.js';
 import { resolveContracts } from './operation.js';
 import { EMPTY_INVOCATION, type InvocationContext } from './invocation.js';
 import { registrationKeyOf } from './contract.js';
-import { type SchemaView, type Fields, applyCreate } from '@fougere/schema';
+import type { SchemaView, Fields } from '@fougere/schema';
 import { projectEgress, presentEgress, guardStorage, type PresenterArgs } from './egress.js';
 
 
@@ -154,57 +154,10 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
   assertOneOwnerPerKey(fronds, options.remotes);
 
-  /**
-   * Emissions — the only place in Fougere where an initiator names a SUBJECT.
-   *
-   * The set comes from the DEPS, not from the subscribers: a handler that declares
-   * `Emit<PostPublished>` must resolve it whether or not anybody listens, and announcing
-   * to nobody is legal. The index is filled by `buildFacade` as each contract is resolved,
-   * and the value below closes over it — so no order between the two ever matters.
-   */
-  const emitted = new Set(fronds.flatMap((frond) => factsAnnouncedBy(frond.handlers)));
-  const subscribers = new Map<string, Array<{ door: string; op: string }>>();
-
-  // Every entity of every frond, by name — so a fact can be judged where it LANDS.
+  // Every entity of every frond, by name — so a fact can be judged where it LANDS, and
+  // so a `reads:` clause can name a neighbour's.
   const entityByName = fronds.schemas();
-
-  /**
-   * Who listens to what — read from the PLAN, where `{ kind: 'fact' }` is a sentence
-   * `computeBindingPlan` already wrote, so nothing re-derives what a parameter is.
-   *
-   * It runs for a frond hosted here AND for one declared remote. A remote frond is still
-   * scanned — only its hosting is elsewhere — so its subscriptions are known, and its door
-   * resolves to a doublure. That is the whole reason an emission crosses a process without
-   * a line of transport code: the emitter learned the signature locally and calls the same
-   * key. Filling this inside `buildFacade` alone left the index EMPTY under a split, and a
-   * fact announced to a remote listener reached nobody, in silence.
-   */
-  const noteSubscriptions = (contracts: OperationsMap, door: string) => {
-    for (const [op, contract] of contracts) {
-      for (const bound of contract.binding ?? []) {
-        if (bound.source.kind !== 'fact') continue;
-        const listeners = subscribers.get(bound.source.factName) ?? [];
-        listeners.push({ door, op });
-        subscribers.set(bound.source.factName, listeners);
-      }
-    }
-  };
-
-  /**
-   * The facts already being announced up the stack, so a fact cannot cause itself.
-   *
-   * A CHAIN and not a depth: `A → B → D` and `A → C → D` is a diamond, perfectly legal,
-   * while `A → … → A` never ends. Carried in async context because a nested emission
-   * happens inside a subscriber, whose own `Emit` closure never sees the invocation that
-   * reached it.
-   *
-   * Detecting this at boot was the first idea and it was wrong: `Emit<G>` is a CONSTRUCTOR
-   * dependency, so it belongs to the handler and not to one of its methods. A handler that
-   * subscribes to `A` in one method and emits `G` from another would have been refused for
-   * a cycle it never walks. Refusing a correct program is worse than a guard that costs
-   * one array per emission.
-   */
-  const chain = new AsyncLocalStorage<readonly string[]>();
+  const emissions = new Emissions(fronds, entityByName, container, log, options.onEmit);
 
   // Register frond scopes
   for (const frond of fronds) {
@@ -215,7 +168,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       // Its doors answer elsewhere, but what they LISTEN to was read here.
       const remoteCollectors = new Set(frond.collectors.map((c) => c.entityName));
       for (const handler of frond.handlers) {
-        noteSubscriptions(
+        emissions.note(
           resolveContracts(handler, frond.operationsOverrides, remoteCollectors),
           facadeKeyOf(handler.address, handler.surface),
         );
@@ -323,236 +276,30 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     const surfaceHandlers = frond.handlers.filter((h) => h.surface);
     const defaultHandlerMap = new Map(defaultHandlers.map((h) => [h.address, h]));
 
-    /**
-     * Build a facade for a handler and register it in the root container.
-     *
-     * A facade is built FROM a handler — that is the whole rule, and the entity is
-     * OPTIONAL. An entity is a shape, not a surface: on its own it declares no
-     * operation, so it gets no facade and answers nothing. The converse used to be
-     * false in fact though true on paper — the loop below walked entities, so a
-     * handler naming no entity was scanned and then silently never built. An
-     * operation that is about no stored row (`health.check`, a pure computation) is
-     * an ordinary case, not a gap to accommodate.
-     *
-     * Without an entity a facade loses exactly three things, and nothing else: the
-     * ORM injected by convention, the output fields to project onto, and the
-     * presenter. Its result travels as the handler returned it.
-     */
+    /** Build the door of a handler and register it under the audience it serves. */
     const buildFacade = (
-      entity: typeof frond.entities[number] | undefined,
-      handler: typeof frond.handlers[number],
-      targetScope: typeof scope,
+      entity: EntityEntry | undefined,
+      handler: HandlerEntry,
+      targetScope: Container,
       facadeKey: string,
     ) => {
-      const handlerKey = `_handler:${facadeKey}`;
-      // The ORM belongs to the SUBJECT, never to the address. `StockHandler extends
-      // Crud(Item)` is called `stock` and reads `Item`; asking for `StockOrm` would be
-      // asking the address for a table. The two coincide in the ordinary case and that
-      // is why it went unnoticed.
-      const ormBase = entity?.name ?? handler.address;
-      const ormTypeName = ormKeyOf(ormBase);
-
-      const inheritsCrud = typeof handler.ctor.prototype?.list === 'function'
-        && typeof handler.ctor.prototype?.findById === 'function';
-      const hasCrudInProto = handler.deps.length === 0 && inheritsCrud;
-      const deps = handler.deps.length > 0
-        ? handler.deps
-        : hasCrudInProto ? [ormTypeName] : [];
-
-      // Declaring a constructor turns the automatic ORM injection OFF — the handler now
-      // states what it takes, and that is the whole DI convention. But a Crud handler
-      // that forgets to state its ORM used to get `this.orm === undefined` and break on
-      // the FIRST REQUEST, silently: `super()` assigns whatever it was handed. Refuse at
-      // boot instead, naming the fix — the clause is deducible, so it is stated, not
-      // configured.
-      if (inheritsCrud && handler.deps.length > 0 && !handler.deps.includes(ormTypeName)) {
-        throw new Error(
-          `${handler.ctor.name} extends Crud() and declares a constructor, so the ORM is no ` +
-          `longer injected for it — but it does not take one.\n` +
-          `  Add it and hand it to super():\n` +
-          `    constructor(orm: ${ormTypeName}, …) { super(orm); }`,
-        );
-      }
-
-      // A Crud handler whose subject is not among the scanned entities is either broken
-      // or installed — `Crud(Note)` from a published package is legitimate and the scan
-      // cannot see it (CLAUDE.md, heritage resolution is workspace-only). Refusing at
-      // boot would break the second case to catch the first, so it is said, not thrown.
-      if (inheritsCrud && !entity) {
-        frondLog.debug(`${handler.ctor.name} extends Crud() and no scanned entity is named `
-          + `'${ormBase}' — installed entity, or a missing one: no ORM will be injected`);
-      }
-
-      targetScope.register(handlerKey, handler.ctor, { deps });
-
-      let instance: any;
-      const getInstance = () => {
-        if (!instance) instance = targetScope.resolve(handlerKey);
-        return instance;
-      };
-
-      /**
-       * The contracts this façade serves — one function, shared with every other
-       * reader, so nobody re-derives the three producers and drifts.
-       */
-      const contracts = resolveContracts(handler, frond.operationsOverrides, collectorEntityNames);
-      // Handed BACK, because "every other reader" was not true: the adapters read
-      // `handler.operations` — the scan's raw map — so an op a prefab declared and the
-      // scan never saw reached the façade and no projection. Four of the five CRUD ops
-      // were absent from GraphQL on any installed app.
-      handler.operations = contracts;
-
-      /**
-       * Who listens to what — read HERE because this is where a contract becomes real,
-       * and read from the PLAN rather than from the AST: `{ kind: 'fact' }` is a sentence
-       * `computeBindingPlan` already wrote, so nothing re-derives what a parameter is.
-       *
-       * A subscriber is an ordinary op. It keeps its door, its judge and its middlewares —
-       * an emission and a direct call are the same call, which is why nothing here has to
-       * build a second path.
-       */
-      noteSubscriptions(contracts, facadeKey);
-
-      /**
-       * A fact is judged on arrival, by the entity it IS.
-       *
-       * The scan never fills `input` from a parameter type, so a subscriber's payload met
-       * no judge at all — tolerable while it came from an emitter in this very process,
-       * false the moment it comes off a wire, from another repository, from an older
-       * emitter, or out of a queue that held it for three days. A fact is an entity: it
-       * has a card, `reconstruct` rebuilds it on the far side, so the same judge stands on
-       * both ends — which is already what a door promises.
-       *
-       * A contract that states its own `input` wins: the three producers keep their order.
-       */
-      for (const [op, contract] of contracts) {
-        if (contract.input) continue;
-        const bound = contract.binding?.find((b) => b.source.kind === 'fact');
-        if (!bound || bound.source.kind !== 'fact') continue;
-        const shape = entityByName.get(bound.source.factName);
-        if (shape) contracts.set(op, { ...contract, input: shape });
-      }
-
-      /**
-       * The field set an op's result is projected onto — the view declared for THAT op
-       * (`Crud(Post, { list: PostCard })`), else the handler-wide view
-       * (`Crud(Post, PostPublic)`), else the entity. Each op is the audience of its own
-       * view: a public index emits cards while `bySlug` emits the full row, from one
-       * handler reading one full-row ORM. Resolved once per op, on first call.
-       */
-      const cachedOutput = new Map<string, { fields: Fields; closed: boolean }>();
-      const outputFieldsFor = (op: string) => {
-        const known = cachedOutput.get(op);
-        if (known) return known;
-        const perOp = (handler?.ctor as { __opOutputs?: Record<string, unknown> })?.__opOutputs?.[op];
-        const contractOutput = contracts.get(op)?.output;
-        const schema = (perOp
-          ?? contractOutput
-          ?? handler?.outputOverride
-          ?? (handler?.ctor as { __output?: unknown })?.__output
-          // No entity and nothing declared: there is no shape to project onto, so the
-          // result travels as the handler returned it (`encodeFields({}, r)` is `{…r}`).
-          ?? entity?.entityClass) as { getFields?: () => Fields };
-        const fields = typeof schema?.getFields === 'function' ? schema.getFields() : {};
-        // A view named for THIS op is a closed list: the author said what this
-        // audience gets. The handler-wide forms already narrow at the ORM.
-        const resolved = { fields, closed: perOp !== undefined };
-        cachedOutput.set(op, resolved);
-        return resolved;
-      };
-
-      const collectorResolver = (entityName: string): CollectorResolver | undefined => {
-        const key = collectorKeyOf(entityName);
-        try { return targetScope.resolve(key) as CollectorResolver; }
-        catch { return undefined; }
-      };
-
-      // The name the door answers to. It reaches the presenter map below, which is keyed
-      // by ENTITY name — they coincide whenever both exist, and when no entity carries
-      // this name the lookup simply misses, which is the correct answer.
-      const address = handler.address;
-      const wrapOp = (op: string) => (invocation?: InvocationContext) => {
-        const inv = invocation ?? EMPTY_INVOCATION;
-        const ctx = { entity: address, operation: op, args: [], state: inv.state, invocation: inv };
-
-        return runMiddlewares(getMiddlewares(address), ctx, async () => {
-          const contract = contracts.get(op);
-          const schema = contract?.input;
-          let effectiveInvocation = inv;
-          if (schema && inv.body && typeof inv.body === 'object') {
-            // The view's mode travels with it: a partial() input validates as a
-            // patch (absent field → untouched), never by forging the fields.
-            // No field filter: the axes already judge every case — a client id
-            // at create is accepted ({ generate }), an id re-supplied in a
-            // patch is 'Immutable', a read-only field 'Read-only', every
-            // system-stamped absence is legal via its lifecycle rule, and a
-            // key outside the contract is 'Unknown field' (refused, not stripped).
-            const result = Judge.row(schema.getFields(), inv.body, { patch: schema.getOpts().patch });
-            if (!result.success) {
-              throw new FougereError({
-                code: ErrorCode.VALIDATION_FAILED,
-                message: result.errors.map((e) => `${e.path}: ${e.message}`).join(', '),
-                details: result.errors,
-                entity: address,
-                operation: op,
-              });
-            }
-            effectiveInvocation = { ...inv, body: result.data };
-            ctx.invocation = effectiveInvocation;
-          }
-
-          // No plan means no declared argument — an op receives what its
-          // contract says it receives, never a guess based on its name.
-          const resolved = contract?.binding
-            ? await resolveArgs(contract.binding, effectiveInvocation, collectorResolver)
-            : [];
-          // Egress at the boundary: a write-only field never rides the result
-          // out, exactly as REST and Pothos already guarantee on their own —
-          // then a presenter's computed fields are added, so every door answers
-          // the same thing (they used to be applied by the projections alone).
-          const out = outputFieldsFor(op);
-          const projected = projectEgress(out.fields, await getInstance()[op](...resolved), out.closed);
-          if (out.closed) return projected;
-          const meta = presenterMap.get(address);
-          if (!meta) return projected;
-
-          // A computed field is bound like an op: what it declares after the rows is
-          // resolved from the same invocation, by the same collectors. The plan is
-          // computed here and not at scan time because the scan meets presenters
-          // before it meets collectors.
-          const args: PresenterArgs = {};
-          for (const field of meta.fieldMeta) {
-            if (!field.params?.length) continue;
-            args[field.name] = await resolveArgs(
-              computeBindingPlan(field.params, collectorEntityNames),
-              effectiveInvocation,
-              collectorResolver,
-            );
-          }
-
-          return presentEgress(
-            projected,
-            scope.resolve(presenterKeyOf(address)),
-            meta.fields,
-            address,
-            op,
-            args,
-          );
-        });
-      };
-
-      // The surface IS the contract table. A method nobody declared is not an
-      // op: it stays a method, callable from inside, unreachable from the wire.
-      const facade: Record<string, Function> = {};
-      for (const op of contracts.keys()) {
-        facade[op] = wrapOp(op);
-      }
-
-      container.registerValue(facadeKey, facade);
-      // The terms alongside the door, under the same audience — a surface that
-      // serves fewer ops describes fewer ops.
-      container.registerValue(`${facadeKey}:contracts`, contracts);
-      return facade;
+      const facade = new HandlerFacade(
+        { handler, entity, scope: targetScope, key: facadeKey },
+        {
+          frondScope: scope,
+          log: frondLog,
+          overrides: frond.operationsOverrides,
+          collectors: collectorEntityNames,
+          presenters: presenterMap,
+          middlewaresFor: getMiddlewares,
+          emissions,
+        },
+      );
+      container.registerValue(facadeKey, facade.ops);
+      // The terms alongside the door, under the same audience — a surface that serves
+      // fewer ops describes fewer ops.
+      container.registerValue(contractsKeyOf(handler.address, handler.surface), facade.contracts);
+      return facade.ops;
     };
 
     // A presenter is about an entity — computed fields sit on a shape — so this walks
@@ -645,161 +392,8 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     frondLog.info(`registered — ${frond.entities.length} entities, ${frond.handlers.length} handlers, ${frond.seeds.length} seeds`);
   }
 
-  /**
-   * A subscriber refusing the SHAPE, said in one line instead of dumped as an error.
-   *
-   * This is the one refusal nobody else will ever see. A door hands its 400 back to the
-   * caller who can fix it; a fact is dispatched, not delivered, so the sender learns
-   * nothing and the log is the whole of the evidence. The most likely cause is also the
-   * one a stack trace hides worst — this process's copy is older than the sender's — so
-   * the line names the fields and the remedy, and hedges because a genuinely bad payload
-   * produces the same refusal.
-   */
-  const describeRefusal = (fact: string, cause: unknown): string | undefined => {
-    const err = cause as { code?: string; details?: Array<{ path: string; message: string }> };
-    if (err?.code !== ErrorCode.VALIDATION_FAILED || !err.details?.length) return undefined;
-    return `refused the shape — ${err.details.map((d) => `${d.path}: ${d.message}`).join(', ')}.`
-      + ` If '${fact}' gained a field, this copy is older than the sender's: re-run \`fougere sync\`.`;
-  };
-
-  /**
-   * Hand the fact to every listener in THIS process, and give back one promise each.
-   *
-   * The call goes THROUGH the door, so a subscriber meets the same judge, the same binding
-   * and the same middlewares as any caller. Nothing new answers for correctness — that is
-   * the dividend of a subscriber being an ordinary op rather than a special kind.
-   *
-   * It returns the promises rather than settling them, because the two callers want
-   * opposite things and only one of them is wrong to wait. See `deliver`.
-   */
-  const handToListeners = (fact: string, payload: unknown): Array<{ door: string; op: string; done: Promise<unknown> }> => {
-    const walked = chain.getStore() ?? [];
-    if (walked.includes(fact)) {
-      throw new Error(
-        `Emission cycle: ${[...walked, fact].join(' → ')}.\n`
-        + `  A fact cannot cause itself. One of the subscribers above announces a fact that leads back here.`,
-      );
-    }
-
-    const listeners = subscribers.get(fact) ?? [];
-    if (listeners.length === 0) {
-      log.debug(`${fact} — nobody listens in this process`);
-      return [];
-    }
-
-    const deeper = [...walked, fact];
-    return listeners.map(({ door, op }) => ({
-      door,
-      op,
-      done: chain.run(deeper, async () => {
-        let facade: Record<string, Function>;
-        try {
-          facade = container.resolve<Record<string, Function>>(door);
-        } catch (cause) {
-          throw new Error(`${fact} → ${door} could not be reached`, { cause });
-        }
-        return facade[op]({ ...EMPTY_INVOCATION, body: payload });
-      }),
-    }));
-  };
-
-  /**
-   * Announcing. Dispatch, never delivery — the emitter is handed back the moment every
-   * subscriber has been HANDED the fact, not when any of them is done.
-   *
-   * The `EventBus` this replaces did `await Promise.all(handlers)` and passed their
-   * rejections up, which made a publication hostage to its own indexer.
-   */
-  const dispatchLocally = async (fact: string, payload: unknown): Promise<void> => {
-    for (const { door, op, done } of handToListeners(fact, payload)) {
-      void done.catch((cause) => log.error(`${fact} → ${door}.${op}`, describeRefusal(fact, cause) ?? cause));
-    }
-  };
-
-  /**
-   * Receiving. **The opposite rule, deliberately**: this one waits, and it tells.
-   *
-   * `deliver` is what a CARRIER calls, and a carrier's whole job is to know whether the
-   * fact landed — at-least-once is retrying what failed, so a delivery that cannot report
-   * makes durability impossible to build on top. It used to be `dispatchLocally` itself:
-   * it resolved before any subscriber had run and swallowed every failure into a log, so a
-   * queue calling it could only ever ack blindly.
-   *
-   * That is not a contradiction of "dispatch is not delivery". That rule protects the
-   * EMITTER, which must not become hostage to a subscriber; a carrier is not the emitter,
-   * it is precisely the party whose business this is.
-   *
-   * What it still does not do is HOLD anything. A fact refused here is refused, and the
-   * carrier decides whether it comes back — which is the whole of Fougere's position on
-   * durability: the channel goes underneath, it is not reimplemented here.
-   */
-  const deliver = async (fact: string, payload: unknown): Promise<void> => {
-    const handed = handToListeners(fact, payload);
-    const settled = await Promise.allSettled(handed.map((h) => h.done));
-
-    const refused = settled.flatMap((result, i) =>
-      result.status === 'rejected' ? [{ ...handed[i], reason: result.reason as unknown }] : []);
-    for (const { door, op, reason } of refused) {
-      log.error(`${fact} → ${door}.${op}`, describeRefusal(fact, reason) ?? reason);
-    }
-    if (refused.length > 0) {
-      throw new AggregateError(
-        refused.map((r) => r.reason),
-        `${fact} — ${refused.length} of ${handed.length} listener(s) refused it`
-        + ` (${refused.map((r) => `${r.door}.${r.op}`).join(', ')}).`
-        + ` Nothing here holds it: the carrier decides whether it comes back.`,
-      );
-    }
-  };
-
-  // Emitted here, or merely listened to: a process that only subscribes still needs the
-  // value, because `deliver` is what a carrier calls and it goes through the same door.
-  for (const fact of new Set([...emitted, ...subscribers.keys()])) {
-    const shape = entityByName.get(fact);
-
-    container.registerValue(emitKeyOf(fact), async (raw: unknown) => {
-      /**
-       * The announcement realizes the fact's own `lifecycle.create` — an `created()` stamped,
-       * an id generated, a default applied.
-       *
-       * `validation.ts` states the split: the judge never fills a hole, the STORAGE does,
-       * at the point of persistence. A fact has no storage, so nobody did — the judge
-       * declared an absent `created()` legal and omitted it, and a subscriber received a
-       * value missing a field its own type promises. Announcing is a fact's point of
-       * persistence, and `applyCreate` is the one realization every storage already shares.
-       *
-       * Here and not in `dispatchLocally`, which is shared with `deliver`: a fact that
-       * arrives from elsewhere was stamped by its sender, and stamping it again would give
-       * one fact a different identity in every process that relayed it.
-       *
-       * **A typed emitter cannot reach this yet.** `Emit<T>` names the ROW type, where an
-       * `created()` field is present and required, so `announce({ id, title })` is a
-       * compile error and the author writes `at: new Date()` anyway. `PartialRow`
-       * (`schema/src/entity.ts`) is exactly the shape wanted and derives from the FIELDS,
-       * which the instance type has already thrown away. So this runs for a payload built
-       * outside the type — a bridge, a replay, a test — and is inert for everyone else.
-       */
-      const payload = shape && raw !== null && typeof raw === 'object' && !Array.isArray(raw)
-        ? applyCreate(shape.getFields(), raw as Record<string, unknown>)
-        : raw;
-
-      /**
-       * Whoever is not in this process — and it is the ONLY way to reach them.
-       *
-       * The local dispatch finds its listeners by having READ their code, so it stops at
-       * the repository boundary: another team's Frond is not on this disk, and the
-       * emission reaches nobody. A carrier hands the fact to a name instead, and the far
-       * side subscribes to that same name from ITS own code. Neither reads the other.
-       *
-       * `deliver` deliberately does NOT come here: a hub that resolved this value to hand
-       * on an incoming reading echoed it straight back to the whole fleet.
-       */
-      const carried = options.onEmit?.(fact, payload);
-      if (carried) void Promise.resolve(carried).catch((cause) => log.error(`${fact} — carrier refused it`, cause));
-
-      await dispatchLocally(fact, payload);
-    });
-  }
+  // Once every door exists: what is announced here and what is listened to are both known.
+  emissions.register();
 
   /**
    * The last resort, held by the container so every resolution path shares it.
@@ -939,8 +533,8 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     resolve,
     schemaFor,
     facadeFor,
-    listensTo: () => [...subscribers.keys()],
-    deliver,
+    listensTo: () => emissions.listensTo(),
+    deliver: (fact, payload) => emissions.deliver(fact, payload),
     ormFor,
     presenterFor,
     dispose: () => container.dispose(),
