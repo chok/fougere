@@ -9,7 +9,7 @@
 import { describe as describeSchema, type SchemaDescriptor } from '@fougere/schema';
 import { factsAnnouncedBy } from './emit.js';
 import type { InvocationContext } from './invocation.js';
-import { FougereError, ErrorCode } from './middleware.js';
+import { FougereError, ErrorCode } from './errors.js';
 import { resolveIsReadOp, type OperationsMap } from './operation.js';
 import type { App } from './types.js';
 

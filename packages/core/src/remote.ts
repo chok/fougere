@@ -11,7 +11,7 @@
 import type { FrondCall, IdentityCard, Transport } from './call.js';
 import { RPC_ENTITY } from './call.js';
 import { EMPTY_INVOCATION, type InvocationContext } from './invocation.js';
-import { FougereError, ErrorCode } from './middleware.js';
+import { FougereError, ErrorCode } from './errors.js';
 import { reconstruct, type SchemaView, type Fields, type SchemaDescriptor } from '@fougere/schema';
 
 interface Route {

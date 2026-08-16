@@ -12,8 +12,8 @@ import { registrationKeyOf } from '@fougere/schema';
 import { EMPTY_INVOCATION, type InvocationContext } from './invocation.js';
 import type { FrondCall } from './call.js';
 
-export { FougereError, ErrorCode } from './middleware.js';
-export type { FougereErrorOptions } from './middleware.js';
+export { FougereError, ErrorCode } from './errors.js';
+export type { FougereErrorOptions } from './errors.js';
 export { EMPTY_INVOCATION } from './invocation.js';
 export type { InvocationContext } from './invocation.js';
 export type { FrondCall, Transport } from './call.js';

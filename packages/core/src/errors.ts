@@ -1,77 +1,97 @@
 /**
- * HTTP error mapping — used by HTTP bridges (REST, Next, Inertia).
+ * The error vocabulary — what a refusal IS, independently of who hears it.
  *
- * Not imported by GraphQL, CLI, or event bus bridges.
+ * It travels on the wire (`toJSON`/`fromJSON`) and through the browser-safe
+ * `@fougere/core/contract`, so nothing here may know about HTTP, a logger, or a
+ * middleware chain. Its HTTP reading is one file over, in `http-error.ts`; it used
+ * to live in `middleware.ts`, which named the one concept this is not.
  */
-import { FougereError, ErrorCode } from './middleware.js';
-import { Logger } from './builtins/logger.js';
 
-/**
- * An INTERNAL_ERROR is the one class of error whose message never leaves: it was not
- * written for a caller and may quote a path, a query or a row. Masking it is right, and
- * masking it *silently* is how a bug becomes unobservable — the operator loses the same
- * sentence the attacker does. So the mask and the record live in one function: whoever
- * calls `toPublicError` cannot forget the half that keeps the error findable.
- */
-const log = new Logger('error');
+// ── ErrorCode ──────────────────────────────────
 
-const HTTP_STATUS: Record<ErrorCode, number> = {
-  [ErrorCode.VALIDATION_FAILED]: 400,
-  [ErrorCode.BAD_REQUEST]: 400,
-  [ErrorCode.UNAUTHORIZED]: 401,
-  [ErrorCode.FORBIDDEN]: 403,
-  [ErrorCode.NOT_FOUND]: 404,
-  [ErrorCode.GONE]: 410,
-  [ErrorCode.CONFLICT]: 409,
-  [ErrorCode.LOCKED]: 423,
-  [ErrorCode.METHOD_NOT_ALLOWED]: 405,
-  [ErrorCode.PRECONDITION_FAILED]: 412,
-  [ErrorCode.PAYLOAD_TOO_LARGE]: 413,
-  [ErrorCode.UNPROCESSABLE_ENTITY]: 422,
-  [ErrorCode.TOO_MANY_REQUESTS]: 429,
-  [ErrorCode.REQUEST_TIMEOUT]: 408,
-  [ErrorCode.INTERNAL_ERROR]: 500,
-  [ErrorCode.NOT_IMPLEMENTED]: 501,
-  [ErrorCode.BAD_GATEWAY]: 502,
-  [ErrorCode.SERVICE_UNAVAILABLE]: 503,
-  [ErrorCode.GATEWAY_TIMEOUT]: 504,
-};
+/** Semantic error codes — transport-agnostic. Each bridge maps them to its own format. */
+export enum ErrorCode {
+  // Input
+  VALIDATION_FAILED = 'VALIDATION_FAILED',
+  BAD_REQUEST = 'BAD_REQUEST',
 
-/** Map a FougereError code to its HTTP status. */
-export function httpStatusFor(code: ErrorCode): number {
-  return HTTP_STATUS[code] ?? 500;
+  // Auth
+  UNAUTHORIZED = 'UNAUTHORIZED',
+  FORBIDDEN = 'FORBIDDEN',
+
+  // Resources
+  NOT_FOUND = 'NOT_FOUND',
+  GONE = 'GONE',
+  CONFLICT = 'CONFLICT',
+  LOCKED = 'LOCKED',
+  METHOD_NOT_ALLOWED = 'METHOD_NOT_ALLOWED',
+
+  // Limits
+  PRECONDITION_FAILED = 'PRECONDITION_FAILED',
+  PAYLOAD_TOO_LARGE = 'PAYLOAD_TOO_LARGE',
+  UNPROCESSABLE_ENTITY = 'UNPROCESSABLE_ENTITY',
+  TOO_MANY_REQUESTS = 'TOO_MANY_REQUESTS',
+  REQUEST_TIMEOUT = 'REQUEST_TIMEOUT',
+
+  // Server
+  INTERNAL_ERROR = 'INTERNAL_ERROR',
+  NOT_IMPLEMENTED = 'NOT_IMPLEMENTED',
+  BAD_GATEWAY = 'BAD_GATEWAY',
+  SERVICE_UNAVAILABLE = 'SERVICE_UNAVAILABLE',
+  GATEWAY_TIMEOUT = 'GATEWAY_TIMEOUT',
 }
 
-/**
- * Serialize an application error for an untrusted caller.
- *
- * Every code but INTERNAL_ERROR was written for the caller and travels whole. An
- * INTERNAL_ERROR is replaced by a constant — and logged here, with its cause, so the
- * sentence exists exactly once: on the server.
- */
-export function toPublicError(err: FougereError): ReturnType<FougereError['toJSON']> {
-  if (err.code !== ErrorCode.INTERNAL_ERROR) return err.toJSON();
-  const where = [err.entity, err.operation].filter(Boolean).join('.');
-  log.error(`${where || 'internal'}: ${err.message}`, err.cause ?? err);
-  return {
-    code: ErrorCode.INTERNAL_ERROR,
-    message: 'Internal error',
-    ...(err.entity && { entity: err.entity }),
-    ...(err.operation && { operation: err.operation }),
-  };
+// ── FougereError ────────────────────────────────
+
+export interface FougereErrorOptions {
+  code: ErrorCode;
+  message: string;
+  entity?: string;
+  operation?: string;
+  details?: unknown;
+  cause?: unknown;
 }
 
-/** Map any thrown error to `{ status, body }` for HTTP bridges. */
-export function toHttpError(err: unknown): { status: number; body: ReturnType<FougereError['toJSON']> } {
-  if (err instanceof FougereError) {
-    return { status: httpStatusFor(err.code), body: toPublicError(err) };
+export class FougereError extends Error {
+  readonly code: ErrorCode;
+  readonly entity?: string;
+  readonly operation?: string;
+  readonly details?: unknown;
+
+  constructor(options: FougereErrorOptions) {
+    super(options.message, { cause: options.cause });
+    this.name = 'FougereError';
+    this.code = options.code;
+    this.entity = options.entity;
+    this.operation = options.operation;
+    this.details = options.details;
   }
-  // A throw that never became a FougereError is masked by the same rule, so it goes
-  // through the same door rather than growing a second, quieter one here.
-  const framed = new FougereError({
-    code: ErrorCode.INTERNAL_ERROR,
-    message: (err as { message?: string })?.message ?? 'Internal error',
-    cause: err,
-  });
-  return { status: 500, body: toPublicError(framed) };
+
+  toJSON() {
+    return {
+      code: this.code,
+      message: this.message,
+      ...(this.entity && { entity: this.entity }),
+      ...(this.operation && { operation: this.operation }),
+      ...(this.details !== undefined && { details: this.details }),
+    };
+  }
+
+  /**
+   * Dual of toJSON — rebuild a typed error from its wire form.
+   *
+   * Wire input is untrusted: an unknown code degrades to INTERNAL_ERROR
+   * (original code kept in details) instead of forging a fake semantic code.
+   */
+  static fromJSON(json: unknown): FougereError {
+    const raw = (typeof json === 'object' && json !== null ? json : {}) as Record<string, unknown>;
+    const known = Object.values(ErrorCode).includes(raw.code as ErrorCode);
+    return new FougereError({
+      code: known ? (raw.code as ErrorCode) : ErrorCode.INTERNAL_ERROR,
+      message: typeof raw.message === 'string' ? raw.message : 'Unknown error',
+      entity: typeof raw.entity === 'string' ? raw.entity : undefined,
+      operation: typeof raw.operation === 'string' ? raw.operation : undefined,
+      details: known ? raw.details : { originalCode: raw.code, details: raw.details },
+    });
+  }
 }

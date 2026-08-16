@@ -11,7 +11,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { entity, primary, text, oneOf, email, number, optional, readOnly } from '@fougere/schema';
 import { guardStorage } from '../src/egress.js';
-import { FougereError, ErrorCode } from '../src/middleware.js';
+import { FougereError, ErrorCode } from '../src/errors.js';
 
 class Contact extends entity({
   id: primary(),

@@ -1,11 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import {
-  runMiddlewares,
-  FougereError,
-  ErrorCode,
-  type AppMiddleware,
-  type OperationContext,
-} from '../src/middleware.js';
+import { runMiddlewares, type AppMiddleware, type OperationContext } from '../src/middleware.js';
+import { FougereError, ErrorCode } from '../src/errors.js';
 import { loggerMiddleware } from '../src/middleware/logger.js';
 import { errorMiddleware } from '../src/middleware/error-handler.js';
 import { Logger } from '../src/builtins/logger.js';
