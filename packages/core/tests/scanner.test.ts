@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
-import { scanProject, toRegistrationName } from '../src/index.js';
+import { scanProject } from '../src/index.js';
+import { toRegistrationName } from '../src/contract.js';
 
 const fixturesRoot = join(import.meta.dirname, 'fixtures');
 

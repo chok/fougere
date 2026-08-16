@@ -1,43 +1,46 @@
+/**
+ * What a consumer writes, and nothing else.
+ *
+ * `exports` publishes this barrel and `./contract`, so an import that is not here
+ * cannot be reached from outside the package at all — which is what makes this file
+ * the contract rather than a convenience. The machinery the boot uses to keep its own
+ * promises stays inside: container keys, the binding plan, the mixin's runtime
+ * accessors, the config merge. Measured on 2026-08-16, none of them had a single
+ * importer anywhere in the workspace.
+ */
 export { createApp } from './bootstrap.js';
 export { boot } from './boot.js';
 export { orderSeeds, runSeeds } from './seed.js';
 export { defineFougere } from './define.js';
-export { loadConfig, loadCascadedConfig, loadFrondConfigs, mergeGlobal, mergeConfig, configForFrond, resolveConfig, type AdapterConfig, type FougereConfig, type ResolvedConfig } from './config-loader.js';
-export { defineFrond, loadFrondConfig, type FrondConfig, type OperationOverride } from './frond-config.js';
+export { loadConfig, loadCascadedConfig, type AdapterConfig, type FougereConfig, type ResolvedConfig } from './config-loader.js';
+export { defineFrond, type FrondConfig, type OperationOverride } from './frond-config.js';
 export { buildGraph, clusterEntities, suggestSplit, type EntityNode, type DomainCluster } from './graph.js';
 export { Crud } from './crud.js';
 export type { CrudOps, CrudOpName, CrudViews, CrudConstructor } from './crud.js';
-export { Mirror, getMirrorTarget, ageFieldOf } from './mirror.js';
+export { Mirror } from './mirror.js';
 export type { MirrorOf, MirrorConstructor, Refreshed } from './mirror.js';
-export { Presenter, getPresenterTarget, getPresenterFields, getPresenterViews } from './presenter.js';
+export { Presenter } from './presenter.js';
 export type { PresenterViews } from './presenter.js';
-export { Collector, getCollectorTarget } from './collector.js';
-export { computeBindingPlan, resolveArgs } from './binding.js';
-export type { BindingPlan, ParamBinding, ParamSource, CollectorResolver } from './binding.js';
+export { Collector } from './collector.js';
+export { Repository, type RepositoryOf, type RepositoryConstructor } from './repository.js';
 export type { InvocationContext } from './invocation.js';
 export { EMPTY_INVOCATION } from './invocation.js';
-export { isReadOp, resolveIsReadOp } from './operation.js';
+export { resolveIsReadOp, resolveContracts } from './operation.js';
 export type { OperationContract, OperationsMap } from './operation.js';
-export { scanProject, frondAliases, FROND_DIRS, toRegistrationName, setModuleLoader, type ModuleLoader } from './scanner.js';
-export { runMiddlewares, FougereError, ErrorCode } from './middleware.js';
-export { createLocalRunner, createAppRunner, identityCardOf, RPC_ENTITY } from './call.js';
-// The container keys, exported so any reader asks the same question the bootstrap
-// answers. A second reader that respells one looks in the wrong place and reports
-// nothing found — which is indistinguishable from nothing wrong.
-export { facadeKeyOf, contractsKeyOf } from './call.js';
-export { type Emit, type Fact, emitKeyOf, factOfEmitKey, factsAnnouncedBy } from './emit.js';
-export { resolveContracts } from './operation.js';
+export { scanProject, frondAliases, FROND_DIRS, setModuleLoader, type ModuleLoader } from './scanner.js';
+export { FougereError, ErrorCode } from './middleware.js';
+export type { OperationContext, AppNext, AppMiddleware, FougereErrorOptions } from './middleware.js';
+export { createLocalRunner, createAppRunner } from './call.js';
 export type { FrondCall, Transport, IdentityCard, CardOp, Facade } from './call.js';
+export { type Emit, type Fact } from './emit.js';
 export { callValueOf } from './contract.js';
 export type { CallValue } from './contract.js';
-export type { OperationContext, AppNext, AppMiddleware, FougereErrorOptions } from './middleware.js';
-export { toHttpError, toPublicError, httpStatusFor } from './errors.js';
+export { toHttpError, toPublicError } from './errors.js';
 export { loggerMiddleware } from './middleware/logger.js';
 export { errorMiddleware } from './middleware/error-handler.js';
 export { Logger } from './builtins/logger.js';
 export { Config } from './builtins/config.js';
 export type { EntityOrm, OrmFactory, ListOptions, ListResult } from './orm.js';
-export { LIST_OPTION_KEYS, assertListOptions } from './orm.js';
 export type {
   App,
   CreateAppOptions,
@@ -57,10 +60,6 @@ export type {
   AuthContext,
   AuthRuntime,
 } from './types.js';
-export { ormKeyOf } from './orm.js';
-export { presenterKeyOf } from './presenter.js';
-export { collectorKeyOf } from './collector.js';
-export { Repository, getRepositoryTarget, repositoryKeyOf, type RepositoryOf, type RepositoryConstructor } from './repository.js';
 export { verify, assertSplittable, type Violation } from './verify.js';
 // Same question as verify(), answered from the source text instead of the model.
 export { crossFrondImports, type CrossFrondImport } from './imports.js';

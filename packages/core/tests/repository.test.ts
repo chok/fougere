@@ -11,7 +11,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
-import { createApp, createLocalRunner, Repository, getRepositoryTarget, repositoryKeyOf } from '../src/index.js';
+import { createApp, createLocalRunner, Repository } from '../src/index.js';
+import { getRepositoryTarget, repositoryKeyOf } from '../src/repository.js';
 import type { OrmFactory } from '../src/index.js';
 import { EMPTY_INVOCATION } from '../src/invocation.js';
 

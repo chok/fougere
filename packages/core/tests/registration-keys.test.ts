@@ -14,7 +14,9 @@
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
-import { createApp, ormKeyOf, facadeKeyOf } from '../src/index.js';
+import { createApp } from '../src/index.js';
+import { ormKeyOf } from '../src/orm.js';
+import { facadeKeyOf } from '../src/call.js';
 import type { EntityOrm } from '../src/orm.js';
 
 const root = join(import.meta.dirname, 'fixtures');

@@ -135,7 +135,6 @@ export const FROND_DIRS = [
   'entities', 'handlers', 'presenters', 'collectors', 'seeds', ...PROVIDER_DIRS,
 ] as const;
 
-export { toRegistrationName } from './contract.js';
 import { toRegistrationName } from './contract.js';
 
 /**
