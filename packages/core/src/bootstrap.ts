@@ -20,7 +20,7 @@ import { computeBindingPlan, resolveArgs, type CollectorResolver } from './bindi
 import type { OperationContract, OperationsMap } from './operation.js';
 import { resolveContracts } from './operation.js';
 import { EMPTY_INVOCATION, type InvocationContext } from './invocation.js';
-import { toRegistrationName } from './contract.js';
+import { registrationKeyOf } from './contract.js';
 import { type SchemaView, type Fields, applyCreate } from '@fougere/schema';
 import { projectEgress, presentEgress, guardStorage, type PresenterArgs } from './egress.js';
 
@@ -253,10 +253,10 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       // Naming one IS the authorization; that is what the declaration is for.
       const hosted = new Map(fronds.flatMap((f) => f.entities.map((e) => [e.name, e.entityClass] as const)));
       const named = frond.reads
-        .map((name) => hosted.get(toRegistrationName(name)))
+        .map((name) => hosted.get(registrationKeyOf(name)))
         .filter((entity): entity is NonNullable<typeof entity> => entity !== undefined);
       if (named.length !== frond.reads.length) {
-        const missing = frond.reads.filter((name) => !hosted.has(toRegistrationName(name)));
+        const missing = frond.reads.filter((name) => !hosted.has(registrationKeyOf(name)));
         frondLog.warn(
           `[reads] ${missing.join(', ')} — named in frond.config.ts but scanned nowhere in this app, `
           + 'so a query naming one would find no table. Check the spelling, or the entity file.',
@@ -589,9 +589,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       // the handler imports it through the runtime's, so the same class arrives as two
       // objects. `===` compares module instances, which is not the question being asked.
       const crudTarget = (handler.ctor as { __entity?: { name?: string } }).__entity;
-      const subject = crudTarget?.name
-        ? crudTarget.name[0].toLowerCase() + crudTarget.name.slice(1)
-        : handler.address;
+      const subject = crudTarget?.name ? registrationKeyOf(crudTarget.name) : handler.address;
       const entity = frond.entities.find((e) => e.name === subject);
       const facadeKey = facadeKeyOf(handler.address);
       buildFacade(entity, handler, scope, facadeKey);

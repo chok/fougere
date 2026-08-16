@@ -14,6 +14,7 @@ import { getPresenterTarget, getPresenterFields, getPresenterViews } from './pre
 import { getRepositoryTarget } from './repository.js';
 import { ormKeyOf } from './orm.js';
 import { getCollectorTarget } from './collector.js';
+import { registrationKeyOf } from './contract.js';
 
 /** Module loader — can be swapped (e.g. jiti for TS files in Nuxt context). */
 export type ModuleLoader = (filePath: string) => Promise<Record<string, unknown>>;
@@ -135,8 +136,6 @@ export const FROND_DIRS = [
   'entities', 'handlers', 'presenters', 'collectors', 'seeds', ...PROVIDER_DIRS,
 ] as const;
 
-import { toRegistrationName } from './contract.js';
-
 /**
  * Strip the 'Handler' suffix → the name the handler answers to. 'PostHandler' → 'post'.
  *
@@ -146,7 +145,7 @@ import { toRegistrationName } from './contract.js';
  */
 function toAddress(className: string): string {
   const base = className.endsWith('Handler') ? className.slice(0, -7) : className;
-  return base[0].toLowerCase() + base.slice(1);
+  return registrationKeyOf(base);
 }
 
 // Scan
@@ -171,7 +170,7 @@ function depKeyOf(type: ParsedType): string {
   // injected), but the door built in front of it. Same key whether that door is the local
   // façade or a doublure, which is what makes the topology invisible from a signature.
   const facadeOf = type.name === 'Facade' ? type.generics?.[0]?.name : undefined;
-  if (facadeOf) return toRegistrationName(facadeOf);
+  if (facadeOf) return registrationKeyOf(facadeOf);
 
   // `Emit<PostPublished>` — the third port, and the only one that names a SUBJECT rather
   // than an interlocutor. Read like the other two: the type names what arrives, here a
@@ -218,10 +217,10 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
   // reason: what a prefab fabricates, only the prefab can describe.
   const target = getRepositoryTarget(ctor);
   if (target && deps.length === 0) {
-    deps.push(`${toRegistrationName((target as { name: string }).name).replace(/^./, (c) => c.toUpperCase())}Orm`);
+    deps.push(ormKeyOf(registrationKeyOf((target as { name: string }).name)));
   }
 
-  return { name: toRegistrationName(ctor.name), ctor, deps, filePath };
+  return { name: registrationKeyOf(ctor.name), ctor, deps, filePath };
 }
 
 async function toEntityEntry(filePath: string): Promise<EntityEntry | null> {
@@ -235,7 +234,7 @@ async function toEntityEntry(filePath: string): Promise<EntityEntry | null> {
   const declaredName = runtimeName && runtimeName !== ANONYMOUS_SCHEMA_NAME
     ? runtimeName
     : basename(filePath).replace(/\.[^.]+$/, '');
-  const name = toRegistrationName(declaredName);
+  const name = registrationKeyOf(declaredName);
   return { name, entityClass: exported, filePath };
 }
 
@@ -381,7 +380,7 @@ async function toHandlerEntry(
   const outputOverride = __output && __entity && __output !== __entity ? __output : undefined;
 
   return {
-    name: toRegistrationName(ctor.name),
+    name: registrationKeyOf(ctor.name),
     address,
     ctor: ctor as ProviderEntry['ctor'],
     operations,
@@ -395,7 +394,7 @@ async function toHandlerEntry(
 /** Strip '.seed' suffix → entity name. 'Author.seed.ts' → 'author'. */
 function toSeedEntityName(fileName: string): string {
   const base = fileName.replace(/\.seed\.(ts|js)$/, '').replace(/\.(ts|js)$/, '');
-  return base[0].toLowerCase() + base.slice(1);
+  return registrationKeyOf(base);
 }
 
 async function toSeedEntry(filePath: string): Promise<SeedEntry | null> {
@@ -411,7 +410,7 @@ async function toPresenterEntry(filePath: string): Promise<PresenterEntry | null
   const ctor = await loadClass(filePath);
   const target = getPresenterTarget(ctor);
   if (!target) return null;
-  const entityName = toRegistrationName((target as any).name);
+  const entityName = registrationKeyOf((target as any).name);
   const fields = getPresenterFields(ctor);
   const presenterParams = await cachedCtorParams(filePath);
   const deps = presenterParams.map((p) => depKeyOf(p.type));
@@ -440,7 +439,7 @@ async function toCollectorEntry(filePath: string): Promise<CollectorEntry | null
   const ctor = await loadClass(filePath);
   const target = getCollectorTarget(ctor);
   if (!target) return null;
-  const entityName = toRegistrationName((target as any).name);
+  const entityName = registrationKeyOf((target as any).name);
   const collectorParams = await cachedCtorParams(filePath);
   const deps = collectorParams.map((p) => depKeyOf(p.type));
   return { entityName, ctor, deps, filePath };

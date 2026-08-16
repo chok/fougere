@@ -12,7 +12,7 @@
  */
 import type { ParsedParam } from './handler-parser.js';
 import type { InvocationContext } from './invocation.js';
-import { toRegistrationName } from './contract.js';
+import { registrationKeyOf } from './contract.js';
 
 // ── Types ─────────────────────────────────────
 
@@ -74,7 +74,7 @@ export function computeBindingPlan(
     if (factOf) {
       return {
         name: param.name,
-        source: { kind: 'fact' as const, factName: toRegistrationName(factOf) },
+        source: { kind: 'fact' as const, factName: registrationKeyOf(factOf) },
         optional: param.optional ?? false,
       };
     }
