@@ -15,7 +15,7 @@ import type { PresenterViews } from './presenter.js';
  * and `Mirror` — the same class recording its subject twice, under two names, with two
  * readers that could disagree. A mark that answers one question answers it once.
  */
-export interface Prefab {
+interface Prefab {
   /** The shape this class was built on. `Mirror` calls it a shape; it is the same slot. */
   readonly __entity?: EntityConstructor;
   /** The view each computed field emits — `Presenter(Order, { items: [OrderItemView] })`. */
