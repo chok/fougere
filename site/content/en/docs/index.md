@@ -65,7 +65,7 @@ the local path avoids, no framework tax layered on top of the network.
 [Entities](/docs/schema/entities) · [Views](/docs/schema/views) ·
 [Standard Schema](/docs/schema/standard-schema) · [Handlers](/docs/business/handlers) ·
 [Presenters](/docs/business/presenters) · [Collectors](/docs/business/collectors) · [Errors](/docs/business/errors) · [Seeds](/docs/business/seeds) ·
-[Facts](/docs/business/facts) · [The ORM port](/docs/business/orm)
+[Facts](/docs/business/facts) · [The ORM port](/docs/business/orm) · [Repositories](/docs/business/repositories)
 
 **Client side** — [Queries & commands](/docs/client/queries-commands) ·
 [Forms](/docs/client/forms) · [Session](/docs/client/session) · [invoke](/docs/client/invoke)
