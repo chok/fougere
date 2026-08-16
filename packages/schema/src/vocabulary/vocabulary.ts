@@ -1,8 +1,12 @@
 import { Field } from '../Field.js';
 import type { FieldData } from '../Field.js';
+import { EXTENSION_AXES } from '../axis/Axis.js';
 
-/** The axes held as member maps. `shape` is the carrier — a word replaces it whole. */
-const MEMBER_SLOTS = ['role', 'lifecycle', 'boundary', 'meta'] as const;
+/**
+ * The slots a word writes MEMBER BY MEMBER — derived from the axes, never listed again.
+ * `shape` is absent: it is the carrier, and a word replaces it whole.
+ */
+const MEMBER_SLOTS = [...EXTENSION_AXES.map((axis) => axis.slot), 'meta'] as const;
 
 /**
  * A vocabulary word that MODIFIES a field — `optional`, `immutable`, `unique`… Each states
