@@ -1,6 +1,7 @@
 import { Crud, FougereError, ErrorCode } from '@fougere/core';
 import type { EntityOrm } from '@fougere/core';
 import Post from '../entities/Post.js';
+import PostRepository from '../repositories/PostRepository.js';
 import User from '@frond/user/entities/User.js';
 
 /** What an author may write — the io axes already exclude the server-owned fields. */
@@ -31,28 +32,30 @@ async function requireOwn(orm: EntityOrm<Post>, id: string, author: User, operat
   return post;
 }
 
-async function requireFreeSlug(orm: EntityOrm<Post>, slug: string, ownId: string | undefined, operation: string): Promise<void> {
-  const all = await orm.list();
-  if (all.some((p) => p.slug === slug && p.id !== ownId)) {
+async function requireFreeSlug(posts: PostRepository, slug: string, ownId: string | undefined, operation: string): Promise<void> {
+  const clash = await posts.bySlug(slug);
+  if (clash && clash.id !== ownId) {
     throw new FougereError({ code: ErrorCode.CONFLICT, message: `Slug '${slug}' is already taken`, entity: 'post', operation });
   }
 }
 
 export default class PostHandler extends Crud(Post, { list: PostCard }) {
+  // A Crud handler that declares a constructor stops getting its ORM injected, so it
+  // takes one and hands it to super() — the boot refuses the signature otherwise.
+  constructor(orm: EntityOrm<Post>, private posts: PostRepository) {
+    super(orm);
+  }
+
   /** Public reading: published only, newest first, card shape — no body on the index. */
   async list(): Promise<PostCard[]> {
-    const all = await this.orm.list();
-    return all
-      .filter((p) => p.status === 'published')
-      .sort((a, b) => String(b.publishedAt).localeCompare(String(a.publishedAt)))
-      .map(({ id, slug, title, summary, authorName, publishedAt }) =>
-        ({ id, slug, title, summary, authorName, publishedAt }));
+    const published = await this.posts.published();
+    return published.map(({ id, slug, title, summary, authorName, publishedAt }) =>
+      ({ id, slug, title, summary, authorName, publishedAt }));
   }
 
   /** Public reading: one published post, full body, designated by slug. */
   async bySlug(input: BySlugInput): Promise<Post> {
-    const all = await this.orm.list();
-    const post = all.find((p) => p.slug === input.slug && p.status === 'published');
+    const post = await this.posts.publishedBySlug(input.slug);
     if (!post) {
       throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `No published post at '${input.slug}'`, entity: 'post', operation: 'bySlug' });
     }
@@ -70,17 +73,16 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
   /** The author's workbench: own posts, drafts first, newest first. */
   async mine(user: User | null): Promise<Post[]> {
     if (!user) return [];
-    const all = await this.orm.list();
-    return all
-      .filter((p) => p.authorId === user.id)
-      .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
-      .sort((a, b) => (a.status === 'draft' ? 0 : 1) - (b.status === 'draft' ? 0 : 1));
+    // The repository answers newest first; sort is stable, so ordering survives the
+    // draft-first pass — a presentation tiebreak, not a question for the storage.
+    const own = await this.posts.ofAuthor(user.id);
+    return own.sort((a, b) => (a.status === 'draft' ? 0 : 1) - (b.status === 'draft' ? 0 : 1));
   }
 
   /** Judge: signed-in author, free slug. Realize: stamp the author pair. */
   async create(input: PostDraft, user: User | null): Promise<Post> {
     const author = requireUser(user, 'create');
-    await requireFreeSlug(this.orm, input.slug, undefined, 'create');
+    await requireFreeSlug(this.posts, input.slug, undefined, 'create');
     return this.orm.create({
       ...input,
       authorId: author.id,
@@ -92,7 +94,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
   async update(id: string, input: PostDraft, user: User | null): Promise<Post> {
     const author = requireUser(user, 'update');
     const post = await requireOwn(this.orm, id, author, 'update');
-    if (input.slug && input.slug !== post.slug) await requireFreeSlug(this.orm, input.slug, id, 'update');
+    if (input.slug && input.slug !== post.slug) await requireFreeSlug(this.posts, input.slug, id, 'update');
     return this.orm.update(id, input);
   }
 
