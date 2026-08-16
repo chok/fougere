@@ -114,8 +114,3 @@ export interface SchemaBundle {
   'x-fougere-vendor': 'fougere';
 }
 
-/** Drop keys whose value is `undefined`, so the descriptor stays clean JSON. */
-export function clean<T extends Record<string, unknown>>(obj: T): T {
-  for (const key of Object.keys(obj)) if (obj[key] === undefined) delete obj[key];
-  return obj;
-}

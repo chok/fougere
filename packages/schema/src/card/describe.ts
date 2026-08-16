@@ -1,3 +1,4 @@
+import { clean } from '../clean.js';
 import { EXTENSION_AXES } from '../axis/Axis.js';
 import type { Field, Fields } from '../Field.js';
 import type { Role } from '../axis/role/Role.js';
@@ -6,7 +7,7 @@ import { Boundary } from '../axis/boundary/Boundary.js';
 import { Anatomy } from '../axis/shape/Shape.js';
 import { Unique } from '../axis/role/Unique.js';
 import { registrationKeyOf } from '../name.js';
-import { clean, type FieldDescriptor, type FieldExtension, type RelationDescriptor, type RoleDescriptor, type SchemaBundle, type SchemaDescriptor } from './Descriptor.js';
+import { type FieldDescriptor, type FieldExtension, type RelationDescriptor, type RoleDescriptor, type SchemaBundle, type SchemaDescriptor } from './Descriptor.js';
 
 // ─── describe — schema → card (the single canonical serialiser) ────
 
