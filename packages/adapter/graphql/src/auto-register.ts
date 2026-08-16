@@ -169,7 +169,8 @@ interface HandlerEntry {
   operations: Map<string, OperationMeta>;
   surface?: string;
   outputOverride?: SchemaView;
-  ctor?: { __output?: SchemaView };
+  /** `name` is the class's own — it names the handler when two ops claim one root field. */
+  ctor?: { __output?: SchemaView; name?: string };
 }
 
 interface PresenterFieldMeta {
@@ -365,6 +366,8 @@ export function registerAll(
         facade: effectiveFacade,
         operations: handler?.operations ?? new Map(),
         operationsOverrides: opOverrides,
+        // Named so a root-field clash can say WHICH two handlers, in which fronds.
+        origin: `${frond.name}/${handler?.ctor?.name ?? `${typeName}Handler`}`,
         // What an op declares as its return becomes its GraphQL type — unless that IS
         // the entity's own schema, which already has one.
         viewType: (view, opName) =>

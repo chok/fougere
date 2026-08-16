@@ -60,6 +60,8 @@ interface ParsedSignature {
   name: string;
   params: { name: string; type: { raw: string; name: string; array?: boolean; nullable?: boolean; generics?: ParsedSignature['params'][0]['type'][] }; optional?: boolean }[];
   returnType?: { raw: string; name: string; array?: boolean; nullable?: boolean; generics?: ParsedSignature['params'][0]['type'][] };
+  /** The body was read and makes no write — see `ParsedMethod.readOnly` in core. */
+  readOnly?: boolean;
 }
 
 /** Metadata for a handler operation (from scanner). */
@@ -86,7 +88,12 @@ export interface OperationsConfig {
   /** Operations metadata from scanner (signature + resolved schemas). */
   operations: Map<string, OperationMeta>;
   /** Per-op kind overrides from frond.config.ts (optional). */
-  operationsOverrides?: Record<string, { kind?: 'query' | 'command' }>;
+  operationsOverrides?: Record<string, { kind?: 'query' | 'command'; graphql?: string }>;
+  /**
+   * Who is registering — `catalog/ChapterHandler`, for the message when two ops claim
+   * one root field. Absent when a caller builds a type by hand.
+   */
+  origin?: string;
   /**
    * The GraphQL type for a schema an operation declares as its return. The caller owns
    * this because it alone knows whether the schema IS the entity's (then: the type
@@ -101,9 +108,11 @@ const READ_PREFIXES = ['list', 'find', 'get', 'search', 'count', 'exists', 'stat
 function resolveIsReadOp(
   name: string,
   overrides?: Record<string, { kind?: 'query' | 'command' }>,
+  readOnly?: boolean,
 ): boolean {
   const kind = overrides?.[name]?.kind;
   if (kind) return kind === 'query';
+  if (readOnly !== undefined) return readOnly;
   return READ_PREFIXES.some((p) => name.startsWith(p));
 }
 
@@ -651,6 +660,43 @@ export function registerInput(builder: InstanceType<typeof SchemaBuilder>, confi
 
 // ─── GraphQL field naming ────────────────────────
 
+/**
+ * Who holds each root field — a GraphQL root is FLAT, and two ops can want one name.
+ *
+ * Refused here rather than left to Pothos: it answers `Duplicate field ofBook on
+ * Mutation` with no file, no handler and no remedy, and it takes the whole schema down
+ * — every other type included. The five CRUD names weave the entity in (`createBook`),
+ * so they never meet this; a custom op keeps its method name, which is the author's and
+ * says nothing about its subject. Four handlers named `ofBook` in one measured app.
+ *
+ * Nothing is renamed automatically: `chapterOfBook` would be this package's choice of
+ * the app's public vocabulary, and adding an entity in some other frond would silently
+ * rename a field already published.
+ */
+const claimed = new WeakMap<object, Map<string, string>>();
+function claimRootField(builder: object, fieldName: string, origin: string): void {
+  let held = claimed.get(builder);
+  if (!held) { held = new Map(); claimed.set(builder, held); }
+
+  const first = held.get(fieldName);
+  if (first !== undefined && first !== origin) {
+    const opName = origin.split('.').pop();
+    // `operations:` is keyed by op name PER FROND, so it cannot tell two handlers of the
+    // same frond apart. Saying otherwise would send the author to a fix that cannot work.
+    const remedy = first.split('/')[0] === origin.split('/')[0]
+      ? `Both are in the same frond, where \`operations:\` is keyed by op name and cannot `
+        + `tell them apart — rename one of the methods.`
+      : `Rename one of the methods, or name the field in the frond.config.ts of whichever `
+        + `should yield:\n  operations: { ${opName}: { graphql: '…' } }`;
+    throw new Error(
+      `two operations claim the GraphQL root field \`${fieldName}\`:\n`
+      + `  ${first}\n  ${origin}\n`
+      + `A root field is global, so one of them has to give. ${remedy}`,
+    );
+  }
+  held.set(fieldName, origin);
+}
+
 function graphqlFieldName(opName: string, entityName: string): string {
   const nameLower = entityName.charAt(0).toLowerCase() + entityName.slice(1);
   const namePlural = pluralize(nameLower);
@@ -858,7 +904,9 @@ export function registerOperations(builder: InstanceType<typeof SchemaBuilder>, 
     const sig = meta.signature;
     if (!sig) continue;
 
-    const fieldName = graphqlFieldName(opName, config.name);
+    const fieldName = config.operationsOverrides?.[opName]?.graphql
+      ?? graphqlFieldName(opName, config.name);
+    claimRootField(builder, fieldName, `${config.origin ?? config.name}.${opName}`);
     const { argsDef, buildInvocation } = buildArgsFromSignature(sig, meta, builder, opName, config.name);
 
     // Output type — what the op declares, else the entity's.
@@ -896,7 +944,7 @@ export function registerOperations(builder: InstanceType<typeof SchemaBuilder>, 
       }),
     });
 
-    if (resolveIsReadOp(opName, config.operationsOverrides)) {
+    if (resolveIsReadOp(opName, config.operationsOverrides, sig.readOnly)) {
       (builder as any).queryFields(fieldDef);
     } else {
       (builder as any).mutationFields(fieldDef);
