@@ -12,7 +12,7 @@ import type { BoundaryRef, LifecycleRules, Relation, Role, Shape } from '../fiel
  */
 
 /** JSON Schema's `type` values, plus `null` for the nullable union form. */
-export type JsonSchemaType =
+type JsonSchemaType =
   | 'string'
   | 'number'
   | 'integer'

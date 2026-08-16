@@ -3,10 +3,7 @@
 // package-internal (and index-level) view.
 export {
   type Shape,
-  SHAPE_TYPES,
   type ShapeType,
-  type BaseShape,
-  type ShapeAnatomy,
   Anatomy,
 } from "./shape.js";
 export { Formats, type FormatPredicate, type StringFormat } from "./format.js";
@@ -41,5 +38,4 @@ export { type Meta } from "./meta.js";
 export {
   Field,
   type Fields,
-  type FieldData,
 } from "./field.js";

@@ -56,7 +56,7 @@ export type Shape =
  * union cannot be enumerated at runtime, so writing both by hand means two lists that
  * drift. {@link isShape} needs the values, so it is the values that are declared.
  */
-export const SHAPE_TYPES = ['string', 'number', 'integer', 'boolean', 'array', 'object'] as const;
+const SHAPE_TYPES = ['string', 'number', 'integer', 'boolean', 'array', 'object'] as const;
 export type ShapeType = (typeof SHAPE_TYPES)[number];
 
 /** Is this a shape? Asked of its `type`, against {@link SHAPE_TYPES}. */
@@ -76,7 +76,7 @@ function isShapeImpl(value: unknown): value is Shape {
  * `switch (base?.type)` narrows; the raw `Shape` union can't (the `[T,'null']`
  * tuple is not a unit type).
  */
-export type BaseShape =
+type BaseShape =
   | ({ type: 'string' } & StringConstraints)
   | ({ type: 'number' | 'integer' } & NumericConstraints)
   | { type: 'boolean' }
@@ -100,7 +100,7 @@ function nullableShapeImpl(shape: Shape): Shape {
 }
 
 /** A shape split back into its base grammar and its nullability. */
-export interface ShapeAnatomy {
+interface ShapeAnatomy {
   /** The shape stripped of `null` (scalar `type`, `enum` without null) — dispatch on THIS. */
   base?: BaseShape;
   nullable: boolean;
