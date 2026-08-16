@@ -12,7 +12,7 @@ import type { FrondCall, IdentityCard, Transport } from '../wire/call.js';
 import { RPC_ENTITY } from '../wire/call.js';
 import { EMPTY_INVOCATION, type InvocationContext } from '../wire/invocation.js';
 import { FougereError, ErrorCode } from '../wire/errors.js';
-import { reconstruct, type SchemaView, type Fields, type SchemaDescriptor } from '@fougere/schema';
+import { reconstruct, type SchemaView, type SchemaDescriptor } from '@fougere/schema';
 
 interface Route {
   frond: string;

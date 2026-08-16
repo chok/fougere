@@ -8,11 +8,10 @@
 import type { Container } from '@fougere/container';
 import type { Fronds } from '../scan/Fronds.js';
 import type { SchemaView } from '@fougere/schema';
-import type { EntityOrm, OrmFactory } from '../orm.js';
+import type { OrmFactory } from '../orm.js';
 import type { AppMiddleware } from '../wire/middleware.js';
 import type { Transport } from '../wire/call.js';
 import type { AuthConfig, AuthRuntime } from './auth.js';
-import type { FrondDescriptor } from '../scan/frond.js';
 
 /** Options for createApp(). */
 export interface CreateAppOptions {

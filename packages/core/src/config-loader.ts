@@ -1,6 +1,5 @@
-import { resolve, join } from 'node:path';
+import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
-import { readdir } from 'node:fs/promises';
 import type { AuthConfig } from './boot/auth.js';
 import { getModuleLoader } from './scan/scanner.js';
 

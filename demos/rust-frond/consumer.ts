@@ -25,7 +25,7 @@ import {
 const RUST_FROND = process.env.RUST_FROND_URL ?? 'http://localhost:4200';
 
 /**
- * La doublure — copie fidèle de `createRemoteFacade` (packages/core/src/remote.ts:79).
+ * La doublure — copie fidèle de `createRemoteFacade` (packages/core/src/boot/remote.ts, `createRemoteFacade`).
  * Elle est reproduite ici parce qu'elle n'est pas exportée hors de bootstrap ;
  * c'est le même Proxy, à la lettre.
  */

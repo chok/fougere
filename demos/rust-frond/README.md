@@ -16,7 +16,7 @@ The frond honours two contracts, and both are JSON:
 1. **the wire** — `POST /_fougere/call`, JSON-RPC 2.0, `method = "entity.op"`,
    `params` = the InvocationContext. See `packages/transport/http/src/jsonrpc.ts`.
 2. **the map** — `rpc.discover` returns what it hosts, schemas included.
-   See `packages/core/src/call.ts:31`.
+   See `RPC_ENTITY` in `packages/core/src/wire/call.ts`.
 
 Everything else belongs to it: the language, the storage, the judge.
 
@@ -61,6 +61,6 @@ no line of TypeScript declares. "The truth travels, the realization varies" — 
 
 It calls `rpc.discover` itself. It no longer has to — since `0e51395`, the remote router
 reconstructs each entity's schema at discovery time and `App.schemaFor(entity)` serves it
-(`core/src/remote.ts:56`, `core/src/bootstrap.ts:429`). The explicit call is kept here
+(`core/src/boot/remote.ts`, `createRemoteRouter` ; `core/src/boot/bootstrap.ts`, `schemaFor`). The explicit call is kept here
 because it is the demo's subject: showing the map arrive, and the judge being rebuilt
 from it. An app would ask `schemaFor`.
