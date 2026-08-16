@@ -1,6 +1,8 @@
 import { Judge } from '@fougere/schema';
 import type { Container } from '@fougere/container';
-import type { CreateAppOptions, App, AuthRuntime, EntityEntry, HandlerEntry, PresenterEntry } from './types.js';
+import type { EntityEntry, HandlerEntry, PresenterEntry } from './frond.js';
+import type { AuthRuntime } from './auth.js';
+import type { CreateAppOptions, App } from './types.js';
 import type { AppMiddleware } from './middleware.js';
 import { runMiddlewares } from './middleware.js';
 import { FougereError, ErrorCode } from './errors.js';

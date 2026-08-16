@@ -2,7 +2,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import { existsSync, type Dirent } from 'node:fs';
 import { join, dirname, basename, resolve as resolvePath } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import type { FrondDescriptor, ProviderEntry, EntityEntry, HandlerEntry, PresenterEntry, CollectorEntry, SeedEntry, ScanResult, ScanDiagnostic } from './types.js';
+import type { FrondDescriptor, ProviderEntry, EntityEntry, HandlerEntry, PresenterEntry, CollectorEntry, SeedEntry, ScanResult, ScanDiagnostic } from './frond.js';
 import { ANONYMOUS_SCHEMA_NAME, type SchemaView } from '@fougere/schema';
 import type { OperationContract, OperationsMap } from './operation.js';
 import { cardinalityOf } from './operation.js';

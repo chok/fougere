@@ -41,9 +41,8 @@ export { errorMiddleware } from './middleware/error-handler.js';
 export { Logger } from './builtins/logger.js';
 export { Config } from './builtins/config.js';
 export type { EntityOrm, OrmFactory, ListOptions, ListResult } from './orm.js';
+export type { App, CreateAppOptions } from './types.js';
 export type {
-  App,
-  CreateAppOptions,
   ScanResult,
   ScanDiagnostic,
   FrondDescriptor,
@@ -56,10 +55,8 @@ export type {
   PresenterEntry,
   PresenterFieldMeta,
   CollectorEntry,
-  AuthConfig,
-  AuthContext,
-  AuthRuntime,
-} from './types.js';
+} from './frond.js';
+export type { AuthConfig, AuthContext, AuthRuntime } from './auth.js';
 export { Fronds } from './Fronds.js';
 export { verify, assertSplittable, type Violation } from './verify.js';
 // Same question as verify(), answered from the source text instead of the model.

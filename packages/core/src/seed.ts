@@ -1,6 +1,7 @@
 import { Role } from '@fougere/schema';
 import { facadeKeyOf } from './call.js';
-import type { App, FrondDescriptor, SeedEntry, SeedFactory } from './types.js';
+import type { FrondDescriptor, SeedEntry, SeedFactory } from './frond.js';
+import type { App } from './types.js';
 
 /**
  * Seeds in dependency order — a `ref()` target is planted before its referrer.

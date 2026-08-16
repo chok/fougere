@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { verify, assertSplittable } from '../src/verify.js';
-import type { FrondDescriptor } from '../src/types.js';
+import type { FrondDescriptor } from '../src/frond.js';
 
 // No fixture tree, no mount, no disk. `verify` is a pure function of the graph
 // the scan produces, so its test builds that graph directly — which is also the

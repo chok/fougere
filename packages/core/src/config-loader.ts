@@ -1,7 +1,7 @@
 import { resolve, join } from 'node:path';
 import { existsSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
-import type { AuthConfig } from './types.js';
+import type { AuthConfig } from './auth.js';
 import { getModuleLoader } from './scanner.js';
 
 // ── Types ────────────────────────────────────────

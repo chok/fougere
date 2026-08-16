@@ -1,4 +1,5 @@
-import type { App, FrondDescriptor } from './types.js';
+import type { FrondDescriptor } from './frond.js';
+import type { App } from './types.js';
 import { repositoryKeyOf } from './repository.js';
 import { ormKeyOf } from './orm.js';
 import { presenterKeyOf } from './presenter.js';

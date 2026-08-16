@@ -1,7 +1,7 @@
 import type { SchemaView } from '@fougere/schema';
 import type { BindingPlan } from './binding.js';
 import { computeBindingPlan } from './binding.js';
-import type { HandlerEntry, FrondDescriptor } from './types.js';
+import type { HandlerEntry, FrondDescriptor } from './frond.js';
 import type { ParsedMethod, ParsedType, ParsedParam } from './handler-parser.js';
 
 /**

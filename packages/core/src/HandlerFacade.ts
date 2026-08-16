@@ -11,7 +11,7 @@ import { projectEgress, presentEgress, type PresenterArgs } from './egress.js';
 import { EMPTY_INVOCATION, type InvocationContext } from './invocation.js';
 import type { Emissions } from './Emissions.js';
 import type { Logger } from './builtins/logger.js';
-import type { EntityEntry, FrondDescriptor, HandlerEntry, PresenterEntry } from './types.js';
+import type { EntityEntry, FrondDescriptor, HandlerEntry, PresenterEntry } from './frond.js';
 
 /** What this door is about: a handler, the entity behind it when there is one, and where it resolves. */
 export interface Doorway {

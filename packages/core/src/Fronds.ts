@@ -1,5 +1,5 @@
 import type { SchemaView } from '@fougere/schema';
-import type { EntityEntry, FrondDescriptor } from './types.js';
+import type { EntityEntry, FrondDescriptor } from './frond.js';
 
 /**
  * What this app hosts — the scan's answer, with the questions everyone was asking it
