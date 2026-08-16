@@ -38,7 +38,7 @@ const HTTP_STATUS: Record<ErrorCode, number> = {
 };
 
 /** Map a FougereError code to its HTTP status. */
-export function httpStatusFor(code: ErrorCode): number {
+function httpStatusFor(code: ErrorCode): number {
   return HTTP_STATUS[code] ?? 500;
 }
 

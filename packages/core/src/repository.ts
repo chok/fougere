@@ -1,4 +1,4 @@
-import type { EntityConstructor } from '@fougere/schema';
+import { classNameOf, type EntityConstructor } from '@fougere/schema';
 import type { EntityOrm } from './orm.js';
 
 /**
@@ -76,5 +76,5 @@ export function getRepositoryTarget(ctor: Function): EntityConstructor | undefin
 
 /** Container key of an entity's repository — 'reading' → 'ReadingRepository'. */
 export function repositoryKeyOf(entity: string): string {
-  return `${entity[0].toUpperCase()}${entity.slice(1)}Repository`;
+  return `${classNameOf(entity)}Repository`;
 }

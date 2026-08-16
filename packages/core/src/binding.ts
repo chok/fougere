@@ -16,7 +16,7 @@ import { registrationKeyOf } from './contract.js';
 
 // ── Types ─────────────────────────────────────
 
-export type ParamSource =
+type ParamSource =
   | { kind: 'collector'; entityName: string }
   /**
    * `Fact<PostPublished>` — something that happened, not something a caller typed.
@@ -33,7 +33,7 @@ export type ParamSource =
   /** The whole query bag, for an op whose argument IS the options (list). */
   | { kind: 'query' };
 
-export interface ParamBinding {
+interface ParamBinding {
   name: string;
   source: ParamSource;
   optional: boolean;

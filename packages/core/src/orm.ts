@@ -1,4 +1,4 @@
-import type { SchemaView } from '@fougere/schema';
+import { classNameOf, type SchemaView } from '@fougere/schema';
 
 /** Options for list queries — pagination, sorting, counting. */
 export interface ListOptions {
@@ -47,7 +47,7 @@ export interface ListResult<T> extends Array<T> {
  * same rule to the framework's own arguments. `list({ orderId })` used to be accepted and
  * the filter dropped, so a one-to-many relation quietly returned the whole table.
  */
-export const LIST_OPTION_KEYS = [
+const LIST_OPTION_KEYS = [
   'limit', 'offset', 'page', 'after', 'orderBy', 'order', 'count', 'where', 'select',
 ] as const;
 
@@ -169,5 +169,5 @@ export type OrmFactory = (entity: SchemaView, name: string) => EntityOrm;
  * so a rename would have moved one and left the other resolving to nothing.
  */
 export function ormKeyOf(entity: string): string {
-  return `${entity[0].toUpperCase()}${entity.slice(1)}Orm`;
+  return `${classNameOf(entity)}Orm`;
 }

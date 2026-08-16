@@ -22,7 +22,7 @@
  * ```
  */
 
-import type { EntityConstructor } from '@fougere/schema';
+import { classNameOf, type EntityConstructor } from '@fougere/schema';
 
 const PRESENTER_TARGET = Symbol.for('fougere:presenter_target');
 const PRESENTER_VIEWS = Symbol.for('fougere:presenter_views');
@@ -80,5 +80,5 @@ export function getPresenterFields(ctor: Function): string[] {
 
 /** Container key of an entity's presenter — 'post' → 'PostPresenter'. */
 export function presenterKeyOf(entity: string): string {
-  return `${entity[0].toUpperCase()}${entity.slice(1)}Presenter`;
+  return `${classNameOf(entity)}Presenter`;
 }

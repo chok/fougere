@@ -56,13 +56,6 @@ export interface AdapterConfig {
   [adapter: string]: boolean | undefined;
 }
 
-export interface ResolvedConfig {
-  /** Global config merged with all overrides. */
-  global: FougereConfig;
-  /** Per-frond config overrides. */
-  fronds: Record<string, FougereConfig>;
-}
-
 // ── Loading ──────────────────────────────────────
 
 const CONFIG_FILES = ['fougere.config.ts', 'fougere.config.js', 'fougere.config.mjs'];
@@ -86,27 +79,6 @@ export async function loadConfig(root: string): Promise<FougereConfig> {
   return loadConfigFrom(root);
 }
 
-/**
- * Load per-frond config files from each frond's directory.
- */
-export async function loadFrondConfigs(root: string, frondsDir = 'fronds'): Promise<Record<string, FougereConfig>> {
-  const dir = join(root, frondsDir);
-  if (!existsSync(dir)) return {};
-
-  const entries = await readdir(dir, { withFileTypes: true });
-  const configs: Record<string, FougereConfig> = {};
-
-  for (const entry of entries) {
-    if (!entry.isDirectory()) continue;
-    const frondConfig = await loadConfigFrom(join(dir, entry.name));
-    if (Object.keys(frondConfig).length > 0) {
-      configs[entry.name] = frondConfig;
-    }
-  }
-
-  return configs;
-}
-
 // ── Merging ──────────────────────────────────────
 
 /**
@@ -115,35 +87,12 @@ export async function loadFrondConfigs(root: string, frondsDir = 'fronds'): Prom
  * or redirects a frond without erasing the others. Used for workspace→app and
  * for global→CLI alike.
  */
-export function mergeGlobal(base: FougereConfig, override: Partial<FougereConfig>): FougereConfig {
+function mergeGlobal(base: FougereConfig, override: Partial<FougereConfig>): FougereConfig {
   const merged: FougereConfig = { ...base, ...override };
   if (base.remotes || override.remotes) {
     merged.remotes = { ...base.remotes, ...override.remotes };
   }
   return merged;
-}
-
-/**
- * Merge configs with cascade: global → frond → CLI overrides.
- *
- * Returns a ResolvedConfig with the merged global and per-frond overrides.
- */
-export function mergeConfig(
-  global: FougereConfig,
-  frondConfigs: Record<string, FougereConfig>,
-  cliOverrides: Partial<FougereConfig> = {},
-): ResolvedConfig {
-  return { global: mergeGlobal(global, cliOverrides), fronds: frondConfigs };
-}
-
-/**
- * Get the effective config for a specific frond.
- * Cascade: global → frond override.
- */
-export function configForFrond(resolved: ResolvedConfig, frondName: string): FougereConfig {
-  const frondOverride = resolved.fronds[frondName];
-  if (!frondOverride) return resolved.global;
-  return { ...resolved.global, ...frondOverride };
 }
 
 /**
@@ -157,17 +106,4 @@ export async function loadCascadedConfig(workspaceRoot: string, appRoot: string)
   const base = await loadConfig(workspaceRoot);
   if (resolve(workspaceRoot) === resolve(appRoot)) return base;
   return mergeGlobal(base, await loadConfig(appRoot));
-}
-
-/**
- * Load everything: root config + frond configs + merge with CLI overrides.
- */
-export async function resolveConfig(
-  root: string,
-  cliOverrides: Partial<FougereConfig> = {},
-): Promise<ResolvedConfig> {
-  const global = await loadConfig(root);
-  const frondsDir = cliOverrides.frondsDir ?? global.frondsDir ?? 'fronds';
-  const frondConfigs = await loadFrondConfigs(root, frondsDir);
-  return mergeConfig(global, frondConfigs, cliOverrides);
 }

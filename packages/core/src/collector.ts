@@ -15,7 +15,7 @@
  * ```
  */
 
-import type { EntityConstructor } from '@fougere/schema';
+import { classNameOf, type EntityConstructor } from '@fougere/schema';
 
 const COLLECTOR_TARGET = Symbol.for('fougere:collector_target');
 
@@ -33,5 +33,5 @@ export function getCollectorTarget(ctor: Function): EntityConstructor | undefine
 
 /** Container key of an entity's collector — 'user' → 'UserCollector'. */
 export function collectorKeyOf(entity: string): string {
-  return `${entity[0].toUpperCase()}${entity.slice(1)}Collector`;
+  return `${classNameOf(entity)}Collector`;
 }
