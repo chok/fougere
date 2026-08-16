@@ -1,3 +1,4 @@
+import { vocabulary } from './vocabulary.js';
 import { Field } from '../field/index.js';
 
 /**
@@ -5,6 +6,4 @@ import { Field } from '../field/index.js';
  * only the cost of one, which is why it is the one word here that is a hint and not a rule.
  * `unique()` already implies an index on every engine, so declaring both is redundant.
  */
-export function indexed<T>(field: Field<T>): Field<T> {
-  return field.with({ role: { ...field.role, index: true } });
-}
+export const indexed: <T>(field: Field<T>) => Field<T> = vocabulary('indexed', () => ({ role: { index: true } }));

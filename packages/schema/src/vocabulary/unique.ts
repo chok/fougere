@@ -1,3 +1,4 @@
+import { vocabulary } from './vocabulary.js';
 import { Field, Unique } from '../field/index.js';
 
 /**
@@ -10,6 +11,6 @@ import { Field, Unique } from '../field/index.js';
  * Its members are empty until `entity()` names the carrier — a field does not know its own
  * key. See {@link Unique}.
  */
-export function unique<T>(field: Field<T>): Field<T> {
-  return field.with({ role: { ...field.role, rules: [...(field.role?.rules ?? []), Unique.self()] } });
-}
+export const unique: <T>(field: Field<T>) => Field<T> = vocabulary('unique', (field) => ({
+  role: { rules: [...(field.role?.rules ?? []), Unique.self()] },
+}));

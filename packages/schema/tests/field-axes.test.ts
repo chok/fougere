@@ -2,7 +2,7 @@ import { Anatomy, Judge, FieldGroup, Unique } from '../src/index.js';
 import { describe, it, expect } from 'vitest';
 import {
   entity, primary, text, number, oneOf, list, optional, nullable,
-  registerGenerator, resolveCustomGenerator, unique, indexed, describe as describeSchema, reconstruct,
+  registerGenerator, resolveCustomGenerator, unique, indexed, immutable, created, updated, describe as describeSchema, reconstruct,
 } from '../src/index.js';
 
 // ─── nullableShape / anatomy — the two gates of the union, per shape genre ──
@@ -188,5 +188,28 @@ describe('unique / indexed — declared here, enforced by the storage', () => {
     expect(rebuilt.getFields().city.role?.index).toBe(true);
     // A constraint of one is not a composite — it is fully stated by the field itself.
     expect(rebuilt.getUnique()).toBeUndefined();
+  });
+});
+
+// ─── la composition du vocabulaire — un mot est une composition d'axes ──
+
+describe('vocabulary — a word states axis members, and a contradiction is refused', () => {
+  it('composes when the members differ', () => {
+    expect(indexed(unique(text())).role).toMatchObject({ index: true });
+  });
+
+  it('composes when both state the SAME value — saying it twice is not a contradiction', () => {
+    expect(immutable(created()).lifecycle).toEqual({ create: 'now', update: 'forbidden' });
+  });
+
+  it('refuses two words that state the same member differently, naming it', () => {
+    // `updated()` re-stamps at every write, `immutable` forbids the write. One used to win
+    // in silence, and which one depended on the nesting order.
+    expect(() => immutable(updated())).toThrow(/lifecycle\.update/);
+  });
+
+  it("`optional` is the weakest create rule, so it refines instead of colliding", () => {
+    expect(optional(text({ default: 'draft' })).lifecycle?.create).toEqual({ value: 'draft' });
+    expect(optional(created()).lifecycle?.create).toBe('now');
   });
 });

@@ -117,7 +117,7 @@ function normalizeRole(role: Role | undefined): Role | undefined {
 /** A record of fields — the input to `entity()` and every derivation. */
 export type Fields = Record<string, Field>;
 
-type FieldData = {
+export type FieldData = {
   [K in keyof Field as Field[K] extends (...args: never[]) => unknown
     ? never
     : K]: Field[K];
