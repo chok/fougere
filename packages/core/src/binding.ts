@@ -12,7 +12,7 @@
  */
 import type { ParsedParam } from './handler-parser.js';
 import type { InvocationContext } from './invocation.js';
-import { registrationKeyOf } from './contract.js';
+import { registrationKeyOf } from '@fougere/schema';
 
 // ── Types ─────────────────────────────────────
 

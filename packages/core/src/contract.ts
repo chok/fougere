@@ -33,7 +33,9 @@ export type { IdentityCard, CardOp } from './call.js';
  * respelled: a card writes it and a foreign key derives from it, so the convention
  * belongs to the schema, and a second copy here is a second opinion. It travels
  * through this subpath because a consumer of the wire (a browser bundle) may hold no
- * schema dependency of its own.
+ * schema dependency of its own — that audience only. Inside the package it is read from
+ * `@fougere/schema` directly: routing four modules through here bought nothing and put
+ * this file inside a cycle.
  */
 export { registrationKeyOf } from '@fougere/schema';
 

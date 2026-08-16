@@ -13,7 +13,7 @@ import { emitKeyOf } from './emit.js';
 import { getPresenterFields } from './presenter.js';
 import { ormKeyOf } from './orm.js';
 import { targetOf, viewsOf, outputOf } from './prefab.js';
-import { registrationKeyOf } from './contract.js';
+import { registrationKeyOf } from '@fougere/schema';
 import { Fronds } from './Fronds.js';
 
 /** Module loader — can be swapped (e.g. jiti for TS files in Nuxt context). */
