@@ -6,7 +6,7 @@ import type { App, CreateAppOptions } from './types.js';
 import type { Transport } from './call.js';
 import type { Container } from '@fougere/container';
 
-export interface BootOptions {
+interface BootOptions {
   /** Project root. Defaults to process.cwd(). */
   root?: string;
   /** Override config (merged with fougere.config.ts). */

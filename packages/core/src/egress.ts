@@ -39,7 +39,7 @@ import { assertListOptions } from './orm.js';
  * judge's business — the receiver fails on its own (an unknown column), and a client
  * input already met `validateFields`, which refuses strangers.
  */
-export function judgeEgress(fields: Fields, value: unknown, entity: string, operation: string): void {
+function judgeEgress(fields: Fields, value: unknown, entity: string, operation: string): void {
   if (typeof value !== 'object' || value === null) return;
 
   const errors: string[] = [];

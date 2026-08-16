@@ -99,9 +99,6 @@ export function setCached(key: string, hash: string, data: unknown): void {
   dirty = true;
 }
 
-// Legacy aliases — used by existing callers
-export { getCached as getCachedMethods, setCached as setCachedMethods };
-
 /** Write cache to disk if modified. */
 export function flushCache(): void {
   if (!dirty || !cache) return;
