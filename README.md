@@ -109,6 +109,11 @@ under [`site/fronds/blog/`](./site/fronds/blog).
 
 ## What you did not write
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/img/core-and-arcs.dark.svg">
+  <img alt="The Frond in the middle. The dotted ring is the public surface, derived from the declaration and published outward as the call envelope, REST and GraphQL. The solid ring is the ports it traverses, where SQL, a remote Frond and a mirrored API arrive. Nothing touches the Frond." src="./docs/img/core-and-arcs.light.svg" width="100%">
+</picture>
+
 Those three files are the domain and nothing else. Everything below was derived from
 them, and none of it is yours to keep in sync:
 
@@ -177,6 +182,11 @@ GraphQL type, no form contract. The entity is the piece that fits through the ho
 reason to come back for the rest is `getFields()`.
 
 ## The domain travels
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/img/gradient.dark.svg">
+  <img alt="Four pairs of nodes — your page and the Frond. Only the link between them changes: a direct call, then a hop, then a hop across a repository boundary, then one where the Frond is not TypeScript." src="./docs/img/gradient.light.svg" width="100%">
+</picture>
 
 A **Frond** is a domain — its entities, its handlers, its collectors, its seeds.
 Where it runs is one line of configuration, and it is the only line that changes.

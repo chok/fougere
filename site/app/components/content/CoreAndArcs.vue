@@ -24,9 +24,9 @@ const { circle, arc, arrow } = roughHand();
 
 const CX = 520;
 const CY = 330;
-const CORE = 132;
-const SURFACE = 600;   // outer ring — two thirds, its gap on the right
-const PORTS = 420;     // inner ring — two thirds, its gap on the left
+const CORE = 196;
+const SURFACE = 620;   // outer ring — two thirds, its gap on the right
+const PORTS = 372;     // inner ring — two thirds, its gap on the left
 
 /** Degrees, y-down: 180 is due left, 0 due right. */
 const DOORS = [
@@ -46,7 +46,7 @@ const at = (deg: number, r: number) => ({ x: CX + r * Math.cos(rad(deg)), y: CY 
 
 const shapes = {
   core: circle(CX, CY, CORE, 3),
-  surface: arc(CX, CY, SURFACE, 60, 300, 11),
+  surface: arc(CX, CY, SURFACE, 60, 300, 11, true),
   ports: arc(CX, CY, PORTS, -120, 120, 17),
 };
 
@@ -70,12 +70,12 @@ const driven = stream(DRIVEN, PORTS, false, 70);
 
 <template>
   <div class="not-prose my-2">
-    <svg viewBox="0 0 1000 680" class="hand-svg w-full h-auto" role="img" :aria-label="t('diagram.arcs.core')">
-      <path v-for="(d, i) in shapes.surface" :key="'s' + i" :d="d" class="hand-dashed" />
+    <svg data-diagram="core-and-arcs" viewBox="0 0 1000 680" class="hand-svg w-full h-auto" role="img" :aria-label="t('diagram.arcs.core')">
+      <path v-for="(d, i) in shapes.surface" :key="'s' + i" :d="d" class="hand-dotted" />
       <path v-for="(d, i) in shapes.ports" :key="'p' + i" :d="d" class="hand-faint" />
 
       <template v-for="ray in driven" :key="ray.label">
-        <path v-for="(d, i) in ray.paths" :key="i" :d="d" class="hand-faint" />
+        <path v-for="(d, i) in ray.paths" :key="i" :d="d" class="hand-ink" />
         <text :x="ray.tip.x + 6" :y="ray.tip.y + 5" class="hand-members">{{ ray.label }}</text>
       </template>
 
@@ -87,9 +87,9 @@ const driven = stream(DRIVEN, PORTS, false, 70);
       <path v-for="(d, i) in shapes.core" :key="'c' + i" :d="d" class="hand-ink" />
       <text x="520" y="336" text-anchor="middle" class="hand-title">{{ t('diagram.arcs.core') }}</text>
 
-      <text x="180" y="26" text-anchor="middle" class="hand-note">{{ t('diagram.arcs.surface') }}</text>
+      <text x="258" y="96" text-anchor="middle" class="hand-note">{{ t('diagram.arcs.surface') }}</text>
 
-      <text x="836" y="662" text-anchor="middle" class="hand-note">{{ t('diagram.arcs.ports') }}</text>
+      <text x="694" y="566" text-anchor="middle" class="hand-note">{{ t('diagram.arcs.ports') }}</text>
     </svg>
   </div>
 </template>

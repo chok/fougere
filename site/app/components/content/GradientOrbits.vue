@@ -49,7 +49,7 @@ const cells = CELLS.map((c, i) => {
 
 <template>
   <div class="not-prose my-2">
-    <svg viewBox="0 0 980 200" class="hand-svg w-full h-auto" role="img" :aria-label="t('diagram.orbits.same')">
+    <svg data-diagram="gradient" viewBox="0 0 980 200" class="hand-svg w-full h-auto" role="img" :aria-label="t('diagram.orbits.same')">
       <template v-for="(cell, i) in cells" :key="cell.key">
         <path v-for="(d, j) in cell.borderLine" :key="'b' + j" :d="d" class="hand-dashed" />
         <path v-for="(d, j) in cell.wire" :key="'w' + j" :d="d" class="hand-ink" />
