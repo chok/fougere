@@ -59,7 +59,11 @@
     "status2": "Une feature métier jugée (draft→publish) validée en navigateur, bascule de badge comprise",
     "status3": "Le split est vécu au quotidien : host tué → 503 typé dans les pages ; relancé → récupération",
     "status4": "Code utilisateur identique in-process et split — vérifié jusqu'au build de prod",
-    "status5": "Ce site — docs, blog, auth — tourne dessus"
+    "status5": "Ce site — docs, blog, auth — tourne dessus",
+    "oneIdeaTitle": "Une seule idée, et du genre qui se vérifie",
+    "oneIdeaText": "La déclaration ne nomme rien en dehors d'elle-même — ni table, ni protocole, ni hôte, ni adresse. Ce qu'elle ne nomme pas est donc soit dérivé d'elle, soit choisi en dehors. Les deux sections qui suivent sont ces deux lectures, et rien d'autre.",
+    "readingOne": "Première lecture — ce qui en dérive",
+    "readingTwo": "Seconde lecture — ce qui est choisi en dehors"
   },
   "docs": {
     "overview": "Vue d'ensemble",
@@ -133,6 +137,21 @@
     "wireCall": "la même valeur d'appel, mise sur le fil",
     "pivot": "la seule ligne qui change",
     "api": "Surface d'API",
-    "judge": "dérivée du shape · embarquée avec la classe"
+    "judge": "dérivée du shape · embarquée avec la classe",
+    "core": {
+      "coreLabel": "La Frond — ce que vous avez écrit",
+      "coreNote": "elle n'en nomme aucune des quatre",
+      "host": "L'hôte",
+      "storage": "Le stockage",
+      "door": "La porte",
+      "place": "Le lieu",
+      "gradientNote": "lue comme un mouvement, celle-ci est le gradient",
+      "caption": "La Frond ne nomme aucune des quatre familles. Chacune est choisie en dehors d'elle — et la dernière, lue comme un mouvement plutôt que comme une liste, est le gradient."
+    },
+    "arcs": {
+      "core": "la Frond",
+      "ports": "les ports qu'elle traverse",
+      "surface": "la surface publique"
+    }
   }
 }

@@ -59,7 +59,11 @@
     "status2": "A judged business feature (draft→publish) verified in the browser, badge flip included",
     "status3": "The split is lived daily: kill the host → typed 503 in the pages; restart → recovery",
     "status4": "Identical user code in-process and split — verified down to the production build",
-    "status5": "This site — docs, blog, auth — runs on it"
+    "status5": "This site — docs, blog, auth — runs on it",
+    "oneIdeaTitle": "One idea, and it is the kind you can check",
+    "oneIdeaText": "The declaration names nothing outside itself — no table, no protocol, no host, no address. So what it does not name is either derived from it, or chosen outside it. The two sections below are those two readings, and nothing else.",
+    "readingOne": "First reading — what is derived from it",
+    "readingTwo": "Second reading — what is chosen outside it"
   },
   "docs": {
     "overview": "Overview",
@@ -133,6 +137,21 @@
     "wireCall": "the same call value, framed on the wire",
     "pivot": "the only line that changes",
     "api": "API surface",
-    "judge": "derived from the shape · ships with the class"
+    "judge": "derived from the shape · ships with the class",
+    "core": {
+      "coreLabel": "The Frond — what you wrote",
+      "coreNote": "it names none of the four",
+      "host": "The host",
+      "storage": "The storage",
+      "door": "The door",
+      "place": "The place",
+      "gradientNote": "read as a movement, this one is the gradient",
+      "caption": "The Frond names none of the four families. Each is chosen outside it — and the last one, read as a movement rather than a list, is the gradient."
+    },
+    "arcs": {
+      "core": "the Frond",
+      "ports": "the ports it traverses",
+      "surface": "the public surface"
+    }
   }
 }

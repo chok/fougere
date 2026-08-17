@@ -1,0 +1,38 @@
+# The path of one call. The topology inserts one hop and changes nothing else —
+# the same façade judges, binds, presents and projects on both sides.
+#
+# A command, not a query: `publish` is where both judges are real — the façade's on the
+# way in, `guardStorage` on the write. A `list()` would show neither.
+#
+# Source of truth for /public/diagrams/call-path.en.{light,dark}.svg.
+# Regenerate with: node scripts/render-diagrams.mjs
+
+shape: sequence_diagram
+
+page: your page
+runner: the runner
+wire: "JSON-RPC 2.0\nPOST /_fougere/call"
+facade: the façade
+handler: your handler
+orm: EntityOrm
+
+page -> runner: "useCommand(Post, 'publish')"
+
+choice: "ONE of these two — and nothing below it changes" {
+  memory: "remotes absent → in memory" {
+    runner -> facade: the call value, unframed
+  }
+  hop: "remotes: { blog: '…' } → one hop" {
+    runner -> wire: framed, never reshaped
+    wire -> facade: the same value, at the far end
+  }
+}
+
+facade -> facade: "judges, then binds — an unknown key is\nrefused, a collector resolves by type"
+facade -> handler: "the value it parsed, not the raw body"
+handler -> orm: "update({ status: 'published' })"
+orm -> orm: guardStorage judges the write
+orm -> handler: the row
+handler -> facade: the row
+facade -> facade: "presents, then projects — computed fields\nover the page, each row onto its view"
+facade -> page: "the result: identical shape either side"

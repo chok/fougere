@@ -4,10 +4,13 @@ Guidance for Claude Code working in this repository.
 
 ## What is this
 
-Fougere is a TypeScript framework built on two ideas:
+Fougere is a TypeScript framework built on ONE idea, stated in the negative because that
+is the form that can be checked: **the declaration names nothing outside itself** — no
+table, no protocol, no host, no address. The two things this file used to call its two
+ideas are its two readings, and calling them two hid the rule that produces both:
 
-1. **Single-schema** — one Entity class (`class Post extends entity({...})`) generates validation, DB tables (Kysely), GraphQL types (Pothos), form contracts, API surfaces.
-2. **The gradient** — a Frond (entities + handlers + collectors + seeds) runs in-process or in its own process behind JSON-RPC, with **identical user code**. `remotes: { blog: 'http://...' }` in `fougere.config.ts` is the whole topology statement.
+1. **Single-schema** — what the declaration does not name is *derived* from it: one Entity class (`class Post extends entity({...})`) generates validation, DB tables (Kysely), GraphQL types (Pothos), form contracts, API surfaces.
+2. **The gradient** — what it does not name is *chosen outside* it: a Frond (entities + handlers + collectors + seeds) runs in-process or in its own process behind JSON-RPC, with **identical user code**. `remotes: { blog: 'http://...' }` in `fougere.config.ts` is the whole topology statement.
 
 Reference docs: `site/content/` (en/fr). Design doctrine: `concepts/`.
 

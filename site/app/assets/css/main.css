@@ -214,3 +214,22 @@
   stroke-width: 1;
   stroke-dasharray: 5 4;
 }
+
+/* ── Hand-drawn diagrams ───────────────────────────────────────────────────
+   rough.js draws the strokes (see `roughHand()`); this states their colour and
+   the hand the labels are written in. @nuxt/fonts, which @nuxt/ui brings, picks
+   up the family named here and self-hosts it — no config, no <link>. */
+.hand-svg text { font-family: 'Architects Daughter', 'Bradley Hand', cursive; }
+.hand-svg .hand-ink,
+.hand-svg .hand-faint,
+.hand-svg .hand-accent {
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 1.7;
+}
+.hand-svg .hand-ink { stroke: var(--ui-text-highlighted); }
+.hand-svg .hand-faint { stroke: var(--ui-text-dimmed); stroke-width: 1.5; }
+.hand-svg .hand-accent { stroke: var(--ui-primary); }
+.hand-svg .hand-title { fill: var(--ui-text-highlighted); font-size: 18px; }
+.hand-svg .hand-members { fill: var(--ui-text-muted); font-size: 13.5px; }
+.hand-svg .hand-note { fill: var(--ui-text-dimmed); font-size: 12.5px; font-style: italic; }

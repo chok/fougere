@@ -1,0 +1,38 @@
+# Le trajet d'un appel. La topologie insère un saut et ne change rien d'autre —
+# la même façade juge, lie, présente et projette des deux côtés.
+#
+# Une command, pas une query : `publish` est l'endroit où les deux juges sont réels — celui
+# de la façade à l'entrée, `guardStorage` sur l'écriture. Un `list()` n'en montrerait aucun.
+#
+# Source de /public/diagrams/call-path.fr.{light,dark}.svg.
+# Régénérer avec : node scripts/render-diagrams.mjs
+
+shape: sequence_diagram
+
+page: votre page
+runner: le runner
+wire: "JSON-RPC 2.0\nPOST /_fougere/call"
+facade: la façade
+handler: votre handler
+orm: EntityOrm
+
+page -> runner: "useCommand(Post, 'publish')"
+
+choice: "L'UNE des deux — et rien en dessous ne change" {
+  memory: "remotes absent → en mémoire" {
+    runner -> facade: la valeur d'appel, sans enveloppe
+  }
+  hop: "remotes: { blog: '…' } → un saut" {
+    runner -> wire: mise sur le fil, jamais remodelée
+    wire -> facade: la même valeur, à l'autre bout
+  }
+}
+
+facade -> facade: "juge, puis lie — une clé inconnue est\nrefusée, un collector résout par type"
+facade -> handler: "la valeur qu'elle a parsée, pas le corps brut"
+handler -> orm: "update({ status: 'published' })"
+orm -> orm: guardStorage juge l'écriture
+orm -> handler: la ligne
+handler -> facade: la ligne
+facade -> facade: "présente, puis projette — champs calculés\nsur la page, chaque ligne sur sa vue"
+facade -> page: "le résultat : forme identique des deux côtés"

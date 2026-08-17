@@ -1,11 +1,26 @@
 ---
 title: What is Fougere
-description: A TypeScript framework built around two ideas — single-schema and the gradient.
+description: One idea — you declare the domain, and everything else derives from it, down to the process it runs in.
 ---
 
 # What is Fougere
 
-Fougere is a TypeScript framework built around two ideas.
+Fougere is a TypeScript framework built on one idea: **you declare the domain, and
+everything else derives from it — down to the process it runs in.**
+
+Stated in the negative, it becomes checkable: *the declaration names nothing outside
+itself.* No table, no protocol, no host, no address appears in it. Two consequences follow,
+and they are ordinarily sold as two separate features:
+
+| The declaration does not name… | so that thing is… | its usual name |
+|---|---|---|
+| its table, its GraphQL type, its form, its judge | **derived** from it | single-schema |
+| its host, its storage, its door, its address | **chosen outside** it | the gradient |
+
+One rule read in two directions — what a declaration produces, and what it may be
+surrounded by. The rest of this page is those two readings.
+
+## What is derived from it
 
 **Single-schema.** One entity class declares your data once — and judges its own input:
 the same `validate()` runs in the browser and at the façade. That judge is itself a
@@ -38,6 +53,8 @@ That single class is simultaneously:
 - the **designation** pages use to call operations (`useQuery(Post, 'list')`),
 - the **nominal name** dependency injection matches in handler signatures (`user: User | null`).
 
+## What is chosen outside it
+
 **The gradient.** Business logic lives in *Fronds* — self-contained modules of entities,
 handlers, collectors and seeds. A Frond runs in-process today and in its own process
 tomorrow, behind JSON-RPC 2.0, with **identical user code**. The entire topology statement
@@ -54,6 +71,19 @@ when it is remote. Transports move the value — they never reshape it.
 
 So the split costs the hop and the JSON that rides it, and nothing else: no serialization
 the local path avoids, no framework tax layered on top of the network.
+
+The four families the rule refuses to name, drawn — the gradient being the fourth one read
+as a movement rather than a list:
+
+::agnostic-core
+::
+
+And it is checkable with `diff`: the five demos that serve this same blog under Next,
+TanStack Start, React Router, SvelteKit and Express share a `fronds/` directory that is
+identical byte for byte, and three of those hosts need no Fougere package at all. So
+*progressive* here means only this — each step outward
+[states its price](/docs/infra/gradient#five-rungs-and-the-price-of-each), and none of them
+asks you to rewrite what you wrote.
 
 ## Reading order
 

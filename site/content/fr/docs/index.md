@@ -1,11 +1,26 @@
 ---
 title: Qu'est-ce que Fougere
-description: Un framework TypeScript construit autour de deux idées — single-schema et le gradient.
+description: Une seule idée — vous déclarez le domaine, et tout en dérive, jusqu'au process où il tourne.
 ---
 
 # Qu'est-ce que Fougere
 
-Fougere est un framework TypeScript construit autour de deux idées.
+Fougere est un framework TypeScript construit sur une seule idée : **vous déclarez le
+domaine, et tout en dérive — jusqu'au process où il tourne.**
+
+Énoncée à la forme négative, elle se vérifie : *la déclaration ne nomme rien en dehors
+d'elle-même.* Ni table, ni protocole, ni hôte, ni adresse n'y figurent. Deux conséquences en
+découlent, et on les vend d'habitude comme deux fonctionnalités distinctes :
+
+| La déclaration ne nomme pas… | donc cette chose est… | son nom usuel |
+|---|---|---|
+| sa table, son type GraphQL, son formulaire, son juge | **dérivée** d'elle | single-schema |
+| son hôte, son stockage, sa porte, son adresse | **choisie en dehors** d'elle | le gradient |
+
+Une seule règle lue dans deux directions — ce qu'une déclaration produit, et ce dont on peut
+l'entourer. Le reste de cette page, ce sont ces deux lectures.
+
+## Ce qui en dérive
 
 **Single-schema.** Une classe d'entité déclare vos données une fois — et juge elle-même
 ses entrées : le même `validate()` tourne dans le navigateur et à la façade. Le juge est
@@ -39,6 +54,8 @@ Cette seule classe est à la fois :
 - la **désignation** que les pages utilisent pour appeler les opérations (`useQuery(Post, 'list')`),
 - le **nom nominal** que l'injection de dépendances matche dans les signatures (`user: User | null`).
 
+## Ce qui est choisi en dehors
+
 **Le gradient.** La logique métier vit dans des *Fronds* — des modules autonomes
 d'entités, handlers, collectors et seeds. Une Frond tourne in-process aujourd'hui et dans
 son propre process demain, derrière JSON-RPC 2.0, avec un **code utilisateur identique**.
@@ -55,6 +72,19 @@ quand elle est distante. Les transports déplacent la valeur — ils ne la remod
 
 Donc le split coûte le saut et le JSON qui voyage avec, et rien d'autre : aucune
 sérialisation que le chemin local éviterait, aucun impôt du framework par-dessus le réseau.
+
+Les quatre familles que la règle refuse de nommer, dessinées — le gradient étant la
+quatrième, lue comme un mouvement plutôt que comme une liste :
+
+::agnostic-core
+::
+
+Et ça se vérifie au `diff` : les cinq demos qui servent ce même blog sous Next,
+TanStack Start, React Router, SvelteKit et Express partagent un répertoire `fronds/`
+identique à l'octet, et trois de ces hôtes ne demandent aucun paquet Fougere. Alors
+*progressif* ne veut dire que ceci : chaque pas vers l'extérieur
+[énonce son prix](/fr/docs/infra/gradient#cinq-barreaux-et-le-prix-de-chacun), et aucun ne
+demande de réécrire ce que vous avez écrit.
 
 ## Ordre de lecture
 

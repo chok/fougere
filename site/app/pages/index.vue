@@ -195,9 +195,23 @@ async function copyAudit() {
       </div>
     </section>
 
-    <!-- The nucleus and its projections -->
-    <section class="max-w-6xl mx-auto px-6 pb-20">
+    <!-- The one idea. The two sections below it are its two readings, in order. -->
+    <section class="border-y border-default bg-elevated/40">
+      <div class="max-w-6xl mx-auto px-6 py-16">
+        <div class="max-w-3xl mx-auto text-center">
+          <h2 class="text-2xl font-bold text-highlighted">{{ $t('home.oneIdeaTitle') }}</h2>
+          <p class="mt-3 text-muted">{{ $t('home.oneIdeaText') }}</p>
+        </div>
+        <div class="mt-10 max-w-4xl mx-auto">
+          <CoreAndArcs />
+        </div>
+      </div>
+    </section>
+
+    <!-- First reading: what the declaration does not name is derived from it -->
+    <section class="max-w-6xl mx-auto px-6 py-20">
       <div class="text-center mb-8">
+        <p class="text-xs uppercase tracking-wider text-muted mb-2">{{ $t('home.readingOne') }}</p>
         <h2 class="text-2xl font-bold text-highlighted">{{ $t('home.derivationTitle') }}</h2>
         <p class="mt-2 text-muted">{{ $t('home.derivationText') }}</p>
       </div>
@@ -238,6 +252,7 @@ async function copyAudit() {
     <section class="border-y border-default bg-elevated/40">
       <div class="max-w-6xl mx-auto px-6 py-16">
         <div class="max-w-2xl">
+          <p class="text-xs uppercase tracking-wider text-muted mb-2">{{ $t('home.readingTwo') }}</p>
           <h2 class="text-2xl font-bold text-highlighted">{{ $t('home.gradientTitle') }}</h2>
           <p class="mt-3 text-muted">{{ $t('home.gradientText') }}</p>
         </div>
