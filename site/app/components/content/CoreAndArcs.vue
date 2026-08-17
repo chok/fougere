@@ -3,10 +3,18 @@
  * The declaration in the middle, two rings around it — each two thirds of a circle, so
  * they read as orbits rather than brackets.
  *
- * Each ring's gap faces the side where the OTHER one's arrows pass: the outer ring is the
- * public surface and its doors leave leftward, the inner ring is the driven side and its
- * arrows escape rightward through the outer gap. Every arrow departs from its own ring,
- * never from the core — a door is not something the core reaches for.
+ * Arrows carry the FLOW TOWARD THE CONSUMER: SQL, a remote Frond and a mirrored API
+ * SUPPLY, so they arrive; the surface SERVES, so it publishes outward. One stream, right
+ * to left, and the Frond is what it crosses.
+ *
+ * NOTHING touches the Frond. Every arrow runs between its own ring and the outside: the
+ * surface publishes outward, the supply arrives at the port. The core never talks to SQL
+ * and never emits a route — it hands over at a ring, and the ring is where the arrow
+ * stops. A head landing on the circle would claim the opposite.
+ *
+ * What is Fougere's own is carried by the STROKE, not by a bent arrow: the outer ring is
+ * dashed because you did not write it — it is derived from the declaration — while the
+ * inner one is solid, because you plug those in yourself.
  *
  * The prose is the page's job. This holds eight words. Drawn with rough.js through
  * `roughHand()`, which runs during SSR.
@@ -42,23 +50,28 @@ const shapes = {
   ports: arc(CX, CY, PORTS, -120, 120, 17),
 };
 
-/** Every arrow departs from its own arc, never from the core. */
-const TERMINUS = SURFACE / 2 + 64;
-const raysFrom = (orbit: number, list: readonly { deg: number; label: string }[], seed0: number) =>
+/** Out to the consumer, or in from the supply — and it stops at its ring either way. */
+const stream = (
+  list: readonly { deg: number; label: string }[],
+  ring: number,
+  outward: boolean,
+  seed0: number,
+) =>
   list.map((ray, i) => {
-    const from = at(ray.deg, orbit / 2);
-    const to = at(ray.deg, TERMINUS);
-    return { ...ray, paths: arrow(from.x, from.y, to.x, to.y, seed0 + i * 3), tip: at(ray.deg, TERMINUS + 10) };
+    const inner = at(ray.deg, ring / 2 + 6);
+    const outer = at(ray.deg, ring / 2 + 66);
+    const [from, to] = outward ? [inner, outer] : [outer, inner];
+    return { ...ray, paths: arrow(from.x, from.y, to.x, to.y, seed0 + i * 3), tip: at(ray.deg, ring / 2 + 78) };
   });
 
-const doors = raysFrom(SURFACE, DOORS, 40);
-const driven = raysFrom(PORTS, DRIVEN, 70);
+const doors = stream(DOORS, SURFACE, true, 40);
+const driven = stream(DRIVEN, PORTS, false, 70);
 </script>
 
 <template>
   <div class="not-prose my-2">
     <svg viewBox="0 0 1000 680" class="hand-svg w-full h-auto" role="img" :aria-label="t('diagram.arcs.core')">
-      <path v-for="(d, i) in shapes.surface" :key="'s' + i" :d="d" class="hand-accent" />
+      <path v-for="(d, i) in shapes.surface" :key="'s' + i" :d="d" class="hand-dashed" />
       <path v-for="(d, i) in shapes.ports" :key="'p' + i" :d="d" class="hand-faint" />
 
       <template v-for="ray in driven" :key="ray.label">

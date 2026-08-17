@@ -257,7 +257,7 @@ async function copyAudit() {
           <p class="mt-3 text-muted">{{ $t('home.gradientText') }}</p>
         </div>
         <div class="mt-10 max-w-5xl mx-auto">
-          <GradientDiagram />
+          <GradientOrbits />
         </div>
         <ul class="mt-8 grid sm:grid-cols-3 gap-x-8 gap-y-3 text-sm text-muted">
           <li class="flex gap-2.5"><UIcon name="i-lucide-check" class="size-4 text-primary/70 shrink-0 mt-0.5" />{{ $t('home.gradientPoint1') }}</li>

@@ -152,6 +152,15 @@
       "core": "the Frond",
       "ports": "the ports it traverses",
       "surface": "the public surface"
+    },
+    "orbits": {
+      "caller": "your page",
+      "same": "the same Frond, unchanged",
+      "sameProcess": "same process",
+      "anotherProcess": "another process",
+      "anotherRepo": "another repo",
+      "anotherLanguage": "another language",
+      "frond": "the Frond"
     }
   }
 }
