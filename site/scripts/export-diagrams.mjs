@@ -48,7 +48,6 @@ text { font-family: 'Architects Daughter', 'Bradley Hand', cursive; }
 .hand-faint { fill: none; stroke: ${c.faint}; stroke-width: 1.5; stroke-linecap: round }
 .hand-accent { fill: none; stroke: ${c.accent}; stroke-width: 1.7; stroke-linecap: round }
 .hand-dashed { fill: none; stroke: ${c.faint}; stroke-width: 1.6; stroke-dasharray: 12 9 }
-.hand-dotted { fill: none; stroke: ${c.faint}; stroke-width: 2.4; stroke-dasharray: 0.1 11; stroke-linecap: round }
 .hand-title { fill: ${c.ink}; font-size: 18px }
 .hand-members { fill: ${c.muted}; font-size: 13.5px }
 .hand-note { fill: ${c.dim}; font-size: 12.5px; font-style: italic }`;

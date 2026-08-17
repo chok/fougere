@@ -19,15 +19,9 @@ export function roughHand() {
     circle: (x: number, y: number, size: number, seed: number) =>
       d(gen.circle(x, y, size, { ...HAND, seed })),
 
-    /**
-     * Angles in degrees, y-down: 180→360 is the upper half.
-     *
-     * `single` draws one pass instead of rough's usual two. It matters for a dotted or
-     * dashed stroke: two passes are offset from each other, so each one's gaps land on
-     * the other's ink and the line comes out looking solid.
-     */
-    arc: (x: number, y: number, size: number, from: number, to: number, seed: number, single = false) =>
-      d(gen.arc(x, y, size, size, rad(from), rad(to), false, { ...HAND, seed, disableMultiStroke: single })),
+    /** Angles in degrees, y-down: 180→360 is the upper half. */
+    arc: (x: number, y: number, size: number, from: number, to: number, seed: number) =>
+      d(gen.arc(x, y, size, size, rad(from), rad(to), false, { ...HAND, seed })),
 
     line: (x1: number, y1: number, x2: number, y2: number, seed: number) =>
       d(gen.line(x1, y1, x2, y2, { ...HAND, seed })),
