@@ -1,5 +1,4 @@
 import type { FrondDescriptor } from './scan/frond.js';
-import type { App } from './boot/types.js';
 import { repositoryKeyOf } from './prefab/repository.js';
 import { ormKeyOf } from './orm.js';
 import { presenterKeyOf } from './prefab/presenter.js';

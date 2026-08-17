@@ -15,7 +15,7 @@
  * The previous version also served `/graphql/public`, a restricted schema for the
  * `public` surface. That cannot work here and the framework says so: a named surface
  * resolves in the local container only, so a consumer cannot expose a restricted view
- * of a REMOTE frond (`core/src/bootstrap.ts`, `facadeFor` — a known limitation, whose
+ * of a REMOTE frond (`core/src/boot/bootstrap.ts`, `facadeFor` — a known limitation, whose
  * coherent answer is composition and is not shipped). Serving it anyway produced an
  * empty schema: `Type Query must define one or more fields`. It is left out rather
  * than left broken.

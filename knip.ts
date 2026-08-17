@@ -1,5 +1,5 @@
 import type { KnipConfig } from 'knip';
-import { FROND_DIRS } from './packages/core/src/scanner.js';
+import { FROND_DIRS } from './packages/core/src/scan/scanner.js';
 
 /**
  * What knip cannot know on its own: a Frond's files are reached by CONVENTION,

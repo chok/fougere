@@ -8,7 +8,7 @@ import { Lifecycle } from '@fougere/schema';
  * scans fronds off the filesystem and hands back an `App`. That is why it lives
  * in `@fougere/app` rather than in one of the two adapters — the second host
  * would otherwise have copied it, and a copied boot drifts (the seeding loop
- * already did, `core/src/seed.ts`).
+ * already did, `core/src/boot/seed.ts`).
  *
  * Default path (zero-config): fougere.config.ts declares `db: 'sqlite'` and
  * everything else; this module auto-resolves the storage handle, builds an

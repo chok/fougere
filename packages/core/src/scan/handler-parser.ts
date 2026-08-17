@@ -605,7 +605,6 @@ export async function parseConstructorParams(filePath: string): Promise<ParsedPa
 const CONSTRUCTOR_ONLY = new Set(['constructor']);
 
 function parseClassMethods(filePath: string, skip: Set<string>, projectRoot?: string): HandlerParse {
-  const ts = getTS();
   const unresolved: string[] = [];
   const source = sourceOf(filePath);
   const cls = findDefaultClass(source);
