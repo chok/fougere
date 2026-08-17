@@ -6,6 +6,10 @@
  * it. What it does hold is a palette, twice: a committed SVG cannot read `--ui-*`, so the
  * theme has to be baked in, once per mode, and `<picture>` picks in the README.
  *
+ * The handwriting is embedded as base64 for the same reason: outside the site there is no
+ * `@nuxt/fonts` to serve it, so a named family would fall back to whatever the reader's
+ * machine calls cursive. It is the subset the site already built — 7 KB.
+ *
  * Needs the site running:
  *     pnpm --filter site dev
  *     node scripts/export-diagrams.mjs
@@ -28,7 +32,17 @@ const THEMES = {
   dark: { ink: '#fafafa', faint: '#71717a', accent: '#22c55e', dim: '#71717a', muted: '#a1a1aa' },
 };
 
-const css = (c) => `
+/** The subsetted woff2 the site is already serving, so the export needs no font of its own. */
+async function embeddedFont() {
+  const sheet = await (await fetch(`${SITE}/_nuxt/assets/css/main.css`)).text();
+  const href = sheet.match(/\/_fonts\/[A-Za-z0-9_-]+\.woff2/)?.[0];
+  if (!href) throw new Error('no self-hosted font found — is the site running?');
+  const buf = Buffer.from(await (await fetch(SITE + href)).arrayBuffer());
+  return `@font-face { font-family: 'Architects Daughter'; font-display: block;
+  src: url(data:font/woff2;base64,${buf.toString('base64')}) format('woff2'); }`;
+}
+
+const css = (c, font) => `${font}
 text { font-family: 'Architects Daughter', 'Bradley Hand', cursive; }
 .hand-ink { fill: none; stroke: ${c.ink}; stroke-width: 1.7; stroke-linecap: round }
 .hand-faint { fill: none; stroke: ${c.faint}; stroke-width: 1.5; stroke-linecap: round }
@@ -46,6 +60,7 @@ const load = async (page) => {
 };
 
 await mkdir(OUT, { recursive: true });
+const font = await embeddedFont();
 
 for (const { id, page } of WANTED) {
   const html = await load(page);
@@ -57,7 +72,7 @@ for (const { id, page } of WANTED) {
     const svg = found[0]
       .replace(/<svg[^>]*viewBox="([^"]+)"[^>]*>/, (_, vb) => {
         const [, , w, h] = vb.split(/\s+/);
-        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="${w}" height="${h}"><style>${css(colours)}</style>`;
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="${w}" height="${h}"><style>${css(colours, font)}</style>`;
       })
       .replace(/ class="hand-svg[^"]*"/, '');
     await writeFile(join(OUT, `${id}.${mode}.svg`), svg);
