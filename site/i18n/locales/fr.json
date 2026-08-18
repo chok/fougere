@@ -21,7 +21,7 @@
     "statAxes": "4 axes",
     "statAxesText": "un champ énonce sa forme, son rôle, son cycle de vie et sa frontière — chaque projection y lit",
     "statPrimitives": "5 primitives",
-    "statPrimitivesText": "toute la surface client : useQuery, useCommand, useFormFor, useCurrentUser, invoke",
+    "statPrimitivesText": "toute la surface d'appel : useQuery, useCommand, useFormFor et useCurrentUser dans la page, et invoke, leur dual serveur",
     "dogfoodTitle": "Ce site est une app Fougere",
     "dogfoodText": "Les docs que vous allez lire sont du markdown dans git. Le blog derrière /blog est une Frond : les posts sont des entités avec une transition draft→publish jugée, écrits via le contrat de formulaire, lus via la primitive de query — et la Frond entière peut partir dans un autre process en décommentant une ligne de config.",
     "realCode": "Le code ci-dessous est la Frond blog de ce site — pas du pseudocode.",
