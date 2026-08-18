@@ -13,6 +13,7 @@ import { HandlerFacade } from './HandlerFacade.js';
 import { targetOf } from '../prefab/prefab.js';
 import { resolveContracts } from '../wire/operation.js';
 import { guardStorage } from './egress.js';
+import { portBindings } from './ports.js';
 // The keys, each read from where its concept is declared — never respelled here.
 import { facadeKeyOf, contractsKeyOf } from '../wire/call.js';
 import { repositoryKeyOf } from '../prefab/repository.js';
@@ -154,6 +155,10 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   const entityByName = fronds.schemas();
   const emissions = new Emissions(fronds, entityByName, container, log, options.onEmit);
 
+  // Every port an implementation was bound to, so a `ports:` entry that named none
+  // can say so rather than look obeyed.
+  const boundPorts = new Set<string>();
+
   // Register frond scopes
   for (const frond of fronds) {
     // Declared remote: keep the scanned metadata (bridges route with it),
@@ -208,6 +213,15 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
     for (const provider of frond.providers) {
       scope.register(provider.ctor.name, provider.ctor, { deps: provider.deps });
+    }
+    // …and again under the port each one extends, so `private payment: Payment`
+    // reaches the realization instead of the base class it is declared against.
+    // Registered AFTER the loop above so a port key always wins over the base's
+    // own registration — same precedence as a declared repository over its default.
+    for (const [port, impl] of portBindings(frond.providers, options.ports)) {
+      scope.register(port, impl.ctor, { deps: impl.deps });
+      boundPorts.add(port);
+      frondLog.debug(`port ${port} → ${impl.ctor.name}`);
     }
     if (frond.providers.length > 0) {
       frondLog.debug(`${frond.providers.length} provider(s): ${frond.providers.map((p) => p.ctor.name).join(', ')}`);
@@ -385,6 +399,17 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
     container.registerValue(`frond:${frond.name}`, scope);
     frondLog.info(`registered — ${frond.entities.length} entities, ${frond.handlers.length} handlers, ${frond.seeds.length} seeds`);
+  }
+
+  // A `ports:` key that matched no port anywhere reads as a choice that was made, and
+  // was not. Said once, at the end, because the entry is app-wide while a port is a
+  // frond's — no single frond can tell whether a key is a typo or a neighbour's.
+  const unused = Object.keys(options.ports ?? {}).filter((port) => !boundPorts.has(port));
+  if (unused.length > 0) {
+    log.warn(
+      `[ports] ${unused.join(', ')} — named in fougere.config.ts, but no scanned class extends `
+      + 'them, so nothing was chosen. Check the spelling, or drop the entry.',
+    );
   }
 
   // Once every door exists: what is announced here and what is listened to are both known.

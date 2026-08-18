@@ -67,6 +67,7 @@ export async function boot(options: BootOptions): Promise<App> {
     auth: config.auth,
     fronds: options.fronds,
     remotes: options.remotes,
+    ports: config.ports,
     remoteTransport: options.remoteTransport,
   });
 

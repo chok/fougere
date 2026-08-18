@@ -47,6 +47,11 @@ export interface CreateAppOptions {
    */
   remoteTransport?: (url: string) => Transport;
   /**
+   * Which realization answers which port — see `FougereConfig.ports`. Needed only
+   * when two classes extend the same port; one is resolved by convention.
+   */
+  ports?: Record<string, string>;
+  /**
    * Which protocol adapters this app serves — see `FougereConfig.adapters`.
    * Carried onto the App so every door reads one answer instead of each host
    * deciding for itself.

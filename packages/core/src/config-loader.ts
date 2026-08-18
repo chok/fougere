@@ -28,6 +28,19 @@ export interface FougereConfig {
   frondsDir?: string;
   /** Remote fronds — frondName → base URL. */
   remotes?: Record<string, string>;
+  /**
+   * Which realization answers which port — port class name → implementation class name.
+   *
+   * A fact about the APP, stated beside `remotes:` for the same reason `sources:` is:
+   * `remotes:` says where a CALL goes, `sources:` says where a ROW is, this says who
+   * performs an ACTION. None of the three belongs inside the frond, which describes
+   * itself and not its deployment — a `billing` frond naming Stripe would be the one
+   * thing the framework refuses.
+   *
+   * Only the exception is declared. One class extending a port answers it by
+   * convention and this key stays absent; two make the boot refuse until one is named.
+   */
+  ports?: Record<string, string>;
   /** Auth declaration — picks a provider package and forwards options to it. */
   auth?: AuthConfig;
   /**
