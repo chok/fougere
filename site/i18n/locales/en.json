@@ -55,7 +55,7 @@
     "statTopologyText": "the entire topology statement: remotes.blog = 'http://…'",
     "statusTitle": "Where Fougere stands",
     "statusText": "Pre-release — but not a promise. Each of these has been seen running:",
-    "status1": "The 5 client primitives are the only path — the old world was deleted, not half-replaced",
+    "status1": "The 5 primitives are the only path — the old world was deleted, not half-replaced",
     "status2": "A judged business feature (draft→publish) verified in the browser, badge flip included",
     "status3": "The split is lived daily: kill the host → typed 503 in the pages; restart → recovery",
     "status4": "Identical user code in-process and split — verified down to the production build",

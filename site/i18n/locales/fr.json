@@ -55,7 +55,7 @@
     "statTopologyText": "l'énoncé de topologie entier : remotes.blog = 'http://…'",
     "statusTitle": "Où en est Fougere",
     "statusText": "Pré-version — mais pas une promesse. Chacun de ces points a été vu tourner :",
-    "status1": "Les 5 primitives client sont le seul chemin — l'ancien monde a été supprimé, pas remplacé à moitié",
+    "status1": "Les 5 primitives sont le seul chemin — l'ancien monde a été supprimé, pas remplacé à moitié",
     "status2": "Une feature métier jugée (draft→publish) validée en navigateur, bascule de badge comprise",
     "status3": "Le split est vécu au quotidien : host tué → 503 typé dans les pages ; relancé → récupération",
     "status4": "Code utilisateur identique in-process et split — vérifié jusqu'au build de prod",
