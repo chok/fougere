@@ -10,7 +10,9 @@ const app = await createApp({
 
 console.log('=== Fronds discovered ===');
 for (const frond of app.fronds) {
-  const providers = frond.providers.map((p) => `${p.name} (${p.kind})`);
+  // Not `p.kind`: the scan dropped that field on purpose (two directories, one thing),
+  // and this line kept printing `undefined` for it.
+  const providers = frond.providers.map((p) => p.ctor.name);
   console.log(`  ${frond.name}: ${providers.join(', ')}`);
 }
 
