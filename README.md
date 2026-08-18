@@ -46,6 +46,23 @@ You now have a running app: the table created, the form contract, the REST and G
 surfaces, and pages calling operations through `useQuery` / `useCommand`. Nothing above
 was generated into a file you have to keep.
 
+## Or adopt nothing
+
+An entity is a [Standard Schema](https://standardschema.dev/), so it is accepted wherever
+one is — tRPC, Hono, TanStack Form, and the server frameworks adopting the spec for
+route-level validation. One `npm i @fougere/schema`, no adapter package, nothing else of
+Fougere in your app.
+
+```ts
+export class PostDraft extends Post.pick('title', 'summary', 'body') {}
+
+PostDraft['~standard'].validate({ title: '' });  // { issues: [{ message, path: [{ key: 'title' }] }] }
+```
+
+Be clear about what crosses: **the judge, and only the judge**. The other three axes stay
+home — no table, no GraphQL type, no form contract. The entity is the piece that fits
+through the hole; the reason to come back for the rest is `getFields()`.
+
 ## What derives from it
 
 <picture>
@@ -61,7 +78,6 @@ was generated into a file you have to keep.
 | **API surface** | `post.list`, `post.create`, `post.publish`… |
 | **GraphQL · REST** | the types, the inputs, the routes — from the same operations |
 | **Types** | the class *is* the type |
-| **Interop** | an entity is a [Standard Schema](https://standardschema.dev/), so tRPC, Hono and TanStack Form take it as-is |
 
 No codegen step, no `dist/generated`, no watcher. The declaration is the artefact.
 
