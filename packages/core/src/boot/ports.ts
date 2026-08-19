@@ -1,9 +1,9 @@
 import type { ProviderEntry } from '../scan/frond.js';
 
 /**
- * A port is a provider class that another provider extends. Nothing declares one —
- * the prototype chain states it, so `class StripePayment extends Payment` IS the
- * whole registration.
+ * A port is a class something already answers under. Nothing declares one — the
+ * prototype chain states it, so `class StripePayment extends Payment` IS the whole
+ * registration, and so is `class MyLogger extends Logger` over a builtin.
  *
  * This is the fourth reading of the rule the other three already apply: the type
  * names the SUBJECT (`EntityOrm<E>`, `Emit<F>`, `Facade<H>`) and the container
@@ -16,18 +16,22 @@ import type { ProviderEntry } from '../scan/frond.js';
  */
 export function portBindings(
   providers: ProviderEntry[],
+  answers: (name: string) => boolean,
   chosen: Record<string, string> | undefined,
 ): Map<string, ProviderEntry> {
-  const scanned = new Map(providers.map((p) => [p.ctor.name, p]));
-
   // port class name → the classes that extend it, in scan order.
   const candidates = new Map<string, ProviderEntry[]>();
   for (const provider of providers) {
     const base = Object.getPrototypeOf(provider.ctor) as { name?: string } | null;
     const port = base?.name;
-    // `!scanned.has(port)` also drops what a prefab fabricates: a repository extends
-    // the class `Repository(Post)` returned, which is no file and therefore no port.
-    if (!port || !scanned.has(port)) continue;
+    // ONE condition: something already answers under that name. Providers are
+    // registered into this scope just above, and the builtins sit in its parent, so
+    // this covers a neighbour service and `Logger` alike — a framework class is a
+    // port like any other, which is what makes a default overridable.
+    //
+    // It is also what excludes a prefab: a repository extends the class
+    // `Repository(Post)` returned (`RepositoryBase`), and no key is ever that name.
+    if (!port || !answers(port)) continue;
     candidates.set(port, [...(candidates.get(port) ?? []), provider]);
   }
 

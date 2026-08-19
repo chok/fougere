@@ -81,10 +81,15 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   const root = options.root ?? process.cwd();
   const container = options.createContainer();
   // Boot chatter is debug by default; a host (e.g. the CLI) can quiet it.
-  const log = new Logger('boot:app', { level: (process.env.FOUGERE_LOG_LEVEL as LogLevel | undefined) ?? 'debug' });
+  const logLevel = (process.env.FOUGERE_LOG_LEVEL as LogLevel | undefined) ?? 'debug';
+  const log = new Logger('boot:app', { level: logLevel });
 
   // Builtins — registered under class name (PascalCase) for type-based DI
-  container.registerValue('Logger', new Logger());
+  // The one every handler receives. It used to be built with no options at all, so it
+  // sat on the 'info' default and `FOUGERE_LOG_LEVEL` reached the boot's loggers only —
+  // the two that are not yours. A frond declaring `class X extends Logger` takes this
+  // key over, like any other port.
+  container.registerValue('Logger', new Logger('app', { level: logLevel }));
   container.register('Config', Config, { lifetime: 'singleton' });
   log.debug('builtins registered (Logger, Config)');
 
@@ -218,7 +223,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // reaches the realization instead of the base class it is declared against.
     // Registered AFTER the loop above so a port key always wins over the base's
     // own registration — same precedence as a declared repository over its default.
-    for (const [port, impl] of portBindings(frond.providers, options.ports)) {
+    for (const [port, impl] of portBindings(frond.providers, (n) => scope.has(n), options.ports)) {
       scope.register(port, impl.ctor, { deps: impl.deps });
       boundPorts.add(port);
       frondLog.debug(`port ${port} → ${impl.ctor.name}`);

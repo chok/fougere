@@ -71,3 +71,29 @@ describe('two implementations of one port', () => {
     ).rejects.toThrow(/does not extend it/);
   });
 });
+
+describe('a framework builtin is a port too', () => {
+  const overridden = join(import.meta.dirname, 'fixtures-logger-override');
+
+  it('hands the handler the declared subclass, not the default Logger', async () => {
+    await using app = await createApp({ root: overridden, createContainer });
+
+    const out = await createLocalRunner(app)({ entity: 'report', op: 'run' }, EMPTY_INVOCATION);
+
+    expect(out).toEqual({ logger: 'AuditLogger', seen: 1 });
+  });
+
+  it('leaves the default in place for a frond that declares none', async () => {
+    await using app = await createApp({ root: one, createContainer });
+
+    expect(app.resolve<object>('Logger').constructor.name).toBe('Logger');
+  });
+
+  it('never treats a prefab base as a port — a repository is not one', async () => {
+    const repo = join(import.meta.dirname, 'fixtures-repository');
+    await using app = await createApp({ root: repo, createContainer });
+    const scope = app.resolve<Container>('frond:mesures');
+
+    expect(scope.has('RepositoryBase')).toBe(false);
+  });
+});
