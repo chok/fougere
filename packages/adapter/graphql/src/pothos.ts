@@ -1,6 +1,6 @@
 import { Role } from '@fougere/schema';
 /**
- * @fougere/adapter-graphql — génère des types Pothos depuis les entités fougere
+ * @fougere/adapter-graphql — Pothos types derived from Fougere entities
  */
 import type SchemaBuilder from '@pothos/core';
 import { Anatomy, Schema } from '@fougere/schema';
@@ -50,9 +50,9 @@ export interface RelationConfig {
 }
 
 export interface InputConfig {
-  /** Nom de l'input GraphQL */
+  /** The GraphQL type name. */
   name: string;
-  /** SchemaView source (résultat de pick/omit/partial) */
+  /** The view to project — derive it (`pick`/`omit`/`partial`) before handing it over. */
   schema: SchemaView;
 }
 
@@ -189,8 +189,8 @@ function fieldToGraphQL(
       });
 
     case 'array': {
-      // value list (`list(text())`) → liste GraphQL du scalaire des items;
-      // items objets → liste de Strings JSON (même règle que 'object')
+      // A value list (`list(text())`) becomes a GraphQL list of the item scalar; a list
+      // of objects becomes a list of JSON strings — the same rule 'object' follows.
       const items = Anatomy.of(shape.items).base;
       const resolve = (parent: any) => parent[fieldName] ?? (nullable ? null : []);
       switch (items?.type) {
@@ -612,7 +612,17 @@ export function registerType(builder: InstanceType<typeof SchemaBuilder>, config
 }
 
 /**
- * Enregistre un input GraphQL (écriture) depuis un SchemaView.
+ * The GraphQL input for EXACTLY this view — or none, when the view asks for nothing.
+ *
+ * The caller derives the view and this projects it; it holds no policy of its own. What
+ * a client may supply at CREATION is `inputFields`, which the op path applies for
+ * create/update alone — `publish(input: Post)` must still name the post.
+ *
+ * Two things are dropped here because GraphQL cannot carry them, not because of any
+ * rule: a collection has no column to send, and `boundary in: 'closed'` is refused from
+ * every client. A view left with nothing after that gets `undefined` rather than an
+ * input object with zero fields, which is invalid GraphQL and takes the WHOLE schema
+ * down — every other type included.
  *
  * ```ts
  * const CreateProductInput = registerInput(builder, {
@@ -622,7 +632,11 @@ export function registerType(builder: InstanceType<typeof SchemaBuilder>, config
  * ```
  */
 export function registerInput(builder: InstanceType<typeof SchemaBuilder>, config: InputConfig): any {
-  const fields = config.schema.getFields();
+  const fields = Object.fromEntries(
+    Object.entries(config.schema.getFields())
+      .filter(([, field]) => !Role.of(field).isCollection && !Boundary.of(field).readOnly),
+  );
+  if (Object.keys(fields).length === 0) return undefined;
   // The view's SOURCE, not the input's name: `CreatePostInput` derives from `Post`, and its
   // `status` must be the same `PostStatus` the query emits.
   const enumOwner = sourceNameOf(config.schema);
@@ -635,14 +649,6 @@ export function registerInput(builder: InstanceType<typeof SchemaBuilder>, confi
       const result: Record<string, any> = {};
 
       for (const [fieldName, field] of Object.entries(fields)) {
-        // The two clauses that hold for ANY input, and only those. A collection has no
-        // column to send, and `boundary in: 'closed'` is never accepted from a client.
-        // Identity and `created()` are a CREATION policy — `inputFields` says that, and
-        // the op path applies it for create/update alone, because `publish(input: Post)`
-        // must still be able to name the post. Filtering here broke exactly that.
-        if (Role.of(field).isCollection) continue;
-        if (Boundary.of(field).readOnly) continue;
-
         result[fieldName] = fieldToInput(
           t, field, patch,
           (shape, suffix) => nestedInputType(builder, shape, `${config.name}${capitalize(fieldName)}${suffix}`),
@@ -761,18 +767,14 @@ function buildArgsFromSignature(
     const opInputFields = isMutation ? inputFields(meta.input.getFields()) : meta.input.getFields();
     const inputName = `${capitalize(opName)}${entityName}Input`;
 
-    // An input object with no field is invalid GraphQL, and it takes the WHOLE schema
-    // down — every other type included — rather than just this op. An entity whose every
-    // field is system-owned leaves a client nothing to supply, so the op takes no input
-    // at all; `argsDef` already guards on `inputRef` being there.
-    if (Object.keys(opInputFields).length > 0) {
-      inputRef = registerInput(builder, {
-        name: inputName,
-        // A real schema over those fields, not a forged stand-in: an update input is the
-        // same fields seen through the patch mode.
-        schema: Schema.of(opInputFields, undefined, undefined, { patch: opName === 'update' }),
-      });
-    }
+    // `undefined` when the view asks for nothing, and `argsDef` already guards on it —
+    // the op then takes no input, which is the truth.
+    inputRef = registerInput(builder, {
+      name: inputName,
+      // A real schema over those fields, not a forged stand-in: an update input is the
+      // same fields seen through the patch mode.
+      schema: Schema.of(opInputFields, undefined, undefined, { patch: opName === 'update' }),
+    });
   }
 
   const hasPagination = paramPlan.some((p) => p.kind === 'pagination');
