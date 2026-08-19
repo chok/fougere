@@ -1,7 +1,8 @@
 import { createApp } from './bootstrap.js';
 import { orderSeeds, runSeeds } from './seed.js';
 import { loadConfig, type FougereConfig } from '../config-loader.js';
-import { Logger, type LogLevel } from '../builtins/logger.js';
+import { Logger } from '../builtins/logger.js';
+import { applyConfig } from './apply.js';
 import type { App, CreateAppOptions } from './types.js';
 import type { Transport } from '../wire/call.js';
 import type { Container } from '@fougere/container';
@@ -30,6 +31,8 @@ interface BootOptions {
     db?: unknown;
     ormFactory: CreateAppOptions['ormFactory'];
     afterBoot?: (app: App) => Promise<void> | void;
+    /** Closes what the factory opened — `boot()` called it, so `boot()` releases it. */
+    close?: () => Promise<void>;
   };
 }
 
@@ -41,7 +44,7 @@ interface BootOptions {
  */
 export async function boot(options: BootOptions): Promise<App> {
   const bootStart = performance.now();
-  const log = new Logger('boot', { level: (process.env.FOUGERE_LOG_LEVEL as LogLevel | undefined) ?? 'debug' });
+  const log = new Logger('boot');
 
   const root = options.root ?? process.cwd();
   log.info(`root: ${root}`);
@@ -49,6 +52,9 @@ export async function boot(options: BootOptions): Promise<App> {
   log.debug('loading config');
   const fileConfig = await loadConfig(root);
   const config: FougereConfig = { ...fileConfig, ...options.config };
+  // What this config changes in the process, said the same way at boot and at reload —
+  // there is one applier, and a host re-reading later calls the very same function.
+  applyConfig(config);
   log.info('config loaded');
 
   let dbSetup: ReturnType<NonNullable<BootOptions['db']>> | undefined;
@@ -67,6 +73,9 @@ export async function boot(options: BootOptions): Promise<App> {
     auth: config.auth,
     fronds: options.fronds,
     remotes: options.remotes,
+    ports: config.ports,
+    // boot() called the factory, so boot() owns closing what it opened.
+    onDispose: dbSetup?.close,
     remoteTransport: options.remoteTransport,
   });
 

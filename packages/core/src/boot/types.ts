@@ -47,6 +47,19 @@ export interface CreateAppOptions {
    */
   remoteTransport?: (url: string) => Transport;
   /**
+   * Which realization answers which port — see `FougereConfig.ports`. Needed only
+   * when two classes extend the same port; one is resolved by convention.
+   */
+  ports?: Record<string, string>;
+  /**
+   * Released by `app.dispose()` AFTER the container, for a resource handed in rather
+   * than built here — a storage connection is the one case today.
+   *
+   * After, because reverse of construction is the rule the container already follows:
+   * what was opened first is closed last, so nothing it holds disappears under it.
+   */
+  onDispose?: () => Promise<void> | void;
+  /**
    * Which protocol adapters this app serves — see `FougereConfig.adapters`.
    * Carried onto the App so every door reads one answer instead of each host
    * deciding for itself.
@@ -162,6 +175,16 @@ export interface App {
   presenterFor(entity: string): unknown | undefined;
   /** Dispose the root container. */
   dispose(): Promise<void>;
+  /**
+   * Stop taking calls, and resolve once the running ones are done.
+   *
+   * The step before releasing, when there is work on the app: `dispose()` closes a
+   * storage connection the running calls are standing on. Rejects on `timeoutMs`
+   * naming how many are left, rather than resolving as if it had succeeded.
+   */
+  drain(timeoutMs?: number): Promise<void>;
+  /** How many calls are running right now — one count for all three doors and the wire. */
+  inFlight(): number;
   /**
    * The same disposal, spelled so the language does it: `await using app = await
    * createApp(…)`. Twelve of the twenty-six mounts in this repo's own tests never

@@ -57,7 +57,6 @@ export type Shape =
  * drift. {@link isShape} needs the values, so it is the values that are declared.
  */
 const SHAPE_TYPES = ['string', 'number', 'integer', 'boolean', 'array', 'object'] as const;
-export type ShapeType = (typeof SHAPE_TYPES)[number];
 
 /** Is this a shape? Asked of its `type`, against {@link SHAPE_TYPES}. */
 function isShapeImpl(value: unknown): value is Shape {

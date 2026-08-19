@@ -28,13 +28,13 @@ describe('scanProject', () => {
   it('discovers services', async () => {
     const result = await scanProject(fixturesRoot);
     const orders = result.fronds.find((f) => f.name === 'orders')!;
-    expect(orders.providers.map((p) => p.name)).toContain('orderService');
+    expect(orders.providers.map((p) => p.ctor.name)).toContain('OrderService');
   });
 
   it('discovers repositories', async () => {
     const result = await scanProject(fixturesRoot);
     const orders = result.fronds.find((f) => f.name === 'orders')!;
-    expect(orders.providers.map((p) => p.name)).toContain('orderRepository');
+    expect(orders.providers.map((p) => p.ctor.name)).toContain('OrderRepository');
   });
 
   // Two directories, one list: where a provider was found is not recorded, because
@@ -42,13 +42,13 @@ describe('scanProject', () => {
   it('services/ and repositories/ land in the same provider list', async () => {
     const result = await scanProject(fixturesRoot);
     const orders = result.fronds.find((f) => f.name === 'orders')!;
-    expect(orders.providers.map((p) => p.name).sort()).toEqual(['orderRepository', 'orderService']);
+    expect(orders.providers.map((p) => p.ctor.name).sort()).toEqual(['OrderRepository', 'OrderService']);
   });
 
   it('stores the constructor from default export', async () => {
     const result = await scanProject(fixturesRoot);
     const catalog = result.fronds.find((f) => f.name === 'catalog')!;
-    const product = catalog.providers.find((p) => p.name === 'productService')!;
+    const product = catalog.providers.find((p) => p.ctor.name === 'ProductService')!;
     expect(typeof product.ctor).toBe('function');
     expect(product.ctor.name).toBe('ProductService');
   });

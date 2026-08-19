@@ -5,7 +5,7 @@ import type { AuthRuntime } from './auth.js';
 import type { CreateAppOptions, App } from './types.js';
 import type { AppMiddleware } from '../wire/middleware.js';
 import { scanProject } from '../scan/scanner.js';
-import { Logger, type LogLevel } from '../builtins/logger.js';
+import { Logger } from '../builtins/logger.js';
 import { Config } from '../builtins/config.js';
 import { createRemoteRouter, createRemoteFacade } from './remote.js';
 import { Emissions } from './Emissions.js';
@@ -13,6 +13,8 @@ import { HandlerFacade } from './HandlerFacade.js';
 import { targetOf } from '../prefab/prefab.js';
 import { resolveContracts } from '../wire/operation.js';
 import { guardStorage } from './egress.js';
+import { portBindings } from './ports.js';
+import { InFlight } from './inflight.js';
 // The keys, each read from where its concept is declared — never respelled here.
 import { facadeKeyOf, contractsKeyOf } from '../wire/call.js';
 import { repositoryKeyOf } from '../prefab/repository.js';
@@ -80,10 +82,14 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   const root = options.root ?? process.cwd();
   const container = options.createContainer();
   // Boot chatter is debug by default; a host (e.g. the CLI) can quiet it.
-  const log = new Logger('boot:app', { level: (process.env.FOUGERE_LOG_LEVEL as LogLevel | undefined) ?? 'debug' });
+  const log = new Logger('boot:app');
 
-  // Builtins — registered under class name (PascalCase) for type-based DI
-  container.registerValue('Logger', new Logger());
+  // Builtins — registered under class name (PascalCase) for type-based DI.
+  // No level here and none anywhere: a logger consults `setLogLevel`'s value at each
+  // emission, so this instance survives a level change and so does every handler that
+  // was handed it. A frond declaring `class X extends Logger` takes this key over,
+  // like any other port.
+  container.registerValue('Logger', new Logger('app'));
   container.register('Config', Config, { lifetime: 'singleton' });
   log.debug('builtins registered (Logger, Config)');
 
@@ -138,6 +144,10 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     ? createRemoteRouter(Object.fromEntries(declaredRemotes), options.remoteTransport)
     : undefined;
 
+  // What is running on this app — counted at the one door every caller goes through,
+  // so releasing it can wait for the work instead of pulling the floor out.
+  const inflight = new InFlight();
+
   // Middleware storage — read at call time, not at boot time
   const globalMiddlewares: AppMiddleware[] = [];
   const scopedMiddlewares = new Map<string, AppMiddleware[]>();
@@ -153,6 +163,10 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   // so a `reads:` clause can name a neighbour's.
   const entityByName = fronds.schemas();
   const emissions = new Emissions(fronds, entityByName, container, log, options.onEmit);
+
+  // Every port an implementation was bound to, so a `ports:` entry that named none
+  // can say so rather than look obeyed.
+  const boundPorts = new Set<string>();
 
   // Register frond scopes
   for (const frond of fronds) {
@@ -208,6 +222,15 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
     for (const provider of frond.providers) {
       scope.register(provider.ctor.name, provider.ctor, { deps: provider.deps });
+    }
+    // …and again under the port each one extends, so `private payment: Payment`
+    // reaches the realization instead of the base class it is declared against.
+    // Registered AFTER the loop above so a port key always wins over the base's
+    // own registration — same precedence as a declared repository over its default.
+    for (const [port, impl] of portBindings(frond.providers, (n) => scope.has(n), options.ports)) {
+      scope.register(port, impl.ctor, { deps: impl.deps });
+      boundPorts.add(port);
+      frondLog.debug(`port ${port} → ${impl.ctor.name}`);
     }
     if (frond.providers.length > 0) {
       frondLog.debug(`${frond.providers.length} provider(s): ${frond.providers.map((p) => p.ctor.name).join(', ')}`);
@@ -288,6 +311,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
           presenters: presenterMap,
           middlewaresFor: getMiddlewares,
           emissions,
+          inflight,
         },
       );
       container.registerValue(facadeKey, facade.ops);
@@ -387,6 +411,17 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     frondLog.info(`registered — ${frond.entities.length} entities, ${frond.handlers.length} handlers, ${frond.seeds.length} seeds`);
   }
 
+  // A `ports:` key that matched no port anywhere reads as a choice that was made, and
+  // was not. Said once, at the end, because the entry is app-wide while a port is a
+  // frond's — no single frond can tell whether a key is a typo or a neighbour's.
+  const unused = Object.keys(options.ports ?? {}).filter((port) => !boundPorts.has(port));
+  if (unused.length > 0) {
+    log.warn(
+      `[ports] ${unused.join(', ')} — named in fougere.config.ts, but no scanned class extends `
+      + 'them, so nothing was chosen. Check the spelling, or drop the entry.',
+    );
+  }
+
   // Once every door exists: what is announced here and what is listened to are both known.
   emissions.register();
 
@@ -407,6 +442,41 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // Façade-shaped stand-in; routing happens lazily at the first call.
     return createRemoteFacade(name.replace(/Handler$/, ''), remoteRouter);
   });
+
+  /**
+   * Everything this app holds, let go in reverse of how it was taken: the container
+   * disposes what it built, then whoever handed a resource in closes it.
+   *
+   * It does NOT wait for running calls — `drain()` is that, and it is a separate gesture
+   * because waiting and releasing do not have the same owner: a test releases at once, a
+   * host turning the ring wants the work finished first.
+   */
+  const release = async (): Promise<void> => {
+    await container.dispose();
+    await options.onDispose?.();
+  };
+
+  /**
+   * Stop taking calls, and resolve once the ones already running are done.
+   *
+   * Refuses on `timeoutMs` rather than resolving anyway: a drain that gives up quietly
+   * reads exactly like a drain that succeeded, and the caller — who is about to release
+   * a storage connection under whatever is left — is the one who must decide.
+   */
+  const drain = async (timeoutMs?: number): Promise<void> => {
+    inflight.close();
+    if (timeoutMs === undefined) return inflight.whenIdle();
+    let timer: ReturnType<typeof setTimeout>;
+    await Promise.race([
+      inflight.whenIdle().then(() => clearTimeout(timer)),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error(`[drain] ${inflight.count} call(s) still running after ${timeoutMs}ms`)),
+          timeoutMs,
+        );
+      }),
+    ]);
+  };
 
   const resolve = <T>(name: string): T => {
     try {
@@ -532,8 +602,10 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     deliver: (fact, payload) => emissions.deliver(fact, payload),
     ormFor,
     presenterFor,
-    dispose: () => container.dispose(),
-    [Symbol.asyncDispose]: () => container.dispose(),
+    dispose: release,
+    drain,
+    inFlight: () => inflight.count,
+    [Symbol.asyncDispose]: release,
     use(...args: [AppMiddleware] | [string, AppMiddleware]): void {
       if (typeof args[0] === 'string') {
         const [entity, mw] = args as [string, AppMiddleware];

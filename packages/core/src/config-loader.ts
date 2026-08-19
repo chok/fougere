@@ -1,6 +1,7 @@
 import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
 import type { AuthConfig } from './boot/auth.js';
+import type { LogLevel } from './builtins/logger.js';
 import { getModuleLoader } from './scan/scanner.js';
 
 // ── Types ────────────────────────────────────────
@@ -26,8 +27,29 @@ export interface FougereConfig {
   sources?: Record<string, { dialect?: 'sqlite'; path?: string; entities: string[] }>;
   /** Directory containing fronds. Defaults to 'fronds'. */
   frondsDir?: string;
+  /**
+   * How much every logger says. The one key a running app CONSULTS rather than
+   * consumes, so re-reading this file changes it without rebuilding anything.
+   *
+   * `FOUGERE_LOG_LEVEL` still wins — it is how the CLI speaks, and the precedence is
+   * the usual one (CLI over config file).
+   */
+  logLevel?: LogLevel;
   /** Remote fronds — frondName → base URL. */
   remotes?: Record<string, string>;
+  /**
+   * Which realization answers which port — port class name → implementation class name.
+   *
+   * A fact about the APP, stated beside `remotes:` for the same reason `sources:` is:
+   * `remotes:` says where a CALL goes, `sources:` says where a ROW is, this says who
+   * performs an ACTION. None of the three belongs inside the frond, which describes
+   * itself and not its deployment — a `billing` frond naming Stripe would be the one
+   * thing the framework refuses.
+   *
+   * Only the exception is declared. One class extending a port answers it by
+   * convention and this key stays absent; two make the boot refuse until one is named.
+   */
+  ports?: Record<string, string>;
   /** Auth declaration — picks a provider package and forwards options to it. */
   auth?: AuthConfig;
   /**
@@ -59,12 +81,16 @@ export interface AdapterConfig {
 
 const CONFIG_FILES = ['fougere.config.ts', 'fougere.config.js', 'fougere.config.mjs'];
 
-async function loadConfigFrom(dir: string): Promise<FougereConfig> {
+async function loadConfigFrom(dir: string, fresh?: boolean): Promise<FougereConfig> {
   const loader = getModuleLoader();
   for (const file of CONFIG_FILES) {
     const path = resolve(dir, file);
     if (existsSync(path)) {
-      const mod = await loader(path);
+      // A module is cached by its specifier, so a second load of an EDITED file hands
+      // back what was read the first time — measured, and it made re-reading a config
+      // return the config already in force. The loader owns its own cache, so it is the
+      // one told; the old module stays in memory, re-reading being for a change.
+      const mod = await loader(path, fresh ? { fresh } : undefined);
       return ((mod as { default?: FougereConfig }).default ?? mod) as FougereConfig;
     }
   }
@@ -73,9 +99,13 @@ async function loadConfigFrom(dir: string): Promise<FougereConfig> {
 
 /**
  * Load the root fougere.config.{ts,js,mjs} from the given directory.
+ *
+ * `fresh` re-reads a file that may have changed since the last load — what a host
+ * calls when it decides to reconsider its config, and the only way `applyConfig` has
+ * anything new to apply.
  */
-export async function loadConfig(root: string): Promise<FougereConfig> {
-  return loadConfigFrom(root);
+export async function loadConfig(root: string, options?: { fresh?: boolean }): Promise<FougereConfig> {
+  return loadConfigFrom(root, options?.fresh);
 }
 
 // ── Merging ──────────────────────────────────────

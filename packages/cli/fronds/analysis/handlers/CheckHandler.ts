@@ -1,4 +1,4 @@
-import { buildGraph, clusterEntities, crossFrondImports, resolveContracts, type ScanDiagnostic } from '@fougere/core';
+import { buildGraph, clusterEntities, crossFrondImports, resolveContracts, verify, type ScanDiagnostic } from '@fougere/core';
 import ProjectScan from '../services/ProjectScan.js';
 
 /** One thing that does not hold, in the terms of whoever has to fix it. */
@@ -8,6 +8,12 @@ export interface Finding {
   code: string;
   /** Where to go and look. */
   filePath: string;
+  /**
+   * What the finding is ABOUT — `PostHandler.whoNull(user)` — when the rule holds it
+   * as a fact rather than inside its sentence. Two ops of one handler breaking the
+   * same rule read as one repeated line without it.
+   */
+  subject?: string;
   /** What is wrong, and what it costs. One sentence. */
   message: string;
 }
@@ -18,26 +24,22 @@ export interface CheckResult {
   findings: Finding[];
 }
 
+/** Shared with `fougere graph` — one threshold, so the two never disagree. */
+const DOMAIN_SPLIT_MIN_ENTITIES = 6;
+
 /**
  * What does not hold in this app — derived from its declarations, not from tests.
  *
  * It scans rather than boots — see `ProjectScan`, which states what that costs.
  *
- * Two rules today, and the shape for the rest:
+ * It raises no rule of its own beyond `operation-unbound`: every other finding comes
+ * from whoever already answers that question — the scan's own diagnostics, the import
+ * reader, the DI checker. A second opinion here would report what the runtime does not
+ * serve, which is the one failure mode a checker must not have.
  *
- *   - what the scan could not do (`ScanResult.diagnostics`) — an unreadable
- *     directory, a handler that would not parse, an `extends` it could not follow;
- *   - an operation whose parameters have no binding plan — it is served, and it
- *     receives nothing;
- *   - a relative import that resolves into another frond — a colocation constraint
- *     nothing declares, which holds until the day the other frond is not on this disk.
- *
- * A rule about an ABSENCE is only sound if the analysis attests it looked, which
- * is why the first bullet had to exist before this command could.
+ * A rule about an ABSENCE is only sound if the analysis attests it looked, which is
+ * why the scan's diagnostics had to exist before this command could.
  */
-/** Shared with `fougere graph` — one threshold, so the two never disagree. */
-const DOMAIN_SPLIT_MIN_ENTITIES = 6;
-
 export default class CheckHandler {
   constructor(private projectScan: ProjectScan) {}
 
@@ -105,6 +107,15 @@ export default class CheckHandler {
         filePath: reach.filePath,
         message: reach.message,
       });
+    }
+
+    /**
+     * What the DI graph says about the same boundary — `verify` answers from the model
+     * where `crossFrondImports` answers from the source text, and the two catch different
+     * crossings: an import is visible in a file, a dependency resolved by type name is not.
+     */
+    for (const v of verify({ fronds })) {
+      findings.push({ severity: v.severity, code: v.rule, filePath: v.filePath, subject: v.subject, message: v.message });
     }
 
     return { fronds: fronds.length, handlers, findings };

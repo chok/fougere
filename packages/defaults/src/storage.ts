@@ -29,6 +29,15 @@ export interface ResolvedStorage {
   ormFactory: ((entity: any, name: string) => any) | undefined;
   /** Brings the schema up to date once the app is scanned. */
   afterBoot?: (app: App) => Promise<void> | void;
+  /**
+   * Close every engine this opened — the dual of opening them, declared by whoever did.
+   *
+   * `boot()` calls the factory that lands here, so `boot()` is what owns closing it: a
+   * container disposes what IT built, and this connection was handed in. Without this
+   * the pool of a discarded app stayed open, which is what turning the ring makes
+   * ordinary rather than rare.
+   */
+  close?: () => Promise<void>;
   /** Raw synchronous handle, when the engine exposes one. */
   raw?: { exec(sql: string): void };
   dialect?: DialectName;
@@ -194,6 +203,12 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
       for (const [name, engine] of engines) {
         await migrate(partition(app, (e) => home.get(registrationKeyOf(e)) === name, false, named) as never, engine.db);
       }
+    },
+    // Every engine, the default one last: a named source may hold what the default
+    // refers to, and closing in reverse of opening is the rule everywhere else.
+    close: async () => {
+      for (const engine of [...engines.values()].reverse()) await engine.db.destroy();
+      await base.db.destroy();
     },
   };
 }

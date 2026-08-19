@@ -12,6 +12,7 @@
 export {
   configureFougere,
   useFougereApp,
+  reloadFougere,
   createMemoryOrm,
   type FougereServerConfig,
 } from './boot.js';

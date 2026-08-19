@@ -1,10 +1,5 @@
 /**
- * Scan cache — caches parse results per file.
- *
- * Stores in .fougere/scan-cache.json.
- * Key: cache key (file path + suffix) → { hash, data }.
- * Hash: content hash of the source file.
- * If hash matches, skip parsing entirely → TypeScript never loaded.
+ * A parse kept per file, so an unchanged source never loads TypeScript again.
  *
  * The envelope carries PARSER_VERSION, and a mismatch drops the whole file. The hash
  * answers "did this source change?"; it cannot answer "does the parser still read it the

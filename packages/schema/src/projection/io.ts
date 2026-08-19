@@ -10,10 +10,14 @@ import type { Fields } from '../Field.js';
  * ⚠️ The audience lives here and not in the data: no axis says "client".
  *
  * The judge is deliberately more permissive: these two answer "what do we ASK for", the
- * judge answers "what do we REFUSE", and a supplied id is legal. But `adapter/graphql`
- * restates the ingress rule with two of the four (`registerInput`, not the op path, which
- * does read `inputFields`) — measured 2026-08-16 on `{ id, title, createdAt }`: the GraphQL
- * input asks for all three, `inputFields` answers `title`. One entity, two forms.
+ * judge answers "what do we REFUSE", and a supplied id is legal.
+ *
+ * `adapter/graphql`'s `registerInput` applies TWO of the four clauses and that is not a
+ * divergence: a collection has no column to send and `boundary in: 'closed'` is refused
+ * from any client, while identity and `created()` are a CREATION policy. Its op path
+ * calls this function for create/update alone, because `publish(input: Post)` must still
+ * name the post. Making `registerInput` call this unconditionally was tried on
+ * 2026-08-19 and reverted — `PublishPostInput` lost its `id`.
  */
 
 /**

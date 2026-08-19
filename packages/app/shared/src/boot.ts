@@ -64,11 +64,40 @@ export function useFougereApp(): Promise<App> {
   return _appPromise;
 }
 
+/**
+ * Turn the ring: instantiate the app again, then let the previous one go.
+ *
+ * This is what "reload" means for anything the config CONSUMED — a value that built
+ * something cannot move under what it built, so the thing is built again. Its dual is
+ * `applyConfig`, for values that are merely consulted and need no turn at all.
+ *
+ * Every door reaches the app through `useFougereApp()` inside the request it serves and
+ * none holds it across two, which is what makes the swap invisible: the next request
+ * lands on the new app whether or not the old one has finished being released.
+ *
+ * A call already running finishes on the OLD app: it is drained before being released,
+ * so nothing has its storage closed underneath it. `timeoutMs` bounds that wait, and a
+ * drain that runs out REJECTS — the app is left alone rather than released under work,
+ * because a caller who cannot wait must choose that on purpose.
+ */
+export async function reloadFougere(timeoutMs?: number): Promise<App> {
+  const previous = _appPromise;
+  _appPromise = null;
+  // The new one first: a boot that fails leaves the previous app serving, still whole.
+  const next = await useFougereApp();
+  if (previous) {
+    const old = await previous;
+    await old.drain(timeoutMs);
+    await old.dispose();
+  }
+  return next;
+}
+
 // ── Boot ─────────────────────────────────────────
 
 async function boot(): Promise<App> {
   const bootStart = performance.now();
-  const log = new Logger('boot', { level: 'debug' });
+  const log = new Logger('boot');
 
   log.info(`booting (${_config.host ?? 'app'})`);
 

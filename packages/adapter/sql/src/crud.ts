@@ -1,4 +1,4 @@
-import { Role } from '@fougere/schema';
+import { Lifecycle, Role } from '@fougere/schema';
 /**
  * SqlEntityOrm — per-entity ORM over Kysely, one implementation for every engine.
  *
@@ -416,7 +416,7 @@ export class SqlEntityOrm {
     return new Set([
       ...this.pk.names.map((name) => this.column(name)),
       ...Object.entries(this.fields)
-        .filter(([, field]) => field.lifecycle?.create === 'now' && field.lifecycle?.update !== 'now')
+        .filter(([, field]) => Lifecycle.of(field).stampedOnce)
         .map(([name]) => this.column(name)),
     ]);
   }

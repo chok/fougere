@@ -45,7 +45,8 @@ export default class CheckCommand {
 function render(f: Finding): string {
   const mark = f.severity === 'blocking' ? pc.red('✗') : pc.yellow('⚠');
   const where = relative(process.cwd(), f.filePath) || f.filePath;
-  return `  ${mark} ${pc.bold(`[${f.code}]`)}\n${wrap(f.message, 76, '    ')}\n    ${pc.dim(where)}`;
+  const what = f.subject ? ` ${f.subject}` : '';
+  return `  ${mark} ${pc.bold(`[${f.code}]`)}${what}\n${wrap(f.message, 76, '    ')}\n    ${pc.dim(where)}`;
 }
 
 /** A box grows to its longest line, so a one-line sentence makes an unreadable box. */
