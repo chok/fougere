@@ -10,10 +10,11 @@ import type { Fields } from '../Field.js';
  * ⚠️ The audience lives here and not in the data: no axis says "client".
  *
  * The judge is deliberately more permissive: these two answer "what do we ASK for", the
- * judge answers "what do we REFUSE", and a supplied id is legal. But `adapter/graphql`
- * restates the ingress rule with two of the four (`registerInput`, not the op path, which
- * does read `inputFields`) — measured 2026-08-16 on `{ id, title, createdAt }`: the GraphQL
- * input asks for all three, `inputFields` answers `title`. One entity, two forms.
+ * judge answers "what do we REFUSE", and a supplied id is legal.
+ *
+ * `adapter/graphql` used to restate the rule with two of its four clauses, so a GraphQL
+ * input asked for the id and the `created()` stamp — measured 2026-08-16, fixed on
+ * 2026-08-19 by having `registerInput` call this instead.
  */
 
 /**
