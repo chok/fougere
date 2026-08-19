@@ -1089,6 +1089,8 @@ importers:
         specifier: ^22.0.0
         version: 22.19.15
 
+  packages/decorators: {}
+
   packages/defaults:
     dependencies:
       '@fougere/adapter-sql':
