@@ -1,4 +1,4 @@
-import { Lifecycle } from '@fougere/schema';
+import { Lifecycle, Role } from '@fougere/schema';
 /**
  * Entity → citty bridge.
  *
@@ -21,11 +21,10 @@ export function entityToArgs(fields: Fields): ArgsDef {
   // Axes-derived ingress membership; the CLI additionally skips ALL relations
   // (a ref is not a flag — supplying related rows is not a CLI gesture).
   for (const [key, field] of Object.entries(inputFields(fields))) {
-    if (field.role?.relation) continue;
+    if (Role.of(field).relation) continue;
 
     // A `default(v)` travels as the create rule `{ value }` — citty shows it.
-    const create = field.lifecycle?.create;
-    const defaultValue = typeof create === 'object' && 'value' in create ? create.value : undefined;
+    const defaultValue = Lifecycle.of(field).literal?.value;
     const { base: shape, nullable } = Anatomy.of(field.shape);
 
     const kebab = toKebab(key);

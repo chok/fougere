@@ -1,4 +1,4 @@
-import { Role } from '@fougere/schema';
+import { Lifecycle, Role } from '@fougere/schema';
 /**
  * Entity → table description, with no SQL in sight.
  *
@@ -112,7 +112,7 @@ function referenceFor(
   tableNameOf?: Map<SchemaSource, string>,
   hosted?: HostedNames,
 ): ColumnReference | undefined {
-  const relation = field.role?.relation;
+  const relation = Role.of(field).relation;
   if (!relation || relation.kind !== 'one') return undefined;
   const target = relation.to() as Partial<SchemaView> & { name?: string };
   const mapped = tableNameOf?.get(target as SchemaView);
@@ -155,7 +155,7 @@ function toColumn(
   // nullable union so a nullable integer stays an integer instead of falling
   // through to text.
   const { base, nullable } = Anatomy.of(field.shape);
-  const create = field.lifecycle?.create;
+  const lifecycle = Lifecycle.of(field);
   const column: ColumnDef = {
     field: fieldName,
     name: toSnakeCase(fieldName),
@@ -165,9 +165,8 @@ function toColumn(
   };
   const bounds = boundsOf(base as Record<string, unknown> | undefined);
   if (bounds) column.bounds = bounds;
-  if (typeof create === 'object' && create !== null && 'value' in create) {
-    column.default = create.value;
-  }
+  const literal = lifecycle.literal;
+  if (literal) column.default = literal.value;
   // A primary key is already unique and already indexed — saying it twice would emit a
   // redundant constraint on every engine. So would indexing what `unique` constrains.
   // Only a constraint of ONE becomes a column constraint; a group of several is a table
@@ -326,7 +325,7 @@ function isDerivation(source: SchemaSource): boolean {
  * An entity is untouched: it is not a copy of anything, and its rows are the truth.
  */
 function refuseUndated(name: string, source: SchemaSource): void {
-  const dated = Object.values(fieldsOf(source)).some((field) => field.lifecycle?.update === 'now');
+  const dated = Object.values(fieldsOf(source)).some((field) => Lifecycle.of(field).stampedOnUpdate);
   if (dated) return;
   throw new Error(
     `${name} is stored as a derivation but carries no \`updated()\` field — a copy that ` +

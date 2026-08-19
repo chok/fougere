@@ -26,10 +26,7 @@ export type FormEntity = SchemaView;
  * is decided at write time, so a form has nothing to show for them.
  */
 function defaultOf(field: Field): unknown {
-  const create = field.lifecycle?.create;
-  return create !== null && typeof create === 'object' && 'value' in create
-    ? (create as { value: unknown }).value
-    : undefined;
+  return Lifecycle.of(field).literal?.value;
 }
 
 export interface FormField {
