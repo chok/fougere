@@ -5,7 +5,7 @@ import type { AuthRuntime } from './auth.js';
 import type { CreateAppOptions, App } from './types.js';
 import type { AppMiddleware } from '../wire/middleware.js';
 import { scanProject } from '../scan/scanner.js';
-import { Logger, type LogLevel } from '../builtins/logger.js';
+import { Logger } from '../builtins/logger.js';
 import { Config } from '../builtins/config.js';
 import { createRemoteRouter, createRemoteFacade } from './remote.js';
 import { Emissions } from './Emissions.js';
@@ -81,15 +81,14 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   const root = options.root ?? process.cwd();
   const container = options.createContainer();
   // Boot chatter is debug by default; a host (e.g. the CLI) can quiet it.
-  const logLevel = (process.env.FOUGERE_LOG_LEVEL as LogLevel | undefined) ?? 'debug';
-  const log = new Logger('boot:app', { level: logLevel });
+  const log = new Logger('boot:app');
 
-  // Builtins — registered under class name (PascalCase) for type-based DI
-  // The one every handler receives. It used to be built with no options at all, so it
-  // sat on the 'info' default and `FOUGERE_LOG_LEVEL` reached the boot's loggers only —
-  // the two that are not yours. A frond declaring `class X extends Logger` takes this
-  // key over, like any other port.
-  container.registerValue('Logger', new Logger('app', { level: logLevel }));
+  // Builtins — registered under class name (PascalCase) for type-based DI.
+  // No level here and none anywhere: a logger consults `setLogLevel`'s value at each
+  // emission, so this instance survives a level change and so does every handler that
+  // was handed it. A frond declaring `class X extends Logger` takes this key over,
+  // like any other port.
+  container.registerValue('Logger', new Logger('app'));
   container.register('Config', Config, { lifetime: 'singleton' });
   log.debug('builtins registered (Logger, Config)');
 

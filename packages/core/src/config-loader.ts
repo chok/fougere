@@ -1,6 +1,7 @@
 import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
 import type { AuthConfig } from './boot/auth.js';
+import type { LogLevel } from './builtins/logger.js';
 import { getModuleLoader } from './scan/scanner.js';
 
 // ── Types ────────────────────────────────────────
@@ -26,6 +27,14 @@ export interface FougereConfig {
   sources?: Record<string, { dialect?: 'sqlite'; path?: string; entities: string[] }>;
   /** Directory containing fronds. Defaults to 'fronds'. */
   frondsDir?: string;
+  /**
+   * How much every logger says. The one key a running app CONSULTS rather than
+   * consumes, so re-reading this file changes it without rebuilding anything.
+   *
+   * `FOUGERE_LOG_LEVEL` still wins — it is how the CLI speaks, and the precedence is
+   * the usual one (CLI over config file).
+   */
+  logLevel?: LogLevel;
   /** Remote fronds — frondName → base URL. */
   remotes?: Record<string, string>;
   /**

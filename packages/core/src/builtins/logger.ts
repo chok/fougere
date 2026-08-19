@@ -8,6 +8,26 @@ export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'silent';
 
 const LEVELS: Record<LogLevel, number> = { debug: 0, info: 1, warn: 2, error: 3, silent: 4 };
 
+/**
+ * The level, held ONCE for the process and CONSULTED at every emission.
+ *
+ * It used to be copied into each Logger by the constructor, and copied again by
+ * `child()` — so there was no place where "the level" was, and changing it meant
+ * rebuilding every logger AND everything that had been handed one. A value read at
+ * the moment it is used costs the same and can move.
+ */
+let threshold: number = LEVELS.info;
+
+/** Set the level for every logger in this process, at once. */
+export function setLogLevel(level: LogLevel): void {
+  threshold = LEVELS[level];
+}
+
+/** What the level is now — the dual, so a reload can report what it changed. */
+export function logLevel(): LogLevel {
+  return (Object.keys(LEVELS) as LogLevel[]).find((l) => LEVELS[l] === threshold) ?? 'info';
+}
+
 const COLORS: Record<string, string> = {
   reset: '\x1b[0m',
   dim: '\x1b[2m',
@@ -46,8 +66,6 @@ function formatTime(): string {
 }
 
 export interface LoggerOptions {
-  /** Minimum log level. Default: 'info'. */
-  level?: LogLevel;
   /** Logger name / prefix. */
   name?: string;
   /** Force color on/off. Auto-detected by default. */
@@ -55,20 +73,17 @@ export interface LoggerOptions {
 }
 
 export class Logger {
-  private level: number;
   private name: string;
   private color: boolean;
 
   constructor(prefix?: string, options?: Omit<LoggerOptions, 'name'>) {
     this.name = prefix ?? 'app';
-    this.level = LEVELS[options?.level ?? 'info'];
     this.color = options?.color ?? supportsColor();
   }
 
-  /** Create a child logger with a sub-name. */
+  /** Create a child logger with a sub-name. It carries no level of its own either. */
   child(name: string): Logger {
-    const level = (Object.entries(LEVELS).find(([, v]) => v === this.level)?.[0] ?? 'info') as LogLevel;
-    return new Logger(`${this.name}:${name}`, { level, color: this.color });
+    return new Logger(`${this.name}:${name}`, { color: this.color });
   }
 
   debug(msg: string, ...args: unknown[]) { this.log('debug', msg, args); }
@@ -77,7 +92,7 @@ export class Logger {
   error(msg: string, ...args: unknown[]) { this.log('error', msg, args); }
 
   private log(level: string, msg: string, args: unknown[]) {
-    if (LEVELS[level as LogLevel] < this.level) return;
+    if (LEVELS[level as LogLevel] < threshold) return;
 
     const style = LEVEL_STYLE[level];
     const time = formatTime();

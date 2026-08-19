@@ -68,7 +68,7 @@ export function useFougereApp(): Promise<App> {
 
 async function boot(): Promise<App> {
   const bootStart = performance.now();
-  const log = new Logger('boot', { level: 'debug' });
+  const log = new Logger('boot');
 
   log.info(`booting (${_config.host ?? 'app'})`);
 
