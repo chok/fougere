@@ -31,6 +31,8 @@ interface BootOptions {
     db?: unknown;
     ormFactory: CreateAppOptions['ormFactory'];
     afterBoot?: (app: App) => Promise<void> | void;
+    /** Closes what the factory opened — `boot()` called it, so `boot()` releases it. */
+    close?: () => Promise<void>;
   };
 }
 
@@ -72,6 +74,8 @@ export async function boot(options: BootOptions): Promise<App> {
     fronds: options.fronds,
     remotes: options.remotes,
     ports: config.ports,
+    // boot() called the factory, so boot() owns closing what it opened.
+    onDispose: dbSetup?.close,
     remoteTransport: options.remoteTransport,
   });
 

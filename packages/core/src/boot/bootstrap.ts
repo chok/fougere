@@ -437,6 +437,15 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     return createRemoteFacade(name.replace(/Handler$/, ''), remoteRouter);
   });
 
+  /**
+   * Everything this app holds, let go in reverse of how it was taken: the container
+   * disposes what it built, then whoever handed a resource in closes it.
+   */
+  const release = async (): Promise<void> => {
+    await container.dispose();
+    await options.onDispose?.();
+  };
+
   const resolve = <T>(name: string): T => {
     try {
       return container.resolve<T>(name);
@@ -561,8 +570,8 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     deliver: (fact, payload) => emissions.deliver(fact, payload),
     ormFor,
     presenterFor,
-    dispose: () => container.dispose(),
-    [Symbol.asyncDispose]: () => container.dispose(),
+    dispose: release,
+    [Symbol.asyncDispose]: release,
     use(...args: [AppMiddleware] | [string, AppMiddleware]): void {
       if (typeof args[0] === 'string') {
         const [entity, mw] = args as [string, AppMiddleware];

@@ -20,6 +20,12 @@ function createScope(parent?: ScopeContainer): ScopeContainer {
   // Construction order, so disposal can run in reverse: a thing built later may
   // hold something built earlier.
   const built: unknown[] = [];
+  // The scopes opened from this one. A child is built BY this container, so it is this
+  // container's to close — and it is closed first, because it may hold what the parent
+  // built while the parent holds nothing of its. Without this a frond's scope, which is
+  // where every provider lives, was never disposed at all: it is registered as a VALUE
+  // under `frond:<name>`, and a value is not the container's to dispose.
+  const children: ScopeContainer[] = [];
   let fallback: ((name: string) => unknown) | undefined;
 
   const remember = <T>(value: T): T => {
@@ -78,13 +84,23 @@ function createScope(parent?: ScopeContainer): ScopeContainer {
     },
 
     createScope(): Container {
-      return createScope(container);
+      const child = createScope(container);
+      children.push(child);
+      return child;
     },
 
     async dispose(): Promise<void> {
       // Reverse order, and one failure must not silence the rest: everything gets
       // told, then the errors travel together.
       const failures: unknown[] = [];
+      for (const child of children.reverse()) {
+        try {
+          await child.dispose();
+        } catch (error) {
+          failures.push(error);
+        }
+      }
+      children.length = 0;
       for (const value of built.reverse()) {
         try {
           await (value as Disposable).dispose();

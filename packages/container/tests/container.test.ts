@@ -201,3 +201,35 @@ describe('Container', () => {
     });
   });
 });
+
+describe('a scope closes what it opened', () => {
+  it('disposes its children, and them first', async () => {
+    const order: string[] = [];
+    const root = createContainer();
+    const child = root.createScope();
+    const grandchild = child.createScope();
+
+    root.register('R', class { dispose() { order.push('root'); } }, { lifetime: 'singleton' });
+    child.register('C', class { dispose() { order.push('child'); } }, { lifetime: 'singleton' });
+    grandchild.register('G', class { dispose() { order.push('grandchild'); } }, { lifetime: 'singleton' });
+    root.resolve('R'); child.resolve('C'); grandchild.resolve('G');
+
+    await root.dispose();
+
+    // Deepest first: a child may hold what its parent built, never the reverse.
+    expect(order).toEqual(['grandchild', 'child', 'root']);
+  });
+
+  it('tells every scope even when one refuses, and carries the failures together', async () => {
+    const root = createContainer();
+    const child = root.createScope();
+    let reached = false;
+
+    child.register('Bad', class { dispose() { throw new Error('nope'); } }, { lifetime: 'singleton' });
+    root.register('Good', class { dispose() { reached = true; } }, { lifetime: 'singleton' });
+    child.resolve('Bad'); root.resolve('Good');
+
+    await expect(root.dispose()).rejects.toThrow(AggregateError);
+    expect(reached).toBe(true);
+  });
+});

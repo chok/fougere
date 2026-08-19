@@ -64,6 +64,31 @@ export function useFougereApp(): Promise<App> {
   return _appPromise;
 }
 
+/**
+ * Turn the ring: instantiate the app again, then let the previous one go.
+ *
+ * This is what "reload" means for anything the config CONSUMED — a value that built
+ * something cannot move under what it built, so the thing is built again. Its dual is
+ * `applyConfig`, for values that are merely consulted and need no turn at all.
+ *
+ * Every door reaches the app through `useFougereApp()` inside the request it serves and
+ * none holds it across two, which is what makes the swap invisible: the next request
+ * lands on the new app whether or not the old one has finished being released.
+ *
+ * **A call already running keeps the old app, and nothing waits for it.** Its ORM is
+ * closed underneath it, so it may fail. Draining needs the in-flight calls to be
+ * counted, and nothing counts them yet — turning the ring under load is not safe today,
+ * and this says so rather than implying otherwise.
+ */
+export async function reloadFougere(): Promise<App> {
+  const previous = _appPromise;
+  _appPromise = null;
+  const next = await useFougereApp();
+  // After the new one is up: a boot that fails leaves the previous app serving.
+  if (previous) await (await previous).dispose();
+  return next;
+}
+
 // ── Boot ─────────────────────────────────────────
 
 async function boot(): Promise<App> {

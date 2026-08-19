@@ -52,6 +52,14 @@ export interface CreateAppOptions {
    */
   ports?: Record<string, string>;
   /**
+   * Released by `app.dispose()` AFTER the container, for a resource handed in rather
+   * than built here — a storage connection is the one case today.
+   *
+   * After, because reverse of construction is the rule the container already follows:
+   * what was opened first is closed last, so nothing it holds disappears under it.
+   */
+  onDispose?: () => Promise<void> | void;
+  /**
    * Which protocol adapters this app serves — see `FougereConfig.adapters`.
    * Carried onto the App so every door reads one answer instead of each host
    * deciding for itself.
