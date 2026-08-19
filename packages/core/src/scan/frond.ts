@@ -19,8 +19,6 @@ import type { Fronds } from './Fronds.js';
  * thing, and DI resolves by type either way.
  */
 export interface ProviderEntry {
-  /** Registration key: class name with first letter lowercased. */
-  name: string;
   /** The class constructor (default export of the file). */
   ctor: new (...args: unknown[]) => unknown;
   /** Constructor dependency type names (from AST scan). */

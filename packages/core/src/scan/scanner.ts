@@ -226,7 +226,10 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
     deps.push(ormKeyOf(registrationKeyOf((target as { name: string }).name)));
   }
 
-  return { name: registrationKeyOf(ctor.name), ctor, deps, filePath };
+  // No `name` beside `ctor`: a provider registers under `ctor.name`, which is what
+  // `depKeyOf` returns since it reads the type as written. The camelCase field that
+  // used to sit here called itself the registration key and was one nowhere.
+  return { ctor, deps, filePath };
 }
 
 async function toEntityEntry(filePath: string): Promise<EntityEntry | null> {
