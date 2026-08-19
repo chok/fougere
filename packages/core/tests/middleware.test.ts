@@ -2,7 +2,6 @@ import { describe, it, expect, vi } from 'vitest';
 import { runMiddlewares, type AppMiddleware, type OperationContext } from '../src/wire/middleware.js';
 import { FougereError, ErrorCode } from '../src/wire/errors.js';
 import { loggerMiddleware } from '../src/wire/loggerMiddleware.js';
-import { errorMiddleware } from '../src/wire/errorMiddleware.js';
 import { Logger } from '../src/builtins/logger.js';
 
 function ctx(overrides?: Partial<OperationContext>): OperationContext {
@@ -165,57 +164,5 @@ describe('loggerMiddleware', () => {
 
     expect(errorSpy).toHaveBeenCalledOnce();
     expect(errorSpy.mock.calls[0][0]).toContain('product.create');
-  });
-});
-
-// ── errorMiddleware ─────────────────────────────
-
-describe('errorMiddleware', () => {
-  it('wraps plain errors into FougereError', async () => {
-    const mw = errorMiddleware();
-
-    try {
-      await runMiddlewares([mw], ctx(), async () => {
-        throw new Error('plain');
-      });
-    } catch (err) {
-      expect(err).toBeInstanceOf(FougereError);
-      expect((err as FougereError).code).toBe('INTERNAL_ERROR');
-      expect((err as FougereError).entity).toBe('product');
-      expect((err as FougereError).operation).toBe('create');
-      expect((err as FougereError).cause).toBeInstanceOf(Error);
-      return;
-    }
-    expect.fail('should have thrown');
-  });
-
-  it('passes through FougereError unchanged', async () => {
-    const mw = errorMiddleware();
-    const original = new FougereError({ code: ErrorCode.CONFLICT, message: 'custom' });
-
-    try {
-      await runMiddlewares([mw], ctx(), async () => {
-        throw original;
-      });
-    } catch (err) {
-      expect(err).toBe(original);
-      return;
-    }
-    expect.fail('should have thrown');
-  });
-
-  it('wraps unknown errors as INTERNAL_ERROR', async () => {
-    const mw = errorMiddleware();
-    const custom = Object.assign(new Error('bad'), { code: 'SOME_RANDOM_CODE' });
-
-    try {
-      await runMiddlewares([mw], ctx(), async () => {
-        throw custom;
-      });
-    } catch (err) {
-      expect((err as FougereError).code).toBe('INTERNAL_ERROR');
-      return;
-    }
-    expect.fail('should have thrown');
   });
 });

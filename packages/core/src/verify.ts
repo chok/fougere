@@ -14,6 +14,15 @@ import { collectorKeyOf } from './prefab/collector.js';
 export interface Violation {
   /** Rule name, stable — 'cross-frond-dependency'. */
   rule: string;
+  /**
+   * What it costs, decided by the rule that raises it — never by whoever renders it.
+   *
+   * The two rules here are not the same animal: a cross-frond dependency resolves
+   * today and stops resolving the day the other frond answers over the wire, while a
+   * collector declared elsewhere is already wrong in one process. A reader holding a
+   * table of rule names would be a second opinion on a fact the rule already has.
+   */
+  severity: 'blocking' | 'warning';
   /** The frond the subject lives in. */
   frond: string;
   /** What violates it — 'PostHandler'. */
@@ -118,6 +127,7 @@ export function verify(app: { fronds: readonly FrondDescriptor[] }): Violation[]
         if (!declared || declared.frond === frond.name) continue;
         violations.push({
           rule: 'cross-frond-dependency',
+          severity: 'warning',
           frond: frond.name,
           subject: subject.name,
           filePath: subject.filePath,
@@ -150,6 +160,7 @@ export function verify(app: { fronds: readonly FrondDescriptor[] }): Violation[]
           if (!elsewhere) continue;
           violations.push({
             rule: 'collector-in-another-frond',
+            severity: 'blocking',
             frond: frond.name,
             subject: `${handler.ctor.name}.${opName}(${param.name})`,
             filePath: handler.filePath,
