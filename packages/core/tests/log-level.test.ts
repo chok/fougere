@@ -7,7 +7,10 @@
  * still holds the same object; what it reads is now consulted at emission.
  */
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { Logger, setLogLevel, logLevel, applyConfig } from '../src/index.js';
+import { mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { Logger, setLogLevel, logLevel, applyConfig, loadConfig } from '../src/index.js';
 
 afterEach(() => { setLogLevel('info'); vi.restoreAllMocks(); });
 
@@ -72,5 +75,22 @@ describe('applyConfig', () => {
 
     expect(logLevel()).toBe('error');
     vi.unstubAllEnvs();
+  });
+});
+
+describe('loadConfig re-reading a file that changed', () => {
+  it('answers the new content, which the module cache alone does not', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'fougere-reload-'));
+    const file = join(dir, 'fougere.config.mjs');
+
+    await writeFile(file, "export default { logLevel: 'warn' };\n");
+    expect((await loadConfig(dir)).logLevel).toBe('warn');
+
+    await writeFile(file, "export default { logLevel: 'error' };\n");
+    // Without `fresh`, the specifier is the same and the module is the one already read.
+    expect((await loadConfig(dir)).logLevel).toBe('warn');
+    expect((await loadConfig(dir, { fresh: true })).logLevel).toBe('error');
+
+    await rm(dir, { recursive: true, force: true });
   });
 });

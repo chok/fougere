@@ -73,6 +73,19 @@ importers:
         specifier: ^4.21.0
         version: 4.21.0
 
+  demos/config-reload:
+    dependencies:
+      '@fougere/container':
+        specifier: workspace:*
+        version: link:../../packages/container
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+    devDependencies:
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+
   demos/container-basics:
     dependencies:
       '@fougere/container':
