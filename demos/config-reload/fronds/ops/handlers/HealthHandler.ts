@@ -8,6 +8,12 @@ import type { Logger } from '@fougere/core';
 export default class HealthHandler {
   constructor(private logger: Logger) {}
 
+  /** Take a while — a call still running when the app is let go. */
+  async slow(): Promise<{ done: boolean }> {
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    return { done: true };
+  }
+
   /** Say something at every level, and report which logger took it. */
   async check(): Promise<{ logger: string }> {
     this.logger.debug('a debug line');

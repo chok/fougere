@@ -176,6 +176,16 @@ export interface App {
   /** Dispose the root container. */
   dispose(): Promise<void>;
   /**
+   * Stop taking calls, and resolve once the running ones are done.
+   *
+   * The step before releasing, when there is work on the app: `dispose()` closes a
+   * storage connection the running calls are standing on. Rejects on `timeoutMs`
+   * naming how many are left, rather than resolving as if it had succeeded.
+   */
+  drain(timeoutMs?: number): Promise<void>;
+  /** How many calls are running right now — one count for all three doors and the wire. */
+  inFlight(): number;
+  /**
    * The same disposal, spelled so the language does it: `await using app = await
    * createApp(…)`. Twelve of the twenty-six mounts in this repo's own tests never
    * called `dispose()` — a scope that closes itself is the only version of that

@@ -14,6 +14,7 @@ import { targetOf } from '../prefab/prefab.js';
 import { resolveContracts } from '../wire/operation.js';
 import { guardStorage } from './egress.js';
 import { portBindings } from './ports.js';
+import { InFlight } from './inflight.js';
 // The keys, each read from where its concept is declared — never respelled here.
 import { facadeKeyOf, contractsKeyOf } from '../wire/call.js';
 import { repositoryKeyOf } from '../prefab/repository.js';
@@ -142,6 +143,10 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   const remoteRouter = declaredRemotes.length > 0 && options.remoteTransport
     ? createRemoteRouter(Object.fromEntries(declaredRemotes), options.remoteTransport)
     : undefined;
+
+  // What is running on this app — counted at the one door every caller goes through,
+  // so releasing it can wait for the work instead of pulling the floor out.
+  const inflight = new InFlight();
 
   // Middleware storage — read at call time, not at boot time
   const globalMiddlewares: AppMiddleware[] = [];
@@ -306,6 +311,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
           presenters: presenterMap,
           middlewaresFor: getMiddlewares,
           emissions,
+          inflight,
         },
       );
       container.registerValue(facadeKey, facade.ops);
@@ -440,10 +446,36 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   /**
    * Everything this app holds, let go in reverse of how it was taken: the container
    * disposes what it built, then whoever handed a resource in closes it.
+   *
+   * It does NOT wait for running calls — `drain()` is that, and it is a separate gesture
+   * because waiting and releasing do not have the same owner: a test releases at once, a
+   * host turning the ring wants the work finished first.
    */
   const release = async (): Promise<void> => {
     await container.dispose();
     await options.onDispose?.();
+  };
+
+  /**
+   * Stop taking calls, and resolve once the ones already running are done.
+   *
+   * Refuses on `timeoutMs` rather than resolving anyway: a drain that gives up quietly
+   * reads exactly like a drain that succeeded, and the caller — who is about to release
+   * a storage connection under whatever is left — is the one who must decide.
+   */
+  const drain = async (timeoutMs?: number): Promise<void> => {
+    inflight.close();
+    if (timeoutMs === undefined) return inflight.whenIdle();
+    let timer: ReturnType<typeof setTimeout>;
+    await Promise.race([
+      inflight.whenIdle().then(() => clearTimeout(timer)),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error(`[drain] ${inflight.count} call(s) still running after ${timeoutMs}ms`)),
+          timeoutMs,
+        );
+      }),
+    ]);
   };
 
   const resolve = <T>(name: string): T => {
@@ -571,6 +603,8 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     ormFor,
     presenterFor,
     dispose: release,
+    drain,
+    inFlight: () => inflight.count,
     [Symbol.asyncDispose]: release,
     use(...args: [AppMiddleware] | [string, AppMiddleware]): void {
       if (typeof args[0] === 'string') {

@@ -75,17 +75,21 @@ export function useFougereApp(): Promise<App> {
  * none holds it across two, which is what makes the swap invisible: the next request
  * lands on the new app whether or not the old one has finished being released.
  *
- * **A call already running keeps the old app, and nothing waits for it.** Its ORM is
- * closed underneath it, so it may fail. Draining needs the in-flight calls to be
- * counted, and nothing counts them yet — turning the ring under load is not safe today,
- * and this says so rather than implying otherwise.
+ * A call already running finishes on the OLD app: it is drained before being released,
+ * so nothing has its storage closed underneath it. `timeoutMs` bounds that wait, and a
+ * drain that runs out REJECTS — the app is left alone rather than released under work,
+ * because a caller who cannot wait must choose that on purpose.
  */
-export async function reloadFougere(): Promise<App> {
+export async function reloadFougere(timeoutMs?: number): Promise<App> {
   const previous = _appPromise;
   _appPromise = null;
+  // The new one first: a boot that fails leaves the previous app serving, still whole.
   const next = await useFougereApp();
-  // After the new one is up: a boot that fails leaves the previous app serving.
-  if (previous) await (await previous).dispose();
+  if (previous) {
+    const old = await previous;
+    await old.drain(timeoutMs);
+    await old.dispose();
+  }
   return next;
 }
 

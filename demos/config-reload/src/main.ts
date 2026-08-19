@@ -66,5 +66,12 @@ await hangUp();
 console.log('   →', JSON.stringify(await call({ entity: 'health', op: 'check' }, EMPTY_INVOCATION)));
 
 write(`{\n  db: false,\n  logLevel: 'warn',\n}`);
-console.log(`\nOne boot, one handler instance, one Logger object. Level now: ${logLevel()}.\n`);
+// ── What a re-read cannot do: `db` above needed a rebuild, not a new value. ──
+console.log(`\n4. a call is running; the app is drained before being released`);
+const slow = call({ entity: 'health', op: 'slow' }, EMPTY_INVOCATION);
+console.log(`   in flight: ${app.inFlight()}`);
+await app.drain();
+console.log(`   drained — in flight: ${app.inFlight()}, and the call answered: ${JSON.stringify(await slow)}`);
 await app.dispose();
+
+console.log(`\nOne boot, one handler instance, one Logger object. Level now: ${logLevel()}.\n`);

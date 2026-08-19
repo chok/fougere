@@ -10,6 +10,8 @@ import { resolveContracts, type OperationsMap } from '../wire/operation.js';
 import { projectEgress, presentEgress, type PresenterArgs } from './egress.js';
 import { EMPTY_INVOCATION, type InvocationContext } from '../wire/invocation.js';
 import type { Emissions } from './Emissions.js';
+import type { InFlight } from './inflight.js';
+import type { OperationContext } from '../wire/middleware.js';
 import type { Logger } from '../builtins/logger.js';
 import type { EntityEntry, FrondDescriptor, HandlerEntry, PresenterEntry } from '../scan/frond.js';
 
@@ -36,6 +38,8 @@ export interface Wiring {
   /** The middlewares that apply to an address, read at call time and never at boot. */
   middlewaresFor: (address: string) => AppMiddleware[];
   emissions: Emissions;
+  /** The app's running calls — counted here because every caller comes through. */
+  inflight: InFlight;
 }
 
 /** The field set an op's result is projected onto, and whether it is the whole of it. */
@@ -229,11 +233,30 @@ export class HandlerFacade {
   private wrap(op: string): (invocation?: InvocationContext) => Promise<unknown> {
     const address = this.door.handler.address;
 
-    return (invocation?: InvocationContext) => {
+    return async (invocation?: InvocationContext) => {
       const inv = invocation ?? EMPTY_INVOCATION;
-      const ctx = { entity: address, operation: op, args: [], state: inv.state, invocation: inv };
+      const ctx: OperationContext = { entity: address, operation: op, args: [], state: inv.state, invocation: inv };
 
-      return runMiddlewares(this.wiring.middlewaresFor(address), ctx, async () => {
+      // Counted around the WHOLE call, middlewares included: they are part of what a
+      // release would pull out from under it. Refused rather than counted once the app
+      // has been closed.
+      const done = this.wiring.inflight.enter(address, op);
+      try {
+        return await this.runCall(ctx, inv, address, op);
+      } finally {
+        done();
+      }
+    };
+  }
+
+  /** The call itself — judge, bind, project, present. */
+  private runCall(
+    ctx: OperationContext,
+    inv: InvocationContext,
+    address: string,
+    op: string,
+  ): Promise<unknown> {
+    return runMiddlewares(this.wiring.middlewaresFor(address), ctx, async () => {
         const contract = this.contracts.get(op);
         const effective = this.judged(contract?.input, inv, address, op);
         ctx.invocation = effective;
@@ -258,12 +281,11 @@ export class HandlerFacade {
           projected,
           this.wiring.frondScope.resolve(presenterKeyOf(address)),
           meta.fields,
-          address,
-          op,
-          await this.presenterArgs(meta, effective),
-        );
-      });
-    };
+        address,
+        op,
+        await this.presenterArgs(meta, effective),
+      );
+    });
   }
 
   /**
