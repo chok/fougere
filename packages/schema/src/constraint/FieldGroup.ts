@@ -9,14 +9,14 @@ import type { Field, Fields } from '../Field.js';
  * single owner, and keeping it beside the fields made a second copy to hold in step.
  *
  * ```ts
- * const u = Unique.of('listId', 'docId')
+ * const u = new Unique(['listId', 'docId'])
  * u.covers('docId')                                       // → true
  * u.rename(k => k === 'docId' ? 'bookId' : k)?.members    // → ['listId', 'bookId']
  * u.rename(k => k === 'docId' ? undefined : k)            // → null, a member is gone
  * ```
  */
 export abstract class FieldGroup {
-  protected constructor(readonly members: readonly string[]) {}
+  constructor(readonly members: readonly string[]) {}
 
   /**
    * The same group over other members. Built from the runtime constructor, so a subclass
@@ -57,7 +57,7 @@ export abstract class FieldGroup {
    * a group naming a field that does not exist states nothing and used to land in silence.
    *
    * ```ts
-   * Unique.of('listId', 'docId').onto(fields)
+   * new Unique(['listId', 'docId']).onto(fields)
    * //   → listId.role.rules = [Unique('listId','docId')]
    * //     docId.role.rules  = [Unique('listId','docId')]
    * ```
@@ -118,7 +118,7 @@ export abstract class FieldGroup {
    * already built is returned as is. The door normalizes so no reader has to.
    *
    * ```ts
-   * FieldGroup.normalize([['slug']], Unique)   // → [Unique('slug')]
+   * FieldGroup.normalize([['slug']], Unique)       // → [Unique('slug')]
    * FieldGroup.normalize([Unique.self()], Unique)  // → unchanged
    * ```
    */

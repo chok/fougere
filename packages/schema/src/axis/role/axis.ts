@@ -73,7 +73,7 @@ export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
     if (wire.primary) out.primary = true;
     // Members arrive spelled out and stay that way — reading a single-member group back as
     // the empty self-reference would re-describe identically and lose the distinction.
-    if (wire.unique?.length) out.rules = wire.unique.map((group) => Unique.of(...group));
+    if (wire.unique?.length) out.rules = wire.unique.map((group) => new Unique(group));
     if (wire.index) out.index = true;
     if (wire.relation) {
       const name = wire.relation.to;

@@ -110,7 +110,7 @@ export class Field<T = unknown> {
  * need the list to say which, and that is the day this stops being derivable.
  */
 function normalizeRole(role: RoleRules | undefined): RoleRules | undefined {
-  const rules = FieldGroup.normalize(role?.rules, (members) => Unique.of(...members));
+  const rules = FieldGroup.normalize(role?.rules, (members) => new Unique(members));
   return rules === role?.rules ? role : { ...role, rules };
 }
 

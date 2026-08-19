@@ -34,7 +34,7 @@ export function entity<TFields extends Fields>(
     fields[key] = new Field(field, key);
 
   for (const group of declarations?.unique ?? [])
-    fields = Unique.of(...group).onto(fields);
+    fields = new Unique(group).onto(fields);
 
   fields = FieldGroup.resolveSelf(fields);
 
