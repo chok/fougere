@@ -1,8 +1,8 @@
 import type { Shape } from './axis/shape/Shape.js';
 import { Judge } from './judge/Judge.js';
 import type { RoleRules } from './axis/role/Role.js';
-import { FieldGroup } from './axis/role/FieldGroup.js';
-import { Unique } from './axis/role/Unique.js';
+import { FieldGroup } from './constraint/FieldGroup.js';
+import { Unique } from './constraint/Unique.js';
 import type { LifecycleRules } from './axis/lifecycle/Lifecycle.js';
 import type { BoundaryRef } from './axis/boundary/Boundary.js';
 import type { Meta } from './axis/Meta.js';

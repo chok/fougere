@@ -6,7 +6,7 @@ import type { RoleRules } from '../axis/role/Role.js';
 import type { SchemaView } from '../SchemaView.js';
 import { Boundary } from '../axis/boundary/Boundary.js';
 import { Anatomy } from '../axis/shape/Shape.js';
-import { Unique } from '../axis/role/Unique.js';
+import { Unique } from '../constraint/Unique.js';
 import { registrationKeyOf } from '../name.js';
 import { type FieldDescriptor, type FieldExtension, type RelationDescriptor, type RoleDescriptor, type SchemaBundle, type SchemaDescriptor } from './Descriptor.js';
 

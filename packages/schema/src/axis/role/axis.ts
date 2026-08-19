@@ -3,8 +3,8 @@ import { isObject, oneOfTokens } from '../../judge/form.js';
 import type { ValidationError } from '../../judge/result.js';
 import { ON_DELETE, RELATION_KINDS, type EntityConstructor } from './Relation.js';
 import { type RoleRules } from './Role.js';
-import { FieldGroup } from './FieldGroup.js';
-import { Unique } from './Unique.js';
+import { FieldGroup } from '../../constraint/FieldGroup.js';
+import { Unique } from '../../constraint/Unique.js';
 import type { RoleDescriptor } from '../../card/Descriptor.js';
 import { registrationKeyOf } from '../../name.js';
 

@@ -5,7 +5,7 @@ import { Field, type Fields } from '../Field.js';
 import { type EntityConstructor } from '../axis/role/Relation.js';
 import { type RoleRules } from '../axis/role/Role.js';
 import { type Shape } from '../axis/shape/Shape.js';
-import { Unique } from '../axis/role/Unique.js';
+import { Unique } from '../constraint/Unique.js';
 import { Schema, type SchemaConstructor } from '../Schema.js';
 import { type SchemaView, type Row } from '../SchemaView.js';
 import { type FieldDescriptor, type RoleDescriptor, type SchemaBundle, type SchemaDescriptor } from './Descriptor.js';

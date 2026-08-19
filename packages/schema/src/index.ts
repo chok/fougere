@@ -10,8 +10,8 @@ export { type GeneratorRef, registerGenerator } from './axis/lifecycle/Generator
 export { Boundary, type BoundaryRules, type BoundaryRef } from './axis/boundary/Boundary.js';
 export { type Decoder, type Encoder, Boundaries } from './axis/boundary/Boundaries.js';
 export { type Meta } from './axis/Meta.js';
-export { FieldGroup } from './axis/role/FieldGroup.js';
-export { Unique } from './axis/role/Unique.js';
+export { FieldGroup } from './constraint/FieldGroup.js';
+export { Unique } from './constraint/Unique.js';
 
 // ─── The carrier and its derivation algebra ──────────────────
 export { Schema, ANONYMOUS_SCHEMA_NAME, type SchemaConstructor } from './Schema.js';

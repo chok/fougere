@@ -3,7 +3,7 @@
 // emits them and the database enforces them, so a collision surfaces as the driver's error,
 // never as a `validate()` failure.
 
-import type { FieldGroup } from './FieldGroup.js';
+import type { FieldGroup } from '../../constraint/FieldGroup.js';
 import type { EntityConstructor, Relation } from './Relation.js';
 
 /** What a field DECLARES on the role slot. {@link Role} is this, resolved. */
