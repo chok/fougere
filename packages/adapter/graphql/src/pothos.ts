@@ -761,12 +761,18 @@ function buildArgsFromSignature(
     const opInputFields = isMutation ? inputFields(meta.input.getFields()) : meta.input.getFields();
     const inputName = `${capitalize(opName)}${entityName}Input`;
 
-    inputRef = registerInput(builder, {
-      name: inputName,
-      // A real schema over those fields, not a forged stand-in: an update input is the
-      // same fields seen through the patch mode.
-      schema: Schema.of(opInputFields, undefined, undefined, { patch: opName === 'update' }),
-    });
+    // An input object with no field is invalid GraphQL, and it takes the WHOLE schema
+    // down — every other type included — rather than just this op. An entity whose every
+    // field is system-owned leaves a client nothing to supply, so the op takes no input
+    // at all; `argsDef` already guards on `inputRef` being there.
+    if (Object.keys(opInputFields).length > 0) {
+      inputRef = registerInput(builder, {
+        name: inputName,
+        // A real schema over those fields, not a forged stand-in: an update input is the
+        // same fields seen through the patch mode.
+        schema: Schema.of(opInputFields, undefined, undefined, { patch: opName === 'update' }),
+      });
+    }
   }
 
   const hasPagination = paramPlan.some((p) => p.kind === 'pagination');
