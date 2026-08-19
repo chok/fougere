@@ -1,11 +1,12 @@
 // ─── The primitive — a Field on four orthogonal axes + meta ──
 export { Field, type Fields } from './Field.js';
-export { type Shape, type ShapeType, Anatomy } from './axis/shape/Shape.js';
+export { type Shape, Anatomy } from './axis/shape/Shape.js';
 export { type StringFormat, type FormatPredicate, Formats } from './axis/shape/Formats.js';
 export { Role, type RoleRules } from './axis/role/Role.js';
 export { type Relation, type EntityConstructor } from './axis/role/Relation.js';
 export { Lifecycle, type LifecycleRules } from './axis/lifecycle/Lifecycle.js';
-export { type GeneratorRef, registerGenerator, resolveCustomGenerator } from './axis/lifecycle/Generators.js';
+// `registerGenerator` is the door; resolving is the framework's own business.
+export { type GeneratorRef, registerGenerator } from './axis/lifecycle/Generators.js';
 export { Boundary, type BoundaryRules, type BoundaryRef } from './axis/boundary/Boundary.js';
 export { type Decoder, type Encoder, Boundaries } from './axis/boundary/Boundaries.js';
 export { type Meta } from './axis/Meta.js';

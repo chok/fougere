@@ -5,8 +5,10 @@ import { Unique } from '../src/axis/role/Unique.js';
 import { describe, it, expect } from 'vitest';
 import {
   entity, primary, text, number, oneOf, list, optional, nullable,
-  registerGenerator, resolveCustomGenerator, unique, indexed, immutable, created, updated, describe as describeSchema, reconstruct,
+  registerGenerator, unique, indexed, immutable, created, updated, describe as describeSchema, reconstruct,
 } from '../src/index.js';
+// The read half is the framework's own business, so the barrel no longer carries it.
+import { resolveCustomGenerator } from '../src/axis/lifecycle/Generators.js';
 
 // ─── nullableShape / anatomy — the two gates of the union, per shape genre ──
 
