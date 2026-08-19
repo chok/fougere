@@ -1,0 +1,19 @@
+{
+  "name": "fougere-demo-mirror-catalog",
+  "version": "0.0.2-alpha.3",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/main.ts",
+    "typecheck": "tsc -p fronds"
+  },
+  "dependencies": {
+    "@fougere/container": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/defaults": "workspace:*",
+    "@fougere/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0"
+  }
+}

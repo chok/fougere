@@ -16,7 +16,18 @@ const LEVELS: Record<LogLevel, number> = { debug: 0, info: 1, warn: 2, error: 3,
  * rebuilding every logger AND everything that had been handed one. A value read at
  * the moment it is used costs the same and can move.
  */
-let threshold: number = LEVELS.info;
+let threshold: number = LEVELS[envLevel() ?? 'info'];
+
+/**
+ * The level the PROCESS was started with. Read here rather than only at `applyConfig`,
+ * which runs after the boot has already said where its root is — an operator asking for
+ * `warn` got that line anyway. Guarded: this module runs on Workers, where there is no
+ * `process`.
+ */
+function envLevel(): LogLevel | undefined {
+  const raw = typeof process === 'undefined' ? undefined : process.env.FOUGERE_LOG_LEVEL;
+  return raw !== undefined && raw in LEVELS ? (raw as LogLevel) : undefined;
+}
 
 /** Set the level for every logger in this process, at once. */
 export function setLogLevel(level: LogLevel): void {

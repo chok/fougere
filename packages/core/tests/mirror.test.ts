@@ -52,9 +52,21 @@ describe('a mirror refreshes', () => {
       async *pull() { yield [{ id: 'P-0', titre: 'oups' } as never]; }
     }
     await expect(new M(orm).refresh())
-      .rejects.toThrow(/Card mirror refused row "P-0" — titre: Unknown field, title: Required/);
+      .rejects.toThrow(/Card mirror refused row id "P-0" — titre: Unknown field, title: Required/);
     // And nothing of that page was written.
     expect((orm as any).written).toHaveLength(0);
+  });
+
+  // Found by demos/mirror-catalog: the key was read as `row.id`, so every shape keyed on
+  // anything else fell back to "row 3 of this page" — a position, in an import of
+  // thousands, pointing at nothing an operator can look up on the other side.
+  it('names a refused row by the key its SHAPE declares, not `id`', async () => {
+    class Book extends entity({ isbn: primary(), title: text({ min: 1 }), pulledAt: updated() }) {}
+    class M extends Mirror(Book) {
+      async *pull() { yield [{ isbn: '978-0', title: '' } as never]; }
+    }
+    await expect(new M(spyOrm()).refresh())
+      .rejects.toThrow(/Book mirror refused row isbn "978-0" —/);
   });
 
   it('writes what the judge PARSED, not what the caller handed over', async () => {

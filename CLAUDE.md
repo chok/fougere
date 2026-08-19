@@ -34,6 +34,7 @@ pnpm -C demos/container-basics dev
 pnpm -C demos/core-scanner dev
 pnpm -C demos/ports-swap dev        # stripe, then ogone, then the refusal — one handler
 pnpm -C demos/config-reload dev     # one boot, a real SIGHUP, a drain — and what a re-read cannot change
+pnpm -C demos/mirror-catalog dev    # two passes over a source that only answers ?page=&since=
 pnpm -C demos/sse-live dev         # live fan-out to readers who are not trusted peers
 ```
 
@@ -81,6 +82,7 @@ demos/
   schema-ecommerce/    SQLite + Apollo Server
   ports-swap/          one handler, two PSPs, and the `ports:` line that decides
   config-reload/       the config re-read under a running app, the drain, and what it refuses to change
+  mirror-catalog/      a copy of rows the app cannot query, and what the second pass costs
   container-basics/ core-scanner/ multi-frond/ crud-auto/ auth-better/
 ```
 

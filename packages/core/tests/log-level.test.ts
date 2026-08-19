@@ -6,6 +6,7 @@
  * rebuilding every logger AND every handler that had been handed one. The handler
  * still holds the same object; what it reads is now consulted at emission.
  */
+import { execFileSync } from 'node:child_process';
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -92,5 +93,27 @@ describe('loadConfig re-reading a file that changed', () => {
     expect((await loadConfig(dir, { fresh: true })).logLevel).toBe('error');
 
     await rm(dir, { recursive: true, force: true });
+  });
+});
+
+/**
+ * The level a process was STARTED with, which only a second process can observe: the
+ * threshold is seeded when the module loads, and `vi.stubEnv` runs long after that.
+ *
+ * Found by demos/mirror-catalog — `FOUGERE_LOG_LEVEL=warn` still printed the boot's
+ * first line, because until then only `applyConfig` moved the threshold and it runs
+ * after the boot has said where its root is.
+ */
+describe('a process started at a level', () => {
+  it('applies it to the very first emission, before any config is read', () => {
+    const probe = `import { Logger } from ${JSON.stringify(new URL('../src/builtins/logger.ts', import.meta.url).href)};`
+      + ` new Logger('probe').info('should not appear'); console.log('END');`;
+    const out = execFileSync(process.execPath, ['--experimental-strip-types', '--input-type=module', '-e', probe], {
+      env: { ...process.env, FOUGERE_LOG_LEVEL: 'warn' },
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    expect(out).not.toContain('should not appear');
+    expect(out).toContain('END');
   });
 });

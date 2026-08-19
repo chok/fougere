@@ -286,6 +286,25 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  demos/mirror-catalog:
+    dependencies:
+      '@fougere/container':
+        specifier: workspace:*
+        version: link:../../packages/container
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../../packages/defaults
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
+    devDependencies:
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+
   demos/multi-frond:
     dependencies:
       '@fougere/adapter-rest':
