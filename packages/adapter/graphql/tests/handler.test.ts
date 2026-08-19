@@ -720,3 +720,24 @@ describe('the operation in words', () => {
     expect(queryFields['post']?.description ?? null).toBeNull();
   });
 });
+
+describe('an entity a client can supply nothing for', () => {
+  it('gets an op with no input, not an input object with no field', () => {
+    // Every field is system-owned: `inputFields` answers {}. An input object with zero
+    // fields is invalid GraphQL and takes the WHOLE schema down, not just this op.
+    class Stamp extends entity({ id: primary(), createdAt: created() }) {}
+
+    const builder = new SchemaBuilder({});
+    builder.queryType({});
+    builder.mutationType({});
+
+    const app = fakeApp([{ name: 'stamp', entityClass: Stamp }], { stampHandler: fakeCrud() });
+    registerAll(builder, app);
+    const schema = builder.toSchema();
+
+    expect(schema.getTypeMap()['CreateStampInput']).toBeUndefined();
+    const createStamp = schema.getMutationType()!.getFields()['createStamp'];
+    expect(createStamp).toBeDefined();
+    expect(createStamp.args.map((a) => a.name)).toEqual([]);
+  });
+});

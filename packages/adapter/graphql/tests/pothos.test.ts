@@ -212,6 +212,10 @@ describe("boundary 'closed' → type membership", () => {
     const inFields = (typeMap['AccountInput'] as any).getFields();
     expect(inFields['loginCount']).toBeUndefined(); // never accepted
     expect(inFields['password']).toBeDefined(); // write-only still writable
+    // Identity STAYS: a generic input is not a creation. `inputFields` drops it, and the
+    // op path applies that for create/update alone — `publish(input: Post)` must be able
+    // to name the post. Filtering it here was tried on 2026-08-19 and reverted.
+    expect(inFields['id']).toBeDefined();
   });
 });
 
@@ -376,5 +380,25 @@ describe('value list (list())', () => {
     builder.queryType({ fields: (t) => ({ ok: t.boolean({ resolve: () => true }) }) });
     const input = (builder.toSchema().getTypeMap()['CreateTaggedInput'] as any).getFields();
     expect(input['tags'].type.toString()).toBe('[String!]!');
+  });
+});
+
+describe('a custom op names its row', () => {
+  it('keeps the primary key in the input, which a creation would drop', () => {
+    class Post extends entity({ id: primary(), reason: text() }) {}
+
+    const builder = new SchemaBuilder({});
+    const Input = registerInput(builder, { name: 'PublishPostInput', schema: Post });
+    builder.queryType({ fields: (t) => ({ ok: t.boolean({ resolve: () => true }) }) });
+    builder.mutationType({
+      fields: (t) => ({
+        publish: t.boolean({ args: { input: t.arg({ type: Input, required: true }) }, resolve: () => true }),
+      }),
+    });
+
+    // Without it, `publish(input: { id, reason })` answers
+    // `Field "id" is not defined by type "PublishPostInput"` and the op cannot say WHICH post.
+    const fields = (builder.toSchema().getTypeMap()['PublishPostInput'] as any).getFields();
+    expect(Object.keys(fields)).toContain('id');
   });
 });
