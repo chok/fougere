@@ -20,10 +20,10 @@ export { type FougereHints, type Hints } from './EntityDeclarations.js';
 
 // ─── The vocabulary — field constructors and transforms ──────
 export { primary } from './vocabulary/primary.js';
-export { text, type TextOptions } from './vocabulary/text.js';
+export { text } from './vocabulary/text.js';
 export { email } from './vocabulary/email.js';
 export { url } from './vocabulary/url.js';
-export { list, type ListOptions } from './vocabulary/list.js';
+export { list } from './vocabulary/list.js';
 export { number } from './vocabulary/number.js';
 export { bool } from './vocabulary/bool.js';
 export { date } from './vocabulary/date.js';
