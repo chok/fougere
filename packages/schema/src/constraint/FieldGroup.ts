@@ -119,7 +119,7 @@ export abstract class FieldGroup {
    *
    * ```ts
    * FieldGroup.normalize([['slug']], Unique)       // → [Unique('slug')]
-   * FieldGroup.normalize([Unique.self()], Unique)  // → unchanged
+   * FieldGroup.normalize([new Unique([])], Unique)  // → unchanged
    * ```
    */
   static normalize<R extends FieldGroup>(

@@ -169,14 +169,8 @@ export class Anatomy {
   }
 }
 
-// ─── Garde-fou : `Shape` reste un sous-ensemble de JSON Schema ──────
-// La validation délègue à un moteur JSON Schema (cfworker) qui IGNORE en silence
-// tout mot-clé hors spec. Cette assertion type-only fait échouer le build si un
-// mot-clé non-JSON-Schema entre dans `Shape` — l'équation « shape = JSON Schema »
-// est tenue par le compilateur, pas par la discipline. `keyof JSONSchema7` est un
-// union fini de mots-clés (l'interface est fermée), d'où la comparaison.
 type Assert<T extends true> = T;
-type ShapeKeys<T> = T extends unknown ? keyof T : never; // distribue keyof sur l'union
+type ShapeKeys<T> = T extends unknown ? keyof T : never;
 type _ShapeConformsToJsonSchema = Assert<
   [Exclude<ShapeKeys<Shape>, keyof JSONSchema7>] extends [never] ? true : false
 >;
