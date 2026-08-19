@@ -5,7 +5,7 @@ import { type EntityDeclarations } from './EntityDeclarations.js';
 import { Schema, type SchemaConstructor } from './Schema.js';
 
 /**
- * Builds the class an entity extends. `fields` becomes its schema; `declarations` states
+ * Builds the class an entity extends. The first argument becomes its schema; `declarations` states
  * what the entity says about itself — `unique` groups and per-adapter `hints`.
  *
  * ```ts
@@ -25,20 +25,18 @@ import { Schema, type SchemaConstructor } from './Schema.js';
  * Data and schema metadata only — no business behaviour lives on an entity.
  */
 export function entity<TFields extends Fields>(
-  fields: TFields,
+  originalFields: TFields,
   declarations?: EntityDeclarations<TFields>,
 ): SchemaConstructor<TFields> {
-  const own: Record<string, Field> = {};
+  let fields: Fields = {};
 
-  for (const [key, field] of Object.entries(fields))
-    own[key] = new Field(field, key);
+  for (const [key, field] of Object.entries(originalFields))
+    fields[key] = new Field(field, key);
 
-  // The declarations are syntax: realized onto the fields here, never kept beside them.
-  let realized: Fields = own;
   for (const group of declarations?.unique ?? [])
-    realized = Unique.of(...group).onto(realized);
-  realized = FieldGroup.resolveSelf(realized);
+    fields = Unique.of(...group).onto(fields);
 
-  return Schema.of(realized as TFields, undefined, declarations?.hints, {});
+  fields = FieldGroup.resolveSelf(fields);
+
+  return Schema.of(fields as TFields, undefined, declarations?.hints, {});
 }
-
