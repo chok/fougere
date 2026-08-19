@@ -1,14 +1,10 @@
 /**
- * Binding — unified parameter resolution for handler operations.
+ * Where each parameter of an operation gets its value — decided once at boot from the
+ * parsed signature, replayed per call by `resolveArgs`.
  *
- * A BindingPlan is computed once at boot from parsed method signatures.
- * At call time, resolveArgs() produces the argument array from an InvocationContext.
- *
- * Algorithm (by param type):
- * 1. Collector entity type → resolved via Collector.collect(ctx)
- * 2. InvocationContext → the context itself
- * 3. Primitive (string, number, boolean) → matched by name from params then query
- * 4. Object/entity type → matched from body
+ * The branches are ORDERED and each states why it sits where it does; the list used to
+ * be repeated here too, and it had already lost `Fact` — the one whose position is
+ * load-bearing, since the fall-through would otherwise hand it the caller's body.
  */
 import type { ParsedParam } from '../scan/handler-parser.js';
 import type { InvocationContext } from '../wire/invocation.js';

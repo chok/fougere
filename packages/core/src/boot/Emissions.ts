@@ -179,8 +179,8 @@ export class Emissions {
    * The announcement realizes the fact's own `lifecycle.create` — a `created()` stamped,
    * an id generated, a default applied.
    *
-   * `validation.ts` states the split: the judge never fills a hole, the STORAGE does, at
-   * the point of persistence. A fact has no storage, so nobody did — the judge declared an
+   * `applyCreate` (`schema/src/axis/lifecycle/apply.ts`) is where the split is realized:
+   * the judge never fills a hole, the STORAGE does, at the point of persistence. A fact has no storage, so nobody did — the judge declared an
    * absent `created()` legal and omitted it, and a subscriber received a value missing a
    * field its own type promises. Announcing is a fact's point of persistence.
    *
