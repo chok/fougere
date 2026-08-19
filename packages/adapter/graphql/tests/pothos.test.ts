@@ -212,6 +212,9 @@ describe("boundary 'closed' → type membership", () => {
     const inFields = (typeMap['AccountInput'] as any).getFields();
     expect(inFields['loginCount']).toBeUndefined(); // never accepted
     expect(inFields['password']).toBeDefined(); // write-only still writable
+    // THE ingress rule, not two of its four clauses: identity is system-owned, so an
+    // input never asks a client for it. This loop used to keep it.
+    expect(inFields['id']).toBeUndefined();
   });
 });
 

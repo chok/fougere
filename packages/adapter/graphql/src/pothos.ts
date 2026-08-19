@@ -622,7 +622,12 @@ export function registerType(builder: InstanceType<typeof SchemaBuilder>, config
  * ```
  */
 export function registerInput(builder: InstanceType<typeof SchemaBuilder>, config: InputConfig): any {
-  const fields = config.schema.getFields();
+  // THE ingress rule, not two of its four clauses. This loop used to skip collections and
+  // read-only fields on its own and keep the rest — so an input asked a client for the id
+  // the system generates and for a `created()` timestamp it stamps. Measured 2026-08-16 on
+  // `{ id, title, createdAt }`: the input took all three, `inputFields` answers `title`.
+  // Idempotent on the op path, which already filtered.
+  const fields = inputFields(config.schema.getFields());
   // The view's SOURCE, not the input's name: `CreatePostInput` derives from `Post`, and its
   // `status` must be the same `PostStatus` the query emits.
   const enumOwner = sourceNameOf(config.schema);
@@ -635,11 +640,6 @@ export function registerInput(builder: InstanceType<typeof SchemaBuilder>, confi
       const result: Record<string, any> = {};
 
       for (const [fieldName, field] of Object.entries(fields)) {
-        // Skip virtual fields
-        if (Role.of(field).isCollection) continue;
-        // Read-only (boundary in: 'closed'): never accepted from a client
-        if (Boundary.of(field).readOnly) continue;
-
         result[fieldName] = fieldToInput(
           t, field, patch,
           (shape, suffix) => nestedInputType(builder, shape, `${config.name}${capitalize(fieldName)}${suffix}`),
