@@ -18,8 +18,14 @@ import type { Field, Fields } from '../../Field.js';
 export abstract class FieldGroup {
   protected constructor(readonly members: readonly string[]) {}
 
-  /** The same group over other members — the one thing a subclass has to know how to do. */
-  protected abstract withMembers(members: readonly string[]): this;
+  /**
+   * The same group over other members. Built from the runtime constructor, so a subclass
+   * declares nothing: every one of them took `members` and returned `new Self(members)`,
+   * which is this line spelled once per subclass.
+   */
+  protected withMembers(members: readonly string[]): this {
+    return new (this.constructor as new (members: readonly string[]) => this)(members);
+  }
 
   /**
    * True while the members are unnamed. `unique(text())` runs before `entity()` names the
