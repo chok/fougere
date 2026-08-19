@@ -622,12 +622,7 @@ export function registerType(builder: InstanceType<typeof SchemaBuilder>, config
  * ```
  */
 export function registerInput(builder: InstanceType<typeof SchemaBuilder>, config: InputConfig): any {
-  // THE ingress rule, not two of its four clauses. This loop used to skip collections and
-  // read-only fields on its own and keep the rest — so an input asked a client for the id
-  // the system generates and for a `created()` timestamp it stamps. Measured 2026-08-16 on
-  // `{ id, title, createdAt }`: the input took all three, `inputFields` answers `title`.
-  // Idempotent on the op path, which already filtered.
-  const fields = inputFields(config.schema.getFields());
+  const fields = config.schema.getFields();
   // The view's SOURCE, not the input's name: `CreatePostInput` derives from `Post`, and its
   // `status` must be the same `PostStatus` the query emits.
   const enumOwner = sourceNameOf(config.schema);
@@ -640,6 +635,14 @@ export function registerInput(builder: InstanceType<typeof SchemaBuilder>, confi
       const result: Record<string, any> = {};
 
       for (const [fieldName, field] of Object.entries(fields)) {
+        // The two clauses that hold for ANY input, and only those. A collection has no
+        // column to send, and `boundary in: 'closed'` is never accepted from a client.
+        // Identity and `created()` are a CREATION policy — `inputFields` says that, and
+        // the op path applies it for create/update alone, because `publish(input: Post)`
+        // must still be able to name the post. Filtering here broke exactly that.
+        if (Role.of(field).isCollection) continue;
+        if (Boundary.of(field).readOnly) continue;
+
         result[fieldName] = fieldToInput(
           t, field, patch,
           (shape, suffix) => nestedInputType(builder, shape, `${config.name}${capitalize(fieldName)}${suffix}`),

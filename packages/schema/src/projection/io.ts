@@ -12,9 +12,12 @@ import type { Fields } from '../Field.js';
  * The judge is deliberately more permissive: these two answer "what do we ASK for", the
  * judge answers "what do we REFUSE", and a supplied id is legal.
  *
- * `adapter/graphql` used to restate the rule with two of its four clauses, so a GraphQL
- * input asked for the id and the `created()` stamp — measured 2026-08-16, fixed on
- * 2026-08-19 by having `registerInput` call this instead.
+ * `adapter/graphql`'s `registerInput` applies TWO of the four clauses and that is not a
+ * divergence: a collection has no column to send and `boundary in: 'closed'` is refused
+ * from any client, while identity and `created()` are a CREATION policy. Its op path
+ * calls this function for create/update alone, because `publish(input: Post)` must still
+ * name the post. Making `registerInput` call this unconditionally was tried on
+ * 2026-08-19 and reverted — `PublishPostInput` lost its `id`.
  */
 
 /**
