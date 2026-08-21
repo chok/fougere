@@ -20,10 +20,6 @@ function toKebab(name: string): string {
   return name.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase()).replace(/^-/, '');
 }
 
-function capitalize(name: string): string {
-  return name.charAt(0).toUpperCase() + name.slice(1);
-}
-
 function toCamel(kebab: string): string {
   return kebab.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
 }

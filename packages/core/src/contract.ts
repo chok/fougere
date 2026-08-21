@@ -12,7 +12,7 @@ import { registrationKeyOf } from '@fougere/schema';
 import { EMPTY_INVOCATION, type InvocationContext } from './wire/invocation.js';
 import type { FrondCall } from './wire/call.js';
 
-export { FougereError, ErrorCode } from './wire/errors.js';
+export { FougereError, ErrorCode, validationErrorsOf } from './wire/errors.js';
 export type { FougereErrorOptions } from './wire/errors.js';
 export { EMPTY_INVOCATION } from './wire/invocation.js';
 export type { InvocationContext } from './wire/invocation.js';

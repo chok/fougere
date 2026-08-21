@@ -1,4 +1,4 @@
-import { Lifecycle, Role, type EntityConstructor, type Fields } from '@fougere/schema';
+import { Lifecycle, Role, type EntityConstructor, type Fields, type ValidationResult } from '@fougere/schema';
 import type { EntityOrm } from '../orm.js';
 
 /**
@@ -177,7 +177,7 @@ export function ageFieldOf(shape: unknown): string | undefined {
  * in the vocabulary of the source it came from.
  */
 function judgePage<T>(shape: unknown, page: Partial<T>[]): Record<string, unknown>[] {
-  const judge = (shape as { validate?: (input: unknown) => { success: boolean; data?: unknown; errors?: { path: string; message: string }[] } }).validate;
+  const judge = (shape as { validate?: (input: unknown) => ValidationResult<unknown> }).validate;
   if (typeof judge !== 'function') return page as Record<string, unknown>[];
 
   const name = (shape as { name?: string }).name ?? 'mirror';
@@ -187,7 +187,7 @@ function judgePage<T>(shape: unknown, page: Partial<T>[]): Record<string, unknow
     if (verdict.success) return verdict.data as Record<string, unknown>;
     const key = primary === undefined ? undefined : (row as Record<string, unknown>)[primary];
     const where = key !== undefined ? `row ${primary} ${JSON.stringify(key)}` : `row ${index} of this page`;
-    const why = (verdict.errors ?? []).map((e) => `${e.path}: ${e.message}`).join(', ');
+    const why = verdict.errors.map((e) => `${e.path}: ${e.message}`).join(', ');
     throw new Error(`${name} mirror refused ${where} — ${why}`);
   });
 }

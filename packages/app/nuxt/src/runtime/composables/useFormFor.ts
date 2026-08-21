@@ -9,7 +9,7 @@
  * the same `{ path, message }` shape whoever judged.
  */
 import { reactive, computed } from 'vue';
-import { FougereError, ErrorCode, registrationKeyOf } from '@fougere/core/contract';
+import { registrationKeyOf, validationErrorsOf } from '@fougere/core/contract';
 import { useCommand } from './useFougereData.js';
 import { formFieldsOf, payloadOf, errorsByField, type FormEntity, type FormField } from '@fougere/app/client';
 
@@ -59,8 +59,9 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
     try {
       return await command.execute({ params: options.params, body: payloadOf(values) });
     } catch (err) {
-      if (err instanceof FougereError && err.code === ErrorCode.VALIDATION_FAILED && Array.isArray(err.details)) {
-        Object.assign(errors, errorsByField(err.details as { path: string; message: string }[]));
+      const refusals = validationErrorsOf(err);
+      if (refusals) {
+        Object.assign(errors, errorsByField(refusals));
         return null;
       }
       throw err;

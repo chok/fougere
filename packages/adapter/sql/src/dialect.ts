@@ -52,7 +52,7 @@ export interface Dialect {
 const KEY_LENGTH = 255;
 
 function keyLength(column: ColumnDef): number {
-  const declared = column.shape?.maxLength;
+  const declared = column.bounds?.maxLength;
   return declared !== undefined && declared > 0 && declared <= KEY_LENGTH ? declared : KEY_LENGTH;
 }
 
