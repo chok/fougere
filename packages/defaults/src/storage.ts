@@ -27,6 +27,18 @@ export interface ResolvedStorage {
   /** Opaque handle handed to auth providers. */
   db?: unknown;
   ormFactory: ((entity: any, name: string) => any) | undefined;
+  /**
+   * The source an entity's rows live in — what decides whether a frame gets a real
+   * transaction or an unwind it replays itself.
+   *
+   * Absent when the caller built a `ResolvedStorage` by hand: there is then one factory
+   * and no routing, so every entity IS on one engine — but nothing here can reach into it
+   * for a transaction, and a frame falls back to compensating. Not knowing and promising
+   * atomicity are two different things.
+   */
+  sourceOf?: (entityName: string) => string;
+  /** Run `fn` inside one transaction of that source, with an ORM factory bound to it. */
+  transacted?: <R>(source: string, fn: (ormFactory: (entity: any, name: string) => any) => Promise<R>) => Promise<R>;
   /** Brings the schema up to date once the app is scanned. */
   afterBoot?: (app: App) => Promise<void> | void;
   /**
@@ -185,6 +197,10 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
     }
   }
 
+  // The default source answers to the name the config gave it, so a refusal naming two
+  // sources names things the author can find in their own file.
+  const DEFAULT = 'db';
+  const sourceOf = (entityName: string) => home.get(registrationKeyOf(entityName)) ?? DEFAULT;
   const engineFor = (entityName: string) => {
     const source = home.get(registrationKeyOf(entityName));
     return (source && engines.get(source)) || base;
@@ -193,6 +209,12 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
   return {
     db: base.db,
     ormFactory: (entity: any, name: string) => engineFor(name).ormFactory(entity, name),
+    sourceOf,
+    transacted: (source, fn) => {
+      const engine = source === DEFAULT ? base : engines.get(source);
+      if (!engine) throw new Error(`No source named '${source}' — declared sources are ${[DEFAULT, ...engines.keys()].join(', ')}.`);
+      return engine.transacted(fn);
+    },
     raw: (base as { sqlite?: { exec(sql: string): void } }).sqlite,
     dialect: base.dialect,
     // Additive migration: creates missing tables AND adds columns an entity gained.

@@ -171,3 +171,82 @@ export type OrmFactory = (entity: SchemaView, name: string) => EntityOrm;
 export function ormKeyOf(entity: string): string {
   return `${classNameOf(entity)}Orm`;
 }
+
+/**
+ * `Together<[Account, Ledger]>` — writes that stand or fall as one.
+ *
+ * `EntityOrm` is the port whose every gesture is ONE statement, and one statement is
+ * atomic in every engine. This is the port whose unit is a BLOCK: what the callback did
+ * happens entirely, or not at all. Nothing else separates them — the arity of the unit
+ * of work is the whole distinction, which is why this lives here and not in a file of
+ * its own.
+ *
+ * ```ts
+ * constructor(private together: Together<[Account, Ledger]>) {}
+ *
+ * await this.together.run(async ([accounts, ledger]) => {
+ *   await accounts.update(from, { balance: b - amount });
+ *   await ledger.create({ from, to, amount });
+ * });
+ * ```
+ *
+ * **The second list is providers**, rebuilt inside the frame so that what THEY write is
+ * covered too — a `Mirror` writes its pages through `EntityOrm<T>`, so naming it puts
+ * them under the same unwind, with no locator and no second injection path:
+ *
+ * ```ts
+ * constructor(private together: Together<[RateCard, Ledger], [RateMirror]>) {}
+ *
+ * await this.together.run(async ([rates, ledger], [mirror]) => { await mirror.refresh(); });
+ * ```
+ *
+ * Two lists rather than one, because in a signature an entity and a provider are both
+ * written as a class name and their instance types do not separate them — the type would
+ * have to guess, by looking for methods or for a brand, and both answers are worse than
+ * saying it. They are two different facts anyway: what the unwind covers, and what is
+ * rebuilt to make that true.
+ *
+ * **All or nothing is the promise; isolation is not.** On one engine the members are
+ * rebuilt over a transaction and the engine gives both. Across engines a transaction
+ * cannot exist, so the frame keeps the before-image of each write and replays the
+ * inverse in reverse order — the unwind holds, the isolation does not, and a reader
+ * between two writes sees the half. The boot says which of the two it built rather
+ * than letting the author assume the stronger one.
+ */
+export interface Together<E extends readonly unknown[], P extends readonly unknown[] = []> {
+  run<R>(fn: (entities: { [K in keyof E]: EntityOrm<E[K]> }, providers: P) => Promise<R>): Promise<R>;
+}
+
+/**
+ * The container key of a frame — `[['Account', 'Ledger'], ['RateMirror']]` →
+ * 'Account+Ledger|RateMirrorTogether'.
+ *
+ * The DECLARED order, not a sorted one. The tuples are what the callback destructures, so
+ * reordering here would hand `[ledger, accounts]` to a signature that says the opposite —
+ * the type and the runtime disagreeing about the same line. Two orders of one frame are
+ * therefore two keys and two registrations; they cost nothing, a frame holding no state
+ * between runs.
+ */
+export function togetherKeyOf(entities: readonly string[], providers: readonly string[] = []): string {
+  const named = entities.map(classNameOf).join(SEPARATOR);
+  return `${named}${providers.length ? KINDS + providers.map(classNameOf).join(SEPARATOR) : ''}${FRAME}`;
+}
+
+const FRAME = 'Together';
+const SEPARATOR = '+';
+/** Separates the two lists — what the unwind covers, and what is rebuilt to make it true. */
+const KINDS = '|';
+
+/**
+ * The members behind a frame key, or `undefined` when the key is not one.
+ *
+ * The dual of the line above, and here for the reason `factOfEmitKey` is: the boot reads
+ * the key back out of a handler's `deps` to know which frames to build. A key and the way
+ * to undo it belong together — the pair that is split is the pair that drifts.
+ */
+export function membersOfTogetherKey(key: string): { entities: string[]; providers: string[] } | undefined {
+  if (key.length <= FRAME.length || !key.endsWith(FRAME)) return undefined;
+  const [entities, providers = ''] = key.slice(0, -FRAME.length).split(KINDS);
+  const split = (list: string) => list.split(SEPARATOR).filter(Boolean);
+  return { entities: split(entities!), providers: split(providers) };
+}

@@ -11,7 +11,7 @@ import { cachedParse, flushCache, setCacheRoot } from './scan-cache.js';
 import { loadFrondConfig } from '../frond-config.js';
 import { emitKeyOf } from '../emit.js';
 import { getPresenterFields } from '../prefab/presenter.js';
-import { ormKeyOf } from '../orm.js';
+import { ormKeyOf, togetherKeyOf } from '../orm.js';
 import { targetOf, viewsOf, outputOf } from '../prefab/prefab.js';
 import { registrationKeyOf } from '@fougere/schema';
 import { Fronds } from './Fronds.js';
@@ -192,10 +192,28 @@ function depKeyOf(type: ParsedType): string {
   const factOf = type.name === 'Emit' ? type.generics?.[0]?.name : undefined;
   if (factOf) return emitKeyOf(factOf);
 
+  // `Together<[Account, Ledger], [RateMirror]>` — the fifth reading, and the only one whose
+  // argument is a SET rather than one subject. The AST hands each tuple back as a single
+  // string, so they are split here, where every other question of "how was it written" lives.
+  const frame = type.name === 'Together' ? type.generics?.[0]?.name : undefined;
+  if (frame) return togetherKeyOf(tupleMembers(frame), tupleMembers(type.generics?.[1]?.name ?? ''));
+
   const target = type.name === 'EntityOrm' ? type.generics?.[0]?.name : undefined;
   if (!target) return type.name;
 
   return ormKeyOf(target);
+}
+
+/**
+ * `'[Account, Ledger]'` → `['Account', 'Ledger']`.
+ *
+ * The tuple was chosen over the variadic form the parser reads more cleanly, because the
+ * variadic one costs arities-with-defaults and a `never` filter on the TypeScript side
+ * while the tuple maps to `[EntityOrm<Account>, EntityOrm<Ledger>]` in one line. The
+ * parser does not get to decide alone; this split is what that choice costs.
+ */
+function tupleMembers(raw: string): string[] {
+  return raw.replace(/^\[|\]$/g, '').split(',').map((member) => member.trim()).filter(Boolean);
 }
 
 /** The three readings of one file, each cached under its own key. */
