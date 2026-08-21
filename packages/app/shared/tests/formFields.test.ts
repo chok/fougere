@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { entity, primary, text, email, url, number, bool, date, created, oneOf, ref, optional, writeOnly } from '@fougere/schema';
-import { formFieldsOf, payloadOf, errorsByField } from '../src/form.js';
+import { entity, primary, text, email, url, number, bool, date, created, oneOf, ref, many, optional, writeOnly, describe as describeSchema, reconstruct } from '@fougere/schema';
+import { formFieldsOf, tableColumnsOf, payloadOf, errorsByField } from '../src/form.js';
 
 class Author extends entity({ id: primary(), name: text() }) {}
 
@@ -143,5 +143,56 @@ describe('formFieldsOf — what the browser enforces, under the names it knows',
   it('leaves an enum to `options` — a select is not an input', () => {
     expect(byName.status.attrs).toEqual({ required: true });
     expect(byName.status.options).toEqual(['draft', 'live']);
+  });
+});
+
+describe('tableColumnsOf — the dual', () => {
+  const columns = tableColumnsOf(Article as never, 'article');
+  const byName = Object.fromEntries(columns.map((c) => [c.name, c]));
+
+  it('membership is the OTHER io projection: the key and the stamp are columns', () => {
+    // What a form excludes because a client may not supply it, a list shows.
+    expect(byName.id).toBeDefined();
+    expect(byName.createdAt).toBeDefined();
+  });
+
+  it('a write-only field is not a column (it is input, never output)', () => {
+    expect(byName.secret).toBeUndefined();
+  });
+
+  it('renders derive from the shape, and a closed set prints as its value', () => {
+    expect(byName.title.render).toBe('text');
+    expect(byName.views.render).toBe('number');
+    expect(byName.published.render).toBe('boolean');
+    expect(byName.publishAt.render).toBe('date');
+    expect(byName.status.render).toBe('text');
+  });
+
+  it('a reference is a link, and names the door it points at', () => {
+    expect(byName.authorId.render).toBe('link');
+    expect(byName.authorId.to).toBe('author');
+  });
+
+  it('a collection is no column: a cell holds one value', () => {
+    class Tag extends entity({ id: primary(), label: text() }) {}
+    class Post extends entity({ id: primary(), tags: many(Tag) }) {}
+    expect(tableColumnsOf(Post as never, 'post').map((c) => c.name)).toEqual(['id']);
+  });
+
+  it('the label convention is the form’s, spelled once', () => {
+    expect(byName.title.labelKey).toBe('article.title');
+    expect(byName.title.label).toBe('Title');
+  });
+
+  it('works on an entity rebuilt from the card — the back-office case', () => {
+    // A page reads `rpc.discover`, not the class: what a remote frond serves has no
+    // constructor here. The reference survives the trip as its target's name.
+    const rebuilt = reconstruct(describeSchema(Article as never, 'article'));
+    const cols = Object.fromEntries(
+      tableColumnsOf(rebuilt as never, 'article').map((c) => [c.name, c]),
+    );
+    expect(Object.keys(cols)).toEqual(Object.keys(byName));
+    expect(cols.authorId).toEqual({ ...byName.authorId });
+    expect(cols.publishAt.render).toBe('date');
   });
 });

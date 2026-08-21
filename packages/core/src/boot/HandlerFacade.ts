@@ -307,7 +307,12 @@ export class HandlerFacade {
     address: string,
     op: string,
   ): InvocationContext {
-    if (!schema || !inv.body || typeof inv.body !== 'object') return inv;
+    // A body that is not an object is JUDGED, not waved through: `"hello"` is valid JSON,
+    // so it arrives from any door, and skipping the judge sent it to the ORM — which
+    // answered `table articles has no column named 0`, a driver error where a refusal
+    // belongs. `Judge.row` already states this one (`Expected an object`); the branch was
+    // simply unreachable from here.
+    if (!schema || inv.body === undefined || inv.body === null) return inv;
 
     const result = Judge.row(schema.getFields(), inv.body, { patch: schema.getOpts().patch });
     if (!result.success) {

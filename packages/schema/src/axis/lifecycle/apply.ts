@@ -24,9 +24,30 @@ function generatorFor(ref: string): () => string {
   }
 }
 
+/**
+ * What "now" means, for the two functions that stamp it.
+ *
+ * The ONE place either of them reads the clock, which is what makes it substitutable at
+ * all: `created()`, `updated()` and `create: 'now'` are realized here and nowhere else, so
+ * a test that needs a stable instant sets this instead of intercepting `Date` globally —
+ * where Rails had to build `travel_to` over the language.
+ *
+ * A value rather than a mock: nothing here is a channel, and a frozen clock is a fact
+ * about the run, not an interception of a call.
+ */
+let clock: () => number = Date.now;
+
+/** Freeze the instant these two functions stamp. Returns the gesture that restores it. */
+export function freezeClock(at: number | Date): () => void {
+  const previous = clock;
+  const instant = at instanceof Date ? at.getTime() : at;
+  clock = () => instant;
+  return () => { clock = previous; };
+}
+
 export function applyCreate(fields: Fields, input: Row): Row {
   const out: Row = { ...input };
-  const instant = Date.now();
+  const instant = clock();
 
   for (const [name, field] of Object.entries(fields) as [string, Field][]) {
     if (name in out) continue;
@@ -47,7 +68,7 @@ function freshValue(value: unknown): unknown {
 
 export function applyUpdate(fields: Fields, patch: Row): Row {
   const out: Row = { ...patch };
-  const instant = Date.now();
+  const instant = clock();
 
   for (const [name, field] of Object.entries(fields) as [string, Field][]) {
     if (Lifecycle.of(field).stampedOnUpdate && !(name in out)) out[name] = new Date(instant);

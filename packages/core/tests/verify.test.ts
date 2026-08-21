@@ -137,4 +137,25 @@ describe('verify — collector in another frond', () => {
     // and the pair is what a caller needs to decide anything.
     expect(violations[0].frond).not.toBe(violations[0].dependsOn.frond);
   });
+
+  // The rule looked its parameter up with `toLowerCase()` while the index is keyed the
+  // way the scan spells it. On a two-word entity that missed in BOTH directions: it
+  // neither confirmed the collector was local nor found it elsewhere, so the one case
+  // the rule exists for went unreported.
+  it('reports a two-word entity, whose key is not its lowercase name', () => {
+    const op = { signature: { name: 'draft', params: [{ name: 'author', type: { raw: 'AuthorUser', name: 'AuthorUser' } }] } };
+    const withOp = (ctor: Function, entityName: string) =>
+      ({ name: `${entityName}Handler`, entityName, ctor, operations: new Map([['draft', op]]), deps: [], filePath: `/app/${ctor.name}.ts` }) as never;
+
+    const violations = verify({
+      fronds: [
+        frond('blog', { handlers: [withOp(PostHandler, 'post')] }),
+        frond('identity', { collectors: [collector('authorUser', UserCollector)] }),
+      ],
+    }).filter((v) => v.rule === 'collector-in-another-frond');
+
+    expect(violations).toHaveLength(1);
+    expect(violations[0].subject).toBe('PostHandler.draft(author)');
+    expect(violations[0].dependsOn.frond).toBe('identity');
+  });
 });

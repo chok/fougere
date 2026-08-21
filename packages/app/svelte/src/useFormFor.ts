@@ -7,7 +7,7 @@
  * holding a value, none of which is a rule.
  */
 import { writable, derived, get, type Readable, type Writable } from 'svelte/store';
-import { FougereError, ErrorCode } from '@fougere/core/contract';
+import { validationErrorsOf } from '@fougere/core/contract';
 import {
   entityKeyOf,
   errorsByField,
@@ -52,8 +52,9 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
     try {
       return await command.execute({ params: options.params, body: payloadOf(get(values)) });
     } catch (err) {
-      if (err instanceof FougereError && err.code === ErrorCode.VALIDATION_FAILED && Array.isArray(err.details)) {
-        errors.set(errorsByField(err.details as { path: string; message: string }[]));
+      const refusals = validationErrorsOf(err);
+      if (refusals) {
+        errors.set(errorsByField(refusals));
         return null;
       }
       throw err;

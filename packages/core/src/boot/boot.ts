@@ -24,6 +24,12 @@ interface BootOptions {
   /** Builds the transport to reach `remotes`. Supplied by a layer-2 package. */
   remoteTransport?: (url: string) => Transport;
   /**
+   * Carries an announced fact out of this process. Forwarded rather than dropped: a
+   * caller handing one in has no other way to reach the emitter, and this path silently
+   * kept it to itself.
+   */
+  onEmit?: CreateAppOptions['onEmit'];
+  /**
    * ORM setup — returns the storage handle (db), an ormFactory and an optional afterBoot.
    * The `db` value is forwarded to the auth provider via AuthContext when `auth` is set.
    */
@@ -74,8 +80,15 @@ export async function boot(options: BootOptions): Promise<App> {
     fronds: options.fronds,
     remotes: options.remotes,
     ports: config.ports,
+    // Read from the config for the same reason `ports` is, one line up: it is a fact the
+    // project states, not one the caller passes. Absent here, `serveRest` and
+    // `serveGraphQL` both answered `pass` on an app whose config declared them — the
+    // hosts got it right through their own boot (`app/shared/src/boot.ts`), and this
+    // path, the conventional one, served nothing.
+    adapters: config.adapters,
     // boot() called the factory, so boot() owns closing what it opened.
     onDispose: dbSetup?.close,
+    onEmit: options.onEmit,
     remoteTransport: options.remoteTransport,
   });
 

@@ -157,9 +157,11 @@ export function asFougereError(err: unknown, entityKey: string, op: string): Fou
 // which carries the boot.
 export {
   formFieldsOf,
+  tableColumnsOf,
   payloadOf,
   errorsByField,
   type FormEntity,
   type FormField,
+  type TableColumn,
 } from './form.js';
 export { sessionViewOf, type SessionView } from './session.js';

@@ -4,7 +4,7 @@ import { entitySourceOf, facadeTypeSourceOf, type SchemaDescriptor } from '@foug
 // The card's shape is declared once, in core, and imported here. A private copy of it
 // lived in this file and went stale the day an op stopped being a bare name: nothing
 // compared the copy to the original, so the drift cost nothing until someone read it.
-import type { IdentityCard } from '@fougere/core';
+import { assertIdentityCard, type IdentityCard } from '@fougere/core';
 
 function assertSafeName(kind: string, name: string): void {
   if (typeof name !== 'string' || !/^[A-Za-z_$][A-Za-z0-9_$-]*$/.test(name)) {
@@ -67,18 +67,12 @@ function assertEntry(kind: string, frondName: string, entry: { name: string; sch
 }
 
 function identityCardOf(value: unknown): IdentityCard {
-  if (!value || typeof value !== 'object' || !Array.isArray((value as IdentityCard).fronds)) {
-    throw new Error('Remote rpc.discover returned an invalid identity card');
-  }
-  const card = value as IdentityCard;
+  // The card's own shape is judged by the package that declares it — `fronds`, and each
+  // frond's `doors`. What stays here is what only a writer of files needs: a name safe to
+  // become one, and the descriptor a class is generated from.
+  const card = assertIdentityCard(value, 'Remote rpc.discover');
   for (const frond of card.fronds) {
-    if (!frond || typeof frond !== 'object') {
-      throw new Error('Remote rpc.discover returned an invalid frond entry');
-    }
     assertSafeName('frond', frond.name);
-    if (!Array.isArray(frond.doors)) {
-      throw new Error(`Remote frond '${frond.name}' has no valid doors array`);
-    }
     // Absent rather than empty is tolerated: a host older than the fact list says nothing
     // about facts, and refusing it would break sync against every previous version for a
     // feature the consumer may not use.

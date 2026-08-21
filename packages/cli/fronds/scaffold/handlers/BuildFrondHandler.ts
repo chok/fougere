@@ -2,10 +2,6 @@ import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync, unlinkSync } from 'node:fs';
 import { join, basename } from 'node:path';
 
-function capitalize(s: string): string {
-  return s[0].toUpperCase() + s.slice(1);
-}
-
 export default class BuildFrondHandler {
   // cwd is ambient in a CLI — not a DI service (the container resolves by type).
   private cwd = process.cwd();

@@ -12,7 +12,7 @@ import { registrationKeyOf } from '@fougere/schema';
 import { EMPTY_INVOCATION, type InvocationContext } from './wire/invocation.js';
 import type { FrondCall } from './wire/call.js';
 
-export { FougereError, ErrorCode } from './wire/errors.js';
+export { FougereError, ErrorCode, validationErrorsOf } from './wire/errors.js';
 export type { FougereErrorOptions } from './wire/errors.js';
 export { EMPTY_INVOCATION } from './wire/invocation.js';
 export type { InvocationContext } from './wire/invocation.js';
@@ -28,6 +28,7 @@ export type { FrondCall, Transport, SignedCall } from './wire/call.js';
  * stale (the CLI's, then the Rust demo's) the day an op stopped being a bare name.
  */
 export type { IdentityCard, CardOp } from './wire/call.js';
+export { assertIdentityCard } from './wire/call.js';
 
 /**
  * The key a class name is filed under — 'Post' → 'post'. Re-exported rather than

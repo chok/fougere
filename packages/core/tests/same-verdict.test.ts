@@ -22,7 +22,7 @@ import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, FougereError } from '../src/index.js';
 import { EMPTY_INVOCATION } from '../src/wire/invocation.js';
-import { inputFields, type Field, type SchemaView } from '@fougere/schema';
+import { casesFor, type SchemaView } from '@fougere/schema';
 import type { EntityOrm, OrmFactory } from '../src/orm.js';
 import Article from './fixtures-same-verdict/fronds/press/entities/Article.js';
 import { NewArticle } from './fixtures-same-verdict/fronds/press/handlers/ArticleHandler.js';
@@ -54,51 +54,6 @@ async function verdictOfFacade(run: ReturnType<typeof createLocalRunner>, op: st
 }
 
 /**
- * The decision table, applied to the declared fields.
- *
- * Three branches are pure axis reads, so they need no value synthesis beyond a valid
- * baseline: an absence no `lifecycle.create` answers is `Required`, a field absent from
- * `inputFields` supplied anyway is refused, a key outside the contract is `Unknown
- * field`. The bounded branch reads `shape` and violates it.
- *
- * The refusal is deliberately NOT spelled here. Against the entity it is `Read-only`
- * (the boundary axis), against a view that dropped the field it is `Unknown field` —
- * and which one is right depends on the schema the op names. Naming the expected
- * message would make this table a third judge; comparing the two is the whole point.
- */
-function decisionTable(schema: SchemaView, baseline: Record<string, unknown>) {
-  const all = schema.getFields();
-  // `inputFields` IS the boundary reader — the same one the façade and the form
-  // stand on. Re-deriving `boundary.in === 'closed'` here would make the test a
-  // second opinion on the axis instead of a reader of it.
-  const writable = new Set(Object.keys(inputFields(all)));
-  const cases: { why: string; body: Record<string, unknown> }[] = [];
-
-  for (const [name, field] of Object.entries(all) as [string, Field][]) {
-    if (!field.lifecycle?.create && field.role?.relation?.kind !== 'many' && name in baseline) {
-      const body = { ...baseline };
-      delete body[name];
-      cases.push({ why: `${name} absent → Required`, body });
-    }
-    if (!writable.has(name) && !field.role?.primary) {
-      cases.push({ why: `${name} fourni → refusé en entrée`, body: { ...baseline, [name]: 'draft' } });
-    }
-    const max = (field.shape as { maxLength?: number } | undefined)?.maxLength;
-    if (typeof max === 'number') {
-      cases.push({ why: `${name} trop long → shape`, body: { ...baseline, [name]: 'x'.repeat(max + 1) } });
-    }
-    const min = (field.shape as { minLength?: number } | undefined)?.minLength;
-    if (typeof min === 'number' && min > 0) {
-      cases.push({ why: `${name} trop court → shape`, body: { ...baseline, [name]: 'x'.repeat(min - 1) } });
-    }
-  }
-
-  cases.push({ why: 'clé hors contrat → Unknown field', body: { ...baseline, couleur: 'rouge' } });
-  cases.push({ why: 'corps valide → accepté', body: { ...baseline } });
-  return cases;
-}
-
-/**
  * Enumerated on the ENTITY, not on the op's view — the widest declaration.
  *
  * Built on the view, the table cannot see a divergence about a field the view dropped:
@@ -107,14 +62,16 @@ function decisionTable(schema: SchemaView, baseline: Record<string, unknown>) {
  * version of this file had that blind spot, and passed while proving less.
  */
 const baseline = { title: 'Un titre', body: 'Un corps' };
-const table = decisionTable(Article, baseline);
+// `casesFor` (`schema/src/judge/cases.ts`) IS this table now. It was written here first,
+// against this very theorem, and lived in a test file where no other reader could have it.
+const table = casesFor(Article, baseline).map((one) => ({ why: one.why, body: one.body }));
 
 describe('un corps, deux juges', () => {
   it('énumère la table de décision plutôt que des exemples choisis', () => {
     // Le garde-fou du garde-fou : si la table se vide, les tests ci-dessous
     // passeraient en ne prouvant rien.
     expect(table.length).toBeGreaterThanOrEqual(6);
-    expect(table.map((c) => c.why)).toContain('clé hors contrat → Unknown field');
+    expect(table.map((one) => one.why)).toContain('a key outside the contract');
   });
 
   it('le formulaire et la façade rendent le même verdict, sur le schéma que le contrat nomme', async () => {

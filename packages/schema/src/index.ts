@@ -12,6 +12,7 @@ export { FieldGroup } from './constraint/FieldGroup.js';
 export { Unique } from './constraint/Unique.js';
 
 export { Schema, ANONYMOUS_SCHEMA_NAME, type SchemaConstructor } from './Schema.js';
+export { casesFor, holds, refusalBranches, type Case } from './judge/cases.js';
 export { type SchemaView, type Row, type PartialRow } from './SchemaView.js';
 export { type FougereHints, type Hints } from './EntityDeclarations.js';
 
@@ -37,7 +38,7 @@ export { readOnly } from './vocabulary/readOnly.js';
 export { writeOnly } from './vocabulary/writeOnly.js';
 export { json } from './vocabulary/json.js';
 
-export { applyCreate, applyUpdate } from './axis/lifecycle/apply.js';
+export { applyCreate, applyUpdate, freezeClock } from './axis/lifecycle/apply.js';
 export { encodeFields } from './projection/encode.js';
 export { inputFields, outputFields } from './projection/io.js';
 export { registrationKeyOf, classNameOf } from './name.js';

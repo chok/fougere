@@ -3,7 +3,7 @@ import { Role } from '@fougere/schema';
  * @fougere/adapter-graphql — Pothos types derived from Fougere entities
  */
 import type SchemaBuilder from '@pothos/core';
-import { Anatomy, Schema } from '@fougere/schema';
+import { Anatomy, Schema, type Shape } from '@fougere/schema';
 import type { Field, Fields, SchemaView, SchemaSource } from '@fougere/schema';
 import { Boundary, Lifecycle, fieldsOf, inputFields, sourceNameOf } from '@fougere/schema';
 
@@ -242,7 +242,7 @@ function fieldToGraphQL(
  */
 function nestedInputType(
   builder: InstanceType<typeof SchemaBuilder>,
-  shape: Record<string, any>,
+  shape: Shape,
   name: string,
 ): any {
   let perBuilder = nestedInputs.get(builder as object);
@@ -250,8 +250,9 @@ function nestedInputType(
   const known = perBuilder.get(name);
   if (known) return known;
 
-  const properties = (shape.properties ?? {}) as Record<string, any>;
-  const required = new Set<string>((shape.required ?? []) as string[]);
+  // Only an object shape has these two, and only an object shape reaches here.
+  const properties: Record<string, Shape> = 'properties' in shape ? (shape.properties ?? {}) as Record<string, Shape> : {};
+  const required = new Set<string>('required' in shape ? shape.required ?? [] : []);
   const type = (builder as any).inputType(name, {
     fields: (t: any) => {
       const out: Record<string, any> = {};
@@ -288,8 +289,8 @@ const enumTypes = new WeakMap<object, Map<string, { ref: any; values: string[] }
  */
 const GRAPHQL_NAME = /^[_A-Za-z][_0-9A-Za-z]*$/;
 
-function enumValuesOf(shape: Record<string, any> | undefined): string[] | undefined {
-  const values = shape?.enum;
+function enumValuesOf(shape: Shape | undefined): string[] | undefined {
+  const values = shape && 'enum' in shape ? shape.enum : undefined;
   if (!Array.isArray(values) || values.length === 0) return undefined;
   if (!values.every((v) => typeof v === 'string' && GRAPHQL_NAME.test(v))) return undefined;
   return values as string[];
@@ -331,7 +332,7 @@ function fieldToInput(
   t: any,
   field: Field,
   patch: boolean,
-  nested?: (shape: Record<string, any>, suffix: string) => any,
+  nested?: (shape: Shape, suffix: string) => any,
   enumFor?: (values: string[]) => any | undefined,
 ): any {
   // Required = the presence axis, projected onto GraphQL's single knob: the

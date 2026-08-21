@@ -1,0 +1,15 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "lib": ["ESNext", "DOM"],
+    "types": ["node", "react"],
+    "jsx": "react-jsx",
+    // Bundler resolution, like every React host resolves — `react-admin` ships no
+    // Node16 exports map and only ever runs through a bundler anyway.
+    "module": "ESNext",
+    "moduleResolution": "Bundler"
+  },
+  "include": ["src"]
+}

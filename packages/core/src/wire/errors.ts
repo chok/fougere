@@ -7,6 +7,8 @@
  * to live in `middleware.ts`, which named the one concept this is not.
  */
 
+import type { ValidationError } from '@fougere/schema';
+
 // ── ErrorCode ──────────────────────────────────
 
 /** Semantic error codes — transport-agnostic. Each bridge maps them to its own format. */
@@ -94,4 +96,29 @@ export class FougereError extends Error {
       details: known ? raw.details : { originalCode: raw.code, details: raw.details },
     });
   }
+}
+
+/**
+ * The refusals behind a VALIDATION_FAILED, or nothing — the ONE place that reads
+ * `details` under that code.
+ *
+ * `details` is `unknown` because it is genuinely polymorphic: `judgeEgress` puts a
+ * `string[]` there under INTERNAL_ERROR, `fromJSON` puts `{ originalCode, details }`
+ * there for a code it does not know. So the shape is not the field's, it is a reading
+ * of the PAIR (code, details) — which is why this is a reader and not a narrower type.
+ *
+ * It judges rather than casts: five call sites asserted `{ path, message }[]` by hand,
+ * and a malformed VALIDATION_FAILED would have been accepted as structured refusals.
+ */
+export function validationErrorsOf(error: unknown): ValidationError[] | undefined {
+  if (!(error instanceof FougereError) || error.code !== ErrorCode.VALIDATION_FAILED) return undefined;
+  const { details } = error;
+  if (!Array.isArray(details)) return undefined;
+  const refusals = details.filter(
+    (entry): entry is ValidationError =>
+      typeof entry === 'object' && entry !== null
+      && typeof (entry as ValidationError).path === 'string'
+      && typeof (entry as ValidationError).message === 'string',
+  );
+  return refusals.length === details.length ? refusals : undefined;
 }

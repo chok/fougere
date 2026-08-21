@@ -1,0 +1,69 @@
+{
+  "name": "@fougere/testing",
+  "version": "0.2.0-alpha.2",
+  "description": "Tests derived from the declaration — cases, stubs and a gradient of realities.",
+  "keywords": [
+    "fougere",
+    "typescript",
+    "framework",
+    "testing",
+    "json-schema"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chok/fougere.git",
+    "directory": "packages/testing"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./vitest": {
+      "types": "./dist/vitest.d.ts",
+      "import": "./dist/vitest.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc",
+    "typecheck": "tsc --noEmit -p tsconfig.test.json",
+    "prepublishOnly": "pnpm run build",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@fougere/core": "workspace:*",
+    "@fougere/container": "workspace:*",
+    "@fougere/defaults": "workspace:*",
+    "@fougere/schema": "workspace:*",
+    "json-schema-faker": "^0.6.3",
+    "@fougere/app": "workspace:*",
+    "@fougere/transport-http": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "vitest": ">=2",
+    "@fougere/adapter-graphql": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "vitest": {
+      "optional": true
+    },
+    "@fougere/adapter-graphql": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "vitest": "^4.1.0",
+    "@fougere/adapter-graphql": "workspace:*"
+  }
+}

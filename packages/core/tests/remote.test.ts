@@ -187,6 +187,19 @@ describe('remote façade (repli)', () => {
     await app.dispose();
   });
 
+  it('refuses a remote whose identity card cannot be walked, naming it', async () => {
+    const app = await createApp({
+      root: emptyRoot,
+      createContainer,
+      remotes: { catalog: 'http://catalog.test' },
+      remoteTransport: () => async () => ({ fronds: [{ name: 'blog' }] }) as never,
+    });
+    // `card.fronds is not iterable` was what this produced: a TypeError naming neither
+    // the remote nor its address, on the one path where the value came from another process.
+    await expect(createAppRunner(app)({ entity: 'post', op: 'list' }, EMPTY_INVOCATION))
+      .rejects.toThrow(/Remote 'catalog' \(http:\/\/catalog.test\).*frond 'blog' has no valid doors array/s);
+  });
+
   it('remotes without remoteTransport is a boot-time config error', async () => {
     await expect(
       createApp({ root: emptyRoot, createContainer, remotes: { catalog: 'http://x' } }),

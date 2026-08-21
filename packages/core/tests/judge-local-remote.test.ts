@@ -16,6 +16,7 @@ import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, createAppRunner, FougereError } from '../src/index.js';
 import type { Transport, EntityOrm, OrmFactory } from '../src/index.js';
 import { EMPTY_INVOCATION } from '../src/wire/invocation.js';
+import { casesFor } from '@fougere/schema';
 import Product from './fixtures-judge/fronds/shop/entities/Product.js';
 
 const root = join(import.meta.dirname, 'fixtures-judge');
@@ -98,17 +99,26 @@ async function judge(run: ReturnType<typeof createLocalRunner>, op: string, body
   }
 }
 
-/** One payload per branch of the table in `schema/src/projections/validation.ts`. */
+/**
+ * One payload per branch, DERIVED from what `Product` declares.
+ *
+ * `casesFor` (`schema/src/judge/cases.ts`) reads the same closed list of refusals this
+ * file exists to compare — so the payloads follow the entity instead of being retyped
+ * beside it. Change a bound in `Product` and the table changes; it used to keep passing
+ * while proving something about a shape that had moved.
+ *
+ * The three below are kept by hand because they are not about a FIELD: a key outside the
+ * contract, a body that is not an object, and one legal payload the run needs as a floor.
+ */
+const baseline = { name: 'lampe', price: 10, status: 'draft' };
+const DERIVED = casesFor(Product, baseline).map((one) => ({
+  name: one.why, op: 'create', body: one.body,
+}));
+
 const CASES: { name: string; op: string; body: unknown }[] = [
-  { name: 'shape — string below its minimum', op: 'create', body: { name: 'x', price: 10, status: 'draft' } },
-  { name: 'shape — number above its maximum', op: 'create', body: { name: 'lampe', price: 5000, status: 'draft' } },
-  { name: 'shape — value outside the bounded set', op: 'create', body: { name: 'lampe', price: 10, status: 'archived' } },
-  { name: 'shape — wrong primitive type', op: 'create', body: { name: 'lampe', price: 'gratuit', status: 'draft' } },
-  { name: 'boundary — a read-only field supplied inbound', op: 'create', body: { name: 'lampe', price: 10, status: 'draft', slug: 'forgé' } },
-  { name: 'unknown key', op: 'create', body: { name: 'lampe', price: 10, status: 'draft', couleur: 'rouge' } },
-  { name: 'required field missing', op: 'create', body: { price: 10, status: 'draft' } },
+  ...DERIVED,
+  // Every refusal at once — not a branch, a combination, so nothing derives it.
   { name: 'every refusal at once', op: 'create', body: { name: 'x', price: 5000, status: 'archived', slug: 'forgé', couleur: 'rouge' } },
-  { name: 'a payload that is legal', op: 'create', body: { name: 'lampe', price: 10, status: 'draft' } },
 ];
 
 describe('juge local = juge distant', () => {
@@ -148,7 +158,22 @@ describe('juge local = juge distant', () => {
 
     // The theorem is empty if nothing was ever refused — guard against a run
     // where both sides accepted everything for an unrelated reason.
-    expect(table.filter((r) => !r.local.ok).length).toBe(CASES.length - 1);
-    expect(table.at(-1)!.local.ok).toBe(true);
+    // The derived table states exactly one legal payload; everything else is a refusal.
+    expect(table.filter((r) => r.local.ok).length).toBe(1);
+    expect(table.length).toBeGreaterThanOrEqual(8);
+  });
+});
+
+describe('what a refusal names', () => {
+  it('lists what answers, not what the scan found', async () => {
+    // `fixtures-emit` in `@fougere/testing` holds an entity with no handler; here the
+    // shape of the claim is what matters: an entity the app does not serve must not be
+    // listed as hosted. The message used to print `entityNames()` — every scanned class —
+    // so it answered "not hosted here. Hosted here: <the very name>."
+    await using app = await createApp({ root, createContainer, ormFactory });
+
+    await expect(
+      createLocalRunner(app)({ entity: 'nowhere', op: 'list' }, EMPTY_INVOCATION),
+    ).rejects.toThrow(/is not hosted here\. Hosted here: (?!.*\bnowhere\b)/);
   });
 });

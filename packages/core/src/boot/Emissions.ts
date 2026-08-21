@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { applyCreate, type SchemaView } from '@fougere/schema';
 import type { Container } from '@fougere/container';
-import { ErrorCode } from '../wire/errors.js';
+import { validationErrorsOf } from '../wire/errors.js';
 import { emitKeyOf, factsAnnouncedBy } from '../emit.js';
 import { currentFrame } from './together.js';
 import { EMPTY_INVOCATION } from '../wire/invocation.js';
@@ -277,9 +277,9 @@ export class Emissions {
    * produces the same refusal.
    */
   private describeRefusal(fact: string, cause: unknown): string | undefined {
-    const err = cause as { code?: string; details?: Array<{ path: string; message: string }> };
-    if (err?.code !== ErrorCode.VALIDATION_FAILED || !err.details?.length) return undefined;
-    return `refused the shape — ${err.details.map((d) => `${d.path}: ${d.message}`).join(', ')}.`
+    const refusals = validationErrorsOf(cause);
+    if (!refusals?.length) return undefined;
+    return `refused the shape — ${refusals.map((d) => `${d.path}: ${d.message}`).join(', ')}.`
       + ` If '${fact}' gained a field, this copy is older than the sender's: re-run \`fougere sync\`.`;
   }
 }

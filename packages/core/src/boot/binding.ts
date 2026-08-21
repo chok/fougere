@@ -61,7 +61,10 @@ export function computeBindingPlan(
 ): BindingPlan {
   return params.map((param) => {
     const typeName = param.type.name;
-    const typeNameLower = typeName.toLowerCase();
+    // `registrationKeyOf`, never `toLowerCase()`: the collector set is keyed the way the
+    // scan spells it, and the two agree on one word only — `AuthorUser` looked up as
+    // `authoruser` missed `authorUser` and fell through to branch 4, the request body.
+    const entityKey = registrationKeyOf(typeName);
 
     // 0. Fact — `Fact<X>` names itself, so nothing has to be known in advance. It comes
     //    FIRST because branch 4 would otherwise hand it the caller's body under the name
@@ -76,10 +79,10 @@ export function computeBindingPlan(
     }
 
     // 1. Collector — param type matches a known collector entity
-    if (collectorEntityNames.has(typeNameLower)) {
+    if (collectorEntityNames.has(entityKey)) {
       return {
         name: param.name,
-        source: { kind: 'collector' as const, entityName: typeNameLower },
+        source: { kind: 'collector' as const, entityName: entityKey },
         optional: param.optional ?? false,
       };
     }

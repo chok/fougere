@@ -14,7 +14,7 @@
  * replaced rather than mutated, so `setValue` is part of the contract here.
  */
 import { useCallback, useMemo, useState } from 'react';
-import { FougereError, ErrorCode } from '@fougere/core/contract';
+import { validationErrorsOf } from '@fougere/core/contract';
 import {
   entityKeyOf,
   errorsByField,
@@ -70,8 +70,9 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
     try {
       return await command.execute({ params: options.params, body: payloadOf(values) });
     } catch (err) {
-      if (err instanceof FougereError && err.code === ErrorCode.VALIDATION_FAILED && Array.isArray(err.details)) {
-        setErrors(errorsByField(err.details as { path: string; message: string }[]));
+      const refusals = validationErrorsOf(err);
+      if (refusals) {
+        setErrors(errorsByField(refusals));
         return null;
       }
       throw err;

@@ -21,18 +21,24 @@ const METHOD_MAP: Record<HttpMethod, 'get' | 'post' | 'put' | 'patch' | 'delete'
 };
 
 function buildContext(req: any): RequestContext {
-  const url = `${req.protocol ?? 'http'}://${req.hostname ?? 'localhost'}${req.url}`;
-  const headers = new Headers(req.headers as Record<string, string>);
   const method = req.method.toUpperCase();
-  const hasBody = method !== 'GET' && method !== 'HEAD';
-  const request = new Request(url, {
-    method,
-    headers,
-    ...(hasBody && req.body ? { body: JSON.stringify(req.body) } : {}),
-  });
+  let request: Request | undefined;
 
   return {
-    request,
+    // Deferred, and it re-serializes a body fastify already parsed — which is why
+    // paying for it on every call was worth removing rather than optimising.
+    get request(): Request {
+      if (!request) {
+        const url = `${req.protocol ?? 'http'}://${req.hostname ?? 'localhost'}${req.url}`;
+        const hasBody = method !== 'GET' && method !== 'HEAD';
+        request = new Request(url, {
+          method,
+          headers: new Headers(req.headers as Record<string, string>),
+          ...(hasBody && req.body ? { body: JSON.stringify(req.body) } : {}),
+        });
+      }
+      return request;
+    },
     method: method as HttpMethod,
     path: req.url,
     params: req.params ?? {},

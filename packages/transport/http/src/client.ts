@@ -6,7 +6,7 @@
  * application failure comes back as the FougereError the façade threw.
  */
 import { FougereError, ErrorCode, type Transport, type FrondCall, type InvocationContext, type SignedCall } from '@fougere/core/contract';
-import type { RpcRequest, RpcResponse } from './jsonrpc.js';
+import type { RpcRequest, RpcResponse, RpcErrorShape } from './jsonrpc.js';
 export type { RpcRequest, RpcResponse } from './jsonrpc.js';
 
 /** Frame a call as a JSON-RPC request. */
@@ -14,13 +14,38 @@ export function frameCall(call: FrondCall, invocation: InvocationContext, id: nu
   return { jsonrpc: '2.0', id, method: `${call.entity}.${call.op}`, params: invocation };
 }
 
-/** Unframe a JSON-RPC response — the result, or the revived FougereError thrown. */
-export function unframeResponse(response: RpcResponse, call: FrondCall): unknown {
+/**
+ * Unframe a JSON-RPC response — the result, or the revived FougereError thrown.
+ *
+ * The answer is JUDGED first: it crossed a process boundary, and `as RpcResponse` at the
+ * call site is a claim about it, not a check. A 200 carrying neither `result` nor `error`
+ * — a proxy's own JSON, a receiver that is not one — used to return `undefined` as if the
+ * op had succeeded, and a `null` body raised `Cannot use 'in' operator`, which is not the
+ * failure vocabulary this file promises.
+ */
+export function unframeResponse(response: unknown, call: FrondCall): unknown {
+  if (!response || typeof response !== 'object' || !('result' in response || 'error' in response)) {
+    throw new FougereError({
+      code: ErrorCode.BAD_GATEWAY,
+      message: 'Answered neither a result nor an error — not a Fougere receiver?',
+      entity: call.entity,
+      operation: call.op,
+    });
+  }
   if ('error' in response) {
-    if (response.error.data !== undefined) throw FougereError.fromJSON(response.error.data);
+    const error = response.error as Partial<RpcErrorShape> | null;
+    if (!error || typeof error !== 'object') {
+      throw new FougereError({
+        code: ErrorCode.BAD_GATEWAY,
+        message: 'Answered an error that is not a JSON-RPC error object',
+        entity: call.entity,
+        operation: call.op,
+      });
+    }
+    if (error.data !== undefined) throw FougereError.fromJSON(error.data);
     throw new FougereError({
       code: ErrorCode.INTERNAL_ERROR,
-      message: `${response.error.message} (rpc ${response.error.code})`,
+      message: `${error.message} (rpc ${error.code})`,
       entity: call.entity,
       operation: call.op,
     });

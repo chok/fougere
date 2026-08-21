@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { FougereError, ErrorCode, EMPTY_INVOCATION } from '@fougere/core';
 import type { Transport } from '@fougere/core';
-import { createHttpTransport, handleRpc, serve, INVALID_REQUEST, PARSE_ERROR } from '../src/index.js';
+import { createHttpTransport, handleRpc, serve, unframeResponse, INVALID_REQUEST, PARSE_ERROR } from '../src/index.js';
 import type { RunningReceiver } from '../src/index.js';
 
 const products = [{ id: '1', name: 'Fern' }];
@@ -159,5 +159,30 @@ describe('handleRpc (receiving half alone)', () => {
     const revived = FougereError.fromJSON(response.error.data);
     expect(revived.code).toBe(ErrorCode.INTERNAL_ERROR);
     expect(revived.message).toBe('Internal error');
+  });
+});
+
+describe('an answer that is not a JSON-RPC response', () => {
+  const call = { entity: 'product', op: 'list' } as const;
+
+  // A 200 with someone else's JSON — a proxy, a CDN, a receiver that is not one.
+  // This used to return `undefined` as if the op had answered nothing.
+  it('is refused rather than read as an empty result', () => {
+    expect(() => unframeResponse({ hello: 1 }, call)).toThrow(/neither a result nor an error/);
+  });
+
+  // `Cannot use 'in' operator` was what a null body raised — not this file's vocabulary.
+  it.each([null, 'a string', 42])('is a FougereError, never a TypeError (%p)', (body) => {
+    try {
+      unframeResponse(body, call);
+      throw new Error('should have refused');
+    } catch (err) {
+      expect(err).toBeInstanceOf(FougereError);
+      expect((err as FougereError).code).toBe(ErrorCode.BAD_GATEWAY);
+    }
+  });
+
+  it('refuses an error member that is not an error object', () => {
+    expect(() => unframeResponse({ error: 'boom' }, call)).toThrow(/not a JSON-RPC error object/);
   });
 });
