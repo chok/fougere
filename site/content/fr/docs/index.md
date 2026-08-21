@@ -91,7 +91,8 @@ demande de réécrire ce que vous avez écrit.
 **Concepts** — [Philosophie](/fr/docs/concepts/philosophy) · [La Frond](/fr/docs/concepts/frond) ·
 [Le socle](/fr/docs/concepts/the-base)
 
-**Côté serveur** — [Démarrer](/fr/docs/getting-started) · [App Nuxt existante](/fr/docs/existing-app) ·
+**Côté serveur** — [Une app que vous avez déjà](/fr/docs/existing-app) ·
+[Apportez votre schéma](/fr/docs/bring-your-schema) · [Démarrer](/fr/docs/getting-started) ·
 [La CLI](/fr/docs/cli) ·
 [Entités](/fr/docs/schema/entities) · [Vues](/fr/docs/schema/views) ·
 [Standard Schema](/fr/docs/schema/standard-schema) · [Handlers](/fr/docs/business/handlers) ·

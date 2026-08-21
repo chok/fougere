@@ -47,7 +47,9 @@ useSeoMeta({ title: `${page.value.title} — Fougere docs`, description: page.va
 <template>
   <div class="max-w-6xl mx-auto px-6 py-10 flex gap-12">
     <aside class="w-56 shrink-0 hidden md:block">
-      <nav class="sticky top-24 text-sm space-y-5">
+      <!-- Its own scroll: the tree is taller than a viewport, so a sticky nav alone still
+           forces a page scroll to reach the last section. -->
+      <nav class="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto overscroll-contain pr-3 -mr-3 text-sm space-y-5 docs-nav">
         <div>
           <NuxtLink
             :to="docsRoot"
@@ -86,3 +88,21 @@ useSeoMeta({ title: `${page.value.title} — Fougere docs`, description: page.va
     </article>
   </div>
 </template>
+
+<style scoped>
+/* A thin, self-effacing scrollbar: the nav scrolls, but does not announce it. */
+.docs-nav {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-border-accented) transparent;
+}
+.docs-nav::-webkit-scrollbar {
+  width: 6px;
+}
+.docs-nav::-webkit-scrollbar-thumb {
+  background-color: var(--ui-border-accented);
+  border-radius: 3px;
+}
+.docs-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+</style>

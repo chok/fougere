@@ -90,7 +90,8 @@ asks you to rewrite what you wrote.
 **Concepts** — [Philosophy](/docs/concepts/philosophy) · [The Frond](/docs/concepts/frond) ·
 [The base](/docs/concepts/the-base)
 
-**Server side** — [Getting started](/docs/getting-started) · [Existing Nuxt app](/docs/existing-app) ·
+**Server side** — [An app you already have](/docs/existing-app) ·
+[Bring your schema](/docs/bring-your-schema) · [Getting started](/docs/getting-started) ·
 [The CLI](/docs/cli) ·
 [Entities](/docs/schema/entities) · [Views](/docs/schema/views) ·
 [Standard Schema](/docs/schema/standard-schema) · [Handlers](/docs/business/handlers) ·

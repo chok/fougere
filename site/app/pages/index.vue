@@ -184,9 +184,10 @@ async function copyAudit() {
         <p class="mt-6 text-lg text-muted max-w-2xl mx-auto text-pretty">
           {{ $t('home.subtitle') }}
         </p>
-        <div class="mt-8 flex items-center justify-center gap-3">
-          <UButton :to="localePath('/docs/getting-started')" size="lg" :label="$t('home.ctaStart')" trailing-icon="i-lucide-arrow-right" />
+        <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <UButton :to="localePath('/docs/existing-app')" size="lg" :label="$t('home.ctaStart')" trailing-icon="i-lucide-arrow-right" />
           <UButton to="#audit" size="lg" variant="outline" color="neutral" :label="$t('home.ctaAudit')" />
+          <UButton :to="localePath('/docs/getting-started')" size="lg" variant="link" color="neutral" :label="$t('home.ctaScratch')" />
         </div>
         <p class="mt-5 text-sm text-muted flex items-center justify-center gap-1.5">
           <UIcon name="i-lucide-file-check" class="size-4 text-muted" />
