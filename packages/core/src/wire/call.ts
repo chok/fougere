@@ -309,8 +309,10 @@ function runnerFor(app: App, resolveFacade: (key: string) => AnyFacade, surface?
     try {
       facade = resolveFacade(facadeKeyOf(call.entity, surface));
     } catch {
-      // What IS hosted, so a wrong entity name (or a missing frond) reads at a glance.
-      const hosted = app.fronds.entityNames();
+      // What ANSWERS, so a wrong entity name (or a missing frond) reads at a glance.
+      // Not the scanned entities: one with no handler is found and serves nothing, and
+      // the refusal used to name the very thing it was refusing.
+      const hosted = app.fronds.servedNames(surface);
       throw new FougereError({
         code: ErrorCode.NOT_FOUND,
         message: (surface
