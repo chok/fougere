@@ -11,7 +11,7 @@ function describeExtension(field: Field, key: string): FieldExtension | undefine
   for (const axis of EXTENSION_AXES) {
     const declared = (field as unknown as Record<string, unknown>)[axis.slot];
     if (declared === undefined) continue;
-    const wire = (axis.describe as (v: unknown, k: string) => unknown)(declared, key);
+    const wire = axis.describe(declared, key);
     if (wire !== undefined) ext[axis.slot] = wire;
   }
   clean(ext);

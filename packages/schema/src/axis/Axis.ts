@@ -15,8 +15,8 @@ export interface Axis<Declared = unknown, Wire = unknown> {
 
 export type Resolver = (name: string) => (abstract new (...args: never[]) => unknown) | undefined;
 
-export const EXTENSION_AXES: readonly Axis<never, never>[] = [
+export const EXTENSION_AXES: readonly Axis[] = [
   roleAxis,
   lifecycleAxis,
   boundaryAxis,
-] as unknown as readonly Axis<never, never>[];
+];

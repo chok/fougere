@@ -43,7 +43,7 @@ function reconstructField(prop: FieldDescriptor, key: string, resolve?: Resolver
   for (const axis of EXTENSION_AXES) {
     const wire = (ext as Record<string, unknown> | undefined)?.[axis.slot];
     if (wire !== undefined) {
-      axes[axis.slot] = (axis.reconstruct as unknown as (w: unknown, r?: Resolver) => unknown)(wire, resolve);
+      axes[axis.slot] = axis.reconstruct(wire, resolve);
     }
   }
 
