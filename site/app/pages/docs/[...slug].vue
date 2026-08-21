@@ -1,7 +1,11 @@
 <script setup lang="ts">
-definePageMeta({ key: (route) => route.path });
+definePageMeta({ key: (route) => route.path.replace(/\/$/, '') || '/' });
 
 const route = useRoute();
+// Static hosting 301s a directory URL onto its trailing slash, so a reload lands on
+// `/fr/docs/` while a document path — and the prerendered payload key built from it —
+// is spelled without one. Everything below reads this, never `route.path`.
+const path = computed(() => route.path.replace(/\/$/, '') || '/');
 const { locale } = useI18n();
 const localePath = useLocalePath();
 
@@ -9,7 +13,7 @@ const localePath = useLocalePath();
 const collection = computed(() => (locale.value === 'fr' ? 'docs_fr' : 'docs_en') as 'docs_fr' | 'docs_en');
 
 const [{ data: page }, { data: nav }] = await Promise.all([
-  useAsyncData(`docs:${route.path}`, () => queryCollection(collection.value).path(route.path).first()),
+  useAsyncData(`docs:${path.value}`, () => queryCollection(collection.value).path(path.value).first()),
   useAsyncData(`docs-nav:${locale.value}`, () => queryCollectionNavigation(collection.value)),
 ]);
 
@@ -20,10 +24,10 @@ if (!page.value) {
 type NavItem = { title: string; path: string; page?: boolean; children?: NavItem[] };
 
 // The docs node sits at a locale-dependent depth — walk the tree.
-function findNode(items: NavItem[], path: string): NavItem | undefined {
+function findNode(items: NavItem[], target: string): NavItem | undefined {
   for (const item of items) {
-    if (item.path === path) return item;
-    const hit = item.children && findNode(item.children, path);
+    if (item.path === target) return item;
+    const hit = item.children && findNode(item.children, target);
     if (hit) return hit;
   }
 }
@@ -54,7 +58,7 @@ useSeoMeta({ title: `${page.value.title} — Fougere docs`, description: page.va
           <NuxtLink
             :to="docsRoot"
             class="block py-1"
-            :class="route.path === docsRoot ? 'text-highlighted font-medium' : 'text-muted hover:text-highlighted'"
+            :class="path === docsRoot ? 'text-highlighted font-medium' : 'text-muted hover:text-highlighted'"
           >
             {{ $t('docs.overview') }}
           </NuxtLink>
@@ -71,7 +75,7 @@ useSeoMeta({ title: `${page.value.title} — Fougere docs`, description: page.va
               class="block py-1"
               :class="[
                 group.label ? 'px-3 -ml-px border-l' : '',
-                route.path === item.path
+                path === item.path
                   ? (group.label ? 'border-(--ui-text-highlighted) text-highlighted font-medium' : 'text-highlighted font-medium')
                   : (group.label ? 'border-transparent text-muted hover:text-highlighted' : 'text-muted hover:text-highlighted'),
               ]"
