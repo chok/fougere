@@ -8,8 +8,8 @@
  * and the answer is cached. A remote that can't be reached stays pending
  * and is retried on the next miss instead of being cached as absent.
  */
-import type { FrondCall, IdentityCard, Transport } from '../wire/call.js';
-import { RPC_ENTITY } from '../wire/call.js';
+import type { FrondCall, Transport } from '../wire/call.js';
+import { assertIdentityCard, RPC_ENTITY } from '../wire/call.js';
 import { runMiddlewares, type AppMiddleware, type OperationContext } from '../wire/middleware.js';
 import { EMPTY_INVOCATION, type InvocationContext } from '../wire/invocation.js';
 import { FougereError, ErrorCode } from '../wire/errors.js';
@@ -56,8 +56,10 @@ export function createRemoteRouter(
         const transport = transports.get(url) ?? makeTransport(url);
         transports.set(url, transport);
         try {
-          const card = (await transport({ entity: RPC_ENTITY, op: 'discover' }, EMPTY_INVOCATION)) as IdentityCard;
-          return { label, transport, card };
+          const answer = await transport({ entity: RPC_ENTITY, op: 'discover' }, EMPTY_INVOCATION);
+          // Judged below and not here: this catch means "unreachable, retry", and a
+          // refusal thrown inside it would be swallowed into another silent retry.
+          return { label, url, transport, answer };
         } catch {
           // Unreachable — stays pending, retried on the next miss.
           return undefined;
@@ -67,8 +69,9 @@ export function createRemoteRouter(
 
     for (const answered of cards) {
       if (!answered) continue;
-      const { label, transport, card } = answered;
+      const { label, url, transport, answer } = answered;
       pending.delete(label);
+      const card = assertIdentityCard(answer, `Remote '${label}' (${url})`);
 
       for (const frond of card.fronds) {
         // Doors only. A fact is not routable — nobody calls it, it arrives — so

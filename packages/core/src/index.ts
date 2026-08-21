@@ -30,7 +30,7 @@ export type { OperationContract, OperationsMap } from './wire/operation.js';
 export { scanProject, frondAliases, FROND_DIRS, setModuleLoader, type ModuleLoader } from './scan/scanner.js';
 export { FougereError, ErrorCode, validationErrorsOf, type FougereErrorOptions } from './wire/errors.js';
 export type { OperationContext, AppNext, AppMiddleware } from './wire/middleware.js';
-export { createLocalRunner, createAppRunner } from './wire/call.js';
+export { createLocalRunner, createAppRunner, assertIdentityCard } from './wire/call.js';
 export type { FrondCall, Transport, IdentityCard, CardOp, Facade } from './wire/call.js';
 export { type Emit, type Fact } from './emit.js';
 export { callValueOf } from './contract.js';

@@ -28,6 +28,7 @@ export type { FrondCall, Transport, SignedCall } from './wire/call.js';
  * stale (the CLI's, then the Rust demo's) the day an op stopped being a bare name.
  */
 export type { IdentityCard, CardOp } from './wire/call.js';
+export { assertIdentityCard } from './wire/call.js';
 
 /**
  * The key a class name is filed under — 'Post' → 'post'. Re-exported rather than

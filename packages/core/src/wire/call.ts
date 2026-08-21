@@ -116,6 +116,39 @@ export interface IdentityCard {
   }>;
 }
 
+/**
+ * The shape a card must have to be walked — `fronds`, and each frond's `doors`.
+ *
+ * A card crosses a process boundary, so it is judged like anything else that does.
+ * The check lives beside the type because two readers walk it: the boot indexes a
+ * remote's doors, and `fougere sync` writes classes from them. `TypeError:
+ * card.fronds is not iterable` was what a malformed card produced at the boot,
+ * naming neither the remote nor the address.
+ *
+ * The descriptor behind a door is NOT checked here — `reconstruct` refuses it, and
+ * only where one is consumed.
+ */
+export function assertIdentityCard(value: unknown, source: string): IdentityCard {
+  const card = value as IdentityCard | undefined;
+  const fronds = Array.isArray(card?.fronds) ? card.fronds : undefined;
+  if (!fronds) throw cardRefusal(source, 'no fronds array');
+  for (const frond of fronds) {
+    if (!frond || typeof frond.name !== 'string') throw cardRefusal(source, 'a frond with no name');
+    if (!Array.isArray(frond.doors)) throw cardRefusal(source, `frond '${frond.name}' has no valid doors array`);
+  }
+  return card as IdentityCard;
+}
+
+function cardRefusal(source: string, what: string): FougereError {
+  return new FougereError({
+    code: ErrorCode.INTERNAL_ERROR,
+    message:
+      `${source} answered an invalid identity card: ${what}.\n`
+      + `  A card is what tells this process what the other one hosts, so nothing can be routed from it.\n`
+      + `  - Check that the address serves a Fougere app, and that its version still speaks this card.`,
+  });
+}
+
 /** A façade as the runtime holds it: op names to functions, nothing typed about them. */
 type AnyFacade = Record<string, (invocation?: InvocationContext) => Promise<unknown>>;
 
