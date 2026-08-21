@@ -28,6 +28,8 @@ export interface Doorway {
 
 /** What the frond and the boot supply to every door alike. */
 export interface Wiring {
+  /** The frond this door belongs to — travels on every OperationContext. */
+  frond: string;
   /** The frond's own scope — where presenters live, whatever sub-scope the door uses. */
   frondScope: Container;
   log: Logger;
@@ -235,7 +237,9 @@ export class HandlerFacade {
 
     return async (invocation?: InvocationContext) => {
       const inv = invocation ?? EMPTY_INVOCATION;
-      const ctx: OperationContext = { entity: address, operation: op, args: [], state: inv.state, invocation: inv };
+      const ctx: OperationContext = {
+        entity: address, frond: this.wiring.frond, operation: op, args: [], state: inv.state, invocation: inv,
+      };
 
       // Counted around the WHOLE call, middlewares included: they are part of what a
       // release would pull out from under it. Refused rather than counted once the app

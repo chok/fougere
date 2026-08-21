@@ -18,9 +18,9 @@ import { Lifecycle } from '@fougere/schema';
  * host's own startup (a Nitro plugin, a Next instrumentation hook) if the user
  * wants a custom data layer — alternative driver, managed migrations, etc.
  */
-import { createApp, loadCascadedConfig, setModuleLoader, frondAliases, Logger } from '@fougere/core';
+import { createApp, loadCascadedConfig, setModuleLoader, frondAliases, identityFromEnv, Logger } from '@fougere/core';
 import { createContainer } from '@fougere/container';
-import type { App, EntityOrm, FougereConfig, Transport } from '@fougere/core';
+import type { App, CreateAppOptions, EntityOrm, FougereConfig, Transport } from '@fougere/core';
 import { applyCreate, applyUpdate, type SchemaView } from '@fougere/schema';
 
 // ── Public types ─────────────────────────────────
@@ -123,6 +123,10 @@ async function boot(): Promise<App> {
   let db = _config.db;
   let ormFactory = _config.ormFactory;
   let migrateSchema: ((app: never) => Promise<void> | void) | undefined;
+  // Where the rows are, and how to open a transaction there — read from the same storage
+  // resolution, because a frame's realization is decided by `sources:` and nothing else.
+  let sourceOf: ((entityName: string) => string) | undefined;
+  let transacted: CreateAppOptions['transacted'];
   if (!ormFactory) {
     const { resolveStorage } = await import('@fougere/defaults');
     const storage = resolveStorage(fileConfig.db as never, (fileConfig as { sources?: unknown }).sources as never);
@@ -130,6 +134,8 @@ async function boot(): Promise<App> {
       log.debug('auto-resolving storage from config.db');
       db = storage.db;
       ormFactory = storage.ormFactory;
+      sourceOf = storage.sourceOf;
+      transacted = storage.transacted as never;
       migrateSchema = storage.afterBoot as never;
     } else {
       log.debug('no db declared — falling back to in-memory ORM');
@@ -143,13 +149,19 @@ async function boot(): Promise<App> {
   if (Object.keys(fileConfig.remotes ?? {}).length > 0) {
     log.debug(`remotes declared (${Object.keys(fileConfig.remotes!).join(', ')}) — wiring HTTP transport`);
     const { createHttpTransport } = await import('@fougere/transport-http');
-    remoteTransport = (url) => createHttpTransport(url);
+    // A call that leaves this process carries a proof of who sent it, when the
+    // deployment gave one. Without a key it travels as a bare claim, which only a
+    // receiver that trusts no root will take.
+    const { sign } = identityFromEnv();
+    remoteTransport = (url) => createHttpTransport(url, { ...(sign ? { sign } : {}) });
   }
 
   const app = await createApp({
     root,
     createContainer,
     ormFactory,
+    sourceOf,
+    transacted,
     db,
     auth: fileConfig.auth,
     adapters: fileConfig.adapters,

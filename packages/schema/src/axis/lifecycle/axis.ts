@@ -3,10 +3,6 @@ import type { ValidationError } from '../../judge/result.js';
 import { isObject, oneOfTokens } from '../../judge/form.js';
 import { CREATE_TOKENS, UPDATE_TOKENS, type LifecycleRules } from './Lifecycle.js';
 
-/**
- * Who writes the value, and when. Its normal forms are named tokens and plain JSON, so both
- * projections are the identity — the axis travels verbatim and reads back verbatim.
- */
 export const lifecycleAxis: Axis<LifecycleRules, LifecycleRules> = {
   slot: 'lifecycle',
 
@@ -28,7 +24,6 @@ export const lifecycleAxis: Axis<LifecycleRules, LifecycleRules> = {
   reconstruct: (wire) => wire,
 };
 
-/** A create rule is a token, or one of two single-key objects. Nothing else is a rule. */
 function judgeCreate(rule: unknown, errors: ValidationError[]): void {
   if (oneOfTokens(rule, CREATE_TOKENS)) return;
   if (isObject(rule)) {

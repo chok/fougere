@@ -30,6 +30,23 @@ export type Transport = (call: FrondCall, invocation: InvocationContext) => Prom
 export const RPC_ENTITY = 'rpc';
 
 /**
+ * Everything a caller's envelope covers — the call as the sender meant it.
+ *
+ * Here and not beside the signing code because it is a CONTRACT: the sender binds it,
+ * the receiver re-presents what arrived, and a frond written in another language reads
+ * this shape without reading our crypto. `body` is bound by digest (arbitrary, possibly
+ * large), the rest by value — which is what keeps a canonical-JSON dependency out.
+ */
+export interface SignedCall {
+  entity: string;
+  op: string;
+  params?: Record<string, string>;
+  query?: Record<string, string>;
+  body?: unknown;
+  state?: Record<string, unknown>;
+}
+
+/**
  * One operation, as a stranger meets it — its name, what it is for, what it takes
  * and whether it reads or writes. Everything here already existed on the contract;
  * it just never left the process.

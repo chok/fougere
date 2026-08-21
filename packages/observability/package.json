@@ -1,0 +1,52 @@
+{
+  "name": "@fougere/observability",
+  "version": "0.2.0-alpha.2",
+  "description": "Optional observability for Fougere: one span per operation, W3C Trace Context across any transport.",
+  "keywords": [
+    "fougere",
+    "typescript",
+    "tracing",
+    "observability",
+    "opentelemetry",
+    "trace-context"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chok/fougere.git",
+    "directory": "packages/observability"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit -p tsconfig.test.json",
+    "prepublishOnly": "pnpm run build"
+  },
+  "peerDependencies": {
+    "@fougere/core": "workspace:^"
+  },
+  "devDependencies": {
+    "@fougere/container": "workspace:*",
+    "@fougere/schema": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/transport-http": "workspace:*",
+    "vitest": "^4.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

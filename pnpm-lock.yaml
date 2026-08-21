@@ -286,6 +286,25 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  demos/mirror-catalog:
+    dependencies:
+      '@fougere/container':
+        specifier: workspace:*
+        version: link:../../packages/container
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../../packages/defaults
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
+    devDependencies:
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+
   demos/multi-frond:
     dependencies:
       '@fougere/adapter-rest':
@@ -505,6 +524,31 @@ importers:
       '@iconify-json/noto':
         specifier: ^1.2.7
         version: 1.2.7
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+
+  demos/observability:
+    dependencies:
+      '@fougere/container':
+        specifier: workspace:*
+        version: link:../../packages/container
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@fougere/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
+      '@fougere/transport-http':
+        specifier: workspace:*
+        version: link:../../packages/transport/http
+      jiti:
+        specifier: ^2.0.0
+        version: 2.7.0
+    devDependencies:
       tsx:
         specifier: ^4.21.0
         version: 4.21.0
@@ -780,6 +824,28 @@ importers:
         specifier: ^8.0.0
         version: 8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0)
 
+  demos/together-frame:
+    dependencies:
+      '@fougere/adapter-sql':
+        specifier: workspace:*
+        version: link:../../packages/adapter/sql
+      '@fougere/container':
+        specifier: workspace:*
+        version: link:../../packages/container
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../../packages/defaults
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
+    devDependencies:
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+
   packages/adapter/duckdb:
     dependencies:
       '@fougere/adapter-sql':
@@ -1035,6 +1101,9 @@ importers:
       '@clack/prompts':
         specifier: ^0.10.0
         version: 0.10.1
+      '@fougere/adapter-sql':
+        specifier: workspace:*
+        version: link:../adapter/sql
       '@fougere/container':
         specifier: workspace:*
         version: link:../container
@@ -1089,6 +1158,8 @@ importers:
         specifier: ^22.0.0
         version: 22.19.15
 
+  packages/decorators: {}
+
   packages/defaults:
     dependencies:
       '@fougere/adapter-sql':
@@ -1134,6 +1205,24 @@ importers:
       '@types/node':
         specifier: ^22.19.15
         version: 22.19.15
+      vitest:
+        specifier: ^4.1.0
+        version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(vite@8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))
+
+  packages/observability:
+    devDependencies:
+      '@fougere/container':
+        specifier: workspace:*
+        version: link:../container
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../core
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../schema
+      '@fougere/transport-http':
+        specifier: workspace:*
+        version: link:../transport/http
       vitest:
         specifier: ^4.1.0
         version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(vite@8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))

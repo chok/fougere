@@ -9,6 +9,7 @@ interface Entry {
 interface ScopeContainer extends Container {
   _getEntry(name: string): Entry | undefined;
   _getFallback(): ((name: string) => unknown) | undefined;
+  _forget(child: ScopeContainer): void;
 }
 
 const isDisposable = (value: unknown): value is Disposable =>
@@ -92,6 +93,11 @@ function createScope(parent?: ScopeContainer): ScopeContainer {
     async dispose(): Promise<void> {
       // Reverse order, and one failure must not silence the rest: everything gets
       // told, then the errors travel together.
+      // Its parent kept a reference so it could close this scope; the scope closing itself
+      // makes that reference garbage. Nothing created a scope at RUN time until frames did,
+      // so the list only ever grew at boot and stayed bounded — one per request, or one per
+      // transaction, and it grows for the life of the process.
+      parent?._forget(container);
       const failures: unknown[] = [];
       for (const child of children.reverse()) {
         try {
@@ -121,6 +127,11 @@ function createScope(parent?: ScopeContainer): ScopeContainer {
 
     _getEntry(name: string): Entry | undefined {
       return registry.get(name) ?? parent?._getEntry(name);
+    },
+
+    _forget(child: ScopeContainer) {
+      const at = children.indexOf(child);
+      if (at !== -1) children.splice(at, 1);
     },
 
     /** Set on the root, honoured from any scope — a scope inherits it by asking upward. */

@@ -1,12 +1,3 @@
-/**
- * Standard Schema v1 — types inlined from @standard-schema/spec.
- *
- * We inline instead of depending on the package to keep @fougere/schema zero-dep.
- * The spec is stable (v1) and unlikely to change.
- *
- * @see https://standardschema.dev/
- */
-
 export interface StandardSchemaV1<Input = unknown, Output = Input> {
   readonly '~standard': StandardSchemaV1.Props<Input, Output>;
 }

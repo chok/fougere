@@ -1,4 +1,4 @@
-import { Lifecycle, type EntityConstructor, type Fields } from '@fougere/schema';
+import { Lifecycle, Role, type EntityConstructor, type Fields } from '@fougere/schema';
 import type { EntityOrm } from '../orm.js';
 
 /**
@@ -138,6 +138,22 @@ export function Mirror<E extends EntityConstructor>(shape: E): MirrorConstructor
 }
 
 /**
+ * The key a refused row is named by — read off the shape, never spelled `id`.
+ *
+ * A mirror copies whatever the source keys its rows on: an ISBN, a partner reference.
+ * Naming the field too means the sentence points at something the operator can look up
+ * on the OTHER side, which is the whole use of it.
+ */
+function primaryFieldOf(shape: unknown): string | undefined {
+  const fields = (shape as { getFields?: () => Fields }).getFields?.();
+  if (!fields) return undefined;
+  for (const [name, field] of Object.entries(fields)) {
+    if (Role.of(field).isPrimary) return name;
+  }
+  return undefined;
+}
+
+/**
  * The field a copy states its age with — the one the storage stamps on every write.
  *
  * Read off the shape rather than named in a config: `update: 'now'` already means
@@ -157,18 +173,20 @@ export function ageFieldOf(shape: unknown): string | undefined {
  * returned, so a declared boundary earns its call on the way in exactly as it does at
  * a façade.
  *
- * Names the row by its key when it has one: an import of thousands says which one.
+ * Names the row by the key its SHAPE declares: an import of thousands says which one,
+ * in the vocabulary of the source it came from.
  */
 function judgePage<T>(shape: unknown, page: Partial<T>[]): Record<string, unknown>[] {
   const judge = (shape as { validate?: (input: unknown) => { success: boolean; data?: unknown; errors?: { path: string; message: string }[] } }).validate;
   if (typeof judge !== 'function') return page as Record<string, unknown>[];
 
   const name = (shape as { name?: string }).name ?? 'mirror';
+  const primary = primaryFieldOf(shape);
   return page.map((row, index) => {
     const verdict = judge.call(shape, row);
     if (verdict.success) return verdict.data as Record<string, unknown>;
-    const key = (row as Record<string, unknown>).id;
-    const where = key !== undefined ? `row ${JSON.stringify(key)}` : `row ${index} of this page`;
+    const key = primary === undefined ? undefined : (row as Record<string, unknown>)[primary];
+    const where = key !== undefined ? `row ${primary} ${JSON.stringify(key)}` : `row ${index} of this page`;
     const why = (verdict.errors ?? []).map((e) => `${e.path}: ${e.message}`).join(', ');
     throw new Error(`${name} mirror refused ${where} — ${why}`);
   });

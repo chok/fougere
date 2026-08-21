@@ -1,4 +1,4 @@
-import { createLocalRunner } from '@fougere/core';
+import { createLocalRunner, identityFromEnv } from '@fougere/core';
 import { bootAppFromConfig } from '@fougere/defaults';
 import { serve } from '@fougere/transport-http';
 import type { App } from '@fougere/core';
@@ -26,8 +26,12 @@ export default class ServeCommand {
     }
 
     const port = raw.port != null ? Number(raw.port) : 4100;
-    const { port: bound } = await serve(createLocalRunner(app), { port });
+    // A served frond admits what it can establish. With no root injected it takes the
+    // state it is handed, which is why the loopback default is the other half.
+    const { verify, requireIdentity } = identityFromEnv();
+    const { port: bound } = await serve(createLocalRunner(app), { port, verify, requireIdentity });
     this.ui.step(`frond ${frond} servie — POST http://127.0.0.1:${bound}/_fougere/call`);
+    this.ui.info(requireIdentity ? 'signed calls only (FOUGERE_ROOT is set)' : 'unsigned calls accepted — no FOUGERE_ROOT');
     this.ui.info('Ctrl-C pour arrêter.');
     // The listening server keeps the event loop alive; the command returns and stays up.
   }

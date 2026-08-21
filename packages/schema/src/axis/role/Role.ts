@@ -1,35 +1,14 @@
-// ─── Axis 2 · role — identity, relations, and what the storage realizes ────
-// `rules` and `index` are the only axis members realized OUTSIDE the framework — the DDL
-// emits them and the database enforces them, so a collision surfaces as the driver's error,
-// never as a `validate()` failure.
+import type { FieldGroup } from "../../constraint/FieldGroup.js";
+import type { Fields } from "../../Field.js";
+import type { EntityConstructor, Relation } from "./Relation.js";
 
-import type { FieldGroup } from './FieldGroup.js';
-import type { EntityConstructor, Relation } from './Relation.js';
-
-/** What a field DECLARES on the role slot. {@link Role} is this, resolved. */
 export interface RoleRules {
   primary?: boolean;
   index?: boolean;
   relation?: Relation;
-  /**
-   * Every {@link FieldGroup} that names this field, of whatever kind — one list, so a new
-   * kind is a subclass and this type does not move. `index` is still a bare boolean: a rule
-   * of the same family that cannot yet name several fields.
-   */
   rules?: ReadonlyArray<FieldGroup>;
 }
 
-/**
- * A field's place in the entity graph, resolved — the questions its readers kept asking by
- * hand. Measured before writing: 42 sites across five packages took `role.relation.kind`,
- * `role.primary` and `role.relation.to()` apart, and not one of them named what it wanted.
- *
- * ```ts
- * Role.of(fields.id).isPrimary          // → true
- * Role.of(fields.posts).isCollection    // → true   (a `many` relation)
- * Role.of(fields.author).target?.name   // → 'Author'
- * ```
- */
 export class Role implements RoleRules {
   readonly primary?: boolean;
   readonly index?: boolean;
@@ -47,28 +26,42 @@ export class Role implements RoleRules {
     return new Role(field.role);
   }
 
-  /** Identity — the storage owns it, and a client never supplies it. */
   get isPrimary(): boolean {
     return this.primary === true;
   }
 
-  /** The DDL emits a separate index for it. A primary or a sole unique already has one. */
   get isIndexed(): boolean {
     return this.index === true;
   }
 
-  /** A `many` relation — the collection lives on the OTHER side, so this field holds no column. */
   get isCollection(): boolean {
-    return this.relation?.kind === 'many';
+    return this.relation?.kind === "many";
   }
 
-  /** A `one` relation — this field holds the foreign key. */
   get isReference(): boolean {
-    return this.relation?.kind === 'one';
+    return this.relation?.kind === "one";
   }
 
-  /** The related entity, the thunk already called. Absent when the field holds no relation. */
   get target(): EntityConstructor | undefined {
     return this.relation?.to();
   }
+}
+
+/**
+ * The name of the field that carries `primary`, or `undefined` when none does.
+ *
+ * `Role.of(field).isPrimary` answers about ONE field; this answers about a shape, which
+ * is the question every reader actually had. It was the same three lines spelled five
+ * times — a mirror's key, a form's row identity, GraphQL's node id, the DDL's primary
+ * key and the ORM's `findById` column — so a shape with two primaries meant whichever
+ * one that loop happened to see first, five times over.
+ *
+ * The absence is answered and not defaulted: `'id'` is a fine fallback for a form and a
+ * lie for a DDL, so the caller decides.
+ */
+export function primaryFieldOf(fields: Fields): string | undefined {
+  for (const [name, field] of Object.entries(fields)) {
+    if (Role.of(field).isPrimary) return name;
+  }
+  return undefined;
 }

@@ -22,6 +22,17 @@ export interface CreateAppOptions {
   /** Factory to auto-generate EntityOrm for each scanned entity. */
   ormFactory?: OrmFactory;
   /**
+   * Which source an entity's rows live in, and how to open a transaction on one — the two
+   * questions that decide whether `Together<[…]>` gets the engine's own unwind or replays
+   * inverses itself.
+   *
+   * Optional together, because a host may hand in a bare `ormFactory` and know neither. A
+   * frame then compensates: not knowing where the rows are and promising atomicity over
+   * them are two different things, and only one of them is honest.
+   */
+  sourceOf?: (entityName: string) => string;
+  transacted?: <R>(source: string, fn: (ormFactory: OrmFactory) => Promise<R>) => Promise<R>;
+  /**
    * Builds the cross-source reader a frond gets when it declares `reads:`.
    *
    * A factory rather than a value, for the same reason `ormFactory` is one: core must

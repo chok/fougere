@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Field } from '../src/Field.js';
 import { Schema } from '../src/Schema.js';
-import { Unique } from '../src/axis/role/Unique.js';
+import { Unique } from '../src/constraint/Unique.js';
 import { created } from '../src/vocabulary/created.js';
 import { entity } from '../src/entity.js';
 import { list } from '../src/vocabulary/list.js';

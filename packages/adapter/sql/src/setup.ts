@@ -37,6 +37,15 @@ export interface Setup {
    * whose `client` gives the same handle while keeping the scope of its entity.
    */
   db: Kysely<any>;
+  /**
+   * Run `fn` inside one transaction of this engine, with an ORM factory bound to it.
+   *
+   * The transaction belongs to the engine, so obtaining one is a gesture on the engine and
+   * nowhere else. Nothing new is handed back: `Transaction<DB> extends Kysely<DB>` and
+   * `SqlEntityOrm` takes a `Kysely<any>`, so the SAME ORM is rebuilt over the substituted
+   * connection — which is why a frame needs no support in this package.
+   */
+  transacted<R>(fn: (ormFactory: ReturnType<typeof createOrmFactory>) => Promise<R>): Promise<R>;
 }
 
 export interface SqliteSetup extends Setup {
@@ -56,7 +65,13 @@ export function setupKysely(
   opts: SetupOptions = {},
 ): Setup {
   const db = new Kysely<any>({ dialect: kyselyDialect });
-  return { db, dialect, ormFactory: createOrmFactory(db, opts.ormFactoryOptions, dialect), sink: sqlSink(db) };
+  return {
+    db,
+    dialect,
+    ormFactory: createOrmFactory(db, opts.ormFactoryOptions, dialect),
+    sink: sqlSink(db),
+    transacted: (fn) => db.transaction().execute((trx) => fn(createOrmFactory(trx, opts.ormFactoryOptions, dialect))),
+  };
 }
 
 export function setupSqlite(opts: SqliteSetupOptions = {}): SqliteSetup {
@@ -73,5 +88,6 @@ export function setupSqlite(opts: SqliteSetupOptions = {}): SqliteSetup {
     dialect: 'sqlite',
     ormFactory: createOrmFactory(db, opts.ormFactoryOptions, 'sqlite'),
     sink: sqlSink(db),
+    transacted: (fn) => db.transaction().execute((trx) => fn(createOrmFactory(trx, opts.ormFactoryOptions, 'sqlite'))),
   };
 }

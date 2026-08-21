@@ -7,9 +7,9 @@
 import { createServer } from 'node:http';
 import type { Transport } from '@fougere/core';
 import { PARSE_ERROR, type RpcResponse } from './jsonrpc.js';
-import { handleRpc } from './server.js';
+import { handleRpc, type ReceiveOptions } from './server.js';
 
-export interface ServeOptions {
+export interface ServeOptions extends ReceiveOptions {
   /** Port to listen on. 0 (default) picks a free one. */
   port?: number;
   /**
@@ -23,6 +23,17 @@ export interface ServeOptions {
   hosts?: string[];
   /** Which address to bind. Must be one of `hosts`. Defaults to its first. */
   host?: string;
+  /**
+   * Serve unsigned calls beyond loopback, deliberately.
+   *
+   * The one case that legitimately needs it: something in front already established the
+   * peer — a service mesh whose sidecar terminated mTLS, an ingress doing client certs.
+   * Asking for a second signature there would redo what was just done a centimetre away.
+   *
+   * It is spelled separately from `requireIdentity` on purpose: that one arrives `false`
+   * by default from `identityFromEnv`, so it cannot also mean "I thought about this".
+   */
+  allowUnsigned?: boolean;
   /** Maximum JSON-RPC body size. Default: 1 MiB. */
   maxBodyBytes?: number;
   /** Time allowed to receive a request. Default: 15 seconds. */
@@ -43,16 +54,36 @@ export function serve(runner: Transport, options: ServeOptions = {}): Promise<Ru
     return Promise.reject(new Error('A Fougere receiver needs at least one host to bind, `hosts` is empty'));
   }
   const host = options.host ?? allowed[0];
-  // A receiver trusts the `state` it is handed — the caller's identity arrives on
-  // the wire and nothing here re-establishes it. `hosts` is where that fact meets a
-  // deployment: the default keeps it on the machine, and widening it is written down
-  // rather than inferred. A shared link secret would not help — whoever holds it can
-  // claim any user — so the answer stays identity at the Frond.
+  // Where a receiver binds, and what it admits, are two questions now. `verify` answers
+  // the second — without it this receiver still takes the `state` it is handed, and
+  // `hosts` is all that stands. The default keeps it on the machine; widening it is
+  // written down rather than inferred, and a widened receiver wants `requireIdentity`.
   if (!allowed.includes(host)) {
     return Promise.reject(
       new Error(`A Fougere receiver binds one of [${allowed.join(', ')}], got '${host}' — add it to \`hosts\` to allow it`),
     );
   }
+  /**
+   * Loopback or signed — there is no third way to serve.
+   *
+   * The address already carries the decision: binding beyond loopback is a deliberate
+   * act (`hosts` says so), and a receiver reachable from outside that establishes nothing
+   * takes the `state` it is handed. Refusing at BOOT and not per call is the point — a
+   * receiver that starts and then rejects everything is discovered in production, one
+   * that will not start is discovered at deployment.
+   */
+  if (!LOOPBACK_HOSTS.includes(host) && !options.verify && !options.allowUnsigned) {
+    return Promise.reject(
+      new Error(
+        `A Fougere receiver on '${host}' is reachable from outside this machine and would believe whatever `
+        + 'state it is handed.\n'
+        + '  - `fougere keys` once, then inject FOUGERE_ROOT here (and `fougere grant <frond>` for each caller), or\n'
+        + '  - keep it on loopback, or\n'
+        + '  - pass `allowUnsigned: true` if a mesh or an ingress already authenticated the caller.',
+      ),
+    );
+  }
+
   const maxBodyBytes = options.maxBodyBytes ?? 1024 * 1024;
   const server = createServer(async (req, res) => {
     if (req.method !== 'POST' || req.url !== '/_fougere/call') {
@@ -75,7 +106,7 @@ export function serve(runner: Transport, options: ServeOptions = {}): Promise<Ru
     let response: RpcResponse;
     try {
       const raw = JSON.parse(Buffer.concat(chunks).toString('utf8'));
-      response = await handleRpc(runner, raw);
+      response = await handleRpc(runner, raw, options);
     } catch {
       response = { jsonrpc: '2.0', id: null, error: { code: PARSE_ERROR, message: 'Parse error' } };
     }

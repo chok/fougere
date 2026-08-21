@@ -1,45 +1,11 @@
 import type { JSONSchema7 } from 'json-schema';
 import type { StringFormat } from './Formats.js';
 
-// ─── Axis 1 · shape — the VALUE ──────────────────────────────
-// What a stand-alone value validator covers: the kind of value and its constraints.
-// Every field states one — `many` says `array` without `items`.
-//
-// The vocabulary IS JSON Schema's, so the portable descriptor is a near-identity
-// projection: a date is `{ type: 'string', format: 'date-time' }`, an integer is a type.
-//
-// NULLABILITY lives in the grammar: a nullable type is the union `[T, 'null']` (and `null`
-// joins `enum`). A flat flag would be a second source of truth next to it — OpenAPI 3.0's
-// bug, fixed in 3.1 by this same move. Writers go through `Anatomy.nullable`, readers through
-// `Anatomy` — NEVER compare `shape.type` directly, the union breaks it silently.
-
-// JSON Schema's own format names (assertion supported by the cfworker engine).
-// `date-time` is special: it derives the isoDate boundary; the others are pure predicates.
-//
-// The union is OPEN — `(string & {})` keeps autocomplete on the built-ins while
-// leaving room for {@link Formats.register}, exactly as `GeneratorRef` and
-// `BoundaryRef` already do on their own axes. `format` is the one JSON Schema
-// keyword whose vocabulary the standard itself declares open, which is why a
-// custom predicate rides here and not in a keyword of our own: a key outside
-// `keyof JSONSchema7` would fail the conformance assertion at the bottom of this
-// file, and rightly so.
-/** A base type name, alone or in the nullable union form. */
 type Nullably<T extends string> = T | readonly [T, 'null'];
 
-// The constraint body of each shape kind — shared by `Shape` (declared, `type`
-// possibly the nullable union) and `BaseShape` (read via `anatomy`, `type` scalar).
 interface StringConstraints { minLength?: number; maxLength?: number; pattern?: string; enum?: readonly (string | null)[]; format?: StringFormat }
 interface NumericConstraints { minimum?: number; maximum?: number }
-// A list of VALUES (`list(text())`) — `items` is the element's own shape, validated
-// natively by the engine. A `many()` relation is NOT this: it has no shape at all.
-// `items` is optional because `array` covers two things, exactly as the card already
-// spells them: a value list (`list(text())`) carries the element shape, a `many`
-// relation carries none — its elements live on the other side and the role names them.
-// `FieldDescriptor.items` was already optional; this is the same statement, in memory.
 interface ArrayConstraints { items?: Shape; minItems?: number; maxItems?: number }
-// `json()` → bare (opaque passthrough); `json(Entity)` → the embedded entity's own
-// shape projection (`properties`/`required` are JSON Schema's nesting, so the engine
-// validates the nested structure natively and the descriptor travels verbatim).
 interface ObjectConstraints { properties?: Record<string, unknown>; required?: readonly string[] }
 
 export type Shape =
@@ -49,16 +15,8 @@ export type Shape =
   | ({ type: Nullably<'array'> } & ArrayConstraints)
   | ({ type: Nullably<'object'> } & ObjectConstraints);
 
-/**
- * The BASE type names — what `Anatomy.of(shape).base?.type` narrows to for a dispatch.
- *
- * The runtime list is the source and the type derives from it, not the reverse: a type
- * union cannot be enumerated at runtime, so writing both by hand means two lists that
- * drift. {@link isShape} needs the values, so it is the values that are declared.
- */
 const SHAPE_TYPES = ['string', 'number', 'integer', 'boolean', 'array', 'object'] as const;
 
-/** Is this a shape? Asked of its `type`, against {@link SHAPE_TYPES}. */
 function isShapeImpl(value: unknown): value is Shape {
   if (typeof value !== 'object' || value === null) return false;
   const declared = (value as Shape).type;
@@ -69,12 +27,6 @@ function isShapeImpl(value: unknown): value is Shape {
   );
 }
 
-/**
- * `Shape` with `type` guaranteed scalar — what `anatomy` returns as `base`, the
- * ONLY form consumers dispatch on. A scalar literal is a real discriminant, so
- * `switch (base?.type)` narrows; the raw `Shape` union can't (the `[T,'null']`
- * tuple is not a unit type).
- */
 type BaseShape =
   | ({ type: 'string' } & StringConstraints)
   | ({ type: 'number' | 'integer' } & NumericConstraints)
@@ -82,13 +34,6 @@ type BaseShape =
   | ({ type: 'array' } & ArrayConstraints)
   | ({ type: 'object' } & ObjectConstraints);
 
-// ─── nullableShape / anatomy — the two gates of the union ──────────
-
-/**
- * Write side: make a shape's grammar accept `null` — the type becomes the union
- * `[T, 'null']`, and `null` joins `enum` when present (an enum is a closed value
- * set; null must be IN it to be legal). Idempotent.
- */
 function nullableShapeImpl(shape: Shape): Shape {
   if (Array.isArray(shape.type)) return shape;
   const out = { ...shape, type: [shape.type, 'null'] } as unknown as Shape;
@@ -98,49 +43,20 @@ function nullableShapeImpl(shape: Shape): Shape {
   return out;
 }
 
-/** A shape split back into its base grammar and its nullability. */
 interface ShapeAnatomy {
-  /** The shape stripped of `null` (scalar `type`, `enum` without null) — dispatch on THIS. */
   base?: BaseShape;
   nullable: boolean;
 }
 
-/**
- * The read side — the single customs post at the standard's border. Every consumer that
- * dispatches on a shape's type comes through here: `shape.type` may be the union
- * `[T,'null']`, and a direct comparison fails silently on it.
- */
 export class Anatomy {
-  /**
-   * Is this a shape? Asked of its `type`, against {@link SHAPE_TYPES} — the recognition a
-   * field's door runs. By FORM and never by a brand, so a plain object from a card, a
-   * config or another language passes.
-   *
-   * ```ts
-   * Anatomy.is({ type: 'string' })            // → true
-   * Anatomy.is({ type: ['string', 'null'] })  // → true
-   * Anatomy.is({ type: 'nope' })              // → false
-   * ```
-   */
   static is(value: unknown): value is Shape {
     return isShapeImpl(value);
   }
 
-  /**
-   * The WRITE side, paired with {@link Anatomy.of}: a shape's grammar made to accept `null`.
-   * The type becomes the union `[T, 'null']`, and `null` joins `enum` when present — an enum
-   * is a closed value set, so null must be IN it to be legal. Idempotent.
-   *
-   * ```ts
-   * Anatomy.nullable({ type: 'string' })                 // → { type: ['string', 'null'] }
-   * Anatomy.nullable({ type: 'string', enum: ['a'] })    // → enum: ['a', null]
-   * ```
-   */
   static nullable(shape: Shape): Shape {
     return nullableShapeImpl(shape);
   }
 
-  /** Cached per shape reference — derivations copy field refs, they never rebuild shapes. */
   private static readonly cache = new WeakMap<object, ShapeAnatomy>();
   private static readonly none: ShapeAnatomy = { base: undefined, nullable: false };
 
@@ -163,20 +79,13 @@ export class Anatomy {
     return a;
   }
 
-  /** Sugar for the most common read: does this shape's grammar accept `null`? */
   static isNullable(shape?: Shape): boolean {
     return this.of(shape).nullable;
   }
 }
 
-// ─── Garde-fou : `Shape` reste un sous-ensemble de JSON Schema ──────
-// La validation délègue à un moteur JSON Schema (cfworker) qui IGNORE en silence
-// tout mot-clé hors spec. Cette assertion type-only fait échouer le build si un
-// mot-clé non-JSON-Schema entre dans `Shape` — l'équation « shape = JSON Schema »
-// est tenue par le compilateur, pas par la discipline. `keyof JSONSchema7` est un
-// union fini de mots-clés (l'interface est fermée), d'où la comparaison.
 type Assert<T extends true> = T;
-type ShapeKeys<T> = T extends unknown ? keyof T : never; // distribue keyof sur l'union
+type ShapeKeys<T> = T extends unknown ? keyof T : never;
 type _ShapeConformsToJsonSchema = Assert<
   [Exclude<ShapeKeys<Shape>, keyof JSONSchema7>] extends [never] ? true : false
 >;

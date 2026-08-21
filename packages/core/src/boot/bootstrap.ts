@@ -8,6 +8,7 @@ import { scanProject } from '../scan/scanner.js';
 import { Logger } from '../builtins/logger.js';
 import { Config } from '../builtins/config.js';
 import { createRemoteRouter, createRemoteFacade } from './remote.js';
+import { registerFrames } from './together.js';
 import { Emissions } from './Emissions.js';
 import { HandlerFacade } from './HandlerFacade.js';
 import { targetOf } from '../prefab/prefab.js';
@@ -162,6 +163,9 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   // Every entity of every frond, by name — so a fact can be judged where it LANDS, and
   // so a `reads:` clause can name a neighbour's.
   const entityByName = fronds.schemas();
+  // Which frond holds an entity — what turns "a member is remote" into a refusal that
+  // names the frond rather than the entity, since `remotes:` is declared per frond.
+  const frondOf = new Map(fronds.flatMap((f) => f.entities.map((e) => [e.name, f.name] as const)));
   const emissions = new Emissions(fronds, entityByName, container, log, options.onEmit);
 
   // Every port an implementation was bound to, so a `ports:` entry that named none
@@ -270,6 +274,24 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       }
     }
 
+    // Frames, after the ORMs and before anything that may ask for one. A frame is read
+    // from the same `deps` every other port is read from — asking for it IS declaring it,
+    // so nothing is registered for a frame nobody wants.
+    registerFrames(
+      scope,
+      [...frond.handlers, ...frond.providers, ...frond.presenters, ...frond.collectors].flatMap((d) => d.deps),
+      frond.providers,
+      {
+        entityByName,
+        frondOf,
+        hostedHere: (name) => !(options.remotes && name in options.remotes),
+        ormFactory: options.ormFactory,
+        sourceOf: options.sourceOf,
+        transacted: options.transacted,
+        log: frondLog,
+      },
+    );
+
     // Register presenters in scope — PascalCase type name (e.g. 'PostPresenter')
     const presenterMap = new Map(frond.presenters.map((p) => [p.entityName, p]));
     for (const presenter of frond.presenters) {
@@ -304,6 +326,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       const facade = new HandlerFacade(
         { handler, entity, scope: targetScope, key: facadeKey },
         {
+          frond: frond.name,
           frondScope: scope,
           log: frondLog,
           overrides: frond.operationsOverrides,
@@ -439,8 +462,11 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   container.setFallback?.((name) => {
     if (!remoteRouter) return undefined;
     if (!name.endsWith('Handler') || name.includes(':')) return undefined;
-    // Façade-shaped stand-in; routing happens lazily at the first call.
-    return createRemoteFacade(name.replace(/Handler$/, ''), remoteRouter);
+    // Façade-shaped stand-in; routing happens lazily at the first call. Through
+    // `registrationKeyOf` because a DEPENDENCY names the type as written — `ProductHandler`,
+    // PascalCase — while a card declares `product`, so the raw strip asked the router for
+    // 'Product' and every by-type dependency on a remote handler answered NOT_FOUND.
+    return createRemoteFacade(registrationKeyOf(name.replace(/Handler$/, '')), remoteRouter, getMiddlewares);
   });
 
   /**

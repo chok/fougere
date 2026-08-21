@@ -10,6 +10,7 @@
  */
 import type { FrondCall, IdentityCard, Transport } from '../wire/call.js';
 import { RPC_ENTITY } from '../wire/call.js';
+import { runMiddlewares, type AppMiddleware, type OperationContext } from '../wire/middleware.js';
 import { EMPTY_INVOCATION, type InvocationContext } from '../wire/invocation.js';
 import { FougereError, ErrorCode } from '../wire/errors.js';
 import { reconstruct, type SchemaView, type SchemaDescriptor } from '@fougere/schema';
@@ -156,12 +157,27 @@ function isOpName(prop: string | symbol): prop is string {
  * lazy on purpose (the card is fetched at the first miss), and the remote is the
  * authority on its own surface anyway. An op it does not serve comes back as its
  * NOT_FOUND — judged where it is owned, which is the same answer a local façade gives.
+ *
+ * It runs the app's middlewares, like `HandlerFacade` does, because "the consumer can't
+ * tell it from a local facade" was false of the one thing a consumer installs: measured,
+ * `runMiddlewares` had a single caller, so a frond that moved lost every middleware on
+ * the calling side — no log, no retry, no cache — from a `remotes:` line alone.
+ * The invocation the transport sends is the one the chain leaves behind, so a middleware
+ * can still put something on the wire.
  */
-export function createRemoteFacade(entity: string, router: RemoteRouter): Facade {
+export function createRemoteFacade(
+  entity: string,
+  router: RemoteRouter,
+  middlewaresFor: (address: string) => AppMiddleware[],
+): Facade {
   const opFn = (op: string) => async (invocation: InvocationContext = EMPTY_INVOCATION) => {
     const { frond, transport } = await router.route(entity);
     const call: FrondCall = { frond, entity, op };
-    return transport(call, invocation);
+    const ctx: OperationContext = {
+      entity, frond, operation: op, args: [], state: invocation.state, invocation,
+    };
+    return runMiddlewares(middlewaresFor(entity), ctx, () =>
+      transport(call, ctx.invocation ?? invocation));
   };
 
   return new Proxy({} as Facade, {

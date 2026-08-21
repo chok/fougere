@@ -1,16 +1,7 @@
 import type { BoundaryRules } from './Boundary.js';
-// ─── The codec registry — an open vocabulary, like Formats and Generators ────
-// A boundary names its conversion; here the name is bound to a function. Open by
-// construction: a frond declares `{ decode: 'celsius' }` and each runtime resolves it
-// locally, so the rule crosses a process, or a language.
 
-/** Inbound: a supplied wire value → domain value. May fail (transformOrFail-style). */
 export type Decoder = (value: unknown) => { value: unknown } | { error: string };
-/** Outbound: a domain value → wire value. Total — a valid domain value always encodes. */
 export type Encoder = (value: unknown) => unknown;
-
-
-// ─── Registries (open, extensible — same spirit as FougereHints) ──
 
 export class Boundaries {
   private static readonly decoders = new Map<string, Decoder>();
@@ -20,7 +11,6 @@ export class Boundaries {
   static registerDecoder(name: string, fn: Decoder): void { this.decoders.set(name, fn); }
   static registerEncoder(name: string, fn: Encoder): void { this.encoders.set(name, fn); }
 
-  /** Name a pair of directional rules, so a field declares `boundary: 'moneyCents'`. */
   static registerAlias(name: string, boundary: BoundaryRules): void { this.aliases.set(name, boundary); }
 
   static alias(name: string): BoundaryRules | undefined { return this.aliases.get(name); }
@@ -40,9 +30,6 @@ export class Boundaries {
   }
 }
 
-// `isoDate`: the only non-identity built-in. Inbound accepts a Date or an ISO-ish
-// string and yields a Date; outbound yields an ISO string. Validity is already
-// guaranteed by `shape` (the date predicate) before decode runs.
 Boundaries.registerDecoder('isoDate', (value) => {
   if (value instanceof Date) return { value };
   if (typeof value === 'string') {
@@ -55,4 +42,3 @@ Boundaries.registerEncoder('isoDate', (value) =>
   value instanceof Date ? value.toISOString() : value,
 );
 Boundaries.registerAlias('isoDate', { in: { decode: 'isoDate' }, out: { encode: 'isoDate' } });
-

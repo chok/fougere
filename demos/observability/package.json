@@ -1,0 +1,23 @@
+{
+  "name": "fougere-demo-observability",
+  "version": "0.0.2-alpha.3",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/main.ts",
+    "load": "k6 run load.js",
+    "signoz": "cd signoz && foundryctl cast -f casting.yaml",
+    "typecheck": "tsc -p catalog/fronds && tsc -p shipping/fronds && tsc -p shop/fronds"
+  },
+  "dependencies": {
+    "@fougere/container": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/observability": "workspace:*",
+    "@fougere/schema": "workspace:*",
+    "@fougere/transport-http": "workspace:*",
+    "jiti": "^2.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0"
+  }
+}

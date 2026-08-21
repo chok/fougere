@@ -37,11 +37,13 @@ export { callValueOf } from './contract.js';
 export type { CallValue } from './contract.js';
 export { toHttpError, toPublicError } from './wire/http-error.js';
 export { loggerMiddleware } from './wire/loggerMiddleware.js';
-export { Logger, setLogLevel, logLevel } from './builtins/logger.js';
+export { Logger, setLogLevel, logLevel, onLog } from './builtins/logger.js';
+export type { LogLevel, LogRecord, LogSink } from './builtins/logger.js';
 // What a re-read config changes in a running process — and what it cannot.
 export { applyConfig, type ConfigApplication } from './boot/apply.js';
 export { Config } from './builtins/config.js';
-export type { EntityOrm, OrmFactory, ListOptions, ListResult } from './orm.js';
+export type { EntityOrm, OrmFactory, ListOptions, ListResult, Together } from './orm.js';
+export { togetherKeyOf, membersOfTogetherKey } from './orm.js';
 export type { App, CreateAppOptions } from './boot/types.js';
 export type {
   ScanResult,
@@ -62,3 +64,6 @@ export { Fronds } from './scan/Fronds.js';
 export { verify, assertSplittable, type Violation } from './verify.js';
 // Same question as verify(), answered from the source text instead of the model.
 export { crossFrondImports, type CrossFrondImport } from './imports.js';
+// Who is calling, established rather than accepted — the proof beside `state`'s claim.
+export { generateKeyPair, issueGrant, signEnvelope, verifyEnvelope, identityFromEnv } from './identity.js';
+export type { FrondIdentity, VerifiedCall, CallIdentity, SignedCall } from './identity.js';
