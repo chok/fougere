@@ -85,11 +85,7 @@ export default class FreezeHandler {
   /** Today's shapes, and the last version recorded before them. */
   private async read(input: Freeze) {
     const scan = await this.projectScan.at(input.root ?? undefined);
-    const schemas: Record<string, unknown> = {};
-    for (const frond of scan.fronds) {
-      for (const found of frond.entities) schemas[found.name] = found.entityClass;
-    }
-    const bundle = describeSet(schemas as Record<string, never>);
+    const bundle = describeSet(Object.fromEntries(scan.fronds.schemas()));
     return { root: scan.root, bundle, previous: await previousOf(scan.root, input.version) };
   }
 }
