@@ -3,6 +3,7 @@ import { applyCreate, type SchemaView } from '@fougere/schema';
 import type { Container } from '@fougere/container';
 import { ErrorCode } from '../wire/errors.js';
 import { emitKeyOf, factsAnnouncedBy } from '../emit.js';
+import { currentFrame } from './together.js';
 import { EMPTY_INVOCATION } from '../wire/invocation.js';
 import type { Logger } from '../builtins/logger.js';
 import type { Fronds } from '../scan/Fronds.js';
@@ -118,6 +119,30 @@ export class Emissions {
    * rejections up, which made a publication hostage to its own indexer.
    */
   private async announce(fact: string, raw: unknown): Promise<void> {
+    /**
+     * A fact announced inside a frame that then rolls back is a lie, and nothing can take
+     * it back: announcing is DISPATCH — every subscriber has been handed the fact and the
+     * carrier has already put it on the wire — while the frame's writes are still
+     * provisional.
+     *
+     * Refused rather than deferred to the commit. Deferring would make `Emit<T>` behave
+     * differently depending on where it is called from, which is the hidden runtime the
+     * doctrine refuses; and it opens a window between the commit and the announcement whose
+     * only remedy is an outbox — a table, therefore durability, the one thing Fougere says
+     * it does not hold.
+     *
+     * A fact designates something that HAS happened. `run` returning is when that becomes
+     * true, so that is where the announcement belongs.
+     */
+    const frame = currentFrame();
+    if (frame !== undefined) {
+      throw new Error(
+        `${fact} cannot be announced inside Together<[…]> (${frame}): announcing is dispatch, ` +
+        `so subscribers and the carrier would have it while these writes can still be taken ` +
+        `back. Announce after run() returns, when it is true.`,
+      );
+    }
+
     const payload = this.stamped(fact, raw);
 
     /**

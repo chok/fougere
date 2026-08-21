@@ -55,6 +55,11 @@ async function boot(split: boolean) {
   return {
     said,
     orm,
+    announceInside: () => call({ entity: 'transfer', op: 'moveAndAnnounceInside' },
+      { ...EMPTY_INVOCATION, params: { from: 'a', to: 'b', amount: 100 } as never }),
+    announceAfter: () => call({ entity: 'transfer', op: 'moveAndAnnounceAfter' },
+      { ...EMPTY_INVOCATION, params: { from: 'a', to: 'b', amount: 100 } as never }),
+    nest: () => call({ entity: 'nested', op: 'nest' }, EMPTY_INVOCATION),
     sync: () => call({ entity: 'refresh', op: 'sync' }, EMPTY_INVOCATION),
     syncAndFail: () => call({ entity: 'refresh', op: 'syncAndFail' }, EMPTY_INVOCATION),
     move: (amount: number) =>
@@ -183,6 +188,34 @@ describe('a provider as a member — the mirror case', () => {
   });
 });
 
+describe('announcing a fact around a frame', () => {
+  it('refuses from INSIDE — dispatch cannot be taken back', async () => {
+    // Announcing hands the fact to every subscriber AND to the carrier, at once. The
+    // frame's writes are still provisional, so the fact would outlive them.
+    await using app = await boot(false);
+    await expect(app.announceInside()).rejects.toThrow(/cannot be announced inside Together/);
+  });
+
+  it('takes the writes back too — the refusal is a failure like any other', async () => {
+    await using app = await boot(false);
+    await app.announceInside().catch(() => undefined);
+
+    expect((await app.orm('account').findById('a')).balance).toBe(1000);
+    expect(await app.orm('ledger').list()).toHaveLength(0);
+  });
+
+  it('allows it AFTER run() returns, which is when it is true', async () => {
+    await using app = await boot(false);
+    await expect(app.announceAfter()).resolves.toBeTruthy();
+    expect((await app.orm('account').findById('a')).balance).toBe(900);
+  });
+
+  it('refuses in a compensated frame too — the two realizations answer the same', async () => {
+    await using app = await boot(true);
+    await expect(app.announceInside()).rejects.toThrow(/cannot be announced inside Together/);
+  });
+});
+
 describe('what a frame refuses at boot', () => {
   /** Boot a fixture and hand back whatever it refused with. */
   const bootOf = async (fixture: string, remotes?: Record<string, string>) => {
@@ -217,5 +250,29 @@ describe('what a frame refuses at boot', () => {
     // declaration makes possible: nothing has to guess what kind the name was meant to be.
     await expect(bootOf('fixtures-together-typo'))
       .rejects.toThrow(/no entity named 'Ledgre' is scanned in this app/);
+  });
+});
+
+describe('a frame opened inside another', () => {
+  /**
+   * Refused, and the measurement is the reason: on ONE engine a second transaction on the
+   * same connection waits for the first, so the nested call hung for five seconds and
+   * answered nothing. Split across engines the same code returned. One declaration with two
+   * behaviours, one of them a deadlock, is worse than a refusal.
+   */
+  it('is refused before it can hang, naming the frame that holds', async () => {
+    await using app = await boot(false);
+    await expect(app.nest()).rejects.toThrow(/cannot be opened inside/);
+  });
+
+  it('and the outer frame takes its own writes back, like any other failure', async () => {
+    await using app = await boot(false);
+    await app.nest().catch(() => undefined);
+    expect((await app.orm('account').findById('a')).balance).toBe(1000);
+  });
+
+  it('answers the same when the members are split — one rule, both realizations', async () => {
+    await using app = await boot(true);
+    await expect(app.nest()).rejects.toThrow(/cannot be opened inside/);
   });
 });

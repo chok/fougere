@@ -1,5 +1,6 @@
-import type { Together } from '@fougere/core';
+import type { Emit, Together } from '@fougere/core';
 import type Account from '../entities/Account.js';
+import type Moved from '../entities/Moved.js';
 import type Ledger from '../../accounting/entities/Ledger.js';
 
 /**
@@ -10,7 +11,26 @@ import type Ledger from '../../accounting/entities/Ledger.js';
  * replays itself.
  */
 export default class TransferHandler {
-  constructor(private together: Together<[Account, Ledger]>) {}
+  constructor(private together: Together<[Account, Ledger]>, private moved: Emit<Moved>) {}
+
+  /** Announcing from INSIDE the block — refused: the writes can still be taken back. */
+  async moveAndAnnounceInside(from: string, to: string, amount: number): Promise<{ ok: true }> {
+    return this.together.run(async ([accounts, ledger]) => {
+      await this.write(accounts, ledger, from, to, amount);
+      await this.moved({ id: `m-${from}`, amount });
+      return { ok: true as const };
+    });
+  }
+
+  /** Announcing AFTER it returns — which is when it is true. */
+  async moveAndAnnounceAfter(from: string, to: string, amount: number): Promise<{ ok: true }> {
+    const done = await this.together.run(async ([accounts, ledger]) => {
+      await this.write(accounts, ledger, from, to, amount);
+      return { ok: true as const };
+    });
+    await this.moved({ id: `m-${from}`, amount });
+    return done;
+  }
 
   /** Move an amount, and write the line that says so. */
   async move(from: string, to: string, amount: number): Promise<{ ok: true }> {
