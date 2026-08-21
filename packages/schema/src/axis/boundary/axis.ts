@@ -2,20 +2,11 @@ import type { Axis } from '../Axis.js';
 import { isObject } from '../../judge/form.js';
 import type { BoundaryRef } from './Boundary.js';
 
-/**
- * How and in which direction a value crosses the client frontier. Only the FORM is judged:
- * the codec registry is OPEN, so a name is resolved — and refused — by `Boundary.of`, the
- * one place that can know.
- *
- * `describe` carries only what was DECLARED: the shape-derived default (a date-time string
- * converts through isoDate) is re-derived on reconstruction. Convention over config, on the
- * wire too.
- */
 export const boundaryAxis: Axis<BoundaryRef, BoundaryRef> = {
   slot: 'boundary',
 
   judge(value, errors) {
-    if (typeof value === 'string') return; // an alias name; resolved, and refused, later
+    if (typeof value === 'string') return; 
     if (!isObject(value)) {
       errors.push({
         path: 'boundary',

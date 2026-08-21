@@ -5,7 +5,6 @@ export interface TextOptions {
   min?: number;
   max?: number;
   pattern?: string;
-  /** JSON Schema format predicate (email, uuid, uri, date, time…), asserted by the engine. */
   format?: StringFormat;
   default?: string;
   description?: string;
