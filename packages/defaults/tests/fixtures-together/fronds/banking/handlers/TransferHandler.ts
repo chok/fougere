@@ -17,7 +17,7 @@ export default class TransferHandler {
   async moveAndAnnounceInside(from: string, to: string, amount: number): Promise<{ ok: true }> {
     return this.together.run(async ([accounts, ledger]) => {
       await this.write(accounts, ledger, from, to, amount);
-      await this.moved({ id: `m-${from}`, amount });
+      await this.moved({ id: `m-${from}`, amount, at: new Date() });
       return { ok: true as const };
     });
   }
@@ -28,7 +28,7 @@ export default class TransferHandler {
       await this.write(accounts, ledger, from, to, amount);
       return { ok: true as const };
     });
-    await this.moved({ id: `m-${from}`, amount });
+    await this.moved({ id: `m-${from}`, amount, at: new Date() });
     return done;
   }
 
