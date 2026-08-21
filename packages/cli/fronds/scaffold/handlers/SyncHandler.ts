@@ -5,8 +5,6 @@ import { entitySourceOf, facadeTypeSourceOf, type SchemaDescriptor } from '@foug
 // lived in this file and went stale the day an op stopped being a bare name: nothing
 // compared the copy to the original, so the drift cost nothing until someone read it.
 import type { IdentityCard } from '@fougere/core';
-import RemoteCard from '../services/RemoteCard.js';
-import ContractLock from '../services/ContractLock.js';
 
 function assertSafeName(kind: string, name: string): void {
   if (typeof name !== 'string' || !/^[A-Za-z_$][A-Za-z0-9_$-]*$/.test(name)) {
@@ -97,16 +95,34 @@ export default class SyncHandler {
   // cwd is ambient in a CLI — not a DI service (the container resolves by type).
   private cwd = process.cwd();
 
-  constructor(
-    private remote: RemoteCard,
-    private lock: ContractLock,
-  ) {}
-
   /** Mirror a remote frond's contract into local entities. */
   async execute(input: { name: string; from: string }): Promise<{ path: string; entities: string[]; removed: string[] }> {
     assertSafeName('frond', input.name);
-    const { baseUrl, card: received } = await this.remote.fetch(input.from);
-    const card = identityCardOf(received);
+    let remoteUrl: URL;
+    try {
+      remoteUrl = new URL(input.from);
+    } catch {
+      throw new Error(`Invalid remote URL '${input.from}'`);
+    }
+    if (remoteUrl.protocol !== 'http:' && remoteUrl.protocol !== 'https:') {
+      throw new Error(`Remote URL must use http or https, got '${remoteUrl.protocol}'`);
+    }
+    const baseUrl = remoteUrl.toString().replace(/\/$/, '');
+
+    // The served frond answers `rpc.discover` on its call endpoint with its
+    // identity card — the same surface every consumer reads, no side endpoint.
+    const res = await fetch(`${baseUrl}/_fougere/call`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'rpc.discover', params: { params: {}, query: {}, state: {} } }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to reach ${baseUrl}/_fougere/call: ${res.status} ${res.statusText}`);
+    }
+    const rpc = (await res.json()) as { result?: IdentityCard; error?: { message: string } };
+    if (rpc.error) throw new Error(`Remote error: ${rpc.error.message}`);
+    const card = identityCardOf(rpc.result);
 
     const target = card.fronds.find((f) => f.name === input.name);
     if (!target) {
@@ -249,15 +265,6 @@ export default class SyncHandler {
      * call and kept the type.
      */
     const removed = [...this.prune(entitiesDir, written), ...this.prune(handlersDir, written)];
-
-    /**
-     * What this consumer now compiles against, in one file a review can read.
-     *
-     * Without it the accepted contract existed only spread across generated sources, and
-     * a host that moved under a deployed consumer was found by a type error at the next
-     * sync — with nothing able to say what changed, or whether it still holds in prod.
-     */
-    this.lock.accept(this.cwd, input.name, baseUrl, target);
 
     return { path: entitiesDir, entities: [...generated.keys()], removed };
   }
