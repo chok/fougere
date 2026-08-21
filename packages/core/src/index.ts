@@ -32,6 +32,8 @@ export { FougereError, ErrorCode, type FougereErrorOptions } from './wire/errors
 export type { OperationContext, AppNext, AppMiddleware } from './wire/middleware.js';
 export { createLocalRunner, createAppRunner } from './wire/call.js';
 export type { FrondCall, Transport, IdentityCard, CardOp, Facade } from './wire/call.js';
+export { compare, breachMessage } from './wire/compat.js';
+export type { Compatibility, Breach, Addition, CardFrond } from './wire/compat.js';
 export { type Emit, type Fact } from './emit.js';
 export { callValueOf } from './contract.js';
 export type { CallValue } from './contract.js';

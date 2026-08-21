@@ -30,6 +30,14 @@ export type { FrondCall, Transport, SignedCall } from './wire/call.js';
 export type { IdentityCard, CardOp } from './wire/call.js';
 
 /**
+ * Whether a served card still honours an accepted one. Pure calculation over two cards,
+ * so it belongs beside their shape rather than behind a boot: a consumer verifying its
+ * contract holds no app, and neither does a CI step.
+ */
+export { compare, breachMessage } from './wire/compat.js';
+export type { Compatibility, Breach, Addition, CardFrond } from './wire/compat.js';
+
+/**
  * The key a class name is filed under — 'Post' → 'post'. Re-exported rather than
  * respelled: a card writes it and a foreign key derives from it, so the convention
  * belongs to the schema, and a second copy here is a second opinion. It travels
