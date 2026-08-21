@@ -7,11 +7,18 @@
  * then `registerGraphQL` on a router). Every one of those lines is convention —
  * there is no decision in them — so the app declaring the adapter is enough.
  *
- * The packages are imported LAZILY, and that is the same shape `db: 'sqlite'` uses
- * (`resolveStorage` pulls `@fougere/adapter-sql` only when a database is declared).
- * `graphql` and `@pothos/core` are heavy and most apps serve none, so a host must not
- * carry them to find out. Declaring the adapter without installing them is refused by
- * name, the way an unresolvable dialect is.
+ * The package is imported LAZILY, the same shape `db: 'sqlite'` uses (`resolveStorage`
+ * pulls `@fougere/adapter-sql` only when a database is declared). A schema builder is
+ * heavy and most apps serve none, so a host must not carry one to find out. Declaring
+ * the adapter without installing it is refused by name, the way an unresolvable dialect is.
+ *
+ * This file used to BUILD the schema — a Pothos builder, `registerAll`, then `graphql()`
+ * — which made it the only schema constructor in the repo, in the package least entitled
+ * to be one. Two costs, one cause: the derivation sat away from the adapter whose job it
+ * is, and `graphql` guards its types with `instanceOf`, so a schema built on one side of
+ * the package boundary was refused on the other as coming *"from another module or
+ * realm"*. Both are gone: `@fougere/adapter-graphql` derives and executes, this door
+ * translates the result into an `Outcome`.
  */
 import type { App } from '@fougere/core';
 import type { Outcome } from './serve.js';
@@ -26,43 +33,27 @@ export interface GraphQLRequest {
   state: Record<string, unknown>;
 }
 
-/** One executable schema per (app, audience) — building it walks every entity. */
-const schemas = new WeakMap<App, Map<string, unknown>>();
+type ExecuteOn = (app: unknown, request: {
+  query: string;
+  variables?: Record<string, unknown>;
+  operationName?: string;
+  surface?: string;
+  state?: Record<string, unknown>;
+}) => Promise<unknown>;
 
-async function schemaFor(app: App, surface?: string): Promise<unknown> {
-  const perApp = schemas.get(app) ?? new Map<string, unknown>();
-  schemas.set(app, perApp);
-
-  const key = surface ?? '';
-  const built = perApp.get(key);
-  if (built) return built;
-
-  let SchemaBuilder: any;
-  let registerAll: any;
+async function executor(): Promise<ExecuteOn> {
   try {
-    ({ default: SchemaBuilder } = await import('@pothos/core'));
-    ({ registerAll } = await import('@fougere/adapter-graphql'));
+    const { executeOn } = await import('@fougere/adapter-graphql');
+    return executeOn as unknown as ExecuteOn;
   } catch (cause) {
     throw new Error(
-      "adapters: { graphql: true } is declared, but the packages that serve it are not " +
-      "installed. Add `@fougere/adapter-graphql` and `@pothos/core` — they are not " +
-      'dependencies of the host, because an app that serves no GraphQL should not carry ' +
-      'a schema builder to find that out.',
+      "adapters: { graphql: true } is declared, but the package that serves it is not " +
+      'installed. Add `@fougere/adapter-graphql` — it is not a dependency of the host, ' +
+      'because an app that serves no GraphQL should not carry a schema builder to find ' +
+      'that out.',
       { cause },
     );
   }
-
-  // Every line here is convention: a builder, the two root types, and the entities
-  // the app already scanned. Nothing an app could usefully say differently — which is
-  // why declaring the adapter is the whole configuration.
-  const builder = new SchemaBuilder({});
-  builder.queryType({});
-  builder.mutationType({});
-  registerAll(builder, app as never, surface ? { surface } : undefined);
-
-  const schema = builder.toSchema();
-  perApp.set(key, schema);
-  return schema;
 }
 
 /**
@@ -78,17 +69,17 @@ export async function serveGraphQL(app: App, request: GraphQLRequest): Promise<O
     return { kind: 'error', status: 400, body: { message: 'Missing query' } };
   }
 
-  const { graphql } = await import('graphql');
-  const result = await graphql({
-    schema: (await schemaFor(app, request.surface)) as never,
-    source: request.query,
-    variableValues: request.variables,
+  const executeOn = await executor();
+  const result = await executeOn(app, {
+    query: request.query,
+    variables: request.variables,
     operationName: request.operationName,
+    surface: request.surface,
     // The same state every other door stamps: what the server resolved, never the wire.
-    contextValue: { state: request.state },
+    state: request.state,
   });
 
   // A GraphQL error is not an HTTP error: the transport succeeded, and the errors ride
   // in the body where a client is required to look for them.
-  return { kind: 'ok', status: 200, body: result };
+  return { kind: 'ok', status: 200, body: result as Record<string, unknown> };
 }
