@@ -52,8 +52,22 @@ export class Fronds extends Array<FrondDescriptor> {
     return new Map(this.flatMap((frond) => frond.entities.map((e) => [e.name, e.entityClass] as const)));
   }
 
-  /** What is hosted here, sorted — the sentence a NOT_FOUND prints. */
+  /** Every scanned entity, sorted. What was FOUND, not what answers. */
   entityNames(): string[] {
     return this.flatMap((frond) => frond.entities.map((e) => e.name)).sort();
+  }
+
+  /**
+   * The names a call may address, sorted — what a NOT_FOUND must print.
+   *
+   * Not `entityNames()`, which is what the scan found: an entity with no handler is
+   * scanned and serves nothing, so the refusal read *"Entity 'indexed' is not hosted
+   * here. Hosted here: indexed."* — naming the very thing it had just refused. A façade
+   * is keyed on a HANDLER's address, and that is what this lists.
+   */
+  servedNames(surface?: string): string[] {
+    return this.flatMap((frond) => frond.handlers
+      .filter((handler) => (handler.surface ?? undefined) === surface)
+      .map((handler) => handler.address)).sort();
   }
 }
