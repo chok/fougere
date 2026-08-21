@@ -13,7 +13,7 @@
   "home": {
     "badge": "Pre-release — APIs are settling",
     "title": "The only framework you can pick at any point.",
-    "subtitle": "Day 1 or day 400: your routes, your pages, your rendering and your database stay put. What you rewrite is the schema — one entity at a time, alongside the ones you already have.",
+    "subtitle": "Day 1 or day 400: your routes, your pages, your rendering and your data stay put. What you rewrite is the model — one entity at a time.",
     "ctaDocs": "Read the docs",
     "ctaBlog": "Read the blog",
     "gradientTitle": "The gradient",

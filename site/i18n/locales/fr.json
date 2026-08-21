@@ -13,7 +13,7 @@
   "home": {
     "badge": "Pré-version — les API se stabilisent",
     "title": "Le seul framework que vous pouvez choisir n'importe quand.",
-    "subtitle": "Jour 1 ou jour 400 : vos routes, vos pages, votre rendu et votre base ne bougent pas. Ce que vous réécrivez, c'est le schéma — une entité à la fois, à côté de celles que vous avez déjà.",
+    "subtitle": "Jour 1 ou jour 400 : vos routes, vos pages, votre rendu et vos données ne bougent pas. Ce que vous réécrivez, c'est le modèle — une entité à la fois.",
     "ctaDocs": "Lire la doc",
     "ctaBlog": "Lire le blog",
     "gradientTitle": "Le gradient",
