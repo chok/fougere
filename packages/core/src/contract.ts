@@ -16,7 +16,8 @@ export { FougereError, ErrorCode } from './wire/errors.js';
 export type { FougereErrorOptions } from './wire/errors.js';
 export { EMPTY_INVOCATION } from './wire/invocation.js';
 export type { InvocationContext } from './wire/invocation.js';
-export type { FrondCall, Transport } from './wire/call.js';
+export type { FrondCall, Transport, SignedCall } from './wire/call.js';
+
 /**
  * What `rpc.discover` answers. It belongs here and not to the runtime: the
  * reserved op travels on the same wire as every other call, so a consumer that

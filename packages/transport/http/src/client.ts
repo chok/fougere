@@ -5,7 +5,7 @@
  * typed error (SERVICE_UNAVAILABLE, GATEWAY_TIMEOUT, BAD_GATEWAY), an
  * application failure comes back as the FougereError the façade threw.
  */
-import { FougereError, ErrorCode, type Transport, type FrondCall, type InvocationContext } from '@fougere/core/contract';
+import { FougereError, ErrorCode, type Transport, type FrondCall, type InvocationContext, type SignedCall } from '@fougere/core/contract';
 import type { RpcRequest, RpcResponse } from './jsonrpc.js';
 export type { RpcRequest, RpcResponse } from './jsonrpc.js';
 
@@ -33,6 +33,16 @@ export interface HttpTransportOptions {
   timeoutMs?: number;
   /** Extra attempts on connection failures only — the request provably never left. */
   retries?: number;
+  /**
+   * Signs the state this transport sends, turning a claim into something the receiver
+   * can check. Supplied rather than built here: signing is `node:crypto`, and this
+   * module is published as the browser-safe `/client` subpath — a browser holds no key
+   * and never signs. `@fougere/app` wires it from `signEnvelope`.
+   *
+   * Absent, the state travels as a bare claim and only a receiver that asks for nothing
+   * will take it.
+   */
+  sign?: (call: SignedCall) => string;
 }
 
 /** Failures where the request never reached the other side — safe to retry. */
@@ -45,7 +55,16 @@ export function createHttpTransport(baseUrl: string, options: HttpTransportOptio
   let nextId = 1;
 
   return async (call, invocation) => {
-    const request = frameCall(call, invocation, nextId++);
+    // The envelope REPLACES the state on the wire — sending both would leave the
+    // receiver choosing between a proof and a claim about the same thing.
+    // `caller` is dropped on every hop: it names who signed THIS call, so carrying the
+    // one this process was handed would make `shop → catalog → billing` read `shop`.
+    // It travels outside the envelope anyway, so a stale one would be unsigned too.
+    const { caller: _established, ...forwarded } = invocation;
+    const sent = options.sign
+      ? { ...forwarded, state: {}, identity: options.sign({ ...call, ...invocation }) }
+      : forwarded;
+    const request = frameCall(call, sent, nextId++);
 
     for (let attempt = 0; ; attempt++) {
       let res: Response;

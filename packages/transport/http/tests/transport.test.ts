@@ -112,15 +112,17 @@ describe('sender ↔ receiver over real HTTP', () => {
   });
 
   it('binds wider when `hosts` says so, and the message names what is allowed', async () => {
-    // Stating the address IS taking the decision — that is the whole guard now.
-    const open = await serve(runner, { hosts: ['0.0.0.0'] });
+    // Stating the address is one of two guards now: a receiver reachable from outside
+    // must also be able to establish its caller, or say that something in front did.
+    // `identity.e2e.test.ts` pins that half; here it is granted so the address is tested alone.
+    const open = await serve(runner, { hosts: ['0.0.0.0'], allowUnsigned: true });
     try {
       expect(open.port).toBeGreaterThan(0);
     } finally {
       await open.close();
     }
     // …and `host` still has to be one of them: a widened list is not a blank cheque.
-    await expect(serve(runner, { hosts: ['0.0.0.0'], host: '10.0.0.1' }))
+    await expect(serve(runner, { hosts: ['0.0.0.0'], host: '10.0.0.1', allowUnsigned: true }))
       .rejects.toThrow(/binds one of \[0\.0\.0\.0\], got '10\.0\.0\.1'/);
     await expect(serve(runner, { hosts: [] })).rejects.toThrow(/`hosts` is empty/);
   });
