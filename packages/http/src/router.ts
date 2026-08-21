@@ -8,8 +8,19 @@
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 export interface RequestContext {
-  /** The original Web Standard Request — source of truth. */
-  request: Request;
+  /**
+   * The request as a Web Standard `Request`.
+   *
+   * Built on FIRST ACCESS. Every adapter used to build one eagerly, and no consumer
+   * in this repo reads it — measured, zero call sites outside the adapters and their
+   * tests, while the construction cost a fifth of the port's throughput on the engines
+   * that have no `Request` of their own (express, fastify). Hono hands over the one it
+   * already has, so nothing is deferred there.
+   *
+   * The fields beside it — `method`, `path`, `params`, `query`, `body` — are what the
+   * projections read, and they are not derived from this one.
+   */
+  readonly request: Request;
   method: HttpMethod;
   path: string;
   params: Record<string, string>;

@@ -83,17 +83,11 @@ export function readExpressBody(req: any): Promise<unknown> {
 }
 
 function buildContext(req: any): RequestContext {
-  const host = req.headers?.host ?? 'localhost';
-  const protocol = req.protocol ?? 'http';
-  const url = `${protocol}://${host}${req.originalUrl ?? req.url}`;
   // Kept as a plain string: a real request may be HEAD or OPTIONS, which the
   // interface's `HttpMethod` does not name. Casting here would have made the
   // "does this verb carry a body" question unaskable — it is asked below.
   const verb: string = req.method.toUpperCase();
-  const headers = new Headers(
-    Object.entries(req.headers ?? {})
-      .filter((entry): entry is [string, string] => typeof entry[1] === 'string'),
-  );
+  let request: Request | undefined;
 
   // One reader for both consumers — see `readExpressBody`.
   const body = () => readExpressBody(req);
@@ -102,7 +96,20 @@ function buildContext(req: any): RequestContext {
     // The Request carries no body: Express may have consumed the stream already,
     // and a Request built around a drained one lies. `body()` is the honest reader,
     // and it is what every consumer in this repo calls.
-    request: new Request(url, { method: verb, headers }),
+    get request(): Request {
+      if (!request) {
+        const host = req.headers?.host ?? 'localhost';
+        const url = `${req.protocol ?? 'http'}://${host}${req.originalUrl ?? req.url}`;
+        request = new Request(url, {
+          method: verb,
+          headers: new Headers(
+            Object.entries(req.headers ?? {})
+              .filter((entry): entry is [string, string] => typeof entry[1] === 'string'),
+          ),
+        });
+      }
+      return request;
+    },
     method: verb as HttpMethod,
     path: req.path ?? (req.originalUrl ?? req.url ?? '').split('?')[0],
     params: req.params ?? {},
