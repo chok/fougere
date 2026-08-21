@@ -30,3 +30,6 @@ export { setupSqlite, setupKysely, sqlSink } from './setup.js';
 export type { Setup, SetupOptions, SqliteSetup, SqliteSetupOptions } from './setup.js';
 export { actualState, desiredTables, delta, orderChanges, changeSQL, planMigration, migrate } from './diff.js';
 export type { SchemaState, Change } from './diff.js';
+// The non-additive half — realised only from a step a human wrote down.
+export { planStep, stepSQL, applyStep } from './step.js';
+export type { Plan, PlanOptions, Refusal, StepChange } from './step.js';
