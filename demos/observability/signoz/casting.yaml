@@ -1,0 +1,13 @@
+# SigNoz on Docker, via Foundry — `foundryctl cast -f casting.yaml`.
+# Install foundryctl first: curl -fsSL https://signoz.io/foundry.sh | bash
+#
+# Brings up ClickHouse, its keeper, Postgres, the OTLP ingester and the UI.
+# UI on :8080, OTLP on :4318 — which is what `observe.ts` targets by default.
+apiVersion: v1alpha1
+kind: Installation
+metadata:
+  name: signoz
+spec:
+  deployment:
+    flavor: compose
+    mode: docker

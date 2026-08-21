@@ -15,11 +15,17 @@ import { Logger, setLogLevel, logLevel, applyConfig, loadConfig } from '../src/i
 
 afterEach(() => { setLogLevel('info'); vi.restoreAllMocks(); });
 
+/**
+ * What the logger SAID, whichever console method carried it — one per level now, so a
+ * spy on `log` alone would miss every `info` and every `debug`.
+ */
 const said = (fn: () => void): string[] => {
   const lines: string[] = [];
-  const spy = vi.spyOn(console, 'log').mockImplementation((...a) => { lines.push(a.join(' ')); });
+  const take = (...a: unknown[]) => { lines.push(a.join(' ')); };
+  const spies = (['debug', 'info', 'log', 'warn', 'error'] as const)
+    .map((method) => vi.spyOn(console, method).mockImplementation(take));
   fn();
-  spy.mockRestore();
+  for (const spy of spies) spy.mockRestore();
   return lines;
 };
 

@@ -6,6 +6,42 @@
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'silent';
 
+/**
+ * One line, before it was formatted for a terminal.
+ *
+ * The console form is already cooked — ANSI codes, a badge, a timestamp — so anything
+ * that wants to FORWARD a log needs it before that. What travels is the structure, and
+ * nothing here knows where it goes.
+ */
+export interface LogRecord {
+  level: Exclude<LogLevel, 'silent'>;
+  /** The logger's own name — 'boot:app', 'boot:app:catalog'. */
+  name: string;
+  message: string;
+  args: unknown[];
+  /** Epoch milliseconds. */
+  at: number;
+}
+
+export type LogSink = (record: LogRecord) => void;
+
+/**
+ * Who else takes this process's log lines, beside the console. A list, like the span
+ * sinks: a line is one fact, and forwarding it twice is the caller's business.
+ *
+ * Nothing is built when nobody listens — the record is only shaped if a sink exists.
+ */
+const sinks: LogSink[] = [];
+
+/** Take every line this process logs. Returns the way to withdraw. */
+export function onLog(next: LogSink): () => void {
+  sinks.push(next);
+  return () => {
+    const at = sinks.indexOf(next);
+    if (at >= 0) sinks.splice(at, 1);
+  };
+}
+
 const LEVELS: Record<LogLevel, number> = { debug: 0, info: 1, warn: 2, error: 3, silent: 4 };
 
 /**
@@ -105,9 +141,19 @@ export class Logger {
   private log(level: string, msg: string, args: unknown[]) {
     if (LEVELS[level as LogLevel] < threshold) return;
 
+    // Beside the console, never instead of it: a forwarded line is an addition, and a
+    // sink that throws must not cost the operator the line they were reading.
+    for (const take of sinks) {
+      try {
+        take({ level: level as LogRecord['level'], name: this.name, message: msg, args, at: Date.now() });
+      } catch { /* forwarding never breaks logging */ }
+    }
+
     const style = LEVEL_STYLE[level];
     const time = formatTime();
-    const method = level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log';
+    // One console method per level. `debug` and `info` both went to `console.log`, so
+    // nothing downstream — a terminal filter, a collector — could tell them apart.
+    const method = level as 'debug' | 'info' | 'warn' | 'error';
 
     if (this.color) {
       const c = COLORS[style.color];
