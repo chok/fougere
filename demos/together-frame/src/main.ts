@@ -5,7 +5,7 @@
  * frames are transactions. Uncomment the block in fougere.config.ts and run again — the
  * same handlers, the same results, and one line of boot output that is not the same.
  */
-import { createApp, createLocalRunner, EMPTY_INVOCATION, type App } from '@fougere/core';
+import { createApp, createLocalRunner, EMPTY_INVOCATION, type App, type EntityOrm } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { storageFrom } from '@fougere/defaults';
 import { setupSqlite } from '@fougere/adapter-sql';
@@ -58,7 +58,7 @@ observeWith(async () => {
   return `ada ${ada.balance}`;
 });
 
-const orm = (entity: string) => (app as never as { ormFor(e: string): any }).ormFor(entity);
+const orm = (entity: string) => app.ormFor(entity) as EntityOrm;
 const call = createLocalRunner(app);
 const run = (entity: string, op: string, params: Record<string, unknown> = {}) =>
   call({ entity, op }, { ...EMPTY_INVOCATION, params: params as never });
