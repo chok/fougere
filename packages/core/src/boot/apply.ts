@@ -1,5 +1,5 @@
 import type { FougereConfig } from '../config-loader.js';
-import { setLogLevel, logLevel, type LogLevel } from '../builtins/logger.js';
+import { setLogLevel, logLevel, envLevel } from '../builtins/logger.js';
 
 export interface ConfigApplication {
   /** What this call changed in the running process. */
@@ -25,8 +25,11 @@ export function applyConfig(next: FougereConfig, inForce?: FougereConfig): Confi
   const applied: string[] = [];
   const pending: string[] = [];
 
-  // The CLI speaks through the environment, so it keeps winning over the file.
-  const wanted = (process.env.FOUGERE_LOG_LEVEL as LogLevel | undefined) ?? next.logLevel ?? 'debug';
+  // The CLI speaks through the environment, so it keeps winning over the file — read
+  // through `envLevel`, which is where the environment is already judged. Casting it
+  // here was a second reader that validated nothing: `FOUGERE_LOG_LEVEL=verbose` set
+  // the threshold to `undefined` and every log passed.
+  const wanted = envLevel() ?? next.logLevel ?? 'debug';
   const before = logLevel();
   if (wanted !== before) {
     setLogLevel(wanted);

@@ -60,13 +60,22 @@ let threshold: number = LEVELS[envLevel() ?? 'info'];
  * `warn` got that line anyway. Guarded: this module runs on Workers, where there is no
  * `process`.
  */
-function envLevel(): LogLevel | undefined {
+export function envLevel(): LogLevel | undefined {
   const raw = typeof process === 'undefined' ? undefined : process.env.FOUGERE_LOG_LEVEL;
   return raw !== undefined && raw in LEVELS ? (raw as LogLevel) : undefined;
 }
 
-/** Set the level for every logger in this process, at once. */
+/**
+ * Set the level for every logger in this process, at once.
+ *
+ * Refuses a level it does not know rather than storing `undefined` as the threshold:
+ * every comparison against it is then `NaN`, so nothing is filtered and `logLevel()`
+ * reports its own fallback instead of what is in force.
+ */
 export function setLogLevel(level: LogLevel): void {
+  if (!(level in LEVELS)) {
+    throw new Error(`Unknown log level: '${level}'. One of ${Object.keys(LEVELS).join(', ')}.`);
+  }
   threshold = LEVELS[level];
 }
 

@@ -123,3 +123,28 @@ describe('a process started at a level', () => {
     expect(out).toContain('END');
   });
 });
+
+/**
+ * A level nobody knows.
+ *
+ * `applyConfig` read `FOUGERE_LOG_LEVEL` through a cast while `envLevel` — one module
+ * away — already judged it. So `verbose` reached `setLogLevel`, the threshold became
+ * `undefined`, and every comparison against it was `NaN`: nothing filtered, and
+ * `logLevel()` answered its own fallback rather than what was in force.
+ */
+describe('an unknown log level', () => {
+  it('loses to the file, and does not open the floodgates', () => {
+    vi.stubEnv('FOUGERE_LOG_LEVEL', 'verbose');
+
+    applyConfig({ logLevel: 'error' }, {});
+
+    expect(logLevel()).toBe('error');
+    expect(said(() => { new Logger('t').debug('should not appear'); })).toEqual([]);
+    vi.unstubAllEnvs();
+  });
+
+  it('is refused by name at the door, so a cast cannot smuggle one in', () => {
+    expect(() => setLogLevel('verbose' as never)).toThrow(/Unknown log level: 'verbose'/);
+    expect(() => setLogLevel('verbose' as never)).toThrow(/debug, info, warn, error, silent/);
+  });
+});
