@@ -4,7 +4,7 @@ import { Lifecycle } from '@fougere/schema';
  * from the entity's field axes. No Vue, no Nuxt: testable headless,
  * usable by any renderer (the page owns the widgets).
  */
-import { Anatomy, inputFields } from '@fougere/schema';
+import { Anatomy, inputFields, outputFields, registrationKeyOf, Role } from '@fougere/schema';
 import type { Field, SchemaView, ValidationError, ValidationResult } from '@fougere/schema';
 
 /**
@@ -133,6 +133,14 @@ function attrsOf(field: Field, control: FormField['control'], required: boolean)
 }
 
 /**
+ * The label convention, spelled once for both projections: an i18n key by convention and
+ * the field's own name as the fallback. The schema never carries display text.
+ */
+function labelOf(name: string, entityKey: string): Pick<FormField, 'labelKey' | 'label'> {
+  return { labelKey: `${entityKey}.${name}`, label: name.charAt(0).toUpperCase() + name.slice(1) };
+}
+
+/**
  * The fields a create form is made of: membership from the io projection
  * (`inputFields` — what a client may supply), requiredness from the
  * lifecycle axis (any create rule makes absence legal).
@@ -147,8 +155,7 @@ export function formFieldsOf(entity: FormEntity, entityKey: string): FormField[]
       name,
       control,
       required,
-      labelKey: `${entityKey}.${name}`,
-      label: name.charAt(0).toUpperCase() + name.slice(1),
+      ...labelOf(name, entityKey),
       ...(Array.isArray(enumOf(f))
         ? { options: enumOf(f)!.filter((value): value is string => typeof value === 'string') }
         : {}),
@@ -156,6 +163,56 @@ export function formFieldsOf(entity: FormEntity, entityKey: string): FormField[]
       ...(defaultOf(f) !== undefined ? { default: defaultOf(f) } : {}),
     };
   });
+}
+
+export interface TableColumn {
+  name: string;
+  /**
+   * How to print the value — the dual of {@link FormField.control}, and deliberately not
+   * the same list: a closed set prints as its value, a reference prints as a link.
+   */
+  render: 'text' | 'number' | 'boolean' | 'date' | 'json' | 'link';
+  /** The same key a form uses for the same field — one convention, two projections. */
+  labelKey: string;
+  label: string;
+  /**
+   * The entity a `link` points at, under the key its door is named by. Always present on a
+   * reference: the card carries the target's name, and a card rebuilt with no sibling to
+   * resolve to keeps it as a stand-in rather than losing it.
+   */
+  to?: string;
+}
+
+/** Asked of the relation before the shape: a reference's own shape is a bare string. */
+function renderOf(field: Field): TableColumn['render'] {
+  if (Role.of(field).isReference) return 'link';
+  const base = Anatomy.of(field.shape).base;
+  if (base?.type === 'number' || base?.type === 'integer') return 'number';
+  if (base?.type === 'boolean') return 'boolean';
+  if (base?.type === 'object' || base?.type === 'array') return 'json';
+  if (base?.type === 'string' && base.format === 'date-time') return 'date';
+  return 'text';
+}
+
+/**
+ * The columns a list is made of: membership from the io projection (`outputFields` — what
+ * may leave), minus collections, because a cell holds one value and a `many()` is a page.
+ *
+ * Which column identifies the row is NOT answered here — `primaryFieldOf` answers it for a
+ * shape, and its own doc records what five private copies of that loop cost.
+ */
+export function tableColumnsOf(entity: FormEntity, entityKey: string): TableColumn[] {
+  return Object.entries(outputFields(entity.getFields()))
+    .filter(([, field]) => !Role.of(field).isCollection)
+    .map(([name, field]) => {
+      const target = Role.of(field).target;
+      return {
+        name,
+        render: renderOf(field),
+        ...labelOf(name, entityKey),
+        ...(target ? { to: registrationKeyOf(target.name) } : {}),
+      };
+    });
 }
 
 /**

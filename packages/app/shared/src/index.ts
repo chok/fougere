@@ -39,10 +39,12 @@ export {
 
 export {
   formFieldsOf,
+  tableColumnsOf,
   payloadOf,
   errorsByField,
   type FormEntity,
   type FormField,
+  type TableColumn,
 } from './form.js';
 
 export { sessionViewOf, type SessionView } from './session.js';
