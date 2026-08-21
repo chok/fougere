@@ -1,0 +1,77 @@
+{
+  "name": "@fougere/admin",
+  "version": "0.2.0-alpha.0",
+  "description": "A back-office derived from what the app already says it hosts — a react-admin DataProvider over the Fougere wire.",
+  "keywords": [
+    "fougere",
+    "react-admin",
+    "admin",
+    "back-office",
+    "typescript",
+    "crud"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chok/fougere.git",
+    "directory": "packages/app/admin"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.test.json",
+    "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "@fougere/app": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@mui/material": "^9.3.1",
+    "@types/react": "^19.2.2",
+    "react": "19.2.8",
+    "react-admin": "^5.15.1",
+    "react-router-dom": "^7.9.6",
+    "vitest": "^4.1.0"
+  },
+  "peerDependencies": {
+    "@mui/material": "^5.16.12 || ^6.0.0 || ^7.0.0 || ^9.0.0",
+    "react": "^18.3.0 || ^19.0.0",
+    "react-admin": "^5.0.0",
+    "react-router-dom": "^6.22.0 || ^7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@mui/material": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "react-admin": {
+      "optional": true
+    },
+    "react-router-dom": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
