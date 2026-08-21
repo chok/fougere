@@ -3,6 +3,11 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import SyncHandler, { entityClassName } from '../fronds/scaffold/handlers/SyncHandler.js';
+import RemoteCard from '../fronds/scaffold/services/RemoteCard.js';
+import ContractLock from '../fronds/scaffold/services/ContractLock.js';
+
+/** What the container hands the handler at runtime, built by hand here. */
+const handler = () => new SyncHandler(new RemoteCard(), new ContractLock());
 
 const originalCwd = process.cwd();
 
@@ -40,7 +45,7 @@ describe('remote frond sync', () => {
     }), { status: 200 })));
 
     try {
-      await new SyncHandler().execute({ name: 'blog', from: 'https://example.test/' });
+      await handler().execute({ name: 'blog', from: 'https://example.test/' });
       const generated = readFileSync(join(root, '.fougere', 'remotes', 'blog', 'entities', 'Post.ts'), 'utf8');
       // The host's `title` names NOTHING: the class takes the already-sanitized name.
       // The string stays present INSIDE the card, as inert data.
@@ -85,7 +90,7 @@ describe('remote frond sync', () => {
     }), { status: 200 })));
 
     try {
-      await new SyncHandler().execute({ name: 'ops', from: 'https://example.test/' });
+      await handler().execute({ name: 'ops', from: 'https://example.test/' });
       const dir = join(root, '.fougere', 'remotes', 'ops');
 
       // The door travels; there is simply no row class to write beside it.
@@ -122,7 +127,7 @@ describe('remote frond sync', () => {
     }), { status: 200 })));
 
     try {
-      await expect(new SyncHandler().execute({ name: 'blog', from: 'https://example.test' }))
+      await expect(handler().execute({ name: 'blog', from: 'https://example.test' }))
         // The message names the list it came from — the card has two now, and a bad
         // name in one says nothing about the other.
         .rejects.toThrow(/Invalid door name/);
@@ -139,7 +144,7 @@ describe('remote frond sync', () => {
     }), { status: 200 })));
 
     try {
-      await expect(new SyncHandler().execute({ name: 'blog', from: 'https://example.test' }))
+      await expect(handler().execute({ name: 'blog', from: 'https://example.test' }))
         .rejects.toThrow(/valid doors array/);
       expect(() => readFileSync(join(root, '.fougere', 'remotes.json'), 'utf8')).toThrow();
     } finally {
@@ -183,7 +188,7 @@ describe('remote frond sync', () => {
     }), { status: 200 })));
 
     try {
-      const out = await new SyncHandler().execute({ name: 'blog', from: 'https://example.test' });
+      const out = await handler().execute({ name: 'blog', from: 'https://example.test' });
       expect(out.entities).toEqual(['Post']);
       expect(readFileSync(join(root, '.fougere', 'remotes', 'blog', 'entities', 'Post.ts'), 'utf8'))
         .toContain('class Post extends reconstruct<');
@@ -218,7 +223,7 @@ describe('remote frond sync', () => {
       const dir = join(root, '.fougere', 'remotes', 'blog');
 
       vi.stubGlobal('fetch', vi.fn(async () => new Response(cardWith(['post', 'ticket']), { status: 200 })));
-      await new SyncHandler().execute({ name: 'blog', from: 'https://example.test' });
+      await handler().execute({ name: 'blog', from: 'https://example.test' });
       expect(readFileSync(join(dir, 'entities', 'Ticket.ts'), 'utf8')).toContain('class Ticket');
 
       // A file the operator put there by hand — sync owns the folder, not its contents.
@@ -226,7 +231,7 @@ describe('remote frond sync', () => {
 
       vi.unstubAllGlobals();
       vi.stubGlobal('fetch', vi.fn(async () => new Response(cardWith(['post']), { status: 200 })));
-      const out = await new SyncHandler().execute({ name: 'blog', from: 'https://example.test' });
+      const out = await handler().execute({ name: 'blog', from: 'https://example.test' });
 
       expect(out.removed.sort()).toEqual(['Ticket.ts', 'TicketHandler.ts']);
       expect(() => readFileSync(join(dir, 'entities', 'Ticket.ts'), 'utf8')).toThrow();
@@ -274,7 +279,7 @@ describe('remote frond sync', () => {
     }), { status: 200 })));
 
     try {
-      const out = await new SyncHandler().execute({ name: 'blog', from: 'https://example.test' });
+      const out = await handler().execute({ name: 'blog', from: 'https://example.test' });
       const dir = join(root, '.fougere', 'remotes', 'blog');
 
       expect(out.entities).toEqual(['Post', 'PostPublished']);
