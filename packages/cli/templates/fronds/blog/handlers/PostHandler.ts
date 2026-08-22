@@ -30,9 +30,7 @@ export default class PostHandler extends Crud(Post) {
 
   /** Only published posts, projected to the card. */
   async published(): Promise<PostCard[]> {
-    const all = await this.orm.list();
-    return all
-      .filter((p) => p.status === 'published')
-      .map(({ id, title, status }) => ({ id, title, status }));
+    const posts = await this.orm.list({ where: { status: 'published' } });
+    return posts.map(({ id, title, status }) => ({ id, title, status }));
   }
 }

@@ -10,7 +10,7 @@ export default class PostHandler extends Crud(Post) {
     if (!post) {
       throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `Post '${id}' not found`, entity: 'post', operation: 'publish' });
     }
-    if ((post as { status?: string }).status === 'published') {
+    if (post.status === 'published') {
       throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published', entity: 'post', operation: 'publish' });
     }
     return this.orm.update(id, { status: 'published' });
@@ -18,9 +18,7 @@ export default class PostHandler extends Crud(Post) {
 
   /** Only published posts, projected to the card. */
   async published(): Promise<PostCard[]> {
-    const all = await this.orm.list();
-    return all
-      .filter((p) => (p as { status?: string }).status === 'published')
-      .map((p) => ({ id: String(p.id), title: String(p.title), status: 'published' })) as PostCard[];
+    const posts = await this.orm.list({ where: { status: 'published' } });
+    return posts.map(({ id, title, status }) => ({ id, title, status }));
   }
 }

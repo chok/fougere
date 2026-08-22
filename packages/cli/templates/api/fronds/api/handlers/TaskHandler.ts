@@ -13,7 +13,7 @@ export default class TaskHandler extends Crud(Task) {
     if (!task) {
       throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `Task '${id}' not found`, entity: 'task', operation: 'complete' });
     }
-    if ((task as { status?: string }).status === 'done') {
+    if (task.status === 'done') {
       throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already done', entity: 'task', operation: 'complete' });
     }
     return this.orm.update(id, { status: 'done' });
@@ -21,9 +21,7 @@ export default class TaskHandler extends Crud(Task) {
 
   /** Still-open tasks, projected to the card contract. */
   async open(): Promise<TaskCard[]> {
-    const all = await this.orm.list();
-    return all
-      .filter((t) => (t as { status?: string }).status === 'open')
-      .map((t) => ({ id: String(t.id), title: String(t.title), status: 'open' })) as TaskCard[];
+    const tasks = await this.orm.list({ where: { status: 'open' } });
+    return tasks.map(({ id, title, status }) => ({ id, title, status }));
   }
 }
