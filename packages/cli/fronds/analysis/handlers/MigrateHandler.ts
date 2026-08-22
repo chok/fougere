@@ -2,12 +2,13 @@ import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { loadConfig } from '@fougere/core';
 import { resolveStorage } from '@fougere/defaults';
-import { actualState, desiredTables, planStep, applyStep, type Plan, type StepChange } from '@fougere/adapter-sql';
+import { actualState, desiredTables, planStep, collapseChain, applyStep, type Plan, type StepChange } from '@fougere/adapter-sql';
 import type { SetDiff } from '@fougere/schema';
 import ProjectScan from '../services/ProjectScan.js';
 import type Migrate from '../entities/Migrate.js';
 
-const VERSIONS = '.fougere/versions';
+/** Beside the frond's source, and committed — see `FreezeHandler`. */
+const VERSIONS = 'versions';
 
 export interface MigrationPlan {
   /** Versions whose step was read, oldest first. */
@@ -36,14 +37,15 @@ export default class MigrateHandler {
   /** Realise the frozen steps this database has not caught up with. */
   async execute(input: Migrate): Promise<MigrationPlan> {
     const scan = await this.projectScan.at(input.root ?? undefined);
-    const steps = await chainOf(scan.root);
+    const perFrond = await Promise.all(scan.fronds.map((frond) => chainOf(frond.source.path)));
+    const steps = perFrond.flat();
     if (steps.length === 0) return { chain: [], changes: [], refusals: [], ran: [] };
 
     const config = await loadConfig(scan.root);
-    const { db } = resolveStorage(config.db ?? {}) as { db?: never };
-    if (!db) {
+    const storage = resolveStorage(config.db ?? {});
+    if (!storage.db) {
       return {
-        chain: steps.map(({ version }) => version),
+        chain: versionsOf(steps),
         changes: [],
         refusals: [{ entity: '*', field: '*', reason: 'no `db` in fougere.config.ts — nothing to migrate' }],
         ran: [],
@@ -51,30 +53,49 @@ export default class MigrateHandler {
     }
 
     const tables = desiredTables(scan as never);
-    const actual = await actualState(db);
+    // Each frond's chain is composed on its own — its versions are its own line — and the
+    // results are gathered by SOURCE, because an engine is what a statement runs against.
+    const composed = collapseChain(perFrond.map((chain) => collapseChain(chain.map(({ step }) => step))));
+    const sourceOf = storage.sourceOf ?? (() => 'db');
 
-    // One state, read once. Every step is planned against the SAME observation, so a
-    // chain of two steps touching one column proposes both — the second is not hidden
-    // by the first, which has not run yet.
     const changes: StepChange[] = [];
     const refusals: Plan['refusals'] = [];
-    for (const { step } of steps) {
-      const plan = planStep(step, tables, { actual });
+    const ran: string[] = [];
+    for (const source of storage.sources?.() ?? ['db']) {
+      const db = (source === 'db' ? storage.db : storage.dbOf?.(source)) as Parameters<typeof actualState>[0];
+      if (!db) continue;
+
+      const mine = onSource(composed, source, sourceOf);
+      if (Object.keys(mine.entities).length === 0) continue;
+
+      const plan = planStep(mine, tables, { actual: await actualState(db) });
       changes.push(...plan.changes);
       refusals.push(...plan.refusals);
+      // Held back: a refusal anywhere stops every engine, for the reason it stops every
+      // statement — half a chain is worse across two engines than within one.
+      if (input.apply && refusals.length === 0) ran.push(...(await applyStep(plan, db)));
     }
 
-    const chain = steps.map(({ version }) => version);
-    if (!input.apply || refusals.length > 0 || changes.length === 0) {
-      return { chain, changes, refusals, ran: [] };
-    }
-    return { chain, changes, refusals, ran: await applyStep({ changes, refusals }, db) };
+    return { chain: versionsOf(steps), changes, refusals, ran: refusals.length > 0 ? [] : ran };
   }
 }
 
+/** The versions read, oldest first and each named once however many fronds cut it. */
+function versionsOf(steps: ReadonlyArray<{ version: string }>): string[] {
+  return [...new Set(steps.map(({ version }) => version))].sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
+}
+
+/** The part of a step whose entities live on one engine. */
+function onSource(step: SetDiff, source: string, sourceOf: (entity: string) => string): SetDiff {
+  return {
+    ...step,
+    entities: Object.fromEntries(Object.entries(step.entities).filter(([entity]) => sourceOf(entity) === source)),
+  };
+}
+
 /** Every recorded step, oldest first — the chain composes, so it is replayed whole. */
-async function chainOf(root: string): Promise<Array<{ version: string; step: SetDiff }>> {
-  const directory = join(root, VERSIONS);
+async function chainOf(frondPath: string): Promise<Array<{ version: string; step: SetDiff }>> {
+  const directory = join(frondPath, VERSIONS);
   const found = await readdir(directory, { withFileTypes: true }).catch(() => []);
   const versions = found
     .filter((entry) => entry.isDirectory())
