@@ -7,6 +7,7 @@
  */
 import type { Container } from '@fougere/container';
 import type { Fronds } from '../scan/Fronds.js';
+import type { ScanResult } from '../scan/frond.js';
 import type { SchemaView } from '@fougere/schema';
 import type { OrmFactory } from '../orm.js';
 import type { AppMiddleware } from '../wire/middleware.js';
@@ -45,6 +46,17 @@ export interface CreateAppOptions {
    * name would make the reader resolve the schema a second time.
    */
   sourcesFactory?: (reads: unknown[], frond: string) => Promise<unknown> | unknown;
+  /**
+   * The scan, handed in rather than performed.
+   *
+   * `createApp` produces one by default — reading the disk is the convention and stays it.
+   * A host that already HAS the answer passes it, and then nothing in the boot reaches for
+   * a file: what `scanProject` reads at runtime, a build can write down, because every
+   * field of a descriptor is either serializable or a module export.
+   *
+   * Its type is the scan's own, so there is one shape and not a second declaration of it.
+   */
+  scan?: ScanResult | (() => Promise<ScanResult> | ScanResult);
   /** Only load these fronds (by name). If absent, load all. */
   fronds?: string[];
   /**

@@ -81,7 +81,6 @@ function assertOneOwnerPerKey(
 
 /** Bootstrap a fougere application. */
 export async function createApp(options: CreateAppOptions): Promise<App> {
-  const root = options.root ?? process.cwd();
   const container = options.createContainer();
   // Boot chatter is debug by default; a host (e.g. the CLI) can quiet it.
   const log = new Logger('boot:app');
@@ -95,12 +94,16 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   container.register('Config', Config, { lifetime: 'singleton' });
   log.debug('builtins registered (Logger, Config)');
 
-  // Scan (with optional filter)
+  // The scan, performed or handed in — one shape either way, and the boot says which.
   const scanStart = performance.now();
-  const { fronds, diagnostics } = await scanProject(root, options.fronds);
+  const { fronds, diagnostics } = options.scan
+    ? await (typeof options.scan === 'function' ? options.scan() : options.scan)
+    // `process.cwd()` is read HERE and nowhere else: a root is what a SCAN needs, and a
+    // runtime with no process — a Worker — hands the scan in instead of performing one.
+    : await scanProject(options.root ?? process.cwd(), options.fronds);
   const scanMs = (performance.now() - scanStart).toFixed(0);
   const blocking = diagnostics.filter((d) => d.severity === 'blocking');
-  log.info(`scanned ${fronds.length} frond(s) in ${scanMs}ms`
+  log.info(`${options.scan ? 'read' : 'scanned'} ${fronds.length} frond(s) in ${scanMs}ms`
     + (diagnostics.length ? ` — ${diagnostics.length} thing(s) the scan could not do` : ''));
 
   /**
