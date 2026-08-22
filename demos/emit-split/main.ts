@@ -7,7 +7,8 @@
  *   terminal 1   pnpm dev:search
  *   terminal 2   pnpm dev
  */
-import { createApp, createLocalRunner, setModuleLoader, frondAliases } from '@fougere/core';
+import { createApp, createLocalRunner } from '@fougere/core';
+import { setModuleLoader, frondAliases } from '@fougere/core/node';
 import type { App, InvocationContext } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { createHttpTransport } from '@fougere/transport-http';

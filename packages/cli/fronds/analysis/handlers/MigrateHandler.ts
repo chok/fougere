@@ -1,6 +1,6 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { loadConfig } from '@fougere/core';
+import { loadConfig } from '@fougere/core/node';
 import { resolveStorage } from '@fougere/defaults';
 import { actualState, desiredTables, planStep, collapseChain, applyStep, type Plan, type StepChange } from '@fougere/adapter-sql';
 import type { SetDiff } from '@fougere/schema';

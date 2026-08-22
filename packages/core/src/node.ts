@@ -1,0 +1,18 @@
+/**
+ * What Fougere does with a filesystem — the half of core that a Worker cannot run.
+ *
+ * The line is not "build vs runtime": `boot()` and `loadConfig` run in production, on a
+ * server, every time. It is whether the thing reaches for a disk. Everything here does,
+ * transitively, and nothing on the main entry does — which is what lets a bundler for a
+ * runtime without `node:fs` trace the main entry and find no builtin at all.
+ *
+ * The third entry, `@fougere/core/contract`, answers a different question: what crosses a
+ * process boundary. A foreign frond reads it without reading our boot.
+ */
+export { boot } from './boot/boot.js';
+
+export { scanProject, frondAliases, FROND_DIRS } from './scan/scanner.js';
+export { setModuleLoader, getModuleLoader } from './loader.js';
+export { loadConfig, loadCascadedConfig } from './config-loader.js';
+export { defineFrond } from './frond-config.js';
+export { crossFrondImports } from './imports.js';

@@ -8,7 +8,8 @@
  * it with a keyboard — on a fleet, the difference between a demo and a deployment.
  */
 import { connect, type Socket } from 'node:net';
-import { createApp, createLocalRunner, setModuleLoader, frondAliases } from '@fougere/core';
+import { createApp, createLocalRunner } from '@fougere/core';
+import { setModuleLoader, frondAliases } from '@fougere/core/node';
 import type { App } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 

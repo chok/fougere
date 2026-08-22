@@ -1,4 +1,4 @@
-import { defineFrond } from '@fougere/core';
+import { defineFrond } from '@fougere/core/node';
 import Note from './entities/Note.js';
 
 /**

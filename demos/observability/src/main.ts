@@ -12,7 +12,8 @@
  *   pnpm load             # k6 against the shop, in stages
  *   pnpm signoz           # a collector, if you want to see it
  */
-import { createApp, createLocalRunner, setModuleLoader, frondAliases, type EntityOrm } from '@fougere/core';
+import { createApp, createLocalRunner, type EntityOrm } from '@fougere/core';
+import { setModuleLoader, frondAliases } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { serve, createHttpTransport } from '@fougere/transport-http';
 import { createJiti } from 'jiti';

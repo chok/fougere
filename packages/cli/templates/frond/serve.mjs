@@ -8,7 +8,8 @@
  * Nothing in the frond changes — only where it runs.
  */
 import { createJiti } from 'jiti';
-import { createLocalRunner, setModuleLoader, frondAliases, Logger } from '@fougere/core';
+import { createLocalRunner, Logger } from '@fougere/core';
+import { setModuleLoader, frondAliases } from '@fougere/core/node';
 import { bootAppFromConfig } from '@fougere/defaults';
 import { serve } from '@fougere/transport-http';
 

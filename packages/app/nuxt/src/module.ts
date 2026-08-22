@@ -14,7 +14,8 @@ import {
   createResolver,
 } from '@nuxt/kit';
 import type { Nuxt } from '@nuxt/schema';
-import { scanProject, frondAliases, FROND_DIRS, setModuleLoader, loadCascadedConfig, orderSeeds } from '@fougere/core';
+import { orderSeeds } from '@fougere/core';
+import { scanProject, frondAliases, FROND_DIRS, setModuleLoader, loadCascadedConfig } from '@fougere/core/node';
 import { declaresStorage } from '@fougere/defaults';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
 import { createJiti } from 'jiti';

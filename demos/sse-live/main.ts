@@ -5,7 +5,8 @@
  * line `tunnel.ts` uses. What follows it is the demo: the carrier decides WHO hears,
  * and it pushes a name rather than a row.
  */
-import { createApp, createLocalRunner, setModuleLoader, frondAliases } from '@fougere/core';
+import { createApp, createLocalRunner } from '@fougere/core';
+import { setModuleLoader, frondAliases } from '@fougere/core/node';
 import type { App, InvocationContext } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { serveLive, watch, type Change } from './live.js';

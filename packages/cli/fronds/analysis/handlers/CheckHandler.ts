@@ -1,4 +1,5 @@
-import { buildGraph, clusterEntities, crossFrondImports, resolveContracts, verify, type ScanDiagnostic } from '@fougere/core';
+import { buildGraph, clusterEntities, resolveContracts, verify, type ScanDiagnostic } from '@fougere/core';
+import { crossFrondImports } from '@fougere/core/node';
 import ProjectScan from '../services/ProjectScan.js';
 
 /** One thing that does not hold, in the terms of whoever has to fix it. */

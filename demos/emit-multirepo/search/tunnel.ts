@@ -5,7 +5,8 @@
  * list is written by hand, it comes off the `Fact<PostPublished>` in `IndexHandler`.
  */
 import { connect } from 'node:net';
-import { createApp, setModuleLoader, frondAliases } from '@fougere/core';
+import { createApp } from '@fougere/core';
+import { setModuleLoader, frondAliases } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 
 const PORT = Number(process.env.TUNNEL_PORT ?? 4400);

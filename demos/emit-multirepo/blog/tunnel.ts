@@ -10,7 +10,8 @@
  * and nothing is held when the link drops.
  */
 import { createServer, type Socket } from 'node:net';
-import { createApp, createLocalRunner, setModuleLoader, frondAliases } from '@fougere/core';
+import { createApp, createLocalRunner } from '@fougere/core';
+import { setModuleLoader, frondAliases } from '@fougere/core/node';
 import type { InvocationContext } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 

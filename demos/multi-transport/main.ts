@@ -6,7 +6,8 @@
  * the consumer. Run it and read the table: the same call gives the same value
  * and the same typed failure down all three paths.
  */
-import { createApp, createLocalRunner, setModuleLoader, FougereError, frondAliases } from '@fougere/core';
+import { createApp, createLocalRunner, FougereError } from '@fougere/core';
+import { setModuleLoader, frondAliases } from '@fougere/core/node';
 import type { App, InvocationContext, Transport } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { serve, createHttpTransport } from '@fougere/transport-http';

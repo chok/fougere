@@ -18,7 +18,8 @@ import { Lifecycle } from '@fougere/schema';
  * host's own startup (a Nitro plugin, a Next instrumentation hook) if the user
  * wants a custom data layer — alternative driver, managed migrations, etc.
  */
-import { createApp, loadCascadedConfig, setModuleLoader, frondAliases, identityFromEnv, Logger, migrating, seeding } from '@fougere/core';
+import { createApp, identityFromEnv, Logger, migrating, seeding } from '@fougere/core';
+import { loadCascadedConfig, setModuleLoader, frondAliases } from '@fougere/core/node';
 import type { Extension } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import type { App, CreateAppOptions, EntityOrm, FougereConfig, Transport } from '@fougere/core';

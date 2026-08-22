@@ -7,7 +7,8 @@
  * files, and nothing made them agree.
  */
 import { createJiti } from 'jiti';
-import { createApp, createLocalRunner, setModuleLoader, frondAliases, loadConfig, Logger } from '@fougere/core';
+import { createApp, createLocalRunner, Logger } from '@fougere/core';
+import { setModuleLoader, frondAliases, loadConfig } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { setupSqlite, migrate } from '@fougere/adapter-sql';
 import { serve } from '@fougere/transport-http';

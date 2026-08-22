@@ -8,7 +8,8 @@
  * Devices behind a NAT cannot be called, so they call. One socket carries both directions.
  */
 import { createServer, type Socket } from 'node:net';
-import { createApp, createLocalRunner, setModuleLoader, frondAliases } from '@fougere/core';
+import { createApp, createLocalRunner } from '@fougere/core';
+import { setModuleLoader, frondAliases } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 
 const PORT = Number(process.env.FLEET_PORT ?? 4500);

@@ -4,7 +4,8 @@
  * Twice: once with nothing carrying the fact out, once with a carrier. `PostHandler` is
  * the same file in both, and this repository holds no copy of anyone else's code.
  */
-import { createApp, createLocalRunner, setModuleLoader, frondAliases } from '@fougere/core';
+import { createApp, createLocalRunner } from '@fougere/core';
+import { setModuleLoader, frondAliases } from '@fougere/core/node';
 import type { App, InvocationContext } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 

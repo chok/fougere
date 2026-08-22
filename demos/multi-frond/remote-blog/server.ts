@@ -9,7 +9,8 @@
  */
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
-import { createApp, setModuleLoader, createLocalRunner, frondAliases } from '@fougere/core';
+import { createApp, createLocalRunner } from '@fougere/core';
+import { setModuleLoader, frondAliases } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { createHonoRouter } from '@fougere/http';
 import { handleRpc } from '@fougere/transport-http';

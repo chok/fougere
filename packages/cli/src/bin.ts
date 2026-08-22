@@ -6,7 +6,8 @@
  * fronds/ → loaded at runtime by jiti (domain)
  * app/   → loaded at runtime by jiti (presentation)
  */
-import { createApp, setModuleLoader, setLogLevel, envLevel } from '@fougere/core';
+import { createApp, setLogLevel, envLevel } from '@fougere/core';
+import { setModuleLoader } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { ui } from './ui.js';
 import { run } from './runner.js';

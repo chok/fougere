@@ -1,4 +1,5 @@
-import { scanProject, frondAliases, setModuleLoader, type ScanResult } from '@fougere/core';
+import { type ScanResult } from '@fougere/core';
+import { scanProject, frondAliases, setModuleLoader } from '@fougere/core/node';
 import { resolve } from 'node:path';
 
 /**

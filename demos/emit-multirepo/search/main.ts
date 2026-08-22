@@ -9,7 +9,8 @@
  * this process can actually answer — which is the whole of what a queue needs from
  * Fougere. The queue itself is in `broker.ts`, deliberately: a resolver holds nothing.
  */
-import { createApp, setModuleLoader, frondAliases } from '@fougere/core';
+import { createApp } from '@fougere/core';
+import { setModuleLoader, frondAliases } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 
 const BROKER = `http://127.0.0.1:${process.env.BROKER_PORT ?? 4300}`;
