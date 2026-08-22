@@ -1,5 +1,5 @@
 import { describe as group, it, expect } from 'vitest';
-import { entity, text, number, primary, optional, date } from '../src/index.js';
+import { entity, text, number, primary, optional, date, readOnly, created, indexed } from '../src/index.js';
 import { describe } from '../src/card/describe.js';
 import { diff, diffSet, type Change } from '../src/card/diff.js';
 
@@ -54,7 +54,9 @@ group('what separates two shapes', () => {
     const V2 = shapeOf({ id: primary(), title: text(), body: optional(text()) });
 
     // `describe` folds nullable into a union, so the set grows — and the requirement drops.
-    expect(kinds(diff(V1, V2).changes)).toEqual(['required', 'retyped']);
+    // `optional()` moves the lifecycle too, and both are reported: one declaration touching
+    // two axes is two differences, and hiding either would be a reader's decision to make.
+    expect(kinds(diff(V1, V2).changes)).toEqual(['required', 'restated', 'retyped']);
   });
 
   it('separates bounds from type — a CHECK moves, the column does not', () => {
@@ -176,5 +178,44 @@ group('two sets of entities — what a freeze actually compares', () => {
 
     expect(answer.entities.post.ambiguous).toEqual([]);
     expect(kinds(answer.entities.post.changes)).toEqual(['renamed']);
+  });
+});
+
+group('the three axes a JSON Schema reader cannot see', () => {
+  const axesOf = (changes: Change[]) =>
+    changes.filter((c) => c.kind === 'restated').map((c) => (c as Extract<Change, { kind: 'restated' }>).axis);
+
+  it('reports an index that appeared', () => {
+    const V2 = shapeOf({ id: primary(), title: indexed(text()), body: text() });
+
+    expect(diff(V1, V2).changes).toEqual([
+      { kind: 'restated', field: 'title', axis: 'role', from: undefined, to: { index: true } },
+    ]);
+  });
+
+  it('reports a unique group that moved', () => {
+    const V2 = describe(
+      class extends entity({ id: primary(), title: text(), body: text() }, { unique: [['title', 'body']] }) {},
+      'post',
+    );
+
+    expect(axesOf(diff(V1, V2).changes)).toEqual(['role', 'role']);
+  });
+
+  it('reports a boundary that closed — the one change no table would show', () => {
+    const V2 = shapeOf({ id: primary(), title: text(), body: readOnly(text()) });
+
+    expect(axesOf(diff(V1, V2).changes)).toEqual(['boundary']);
+  });
+
+  it('reports a lifecycle that gained a stamp', () => {
+    const V2 = shapeOf({ id: primary(), title: text(), body: text(), at: created() });
+
+    // The field is new, so its axes ride in with it — nothing is `restated` about it.
+    expect(kinds(diff(V1, V2).changes)).toEqual(['added']);
+  });
+
+  it('says nothing when every axis stands still', () => {
+    expect(diff(V1, shapeOf({ id: primary(), title: text(), body: text() })).changes).toEqual([]);
   });
 });

@@ -196,8 +196,55 @@ function realise(
         field: change.field,
         reason: `bounds moved — the door enforces them, the table keeps its old CHECK until you migrate it`,
       };
+
+    case 'restated':
+      return restated(entity, change);
   }
 }
+
+/**
+ * An axis other than shape moved. Only some of it is a fact about the table.
+ *
+ * `boundary` never is — it says who may read or write, which no column holds. `lifecycle`
+ * is one only through the DEFAULT clause. `role` is one three times over, and two of those
+ * are constraints a live table may already contradict.
+ */
+function restated(entity: string, change: Extract<ShapeChange, { kind: 'restated' }>): { change?: StepChange } | Refusal {
+  const refuse = (reason: string): Refusal => ({ entity, field: change.field, reason });
+
+  if (change.axis === 'boundary') return {};
+
+  if (change.axis === 'lifecycle') {
+    const was = literalOf(change.from);
+    const is = literalOf(change.to);
+    if (was === is) return {};
+    return refuse(`default moved ${show(was)} → ${show(is)} — the table keeps the old one, and nothing here alters a DEFAULT`);
+  }
+
+  const from = change.from ?? {};
+  const to = change.to ?? {};
+  if (from.primary !== to.primary) return refuse(`primary moved — a key is not something a step may take from live rows`);
+  if (!same(from.unique, to.unique)) {
+    // The same reason `delta` cannot add one: CREATE UNIQUE INDEX fails on a table that
+    // already holds duplicates, so it is a decision about the rows, not about the DDL.
+    return refuse(`unique group moved — rows already stored may contradict it, so it is declared and applied by hand`);
+  }
+  if (!same(from.relation, to.relation)) return refuse(`relation moved — a foreign key is a constraint, and nothing here alters one`);
+  // What is left is the index, and only its appearance: the additive pass proposes every
+  // declared index at every boot, and nothing has ever dropped one.
+  if (from.index && !to.index) return refuse(`index gone — nothing drops an index today, so the table keeps it`);
+  return {};
+}
+
+const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
+
+/** The value a lifecycle declares at create, when it declares one — what reaches DEFAULT. */
+function literalOf(rules: { create?: unknown } | undefined): unknown {
+  const create = rules?.create;
+  return create && typeof create === 'object' && 'value' in create ? (create as { value: unknown }).value : undefined;
+}
+
+const show = (value: unknown): string => (value === undefined ? 'none' : JSON.stringify(value));
 
 /**
  * Has the table already moved? Read off the columns themselves.

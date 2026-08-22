@@ -120,5 +120,6 @@ function describe(change: Change): string {
     case 'retyped': return `${change.field}: ${[...change.from].join('|')} → ${[...change.to].join('|')}`;
     case 'reshaped': return `${change.field}: its bounds moved`;
     case 'required': return `${change.field}: ${change.from ? 'no longer' : 'now'} required`;
+    case 'restated': return `${change.field}: its ${change.axis} moved`;
   }
 }
