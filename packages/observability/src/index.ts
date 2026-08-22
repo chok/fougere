@@ -178,7 +178,9 @@ function codeOf(err: unknown): string {
 
 export { otlp } from './otlp.js';
 export type { OtlpOptions, OtlpExporter } from './otlp.js';
-export { metrics, metricsPayload } from './metrics.js';
-export type { Metrics, MetricsSnapshot } from './metrics.js';
+export { metrics, metricsPayload, serveTopology } from './metrics.js';
+export type { Metrics, MetricsSnapshot, TopologyReport, FrondPlacement, Edge } from './metrics.js';
 export { logs } from './logs.js';
 export type { LogsOptions, LogExporter, CapturedLog } from './logs.js';
+export { observability } from './extension.js';
+export type { ObservabilityOptions } from './extension.js';

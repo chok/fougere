@@ -4,10 +4,10 @@
  */
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import { join } from 'node:path';
-import { createApp } from '@fougere/core';
+import { createApp, createLocalRunner } from '@fougere/core';
 import type { App, InvocationContext } from '@fougere/core';
 import { createContainer } from '@fougere/container';
-import { trace, onSpan, metrics, metricsPayload, activeCalls, type Metrics } from '../src/index.js';
+import { trace, onSpan, metrics, metricsPayload, activeCalls, serveTopology, type Metrics } from '../src/index.js';
 // @ts-expect-error plain-JS fixture
 import { createOrmFactory } from './fixtures/data.mjs';
 
@@ -93,6 +93,31 @@ describe('saturation and topology', () => {
     expect(activeCalls()).toBe(1);
     await running;
     expect(activeCalls()).toBe(0);
+  });
+
+  /**
+   * The same reading, served on the wire — which is what a panel in a browser can reach.
+   * It is declared HERE and not in core: an app that never installed this package refuses
+   * the op by name, and that refusal is the whole degradation a reader needs.
+   */
+  it('answers rpc.topology once this package is wired, and not before', async () => {
+    collect();
+    serveTopology(app, measured);
+    const run = createLocalRunner(app);
+    await app.resolve<Facade>('productHandler').list();
+
+    const report = await run({ entity: 'rpc', op: 'topology' }, { params: {}, query: {}, body: undefined, state: {} }) as {
+      fronds: Array<{ frond: string; placement: string }>;
+      edges: unknown[];
+      active: number;
+      since: number;
+    };
+    expect(report.fronds).toEqual([{ frond: 'catalog', placement: 'local', entities: 1, doors: 1 }]);
+    // One process, one frond: no edge exists to report, and saying zero is the answer.
+    expect(report.edges).toEqual([]);
+    expect(report.active).toBe(0);
+    // A wire document: it must survive JSON as-is.
+    expect(JSON.parse(JSON.stringify(report))).toEqual(report);
   });
 
   it('discovers the fronds rather than being told them', async () => {
