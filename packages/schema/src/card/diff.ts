@@ -17,6 +17,7 @@
 import type { BoundaryRef } from '../axis/boundary/Boundary.js';
 import type { LifecycleRules } from '../axis/lifecycle/Lifecycle.js';
 import type { FieldDescriptor, FieldExtension, RoleDescriptor, SchemaBundle, SchemaDescriptor } from './Descriptor.js';
+import { same } from '../same.js';
 
 /** One named difference, at one place. Each kind exists because a reader asks for it. */
 export type Change =
@@ -102,7 +103,6 @@ function boundsOf(descriptor: FieldDescriptor): Record<string, unknown> {
   return rest;
 }
 
-const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
 
 /**
  * What separates two shapes.

@@ -1,6 +1,7 @@
 import { Field } from '../Field.js';
 import type { FieldData } from '../Field.js';
 import { EXTENSION_AXES } from '../axis/Axis.js';
+import { same } from '../same.js';
 
 const MEMBER_SLOTS = [...EXTENSION_AXES.map((axis) => axis.slot), 'meta'] as const;
 
@@ -38,4 +39,3 @@ function merge(name: string, field: Field, stated: Partial<FieldData>): Partial<
   return out as Partial<FieldData>;
 }
 
-const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);

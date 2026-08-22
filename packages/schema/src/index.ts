@@ -15,6 +15,7 @@ export { Schema, ANONYMOUS_SCHEMA_NAME, type SchemaConstructor } from './Schema.
 export { casesFor, holds, refusalBranches, type Case } from './judge/cases.js';
 export { type SchemaView, type Row, type PartialRow } from './SchemaView.js';
 export { type FougereHints, type Hints } from './EntityDeclarations.js';
+export { same } from './same.js';
 
 export { primary } from './vocabulary/primary.js';
 export { text } from './vocabulary/text.js';
