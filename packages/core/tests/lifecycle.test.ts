@@ -6,6 +6,7 @@
  * seeding had to claim EVERYTHING after the boot to get it, which is how the Nitro plugin's
  * copy of the seeding loop drifted out of sight.
  */
+import { scanProject } from '../src/node.js';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
@@ -25,7 +26,7 @@ describe('Lifecycle', () => {
   it('runs up in declaration order and down in reverse', async () => {
     const log: string[] = [];
     await using app = await createApp({
-      root, createContainer,
+      scan: await scanProject(root), createContainer,
       extensions: [recording('migrate', log), recording('seeds', log)],
     });
 
@@ -97,7 +98,7 @@ describe('Lifecycle', () => {
     container.dispose = async () => { released.push('container'); await disposeContainer(); };
 
     const app = await createApp({
-      root,
+      scan: await scanProject(root),
       createContainer: () => container,
       extensions: [{ name: 'broken', down: () => { throw new Error('socket already gone'); } }],
       onDispose: () => { released.push('handed in'); },
@@ -115,7 +116,7 @@ describe('Lifecycle', () => {
   it('keeps migrate before seeds when the host declares its own migrate last', async () => {
     const ran: string[] = [];
     await using app = await createApp({
-      root, createContainer,
+      scan: await scanProject(root), createContainer,
       extensions: [
         // No local storage resolved, so the framework contributes an empty slot…
         migrating(undefined),

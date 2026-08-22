@@ -6,6 +6,7 @@
  * no headers at all and still carries it, which is the whole point — the trace rides the
  * invocation, and every transport carries the invocation.
  */
+import { scanProject } from '@fougere/core/node';
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import { createServer, connect, type Server } from 'node:net';
 import { join } from 'node:path';
@@ -75,7 +76,7 @@ function halves(): [FinishedSpan, FinishedSpan] {
 }
 
 beforeAll(async () => {
-  host = await createApp({ root: fixturesDir, createContainer, ormFactory: createOrmFactory() });
+  host = await createApp({ scan: await scanProject(fixturesDir), createContainer, ormFactory: createOrmFactory() });
   host.use(trace());
   const runner = createLocalRunner(host);
 
@@ -83,7 +84,7 @@ beforeAll(async () => {
   socket = await serveSocket(runner);
 
   overHttp = await createApp({
-    root: '/tmp/fougere-trace-http',
+    scan: await scanProject('/tmp/fougere-trace-http'),
     createContainer,
     remotes: { catalog: `http://127.0.0.1:${receiver.port}` },
     remoteTransport: (url) => createHttpTransport(url),
@@ -91,7 +92,7 @@ beforeAll(async () => {
   overHttp.use(trace());
 
   overSocket = await createApp({
-    root: '/tmp/fougere-trace-socket',
+    scan: await scanProject('/tmp/fougere-trace-socket'),
     createContainer,
     remotes: { catalog: `tcp://127.0.0.1:${socket.port}` },
     remoteTransport: () => socketTransport(socket.port),

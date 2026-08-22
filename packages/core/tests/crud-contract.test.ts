@@ -10,6 +10,7 @@
  * So both worlds are covered here: inside the workspace the scan discovers the
  * ops, outside it discovers nothing — and the façade must judge either way.
  */
+import { scanProject } from '../src/node.js';
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { join } from 'node:path';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
@@ -45,7 +46,7 @@ function spyOrm() {
 async function boot(root: string) {
   const orm = spyOrm();
   const ormFactory: OrmFactory = vi.fn(() => orm) as unknown as OrmFactory;
-  const app = await createApp({ root, createContainer, ormFactory });
+  const app = await createApp({ scan: await scanProject(root), createContainer, ormFactory });
   return { app, orm, run: createLocalRunner(app) };
 }
 

@@ -6,7 +6,7 @@
  */
 import { connect } from 'node:net';
 import { createApp } from '@fougere/core';
-import { setModuleLoader, frondAliases } from '@fougere/core/node';
+import { scanProject, setModuleLoader, frondAliases } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 
 const PORT = Number(process.env.TUNNEL_PORT ?? 4400);
@@ -20,7 +20,7 @@ async function main() {
   });
   setModuleLoader((path) => jiti.import(path) as Promise<Record<string, unknown>>);
 
-  const app = await createApp({ root: import.meta.dirname, createContainer });
+  const app = await createApp({ scan: await scanProject(import.meta.dirname), createContainer });
   const topics = app.listensTo();
 
   console.log(`\x1b[36m[search · pid ${process.pid}]\x1b[0m repository B — knows only itself`);

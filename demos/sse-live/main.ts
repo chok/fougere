@@ -6,7 +6,7 @@
  * and it pushes a name rather than a row.
  */
 import { createApp, createLocalRunner } from '@fougere/core';
-import { setModuleLoader, frondAliases } from '@fougere/core/node';
+import { scanProject, setModuleLoader, frondAliases } from '@fougere/core/node';
 import type { App, InvocationContext } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { serveLive, watch, type Change } from './live.js';
@@ -44,7 +44,7 @@ async function main() {
   const live = await serveLive();
 
   const app = await createApp({
-    root: import.meta.dirname,
+    scan: await scanProject(import.meta.dirname),
     createContainer,
     ormFactory: createMemoryOrm,
     // The whole wiring. The fact's own name and its own fields — nothing written by hand.

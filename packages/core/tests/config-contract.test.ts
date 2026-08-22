@@ -6,6 +6,7 @@
  * source, config STATES. That is what makes the scan a convenience rather than a
  * dependency — and it is the only answer for an op the scan cannot see at all.
  */
+import { scanProject } from '../src/node.js';
 import { describe, it, expect, vi } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
@@ -30,7 +31,7 @@ function noteOrm() {
 
 async function boot() {
   const app = await createApp({
-    root,
+    scan: await scanProject(root),
     createContainer,
     ormFactory: vi.fn(() => noteOrm()) as unknown as OrmFactory,
   });

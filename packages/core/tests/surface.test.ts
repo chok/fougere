@@ -6,6 +6,7 @@
  * path. The REST and GraphQL adapters had their own tests; the runner and the identity
  * card, which the envelope stands on, had none.
  */
+import { scanProject } from '../src/node.js';
 import { describe, it, expect, vi } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
@@ -45,8 +46,9 @@ function ormFor(entity: { name: string }) {
   return make();
 }
 
+const scan = await scanProject(root);
 const boot = () => createApp({
-  root,
+  scan,
   createContainer,
   ormFactory: ((e: any, name: string) => ormFor({ name })) as unknown as OrmFactory,
 });

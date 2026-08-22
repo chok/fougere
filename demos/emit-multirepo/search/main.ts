@@ -10,7 +10,7 @@
  * Fougere. The queue itself is in `broker.ts`, deliberately: a resolver holds nothing.
  */
 import { createApp } from '@fougere/core';
-import { setModuleLoader, frondAliases } from '@fougere/core/node';
+import { scanProject, setModuleLoader, frondAliases } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 
 const BROKER = `http://127.0.0.1:${process.env.BROKER_PORT ?? 4300}`;
@@ -26,7 +26,7 @@ async function main() {
   });
   setModuleLoader((path) => jiti.import(path) as Promise<Record<string, unknown>>);
 
-  const app = await createApp({ root: import.meta.dirname, createContainer });
+  const app = await createApp({ scan: await scanProject(import.meta.dirname), createContainer });
 
   // What this process listens to — read off its own code, declared nowhere else.
   const topics = app.listensTo();

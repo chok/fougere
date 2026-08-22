@@ -19,7 +19,7 @@ import { Lifecycle } from '@fougere/schema';
  * wants a custom data layer — alternative driver, managed migrations, etc.
  */
 import { createApp, identityFromEnv, Logger, migrating, seeding } from '@fougere/core';
-import { loadCascadedConfig, setModuleLoader, frondAliases } from '@fougere/core/node';
+import { scanProject, loadCascadedConfig, setModuleLoader, frondAliases } from '@fougere/core/node';
 import type { Extension } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import type { App, CreateAppOptions, EntityOrm, FougereConfig, Transport } from '@fougere/core';
@@ -170,7 +170,7 @@ async function boot(): Promise<App> {
   }
 
   const app = await createApp({
-    root,
+    scan: await scanProject(root),
     createContainer,
     ormFactory,
     sourceOf,

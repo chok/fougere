@@ -1,3 +1,4 @@
+import { scanProject } from '../src/node.js';
 import { describe, it, expect, vi } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
@@ -35,12 +36,12 @@ const asWire = (runner: Transport): Transport => async (call, invocation) => {
 };
 
 async function bootHost(): Promise<App> {
-  return createApp({ root: fixturesRoot, createContainer, ormFactory });
+  return createApp({ scan: await scanProject(fixturesRoot), createContainer, ormFactory });
 }
 
 async function bootConsumer(host: App, transportSpy?: Transport): Promise<App> {
   return createApp({
-    root: emptyRoot,
+    scan: await scanProject(emptyRoot),
     createContainer,
     remotes: { catalog: 'mem://host' },
     remoteTransport: () => transportSpy ?? asWire(createLocalRunner(host)),
@@ -182,14 +183,14 @@ describe('remote façade (repli)', () => {
   });
 
   it('without remotes, an unknown handler still fails fast at resolve', async () => {
-    const app = await createApp({ root: emptyRoot, createContainer });
+    const app = await createApp({ scan: await scanProject(emptyRoot), createContainer });
     expect(() => app.resolve('productHandler')).toThrow(/is not loaded/);
     await app.dispose();
   });
 
   it('refuses a remote whose identity card cannot be walked, naming it', async () => {
     const app = await createApp({
-      root: emptyRoot,
+      scan: await scanProject(emptyRoot),
       createContainer,
       remotes: { catalog: 'http://catalog.test' },
       remoteTransport: () => async () => ({ fronds: [{ name: 'blog' }] }) as never,
@@ -202,7 +203,7 @@ describe('remote façade (repli)', () => {
 
   it('remotes without remoteTransport is a boot-time config error', async () => {
     await expect(
-      createApp({ root: emptyRoot, createContainer, remotes: { catalog: 'http://x' } }),
+      createApp({ scan: await scanProject(emptyRoot), createContainer, remotes: { catalog: 'http://x' } }),
     ).rejects.toThrow(/remoteTransport/);
   });
 
@@ -246,7 +247,7 @@ describe('remote façade (repli)', () => {
   });
 
   it('schemaFor rejects an entity nothing declares, local or remote', async () => {
-    const app = await createApp({ root: emptyRoot, createContainer });
+    const app = await createApp({ scan: await scanProject(emptyRoot), createContainer });
     await expect(app.schemaFor('unicorn')).rejects.toThrow(/is not loaded/);
     await app.dispose();
   });
@@ -256,7 +257,7 @@ describe('remote façade (repli)', () => {
     // Same fixtures on disk, but catalog is declared remote: the frond must be
     // scanned (bridges route with app.fronds) yet not hosted locally.
     const consumer = await createApp({
-      root: fixturesRoot,
+      scan: await scanProject(fixturesRoot),
       createContainer,
       ormFactory,
       remotes: { catalog: 'mem://host' },
@@ -294,7 +295,7 @@ describe('two remotes serving one entity', () => {
 
   it('is refused, and the message names both', async () => {
     await using consumer = await createApp({
-      root: emptyRoot,
+      scan: await scanProject(emptyRoot),
       createContainer,
       remotes: { east: 'mem://east', west: 'mem://west' },
       remoteTransport: (url) => (url.endsWith('east') ? serving('catalog', 'product') : serving('stock', 'product')),
@@ -316,7 +317,7 @@ describe('two remotes serving one entity', () => {
     };
 
     await using consumer = await createApp({
-      root: emptyRoot,
+      scan: await scanProject(emptyRoot),
       createContainer,
       remotes: { east: 'mem://east', west: 'mem://west' },
       remoteTransport: (url) => (url.endsWith('east') ? slowEast : serving('stock', 'product')),
@@ -328,7 +329,7 @@ describe('two remotes serving one entity', () => {
 
   it('leaves a name only one of them serves alone', async () => {
     await using consumer = await createApp({
-      root: emptyRoot,
+      scan: await scanProject(emptyRoot),
       createContainer,
       remotes: { east: 'mem://east', west: 'mem://west' },
       remoteTransport: (url) => (url.endsWith('east') ? serving('catalog', 'product') : serving('stock', 'crate')),

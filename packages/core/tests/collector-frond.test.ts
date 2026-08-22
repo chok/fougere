@@ -9,6 +9,7 @@
  * (`bootstrap.ts:167`), so the misplacement is decided before any topology:
  * there is no split in this file, and there does not need to be.
  */
+import { scanProject } from '../src/node.js';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
@@ -22,7 +23,7 @@ const forged = { id: 'u-999', email: 'attacker@example.com', role: 'admin' };
 
 describe('a collector declared in the wrong frond', () => {
   it('never binds — in one process, before any split', async () => {
-    await using app = await createApp({ root, createContainer });
+    await using app = await createApp({ scan: await scanProject(root), createContainer });
 
     const blog = app.fronds.find((f) => f.name === 'blog');
     const identity = app.fronds.find((f) => f.name === 'identity');
@@ -32,7 +33,7 @@ describe('a collector declared in the wrong frond', () => {
   });
 
   it('hands the request BODY to the parameter that wanted a user', async () => {
-    await using app = await createApp({ root, createContainer });
+    await using app = await createApp({ scan: await scanProject(root), createContainer });
 
     const out = await createLocalRunner(app)(
       { entity: 'post', op: 'whoNull' },
@@ -52,7 +53,7 @@ describe('a collector declared in the wrong frond', () => {
   });
 
   it('does the same to the optional spelling — the type is the only difference', async () => {
-    await using app = await createApp({ root, createContainer });
+    await using app = await createApp({ scan: await scanProject(root), createContainer });
 
     const out = await createLocalRunner(app)(
       { entity: 'post', op: 'whoOptional' },
@@ -67,7 +68,7 @@ describe('a collector declared in the wrong frond', () => {
 
   it('binds to the collector once it is declared in the consuming frond', async () => {
     // The remedy, stated as a test rather than as a sentence to remember.
-    await using app = await createApp({ root, createContainer, fronds: ['identity'] });
+    await using app = await createApp({ scan: await scanProject(root, ['identity']), createContainer,});
 
     const identity = app.fronds.find((f) => f.name === 'identity');
     expect(identity?.collectors.map((c) => c.typeName)).toEqual(['user']);

@@ -8,7 +8,7 @@
  */
 import { createJiti } from 'jiti';
 import { createApp, createLocalRunner, Logger } from '@fougere/core';
-import { setModuleLoader, frondAliases, loadConfig } from '@fougere/core/node';
+import { scanProject, setModuleLoader, frondAliases, loadConfig } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { setupSqlite, migrate } from '@fougere/adapter-sql';
 import { serve } from '@fougere/transport-http';
@@ -38,7 +38,7 @@ const { hostname, port: declaredPort } = new URL(address);
 const log = new Logger('blog-host');
 const { ormFactory, db } = setupSqlite({ path: './nuxt-blog.db' });
 
-const app = await createApp({ root: process.cwd(), createContainer, ormFactory, fronds: ['blog'] });
+const app = await createApp({ scan: await scanProject(process.cwd(), ['blog']), createContainer, ormFactory,});
 await migrate({ fronds: app.fronds }, db);
 
 const { port } = await serve(createLocalRunner(app), { port: Number(declaredPort), host: hostname });

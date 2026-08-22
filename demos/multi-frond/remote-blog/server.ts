@@ -10,7 +10,7 @@
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { createApp, createLocalRunner } from '@fougere/core';
-import { setModuleLoader, frondAliases } from '@fougere/core/node';
+import { scanProject, setModuleLoader, frondAliases } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { createHonoRouter } from '@fougere/http';
 import { handleRpc } from '@fougere/transport-http';
@@ -29,7 +29,7 @@ async function main() {
   setModuleLoader((p) => jiti.import(p) as Promise<Record<string, unknown>>);
 
   const app = await createApp({
-    root: import.meta.dirname,
+    scan: await scanProject(import.meta.dirname),
     createContainer,
     ormFactory: createMemoryOrm,
   });

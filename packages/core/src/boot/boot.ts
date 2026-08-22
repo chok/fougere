@@ -1,5 +1,6 @@
 import { createApp } from './bootstrap.js';
 import { seeding } from './seed.js';
+import { scanProject } from '../scan/scanner.js';
 import { loadConfig, type FougereConfig } from '../config-loader.js';
 import { Logger } from '../builtins/logger.js';
 import { applyConfig } from './apply.js';
@@ -83,12 +84,13 @@ export async function boot(options: BootOptions): Promise<App> {
 
   log.debug('creating app (scan + container)');
   const app = await createApp({
-    root,
+    // boot() lives on the Node entry, so boot() is what reads the disk. `createApp` is
+    // handed the answer and reaches for nothing.
+    scan: await scanProject(root, options.fronds),
     createContainer: options.createContainer,
     ormFactory: dbSetup?.ormFactory,
     db: dbSetup?.db,
     auth: config.auth,
-    fronds: options.fronds,
     remotes: options.remotes,
     ports: config.ports,
     // Read from the config for the same reason `ports` is, one line up: it is a fact the

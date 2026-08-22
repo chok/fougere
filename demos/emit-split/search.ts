@@ -6,7 +6,7 @@
  * a listener never reaches back.
  */
 import { createApp, createAppRunner } from '@fougere/core';
-import { setModuleLoader, frondAliases } from '@fougere/core/node';
+import { scanProject, setModuleLoader, frondAliases } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { serve } from '@fougere/transport-http';
 
@@ -22,10 +22,9 @@ async function main() {
   setModuleLoader((path) => jiti.import(path) as Promise<Record<string, unknown>>);
 
   const app = await createApp({
-    root: import.meta.dirname,
+    scan: await scanProject(import.meta.dirname, ['search']),
     createContainer,
     // Only this frond runs here. `blog` stays on disk and is simply not loaded.
-    fronds: ['search'],
   });
 
   await serve(createAppRunner(app), { port: PORT });

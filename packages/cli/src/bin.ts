@@ -7,7 +7,7 @@
  * app/   → loaded at runtime by jiti (presentation)
  */
 import { createApp, setLogLevel, envLevel } from '@fougere/core';
-import { setModuleLoader } from '@fougere/core/node';
+import { scanProject, setModuleLoader } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { ui } from './ui.js';
 import { run } from './runner.js';
@@ -28,7 +28,7 @@ process.env.FOUGERE_LOG_LEVEL ??= 'warn';
 setLogLevel(envLevel() ?? 'warn');
 
 const app = await createApp({
-  root: cliRoot,
+  scan: await scanProject(cliRoot),
   createContainer: () => container,
 });
 

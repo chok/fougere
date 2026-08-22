@@ -5,7 +5,7 @@
  * the same file in both, and this repository holds no copy of anyone else's code.
  */
 import { createApp, createLocalRunner } from '@fougere/core';
-import { setModuleLoader, frondAliases } from '@fougere/core/node';
+import { scanProject, setModuleLoader, frondAliases } from '@fougere/core/node';
 import type { App, InvocationContext } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 
@@ -31,14 +31,14 @@ async function main() {
   console.log(`\x1b[33m[blog · pid ${process.pid}]\x1b[0m repository A — knows only itself\n`);
 
   console.log('\x1b[1m1.\x1b[0m No carrier. The listener lives in another repository.');
-  const alone = await createApp({ root: import.meta.dirname, createContainer });
+  const alone = await createApp({ scan: await scanProject(import.meta.dirname), createContainer });
   console.log('  ', await publish(alone, 'p1', 'Ferns are not plants that give up'));
   await settle();
   console.log('   \x1b[2m…and that is all. Nothing failed, nobody heard.\x1b[0m\n');
 
   console.log('\x1b[1m2.\x1b[0m With a carrier — the fact goes out under its own name.');
   const carried = await createApp({
-    root: import.meta.dirname,
+    scan: await scanProject(import.meta.dirname),
     createContainer,
     // The whole change. The name comes from the fact, never written by hand.
     onEmit: async (fact, payload) => {

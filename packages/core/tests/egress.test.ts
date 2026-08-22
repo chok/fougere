@@ -5,6 +5,7 @@
  * may legitimately read a write-only field (verifying a password); the result
  * that crosses the façade must not carry it — to a browser or to another frond.
  */
+import { scanProject } from '../src/node.js';
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { join } from 'node:path';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
@@ -63,7 +64,7 @@ async function boot(root: string) {
     delete: vi.fn(async () => true),
     output: () => orm,
   };
-  const app = await createApp({ root, createContainer, ormFactory: (() => orm) as unknown as OrmFactory });
+  const app = await createApp({ scan: await scanProject(root), createContainer, ormFactory: (() => orm) as unknown as OrmFactory });
   return { app, run: createLocalRunner(app) };
 }
 

@@ -4,7 +4,6 @@ import type { EntityEntry, HandlerEntry, PresenterEntry } from '../scan/frond.js
 import type { AuthRuntime } from './auth.js';
 import type { CreateAppOptions, App } from './types.js';
 import type { AppMiddleware } from '../wire/middleware.js';
-import { scanProject } from '../scan/scanner.js';
 import { Logger } from '../builtins/logger.js';
 import { Config } from '../builtins/config.js';
 import { createRemoteRouter, createRemoteFacade } from './remote.js';
@@ -94,16 +93,14 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   container.register('Config', Config, { lifetime: 'singleton' });
   log.debug('builtins registered (Logger, Config)');
 
-  // The scan, performed or handed in — one shape either way, and the boot says which.
+  // The scan is HANDED IN. Producing it reads a disk, consuming it does not — which is
+  // the whole reason this file names no builtin and a Worker can run what it builds.
+  // `scanProject` (`@fougere/core/node`) is one producer; a module a build wrote is another.
   const scanStart = performance.now();
-  const { fronds, diagnostics } = options.scan
-    ? await (typeof options.scan === 'function' ? options.scan() : options.scan)
-    // `process.cwd()` is read HERE and nowhere else: a root is what a SCAN needs, and a
-    // runtime with no process — a Worker — hands the scan in instead of performing one.
-    : await scanProject(options.root ?? process.cwd(), options.fronds);
+  const { fronds, diagnostics } = await (typeof options.scan === 'function' ? options.scan() : options.scan);
   const scanMs = (performance.now() - scanStart).toFixed(0);
   const blocking = diagnostics.filter((d) => d.severity === 'blocking');
-  log.info(`${options.scan ? 'read' : 'scanned'} ${fronds.length} frond(s) in ${scanMs}ms`
+  log.info(`read ${fronds.length} frond(s) in ${scanMs}ms`
     + (diagnostics.length ? ` — ${diagnostics.length} thing(s) the scan could not do` : ''));
 
   /**

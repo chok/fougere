@@ -11,6 +11,7 @@
  * container contient répond à la clé que la fonction rend**. Une épellation qui
  * repart ailleurs le casse.
  */
+import { scanProject } from '../src/node.js';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
@@ -29,7 +30,7 @@ const fakeOrm = () => ({
 
 describe('les clés d\'enregistrement ont une seule orthographe', () => {
   it('ce que le boot enregistre répond à la clé que la fonction rend', async () => {
-    await using app = await createApp({ root, createContainer, ormFactory: fakeOrm });
+    await using app = await createApp({ scan: await scanProject(root), createContainer, ormFactory: fakeOrm });
 
     for (const frond of app.fronds) {
       // L'ORM se lit par son accesseur, qui passe par le scope de la frond —
@@ -45,7 +46,7 @@ describe('les clés d\'enregistrement ont une seule orthographe', () => {
   });
 
   it('le scan demande la clé que le boot enregistre — même fonction des deux côtés', async () => {
-    await using app = await createApp({ root, createContainer, ormFactory: fakeOrm });
+    await using app = await createApp({ scan: await scanProject(root), createContainer, ormFactory: fakeOrm });
 
     // `deps` vient de `depKeyOf` dans le scanner ; l'enregistrement vient de
     // `bootstrap`. Les deux lisent `ormKeyOf` maintenant, et c'est ce que dit ce test :

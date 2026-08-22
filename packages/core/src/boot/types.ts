@@ -17,8 +17,6 @@ import type { AuthConfig, AuthRuntime } from './auth.js';
 
 /** Options for createApp(). */
 export interface CreateAppOptions {
-  /** Project root directory. Defaults to process.cwd(). */
-  root?: string;
   /** Factory function to create the container. Required. */
   createContainer: () => Container;
   /** Factory to auto-generate EntityOrm for each scanned entity. */
@@ -47,18 +45,14 @@ export interface CreateAppOptions {
    */
   sourcesFactory?: (reads: unknown[], frond: string) => Promise<unknown> | unknown;
   /**
-   * The scan, handed in rather than performed.
+   * What this app is built from — required, because producing it is what reads a disk.
    *
-   * `createApp` produces one by default — reading the disk is the convention and stays it.
-   * A host that already HAS the answer passes it, and then nothing in the boot reaches for
-   * a file: what `scanProject` reads at runtime, a build can write down, because every
-   * field of a descriptor is either serializable or a module export.
-   *
-   * Its type is the scan's own, so there is one shape and not a second declaration of it.
+   * `scanProject` (`@fougere/core/node`) reads the fronds off the filesystem; a module a
+   * build wrote holds the same value with no disk at all. `createApp` cannot tell them
+   * apart, and that is the point: it names no builtin, so a runtime without `node:fs`
+   * runs it. `root` and `fronds` used to live here — both were arguments to the scan.
    */
-  scan?: ScanResult | (() => Promise<ScanResult> | ScanResult);
-  /** Only load these fronds (by name). If absent, load all. */
-  fronds?: string[];
+  scan: ScanResult | (() => Promise<ScanResult> | ScanResult);
   /**
    * Remote fronds — label → address. What each remote hosts is discovered
    * at the first miss (rpc.discover), never declared here.

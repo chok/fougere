@@ -10,6 +10,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner } from '../src/index.js';
+import { scanProject } from '../src/node.js';
 import { emitKeyOf, factOfEmitKey } from '../src/emit.js';
 import { identityCardOf } from '../src/wire/call.js';
 import { EMPTY_INVOCATION } from '../src/wire/invocation.js';
@@ -35,7 +36,7 @@ describe('a fact reaching several fronds', () => {
   beforeEach(() => { (globalThis as any).__heard = []; });
 
   it('reaches every handler that accepts it, in fronds that declared nothing', async () => {
-    await using app = await createApp({ root, createContainer });
+    await using app = await createApp({ scan: await scanProject(root), createContainer });
 
     await createLocalRunner(app)({ entity: 'post', op: 'publish' }, { ...EMPTY_INVOCATION, params: { id: '42' } });
     await settle();
@@ -46,7 +47,7 @@ describe('a fact reaching several fronds', () => {
   });
 
   it('leaves the emitter untouched when a subscriber throws', async () => {
-    await using app = await createApp({ root, createContainer });
+    await using app = await createApp({ scan: await scanProject(root), createContainer });
 
     // DigestHandler throws every time. The publication must not become hostage to it —
     // the EventBus this replaces did `await Promise.all(handlers)` and took the rejection.
@@ -61,7 +62,7 @@ describe('a fact reaching several fronds', () => {
   });
 
   it('binds the fact parameter as a fact, never as the request body', async () => {
-    await using app = await createApp({ root, createContainer });
+    await using app = await createApp({ scan: await scanProject(root), createContainer });
     const contracts = app.container.resolve<Map<string, any>>('indexHandler:contracts');
 
     // `binding.ts` branch 4 would have handed this parameter whatever a caller typed.
@@ -74,7 +75,7 @@ describe('a fact reaching several fronds', () => {
   it('is legal to announce with nobody listening', async () => {
     // `Emit` is registered from the DEPS, not from the subscribers: a handler that
     // declares one must resolve it whether or not anybody cares.
-    await using app = await createApp({ root, createContainer, fronds: ['blog'] });
+    await using app = await createApp({ scan: await scanProject(root, ['blog']), createContainer });
 
     await expect(
       createLocalRunner(app)({ entity: 'post', op: 'publish' }, { ...EMPTY_INVOCATION, params: { id: '1' } }),
@@ -88,7 +89,7 @@ describe('a fact is judged where it lands', () => {
   beforeEach(() => { (globalThis as any).__heard = []; });
 
   it('refuses a payload the fact itself refuses, and the op is never called', async () => {
-    await using app = await createApp({ root, createContainer });
+    await using app = await createApp({ scan: await scanProject(root), createContainer });
     const door = app.facadeFor('index')!;
 
     // `PostPublished` picks `title: text({ min: 1 })` from Post, so an empty title is not
@@ -100,7 +101,7 @@ describe('a fact is judged where it lands', () => {
   });
 
   it('lets a legal fact through, decoded', async () => {
-    await using app = await createApp({ root, createContainer });
+    await using app = await createApp({ scan: await scanProject(root), createContainer });
     const door = app.facadeFor('index')!;
 
     await door.reindex({ ...EMPTY_INVOCATION, body: { id: 'ok', title: 'A fern', at: new Date().toISOString() } });
@@ -118,7 +119,7 @@ describe('a listener that lives in another process', () => {
     // announced to a remote listener reached nobody, in silence. Proven by a demo, not by
     // a test, which is why this one exists.
     await using app = await createApp({
-      root,
+      scan: await scanProject(root),
       createContainer,
       remotes: { search: 'http://127.0.0.1:9' },
       remoteTransport: () => async (call) => {
@@ -149,7 +150,7 @@ describe('a fact on the identity card', () => {
    * to prevent everywhere else.
    */
   it('publishes what a frond announces, next to what it serves', async () => {
-    await using app = await createApp({ root, createContainer });
+    await using app = await createApp({ scan: await scanProject(root), createContainer });
     const card = identityCardOf(app);
 
     const blog = card.fronds.find((frond) => frond.name === 'blog')!;
@@ -165,7 +166,7 @@ describe('a fact on the identity card', () => {
   });
 
   it('keeps a fact out of the doors, where hosting means answering', async () => {
-    await using app = await createApp({ root, createContainer });
+    await using app = await createApp({ scan: await scanProject(root), createContainer });
     const blog = identityCardOf(app).fronds.find((frond) => frond.name === 'blog')!;
 
     // Listing it as a door would claim it is callable, and the runner would answer
@@ -202,7 +203,7 @@ describe('a fact stamped at the announcement', () => {
   beforeEach(() => { (globalThis as any).__heard = []; (globalThis as any).__lastFact = undefined; });
 
   it('fills what the entity says the system writes', async () => {
-    await using app = await createApp({ root, createContainer });
+    await using app = await createApp({ scan: await scanProject(root), createContainer });
     const announce = app.container.resolve<(fact: unknown) => Promise<void>>(emitKeyOf('PostPublished'));
 
     // `at: created()` — the emitter does not write it, the entity says who does.
@@ -214,7 +215,7 @@ describe('a fact stamped at the announcement', () => {
   });
 
   it('never re-stamps a fact that arrived from elsewhere', async () => {
-    await using app = await createApp({ root, createContainer });
+    await using app = await createApp({ scan: await scanProject(root), createContainer });
 
     // `deliver` is the carrier's door. The sender already stamped this fact; doing it
     // again would give one fact two identities, one per process that relayed it.
@@ -231,7 +232,7 @@ describe('a sender whose copy has moved ahead', () => {
   beforeEach(() => { (globalThis as any).__heard = []; });
 
   it('is refused, and the refusal names the field', async () => {
-    await using app = await createApp({ root, createContainer });
+    await using app = await createApp({ scan: await scanProject(root), createContainer });
 
     const refused = await app.deliver('postPublished', {
       id: '77',
@@ -254,7 +255,7 @@ describe('a sender whose copy has moved ahead', () => {
    * dump would leave the most likely cause (a copy older than the sender's) unsaid.
    */
   it('says so in a log that names the field and the remedy', async () => {
-    await using app = await createApp({ root, createContainer });
+    await using app = await createApp({ scan: await scanProject(root), createContainer });
     const written: string[] = [];
     const spy = vi.spyOn(console, 'error').mockImplementation((...args) => {
       written.push(args.map(String).join(' '));
@@ -274,7 +275,7 @@ describe('a sender whose copy has moved ahead', () => {
   });
 
   it('leaves the ANNOUNCEMENT untouched — a refusal reaches a log, never back up', async () => {
-    await using app = await createApp({ root, createContainer });
+    await using app = await createApp({ scan: await scanProject(root), createContainer });
     const announce = app.container.resolve<(fact: unknown) => Promise<void>>(emitKeyOf('PostPublished'));
 
     // The emission path, not `deliver`: this is the rule that protects the EMITTER, and
@@ -285,7 +286,7 @@ describe('a sender whose copy has moved ahead', () => {
 
   /** The other direction was never in question: a field that left is missing data. */
   it('refuses a fact that lost a field it needs', async () => {
-    await using app = await createApp({ root, createContainer });
+    await using app = await createApp({ scan: await scanProject(root), createContainer });
 
     await expect(app.deliver('postPublished', { id: '79' })).rejects.toThrow(/refused it/);
     expect(heard()).not.toContain('search:79');
@@ -307,7 +308,7 @@ describe('a carrier that must decide whether to redeliver', () => {
   beforeEach(() => { (globalThis as any).__heard = []; });
 
   it('is told which listener refused, and how many', async () => {
-    await using app = await createApp({ root, createContainer });
+    await using app = await createApp({ scan: await scanProject(root), createContainer });
 
     // `mail` throws on every fact by design, `search` accepts this one.
     const refused = await app.deliver('postPublished', {
@@ -324,7 +325,7 @@ describe('a carrier that must decide whether to redeliver', () => {
   });
 
   it('waits for the listeners rather than handing back straight away', async () => {
-    await using app = await createApp({ root, createContainer });
+    await using app = await createApp({ scan: await scanProject(root), createContainer });
 
     // Nothing settles between the call and the assertion — no `settle()` here, which is
     // the difference from every announcement test above.
@@ -340,7 +341,7 @@ describe('a fact that would cause itself', () => {
   it('is refused, and the message names the ring', async () => {
     (globalThis as any).__heard = [];
     const cycleRoot = join(import.meta.dirname, 'fixtures-emit-cycle');
-    await using app = await createApp({ root: cycleRoot, createContainer });
+    await using app = await createApp({ scan: await scanProject(cycleRoot), createContainer });
 
     // alpha → beta → alpha. A chain and not a depth: a diamond (A→B→D, A→C→D) stays
     // legal, only a fact that leads back to itself is refused.
