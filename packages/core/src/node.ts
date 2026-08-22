@@ -12,6 +12,7 @@
 export { boot } from './boot/boot.js';
 
 export { scanProject, frondAliases, FROND_DIRS } from './scan/scanner.js';
+export { emitScan, type EmitOptions } from './scan/emit.js';
 export { setModuleLoader, getModuleLoader } from './loader.js';
 export { loadConfig, loadCascadedConfig } from './config-loader.js';
 export { defineFrond } from './frond-config.js';
