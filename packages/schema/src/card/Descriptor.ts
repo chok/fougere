@@ -39,11 +39,24 @@ export type RoleDescriptor = Pick<RoleRules, 'primary' | 'index'> & {
 
 export type RelationDescriptor = Pick<Relation, 'kind' | 'onDelete'> & { to: string };
 
+/**
+ * What a derivation was cut from, and what the cut left — `survived` keyed by the
+ * ORIGIN's field names. Absent on a declaration that derives from nothing.
+ *
+ * A dropped field is `null` and never `undefined`: JSON.stringify erases the second,
+ * which would leave the card saying only what remains — what `properties` already says.
+ */
+export interface DerivedFrom {
+  from: string;
+  survived: Record<string, string | null>;
+}
+
 export interface SchemaDescriptor {
   title?: string;
   type: 'object';
   properties: Record<string, FieldDescriptor>;
   required?: string[];
+  'x-fougere-derived'?: DerivedFrom;
   'x-fougere-version': 1;
   'x-fougere-vendor': 'fougere';
 }
