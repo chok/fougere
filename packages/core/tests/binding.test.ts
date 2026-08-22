@@ -61,7 +61,7 @@ describe('computeBindingPlan', () => {
       collectors,
     );
     expect(plan[0].source).toEqual({ kind: 'body' });
-    expect(plan[1].source).toEqual({ kind: 'collector', entityName: 'user' });
+    expect(plan[1].source).toEqual({ kind: 'collector', typeName: 'user' });
   });
 
   // The set is keyed by `registrationKeyOf`, the way the scan spells it. Looking a
@@ -70,7 +70,15 @@ describe('computeBindingPlan', () => {
   it('draft(author: AuthorUser) with AuthorUserCollector → [collector], not [body]', () => {
     const collectors = new Set([registrationKeyOf('AuthorUser')]);
     const plan = computeBindingPlan([param('author', 'AuthorUser')], collectors);
-    expect(plan[0].source).toEqual({ kind: 'collector', entityName: 'authorUser' });
+    expect(plan[0].source).toEqual({ kind: 'collector', typeName: 'authorUser' });
+  });
+
+  // A collector's target is a NAME, so a class with no fields answers like any other.
+  // The plan cannot tell them apart, which is the whole point: `Ability` is built from
+  // state at every call and never read from a row.
+  it('read(ability: Ability) with AbilityCollector → [collector], no entity involved', () => {
+    const plan = computeBindingPlan([param('ability', 'Ability')], new Set(['ability']));
+    expect(plan[0].source).toEqual({ kind: 'collector', typeName: 'ability' });
   });
 
   it('handler(ctx: InvocationContext) → [context]', () => {
@@ -141,10 +149,10 @@ describe('resolveArgs', () => {
   it('resolves collector', async () => {
     const fakeUser = { id: 'u1', name: 'Alice' };
     const plan: BindingPlan = [
-      { name: 'author', source: { kind: 'collector', entityName: 'user' }, optional: false },
+      { name: 'author', source: { kind: 'collector', typeName: 'user' }, optional: false },
     ];
-    const args = await resolveArgs(plan, ctx({ state: { userId: 'u1' } }), (entityName) => {
-      if (entityName === 'user') return { collect: async () => fakeUser };
+    const args = await resolveArgs(plan, ctx({ state: { userId: 'u1' } }), (typeName) => {
+      if (typeName === 'user') return { collect: async () => fakeUser };
       return undefined;
     });
     expect(args).toEqual([fakeUser]);
@@ -165,7 +173,7 @@ describe('resolveArgs', () => {
     const user = { id: 'u1', role: 'admin' };
     const plan: BindingPlan = [
       { name: 'data', source: { kind: 'body' }, optional: false },
-      { name: 'author', source: { kind: 'collector', entityName: 'user' }, optional: false },
+      { name: 'author', source: { kind: 'collector', typeName: 'user' }, optional: false },
     ];
     const args = await resolveArgs(plan, ctx({ body, state: { userId: 'u1' } }), (name) => {
       if (name === 'user') return { collect: async () => user };

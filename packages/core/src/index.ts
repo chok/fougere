@@ -10,7 +10,9 @@
  */
 export { createApp } from './boot/bootstrap.js';
 export { boot } from './boot/boot.js';
-export { orderSeeds, runSeeds } from './boot/seed.js';
+export { orderSeeds, runSeeds, seeding } from './boot/seed.js';
+export { Lifecycle, migrating } from './boot/Lifecycle.js';
+export type { Extension } from './boot/Lifecycle.js';
 export { defineFougere } from './define.js';
 export { loadConfig, loadCascadedConfig, type AdapterConfig, type FougereConfig } from './config-loader.js';
 export { defineFrond, type FrondConfig, type OperationOverride } from './frond-config.js';
@@ -31,13 +33,16 @@ export { scanProject, frondAliases, FROND_DIRS, setModuleLoader, type ModuleLoad
 export { FougereError, ErrorCode, validationErrorsOf, type FougereErrorOptions } from './wire/errors.js';
 export type { OperationContext, AppNext, AppMiddleware } from './wire/middleware.js';
 export { createLocalRunner, createAppRunner, assertIdentityCard } from './wire/call.js';
-export type { FrondCall, Transport, IdentityCard, CardOp, Facade } from './wire/call.js';
+export type {
+  FrondCall, Transport, IdentityCard, CardOp, Facade, RpcAnswer,
+  TopologyReport, FrondPlacement, Edge,
+} from './wire/call.js';
 export { type Emit, type Fact } from './emit.js';
 export { callValueOf } from './contract.js';
 export type { CallValue } from './contract.js';
 export { toHttpError, toPublicError } from './wire/http-error.js';
 export { loggerMiddleware } from './wire/loggerMiddleware.js';
-export { Logger, setLogLevel, logLevel, onLog } from './builtins/logger.js';
+export { Logger, setLogLevel, logLevel, envLevel, onLog } from './builtins/logger.js';
 export type { LogLevel, LogRecord, LogSink } from './builtins/logger.js';
 // What a re-read config changes in a running process — and what it cannot.
 export { applyConfig, type ConfigApplication } from './boot/apply.js';

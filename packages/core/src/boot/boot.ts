@@ -1,9 +1,10 @@
 import { createApp } from './bootstrap.js';
-import { orderSeeds, runSeeds } from './seed.js';
+import { seeding } from './seed.js';
 import { loadConfig, type FougereConfig } from '../config-loader.js';
 import { Logger } from '../builtins/logger.js';
 import { applyConfig } from './apply.js';
 import type { App, CreateAppOptions } from './types.js';
+import { migrating, type Extension } from './Lifecycle.js';
 import type { Transport } from '../wire/call.js';
 import type { Container } from '@fougere/container';
 
@@ -30,16 +31,26 @@ interface BootOptions {
    */
   onEmit?: CreateAppOptions['onEmit'];
   /**
-   * ORM setup — returns the storage handle (db), an ormFactory and an optional afterBoot.
+   * ORM setup — returns the storage handle (db), an ormFactory, and its two halves.
    * The `db` value is forwarded to the auth provider via AuthContext when `auth` is set.
    */
   db?: (config: FougereConfig) => {
     db?: unknown;
     ormFactory: CreateAppOptions['ormFactory'];
-    afterBoot?: (app: App) => Promise<void> | void;
+    /**
+     * Bring the schema up to date — an extension's `up`, because it runs after the
+     * container. It used to be called `afterBoot`, a word that also meant the host's
+     * post-boot and was read in four places under two senses.
+     */
+    migrate?: (app: App) => Promise<void> | void;
     /** Closes what the factory opened — `boot()` called it, so `boot()` releases it. */
     close?: () => Promise<void>;
   };
+  /**
+   * What this app takes on beyond its fronds. Appended after the framework's own, so a
+   * host adds to the ascent — or replaces a member of it by declaring the same name.
+   */
+  extensions?: ReadonlyArray<Extension | undefined>;
 }
 
 /**
@@ -86,25 +97,24 @@ export async function boot(options: BootOptions): Promise<App> {
     // hosts got it right through their own boot (`app/shared/src/boot.ts`), and this
     // path, the conventional one, served nothing.
     adapters: config.adapters,
-    // boot() called the factory, so boot() owns closing what it opened.
+    // boot() called the factory, so boot() owns closing what it opened. Not an extension:
+    // it was opened before the container existed, so it closes after the container goes.
     onDispose: dbSetup?.close,
+    /**
+     * The whole ascent, in one ordered list — tables, then rows, then whatever the host
+     * takes on. It was four call sites under the name `afterBoot`, two of which meant
+     * different things and one of which was generated into a Nitro plugin.
+     */
+    extensions: [
+      migrating(dbSetup?.migrate),
+      seeding((message) => log.debug(message)),
+      ...(options.extensions ?? []),
+    ],
     onEmit: options.onEmit,
     remoteTransport: options.remoteTransport,
   });
 
-  if (dbSetup?.afterBoot) {
-    log.debug('running migrations');
-    await dbSetup.afterBoot(app);
-    log.info('migrations done');
-  }
-
-  // Run seeds — in dependency order, so a referrer never lands before its target.
-  const seeds = orderSeeds(app.fronds);
-  if (seeds.length > 0) {
-    log.debug(`seeding ${seeds.length} entities: ${seeds.map((s) => s.entityName).join(' → ')}`);
-    await runSeeds(app, seeds, (message) => log.debug(message));
-    log.info('seeding done');
-  }
+  log.info(`ascent: ${app.extensions().join(' → ') || 'nothing declared'}`);
 
   const ms = (performance.now() - bootStart).toFixed(0);
   log.info(`ready in ${ms}ms — ${app.fronds.length} frond(s)`);

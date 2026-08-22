@@ -10,7 +10,8 @@ import type { Fronds } from '../scan/Fronds.js';
 import type { SchemaView } from '@fougere/schema';
 import type { OrmFactory } from '../orm.js';
 import type { AppMiddleware } from '../wire/middleware.js';
-import type { Transport } from '../wire/call.js';
+import type { RpcAnswer, Transport } from '../wire/call.js';
+import type { Extension } from './Lifecycle.js';
 import type { AuthConfig, AuthRuntime } from './auth.js';
 
 /** Options for createApp(). */
@@ -63,11 +64,27 @@ export interface CreateAppOptions {
    */
   ports?: Record<string, string>;
   /**
+   * What this app takes on beyond its fronds, each stating what it does and what it undoes.
+   *
+   * `up` runs before `createApp` returns, in this order; `down` runs inside `dispose()`,
+   * in reverse. Three levels release in reverse of construction, which is the container's
+   * own rule read one level out: extensions first (built last), then the container, then
+   * `onDispose` — a resource opened before any of this existed.
+   *
+   * A member may be `undefined`, so a host writes a conditional one inline rather than a
+   * spread over a ternary. The framework's own two are always declared, `migrate` as an
+   * empty slot when nothing migrates: a host filling it later REPLACES that member in
+   * place instead of adding one after the seeds.
+   */
+  extensions?: ReadonlyArray<Extension | undefined>;
+  /**
    * Released by `app.dispose()` AFTER the container, for a resource handed in rather
    * than built here — a storage connection is the one case today.
    *
-   * After, because reverse of construction is the rule the container already follows:
-   * what was opened first is closed last, so nothing it holds disappears under it.
+   * NOT an extension, and the difference is a time: this was opened BEFORE the container,
+   * so it closes after it, while an extension's `up` runs after the container and its
+   * `down` therefore runs before. A storage's migration is an extension; its connection
+   * is not, and `ResolvedStorage` declares the two beside each other.
    */
   onDispose?: () => Promise<void> | void;
   /**
@@ -203,6 +220,21 @@ export interface App {
    * rule nobody forgets.
    */
   [Symbol.asyncDispose](): Promise<void>;
+  /**
+   * What this app took on, in the order it will release them. The reading of
+   * `CreateAppOptions.extensions` after the boot resolved it.
+   */
+  extensions(): string[];
+  /**
+   * Declare one `rpc` op — what the app says about ITSELF, beside the card.
+   *
+   * The gesture a package uses to add a reading core does not hold: an app that never
+   * installed it never registers it, so the runner's refusal is the whole degradation.
+   * A name already declared is refused rather than replaced — `discover` included.
+   */
+  serveRpc(op: string, answer: RpcAnswer): void;
+  /** What the `rpc` door serves. Read by the runner, to dispatch and to name. */
+  rpcAnswers(): ReadonlyMap<string, RpcAnswer>;
   /** Register a global app middleware (runs on every operation). */
   use(middleware: AppMiddleware): void;
   /** Register an app middleware scoped to a specific entity. */

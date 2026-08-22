@@ -4,7 +4,7 @@ import { EXTENSION_AXES } from '../axis/Axis.js';
 import type { Field } from '../Field.js';
 import type { SchemaView } from '../SchemaView.js';
 import { registrationKeyOf } from '../name.js';
-import { type FieldDescriptor, type FieldExtension, type SchemaBundle, type SchemaDescriptor } from './Descriptor.js';
+import { type DerivedFrom, type FieldDescriptor, type FieldExtension, type SchemaBundle, type SchemaDescriptor } from './Descriptor.js';
 
 function describeExtension(field: Field, key: string): FieldExtension | undefined {
   const ext: Record<string, unknown> = {};
@@ -46,7 +46,21 @@ export function describe(schema: SchemaView, name?: string): SchemaDescriptor {
   const title = name ?? sourceNameOf(schema);
   if (title) descriptor.title = title;
   if (required.length) descriptor.required = required;
+  const derived = derivedOf(schema);
+  if (derived) descriptor['x-fougere-derived'] = derived;
   return descriptor;
+}
+
+/**
+ * A view says what it is a view OF. `title` already carries the origin's name, and
+ * carried it alone: two derivations of one entity described identically while serving
+ * different fields, and nothing in the card said which was which.
+ */
+export function derivedOf(schema: SchemaView): DerivedFrom | undefined {
+  const s = schema as { source?: { name?: string }; survived?: Record<string, string | undefined> };
+  if (!s.source?.name || !s.survived) return undefined;
+  const survived = Object.fromEntries(Object.entries(s.survived).map(([k, v]) => [k, v ?? null]));
+  return { from: s.source.name, survived };
 }
 
 export function sourceNameOf(schema: SchemaView): string | undefined {

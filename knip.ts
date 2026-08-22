@@ -52,6 +52,12 @@ const config: KnipConfig = {
     'packages/app/nuxt': { entry: [...entry, 'src/runtime/**/*.ts'] },
     // A command is resolved by name from the CLI's own frond, not imported.
     'packages/cli': { entry: [...entry, 'src/bin.ts', 'app/commands/**/*.ts'] },
+    /**
+     * `require.resolve('graphql')` in a `try`/`catch` whose `catch` says *"No GraphQL in
+     * this project — nothing to pin"*. A probe for what MAY be there is not a dependency,
+     * and reporting it as `unlisted` costs the one finding class this step is kept for.
+     */
+    'packages/testing': { entry, ignoreDependencies: ['graphql'] },
   },
   // Copied, never imported: a scaffold template is source for an app knip is not
   // looking at. Test fixtures are fronds too, loaded by the scan under test.

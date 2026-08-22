@@ -462,10 +462,12 @@ async function toCollectorEntry(filePath: string): Promise<CollectorEntry | null
   const ctor = await loadClass(filePath);
   const target = targetOf(ctor);
   if (!target) return null;
-  const entityName = registrationKeyOf((target as any).name);
+  // The target's NAME and nothing else — a collector reads no fields, so the class it
+  // was built on needs no schema.
+  const typeName = registrationKeyOf((target as any).name);
   const collectorParams = await ctorParamsOf(filePath);
   const deps = collectorParams.map((p) => depKeyOf(p.type));
-  return { entityName, ctor, deps, filePath };
+  return { typeName, ctor, deps, filePath };
 }
 
 async function scanFrond(frondPath: string, name: string, source: FrondDescriptor['source'], projectRoot?: string): Promise<FrondDescriptor> {

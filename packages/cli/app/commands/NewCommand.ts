@@ -47,7 +47,7 @@ export default class NewCommand {
       if (raw.local) pw.linkLocal(dir);
       this.ui.info(`${template} at the root`);
       this.ui.note([`cd ${name}`, INSTALL, `pnpm dev`].join('\n'), `${name} — one frond, at the root`);
-      this.ui.outro('Prêt.');
+      this.ui.outro('Ready.');
       return;
     }
 
@@ -56,7 +56,7 @@ export default class NewCommand {
     if (raw.bare) {
       if (raw.local) pw.linkLocal(dir);
       this.ui.note([`cd ${name}`, `fougere new   # compose it (guided)`].join('\n'), `${name} — empty workspace`);
-      this.ui.outro('Prêt.');
+      this.ui.outro('Ready.');
       return;
     }
 
@@ -65,16 +65,16 @@ export default class NewCommand {
     const stated = (raw.frond as string) || (raw.app as string);
     const fronds = stated
       ? this.state(dir, pw, 'fronds', raw.frond as string)
-      : await this.compose(dir, pw, 'fronds', 'Fronds — tes domaines', pw.listTemplates('fronds'));
+      : await this.compose(dir, pw, 'fronds', 'Fronds — your domains', pw.listTemplates('fronds'));
     const apps = stated
       ? this.state(dir, pw, 'apps', raw.app as string)
-      : await this.compose(dir, pw, 'apps', 'Apps — ce qui les consomme', pw.listTemplates('apps'));
+      : await this.compose(dir, pw, 'apps', 'Apps — what consumes them', pw.listTemplates('apps'));
 
     // Every app depends on every frond — stated here, where both names are known.
     pw.linkFronds(dir);
     if (raw.local) pw.linkLocal(dir);
     this.ui.note([`cd ${name}`, INSTALL, `pnpm dev`].join('\n'), `${name} — ${fronds} frond(s), ${apps} app(s)`);
-    this.ui.outro('Prêt.');
+    this.ui.outro('Ready.');
   }
 
   /**

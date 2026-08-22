@@ -18,7 +18,7 @@ import { serve, createHttpTransport } from '@fougere/transport-http';
 import { createJiti } from 'jiti';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { observe } from './observe.js';
+import { observed } from './observe.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
@@ -54,16 +54,16 @@ const memoryOrm = () => ({
 const stopping: Array<() => Promise<void>> = [];
 
 // ── catalog — holds Product, answers about it ───
-const catalog = await createApp({ root: join(root, 'catalog'), createContainer, ormFactory: memoryOrm });
-const catalogTelemetry = observe(catalog, 'catalog');
+// Observing is declared with the app, not wired onto it after the fact — so `dispose()`
+// flushes the telemetry and this file no longer owes a `stop()` it could forget.
+const catalog = await createApp({ root: join(root, 'catalog'), createContainer, ormFactory: memoryOrm, extensions: [observed('catalog')] });
 const catalogReceiver = await serve(createLocalRunner(catalog), { port: CATALOG });
-stopping.push(async () => { await catalogTelemetry.stop(); await catalogReceiver.close(); await catalog.dispose(); });
+stopping.push(async () => { await catalogReceiver.close(); await catalog.dispose(); });
 
 // ── shipping — a Frond with no entity at all ────
-const shipping = await createApp({ root: join(root, 'shipping'), createContainer });
-const shippingTelemetry = observe(shipping, 'shipping');
+const shipping = await createApp({ root: join(root, 'shipping'), createContainer, extensions: [observed('shipping')] });
 const shippingReceiver = await serve(createLocalRunner(shipping), { port: SHIPPING });
-stopping.push(async () => { await shippingTelemetry.stop(); await shippingReceiver.close(); await shipping.dispose(); });
+stopping.push(async () => { await shippingReceiver.close(); await shipping.dispose(); });
 
 // ── shop — owns neither, calls both ─────────────
 // This is the entire topology statement. Comment it out and the same CartHandler runs
@@ -76,10 +76,10 @@ const shop = await createApp({
     shipping: `http://127.0.0.1:${SHIPPING}`,
   },
   remoteTransport: (url) => createHttpTransport(url),
+  extensions: [observed('shop')],
 });
-const shopTelemetry = observe(shop, 'shop');
 const shopReceiver = await serve(createLocalRunner(shop), { port: SHOP });
-stopping.push(async () => { await shopTelemetry.stop(); await shopReceiver.close(); await shop.dispose(); });
+stopping.push(async () => { await shopReceiver.close(); await shop.dispose(); });
 
 console.log(`
   catalog   :${CATALOG}   product.list · product.findById · product.reserve
@@ -93,8 +93,8 @@ console.log(`
 `);
 
 const shutdown = async () => {
-  // Reverse of construction, and telemetry flushes before its process goes: a span held
-  // in a buffer at exit is a span nobody will ever see.
+  // Reverse of construction. Telemetry flushes inside `dispose()` now — a span held in a
+  // buffer at exit is a span nobody will ever see, and that is the extension's `down`.
   for (const stop of stopping.reverse()) await stop();
   process.exit(0);
 };

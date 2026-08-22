@@ -4,8 +4,15 @@ import { describeSet, diffSet, type SchemaBundle, type SetDiff } from '@fougere/
 import ProjectScan from '../services/ProjectScan.js';
 import type Freeze from '../entities/Freeze.js';
 
-/** Where a project keeps what its shapes USED to be. */
-const VERSIONS = '.fougere/versions';
+/**
+ * Where a FROND keeps what its shapes used to be — beside `entities/`, not under a dot.
+ *
+ * Under the frond because its entities move with it behind `remotes:`, and a history left
+ * at the app root would stay with the host it left. Beside the source because a version is
+ * COMMITTED: `.fougere/` is gitignored whole and holds what a run can rebuild — a scan
+ * cache, a synced card. A past no current code can regenerate is not that.
+ */
+const VERSIONS = 'versions';
 
 export interface FreezeInspection {
   version: string;
@@ -43,37 +50,44 @@ export default class FreezeHandler {
    * a version it never inspected.
    */
   async execute(input: Freeze & { renamed?: Record<string, Record<string, string>> }): Promise<FreezeInspection> {
-    const { root, bundle, previous } = await this.read(input);
+    const fronds = await this.read(input);
     const version = input.version;
-    const entities = Object.keys(bundle.$defs ?? {});
-
-    if (!previous) {
-      await this.record(root, version, bundle);
-      return { version, entities, ambiguous: {}, written: true };
-    }
-
+    const entities = fronds.flatMap(({ bundle }) => Object.keys(bundle.$defs ?? {}));
     const renamed = input.renamed ?? {};
-    const step = diffSet(previous.bundle, bundle, { renamed });
+
+    // Every frond is inspected before ANY of them writes: a question standing in one
+    // frond must not leave the others recorded, or a second run cuts half a version.
+    const inspected = fronds.map(({ path, bundle, previous }) => ({
+      path,
+      bundle,
+      previous,
+      step: previous ? diffSet(previous.bundle, bundle, { renamed }) : undefined,
+    }));
 
     const ambiguous: FreezeInspection['ambiguous'] = {};
-    for (const [name, answer] of Object.entries(step.entities)) {
-      if (answer.ambiguous.length > 0) ambiguous[name] = answer.ambiguous;
+    for (const { step } of inspected) {
+      for (const [name, answer] of Object.entries(step?.entities ?? {})) {
+        if (answer.ambiguous.length > 0) ambiguous[name] = answer.ambiguous;
+      }
     }
     // Nothing on disk while a question stands. The only information the code does not
     // hold is what the person who made the change meant.
     if (Object.keys(ambiguous).length > 0) {
-      return { version, previous: previous.name, entities, step, ambiguous, written: false };
+      return { version, previous: previousName(inspected), entities, step: merge(inspected), ambiguous, written: false };
     }
 
-    await this.record(root, version, bundle);
-    // `previous` is recorded rather than re-derived: the chain is a fact of the moment
-    // this version was cut, and a later sort of directory names is not that fact.
-    await writeFile(
-      join(root, VERSIONS, version, 'from.json'),
-      `${JSON.stringify({ previous: previous.name, renamed, ...step }, null, 2)}\n`,
-    );
+    for (const { path, bundle, previous, step } of inspected) {
+      await this.record(path, version, bundle);
+      if (!previous || !step) continue;
+      // `previous` is recorded rather than re-derived: the chain is a fact of the moment
+      // this version was cut, and a later sort of directory names is not that fact.
+      await writeFile(
+        join(path, VERSIONS, version, 'from.json'),
+        `${JSON.stringify({ previous: previous.name, renamed, ...step }, null, 2)}\n`,
+      );
+    }
 
-    return { version, previous: previous.name, entities, step, ambiguous: {}, written: true };
+    return { version, previous: previousName(inspected), entities, step: merge(inspected), ambiguous: {}, written: true };
   }
 
   private async record(root: string, version: string, bundle: SchemaBundle): Promise<void> {
@@ -82,12 +96,45 @@ export default class FreezeHandler {
     await writeFile(join(directory, 'shape.json'), `${JSON.stringify(bundle, null, 2)}\n`);
   }
 
-  /** Today's shapes, and the last version recorded before them. */
+  /**
+   * Today's shapes and the version before them, one entry per frond.
+   *
+   * `Fronds.schemas()` is deliberately flat — a fact heard in one frond is declared in
+   * another — so the per-frond map is built here, where the question IS per frond.
+   */
   private async read(input: Freeze) {
     const scan = await this.projectScan.at(input.root ?? undefined);
-    const bundle = describeSet(Object.fromEntries(scan.fronds.schemas()));
-    return { root: scan.root, bundle, previous: await previousOf(scan.root, input.version) };
+    return Promise.all(
+      scan.fronds
+        .filter((frond) => frond.entities.length > 0)
+        .map(async (frond) => ({
+          path: frond.source.path,
+          bundle: describeSet(Object.fromEntries(frond.entities.map((e) => [e.name, e.entityClass]))),
+          previous: await previousOf(frond.source.path, input.version),
+        })),
+    );
   }
+}
+
+type Inspected = { previous?: { name: string }; step?: SetDiff };
+
+/** The version every frond steps from. They are cut together, so they agree. */
+function previousName(inspected: readonly Inspected[]): string | undefined {
+  return inspected.find(({ previous }) => previous)?.previous?.name;
+}
+
+/**
+ * One report out of several fronds — entity names are unique across a scan, so the
+ * union loses nothing. Writing stays per frond; only the telling is gathered.
+ */
+function merge(inspected: readonly Inspected[]): SetDiff | undefined {
+  const steps = inspected.map(({ step }) => step).filter((step): step is SetDiff => Boolean(step));
+  if (steps.length === 0) return undefined;
+  return {
+    entities: Object.assign({}, ...steps.map((step) => step.entities)),
+    entitiesAdded: steps.flatMap((step) => step.entitiesAdded),
+    entitiesRemoved: steps.flatMap((step) => step.entitiesRemoved),
+  };
 }
 
 /** The version recorded just before this one — by name order, and only this once. */

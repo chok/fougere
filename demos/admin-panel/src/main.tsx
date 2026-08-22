@@ -10,7 +10,7 @@ import {
   type ReactAdminRenderers,
 } from '@fougere/admin/react';
 import type { Fetcher } from '@fougere/app/client';
-import type { IdentityCard } from '@fougere/core/contract';
+import type { IdentityCard, TopologyReport } from '@fougere/core/contract';
 import { created, describe, email, entity, oneOf, primary, readOnly, text } from '@fougere/schema';
 // The theme names a variable family and cannot load one: a package that ships no CSS
 // has no way to. The host does it, and this is the line — without it every weight the
@@ -104,6 +104,30 @@ const collections: Record<string, Array<Record<string, unknown>>> = {
   ],
 };
 
+/** Flip to false to see the panel's answer when nothing observes the app. */
+const observed = true;
+
+/**
+ * One frond here, one that only ANSWERED — which is the whole point of the reading:
+ * `billing` is remote because a call reached it, not because a config line said so, and its
+ * shape is published by the process that owns it.
+ */
+const topology: TopologyReport = {
+  since: Date.parse('2026-08-22T08:00:00.000Z'),
+  active: 0,
+  fronds: [
+    { frond: 'cms', placement: 'local', entities: 2, doors: 2 },
+    { frond: 'billing', placement: 'remote', entities: 0, doors: 0 },
+  ],
+  edges: [{ from: 'cms', to: 'billing', count: 128, errors: 3 }],
+};
+
+/** The refusal a real app answers when the package was never wired — carried on `data`. */
+const unserved = {
+  code: 'NOT_FOUND',
+  message: "Unknown rpc operation 'topology'. It serves discover.",
+};
+
 type DemoRequest = {
   id: number;
   method: string;
@@ -121,6 +145,15 @@ const demoFetcher: Fetcher = async <T,>(
   const request = options.body as DemoRequest;
   if (request.method === 'rpc.discover') {
     return { jsonrpc: '2.0', id: request.id, result: card } as T;
+  }
+  /*
+   * What an app running `@fougere/observability` answers. Set `observed` to false to see the
+   * other half: the page then explains which two lines are missing, rather than failing.
+   */
+  if (request.method === 'rpc.topology') {
+    return (observed
+      ? { jsonrpc: '2.0', id: request.id, result: topology }
+      : { jsonrpc: '2.0', id: request.id, error: { code: -32004, message: unserved.message, data: unserved } }) as T;
   }
 
   const [resource, operation] = request.method.split('.');
@@ -273,13 +306,29 @@ const messages = {
       },
       users: { title: 'Utilisateurs', subtitle: 'Accès et rôles', empty: 'Déclarez une facet `users` pour remplir ce panneau.' },
       collections: { title: 'Collections', subtitle: 'Toutes les portes annoncées par la carte' },
+      topology: {
+        title: 'Topologie',
+        here: 'ici', elsewhere: 'ailleurs',
+        opaque: 'Sa forme est publiée par le processus qui la possède.',
+        here_count: '%{smart_count} ici |||| %{smart_count} ici',
+        elsewhere_count: '%{smart_count} ailleurs |||| %{smart_count} ailleurs',
+        paths: "%{smart_count} chemin d'appel observé |||| %{smart_count} chemins d'appel observés",
+        entities: '%{smart_count} entité |||| %{smart_count} entités',
+        doors: '%{smart_count} porte |||| %{smart_count} portes',
+        refused: '%{smart_count} refus |||| %{smart_count} refus',
+        inFlight: '%{smart_count} appel en vol |||| %{smart_count} appels en vol',
+        noEdges: "Aucun appel entre fronds observé — une arête apparaît au premier appel de l'un vers l'autre.",
+        unobservedTitle: "Cette application ne s'observe pas",
+        unobservedBody: "La forme d'un système se lit depuis l'intérieur du processus qu'elle décrit, et celui-ci n'en publie aucune. Installez @fougere/observability et déclarez-le comme extension du boot.",
+        failedTitle: "L'application n'a pas répondu",
+      },
       structure: {
-        title: 'Topologie', subtitle: "Ce que la carte d'identité annonce de cette app",
+        title: 'Structure', subtitle: "Ce que la carte d'identité annonce de cette app",
         fronds: 'Fronds', doors: 'Portes', queries: 'Lectures', commands: 'Écritures',
         frondDoors: '%{smart_count} porte |||| %{smart_count} portes',
         frondFields: '%{smart_count} champ |||| %{smart_count} champs',
         read: 'lecture', write: 'écriture',
-        localOnly: "Fronds locales seulement — une carte n'annonce pas ce vers quoi elle route.",
+        localOnly: "Fronds locales seulement — une carte n'annonce pas ce vers quoi elle route. La topologie dit où va un appel.",
       },
       resource: { rows: '%{smart_count} ligne |||| %{smart_count} lignes' },
       action: {

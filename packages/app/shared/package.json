@@ -31,10 +31,6 @@
       "types": "./dist/web.d.ts",
       "import": "./dist/web.js"
     },
-    "./router": {
-      "types": "./dist/router.d.ts",
-      "import": "./dist/router.js"
-    },
     "./express": {
       "types": "./dist/express.d.ts",
       "import": "./dist/express.js"

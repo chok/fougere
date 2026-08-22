@@ -100,5 +100,8 @@ export default class FreezeCommand {
 }
 
 function describeChange(change: Change): string {
-  return change.kind === 'renamed' ? `${change.from} → ${change.to}` : `${change.kind} ${change.field}`;
+  if (change.kind === 'renamed') return `${change.from} → ${change.to}`;
+  // An axis that moved names WHICH: "restated title" says nothing a reader can act on.
+  if (change.kind === 'restated') return `${change.field}: ${change.axis} moved`;
+  return `${change.kind} ${change.field}`;
 }

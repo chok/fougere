@@ -45,7 +45,7 @@ async function boot(split: boolean) {
     transacted: storage.transacted as never,
   });
   for (const spy of spies) spy.mockRestore();
-  await storage.afterBoot!(app);
+  await storage.migrate!(app);
 
   const orm = (entity: string) => (app as never as { ormFor(e: string): any }).ormFor(entity);
   await orm('account').create({ id: 'a', owner: 'Ada', balance: 1000 });

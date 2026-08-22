@@ -184,4 +184,38 @@ describe('derivation', () => {
       expect(h?.sql?.shared?.columnType).toBe('new');
     });
   });
+
+  describe('the trace a derivation leaves', () => {
+    it('says what survived and what did not, keyed by the origin', () => {
+      const view = Order.pick('id', 'status');
+      expect(view.survived).toEqual({
+        id: 'id', status: 'status', total: undefined, note: undefined, createdAt: undefined,
+      });
+    });
+
+    it('reports against the origin, never the intermediate', () => {
+      const view = Order.pick('id', 'status', 'total').omit('total');
+      expect(view.source).toBe(Order);
+      expect(view.survived).toEqual({
+        id: 'id', status: 'status', total: undefined, note: undefined, createdAt: undefined,
+      });
+    });
+
+    it('carries the new name a rename gave a field', () => {
+      const view = Order.rename({ note: 'comment' });
+      expect(view.survived?.note).toBe('comment');
+    });
+
+    it('speaks of the source only — an added field has no origin', () => {
+      const view = Order.pick('id').extend({ at: created() });
+      expect(Object.keys(view.getFields())).toEqual(['id', 'at']);
+      expect(view.survived).toEqual({
+        id: 'id', status: undefined, total: undefined, note: undefined, createdAt: undefined,
+      });
+    });
+
+    it('is absent on a declaration that derives from nothing', () => {
+      expect((Order as unknown as { survived?: unknown }).survived).toBeUndefined();
+    });
+  });
 });

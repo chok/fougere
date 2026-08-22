@@ -14,7 +14,9 @@
  * it away. The intent lives in the transition and no pair of snapshots holds it, so it is
  * an input here (`renamed`) and what is left over is REPORTED rather than resolved.
  */
-import type { FieldDescriptor, SchemaBundle, SchemaDescriptor } from './Descriptor.js';
+import type { BoundaryRef } from '../axis/boundary/Boundary.js';
+import type { LifecycleRules } from '../axis/lifecycle/Lifecycle.js';
+import type { FieldDescriptor, FieldExtension, RoleDescriptor, SchemaBundle, SchemaDescriptor } from './Descriptor.js';
 
 /** One named difference, at one place. Each kind exists because a reader asks for it. */
 export type Change =
@@ -29,7 +31,19 @@ export type Change =
   /** Same type, different bounds — a CHECK moves, and a value legal yesterday may not be. */
   | { kind: 'reshaped'; field: string; from: FieldDescriptor; to: FieldDescriptor }
   /** NOT NULL in either direction. Boot: an old writer cannot fill what it never knew. */
-  | { kind: 'required'; field: string; from: boolean; to: boolean };
+  | { kind: 'required'; field: string; from: boolean; to: boolean }
+  /**
+   * An axis other than shape was restated — `axis` names which, so a reader switches on
+   * it rather than re-comparing the descriptor it was handed.
+   *
+   * One kind for three axes and three kinds for shape is not lopsided: shape is the half
+   * a JSON Schema reader honours, and its differences mean different things to a table.
+   * A field is FOUR axes, and a comparison that reads one of them answers a quarter of
+   * the question — measured, and every reader of `diff` was blind the same way.
+   */
+  | { kind: 'restated'; field: string; axis: 'role'; from?: RoleDescriptor; to?: RoleDescriptor }
+  | { kind: 'restated'; field: string; axis: 'lifecycle'; from?: LifecycleRules; to?: LifecycleRules }
+  | { kind: 'restated'; field: string; axis: 'boundary'; from?: BoundaryRef; to?: BoundaryRef };
 
 /** A field's declared type(s) — `describe` folds nullable into a union, so it is a set. */
 export type TypeSet = string[];
@@ -52,6 +66,21 @@ export interface Diff {
 export interface DiffOptions {
   /** Renames as declared at the time — old name → new name. */
   renamed?: Record<string, string>;
+}
+
+/** The three axes `shapeOf` sets aside, compared one by one. */
+const AXES = ['role', 'lifecycle', 'boundary'] as const;
+
+/**
+ * What moved on the axes a JSON Schema reader cannot see.
+ *
+ * Compared as VALUES: every axis is normal-form data by construction — that is what makes
+ * a descriptor travel — so equality is the whole test and no axis needs its own reader.
+ */
+function restated(field: string, before: FieldExtension | undefined, after: FieldExtension | undefined): Change[] {
+  return AXES.filter((axis) => !same(before?.[axis], after?.[axis])).map(
+    (axis) => ({ kind: 'restated', field, axis, from: before?.[axis], to: after?.[axis] }) as Change,
+  );
 }
 
 /** The shape half of a descriptor: everything a JSON Schema reader would honour. */
@@ -119,6 +148,8 @@ export function diff(from: SchemaDescriptor, to: SchemaDescriptor, options: Diff
     if (wasRequired !== isRequired) {
       changes.push({ kind: 'required', field: now, from: wasRequired, to: isRequired });
     }
+
+    changes.push(...restated(now, descriptor['x-fougere'], target['x-fougere']));
   }
 
   const claimed = new Set(Object.values(renamed));

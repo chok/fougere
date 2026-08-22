@@ -11,10 +11,18 @@ import type { PartialRow, Row, SchemaView } from './SchemaView.js';
 
 export const ANONYMOUS_SCHEMA_NAME = "Schema";
 
+/**
+ * What a derivation kept, keyed by the ORIGIN's field names: the name a field
+ * carries here, or `undefined` when this view dropped it. `source` says what a
+ * view was cut from; this says what the cut left.
+ */
+export type Survived = Record<string, string | undefined>;
+
 export interface SchemaConstructor<TFields extends Fields> extends SchemaView<TFields> {
   new (data: PartialRow<TFields>): Row<TFields>;
   readonly "~standard": StandardSchemaV1.Props<Record<string, unknown>, Row<TFields>>;
   readonly source?: abstract new (...args: never[]) => unknown;
+  readonly survived?: Survived;
   from(data: Record<string, unknown>): Row<TFields>;
   pick<K extends string & keyof TFields>(...keys: K[]): SchemaConstructor<Pick<TFields, K>>;
   omit<K extends string & keyof TFields>(...keys: K[]): SchemaConstructor<Omit<TFields, K>>;
@@ -29,6 +37,7 @@ export class Schema {
   static hints: Hints<Fields> | undefined;
   static opts: ValidateOptions = {};
   static source: (abstract new (...args: never[]) => unknown) | undefined;
+  static survived: Survived | undefined;
 
   constructor(data?: Record<string, unknown>) {
     if (!data) return;
@@ -101,11 +110,12 @@ export class Schema {
   }
 
   static partial() {
-    return Schema.of({ ...this.fields }, this.source ?? this, this.hints, { ...this.opts, patch: true });
+    return Schema.of({ ...this.fields }, this.source ?? this, this.hints, { ...this.opts, patch: true }, this.survived);
   }
 
   static extend(extra: Fields) {
-    return Schema.of({ ...this.fields, ...extra }, this.source ?? this, this.hints, this.opts);
+    // The added fields have no origin, so the trace is unchanged: it speaks of the source.
+    return Schema.of({ ...this.fields, ...extra }, this.source ?? this, this.hints, this.opts, this.survived);
   }
 
   static named(name: string) {
@@ -143,9 +153,10 @@ export class Schema {
     source?: abstract new (...args: never[]) => unknown,
     hints?: Hints<TFields>,
     opts: ValidateOptions = {},
+    survived?: Survived,
   ): SchemaConstructor<TFields> {
     class Derived extends Schema {}
-    Object.assign(Derived, { fields, source, hints, opts });
+    Object.assign(Derived, { fields, source, hints, opts, survived });
     Object.defineProperty(Derived, "name", { value: ANONYMOUS_SCHEMA_NAME, configurable: true });
     return Derived as unknown as SchemaConstructor<TFields>;
   }
@@ -153,7 +164,18 @@ export class Schema {
   private static derive(fields: Fields, survives: (key: string) => string | undefined) {
     const renamed: Fields = {};
     for (const [key, field] of Object.entries(fields)) renamed[key] = field.rename(survives);
-    return Schema.of(renamed, this.source ?? this, deriveHints(this.hints, survives), this.opts);
+    return Schema.of(renamed, this.source ?? this, deriveHints(this.hints, survives), this.opts, this.trace(survives));
+  }
+
+  /**
+   * The trace, composed with the parent's — so `Post.pick(a, b).omit(b)` reports against
+   * `Post` and not against the intermediate, exactly as `source` skips it.
+   */
+  private static trace(survives: (key: string) => string | undefined): Survived {
+    const parent = this.survived ?? Object.fromEntries(Object.keys(this.fields).map((k) => [k, k]));
+    return Object.fromEntries(
+      Object.entries(parent).map(([origin, here]) => [origin, here === undefined ? undefined : survives(here)]),
+    );
   }
 }
 

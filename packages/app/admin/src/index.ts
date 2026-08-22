@@ -43,6 +43,15 @@ export {
   type AdminOperationExtension,
 } from './extensions.js';
 export {
+  fetchTopology,
+  nodesOf,
+  isOpaque,
+  type TopologyReport,
+  type TopologyNode,
+  type FrondPlacement,
+  type Edge,
+} from './topology.js';
+export {
   createAdminRuntime,
   type AdminRuntime,
   type AdminRuntimeOptions,

@@ -5,7 +5,7 @@
  * frames are transactions. Uncomment the block in fougere.config.ts and run again — the
  * same handlers, the same results, and one line of boot output that is not the same.
  */
-import { createApp, createLocalRunner, EMPTY_INVOCATION, type App, type EntityOrm } from '@fougere/core';
+import { createApp, createLocalRunner, migrating, EMPTY_INVOCATION, type App, type EntityOrm } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { storageFrom } from '@fougere/defaults';
 import { setupSqlite } from '@fougere/adapter-sql';
@@ -43,8 +43,9 @@ const app: App = await createApp({
   ormFactory: storage.ormFactory,
   sourceOf: storage.sourceOf,
   transacted: storage.transacted as never,
+  // The storage's ascent, declared rather than called by hand after the boot.
+  extensions: [migrating(storage.migrate)],
 });
-await storage.afterBoot!(app);
 
 /**
  * A reader on its OWN connection — what a second process, or another request, would see.

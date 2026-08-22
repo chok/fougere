@@ -124,8 +124,8 @@ export interface PresenterEntry {
 
 /** A discovered collector (resolves handler input params from invocation context). */
 export interface CollectorEntry {
-  /** Entity name this collector resolves (e.g. 'user' from UserCollector). */
-  entityName: string;
+  /** Registration key of the TYPE this collector resolves — 'user', 'ability'. */
+  typeName: string;
   /** The collector class. */
   ctor: new (...args: unknown[]) => unknown;
   /** Constructor dependency type names (from AST scan). */

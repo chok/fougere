@@ -50,12 +50,12 @@ export default class CheckHandler {
     let handlers = 0;
 
     for (const frond of fronds) {
-      const collectorEntityNames = new Set(frond.collectors.map((c) => c.entityName));
+      const collectorTypeNames = new Set(frond.collectors.map((c) => c.typeName));
       for (const handler of frond.handlers) {
         handlers++;
         // The same merge the façade performs — asked for, not redone. A second
         // opinion here would report a contract the runtime does not serve.
-        const contracts = resolveContracts(handler, frond.operationsOverrides, collectorEntityNames);
+        const contracts = resolveContracts(handler, frond.operationsOverrides, collectorTypeNames);
 
         for (const [op, contract] of contracts) {
           const params = contract.signature?.params.length ?? 0;

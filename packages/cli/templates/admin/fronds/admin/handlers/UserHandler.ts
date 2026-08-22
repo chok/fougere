@@ -13,7 +13,7 @@ export default class UserHandler extends Crud(User) {
     if (!user) {
       throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `User '${id}' not found`, entity: 'user', operation: 'deactivate' });
     }
-    if ((user as { status?: string }).status === 'inactive') {
+    if (user.status === 'inactive') {
       throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already inactive', entity: 'user', operation: 'deactivate' });
     }
     return this.orm.update(id, { status: 'inactive' });
@@ -21,9 +21,7 @@ export default class UserHandler extends Crud(User) {
 
   /** Active users, projected to the card contract. */
   async active(): Promise<UserCard[]> {
-    const all = await this.orm.list();
-    return all
-      .filter((u) => (u as { status?: string }).status === 'active')
-      .map((u) => ({ id: String(u.id), name: String(u.name), status: 'active' })) as UserCard[];
+    const users = await this.orm.list({ where: { status: 'active' } });
+    return users.map(({ id, name, status }) => ({ id, name, status }));
   }
 }

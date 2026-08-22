@@ -13,7 +13,7 @@ import { registrationKeyOf } from '@fougere/schema';
 // ── Types ─────────────────────────────────────
 
 type ParamSource =
-  | { kind: 'collector'; entityName: string }
+  | { kind: 'collector'; typeName: string }
   /**
    * `Fact<PostPublished>` — something that happened, not something a caller typed.
    *
@@ -53,18 +53,18 @@ function coercionFor(typeName: string): 'number' | 'boolean' | undefined {
  * Build a BindingPlan from parsed method params.
  *
  * @param params - Parsed parameter list from AST
- * @param collectorEntityNames - Set of entity names that have a Collector
+ * @param collectorTypeNames - Registration keys of the types a Collector answers for
  */
 export function computeBindingPlan(
   params: ParsedParam[],
-  collectorEntityNames: Set<string>,
+  collectorTypeNames: Set<string>,
 ): BindingPlan {
   return params.map((param) => {
     const typeName = param.type.name;
     // `registrationKeyOf`, never `toLowerCase()`: the collector set is keyed the way the
     // scan spells it, and the two agree on one word only — `AuthorUser` looked up as
     // `authoruser` missed `authorUser` and fell through to branch 4, the request body.
-    const entityKey = registrationKeyOf(typeName);
+    const typeKey = registrationKeyOf(typeName);
 
     // 0. Fact — `Fact<X>` names itself, so nothing has to be known in advance. It comes
     //    FIRST because branch 4 would otherwise hand it the caller's body under the name
@@ -78,11 +78,11 @@ export function computeBindingPlan(
       };
     }
 
-    // 1. Collector — param type matches a known collector entity
-    if (collectorEntityNames.has(entityKey)) {
+    // 1. Collector — param type matches a type some collector answers for
+    if (collectorTypeNames.has(typeKey)) {
       return {
         name: param.name,
-        source: { kind: 'collector' as const, entityName: entityKey },
+        source: { kind: 'collector' as const, typeName: typeKey },
         optional: param.optional ?? false,
       };
     }
@@ -130,14 +130,14 @@ export interface CollectorResolver {
 export async function resolveArgs(
   plan: BindingPlan,
   ctx: InvocationContext,
-  resolveCollector?: (entityName: string) => CollectorResolver | undefined,
+  resolveCollector?: (typeName: string) => CollectorResolver | undefined,
 ): Promise<unknown[]> {
   const args: unknown[] = [];
 
   for (const binding of plan) {
     switch (binding.source.kind) {
       case 'collector': {
-        const collector = resolveCollector?.(binding.source.entityName);
+        const collector = resolveCollector?.(binding.source.typeName);
         args.push(collector ? await collector.collect(ctx) : undefined);
         break;
       }

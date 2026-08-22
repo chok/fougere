@@ -241,3 +241,31 @@ group('every member of a role is accounted for on the wire', () => {
     expect([role, relation]).toEqual([true, true]);
   });
 });
+
+group('a view says what it is a view of', () => {
+  class Note extends entity({ id: primary(), title: text(), body: text() }) {}
+
+  it('carries the origin and what the cut left', () => {
+    const card = describe(Note.pick('id', 'title'));
+    expect(card['x-fougere-derived']).toEqual({
+      from: 'Note',
+      survived: { id: 'id', title: 'title', body: null },
+    });
+  });
+
+  it('separates two views an identical title used to merge', () => {
+    const a = describe(Note.pick('id', 'title'));
+    const b = describe(Note.pick('id', 'body'));
+    expect(a.title).toBe(b.title);
+    expect(a['x-fougere-derived']).not.toEqual(b['x-fougere-derived']);
+  });
+
+  it('survives JSON — a dropped field is null, never erased', () => {
+    const card = JSON.parse(JSON.stringify(describe(Note.pick('id', 'title'))));
+    expect(card['x-fougere-derived'].survived).toEqual({ id: 'id', title: 'title', body: null });
+  });
+
+  it('says nothing on a declaration that derives from nothing', () => {
+    expect(describe(Note)['x-fougere-derived']).toBeUndefined();
+  });
+});

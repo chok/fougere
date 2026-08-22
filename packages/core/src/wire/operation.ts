@@ -135,7 +135,7 @@ export function resolveIsReadOp(
 export function resolveContracts(
   handler: Pick<HandlerEntry, 'ctor' | 'operations'>,
   overrides: FrondDescriptor['operationsOverrides'],
-  collectorEntityNames: Set<string>,
+  collectorTypeNames: Set<string>,
 ): OperationsMap {
   const declared = (handler.ctor as { __ops?: Record<string, OperationContract> }).__ops ?? {};
   const contracts: OperationsMap = new Map(Object.entries(declared));
@@ -145,7 +145,7 @@ export function resolveContracts(
     contracts.set(opName, {
       ...scanned,
       binding: scanned.binding
-        ?? (scanned.signature ? computeBindingPlan(scanned.signature.params, collectorEntityNames) : undefined),
+        ?? (scanned.signature ? computeBindingPlan(scanned.signature.params, collectorTypeNames) : undefined),
     });
   }
 

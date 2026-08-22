@@ -18,7 +18,8 @@ import { Lifecycle } from '@fougere/schema';
  * host's own startup (a Nitro plugin, a Next instrumentation hook) if the user
  * wants a custom data layer — alternative driver, managed migrations, etc.
  */
-import { createApp, loadCascadedConfig, setModuleLoader, frondAliases, identityFromEnv, Logger } from '@fougere/core';
+import { createApp, loadCascadedConfig, setModuleLoader, frondAliases, identityFromEnv, Logger, migrating, seeding } from '@fougere/core';
+import type { Extension } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import type { App, CreateAppOptions, EntityOrm, FougereConfig, Transport } from '@fougere/core';
 import { applyCreate, applyUpdate, type SchemaView } from '@fougere/schema';
@@ -30,8 +31,15 @@ export interface FougereServerConfig {
   db?: unknown;
   /** Per-entity ORM factory. */
   ormFactory?: (entity: SchemaView, name: string) => EntityOrm;
-  /** Called after app is created. Use for migrations, seeding, etc. */
-  afterBoot?: (app: App) => void | Promise<void>;
+  /**
+   * What this app takes on beyond its fronds, each stating what it does and what it undoes.
+   *
+   * It replaced `afterBoot`, which a host used to CLAIM the whole post-boot to get its own
+   * seeding — Nuxt's generated plugin did exactly that, and its copy of the seeding loop
+   * drifted. Declaring `{ name: 'seeds', up }` replaces that one member and leaves the
+   * rest of the ascent alone.
+   */
+  extensions?: CreateAppOptions['extensions'];
   /**
    * What the boot line names as the host — 'Nuxt/Nitro', 'Next'. Stated by the
    * adapter, never sniffed: a boot that guesses its host from what happens to be
@@ -122,7 +130,10 @@ async function boot(): Promise<App> {
   // — this host must not know which storage package backs `db:`.
   let db = _config.db;
   let ormFactory = _config.ormFactory;
-  let migrateSchema: ((app: never) => Promise<void> | void) | undefined;
+  // The storage's two halves, kept together: its ascent is an extension, its connection
+  // is not — it is opened here, before the container, so it closes after the container.
+  let storageMigrate: Extension['up'] | undefined;
+  let closeStorage: (() => Promise<void>) | undefined;
   // Where the rows are, and how to open a transaction there — read from the same storage
   // resolution, because a frame's realization is decided by `sources:` and nothing else.
   let sourceOf: ((entityName: string) => string) | undefined;
@@ -136,7 +147,8 @@ async function boot(): Promise<App> {
       ormFactory = storage.ormFactory;
       sourceOf = storage.sourceOf;
       transacted = storage.transacted as never;
-      migrateSchema = storage.afterBoot as never;
+      storageMigrate = storage.migrate;
+      closeStorage = storage.close;
     } else {
       log.debug('no db declared — falling back to in-memory ORM');
       ormFactory = createMemoryOrm;
@@ -167,30 +179,26 @@ async function boot(): Promise<App> {
     adapters: fileConfig.adapters,
     remotes: fileConfig.remotes,
     remoteTransport,
+    /**
+     * The whole ascent, one ordered list: tables, then rows, then what the host adds.
+     * A host wanting its OWN seeding declares `{ name: 'seeds', … }` and replaces that
+     * member — it no longer has to claim everything after the boot to get it.
+     */
+    extensions: [
+      // The slot is declared even when this host resolved no storage — a host that resolved
+      // its own (the Nitro plugin does, for its bundler) then REPLACES this member in place
+      // instead of adding one after the seeds, which is rows before tables.
+      migrating(storageMigrate),
+      seeding((message) => log.info(`[seed]${message}`)),
+      ...(_config.extensions ?? []),
+    ],
+    // Opened before the container, so released after it. Never wired here until now:
+    // this host boots the storage and no host closed one, which is what made a reload
+    // leak the pool of every app it discarded.
+    onDispose: closeStorage,
   });
 
-  // Bring the schema up to date — creates missing tables and adds columns an
-  // entity gained. Auth entities travel with the app, no synthetic frond needed.
-  if (migrateSchema) {
-    log.debug('migrating schema from entities');
-    await migrateSchema(app as never);
-  }
-
-  if (_config.afterBoot) {
-    // A host that declares `afterBoot` OWNS what happens after the boot, seeding
-    // included — Nuxt's generated Nitro plugin does exactly that, because Nitro
-    // bundles and the seed modules have to be spelled out as static imports for it.
-    log.debug('running afterBoot');
-    await _config.afterBoot(app);
-    log.info('afterBoot done');
-  } else {
-    // Nobody claimed it, so the boot seeds. The scan already carries each seed's
-    // data (`SeedEntry.data` is its resolved default export), and the order comes
-    // from core — the same `orderSeeds`/`runSeeds` pair Nuxt's plugin calls. A host
-    // that does not bundle its frond sources needs nothing else.
-    const { orderSeeds, runSeeds } = await import('@fougere/core');
-    await runSeeds(app, orderSeeds(app.fronds), (message) => log.info(`[seed]${message}`));
-  }
+  log.info(`ascent: ${app.extensions().join(' → ') || 'nothing declared'}`);
 
   const ms = (performance.now() - bootStart).toFixed(0);
   log.info(`ready in ${ms}ms — ${app.fronds.length} frond(s)${app.auth ? ` + auth (${app.auth.basePath})` : ''}`);

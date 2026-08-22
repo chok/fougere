@@ -53,6 +53,66 @@ export interface PlanOptions {
 }
 
 /**
+ * Collapse a chain of steps into one, following each field through its renames.
+ *
+ * A step judges itself on two names — old gone, new here — so an intermediate rename is
+ * unrecognisable once its target has been renamed again: both names are absent and it is
+ * proposed forever. Composing the chain first asks the question about the name the field
+ * ENDS on, which is the only one the tables can answer.
+ */
+export function collapseChain(steps: readonly SetDiff[]): SetDiff {
+  const entities: SetDiff['entities'] = {};
+  const added: string[] = [];
+  const removed: string[] = [];
+
+  for (const step of steps) {
+    added.push(...step.entitiesAdded);
+    removed.push(...step.entitiesRemoved);
+    for (const [entity, answer] of Object.entries(step.entities)) {
+      const held = (entities[entity] ??= { changes: [], ambiguous: [] });
+      held.ambiguous.push(...answer.ambiguous);
+      for (const change of answer.changes) compose(held.changes, change);
+    }
+  }
+
+  return { entities, entitiesAdded: [...new Set(added)], entitiesRemoved: [...new Set(removed)] };
+}
+
+/**
+ * Add one change to what the chain has said so far, rewriting rather than appending when
+ * it continues a field already moved. A rename back to its origin cancels: the tables
+ * never held the name in between, so there is nothing for them to do.
+ */
+function compose(held: ShapeChange[], change: ShapeChange): void {
+  if (change.kind === 'renamed') {
+    const at = held.findIndex((each) => each.kind === 'renamed' && each.to === change.from);
+    if (at === -1) {
+      held.push(change);
+      return;
+    }
+    const first = held[at] as Extract<ShapeChange, { kind: 'renamed' }>;
+    if (first.from === change.to) held.splice(at, 1);
+    else held[at] = { ...first, to: change.to };
+    return;
+  }
+
+  // Anything else names a field; if the chain renamed it earlier, the tables know it
+  // under the name it started with.
+  const field = 'field' in change ? change.field : undefined;
+  const at = held.findIndex((each) => each.kind === 'renamed' && each.to === field);
+  if (at === -1) {
+    held.push(change);
+    return;
+  }
+
+  const origin = held[at] as Extract<ShapeChange, { kind: 'renamed' }>;
+  // A field the chain ends by dropping is dropped under its original name, and the
+  // renames that led there are work nobody has to do.
+  if (change.kind === 'removed') held.splice(at, 1);
+  held.push({ ...change, field: origin.from });
+}
+
+/**
  * Turn a frozen step into what the tables must do, and what nobody may decide for you.
  *
  * Pure, like `delta` — the comparison is one thing, running it is another.
@@ -136,8 +196,55 @@ function realise(
         field: change.field,
         reason: `bounds moved — the door enforces them, the table keeps its old CHECK until you migrate it`,
       };
+
+    case 'restated':
+      return restated(entity, change);
   }
 }
+
+/**
+ * An axis other than shape moved. Only some of it is a fact about the table.
+ *
+ * `boundary` never is — it says who may read or write, which no column holds. `lifecycle`
+ * is one only through the DEFAULT clause. `role` is one three times over, and two of those
+ * are constraints a live table may already contradict.
+ */
+function restated(entity: string, change: Extract<ShapeChange, { kind: 'restated' }>): { change?: StepChange } | Refusal {
+  const refuse = (reason: string): Refusal => ({ entity, field: change.field, reason });
+
+  if (change.axis === 'boundary') return {};
+
+  if (change.axis === 'lifecycle') {
+    const was = literalOf(change.from);
+    const is = literalOf(change.to);
+    if (was === is) return {};
+    return refuse(`default moved ${show(was)} → ${show(is)} — the table keeps the old one, and nothing here alters a DEFAULT`);
+  }
+
+  const from = change.from ?? {};
+  const to = change.to ?? {};
+  if (from.primary !== to.primary) return refuse(`primary moved — a key is not something a step may take from live rows`);
+  if (!same(from.unique, to.unique)) {
+    // The same reason `delta` cannot add one: CREATE UNIQUE INDEX fails on a table that
+    // already holds duplicates, so it is a decision about the rows, not about the DDL.
+    return refuse(`unique group moved — rows already stored may contradict it, so it is declared and applied by hand`);
+  }
+  if (!same(from.relation, to.relation)) return refuse(`relation moved — a foreign key is a constraint, and nothing here alters one`);
+  // What is left is the index, and only its appearance: the additive pass proposes every
+  // declared index at every boot, and nothing has ever dropped one.
+  if (from.index && !to.index) return refuse(`index gone — nothing drops an index today, so the table keeps it`);
+  return {};
+}
+
+const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
+
+/** The value a lifecycle declares at create, when it declares one — what reaches DEFAULT. */
+function literalOf(rules: { create?: unknown } | undefined): unknown {
+  const create = rules?.create;
+  return create && typeof create === 'object' && 'value' in create ? (create as { value: unknown }).value : undefined;
+}
+
+const show = (value: unknown): string => (value === undefined ? 'none' : JSON.stringify(value));
 
 /**
  * Has the table already moved? Read off the columns themselves.

@@ -25,6 +25,8 @@ import type { Fetcher } from '@fougere/app/client';
 import { formFieldsOf, type FormField, type TableColumn } from '@fougere/app/client';
 import { reconstruct } from '@fougere/schema';
 import { FougereLayout, fougereDarkTheme, fougereLightTheme } from './theme.js';
+import { FougereTopology } from './topology-page.js';
+export { FougereTopology, type FougereTopologyProps } from './topology-page.js';
 import {
   FougereContentIcon,
   FougereDashboard,
@@ -486,10 +488,23 @@ export function FougereAdmin({
     >
       {async () => {
         try {
-          return (await runtime.load()).resources.map((resource) => resourceFor(resource, {
-            renderers,
-            components: resourceComponents?.[resource.name],
-          }));
+          return [
+            ...(await runtime.load()).resources.map((resource) => resourceFor(resource, {
+              renderers,
+              components: resourceComponents?.[resource.name],
+            })),
+            /*
+             * The one page that renders the APP rather than a door. It is not a resource —
+             * there is no row behind it — so it rides a route, and its data comes from
+             * `rpc.topology` rather than from the card.
+             */
+            <CustomRoutes key="fougere.routes">
+              <Route
+                path="/topology"
+                element={<FougereTopology {...(endpoint ? { endpoint } : {})} {...(fetcher ? { fetcher } : {})} />}
+              />
+            </CustomRoutes>,
+          ];
         } catch (error) {
           return (
             <CustomRoutes>

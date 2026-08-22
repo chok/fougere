@@ -37,10 +37,21 @@ export interface ResolvedStorage {
    * atomicity are two different things.
    */
   sourceOf?: (entityName: string) => string;
+  /**
+   * The engine a source runs on — the dual of `sourceOf`, which names it without
+   * reaching it. A caller that must run DDL per engine needs the handle, not the name.
+   */
+  dbOf?: (source: string) => unknown;
+  /** Every source that has an engine, the default one first. */
+  sources?: () => string[];
   /** Run `fn` inside one transaction of that source, with an ORM factory bound to it. */
   transacted?: <R>(source: string, fn: (ormFactory: (entity: any, name: string) => any) => Promise<R>) => Promise<R>;
-  /** Brings the schema up to date once the app is scanned. */
-  afterBoot?: (app: App) => Promise<void> | void;
+  /**
+   * Brings the schema up to date once the app is scanned — the storage's `up`, handed to
+   * `migrating()`. It was called `afterBoot`, a word that also meant the host's own
+   * post-boot and was read in four places under the two senses.
+   */
+  migrate?: (app: App) => Promise<void> | void;
   /**
    * Close every engine this opened — the dual of opening them, declared by whoever did.
    *
@@ -201,6 +212,7 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
   // sources names things the author can find in their own file.
   const DEFAULT = 'db';
   const sourceOf = (entityName: string) => home.get(registrationKeyOf(entityName)) ?? DEFAULT;
+  const engineOf = (source: string) => (source === DEFAULT ? base : engines.get(source));
   const engineFor = (entityName: string) => {
     const source = home.get(registrationKeyOf(entityName));
     return (source && engines.get(source)) || base;
@@ -210,8 +222,10 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
     db: base.db,
     ormFactory: (entity: any, name: string) => engineFor(name).ormFactory(entity, name),
     sourceOf,
+    dbOf: (source) => engineOf(source)?.db,
+    sources: () => [DEFAULT, ...engines.keys()],
     transacted: (source, fn) => {
-      const engine = source === DEFAULT ? base : engines.get(source);
+      const engine = engineOf(source);
       if (!engine) throw new Error(`No source named '${source}' — declared sources are ${[DEFAULT, ...engines.keys()].join(', ')}.`);
       return engine.transacted(fn);
     },
@@ -220,7 +234,7 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
     // Additive migration: creates missing tables AND adds columns an entity gained.
     // One pass per source, each seeing only its own tables — which is what makes a
     // cross-source `ref()` a miss rather than a constraint against a stranger.
-    afterBoot: async (app) => {
+    migrate: async (app) => {
       await migrate(partition(app, (name) => !home.has(registrationKeyOf(name)), true, named) as never, base.db);
       for (const [name, engine] of engines) {
         await migrate(partition(app, (e) => home.get(registrationKeyOf(e)) === name, false, named) as never, engine.db);

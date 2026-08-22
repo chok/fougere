@@ -232,7 +232,6 @@ export function generateBootPlugin(
   // Explicit imports — nitro's auto-imports don't reach this template in a prod build
   lines.push(`import { defineNitroPlugin } from 'nitropack/runtime';`);
   lines.push(`import { configureFougere } from '${fougereAppPath}';`);
-  if (seeds.length) lines.push(`import { runSeeds } from '@fougere/core';`);
 
   const db = config.db ?? 'sqlite';
   const sources = (config as { sources?: unknown }).sources;
@@ -249,6 +248,8 @@ export function generateBootPlugin(
   // The generated plugin names no storage package — resolution lives in
   // @fougere/defaults, the one place that knows which engine backs `db:`.
   lines.push(`import { resolveStorage } from '@fougere/defaults';`);
+  // After the early return above: an app that declares no storage generates no imports.
+  lines.push(`import { migrating${seeds.length ? ', runSeeds' : ''} } from '@fougere/core';`);
   lines.push(``);
 
   // Seed imports
@@ -270,8 +271,11 @@ export function generateBootPlugin(
   lines.push(`  configureFougere({`);
   lines.push(`    db: storage.db,`);
   lines.push(`    ormFactory: storage.ormFactory,`);
-  lines.push(`    async afterBoot(app) {`);
-  lines.push(`      await storage.afterBoot?.(app);`);
+  // Two members of the ascent, named — not a claim on everything after the boot. The
+  // storage's is core's own declaration (`migrating`), so this codegen states no order and
+  // cannot mistype the name it would otherwise be silently adding beside.
+  lines.push(`    extensions: [`);
+  lines.push(`      migrating(storage.migrate),`);
 
   if (seeds.length) {
     // The seeding LOOP is core's (`runSeeds`), not written out here: a second copy
@@ -279,16 +283,19 @@ export function generateBootPlugin(
     // that actually runs when you open the app. Codegen's only job is the static
     // imports, which is the one thing a bundler needs spelled out.
     //
+    // Naming it 'seeds' REPLACES core's default member rather than running beside it —
+    // which is what the old `afterBoot` claim achieved by taking over the whole post-boot.
+    //
     // `report` is passed: its default is a no-op, so the boot you actually open said
     // nothing about a skipped seed — the very silence F-12 was aggravated by.
-    lines.push(`      await runSeeds(app, [`);
+    lines.push(`      { name: 'seeds', up: (app) => runSeeds(app, [`);
     for (let i = 0; i < seeds.length; i++) {
       lines.push(`        { entityName: '${seeds[i].entityName}', data: seed_${i}, filePath: ${JSON.stringify(seeds[i].filePath)} },`);
     }
-    lines.push(`      ], (message) => console.log('[fougere:seed]' + message));`);
+    lines.push(`      ], (message) => console.log('[fougere:seed]' + message)) },`);
   }
 
-  lines.push(`    },`);
+  lines.push(`    ],`);
   lines.push(`  });`);
   lines.push(`});`);
 

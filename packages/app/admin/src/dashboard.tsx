@@ -440,7 +440,7 @@ function StructureWidget(): ReactElement {
     <Card sx={{ height: '100%' }}>
       <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
         <Box sx={{ px: 2.5, pt: 2.25, pb: 1.75 }}>
-          <Typography variant="h5">{t('structure.title', 'Topology')}</Typography>
+          <Typography variant="h5">{t('structure.title', 'Structure')}</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: .4 }}>
             {t('structure.subtitle', 'What the identity card announces about this app')}
           </Typography>
@@ -482,7 +482,7 @@ function StructureWidget(): ReactElement {
 
         <Box sx={{ px: 2.5, py: 1.5, borderTop: 1, borderColor: 'divider' }}>
           <Typography variant="caption" color="text.secondary">
-            {t('structure.localOnly', 'Local fronds only — a card does not announce what it routes to.')}
+            {t('structure.localOnly', 'Local fronds only — a card does not announce what it routes to. Topology says where a call goes.')}
           </Typography>
         </Box>
       </CardContent>
