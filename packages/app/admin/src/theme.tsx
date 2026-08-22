@@ -2,13 +2,16 @@ import type { ReactElement } from 'react';
 import {
   AppBar,
   Layout,
+  Menu,
   TitlePortal,
   defaultDarkTheme,
   defaultLightTheme,
+  useTranslate,
   type AppBarProps,
   type LayoutProps,
   type RaThemeOptions,
 } from 'react-admin';
+import { SvgIcon, type SvgIconProps } from '@mui/material';
 
 type Mode = 'light' | 'dark';
 
@@ -251,6 +254,14 @@ const createFougereTheme = (mode: Mode): RaThemeOptions => {
             color: dark ? '#8FDCB8' : fern[700],
             borderColor: dark ? 'rgba(79,192,141,.24)' : fern[200],
           },
+          // The root above paints every chip neutral, so a chip asking for `error` used to
+          // come out identical to the count beside it — and a refusal count that reads like
+          // a total is the one number on a topology page that must not.
+          colorError: {
+            backgroundColor: dark ? 'rgba(240,115,106,.14)' : '#FDF0EF',
+            color: dark ? '#F0736A' : '#C1372F',
+            borderColor: dark ? 'rgba(240,115,106,.26)' : '#F3CFCC',
+          },
         },
       },
 
@@ -485,6 +496,32 @@ export function FougereAppBar(props: AppBarProps): ReactElement {
   );
 }
 
+const TopologyIcon = (props: SvgIconProps) => (
+  <SvgIcon {...props}><path d="M12 2a3 3 0 0 1 1 5.83V10h4a3 3 0 0 1 3 3v1.17a3 3 0 1 1-2 0V13a1 1 0 0 0-1-1h-4v2.17a3 3 0 1 1-2 0V12H7a1 1 0 0 0-1 1v1.17a3 3 0 1 1-2 0V13a3 3 0 0 1 3-3h4V7.83A3 3 0 0 1 12 2Z" /></SvgIcon>
+);
+
+/**
+ * The derived menu, plus the one entry that is not a door.
+ *
+ * `Menu.ResourceItems` keeps the resources the card produced — the menu stays derived, and
+ * this adds beside it rather than replacing it. The topology entry shows even when nothing
+ * answers: the page is the only place that can say what is missing.
+ */
+const FougereMenu = () => {
+  const translate = useTranslate();
+  return (
+    <Menu>
+      <Menu.DashboardItem />
+      <Menu.ResourceItems />
+      <Menu.Item
+        to="/topology"
+        primaryText={translate('fougere.admin.topology.title', { _: 'Topology' })}
+        leftIcon={<TopologyIcon />}
+      />
+    </Menu>
+  );
+};
+
 export function FougereLayout(props: LayoutProps): ReactElement {
-  return <Layout {...props} appBar={FougereAppBar} />;
+  return <Layout {...props} appBar={FougereAppBar} menu={FougereMenu} />;
 }
