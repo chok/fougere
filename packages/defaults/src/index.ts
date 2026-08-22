@@ -8,7 +8,7 @@
  * package supplies them on top of `core.boot()`. Nuxt's fallback, the CLI's
  * `serve`/`call`, and a standalone frond host are all projections of it.
  */
-import { boot, loadConfig, type App } from '@fougere/core';
+import { boot, loadConfig, type App, type CreateAppOptions } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { createHttpTransport } from '@fougere/transport-http';
 import { resolveStorage, type DbConfig } from './storage.js';
@@ -24,6 +24,11 @@ export interface BootAppOptions {
    * passes false — it *is* the frond, it doesn't route back out.
    */
   topology?: boolean;
+  /**
+   * What this app takes on beyond its fronds — `observability()` is the first one.
+   * Appended after the framework's own members, or replacing one by naming it.
+   */
+  extensions?: CreateAppOptions['extensions'];
 }
 
 /**
@@ -43,5 +48,6 @@ export async function bootAppFromConfig(root: string, opts: BootAppOptions = {})
     remoteTransport: useRemotes ? (url) => createHttpTransport(url) : undefined,
     // One resolver, one place that knows a storage package.
     db: (cfg) => resolveStorage(cfg.db as DbConfig, (cfg as { sources?: unknown }).sources as never),
+    extensions: opts.extensions,
   });
 }

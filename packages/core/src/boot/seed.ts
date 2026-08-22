@@ -2,6 +2,7 @@ import { Role } from '@fougere/schema';
 import { facadeKeyOf } from '../wire/call.js';
 import type { FrondDescriptor, SeedEntry, SeedFactory } from '../scan/frond.js';
 import type { App } from './types.js';
+import type { Extension } from './Lifecycle.js';
 
 /**
  * Seeds in dependency order — a `ref()` target is planted before its referrer.
@@ -135,4 +136,23 @@ function doorFor(app: App, entityName: string): SeedDoor | undefined {
   if (!orm) return undefined;
 
   return { list: () => orm.list(), write: (item) => orm.create(item) };
+}
+
+/**
+ * The framework's own ascent for rows, named — so a host can REPLACE it rather than take
+ * over the whole post-boot to get its own.
+ *
+ * That is what Nuxt's Nitro plugin had to do: a bundler needs its seed modules spelled out
+ * as static imports, so the plugin claimed everything after the boot and its copy of the
+ * loop drifted. It now declares an extension under this same name instead, and the delta
+ * is one member of a list.
+ */
+export function seeding(report?: (message: string) => void): Extension {
+  return {
+    name: 'seeds',
+    up: async (app: App) => {
+      const seeds = orderSeeds(app.fronds);
+      if (seeds.length > 0) await runSeeds(app, seeds, report);
+    },
+  };
 }

@@ -58,6 +58,26 @@ describe('generateBootPlugin — db path convergence', () => {
     expect(out).toContain('resolveStorage("sqlite", {"archive":{"path":".data/archive.db","entities":["Book"]}})');
   });
 
+  /**
+   * The plugin used to CLAIM the whole post-boot (`afterBoot`) to get its static-import
+   * seeding, and its copy of the loop drifted — losing the storage fallback, in the one
+   * copy that runs when you open the app. It now names the member it replaces.
+   */
+  it('declares two members of the ascent, and names the one it replaces', () => {
+    const out = generateBootPlugin(
+      { db: 'sqlite' } as FougereConfig,
+      [{ entityName: 'post', data: [], filePath: '/app/fronds/blog/seeds/post.ts' }] as never,
+      '@fougere/nuxt/fougereApp',
+    );
+
+    expect(out).toContain('extensions: [');
+    // The storage's ascent is core's own declaration, so this codegen states no name.
+    expect(out).toContain('migrating(storage.migrate)');
+    // And the seeding says which member it is, instead of taking over everything.
+    expect(out).toContain("{ name: 'seeds', up: (app) => runSeeds(app, [");
+    expect(out).not.toContain('afterBoot');
+  });
+
   it('db: false skips storage entirely', () => {
     const out = generateBootPlugin({ db: false } as FougereConfig, [], '@fougere/nuxt/fougereApp');
     expect(out).not.toContain('resolveStorage');

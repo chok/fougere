@@ -78,6 +78,40 @@ describe('createLocalRunner', () => {
     await app.dispose();
   });
 
+  /**
+   * `rpc` is the door for what the app says about ITSELF, and it is a registry — which is
+   * what lets an optional package declare a reading core does not hold.
+   */
+  describe('the rpc door', () => {
+    it('names what it serves when an op is unknown — how a missing package reads', async () => {
+      await using app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
+      const run = createLocalRunner(app);
+      // The whole degradation for `@fougere/observability` not being wired: the op it
+      // would have declared is simply not there, and the refusal says what is.
+      await expect(run({ entity: 'rpc', op: 'topology' }, EMPTY_INVOCATION))
+        .rejects.toMatchObject({ code: ErrorCode.NOT_FOUND, entity: 'rpc', operation: 'topology' });
+      await expect(run({ entity: 'rpc', op: 'topology' }, EMPTY_INVOCATION))
+        .rejects.toThrow(/Unknown rpc operation 'topology'\. It serves discover\./);
+    });
+
+    it('serves what a package declared, on the same wire as the card', async () => {
+      await using app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
+      app.serveRpc('topology', () => ({ fronds: [{ frond: 'catalog', placement: 'local' }] }));
+
+      expect(await createLocalRunner(app)({ entity: 'rpc', op: 'topology' }, EMPTY_INVOCATION))
+        .toEqual({ fronds: [{ frond: 'catalog', placement: 'local' }] });
+    });
+
+    it('refuses a second declaration rather than replacing the first', async () => {
+      await using app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
+      app.serveRpc('topology', () => 1);
+      // Two packages claiming one name would make the answer depend on wiring order.
+      expect(() => app.serveRpc('topology', () => 2)).toThrow(/already served/);
+      // And the card cannot be taken over, because it is in the same registry.
+      expect(() => app.serveRpc('discover', () => 'mine')).toThrow(/already served/);
+    });
+  });
+
   it('serves the identity card on rpc.discover, JSON-serializable', async () => {
     const app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
     const run = createLocalRunner(app);

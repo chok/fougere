@@ -27,7 +27,7 @@ export type { FrondCall, Transport, SignedCall } from './wire/call.js';
  * Stated once, on purpose: two private copies of this interface have already gone
  * stale (the CLI's, then the Rust demo's) the day an op stopped being a bare name.
  */
-export type { IdentityCard, CardOp } from './wire/call.js';
+export type { IdentityCard, CardOp, TopologyReport, FrondPlacement, Edge } from './wire/call.js';
 export { assertIdentityCard } from './wire/call.js';
 
 /**

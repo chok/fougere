@@ -30,6 +30,14 @@ export type Transport = (call: FrondCall, invocation: InvocationContext) => Prom
 export const RPC_ENTITY = 'rpc';
 
 /**
+ * What an `rpc` op answers — the door for what the app says about ITSELF, never about a row.
+ *
+ * `discover` is core's own, registered like any other (`bootstrap.ts`): a package declares
+ * its reading beside it, and an app that installed none serves none.
+ */
+export type RpcAnswer = (invocation: InvocationContext, surface?: string) => unknown;
+
+/**
  * Everything a caller's envelope covers — the call as the sender meant it.
  *
  * Here and not beside the signing code because it is a CONTRACT: the sender binds it,
@@ -114,6 +122,42 @@ export interface IdentityCard {
      */
     facts: Array<{ name: string; schema?: SchemaDescriptor }>;
   }>;
+}
+
+/** A frond this process knows about, and whether it runs here. */
+export interface FrondPlacement {
+  frond: string;
+  placement: 'local' | 'remote';
+  entities: number;
+  doors: number;
+}
+
+/** One frond calling another — an edge of the graph, counted where the call was made. */
+export interface Edge {
+  from: string;
+  to: string;
+  count: number;
+  errors: number;
+}
+
+/**
+ * The shape of the system as ONE process discovered it — the answer to `rpc.topology`.
+ *
+ * Here and not in the package that produces it, for the reason `SignedCall` is here: it
+ * crosses a process boundary, so a reader consumes it without depending on the producer.
+ * `@fougere/observability` fills it; a panel reads it; neither imports the other.
+ *
+ * Nothing in it is declared — a frond is `local` because this process scanned it, `remote`
+ * because it answered a call nobody here hosts. `remotes:` states an intent, and the two
+ * disagree exactly when something is misconfigured.
+ */
+export interface TopologyReport {
+  /** When this process started counting — an edge count is read against it. */
+  since: number;
+  /** Calls running right now: the one signal a static shape cannot carry. */
+  active: number;
+  fronds: FrondPlacement[];
+  edges: Edge[];
 }
 
 /**
@@ -329,13 +373,20 @@ export function createAppRunner(app: App, surface?: string): Transport {
 function runnerFor(app: App, resolveFacade: (key: string) => AnyFacade, surface?: string): Transport {
   return async (call, invocation) => {
     if (call.entity === RPC_ENTITY) {
-      if (call.op === 'discover') return identityCardOf(app, surface);
-      throw new FougereError({
-        code: ErrorCode.NOT_FOUND,
-        message: `Unknown rpc operation '${call.op}'`,
-        entity: RPC_ENTITY,
-        operation: call.op,
-      });
+      // One registry, `discover` included, so the refusal names what IS served — which is
+      // how an operator learns that the package declaring an op was never wired.
+      const answer = app.rpcAnswers().get(call.op);
+      if (!answer) {
+        const served = [...app.rpcAnswers().keys()];
+        throw new FougereError({
+          code: ErrorCode.NOT_FOUND,
+          message: `Unknown rpc operation '${call.op}'. `
+            + (served.length ? `It serves ${served.join(', ')}.` : 'It serves nothing.'),
+          entity: RPC_ENTITY,
+          operation: call.op,
+        });
+      }
+      return (await answer(invocation, surface)) ?? null;
     }
 
     let facade: AnyFacade;

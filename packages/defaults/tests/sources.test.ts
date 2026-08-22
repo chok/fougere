@@ -71,7 +71,7 @@ describe('resolveStorage with a second source', () => {
         { dialect: 'sqlite', path: join(dir, 'main.db') },
         { archive: { path: join(dir, 'archive.db'), entities: ['Book'] } },
       );
-      await storage.afterBoot!(app as never);
+      await storage.migrate!(app as never);
 
       const readerOrm = storage.ormFactory!(Reader, 'reader');
       const bookOrm = storage.ormFactory!(Book, 'book');
@@ -129,7 +129,7 @@ describe('storageFrom — an engine the caller built', () => {
       sources: { archive: { setup: archive, entities: ['Book'] } },
     });
 
-    await storage.afterBoot!(app as never);
+    await storage.migrate!(app as never);
     const bookOrm = storage.ormFactory!(Book, 'book');
     await bookOrm.create({ title: 'brought my own engine' });
 

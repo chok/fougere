@@ -17,7 +17,8 @@ import { guardStorage } from './egress.js';
 import { portBindings } from './ports.js';
 import { InFlight } from './inflight.js';
 // The keys, each read from where its concept is declared — never respelled here.
-import { facadeKeyOf, contractsKeyOf } from '../wire/call.js';
+import { facadeKeyOf, contractsKeyOf, identityCardOf, type RpcAnswer } from '../wire/call.js';
+import { Lifecycle } from './Lifecycle.js';
 import { repositoryKeyOf } from '../prefab/repository.js';
 import { ormKeyOf } from '../orm.js';
 import { presenterKeyOf } from '../prefab/presenter.js';
@@ -152,6 +153,10 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   // Middleware storage — read at call time, not at boot time
   const globalMiddlewares: AppMiddleware[] = [];
   const scopedMiddlewares = new Map<string, AppMiddleware[]>();
+  /** What the `rpc` door serves — the card, plus whatever a package declared. */
+  const rpcAnswers = new Map<string, RpcAnswer>();
+  /** What this app took on beyond its fronds. Its `up` is the last thing the boot does. */
+  const lifecycle = new Lifecycle().add(...(options.extensions ?? []));
 
   function getMiddlewares(entity: string): AppMiddleware[] {
     const scoped = scopedMiddlewares.get(entity) ?? [];
@@ -470,16 +475,32 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   });
 
   /**
-   * Everything this app holds, let go in reverse of how it was taken: the container
-   * disposes what it built, then whoever handed a resource in closes it.
+   * Everything this app holds, let go in reverse of how it was taken: what an extension
+   * took on last, then the container's own, then whoever handed a resource in.
    *
    * It does NOT wait for running calls — `drain()` is that, and it is a separate gesture
    * because waiting and releasing do not have the same owner: a test releases at once, a
    * host turning the ring wants the work finished first.
    */
   const release = async (): Promise<void> => {
-    await container.dispose();
-    await options.onDispose?.();
+    // Every level is told to close even when one refuses, and the refusals leave together —
+    // the rule `Lifecycle.down` applies INSIDE its list, applied ACROSS the three. Stated
+    // there and broken here, a refusing extension took the container and the connection
+    // down with it, which is the leak this gesture exists to prevent.
+    const refused: unknown[] = [];
+    for (const level of [() => lifecycle.down(app), () => container.dispose(), () => options.onDispose?.()]) {
+      try {
+        await level();
+      } catch (error) {
+        // Flattened one level: an extension's refusals are already an AggregateError, and
+        // nesting them would make the caller unwrap twice to read one list.
+        if (error instanceof AggregateError) refused.push(...error.errors);
+        else refused.push(error);
+      }
+    }
+    if (refused.length > 0) {
+      throw new AggregateError(refused, `${refused.length} refusal(s) while releasing the app`);
+    }
   };
 
   /**
@@ -615,7 +636,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     }
   };
 
-  return {
+  const app: App = {
     container,
     fronds,
     // What this app publishes, straight from fougere.config.ts — the doors read it,
@@ -632,6 +653,15 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     drain,
     inFlight: () => inflight.count,
     [Symbol.asyncDispose]: release,
+    serveRpc(op: string, answer: RpcAnswer): void {
+      // Refused rather than replaced: two declarations of one name would make the answer
+      // depend on wiring order, and `discover` is in here precisely so it cannot be taken.
+      const held = rpcAnswers.get(op);
+      if (held) throw new Error(`rpc operation '${op}' is already served; a second declaration would depend on wiring order`);
+      rpcAnswers.set(op, answer);
+    },
+    rpcAnswers: () => rpcAnswers,
+    extensions: () => lifecycle.names(),
     use(...args: [AppMiddleware] | [string, AppMiddleware]): void {
       if (typeof args[0] === 'string') {
         const [entity, mw] = args as [string, AppMiddleware];
@@ -644,4 +674,14 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     },
     auth: authRuntime,
   };
+
+  // The card is an rpc op like any other, so one registry answers and one refusal names
+  // what is served. A package's op is declared the same way, from outside.
+  app.serveRpc('discover', (_invocation, surface) => identityCardOf(app, surface));
+
+  // The last thing the boot does, and the first thing a release undoes. An extension may
+  // await here — which is what a provider needing to OPEN something could never do.
+  await lifecycle.up(app);
+
+  return app;
 }
