@@ -41,9 +41,13 @@ jobs:
 
       # The scan cache is keyed on source hashes, not on the parser's version —
       # a cold run is the only one that proves the parser itself still agrees.
+      #
+      # The CACHE is one file. Deleting the whole `.fougere/` directory also removed
+      # `remotes.json` and the synced entities beside it, which are not caches at all —
+      # what a consumer holds of a remote frond, and what one fixture is made of.
       - name: tests, cold scan cache
         run: |
-          find . -name '.fougere' -type d -not -path '*/node_modules/*' -exec rm -rf {} +
+          find . -path '*/.fougere/scan-cache.json' -not -path '*/node_modules/*' -delete
           pnpm -r test
 
       # Mechanical readings, NOT gates — same posture as `audit` below, for the same
