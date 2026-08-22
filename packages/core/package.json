@@ -1,7 +1,7 @@
 {
   "name": "@fougere/core",
   "version": "0.2.0-alpha.2",
-  "description": "The core — scan, call contract, façades, remote stand-ins.",
+  "description": "The core \u2014 scan, call contract, fa\u00e7ades, remote stand-ins.",
   "keywords": [
     "fougere",
     "typescript",
@@ -30,6 +30,13 @@
       "types": "./dist/contract.d.ts",
       "import": "./dist/contract.js",
       "default": "./dist/contract.js"
+    }
+  },
+  "imports": {
+    "#ambient": {
+      "types": "./src/boot/ambient.als.ts",
+      "workerd": "./dist/boot/ambient.queue.js",
+      "default": "./dist/boot/ambient.als.js"
     }
   },
   "files": [

@@ -1,9 +1,8 @@
-import { AsyncLocalStorage } from 'node:async_hooks';
 import { applyCreate, type SchemaView } from '@fougere/schema';
 import type { Container } from '@fougere/container';
 import { validationErrorsOf } from '../wire/errors.js';
 import { emitKeyOf, factsAnnouncedBy } from '../emit.js';
-import { currentFrame } from './together.js';
+import { ambient } from '#ambient';
 import { EMPTY_INVOCATION } from '../wire/invocation.js';
 import type { Logger } from '../builtins/logger.js';
 import type { Fronds } from '../scan/Fronds.js';
@@ -32,22 +31,6 @@ type Carrier = (fact: string, payload: unknown) => void | Promise<void>;
 export class Emissions {
   /** Who listens to what. Filled as each door's contracts are resolved. */
   private readonly subscribers = new Map<string, Listener[]>();
-
-  /**
-   * The facts already being announced up the stack, so a fact cannot cause itself.
-   *
-   * A CHAIN and not a depth: `A → B → D` and `A → C → D` is a diamond, perfectly legal,
-   * while `A → … → A` never ends. Carried in async context because a nested emission
-   * happens inside a subscriber, whose own `Emit` closure never sees the invocation that
-   * reached it.
-   *
-   * Detecting this at boot was the first idea and it was wrong: `Emit<G>` is a CONSTRUCTOR
-   * dependency, so it belongs to the handler and not to one of its methods. A handler that
-   * subscribes to `A` in one method and emits `G` from another would have been refused for
-   * a cycle it never walks. Refusing a correct program is worse than a guard that costs
-   * one array per emission.
-   */
-  private readonly chain = new AsyncLocalStorage<readonly string[]>();
 
   /**
    * What is announced here, read from the DEPS and not from the subscribers: a handler
@@ -109,6 +92,9 @@ export class Emissions {
     for (const fact of new Set([...this.announced, ...this.subscribers.keys()])) {
       this.container.registerValue(emitKeyOf(fact), (raw: unknown) => this.announce(fact, raw));
     }
+    if (ambient.degraded && this.subscribers.size > 0) {
+      this.log.warn('no async context on this runtime — an emission ring is not detected');
+    }
   }
 
   /**
@@ -134,14 +120,7 @@ export class Emissions {
      * A fact designates something that HAS happened. `run` returning is when that becomes
      * true, so that is where the announcement belongs.
      */
-    const frame = currentFrame();
-    if (frame !== undefined) {
-      throw new Error(
-        `${fact} cannot be announced inside Together<[…]> (${frame}): announcing is dispatch, ` +
-        `so subscribers and the carrier would have it while these writes can still be taken ` +
-        `back. Announce after run() returns, when it is true.`,
-      );
-    }
+    await ambient.beforeAnnounce(fact);
 
     const payload = this.stamped(fact, raw);
 
@@ -236,7 +215,7 @@ export class Emissions {
    * opposite things and only one of them is wrong to wait.
    */
   private handToListeners(fact: string, payload: unknown): Array<Listener & { done: Promise<unknown> }> {
-    const walked = this.chain.getStore() ?? [];
+    const walked = ambient.currentChain();
     if (walked.includes(fact)) {
       throw new Error(
         `Emission cycle: ${[...walked, fact].join(' → ')}.\n`
@@ -250,11 +229,10 @@ export class Emissions {
       return [];
     }
 
-    const deeper = [...walked, fact];
     return listeners.map(({ door, op }) => ({
       door,
       op,
-      done: this.chain.run(deeper, async () => {
+      done: ambient.enterChain(fact, async () => {
         let facade: Record<string, Function>;
         try {
           facade = this.container.resolve<Record<string, Function>>(door);
