@@ -179,7 +179,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     if (options.remotes && frond.name in options.remotes) {
       log.child(frond.name).info('declared remote — not hosted locally');
       // Its doors answer elsewhere, but what they LISTEN to was read here.
-      const remoteCollectors = new Set(frond.collectors.map((c) => c.entityName));
+      const remoteCollectors = new Set(frond.collectors.map((c) => c.typeName));
       for (const handler of frond.handlers) {
         emissions.note(
           resolveContracts(handler, frond.operationsOverrides, remoteCollectors),
@@ -302,13 +302,13 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     }
 
     // Register collectors in scope — PascalCase type name (e.g. 'UserCollector')
-    const collectorEntityNames = new Set(frond.collectors.map((c) => c.entityName));
+    const collectorTypeNames = new Set(frond.collectors.map((c) => c.typeName));
     for (const collector of frond.collectors) {
-      const key = collectorKeyOf(collector.entityName);
+      const key = collectorKeyOf(collector.typeName);
       scope.register(key, collector.ctor, { deps: collector.deps });
     }
     if (frond.collectors.length > 0) {
-      frondLog.debug(`${frond.collectors.length} collector(s): ${frond.collectors.map((c) => c.entityName).join(', ')}`);
+      frondLog.debug(`${frond.collectors.length} collector(s): ${frond.collectors.map((c) => c.typeName).join(', ')}`);
     }
 
     // Build handler facades → registered in ROOT container (public contract)
@@ -330,7 +330,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
           frondScope: scope,
           log: frondLog,
           overrides: frond.operationsOverrides,
-          collectors: collectorEntityNames,
+          collectors: collectorTypeNames,
           presenters: presenterMap,
           middlewaresFor: getMiddlewares,
           emissions,

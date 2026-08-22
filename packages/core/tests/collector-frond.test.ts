@@ -70,6 +70,6 @@ describe('a collector declared in the wrong frond', () => {
     await using app = await createApp({ root, createContainer, fronds: ['identity'] });
 
     const identity = app.fronds.find((f) => f.name === 'identity');
-    expect(identity?.collectors.map((c) => c.entityName)).toEqual(['user']);
+    expect(identity?.collectors.map((c) => c.typeName)).toEqual(['user']);
   });
 });

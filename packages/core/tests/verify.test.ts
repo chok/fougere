@@ -30,8 +30,8 @@ const frond = (name: string, parts: Partial<FrondDescriptor>): FrondDescriptor =
 const handler = (ctor: Function, entityName: string, deps: string[]) =>
   ({ name: `${entityName}Handler`, entityName, ctor, operations: new Map(), deps, filePath: `/app/${ctor.name}.ts` }) as never;
 
-const collector = (entityName: string, ctor: Function) =>
-  ({ entityName, ctor, deps: [], filePath: `/app/${ctor.name}.ts` }) as never;
+const collector = (typeName: string, ctor: Function) =>
+  ({ typeName, ctor, deps: [], filePath: `/app/${ctor.name}.ts` }) as never;
 
 const presenter = (entityName: string, ctor: Function, deps: string[]) =>
   ({ entityName, ctor, fields: [], fieldMeta: [], deps, filePath: `/app/${ctor.name}.ts` }) as never;

@@ -214,8 +214,8 @@ export class HandlerFacade {
     return resolved;
   }
 
-  private collectorResolver = (entityName: string): CollectorResolver | undefined => {
-    try { return this.door.scope.resolve(collectorKeyOf(entityName)) as CollectorResolver; }
+  private collectorResolver = (typeName: string): CollectorResolver | undefined => {
+    try { return this.door.scope.resolve(collectorKeyOf(typeName)) as CollectorResolver; }
     catch { return undefined; }
   };
 

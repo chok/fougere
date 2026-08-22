@@ -61,7 +61,7 @@ function registrationsOf(frond: FrondDescriptor): Map<string, Registration> {
 
   for (const p of frond.providers) put(p.ctor.name, 'provider');
   for (const p of frond.presenters) put(presenterKeyOf(p.entityName), 'presenter');
-  for (const c of frond.collectors) put(collectorKeyOf(c.entityName), 'collector');
+  for (const c of frond.collectors) put(collectorKeyOf(c.typeName), 'collector');
   for (const e of frond.entities) {
     put(ormKeyOf(e.name), 'ORM');
     put(repositoryKeyOf(e.name), 'repository');
@@ -109,7 +109,7 @@ export function verify(app: { fronds: readonly FrondDescriptor[] }): Violation[]
   // they need their own index and their own rule.
   const collectorFronds = new Map<string, string>();
   for (const frond of app.fronds) {
-    for (const c of frond.collectors) collectorFronds.set(c.entityName, frond.name);
+    for (const c of frond.collectors) collectorFronds.set(c.typeName, frond.name);
   }
 
   const violations: Violation[] = [];
@@ -144,16 +144,16 @@ export function verify(app: { fronds: readonly FrondDescriptor[] }): Violation[]
 
     // Rule 2 — an operation parameter that wanted a collector this frond has not
     // got. `computeBindingPlan` gates the collector branch on the frond's OWN
-    // collector set (`collectorEntityNames`, bootstrap.ts), then falls through to
+    // collector set (`collectorTypeNames`, bootstrap.ts), then falls through to
     // branch 4, "Everything else — body" (`computeBindingPlan`, binding.ts). So the
     // parameter does not go missing: it carries what the caller sent. Measured in
     // tests/collector-frond.test.ts.
-    const own = new Set(frond.collectors.map((c) => c.entityName));
+    const own = new Set(frond.collectors.map((c) => c.typeName));
     for (const handler of frond.handlers) {
       for (const [opName, op] of handler.operations) {
         for (const param of op.signature?.params ?? []) {
           // Same key the scan writes and the binding plan looks up — `toLowerCase()`
-          // here missed a two-word entity in BOTH directions: neither confirmed the
+          // here missed a two-word type in BOTH directions: neither confirmed the
           // collector was local nor found it elsewhere, so the rule reported nothing.
           const wanted = registrationKeyOf(param.type.name);
           if (own.has(wanted)) continue;
