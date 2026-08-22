@@ -64,10 +64,15 @@ jobs:
       # declares works in the workspace and breaks once published.
       - run: pnpm knip --no-exit-code
 
-      # A GATE, unlike the two readings above, and for the reason they are not: a
-      # subpath naming a file that is not in the tarball is not a judgment call, and
-      # there is nothing here to clear in bulk. Needs `dist/`, so it runs after build.
+      # Two GATES, unlike the readings above, and for the reason they are not: neither
+      # asks a judgment call, and both start green, so there is nothing to clear in bulk.
+      # Both need `dist/`, so they run after build.
+      #
+      # `publish:check` — a subpath naming a file absent from the tarball.
+      # `arch` — the six invariants this repo used to state in prose only.
       - run: pnpm publish:check
+
+      - run: pnpm arch
 
   audit:
     runs-on: ubuntu-latest
