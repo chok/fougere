@@ -53,6 +53,66 @@ export interface PlanOptions {
 }
 
 /**
+ * Collapse a chain of steps into one, following each field through its renames.
+ *
+ * A step judges itself on two names — old gone, new here — so an intermediate rename is
+ * unrecognisable once its target has been renamed again: both names are absent and it is
+ * proposed forever. Composing the chain first asks the question about the name the field
+ * ENDS on, which is the only one the tables can answer.
+ */
+export function collapseChain(steps: readonly SetDiff[]): SetDiff {
+  const entities: SetDiff['entities'] = {};
+  const added: string[] = [];
+  const removed: string[] = [];
+
+  for (const step of steps) {
+    added.push(...step.entitiesAdded);
+    removed.push(...step.entitiesRemoved);
+    for (const [entity, answer] of Object.entries(step.entities)) {
+      const held = (entities[entity] ??= { changes: [], ambiguous: [] });
+      held.ambiguous.push(...answer.ambiguous);
+      for (const change of answer.changes) compose(held.changes, change);
+    }
+  }
+
+  return { entities, entitiesAdded: [...new Set(added)], entitiesRemoved: [...new Set(removed)] };
+}
+
+/**
+ * Add one change to what the chain has said so far, rewriting rather than appending when
+ * it continues a field already moved. A rename back to its origin cancels: the tables
+ * never held the name in between, so there is nothing for them to do.
+ */
+function compose(held: ShapeChange[], change: ShapeChange): void {
+  if (change.kind === 'renamed') {
+    const at = held.findIndex((each) => each.kind === 'renamed' && each.to === change.from);
+    if (at === -1) {
+      held.push(change);
+      return;
+    }
+    const first = held[at] as Extract<ShapeChange, { kind: 'renamed' }>;
+    if (first.from === change.to) held.splice(at, 1);
+    else held[at] = { ...first, to: change.to };
+    return;
+  }
+
+  // Anything else names a field; if the chain renamed it earlier, the tables know it
+  // under the name it started with.
+  const field = 'field' in change ? change.field : undefined;
+  const at = held.findIndex((each) => each.kind === 'renamed' && each.to === field);
+  if (at === -1) {
+    held.push(change);
+    return;
+  }
+
+  const origin = held[at] as Extract<ShapeChange, { kind: 'renamed' }>;
+  // A field the chain ends by dropping is dropped under its original name, and the
+  // renames that led there are work nobody has to do.
+  if (change.kind === 'removed') held.splice(at, 1);
+  held.push({ ...change, field: origin.from });
+}
+
+/**
  * Turn a frozen step into what the tables must do, and what nobody may decide for you.
  *
  * Pure, like `delta` — the comparison is one thing, running it is another.

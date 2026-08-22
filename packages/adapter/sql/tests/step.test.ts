@@ -9,8 +9,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import Database from 'better-sqlite3';
 import { Kysely, SqliteDialect, sql } from 'kysely';
 import { entity, primary, text, number, optional, describeSet, diffSet, type Fields } from '@fougere/schema';
-import { planStep, stepSQL, applyStep } from '../src/step.js';
-import { desiredTables, actualState } from '../src/diff.js';
+import { planStep, collapseChain, stepSQL, applyStep } from '../src/step.js';
+import { desiredTables, actualState, type SchemaState } from '../src/diff.js';
 import { createTableSQL } from '../src/ddl.js';
 
 const bundle = (fields: Fields) => describeSet({ post: class extends entity(fields) {} });
@@ -168,5 +168,49 @@ describe('replaying a step changes nothing', () => {
 
     expect(planStep(step, desiredTables(appOf(current)), { actual: await actualState(db) }).changes)
       .toEqual([{ kind: 'dropColumn', table: 'posts', column: 'title' }]);
+  });
+});
+
+describe('a chain composes before it is planned', () => {
+  const chain = (...pairs: Array<[string, string]>) => {
+    let was = V1 as Fields;
+    return pairs.map(([from, to]) => {
+      const now = Object.fromEntries(Object.entries(was).map(([key, f]) => [key === from ? to : key, f])) as Fields;
+      const step = diffSet(bundle(was), bundle(now), { renamed: { post: { [from]: to } } });
+      was = now;
+      return step;
+    });
+  };
+
+  it('follows a field renamed twice to the name it ends on', () => {
+    const steps = collapseChain(chain(['body', 'content'], ['content', 'richText']));
+    const current = { id: primary(), title: text(), richText: text() };
+
+    expect(planStep(steps, desiredTables(appOf(current))).changes).toEqual([
+      { kind: 'renameColumn', table: 'posts', from: 'body', to: 'rich_text' },
+    ]);
+  });
+
+  it('proposes nothing once the database ends on that name', () => {
+    const steps = collapseChain(chain(['body', 'content'], ['content', 'richText']));
+    const current = { id: primary(), title: text(), richText: text() };
+    const actual: SchemaState = new Map([['posts', new Set(['id', 'title', 'rich_text'])]]);
+
+    expect(planStep(steps, desiredTables(appOf(current)), { actual }).changes).toEqual([]);
+  });
+
+  it('cancels a rename that comes back to the name it left', () => {
+    const steps = collapseChain(chain(['body', 'content'], ['content', 'body']));
+    const actual: SchemaState = new Map([['posts', new Set(['id', 'title', 'body'])]]);
+
+    expect(planStep(steps, desiredTables(appOf(V1)), { actual }).changes).toEqual([]);
+  });
+
+  it('drops the column under the name the tables hold it by', () => {
+    const [renaming] = chain(['body', 'content']);
+    const gone = diffSet(bundle({ id: primary(), title: text(), content: text() }), bundle({ id: primary(), title: text() }));
+
+    const plan = planStep(collapseChain([renaming, gone]), desiredTables(appOf({ id: primary(), title: text() })));
+    expect(plan.changes).toEqual([{ kind: 'dropColumn', table: 'posts', column: 'body' }]);
   });
 });
