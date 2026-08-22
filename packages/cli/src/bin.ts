@@ -6,7 +6,7 @@
  * fronds/ → loaded at runtime by jiti (domain)
  * app/   → loaded at runtime by jiti (presentation)
  */
-import { createApp, setModuleLoader } from '@fougere/core';
+import { createApp, setModuleLoader, setLogLevel, envLevel } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { ui } from './ui.js';
 import { run } from './runner.js';
@@ -20,8 +20,11 @@ const container = createContainer();
 container.registerValue('ui', ui());
 container.registerValue('cwd', process.cwd());
 
-// The CLI is a Fougere app — silence its boot chatter unless explicitly asked.
+// The CLI is a Fougere app — silence its boot chatter unless explicitly asked. The
+// threshold is SET, not only announced: a static import evaluates the logger module,
+// its env read included, before this line runs.
 process.env.FOUGERE_LOG_LEVEL ??= 'warn';
+setLogLevel(envLevel() ?? 'warn');
 
 const app = await createApp({
   root: cliRoot,
