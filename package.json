@@ -13,12 +13,14 @@
     "test": "pnpm -r test",
     "lint": "oxlint packages site demos",
     "knip": "knip",
+    "publish:check": "node tools/publish-check.mjs",
     "coverage": "pnpm -r --filter './packages/**' exec vitest run --passWithNoTests --coverage --coverage.provider=v8 --coverage.reporter=text --coverage.include=src/**",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "build:apps": "pnpm -r --filter \"./demos/**\" --filter ./site build"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
     "@changesets/cli": "^2.31.1",
     "@oxlint/plugins": "1.78.0",
     "@swc/core": "^1.15.21",
@@ -26,6 +28,7 @@
     "@vitest/coverage-v8": "4.1.0",
     "knip": "^6.32.1",
     "oxlint": "^1.78.0",
+    "publint": "^0.3.24",
     "typescript": "^7.0.2",
     "unplugin-swc": "^1.5.9",
     "vitest": "^4.1.0"

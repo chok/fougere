@@ -64,6 +64,11 @@ jobs:
       # declares works in the workspace and breaks once published.
       - run: pnpm knip --no-exit-code
 
+      # A GATE, unlike the two readings above, and for the reason they are not: a
+      # subpath naming a file that is not in the tarball is not a judgment call, and
+      # there is nothing here to clear in bulk. Needs `dist/`, so it runs after build.
+      - run: pnpm publish:check
+
   audit:
     runs-on: ubuntu-latest
     timeout-minutes: 10
