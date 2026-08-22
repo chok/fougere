@@ -1,18 +1,9 @@
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describeSet, diffSet, registrationKeyOf, type SchemaBundle, type SetDiff } from '@fougere/schema';
 import ProjectScan from '../services/ProjectScan.js';
+import { VERSIONS, chainOf } from '../versions.js';
 import type Freeze from '../entities/Freeze.js';
-
-/**
- * Where a FROND keeps what its shapes used to be — beside `entities/`, not under a dot.
- *
- * Under the frond because its entities move with it behind `remotes:`, and a history left
- * at the app root would stay with the host it left. Beside the source because a version is
- * COMMITTED: `.fougere/` is gitignored whole and holds what a run can rebuild — a scan
- * cache, a synced card. A past no current code can regenerate is not that.
- */
-const VERSIONS = 'versions';
 
 export interface FreezeInspection {
   version: string;
@@ -170,18 +161,12 @@ function merge(inspected: readonly Inspected[]): SetDiff | undefined {
   };
 }
 
-/** The version recorded just before this one — by name order, and only this once. */
+/** The version this one steps from: the tip of the chain, the links read rather than sorted. */
 async function previousOf(root: string, version: string): Promise<{ name: string; bundle: SchemaBundle } | undefined> {
-  const directory = join(root, VERSIONS);
-  const found = await readdir(directory, { withFileTypes: true }).catch(() => []);
-  const names = found
-    .filter((entry) => entry.isDirectory() && entry.name !== version)
-    .map((entry) => entry.name)
-    .sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
-
-  const last = names.at(-1);
+  const chain = (await chainOf(root)).filter((cut) => cut.name !== version);
+  const last = chain.at(-1)?.name;
   if (!last) return undefined;
 
-  const raw = await readFile(join(directory, last, 'shape.json'), 'utf8').catch(() => undefined);
+  const raw = await readFile(join(root, VERSIONS, last, 'shape.json'), 'utf8').catch(() => undefined);
   return raw ? { name: last, bundle: JSON.parse(raw) as SchemaBundle } : undefined;
 }
