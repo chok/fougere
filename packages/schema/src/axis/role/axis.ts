@@ -1,5 +1,5 @@
 import type { Axis, Resolver } from '../Axis.js';
-import { isObject, oneOfTokens } from '../../judge/form.js';
+import { isObject, oneOfTokens, refuse } from '../../judge/form.js';
 import type { ValidationError } from '../../judge/result.js';
 import { ON_DELETE, RELATION_KINDS, type EntityConstructor, type Relation } from './Relation.js';
 import { type RoleRules } from './Role.js';
@@ -65,6 +65,19 @@ export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
     if (wire.unique?.length) out.rules = wire.unique.map((group) => new Unique(group));
     if (wire.index) out.index = true;
     if (wire.relation) {
+      // `judge` cannot serve here: it demands a thunk where a card carries a name.
+      if (!oneOfTokens(wire.relation.kind, RELATION_KINDS)) {
+        refuse(
+          `role.relation.kind is ${JSON.stringify(wire.relation.kind)}`,
+          `Expected one of ${RELATION_KINDS.join(', ')}.`,
+        );
+      }
+      if (wire.relation.onDelete !== undefined && !oneOfTokens(wire.relation.onDelete, ON_DELETE)) {
+        refuse(
+          `role.relation.onDelete is ${JSON.stringify(wire.relation.onDelete)}`,
+          `Expected one of ${ON_DELETE.join(', ')}.`,
+        );
+      }
       const name = wire.relation.to;
       out.relation = {
         to: () => (resolve?.(name) ?? ({ name } as unknown)) as EntityConstructor,

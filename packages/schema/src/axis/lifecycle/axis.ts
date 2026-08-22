@@ -1,6 +1,6 @@
 import type { Axis } from '../Axis.js';
 import type { ValidationError } from '../../judge/result.js';
-import { isObject, oneOfTokens } from '../../judge/form.js';
+import { admitWire, isObject, oneOfTokens } from '../../judge/form.js';
 import { CREATE_TOKENS, UPDATE_TOKENS, type LifecycleRules } from './Lifecycle.js';
 
 export const lifecycleAxis: Axis<LifecycleRules, LifecycleRules> = {
@@ -21,7 +21,10 @@ export const lifecycleAxis: Axis<LifecycleRules, LifecycleRules> = {
   },
 
   describe: (value) => value,
-  reconstruct: (wire) => wire,
+  reconstruct: (wire) => {
+    admitWire(lifecycleAxis.judge, wire, 'lifecycle');
+    return wire;
+  },
 };
 
 function judgeCreate(rule: unknown, errors: ValidationError[]): void {
