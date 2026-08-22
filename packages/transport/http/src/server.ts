@@ -4,7 +4,7 @@
  * Judges nothing: validation and middlewares live with the handler, inside
  * the runner. The error a façade throws is framed whole, never flattened.
  */
-import { FougereError, ErrorCode, toPublicError, type InvocationContext, type SignedCall, type Transport } from '@fougere/core';
+import { FougereError, ErrorCode, toPublicError, type InvocationContext, type SignedCall, type Transport } from '@fougere/core/contract';
 import { APP_ERROR, INVALID_REQUEST, type RpcRequest, type RpcResponse } from './jsonrpc.js';
 
 /** What a receiver does with the caller's envelope. */
