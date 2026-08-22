@@ -15,5 +15,7 @@ export function entity<TFields extends Fields>(
   for (const group of declarations?.unique ?? [])
     fields = new Unique(group).onto(fields);
 
-  return Schema.of(fields as TFields, undefined, declarations?.hints, {});
+  const schema = Schema.of(fields as TFields, undefined, declarations?.hints, {});
+  if (declarations?.previous) Object.assign(schema, { previous: declarations.previous });
+  return schema;
 }

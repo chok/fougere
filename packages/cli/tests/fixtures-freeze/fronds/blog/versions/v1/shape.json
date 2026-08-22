@@ -1,0 +1,38 @@
+{
+  "$defs": {
+    "post": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "x-fougere": {
+            "role": {
+              "primary": true
+            },
+            "lifecycle": {
+              "create": {
+                "generate": "cuid2"
+              },
+              "update": "forbidden"
+            }
+          }
+        },
+        "title": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        }
+      },
+      "x-fougere-version": 1,
+      "x-fougere-vendor": "fougere",
+      "title": "post",
+      "required": [
+        "title",
+        "email"
+      ]
+    }
+  },
+  "x-fougere-version": 1,
+  "x-fougere-vendor": "fougere"
+}

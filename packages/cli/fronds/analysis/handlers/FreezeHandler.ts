@@ -1,6 +1,6 @@
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { describeSet, diffSet, type SchemaBundle, type SetDiff } from '@fougere/schema';
+import { describeSet, diffSet, registrationKeyOf, type SchemaBundle, type SetDiff } from '@fougere/schema';
 import ProjectScan from '../services/ProjectScan.js';
 import type Freeze from '../entities/Freeze.js';
 
@@ -53,7 +53,9 @@ export default class FreezeHandler {
     const fronds = await this.read(input);
     const version = input.version;
     const entities = fronds.flatMap(({ bundle }) => Object.keys(bundle.$defs ?? {}));
-    const renamed = input.renamed ?? {};
+    // Two entrances, one map: what the entities declare, and what a caller answered.
+    // The answer wins — it is the later word on a question the declaration left open.
+    const renamed = settled(fronds.map(({ declared }) => declared), input.renamed ?? {});
 
     // Every frond is inspected before ANY of them writes: a question standing in one
     // frond must not leave the others recorded, or a second run cuts half a version.
@@ -110,6 +112,7 @@ export default class FreezeHandler {
         .map(async (frond) => ({
           path: frond.source.path,
           bundle: describeSet(Object.fromEntries(frond.entities.map((e) => [e.name, e.entityClass]))),
+          declared: declaredRenames(frond.entities),
           previous: await previousOf(frond.source.path, input.version),
         })),
     );
@@ -117,6 +120,36 @@ export default class FreezeHandler {
 }
 
 type Inspected = { previous?: { name: string }; step?: SetDiff };
+
+/**
+ * What the entities state about themselves — `previous` says what a field WAS, while
+ * `diff` reads old → new, so the pair is turned around here and nowhere else.
+ */
+function declaredRenames(
+  entities: ReadonlyArray<{ name: string; entityClass: unknown }>,
+): Record<string, Record<string, string>> {
+  const out: Record<string, Record<string, string>> = {};
+  for (const { name, entityClass } of entities) {
+    const previous = (entityClass as { previous?: Record<string, string> }).previous;
+    // Keyed as `describeSet` keys `$defs`, which is what `diffSet` reads. Spelling the
+    // convention a second way here is the defect this repo has already recorded twice.
+    const key = registrationKeyOf(name);
+    if (previous) out[key] = Object.fromEntries(Object.entries(previous).map(([now, was]) => [was, now]));
+  }
+  return out;
+}
+
+/** Every source of an answer, folded per entity — later sources win field by field. */
+function settled(
+  sources: ReadonlyArray<Record<string, Record<string, string>>>,
+  answers: Record<string, Record<string, string>>,
+): Record<string, Record<string, string>> {
+  const out: Record<string, Record<string, string>> = {};
+  for (const source of [...sources, answers]) {
+    for (const [entity, pairs] of Object.entries(source)) out[entity] = { ...(out[entity] ?? {}), ...pairs };
+  }
+  return out;
+}
 
 /** The version every frond steps from. They are cut together, so they agree. */
 function previousName(inspected: readonly Inspected[]): string | undefined {

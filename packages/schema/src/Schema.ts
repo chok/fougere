@@ -23,6 +23,7 @@ export interface SchemaConstructor<TFields extends Fields> extends SchemaView<TF
   readonly "~standard": StandardSchemaV1.Props<Record<string, unknown>, Row<TFields>>;
   readonly source?: abstract new (...args: never[]) => unknown;
   readonly survived?: Survived;
+  readonly previous?: Readonly<Record<string, string>>;
   from(data: Record<string, unknown>): Row<TFields>;
   pick<K extends string & keyof TFields>(...keys: K[]): SchemaConstructor<Pick<TFields, K>>;
   omit<K extends string & keyof TFields>(...keys: K[]): SchemaConstructor<Omit<TFields, K>>;
@@ -38,6 +39,7 @@ export class Schema {
   static opts: ValidateOptions = {};
   static source: (abstract new (...args: never[]) => unknown) | undefined;
   static survived: Survived | undefined;
+  static previous: Readonly<Record<string, string>> | undefined;
 
   constructor(data?: Record<string, unknown>) {
     if (!data) return;
