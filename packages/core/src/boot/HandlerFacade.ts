@@ -1,6 +1,5 @@
-import { Judge, type Fields, type SchemaView } from '@fougere/schema';
+import { type Fields } from '@fougere/schema';
 import type { Container } from '@fougere/container';
-import { ErrorCode, FougereError } from '../wire/errors.js';
 import { runMiddlewares, type AppMiddleware } from '../wire/middleware.js';
 import { computeBindingPlan, resolveArgs, type CollectorResolver } from './binding.js';
 import { collectorKeyOf } from '../prefab/collector.js';
@@ -14,6 +13,7 @@ import type { InFlight } from './inflight.js';
 import type { OperationContext } from '../wire/middleware.js';
 import type { Logger } from '../builtins/logger.js';
 import type { EntityEntry, FrondDescriptor, HandlerEntry, PresenterEntry } from '../scan/frond.js';
+import { InputValidator } from '../dispatch/InputValidator.js';
 
 /** What this door is about: a handler, the entity behind it when there is one, and where it resolves. */
 export interface Doorway {
@@ -80,6 +80,7 @@ export class HandlerFacade {
 
   private readonly cachedViews = new Map<string, View>();
   private instance: any;
+  private readonly inputValidator = new InputValidator();
 
   constructor(private readonly door: Doorway, private readonly wiring: Wiring) {
     const { handler, entity } = door;
@@ -262,7 +263,7 @@ export class HandlerFacade {
   ): Promise<unknown> {
     return runMiddlewares(this.wiring.middlewaresFor(address), ctx, async () => {
         const contract = this.contracts.get(op);
-        const effective = this.judged(contract?.input, inv, address, op);
+        const effective = this.inputValidator.validate(contract?.input, inv, address, op);
         ctx.invocation = effective;
 
         // No plan means no declared argument — an op receives what its contract says it
@@ -290,41 +291,6 @@ export class HandlerFacade {
         await this.presenterArgs(meta, effective),
       );
     });
-  }
-
-  /**
-   * The client's input, or a refusal. The view's mode travels with it: a `partial()` input
-   * validates as a patch (absent field → untouched), never by forging the fields.
-   *
-   * No field filter: the axes already judge every case — a client id at create is accepted
-   * (`{ generate }`), an id re-supplied in a patch is 'Immutable', a read-only field
-   * 'Read-only', every system-stamped absence is legal via its lifecycle rule, and a key
-   * outside the contract is 'Unknown field' (refused, not stripped).
-   */
-  private judged(
-    schema: SchemaView | undefined,
-    inv: InvocationContext,
-    address: string,
-    op: string,
-  ): InvocationContext {
-    // A body that is not an object is JUDGED, not waved through: `"hello"` is valid JSON,
-    // so it arrives from any door, and skipping the judge sent it to the ORM — which
-    // answered `table articles has no column named 0`, a driver error where a refusal
-    // belongs. `Judge.row` already states this one (`Expected an object`); the branch was
-    // simply unreachable from here.
-    if (!schema || inv.body === undefined || inv.body === null) return inv;
-
-    const result = Judge.row(schema.getFields(), inv.body, { patch: schema.getOpts().patch });
-    if (!result.success) {
-      throw new FougereError({
-        code: ErrorCode.VALIDATION_FAILED,
-        message: result.errors.map((e) => `${e.path}: ${e.message}`).join(', '),
-        details: result.errors,
-        entity: address,
-        operation: op,
-      });
-    }
-    return { ...inv, body: result.data };
   }
 
   /**
