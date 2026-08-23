@@ -1,5 +1,7 @@
 import { type ScanResult } from '@fougere/core';
-import { scanProject, frondAliases, setModuleLoader } from '@fougere/core/node';
+import {
+  scanProject, frondAliases, setModuleLoader, loadConfig, resolveConventions,
+} from '@fougere/core/node';
 import { resolve } from 'node:path';
 
 /**
@@ -26,11 +28,23 @@ export default class ProjectScan {
     // cannot. Installed once per call because the loader is module-global — the
     // CLI's own app was loaded with its own, and this replaces it for the target.
     const { createJiti } = await import('jiti');
-    // `@frond/<name>` is the framework's own convention; the loader has to know it,
-    // or a frond naming its neighbour is unreadable to the very tool that checks it.
-    const jiti = createJiti(import.meta.url, { interopDefault: true, alias: await frondAliases(target) });
-    setModuleLoader((filePath) => jiti.import(filePath) as Promise<Record<string, unknown>>);
+    const install = (alias?: Record<string, string>): void => {
+      const jiti = createJiti(import.meta.url, { interopDefault: true, ...(alias ? { alias } : {}) });
+      setModuleLoader((filePath) => jiti.import(filePath) as Promise<Record<string, unknown>>);
+    };
 
-    return { root: target, ...(await scanProject(target)) };
+    /**
+     * The config is read BEFORE the aliases, because it names the scope they are built
+     * from. Safe because nothing in `fougere.config.ts` may import `@fronds/*` — the one
+     * import that would need the name to read the file that declares it.
+     */
+    install();
+    const conventions = resolveConventions((await loadConfig(target)).conventions);
+
+    // The scope is the framework's own convention; the loader has to know it, or a frond
+    // naming its neighbour is unreadable to the very tool that checks it.
+    install(await frondAliases(target, conventions));
+
+    return { root: target, ...(await scanProject(target, undefined, conventions)) };
   }
 }

@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery } from '@fougere/react';
-import Post from '@frond/blog/entities/Post';
+import Post from '@fronds/blog/entities/Post';
 
 /**
  * The published list. Same hook, same designation, same import as

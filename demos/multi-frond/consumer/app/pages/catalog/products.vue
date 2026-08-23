@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
- * Products page — local frond @frond/catalog
+ * Products page — local frond @fronds/catalog
  *
  * Direct import of the Entity class for client-side validation.
  * Same Entity that drives the DB schema and REST API on the server.
  */
-import Product from '@frond/catalog/entities/Product';
+import Product from '@fronds/catalog/entities/Product';
 
 const CreateProduct = Product.omit('id');
 
@@ -40,7 +40,7 @@ function fieldError(field: string) {
 
 <template>
   <div style="max-width: 600px; margin: 3rem auto; font-family: system-ui;">
-    <h1>Products <small style="color: #888;">(local @frond/catalog)</small></h1>
+    <h1>Products <small style="color: #888;">(local @fronds/catalog)</small></h1>
     <p><NuxtLink to="/">Back</NuxtLink></p>
 
     <form @submit.prevent="submit" style="display: flex; flex-direction: column; gap: 0.5rem; margin: 1rem 0;">

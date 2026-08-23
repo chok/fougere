@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useFormFor } from '@fougere/react';
-import Post from '@frond/blog/entities/Post';
+import Post from '@fronds/blog/entities/Post';
 
 /**
  * The form contract, not a form widget. `fields` comes from the entity's own axes:

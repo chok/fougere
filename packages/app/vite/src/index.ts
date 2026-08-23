@@ -44,6 +44,7 @@
 import { readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Plugin } from 'vite';
+import { type Conventions, DEFAULT_CONVENTIONS } from '@fougere/core/node';
 
 /**
  * The entity names a build must not rename, read off the filesystem.
@@ -53,14 +54,14 @@ import type { Plugin } from 'vite';
  * no annotation: it is derived from the same convention the framework already
  * relies on, which is why this feint costs the developer nothing.
  */
-export function entityNamesIn(root: string): string[] {
-  const frondsDir = join(root, 'fronds');
+export function entityNamesIn(root: string, conventions: Conventions = DEFAULT_CONVENTIONS): string[] {
+  const frondsDir = join(root, conventions.fronds);
   if (!existsSync(frondsDir)) return [];
 
   const names = new Set<string>();
   for (const frond of readdirSync(frondsDir, { withFileTypes: true })) {
     if (!frond.isDirectory()) continue;
-    const entities = join(frondsDir, frond.name, 'entities');
+    const entities = join(frondsDir, frond.name, conventions.dirs.entities);
     if (!existsSync(entities)) continue;
     for (const file of readdirSync(entities)) {
       const match = /^(.+)\.tsx?$/.exec(file);

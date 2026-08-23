@@ -13,7 +13,7 @@ import { setModuleLoader, frondAliases } from '@fougere/core/node';
 import { bootAppFromConfig } from '@fougere/defaults';
 import { serve } from '@fougere/transport-http';
 
-// `frondAliases` is what makes `@frond/<neighbour>/entities/X.js` resolve — the
+// `frondAliases` is what makes `@fronds/<neighbour>/entities/X.js` resolve — the
 // named form a frond uses for its neighbour. A bare jiti loads frond sources but
 // not that convention, so a collector or handler importing across fronds dies here
 // while the same code works in-process.

@@ -13,7 +13,7 @@ class Mailer {}
 
 const frond = (name: string, parts: Partial<FrondDescriptor>): FrondDescriptor => ({
   name,
-  source: { path: `/app/fronds/${name}`, package: `@frond/${name}` },
+  source: { path: `/app/fronds/${name}`, package: `@fronds/${name}` },
   providers: [],
   entities: [],
   handlers: [],

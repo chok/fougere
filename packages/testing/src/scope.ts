@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { dirname, join, sep } from 'node:path';
+import { DEFAULT_CONVENTIONS, loadConfig, resolveConventions } from '@fougere/core/node';
 
 /**
  * What a test file's position states about its subject.
@@ -26,20 +27,26 @@ export interface Scope {
  * The LAST `fronds/` segment wins: a frond may hold a synced copy of a neighbour under
  * `.fougere/remotes/`, and a test that ever lands beside one is about the inner frond.
  */
-export function frondOf(path: string): string | undefined {
+export function frondOf(path: string, frondsDir: string = DEFAULT_CONVENTIONS.fronds): string | undefined {
   const parts = path.split(sep);
-  const at = parts.lastIndexOf('fronds');
+  const at = parts.lastIndexOf(frondsDir);
   if (at === -1 || at + 1 >= parts.length) return undefined;
   const name = parts[at + 1];
   return name && !name.endsWith('.ts') ? name : undefined;
 }
 
-/** Where the project starts: the first ancestor holding a config or a `fronds/`. */
+/**
+ * Where the project starts: the first ancestor holding a config or a `fronds/`.
+ *
+ * The config is probed FIRST, which is what lets the rest of this file ask it where fronds
+ * live: a project that renamed the directory still declares one, and only a project with
+ * no config at all is found by the convention.
+ */
 export function rootOf(path: string): string | undefined {
   let at = dirname(path);
   let previous = '';
   while (at !== previous) {
-    if (existsSync(join(at, 'fougere.config.ts')) || existsSync(join(at, 'fronds'))) return at;
+    if (existsSync(join(at, 'fougere.config.ts')) || existsSync(join(at, DEFAULT_CONVENTIONS.fronds))) return at;
     previous = at;
     at = dirname(at);
   }
@@ -52,10 +59,14 @@ export function rootOf(path: string): string | undefined {
  * Returns nothing when the file sits outside any project — a caller then states `root`
  * itself, which is what this package's own tests do against their fixtures.
  */
-export function scopeOf(path: string): Scope | undefined {
+export async function scopeOf(path: string): Promise<Scope | undefined> {
   const root = rootOf(path);
   if (!root) return undefined;
-  return { root, ...(frondOf(path) ? { frond: frondOf(path) } : {}) };
+  // The root is known, so its config can say what the fronds directory is called before
+  // the position is read against it.
+  const { fronds } = resolveConventions((await loadConfig(root)).conventions);
+  const frond = frondOf(path, fronds);
+  return { root, ...(frond ? { frond } : {}) };
 }
 
 /**
@@ -65,6 +76,6 @@ export function scopeOf(path: string): Scope | undefined {
  * caller because this module is ESM and cannot `require`, and because a package that
  * imports vitest at the top level stops being loadable outside a test run.
  */
-export function scopeOfRun(testPath: string | undefined): Scope | undefined {
+export async function scopeOfRun(testPath: string | undefined): Promise<Scope | undefined> {
   return testPath ? scopeOf(testPath) : undefined;
 }

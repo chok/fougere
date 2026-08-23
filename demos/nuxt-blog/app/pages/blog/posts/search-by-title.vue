@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Post from '@frond/blog/entities/Post';
+import Post from '@fronds/blog/entities/Post';
 
 const query = ref('');
 const submitted = ref('');

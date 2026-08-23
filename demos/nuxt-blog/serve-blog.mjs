@@ -13,7 +13,7 @@ import { createContainer } from '@fougere/container';
 import { setupSqlite, migrate } from '@fougere/adapter-sql';
 import { serve } from '@fougere/transport-http';
 
-// `frondAliases` is what makes `@frond/user/entities/User.js` resolve — the named
+// `frondAliases` is what makes `@fronds/user/entities/User.js` resolve — the named
 // form a frond uses for its neighbour. Without it this entry point loaded frond
 // sources through a bare jiti, and `CurrentUserCollector` died on that import
 // while the very same code worked in-process under Nuxt.

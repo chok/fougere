@@ -1,6 +1,7 @@
 import { cpSync, existsSync, renameSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { type Conventions, DEFAULT_CONVENTIONS, frondPackage } from '@fougere/core/node';
 
 /**
  * The monorepo's `packages/`, found by its workspace marker rather than counted
@@ -67,7 +68,7 @@ export default class ProjectWriter {
 
   /**
    * Put a frond template's directories at the project root. Only the directories: at the
-   * root the app's own `package.json` is the frond's, and `@frond/<name>` comes from the
+   * root the app's own `package.json` is the frond's, and `@fronds/<name>` comes from the
    * directory through the Nuxt module's alias, so the template's package would only
    * duplicate it under a second name.
    */
@@ -81,8 +82,8 @@ export default class ProjectWriter {
   }
 
   /** Add a frond (business hexagon) under fronds/<name>. */
-  addFrond(wsDir: string, template: string, name: string): { path: string } {
-    const dest = join(wsDir, 'fronds', name);
+  addFrond(wsDir: string, template: string, name: string, conventions: Conventions = DEFAULT_CONVENTIONS): { path: string } {
+    const dest = join(wsDir, conventions.fronds, name);
     cpSync(join(TEMPLATES, 'fronds', template), dest, { recursive: true });
     // Only the import name. Carrying the convention is what makes a frond — the scan
     // reads directories. `fougere.frond` IS read now (`scanner.ts`, `frondNameOf`), but
@@ -90,7 +91,7 @@ export default class ProjectWriter {
     const pkgPath = join(dest, 'package.json');
     if (existsSync(pkgPath)) {
       const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as { name: string };
-      pkg.name = `@frond/${name}`;
+      pkg.name = frondPackage(name, conventions);
       writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
     }
     return { path: dest };
@@ -119,11 +120,11 @@ export default class ProjectWriter {
    * A template cannot carry it: the frond is named at composition time (`blog:catalog`),
    * so a dependency written into `templates/apps/nuxt` would name the template instead
    * and resolve to nothing. Which is what happened — the generated app imported
-   * `@frond/blog` whatever you had called it, and did not start.
+   * `@fronds/blog` whatever you had called it, and did not start.
    *
    * `fronds/` and `apps/` are the registry, like `listTemplates`: nothing to declare.
    */
-  linkFronds(wsDir: string): void {
+  linkFronds(wsDir: string, conventions: Conventions = DEFAULT_CONVENTIONS): void {
     const dirs = (kind: string): string[] => {
       const dir = join(wsDir, kind);
       if (!existsSync(dir)) return [];
@@ -131,7 +132,7 @@ export default class ProjectWriter {
       return readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name);
     };
 
-    const fronds = dirs('fronds');
+    const fronds = dirs(conventions.fronds);
     if (fronds.length === 0) return;
 
     for (const app of dirs('apps')) {
@@ -140,7 +141,7 @@ export default class ProjectWriter {
 
       const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as { dependencies?: Record<string, string> };
       pkg.dependencies ??= {};
-      for (const frond of fronds) pkg.dependencies[`@frond/${frond}`] = 'workspace:*';
+      for (const frond of fronds) pkg.dependencies[frondPackage(frond, conventions)] = 'workspace:*';
       writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
     }
   }

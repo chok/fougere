@@ -12,7 +12,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { crossFrondImports } from '../src/node.js';
 
-const frond = (name: string, path: string) => ({ name, source: { path, package: `@frond/${name}` } });
+const frond = (name: string, path: string) => ({ name, source: { path, package: `@fronds/${name}` } });
 
 describe('a relative import that leaves its frond', () => {
   it('is found, and the message names the frond it lands in', async () => {
@@ -30,7 +30,7 @@ describe('a relative import that leaves its frond', () => {
       expect(found[0].frond).toBe('blog');
       expect(found[0].target).toBe('user');
       expect(found[0].specifier).toBe('../../user/entities/User.js');
-      expect(found[0].message).toContain("'@frond/user/…'");
+      expect(found[0].message).toContain("'@fronds/user/…'");
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
@@ -59,7 +59,7 @@ describe('a relative import that leaves its frond', () => {
       mkdirSync(join(root, 'user', 'entities'), { recursive: true });
       writeFileSync(join(root, 'user', 'entities', 'User.ts'), 'export default class User {}\n');
       writeFileSync(join(root, 'blog', 'handlers', 'PostHandler.ts'),
-        `import User from '@frond/user/entities/User.js';\nexport default class PostHandler { x(u: User) { return u; } }\n`);
+        `import User from '@fronds/user/entities/User.js';\nexport default class PostHandler { x(u: User) { return u; } }\n`);
 
       expect(await crossFrondImports([frond('blog', join(root, 'blog')), frond('user', join(root, 'user'))])).toEqual([]);
     } finally {

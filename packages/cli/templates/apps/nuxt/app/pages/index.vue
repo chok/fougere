@@ -3,7 +3,7 @@
 // They take an ENTITY, so this page names none: what is composed here is yours, and a
 // scaffold that guessed at an entity shipped a page that could not run.
 //
-//   import Post from '@frond/<your-frond>/entities/Post'
+//   import Post from '@fronds/<your-frond>/entities/Post'
 //   const { items, loading } = await useQuery(Post, 'list')
 //   const { values, errors, submit } = useFormFor(Post)
 //   const { execute } = useCommand(Post, 'publish')

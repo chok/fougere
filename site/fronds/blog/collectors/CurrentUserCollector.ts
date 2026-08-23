@@ -1,6 +1,6 @@
 import { Collector } from '@fougere/core';
 import type { InvocationContext } from '@fougere/core';
-import User from '@frond/user/entities/User.js';
+import User from '@fronds/user/entities/User.js';
 
 /**
  * The auth middleware (from @fougere/nuxt) puts the session user on

@@ -1,12 +1,12 @@
 <script setup lang="ts">
 /**
- * Posts page — remote frond @frond/blog (synced via `fougere sync`)
+ * Posts page — remote frond @fronds/blog (synced via `fougere sync`)
  *
  * Same import pattern as a local frond.
  * The Entity was generated from remote metadata at build time.
  * Validation, pick/omit, Standard Schema v1 — all identical.
  */
-import Post from '@frond/blog/entities/Post';
+import Post from '@fronds/blog/entities/Post';
 
 const CreatePost = Post.omit('id', 'createdAt');
 
@@ -41,7 +41,7 @@ function fieldError(field: string) {
 
 <template>
   <div style="max-width: 600px; margin: 3rem auto; font-family: system-ui;">
-    <h1>Posts <small style="color: #888;">(remote @frond/blog, synced)</small></h1>
+    <h1>Posts <small style="color: #888;">(remote @fronds/blog, synced)</small></h1>
     <p><NuxtLink to="/">Back</NuxtLink></p>
 
     <form @submit.prevent="submit" style="display: flex; flex-direction: column; gap: 0.5rem; margin: 1rem 0;">

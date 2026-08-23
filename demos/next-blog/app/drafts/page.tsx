@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useCommand } from '@fougere/react';
-import Post from '@frond/blog/entities/Post';
+import Post from '@fronds/blog/entities/Post';
 
 /**
  * The couple. `useQuery(Post, 'drafts')` reads, `useCommand(Post, 'publish')`

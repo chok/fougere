@@ -9,11 +9,11 @@
     "declarationMap": false,
     "sourceMap": false,
     // A frond names its neighbours, it does not walk to them. The alias is what the
-    // Nuxt module registers at runtime (`@frond/<name>` → the frond directory); this
+    // Nuxt module registers at runtime (`@fronds/<name>` → the frond directory); this
     // is the same statement for the compiler.
     "paths": {
-      "@frond/blog/*": ["./blog/*"],
-      "@frond/user/*": ["./user/*"]
+      "@fronds/blog/*": ["./blog/*"],
+      "@fronds/user/*": ["./user/*"]
     }
   },
   "include": ["."]

@@ -75,7 +75,7 @@ export async function testApp(options: TestAppOptions = {}): Promise<TestApp> {
   // The position is consulted only for what the caller did not state: an explicit `root`
   // or `fronds` wins, the way a config key wins over a convention everywhere else.
   const scope = (options.root && options.fronds) ? undefined
-    : scopeOfRun(options.testPath ?? currentTestPath());
+    : await scopeOfRun(options.testPath ?? currentTestPath());
 
   // One entry per announcement, in order. `Emissions.announce` calls the carrier for
   // every fact, so this sees them all — including those nobody in this process listens to.

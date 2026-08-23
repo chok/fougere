@@ -2,7 +2,7 @@
  * Sync remote frond schemas — equivalent to `fougere sync blog --from http://localhost:4001`
  *
  * Fetches entity metadata from the remote server and generates
- * local Entity files that can be imported as @frond/blog.
+ * local Entity files that can be imported as @fronds/blog.
  *
  * Run: npx tsx sync-remote.ts
  * Requires: remote-blog server running on port 4001
@@ -89,7 +89,7 @@ async function sync() {
 
     // Package.json
     writeFileSync(join(frondDir, 'package.json'), JSON.stringify({
-      name: `@frond/${frond.name}`,
+      name: `@fronds/${frond.name}`,
       version: '0.0.0-synced',
       type: 'module',
       fougere: { frond: frond.name, synced: true, source: REMOTE_URL },

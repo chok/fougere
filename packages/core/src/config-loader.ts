@@ -2,6 +2,7 @@ import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
 import type { AuthConfig } from './boot/auth.js';
 import type { LogLevel } from './builtins/logger.js';
+import type { ConventionsInput } from './scan/conventions.js';
 import { getModuleLoader } from './loader.js';
 
 // ── Types ────────────────────────────────────────
@@ -25,8 +26,15 @@ export interface FougereConfig {
    * constraint. The DDL stops pretending rather than the `ref` being refused.
    */
   sources?: Record<string, { dialect?: 'sqlite'; path?: string; entities: string[] }>;
-  /** Directory containing fronds. Defaults to 'fronds'. */
-  frondsDir?: string;
+  /**
+   * The names the scan reads instead of deriving them — the import scope, the fronds
+   * directory, the seven convention directories.
+   *
+   * Only what differs is stated. Read BEFORE the fronds are discovered, which is what
+   * lets it name the prefix they are found under: nothing in this file may import
+   * `@fronds/*`, or the name would be needed to read the file that declares it.
+   */
+  conventions?: ConventionsInput;
   /**
    * How much every logger says. The one key a running app CONSULTS rather than
    * consumes, so re-reading this file changes it without rebuilding anything.

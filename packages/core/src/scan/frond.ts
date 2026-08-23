@@ -159,7 +159,7 @@ export type SeedFactory = (resolve: <T>(name: string) => T) => Promise<Record<st
 export interface FrondSource {
   /** Absolute path to the frond directory. */
   path: string;
-  /** The @frond/{name} package name. Always present. */
+  /** The @fronds/{name} package name. Always present. */
   package: string;
 }
 

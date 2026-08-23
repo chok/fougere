@@ -37,12 +37,14 @@ describe('the project a path belongs to', () => {
 });
 
 describe('the scope a test file declares', () => {
-  it('names the project and the frond under test', () => {
-    expect(scopeOf(join(fixtures, 'fronds/press/tests/x.test.ts')))
+  // Asynchronous because the root has to be found before its config can say what the
+  // fronds directory is called — the one order that lets that name be declared at all.
+  it('names the project and the frond under test', async () => {
+    expect(await scopeOf(join(fixtures, 'fronds/press/tests/x.test.ts')))
       .toEqual({ root: fixtures, frond: 'press' });
   });
 
-  it('names the project alone when the file sits above the fronds', () => {
-    expect(scopeOf(join(fixtures, 'tests/x.test.ts'))).toEqual({ root: fixtures });
+  it('names the project alone when the file sits above the fronds', async () => {
+    expect(await scopeOf(join(fixtures, 'tests/x.test.ts'))).toEqual({ root: fixtures });
   });
 });

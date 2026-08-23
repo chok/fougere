@@ -8,7 +8,7 @@
  *
  * ```ts
  * import User from '../../user/entities/User.js';   // these two folders are neighbours
- * import User from '@frond/user/entities/User';     // I depend on the frond named user
+ * import User from '@fronds/user/entities/User';    // I depend on the frond named user
  * ```
  *
  * Both resolve today, and that is exactly the trap: a frond declared in `remotes:` is
@@ -82,7 +82,11 @@ export async function crossFrondImports(
   fronds: ReadonlyArray<Pick<FrondDescriptor, 'name' | 'source'>>,
 ): Promise<CrossFrondImport[]> {
   const typescript = await loadTs();
-  const roots = fronds.map((frond) => ({ name: frond.name, path: resolve(frond.source.path) }));
+  // `source.package` is the scoped name the scan already resolved — the remedy this rule
+  // prints must be the name that actually resolves, not one rebuilt from a prefix here.
+  const roots = fronds.map((frond) => ({
+    name: frond.name, path: resolve(frond.source.path), package: frond.source.package,
+  }));
   const found: CrossFrondImport[] = [];
 
   for (const root of roots) {
@@ -105,7 +109,7 @@ export async function crossFrondImports(
           message: target
             ? `'${specifier}' resolves into frond '${target.name}'. A relative path states that `
               + `these two fronds share a directory tree — a constraint nothing declares, and one `
-              + `that nothing here can see. Write '@frond/${target.name}/…' instead: it says the `
+              + `that nothing here can see. Write '${target.package}/…' instead: it says the `
               + `same dependency in terms the model reads, and it is the form \`fougere sync\` writes, `
               + `so it survives '${target.name}' moving out.`
             : `'${specifier}' resolves outside frond '${root.name}', into no frond at all. `

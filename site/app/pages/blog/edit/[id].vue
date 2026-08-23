@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Post from '@frond/blog/entities/Post';
+import Post from '@fronds/blog/entities/Post';
 
 const route = useRoute();
 const { t } = useI18n();

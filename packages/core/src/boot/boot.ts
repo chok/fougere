@@ -86,7 +86,7 @@ export async function boot(options: BootOptions): Promise<App> {
   const app = await createApp({
     // boot() lives on the Node entry, so boot() is what reads the disk. `createApp` is
     // handed the answer and reaches for nothing.
-    scan: await scanProject(root, options.fronds),
+    scan: await scanProject(root, options.fronds, config.conventions),
     createContainer: options.createContainer,
     ormFactory: dbSetup?.ormFactory,
     db: dbSetup?.db,

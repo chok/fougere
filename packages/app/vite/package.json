@@ -35,6 +35,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
+    "@fougere/core": "workspace:*",
     "terser": "^5.44.0"
   },
   "devDependencies": {

@@ -1,7 +1,7 @@
 import { Crud, FougereError, ErrorCode } from '@fougere/core';
 import Post from '../entities/Post.js';
 import PostRepository from '../repositories/PostRepository.js';
-import User from '@frond/user/entities/User.js';
+import User from '@fronds/user/entities/User.js';
 
 /** What an author may write — the io axes already exclude the server-owned fields. */
 export class PostDraft extends Post.pick('slug', 'title', 'summary', 'body') {}

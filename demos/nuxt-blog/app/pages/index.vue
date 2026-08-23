@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import Post from '@frond/blog/entities/Post';
-import Author from '@frond/blog/entities/Author';
-import Category from '@frond/blog/entities/Category';
+import Post from '@fronds/blog/entities/Post';
+import Author from '@fronds/blog/entities/Author';
+import Category from '@fronds/blog/entities/Category';
 
 const { user } = useCurrentUser();
 

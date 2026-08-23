@@ -1,6 +1,6 @@
 import type { Emit, Fact } from '@fougere/core';
-import type Reading from '@frond/fleet/entities/Reading.js';
-import type Recalibrate from '@frond/fleet/entities/Recalibrate.js';
+import type Reading from '@fronds/fleet/entities/Reading.js';
+import type Recalibrate from '@fronds/fleet/entities/Recalibrate.js';
 
 /**
  * A device. It announces its readings and listens for orders, and it names no hub.

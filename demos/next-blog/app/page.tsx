@@ -1,5 +1,5 @@
 import { invoke } from '@fougere/next';
-import Post from '@frond/blog/entities/Post';
+import Post from '@fronds/blog/entities/Post';
 
 /**
  * A server component reading a Frond directly — no fetch, no endpoint, no route.

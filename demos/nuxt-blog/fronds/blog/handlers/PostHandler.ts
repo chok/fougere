@@ -1,6 +1,6 @@
 import { Crud, FougereError, ErrorCode } from '@fougere/core';
 import Post from '../entities/Post.js';
-import User from '@frond/user/entities/User.js';
+import User from '@fronds/user/entities/User.js';
 
 export class SearchByTitleInput extends Post.pick('title') {}
 export class SearchByTitleOutput extends Post.pick('id', 'title') {}

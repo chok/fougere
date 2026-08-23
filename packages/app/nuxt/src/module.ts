@@ -16,7 +16,10 @@ import {
 } from '@nuxt/kit';
 import type { Nuxt } from '@nuxt/schema';
 import { orderSeeds } from '@fougere/core';
-import { scanProject, emitScan, frondAliases, FROND_DIRS, setModuleLoader, loadCascadedConfig } from '@fougere/core/node';
+import {
+  scanProject, emitScan, frondAliases, frondDirsOf, resolveConventions, type Conventions,
+  setModuleLoader, loadCascadedConfig,
+} from '@fougere/core/node';
 import { declaresStorage } from '@fougere/defaults';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
 import { createJiti } from 'jiti';
@@ -26,7 +29,6 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 export interface FougereModuleOptions {
   /** Override fougere.config.ts values from nuxt.config. Optional. */
   db?: FougereConfig['db'];
-  frondsDir?: string;
   /**
    * Where `fronds/` lives, relative to the app's rootDir. Default: the app
    * itself. Set to `../..` for an app under `apps/*` in a workspace whose
@@ -40,10 +42,6 @@ const module = defineNuxtModule<FougereModuleOptions>({
   meta: {
     name: '@fougere/nuxt',
     configKey: 'fougere',
-  },
-
-  defaults: {
-    frondsDir: 'fronds',
   },
 
   async setup(options: FougereModuleOptions, nuxt: Nuxt) {
@@ -76,12 +74,20 @@ const module = defineNuxtModule<FougereModuleOptions>({
       nitroConfig.experimental = { ...nitroConfig.experimental, asyncContext: true };
     });
 
-    // ── 0. Setup TS-aware module loader before reading any user config ──
+    // ── 0. A TS-aware loader, installed twice on purpose ──
     // The Vite alias below covers `.vue` pages; this covers the SCAN, which loads a
-    // frond's own sources — so `@frond/user/entities/User.js` inside a handler resolves
+    // frond's own sources — so `@fronds/user/entities/User.js` inside a handler resolves
     // for the same reason it does in a page.
-    const jiti = createJiti(import.meta.url, { interopDefault: true, alias: await frondAliases(scanRoot) });
-    setModuleLoader((filePath) => jiti.import(filePath) as Promise<Record<string, unknown>>);
+    //
+    // The FIRST install carries no aliases, because the config names the scope they are
+    // built from: reading it must not need them. Safe because nothing in
+    // `fougere.config.ts` may import `@fronds/*` — the one import that would need the
+    // name to read the file that declares it.
+    const installLoader = (alias?: Record<string, string>): void => {
+      const jiti = createJiti(import.meta.url, { interopDefault: true, ...(alias ? { alias } : {}) });
+      setModuleLoader((filePath) => jiti.import(filePath) as Promise<Record<string, unknown>>);
+    };
+    installLoader();
 
     // ── 0b. Load fougere.config.ts along the workspace→app cascade (scanRoot is
     //        the workspace when the app declares `root`); module options override. ──
@@ -90,13 +96,18 @@ const module = defineNuxtModule<FougereModuleOptions>({
       Object.entries(options).filter(([, v]) => v !== undefined),
     ) as Partial<FougereConfig>;
     const config: FougereConfig = { db: 'sqlite', ...fileConfig, ...optionsOverride };
+    const conventions = resolveConventions(config.conventions);
+
+    // Now the names are known, so the loader can resolve them — and the scan below runs
+    // with them installed, which is what lets it read a frond that names its neighbour.
+    installLoader(await frondAliases(scanRoot, conventions));
 
     // ── 1. Scan fronds (filtered by FOUGERE_FRONDS env var) ──
     const frondsFilter = process.env.FOUGERE_FRONDS?.split(',').map((s) => s.trim()).filter(Boolean);
-    const scan = await scanProject(scanRoot, frondsFilter);
+    const scan = await scanProject(scanRoot, frondsFilter, conventions);
     const { fronds } = scan;
 
-    // ── 1b. Register @frond/* aliases for all fronds, and watch them ──
+    // ── 1b. Register @fronds/* aliases for all fronds, and watch them ──
     // The scanned fronds ARE the watch list — nothing to declare. Without this, a
     // frond under `apps/../..` sits outside rootDir, so Nuxt never restarts: the scan,
     // the additive migration (once per boot) and the seeds all keep the previous shape,
@@ -105,9 +116,9 @@ const module = defineNuxtModule<FougereModuleOptions>({
     // the project — `.nuxt/`, `node_modules/`, the build output. Its convention
     // directories are the frond, and they are what changes when the domain changes.
     for (const frond of fronds) {
-      nuxt.options.alias[`@frond/${frond.name}`] = frond.source.path;
+      nuxt.options.alias[frond.source.package] = frond.source.path;
       const watched = frond.source.path === scanRoot
-        ? FROND_DIRS.map((dir) => resolve(scanRoot, dir))
+        ? frondDirsOf(conventions).map((dir) => resolve(scanRoot, dir))
         : [frond.source.path];
       nuxt.options.watch.push(...watched);
     }
@@ -134,7 +145,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
     // letter, which is the only reason it was findable at all.
     const designated = [
       ...fronds.flatMap((frond) => frond.entities.map((e) => (e.entityClass as unknown as { name: string }).name)),
-      ...(await syncedEntityNames(rootDir)),
+      ...(await syncedEntityNames(rootDir, conventions)),
     ];
     const entityNames = [...new Set(designated)];
     if (Object.keys(config.remotes ?? {}).length > 0 && entityNames.length === 0) {
@@ -160,8 +171,9 @@ const module = defineNuxtModule<FougereModuleOptions>({
         const remotes = JSON.parse(readFileSync(remotesPath, 'utf-8')) as Record<string, { url: string; path: string }>;
         for (const [name, meta] of Object.entries(remotes)) {
           // Don't override locally scanned fronds
-          if (!nuxt.options.alias[`@frond/${name}`]) {
-            nuxt.options.alias[`@frond/${name}`] = meta.path;
+          const specifier = `${conventions.scope}/${name}`;
+          if (!nuxt.options.alias[specifier]) {
+            nuxt.options.alias[specifier] = meta.path;
             // Ensure Vite/Nitro can resolve files inside synced remotes
             nuxt.options.build.transpile.push(meta.path);
           }
@@ -282,14 +294,14 @@ function carried(config: FougereConfig): Partial<FougereConfig> {
  * By filename and not by loading them: this runs before the loader is installed, and a
  * class file is named after its class by the same convention the scan reads.
  */
-async function syncedEntityNames(rootDir: string): Promise<string[]> {
+async function syncedEntityNames(rootDir: string, conventions: Conventions): Promise<string[]> {
   const remotesPath = resolve(rootDir, '.fougere', 'remotes.json');
   if (!existsSync(remotesPath)) return [];
   try {
     const remotes = JSON.parse(readFileSync(remotesPath, 'utf-8')) as Record<string, { path: string }>;
     const names: string[] = [];
     for (const { path } of Object.values(remotes)) {
-      const dir = resolve(path, 'entities');
+      const dir = resolve(path, conventions.dirs.entities);
       if (!existsSync(dir)) continue;
       for (const file of readdirSync(dir)) {
         const name = file.replace(/\.(ts|js|tsx)$/, '');

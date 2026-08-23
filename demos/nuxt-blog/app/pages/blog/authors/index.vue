@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Author from '@frond/blog/entities/Author';
+import Author from '@fronds/blog/entities/Author';
 
 interface AuthorRow { id: string; name: string; email: string; bio?: string }
 const { items: authors, loading: pending } = await useQuery<AuthorRow>(Author, 'list');

@@ -168,7 +168,15 @@ async function boot(): Promise<App> {
   //
   // Installed twice: the config names the scope the aliases are built from, so reading it
   // must not need them. Nothing in `fougere.config.ts` may import `@fronds/*`.
+  //
+  // And installed only when something is going to READ a source. A host that handed in
+  // both its scan and its config has nothing left to load, and jiti cannot run where
+  // there is no module resolver: measured on workerd, `createJiti` threw
+  // `Cannot read properties of undefined (reading 'paths')` and every request answered
+  // 500 — the loader was being built for files that no longer needed opening.
+  const reads = _config.scan === undefined || _config.config === undefined;
   const installLoader = (alias?: Record<string, string>): void => {
+    if (!reads) return;
     const jiti = createJiti(import.meta.url, { interopDefault: true, ...(alias ? { alias } : {}) });
     setModuleLoader((filePath) => jiti.import(filePath) as Promise<Record<string, unknown>>);
   };
@@ -184,7 +192,9 @@ async function boot(): Promise<App> {
   const fileConfig: FougereConfig = (_config.config as FougereConfig | undefined)
     ?? (await loadCascadedConfig(root, configRoot));
   const conventions = resolveConventions(fileConfig.conventions);
-  installLoader(await frondAliases(root, conventions));
+  // `frondAliases` reads a directory listing, so it is asked only when the loader it
+  // feeds is going to exist at all.
+  if (reads) installLoader(await frondAliases(root, conventions));
 
   // Auto-resolve the data layer from config.db when the user didn't provide a
   // custom one via configureFougere. The resolution itself lives in @fougere/defaults

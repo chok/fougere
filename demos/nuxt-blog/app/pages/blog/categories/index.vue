@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Category from '@frond/blog/entities/Category';
+import Category from '@fronds/blog/entities/Category';
 
 interface CategoryRow { id: string; name: string }
 const { items: categories, loading: pending } = await useQuery<CategoryRow>(Category, 'list');

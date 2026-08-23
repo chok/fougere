@@ -13,7 +13,7 @@
     "isolatedModules": true,
     "types": ["node", "vite/client"],
     "paths": {
-      "@frond/blog/*": ["./fronds/blog/*"]
+      "@fronds/blog/*": ["./fronds/blog/*"]
     }
   },
   "include": ["src", "vite.config.ts"],

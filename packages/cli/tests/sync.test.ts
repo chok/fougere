@@ -197,7 +197,7 @@ describe('remote frond sync', () => {
    *
    * The barrel is rewritten each run, so a dropped entity loses its export by itself — but
    * the FILE stayed, and the generated `package.json` exports `'./entities/*'` as a
-   * wildcard. So `@frond/blog/entities/Ticket.js` kept resolving to a class that validates
+   * wildcard. So `@fronds/blog/entities/Ticket.js` kept resolving to a class that validates
    * perfectly and that nothing behind it answers for.
    */
   it('removes what the host no longer serves, and only what it wrote itself', async () => {

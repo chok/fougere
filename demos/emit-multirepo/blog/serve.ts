@@ -18,7 +18,7 @@ async function main() {
   const { createJiti } = await import('jiti');
   const jiti = createJiti(import.meta.url, {
     interopDefault: true,
-    // `@frond/<name>` is how a frond names its neighbour; the loader has to know it.
+    // `@fronds/<name>` is how a frond names its neighbour; the loader has to know it.
     alias: await frondAliases(import.meta.dirname),
   });
   setModuleLoader((path) => jiti.import(path) as Promise<Record<string, unknown>>);

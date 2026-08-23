@@ -5,6 +5,9 @@ import { entitySourceOf, facadeTypeSourceOf, type SchemaDescriptor } from '@foug
 // lived in this file and went stale the day an op stopped being a bare name: nothing
 // compared the copy to the original, so the drift cost nothing until someone read it.
 import { assertIdentityCard, type IdentityCard } from '@fougere/core';
+import {
+  type Conventions, loadConfig, resolveConventions, frondPackage,
+} from '@fougere/core/node';
 
 function assertSafeName(kind: string, name: string): void {
   if (typeof name !== 'string' || !/^[A-Za-z_$][A-Za-z0-9_$-]*$/.test(name)) {
@@ -123,9 +126,15 @@ export default class SyncHandler {
       throw new Error(`Frond '${input.name}' not found on ${baseUrl}. Available: ${card.fronds.map((f) => f.name).join(', ')}`);
     }
 
+    // The consumer's own convention: a synced frond is laid out like the ones they wrote,
+    // and the export map below is what makes `@fronds/<name>/<dir>/X.js` resolve.
+    const conventions = resolveConventions((await loadConfig(this.cwd)).conventions);
+    const entities = conventions.dirs.entities;
+    const handlers = conventions.dirs.handlers;
+
     const frondDir = join(this.cwd, '.fougere', 'remotes', input.name);
-    const entitiesDir = join(frondDir, 'entities');
-    const handlersDir = join(frondDir, 'handlers');
+    const entitiesDir = join(frondDir, entities);
+    const handlersDir = join(frondDir, handlers);
     mkdirSync(entitiesDir, { recursive: true });
     mkdirSync(handlersDir, { recursive: true });
 
@@ -223,21 +232,21 @@ export default class SyncHandler {
     // One binding carries the value AND the type, because a class is both — the pair of
     // re-exports that stood here was the price of declaring them separately.
     const indexLines = [...generated].flatMap(([name, { row, door }]) => [
-      ...(row ? [`export { default as ${name} } from './entities/${name}.js';`] : []),
-      ...(door ? [`export type { ${name}Handler } from './handlers/${name}Handler.js';`] : []),
+      ...(row ? [`export { default as ${name} } from './${entities}/${name}.js';`] : []),
+      ...(door ? [`export type { ${name}Handler } from './${handlers}/${name}Handler.js';`] : []),
     ]);
     writeFileSync(join(frondDir, 'index.ts'), indexLines.join('\n') + '\n');
 
     // Package.json
     writeFileSync(join(frondDir, 'package.json'), JSON.stringify({
-      name: `@frond/${input.name}`,
+      name: frondPackage(input.name, conventions),
       version: '0.0.0-synced',
       type: 'module',
       fougere: { frond: input.name, synced: true, source: baseUrl },
       exports: {
         '.': './index.ts',
-        './entities/*': './entities/*.ts',
-        './handlers/*': './handlers/*.ts',
+        [`./${entities}/*`]: `./${entities}/*.ts`,
+        [`./${handlers}/*`]: `./${handlers}/*.ts`,
         './package.json': './package.json',
       },
     }, null, 2) + '\n');
@@ -246,14 +255,14 @@ export default class SyncHandler {
     this.updateRemotesRegistry(input.name, baseUrl, frondDir);
 
     // Update tsconfig paths if tsconfig.json exists (non-Nuxt projects)
-    this.updateTsconfigPaths(input.name, frondDir);
+    this.updateTsconfigPaths(input.name, frondDir, conventions);
 
     /**
      * What the host no longer serves stops being importable here.
      *
      * The barrel is rewritten every run, so a dropped entity loses its export on its own
      * — but the FILE stayed, and the generated `package.json` exports `'./entities/*'` as
-     * a wildcard, so `@frond/blog/entities/Ticket.js` kept resolving to a class nothing
+     * a wildcard, so `@fronds/blog/entities/Ticket.js` kept resolving to a class nothing
      * behind it answers for. The consumer compiles, its local judge accepts, and the call
      * comes back NOT_FOUND at the door — or never leaves, because the page dropped the
      * call and kept the type.
@@ -298,8 +307,8 @@ export default class SyncHandler {
     writeFileSync(registryPath, JSON.stringify(registry, null, 2) + '\n');
   }
 
-  /** Add @frond/{name} to tsconfig paths if tsconfig.json exists. */
-  private updateTsconfigPaths(name: string, localPath: string): void {
+  /** Add the frond's scoped name to tsconfig paths if tsconfig.json exists. */
+  private updateTsconfigPaths(name: string, localPath: string, conventions: Conventions): void {
     const tsconfigPath = join(this.cwd, 'tsconfig.json');
     if (!existsSync(tsconfigPath)) return;
 
@@ -314,8 +323,8 @@ export default class SyncHandler {
       tsconfig.compilerOptions.paths ??= {};
 
       const relative = localPath.replace(this.cwd, '.').replace(/\\/g, '/');
-      tsconfig.compilerOptions.paths[`@frond/${name}`] = [`${relative}/index.ts`];
-      tsconfig.compilerOptions.paths[`@frond/${name}/*`] = [`${relative}/*`];
+      tsconfig.compilerOptions.paths[frondPackage(name, conventions)] = [`${relative}/index.ts`];
+      tsconfig.compilerOptions.paths[`${frondPackage(name, conventions)}/*`] = [`${relative}/*`];
 
       writeFileSync(tsconfigPath, JSON.stringify(tsconfig, null, 2) + '\n');
     } catch { /* tsconfig parse error — skip */ }

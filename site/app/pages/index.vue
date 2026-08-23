@@ -30,7 +30,7 @@ const judgeSnippet = `class PostHandler extends Crud(Post) {
   }
 }`;
 
-const consumeSnippet = `import Post from '@frond/blog/entities/Post';
+const consumeSnippet = `import Post from '@fronds/blog/entities/Post';
 
 const { items } = await useQuery(Post, 'list');
 const publish = useCommand(Post, 'publish');

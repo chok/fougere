@@ -200,6 +200,9 @@ importers:
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../../packages/schema
+      '@fougere/transport-http':
+        specifier: workspace:*
+        version: link:../../../packages/transport/http
       nuxt:
         specifier: ^4.5.1
         version: 4.5.1(@babel/plugin-syntax-jsx@7.29.7(@babel/core@7.29.7(supports-color@10.2.2)))(@babel/plugin-syntax-typescript@7.29.7(@babel/core@7.29.7(supports-color@10.2.2)))(@oxc-project/types@0.142.0)(@parcel/watcher@2.5.6)(@types/node@22.19.15)(@vue/compiler-sfc@3.5.40)(better-sqlite3@13.0.3)(cac@6.7.14)(commander@15.0.0)(db0@0.3.4(better-sqlite3@13.0.3))(esbuild@0.28.1)(eslint@10.7.0(jiti@2.7.0)(supports-color@10.2.2))(ioredis@5.10.1(supports-color@10.2.2))(lightningcss@1.33.0)(magicast@0.5.4)(optionator@0.9.4)(oxc-parser@0.142.0)(oxlint@1.78.0)(rollup-plugin-visualizer@7.0.1(rolldown@1.2.2)(rollup@4.62.4))(rollup@4.62.4)(supports-color@10.2.2)(terser@5.46.1)(tsx@4.21.0)(typescript@7.0.2)(vite@8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))(vue-tsc@3.3.9(typescript@7.0.2))(webpack@5.109.2(@swc/core@1.15.21)(cssnano@8.0.2(postcss@8.5.25))(csso@5.0.5)(esbuild@0.28.1)(lightningcss@1.33.0)(postcss@8.5.25))(yaml@2.9.0)
@@ -1263,6 +1266,9 @@ importers:
 
   packages/app/vite:
     dependencies:
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../core
       terser:
         specifier: ^5.44.0
         version: 5.46.1

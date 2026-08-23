@@ -16,6 +16,10 @@ import { ownedBy, repositoryKeyOf } from '../prefab/repository.js';
 import { registrationKeyOf } from '@fougere/schema';
 import { Fronds } from './Fronds.js';
 import { getModuleLoader } from '../loader.js';
+import {
+  type Conventions, type ConventionsInput,
+  DEFAULT_CONVENTIONS, resolveConventions, frondPackage, providerDirsOf,
+} from './conventions.js';
 
 // FS
 
@@ -102,22 +106,6 @@ function findWorkspaceRoot(from: string): string {
   }
   return resolvePath(from); // fallback: use project root itself
 }
-
-// Convention
-
-/** Directories whose classes register as providers — two spellings, one behaviour. */
-const PROVIDER_DIRS = ['services', 'repositories'] as const;
-
-/**
- * The frond vocabulary — every directory {@link scanFrond} reads. A frond directory says
- * nothing else, which is why this list is what a reader needs to bound one: the Nuxt
- * module watches these for the root frond (watching the root itself would match every
- * write), and a flat app's tsconfig lists them instead of `["."]`, which would swallow
- * `app/` and `nuxt.config.ts`.
- */
-export const FROND_DIRS = [
-  'entities', 'handlers', 'presenters', 'collectors', 'seeds', ...PROVIDER_DIRS,
-] as const;
 
 /**
  * Strip the 'Handler' suffix → the name the handler answers to. 'PostHandler' → 'post'.
@@ -452,7 +440,11 @@ async function toCollectorEntry(filePath: string): Promise<CollectorEntry | null
   return { typeName, ctor, deps, filePath };
 }
 
-async function scanFrond(frondPath: string, name: string, source: FrondDescriptor['source'], projectRoot?: string): Promise<FrondDescriptor> {
+async function scanFrond(frondPath: string, name: string, source: FrondDescriptor['source'], conventions: Conventions, projectRoot?: string): Promise<FrondDescriptor> {
+  const {
+    entities: entitiesDir, handlers: handlersDir,
+    presenters: presentersDir, collectors: collectorsDir, seeds: seedsDir,
+  } = conventions.dirs;
   /**
    * A convention directory, read by whoever knows the shape it holds.
    *
@@ -469,25 +461,25 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
   };
 
   // services/ and repositories/ — two spellings, one provider list.
-  const providers = (await Promise.all(PROVIDER_DIRS.map((dir) => collect(dir, toProvider)))).flat();
-  const entities = await collect('entities', toEntityEntry);
+  const providers = (await Promise.all(providerDirsOf(conventions).map((dir) => collect(dir, toProvider)))).flat();
+  const entities = await collect(entitiesDir, toEntityEntry);
 
   // Handlers resolve `T` against the entities, so those come first.
   const entityByClassName = new Map(
     entities.map((e) => [(e.entityClass as { name: string }).name, e.entityClass]),
   );
-  const handlers = await collect('handlers', (f) => toHandlerEntry(f, entityByClassName, projectRoot));
+  const handlers = await collect(handlersDir, (f) => toHandlerEntry(f, entityByClassName, projectRoot));
 
   // A subdirectory of handlers/ is a named surface — the one directory whose CHILDREN
   // are part of the convention too.
-  for (const surface of await dirs(join(frondPath, 'handlers'))) {
-    handlers.push(...await collect(join('handlers', surface), (f) =>
+  for (const surface of await dirs(join(frondPath, handlersDir))) {
+    handlers.push(...await collect(join(handlersDir, surface), (f) =>
       toHandlerEntry(f, entityByClassName, projectRoot, surface)));
   }
 
-  const presenters = await collect('presenters', toPresenterEntry);
-  const collectors = await collect('collectors', toCollectorEntry);
-  const seeds = await collect('seeds', toSeedEntry);
+  const presenters = await collect(presentersDir, toPresenterEntry);
+  const collectors = await collect(collectorsDir, toCollectorEntry);
+  const seeds = await collect(seedsDir, toSeedEntry);
 
   // Mark exposed entries: frond.config.ts takes precedence, then @expose decorator
   const frondConfig = await loadFrondConfig(frondPath);
@@ -546,7 +538,7 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
  * Carrying the convention is what makes a frond; the key never marked anything and
  * nothing read it. It earns its keep as the one thing the directory cannot say: that
  * `fronds/blog-v2/` serves the frond still called `blog` — so a rename on disk does not
- * rename the entity keys, the `@frond/*` import or a `remotes:` entry.
+ * rename the entity keys, the `@fronds/*` import or a `remotes:` entry.
  */
 async function frondNameOf(frondPath: string, dirName: string): Promise<string> {
   try {
@@ -571,20 +563,20 @@ async function frondNameOf(frondPath: string, dirName: string): Promise<string> 
  * are ordinary top-level names in projects that never heard of Fougere, and a domain
  * without a single entity is not a domain.
  */
-async function rootFrondOf(root: string, workspaceRoot: string): Promise<FrondDescriptor | null> {
-  if ((await files(join(root, 'entities'))).length === 0) return null;
+async function rootFrondOf(root: string, workspaceRoot: string, conventions: Conventions): Promise<FrondDescriptor | null> {
+  if ((await files(join(root, conventions.dirs.entities))).length === 0) return null;
   const name = await frondNameOf(root, basename(resolvePath(root)));
-  return scanFrond(root, name, { path: root, package: `@frond/${name}` }, workspaceRoot);
+  return scanFrond(root, name, { path: root, package: frondPackage(name, conventions) }, conventions, workspaceRoot);
 }
 
 /**
- * `@frond/<name>` → the directory it names, for every frond of a project.
+ * `@fronds/<name>` → the directory it names, for every frond of a project.
  *
  * The framework states this convention — `FrondSource.package` has always spelled it, and
  * `fougere sync` writes it into a consumer's tsconfig — and until now its own reader could
  * not resolve it. The Nuxt module registered a Vite alias, so a `.vue` page could import
- * `@frond/blog/entities/Post`, while the SCAN loaded sources through a bare jiti: a frond
- * naming its neighbour got `Cannot find module '@frond/user/entities/User.js'`. So the one
+ * `@fronds/blog/entities/Post`, while the SCAN loaded sources through a bare jiti: a frond
+ * naming its neighbour got `Cannot find module '@fronds/user/entities/User.js'`. So the one
  * form that survives a split was the one form that did not run.
  *
  * Hand it to the module loader — `createJiti(url, { alias: await frondAliases(root) })` —
@@ -592,25 +584,25 @@ async function rootFrondOf(root: string, workspaceRoot: string): Promise<FrondDe
  * `package.json` read, no parsing: it is deliberately callable BEFORE the loader exists,
  * which is what makes the chicken-and-egg go away.
  */
-export async function frondAliases(root: string): Promise<Record<string, string>> {
-  const frondsDir = join(root, 'fronds');
+export async function frondAliases(root: string, conventions: Conventions = DEFAULT_CONVENTIONS): Promise<Record<string, string>> {
+  const frondsDir = join(root, conventions.fronds);
   const aliases: Record<string, string> = {};
 
   // The root itself is a frond when it carries `entities/` — same rule as the scan.
-  if ((await files(join(root, 'entities'))).length > 0) {
-    aliases[`@frond/${await frondNameOf(root, basename(resolvePath(root)))}`] = resolvePath(root);
+  if ((await files(join(root, conventions.dirs.entities))).length > 0) {
+    aliases[frondPackage(await frondNameOf(root, basename(resolvePath(root))), conventions)] = resolvePath(root);
   }
   for (const dir of await dirs(frondsDir)) {
     const path = join(frondsDir, dir);
-    aliases[`@frond/${await frondNameOf(path, dir)}`] = resolvePath(path);
+    aliases[frondPackage(await frondNameOf(path, dir), conventions)] = resolvePath(path);
   }
 
   /**
    * A SYNCED frond answers to the same name.
    *
    * `fougere sync` writes `.fougere/remotes/<name>/` and registers it in `remotes.json`,
-   * which the Nuxt module already reads to alias `@frond/<name>`. Doing it here too is
-   * what makes the convention mean ONE thing: a consumer writes `@frond/blog/entities/Post`
+   * which the Nuxt module already reads to alias `@fronds/<name>`. Doing it here too is
+   * what makes the convention mean ONE thing: a consumer writes `@fronds/blog/entities/Post`
    * and never learns whether that frond is on this disk or was fetched from a card.
    *
    * A local frond wins a name collision — its source is the truth, a synced copy is a
@@ -621,8 +613,8 @@ export async function frondAliases(root: string): Promise<Record<string, string>
       await readFile(join(root, '.fougere', 'remotes.json'), 'utf8'),
     ) as Record<string, { path?: string }>;
     for (const [name, entry] of Object.entries(registry)) {
-      if (typeof entry?.path !== 'string' || aliases[`@frond/${name}`]) continue;
-      aliases[`@frond/${name}`] = resolvePath(entry.path);
+      if (typeof entry?.path !== 'string' || aliases[frondPackage(name, conventions)]) continue;
+      aliases[frondPackage(name, conventions)] = resolvePath(entry.path);
     }
   } catch {
     // No registry, or an unreadable one: nothing was synced here. Not this function's
@@ -632,26 +624,32 @@ export async function frondAliases(root: string): Promise<Record<string, string>
   return aliases;
 }
 
-export async function scanProject(root: string, filter?: string[]): Promise<ScanResult> {
+export async function scanProject(
+  root: string,
+  filter?: string[],
+  conventionsInput?: ConventionsInput,
+): Promise<ScanResult> {
+  const conventions = resolveConventions(conventionsInput);
   setCacheRoot(root);
   // A run owns its findings: two scans in one process (a test suite, a watcher)
   // must not inherit each other's.
   diagnostics = [];
 
-  const frondsDir = join(root, 'fronds');
+  const frondsDir = join(root, conventions.fronds);
   const dirNames = await dirs(frondsDir);
   // Resolve workspace root (parent of packages/) for package import resolution
   // For monorepo: root is the project dir (e.g. demos/nuxt-blog), workspace root is the repo root
   const workspaceRoot = findWorkspaceRoot(root);
 
   const [rootFrond, under] = await Promise.all([
-    rootFrondOf(root, workspaceRoot),
+    rootFrondOf(root, workspaceRoot, conventions),
     Promise.all(
       dirNames.map(async (dir) => {
         const name = await frondNameOf(join(frondsDir, dir), dir);
         return scanFrond(
           join(frondsDir, dir), name,
-          { path: join(frondsDir, dir), package: `@frond/${name}` },
+          { path: join(frondsDir, dir), package: frondPackage(name, conventions) },
+          conventions,
           workspaceRoot,
         );
       }),

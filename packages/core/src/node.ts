@@ -11,7 +11,11 @@
  */
 export { boot } from './boot/boot.js';
 
-export { scanProject, frondAliases, FROND_DIRS } from './scan/scanner.js';
+export { scanProject, frondAliases } from './scan/scanner.js';
+export {
+  type Conventions, type ConventionsInput, DEFAULT_CONVENTIONS,
+  resolveConventions, frondPackage, frondDirsOf, providerDirsOf,
+} from './scan/conventions.js';
 export { emitScan, type EmitOptions } from './scan/emit.js';
 export { setModuleLoader, getModuleLoader } from './loader.js';
 export { loadConfig, loadCascadedConfig } from './config-loader.js';

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Post from '@frond/blog/entities/Post';
+import Post from '@fronds/blog/entities/Post';
 
 const { values, errors, submit, loading, error } = useFormFor(Post);
 

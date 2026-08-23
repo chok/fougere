@@ -220,19 +220,19 @@ describe('frond naming', () => {
     const result = await scanProject(nameRoot);
     const plain = result.fronds.find((f) => f.source.path.endsWith('plain'))!;
     expect(plain.name).toBe('plain');
-    expect(plain.source.package).toBe('@frond/plain');
+    expect(plain.source.package).toBe('@fronds/plain');
   });
 
   /**
    * The one thing the directory cannot say. `fronds/blog-v2/` still serves the frond
-   * called `blog`, so renaming on disk does not rename the entity keys, the `@frond/*`
+   * called `blog`, so renaming on disk does not rename the entity keys, the `@fronds/*`
    * import, or a `remotes:` entry pointing at it.
    */
   it('honours `fougere.frond` in package.json as a rename', async () => {
     const result = await scanProject(nameRoot);
     const renamed = result.fronds.find((f) => f.source.path.endsWith('blog-v2'))!;
     expect(renamed.name).toBe('blog');
-    expect(renamed.source.package).toBe('@frond/blog');
+    expect(renamed.source.package).toBe('@fronds/blog');
     expect(renamed.entities.map((e) => e.name)).toEqual(['note']);
   });
 
@@ -258,7 +258,7 @@ describe('the root frond', () => {
 
     const shop = result.fronds[0]!;
     expect(shop.source.path).toBe(join(rootFixtures, 'shop'));
-    expect(shop.source.package).toBe('@frond/shop');
+    expect(shop.source.package).toBe('@fronds/shop');
     expect(shop.entities.map((e) => e.name)).toEqual(['product']);
     expect(shop.handlers.map((h) => h.address)).toEqual(['product']);
   });
@@ -274,7 +274,7 @@ describe('the root frond', () => {
   it('honours `fougere.frond` on the root package.json too', async () => {
     const result = await scanProject(join(rootFixtures, 'renamed'));
     expect(result.fronds.map((f) => f.name)).toEqual(['shop']);
-    expect(result.fronds[0]!.source.package).toBe('@frond/shop');
+    expect(result.fronds[0]!.source.package).toBe('@fronds/shop');
   });
 
   /** `entities/` is the test — `services/` is an ordinary top-level name elsewhere. */

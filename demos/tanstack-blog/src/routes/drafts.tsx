@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, useCommand } from '@fougere/react';
-import Post from '@frond/blog/entities/Post';
+import Post from '@fronds/blog/entities/Post';
 
 /**
  * The couple. Nothing wires the read to the write: both designate the same entity,

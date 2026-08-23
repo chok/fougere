@@ -108,7 +108,7 @@
 
   - `@fougere/nuxt` declares the `h3` its runtime has always imported — seven imports across six
     server files, resolvable from nothing but Nitro's build.
-  - `@frond/<name>` resolves in the scan: two entry points were loading a neighbour's sources
+  - `@fronds/<name>` resolves in the scan: two entry points were loading a neighbour's sources
     without the alias map.
   - A `list` op reaches GraphQL with its pagination arguments, and `required` no longer demands
     what the door refuses.

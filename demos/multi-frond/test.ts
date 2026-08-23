@@ -107,7 +107,7 @@ async function main() {
 
     // 5. Verify generated package.json
     const pkg = JSON.parse(readFileSync(pkgFile, 'utf-8'));
-    if (pkg.name !== '@frond/blog') fail(`Wrong package name: ${pkg.name}`);
+    if (pkg.name !== '@fronds/blog') fail(`Wrong package name: ${pkg.name}`);
     if (!pkg.exports?.['./entities/*']) fail('Missing exports field');
     pass('Generated package.json is correct');
 
@@ -162,7 +162,7 @@ async function main() {
     const CreateProduct = Product.omit('id');
     const productValid = CreateProduct.validate({ name: 'Widget', price: 9.99, stock: 5 });
     if (!productValid.success) fail('Local Product validation failed');
-    pass('Local @frond/catalog works identically');
+    pass('Local @fronds/catalog works identically');
 
     // Verify Standard Schema v1 on local frond too
     const productStandard = CreateProduct['~standard'];

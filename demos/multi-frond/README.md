@@ -5,7 +5,7 @@ Two apps. `remote-blog` hosts the `blog` frond and serves its identity card on
 `blog` from the wire — and the import reads the same either way:
 
 ```ts
-import Post from '@frond/blog/entities/Post';   // generated from remote metadata
+import Post from '@fronds/blog/entities/Post';   // generated from remote metadata
 
 const CreatePost = Post.omit('id', 'createdAt');
 ```
@@ -21,7 +21,7 @@ Three terminals, in order — each step needs the one before it.
 
 ```bash
 pnpm remote     # the blog host, :4001
-pnpm sync       # asks :4001 for its card, generates @frond/blog
+pnpm sync       # asks :4001 for its card, generates @fronds/blog
 pnpm dev        # the consumer, :3002
 pnpm test       # or: the whole exchange, headless
 ```
