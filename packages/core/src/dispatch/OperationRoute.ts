@@ -4,11 +4,10 @@ import type { Route } from './Route.js';
 
 export type RouteExecution = (call: Call) => unknown | Promise<unknown>;
 
-/** Shared execution mechanics for concrete route kinds. */
-export abstract class OperationRoute implements Route {
-  abstract readonly kind: Route['kind'];
-
+/** One executable route, distinguished by its routing kind. */
+export class OperationRoute implements Route {
   constructor(
+    readonly kind: Route['kind'],
     readonly address: RouteAddress,
     private readonly execution: RouteExecution,
   ) {}

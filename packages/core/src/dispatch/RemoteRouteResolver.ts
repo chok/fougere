@@ -1,5 +1,5 @@
 import type { RouteAddress } from '../contract/RouteAddress.js';
-import { RemoteRoute } from './RemoteRoute.js';
+import { OperationRoute } from './OperationRoute.js';
 import type { Route } from './Route.js';
 import type { RouteResolver } from './RouteResolver.js';
 
@@ -16,6 +16,6 @@ export class RemoteRouteResolver implements RouteResolver {
     const facade = this.facades(address.entity);
     const operation = facade?.[address.operation];
     if (typeof operation !== 'function') return undefined;
-    return new RemoteRoute(address, (call) => operation(call.invocation));
+    return new OperationRoute('remote', address, (call) => operation(call.invocation));
   }
 }

@@ -30,11 +30,10 @@ import { collectorKeyOf } from '../prefab/collector.js';
 import { RouteAddress } from '../contract/RouteAddress.js';
 import { DispatchLifecycle } from '../dispatch/DispatchLifecycle.js';
 import { Dispatcher } from '../dispatch/Dispatcher.js';
-import { LocalRoute } from '../dispatch/LocalRoute.js';
 import { LocalRoutePolicy } from '../dispatch/LocalRoutePolicy.js';
+import { OperationRoute } from '../dispatch/OperationRoute.js';
 import { RemoteRouteResolver } from '../dispatch/RemoteRouteResolver.js';
 import { RouteRegistry } from '../dispatch/RouteRegistry.js';
-import { SystemRoute } from '../dispatch/SystemRoute.js';
 
 
 /**
@@ -431,7 +430,8 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
             operation,
             ...(surface !== undefined ? { surface } : {}),
           });
-          routeRegistry.register(new LocalRoute(
+          routeRegistry.register(new OperationRoute(
+            'local',
             address,
             (call) => facade.ops[operation](call.invocation),
           ));
@@ -774,7 +774,8 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       if (routeRegistry.find(address)) {
         throw new Error(`rpc operation '${op}' is already served; a second declaration would depend on wiring order`);
       }
-      routeRegistry.register(new SystemRoute(
+      routeRegistry.register(new OperationRoute(
+        'system',
         address,
         (call) => answer(call.invocation, call.address.surface),
       ));
