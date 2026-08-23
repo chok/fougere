@@ -450,7 +450,6 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
           ));
         }
       }
-      return facade.ops;
     };
 
     // A presenter is about an entity — computed fields sit on a shape — so this walks
