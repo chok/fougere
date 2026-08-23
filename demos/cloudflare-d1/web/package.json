@@ -15,7 +15,8 @@
     "@fougere/core": "workspace:*",
     "@fougere/nuxt": "workspace:*",
     "@fougere/schema": "workspace:*",
-    "nuxt": "^4.5.1"
+    "nuxt": "^4.5.1",
+    "@fougere/transport-http": "workspace:*"
   },
   "devDependencies": {
     "wrangler": "^4.0.0"

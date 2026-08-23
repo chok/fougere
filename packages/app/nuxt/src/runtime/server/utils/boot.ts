@@ -9,4 +9,4 @@
  * So the codegen imports this file by absolute path, and this file — which does sit
  * in `@fougere/nuxt` — does the resolving. One indirection, one reason.
  */
-export { configureFougere, useFougereApp, type FougereServerConfig } from '@fougere/app';
+export { configureFougere, extendFougere, useFougereApp, type FougereServerConfig } from '@fougere/app';

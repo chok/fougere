@@ -103,6 +103,20 @@ export function configureFougere(config: FougereServerConfig) {
   _appPromise = null;
 }
 
+/**
+ * Add to what is already stated, instead of replacing it.
+ *
+ * A host states its app in PIECES when the pieces are known at different moments: a
+ * build writes the scan and the config into a generated plugin, and a value only the
+ * running process holds — a Cloudflare service binding — cannot be written there at all.
+ * Its dual is `configureFougere`, which replaces; `reloadFougere` depends on that
+ * replacement, so merging silently would have broken the turn of the ring.
+ */
+export function extendFougere(config: Partial<FougereServerConfig>) {
+  _config = { ..._config, ...config };
+  _appPromise = null;
+}
+
 /** Get the booted Fougere app. Lazy — boots on first call, then caches. */
 export function useFougereApp(): Promise<App> {
   if (!_appPromise) {

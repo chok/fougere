@@ -11,6 +11,7 @@
  */
 export {
   configureFougere,
+  extendFougere,
   useFougereApp,
   reloadFougere,
   createMemoryOrm,

@@ -7,5 +7,7 @@
   // not need one either: it stores nothing and opens nothing.
   "compatibility_flags": ["nodejs_compat"],
   "assets": { "directory": ".output/public", "binding": "ASSETS" },
+  // The only route to the frond worker. Its public URL is refused from here (error 1042).
+  "services": [{ "binding": "CATALOG", "service": "fougere-catalog" }],
   "observability": { "enabled": true }
 }
