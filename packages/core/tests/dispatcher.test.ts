@@ -6,6 +6,7 @@ import { DispatchLifecycle } from '../src/dispatch/DispatchLifecycle.js';
 import { Dispatcher } from '../src/dispatch/Dispatcher.js';
 import type { Route } from '../src/dispatch/Route.js';
 import { RouteRegistry } from '../src/dispatch/RouteRegistry.js';
+import { InFlight } from '../src/dispatch/InFlight.js';
 import { ErrorCode } from '../src/wire/errors.js';
 
 function setup(execute: Route['execute']) {
@@ -13,11 +14,17 @@ function setup(execute: Route['execute']) {
   const route: Route = { kind: 'local', address, execute };
   const routes = new RouteRegistry();
   const events: DispatchEvent[] = [];
+  const inFlight = new InFlight();
   routes.register(route);
   return {
     call: new Call(address),
-    dispatcher: new Dispatcher(routes, new DispatchLifecycle([(event) => events.push(event)])),
+    dispatcher: new Dispatcher(
+      routes,
+      inFlight,
+      new DispatchLifecycle([(event) => events.push(event)]),
+    ),
     events,
+    inFlight,
   };
 }
 
@@ -38,6 +45,7 @@ describe('Dispatcher', () => {
     const events: DispatchEvent[] = [];
     const dispatcher = new Dispatcher(
       new RouteRegistry(),
+      new InFlight(),
       new DispatchLifecycle([(event) => events.push(event)]),
     );
     const call = new Call(new RouteAddress({ entity: 'missing', operation: 'list' }));
@@ -60,6 +68,36 @@ describe('Dispatcher', () => {
     expect(events.find(({ stage }) => stage === 'failed')).toMatchObject({ error: failure });
   });
 
+  it('owns admission for the whole route execution', async () => {
+    let finish!: (value: string) => void;
+    const execution = new Promise<string>((resolve) => { finish = resolve; });
+    const { dispatcher, call, inFlight } = setup(() => execution);
+
+    const result = dispatcher.dispatch(call);
+    expect(inFlight.count).toBe(1);
+
+    finish('done');
+    await expect(result).resolves.toBe('done');
+    expect(inFlight.count).toBe(0);
+  });
+
+  it('observes a call refused by closed admission', async () => {
+    const events: DispatchEvent[] = [];
+    const inFlight = new InFlight();
+    inFlight.close();
+    const dispatcher = new Dispatcher(
+      new RouteRegistry(),
+      inFlight,
+      new DispatchLifecycle([(event) => events.push(event)]),
+    );
+
+    await expect(dispatcher.dispatch(new Call(
+      new RouteAddress({ entity: 'product', operation: 'list' }),
+    ))).rejects.toMatchObject({ code: ErrorCode.SERVICE_UNAVAILABLE });
+    expect(events.map(({ stage }) => stage)).toEqual(['received', 'failed', 'settled']);
+    expect(inFlight.count).toBe(0);
+  });
+
   it('does not let an observer alter the dispatch result', async () => {
     const address = new RouteAddress({ entity: 'product', operation: 'count' });
     const routes = new RouteRegistry();
@@ -68,7 +106,7 @@ describe('Dispatcher', () => {
     const diagnose = vi.fn();
     const lifecycle = new DispatchLifecycle([() => { throw failure; }], diagnose);
 
-    await expect(new Dispatcher(routes, lifecycle).dispatch(new Call(address))).resolves.toBe(2);
+    await expect(new Dispatcher(routes, new InFlight(), lifecycle).dispatch(new Call(address))).resolves.toBe(2);
     expect(diagnose).toHaveBeenCalledTimes(4);
     expect(diagnose).toHaveBeenCalledWith(failure, expect.objectContaining({ stage: 'received' }));
   });

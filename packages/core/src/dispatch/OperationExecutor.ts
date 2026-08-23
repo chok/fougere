@@ -1,4 +1,3 @@
-import type { InFlight } from '../boot/inflight.js';
 import type { InvocationContext } from '../contract/Invocation.js';
 import { canonicalInvocation } from '../contract/Invocation.js';
 import type { OperationContract } from '../wire/operation.js';
@@ -17,7 +16,6 @@ export interface OperationExecution {
   operation: string;
   contract: OperationContract | undefined;
   middlewares: () => AppMiddleware[];
-  inFlight: InFlight;
   validator: InputValidator;
   arguments: ArgumentResolver;
   invoke: (args: unknown[]) => unknown | Promise<unknown>;
@@ -39,30 +37,24 @@ export class OperationExecutor {
       state: invocation.state,
       invocation,
     };
-    const done = this.execution.inFlight.enter(context.entity, context.operation);
+    return runMiddlewares(this.execution.middlewares(), context, async () => {
+      const effective = this.execution.validator.validate(
+        this.execution.contract?.input,
+        invocation,
+        context.entity,
+        context.operation,
+      );
+      context.invocation = effective;
 
-    try {
-      return await runMiddlewares(this.execution.middlewares(), context, async () => {
-        const effective = this.execution.validator.validate(
-          this.execution.contract?.input,
-          invocation,
-          context.entity,
-          context.operation,
-        );
-        context.invocation = effective;
-
-        const args = this.execution.contract?.binding
-          ? await this.execution.arguments.resolve(this.execution.contract.binding, effective)
-          : [];
-        const projected = this.execution.projector.project(
-          await this.execution.invoke(args),
-        );
-        return this.execution.present
-          ? this.execution.present(projected, effective)
-          : projected;
-      });
-    } finally {
-      done();
-    }
+      const args = this.execution.contract?.binding
+        ? await this.execution.arguments.resolve(this.execution.contract.binding, effective)
+        : [];
+      const projected = this.execution.projector.project(
+        await this.execution.invoke(args),
+      );
+      return this.execution.present
+        ? this.execution.present(projected, effective)
+        : projected;
+    });
   }
 }

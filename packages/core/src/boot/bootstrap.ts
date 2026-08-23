@@ -19,7 +19,7 @@ import {
 } from '../effective-operation.js';
 import { guardStorage } from './egress.js';
 import { portBindings } from './ports.js';
-import { InFlight } from './inflight.js';
+import { InFlight } from '../dispatch/InFlight.js';
 // The keys, each read from where its concept is declared — never respelled here.
 import { facadeKeyOf, contractsKeyOf, identityCardOf, type RpcAnswer } from '../wire/call.js';
 import { AppLifecycle } from './AppLifecycle.js';
@@ -34,6 +34,7 @@ import { LocalRoutePolicy } from '../dispatch/LocalRoutePolicy.js';
 import { OperationRoute } from '../dispatch/OperationRoute.js';
 import { RemoteRouteResolver } from '../dispatch/RemoteRouteResolver.js';
 import { RouteRegistry } from '../dispatch/RouteRegistry.js';
+import { FacadeEntry } from '../entry/FacadeEntry.js';
 
 
 /**
@@ -197,9 +198,10 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       error,
     ),
   );
-  const dispatcher = new Dispatcher(routeRegistry, dispatchLifecycle);
+  const dispatcher = new Dispatcher(routeRegistry, inflight, dispatchLifecycle);
   const localDispatcher = new Dispatcher(
     routeRegistry,
+    inflight,
     dispatchLifecycle,
     new LocalRoutePolicy((surface) => fronds.servedNames(surface)),
   );
@@ -409,10 +411,15 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
           presenters: presenterMap,
           middlewaresFor: getMiddlewares,
           emissions,
-          inflight,
         },
       );
-      container.registerValue(facadeKey, facade.ops);
+      const entry = new FacadeEntry(
+        handler.surface ? localDispatcher : dispatcher,
+        handler.address,
+        Object.keys(facade.ops),
+        handler.surface,
+      );
+      container.registerValue(facadeKey, entry.operations);
       // The terms alongside the door, under the same audience — a surface that serves
       // fewer ops describes fewer ops.
       container.registerValue(contractsKeyOf(handler.address, handler.surface), facade.contracts);
@@ -572,7 +579,10 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // `registrationKeyOf` because a DEPENDENCY names the type as written — `ProductHandler`,
     // PascalCase — while a card declares `product`, so the raw strip asked the router for
     // 'Product' and every by-type dependency on a remote handler answered NOT_FOUND.
-    return createRemoteFacade(registrationKeyOf(name.replace(/Handler$/, '')), remoteRouter, getMiddlewares);
+    return new FacadeEntry(
+      dispatcher,
+      registrationKeyOf(name.replace(/Handler$/, '')),
+    ).operations;
   });
 
   /**
@@ -692,13 +702,24 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     const own = facadeAt(facadeKeyOf(entity, surface), false);
     const declared = fronds.owner(entity)?.surfaces?.[surface];
     if (!declared) return own;
-    return declared.some((n) => n.toLowerCase() === entity.toLowerCase())
-      ? (own ?? facadeAt(facadeKeyOf(entity), false))
+    if (!declared.some((n) => n.toLowerCase() === entity.toLowerCase())) return undefined;
+    if (own) return own;
+
+    const fallback = facadeAt(facadeKeyOf(entity), false);
+    return fallback
+      ? new FacadeEntry(localDispatcher, entity, Object.keys(fallback), surface).operations
       : undefined;
   };
 
   if (remoteRouter) {
-    routeRegistry.addResolver(new RemoteRouteResolver((entity) => facadeFor(entity)));
+    const remoteFacades = new Map<string, Record<string, Function>>();
+    routeRegistry.addResolver(new RemoteRouteResolver((entity) => {
+      const known = remoteFacades.get(entity);
+      if (known) return known;
+      const facade = createRemoteFacade(entity, remoteRouter, getMiddlewares);
+      remoteFacades.set(entity, facade);
+      return facade;
+    }));
   }
 
   /** The terms beside a door, with the exact same named-surface fallback rule. */

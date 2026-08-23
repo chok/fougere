@@ -10,7 +10,6 @@ import type { OperationContract, OperationsMap } from '../wire/operation.js';
 import type { EffectiveOperation, EffectiveOperationsMap } from '../effective-operation.js';
 import type { InvocationContext } from '../wire/invocation.js';
 import type { Emissions } from './Emissions.js';
-import type { InFlight } from './inflight.js';
 import type { Logger } from '../builtins/logger.js';
 import type { EntityEntry, HandlerEntry, PresenterEntry } from '../scan/frond.js';
 import { InputValidator } from '../dispatch/InputValidator.js';
@@ -49,8 +48,6 @@ export interface Wiring {
   /** The middlewares that apply to an address, read at call time and never at boot. */
   middlewaresFor: (address: string) => AppMiddleware[];
   emissions: Emissions;
-  /** The app's running calls — counted here because every caller comes through. */
-  inflight: InFlight;
 }
 
 /** Adapts one handler door to executable operations. */
@@ -222,7 +219,6 @@ export class HandlerFacade {
       operation: op,
       contract,
       middlewares: () => this.wiring.middlewaresFor(address),
-      inFlight: this.wiring.inflight,
       validator: this.inputValidator,
       arguments: this.argumentResolver,
       invoke: async (args) => {
