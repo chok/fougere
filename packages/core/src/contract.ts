@@ -19,6 +19,11 @@ export { toPublicError } from './wire/http-error.js';
 export type { FougereErrorOptions } from './wire/errors.js';
 export { EMPTY_INVOCATION } from './wire/invocation.js';
 export type { InvocationContext } from './wire/invocation.js';
+export { Invocation } from './contract/Invocation.js';
+export type { InvocationInput } from './contract/Invocation.js';
+export { Call } from './contract/Call.js';
+export { RouteAddress } from './contract/RouteAddress.js';
+export type { RouteAddressInput } from './contract/RouteAddress.js';
 export type { FrondCall, Transport, SignedCall } from './wire/call.js';
 
 /**

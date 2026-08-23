@@ -23,6 +23,14 @@ import { repositoryKeyOf } from '../prefab/repository.js';
 import { ormKeyOf } from '../orm.js';
 import { presenterKeyOf } from '../prefab/presenter.js';
 import { collectorKeyOf } from '../prefab/collector.js';
+import { RouteAddress } from '../contract/RouteAddress.js';
+import { DispatchLifecycle } from '../dispatch/DispatchLifecycle.js';
+import { Dispatcher } from '../dispatch/Dispatcher.js';
+import { LocalRoute } from '../dispatch/LocalRoute.js';
+import { LocalRoutePolicy } from '../dispatch/LocalRoutePolicy.js';
+import { RemoteRouteResolver } from '../dispatch/RemoteRouteResolver.js';
+import { RouteRegistry } from '../dispatch/RouteRegistry.js';
+import { SystemRoute } from '../dispatch/SystemRoute.js';
 
 
 /**
@@ -154,10 +162,16 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   // Middleware storage — read at call time, not at boot time
   const globalMiddlewares: AppMiddleware[] = [];
   const scopedMiddlewares = new Map<string, AppMiddleware[]>();
-  /** What the `rpc` door serves — the card, plus whatever a package declared. */
-  const rpcAnswers = new Map<string, RpcAnswer>();
   /** What this app took on beyond its fronds. Its `up` is the last thing the boot does. */
-  const lifecycle = new Lifecycle().add(...(options.extensions ?? []));
+  const appLifecycle = new Lifecycle().add(...(options.extensions ?? []));
+  const routeRegistry = new RouteRegistry();
+  const dispatchLifecycle = new DispatchLifecycle(options.dispatchObservers);
+  const dispatcher = new Dispatcher(routeRegistry, dispatchLifecycle);
+  const localDispatcher = new Dispatcher(
+    routeRegistry,
+    dispatchLifecycle,
+    new LocalRoutePolicy((surface) => fronds.servedNames(surface)),
+  );
 
   function getMiddlewares(entity: string): AppMiddleware[] {
     const scoped = scopedMiddlewares.get(entity) ?? [];
@@ -359,6 +373,31 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       // The terms alongside the door, under the same audience — a surface that serves
       // fewer ops describes fewer ops.
       container.registerValue(contractsKeyOf(handler.address, handler.surface), facade.contracts);
+
+      const surfaces = new Set<string | undefined>([handler.surface]);
+      if (!handler.surface) {
+        for (const [surface, names] of Object.entries(frond.surfaces ?? {})) {
+          const isDeclared = names.some((name) =>
+            name.toLowerCase() === handler.address.toLowerCase());
+          const hasOwnDoor = surfaceHandlers.some((candidate) =>
+            candidate.surface === surface && candidate.address === handler.address);
+          if (isDeclared && !hasOwnDoor) surfaces.add(surface);
+        }
+      }
+
+      for (const operation of Object.keys(facade.ops)) {
+        for (const surface of surfaces) {
+          const address = new RouteAddress({
+            entity: handler.address,
+            operation,
+            ...(surface !== undefined ? { surface } : {}),
+          });
+          routeRegistry.register(new LocalRoute(
+            address,
+            (call) => facade.ops[operation](call.invocation),
+          ));
+        }
+      }
       return facade.ops;
     };
 
@@ -505,7 +544,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // there and broken here, a refusing extension took the container and the connection
     // down with it, which is the leak this gesture exists to prevent.
     const refused: unknown[] = [];
-    for (const level of [() => lifecycle.down(app), () => container.dispose(), () => options.onDispose?.()]) {
+    for (const level of [() => appLifecycle.down(app), () => container.dispose(), () => options.onDispose?.()]) {
       try {
         await level();
       } catch (error) {
@@ -613,6 +652,10 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       : undefined;
   };
 
+  if (remoteRouter) {
+    routeRegistry.addResolver(new RemoteRouteResolver((entity) => facadeFor(entity)));
+  }
+
   /**
    * The storage an entity is backed by — the dual of `facadeFor`, which serves its
    * client-facing door. Both are ways in; an entity that opens none of them still has rows.
@@ -659,6 +702,8 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // What this app publishes, straight from fougere.config.ts — the doors read it,
     // so an undeclared adapter serves nothing whatever a host mounted.
     adapters: options.adapters ?? {},
+    dispatch: (call) => dispatcher.dispatch(call),
+    local: localDispatcher,
     resolve,
     schemaFor,
     facadeFor,
@@ -673,12 +718,16 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     serveRpc(op: string, answer: RpcAnswer): void {
       // Refused rather than replaced: two declarations of one name would make the answer
       // depend on wiring order, and `discover` is in here precisely so it cannot be taken.
-      const held = rpcAnswers.get(op);
-      if (held) throw new Error(`rpc operation '${op}' is already served; a second declaration would depend on wiring order`);
-      rpcAnswers.set(op, answer);
+      const address = new RouteAddress({ entity: 'rpc', operation: op });
+      if (routeRegistry.find(address)) {
+        throw new Error(`rpc operation '${op}' is already served; a second declaration would depend on wiring order`);
+      }
+      routeRegistry.register(new SystemRoute(
+        address,
+        (call) => answer(call.invocation, call.address.surface),
+      ));
     },
-    rpcAnswers: () => rpcAnswers,
-    extensions: () => lifecycle.names(),
+    extensions: () => appLifecycle.names(),
     use(...args: [AppMiddleware] | [string, AppMiddleware]): void {
       if (typeof args[0] === 'string') {
         const [entity, mw] = args as [string, AppMiddleware];
@@ -698,7 +747,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
   // The last thing the boot does, and the first thing a release undoes. An extension may
   // await here — which is what a provider needing to OPEN something could never do.
-  await lifecycle.up(app);
+  await appLifecycle.up(app);
 
   return app;
 }

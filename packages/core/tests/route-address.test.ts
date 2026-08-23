@@ -5,7 +5,6 @@ import { RouteAddress } from '../src/contract/RouteAddress.js';
 describe('RouteAddress', () => {
   it('compares every routing dimension', () => {
     const address = new RouteAddress({
-      frond: 'catalog',
       surface: 'public',
       entity: 'product',
       operation: 'list',
@@ -13,7 +12,7 @@ describe('RouteAddress', () => {
 
     expect(address.equals(new RouteAddress(address.toJSON()))).toBe(true);
     expect(address.equals(new RouteAddress({ ...address.toJSON(), surface: 'admin' }))).toBe(false);
-    expect(address.toString()).toBe('catalog/public/product.list');
+    expect(address.toString()).toBe('public/product.list');
   });
 
   it('uses collision-safe keys', () => {

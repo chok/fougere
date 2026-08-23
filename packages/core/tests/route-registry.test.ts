@@ -37,6 +37,21 @@ describe('RouteRegistry', () => {
     expect(registry.find(adminRoute.address)).toBe(adminRoute);
   });
 
+  it('shares system routes across surfaces without widening local routes', () => {
+    const registry = new RouteRegistry();
+    const system = route(new RouteAddress({ entity: 'rpc', operation: 'discover' }), 'system');
+    const local = route(new RouteAddress({ entity: 'product', operation: 'list' }));
+    registry.register(system);
+    registry.register(local);
+
+    expect(registry.find(new RouteAddress({
+      surface: 'admin', entity: 'rpc', operation: 'discover',
+    }))).toBe(system);
+    expect(registry.find(new RouteAddress({
+      surface: 'admin', entity: 'product', operation: 'list',
+    }))).toBeUndefined();
+  });
+
   it('refuses two owners for the same address', () => {
     const registry = new RouteRegistry();
     const address = new RouteAddress({ entity: 'product', operation: 'list' });
@@ -45,5 +60,19 @@ describe('RouteRegistry', () => {
 
     expect(() => registry.register(route(address, 'remote')))
       .toThrow(/product\.list.*local and remote/);
+  });
+
+  it('resolves an unknown route once and caches it', async () => {
+    const registry = new RouteRegistry();
+    const address = new RouteAddress({ entity: 'product', operation: 'list' });
+    const resolved = route(address, 'remote');
+    const resolve = vi.fn(async () => resolved);
+    registry.addResolver({ resolve });
+
+    await expect(Promise.all([registry.resolve(address), registry.resolve(address)]))
+      .resolves.toEqual([resolved, resolved]);
+    expect(resolve).toHaveBeenCalledTimes(1);
+    await expect(registry.resolve(address)).resolves.toBe(resolved);
+    expect(resolve).toHaveBeenCalledTimes(1);
   });
 });

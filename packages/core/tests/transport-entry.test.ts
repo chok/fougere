@@ -11,7 +11,7 @@ describe('createTransportEntry', () => {
     await expect(entry(
       { frond: 'catalog', entity: 'product', op: 'create' },
       { params: {}, query: {}, body: { name: 'Fern', omitted: undefined }, state: {} },
-    )).resolves.toBe('catalog/admin/product.create');
+    )).resolves.toBe('admin/product.create');
 
     const call = dispatch.mock.calls[0]![0];
     expect(call).toBeInstanceOf(Call);
