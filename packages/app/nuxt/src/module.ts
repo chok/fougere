@@ -290,23 +290,29 @@ export function generateBootPlugin(
 
   // Wrap all init in the plugin callback to avoid top-level native calls
   lines.push(`export default defineNitroPlugin(async () => {`);
+  // The SCAN first, and on its own line: it names no engine, so nothing below can stop it
+  // from being stated. Measured on workerd — `resolveStorage` threw on a native driver,
+  // Nitro swallowed the plugin whole, and the app came up with zero fronds and not a word.
+  // Two unrelated facts had been sharing one failure.
+  if (scanPath) lines.push(`  configureFougere({ scan });`);
+  lines.push(`  try {`);
   // Pass `db` through unchanged — resolveStorage (@fougere/defaults → setupSqlite)
   // is the one place that defaults an absent path, so both call sites (this
   // codegen'd plugin and fougereApp.ts's own fallback) land on the same file.
   // The second argument only appears when there is something to say: an app with one
   // database generates exactly the line it generated before.
   const sourcesArg = sources ? `, ${JSON.stringify(sources)}` : '';
-  lines.push(`  const storage = resolveStorage(${JSON.stringify(db)}${sourcesArg});`);
+  lines.push(`    const storage = resolveStorage(${JSON.stringify(db)}${sourcesArg});`);
   lines.push(``);
-  lines.push(`  configureFougere({`);
-  if (scanPath) lines.push(`    scan,`);
-  lines.push(`    db: storage.db,`);
-  lines.push(`    ormFactory: storage.ormFactory,`);
+  lines.push(`    configureFougere({`);
+  if (scanPath) lines.push(`      scan,`);
+  lines.push(`      db: storage.db,`);
+  lines.push(`      ormFactory: storage.ormFactory,`);
   // Two members of the ascent, named — not a claim on everything after the boot. The
   // storage's is core's own declaration (`migrating`), so this codegen states no order and
   // cannot mistype the name it would otherwise be silently adding beside.
-  lines.push(`    extensions: [`);
-  lines.push(`      migrating(storage.migrate),`);
+  lines.push(`      extensions: [`);
+  lines.push(`        migrating(storage.migrate),`);
 
   if (seeds.length) {
     // The seeding LOOP is core's (`runSeeds`), not written out here: a second copy
@@ -319,15 +325,23 @@ export function generateBootPlugin(
     //
     // `report` is passed: its default is a no-op, so the boot you actually open said
     // nothing about a skipped seed — the very silence F-12 was aggravated by.
-    lines.push(`      { name: 'seeds', up: (app) => runSeeds(app, [`);
+    lines.push(`        { name: 'seeds', up: (app) => runSeeds(app, [`);
     for (let i = 0; i < seeds.length; i++) {
-      lines.push(`        { entityName: '${seeds[i].entityName}', data: seed_${i}, filePath: ${JSON.stringify(seeds[i].filePath)} },`);
+      lines.push(`          { entityName: '${seeds[i].entityName}', data: seed_${i}, filePath: ${JSON.stringify(seeds[i].filePath)} },`);
     }
-    lines.push(`      ], (message) => console.log('[fougere:seed]' + message)) },`);
+    lines.push(`        ], (message) => console.log('[fougere:seed]' + message)) },`);
   }
 
-  lines.push(`    ],`);
-  lines.push(`  });`);
+  lines.push(`      ],`);
+  lines.push(`    });`);
+  // A storage that could not be opened is REPORTED, never swallowed. Nitro takes a
+  // throwing plugin quietly, and the app then serves its pages with an empty domain —
+  // the failure mode this whole file exists to make impossible. The scan above already
+  // stands, so what is lost here is the storage and nothing else, and the line says which.
+  lines.push(`  } catch (cause) {`);
+  lines.push(`    console.error('[fougere] storage could not be opened — the app serves its fronds with no rows.');`);
+  lines.push(`    console.error(cause);`);
+  lines.push(`  }`);
   lines.push(`});`);
 
   return lines.join('\n') + '\n';

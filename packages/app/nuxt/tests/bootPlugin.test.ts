@@ -83,3 +83,30 @@ describe('generateBootPlugin — db path convergence', () => {
     expect(out).not.toContain('resolveStorage');
   });
 });
+
+describe('a storage that could not be opened', () => {
+  it('states the scan before it tries, so a failure costs the storage alone', () => {
+    // Measured on workerd: `resolveStorage` threw on a native driver, Nitro swallowed the
+    // plugin whole, and the app came up with ZERO fronds and not a word. Two unrelated
+    // facts were sharing one failure.
+    const out = generateBootPlugin({ db: 'sqlite' }, [], '/app/boot', '/nuxt/scan.mjs');
+
+    expect(out.indexOf('configureFougere({ scan })')).toBeLessThan(out.indexOf('resolveStorage("sqlite")'));
+  });
+
+  it('reports it rather than dying quietly', () => {
+    const out = generateBootPlugin({ db: 'sqlite' }, [], '/app/boot', '/nuxt/scan.mjs');
+
+    expect(out).toContain('try {');
+    expect(out).toContain('storage could not be opened');
+  });
+
+  it('states the scan even when no storage is declared', () => {
+    // The early return used to emit an empty plugin, which threw the scan away with the
+    // storage — and an app with no database still has fronds.
+    const out = generateBootPlugin({ db: false }, [], '/app/boot', '/nuxt/scan.mjs');
+
+    expect(out).toContain('configureFougere({ scan })');
+    expect(out).not.toContain('resolveStorage');
+  });
+});
