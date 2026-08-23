@@ -1,7 +1,7 @@
 import { type Fields } from '@fougere/schema';
 import type { Container } from '@fougere/container';
 import { runMiddlewares, type AppMiddleware } from '../wire/middleware.js';
-import { computeBindingPlan, resolveArgs, type CollectorResolver } from './binding.js';
+import { computeBindingPlan, type CollectorResolver } from './binding.js';
 import { collectorKeyOf } from '../prefab/collector.js';
 import { presenterKeyOf } from '../prefab/presenter.js';
 import { repositoryKeyOf } from '../prefab/repository.js';
@@ -14,6 +14,7 @@ import type { OperationContext } from '../wire/middleware.js';
 import type { Logger } from '../builtins/logger.js';
 import type { EntityEntry, FrondDescriptor, HandlerEntry, PresenterEntry } from '../scan/frond.js';
 import { InputValidator } from '../dispatch/InputValidator.js';
+import { ArgumentResolver } from '../dispatch/ArgumentResolver.js';
 
 /** What this door is about: a handler, the entity behind it when there is one, and where it resolves. */
 export interface Doorway {
@@ -81,6 +82,9 @@ export class HandlerFacade {
   private readonly cachedViews = new Map<string, View>();
   private instance: any;
   private readonly inputValidator = new InputValidator();
+  private readonly argumentResolver = new ArgumentResolver(
+    (typeName) => this.collectorResolver(typeName),
+  );
 
   constructor(private readonly door: Doorway, private readonly wiring: Wiring) {
     const { handler, entity } = door;
@@ -269,7 +273,7 @@ export class HandlerFacade {
         // No plan means no declared argument — an op receives what its contract says it
         // receives, never a guess based on its name.
         const args = contract?.binding
-          ? await resolveArgs(contract.binding, effective, this.collectorResolver)
+          ? await this.argumentResolver.resolve(contract.binding, effective)
           : [];
 
         // Egress at the boundary: a write-only field never rides the result out, exactly
@@ -302,10 +306,9 @@ export class HandlerFacade {
     const args: PresenterArgs = {};
     for (const field of meta.fieldMeta) {
       if (!field.params?.length) continue;
-      args[field.name] = await resolveArgs(
+      args[field.name] = await this.argumentResolver.resolve(
         computeBindingPlan(field.params, this.wiring.collectors),
         inv,
-        this.collectorResolver,
       );
     }
     return args;
