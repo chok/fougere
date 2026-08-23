@@ -12,6 +12,7 @@ import {
   addTemplate,
   addImports,
   createResolver,
+  useLogger,
 } from '@nuxt/kit';
 import type { Nuxt } from '@nuxt/schema';
 import { orderSeeds } from '@fougere/core';
@@ -20,7 +21,7 @@ import { declaresStorage } from '@fougere/defaults';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
 import { createJiti } from 'jiti';
 import { resolve } from 'node:path';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 
 export interface FougereModuleOptions {
   /** Override fougere.config.ts values from nuxt.config. Optional. */
@@ -125,7 +126,24 @@ const module = defineNuxtModule<FougereModuleOptions>({
     // The list is exact rather than guessed: the scan just ran, so these are the
     // classes themselves, read before any bundler touched them. `@fougere/vite`
     // does the same for the hosts that have no module to do it for them.
-    const entityNames = fronds.flatMap((frond) => frond.entities.map((e) => (e.entityClass as unknown as { name: string }).name));
+    // What this app can DESIGNATE, never what it hosts. A CONSUMER hosts nothing and
+    // designates everything through `remotes:` — and the guard below used to read
+    // `fronds`, so the app most in need of the reservation got none: measured on a Nuxt
+    // worker consuming a remote frond, `Product` minified to `f` and the call left as
+    // `f.list`, answered `No declared remote hosts 'f'`. The error names the mangled
+    // letter, which is the only reason it was findable at all.
+    const designated = [
+      ...fronds.flatMap((frond) => frond.entities.map((e) => (e.entityClass as unknown as { name: string }).name)),
+      ...(await syncedEntityNames(rootDir)),
+    ];
+    const entityNames = [...new Set(designated)];
+    if (Object.keys(config.remotes ?? {}).length > 0 && entityNames.length === 0) {
+      useLogger('fougere').warn(
+        'fougere: this app declares `remotes:` and no entity name could be reserved against the minifier.\n'
+        + '  A class name IS the JSON-RPC method, so a mangled one leaves as `f.list` and the remote refuses it.\n'
+        + '  Run `fougere sync` so the remote entities land in .fougere/, or keep a frond of your own.',
+      );
+    }
     if (entityNames.length > 0) {
       const vite = (nuxt.options.vite ??= {});
       const build = (vite.build ??= {});
@@ -241,6 +259,49 @@ export default module;
 // Exported (not just module-internal) so its output is unit-testable without
 // spinning up a whole Nuxt build.
 
+/**
+ * What of the config a generated plugin can carry: values, never providers.
+ *
+ * `auth` holds a live object built by `betterAuth(...)`, so it cannot be written into a
+ * module — and it needs a database, which a codegen'd host has already resolved its own
+ * way. The rest is data and travels.
+ */
+function carried(config: FougereConfig): Partial<FougereConfig> {
+  const { remotes, adapters, sources } = config as FougereConfig & { sources?: unknown };
+  return {
+    ...(remotes ? { remotes } : {}),
+    ...(adapters ? { adapters } : {}),
+    ...(sources ? { sources } : {}),
+  } as Partial<FougereConfig>;
+}
+
+/**
+ * The entity names a SYNCED remote brought in — `fougere sync` writes the classes under
+ * `.fougere/`, and a consumer designates them exactly as it designates its own.
+ *
+ * By filename and not by loading them: this runs before the loader is installed, and a
+ * class file is named after its class by the same convention the scan reads.
+ */
+async function syncedEntityNames(rootDir: string): Promise<string[]> {
+  const remotesPath = resolve(rootDir, '.fougere', 'remotes.json');
+  if (!existsSync(remotesPath)) return [];
+  try {
+    const remotes = JSON.parse(readFileSync(remotesPath, 'utf-8')) as Record<string, { path: string }>;
+    const names: string[] = [];
+    for (const { path } of Object.values(remotes)) {
+      const dir = resolve(path, 'entities');
+      if (!existsSync(dir)) continue;
+      for (const file of readdirSync(dir)) {
+        const name = file.replace(/\.(ts|js|tsx)$/, '');
+        if (name !== file) names.push(name);
+      }
+    }
+    return names;
+  } catch {
+    return [];
+  }
+}
+
 export function generateBootPlugin(
   config: FougereConfig,
   seeds: SeedEntry[],
@@ -270,7 +331,7 @@ export function generateBootPlugin(
   if (!declaresStorage(db as Parameters<typeof declaresStorage>[0])) {
     lines.push(``);
     lines.push(`export default defineNitroPlugin(() => {`);
-    if (scanPath) lines.push(`  configureFougere({ scan });`);
+    if (scanPath) lines.push(`  configureFougere({ scan, config: ${JSON.stringify(carried(config))} });`);
     lines.push(`});`);
     return lines.join('\n') + '\n';
   }
@@ -294,7 +355,10 @@ export function generateBootPlugin(
   // from being stated. Measured on workerd — `resolveStorage` threw on a native driver,
   // Nitro swallowed the plugin whole, and the app came up with zero fronds and not a word.
   // Two unrelated facts had been sharing one failure.
-  if (scanPath) lines.push(`  configureFougere({ scan });`);
+  // The scan AND what the config says about topology — both read at build, both stated
+  // here rather than re-derived. `remotes` is the whole reason a consumer boots at all:
+  // without it the app hosts nothing and reaches nothing, and its pages render empty.
+  if (scanPath) lines.push(`  configureFougere({ scan, config: ${JSON.stringify(carried(config))} });`);
   lines.push(`  try {`);
   // Pass `db` through unchanged — resolveStorage (@fougere/defaults → setupSqlite)
   // is the one place that defaults an absent path, so both call sites (this
@@ -306,6 +370,7 @@ export function generateBootPlugin(
   lines.push(``);
   lines.push(`    configureFougere({`);
   if (scanPath) lines.push(`      scan,`);
+  lines.push(`      config: ${JSON.stringify(carried(config))},`);
   lines.push(`      db: storage.db,`);
   lines.push(`      ormFactory: storage.ormFactory,`);
   // Two members of the ascent, named — not a claim on everything after the boot. The

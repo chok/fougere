@@ -1,0 +1,23 @@
+{
+  "name": "fougere-demo-cloudflare-web",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev --port 3010",
+    "build": "NITRO_PRESET=cloudflare_module nuxt build",
+    "preview": "pnpm build && wrangler dev .output/server/index.mjs --assets .output/public",
+    "deploy": "pnpm build && wrangler deploy .output/server/index.mjs --assets .output/public",
+    "typecheck": "tsc -p fronds"
+  },
+  "dependencies": {
+    "@fougere/container": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/nuxt": "workspace:*",
+    "@fougere/schema": "workspace:*",
+    "nuxt": "^4.5.1"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

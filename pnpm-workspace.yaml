@@ -9,6 +9,7 @@ packages:
   - packages/*/*
   - demos/*
   - site
+  - demos/cloudflare-d1/web
   - demos/multi-frond/remote-blog
   - demos/multi-frond/consumer
   - demos/emit-multirepo/blog

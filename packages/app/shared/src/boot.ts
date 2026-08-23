@@ -60,6 +60,18 @@ export interface FougereServerConfig {
    * reads a disk, consuming it does not.
    */
   scan?: CreateAppOptions['scan'];
+  /**
+   * What `fougere.config.ts` says, when the host already read it.
+   *
+   * The same rule as `scan`, and found the same way: `boot()` re-reads the file at
+   * runtime, which a Worker cannot do — measured, a consumer's `remotes:` never reached
+   * the boot and its pages rendered empty with nothing said. A host that read the config
+   * at BUILD time states it here instead.
+   *
+   * `auth` is deliberately not part of what a codegen'd host can carry: it holds a live
+   * provider, not a value. An app that authenticates reads its own config.
+   */
+  config?: Partial<FougereConfig>;
 }
 
 // ── State ────────────────────────────────────────
@@ -137,7 +149,10 @@ async function boot(): Promise<App> {
   // overrides. Same boundary the fronds cascade along. No `root` → both equal.
   const configRoot = process.cwd();
   const root = process.env.FOUGERE_ROOT ?? configRoot;
-  const fileConfig: FougereConfig = await loadCascadedConfig(root, configRoot);
+  // The host's word wins, for the reason it wins on `scan`: it read the file already,
+  // and where there is no file a second read finds nothing and says nothing.
+  const fileConfig: FougereConfig = (_config.config as FougereConfig | undefined)
+    ?? (await loadCascadedConfig(root, configRoot));
 
   // Auto-resolve the data layer from config.db when the user didn't provide a
   // custom one via configureFougere. The resolution itself lives in @fougere/defaults
