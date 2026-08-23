@@ -19,8 +19,16 @@ import type { Fronds } from './Fronds.js';
  * thing, and DI resolves by type either way.
  */
 export interface ProviderEntry {
-  /** The class constructor (default export of the file). */
-  ctor: new (...args: unknown[]) => unknown;
+  /**
+   * The class constructor (default export of the file).
+   *
+   * `never[]` and not `unknown[]`: the arguments are the CONTAINER's to supply, so the
+   * slot must accept any constructor — and with `unknown[]` a real class is refused,
+   * because assigning it would need `unknown` to be one of its declared parameters.
+   * Invisible on the scan path, where the value arrives as `unknown` and is cast; the
+   * module `fougere build` writes states the class by name, and that is where it showed.
+   */
+  ctor: new (...args: never[]) => unknown;
   /** Constructor dependency type names (from AST scan). */
   deps: string[];
   /** Absolute file path (for debugging). */
@@ -57,7 +65,7 @@ export interface HandlerEntry {
    */
   address: string;
   /** The handler class. */
-  ctor: new (...args: unknown[]) => unknown;
+  ctor: new (...args: never[]) => unknown;
   /** All operations with full signatures for binding. */
   operations: OperationsMap;
   /** Constructor dependency type names (from AST scan). */
@@ -104,7 +112,7 @@ export interface PresenterEntry {
   /** Entity name this presenter enriches (e.g. 'post' from PostPresenter). */
   entityName: string;
   /** The presenter class. */
-  ctor: new (...args: unknown[]) => unknown;
+  ctor: new (...args: never[]) => unknown;
   /** Computed field names (method names on prototype). */
   fields: string[];
   /** Per-field type metadata (inferred from source via parser). */
@@ -127,7 +135,7 @@ export interface CollectorEntry {
   /** Registration key of the TYPE this collector resolves — 'user', 'ability'. */
   typeName: string;
   /** The collector class. */
-  ctor: new (...args: unknown[]) => unknown;
+  ctor: new (...args: never[]) => unknown;
   /** Constructor dependency type names (from AST scan). */
   deps: string[];
   /** Absolute file path (for debugging). */
