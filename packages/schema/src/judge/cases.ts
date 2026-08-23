@@ -2,7 +2,7 @@ import { Anatomy } from '../axis/shape/Shape.js';
 import { Boundary } from '../axis/boundary/Boundary.js';
 import { Lifecycle } from '../axis/lifecycle/Lifecycle.js';
 import { Role } from '../axis/role/Role.js';
-import type { Field, Fields } from '../Field.js';
+import type { Field } from '../Field.js';
 import type { SchemaView } from '../SchemaView.js';
 import { Judge } from './Judge.js';
 
@@ -64,14 +64,8 @@ function outOfBoundsFor(field: Field): { why: string; value: unknown }[] {
 /**
  * The decision table, enumerated on the entity's own fields.
  *
- * Enumerated on the ENTITY and not on an operation's view, deliberately: built on the
- * view, the table cannot see a divergence about a field the view dropped — the blind spot
- * `same-verdict.test.ts` records having had.
- *
- * `valid` is handed IN rather than built here, and that is the line between this file and
- * `@fougere/testing`: deriving the cases needs the four axes and nothing else, while
- * inventing a value needs a generator. Merging them would have put a 426 KB faker in the
- * package a browser loads.
+ * Use the complete entity so a derived view cannot hide a divergent field. The caller
+ * supplies a valid row; generating data belongs to the testing package.
  */
 export function casesFor(entity: SchemaView, valid: Record<string, unknown>): Case[] {
   const fields = entity.getFields();
@@ -126,22 +120,10 @@ export function holds(expected: Case['expect'], result: { success: boolean; erro
 /**
  * Every way `Judge.row` can refuse, read from its own source.
  *
- * The names rather than a count: a branch added there without a case above leaves the
- * table silently incomplete, and a test comparing a number says "7 became 8" where this
- * says which one appeared. Fragile to minification and loud when it breaks — the right
- * way round for a guard.
- *
- * One of them is not derivable and never will be: `decoded.error` is a NAMED boundary
- * codec refusing a value, and what breaks a user's decoder is the user's code. Same line
- * as a service's return type — what Fougere's vocabulary declares can be derived, what
- * is arbitrary code cannot.
+ * Returning names instead of a count makes an uncovered branch identifiable. Custom
+ * decoder failures remain outside the derived table because user code defines them.
  */
 export function refusalBranches(): string[] {
   const source = Judge.row.toString();
   return [...source.matchAll(/message:\s*([^,}]+)/g)].map((match) => match[1].trim().replace(/^['"]|['"]$/g, ''));
-}
-
-/** The `Fields` of an entity, for a reader that has the entity and not its shape. */
-export function fieldsOf(entity: SchemaView): Fields {
-  return entity.getFields();
 }
