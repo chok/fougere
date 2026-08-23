@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile, appendFile, access } from 'node:fs/promises';
 import { join } from 'node:path';
-import { generateKeyPair } from '@fougere/core';
+import { generateKeyPair } from '@fougere/core/node';
 import type { App } from '@fougere/core';
 import type { ui as createUi } from '../../src/ui.js';
 import { ROOT_KEY, packed } from './grant-material.js';

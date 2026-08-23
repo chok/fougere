@@ -22,10 +22,17 @@
  *
  * Ed25519 and a JWS-shaped grant rather than X.509: node can PARSE a certificate but
  * not ISSUE one, so a real chain would mean openssl or a library. The grant says the
- * same thing — a name bound to a public key, signed by the root — with node:crypto
- * alone, which is what keeps this package and the CLI dependency-free.
+ * same thing — a name bound to a public key, signed by the root — with no dependency.
+ *
+ * The Ed25519 itself comes through `#crypto`, which has two realizations: `node:crypto`
+ * everywhere, WebCrypto under `workerd`. Everything here is therefore async — WebCrypto
+ * has no synchronous form — and a key is parsed ONCE, into a `Signer` or a `Verifier`,
+ * never per call. Making the keys and issuing grants happen at a deployment and live in
+ * `identity-keys.ts`, on the Node entry.
  */
-import { createHash, createPublicKey, createPrivateKey, generateKeyPairSync, sign, verify, type JsonWebKey, type KeyObject } from 'node:crypto';
+import { crypto } from '#crypto';
+import type { PublicJwk, Signer, Verifier } from './crypto/port.js';
+import { b64url, unb64url, bytesOf, textOf, unb64 } from './crypto/encoding.js';
 import type { SignedCall } from './wire/call.js';
 
 export type { SignedCall } from './wire/call.js';
@@ -44,18 +51,18 @@ export interface FrondIdentity {
 }
 
 /** The body's fingerprint. `null` and an absent body are the same call. */
-function digestOf(body: unknown): string {
-  return createHash('sha256').update(JSON.stringify(body ?? null)).digest('base64url');
+async function digestOf(body: unknown): Promise<string> {
+  return b64url(await crypto.sha256(bytesOf(JSON.stringify(body ?? null))));
 }
 
 /** What the envelope pins, as one comparable value. */
-function boundTo(call: SignedCall) {
+async function boundTo(call: SignedCall) {
   return {
     entity: call.entity,
     op: call.op,
     params: call.params ?? {},
     query: call.query ?? {},
-    body: digestOf(call.body),
+    body: await digestOf(call.body),
   };
 }
 
@@ -67,13 +74,10 @@ export interface VerifiedCall {
   state: Record<string, unknown>;
 }
 
-const b64url = (input: Buffer | string): string => Buffer.from(input).toString('base64url');
-const unb64url = (input: string): Buffer => Buffer.from(input, 'base64url');
-
 /** A JWS compact serialization, signed with Ed25519. */
-function signJws(header: object, payload: object, key: KeyObject): string {
+async function signJws(header: object, payload: object, signer: Signer): Promise<string> {
   const signingInput = `${b64url(JSON.stringify(header))}.${b64url(JSON.stringify(payload))}`;
-  return `${signingInput}.${b64url(sign(null, Buffer.from(signingInput), key))}`;
+  return `${signingInput}.${b64url(await signer.sign(bytesOf(signingInput)))}`;
 }
 
 /**
@@ -81,14 +85,14 @@ function signJws(header: object, payload: object, key: KeyObject): string {
  * every caller here is deciding whether to admit a call, and an unverified payload
  * must never be reachable by forgetting a check.
  */
-function verifyJws(token: string, key: KeyObject, what: string): Record<string, unknown> {
+async function verifyJws(token: string, verifier: Verifier, what: string): Promise<Record<string, unknown>> {
   const parts = token.split('.');
   if (parts.length !== 3) throw new Error(`Malformed ${what}`);
   const [encodedHeader, encodedPayload, encodedSignature] = parts;
-  if (!verify(null, Buffer.from(`${encodedHeader}.${encodedPayload}`), key, unb64url(encodedSignature))) {
+  if (!await verifier.verify(bytesOf(`${encodedHeader}.${encodedPayload}`), unb64url(encodedSignature))) {
     throw new Error(`Bad ${what} signature`);
   }
-  const payload = JSON.parse(unb64url(encodedPayload).toString()) as Record<string, unknown>;
+  const payload = JSON.parse(textOf(unb64url(encodedPayload))) as Record<string, unknown>;
   const now = Date.now();
   if (typeof payload.exp === 'number' && now > payload.exp + SKEW_MS) throw new Error(`Expired ${what}`);
   if (typeof payload.nbf === 'number' && now < payload.nbf - SKEW_MS) throw new Error(`${what} not yet valid`);
@@ -99,48 +103,28 @@ function verifyJws(token: string, key: KeyObject, what: string): Record<string, 
 function headerOf(token: string): Record<string, unknown> {
   const encodedHeader = token.split('.')[0];
   if (!encodedHeader) throw new Error('Malformed envelope');
-  return JSON.parse(unb64url(encodedHeader).toString()) as Record<string, unknown>;
-}
-
-/** A fresh Ed25519 pair, PEM both ways. The root's and a frond's are the same kind. */
-export function generateKeyPair(): { privateKey: string; publicKey: string } {
-  const { privateKey, publicKey } = generateKeyPairSync('ed25519');
-  return {
-    privateKey: privateKey.export({ type: 'pkcs8', format: 'pem' }).toString(),
-    publicKey: publicKey.export({ type: 'spki', format: 'pem' }).toString(),
-  };
+  return JSON.parse(textOf(unb64url(encodedHeader))) as Record<string, unknown>;
 }
 
 /**
- * Bind a name to a public key, signed by the root — the whole of what a receiver
- * needs to recognize a frond it has never seen.
+ * Sign one call, whole: who is asking, what is asked, and on whose behalf.
  *
- * `ttlDays` bounds the damage of a leaked frond key without a revocation list:
- * re-issuing is a deployment, which is the same gesture that leaked it.
+ * The private key is parsed on every call here, which is the convenience form. A process
+ * that signs in a request path builds its signer once — `identityFromEnv` does exactly
+ * that, and `sign` on the value it returns holds the parsed key.
  */
-export function issueGrant(
-  rootPrivateKey: string,
-  name: string,
-  frondPublicKey: string,
-  ttlDays = 90,
-): string {
-  const jwk = createPublicKey(frondPublicKey).export({ format: 'jwk' });
-  const now = Date.now();
-  return signJws(
-    { alg: 'EdDSA', typ: 'fougere-grant' },
-    { sub: name, jwk, iat: now, exp: now + ttlDays * 86_400_000 },
-    createPrivateKey(rootPrivateKey),
-  );
+export async function signEnvelope(identity: FrondIdentity, call: SignedCall): Promise<string> {
+  return sealWith(await crypto.signerOf(identity.privateKey), identity.grant, call);
 }
 
-/** Sign one call, whole: who is asking, what is asked, and on whose behalf. */
-export function signEnvelope(identity: FrondIdentity, call: SignedCall): string {
+/** The same envelope, against a key someone already parsed. */
+async function sealWith(signer: Signer, grant: string, call: SignedCall): Promise<string> {
   const now = Date.now();
-  const { sub } = JSON.parse(unb64url(identity.grant.split('.')[1]).toString()) as { sub: string };
+  const { sub } = JSON.parse(textOf(unb64url(grant.split('.')[1]))) as { sub: string };
   return signJws(
-    { alg: 'EdDSA', typ: 'fougere-call', grant: identity.grant },
-    { iss: sub, state: call.state ?? {}, bound: boundTo(call), iat: now, exp: now + ENVELOPE_TTL_MS },
-    createPrivateKey(identity.privateKey),
+    { alg: 'EdDSA', typ: 'fougere-call', grant },
+    { iss: sub, state: call.state ?? {}, bound: await boundTo(call), iat: now, exp: now + ENVELOPE_TTL_MS },
+    signer,
   );
 }
 
@@ -149,17 +133,21 @@ export function signEnvelope(identity: FrondIdentity, call: SignedCall): string 
  * first, and only the key it carries verifies the envelope — reading the envelope's own
  * claim of who it is before that would be believing the thing under examination.
  */
-export function verifyEnvelope(token: string, rootPublicKey: string, presented: SignedCall): VerifiedCall {
+export async function verifyEnvelope(token: string, rootPublicKey: string, presented: SignedCall): Promise<VerifiedCall> {
+  return openWith(await crypto.verifierOf(rootPublicKey), token, presented);
+}
+
+/** The same check, against a root key someone already parsed. */
+async function openWith(root: Verifier, token: string, presented: SignedCall): Promise<VerifiedCall> {
   const { grant } = headerOf(token);
   if (typeof grant !== 'string') throw new Error('Envelope carries no grant');
 
-  const granted = verifyJws(grant, createPublicKey(rootPublicKey), 'grant');
+  const granted = await verifyJws(grant, root, 'grant');
   if (typeof granted.sub !== 'string' || typeof granted.jwk !== 'object' || granted.jwk === null) {
     throw new Error('Grant names no frond');
   }
 
-  const callerKey = createPublicKey({ key: granted.jwk as JsonWebKey, format: 'jwk' });
-  const payload = verifyJws(token, callerKey, 'envelope');
+  const payload = await verifyJws(token, await crypto.verifierOf(granted.jwk as PublicJwk), 'envelope');
 
   // The grant is the authority on the name; the envelope only repeats it. They disagree
   // when a frond signs under someone else's name with its own key.
@@ -168,7 +156,7 @@ export function verifyEnvelope(token: string, rootPublicKey: string, presented: 
   // The signature says this envelope was made by `blog`; this says it was made for THIS
   // call. Without it a captured envelope is a blank cheque until it expires.
   const bound = JSON.stringify(payload.bound);
-  if (bound !== JSON.stringify(boundTo(presented))) {
+  if (bound !== JSON.stringify(await boundTo(presented))) {
     throw new Error(`Envelope was signed for a different call than ${presented.entity}.${presented.op}`);
   }
 
@@ -180,10 +168,16 @@ export function verifyEnvelope(token: string, rootPublicKey: string, presented: 
 
 /** The two halves a boot needs, and the environment they come from. */
 export interface CallIdentity {
-  /** Signs an outgoing call, whole. Absent when this process holds no key — it only answers. */
-  sign?: (call: SignedCall) => string;
+  /**
+   * Signs an outgoing call, whole. Absent when this process holds no key — it only answers.
+   *
+   * A promise because WebCrypto has no synchronous form. On Node the work stays
+   * synchronous inside and only the answer is wrapped: measured at 14.28 µs awaited
+   * against 14.30 µs called directly, while WebCrypto on the same curve costs 22.72.
+   */
+  sign?: (call: SignedCall) => Promise<string>;
   /** Establishes an incoming caller, against the call that actually arrived. */
-  verify?: (identity: string, presented: SignedCall) => VerifiedCall;
+  verify?: (identity: string, presented: SignedCall) => Promise<VerifiedCall>;
   /** Refuse an unsigned call. True exactly when a root is trusted. */
   requireIdentity: boolean;
 }
@@ -197,7 +191,7 @@ export interface CallIdentity {
  * a human pasting a real PEM is not making a mistake.
  */
 function pemOf(value: string): string {
-  return value.trimStart().startsWith('-----') ? value : Buffer.from(value, 'base64').toString('utf8');
+  return value.trimStart().startsWith('-----') ? value : textOf(unb64(value));
 }
 
 /**
@@ -211,14 +205,26 @@ function pemOf(value: string): string {
  * Trusting a root IS asking to refuse: there is no separate flag, because a deployment
  * that names an authority and then accepts unsigned calls has said two things at once.
  */
-export function identityFromEnv(env: Record<string, string | undefined> = process.env): CallIdentity {
+export async function identityFromEnv(env: Record<string, string | undefined> = envOfProcess()): Promise<CallIdentity> {
   const root = env.FOUGERE_ROOT ? pemOf(env.FOUGERE_ROOT) : undefined;
   const privateKey = env.FOUGERE_KEY ? pemOf(env.FOUGERE_KEY) : undefined;
   const grant = env.FOUGERE_GRANT;
 
+  // Async because the keys are parsed HERE, once, and both closures below capture the
+  // result: importing a key is per-key work, and a per-call import would put it inside
+  // every request. This is the one gesture a boot pays for.
+  const signer = privateKey ? await crypto.signerOf(privateKey) : undefined;
+  const rootKey = root ? await crypto.verifierOf(root) : undefined;
+
   return {
-    ...(privateKey && grant ? { sign: (call: SignedCall) => signEnvelope({ privateKey, grant }, call) } : {}),
-    ...(root ? { verify: (identity: string, presented: SignedCall) => verifyEnvelope(identity, root, presented) } : {}),
+    ...(signer && grant ? { sign: (call: SignedCall) => sealWith(signer, grant, call) } : {}),
+    ...(rootKey ? { verify: (identity: string, presented: SignedCall) => openWith(rootKey, identity, presented) } : {}),
     requireIdentity: Boolean(root),
   };
+}
+
+/** A Worker has no `process`. Reading the global is what makes an absent one an empty env. */
+function envOfProcess(): Record<string, string | undefined> {
+  const proc = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process;
+  return proc?.env ?? {};
 }

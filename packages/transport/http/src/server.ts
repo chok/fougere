@@ -14,7 +14,7 @@ export interface ReceiveOptions {
    * the sender's `sign` is: verifying is `node:crypto` and this package carries none.
    * `@fougere/app` wires it from `verifyEnvelope` and the root public key.
    */
-  verify?: (identity: string, presented: SignedCall) => { caller: string; state: Record<string, unknown> };
+  verify?: (identity: string, presented: SignedCall) => Promise<{ caller: string; state: Record<string, unknown> }>;
   /**
    * Refuse a call carrying no verifiable identity — the whole of "secure by default"
    * at the wire. Without it a receiver takes the state it is handed and its only
@@ -57,7 +57,7 @@ export async function handleRpc(runner: Transport, raw: unknown, options: Receiv
   if (options.verify && sent.identity) {
     try {
       // What ARRIVED, never what we would rather it had been — the comparison is the point.
-      ({ caller, state } = options.verify(sent.identity, {
+      ({ caller, state } = await options.verify(sent.identity, {
         entity,
         op,
         params: sent.params ?? {},
