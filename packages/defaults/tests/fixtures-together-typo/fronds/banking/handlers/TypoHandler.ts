@@ -11,5 +11,5 @@ export default class TypoHandler {
   }
 }
 
-/** Declared so the file compiles; the boot still finds nothing under this name. */
-type Ledgre = never;
+/** Declared so the file compiles, and NAMED so the refusal can quote what was written. */
+interface Ledgre { readonly notAnEntity: true }

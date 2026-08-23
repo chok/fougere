@@ -14,7 +14,7 @@ export default class SensorHandler {
   constructor(private reading: Emit<Reading>) {}
 
   /** Take a measurement and announce it. */
-  async report(node: string): Promise<void> {
+  async recordReading(node: string): Promise<void> {
     const celsius = Math.round((18 + Math.random() * 4 + this.offset) * 10) / 10;
     await this.reading({ node, celsius, at: new Date() });
   }

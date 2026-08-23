@@ -8,7 +8,7 @@ const localePath = useLocalePath();
 const slug = route.params.slug as string;
 
 interface Full { id: string; slug: string; title: string; summary?: string; body?: string; authorName?: string; publishedAt?: string }
-const { data: post, error } = await useQuery<Full>(Post, 'bySlug', { body: { slug } });
+const { data: post, error } = await useQuery<Full>(Post, 'findBySlug', { body: { slug } });
 
 const md = new MarkdownIt({ linkify: true });
 const rendered = computed(() => (post.value?.body ? md.render(post.value.body) : ''));

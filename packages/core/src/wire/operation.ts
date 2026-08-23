@@ -114,6 +114,11 @@ const COMMAND_VERBS = new Set([
 
 const COMPOUND_CONNECTORS = new Set(['and', 'or', 'then']);
 
+/** The two lists, for a refusal that has to say what a name could have led with. */
+export function knownVerbs(): { query: string[]; command: string[] } {
+  return { query: [...QUERY_VERBS].sort(), command: [...COMMAND_VERBS].sort() };
+}
+
 /** `getOrCreatePost` → `['get', 'or', 'create', 'post']`; `hash` never becomes `has`. */
 function wordsOf(name: string): string[] {
   return name

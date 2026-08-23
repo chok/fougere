@@ -4,7 +4,7 @@ import { useQuery, useCommand } from '@fougere/react';
 import Post from '@fronds/blog/entities/Post';
 
 /**
- * The couple. `useQuery(Post, 'drafts')` reads, `useCommand(Post, 'publish')`
+ * The couple. `useQuery(Post, 'listDrafts')` reads, `useCommand(Post, 'publish')`
  * writes, and nothing wires them together: both designate the same entity, so a
  * successful publish revalidates this list on its own.
  *
@@ -12,7 +12,7 @@ import Post from '@fronds/blog/entities/Post';
  * `useState` — the rules live in `@fougere/app/client`, shared by both.
  */
 export default function DraftsPage() {
-  const { items, loading, error, refresh } = useQuery<Post>(Post, 'drafts');
+  const { items, loading, error, refresh } = useQuery<Post>(Post, 'listDrafts');
   const publish = useCommand(Post, 'publish');
 
   return (

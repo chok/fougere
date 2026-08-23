@@ -22,7 +22,7 @@ export default class PostRepository extends Repository(Post) {
    * Any post carrying this slug, whatever its status — what a uniqueness check asks.
    * `slug` is not a database constraint, so this is the only thing holding it.
    */
-  bySlug(slug: string): Promise<Post | undefined> {
+  findBySlug(slug: string): Promise<Post | undefined> {
     return this.findBy({ slug });
   }
 

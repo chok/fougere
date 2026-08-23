@@ -26,7 +26,7 @@ export default class PostHandler {
    * The one judge in the demo. Every terminal that shows a title got it from
    * here, whatever pushed it into asking.
    */
-  async list(user: User | null): Promise<Post[]> {
+  async list(user?: User): Promise<Post[]> {
     const all = await this.posts.list();
     return all.filter((post) => post.status === 'published' || post.author === user?.name);
   }
@@ -34,12 +34,10 @@ export default class PostHandler {
   /**
    * Write a draft, and say a post changed.
    *
-   * `input` comes before `user` on purpose: the scan takes the FIRST param whose type
-   * resolves to a schema as the op's input contract, without consulting the collector
-   * set — so a signature whose only schema-typed param is the collected one makes the
-   * façade judge the caller's body against `User`.
+   * `input` is supplied by the caller; `user` is supplied by the collector. The resolved
+   * binding plan, rather than their position, determines the operation's input contract.
    */
-  async draft(input: PostDraft, user: User | null): Promise<Post> {
+  async createDraft(input: PostDraft, user?: User): Promise<Post> {
     if (!user) throw new FougereError({ code: ErrorCode.UNAUTHORIZED, message: 'sign in to write' });
     const post = await this.posts.create({ ...input, author: user.name, status: 'draft' });
     await this.changed({ id: post.id, author: post.author, status: post.status, at: new Date() });

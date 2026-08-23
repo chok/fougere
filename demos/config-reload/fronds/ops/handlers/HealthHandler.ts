@@ -9,7 +9,7 @@ export default class HealthHandler {
   constructor(private logger: Logger) {}
 
   /** Take a while — a call still running when the app is let go. */
-  async slow(): Promise<{ done: boolean }> {
+  async pingSlow(): Promise<{ done: boolean }> {
     await new Promise((resolve) => setTimeout(resolve, 30));
     return { done: true };
   }

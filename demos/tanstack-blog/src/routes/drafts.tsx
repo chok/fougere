@@ -12,7 +12,7 @@ import Post from '@fronds/blog/entities/Post';
 export const Route = createFileRoute('/drafts')({ component: Drafts });
 
 function Drafts() {
-  const { items, loading, error, refresh } = useQuery<Post>(Post, 'drafts');
+  const { items, loading, error, refresh } = useQuery<Post>(Post, 'listDrafts');
   const publish = useCommand(Post, 'publish');
 
   return (

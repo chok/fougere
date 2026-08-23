@@ -15,7 +15,7 @@ export default class PostHandler extends Crud(Post) {
   }
 
   /** Everything, drafts included — what an author's own dashboard shows. */
-  async drafts(): Promise<Post[]> {
+  async listDrafts(): Promise<Post[]> {
     const all = await this.orm.list();
     return all.filter((post) => post.status === 'draft');
   }
