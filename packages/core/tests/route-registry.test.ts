@@ -62,14 +62,24 @@ describe('RouteRegistry', () => {
       .toThrow(/product\.list.*local and remote/);
   });
 
-  it('resolves an unknown route once and caches it', async () => {
+  it('shares an in-progress resolution between equivalent addresses, then caches it', async () => {
     const registry = new RouteRegistry();
     const address = new RouteAddress({ entity: 'product', operation: 'list' });
     const resolved = route(address, 'remote');
-    const resolve = vi.fn(async () => resolved);
+    let finish!: () => void;
+    const pending = new Promise<void>((resolve) => { finish = resolve; });
+    const resolve = vi.fn(async () => {
+      await pending;
+      return resolved;
+    });
     registry.addResolver({ resolve });
 
-    await expect(Promise.all([registry.resolve(address), registry.resolve(address)]))
+    const first = registry.resolve(address);
+    const second = registry.resolve(new RouteAddress(address.toJSON()));
+    expect(resolve).toHaveBeenCalledTimes(1);
+
+    finish();
+    await expect(Promise.all([first, second]))
       .resolves.toEqual([resolved, resolved]);
     expect(resolve).toHaveBeenCalledTimes(1);
     await expect(registry.resolve(address)).resolves.toBe(resolved);
