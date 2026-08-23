@@ -6,6 +6,7 @@ import { ArgumentResolver } from '../src/dispatch/ArgumentResolver.js';
 import { InputValidator } from '../src/dispatch/InputValidator.js';
 import { OperationExecutor } from '../src/dispatch/OperationExecutor.js';
 import { OutputProjector } from '../src/dispatch/OutputProjector.js';
+import { OutputView } from '../src/dispatch/OutputView.js';
 
 class Product extends entity({ name: text() }) {}
 
@@ -37,7 +38,7 @@ describe('OperationExecutor', () => {
       validator: new InputValidator(),
       arguments: new ArgumentResolver(),
       invoke,
-      projector: new OutputProjector(Product.getFields(), true),
+      projector: new OutputProjector(new OutputView(Product.getFields(), true)),
       present: async (result) => {
         order.push('present');
         return result;
@@ -69,7 +70,7 @@ describe('OperationExecutor', () => {
       validator: new InputValidator(),
       arguments: new ArgumentResolver(),
       invoke,
-      projector: new OutputProjector(Product.getFields()),
+      projector: new OutputProjector(new OutputView(Product.getFields())),
     });
 
     await expect(executor.execute({ body: { unknown: true } }))

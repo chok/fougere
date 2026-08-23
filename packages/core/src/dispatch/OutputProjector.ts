@@ -1,12 +1,10 @@
-import { encodeFields, type Fields } from '@fougere/schema';
+import { encodeFields } from '@fougere/schema';
 import { preserveArrayProperties } from './ArrayResult.js';
+import type { OutputView } from './OutputView.js';
 
 /** Projects one operation result onto the fields its audience may read. */
 export class OutputProjector {
-  constructor(
-    private readonly fields: Fields,
-    private readonly closed = false,
-  ) {}
+  constructor(private readonly view: OutputView) {}
 
   project(result: unknown): unknown {
     if (result === null || result === undefined) return result;
@@ -18,13 +16,13 @@ export class OutputProjector {
     if (typeof result !== 'object') return result;
 
     const record = result as Record<string, unknown>;
-    const scoped = this.closed
+    const scoped = this.view.closed
       ? Object.fromEntries(
-          Object.keys(this.fields)
+          Object.keys(this.view.fields)
             .filter((key) => key in record)
             .map((key) => [key, record[key]]),
         )
       : record;
-    return encodeFields(this.fields, scoped);
+    return encodeFields(this.view.fields, scoped);
   }
 }

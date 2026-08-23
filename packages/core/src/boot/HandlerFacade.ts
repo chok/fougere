@@ -15,6 +15,7 @@ import { InputValidator } from '../dispatch/InputValidator.js';
 import { ArgumentResolver } from '../dispatch/ArgumentResolver.js';
 import { OperationExecutor } from '../dispatch/OperationExecutor.js';
 import { OutputProjector } from '../dispatch/OutputProjector.js';
+import { OutputView } from '../dispatch/OutputView.js';
 import { PresenterExecutor } from '../dispatch/PresenterExecutor.js';
 import { PresenterArgumentResolver } from '../dispatch/PresenterArgumentResolver.js';
 
@@ -47,12 +48,6 @@ export interface Wiring {
   inflight: InFlight;
 }
 
-/** The field set an op's result is projected onto, and whether it is the whole of it. */
-interface View {
-  fields: Fields;
-  closed: boolean;
-}
-
 /** Adapts one handler door to executable operations. */
 export class HandlerFacade {
   /** Contracts served by this door. */
@@ -61,7 +56,7 @@ export class HandlerFacade {
   /** The callable surface: op name → the function a caller reaches. */
   readonly ops: Record<string, Function> = {};
 
-  private readonly cachedViews = new Map<string, View>();
+  private readonly cachedViews = new Map<string, OutputView>();
   private instance: any;
   private readonly inputValidator = new InputValidator();
   private readonly argumentResolver = new ArgumentResolver(
@@ -142,7 +137,7 @@ export class HandlerFacade {
   }
 
   /** Resolve and cache the output view declared for one operation. */
-  private viewOf(op: string): View {
+  private viewOf(op: string): OutputView {
     const known = this.cachedViews.get(op);
     if (known) return known;
 
@@ -154,10 +149,10 @@ export class HandlerFacade {
       ?? (handler.ctor as { __output?: unknown })?.__output
       // Without a declared shape, projection preserves the returned object.
       ?? entity?.entityClass) as { getFields?: () => Fields };
-    const resolved: View = {
-      fields: typeof schema?.getFields === 'function' ? schema.getFields() : {},
-      closed: perOp !== undefined,
-    };
+    const resolved = new OutputView(
+      typeof schema?.getFields === 'function' ? schema.getFields() : {},
+      perOp !== undefined,
+    );
     this.cachedViews.set(op, resolved);
     return resolved;
   }
@@ -188,7 +183,7 @@ export class HandlerFacade {
       validator: this.inputValidator,
       arguments: this.argumentResolver,
       invoke: (args) => this.resolvedHandler()[op](...args),
-      projector: new OutputProjector(view.fields, view.closed),
+      projector: new OutputProjector(view),
       ...(view.closed || !presenter ? {} : {
         present: async (result: unknown, effective: InvocationContext) =>
           new PresenterExecutor(
