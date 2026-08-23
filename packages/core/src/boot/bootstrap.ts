@@ -413,13 +413,6 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
           emissions,
         },
       );
-      const entry = new FacadeEntry(
-        handler.surface ? localDispatcher : dispatcher,
-        handler.address,
-        Object.keys(facade.ops),
-        handler.surface,
-      );
-      container.registerValue(facadeKey, entry.operations);
       // The terms alongside the door, under the same audience — a surface that serves
       // fewer ops describes fewer ops.
       container.registerValue(contractsKeyOf(handler.address, handler.surface), facade.contracts);
@@ -436,7 +429,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         }
       }
 
-      for (const operation of Object.keys(facade.ops)) {
+      for (const operation of facade.contracts.keys()) {
         for (const surface of surfaces) {
           const address = new RouteAddress({
             entity: handler.address,
@@ -450,6 +443,14 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
           ));
         }
       }
+
+      const entry = new FacadeEntry(
+        handler.surface ? localDispatcher : dispatcher,
+        handler.address,
+        routeRegistry.operationNames(handler.address, handler.surface),
+        handler.surface,
+      );
+      container.registerValue(facadeKey, entry.operations);
     };
 
     // A presenter is about an entity — computed fields sit on a shape — so this walks
@@ -706,7 +707,12 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
     const fallback = facadeAt(facadeKeyOf(entity), false);
     return fallback
-      ? new FacadeEntry(localDispatcher, entity, Object.keys(fallback), surface).operations
+      ? new FacadeEntry(
+          localDispatcher,
+          entity,
+          routeRegistry.operationNames(entity, surface),
+          surface,
+        ).operations
       : undefined;
   };
 

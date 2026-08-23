@@ -35,6 +35,9 @@ describe('RouteRegistry', () => {
 
     expect(registry.find(publicRoute.address)).toBe(publicRoute);
     expect(registry.find(adminRoute.address)).toBe(adminRoute);
+    expect(registry.operationNames('product', 'public')).toEqual(['list']);
+    expect(registry.operationNames('product', 'admin')).toEqual(['list']);
+    expect(registry.operationNames('product')).toEqual([]);
   });
 
   it('shares system routes across surfaces without widening local routes', () => {

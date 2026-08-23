@@ -64,4 +64,10 @@ export class RouteRegistry {
   routes(): Route[] {
     return [...this.byAddress.values()];
   }
+
+  operationNames(entity: string, surface?: string): string[] {
+    return this.routes()
+      .filter((route) => route.address.entity === entity && route.address.surface === surface)
+      .map((route) => route.address.operation);
+  }
 }
