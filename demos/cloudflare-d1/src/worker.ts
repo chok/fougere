@@ -20,7 +20,7 @@
 import { env } from 'cloudflare:workers';
 import { Hono } from 'hono';
 import { createApp, createLocalRunner, type App } from '@fougere/core';
-import { observability } from '@fougere/observability';
+import { observability, flushTelemetry } from '@fougere/observability';
 import { createContainer } from '@fougere/container';
 import { receive } from '@fougere/transport-http/receive';
 import { createHonoRouter } from '@fougere/http';
@@ -45,7 +45,15 @@ async function open(env: Env) {
     scan,
     createContainer,
     ormFactory: storage.ormFactory,
-    extensions: [observability({ service: 'catalog' })],
+    extensions: [observability({
+      service: 'catalog',
+      // The collector next door. Its exporter still buffers on a timer — which never
+      // fires here — so the flush below is what actually sends.
+      otlp: 'https://fougere-telemetry.maxime-picaud-240.workers.dev',
+      // No timer: Cloudflare refuses a deployment whose module scope sets one, and an
+      // isolate is frozen at the response anyway. `ctx.waitUntil` below is what sends.
+      flushMs: 0,
+    })],
   });
 
   // Said out loud: this demo has no root key, so the envelope door takes the `state` a
@@ -73,7 +81,14 @@ async function open(env: Env) {
 const door = await open(env as unknown as Env);
 
 export default {
-  fetch: (request: Request): Promise<Response> => door(request),
+  async fetch(request: Request, _env: Env, ctx: { waitUntil(work: Promise<unknown>): void }): Promise<Response> {
+    const answer = await door(request);
+    // The isolate is frozen the moment this returns, so an exporter's timer never fires
+    // and the window it held is lost. `waitUntil` is the platform saying "this work
+    // outlives the response" — the one place a Worker can send what it measured.
+    ctx.waitUntil(flushTelemetry().catch(() => {}));
+    return answer;
+  },
 };
 
 /** What is served, read off the app itself — never a list written twice. */

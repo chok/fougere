@@ -1,0 +1,10 @@
+{
+  "name": "fougere-telemetry",
+  "main": "dist/collector.mjs",
+  "compatibility_date": "2026-08-01",
+  "compatibility_flags": [],
+  "d1_databases": [
+    { "binding": "DB", "database_name": "fougere-telemetry", "database_id": "7d696576-94e0-4bd2-b959-401bcda13bee" }
+  ],
+  "observability": { "enabled": true }
+}

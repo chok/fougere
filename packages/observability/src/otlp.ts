@@ -74,15 +74,23 @@ export function otlp(options: OtlpOptions): OtlpExporter {
     ]);
   }
 
+  // `flushMs: 0` means "nobody is on a timer here, I will say when" — and on a Worker it
+  // is not a preference, it is the only legal form: Cloudflare REFUSES a deployment whose
+  // module scope sets a timeout ("Disallowed operation called within global scope"), and
+  // an app built at module scope builds its exporter there. Measured 2026-08-23, the
+  // deploy failed with error 10021. The isolate is frozen at the response anyway, so the
+  // timer could never have fired; `ctx.waitUntil(flushTelemetry())` is what sends.
+  //
   // `unref` so a buffered span never keeps a process alive: exporting is something the
   // process does on its way, never a reason for it to stay.
-  const timer = setInterval(() => void flush(), options.flushMs ?? 1_000);
-  timer.unref?.();
+  const every = options.flushMs ?? 1_000;
+  const timer = every > 0 ? setInterval(() => void flush(), every) : undefined;
+  timer?.unref?.();
 
   return {
     sink: (span) => { buffer.push(span); },
     flush,
-    stop: async () => { clearInterval(timer); await flush(); },
+    stop: async () => { if (timer) clearInterval(timer); await flush(); },
   };
 }
 

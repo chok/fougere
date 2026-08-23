@@ -11,6 +11,7 @@
  */
 import { loggerMiddleware, Logger, onLog, type App, type Extension } from '@fougere/core';
 import { traceContext } from '#trace-context';
+import { registerFlush } from './index.js';
 import { trace, onSpan } from './index.js';
 import { metrics, serveTopology } from './metrics.js';
 import { otlp } from './otlp.js';
@@ -92,7 +93,13 @@ export function observability(options: ObservabilityOptions = {}): Extension {
         ...(options.flushMs === undefined ? {} : { flushMs: options.flushMs }),
         ...(options.onError ? { onError: options.onError } : {}),
       });
-      undo.push(onSpan(telemetry.sink), onLog(written.sink), () => telemetry.stop(), () => written.stop());
+      // The timer is not the only way out: an isolate is frozen when it answers, so a
+      // host with no time between requests calls `flushTelemetry()` inside `ctx.waitUntil`.
+      undo.push(
+        onSpan(telemetry.sink), onLog(written.sink),
+        registerFlush(() => telemetry.flush()), registerFlush(() => written.flush()),
+        () => telemetry.stop(), () => written.stop(),
+      );
     },
     async down(app: App) {
       // Reverse, and the exporters' `stop()` is in here: it flushes what is buffered, so a

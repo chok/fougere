@@ -98,6 +98,39 @@ export function activeCalls(): number {
   return active;
 }
 
+/**
+ * Every exporter this process installed, so something can make them send NOW.
+ *
+ * An exporter buffers and flushes on a timer, which assumes a process that lives between
+ * two requests. An isolate does not: it is frozen the moment it answers, so the timer
+ * never fires and what it held is lost. `ctx.waitUntil(flushTelemetry())` is the whole
+ * remedy — the platform's way of saying "this work outlives the response".
+ */
+const flushes: Array<() => Promise<void>> = [];
+
+/**
+ * Send what is buffered, now. Safe to call where there is nothing to send.
+ *
+ * Module-level like `sinks`, and for the same reason: an exporter belongs to the PROCESS,
+ * and the handler that wants to flush it holds no reference to the extension that built it.
+ */
+export async function flushTelemetry(): Promise<void> {
+  // Every one, and the refusals together — a flush that abandons the rest loses the
+  // windows after it, which is the answer `app.deliver` gives for the same shape.
+  const failed = await Promise.allSettled(flushes.map((send) => send()));
+  const refused = failed.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+  if (refused.length > 0) throw new AggregateError(refused.map((r) => r.reason), 'telemetry flush');
+}
+
+/** Declare an exporter's flush, and answer the way to withdraw it — like `onSpan`. */
+export function registerFlush(send: () => Promise<void>): () => void {
+  flushes.push(send);
+  return () => {
+    const at = flushes.indexOf(send);
+    if (at >= 0) flushes.splice(at, 1);
+  };
+}
+
 export function onSpan(next: SpanSink): () => void {
   sinks.push(next);
   return () => {

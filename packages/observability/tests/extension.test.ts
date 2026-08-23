@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { createApp, createLocalRunner } from '@fougere/core';
 import type { InvocationContext } from '@fougere/core';
 import { createContainer } from '@fougere/container';
-import { observability, trace, activeCalls } from '../src/index.js';
+import { observability, trace, activeCalls, flushTelemetry, registerFlush } from '../src/index.js';
 // @ts-expect-error plain-JS fixture
 import { createOrmFactory } from './fixtures/data.mjs';
 
@@ -74,5 +74,39 @@ describe('observability as an extension', () => {
     const secondRunning = second.resolve<Facade>('productHandler').list();
     expect(activeCalls()).toBe(0);
     await secondRunning;
+  });
+});
+
+describe('sending what is buffered, now', () => {
+  it('a flush with nothing registered is not an error', async () => {
+    // A host calls `ctx.waitUntil(flushTelemetry())` unconditionally — it cannot know
+    // whether the deployment configured an exporter, and asking would be its business.
+    await expect(flushTelemetry()).resolves.toBeUndefined();
+  });
+
+  it('asks every exporter, and reports the refusals together', async () => {
+    // An isolate is frozen when it answers, so the timer an exporter relies on never
+    // fires. Every one is asked: a flush that abandons the rest loses the windows after it.
+    const asked: string[] = [];
+    const undo = [
+      registerFlush(async () => { asked.push('traces'); }),
+      registerFlush(async () => { asked.push('logs'); throw new Error('collector down'); }),
+      registerFlush(async () => { asked.push('metrics'); }),
+    ];
+
+    await expect(flushTelemetry()).rejects.toThrow(AggregateError);
+    expect(asked).toEqual(['traces', 'logs', 'metrics']);
+
+    for (const stop of undo) stop();
+  });
+
+  it('withdraws, so a released app stops being asked', async () => {
+    let asked = 0;
+    const stop = registerFlush(async () => { asked += 1; });
+    await flushTelemetry();
+    stop();
+    await flushTelemetry();
+
+    expect(asked).toBe(1);
   });
 });

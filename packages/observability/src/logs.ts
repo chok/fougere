@@ -73,8 +73,10 @@ export function logs(options: LogsOptions): LogExporter {
     }
   }
 
-  const timer = setInterval(() => void flush(), options.flushMs ?? 1_000);
-  timer.unref?.();
+  const every = options.flushMs ?? 1_000;
+  // Same rule as the span exporter: a timer at module scope makes a Worker undeployable.
+  const timer = every > 0 ? setInterval(() => void flush(), every) : undefined;
+  timer?.unref?.();
 
   return {
     // The span is read HERE, while the line is being written — not at flush time, when
@@ -85,7 +87,7 @@ export function logs(options: LogsOptions): LogExporter {
       buffer.push({ ...record, traceId: span?.traceId, spanId: span?.spanId });
     },
     flush,
-    stop: async () => { clearInterval(timer); await flush(); },
+    stop: async () => { if (timer) clearInterval(timer); await flush(); },
   };
 }
 
