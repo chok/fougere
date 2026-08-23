@@ -1,10 +1,10 @@
-import { Crud, type EntityOrm } from '@fougere/core';
+import { Crud, type RepositoryOf } from '@fougere/core';
 import Product from '../entities/Product.js';
 import Pricing from '../services/Pricing.js';
 
 export default class ProductHandler extends Crud(Product) {
-  constructor(orm: EntityOrm<Product>, private pricing: Pricing) {
-    super(orm);
+  constructor(products: RepositoryOf<Product>, private pricing: Pricing) {
+    super(products);
   }
 
   /** The price a buyer pays, rate included. */

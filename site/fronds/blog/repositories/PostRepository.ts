@@ -10,12 +10,12 @@ import Post from '../entities/Post.js';
 export default class PostRepository extends Repository(Post) {
   /** The public index: published only, newest first. */
   published(): Promise<Post[]> {
-    return this.orm.list({ where: { status: 'published' }, orderBy: 'publishedAt', order: 'desc' });
+    return this.list({ where: { status: 'published' }, orderBy: 'publishedAt', order: 'desc' });
   }
 
   /** The public read: the published post carrying this slug, if there is one. */
   publishedBySlug(slug: string): Promise<Post | undefined> {
-    return this.orm.findBy({ slug, status: 'published' });
+    return this.findBy({ slug, status: 'published' });
   }
 
   /**
@@ -23,11 +23,11 @@ export default class PostRepository extends Repository(Post) {
    * `slug` is not a database constraint, so this is the only thing holding it.
    */
   bySlug(slug: string): Promise<Post | undefined> {
-    return this.orm.findBy({ slug });
+    return this.findBy({ slug });
   }
 
   /** The author's workbench: their own posts, newest first. */
   ofAuthor(authorId: string): Promise<Post[]> {
-    return this.orm.list({ where: { authorId }, orderBy: 'createdAt', order: 'desc' });
+    return this.list({ where: { authorId }, orderBy: 'createdAt', order: 'desc' });
   }
 }

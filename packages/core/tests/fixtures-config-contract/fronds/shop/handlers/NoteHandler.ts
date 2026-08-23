@@ -1,7 +1,8 @@
-import type { EntityOrm } from '@fougere/core';
 import Note from '../entities/Note.js';
 
-type NoteOrm = EntityOrm<Note>;
+declare class NoteRepository {
+  findById(id: string): Promise<Note | undefined>;
+}
 
 /**
  * Two ops the scan cannot fully serve — the reason `frond.config.ts` can state a contract.
@@ -11,10 +12,10 @@ type NoteOrm = EntityOrm<Note>;
  * entity. Config names the judge.
  */
 export default class NoteHandler {
-  constructor(private noteOrm: NoteOrm) {}
+  constructor(private notes: NoteRepository) {}
 
   async retitle(input: Record<string, unknown>) {
-    return { ...(await this.noteOrm.findById('note-1')), title: input.title };
+    return { ...(await this.notes.findById('note-1')), title: input.title };
   }
 }
 
@@ -28,7 +29,7 @@ export default class NoteHandler {
  * RUNTIME and not in the parsed source, which is exactly the production case.
  */
 Object.assign(NoteHandler.prototype, {
-  async archive(this: { noteOrm: NoteOrm }, id: string) {
+  async archive(this: { notes: NoteRepository }, id: string) {
     return { id, archived: true };
   },
 });

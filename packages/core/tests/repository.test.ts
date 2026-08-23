@@ -51,12 +51,17 @@ describe('Repository(Entity)', () => {
     expect(repositoryKeyOf('reading')).toBe('ReadingRepository');
   });
 
-  it('is handed the port, and holds nothing else', () => {
+  it('forwards the port, gesture by gesture — the same shape the default has', async () => {
     class Thing {}
     const orm = makeOrm() as never;
     const repo = new (Repository(Thing))(orm);
 
-    expect(repo.orm).toBe(orm);
+    // The declared form and the default answer the same names: that is what makes a
+    // handler read `this.things.list()` whether or not anyone wrote the file.
+    for (const gesture of ['list', 'findById', 'findBy', 'create', 'update', 'delete', 'upsert']) {
+      expect(typeof (repo as unknown as Record<string, unknown>)[gesture]).toBe('function');
+    }
+    expect(await repo.list()).toEqual(rows);
   });
 });
 

@@ -1,5 +1,4 @@
 import { Crud, FougereError, ErrorCode } from '@fougere/core';
-import type { EntityOrm } from '@fougere/core';
 import Post from '../entities/Post.js';
 import PostRepository from '../repositories/PostRepository.js';
 import User from '@frond/user/entities/User.js';
@@ -21,8 +20,8 @@ function requireUser(user: User | null, operation: string): User {
   return user;
 }
 
-async function requireOwn(orm: EntityOrm<Post>, id: string, author: User, operation: string): Promise<Post> {
-  const post = await orm.findById(id);
+async function requireOwn(posts: PostRepository, id: string, author: User, operation: string): Promise<Post> {
+  const post = await posts.findById(id);
   if (!post) {
     throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `Post '${id}' not found`, entity: 'post', operation });
   }
@@ -40,10 +39,12 @@ async function requireFreeSlug(posts: PostRepository, slug: string, ownId: strin
 }
 
 export default class PostHandler extends Crud(Post, { list: PostCard }) {
-  // A Crud handler that declares a constructor stops getting its ORM injected, so it
-  // takes one and hands it to super() — the boot refuses the signature otherwise.
-  constructor(orm: EntityOrm<Post>, private posts: PostRepository) {
-    super(orm);
+  // A Crud handler that declares a constructor stops getting its storage injected, so it
+  // takes it and hands it to super() — the boot refuses the signature otherwise. ONE
+  // dependency: a repository forwards every gesture the port has, so the five CRUD ops
+  // and `published()` come out of the same object.
+  constructor(private posts: PostRepository) {
+    super(posts);
   }
 
   /** Public reading: published only, newest first, card shape — no body on the index. */
@@ -64,7 +65,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
 
   /** A post is visible when published, or when it's the author's own. */
   async findById(id: string, user: User | null): Promise<Post | undefined> {
-    const post = await this.orm.findById(id);
+    const post = await this.posts.findById(id);
     if (!post) return undefined;
     const own = user && post.authorId === user.id;
     return post.status === 'published' || own ? post : undefined;
@@ -83,7 +84,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
   async create(input: PostDraft, user: User | null): Promise<Post> {
     const author = requireUser(user, 'create');
     await requireFreeSlug(this.posts, input.slug, undefined, 'create');
-    return this.orm.create({
+    return this.posts.create({
       ...input,
       authorId: author.id,
       authorName: author.name ?? author.email,
@@ -93,9 +94,9 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
   /** Judge: the author only, free slug if it changes. */
   async update(id: string, input: PostDraft, user: User | null): Promise<Post> {
     const author = requireUser(user, 'update');
-    const post = await requireOwn(this.orm, id, author, 'update');
+    const post = await requireOwn(this.posts, id, author, 'update');
     if (input.slug && input.slug !== post.slug) await requireFreeSlug(this.posts, input.slug, id, 'update');
-    return this.orm.update(id, input);
+    return this.posts.update(id, input);
   }
 
   /**
@@ -105,20 +106,20 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
    */
   async publish(id: string, user: User | null): Promise<Post> {
     const author = requireUser(user, 'publish');
-    const post = await requireOwn(this.orm, id, author, 'publish');
+    const post = await requireOwn(this.posts, id, author, 'publish');
     if (post.status === 'published') {
       throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published', entity: 'post', operation: 'publish' });
     }
     if (!post.body?.trim()) {
       throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Cannot publish an empty draft', entity: 'post', operation: 'publish' });
     }
-    return this.orm.update(id, { status: 'published', publishedAt: new Date() });
+    return this.posts.update(id, { status: 'published', publishedAt: new Date() });
   }
 
   /** Judge: the author only. */
   async delete(id: string, user: User | null): Promise<boolean> {
     const author = requireUser(user, 'delete');
-    await requireOwn(this.orm, id, author, 'delete');
-    return this.orm.delete(id);
+    await requireOwn(this.posts, id, author, 'delete');
+    return this.posts.delete(id);
   }
 }

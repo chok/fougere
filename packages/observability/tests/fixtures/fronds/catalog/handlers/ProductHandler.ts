@@ -2,10 +2,10 @@ import { FougereError, ErrorCode } from '@fougere/core';
 import type Product from '../entities/Product.js';
 
 // Resolved by type from the container — not imported directly. Declared over the
-// entity rather than over `Record<string, unknown>`: the real ORM is `EntityOrm<T>`,
+// entity rather than over `Record<string, unknown>`: the default repository IS the port,
 // and an entity class is not an index signature, so a stand-in typed on records
 // forces every caller into a cast that says nothing.
-declare class ProductOrm {
+declare class ProductRepository {
   list(): Promise<Product[]>;
   findById(id: string): Promise<Product | undefined>;
   create(input: Partial<Product>): Promise<Product>;
@@ -13,11 +13,11 @@ declare class ProductOrm {
 
 /** Handler fixture — enough surface to prove parity, deliberate failure included. */
 export default class ProductHandler {
-  constructor(private productOrm: ProductOrm) {}
+  constructor(private products: ProductRepository) {}
 
-  async list() { return this.productOrm.list(); }
-  async findById(id: string) { return this.productOrm.findById(id); }
-  async create(input: Product) { return this.productOrm.create(input); }
+  async list() { return this.products.list(); }
+  async findById(id: string) { return this.products.findById(id); }
+  async create(input: Product) { return this.products.create(input); }
 
   async reserve(): Promise<never> {
     throw new FougereError({

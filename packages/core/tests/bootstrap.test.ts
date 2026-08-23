@@ -209,17 +209,17 @@ describe('handler facades', () => {
 });
 
 /**
- * A Crud handler that declares a constructor loses the automatic ORM injection —
- * `bootstrap` only injects it when `deps` is empty. Before this, `super()` handed
+ * A Crud handler that declares a constructor loses the automatic injection —
+ * `bootstrap` only injects when `deps` is empty. Before this, `super()` handed
  * `undefined` down and the five CRUD ops broke on the first request, silently. No
  * handler in the repo had a constructor, so nobody had met it yet.
  */
 describe('a Crud handler that declares a constructor', () => {
   const trapRoot = join(import.meta.dirname, 'fixtures-ctor-trap');
 
-  it('is refused at boot when it does not take its ORM, and the message says how', async () => {
+  it('is refused at boot when it does not take its storage, and the message says how', async () => {
     const boot = createApp({ scan: await scanProject(trapRoot), createContainer, ormFactory: () => fakeOrm() });
     await expect(boot).rejects.toThrow(/ItemHandler extends Crud\(\)/);
-    await expect(boot).rejects.toThrow(/constructor\(orm: ItemOrm, …\) \{ super\(orm\); \}/);
+    await expect(boot).rejects.toThrow(/constructor\(repo: ItemRepository, …\) \{ super\(repo\); \}/);
   });
 });

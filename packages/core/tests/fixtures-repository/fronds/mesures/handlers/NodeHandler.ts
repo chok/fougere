@@ -1,11 +1,11 @@
-import type { RepositoryOf } from '../../../../../src/index.js';
+import type { EntityOrm } from '../../../../../src/index.js';
 import Node from '../entities/Node.js';
 
-/** No repository was written for Node — the default is the port itself. */
-type NodeRepository = RepositoryOf<Node>;
+/** No repository was written for Node — the default IS the port, gestures and all. */
+type NodeRepository = EntityOrm<Node>;
 
 export default class NodeHandler {
-  constructor(private nodeRepository: NodeRepository) {}
+  constructor(private nodes: NodeRepository) {}
 
-  async all() { return this.nodeRepository.orm.list(); }
+  async all() { return this.nodes.list(); }
 }

@@ -23,7 +23,7 @@ export type { MirrorOf, MirrorConstructor, Refreshed } from './prefab/mirror.js'
 export { Presenter } from './prefab/presenter.js';
 export type { PresenterViews } from './prefab/presenter.js';
 export { Collector } from './prefab/collector.js';
-export { Repository, type RepositoryOf, type RepositoryConstructor } from './prefab/repository.js';
+export { Repository, type RepositoryOf, type RepositoryConstructor, type AggregateOf, type AggregateConstructor } from './prefab/repository.js';
 export type { InvocationContext } from './wire/invocation.js';
 export { EMPTY_INVOCATION } from './wire/invocation.js';
 export { resolveIsReadOp, resolveContracts } from './wire/operation.js';

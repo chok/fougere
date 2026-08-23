@@ -5,7 +5,7 @@ import type PostDraft from '../entities/PostDraft.js';
 import type PostChanged from '../entities/PostChanged.js';
 import type User from '../entities/User.js';
 
-declare class PostOrm {
+declare class PostRepository {
   list(): Promise<Post[]>;
   findById(id: string): Promise<Post | undefined>;
   create(input: Partial<Post>): Promise<Post>;
@@ -18,7 +18,7 @@ declare class PostOrm {
  * live door is a consumer of this file, never a variant of it.
  */
 export default class PostHandler {
-  constructor(private postOrm: PostOrm, private changed: Emit<PostChanged>) {}
+  constructor(private posts: PostRepository, private changed: Emit<PostChanged>) {}
 
   /**
    * What this caller may read — published posts, plus their own drafts.
@@ -27,7 +27,7 @@ export default class PostHandler {
    * here, whatever pushed it into asking.
    */
   async list(user: User | null): Promise<Post[]> {
-    const all = await this.postOrm.list();
+    const all = await this.posts.list();
     return all.filter((post) => post.status === 'published' || post.author === user?.name);
   }
 
@@ -41,14 +41,14 @@ export default class PostHandler {
    */
   async draft(input: PostDraft, user: User | null): Promise<Post> {
     if (!user) throw new FougereError({ code: ErrorCode.UNAUTHORIZED, message: 'sign in to write' });
-    const post = await this.postOrm.create({ ...input, author: user.name, status: 'draft' });
+    const post = await this.posts.create({ ...input, author: user.name, status: 'draft' });
     await this.changed({ id: post.id, author: post.author, status: post.status, at: new Date() });
     return post;
   }
 
   /** Send it out, and say so. */
   async publish(id: string): Promise<Post> {
-    const post = await this.postOrm.update(id, { status: 'published' });
+    const post = await this.posts.update(id, { status: 'published' });
     await this.changed({ id: post.id, author: post.author, status: post.status, at: new Date() });
     return post;
   }

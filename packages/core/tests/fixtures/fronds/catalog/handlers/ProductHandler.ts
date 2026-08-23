@@ -11,22 +11,22 @@ export class SearchOutput extends entity({
 }) {}
 
 // Resolved by type from the container — not imported directly. Declared over the
-// row shape rather than `unknown`: the real ORM is `EntityOrm<T>`, so a stand-in
+// row shape rather than `unknown`: the default repository IS the port, so a stand-in
 // answering `unknown[]` forces every caller into a cast that says nothing.
-declare class ProductOrm {
+declare class ProductRepository {
   list(): SearchOutput[];
   findById(id: string): SearchOutput | undefined;
 }
 
 /** Handler fixture — read-only + search op. */
 export default class ProductHandler {
-  constructor(private productOrm: ProductOrm) {}
+  constructor(private products: ProductRepository) {}
 
-  async list() { return this.productOrm.list(); }
-  async findById(id: string) { return this.productOrm.findById(id); }
+  async list() { return this.products.list(); }
+  async findById(id: string) { return this.products.findById(id); }
 
   /** Find products by name. Matches on a prefix, never on the description. */
   async search(input: SearchInput): Promise<SearchOutput[]> {
-    return this.productOrm.list();
+    return this.products.list();
   }
 }

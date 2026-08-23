@@ -12,6 +12,7 @@ import { emitKeyOf } from '../emit.js';
 import { getPresenterFields } from '../prefab/presenter.js';
 import { ormKeyOf, togetherKeyOf } from '../orm.js';
 import { targetOf, viewsOf, outputOf } from '../prefab/prefab.js';
+import { ownedBy, repositoryKeyOf } from '../prefab/repository.js';
 import { registrationKeyOf } from '@fougere/schema';
 import { Fronds } from './Fronds.js';
 import { getModuleLoader } from '../loader.js';
@@ -166,6 +167,12 @@ function depKeyOf(type: ParsedType): string {
   const frame = type.name === 'Together' ? type.generics?.[0]?.name : undefined;
   if (frame) return togetherKeyOf(tupleMembers(frame), tupleMembers(type.generics?.[1]?.name ?? ''));
 
+  // `RepositoryOf<Post>` — what an author writes when no repository file exists. The dual
+  // of the line below: one names the port, the other the holder, and both resolve to a key
+  // rather than to a class the author would have to invent.
+  const held = type.name === 'RepositoryOf' ? type.generics?.[0]?.name : undefined;
+  if (held) return repositoryKeyOf(held);
+
   const target = type.name === 'EntityOrm' ? type.generics?.[0]?.name : undefined;
   if (!target) return type.name;
 
@@ -203,12 +210,19 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
   const params = await ctorParamsOf(filePath);
   const deps = params.map((p) => depKeyOf(p.type));
 
-  // A repository inherits its constructor from `Repository(Entity)`, so the file
-  // declares none and the scan reads no parameter. The mixin knows which entity it
-  // was built for and says so at runtime — same escape as `Crud.__ops`, and the same
-  // reason: what a prefab fabricates, only the prefab can describe.
+  // A repository inherits its constructor from `Repository(…)`, so the file declares none
+  // and the scan reads no parameter. The mixin knows what it was built for and says so at
+  // runtime — same escape as `Crud.__ops`, and the same reason: what a prefab fabricates,
+  // only the prefab can describe.
+  //
+  // An AGGREGATE owns several, and its base takes them in the declared order. It is handed
+  // no frame: the boundary and the unit of work are two statements, and a frame is ASKED FOR
+  // like anywhere else — see `prefab/repository.ts`.
+  const owned = ownedBy(ctor);
   const target = targetOf(ctor);
-  if (target && deps.length === 0) {
+  if (owned.length > 1 && deps.length === 0) {
+    deps.push(...owned.map((entity) => ormKeyOf(registrationKeyOf((entity as { name: string }).name))));
+  } else if (target && deps.length === 0) {
     deps.push(ormKeyOf(registrationKeyOf((target as { name: string }).name)));
   }
 

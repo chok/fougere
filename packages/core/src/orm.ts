@@ -64,7 +64,7 @@ export function assertListOptions(options: object | undefined, entity: string): 
 }
 
 /** Select option — restrict returned fields to those of a SchemaView. */
-interface SelectOption {
+export interface SelectOption {
   select?: SchemaView;
 }
 

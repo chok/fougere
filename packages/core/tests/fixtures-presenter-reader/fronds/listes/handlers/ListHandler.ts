@@ -1,12 +1,12 @@
 import List from '../entities/List.js';
 
-declare class ListOrm {
+declare class ListRepository {
   list(): List[];
 }
 
 /** Reads only — the presenter is the subject here. */
 export default class ListHandler {
-  constructor(private listOrm: ListOrm) {}
+  constructor(private listes: ListRepository) {}
 
-  async list() { return this.listOrm.list(); }
+  async list() { return this.listes.list(); }
 }

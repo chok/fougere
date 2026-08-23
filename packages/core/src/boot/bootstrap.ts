@@ -11,6 +11,7 @@ import { registerFrames } from './together.js';
 import { Emissions } from './Emissions.js';
 import { HandlerFacade } from './HandlerFacade.js';
 import { targetOf } from '../prefab/prefab.js';
+import { ownersOf, refuseOrmInUserCode, refuseCrudOnOwned } from './ownership.js';
 import { resolveContracts } from '../wire/operation.js';
 import { guardStorage } from './egress.js';
 import { portBindings } from './ports.js';
@@ -229,6 +230,12 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       frondLog.debug(`cross-source reader over ${named.length} entit(ies)`);
     }
 
+    // Who owns what, and the rule that makes owning mean something. Before anything is
+    // registered, so a bad line is named by this refusal rather than by the container's.
+    const owners = ownersOf(frond.providers);
+    refuseOrmInUserCode(frond, owners);
+    refuseCrudOnOwned(frond, owners);
+
     for (const provider of frond.providers) {
       scope.register(provider.ctor.name, provider.ctor, { deps: provider.deps });
     }
@@ -263,16 +270,22 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         const guarded = guardStorage(scoped, entity.entityClass.getFields(), entity.name);
         scope.registerValue(ormName, guarded);
 
-        // The default repository holds the port and adds nothing — the same shape a
-        // declared one has, so a handler reads `repo.orm.list()` either way. Giving
-        // the ORM itself as the default was shorter and wrong: `repo.orm` would then
-        // exist only when someone had written the file, and the two forms would
-        // differ exactly where the convention promises they do not.
+        // The default repository IS the guarded port — it already answers every gesture a
+        // declared one forwards, so the two forms have the same shape and a handler reads
+        // `repo.list()` either way. The wrapper that used to sit here (`{ orm: guarded }`)
+        // existed to make `repo.orm` true in both, back when `.orm` was the way in.
         //
-        // `providers` are registered above, so a declared repository is never
-        // overwritten by this.
+        // Not registered for an OWNED entity: an aggregate's members are reached through it
+        // and nowhere else, and the default would be a second door under a name a handler
+        // can spell. Every member is skipped, not just the one the key is named after —
+        // that asymmetry was the whole hole.
         const repoKey = repositoryKeyOf(entity.name);
-        if (!scope.has(repoKey)) scope.registerValue(repoKey, { orm: guarded });
+        const owner = owners.get(entity.name);
+        if (owner) {
+          frondLog.debug(`${entity.name} — owned by ${owner}, no default repository`);
+        } else if (!scope.has(repoKey)) {
+          scope.registerValue(repoKey, guarded);
+        }
       }
       if (frond.entities.length > 0) {
         frondLog.debug(`${frond.entities.length} entity ORM(s): ${frond.entities.map((e) => e.name).join(', ')}`);
@@ -401,15 +414,19 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       const entity = frond.entities.find((e) => e.name === handler.address);
       const surfaceScope = scope.createScope();
 
-      // Register scoped ORM if output override differs from entity
+      // Register scoped ORM if output override differs from entity — under the REPOSITORY
+      // key, which is what a Crud handler asks for, and under the port's own for a holder
+      // that legitimately names it. Registering only the latter left a named surface with
+      // no door at all once the façade stopped spelling the storage.
       if (entity && options.ormFactory) {
-        const ormName = ormKeyOf(entity.name);
         const baseOrm = options.ormFactory(entity.entityClass, entity.name);
         const outputSchema = handler.outputOverride ?? (handler.ctor as any).__output;
         const scoped = outputSchema && outputSchema !== entity.entityClass
           ? baseOrm.output(outputSchema)
           : baseOrm;
-        surfaceScope.registerValue(ormName, guardStorage(scoped, entity.entityClass.getFields(), entity.name));
+        const guarded = guardStorage(scoped, entity.entityClass.getFields(), entity.name);
+        surfaceScope.registerValue(ormKeyOf(entity.name), guarded);
+        surfaceScope.registerValue(repositoryKeyOf(entity.name), guarded);
       }
 
       const facadeKey = facadeKeyOf(handler.address, handler.surface);

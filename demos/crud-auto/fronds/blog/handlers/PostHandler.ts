@@ -7,8 +7,8 @@ export class PublishInput extends Post.pick("id") {}
 export class PublishOutput extends Post.pick("id", "title", "createdAt") {}
 
 /**
- * PostHandler — no service, Crud delegates directly to the ORM.
- * Custom ops use this.orm (the ORM injected by Crud).
+ * PostHandler — no service, Crud delegates straight to the storage it was handed.
+ * Custom ops use this.orm, which is the repository Crud received.
  */
 export default class PostHandler extends Crud(Post) {
   async searchByTitle(

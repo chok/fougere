@@ -5,7 +5,7 @@ import { runMiddlewares, type AppMiddleware } from '../wire/middleware.js';
 import { computeBindingPlan, resolveArgs, type CollectorResolver } from './binding.js';
 import { collectorKeyOf } from '../prefab/collector.js';
 import { presenterKeyOf } from '../prefab/presenter.js';
-import { ormKeyOf } from '../orm.js';
+import { repositoryKeyOf } from '../prefab/repository.js';
 import { resolveContracts, type OperationsMap } from '../wire/operation.js';
 import { projectEgress, presentEgress, type PresenterArgs } from './egress.js';
 import { EMPTY_INVOCATION, type InvocationContext } from '../wire/invocation.js';
@@ -83,7 +83,7 @@ export class HandlerFacade {
 
   constructor(private readonly door: Doorway, private readonly wiring: Wiring) {
     const { handler, entity } = door;
-    this.refuseCrudWithoutOrm();
+    this.refuseCrudWithoutRepository();
 
     door.scope.register(this.handlerKey, handler.ctor, { deps: this.deps() });
 
@@ -141,25 +141,25 @@ export class HandlerFacade {
   private deps(): string[] {
     const { deps } = this.door.handler;
     if (deps.length > 0) return deps;
-    return this.inheritsCrud ? [ormKeyOf(this.ormBase)] : [];
+    return this.inheritsCrud ? [repositoryKeyOf(this.ormBase)] : [];
   }
 
   /**
-   * Declaring a constructor turns the automatic ORM injection OFF — the handler now states
-   * what it takes, and that is the whole DI convention. But a Crud handler that forgets to
-   * state its ORM used to get `this.orm === undefined` and break on the FIRST REQUEST,
+   * Declaring a constructor turns the automatic injection OFF — the handler now states what
+   * it takes, and that is the whole DI convention. But a Crud handler that forgets to state
+   * its storage used to get `this.orm === undefined` and break on the FIRST REQUEST,
    * silently: `super()` assigns whatever it was handed. Refused at boot instead, naming the
    * fix — the clause is deducible, so it is stated, not configured.
    */
-  private refuseCrudWithoutOrm(): void {
+  private refuseCrudWithoutRepository(): void {
     const { handler } = this.door;
-    const ormTypeName = ormKeyOf(this.ormBase);
-    if (!this.inheritsCrud || handler.deps.length === 0 || handler.deps.includes(ormTypeName)) return;
+    const repoTypeName = repositoryKeyOf(this.ormBase);
+    if (!this.inheritsCrud || handler.deps.length === 0 || handler.deps.includes(repoTypeName)) return;
     throw new Error(
-      `${handler.ctor.name} extends Crud() and declares a constructor, so the ORM is no ` +
-      `longer injected for it — but it does not take one.\n` +
+      `${handler.ctor.name} extends Crud() and declares a constructor, so its storage is no ` +
+      `longer injected for it — but it does not take any.\n` +
       `  Add it and hand it to super():\n` +
-      `    constructor(orm: ${ormTypeName}, …) { super(orm); }`,
+      `    constructor(repo: ${repoTypeName}, …) { super(repo); }`,
     );
   }
 
