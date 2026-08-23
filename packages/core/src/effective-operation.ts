@@ -21,6 +21,7 @@ import {
   type OperationContract,
   type OperationKind,
   type ParsedType,
+  knownVerbs,
 } from './wire/operation.js';
 
 type Binding = BindingPlan[number];
@@ -192,8 +193,10 @@ export function resolveEffectiveOperations(
                 + `(${inference.queryMatches.join(', ')}) and command evidence `
                 + `(${inference.commandMatches.join(', ')}). `
                 + `Declare operations.${name}.kind.`
-              : `Cannot resolve the kind of ${subject}: '${name}' matches no query or command `
-                + `convention. Declare operations.${name}.kind in frond.config.ts.`,
+              : `Cannot resolve the kind of ${subject}: '${name}' leads with no known verb. `
+                + `Rename it to lead with one, or declare operations.${name}.kind in `
+                + `frond.config.ts.\n  query:   ${knownVerbs().query.join(', ')}`
+                + `\n  command: ${knownVerbs().command.join(', ')}`,
           });
           continue;
         }
@@ -426,6 +429,13 @@ function validateProvenance(
     }
   }
 
+  // A type written with an inline object literal names nothing a collector can register
+  // under, so the parameter IS the body. Only a NAMED type can be the wrong-frond
+  // substitution the refusal below exists for.
+  for (const parameter of body) {
+    if (structural(contract.signature?.params[parameter.position]?.type)) inferredBody.add(parameter);
+  }
+
   for (const parameter of parameters) {
     const source = parameter.binding.source;
     if (source.kind === 'collector') {
@@ -475,6 +485,10 @@ function validateProvenance(
     });
   }
   return valid;
+}
+
+function structural(type: ParsedType | undefined): boolean {
+  return type !== undefined && type.raw.includes('{');
 }
 
 function schemaMatches(schema: SchemaView, type: ParsedType | undefined): boolean {
