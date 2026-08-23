@@ -1,7 +1,8 @@
 /**
  * The envelope door for a host that speaks `Request`/`Response` — hono, a Worker, Next,
  * SvelteKit. It reads a `Request` body; `serve` reads a `node:http` stream, and the two
- * stay separate on purpose: putting Node through this reader cost 48,000 req/s.
+ * stay separate on purpose: putting Node through this reader HALVED the Node door
+ * (0.677 → 0.341 of its baseline, measured 2026-08-22).
  *
  * What they share is `policy.ts` — the cap and the answers. Nothing here is edge-specific
  * beyond that: `handleRpc` is the wire and knows no HTTP at all.
