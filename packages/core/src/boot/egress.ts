@@ -1,13 +1,6 @@
 import type { Fields } from '@fougere/schema';
-import { OutputProjector } from '../dispatch/OutputProjector.js';
-import { OutputView } from '../dispatch/OutputView.js';
 import { PresenterExecutor, type PresenterArgs } from '../dispatch/PresenterExecutor.js';
 import { StorageGuard } from '../dispatch/StorageGuard.js';
-
-/** Compatibility function while call sites move to OutputProjector. */
-export function projectEgress(fields: Fields, result: unknown, closed = false): unknown {
-  return new OutputProjector(new OutputView(fields, closed)).project(result);
-}
 
 export type { PresenterArgs } from '../dispatch/PresenterExecutor.js';
 
