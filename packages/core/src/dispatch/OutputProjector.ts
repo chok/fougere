@@ -2,7 +2,11 @@ import { encodeFields } from '@fougere/schema';
 import { preserveArrayProperties } from './ArrayResult.js';
 import type { OutputView } from './OutputView.js';
 
-/** Projects one operation result onto the fields its audience may read. */
+/**
+ * Projects one operation result onto the fields its audience may read.
+ *
+ * One of the two exits a judge watches; `StorageGuard` is the other.
+ */
 export class OutputProjector {
   constructor(private readonly view: OutputView) {}
 

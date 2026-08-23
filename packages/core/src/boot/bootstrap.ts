@@ -319,7 +319,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
           ? baseOrm.output(outputSchema)
           : baseOrm;
 
-        // Storage is a way out like the client surface — see egress.ts.
+        // Storage is a way out like the client surface — see `StorageGuard`.
         const guarded = guardStorage(scoped, entity.entityClass.getFields(), entity.name);
         scope.registerValue(ormName, guarded);
 

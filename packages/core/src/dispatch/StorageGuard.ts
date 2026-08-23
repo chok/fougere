@@ -7,7 +7,12 @@ interface Writer {
   update(...args: [unknown, Record<string, unknown>, ...unknown[]]): Promise<unknown>;
 }
 
-/** Judges storage writes and list options without narrowing the ORM interface. */
+/**
+ * Judges storage writes and list options without narrowing the ORM interface.
+ *
+ * Storage is a way out like the client surface, so what goes to it is judged too — the
+ * same rule `OutputProjector` applies on the other exit.
+ */
 export class StorageGuard {
   constructor(
     private readonly fields: Fields,
