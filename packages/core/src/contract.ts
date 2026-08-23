@@ -9,7 +9,7 @@
  * is allowed in — measured, it imports no node builtin either.
  */
 import { registrationKeyOf } from '@fougere/schema';
-import { EMPTY_INVOCATION, type InvocationContext } from './wire/invocation.js';
+import { canonicalInvocation, type InvocationContext } from './wire/invocation.js';
 import type { FrondCall } from './wire/call.js';
 
 export { FougereError, ErrorCode, validationErrorsOf } from './wire/errors.js';
@@ -17,7 +17,7 @@ export { FougereError, ErrorCode, validationErrorsOf } from './wire/errors.js';
 // core's boot — reaching it through the main entry dragged the scanner into a bundle.
 export { toPublicError } from './wire/http-error.js';
 export type { FougereErrorOptions } from './wire/errors.js';
-export { EMPTY_INVOCATION } from './wire/invocation.js';
+export { canonicalInvocation, EMPTY_INVOCATION } from './wire/invocation.js';
 export type { InvocationContext } from './wire/invocation.js';
 export { Invocation } from './contract/Invocation.js';
 export type { InvocationInput } from './contract/Invocation.js';
@@ -70,5 +70,5 @@ export function callValueOf(
     typeof opOrInput === 'string'
       ? [{ entity: registrationKeyOf((target as { name: string }).name), op: opOrInput }, input]
       : [target as FrondCall, opOrInput];
-  return { call, invocation: { ...EMPTY_INVOCATION, ...given } };
+  return { call, invocation: canonicalInvocation(given) };
 }

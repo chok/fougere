@@ -1,76 +1,44 @@
-/**
- * What actually happens when a collector sits in the wrong frond.
- *
- * `Known issues` says: "Collectors register per-frond — under a split, a handler
- * depending on another frond's collector silently loses it." These tests ask
- * whether that sentence is true, because nothing in this repo had ever asked.
- *
- * The binding plan is computed from the frond's OWN collector set
- * (`bootstrap.ts:167`), so the misplacement is decided before any topology:
- * there is no split in this file, and there does not need to be.
- */
+/** A collector is local provenance: placing it in another frond is never a body fallback. */
 import { scanProject } from '../src/node.js';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
-import { createApp, createLocalRunner } from '../src/index.js';
-import { EMPTY_INVOCATION } from '../src/wire/invocation.js';
+import { createApp, resolveEffectiveOperations } from '../src/index.js';
 
 const root = join(import.meta.dirname, 'fixtures-collector-split');
 
-/** What a client sends. Nothing here should be able to become the current user. */
-const forged = { id: 'u-999', email: 'attacker@example.com', role: 'admin' };
-
 describe('a collector declared in the wrong frond', () => {
-  it('never binds — in one process, before any split', async () => {
-    await using app = await createApp({ scan: await scanProject(root), createContainer });
+  it('is a blocking resolution error for every affected operation', async () => {
+    const scan = await scanProject(root);
+    const model = resolveEffectiveOperations(scan.fronds, { diagnostics: scan.diagnostics });
+    const invalid = model.resolutionDiagnostics
+      .filter((diagnostic) => diagnostic.code === 'collector-in-another-frond');
 
-    const blog = app.fronds.find((f) => f.name === 'blog');
-    const identity = app.fronds.find((f) => f.name === 'identity');
-
-    expect(blog?.collectors).toHaveLength(0);
-    expect(identity?.collectors).toHaveLength(1);
+    expect(scan.fronds.find((frond) => frond.name === 'blog')?.collectors).toHaveLength(0);
+    expect(scan.fronds.find((frond) => frond.name === 'identity')?.collectors).toHaveLength(1);
+    expect(invalid.map((diagnostic) => diagnostic.subject).sort()).toEqual([
+      'PostHandler.whoExplicit(user)',
+      'PostHandler.whoOptional(user)',
+    ]);
+    expect(invalid.every((diagnostic) => diagnostic.severity === 'blocking')).toBe(true);
   });
 
-  it('hands the request BODY to the parameter that wanted a user', async () => {
-    await using app = await createApp({ scan: await scanProject(root), createContainer });
+  it('refuses boot before a caller can supply a forged body', async () => {
+    const scan = await scanProject(root);
 
-    const out = await createLocalRunner(app)(
-      { entity: 'post', op: 'whoNull' },
-      {
-        ...EMPTY_INVOCATION,
-        body: forged,
-        state: { user: { id: 'u-1', email: 'real@example.com', role: 'reader' } },
-      },
+    await expect(createApp({ scan, createContainer })).rejects.toThrow(
+      /collector-in-another-frond.*PostHandler\.whoExplicit\(user\)/s,
     );
-
-    // The sentence in `Known issues` says the handler "silently loses" the
-    // collector. It does not lose it: `computeBindingPlan` falls through to
-    // branch 4, "Everything else — body". The parameter meant to carry the
-    // authenticated user carries what the caller typed.
-    expect(out).toEqual(forged);
-    expect((out as { role: string }).role).toBe('admin');
-  });
-
-  it('does the same to the optional spelling — the type is the only difference', async () => {
-    await using app = await createApp({ scan: await scanProject(root), createContainer });
-
-    const out = await createLocalRunner(app)(
-      { entity: 'post', op: 'whoOptional' },
-      { ...EMPTY_INVOCATION, body: forged },
+    await expect(createApp({ scan, createContainer })).rejects.toThrow(
+      /preliminary body interpretation is invalid/s,
     );
-
-    // `user?: User` admits `undefined`, so a handler written against it is
-    // defensive by construction. It gets the body all the same: `optional` is
-    // written onto the binding four times and read nowhere.
-    expect(out).toEqual(forged);
   });
 
-  it('binds to the collector once it is declared in the consuming frond', async () => {
-    // The remedy, stated as a test rather than as a sentence to remember.
-    await using app = await createApp({ scan: await scanProject(root, ['identity']), createContainer,});
+  it('keeps a collector valid when it is declared in the consuming frond', async () => {
+    const scan = await scanProject(root, ['identity']);
+    const model = resolveEffectiveOperations(scan.fronds, { diagnostics: scan.diagnostics });
 
-    const identity = app.fronds.find((f) => f.name === 'identity');
-    expect(identity?.collectors.map((c) => c.typeName)).toEqual(['user']);
+    expect(scan.fronds[0]?.collectors.map((collector) => collector.typeName)).toEqual(['user']);
+    expect(model.resolutionDiagnostics).toEqual([]);
   });
 });

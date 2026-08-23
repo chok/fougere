@@ -93,6 +93,29 @@ describe('computeBindingPlan', () => {
 });
 
 describe('resolveArgs', () => {
+  const optionalValue: BindingPlan = [
+    { name: 'value', source: { kind: 'param', name: 'value' }, optional: true },
+  ];
+
+  it('resolves an absent optional parameter as undefined', async () => {
+    expect(await resolveArgs(optionalValue, ctx())).toEqual([undefined]);
+  });
+
+  it('keeps an explicit null instead of treating it as a missing param', async () => {
+    expect(await resolveArgs(optionalValue, ctx({
+      params: { value: null },
+      query: { value: 'query fallback' },
+    }))).toEqual([null]);
+  });
+
+  it('distinguishes absence from explicit null for an optional nullable parameter', async () => {
+    const absent = await resolveArgs(optionalValue, ctx());
+    const explicit = await resolveArgs(optionalValue, ctx({ query: { value: null } }));
+
+    expect(absent[0]).toBeUndefined();
+    expect(explicit[0]).toBeNull();
+  });
+
   it('resolves param from URL params', async () => {
     const plan: BindingPlan = [
       { name: 'id', source: { kind: 'param', name: 'id' }, optional: false },

@@ -115,7 +115,7 @@ type OutOf<V, K extends CrudOpName, T> =
  * Two things the mixin declares but does not own. The **output** is the view the
  * handler names (`Crud(Post, { list: PostCard })`) — fabricated, so a redefinition
  * that returns cards stays assignable. The **trailing parameters** are resolved by
- * type from the container (`delete(id, user: User | null)` gets its user from a
+ * type from the container (`delete(id, user?: User)` gets its user from a
  * collector): the mixin cannot know them, they belong to the app, so it declares that
  * a tail exists and that it supplies none — which is what `never` says, and what keeps
  * a judged redefinition assignable.

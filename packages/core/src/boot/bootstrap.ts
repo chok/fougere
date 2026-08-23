@@ -12,7 +12,11 @@ import { Emissions } from './Emissions.js';
 import { HandlerFacade } from './HandlerFacade.js';
 import { targetOf } from '../prefab/prefab.js';
 import { ownersOf, refuseOrmInUserCode, refuseCrudOnOwned } from './ownership.js';
-import { resolveContracts } from '../wire/operation.js';
+import type { OperationContract, OperationsMap } from '../wire/operation.js';
+import {
+  resolveEffectiveOperations,
+  type EffectiveOperationsMap,
+} from '../effective-operation.js';
 import { guardStorage } from './egress.js';
 import { portBindings } from './ports.js';
 import { InFlight } from './inflight.js';
@@ -107,6 +111,11 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   // `scanProject` (`@fougere/core/node`) is one producer; a module a build wrote is another.
   const scanStart = performance.now();
   const { fronds, diagnostics } = await (typeof options.scan === 'function' ? options.scan() : options.scan);
+  const operationModel = resolveEffectiveOperations(fronds, {
+    diagnostics,
+    remotes: options.remotes,
+    adapters: options.adapters,
+  });
   const scanMs = (performance.now() - scanStart).toFixed(0);
   const blocking = diagnostics.filter((d) => d.severity === 'blocking');
   log.info(`read ${fronds.length} frond(s) in ${scanMs}ms`
@@ -122,6 +131,23 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
    */
   for (const d of blocking) log.error(`[${d.code}] ${d.message}`, d.cause);
   for (const d of diagnostics) if (d.severity === 'warning') log.warn(`[${d.code}] ${d.message}`);
+
+  /**
+   * An ambiguous convention is not a partial scan. Every relevant declaration was read,
+   * but more than one executable contract can be built from it. Refuse before auth,
+   * storage, migrations or seeds make the boot observable.
+   */
+  const invalidOperations = operationModel.resolutionDiagnostics
+    .filter((diagnostic) => diagnostic.severity === 'blocking');
+  if (invalidOperations.length > 0) {
+    const details = invalidOperations.map((d) =>
+      `  [${d.code}]${d.subject ? ` ${d.subject}` : ''}\n    ${d.message}\n    ${d.filePath}`,
+    );
+    throw new Error(
+      `Fougere boot refused: ${invalidOperations.length} unresolved operation contract(s):\n`
+      + details.join('\n'),
+    );
+  }
 
   // Auth runtime — built once from the lazy AuthConfig produced by a provider factory
   // (e.g. betterAuth({...})) in fougere.config.ts. The provider receives our db +
@@ -187,6 +213,12 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   // names the frond rather than the entity, since `remotes:` is declared per frond.
   const frondOf = new Map(fronds.flatMap((f) => f.entities.map((e) => [e.name, f.name] as const)));
   const emissions = new Emissions(fronds, entityByName, container, log, options.onEmit);
+  /** Canonical operation tables, indexed by the same audience key as their facades. */
+  const effectiveByKey = new Map<string, EffectiveOperationsMap>();
+
+  const contractsOf = (operations: EffectiveOperationsMap): OperationsMap => new Map(
+    [...operations].map(([name, operation]) => [name, operation as OperationContract] as const),
+  );
 
   // Every port an implementation was bound to, so a `ports:` entry that named none
   // can say so rather than look obeyed.
@@ -199,12 +231,12 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     if (options.remotes && frond.name in options.remotes) {
       log.child(frond.name).info('declared remote — not hosted locally');
       // Its doors answer elsewhere, but what they LISTEN to was read here.
-      const remoteCollectors = new Set(frond.collectors.map((c) => c.typeName));
       for (const handler of frond.handlers) {
-        emissions.note(
-          resolveContracts(handler, frond.operationsOverrides, remoteCollectors),
-          facadeKeyOf(handler.address, handler.surface),
-        );
+        const key = facadeKeyOf(handler.address, handler.surface);
+        const operations = operationModel.forHandler(handler);
+        effectiveByKey.set(key, operations);
+        emissions.note(contractsOf(operations), key);
+
       }
       continue;
     }
@@ -356,12 +388,18 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       facadeKey: string,
     ) => {
       const facade = new HandlerFacade(
-        { handler, entity, scope: targetScope, key: facadeKey },
+        {
+          handler,
+          handlers: frond.handlers,
+          entity,
+          scope: targetScope,
+          key: facadeKey,
+          operations: operationModel.forHandler(handler),
+        },
         {
           frond: frond.name,
           frondScope: scope,
           log: frondLog,
-          overrides: frond.operationsOverrides,
           collectors: collectorTypeNames,
           presenters: presenterMap,
           middlewaresFor: getMiddlewares,
@@ -373,6 +411,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       // The terms alongside the door, under the same audience — a surface that serves
       // fewer ops describes fewer ops.
       container.registerValue(contractsKeyOf(handler.address, handler.surface), facade.contracts);
+      effectiveByKey.set(facadeKey, facade.effectiveOperations);
 
       const surfaces = new Set<string | undefined>([handler.surface]);
       if (!handler.surface) {
@@ -656,6 +695,18 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     routeRegistry.addResolver(new RemoteRouteResolver((entity) => facadeFor(entity)));
   }
 
+  /** The terms beside a door, with the exact same named-surface fallback rule. */
+  const operationsFor = (entity: string, surface?: string): EffectiveOperationsMap | undefined => {
+    if (!surface) return effectiveByKey.get(facadeKeyOf(entity));
+
+    const own = effectiveByKey.get(facadeKeyOf(entity, surface));
+    const declared = fronds.owner(entity)?.surfaces?.[surface];
+    if (!declared) return own;
+    return declared.some((name) => name.toLowerCase() === entity.toLowerCase())
+      ? (own ?? effectiveByKey.get(facadeKeyOf(entity)))
+      : undefined;
+  };
+
   /**
    * The storage an entity is backed by — the dual of `facadeFor`, which serves its
    * client-facing door. Both are ways in; an entity that opens none of them still has rows.
@@ -707,6 +758,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     resolve,
     schemaFor,
     facadeFor,
+    operationsFor,
     listensTo: () => emissions.listensTo(),
     deliver: (fact, payload) => emissions.deliver(fact, payload),
     ormFor,

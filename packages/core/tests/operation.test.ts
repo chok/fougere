@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { isReadOp, resolveIsReadOp } from '../src/wire/operation.js';
+import {
+  inferOperationKind,
+  isReadOp,
+  resolveIsReadOp,
+} from '../src/wire/operation.js';
 
 describe('isReadOp (convention)', () => {
   it('recognizes default read prefixes', () => {
@@ -14,12 +18,34 @@ describe('isReadOp (convention)', () => {
     expect(isReadOp('statsFor')).toBe(true);
   });
 
-  it('classifies non-read prefixes as write', () => {
+  it('recognizes finite command verbs', () => {
     expect(isReadOp('create')).toBe(false);
     expect(isReadOp('update')).toBe(false);
     expect(isReadOp('archivePost')).toBe(false);
     expect(isReadOp('republishPost')).toBe(false);
-    expect(isReadOp('computeReport')).toBe(false);
+    expect(isReadOp('settle')).toBe(false);
+  });
+
+  it('refuses a name with zero evidence instead of silently calling it a command', () => {
+    expect(inferOperationKind('computeReport')).toEqual({
+      kind: undefined,
+      queryMatches: [],
+      commandMatches: [],
+    });
+    expect(() => isReadOp('computeReport')).toThrow(/Cannot infer operation kind/);
+  });
+
+  it('refuses contradictory compound evidence', () => {
+    expect(inferOperationKind('findAndArchive')).toMatchObject({
+      kind: undefined,
+      queryMatches: ['find'],
+      commandMatches: ['archive'],
+    });
+    expect(() => isReadOp('getOrCreatePost')).toThrow(/Cannot infer operation kind/);
+  });
+
+  it('matches whole words, never string prefixes', () => {
+    expect(() => isReadOp('hashPassword')).toThrow(/Cannot infer operation kind/);
   });
 });
 
@@ -32,12 +58,12 @@ describe('resolveIsReadOp (convention + overrides)', () => {
   });
 
   it('overrides convention: a non-read-prefixed name can be declared as query', () => {
-    expect(resolveIsReadOp('computeReport')).toBe(false);
+    expect(() => resolveIsReadOp('computeReport')).toThrow(/Cannot infer operation kind/);
     expect(resolveIsReadOp('computeReport', { computeReport: { kind: 'query' } })).toBe(true);
   });
 
   it('overrides convention: a read-prefixed name can be declared as command', () => {
-    expect(resolveIsReadOp('findAndArchive')).toBe(true);
+    expect(() => resolveIsReadOp('findAndArchive')).toThrow(/Cannot infer operation kind/);
     expect(resolveIsReadOp('findAndArchive', { findAndArchive: { kind: 'command' } })).toBe(false);
   });
 

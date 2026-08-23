@@ -7,7 +7,7 @@ export default class ListPresenter extends Presenter(List) {
   /** Counts its own calls, so a test can prove it ran once for the page. */
   static calls = 0;
 
-  canEdit(lists: List[], user: User | null): boolean[] {
+  canEdit(lists: List[], user?: User): boolean[] {
     ListPresenter.calls++;
     return lists.map((list) => Boolean(user) && list.ownerUserId === user!.id);
   }

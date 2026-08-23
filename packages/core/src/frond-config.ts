@@ -10,8 +10,9 @@ import type { BindingPlan } from './boot/binding.js';
  *
  * Two families of keys, and they act at different depths:
  *
- * - **Surface** (`kind`, `handler`, `method`, `policy`) — how the op is EXPOSED. Read by
- *   the transport adapters: `kind` decides query vs mutation and GET vs POST.
+ * - **Resolution** (`kind`, `handler`, `method`) — intent and implementation, resolved
+ *   once into core's `EffectiveOperation`; every local or remote door consumes it.
+ * - **Projection** (`graphql`) — protocol vocabulary, read only by that adapter.
  * - **Contract** (`input`, `output`, `binding`) — what the op IS. Read by the façade,
  *   and this is the third producer of an {@link OperationContract}: a prefab DECLARES its
  *   ops (`Crud.__ops`), the scan DERIVES them from source, config STATES them outright.
@@ -21,7 +22,7 @@ import type { BindingPlan } from './boot/binding.js';
  * answers that nothing else does:
  * - a method inherited from an **installed** base class — the scan resolves nothing there
  *   (workspace-only heritage) and says nothing, so the op silently misses the façade;
- * - a signature the AST parser cannot read (a type alias, `type CurrentUser = User | null`).
+ * - an operation inherited from a declaration unavailable to the project's type checker.
  *
  * Config wins over both other producers — it is the most explicit statement, made by
  * whoever assembles the app. Precedence: CLI > frond config > fougere config > scan >
@@ -74,11 +75,8 @@ export interface OperationOverride {
    */
   binding?: BindingPlan;
 
-  // No `output` on purpose. `OperationContract.output` has no reader today: the scan
-  // fills it from the return type (`scanner.ts`), and the façade projects through
-  // `__opOutputs` / `outputOverride` / `__output` instead — so a config key would state
-  // something nothing acts on. Name the op's view where the façade looks for it
-  // (`Crud(Post, { list: PostCard })`) until that slot gets an interpreter.
+  /** Per-operation output view, below prefab declarations and above handler/entity defaults. */
+  output?: SchemaView;
 }
 
 export interface FrondConfig {

@@ -1,8 +1,8 @@
 /**
  * Handler signature parser — extracts method signatures from handler source files.
  *
- * Uses TypeScript's createSourceFile() for lightweight AST parsing (no type checker).
- * TypeScript is lazy-loaded to avoid bundling the 9MB compiler in production builds.
+ * The AST says what the author declared; TypeScript's checker says what those types mean.
+ * TypeScript is lazy-loaded to avoid bundling the compiler in production builds.
  */
 import type ts from 'typescript';
 import { readFileSync, existsSync } from 'node:fs';
@@ -19,6 +19,104 @@ function getTS(): typeof ts {
   return _ts;
 }
 
+interface TypeProject {
+  roots: Set<string>;
+  options: ts.CompilerOptions;
+  program: ts.Program;
+}
+
+/**
+ * One checked program per project/configuration during a scan.
+ *
+ * A checker is a project reader, not a file parser: creating one per handler would reopen
+ * the standard library and every imported declaration for each method. `scanProject`
+ * resets this map at the start of a run, so an edited source can never meet a program from
+ * the previous run.
+ */
+const typeProjects = new Map<string, TypeProject>();
+const compilerProjects = new Map<string, { key: string; roots: string[]; options: ts.CompilerOptions }>();
+
+export function resetTypePrograms(): void {
+  typeProjects.clear();
+  compilerProjects.clear();
+}
+
+function compilerProjectOf(filePath: string, projectRoot?: string): { key: string; roots: string[]; options: ts.CompilerOptions } {
+  const typescript = getTS();
+  const absolute = resolvePath(filePath);
+  const configPath = typescript.findConfigFile(dirname(absolute), typescript.sys.fileExists);
+
+  if (configPath) {
+    const key = `${configPath}:${projectRoot ?? ''}`;
+    const cached = compilerProjects.get(key);
+    if (cached) return cached;
+
+    const read = typescript.readConfigFile(configPath, typescript.sys.readFile);
+    if (read.error) throw new Error(typescript.flattenDiagnosticMessageText(read.error.messageText, '\n'));
+    const parsed = typescript.parseJsonConfigFileContent(read.config, typescript.sys, dirname(configPath));
+    const configured = {
+      key,
+      // Compiler options belong to the project; its entire include glob does not belong
+      // to this scan. Each declaration inspected below becomes a root and TypeScript
+      // follows its imports. Seeding the monorepo here made a one-file scan compile it all.
+      roots: [],
+      // Handlers may be authored or emitted as JavaScript. They still need to belong to
+      // the checked program so constructor parsing does not fail on the first cold scan.
+      options: { ...parsed.options, allowJs: true, noEmit: true },
+    };
+    compilerProjects.set(key, configured);
+    return configured;
+  }
+
+  const key = projectRoot ?? dirname(absolute);
+  const cached = compilerProjects.get(key);
+  if (cached) return cached;
+  const configured = {
+    key,
+    roots: [],
+    options: {
+      target: typescript.ScriptTarget.ES2022,
+      module: typescript.ModuleKind.Node16,
+      moduleResolution: typescript.ModuleResolutionKind.Node16,
+      strict: true,
+      skipLibCheck: true,
+      allowJs: true,
+      noEmit: true,
+    },
+  };
+  compilerProjects.set(key, configured);
+  return configured;
+}
+
+function checkedSourceOf(filePath: string, projectRoot?: string): { source: ts.SourceFile; checker: ts.TypeChecker } {
+  const typescript = getTS();
+  const absolute = resolvePath(filePath);
+  const configured = compilerProjectOf(absolute, projectRoot);
+  let held = typeProjects.get(configured.key);
+
+  if (!held) {
+    // `path.resolve` is variadic, so handing it directly to `map` also passed the
+    // index and the whole roots array as path segments. A fixture without a warm scan
+    // cache exposed that first-run-only failure.
+    const roots = new Set(configured.roots.map((root) => resolvePath(root)));
+    roots.add(absolute);
+    const program = typescript.createProgram({ rootNames: [...roots], options: configured.options });
+    held = { roots, options: configured.options, program };
+    typeProjects.set(configured.key, held);
+  } else if (!held.roots.has(absolute)) {
+    held.roots.add(absolute);
+    held.program = typescript.createProgram({
+      rootNames: [...held.roots],
+      options: held.options,
+      oldProgram: held.program,
+    });
+  }
+
+  const source = held.program.getSourceFile(absolute);
+  if (!source) throw new Error(`TypeScript did not include '${absolute}' in its program.`);
+  return { source, checker: held.program.getTypeChecker() };
+}
+
 /** A file, opened. Five places read and parsed one, each spelling the same two calls. */
 function sourceOf(filePath: string): ts.SourceFile {
   const ts = getTS();
@@ -26,12 +124,15 @@ function sourceOf(filePath: string): ts.SourceFile {
 }
 
 /** One declared parameter — a constructor's and a method's are read the same way. */
-function parsedParam(param: ts.ParameterDeclaration, source: ts.SourceFile): ParsedParam {
+function parsedParam(param: ts.ParameterDeclaration, source: ts.SourceFile, checker?: ts.TypeChecker): ParsedParam {
   const ts = getTS();
+  const type = param.type ? parseTypeNode(param.type, source, checker) : { raw: 'unknown', name: 'unknown' };
   return {
     name: ts.isIdentifier(param.name) ? param.name.text : param.name.getText(source),
-    type: param.type ? parseTypeNode(param.type, source) : { raw: 'unknown', name: 'unknown' },
-    optional: param.questionToken !== undefined || param.initializer !== undefined,
+    type,
+    // `user?: User` and `user: User | undefined` are the same declaration of
+    // absence. A type alias may carry the latter, so only the checker can see it.
+    optional: param.questionToken !== undefined || param.initializer !== undefined || type.undefined === true,
   };
 }
 
@@ -53,8 +154,10 @@ export interface ParsedType {
   arrayDepth?: number;
   /** Generic type arguments (e.g. for Pagination<Post> → [{ name: 'Post' }]). */
   generics?: ParsedType[];
-  /** Whether the type is nullable (T | null | undefined). */
+  /** Whether `null` belongs to the type. */
   nullable?: boolean;
+  /** Whether absence (`undefined` or `void`) belongs to the type. */
+  undefined?: boolean;
   /** Whether this is a Promise wrapper (unwrapped in output). */
   promise?: boolean;
 }
@@ -89,9 +192,23 @@ export interface ParsedMethod {
 }
 
 /** Parse a TypeScript type node into a ParsedType. */
-function parseTypeNode(node: ts.TypeNode, source: ts.SourceFile): ParsedType {
+function parseTypeNode(node: ts.TypeNode, source: ts.SourceFile, checker?: ts.TypeChecker): ParsedType {
   const ts = getTS();
   const raw = node.getText(source);
+
+  if (checker) {
+    // `Fact<T>` is deliberately transparent in TypeScript (`type Fact<T> = T`), because
+    // a subscriber receives the payload itself. The checker erases that marker, while
+    // the binding plan still needs it to distinguish a fact from an ordinary body.
+    if (ts.isTypeReferenceNode(node) && ts.isIdentifier(node.typeName) && node.typeName.text === 'Fact') {
+      return {
+        raw,
+        name: 'Fact',
+        generics: node.typeArguments?.map((arg) => parseTypeNode(arg, source, checker)) ?? [],
+      };
+    }
+    return parseCheckedType(checker.getTypeFromTypeNode(node), raw, checker);
+  }
 
   // Union types — extract nullable, strip Promise
   if (ts.isUnionTypeNode(node)) {
@@ -101,12 +218,18 @@ function parseTypeNode(node: ts.TypeNode, source: ts.SourceFile): ParsedType {
         && !(t.kind === ts.SyntaxKind.VoidKeyword)
         && !(t.kind === ts.SyntaxKind.NullKeyword),
     );
-    const nullable = nonNull.length < node.types.length;
+    const nullable = node.types.some((t) =>
+      (ts.isLiteralTypeNode(t) && t.literal.kind === ts.SyntaxKind.NullKeyword)
+      || t.kind === ts.SyntaxKind.NullKeyword,
+    );
+    const undefinable = node.types.some((t) =>
+      t.kind === ts.SyntaxKind.UndefinedKeyword || t.kind === ts.SyntaxKind.VoidKeyword,
+    );
     if (nonNull.length === 1) {
       const inner = parseTypeNode(nonNull[0], source);
-      return { ...inner, nullable: nullable || inner.nullable, raw };
+      return { ...inner, nullable: nullable || inner.nullable, undefined: undefinable || inner.undefined, raw };
     }
-    return { raw, name: raw, nullable };
+    return { raw, name: raw, nullable, undefined: undefinable };
   }
 
   // Promise<T> — unwrap
@@ -145,9 +268,9 @@ function parseTypeNode(node: ts.TypeNode, source: ts.SourceFile): ParsedType {
     case ts.SyntaxKind.StringKeyword: return { raw, name: 'string' };
     case ts.SyntaxKind.NumberKeyword: return { raw, name: 'number' };
     case ts.SyntaxKind.BooleanKeyword: return { raw, name: 'boolean' };
-    case ts.SyntaxKind.VoidKeyword: return { raw, name: 'void' };
-    case ts.SyntaxKind.UndefinedKeyword: return { raw, name: 'undefined' };
-    case ts.SyntaxKind.NullKeyword: return { raw, name: 'null' };
+    case ts.SyntaxKind.VoidKeyword: return { raw, name: 'void', undefined: true };
+    case ts.SyntaxKind.UndefinedKeyword: return { raw, name: 'undefined', undefined: true };
+    case ts.SyntaxKind.NullKeyword: return { raw, name: 'null', nullable: true };
     case ts.SyntaxKind.AnyKeyword: return { raw, name: 'any' };
     case ts.SyntaxKind.UnknownKeyword: return { raw, name: 'unknown' };
   }
@@ -159,6 +282,96 @@ function parseTypeNode(node: ts.TypeNode, source: ts.SourceFile): ParsedType {
 
   // Fallback
   return { raw, name: raw };
+}
+
+function meaningfulSymbolName(type: ts.Type, checker: ts.TypeChecker): string {
+  const typescript = getTS();
+  const symbol = type.aliasSymbol ?? type.getSymbol();
+  if (symbol && symbol.name !== 'default' && !symbol.name.startsWith('__')) return symbol.name;
+
+  for (const declaration of symbol?.declarations ?? []) {
+    if (
+      (typescript.isClassDeclaration(declaration)
+        || typescript.isInterfaceDeclaration(declaration)
+        || typescript.isTypeAliasDeclaration(declaration))
+      && declaration.name
+    ) return declaration.name.text;
+  }
+
+  return checker.typeToString(type, undefined, typescript.TypeFormatFlags.NoTruncation);
+}
+
+/** Turn a checked TypeScript type into the small, serializable vocabulary the runtime reads. */
+function parseCheckedType(type: ts.Type, raw: string, checker: ts.TypeChecker, depth = 0): ParsedType {
+  const typescript = getTS();
+  if (depth > 12) return { raw, name: checker.typeToString(type) };
+
+  if (type.isUnion()) {
+    const nullable = type.types.some((member) => (member.flags & typescript.TypeFlags.Null) !== 0);
+    const undefinable = type.types.some((member) =>
+      (member.flags & (typescript.TypeFlags.Undefined | typescript.TypeFlags.Void)) !== 0,
+    );
+    const members = type.types.filter((member) =>
+      (member.flags & (typescript.TypeFlags.Null | typescript.TypeFlags.Undefined | typescript.TypeFlags.Void)) === 0,
+    );
+    // The checker represents the `boolean` keyword itself as `false | true`. Preserve
+    // the primitive vocabulary consumed by binding and presenter metadata.
+    if (
+      members.length > 0
+      && members.every((member) => (member.flags & typescript.TypeFlags.BooleanLiteral) !== 0)
+    ) {
+      return { raw, name: 'boolean', nullable, undefined: undefinable };
+    }
+    if (members.length === 1) {
+      const inner = parseCheckedType(members[0]!, raw, checker, depth + 1);
+      return {
+        ...inner,
+        raw,
+        nullable: nullable || inner.nullable,
+        undefined: undefinable || inner.undefined,
+      };
+    }
+    return {
+      raw,
+      name: members.map((member) => meaningfulSymbolName(member, checker)).join(' | ') || raw,
+      nullable,
+      undefined: undefinable,
+    };
+  }
+
+  // Present at runtime in the supported compiler versions, but intentionally omitted
+  // from TypeScript's public TypeChecker declaration.
+  const promised = (checker as ts.TypeChecker & {
+    getPromisedTypeOfPromise(candidate: ts.Type): ts.Type | undefined;
+  }).getPromisedTypeOfPromise(type);
+  if (promised) return { ...parseCheckedType(promised, raw, checker, depth + 1), raw, promise: true };
+
+  if (checker.isArrayType(type)) {
+    const [element] = checker.getTypeArguments(type as ts.TypeReference);
+    const inner = element ? parseCheckedType(element, raw, checker, depth + 1) : { raw, name: 'unknown' };
+    return { ...inner, raw, array: true, arrayDepth: (inner.arrayDepth ?? 0) + 1 };
+  }
+
+  if ((type.flags & typescript.TypeFlags.StringLike) !== 0) return { raw, name: 'string' };
+  if ((type.flags & typescript.TypeFlags.NumberLike) !== 0) return { raw, name: 'number' };
+  if ((type.flags & typescript.TypeFlags.BooleanLike) !== 0) return { raw, name: 'boolean' };
+  if ((type.flags & typescript.TypeFlags.Void) !== 0) return { raw, name: 'void', undefined: true };
+  if ((type.flags & typescript.TypeFlags.Undefined) !== 0) return { raw, name: 'undefined', undefined: true };
+  if ((type.flags & typescript.TypeFlags.Null) !== 0) return { raw, name: 'null', nullable: true };
+  if ((type.flags & typescript.TypeFlags.Any) !== 0) return { raw, name: 'any' };
+  if ((type.flags & typescript.TypeFlags.Unknown) !== 0) return { raw, name: 'unknown' };
+
+  const reference = type as ts.TypeReference;
+  // A declared alias such as `Emit<PostPublished>` may reduce to a function or object
+  // type, so it is no longer a TypeReference. The checker keeps its arguments beside
+  // `aliasSymbol`; losing them turns DI keys into bare `Emit`/`Facade`.
+  const args = (type as ts.Type & { aliasTypeArguments?: readonly ts.Type[] }).aliasTypeArguments
+    ?? checker.getTypeArguments(reference);
+  return {
+    raw,
+    name: meaningfulSymbolName(type, checker),
+    ...(args.length && { generics: args.map((arg) => parseCheckedType(arg, checker.typeToString(arg), checker, depth + 1)) }),
+  };
 }
 
 // ── Module resolution ────────────────────────
@@ -391,7 +604,12 @@ function detectGenericNames(methods: ParsedMethod[], source: ts.SourceFile): Set
 /**
  * Extract methods from a class node (no file reading — works on already-parsed AST).
  */
-function extractClassMethods(cls: ts.ClassDeclaration | ts.ClassExpression, source: ts.SourceFile, skip: Set<string>): ParsedMethod[] {
+function extractClassMethods(
+  cls: ts.ClassDeclaration | ts.ClassExpression,
+  source: ts.SourceFile,
+  skip: Set<string>,
+  checker?: ts.TypeChecker,
+): ParsedMethod[] {
   const ts = getTS();
   const results: ParsedMethod[] = [];
 
@@ -409,8 +627,8 @@ function extractClassMethods(cls: ts.ClassDeclaration | ts.ClassExpression, sour
     const name = member.name.text;
     if (skip.has(name)) continue;
 
-    const params = member.parameters.map((p) => parsedParam(p, source));
-    const returnType = member.type ? parseTypeNode(member.type, source) : undefined;
+    const params = member.parameters.map((p) => parsedParam(p, source, checker));
+    const returnType = member.type ? parseTypeNode(member.type, source, checker) : undefined;
     results.push({
       name, params, returnType,
       description: docSentenceOf(member, source),
@@ -581,42 +799,47 @@ export async function parseAllHandlerMethods(filePath: string, projectRoot?: str
  *
  * Returns all methods (no CRUD filtering) — each method is a computed field.
  */
-export async function parsePresenterMethods(filePath: string): Promise<ParsedMethod[]> {
+export async function parsePresenterMethods(filePath: string, projectRoot?: string): Promise<ParsedMethod[]> {
   await loadTS();
   // No `projectRoot`, so no heritage pass and nothing to report: a presenter's
   // computed fields are its own methods.
-  return parseClassMethods(filePath, CONSTRUCTOR_ONLY).methods;
+  return parseClassMethods(filePath, CONSTRUCTOR_ONLY, undefined, projectRoot).methods;
 }
 
 /**
  * Parse constructor parameter types from a source file's default class.
  * Returns type names (e.g. ['PostOrm', 'Logger']) for DI resolution.
  */
-export async function parseConstructorParams(filePath: string): Promise<ParsedParam[]> {
+export async function parseConstructorParams(filePath: string, projectRoot?: string): Promise<ParsedParam[]> {
   const ts = await loadTS();
-  const source = sourceOf(filePath);
+  const { source, checker } = checkedSourceOf(filePath, projectRoot);
   const cls = findDefaultClass(source);
   if (!cls) return [];
 
   const ctor = cls.members.find(ts.isConstructorDeclaration);
-  return ctor ? ctor.parameters.map((p) => parsedParam(p, source)) : [];
+  return ctor ? ctor.parameters.map((p) => parsedParam(p, source, checker)) : [];
 }
 
 const CONSTRUCTOR_ONLY = new Set(['constructor']);
 
-function parseClassMethods(filePath: string, skip: Set<string>, projectRoot?: string): HandlerParse {
+function parseClassMethods(
+  filePath: string,
+  skip: Set<string>,
+  heritageRoot?: string,
+  typeRoot: string | undefined = heritageRoot,
+): HandlerParse {
   const unresolved: string[] = [];
-  const source = sourceOf(filePath);
+  const { source, checker } = checkedSourceOf(filePath, typeRoot);
   const cls = findDefaultClass(source);
   if (!cls) return { methods: [], unresolvedHeritage: unresolved };
 
   // Parse child class methods
-  const childMethods = extractClassMethods(cls, source, skip);
+  const childMethods = extractClassMethods(cls, source, skip, checker);
   const childNames = new Set(childMethods.map((m) => m.name));
 
   // Parse inherited methods (if projectRoot is provided for resolution)
-  if (projectRoot) {
-    const inherited = parseInheritedMethods(cls, source, filePath, projectRoot, skip, unresolved);
+  if (heritageRoot) {
+    const inherited = parseInheritedMethods(cls, source, filePath, heritageRoot, skip, unresolved);
     // Merge: child methods win over inherited
     const parentOnly = inherited
       .filter((m) => !childNames.has(m.name))

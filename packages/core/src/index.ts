@@ -33,8 +33,32 @@ export { DispatchLifecycle } from './dispatch/DispatchLifecycle.js';
 export { Dispatcher } from './dispatch/Dispatcher.js';
 export type { DispatchEvent, DispatchObserver } from './dispatch/DispatchEvent.js';
 export type { DispatchPort } from './dispatch/DispatchPort.js';
-export { resolveIsReadOp, resolveContracts } from './wire/operation.js';
-export type { OperationContract, OperationsMap } from './wire/operation.js';
+export {
+  inferOperationKind,
+  resolveContracts,
+  resolveIsReadOp,
+  resolveOperationKind,
+} from './wire/operation.js';
+export type {
+  OperationContract,
+  OperationKind,
+  OperationKindInference,
+  OperationsMap,
+  ParsedParam,
+  ParsedType,
+} from './wire/operation.js';
+export {
+  EFFECTIVE_OPERATION_SEMANTICS,
+  EffectiveOperationModel,
+  resolveEffectiveOperations,
+} from './effective-operation.js';
+export type {
+  EffectiveCollector,
+  EffectiveOperation,
+  EffectiveOperationOptions,
+  EffectiveOperationsMap,
+  EffectiveParameter,
+} from './effective-operation.js';
 export type { ModuleLoader } from './loader.js';
 export { FougereError, ErrorCode, validationErrorsOf, type FougereErrorOptions } from './wire/errors.js';
 export type { OperationContext, AppNext, AppMiddleware } from './wire/middleware.js';

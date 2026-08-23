@@ -5,8 +5,14 @@ import type { FrondDescriptor, ProviderEntry, EntityEntry, HandlerEntry, Present
 import { ANONYMOUS_SCHEMA_NAME, type SchemaView } from '@fougere/schema';
 import type { OperationContract, OperationsMap } from '../wire/operation.js';
 import { cardinalityOf } from '../wire/operation.js';
-import { parseAllHandlerMethods, parsePresenterMethods, parseConstructorParams, type ParsedType } from './handler-parser.js';
-import { cachedParse, flushCache, setCacheRoot } from './scan-cache.js';
+import { computeBindingPlan } from '../boot/binding.js';
+import {
+  parseAllHandlerMethods,
+  parsePresenterMethods,
+  parseConstructorParams,
+  resetTypePrograms,
+  type ParsedType,
+} from './handler-parser.js';
 import { loadFrondConfig } from '../frond-config.js';
 import { emitKeyOf } from '../emit.js';
 import { getPresenterFields } from '../prefab/presenter.js';
@@ -179,19 +185,19 @@ function tupleMembers(raw: string): string[] {
   return raw.replace(/^\[|\]$/g, '').split(',').map((member) => member.trim()).filter(Boolean);
 }
 
-/** The three readings of one file, each cached under its own key. */
+/**
+ * These readings are semantic: an unchanged file can mean something different after an
+ * imported alias changes. The parser's TypeScript Program is the cache for one scan; a
+ * cache keyed only by this file's bytes would be unsound.
+ */
 const ctorParamsOf = (filePath: string) =>
-  cachedParse(`${filePath}:ctor`, filePath, () => parseConstructorParams(filePath));
+  parseConstructorParams(filePath);
 
 const presenterMethodsOf = (filePath: string) =>
-  cachedParse(`${filePath}:presenter`, filePath, () => parsePresenterMethods(filePath));
+  parsePresenterMethods(filePath);
 
 const handlerMethodsOf = (filePath: string, projectRoot?: string) =>
-  cachedParse(
-    `${filePath}:all${projectRoot ? ':inherited' : ''}`,
-    filePath,
-    () => parseAllHandlerMethods(filePath, projectRoot),
-  );
+  parseAllHandlerMethods(filePath, projectRoot);
 
 async function toProvider(filePath: string): Promise<ProviderEntry> {
   const ctor = await loadClass(filePath);
@@ -270,7 +276,15 @@ function resolveSchema(type: ParsedType, moduleExports: Record<string, unknown>)
  * Resolves schemas for all params (not just the first) and stores
  * full signatures for the binding algorithm.
  */
-async function inferOperations(filePath: string, moduleExports: Record<string, unknown>, projectRoot?: string): Promise<OperationsMap> {
+async function inferOperations(
+  filePath: string,
+  handlerName: string,
+  moduleExports: Record<string, unknown>,
+  collectorTypeNames: Set<string>,
+  explicitInputs: ReadonlySet<string>,
+  declared: Record<string, OperationContract>,
+  projectRoot?: string,
+): Promise<OperationsMap> {
   const map = new Map<string, OperationContract>();
   let parsed: Awaited<ReturnType<typeof parseAllHandlerMethods>>;
   try {
@@ -322,10 +336,34 @@ async function inferOperations(filePath: string, moduleExports: Record<string, u
       ...(method.description && { description: method.description }),
     };
 
-    // Resolve schemas for all params
-    for (const param of method.params) {
+    // A convention may omit a declaration only when it has one answer. Only values the
+    // caller supplies through the body are candidates: a schema-typed collector, fact or
+    // context parameter is not input merely because it names an entity. The old loop
+    // ignored provenance and assigned the first schema it met, so swapping two parameters
+    // silently changed the contract the façade used to judge the request body.
+    const binding = computeBindingPlan(method.params, collectorTypeNames);
+    const candidates = method.params.flatMap((param, index) => {
+      if (binding[index]?.source.kind !== 'body') return [];
       const schema = resolveSchema(param.type, moduleExports);
-      if (schema && !meta.input) meta.input = schema;
+      return schema ? [{ param, schema }] : [];
+    });
+    if (candidates.length === 1) {
+      meta.input = candidates[0].schema;
+    } else if (
+      candidates.length > 1
+      && declared[method.name]?.input === undefined
+      && !explicitInputs.has(method.name)
+    ) {
+      const subject = `${handlerName}.${method.name}`;
+      record({
+        severity: 'blocking',
+        code: 'input-contract-ambiguous',
+        filePath,
+        subject,
+        message: `Cannot infer the input contract for ${subject}: ${candidates.length} entity `
+          + `candidates — ${candidates.map(({ param }) => `${param.name}: ${param.type.raw}`).join('; ')}. `
+          + `Declare operations.${method.name}.input in frond.config.ts.`,
+      });
     }
 
     if (method.returnType) {
@@ -343,6 +381,8 @@ async function inferOperations(filePath: string, moduleExports: Record<string, u
 async function toHandlerEntry(
   filePath: string,
   entityByClassName: Map<string, SchemaView>,
+  collectorTypeNames: Set<string>,
+  explicitInputs: ReadonlySet<string>,
   projectRoot?: string,
   surface?: string,
 ): Promise<HandlerEntry> {
@@ -359,7 +399,16 @@ async function toHandlerEntry(
   }
 
   const address = toAddress(ctor.name);
-  const operations = await inferOperations(filePath, augmented, projectRoot);
+  const declaredOps = (ctor as { __ops?: Record<string, OperationContract> }).__ops ?? {};
+  const operations = await inferOperations(
+    filePath,
+    ctor.name,
+    augmented,
+    collectorTypeNames,
+    explicitInputs,
+    declaredOps,
+    projectRoot,
+  );
   const ctorParams = await ctorParamsOf(filePath);
   const deps = ctorParams.map((p) => depKeyOf(p.type));
 
@@ -463,26 +512,33 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
   // services/ and repositories/ — two spellings, one provider list.
   const providers = (await Promise.all(providerDirsOf(conventions).map((dir) => collect(dir, toProvider)))).flat();
   const entities = await collect(entitiesDir, toEntityEntry);
+  const collectors = await collect(collectorsDir, toCollectorEntry);
+  const collectorTypeNames = new Set(collectors.map((collector) => collector.typeName));
+  const frondConfig = await loadFrondConfig(frondPath);
+  const explicitInputs = new Set(
+    Object.entries(frondConfig?.operations ?? {})
+      .filter(([, contract]) => contract.input !== undefined)
+      .map(([operation]) => operation),
+  );
 
   // Handlers resolve `T` against the entities, so those come first.
   const entityByClassName = new Map(
     entities.map((e) => [(e.entityClass as { name: string }).name, e.entityClass]),
   );
-  const handlers = await collect(handlersDir, (f) => toHandlerEntry(f, entityByClassName, projectRoot));
+  const handlers = await collect(handlersDir, (f) =>
+    toHandlerEntry(f, entityByClassName, collectorTypeNames, explicitInputs, projectRoot));
 
   // A subdirectory of handlers/ is a named surface — the one directory whose CHILDREN
   // are part of the convention too.
   for (const surface of await dirs(join(frondPath, handlersDir))) {
     handlers.push(...await collect(join(handlersDir, surface), (f) =>
-      toHandlerEntry(f, entityByClassName, projectRoot, surface)));
+      toHandlerEntry(f, entityByClassName, collectorTypeNames, explicitInputs, projectRoot, surface)));
   }
 
   const presenters = await collect(presentersDir, toPresenterEntry);
-  const collectors = await collect(collectorsDir, toCollectorEntry);
   const seeds = await collect(seedsDir, toSeedEntry);
 
   // Mark exposed entries: frond.config.ts takes precedence, then @expose decorator
-  const frondConfig = await loadFrondConfig(frondPath);
   if (frondConfig?.expose) {
     const exposeSet = new Set(frondConfig.expose);
     for (const e of entities) {
@@ -630,7 +686,7 @@ export async function scanProject(
   conventionsInput?: ConventionsInput,
 ): Promise<ScanResult> {
   const conventions = resolveConventions(conventionsInput);
-  setCacheRoot(root);
+  resetTypePrograms();
   // A run owns its findings: two scans in one process (a test suite, a watcher)
   // must not inherit each other's.
   diagnostics = [];
@@ -660,6 +716,5 @@ export async function scanProject(
   const all = rootFrond ? [rootFrond, ...under] : under;
   const fronds = Fronds.scanned(filter ? all.filter((f) => filter.includes(f.name)) : all);
 
-  flushCache();
   return { fronds, diagnostics };
 }

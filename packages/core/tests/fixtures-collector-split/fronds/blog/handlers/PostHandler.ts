@@ -7,12 +7,12 @@ import type User from '../../identity/entities/User.js';
  * The two ops differ only in how the parameter is spelled. Nothing else.
  */
 export default class PostHandler {
-  /** The spelling `CLAUDE.md` prescribes. */
-  async whoNull(user: User | null): Promise<unknown> {
+  /** The explicit spelling of absence, needed when a required parameter follows. */
+  async whoExplicit(user: User | undefined): Promise<unknown> {
     return user;
   }
 
-  /** The spelling that admits the failure. */
+  /** The concise spelling of the same type. */
   async whoOptional(user?: User): Promise<unknown> {
     return user;
   }

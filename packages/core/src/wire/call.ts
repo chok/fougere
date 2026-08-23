@@ -10,7 +10,6 @@ import { describe as describeSchema, type SchemaDescriptor } from '@fougere/sche
 import { factsAnnouncedBy } from '../emit.js';
 import type { InvocationContext } from './invocation.js';
 import { FougereError, ErrorCode } from './errors.js';
-import { resolveIsReadOp, type OperationsMap } from './operation.js';
 import type { App } from '../boot/types.js';
 import { createTransportEntry } from '../entry/TransportEntry.js';
 
@@ -49,8 +48,8 @@ export type RpcAnswer = (invocation: InvocationContext, surface?: string) => unk
 export interface SignedCall {
   entity: string;
   op: string;
-  params?: Record<string, string>;
-  query?: Record<string, string>;
+  params?: Record<string, unknown>;
+  query?: Record<string, unknown>;
   body?: unknown;
   state?: Record<string, unknown>;
 }
@@ -316,23 +315,21 @@ function facadeOps(app: App, entityName: string, surface?: string): CardOp[] {
     return [];
   }
 
-  // The façade is the list of names; the contracts are the terms. Registered
-  // together, so a door that serves fewer ops also describes fewer.
-  let contracts: OperationsMap | undefined;
-  try {
-    contracts = app.container.resolve<OperationsMap>(contractsKeyOf(entityName, surface));
-  } catch {
-    contracts = undefined;
+  // The façade is the list of names; the model is the resolved terms.
+  const effective = app.operationsFor(entityName, surface);
+  if (!effective) {
+    throw new Error(
+      `Facade '${facadeKeyOf(entityName, surface)}' exists without an effective operation table.`,
+    );
   }
 
-  // `resolveIsReadOp` takes the overrides for a reason: `kind` is exactly the field
-  // frond.config.ts exists to state, for the op whose name the convention reads wrong.
-  // Called without them, the card announced `query` for an op its own author had
-  // declared a command — and the card is what a remote consumer builds its calls on.
-  const overrides = app.fronds.owner(entityName)?.operationsOverrides;
-
   return Object.keys(facade).map((name) => {
-    const contract = contracts?.get(name);
+    const contract = effective.get(name);
+    if (!contract) {
+      throw new Error(
+        `Facade '${facadeKeyOf(entityName, surface)}' serves '${name}' without an effective contract.`,
+      );
+    }
 
     return {
       name,
@@ -340,7 +337,7 @@ function facadeOps(app: App, entityName: string, surface?: string): CardOp[] {
       ...(contract?.input && { input: describeSchema(contract.input, name) }),
       ...(contract?.output && { output: describeSchema(contract.output, name) }),
       ...(contract?.cardinality && { cardinality: contract.cardinality }),
-      kind: resolveIsReadOp(name, overrides) ? 'query' as const : 'command' as const,
+      kind: contract.kind,
     };
   });
 }

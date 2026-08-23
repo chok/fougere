@@ -1,16 +1,18 @@
-import { type Fields } from '@fougere/schema';
+import { registrationKeyOf, type Fields } from '@fougere/schema';
 import type { Container } from '@fougere/container';
 import type { AppMiddleware } from '../wire/middleware.js';
 import type { CollectorResolver } from './binding.js';
 import { collectorKeyOf } from '../prefab/collector.js';
 import { presenterKeyOf } from '../prefab/presenter.js';
 import { repositoryKeyOf } from '../prefab/repository.js';
-import { resolveContracts, type OperationsMap } from '../wire/operation.js';
+import { targetOf } from '../prefab/prefab.js';
+import type { OperationContract, OperationsMap } from '../wire/operation.js';
+import type { EffectiveOperation, EffectiveOperationsMap } from '../effective-operation.js';
 import type { InvocationContext } from '../wire/invocation.js';
 import type { Emissions } from './Emissions.js';
 import type { InFlight } from './inflight.js';
 import type { Logger } from '../builtins/logger.js';
-import type { EntityEntry, FrondDescriptor, HandlerEntry, PresenterEntry } from '../scan/frond.js';
+import type { EntityEntry, HandlerEntry, PresenterEntry } from '../scan/frond.js';
 import { InputValidator } from '../dispatch/InputValidator.js';
 import { ArgumentResolver } from '../dispatch/ArgumentResolver.js';
 import { OperationExecutor } from '../dispatch/OperationExecutor.js';
@@ -22,6 +24,10 @@ import { PresenterArgumentResolver } from '../dispatch/PresenterArgumentResolver
 /** What this door is about: a handler, the entity behind it when there is one, and where it resolves. */
 export interface Doorway {
   handler: HandlerEntry;
+  /** Handlers in the owning frond, used to realize a resolved implementation override. */
+  handlers: readonly HandlerEntry[];
+  /** The canonical operation table resolved before boot performs any side effect. */
+  operations: EffectiveOperationsMap;
   /** The subject — absent is ordinary: a health check owns no row. */
   entity: EntityEntry | undefined;
   /** The scope the handler and its collectors resolve in — a surface gets its own. */
@@ -37,7 +43,6 @@ export interface Wiring {
   /** The frond's own scope — where presenters live, whatever sub-scope the door uses. */
   frondScope: Container;
   log: Logger;
-  overrides: FrondDescriptor['operationsOverrides'];
   /** Entity names this frond has a collector for. */
   collectors: Set<string>;
   presenters: Map<string, PresenterEntry>;
@@ -50,6 +55,8 @@ export interface Wiring {
 
 /** Adapts one handler door to executable operations. */
 export class HandlerFacade {
+  /** Rich operation facts shared with check, explain and adapters. */
+  readonly effectiveOperations: EffectiveOperationsMap;
   /** Contracts served by this door. */
   readonly contracts: OperationsMap;
 
@@ -58,6 +65,8 @@ export class HandlerFacade {
 
   private readonly cachedViews = new Map<string, OutputView>();
   private instance: any;
+  private readonly implementationKeys = new Map<string, string>();
+  private readonly implementationInstances = new Map<string, any>();
   private readonly inputValidator = new InputValidator();
   private readonly argumentResolver = new ArgumentResolver(
     (typeName) => this.collectorResolver(typeName),
@@ -70,35 +79,48 @@ export class HandlerFacade {
       this.argumentResolver,
       wiring.collectors,
     );
-    this.refuseCrudWithoutRepository();
+    this.refuseCrudWithoutRepository(handler);
 
-    door.scope.register(this.handlerKey, handler.ctor, { deps: this.deps() });
+    door.scope.register(this.handlerKey, handler.ctor, { deps: this.depsOf(handler) });
 
-    this.contracts = resolveContracts(handler, wiring.overrides, wiring.collectors);
-    // Keep scan metadata aligned with the executable contract.
+    this.effectiveOperations = door.operations;
+    this.contracts = new Map(
+      [...door.operations].map(([name, operation]) => [name, operation as OperationContract] as const),
+    );
     handler.operations = this.contracts;
+
+    // Register model-selected implementations in the same execution scope.
+    for (const [name, operation] of door.operations) {
+      if (this.isBaseImplementation(operation)) continue;
+      const implementation = this.implementationHandler(name);
+      this.refuseCrudWithoutRepository(implementation);
+      const key = `${this.handlerKey}:implementation:${operation.implementation.className}`;
+      if (!this.implementationKeys.has(operation.implementation.className)) {
+        door.scope.register(key, implementation.ctor, { deps: this.depsOf(implementation) });
+        this.implementationKeys.set(operation.implementation.className, key);
+      }
+    }
 
     // Emissions use the same contracts and execution path as direct calls.
     wiring.emissions.note(this.contracts, door.key);
-    this.judgeFactsByTheirShape();
-
     // Only declared operations become callable façade members.
     for (const op of this.contracts.keys()) this.ops[op] = this.wrap(op);
 
-    if (this.inheritsCrud && !entity) {
+    if (this.inheritsCrud(handler) && !entity) {
       // An installed Crud subject may be absent from the local scan.
       wiring.log.debug(`${handler.ctor.name} extends Crud() and no scanned entity is named `
-        + `'${this.ormBase}' — installed entity, or a missing one: no ORM will be injected`);
+        + `'${this.subjectOf(handler)}' — installed entity, or a missing one: no ORM will be injected`);
     }
   }
 
   /** Storage follows the Crud subject, which may differ from the door address. */
-  private get ormBase(): string {
-    return this.door.entity?.name ?? this.door.handler.address;
+  private subjectOf(handler: HandlerEntry): string {
+    const target = targetOf(handler.ctor);
+    return target?.name ? registrationKeyOf(target.name) : handler.address;
   }
 
-  private get inheritsCrud(): boolean {
-    const proto = this.door.handler.ctor.prototype;
+  private inheritsCrud(handler: HandlerEntry): boolean {
+    const proto = handler.ctor.prototype;
     return typeof proto?.list === 'function' && typeof proto?.findById === 'function';
   }
 
@@ -106,17 +128,16 @@ export class HandlerFacade {
     return `_handler:${this.door.key}`;
   }
 
-  private deps(): string[] {
-    const { deps } = this.door.handler;
+  private depsOf(handler: HandlerEntry): string[] {
+    const { deps } = handler;
     if (deps.length > 0) return deps;
-    return this.inheritsCrud ? [repositoryKeyOf(this.ormBase)] : [];
+    return this.inheritsCrud(handler) ? [repositoryKeyOf(this.subjectOf(handler))] : [];
   }
 
   /** A custom Crud constructor must explicitly receive its repository. */
-  private refuseCrudWithoutRepository(): void {
-    const { handler } = this.door;
-    const repoTypeName = repositoryKeyOf(this.ormBase);
-    if (!this.inheritsCrud || handler.deps.length === 0 || handler.deps.includes(repoTypeName)) return;
+  private refuseCrudWithoutRepository(handler: HandlerEntry): void {
+    const repoTypeName = repositoryKeyOf(this.subjectOf(handler));
+    if (!this.inheritsCrud(handler) || handler.deps.length === 0 || handler.deps.includes(repoTypeName)) return;
     throw new Error(
       `${handler.ctor.name} extends Crud() and declares a constructor, so its storage is no ` +
       `longer injected for it — but it does not take any.\n` +
@@ -125,33 +146,16 @@ export class HandlerFacade {
     );
   }
 
-  /** Infer a fact input contract from its announced shape when none is explicit. */
-  private judgeFactsByTheirShape(): void {
-    for (const [op, contract] of this.contracts) {
-      if (contract.input) continue;
-      const bound = contract.binding?.find((b) => b.source.kind === 'fact');
-      if (!bound || bound.source.kind !== 'fact') continue;
-      const shape = this.wiring.emissions.shapeOf(bound.source.factName);
-      if (shape) this.contracts.set(op, { ...contract, input: shape });
-    }
-  }
-
   /** Resolve and cache the output view declared for one operation. */
   private viewOf(op: string): OutputView {
     const known = this.cachedViews.get(op);
     if (known) return known;
 
-    const { handler, entity } = this.door;
-    const perOp = (handler.ctor as { __opOutputs?: Record<string, unknown> })?.__opOutputs?.[op];
-    const schema = (perOp
-      ?? this.contracts.get(op)?.output
-      ?? handler.outputOverride
-      ?? (handler.ctor as { __output?: unknown })?.__output
-      // Without a declared shape, projection preserves the returned object.
-      ?? entity?.entityClass) as { getFields?: () => Fields };
+    const operation = this.effectiveOperations.get(op);
+    const schema = operation?.output as { getFields?: () => Fields } | undefined;
     const resolved = new OutputView(
       typeof schema?.getFields === 'function' ? schema.getFields() : {},
-      perOp !== undefined,
+      operation?.outputClosed ?? false,
     );
     this.cachedViews.set(op, resolved);
     return resolved;
@@ -168,6 +172,45 @@ export class HandlerFacade {
     return this.instance;
   }
 
+  private isBaseImplementation(operation: EffectiveOperation): boolean {
+    return operation.implementation.className === this.door.handler.ctor.name
+      && operation.implementation.address === this.door.handler.address
+      && operation.implementation.filePath === this.door.handler.filePath;
+  }
+
+  /** The exact handler entry the pure model selected; no name-only retry or fallback. */
+  private implementationHandler(operationName: string): HandlerEntry {
+    const operation = this.effectiveOperations.get(operationName)!;
+    const matches = this.door.handlers.filter((handler) =>
+      handler.ctor.name === operation.implementation.className
+      && handler.address === operation.implementation.address
+      && handler.filePath === operation.implementation.filePath);
+    if (matches.length !== 1) {
+      throw new Error(
+        `EffectiveOperation '${operation.id}' names ${operation.implementation.className}.`
+        + `${operation.implementation.method}, but boot found ${matches.length} matching handlers.`,
+      );
+    }
+    return matches[0]!;
+  }
+
+  private resolvedImplementation(operationName: string): { instance: any; method: string } {
+    const operation = this.effectiveOperations.get(operationName)!;
+    if (this.isBaseImplementation(operation)) {
+      return { instance: this.resolvedHandler(), method: operation.implementation.method };
+    }
+
+    const className = operation.implementation.className;
+    const key = this.implementationKeys.get(className);
+    if (!key) throw new Error(`No registered implementation for EffectiveOperation '${operation.id}'.`);
+    let instance = this.implementationInstances.get(key);
+    if (!instance) {
+      instance = this.door.scope.resolve(key);
+      this.implementationInstances.set(key, instance);
+    }
+    return { instance, method: operation.implementation.method };
+  }
+
   private wrap(op: string): (invocation?: InvocationContext) => Promise<unknown> {
     const address = this.door.handler.address;
     const contract = this.contracts.get(op);
@@ -182,7 +225,10 @@ export class HandlerFacade {
       inFlight: this.wiring.inflight,
       validator: this.inputValidator,
       arguments: this.argumentResolver,
-      invoke: (args) => this.resolvedHandler()[op](...args),
+      invoke: async (args) => {
+        const implementation = this.resolvedImplementation(op);
+        return implementation.instance[implementation.method](...args);
+      },
       projector: new OutputProjector(view),
       ...(view.closed || !presenter ? {} : {
         present: async (result: unknown, effective: InvocationContext) =>

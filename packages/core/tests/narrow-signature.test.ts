@@ -1,5 +1,5 @@
 /**
- * What a NARROW type in an operation's signature actually gets handed.
+ * A narrow type retains its name, but does not acquire a provenance by accident.
  *
  * `gardes-par-signature` proposes that a rule live on the operation, spelled as a
  * tighter type in the signature — `charge(amount: Cents)` rather than a guard in the
@@ -7,21 +7,12 @@
  * an unmeasured starting point is how you design the wrong thing.
  *
  * The fixture is two methods with the SAME body, `amount * 2`, differing only in how
- * the parameter's type is written. What changes is not the arithmetic, it is where the
- * value comes from:
+ * the parameter's type is written:
  *
  *   - `amount: number` binds BY NAME, from the route params or the query string.
- *   - `amount: Cents` — an alias that is a number at runtime — binds to the whole
- *     request body, so `amount * 2` is `NaN` and nothing says a word.
- *
- * It is not enforced and not refused: the alias falls through `computeBindingPlan`'s
- * last branch, "everything else, body". That is the same branch as the collector known
- * issue (`binding.ts`, branch 4), where a parameter typed with an entity its frond has
- * no collector for receives the caller's body. Two symptoms, one fall-through, both silent.
- *
- * This began as a probe that asserted nothing and printed to stderr. What it found was
- * worth keeping; the printing is assertions now, because a measurement nobody can
- * re-run is just a memory.
+ *   - `amount: Cents` has no derivable primitive provenance, so the frond states its
+ *     `param` binding explicitly. The effective model then treats it exactly like the
+ *     plain number instead of silently handing it the whole body.
  */
 import { scanProject } from '../src/node.js';
 import { describe, expect, it } from 'vitest';
@@ -70,16 +61,14 @@ describe('a narrow type in an operation signature', () => {
     await app.dispose();
   });
 
-  it('hands an ALIAS the whole body, wherever the value actually is', async () => {
+  it('uses the explicitly resolved provenance for an alias', async () => {
     const { app, call } = await billing();
 
-    // Declared `amount: Cents`, received `{ amount: 1500 }` — an object times two.
-    expect(await call('doubleCents', { body: { amount: 1500 } })).toBeNaN();
+    expect(await call('doubleCents', { params: { amount: '1500' } })).toBe(3000);
+    expect(await call('doubleCents', { query: { amount: '1500' } })).toBe(3000);
 
-    // And the name it was given is ignored: params and query are not consulted at all,
-    // so the same call that feeds `doublePlain` feeds this one `undefined`.
-    expect(await call('doubleCents', { params: { amount: '1500' } })).toBeNaN();
-    expect(await call('doubleCents', { query: { amount: '1500' } })).toBeNaN();
+    // The declared source is a named parameter, never the body fallback.
+    expect(await call('doubleCents', { body: { amount: 1500 } })).toBeNaN();
 
     await app.dispose();
   });

@@ -116,7 +116,7 @@ describe('verify — cross-frond dependency', () => {
 });
 
 describe('verify — collector in another frond', () => {
-  it('names the parameter that will take the request body', async () => {
+  it('names the parameter whose preliminary body interpretation must be refused', async () => {
     const { scanProject } = await import('../src/scan/scanner.js');
     const scan = await scanProject(new URL('./fixtures-collector-split', import.meta.url).pathname);
 
@@ -125,12 +125,13 @@ describe('verify — collector in another frond', () => {
     // Two ops, same misplacement — the spelling of the param changes nothing.
     expect(violations).toHaveLength(2);
     expect(violations.map((v) => v.subject).sort()).toEqual([
-      'PostHandler.whoNull(user)',
+      'PostHandler.whoExplicit(user)',
       'PostHandler.whoOptional(user)',
     ]);
     expect(violations[0].frond).toBe('blog');
     expect(violations[0].message).toContain("declared in frond 'identity'");
-    expect(violations[0].message).toContain('falls through to the request body');
+    expect(violations[0].message).toContain('preliminary body interpretation is invalid');
+    expect(violations[0].message).toContain('refuses the operation');
     // What the boot filters on when `remotes:` names a frond.
     expect(violations[0].dependsOn).toEqual({ key: 'UserCollector', frond: 'identity', kind: 'collector' });
     // The consumer is 'blog', the target is 'identity' — two different fields,

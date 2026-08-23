@@ -14,6 +14,7 @@ import type { AppMiddleware } from '../wire/middleware.js';
 import type { RpcAnswer, Transport } from '../wire/call.js';
 import type { Extension } from './AppLifecycle.js';
 import type { AuthConfig, AuthRuntime } from './auth.js';
+import type { EffectiveOperationsMap } from '../effective-operation.js';
 import type { DispatchObserver } from '../dispatch/DispatchEvent.js';
 import type { DispatchPort } from '../dispatch/DispatchPort.js';
 
@@ -166,6 +167,12 @@ export interface App extends DispatchPort {
    * stay structurally typed and depend on nothing.
    */
   facadeFor(entity: string, surface?: string): Record<string, Function> | undefined;
+  /**
+   * The canonical contracts served beside a facade, after prefab + scan + config,
+   * binding, kind, topology and surface resolution. Check, explain and adapters read
+   * this table instead of replaying those decisions.
+   */
+  operationsFor(entity: string, surface?: string): EffectiveOperationsMap | undefined;
   /**
    * The facts this app has a listener for — what a carrier must subscribe to on its behalf.
    *

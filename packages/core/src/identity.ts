@@ -50,9 +50,14 @@ export interface FrondIdentity {
   grant: string;
 }
 
-/** The body's fingerprint. `null` and an absent body are the same call. */
+/** The body's fingerprint. Absence and explicit null are different signed calls. */
 async function digestOf(body: unknown): Promise<string> {
-  return b64url(await crypto.sha256(bytesOf(JSON.stringify(body ?? null))));
+  // The tag is outside the caller value, so no user object can collide with it. JSON's
+  // own omission rule still applies inside `value`, matching what crosses the wire.
+  const canonical = body === undefined
+    ? { kind: 'undefined' }
+    : { kind: 'value', value: body };
+  return b64url(await crypto.sha256(bytesOf(JSON.stringify(canonical))));
 }
 
 /** What the envelope pins, as one comparable value. */
