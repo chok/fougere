@@ -32,6 +32,7 @@ function fakeCrud(data: Record<string, unknown>[] = []) {
 function crudOps(entityName: string, entityClass?: any): Map<string, any> {
   return new Map([
     ['list', {
+      kind: 'query',
       signature: {
         name: 'list',
         params: [{ name: 'options', type: { raw: 'ListOptions', name: 'ListOptions' }, optional: true }],
@@ -39,6 +40,7 @@ function crudOps(entityName: string, entityClass?: any): Map<string, any> {
       },
     }],
     ['findById', {
+      kind: 'query',
       signature: {
         name: 'findById',
         params: [{ name: 'id', type: { raw: 'string', name: 'string' } }],
@@ -46,6 +48,7 @@ function crudOps(entityName: string, entityClass?: any): Map<string, any> {
       },
     }],
     ['create', {
+      kind: 'command',
       input: entityClass,
       output: entityClass,
       signature: {
@@ -55,6 +58,7 @@ function crudOps(entityName: string, entityClass?: any): Map<string, any> {
       },
     }],
     ['update', {
+      kind: 'command',
       input: entityClass,
       output: entityClass,
       signature: {
@@ -67,6 +71,7 @@ function crudOps(entityName: string, entityClass?: any): Map<string, any> {
       },
     }],
     ['delete', {
+      kind: 'command',
       signature: {
         name: 'delete',
         params: [{ name: 'id', type: { raw: 'string', name: 'string' } }],
@@ -89,7 +94,7 @@ function pickOps(ops: Map<string, any>, names: string[]): Map<string, any> {
 /** Add custom ops to an existing map. */
 function withCustomOps(
   base: Map<string, any>,
-  custom: Record<string, { input?: any; output?: any; signature: any }>,
+  custom: Record<string, { kind: 'query' | 'command'; input?: any; output?: any; signature: any }>,
 ): Map<string, any> {
   const result = new Map(base);
   for (const [name, meta] of Object.entries(custom)) {
@@ -128,12 +133,31 @@ function fakeApp(
     // presenters, so the honest answer is that there is none — not that the method is
     // missing, which is what left this file red while its three siblings were updated.
     presenterFor: () => undefined,
+    // Tests exercise the same canonical table the real App exposes. The operation
+    // metadata above deliberately states its kind; this double must not recreate
+    // core's query/command inference inside the GraphQL adapter.
+    operationsFor: (entity: string) => effectiveHandlers.find(
+      (handler) => handler.address.toLowerCase() === entity.toLowerCase(),
+    )?.operations ?? new Map(),
   };
 }
 
 // ─── Tests ─────────────────────────────────────
 
 describe('registerAll', () => {
+  it('refuses a facade with no canonical operation table', () => {
+    const builder = new SchemaBuilder({});
+    builder.queryType({});
+    builder.mutationType({});
+    const app = fakeApp(
+      [{ name: 'post', entityClass: Post }],
+      { postHandler: fakeCrud() },
+    );
+
+    expect(() => registerAll(builder, { ...app, operationsFor: () => undefined }))
+      .toThrow(/without its EffectiveOperation table/);
+  });
+
   it('generates types, inputs, queries and mutations for all entities', () => {
     const builder = new SchemaBuilder({});
     builder.queryType({});
@@ -350,6 +374,7 @@ describe('registerAll', () => {
       crudOps('Post', Post),
       {
         searchByTitle: {
+          kind: 'query',
           input: Post.pick('title'),
           output: Post.pick('id', 'title'),
           signature: {
@@ -389,6 +414,7 @@ describe('registerAll', () => {
       crudOps('Post', Post),
       {
         publish: {
+          kind: 'command',
           input: Post.pick('id'),
           output: Post.pick('id', 'title'),
           signature: {
@@ -425,6 +451,7 @@ describe('registerAll', () => {
       pickOps(crudOps('Post', Post), ['list', 'findById']),
       {
         listFeatured: {
+          kind: 'query',
           output: Post.pick('id', 'title'),
           signature: {
             name: 'listFeatured',
@@ -656,6 +683,7 @@ describe('registerAll', () => {
 describe('an operation that declares its return type', () => {
   const declaredOp = (output: any) => withCustomOps(crudOps('Post', Post), {
     digest: {
+      kind: 'query',
       output,
       signature: { name: 'digest', params: [], returnType: { raw: 'X[]', name: 'X', array: true } },
     },

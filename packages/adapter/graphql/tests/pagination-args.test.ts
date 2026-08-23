@@ -25,6 +25,7 @@ describe('a list op that declares ListOptions', () => {
       facade: { list: () => [] },
       operations: new Map([
         ['list', {
+          kind: 'query',
           signature: {
             name: 'list',
             params: [{ name: 'options', type: { raw: 'ListOptions', name: 'ListOptions' }, optional: true }],

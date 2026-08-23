@@ -100,6 +100,7 @@ describe('the arity of a computed field', () => {
       resolve: () => ({ tags: () => [], excerpt: () => [] }),
       presenterFor: () => ({ tags: () => [], excerpt: () => [] }),
       facadeFor: () => ({ list: async () => [] }),
+      operationsFor: () => new Map(),
     };
 
     const builder = new SchemaBuilder({});

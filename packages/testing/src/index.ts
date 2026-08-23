@@ -7,7 +7,13 @@ export { checkContract, checkOutput, verdictOf, type Verdict, type CheckOptions 
 export { stubOf, methodsOf, installStubs, type Port, type Stub } from './stub.js';
 export { scopeOf, scopeOfRun, frondOf, rootOf, type Scope } from './scope.js';
 export { loadScript, reachableOps, type LoadOptions } from './load.js';
-export { checkDoors, type DoorOptions } from './comparison.js';
+export {
+  checkDoorContract,
+  checkDoors,
+  type DoorContractCase,
+  type DoorInput,
+  type DoorOptions,
+} from './comparison.js';
 export { selectionOf, queryFieldFor, mutationFieldFor, listQuery, findQuery, mutationFor, at } from './gql.js';
 export { driftOf, agrees, explain, type CardDrift } from './remotes.js';
 export { checkAll, servedEntities, type CheckAllOptions } from './all.js';

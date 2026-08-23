@@ -32,11 +32,12 @@ function fakeApp(facade: object, presenter: object) {
     fronds: [{
       name: 'blog',
       entities: [{ name: 'post', entityClass: Post }],
-      handlers: [{ address: 'post', operations: new Map([['list', {}]]) }],
+      handlers: [{ address: 'post', operations: new Map([['list', { kind: 'query' }]]) }],
       presenters: [{ entityName: 'post', fields: ['excerpt'] }],
     }],
     resolve: <T>(name: string) => (name === 'PostPresenter' ? presenter : facade) as T,
     facadeFor: () => facade as Record<string, Function>,
+    operationsFor: () => new Map([['list', { kind: 'query' }]]),
   } as never;
 }
 

@@ -32,7 +32,7 @@ function build(fronds: { name: string; handler: string; overrides?: Record<strin
       handlers: [{
         address: name === 'annotation' ? 'note' : 'chapter',
         ctor: { name: handler },
-        operations: new Map([['ofBook', { signature: ofBook }]]),
+        operations: new Map([['ofBook', { kind: 'query', signature: ofBook }]]),
       }],
       presenters: [],
       operationsOverrides: overrides,
@@ -40,6 +40,7 @@ function build(fronds: { name: string; handler: string; overrides?: Record<strin
     presenterFor: () => undefined,
     resolve: () => { throw new Error('no such registration'); },
     facadeFor: () => ({ ofBook: async () => [] }),
+    operationsFor: () => new Map([['ofBook', { kind: 'query', signature: ofBook }]]),
   } as never;
 
   const builder = new SchemaBuilder({});
@@ -74,14 +75,15 @@ describe('two operations claiming one root field', () => {
         name: 'annotation',
         entities: [{ name: 'note', entityClass: Note }, { name: 'chapter', entityClass: Chapter }],
         handlers: [
-          { address: 'note', ctor: { name: 'NoteHandler' }, operations: new Map([['ofBook', { signature: ofBook }]]) },
-          { address: 'chapter', ctor: { name: 'HighlightHandler' }, operations: new Map([['ofBook', { signature: ofBook }]]) },
+          { address: 'note', ctor: { name: 'NoteHandler' }, operations: new Map([['ofBook', { kind: 'query', signature: ofBook }]]) },
+          { address: 'chapter', ctor: { name: 'HighlightHandler' }, operations: new Map([['ofBook', { kind: 'query', signature: ofBook }]]) },
         ],
         presenters: [],
       }],
       presenterFor: () => undefined,
       resolve: () => { throw new Error('no such registration'); },
       facadeFor: () => ({ ofBook: async () => [] }),
+      operationsFor: () => new Map([['ofBook', { kind: 'query', signature: ofBook }]]),
     } as never;
 
     const builder = new SchemaBuilder({});
@@ -95,8 +97,7 @@ describe('two operations claiming one root field', () => {
       { name: 'annotation', handler: 'NoteHandler' },
       { name: 'catalog', handler: 'ChapterHandler', overrides: { ofBook: { graphql: 'chaptersOfBook' } } },
     ]);
-    // Whichever root they land on — `ofBook` matches no read prefix, so both are
-    // mutations here. What this pins is the NAME, not the kind.
+    // Both explicitly declare query intent. What this pins is the NAME, not the kind.
     const roots = ['Query', 'Mutation'].flatMap(
       (t) => Object.keys((schema.getTypeMap()[t] as any).getFields()),
     );

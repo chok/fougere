@@ -309,6 +309,7 @@ describe('registerOperations', () => {
 
     const operations = new Map<string, any>([
       ['list', {
+        kind: 'query',
         signature: {
           name: 'list',
           params: [{ name: 'options', type: { raw: 'ListOptions', name: 'ListOptions' }, optional: true }],
@@ -316,6 +317,7 @@ describe('registerOperations', () => {
         },
       }],
       ['findById', {
+        kind: 'query',
         signature: {
           name: 'findById',
           params: [{ name: 'id', type: { raw: 'string', name: 'string' } }],
@@ -323,6 +325,7 @@ describe('registerOperations', () => {
         },
       }],
       ['create', {
+        kind: 'command',
         input: Category,
         signature: {
           name: 'create',
@@ -355,6 +358,89 @@ describe('registerOperations', () => {
     const createSchema = Category.pick('name', 'slug');
     const result = createSchema.validate({ name: '', slug: 'test' });
     expect(result.success).toBe(false);
+  });
+
+  it('does not publish a collector-bound optional parameter as caller input', () => {
+    const builder = new SchemaBuilder({});
+    const CategoryType = registerType(builder, { name: 'Category', entity: Category });
+    builder.queryType({});
+    builder.mutationType({});
+
+    registerOperations(builder, {
+      name: 'Category',
+      type: CategoryType,
+      facade: { publish: () => categories[0] },
+      operations: new Map([['publish', {
+        kind: 'command',
+        signature: {
+          name: 'publish',
+          params: [
+            { name: 'id', type: { raw: 'string', name: 'string' } },
+            { name: 'user', type: { raw: 'User', name: 'User' }, optional: true },
+          ],
+          returnType: { raw: 'Category', name: 'Category' },
+        },
+        binding: [
+          { name: 'id', source: { kind: 'param', name: 'id' }, optional: false },
+          { name: 'user', source: { kind: 'collector' }, optional: true },
+        ],
+      }]]),
+    });
+
+    const publish = builder.toSchema().getMutationType()!.getFields()['publish'];
+    expect(publish.args.map((arg) => arg.name)).toEqual(['id']);
+  });
+
+  it('keeps omitted, undefined and explicit null distinct in primitive arguments', async () => {
+    const builder = new SchemaBuilder({});
+    const CategoryType = registerType(builder, { name: 'Category', entity: Category });
+    builder.queryType({});
+    builder.mutationType({});
+
+    const invocations: any[] = [];
+    registerOperations(builder, {
+      name: 'Category',
+      type: CategoryType,
+      facade: {
+        inspect: (invocation: any) => {
+          invocations.push(invocation);
+          return categories[0];
+        },
+      },
+      operations: new Map([['inspect', {
+        kind: 'command',
+        signature: {
+          name: 'inspect',
+          params: [
+            { name: 'requiredNullable', type: { raw: 'string | null', name: 'string', nullable: true } },
+            { name: 'optional', type: { raw: 'string | undefined', name: 'string', undefined: true }, optional: true },
+            { name: 'optionalNullable', type: { raw: 'string | null | undefined', name: 'string', nullable: true, undefined: true }, optional: true },
+          ],
+          returnType: { raw: 'Category', name: 'Category' },
+        },
+        binding: [
+          { name: 'requiredNullable', source: { kind: 'param', name: 'requiredNullable' }, optional: false },
+          { name: 'optional', source: { kind: 'param', name: 'optional' }, optional: true },
+          { name: 'optionalNullable', source: { kind: 'param', name: 'optionalNullable' }, optional: true },
+        ],
+      }]]),
+    });
+
+    const inspect = builder.toSchema().getMutationType()!.getFields()['inspect'];
+    expect(Object.fromEntries(inspect.args.map((arg) => [arg.name, arg.type.toString()]))).toEqual({
+      requiredNullable: 'String',
+      optional: 'String',
+      optionalNullable: 'String',
+    });
+
+    await inspect.resolve!({}, { requiredNullable: null, optionalNullable: null }, { state: {} }, {} as any);
+    expect(invocations[0].params).toEqual({ requiredNullable: null, optionalNullable: null });
+    expect(invocations[0].params.optional).toBeUndefined();
+    expect(Object.hasOwn(invocations[0].params, 'optional')).toBe(false);
+
+    await inspect.resolve!({}, { requiredNullable: 'present' }, { state: {} }, {} as any);
+    expect(invocations[1].params.optionalNullable).toBeUndefined();
+    expect(Object.hasOwn(invocations[1].params, 'optionalNullable')).toBe(false);
   });
 });
 

@@ -1,4 +1,4 @@
-import { type ScanResult } from '@fougere/core';
+import { type FougereConfig, type ScanResult } from '@fougere/core';
 import {
   scanProject, frondAliases, setModuleLoader, loadConfig, resolveConventions,
 } from '@fougere/core/node';
@@ -21,7 +21,7 @@ export default class ProjectScan {
   private cwd = process.cwd();
 
   /** Scan the project at `root`, relative to where the command was invoked. */
-  async at(root?: string): Promise<ScanResult & { root: string }> {
+  async at(root?: string): Promise<ScanResult & { root: string; config: FougereConfig }> {
     const target = resolve(this.cwd, root || '.');
 
     // The scan reads `.ts` sources; the default loader is a plain `import`, which
@@ -39,12 +39,13 @@ export default class ProjectScan {
      * import that would need the name to read the file that declares it.
      */
     install();
-    const conventions = resolveConventions((await loadConfig(target)).conventions);
+    const config = await loadConfig(target);
+    const conventions = resolveConventions(config.conventions);
 
     // The scope is the framework's own convention; the loader has to know it, or a frond
     // naming its neighbour is unreadable to the very tool that checks it.
     install(await frondAliases(target, conventions));
 
-    return { root: target, ...(await scanProject(target, undefined, conventions)) };
+    return { root: target, config, ...(await scanProject(target, undefined, conventions)) };
   }
 }

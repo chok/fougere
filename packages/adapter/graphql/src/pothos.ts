@@ -59,20 +59,31 @@ export interface InputConfig {
 /** Parsed method signature (mirrors core OperationMeta.signature). */
 interface ParsedSignature {
   name: string;
-  params: { name: string; type: { raw: string; name: string; array?: boolean; nullable?: boolean; generics?: ParsedSignature['params'][0]['type'][] }; optional?: boolean }[];
-  returnType?: { raw: string; name: string; array?: boolean; nullable?: boolean; generics?: ParsedSignature['params'][0]['type'][] };
+  params: { name: string; type: { raw: string; name: string; array?: boolean; nullable?: boolean; undefined?: boolean; generics?: ParsedSignature['params'][0]['type'][] }; optional?: boolean }[];
+  returnType?: { raw: string; name: string; array?: boolean; nullable?: boolean; undefined?: boolean; generics?: ParsedSignature['params'][0]['type'][] };
 }
 
-/** Metadata for a handler operation (from scanner). */
+interface OperationBinding {
+  name: string;
+  optional: boolean;
+  source:
+    | { kind: 'collector' | 'context' | 'fact' }
+    | { kind: 'param'; name: string }
+    | { kind: 'body' | 'query' };
+}
+
+/** The projection-facing subset of core's EffectiveOperation. */
 interface OperationMeta {
   input?: SchemaView;
   output?: SchemaView;
+  /** Canonical kind from core's EffectiveOperation. */
+  kind: 'query' | 'command';
   signature?: ParsedSignature;
+  /** The façade's effective answer to where every parameter comes from. */
+  binding?: OperationBinding[];
   /**
-   * The operation in words. It reaches here already — `handler.operations` is core's
-   * `Map<string, OperationContract>`, and this narrowed view simply did not name the
-   * field, so an explorer showed every field undocumented while the sentence sat one
-   * property away.
+   * The operation in words. It reaches here through core's EffectiveOperation table;
+   * this narrowed view simply carries it to the GraphQL field.
    */
   description?: string;
 }
@@ -101,16 +112,17 @@ export interface OperationsConfig {
   viewType?: (view: SchemaView, opName: string) => any;
 }
 
-// Mirrors core's resolveIsReadOp (this package stays core-free, same as OperationMeta
-// above). Scheduled to die with the handler-kind plan (docs/notes/handler-kind.md).
-const READ_PREFIXES = ['list', 'find', 'get', 'search', 'count', 'exists', 'stats'];
-function resolveIsReadOp(
+function operationIsQuery(
   name: string,
-  overrides?: Record<string, { kind?: 'query' | 'command' }>,
+  resolved?: OperationMeta['kind'],
 ): boolean {
-  const kind = overrides?.[name]?.kind;
-  if (kind) return kind === 'query';
-  return READ_PREFIXES.some((p) => name.startsWith(p));
+  if (!resolved) {
+    throw new Error(
+      `GraphQL cannot project '${name}' without its resolved operation kind. `
+      + 'Pass the EffectiveOperation table produced by core.',
+    );
+  }
+  return resolved === 'query';
 }
 
 function capitalize(s: string): string {
@@ -734,29 +746,59 @@ function buildArgsFromSignature(
   opName: string,
   entityName: string,
 ): ArgsResult {
-  // Classify each param: primitive, body (object/input), or skip
-  const paramPlan: { name: string; kind: 'primitive' | 'body' | 'skip' | 'pagination'; typeName: string; optional: boolean }[] = [];
+  // Classify from the façade's binding plan when it exists. A collector is not a
+  // GraphQL argument just because its value has an entity type: it is supplied by the
+  // invocation context, and publishing it would let callers impersonate that value.
+  const paramPlan: {
+    name: string;
+    kind: 'primitive' | 'body' | 'skip' | 'pagination';
+    typeName: string;
+    optional: boolean;
+    nullable: boolean;
+  }[] = [];
+  const bindings = new Map((meta.binding ?? []).map((binding) => [binding.name, binding]));
 
   for (const param of sig.params) {
     const typeName = param.type.name;
+    const binding = bindings.get(param.name);
 
+    if (binding) {
+      switch (binding.source.kind) {
+        case 'collector':
+        case 'context':
+        case 'fact':
+          paramPlan.push({ name: param.name, kind: 'skip', typeName, optional: true, nullable: param.type.nullable === true });
+          continue;
+        case 'query':
+          paramPlan.push({ name: param.name, kind: 'pagination', typeName, optional: binding.optional, nullable: param.type.nullable === true });
+          continue;
+        case 'param':
+          paramPlan.push({ name: param.name, kind: 'primitive', typeName, optional: binding.optional, nullable: param.type.nullable === true });
+          continue;
+        case 'body':
+          paramPlan.push({ name: param.name, kind: 'body', typeName, optional: binding.optional, nullable: param.type.nullable === true });
+          continue;
+      }
+    }
+
+    // Compatibility for callers constructing OperationMeta by hand, without core's plan.
     if (SKIP_TYPES.has(typeName)) {
-      paramPlan.push({ name: param.name, kind: 'skip', typeName, optional: true });
+      paramPlan.push({ name: param.name, kind: 'skip', typeName, optional: true, nullable: param.type.nullable === true });
       continue;
     }
 
     if (typeName === 'ListOptions') {
-      paramPlan.push({ name: param.name, kind: 'pagination', typeName, optional: true });
+      paramPlan.push({ name: param.name, kind: 'pagination', typeName, optional: true, nullable: param.type.nullable === true });
       continue;
     }
 
     if (typeName in PRIMITIVES) {
-      paramPlan.push({ name: param.name, kind: 'primitive', typeName, optional: param.optional ?? false });
+      paramPlan.push({ name: param.name, kind: 'primitive', typeName, optional: param.optional ?? false, nullable: param.type.nullable === true });
       continue;
     }
 
     // Object/entity param → body
-    paramPlan.push({ name: param.name, kind: 'body', typeName, optional: param.optional ?? false });
+    paramPlan.push({ name: param.name, kind: 'body', typeName, optional: param.optional ?? false, nullable: param.type.nullable === true });
   }
 
   // Register input type if needed
@@ -785,12 +827,15 @@ function buildArgsFromSignature(
 
     for (const p of paramPlan) {
       if (p.kind === 'primitive') {
-        args[p.name] = PRIMITIVES[p.typeName](t, !p.optional);
+        // GraphQL's NonNull means both "present" and "not null". A `T | null`
+        // parameter therefore cannot use it: the resolver still preserves an explicit
+        // null, and core remains the authority on the TypeScript invocation.
+        args[p.name] = PRIMITIVES[p.typeName](t, !p.optional && !p.nullable);
       }
     }
 
     if (bodyParam && inputRef) {
-      args.input = t.arg({ type: inputRef, required: !bodyParam.optional });
+      args.input = t.arg({ type: inputRef, required: !bodyParam.optional && !bodyParam.nullable });
     }
 
     if (hasPagination) {
@@ -811,14 +856,17 @@ function buildArgsFromSignature(
 
     for (const p of paramPlan) {
       if (p.kind === 'primitive') {
-        if (args[p.name] != null) params[p.name] = args[p.name];
+        // graphql-js omits an omitted optional argument and keeps an explicitly supplied
+        // null. Test undefined alone: `!= null` erased the second case and made
+        // `foo?: T | null` indistinguishable from `foo?: T`.
+        if (args[p.name] !== undefined) params[p.name] = args[p.name];
       } else if (p.kind === 'body') {
         body = args.input;
       } else if (p.kind === 'pagination') {
         // Collect pagination args into body (ListOptions)
         const options: Record<string, any> = {};
         for (const key of ['limit', 'offset', 'page', 'after', 'orderBy', 'order']) {
-          if (args[key] != null) options[key] = args[key];
+          if (args[key] !== undefined) options[key] = args[key];
         }
         body = options;
       }
@@ -869,7 +917,7 @@ function resolveOutputType(
   if (rt?.array) {
     return { type: [type], isList: false, nullable: false };
   }
-  return { type, isList: false, nullable: rt?.nullable ?? false };
+  return { type, isList: false, nullable: rt?.nullable === true || rt?.undefined === true };
 }
 
 // ─── registerOperations ──────────────────────────
@@ -908,7 +956,11 @@ export function registerOperations(builder: InstanceType<typeof SchemaBuilder>, 
   }
 
   for (const [opName, meta] of config.operations) {
-    if (typeof config.facade[opName] !== 'function') continue;
+    if (typeof config.facade[opName] !== 'function') {
+      throw new Error(
+        `GraphQL EffectiveOperation table exposes '${opName}' but its facade does not.`,
+      );
+    }
 
     const sig = meta.signature;
     if (!sig) continue;
@@ -953,7 +1005,7 @@ export function registerOperations(builder: InstanceType<typeof SchemaBuilder>, 
       }),
     });
 
-    if (resolveIsReadOp(opName, config.operationsOverrides)) {
+    if (operationIsQuery(opName, meta.kind)) {
       (builder as any).queryFields(fieldDef);
     } else {
       (builder as any).mutationFields(fieldDef);

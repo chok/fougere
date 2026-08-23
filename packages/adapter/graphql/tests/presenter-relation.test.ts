@@ -47,6 +47,7 @@ function fakeApp(presenterFields: string[], views?: Record<string, any>) {
     })(),
     resolve: () => { throw new Error('no such registration'); },
     facadeFor: () => facade,
+    operationsFor: () => new Map(),
   } as never;
 }
 

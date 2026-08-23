@@ -23,6 +23,7 @@ const repoRoot = ((d: string): string => {
 })(import.meta.dirname);
 
 const fixture = join(import.meta.dirname, 'fixtures-check');
+const ambiguousInputFixture = join(repoRoot, 'packages', 'core', 'tests', 'fixtures-input-contract');
 const check = () => new CheckHandler(new ProjectScan());
 
 describe('check', () => {
@@ -47,5 +48,17 @@ describe('check', () => {
 
     expect(result.fronds).toBeGreaterThan(0);
     expect(result.findings).toEqual([]);
+  });
+
+  it('bloque sur chaque contrat d’entrée ambigu, quel que soit l’ordre', async () => {
+    const result = await check().execute({ root: ambiguousInputFixture });
+    const found = result.findings.filter((f) => f.code === 'input-contract-ambiguous');
+
+    expect(found.map((f) => f.subject).sort()).toEqual([
+      'TransferHandler.transfer',
+      'TransferHandler.transferReversed',
+    ]);
+    expect(found.every((f) => f.severity === 'blocking')).toBe(true);
+    expect(found[0].message).toMatch(/source: Account|destination: Ledger/);
   });
 });

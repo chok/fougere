@@ -48,6 +48,7 @@ function fakeApp(authorSchema: unknown, postSchema: unknown) {
     resolve: () => { throw new Error('no presenter'); },
     presenterFor: () => undefined,
     facadeFor: () => facade,
+    operationsFor: () => new Map(),
   } as any;
 }
 
@@ -110,6 +111,7 @@ suite('the GraphQL projection reads a card as readily as a class', () => {
       resolve: () => { throw new Error('no presenter'); },
       presenterFor: () => undefined,
       facadeFor: () => facade,
+      operationsFor: () => new Map(),
     } as any);
 
     const noteFields = (schema.getTypeMap()['Note'] as any).getFields();

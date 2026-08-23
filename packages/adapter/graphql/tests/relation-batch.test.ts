@@ -38,6 +38,7 @@ function build(userDoor: Record<string, Function>) {
     facadeFor: (name: string) => (name === 'order'
       ? { list: async () => orders, findById: async () => undefined }
       : userDoor),
+    operationsFor: () => new Map(),
   } as never;
 
   const builder = new SchemaBuilder({});
@@ -148,6 +149,7 @@ describe('the many side of a relation', () => {
           },
         }
         : { list: async () => [] }),
+      operationsFor: () => new Map(),
     } as never;
 
     const builder = new SchemaBuilder({});

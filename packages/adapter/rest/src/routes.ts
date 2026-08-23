@@ -5,7 +5,6 @@
  */
 import type { Field, Fields, SchemaSource } from '@fougere/schema';
 import { fieldsOf, inputFields as clientInputFields, outputFields as clientOutputFields } from '@fougere/schema';
-import { resolveIsReadOp } from '@fougere/core';
 import type { HandlerEntry as CoreHandlerEntry } from '@fougere/core';
 
 // ─── Types ──────────────────────────────────────
@@ -32,7 +31,7 @@ export interface RouteDefinition {
    * The operation in words — the method's own doc sentence, carried by the contract.
    *
    * A route is what an OpenAPI `summary` is generated FROM, and the sentence reached
-   * this file already (`handler.operations` is core's `Map<string, OperationContract>`);
+   * this file already through core's `EffectiveOperation` table;
    * only this type had no name for it, so every generated route was undocumented while
    * the sentence sat one property away. Carried, not rendered: emitting OpenAPI is a
    * reader's job, and this is what it reads.
@@ -46,6 +45,8 @@ export interface RouteDefinition {
 interface OperationMeta {
   input?: SchemaSource;
   output?: SchemaSource;
+  /** Canonical kind from core's EffectiveOperation. */
+  kind: 'query' | 'command';
   /** The operation in words — see `RouteDefinition.description`. */
   description?: string;
 }
@@ -90,19 +91,14 @@ interface FrondLike {
   handlers: HandlerEntry[];
   presenters: PresenterEntry[];
   surfaces?: Record<string, string[]>;
-  operationsOverrides?: Record<string, {
-    kind?: 'query' | 'command';
-    handlerName?: string;
-    method?: string;
-    policy?: string;
-  }>;
 }
 
 interface AppLike {
   fronds: FrondLike[];
-  resolve<T>(name: string): T;
   /** The façade an entity exposes to one audience — `undefined` when none. */
   facadeFor(entity: string, surface?: string): Record<string, Function> | undefined;
+  /** Canonical operation table produced by core. */
+  operationsFor(entity: string, surface?: string): Map<string, OperationMeta> | undefined;
 }
 
 type HandlerFacade = Record<string, Function>;
@@ -123,9 +119,15 @@ function pluralize(name: string): string {
 /** Derive HTTP method from operation name, honoring frond.config.ts overrides. */
 function deriveMethod(
   opName: string,
-  overrides?: Record<string, { kind?: 'query' | 'command' }>,
+  resolvedKind: OperationMeta['kind'],
 ): HttpMethod {
-  if (resolveIsReadOp(opName, overrides)) return 'GET';
+  if (!resolvedKind) {
+    throw new Error(
+      `REST cannot project '${opName}' without its resolved operation kind. `
+      + 'Build routes from App.operationsFor(), the EffectiveOperation table produced by core.',
+    );
+  }
+  if (resolvedKind === 'query') return 'GET';
   if (opName.startsWith('create')) return 'POST';
   if (opName.startsWith('update') || opName.startsWith('edit')) return 'PUT';
   if (opName.startsWith('delete') || opName.startsWith('remove')) return 'DELETE';
@@ -205,8 +207,15 @@ export function generateRoutes(app: AppLike, options?: GenerateRoutesOptions): R
       const handler = (surfaceName
         ? frond.handlers.find((h) => h.address === entity.name && h.surface === surfaceName)
         : undefined) ?? handlerMap.get(entity.name);
-      // Use facade keys (includes inherited ops like CRUD), fallback to handler.operations
-      const opNames = Object.keys(facade);
+      const effectiveOperations = app.operationsFor(entity.name, surfaceName);
+      if (!effectiveOperations) {
+        throw new Error(
+          `REST cannot project '${entity.name}' without its EffectiveOperation table.`,
+        );
+      }
+      // The resolved table defines the public operation set. This also works for remote
+      // proxy facades, which intentionally cannot enumerate their keys before discovery.
+      const opNames = [...effectiveOperations.keys()];
       const entityOverrides = overrides[entity.name] ?? {};
       // Use handler's output schema if declared, otherwise entity. A live class or a
       // card — `fieldsOf` takes both, so a frond whose class never crossed the wire
@@ -217,9 +226,14 @@ export function generateRoutes(app: AppLike, options?: GenerateRoutesOptions): R
       const fields = fieldsOf(outputSchema);
 
       for (const opName of opNames) {
-        const meta = handler?.operations.get(opName);
+        const meta = effectiveOperations.get(opName);
+        if (!meta) {
+          throw new Error(
+            `REST facade '${entity.name}' exposes '${opName}' but its EffectiveOperation table does not.`,
+          );
+        }
         const override = entityOverrides[opName];
-        const method = override?.method ?? deriveMethod(opName, frond.operationsOverrides);
+        const method = override?.method ?? deriveMethod(opName, meta?.kind);
         const path = prefix + (override?.path ?? derivePath(entity.name, opName));
 
         // Input/output fields: use meta if available, fallback to entity fields for CRUD.
@@ -233,19 +247,14 @@ export function generateRoutes(app: AppLike, options?: GenerateRoutesOptions): R
         }
         if (meta?.output) outputFields = clientOutputFields(fieldsOf(meta.output));
 
-        // Per-op handler override: redirect to a different class+method resolved from DI.
-        const opOverride = frond.operationsOverrides?.[opName];
-        let op: Function | undefined = facade[opName];
-        if (opOverride?.handlerName) {
-          try {
-            const altFacade = app.resolve<HandlerFacade>(opOverride.handlerName);
-            const altMethod = opOverride.method ?? opName;
-            if (typeof altFacade[altMethod] === 'function') {
-              op = altFacade[altMethod].bind(altFacade);
-            }
-          } catch { /* alternate handler not in DI — fall back to default */ }
+        // Handler/method overrides are already executed by the facade from the same
+        // EffectiveOperation local and RPC use. The adapter never resolves DI itself.
+        const op = facade[opName];
+        if (typeof op !== 'function') {
+          throw new Error(
+            `REST EffectiveOperation table exposes '${opName}' but its facade does not.`,
+          );
         }
-        if (!op) continue;
 
         routes.push({
           method,

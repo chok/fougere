@@ -52,7 +52,7 @@ Cette seule classe est à la fois :
 - le **validateur** des entrées client (`Post.validate(input)`),
 - la **metadata** que chaque adapter lit (`Post.getFields()`),
 - la **désignation** que les pages utilisent pour appeler les opérations (`useQuery(Post, 'list')`),
-- le **nom nominal** que l'injection de dépendances matche dans les signatures (`user: User | null`).
+- le **type nominal** que l'injection de dépendances matche dans les signatures (`user?: User`).
 
 ## Ce qui est choisi en dehors
 
