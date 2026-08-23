@@ -190,7 +190,13 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   /** What this app took on beyond its fronds. Its `up` is the last thing the boot does. */
   const appLifecycle = new AppLifecycle().add(...(options.extensions ?? []));
   const routeRegistry = new RouteRegistry();
-  const dispatchLifecycle = new DispatchLifecycle(options.dispatchObservers);
+  const dispatchLifecycle = new DispatchLifecycle(
+    options.dispatchObservers,
+    (error, event) => log.error(
+      `[dispatch-observer] ${event.stage} ${event.call.address.toString()}`,
+      error,
+    ),
+  );
   const dispatcher = new Dispatcher(routeRegistry, dispatchLifecycle);
   const localDispatcher = new Dispatcher(
     routeRegistry,

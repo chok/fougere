@@ -64,8 +64,12 @@ describe('Dispatcher', () => {
     const address = new RouteAddress({ entity: 'product', operation: 'count' });
     const routes = new RouteRegistry();
     routes.register({ kind: 'system', address, execute: async () => 2 });
-    const lifecycle = new DispatchLifecycle([() => { throw new Error('metrics failed'); }]);
+    const failure = new Error('metrics failed');
+    const diagnose = vi.fn();
+    const lifecycle = new DispatchLifecycle([() => { throw failure; }], diagnose);
 
     await expect(new Dispatcher(routes, lifecycle).dispatch(new Call(address))).resolves.toBe(2);
+    expect(diagnose).toHaveBeenCalledTimes(4);
+    expect(diagnose).toHaveBeenCalledWith(failure, expect.objectContaining({ stage: 'received' }));
   });
 });
