@@ -44,7 +44,18 @@ exist to add what a projection cannot derive — never to replace it.
 
 ## Reading data
 
-`EntityOrm`, injected by type, is the only data access:
+Storage is reached through a repository. Never inject `EntityOrm` directly into a handler,
+presenter or collector — the boot refuses it. With no repository file, ask for the default shape:
+
+```ts
+import type { RepositoryOf } from '@fougere/core';
+import Product from '../entities/Product.js';
+
+constructor(private products: RepositoryOf<Product>) {}
+```
+
+If the handler extends `Crud(Product)`, its inherited `this.orm` is already backed by that
+repository; do not add a constructor. The repository forwards the guarded storage gestures:
 
 ```
 list(options?)        every row — `options.where` filters, plus paging and sorting
@@ -56,10 +67,21 @@ create / update / delete
 
 Read a relation with `findAllBy`. Never read a whole table to filter it in memory.
 
+When a query deserves a domain name, add `repositories/ProductRepository.ts` with
+`class ProductRepository extends Repository(Product)`, put the query there, and inject
+`ProductRepository`. A repository is registered as a provider and remains the only route to storage.
+
 ## Checking your work
 
+After every change to handlers, entities, Fronds, configuration, or topology:
+
+1. Run `fougere check`.
+2. Fix every deterministic error it reports before continuing.
+3. Run the relevant tests, then run the project typecheck.
+
 ```bash
-pnpm typecheck    # the compiler — free, immediate, and it catches most of it
+fougere check
+pnpm typecheck
 ```
 
-Run it. It is the first judge, and the cheapest.
+`fougere check` is the Fougere model barrier; tests and TypeScript come after it passes.

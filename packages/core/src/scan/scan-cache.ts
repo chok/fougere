@@ -27,7 +27,9 @@ import { join } from 'node:path';
 //     "does this touch storage", not "is this a read", so a read that wrote an audit row
 //     was published as a mutation. The number stays taken; going back to 4 would revive
 //     a v4 cache written before 5, which is the same shape but not the same history.
-const PARSER_VERSION = 6;
+// 7 — parsed types carry checked, alias-resolved meaning and distinguish `undefined`
+//     from `null`; a v6 entry contains only the syntax that happened to be written.
+const PARSER_VERSION = 7;
 
 interface CacheEntry {
   hash: string;

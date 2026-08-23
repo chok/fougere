@@ -96,7 +96,7 @@ await attempt('2. the same three writes, and a failure after the last one',
   () => run('transfer', 'moveAndFail', { from: 'ada', to: 'bob', amount: 100 }));
 
 await attempt('3. the ENTITY refusing the last write — balance may not go below zero',
-  () => run('transfer', 'overdraw', { from: 'ada', to: 'bob' }));
+  () => run('transfer', 'transferOverdrawn', { from: 'ada', to: 'bob' }));
 
 await attempt('4. a mirror inside the frame — its pages come back too, and EUR is RESTORED to 0.5',
   () => run('refresh', 'syncAndFail'));

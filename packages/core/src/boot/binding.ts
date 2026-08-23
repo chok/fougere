@@ -146,7 +146,13 @@ export async function resolveArgs(
         break;
       }
       case 'param': {
-        let val: unknown = ctx.params[binding.source.name] ?? ctx.query[binding.source.name];
+        // `null` is a value, not a miss. Nullish coalescing used to make an explicit
+        // nullable path/GraphQL argument fall through to query (or become undefined),
+        // collapsing `T | null` into `T | undefined`. Only undefined means absent.
+        const fromParams = ctx.params[binding.source.name];
+        let val: unknown = fromParams === undefined
+          ? ctx.query[binding.source.name]
+          : fromParams;
         if (val != null && binding.source.coerce === 'number') val = Number(val);
         if (val != null && binding.source.coerce === 'boolean') val = val === 'true' || val === '1' || val === true;
         args.push(val);

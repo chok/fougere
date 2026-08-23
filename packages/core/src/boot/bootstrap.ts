@@ -12,17 +12,29 @@ import { Emissions } from './Emissions.js';
 import { HandlerFacade } from './HandlerFacade.js';
 import { targetOf } from '../prefab/prefab.js';
 import { ownersOf, refuseOrmInUserCode, refuseCrudOnOwned } from './ownership.js';
-import { resolveContracts } from '../wire/operation.js';
+import type { OperationContract, OperationsMap } from '../wire/operation.js';
+import {
+  resolveEffectiveOperations,
+  type EffectiveOperationsMap,
+} from '../effective-operation.js';
 import { guardStorage } from './egress.js';
 import { portBindings } from './ports.js';
-import { InFlight } from './inflight.js';
+import { InFlight } from '../dispatch/InFlight.js';
 // The keys, each read from where its concept is declared — never respelled here.
 import { facadeKeyOf, contractsKeyOf, identityCardOf, type RpcAnswer } from '../wire/call.js';
-import { Lifecycle } from './Lifecycle.js';
+import { AppLifecycle } from './AppLifecycle.js';
 import { repositoryKeyOf } from '../prefab/repository.js';
 import { ormKeyOf } from '../orm.js';
 import { presenterKeyOf } from '../prefab/presenter.js';
 import { collectorKeyOf } from '../prefab/collector.js';
+import { RouteAddress } from '../contract/RouteAddress.js';
+import { DispatchLifecycle } from '../dispatch/DispatchLifecycle.js';
+import { Dispatcher } from '../dispatch/Dispatcher.js';
+import { LocalRoutePolicy } from '../dispatch/LocalRoutePolicy.js';
+import { OperationRoute } from '../dispatch/OperationRoute.js';
+import { RemoteRouteResolver } from '../dispatch/RemoteRouteResolver.js';
+import { RouteRegistry } from '../dispatch/RouteRegistry.js';
+import { FacadeEntry } from '../entry/FacadeEntry.js';
 
 
 /**
@@ -99,6 +111,11 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   // `scanProject` (`@fougere/core/node`) is one producer; a module a build wrote is another.
   const scanStart = performance.now();
   const { fronds, diagnostics } = await (typeof options.scan === 'function' ? options.scan() : options.scan);
+  const operationModel = resolveEffectiveOperations(fronds, {
+    diagnostics,
+    remotes: options.remotes,
+    adapters: options.adapters,
+  });
   const scanMs = (performance.now() - scanStart).toFixed(0);
   const blocking = diagnostics.filter((d) => d.severity === 'blocking');
   log.info(`read ${fronds.length} frond(s) in ${scanMs}ms`
@@ -114,6 +131,23 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
    */
   for (const d of blocking) log.error(`[${d.code}] ${d.message}`, d.cause);
   for (const d of diagnostics) if (d.severity === 'warning') log.warn(`[${d.code}] ${d.message}`);
+
+  /**
+   * An ambiguous convention is not a partial scan. Every relevant declaration was read,
+   * but more than one executable contract can be built from it. Refuse before auth,
+   * storage, migrations or seeds make the boot observable.
+   */
+  const invalidOperations = operationModel.resolutionDiagnostics
+    .filter((diagnostic) => diagnostic.severity === 'blocking');
+  if (invalidOperations.length > 0) {
+    const details = invalidOperations.map((d) =>
+      `  [${d.code}]${d.subject ? ` ${d.subject}` : ''}\n    ${d.message}\n    ${d.filePath}`,
+    );
+    throw new Error(
+      `Fougere boot refused: ${invalidOperations.length} unresolved operation contract(s):\n`
+      + details.join('\n'),
+    );
+  }
 
   // Auth runtime — built once from the lazy AuthConfig produced by a provider factory
   // (e.g. betterAuth({...})) in fougere.config.ts. The provider receives our db +
@@ -154,10 +188,23 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   // Middleware storage — read at call time, not at boot time
   const globalMiddlewares: AppMiddleware[] = [];
   const scopedMiddlewares = new Map<string, AppMiddleware[]>();
-  /** What the `rpc` door serves — the card, plus whatever a package declared. */
-  const rpcAnswers = new Map<string, RpcAnswer>();
   /** What this app took on beyond its fronds. Its `up` is the last thing the boot does. */
-  const lifecycle = new Lifecycle().add(...(options.extensions ?? []));
+  const appLifecycle = new AppLifecycle().add(...(options.extensions ?? []));
+  const routeRegistry = new RouteRegistry();
+  const dispatchLifecycle = new DispatchLifecycle(
+    options.dispatchObservers,
+    (error, event) => log.error(
+      `[dispatch-observer] ${event.stage} ${event.call.address.toString()}`,
+      error,
+    ),
+  );
+  const dispatcher = new Dispatcher(routeRegistry, inflight, dispatchLifecycle);
+  const localDispatcher = new Dispatcher(
+    routeRegistry,
+    inflight,
+    dispatchLifecycle,
+    new LocalRoutePolicy((surface) => fronds.servedNames(surface)),
+  );
 
   function getMiddlewares(entity: string): AppMiddleware[] {
     const scoped = scopedMiddlewares.get(entity) ?? [];
@@ -173,6 +220,12 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   // names the frond rather than the entity, since `remotes:` is declared per frond.
   const frondOf = new Map(fronds.flatMap((f) => f.entities.map((e) => [e.name, f.name] as const)));
   const emissions = new Emissions(fronds, entityByName, container, log, options.onEmit);
+  /** Canonical operation tables, indexed by the same audience key as their facades. */
+  const effectiveByKey = new Map<string, EffectiveOperationsMap>();
+
+  const contractsOf = (operations: EffectiveOperationsMap): OperationsMap => new Map(
+    [...operations].map(([name, operation]) => [name, operation as OperationContract] as const),
+  );
 
   // Every port an implementation was bound to, so a `ports:` entry that named none
   // can say so rather than look obeyed.
@@ -185,12 +238,12 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     if (options.remotes && frond.name in options.remotes) {
       log.child(frond.name).info('declared remote — not hosted locally');
       // Its doors answer elsewhere, but what they LISTEN to was read here.
-      const remoteCollectors = new Set(frond.collectors.map((c) => c.typeName));
       for (const handler of frond.handlers) {
-        emissions.note(
-          resolveContracts(handler, frond.operationsOverrides, remoteCollectors),
-          facadeKeyOf(handler.address, handler.surface),
-        );
+        const key = facadeKeyOf(handler.address, handler.surface);
+        const operations = operationModel.forHandler(handler);
+        effectiveByKey.set(key, operations);
+        emissions.note(contractsOf(operations), key);
+
       }
       continue;
     }
@@ -266,7 +319,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
           ? baseOrm.output(outputSchema)
           : baseOrm;
 
-        // Storage is a way out like the client surface — see egress.ts.
+        // Storage is a way out like the client surface — see `StorageGuard`.
         const guarded = guardStorage(scoped, entity.entityClass.getFields(), entity.name);
         scope.registerValue(ormName, guarded);
 
@@ -342,24 +395,62 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       facadeKey: string,
     ) => {
       const facade = new HandlerFacade(
-        { handler, entity, scope: targetScope, key: facadeKey },
+        {
+          handler,
+          handlers: frond.handlers,
+          entity,
+          scope: targetScope,
+          key: facadeKey,
+          operations: operationModel.forHandler(handler),
+        },
         {
           frond: frond.name,
           frondScope: scope,
           log: frondLog,
-          overrides: frond.operationsOverrides,
           collectors: collectorTypeNames,
           presenters: presenterMap,
           middlewaresFor: getMiddlewares,
           emissions,
-          inflight,
         },
       );
-      container.registerValue(facadeKey, facade.ops);
       // The terms alongside the door, under the same audience — a surface that serves
       // fewer ops describes fewer ops.
       container.registerValue(contractsKeyOf(handler.address, handler.surface), facade.contracts);
-      return facade.ops;
+      effectiveByKey.set(facadeKey, facade.effectiveOperations);
+
+      const surfaces = new Set<string | undefined>([handler.surface]);
+      if (!handler.surface) {
+        for (const [surface, names] of Object.entries(frond.surfaces ?? {})) {
+          const isDeclared = names.some((name) =>
+            name.toLowerCase() === handler.address.toLowerCase());
+          const hasOwnDoor = surfaceHandlers.some((candidate) =>
+            candidate.surface === surface && candidate.address === handler.address);
+          if (isDeclared && !hasOwnDoor) surfaces.add(surface);
+        }
+      }
+
+      for (const operation of facade.contracts.keys()) {
+        for (const surface of surfaces) {
+          const address = new RouteAddress({
+            entity: handler.address,
+            operation,
+            ...(surface !== undefined ? { surface } : {}),
+          });
+          routeRegistry.register(new OperationRoute(
+            'local',
+            address,
+            (call) => facade.ops[operation](call.invocation),
+          ));
+        }
+      }
+
+      const entry = new FacadeEntry(
+        handler.surface ? localDispatcher : dispatcher,
+        handler.address,
+        routeRegistry.operationNames(handler.address, handler.surface),
+        handler.surface,
+      );
+      container.registerValue(facadeKey, entry.operations);
     };
 
     // A presenter is about an entity — computed fields sit on a shape — so this walks
@@ -488,7 +579,10 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // `registrationKeyOf` because a DEPENDENCY names the type as written — `ProductHandler`,
     // PascalCase — while a card declares `product`, so the raw strip asked the router for
     // 'Product' and every by-type dependency on a remote handler answered NOT_FOUND.
-    return createRemoteFacade(registrationKeyOf(name.replace(/Handler$/, '')), remoteRouter, getMiddlewares);
+    return new FacadeEntry(
+      dispatcher,
+      registrationKeyOf(name.replace(/Handler$/, '')),
+    ).operations;
   });
 
   /**
@@ -505,7 +599,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // there and broken here, a refusing extension took the container and the connection
     // down with it, which is the leak this gesture exists to prevent.
     const refused: unknown[] = [];
-    for (const level of [() => lifecycle.down(app), () => container.dispose(), () => options.onDispose?.()]) {
+    for (const level of [() => appLifecycle.down(app), () => container.dispose(), () => options.onDispose?.()]) {
       try {
         await level();
       } catch (error) {
@@ -608,8 +702,40 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     const own = facadeAt(facadeKeyOf(entity, surface), false);
     const declared = fronds.owner(entity)?.surfaces?.[surface];
     if (!declared) return own;
-    return declared.some((n) => n.toLowerCase() === entity.toLowerCase())
-      ? (own ?? facadeAt(facadeKeyOf(entity), false))
+    if (!declared.some((n) => n.toLowerCase() === entity.toLowerCase())) return undefined;
+    if (own) return own;
+
+    const fallback = facadeAt(facadeKeyOf(entity), false);
+    return fallback
+      ? new FacadeEntry(
+          localDispatcher,
+          entity,
+          routeRegistry.operationNames(entity, surface),
+          surface,
+        ).operations
+      : undefined;
+  };
+
+  if (remoteRouter) {
+    const remoteFacades = new Map<string, Record<string, Function>>();
+    routeRegistry.addResolver(new RemoteRouteResolver((entity) => {
+      const known = remoteFacades.get(entity);
+      if (known) return known;
+      const facade = createRemoteFacade(entity, remoteRouter, getMiddlewares);
+      remoteFacades.set(entity, facade);
+      return facade;
+    }));
+  }
+
+  /** The terms beside a door, with the exact same named-surface fallback rule. */
+  const operationsFor = (entity: string, surface?: string): EffectiveOperationsMap | undefined => {
+    if (!surface) return effectiveByKey.get(facadeKeyOf(entity));
+
+    const own = effectiveByKey.get(facadeKeyOf(entity, surface));
+    const declared = fronds.owner(entity)?.surfaces?.[surface];
+    if (!declared) return own;
+    return declared.some((name) => name.toLowerCase() === entity.toLowerCase())
+      ? (own ?? effectiveByKey.get(facadeKeyOf(entity)))
       : undefined;
   };
 
@@ -659,9 +785,12 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // What this app publishes, straight from fougere.config.ts — the doors read it,
     // so an undeclared adapter serves nothing whatever a host mounted.
     adapters: options.adapters ?? {},
+    dispatch: (call) => dispatcher.dispatch(call),
+    local: localDispatcher,
     resolve,
     schemaFor,
     facadeFor,
+    operationsFor,
     listensTo: () => emissions.listensTo(),
     deliver: (fact, payload) => emissions.deliver(fact, payload),
     ormFor,
@@ -673,12 +802,17 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     serveRpc(op: string, answer: RpcAnswer): void {
       // Refused rather than replaced: two declarations of one name would make the answer
       // depend on wiring order, and `discover` is in here precisely so it cannot be taken.
-      const held = rpcAnswers.get(op);
-      if (held) throw new Error(`rpc operation '${op}' is already served; a second declaration would depend on wiring order`);
-      rpcAnswers.set(op, answer);
+      const address = new RouteAddress({ entity: 'rpc', operation: op });
+      if (routeRegistry.find(address)) {
+        throw new Error(`rpc operation '${op}' is already served; a second declaration would depend on wiring order`);
+      }
+      routeRegistry.register(new OperationRoute(
+        'system',
+        address,
+        (call) => answer(call.invocation, call.address.surface),
+      ));
     },
-    rpcAnswers: () => rpcAnswers,
-    extensions: () => lifecycle.names(),
+    extensions: () => appLifecycle.names(),
     use(...args: [AppMiddleware] | [string, AppMiddleware]): void {
       if (typeof args[0] === 'string') {
         const [entity, mw] = args as [string, AppMiddleware];
@@ -698,7 +832,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
   // The last thing the boot does, and the first thing a release undoes. An extension may
   // await here — which is what a provider needing to OPEN something could never do.
-  await lifecycle.up(app);
+  await appLifecycle.up(app);
 
   return app;
 }

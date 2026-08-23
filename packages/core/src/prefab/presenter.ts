@@ -34,7 +34,7 @@ export type PresenterViews = Record<string, EntityConstructor | [EntityConstruct
  * `Presenter(Order, { items: [OrderItemView], user: UserCard })` — the second argument names
  * the view each computed field emits, exactly as `Crud(Post, { list: PostCard })` names an
  * op's. What fabricates a field declares its contract, and it declares it **once**: the
- * façade applies the presenter (see `egress.ts`), and every surface reads the same statement
+ * façade applies the presenter (see `PresenterExecutor`), and every surface reads the same statement
  * instead of guessing.
  *
  * Guessing was the cost of not stating it. The scan can read a scalar off a return type and

@@ -34,7 +34,7 @@ function buildContext(req: any): RequestContext {
         request = new Request(url, {
           method,
           headers: new Headers(req.headers as Record<string, string>),
-          ...(hasBody && req.body ? { body: JSON.stringify(req.body) } : {}),
+          ...(hasBody && req.body !== undefined ? { body: JSON.stringify(req.body) } : {}),
         });
       }
       return request;
@@ -43,7 +43,9 @@ function buildContext(req: any): RequestContext {
     path: req.url,
     params: req.params ?? {},
     query: req.query ?? {},
-    body: async () => req.body ?? {},
+    // Absence alone gets the empty protocol object. `null` is valid parsed JSON and must
+    // reach the core unchanged when the contract admits it.
+    body: async () => req.body === undefined ? {} : req.body,
     state: {},
   };
 }

@@ -101,7 +101,7 @@ export interface PresenterFieldMeta {
    * meets presenters before collectors, so the plan is computed at boot where the
    * collector names are known — exactly as a handler op's is.
    *
-   * A computed field that declares `user: User | null` is then fed by the collector
+   * A computed field that declares `user?: User` is then fed by the collector
    * that resolves one. A presenter is not a second mechanism.
    */
   params?: ParsedParam[];
@@ -220,6 +220,8 @@ export interface ScanDiagnostic {
   filePath: string;
   /** The frond it belongs to, when the scan got far enough to know. */
   frond?: string;
+  /** The declaration the diagnostic is about — e.g. `PostHandler.publish`. */
+  subject?: string;
   /** What could not be done, and what it costs. One sentence, for a human. */
   message: string;
   /** The underlying failure, kept whole. */

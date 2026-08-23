@@ -10,8 +10,8 @@
  */
 export { createApp } from './boot/bootstrap.js';
 export { orderSeeds, runSeeds, seeding } from './boot/seed.js';
-export { Lifecycle, migrating } from './boot/Lifecycle.js';
-export type { Extension } from './boot/Lifecycle.js';
+export { AppLifecycle, AppLifecycle as Lifecycle, migrating } from './boot/AppLifecycle.js';
+export type { Extension } from './boot/AppLifecycle.js';
 export { defineFougere } from './define.js';
 export type { AdapterConfig, FougereConfig } from './config-loader.js';
 export type { FrondConfig, OperationOverride } from './frond-config.js';
@@ -24,10 +24,41 @@ export { Presenter } from './prefab/presenter.js';
 export type { PresenterViews } from './prefab/presenter.js';
 export { Collector } from './prefab/collector.js';
 export { Repository, type RepositoryOf, type RepositoryConstructor, type AggregateOf, type AggregateConstructor } from './prefab/repository.js';
-export type { InvocationContext } from './wire/invocation.js';
-export { EMPTY_INVOCATION } from './wire/invocation.js';
-export { resolveIsReadOp, resolveContracts } from './wire/operation.js';
-export type { OperationContract, OperationsMap } from './wire/operation.js';
+export { Invocation, canonicalInvocation, EMPTY_INVOCATION } from './contract/Invocation.js';
+export type { InvocationContext, InvocationInput } from './contract/Invocation.js';
+export { Call } from './contract/Call.js';
+export { RouteAddress } from './contract/RouteAddress.js';
+export type { RouteAddressInput } from './contract/RouteAddress.js';
+export { DispatchLifecycle } from './dispatch/DispatchLifecycle.js';
+export { Dispatcher } from './dispatch/Dispatcher.js';
+export type { DispatchEvent, DispatchObserver } from './dispatch/DispatchEvent.js';
+export type { DispatchPort } from './dispatch/DispatchPort.js';
+export {
+  inferOperationKind,
+  resolveContracts,
+  resolveIsReadOp,
+  resolveOperationKind,
+} from './wire/operation.js';
+export type {
+  OperationContract,
+  OperationKind,
+  OperationKindInference,
+  OperationsMap,
+  ParsedParam,
+  ParsedType,
+} from './wire/operation.js';
+export {
+  EFFECTIVE_OPERATION_SEMANTICS,
+  EffectiveOperationModel,
+  resolveEffectiveOperations,
+} from './effective-operation.js';
+export type {
+  EffectiveCollector,
+  EffectiveOperation,
+  EffectiveOperationOptions,
+  EffectiveOperationsMap,
+  EffectiveParameter,
+} from './effective-operation.js';
 export type { ModuleLoader } from './loader.js';
 export { FougereError, ErrorCode, validationErrorsOf, type FougereErrorOptions } from './wire/errors.js';
 export type { OperationContext, AppNext, AppMiddleware } from './wire/middleware.js';

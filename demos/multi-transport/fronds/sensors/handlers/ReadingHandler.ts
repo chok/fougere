@@ -25,12 +25,12 @@ export default class ReadingHandler {
   async create(input: Reading) { return this.readings.create(input); }
 
   /** A deliberate business failure, to show a typed error crossing intact. */
-  async recalibrate(): Promise<never> {
+  async sendCalibration(): Promise<never> {
     throw new FougereError({
       code: ErrorCode.CONFLICT,
       message: 'station is mid-cycle',
       entity: 'reading',
-      operation: 'recalibrate',
+      operation: 'sendCalibration',
       details: { retryAfterSeconds: 30 },
     });
   }

@@ -69,7 +69,7 @@ async function main() {
     ['list()', 'list', inv()],
     ['create({ station: "" })', 'create', inv({ body: { station: '', celsius: 3 } })],
     ['create({ celsius: 200 })', 'create', inv({ body: { station: 'dune', celsius: 200 } })],
-    ['recalibrate()', 'recalibrate', inv()],
+    ['sendCalibration()', 'sendCalibration', inv()],
   ];
 
   console.log('\n  \x1b[32m🌿 fougere\x1b[0m  multi-transport — one frond, three protocols\n');

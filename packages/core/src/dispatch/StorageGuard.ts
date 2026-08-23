@@ -1,0 +1,71 @@
+import { Judge, type Fields } from '@fougere/schema';
+import { assertListOptions } from '../orm.js';
+import { ErrorCode, FougereError } from '../wire/errors.js';
+
+interface Writer {
+  create(...args: [Record<string, unknown>, ...unknown[]]): Promise<unknown>;
+  update(...args: [unknown, Record<string, unknown>, ...unknown[]]): Promise<unknown>;
+}
+
+/**
+ * Judges storage writes and list options without narrowing the ORM interface.
+ *
+ * Storage is a way out like the client surface, so what goes to it is judged too — the
+ * same rule `OutputProjector` applies on the other exit.
+ */
+export class StorageGuard {
+  constructor(
+    private readonly fields: Fields,
+    private readonly entity: string,
+  ) {}
+
+  guard<T extends object>(orm: T): T {
+    const writer = orm as unknown as Writer;
+    if (typeof writer.create !== 'function' || typeof writer.update !== 'function') return orm;
+
+    const validation = this;
+    const guarded = Object.create(orm) as T & Writer;
+
+    guarded.create = async function (...args) {
+      validation.judge(args[0], 'create');
+      return writer.create.apply(this, args);
+    };
+
+    guarded.update = async function (...args) {
+      validation.judge(args[1], 'update');
+      return writer.update.apply(this, args);
+    };
+
+    const reader = orm as unknown as { list?: (...args: unknown[]) => unknown };
+    if (typeof reader.list === 'function') {
+      (guarded as unknown as typeof reader).list = async function (...args: unknown[]) {
+        assertListOptions(args[0] as object | undefined, validation.entity);
+        return (reader.list as Function).apply(this, args);
+      };
+    }
+
+    return guarded;
+  }
+
+  private judge(value: unknown, operation: string): void {
+    if (typeof value !== 'object' || value === null) return;
+
+    const errors: string[] = [];
+    for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+      const field = this.fields[key];
+      if (!field || item === undefined) continue;
+      const checked = Judge.value(field, item);
+      if ('error' in checked) errors.push(`${key}: ${checked.error}`);
+    }
+
+    if (errors.length > 0) {
+      throw new FougereError({
+        code: ErrorCode.INTERNAL_ERROR,
+        message: `Refused on the way out — ${errors.join(', ')}`,
+        entity: this.entity,
+        operation,
+        details: errors,
+      });
+    }
+  }
+}

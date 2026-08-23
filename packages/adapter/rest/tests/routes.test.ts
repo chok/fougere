@@ -27,16 +27,27 @@ function fakeCrud() {
   };
 }
 
+const operationKinds: Record<string, 'query' | 'command'> = {
+  list: 'query',
+  findById: 'query',
+  searchByTitle: 'query',
+  create: 'command',
+  update: 'command',
+  delete: 'command',
+  publish: 'command',
+  archiveById: 'command',
+};
+
 /** Build an OperationsMap from op names + optional ops with meta. */
 function opsMap(
   ops: string[],
   custom?: Record<string, { input?: any; output?: any }>,
 ): Map<string, any> {
   const map = new Map<string, any>();
-  for (const op of ops) map.set(op, {});
+  for (const op of ops) map.set(op, { kind: operationKinds[op] });
   if (custom) {
     for (const [name, meta] of Object.entries(custom)) {
-      map.set(name, meta);
+      map.set(name, { kind: operationKinds[name], ...meta });
     }
   }
   return map;
@@ -65,12 +76,33 @@ function fakeApp(
         ? (own ?? facades[`${entity}Handler`])
         : undefined;
     },
+    operationsFor: (entity: string, surface?: string) => {
+      const handler = handlers.find((candidate) =>
+        candidate.address === entity && (!surface || candidate.surface === surface));
+      const facade = facades[`${surface ? `${surface}:` : ''}${entity}Handler`]
+        ?? facades[`${entity}Handler`];
+      if (!facade) return undefined;
+      return new Map(Object.keys(facade).map((name) => [
+        name,
+        { kind: operationKinds[name], ...(handler?.operations.get(name) ?? {}) },
+      ]));
+    },
   };
 }
 
 // ─── Tests ─────────────────────────────────────
 
 describe('generateRoutes', () => {
+  it('refuses a facade with no canonical operation table', () => {
+    const app = fakeApp(
+      [{ name: 'post', entityClass: Post }],
+      { postHandler: fakeCrud() },
+    );
+
+    expect(() => generateRoutes({ ...app, operationsFor: () => undefined }))
+      .toThrow(/without its EffectiveOperation table/);
+  });
+
   it('generates CRUD routes for all entities', () => {
     const app = fakeApp(
       [{ name: 'post', entityClass: Post }],

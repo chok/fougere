@@ -5,7 +5,8 @@ strictly locally; `createAppRunner` follows the topology (local façades, remote
 stand-ins). Transports move the value — they never reshape it.
 
 The façade judges the input, projects the output, and exposes only what a contract
-declares.
+declares. It also canonicalizes optional input before binding: omission is `undefined`,
+JSON may omit its property, and an explicit `null` is never rewritten.
 
 Node-free surface, for the browser: the `@fougere/core/contract` subpath.
 

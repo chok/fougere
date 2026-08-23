@@ -8,6 +8,6 @@ import User from '../entities/User.js';
  */
 export default class CurrentUserCollector extends Collector(User) {
   async collect(ctx: InvocationContext) {
-    return (ctx.state.user ?? null) as User | null;
+    return ctx.state.user as User | undefined;
   }
 }

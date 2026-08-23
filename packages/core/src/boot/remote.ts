@@ -14,6 +14,7 @@ import { runMiddlewares, type AppMiddleware, type OperationContext } from '../wi
 import { EMPTY_INVOCATION, type InvocationContext } from '../wire/invocation.js';
 import { FougereError, ErrorCode } from '../wire/errors.js';
 import { reconstruct, type SchemaView, type SchemaDescriptor } from '@fougere/schema';
+import { DynamicFacade } from '../entry/DynamicFacade.js';
 
 interface Route {
   frond: string;
@@ -140,15 +141,6 @@ export function createRemoteRouter(
 type Facade = Record<string, (invocation?: InvocationContext) => Promise<unknown>>;
 
 /**
- * Does this name designate an operation at all? `then` is excluded so the façade is
- * never mistaken for a thenable, and `Object.prototype`'s own names so `constructor`
- * or `toString` cannot be called across the wire.
- */
-function isOpName(prop: string | symbol): prop is string {
-  return typeof prop === 'string' && prop !== 'then' && !Object.hasOwn(Object.prototype, prop);
-}
-
-/**
  * Façade-shaped stand-in — the consumer can't tell it from a local facade.
  *
  * Every trap answers the same question, and that is the point: the runner asks
@@ -183,14 +175,5 @@ export function createRemoteFacade(
       transport(call, ctx.invocation ?? invocation));
   };
 
-  return new Proxy({} as Facade, {
-    get: (_target, prop) => (isOpName(prop) ? opFn(prop) : undefined),
-    has: (_target, prop) => isOpName(prop),
-    getOwnPropertyDescriptor: (_target, prop) =>
-      // `configurable: true` is required: a proxy may not report a non-configurable
-      // property that the target does not actually have.
-      isOpName(prop)
-        ? { value: opFn(prop), writable: false, enumerable: true, configurable: true }
-        : undefined,
-  });
+  return new DynamicFacade(opFn).operations as Facade;
 }

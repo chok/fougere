@@ -13,7 +13,7 @@ export default class PostHandler extends Crud(Post) {
   }
 
   /** A post is visible when published, or when it's the reader's own draft. */
-  async findById(id: string, user: User | null): Promise<Post | undefined> {
+  async findById(id: string, user?: User): Promise<Post | undefined> {
     const post = await this.orm.findById(id);
     if (!post) return undefined;
     const own = user && post.authorId === user.id;
@@ -24,7 +24,7 @@ export default class PostHandler extends Crud(Post) {
    * The draft→published transition — an operation, not a field write.
    * Judge: author only, draft only. Realise: the server stamps the pair.
    */
-  async publish(id: string, user: User | null): Promise<Post> {
+  async publish(id: string, user?: User): Promise<Post> {
     if (!user) {
       throw new FougereError({ code: ErrorCode.UNAUTHORIZED, message: 'Login required to publish', entity: 'post', operation: 'publish' });
     }
@@ -51,10 +51,9 @@ export default class PostHandler extends Crud(Post) {
 
   /**
    * Returns posts created by the current user, or an empty list when
-   * unauthenticated. `User | null` is spelled out — the signature parser
-   * matches the collector on the entity type name, not through aliases.
+   * unauthenticated. `?` states that the collector may resolve no user.
    */
-  async mine(user: User | null): Promise<Post[]> {
+  async mine(user?: User): Promise<Post[]> {
     if (!user) return [];
     const all = await this.orm.list();
     return all.filter((p) => p.authorId === user.id);

@@ -10,8 +10,8 @@ import { describe as describeSchema, type SchemaDescriptor } from '@fougere/sche
 import { factsAnnouncedBy } from '../emit.js';
 import type { InvocationContext } from './invocation.js';
 import { FougereError, ErrorCode } from './errors.js';
-import { resolveIsReadOp, type OperationsMap } from './operation.js';
 import type { App } from '../boot/types.js';
+import { createTransportEntry } from '../entry/TransportEntry.js';
 
 /** Target of a call — which façade operation, wherever it lives. */
 export interface FrondCall {
@@ -48,8 +48,8 @@ export type RpcAnswer = (invocation: InvocationContext, surface?: string) => unk
 export interface SignedCall {
   entity: string;
   op: string;
-  params?: Record<string, string>;
-  query?: Record<string, string>;
+  params?: Record<string, unknown>;
+  query?: Record<string, unknown>;
   body?: unknown;
   state?: Record<string, unknown>;
 }
@@ -315,23 +315,21 @@ function facadeOps(app: App, entityName: string, surface?: string): CardOp[] {
     return [];
   }
 
-  // The façade is the list of names; the contracts are the terms. Registered
-  // together, so a door that serves fewer ops also describes fewer.
-  let contracts: OperationsMap | undefined;
-  try {
-    contracts = app.container.resolve<OperationsMap>(contractsKeyOf(entityName, surface));
-  } catch {
-    contracts = undefined;
+  // The façade is the list of names; the model is the resolved terms.
+  const effective = app.operationsFor(entityName, surface);
+  if (!effective) {
+    throw new Error(
+      `Facade '${facadeKeyOf(entityName, surface)}' exists without an effective operation table.`,
+    );
   }
 
-  // `resolveIsReadOp` takes the overrides for a reason: `kind` is exactly the field
-  // frond.config.ts exists to state, for the op whose name the convention reads wrong.
-  // Called without them, the card announced `query` for an op its own author had
-  // declared a command — and the card is what a remote consumer builds its calls on.
-  const overrides = app.fronds.owner(entityName)?.operationsOverrides;
-
   return Object.keys(facade).map((name) => {
-    const contract = contracts?.get(name);
+    const contract = effective.get(name);
+    if (!contract) {
+      throw new Error(
+        `Facade '${facadeKeyOf(entityName, surface)}' serves '${name}' without an effective contract.`,
+      );
+    }
 
     return {
       name,
@@ -339,7 +337,7 @@ function facadeOps(app: App, entityName: string, surface?: string): CardOp[] {
       ...(contract?.input && { input: describeSchema(contract.input, name) }),
       ...(contract?.output && { output: describeSchema(contract.output, name) }),
       ...(contract?.cardinality && { cardinality: contract.cardinality }),
-      kind: resolveIsReadOp(name, overrides) ? 'query' as const : 'command' as const,
+      kind: contract.kind,
     };
   });
 }
@@ -351,7 +349,7 @@ function facadeOps(app: App, entityName: string, surface?: string): CardOp[] {
  * judged here. A miss is a typed NOT_FOUND, never a forward to another remote.
  */
 export function createLocalRunner(app: App, surface?: string): Transport {
-  return runnerFor(app, (key) => app.container.resolve<AnyFacade>(key), surface);
+  return createTransportEntry(app.local, surface);
 }
 
 /**
@@ -367,65 +365,5 @@ export function createLocalRunner(app: App, surface?: string): Transport {
  * is simply which URL `remotes:` points at.
  */
 export function createAppRunner(app: App, surface?: string): Transport {
-  return runnerFor(app, (key) => app.resolve<AnyFacade>(key), surface);
-}
-
-function runnerFor(app: App, resolveFacade: (key: string) => AnyFacade, surface?: string): Transport {
-  return async (call, invocation) => {
-    if (call.entity === RPC_ENTITY) {
-      // One registry, `discover` included, so the refusal names what IS served — which is
-      // how an operator learns that the package declaring an op was never wired.
-      const answer = app.rpcAnswers().get(call.op);
-      if (!answer) {
-        const served = [...app.rpcAnswers().keys()];
-        throw new FougereError({
-          code: ErrorCode.NOT_FOUND,
-          message: `Unknown rpc operation '${call.op}'. `
-            + (served.length ? `It serves ${served.join(', ')}.` : 'It serves nothing.'),
-          entity: RPC_ENTITY,
-          operation: call.op,
-        });
-      }
-      return (await answer(invocation, surface)) ?? null;
-    }
-
-    let facade: AnyFacade;
-    try {
-      facade = resolveFacade(facadeKeyOf(call.entity, surface));
-    } catch {
-      // What ANSWERS, so a wrong entity name (or a missing frond) reads at a glance.
-      // Not the scanned entities: one with no handler is found and serves nothing, and
-      // the refusal used to name the very thing it was refusing.
-      const hosted = app.fronds.servedNames(surface);
-      throw new FougereError({
-        code: ErrorCode.NOT_FOUND,
-        message: (surface
-          ? `Entity '${call.entity}' is not served on surface '${surface}'`
-          : `Entity '${call.entity}' is not hosted here`)
-          + (hosted.length ? `. Hosted here: ${hosted.join(', ')}.` : '. This app hosts no entity.'),
-        entity: call.entity,
-        operation: call.op,
-      });
-    }
-
-    // Own properties only: a façade is a plain object, so a bare lookup reaches
-    // Object.prototype — `constructor` echoed the invocation back, `toString`
-    // answered. An op is what the façade declares, not what JS inherits.
-    const fn = Object.hasOwn(facade, call.op) ? facade[call.op] : undefined;
-    if (typeof fn !== 'function') {
-      // Name what IS served: the façade is right here, and `op` is a bare string all
-      // the way from `useQuery` — so a typo is the ordinary case, not the exotic one.
-      const served = Object.keys(facade).filter((key) => typeof facade[key] === 'function');
-      throw new FougereError({
-        code: ErrorCode.NOT_FOUND,
-        message: `Unknown operation '${call.op}' on '${call.entity}'. `
-          + (served.length ? `It serves ${served.join(', ')}.` : 'It serves nothing.'),
-        entity: call.entity,
-        operation: call.op,
-      });
-    }
-    // A call's result is JSON-shaped: undefined has no wire form, it
-    // normalizes to null at the contract edge — identically on every transport.
-    return (await fn(invocation)) ?? null;
-  };
+  return createTransportEntry(app, surface);
 }

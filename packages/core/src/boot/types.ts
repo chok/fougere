@@ -12,8 +12,11 @@ import type { SchemaView } from '@fougere/schema';
 import type { OrmFactory } from '../orm.js';
 import type { AppMiddleware } from '../wire/middleware.js';
 import type { RpcAnswer, Transport } from '../wire/call.js';
-import type { Extension } from './Lifecycle.js';
+import type { Extension } from './AppLifecycle.js';
 import type { AuthConfig, AuthRuntime } from './auth.js';
+import type { EffectiveOperationsMap } from '../effective-operation.js';
+import type { DispatchObserver } from '../dispatch/DispatchEvent.js';
+import type { DispatchPort } from '../dispatch/DispatchPort.js';
 
 /** Options for createApp(). */
 export interface CreateAppOptions {
@@ -112,6 +115,8 @@ export interface CreateAppOptions {
    * Its failure never reaches the emitter — same rule as a subscriber's.
    */
   onEmit?: (fact: string, payload: unknown) => void | Promise<void>;
+  /** Passive observers of every dispatch transition. */
+  dispatchObservers?: readonly DispatchObserver[];
   /**
    * Storage handle to expose to the auth provider via AuthContext.db.
    * Required when `auth` is set.
@@ -122,7 +127,9 @@ export interface CreateAppOptions {
 }
 
 /** The App object returned by createApp(). */
-export interface App {
+export interface App extends DispatchPort {
+  /** Process-only dispatch capability used by incoming transports. */
+  local: DispatchPort;
   /** Root container with builtins + frond scopes. */
   container: Container;
   /**
@@ -160,6 +167,12 @@ export interface App {
    * stay structurally typed and depend on nothing.
    */
   facadeFor(entity: string, surface?: string): Record<string, Function> | undefined;
+  /**
+   * The canonical contracts served beside a facade, after prefab + scan + config,
+   * binding, kind, topology and surface resolution. Check, explain and adapters read
+   * this table instead of replaying those decisions.
+   */
+  operationsFor(entity: string, surface?: string): EffectiveOperationsMap | undefined;
   /**
    * The facts this app has a listener for — what a carrier must subscribe to on its behalf.
    *
@@ -239,8 +252,6 @@ export interface App {
    * A name already declared is refused rather than replaced — `discover` included.
    */
   serveRpc(op: string, answer: RpcAnswer): void;
-  /** What the `rpc` door serves. Read by the runner, to dispatch and to name. */
-  rpcAnswers(): ReadonlyMap<string, RpcAnswer>;
   /** Register a global app middleware (runs on every operation). */
   use(middleware: AppMiddleware): void;
   /** Register an app middleware scoped to a specific entity. */

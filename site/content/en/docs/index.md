@@ -51,7 +51,7 @@ That single class is simultaneously:
 - the **validator** of client input (`Post.validate(input)`),
 - the **metadata** every adapter reads (`Post.getFields()`),
 - the **designation** pages use to call operations (`useQuery(Post, 'list')`),
-- the **nominal name** dependency injection matches in handler signatures (`user: User | null`).
+- the **nominal type** dependency injection matches in handler signatures (`user?: User`).
 
 ## What is chosen outside it
 

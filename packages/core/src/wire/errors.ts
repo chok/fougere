@@ -102,7 +102,7 @@ export class FougereError extends Error {
  * The refusals behind a VALIDATION_FAILED, or nothing — the ONE place that reads
  * `details` under that code.
  *
- * `details` is `unknown` because it is genuinely polymorphic: `judgeEgress` puts a
+ * `details` is `unknown` because it is genuinely polymorphic: `StorageGuard.judge` puts a
  * `string[]` there under INTERNAL_ERROR, `fromJSON` puts `{ originalCode, details }`
  * there for a code it does not know. So the shape is not the field's, it is a reading
  * of the PAIR (code, details) — which is why this is a reader and not a narrower type.

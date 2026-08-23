@@ -120,40 +120,24 @@ function loadByKey<R>(
   return batch.rows.then((found) => found.get(id) ?? absent());
 }
 
-/**
- * Redirect specific ops to alternate handlers based on frond.config.ts overrides.
- * For ops declaring `handler: OtherClass, method?: 'name'`, replaces the facade entry
- * with a call into the resolved alternate handler.
- */
-function applyOperationOverrides(
-  baseFacade: HandlerFacade,
-  overrides: Record<string, { handlerName?: string; method?: string }>,
-  app: { resolve<T>(name: string): T },
-): HandlerFacade {
-  const patched: HandlerFacade = { ...baseFacade };
-  for (const [opName, override] of Object.entries(overrides)) {
-    if (!override.handlerName) continue;
-    try {
-      const altFacade = app.resolve<HandlerFacade>(override.handlerName);
-      const methodName = override.method ?? opName;
-      const fn = altFacade[methodName];
-      if (typeof fn === 'function') {
-        patched[opName] = fn.bind(altFacade);
-      }
-    } catch { /* alternate handler not in DI — silent skip */ }
-  }
-  return patched;
-}
-
 // ─── Types ──────────────────────────────────────
 
 interface OperationMeta {
   input?: SchemaView;
   output?: SchemaView;
+  kind: 'query' | 'command';
+  binding?: {
+    name: string;
+    optional: boolean;
+    source:
+      | { kind: 'collector' | 'context' | 'fact' }
+      | { kind: 'param'; name: string }
+      | { kind: 'body' | 'query' };
+  }[];
   signature?: {
     name: string;
-    params: { name: string; type: { raw: string; name: string; array?: boolean; nullable?: boolean; generics?: any[] }; optional?: boolean }[];
-    returnType?: { raw: string; name: string; array?: boolean; nullable?: boolean; generics?: any[] };
+    params: { name: string; type: { raw: string; name: string; array?: boolean; nullable?: boolean; undefined?: boolean; generics?: any[] }; optional?: boolean }[];
+    returnType?: { raw: string; name: string; array?: boolean; nullable?: boolean; undefined?: boolean; generics?: any[] };
   };
 }
 
@@ -197,18 +181,16 @@ interface FrondLike {
   presenters: PresenterEntry[];
   surfaces?: Record<string, string[]>;
   operationsOverrides?: Record<string, {
-    kind?: 'query' | 'command';
-    handlerName?: string;
-    method?: string;
-    policy?: string;
+    graphql?: string;
   }>;
 }
 
 interface AppLike {
   fronds: FrondLike[];
-  resolve<T>(name: string): T;
   /** The façade an entity exposes to one audience — `undefined` when none. */
   facadeFor(entity: string, surface?: string): Record<string, Function> | undefined;
+  /** Canonical operation table produced by core. */
+  operationsFor(entity: string, surface?: string): Map<string, OperationMeta> | undefined;
   /**
    * The presenter of an entity — `undefined` when none. Asked for rather than
    * resolved by a key spelled here: this adapter used to build `${Name}Presenter`
@@ -355,17 +337,20 @@ export function registerAll(
         fields: fieldsOf(entity.entityClass),
       });
 
-      // Apply per-op handler/method overrides: redirect specific ops to a different handler instance.
       const opOverrides = frond.operationsOverrides;
-      const effectiveFacade = opOverrides
-        ? applyOperationOverrides(facade, opOverrides, app)
-        : facade;
+
+      const operations = app.operationsFor(entity.name, surfaceName);
+      if (!operations) {
+        throw new Error(
+          `GraphQL cannot project '${entity.name}' without its EffectiveOperation table.`,
+        );
+      }
 
       registerOperations(builder, {
         name: typeName,
         type,
-        facade: effectiveFacade,
-        operations: handler?.operations ?? new Map(),
+        facade,
+        operations,
         operationsOverrides: opOverrides,
         // Named so a root-field clash can say WHICH two handlers, in which fronds.
         origin: `${frond.name}/${handler?.ctor?.name ?? `${typeName}Handler`}`,

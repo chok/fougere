@@ -3,7 +3,7 @@
 	import { useQuery, useCommand } from '@fougere/svelte';
 	import Post from '../../../fronds/blog/entities/Post';
 
-	const drafts = useQuery<Post>(Post, 'drafts');
+	const drafts = useQuery<Post>(Post, 'listDrafts');
 	const publish = useCommand(Post, 'publish');
 
 	// The link needs to forget this read when the page goes. React does it in an

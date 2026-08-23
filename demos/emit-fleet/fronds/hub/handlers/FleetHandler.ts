@@ -11,8 +11,8 @@ import type Reading from '@fronds/fleet/entities/Reading.js';
 export default class FleetHandler {
   constructor(private recalibration: Emit<Recalibrate>) {}
 
-  /** Tell the fleet — or one of it — to recalibrate. */
-  async recalibrate(offset: number, node?: string): Promise<{ sent: true }> {
+  /** Tell the fleet — or one of it — to sendCalibration. */
+  async sendCalibration(offset: number, node?: string): Promise<{ sent: true }> {
     await this.recalibration({ offset, node, at: new Date() });
     return { sent: true };
   }

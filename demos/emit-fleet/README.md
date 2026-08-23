@@ -33,7 +33,7 @@ why nothing local can shortcut the tunnel.
 [sensor-9] link down — retrying in 1000ms
 [sensor-9] link down — retrying in 2000ms
 [sensor-9] link down — retrying in 4000ms
-[sensor-9] connected — listens to recalibrate     ← the hub appeared; nobody touched it
+[sensor-9] connected — listens to sendCalibration     ← the hub appeared; nobody touched it
 ```
 
 Backoff doubles and stops at 5 s. A device may be down for hours.
@@ -54,7 +54,7 @@ Receiving and announcing are two operations; only one of them leaves.
 
 ```
 → sensor-2 only: offset -3
-[hub] recalibrate → 3 device(s)
+[hub] sendCalibration → 3 device(s)
   [sensor-1] recalibration for sensor-2 — not mine
   [sensor-2] recalibrated, offset -3
   [sensor-3] recalibration for sensor-2 — not mine

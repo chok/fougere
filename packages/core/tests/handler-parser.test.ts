@@ -80,6 +80,50 @@ describe('a handler inheriting from a mixin', () => {
   });
 });
 
+describe('checked parameter types', () => {
+  it('resolves a type alias and treats undefined as absence', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'fougere-checked-parser-'));
+    const handler = join(dir, 'AccountHandler.ts');
+    writeFileSync(join(dir, 'identity.ts'), `
+      export class User { id!: string }
+      export type CurrentUser = User | undefined;
+    `);
+    writeFileSync(handler, `
+      import type { CurrentUser, User } from './identity.js';
+
+      export default class AccountHandler {
+        async concise(user?: User): Promise<User | undefined> { return user; }
+        async aliased(user: CurrentUser): Promise<User | undefined> { return user; }
+        async semantics(requiredNullable: string | null, optional?: string, optionalNullable?: string | null) {
+          return { requiredNullable, optional, optionalNullable };
+        }
+      }
+    `);
+
+    try {
+      const methods = (await parseAllHandlerMethods(handler)).methods;
+      for (const name of ['concise', 'aliased']) {
+        const method = methods.find((candidate) => candidate.name === name);
+        expect(method?.params[0]).toMatchObject({
+          name: 'user',
+          type: { name: 'User' },
+          optional: true,
+        });
+        expect(method?.returnType).toMatchObject({ name: 'User', undefined: true });
+      }
+
+      const semantics = methods.find((candidate) => candidate.name === 'semantics');
+      expect(semantics?.params).toMatchObject([
+        { name: 'requiredNullable', type: { name: 'string', nullable: true }, optional: false },
+        { name: 'optional', type: { name: 'string' }, optional: true },
+        { name: 'optionalNullable', type: { name: 'string', nullable: true }, optional: true },
+      ]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
 /**
  * The cache must not outlive the parser that filled it.
  *

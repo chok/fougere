@@ -13,6 +13,7 @@ const runner: Transport = async (call, invocation) => {
   }
   if (call.op === 'list') return products;
   if (call.op === 'echo') return { got: invocation.params, state: invocation.state };
+  if (call.op === 'absence') return { params: invocation.params, body: invocation.body };
   if (call.op === 'empty') return null;
   if (call.op === 'boom') {
     throw new FougereError({
@@ -55,6 +56,27 @@ describe('sender ↔ receiver over real HTTP', () => {
       { params: { id: '7' }, query: {}, body: undefined, state: { user: 'max' } },
     );
     expect(result).toEqual({ got: { id: '7' }, state: { user: 'max' } });
+  });
+
+  it('omits undefined properties on JSON while preserving explicit null', async () => {
+    const transport = createHttpTransport(base);
+    const result = await transport(
+      { entity: 'product', op: 'absence' },
+      {
+        params: { optional: undefined, nullable: null },
+        query: {},
+        body: { optional: undefined, nullable: null, optionalNullable: null },
+        state: {},
+      },
+    ) as { params: Record<string, unknown>; body: Record<string, unknown> };
+
+    expect(result.params.optional).toBeUndefined();
+    expect(Object.hasOwn(result.params, 'optional')).toBe(false);
+    expect(result.params.nullable).toBeNull();
+    expect(result.body.optional).toBeUndefined();
+    expect(Object.hasOwn(result.body, 'optional')).toBe(false);
+    expect(result.body.nullable).toBeNull();
+    expect(result.body.optionalNullable).toBeNull();
   });
 
   it('serves rpc.discover like any call', async () => {

@@ -54,7 +54,7 @@
   ],
   "scripts": {
     "build": "rm -rf dist && tsc",
-    "test": "vitest run",
+    "test": "vitest run --maxWorkers=2",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit -p tsconfig.test.json",
     "prepublishOnly": "pnpm run build"

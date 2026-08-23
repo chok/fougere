@@ -60,7 +60,9 @@ describe('drain', () => {
     await expect(door.boom()).rejects.toThrow('nope');
     expect(a.inFlight()).toBe(0);
 
-    await Promise.all([door.work(), door.work(), door.work()]);
+    const calls = [door.work(), door.work(), door.work()];
+    expect(a.inFlight()).toBe(3);
+    await Promise.all(calls);
     expect(a.inFlight()).toBe(0);
     await a.dispose();
   });

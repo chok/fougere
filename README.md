@@ -92,7 +92,7 @@ export class PostCard extends Post.pick('id', 'slug', 'title', 'summary', 'autho
 
 export default class PostHandler extends Crud(Post, { list: PostCard }) {
   /** Judge: the author, a draft, a body worth publishing. Realize: stamp the pair. */
-  async publish(id: string, user: User | null): Promise<Post> {
+  async publish(id: string, user?: User): Promise<Post> {
     const author = requireUser(user, 'publish');
     const post = await requireOwn(this.orm, id, author, 'publish');
     if (post.status === 'published') {
@@ -103,7 +103,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
 }
 ```
 
-`user: User | null` is the injection: the signature is matched **by type** against the
+`user?: User` is the injection: the signature is matched **by type** against the
 collector that resolves the session. No decorator, no container lookup to write.
 
 ## The domain travels
@@ -128,15 +128,16 @@ Rust whose rules — not just its types — are enforced by the TypeScript judge
 
 ## Alpha today
 
-`0.1.0-alpha.0`, published under the `alpha` tag. The version is the whole promise: the
+`0.2.0-alpha.2`, published under the `alpha` tag. The version is the whole promise: the
 surface can still move. Seen running, not planned — a judged draft→publish exercised in a
 browser, the split lived daily, identical user code either side through a production
 build, and [this site](./site) is itself a Fougere app.
 
 Known limits, because you would find them anyway: storage is SQLite with additive
 auto-DDL, so renames and type changes need an explicit migration; a computed field costs
-one read per row unless you name a view; a split link is loopback by default, the receiver
-trusting the identity it is handed. The full list is in
+one read per row unless you name a view. A split receiver binds to loopback by default;
+widening it requires signed envelopes, or an explicit `allowUnsigned` when an upstream mesh
+already authenticated the caller. The full list is in
 [`CLAUDE.md`](./CLAUDE.md#known-issues), kept honest rather than short.
 
 ## Learn more

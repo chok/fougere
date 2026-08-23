@@ -40,9 +40,9 @@ partner.add({ isbn: '9780596007126', title: 'Head First Design Patterns', author
 console.log(`\n2. the same pass again — the mark is read off the rows already here`);
 say('second', await refresh());
 
-console.log(`\n3. a query the source could not have served — cheapest three, from the copy`);
-const cheapest = await call({ entity: 'catalog', op: 'cheapest' }, EMPTY_INVOCATION) as { title: string; priceCents: number }[];
-for (const book of cheapest) console.log(`   ${String(book.priceCents).padStart(5)}  ${book.title}`);
+console.log(`\n3. a query the source could not have served — findCheapest three, from the copy`);
+const findCheapest = await call({ entity: 'catalog', op: 'findCheapest' }, EMPTY_INVOCATION) as { title: string; priceCents: number }[];
+for (const book of findCheapest) console.log(`   ${String(book.priceCents).padStart(5)}  ${book.title}`);
 
 console.log(`\n4. the partner ships a row the shape refuses`);
 await new Promise((r) => setTimeout(r, 1100));

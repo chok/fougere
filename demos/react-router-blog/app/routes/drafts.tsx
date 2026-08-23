@@ -6,7 +6,7 @@ import Post from '../../fronds/blog/entities/Post';
  * designation. `@fougere/react` does not know which of the three renders it.
  */
 export default function Drafts() {
-  const { items, loading, error, refresh } = useQuery<Post>(Post, 'drafts');
+  const { items, loading, error, refresh } = useQuery<Post>(Post, 'listDrafts');
   const publish = useCommand(Post, 'publish');
 
   return (

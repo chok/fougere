@@ -68,7 +68,10 @@ export function readExpressBody(req: any): Promise<unknown> {
   const verb = String(req.method ?? 'GET').toUpperCase();
   req.__fougereBody = (async () => {
     if (verb === 'GET' || verb === 'HEAD') return {};
-    if (req.body !== undefined && req.body !== null) return req.body;
+    // `null` is parsed JSON, not evidence that no parser ran. Falling through here
+    // turned an explicit domain value into `{}` (or tried to drain an already consumed
+    // stream), while every other door kept it.
+    if (req.body !== undefined) return req.body;
     const contentType = String(req.headers?.['content-type'] ?? '');
     if (!contentType.toLowerCase().includes('json')) return {};
     const raw = await readRawBody(req);

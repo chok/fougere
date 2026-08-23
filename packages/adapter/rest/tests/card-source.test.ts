@@ -93,6 +93,11 @@ function fakeApp(entityClass: unknown) {
     }],
     resolve: <T>() => facade as unknown as T,
     facadeFor: () => facade as Record<string, Function>,
+    operationsFor: () => new Map([
+      ['list', { kind: 'query' }],
+      ['create', { kind: 'command' }],
+      ['update', { kind: 'command' }],
+    ]),
   } as any;
 }
 

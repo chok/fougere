@@ -42,13 +42,23 @@ export interface DoorOptions extends SampleOptions {
 }
 
 interface Doors {
-  local: (op: string, input?: Input) => Promise<unknown>;
-  rpc: (op: string, input?: Input) => Promise<unknown>;
-  rest: (op: string, input?: Input) => Promise<unknown>;
-  graphql: (op: string, input?: Input) => Promise<unknown>;
+  local: (op: string, input?: DoorInput) => Promise<unknown>;
+  rpc: (op: string, input?: DoorInput) => Promise<unknown>;
+  rest: (op: string, input?: DoorInput) => Promise<unknown>;
+  graphql: (op: string, input?: DoorInput) => Promise<unknown>;
 }
 
-interface Input { id?: string; body?: Record<string, unknown> }
+export interface DoorInput { id?: string; body?: Record<string, unknown> }
+
+export interface DoorContractCase {
+  /** What this case proves — becomes the test name. */
+  name: string;
+  /** Any declared operation, CRUD or custom. */
+  operation: string;
+  input?: DoorInput;
+  /** The protocol envelopes are removed before this value is compared. */
+  expected: unknown;
+}
 
 /**
  * One entity, four doors, the same answers.
@@ -142,6 +152,35 @@ export function checkDoors(app: App, entity: SchemaView, options: DoorOptions = 
   });
 }
 
+/**
+ * Run one hand-written invocation contract through every door.
+ *
+ * `checkDoors` derives the generic CRUD gradient. This is its small explicit companion
+ * for semantics only the handler can observe — notably omitted versus null input. A new
+ * adapter joins the same harness instead of inventing its own interpretation.
+ */
+export function checkDoorContract(
+  app: App,
+  entity: SchemaView,
+  cases: readonly DoorContractCase[],
+  options: Pick<DoorOptions, 'surface'> = {},
+): void {
+  const name = registrationKeyOf(entity.name ?? '');
+  const doors = doorsOf(app, entity, name, options.surface);
+  const names = ['local', 'rpc', 'rest', 'graphql'] as const;
+
+  describe(`${entity.name} — its invocation contract crosses every door`, () => {
+    for (const one of cases) {
+      it(one.name, async () => {
+        const answers = await Promise.all(names.map((door) => doors[door](one.operation, one.input)));
+        for (const [index, answer] of answers.entries()) {
+          expect(wire(answer), `${names[index]} disagrees with the canonical invocation`).toEqual(wire(one.expected));
+        }
+      });
+    }
+  });
+}
+
 async function refused(call: () => Promise<unknown>): Promise<boolean> {
   try { await call(); return false; } catch { return true; }
 }
@@ -151,7 +190,7 @@ function doorsOf(app: App, entity: SchemaView, name: string, surface?: string): 
   const run = createLocalRunner(app, surface);
   const state: Record<string, unknown> = {};
 
-  const invocation = (input: Input = {}) => ({
+  const invocation = (input: DoorInput = {}) => ({
     ...EMPTY_INVOCATION,
     ...(input.id !== undefined ? { params: { id: input.id } } : {}),
     ...(input.body !== undefined ? { body: input.body } : {}),

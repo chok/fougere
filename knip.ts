@@ -1,19 +1,12 @@
 import type { KnipConfig } from 'knip';
-import { FROND_DIRS } from './packages/core/src/scan/scanner.js';
+import { DEFAULT_CONVENTIONS, frondDirsOf } from './packages/core/src/scan/conventions.js';
 
 /**
- * What knip cannot know on its own: a Frond's files are reached by CONVENTION,
- * not by import. `scanFrond` reads a fixed list of directories and loads what it
- * finds there — so an entity, a handler, a seed has no importer anywhere, and a
- * reachability analysis calls all of them dead. Run bare, knip reports 211 unused
- * files, nearly all of them the framework working as designed.
- *
- * The list is not restated here. {@link FROND_DIRS} already declares what bounds a
- * frond, and its own doc names its readers — the Nuxt module's watcher, a flat
- * app's tsconfig. This is the next one; a directory added there arrives here.
+ * Frond files are loaded by convention rather than imports. Derive their entry globs
+ * from the same convention as the scanner so Knip does not report them as dead.
  */
 const frondEntry = (prefix: string): string[] =>
-  FROND_DIRS.map((dir) => `${prefix}${dir}/**/*.ts`);
+  frondDirsOf(DEFAULT_CONVENTIONS).map((dir) => `${prefix}${dir}/**/*.ts`);
 
 const entry = [
   // A frond under `fronds/`, and the root frond — the root IS a frond.

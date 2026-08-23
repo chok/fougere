@@ -47,6 +47,9 @@ export default class SecretHandler extends Crud(Secret) {
   }
 }
 `);
+  writeFileSync(join(frond, 'frond.config.js'), `
+export default { operations: { audit: { kind: 'query' } } };
+`);
   return root;
 }
 

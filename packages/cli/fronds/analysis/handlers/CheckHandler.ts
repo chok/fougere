@@ -1,4 +1,9 @@
-import { buildGraph, clusterEntities, resolveContracts, verify, type ScanDiagnostic } from '@fougere/core';
+import {
+  buildGraph,
+  clusterEntities,
+  resolveEffectiveOperations,
+  type ScanDiagnostic,
+} from '@fougere/core';
 import { crossFrondImports } from '@fougere/core/node';
 import ProjectScan from '../services/ProjectScan.js';
 
@@ -33,10 +38,11 @@ const DOMAIN_SPLIT_MIN_ENTITIES = 6;
  *
  * It scans rather than boots — see `ProjectScan`, which states what that costs.
  *
- * It raises no rule of its own beyond `operation-unbound`: every other finding comes
- * from whoever already answers that question — the scan's own diagnostics, the import
- * reader, the DI checker. A second opinion here would report what the runtime does not
- * serve, which is the one failure mode a checker must not have.
+ * It raises no operation-resolution rule of its own: those findings come from the same
+ * EffectiveOperation resolver boot consumes. The remaining findings come from their
+ * existing owners — scan diagnostics, the import reader and domain clustering. A second
+ * opinion here would report what the runtime does not serve, precisely what a checker
+ * must avoid.
  *
  * A rule about an ABSENCE is only sound if the analysis attests it looked, which is
  * why the scan's diagnostics had to exist before this command could.
@@ -46,32 +52,16 @@ export default class CheckHandler {
 
   /** Report what does not hold in a Fougere app, without booting it. */
   async execute(input: { root?: string }): Promise<CheckResult> {
-    const { fronds, diagnostics } = await this.projectScan.at(input.root);
-    const findings: Finding[] = diagnostics.map(asFinding);
-    let handlers = 0;
-
-    for (const frond of fronds) {
-      const collectorTypeNames = new Set(frond.collectors.map((c) => c.typeName));
-      for (const handler of frond.handlers) {
-        handlers++;
-        // The same merge the façade performs — asked for, not redone. A second
-        // opinion here would report a contract the runtime does not serve.
-        const contracts = resolveContracts(handler, frond.operationsOverrides, collectorTypeNames);
-
-        for (const [op, contract] of contracts) {
-          const params = contract.signature?.params.length ?? 0;
-          if (params > 0 && !contract.binding) {
-            findings.push({
-              severity: 'blocking',
-              code: 'operation-unbound',
-              filePath: handler.filePath,
-              message: `${handler.ctor.name}.${op} declares ${params} parameter(s) and has no `
-                + `binding plan — it is served, and it receives none of them.`,
-            });
-          }
-        }
-      }
-    }
+    const { fronds, diagnostics, config } = await this.projectScan.at(input.root);
+    // This is the same pure resolution the boot consumes. No app lifecycle, database,
+    // migration, seed or adapter mount is needed for a global semantic check.
+    const model = resolveEffectiveOperations(fronds, {
+      diagnostics,
+      remotes: config.remotes,
+      adapters: config.adapters,
+    });
+    const findings: Finding[] = model.diagnostics.map(asFinding);
+    const handlers = fronds.reduce((count, frond) => count + frond.handlers.length, 0);
 
     /**
      * Entity groups with no `ref()` between them, in one frond. Reported as a FACT, not a
@@ -110,20 +100,17 @@ export default class CheckHandler {
       });
     }
 
-    /**
-     * What the DI graph says about the same boundary — `verify` answers from the model
-     * where `crossFrondImports` answers from the source text, and the two catch different
-     * crossings: an import is visible in a file, a dependency resolved by type name is not.
-     */
-    for (const v of verify({ fronds })) {
-      findings.push({ severity: v.severity, code: v.rule, filePath: v.filePath, subject: v.subject, message: v.message });
-    }
-
     return { fronds: fronds.length, handlers, findings };
   }
 }
 
 /** A scan diagnostic IS a finding — same vocabulary, so the renderer has one shape. */
 function asFinding(d: ScanDiagnostic): Finding {
-  return { severity: d.severity, code: d.code, filePath: d.filePath, message: d.message };
+  return {
+    severity: d.severity,
+    code: d.code,
+    filePath: d.filePath,
+    subject: d.subject,
+    message: d.message,
+  };
 }

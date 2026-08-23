@@ -95,7 +95,7 @@ async function main() {
   };
 
   console.log(bold('1. alice drafts "Ferns unfurl in silence"'));
-  await run({ entity: 'post', op: 'draft' }, as('alice', { body: { id: 'p1', title: 'Ferns unfurl in silence' } }));
+  await run({ entity: 'post', op: 'createDraft' }, as('alice', { body: { id: 'p1', title: 'Ferns unfurl in silence' } }));
   await settle();
   show();
 

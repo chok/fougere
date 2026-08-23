@@ -63,7 +63,7 @@ export function cardinalityOf(type: ParsedType | undefined): OperationContract['
   if (inner.name === 'ListResult') return 'page';
   if (inner.array) return 'many';
   if (PRIMITIVE_RETURNS.has(inner.name)) return 'none';
-  return inner.nullable ? 'maybe' : 'one';
+  return inner.nullable || inner.undefined ? 'maybe' : 'one';
 }
 
 /** A return that carries no schema — the card has nothing to project onto it. */
@@ -80,31 +80,124 @@ export type { ParsedType, ParsedParam };
 // @fougere/schema: it is a runtime convention about operations, not a
 // schema concept.
 
-const READ_PREFIXES = ['list', 'find', 'get', 'search', 'count', 'exists', 'stats'];
+export type OperationKind = 'query' | 'command';
 
-/** Convention-based: returns true if the operation name implies a read (query/GET). */
-export function isReadOp(name: string): boolean {
-  return READ_PREFIXES.some((p) => name.startsWith(p));
+/** The convention's evidence, including both sides when a composed name contradicts itself. */
+export interface OperationKindInference {
+  kind?: OperationKind;
+  queryMatches: string[];
+  commandMatches: string[];
 }
 
 /**
- * Resolve operation kind honoring per-op overrides (from frond.config.ts).
- * Precedence: explicit override wins over convention.
- *
- * The convention is the NAME, and it is a weak signal: an app naming its reads in domain
- * terms (`ofBook`, `roots`, `bySlug`) matches no prefix and every one of them is published
- * as a mutation. Reading the method body instead was built and removed (2026-08-16): it
- * answers "does this touch storage", not "is this a read", and the two part company on
- * logging — a read that writes an audit row became a mutation, so adding a log line moved
- * a field from Query to Mutation. The shape of an API must not depend on that.
+ * Deliberately finite: these are verbs whose leading use carries a stable read meaning.
+ * `stats` and `check` preserve conventions already used by the project; the rest are the
+ * ordinary query vocabulary shared by the built-in adapters.
  */
+const QUERY_VERBS = new Set([
+  'all', 'check', 'count', 'exists', 'fetch', 'find', 'get', 'has', 'health', 'list',
+  'load', 'mine', 'ping', 'quote', 'read', 'search', 'stats', 'status', 'who',
+]);
+
+/**
+ * Leading verbs whose write intent is strong enough to infer. Domain words (`mine`,
+ * `drafts`, `bySlug`) stay out: a convention may omit syntax, but may not invent intent.
+ */
+const COMMAND_VERBS = new Set([
+  'add', 'apply', 'archive', 'assign', 'charge', 'checkout', 'complete', 'create',
+  'deactivate', 'delete', 'disable', 'edit', 'enable', 'execute', 'link', 'move', 'notify',
+  'open', 'pay', 'post', 'publish', 'queue', 'rebuild', 'record', 'refresh', 'refund',
+  'reindex', 'remove', 'rename', 'republish', 'reserve', 'restore', 'retitle', 'run',
+  'schedule', 'send', 'set', 'settle', 'stop', 'sync', 'toggle', 'track', 'transfer',
+  'unassign', 'update', 'upsert', 'withdraw', 'write',
+]);
+
+const COMPOUND_CONNECTORS = new Set(['and', 'or', 'then']);
+
+/** The two lists, for a refusal that has to say what a name could have led with. */
+export function knownVerbs(): { query: string[]; command: string[] } {
+  return { query: [...QUERY_VERBS].sort(), command: [...COMMAND_VERBS].sort() };
+}
+
+/** `getOrCreatePost` → `['get', 'or', 'create', 'post']`; `hash` never becomes `has`. */
+function wordsOf(name: string): string[] {
+  return name
+    .replace(/([a-z\d])([A-Z])/g, '$1 $2')
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+    .split(/[^A-Za-z\d]+/)
+    .filter(Boolean)
+    .map((word) => word.toLowerCase());
+}
+
+/**
+ * Infer only when the leading word names one convention and a composed clause does not
+ * name the opposite one. This is intentionally partial: `ofBook`, `computeReport` and
+ * `getOrCreateUser` have no inferred kind instead of falling through to command/query.
+ */
+export function inferOperationKind(name: string): OperationKindInference {
+  const words = wordsOf(name);
+  const first = words[0];
+  const primary = first && QUERY_VERBS.has(first)
+    ? 'query'
+    : first && COMMAND_VERBS.has(first)
+      ? 'command'
+      : undefined;
+
+  if (!primary) return { kind: undefined, queryMatches: [], commandMatches: [] };
+
+  const queryMatches = primary === 'query' ? [first] : [];
+  const commandMatches = primary === 'command' ? [first] : [];
+  for (let i = 1; i < words.length; i++) {
+    if (!COMPOUND_CONNECTORS.has(words[i - 1])) continue;
+    if (QUERY_VERBS.has(words[i])) queryMatches.push(words[i]);
+    if (COMMAND_VERBS.has(words[i])) commandMatches.push(words[i]);
+  }
+
+  return {
+    kind: queryMatches.length > 0 && commandMatches.length === 0
+      ? 'query'
+      : commandMatches.length > 0 && queryMatches.length === 0
+        ? 'command'
+        : undefined,
+    queryMatches,
+    commandMatches,
+  };
+}
+
+/** Explicit config is authoritative; otherwise the finite convention may decline. */
+export function resolveOperationKind(
+  name: string,
+  overrides?: Record<string, { kind?: OperationKind }>,
+): OperationKind | undefined {
+  return overrides?.[name]?.kind ?? inferOperationKind(name).kind;
+}
+
+/**
+ * Compatibility for boolean readers. An indeterminate name throws: returning `false`
+ * here would recreate the silent command fallback this module exists to prevent.
+ */
+export function isReadOp(name: string): boolean {
+  return requireOperationKind(name) === 'query';
+}
+
+/** Resolve an explicit/conventional kind for existing adapters, never by fallback. */
 export function resolveIsReadOp(
   name: string,
-  overrides?: Record<string, { kind?: 'query' | 'command' }>,
+  overrides?: Record<string, { kind?: OperationKind }>,
 ): boolean {
-  const kind = overrides?.[name]?.kind;
-  if (kind) return kind === 'query';
-  return isReadOp(name);
+  return requireOperationKind(name, overrides) === 'query';
+}
+
+function requireOperationKind(
+  name: string,
+  overrides?: Record<string, { kind?: OperationKind }>,
+): OperationKind {
+  const kind = resolveOperationKind(name, overrides);
+  if (kind) return kind;
+  throw new Error(
+    `Cannot infer operation kind from '${name}'. `
+    + `Declare operations.${name}.kind as 'query' or 'command' in frond.config.ts.`,
+  );
 }
 
 

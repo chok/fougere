@@ -49,7 +49,7 @@ export default class TransferHandler {
    * write the entity refuses never enters the journal, and what preceded it comes back
    * like anything else.
    */
-  async overdraw(from: string, to: string): Promise<never> {
+  async transferOverdrawn(from: string, to: string): Promise<never> {
     return this.together.run(async ([accounts, ledger]) => {
       await ledger.create({ id: `over-${++line}`, from, to, amount: 999 });
       await accounts.update(from, { balance: -5 });

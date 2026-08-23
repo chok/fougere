@@ -13,7 +13,7 @@ export class PostCard extends Post.pick('id', 'slug', 'title', 'summary', 'autho
 // Judges live at module level on purpose: only PUBLIC class methods become
 // operations, so a helper out here cannot become one by accident.
 
-function requireUser(user: User | null, operation: string): User {
+function requireUser(user: User | undefined, operation: string): User {
   if (!user) {
     throw new FougereError({ code: ErrorCode.UNAUTHORIZED, message: 'Sign in to write', entity: 'post', operation });
   }
@@ -32,7 +32,7 @@ async function requireOwn(posts: PostRepository, id: string, author: User, opera
 }
 
 async function requireFreeSlug(posts: PostRepository, slug: string, ownId: string | undefined, operation: string): Promise<void> {
-  const clash = await posts.bySlug(slug);
+  const clash = await posts.findBySlug(slug);
   if (clash && clash.id !== ownId) {
     throw new FougereError({ code: ErrorCode.CONFLICT, message: `Slug '${slug}' is already taken`, entity: 'post', operation });
   }
@@ -55,16 +55,16 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
   }
 
   /** Public reading: one published post, full body, designated by slug. */
-  async bySlug(input: BySlugInput): Promise<Post> {
+  async findBySlug(input: BySlugInput): Promise<Post> {
     const post = await this.posts.publishedBySlug(input.slug);
     if (!post) {
-      throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `No published post at '${input.slug}'`, entity: 'post', operation: 'bySlug' });
+      throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `No published post at '${input.slug}'`, entity: 'post', operation: 'findBySlug' });
     }
     return post;
   }
 
   /** A post is visible when published, or when it's the author's own. */
-  async findById(id: string, user: User | null): Promise<Post | undefined> {
+  async findById(id: string, user?: User): Promise<Post | undefined> {
     const post = await this.posts.findById(id);
     if (!post) return undefined;
     const own = user && post.authorId === user.id;
@@ -72,7 +72,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
   }
 
   /** The author's workbench: own posts, drafts first, newest first. */
-  async mine(user: User | null): Promise<Post[]> {
+  async mine(user?: User): Promise<Post[]> {
     if (!user) return [];
     // The repository answers newest first; sort is stable, so ordering survives the
     // draft-first pass — a presentation tiebreak, not a question for the storage.
@@ -81,7 +81,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
   }
 
   /** Judge: signed-in author, free slug. Realize: stamp the author pair. */
-  async create(input: PostDraft, user: User | null): Promise<Post> {
+  async create(input: PostDraft, user?: User): Promise<Post> {
     const author = requireUser(user, 'create');
     await requireFreeSlug(this.posts, input.slug, undefined, 'create');
     return this.posts.create({
@@ -92,7 +92,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
   }
 
   /** Judge: the author only, free slug if it changes. */
-  async update(id: string, input: PostDraft, user: User | null): Promise<Post> {
+  async update(id: string, input: PostDraft, user?: User): Promise<Post> {
     const author = requireUser(user, 'update');
     const post = await requireOwn(this.posts, id, author, 'update');
     if (input.slug && input.slug !== post.slug) await requireFreeSlug(this.posts, input.slug, id, 'update');
@@ -104,7 +104,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
    * Judge: the author, a draft, a body worth publishing. Realize: the
    * server stamps the pair.
    */
-  async publish(id: string, user: User | null): Promise<Post> {
+  async publish(id: string, user?: User): Promise<Post> {
     const author = requireUser(user, 'publish');
     const post = await requireOwn(this.posts, id, author, 'publish');
     if (post.status === 'published') {
@@ -117,7 +117,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
   }
 
   /** Judge: the author only. */
-  async delete(id: string, user: User | null): Promise<boolean> {
+  async delete(id: string, user?: User): Promise<boolean> {
     const author = requireUser(user, 'delete');
     await requireOwn(this.posts, id, author, 'delete');
     return this.posts.delete(id);

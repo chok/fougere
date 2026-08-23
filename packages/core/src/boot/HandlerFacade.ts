@@ -1,23 +1,32 @@
-import { Judge, type Fields, type SchemaView } from '@fougere/schema';
+import { registrationKeyOf, type Fields } from '@fougere/schema';
 import type { Container } from '@fougere/container';
-import { ErrorCode, FougereError } from '../wire/errors.js';
-import { runMiddlewares, type AppMiddleware } from '../wire/middleware.js';
-import { computeBindingPlan, resolveArgs, type CollectorResolver } from './binding.js';
+import type { AppMiddleware } from '../wire/middleware.js';
+import type { CollectorResolver } from './binding.js';
 import { collectorKeyOf } from '../prefab/collector.js';
 import { presenterKeyOf } from '../prefab/presenter.js';
 import { repositoryKeyOf } from '../prefab/repository.js';
-import { resolveContracts, type OperationsMap } from '../wire/operation.js';
-import { projectEgress, presentEgress, type PresenterArgs } from './egress.js';
-import { EMPTY_INVOCATION, type InvocationContext } from '../wire/invocation.js';
+import { targetOf } from '../prefab/prefab.js';
+import type { OperationContract, OperationsMap } from '../wire/operation.js';
+import type { EffectiveOperation, EffectiveOperationsMap } from '../effective-operation.js';
+import type { InvocationContext } from '../wire/invocation.js';
 import type { Emissions } from './Emissions.js';
-import type { InFlight } from './inflight.js';
-import type { OperationContext } from '../wire/middleware.js';
 import type { Logger } from '../builtins/logger.js';
-import type { EntityEntry, FrondDescriptor, HandlerEntry, PresenterEntry } from '../scan/frond.js';
+import type { EntityEntry, HandlerEntry, PresenterEntry } from '../scan/frond.js';
+import { InputValidator } from '../dispatch/InputValidator.js';
+import { ArgumentResolver } from '../dispatch/ArgumentResolver.js';
+import { OperationExecutor } from '../dispatch/OperationExecutor.js';
+import { OutputProjector } from '../dispatch/OutputProjector.js';
+import { OutputView } from '../dispatch/OutputView.js';
+import { PresenterExecutor } from '../dispatch/PresenterExecutor.js';
+import { PresenterArgumentResolver } from '../dispatch/PresenterArgumentResolver.js';
 
 /** What this door is about: a handler, the entity behind it when there is one, and where it resolves. */
 export interface Doorway {
   handler: HandlerEntry;
+  /** Handlers in the owning frond, used to realize a resolved implementation override. */
+  handlers: readonly HandlerEntry[];
+  /** The canonical operation table resolved before boot performs any side effect. */
+  operations: EffectiveOperationsMap;
   /** The subject — absent is ordinary: a health check owns no row. */
   entity: EntityEntry | undefined;
   /** The scope the handler and its collectors resolve in — a surface gets its own. */
@@ -33,104 +42,82 @@ export interface Wiring {
   /** The frond's own scope — where presenters live, whatever sub-scope the door uses. */
   frondScope: Container;
   log: Logger;
-  overrides: FrondDescriptor['operationsOverrides'];
   /** Entity names this frond has a collector for. */
   collectors: Set<string>;
   presenters: Map<string, PresenterEntry>;
   /** The middlewares that apply to an address, read at call time and never at boot. */
   middlewaresFor: (address: string) => AppMiddleware[];
   emissions: Emissions;
-  /** The app's running calls — counted here because every caller comes through. */
-  inflight: InFlight;
 }
 
-/** The field set an op's result is projected onto, and whether it is the whole of it. */
-interface View {
-  fields: Fields;
-  closed: boolean;
-}
-
-/**
- * The door a handler answers on: its contracts, the view each op emits, and the one call
- * path every caller takes — judge, bind, project, present.
- *
- * A façade is built FROM a handler — that is the whole rule, and the entity is OPTIONAL.
- * An entity is a shape, not a surface: on its own it declares no operation, so it gets no
- * façade and answers nothing. The converse used to be false in fact though true on paper —
- * the boot walked entities, so a handler naming no entity was scanned and then silently
- * never built. An operation about no stored row (`health.check`, a pure computation) is an
- * ordinary case, not a gap to accommodate.
- *
- * Without an entity a façade loses exactly three things, and nothing else: the ORM injected
- * by convention, the output fields to project onto, and the presenter. Its result travels
- * as the handler returned it.
- *
- * It registers nothing. The boot puts `ops` and `contracts` in the container under the
- * audience they belong to; this class knows a scope to RESOLVE from and no more.
- */
+/** Adapts one handler door to executable operations. */
 export class HandlerFacade {
-  /**
-   * The contracts this door serves — resolved once, from the three producers, so nobody
-   * re-derives them and drifts.
-   */
+  /** Rich operation facts shared with check, explain and adapters. */
+  readonly effectiveOperations: EffectiveOperationsMap;
+  /** Contracts served by this door. */
   readonly contracts: OperationsMap;
 
   /** The callable surface: op name → the function a caller reaches. */
   readonly ops: Record<string, Function> = {};
 
-  private readonly cachedViews = new Map<string, View>();
+  private readonly cachedViews = new Map<string, OutputView>();
   private instance: any;
+  private readonly implementationKeys = new Map<string, string>();
+  private readonly implementationInstances = new Map<string, any>();
+  private readonly inputValidator = new InputValidator();
+  private readonly argumentResolver = new ArgumentResolver(
+    (typeName) => this.collectorResolver(typeName),
+  );
+  private readonly presenterArguments: PresenterArgumentResolver;
 
   constructor(private readonly door: Doorway, private readonly wiring: Wiring) {
     const { handler, entity } = door;
-    this.refuseCrudWithoutRepository();
+    this.presenterArguments = new PresenterArgumentResolver(
+      this.argumentResolver,
+      wiring.collectors,
+    );
+    this.refuseCrudWithoutRepository(handler);
 
-    door.scope.register(this.handlerKey, handler.ctor, { deps: this.deps() });
+    door.scope.register(this.handlerKey, handler.ctor, { deps: this.depsOf(handler) });
 
-    this.contracts = resolveContracts(handler, wiring.overrides, wiring.collectors);
-    // Handed BACK, because "resolved once" was not true elsewhere: the adapters read
-    // `handler.operations` — the scan's raw map — so an op a prefab declared and the
-    // scan never saw reached the façade and no projection. Four of the five CRUD ops
-    // were absent from GraphQL on any installed app.
+    this.effectiveOperations = door.operations;
+    this.contracts = new Map(
+      [...door.operations].map(([name, operation]) => [name, operation as OperationContract] as const),
+    );
     handler.operations = this.contracts;
 
-    /**
-     * Who listens to what — noted HERE because this is where a contract becomes real,
-     * and read from the PLAN rather than from the AST: `{ kind: 'fact' }` is a sentence
-     * `computeBindingPlan` already wrote.
-     *
-     * A subscriber is an ordinary op. It keeps its door, its judge and its middlewares —
-     * an emission and a direct call are the same call, which is why nothing here has to
-     * build a second path.
-     */
-    wiring.emissions.note(this.contracts, door.key);
-    this.judgeFactsByTheirShape();
+    // Register model-selected implementations in the same execution scope.
+    for (const [name, operation] of door.operations) {
+      if (this.isBaseImplementation(operation)) continue;
+      const implementation = this.implementationHandler(name);
+      this.refuseCrudWithoutRepository(implementation);
+      const key = `${this.handlerKey}:implementation:${operation.implementation.className}`;
+      if (!this.implementationKeys.has(operation.implementation.className)) {
+        door.scope.register(key, implementation.ctor, { deps: this.depsOf(implementation) });
+        this.implementationKeys.set(operation.implementation.className, key);
+      }
+    }
 
-    // The surface IS the contract table. A method nobody declared is not an op: it stays
-    // a method, callable from inside, unreachable from the wire.
+    // Emissions use the same contracts and execution path as direct calls.
+    wiring.emissions.note(this.contracts, door.key);
+    // Only declared operations become callable façade members.
     for (const op of this.contracts.keys()) this.ops[op] = this.wrap(op);
 
-    if (this.inheritsCrud && !entity) {
-      // A Crud handler whose subject is not among the scanned entities is either broken
-      // or installed — `Crud(Note)` from a published package is legitimate and the scan
-      // cannot see it (heritage resolution is workspace-only). Refusing at boot would
-      // break the second case to catch the first, so it is said, not thrown.
+    if (this.inheritsCrud(handler) && !entity) {
+      // An installed Crud subject may be absent from the local scan.
       wiring.log.debug(`${handler.ctor.name} extends Crud() and no scanned entity is named `
-        + `'${this.ormBase}' — installed entity, or a missing one: no ORM will be injected`);
+        + `'${this.subjectOf(handler)}' — installed entity, or a missing one: no ORM will be injected`);
     }
   }
 
-  /**
-   * The ORM belongs to the SUBJECT, never to the address. `StockHandler extends Crud(Item)`
-   * is called `stock` and reads `Item`; asking for `StockOrm` would be asking the address
-   * for a table. The two coincide in the ordinary case and that is why it went unnoticed.
-   */
-  private get ormBase(): string {
-    return this.door.entity?.name ?? this.door.handler.address;
+  /** Storage follows the Crud subject, which may differ from the door address. */
+  private subjectOf(handler: HandlerEntry): string {
+    const target = targetOf(handler.ctor);
+    return target?.name ? registrationKeyOf(target.name) : handler.address;
   }
 
-  private get inheritsCrud(): boolean {
-    const proto = this.door.handler.ctor.prototype;
+  private inheritsCrud(handler: HandlerEntry): boolean {
+    const proto = handler.ctor.prototype;
     return typeof proto?.list === 'function' && typeof proto?.findById === 'function';
   }
 
@@ -138,23 +125,16 @@ export class HandlerFacade {
     return `_handler:${this.door.key}`;
   }
 
-  private deps(): string[] {
-    const { deps } = this.door.handler;
+  private depsOf(handler: HandlerEntry): string[] {
+    const { deps } = handler;
     if (deps.length > 0) return deps;
-    return this.inheritsCrud ? [repositoryKeyOf(this.ormBase)] : [];
+    return this.inheritsCrud(handler) ? [repositoryKeyOf(this.subjectOf(handler))] : [];
   }
 
-  /**
-   * Declaring a constructor turns the automatic injection OFF — the handler now states what
-   * it takes, and that is the whole DI convention. But a Crud handler that forgets to state
-   * its storage used to get `this.orm === undefined` and break on the FIRST REQUEST,
-   * silently: `super()` assigns whatever it was handed. Refused at boot instead, naming the
-   * fix — the clause is deducible, so it is stated, not configured.
-   */
-  private refuseCrudWithoutRepository(): void {
-    const { handler } = this.door;
-    const repoTypeName = repositoryKeyOf(this.ormBase);
-    if (!this.inheritsCrud || handler.deps.length === 0 || handler.deps.includes(repoTypeName)) return;
+  /** A custom Crud constructor must explicitly receive its repository. */
+  private refuseCrudWithoutRepository(handler: HandlerEntry): void {
+    const repoTypeName = repositoryKeyOf(this.subjectOf(handler));
+    if (!this.inheritsCrud(handler) || handler.deps.length === 0 || handler.deps.includes(repoTypeName)) return;
     throw new Error(
       `${handler.ctor.name} extends Crud() and declares a constructor, so its storage is no ` +
       `longer injected for it — but it does not take any.\n` +
@@ -163,53 +143,17 @@ export class HandlerFacade {
     );
   }
 
-  /**
-   * A fact is judged on arrival, by the entity it IS.
-   *
-   * The scan never fills `input` from a parameter type, so a subscriber's payload met no
-   * judge at all — tolerable while it came from an emitter in this very process, false the
-   * moment it comes off a wire, from another repository, from an older emitter, or out of a
-   * queue that held it for three days. A fact is an entity: it has a card, `reconstruct`
-   * rebuilds it on the far side, so the same judge stands on both ends.
-   *
-   * A contract that states its own `input` wins: the three producers keep their order.
-   */
-  private judgeFactsByTheirShape(): void {
-    for (const [op, contract] of this.contracts) {
-      if (contract.input) continue;
-      const bound = contract.binding?.find((b) => b.source.kind === 'fact');
-      if (!bound || bound.source.kind !== 'fact') continue;
-      const shape = this.wiring.emissions.shapeOf(bound.source.factName);
-      if (shape) this.contracts.set(op, { ...contract, input: shape });
-    }
-  }
-
-  /**
-   * The field set an op's result is projected onto — the view declared for THAT op
-   * (`Crud(Post, { list: PostCard })`), else the handler-wide view (`Crud(Post,
-   * PostPublic)`), else the entity. Each op is the audience of its own view: a public
-   * index emits cards while `bySlug` emits the full row, from one handler reading one
-   * full-row ORM. Resolved once per op, on first call.
-   */
-  private viewOf(op: string): View {
+  /** Resolve and cache the output view declared for one operation. */
+  private viewOf(op: string): OutputView {
     const known = this.cachedViews.get(op);
     if (known) return known;
 
-    const { handler, entity } = this.door;
-    const perOp = (handler.ctor as { __opOutputs?: Record<string, unknown> })?.__opOutputs?.[op];
-    const schema = (perOp
-      ?? this.contracts.get(op)?.output
-      ?? handler.outputOverride
-      ?? (handler.ctor as { __output?: unknown })?.__output
-      // No entity and nothing declared: there is no shape to project onto, so the result
-      // travels as the handler returned it (`encodeFields({}, r)` is `{…r}`).
-      ?? entity?.entityClass) as { getFields?: () => Fields };
-    // A view named for THIS op is a closed list: the author said what this audience gets.
-    // The handler-wide forms already narrow at the ORM.
-    const resolved: View = {
-      fields: typeof schema?.getFields === 'function' ? schema.getFields() : {},
-      closed: perOp !== undefined,
-    };
+    const operation = this.effectiveOperations.get(op);
+    const schema = operation?.output as { getFields?: () => Fields } | undefined;
+    const resolved = new OutputView(
+      typeof schema?.getFields === 'function' ? schema.getFields() : {},
+      operation?.outputClosed ?? false,
+    );
     this.cachedViews.set(op, resolved);
     return resolved;
   }
@@ -225,123 +169,74 @@ export class HandlerFacade {
     return this.instance;
   }
 
-  /**
-   * One op, as a caller meets it: middlewares, then judge, bind, project, present.
-   *
-   * The name the door answers to reaches the presenter map, which is keyed by ENTITY
-   * name — they coincide whenever both exist, and when no entity carries this name the
-   * lookup simply misses, which is the correct answer.
-   */
+  private isBaseImplementation(operation: EffectiveOperation): boolean {
+    return operation.implementation.className === this.door.handler.ctor.name
+      && operation.implementation.address === this.door.handler.address
+      && operation.implementation.filePath === this.door.handler.filePath;
+  }
+
+  /** The exact handler entry the pure model selected; no name-only retry or fallback. */
+  private implementationHandler(operationName: string): HandlerEntry {
+    const operation = this.effectiveOperations.get(operationName)!;
+    const matches = this.door.handlers.filter((handler) =>
+      handler.ctor.name === operation.implementation.className
+      && handler.address === operation.implementation.address
+      && handler.filePath === operation.implementation.filePath);
+    if (matches.length !== 1) {
+      throw new Error(
+        `EffectiveOperation '${operation.id}' names ${operation.implementation.className}.`
+        + `${operation.implementation.method}, but boot found ${matches.length} matching handlers.`,
+      );
+    }
+    return matches[0]!;
+  }
+
+  private resolvedImplementation(operationName: string): { instance: any; method: string } {
+    const operation = this.effectiveOperations.get(operationName)!;
+    if (this.isBaseImplementation(operation)) {
+      return { instance: this.resolvedHandler(), method: operation.implementation.method };
+    }
+
+    const className = operation.implementation.className;
+    const key = this.implementationKeys.get(className);
+    if (!key) throw new Error(`No registered implementation for EffectiveOperation '${operation.id}'.`);
+    let instance = this.implementationInstances.get(key);
+    if (!instance) {
+      instance = this.door.scope.resolve(key);
+      this.implementationInstances.set(key, instance);
+    }
+    return { instance, method: operation.implementation.method };
+  }
+
   private wrap(op: string): (invocation?: InvocationContext) => Promise<unknown> {
     const address = this.door.handler.address;
-
-    return async (invocation?: InvocationContext) => {
-      const inv = invocation ?? EMPTY_INVOCATION;
-      const ctx: OperationContext = {
-        entity: address, frond: this.wiring.frond, operation: op, args: [], state: inv.state, invocation: inv,
-      };
-
-      // Counted around the WHOLE call, middlewares included: they are part of what a
-      // release would pull out from under it. Refused rather than counted once the app
-      // has been closed.
-      const done = this.wiring.inflight.enter(address, op);
-      try {
-        return await this.runCall(ctx, inv, address, op);
-      } finally {
-        done();
-      }
-    };
-  }
-
-  /** The call itself — judge, bind, project, present. */
-  private runCall(
-    ctx: OperationContext,
-    inv: InvocationContext,
-    address: string,
-    op: string,
-  ): Promise<unknown> {
-    return runMiddlewares(this.wiring.middlewaresFor(address), ctx, async () => {
-        const contract = this.contracts.get(op);
-        const effective = this.judged(contract?.input, inv, address, op);
-        ctx.invocation = effective;
-
-        // No plan means no declared argument — an op receives what its contract says it
-        // receives, never a guess based on its name.
-        const args = contract?.binding
-          ? await resolveArgs(contract.binding, effective, this.collectorResolver)
-          : [];
-
-        // Egress at the boundary: a write-only field never rides the result out, exactly
-        // as REST and Pothos already guarantee on their own — then a presenter's computed
-        // fields are added, so every door answers the same thing (they used to be applied
-        // by the projections alone).
-        const view = this.viewOf(op);
-        const projected = projectEgress(view.fields, await this.resolvedHandler()[op](...args), view.closed);
-        if (view.closed) return projected;
-
-        const meta = this.wiring.presenters.get(address);
-        if (!meta) return projected;
-        return presentEgress(
-          projected,
-          this.wiring.frondScope.resolve(presenterKeyOf(address)),
-          meta.fields,
-        address,
-        op,
-        await this.presenterArgs(meta, effective),
-      );
+    const contract = this.contracts.get(op);
+    const view = this.viewOf(op);
+    const presenter = this.wiring.presenters.get(address);
+    const executor = new OperationExecutor({
+      entity: address,
+      frond: this.wiring.frond,
+      operation: op,
+      contract,
+      middlewares: () => this.wiring.middlewaresFor(address),
+      validator: this.inputValidator,
+      arguments: this.argumentResolver,
+      invoke: async (args) => {
+        const implementation = this.resolvedImplementation(op);
+        return implementation.instance[implementation.method](...args);
+      },
+      projector: new OutputProjector(view),
+      ...(view.closed || !presenter ? {} : {
+        present: async (result: unknown, effective: InvocationContext) =>
+          new PresenterExecutor(
+            this.wiring.frondScope.resolve(presenterKeyOf(address)),
+            presenter.fields,
+            address,
+            op,
+          ).present(result, await this.presenterArguments.resolve(presenter, effective)),
+      }),
     });
-  }
 
-  /**
-   * The client's input, or a refusal. The view's mode travels with it: a `partial()` input
-   * validates as a patch (absent field → untouched), never by forging the fields.
-   *
-   * No field filter: the axes already judge every case — a client id at create is accepted
-   * (`{ generate }`), an id re-supplied in a patch is 'Immutable', a read-only field
-   * 'Read-only', every system-stamped absence is legal via its lifecycle rule, and a key
-   * outside the contract is 'Unknown field' (refused, not stripped).
-   */
-  private judged(
-    schema: SchemaView | undefined,
-    inv: InvocationContext,
-    address: string,
-    op: string,
-  ): InvocationContext {
-    // A body that is not an object is JUDGED, not waved through: `"hello"` is valid JSON,
-    // so it arrives from any door, and skipping the judge sent it to the ORM — which
-    // answered `table articles has no column named 0`, a driver error where a refusal
-    // belongs. `Judge.row` already states this one (`Expected an object`); the branch was
-    // simply unreachable from here.
-    if (!schema || inv.body === undefined || inv.body === null) return inv;
-
-    const result = Judge.row(schema.getFields(), inv.body, { patch: schema.getOpts().patch });
-    if (!result.success) {
-      throw new FougereError({
-        code: ErrorCode.VALIDATION_FAILED,
-        message: result.errors.map((e) => `${e.path}: ${e.message}`).join(', '),
-        details: result.errors,
-        entity: address,
-        operation: op,
-      });
-    }
-    return { ...inv, body: result.data };
-  }
-
-  /**
-   * A computed field is bound like an op: what it declares after the rows is resolved from
-   * the same invocation, by the same collectors. The plan is computed here and not at scan
-   * time because the scan meets presenters before it meets collectors.
-   */
-  private async presenterArgs(meta: PresenterEntry, inv: InvocationContext): Promise<PresenterArgs> {
-    const args: PresenterArgs = {};
-    for (const field of meta.fieldMeta) {
-      if (!field.params?.length) continue;
-      args[field.name] = await resolveArgs(
-        computeBindingPlan(field.params, this.wiring.collectors),
-        inv,
-        this.collectorResolver,
-      );
-    }
-    return args;
+    return (invocation) => executor.execute(invocation);
   }
 }

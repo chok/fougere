@@ -30,7 +30,7 @@ export interface Undo {
  * The subset of the port a frame has to watch: every gesture that writes, plus the reads
  * that take one back.
  *
- * Not `egress.ts`'s `Writer`, which is `create` and `update` — all a judge needs. Undoing
+ * Not `StorageGuard`'s `Writer`, which is `create` and `update` — all a judge needs. Undoing
  * needs more: the deletes, and the reads that fetch the image to put back.
  */
 interface Undoable {
