@@ -5,6 +5,8 @@ import type { RoutePolicy } from './RoutePolicy.js';
 
 /** Describes an unresolved route from the destinations visible to one dispatcher. */
 export class RouteNotFoundError extends FougereError {
+  readonly servedOperations: readonly string[];
+
   constructor(call: Call, routes: readonly Route[], policy?: RoutePolicy) {
     const served = routes
       .filter((route) => !policy || policy.accepts(route))
@@ -22,5 +24,6 @@ export class RouteNotFoundError extends FougereError {
         : `No route serves '${call.address}'`;
 
     super({ code: ErrorCode.NOT_FOUND, message, entity, operation });
+    this.servedOperations = served;
   }
 }
