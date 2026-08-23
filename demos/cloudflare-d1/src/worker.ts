@@ -48,7 +48,10 @@ async function open(env: Env) {
     extensions: [observability({ service: 'catalog' })],
   });
 
-  const envelope = receive(createLocalRunner(app));
+  // Said out loud: this demo has no root key, so the envelope door takes the `state` a
+  // caller hands it. A deployment that splits fronds across Workers wires `verify`
+  // instead — `fougere keys` / `fougere grant`, and the three env vars as secrets.
+  const envelope = receive(createLocalRunner(app), { allowUnsigned: true });
   const hono = new Hono();
   registerRoutes(createHonoRouter(hono), generateRoutes(app as never, { prefix: '/api' }));
   hono.get('/', (c) => c.html(landing(app)));

@@ -1048,6 +1048,9 @@ importers:
 
   packages/adapter/sql:
     dependencies:
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../core
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../schema
@@ -1055,9 +1058,6 @@ importers:
         specifier: ^13.0.3
         version: 13.0.3
     devDependencies:
-      '@fougere/core':
-        specifier: workspace:*
-        version: link:../../core
       '@types/better-sqlite3':
         specifier: ^7.6.13
         version: 7.6.13

@@ -16,7 +16,10 @@ import { Lifecycle, Role } from '@fougere/schema';
 import { sql, type Kysely } from 'kysely';
 import { applyCreate, applyUpdate, schemaOf, type Fields, type SchemaView, type SchemaSource } from '@fougere/schema';
 import { toTable, toTableName, type TableDef } from './table.js';
-import { resolveDialect, type DialectName } from './dialect.js';
+import { resolveDialect, type Dialect, type DialectName } from './dialect.js';
+// The contract entry and not the main one: `FougereError` crosses a process boundary and
+// lives there for that reason, and this package must not drag the boot to raise one.
+import { FougereError, ErrorCode } from '@fougere/core/contract';
 import { codecsOf, type ValueCodec } from './values.js';
 
 /** ListOptions — duplicated from @fougere/core to avoid a runtime dep. */
@@ -99,6 +102,8 @@ export class SqlEntityOrm {
   private codecs: Map<string, ValueCodec>;
 
   /** How many keys one statement may carry here — see `Dialect.maxBindings`. */
+  /** Kept whole: the engine answers more than one question, and refusals are one of them. */
+  private dialect: Dialect;
   private maxBindings: number;
   /** How this engine spells an upsert, or `false` when it cannot — see `Dialect.upsert`. */
   private upsertClause: 'on conflict' | 'on duplicate key' | false;
@@ -111,6 +116,7 @@ export class SqlEntityOrm {
     dialect: DialectName = 'sqlite',
   ) {
     const resolved = resolveDialect(dialect);
+    this.dialect = resolved;
     this.maxBindings = resolved.maxBindings;
     this.upsertClause = resolved.upsert;
     // Normalized once: the table projection and the axis analysis below both read the
@@ -492,7 +498,7 @@ export class SqlEntityOrm {
     // writer that is not us, the way a CHECK does; nothing depends on it any more.
     const data = applyCreate(this.fields, input);
 
-    await this.db.insertInto(this.table.name).values(this.toRow(data)).execute();
+    await this.refusal(() => this.db.insertInto(this.table.name).values(this.toRow(data)).execute());
 
     // Contract: create returns the COMPLETE row (validation judges absence, it
     // never fills) — re-read so SQL-realised defaults appear. Same move as update().
@@ -508,12 +514,33 @@ export class SqlEntityOrm {
   async update(id: string | Record<string, unknown>, input: Record<string, unknown>, options?: SelectOption): Promise<Record<string, unknown>> {
     const data = applyUpdate(this.fields, input);
 
-    await this.wherePk(this.db.updateTable(this.table.name).set(this.toRow(data)) as any, id).execute();
+    await this.refusal(() => this.wherePk(this.db.updateTable(this.table.name).set(this.toRow(data)) as any, id).execute());
 
     const updated = await this.findById(id);
     const result = updated ?? (typeof id === 'string' ? { id, ...data } : { ...id, ...data });
     const sel = this.resolveSelect(options);
     return sel ? pick(result, sel) : result;
+  }
+
+  /**
+   * A duplicate is an ANSWER, not a failure — so it leaves as `CONFLICT` and not as the
+   * blank `Internal error` a caller used to get. The engine's own wording never travels:
+   * it names a table and a constraint, which is our schema and not the caller's business.
+   *
+   * Only the dialect can recognize it; this method knows no engine, which is the rule
+   * `dialect.ts` exists to keep.
+   */
+  private async refusal<R>(write: () => Promise<R>): Promise<R> {
+    try {
+      return await write();
+    } catch (cause) {
+      if (!this.dialect.isUniqueViolation(cause)) throw cause;
+      throw new FougereError({
+        code: ErrorCode.CONFLICT,
+        message: `A row with these values already exists in ${this.table.name}.`,
+        cause,
+      });
+    }
   }
 
   async delete(id: string | Record<string, unknown>): Promise<boolean> {

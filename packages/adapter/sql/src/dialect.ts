@@ -46,6 +46,26 @@ export interface Dialect {
    * about atomicity in an engine that has no transaction here either.
    */
   upsert: 'on conflict' | 'on duplicate key' | false;
+  /**
+   * Is this the engine refusing a duplicate, rather than failing?
+   *
+   * A driver reports it as a plain `Error` whose wording is the engine's own, so only a
+   * dialect can tell — the same reason `maxBindings` and `upsert` live here. Without it
+   * every engine's phrasing would be matched in one place, and this file exists so no
+   * other one learns a dialect.
+   *
+   * A false negative costs an INTERNAL_ERROR where a CONFLICT was due — which is what
+   * every engine answered before this existed, so nothing is made worse by a gap.
+   */
+  isUniqueViolation(error: unknown): boolean;
+}
+
+/** The message a driver hands up, however it wrapped it. */
+function messageOf(error: unknown): string {
+  const e = error as { message?: unknown; code?: unknown; cause?: unknown } | null;
+  const own = `${typeof e?.message === 'string' ? e.message : ''} ${typeof e?.code === 'string' ? e.code : ''}`;
+  // Kysely wraps a driver error, and D1 wraps it again: the wording is often one level down.
+  return e?.cause ? `${own} ${messageOf(e.cause)}` : own;
 }
 
 /** Bounded length for a key column, when the shape doesn't state its own. */
@@ -57,6 +77,8 @@ function keyLength(column: ColumnDef): number {
 }
 
 export const sqliteDialect: Dialect = {
+  // SQLite: `UNIQUE constraint failed: products.sku` — and D1 relays it verbatim.
+  isUniqueViolation: (error) => /UNIQUE constraint failed/i.test(messageOf(error)),
   upsert: 'on conflict',
   // SQLITE_MAX_VARIABLE_NUMBER is 32766 on any build since 3.32 (measured on better-sqlite3).
   maxBindings: 30000,
@@ -78,6 +100,9 @@ export const sqliteDialect: Dialect = {
 };
 
 export const pgDialect: Dialect = {
+  // Postgres: SQLSTATE 23505, which `pg` puts on `code` — the one engine that names it
+  // in a way no translation can blur.
+  isUniqueViolation: (error) => /23505/.test(messageOf(error)),
   upsert: 'on conflict',
   // the wire protocol counts parameters in an int16 — 65535.
   maxBindings: 60000,
@@ -103,6 +128,8 @@ export const pgDialect: Dialect = {
 };
 
 export const mysqlDialect: Dialect = {
+  // MySQL: ER_DUP_ENTRY / 1062, `Duplicate entry '…' for key '…'`.
+  isUniqueViolation: (error) => /ER_DUP_ENTRY|Duplicate entry/i.test(messageOf(error)),
   upsert: 'on duplicate key',
   // no parameter ceiling of its own; max_allowed_packet is what gives way, and it grows with the VALUES not the count.
   maxBindings: 60000,
@@ -127,6 +154,8 @@ export const mysqlDialect: Dialect = {
 };
 
 export const mssqlDialect: Dialect = {
+  // SQL Server: 2627 for a constraint, 2601 for a unique index — two numbers, one fact.
+  isUniqueViolation: (error) => /\b(2627|2601)\b|Violation of UNIQUE KEY/i.test(messageOf(error)),
   upsert: false,
   // 2100 parameters per statement, the lowest of the four by a wide margin.
   maxBindings: 2000,
