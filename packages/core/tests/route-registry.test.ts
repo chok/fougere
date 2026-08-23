@@ -1,0 +1,49 @@
+import { describe, expect, it, vi } from 'vitest';
+import { Call } from '../src/contract/Call.js';
+import { RouteAddress } from '../src/contract/RouteAddress.js';
+import type { Route, RouteKind } from '../src/dispatch/Route.js';
+import { RouteRegistry } from '../src/dispatch/RouteRegistry.js';
+
+function route(address: RouteAddress, kind: RouteKind = 'local'): Route {
+  return { kind, address, execute: vi.fn(async (_call: Call) => kind) };
+}
+
+describe('RouteRegistry', () => {
+  it('finds the exact registered operation', () => {
+    const registry = new RouteRegistry();
+    const address = new RouteAddress({ entity: 'product', operation: 'list' });
+    const registered = route(address);
+
+    registry.register(registered);
+
+    expect(registry.find(new RouteAddress(address.toJSON()))).toBe(registered);
+    expect(registry.size).toBe(1);
+    expect(registry.routes()).toEqual([registered]);
+  });
+
+  it('keeps surfaces distinct', () => {
+    const registry = new RouteRegistry();
+    const publicRoute = route(new RouteAddress({
+      surface: 'public', entity: 'product', operation: 'list',
+    }));
+    const adminRoute = route(new RouteAddress({
+      surface: 'admin', entity: 'product', operation: 'list',
+    }));
+
+    registry.register(publicRoute);
+    registry.register(adminRoute);
+
+    expect(registry.find(publicRoute.address)).toBe(publicRoute);
+    expect(registry.find(adminRoute.address)).toBe(adminRoute);
+  });
+
+  it('refuses two owners for the same address', () => {
+    const registry = new RouteRegistry();
+    const address = new RouteAddress({ entity: 'product', operation: 'list' });
+
+    registry.register(route(address, 'local'));
+
+    expect(() => registry.register(route(address, 'remote')))
+      .toThrow(/product\.list.*local and remote/);
+  });
+});
