@@ -176,8 +176,14 @@ describe('remote façade (repli)', () => {
   it('the façade is not a thenable — awaiting resolve() stays safe', async () => {
     const host = await bootHost();
     const consumer = await bootConsumer(host);
-    const facade = await Promise.resolve(consumer.resolve('productHandler'));
+    const facade = await Promise.resolve(consumer.resolve<Record<string, Function>>('productHandler'));
     expect(facade).toBeDefined();
+    expect('list' in facade).toBe(true);
+    expect(Object.hasOwn(facade, 'list')).toBe(true);
+    expect(facade.then).toBeUndefined();
+    expect(facade.constructor).toBeUndefined();
+    expect(facade.toJSON).toBeUndefined();
+    expect(JSON.stringify(facade)).toBe('{}');
     await consumer.dispose();
     await host.dispose();
   });

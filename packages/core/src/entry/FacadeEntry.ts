@@ -2,6 +2,7 @@ import { Call } from '../contract/Call.js';
 import type { InvocationInput } from '../contract/Invocation.js';
 import { RouteAddress } from '../contract/RouteAddress.js';
 import type { DispatchPort } from '../dispatch/DispatchPort.js';
+import { DynamicFacade } from './DynamicFacade.js';
 
 /** Object-shaped entry that turns facade method calls into canonical dispatches. */
 export class FacadeEntry {
@@ -15,11 +16,7 @@ export class FacadeEntry {
   ) {
     this.operations = operationNames
       ? Object.fromEntries([...operationNames].map((name) => [name, this.operation(name)]))
-      : new Proxy({}, {
-        get: (_target, name) => typeof name === 'string' && name !== 'then'
-          ? this.operation(name)
-          : undefined,
-      });
+      : new DynamicFacade((name) => this.operation(name)).operations;
   }
 
   private operation(name: string): (invocation?: InvocationInput) => Promise<unknown> {
