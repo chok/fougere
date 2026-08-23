@@ -1,20 +1,21 @@
 import { type Fields } from '@fougere/schema';
 import type { Container } from '@fougere/container';
-import { runMiddlewares, type AppMiddleware } from '../wire/middleware.js';
+import type { AppMiddleware } from '../wire/middleware.js';
 import { computeBindingPlan, type CollectorResolver } from './binding.js';
 import { collectorKeyOf } from '../prefab/collector.js';
 import { presenterKeyOf } from '../prefab/presenter.js';
 import { repositoryKeyOf } from '../prefab/repository.js';
 import { resolveContracts, type OperationsMap } from '../wire/operation.js';
-import { projectEgress, presentEgress, type PresenterArgs } from './egress.js';
-import { EMPTY_INVOCATION, type InvocationContext } from '../wire/invocation.js';
+import type { InvocationContext } from '../wire/invocation.js';
 import type { Emissions } from './Emissions.js';
 import type { InFlight } from './inflight.js';
-import type { OperationContext } from '../wire/middleware.js';
 import type { Logger } from '../builtins/logger.js';
 import type { EntityEntry, FrondDescriptor, HandlerEntry, PresenterEntry } from '../scan/frond.js';
 import { InputValidator } from '../dispatch/InputValidator.js';
 import { ArgumentResolver } from '../dispatch/ArgumentResolver.js';
+import { OperationExecutor } from '../dispatch/OperationExecutor.js';
+import { OutputProjector } from '../dispatch/OutputProjector.js';
+import { PresenterExecutor, type PresenterArgs } from '../dispatch/PresenterExecutor.js';
 
 /** What this door is about: a handler, the entity behind it when there is one, and where it resolves. */
 export interface Doorway {
@@ -230,71 +231,34 @@ export class HandlerFacade {
     return this.instance;
   }
 
-  /**
-   * One op, as a caller meets it: middlewares, then judge, bind, project, present.
-   *
-   * The name the door answers to reaches the presenter map, which is keyed by ENTITY
-   * name — they coincide whenever both exist, and when no entity carries this name the
-   * lookup simply misses, which is the correct answer.
-   */
   private wrap(op: string): (invocation?: InvocationContext) => Promise<unknown> {
     const address = this.door.handler.address;
-
-    return async (invocation?: InvocationContext) => {
-      const inv = invocation ?? EMPTY_INVOCATION;
-      const ctx: OperationContext = {
-        entity: address, frond: this.wiring.frond, operation: op, args: [], state: inv.state, invocation: inv,
-      };
-
-      // Counted around the WHOLE call, middlewares included: they are part of what a
-      // release would pull out from under it. Refused rather than counted once the app
-      // has been closed.
-      const done = this.wiring.inflight.enter(address, op);
-      try {
-        return await this.runCall(ctx, inv, address, op);
-      } finally {
-        done();
-      }
-    };
-  }
-
-  /** The call itself — judge, bind, project, present. */
-  private runCall(
-    ctx: OperationContext,
-    inv: InvocationContext,
-    address: string,
-    op: string,
-  ): Promise<unknown> {
-    return runMiddlewares(this.wiring.middlewaresFor(address), ctx, async () => {
-        const contract = this.contracts.get(op);
-        const effective = this.inputValidator.validate(contract?.input, inv, address, op);
-        ctx.invocation = effective;
-
-        // No plan means no declared argument — an op receives what its contract says it
-        // receives, never a guess based on its name.
-        const args = contract?.binding
-          ? await this.argumentResolver.resolve(contract.binding, effective)
-          : [];
-
-        // Egress at the boundary: a write-only field never rides the result out, exactly
-        // as REST and Pothos already guarantee on their own — then a presenter's computed
-        // fields are added, so every door answers the same thing (they used to be applied
-        // by the projections alone).
-        const view = this.viewOf(op);
-        const projected = projectEgress(view.fields, await this.resolvedHandler()[op](...args), view.closed);
-        if (view.closed) return projected;
-
-        const meta = this.wiring.presenters.get(address);
-        if (!meta) return projected;
-        return presentEgress(
-          projected,
-          this.wiring.frondScope.resolve(presenterKeyOf(address)),
-          meta.fields,
-        address,
-        op,
-        await this.presenterArgs(meta, effective),
-      );
+    const contract = this.contracts.get(op);
+    const view = this.viewOf(op);
+    const presenter = this.wiring.presenters.get(address);
+    const executor = new OperationExecutor({
+      entity: address,
+      frond: this.wiring.frond,
+      operation: op,
+      contract,
+      middlewares: () => this.wiring.middlewaresFor(address),
+      inFlight: this.wiring.inflight,
+      validator: this.inputValidator,
+      arguments: this.argumentResolver,
+      invoke: (args) => this.resolvedHandler()[op](...args),
+      projector: new OutputProjector(view.fields, view.closed),
+      ...(view.closed || !presenter ? {} : {
+        present: async (result: unknown, effective: InvocationContext) =>
+          new PresenterExecutor(
+            this.wiring.frondScope.resolve(presenterKeyOf(address)),
+            presenter.fields,
+            address,
+            op,
+          ).present(result, await this.presenterArgs(presenter, effective)),
+      }),
     });
+
+    return (invocation) => executor.execute(invocation);
   }
 
   /**
