@@ -38,6 +38,15 @@ function appOf(options: { exposed?: boolean; overrides?: Record<string, { kind?:
     }],
     resolve: () => undefined as never,
     facadeFor: (name: string) => (name === 'post' || name === 'secret' ? facade : undefined),
+    operationsFor: (name: string) => (name === 'post' || name === 'secret'
+      ? new Map(Object.keys(facade).map((op) => [
+        op,
+        {
+          kind: options.overrides?.[op]?.kind
+            ?? (op === 'list' || op === 'findById' ? 'query' : 'command'),
+        },
+      ]))
+      : undefined),
   } as never;
 }
 

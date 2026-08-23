@@ -35,6 +35,12 @@ function appOf(adapters: Record<string, boolean> = { rest: true }) {
     }],
     resolve: () => undefined as never,
     facadeFor: (name: string) => (name === 'post' ? facade : undefined),
+    operationsFor: (name: string) => (name === 'post'
+      ? new Map(Object.keys(facade).map((op) => [
+        op,
+        { kind: op === 'list' || op === 'findById' ? 'query' : 'command' },
+      ]))
+      : undefined),
   } as never;
 }
 
