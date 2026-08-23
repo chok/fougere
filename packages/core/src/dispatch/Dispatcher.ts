@@ -1,5 +1,6 @@
 import type { Call } from '../contract/Call.js';
 import { ErrorCode, FougereError } from '../wire/errors.js';
+import { DispatchEvent } from './DispatchEvent.js';
 import { DispatchLifecycle } from './DispatchLifecycle.js';
 import type { DispatchPort } from './DispatchPort.js';
 import type { Route } from './Route.js';
@@ -16,7 +17,7 @@ export class Dispatcher implements DispatchPort {
 
   async dispatch(call: Call): Promise<unknown> {
     let route: Route | undefined;
-    this.lifecycle.publish({ stage: 'received', call });
+    this.lifecycle.publish(DispatchEvent.received(call));
 
     try {
       const known = this.routes.find(call.address);
@@ -26,24 +27,15 @@ export class Dispatcher implements DispatchPort {
         throw this.policy?.notFound?.(call, this.routes.routes()) ?? this.notFound(call);
       }
 
-      this.lifecycle.publish({ stage: 'resolved', call, routeKind: route.kind });
+      this.lifecycle.publish(DispatchEvent.resolved(call, route.kind));
       const result = await route.execute(call);
-      this.lifecycle.publish({ stage: 'completed', call, routeKind: route.kind });
+      this.lifecycle.publish(DispatchEvent.completed(call, route.kind));
       return result;
     } catch (error) {
-      this.lifecycle.publish({
-        stage: 'failed',
-        call,
-        ...(route ? { routeKind: route.kind } : {}),
-        error,
-      });
+      this.lifecycle.publish(DispatchEvent.failed(call, error, route?.kind));
       throw error;
     } finally {
-      this.lifecycle.publish({
-        stage: 'settled',
-        call,
-        ...(route ? { routeKind: route.kind } : {}),
-      });
+      this.lifecycle.publish(DispatchEvent.settled(call, route?.kind));
     }
   }
 

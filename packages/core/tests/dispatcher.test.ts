@@ -31,6 +31,7 @@ describe('Dispatcher', () => {
     expect(execute).toHaveBeenCalledWith(call);
     expect(events.map(({ stage }) => stage))
       .toEqual(['received', 'resolved', 'completed', 'settled']);
+    expect(events.every(Object.isFrozen)).toBe(true);
   });
 
   it('observes resolution failures and always settles', async () => {
