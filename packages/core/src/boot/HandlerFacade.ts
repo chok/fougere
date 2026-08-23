@@ -53,29 +53,9 @@ interface View {
   closed: boolean;
 }
 
-/**
- * The door a handler answers on: its contracts, the view each op emits, and the one call
- * path every caller takes — judge, bind, project, present.
- *
- * A façade is built FROM a handler — that is the whole rule, and the entity is OPTIONAL.
- * An entity is a shape, not a surface: on its own it declares no operation, so it gets no
- * façade and answers nothing. The converse used to be false in fact though true on paper —
- * the boot walked entities, so a handler naming no entity was scanned and then silently
- * never built. An operation about no stored row (`health.check`, a pure computation) is an
- * ordinary case, not a gap to accommodate.
- *
- * Without an entity a façade loses exactly three things, and nothing else: the ORM injected
- * by convention, the output fields to project onto, and the presenter. Its result travels
- * as the handler returned it.
- *
- * It registers nothing. The boot puts `ops` and `contracts` in the container under the
- * audience they belong to; this class knows a scope to RESOLVE from and no more.
- */
+/** Adapts one handler door to executable operations. */
 export class HandlerFacade {
-  /**
-   * The contracts this door serves — resolved once, from the three producers, so nobody
-   * re-derives them and drifts.
-   */
+  /** Contracts served by this door. */
   readonly contracts: OperationsMap;
 
   /** The callable surface: op name → the function a caller reaches. */
@@ -100,43 +80,24 @@ export class HandlerFacade {
     door.scope.register(this.handlerKey, handler.ctor, { deps: this.deps() });
 
     this.contracts = resolveContracts(handler, wiring.overrides, wiring.collectors);
-    // Handed BACK, because "resolved once" was not true elsewhere: the adapters read
-    // `handler.operations` — the scan's raw map — so an op a prefab declared and the
-    // scan never saw reached the façade and no projection. Four of the five CRUD ops
-    // were absent from GraphQL on any installed app.
+    // Keep scan metadata aligned with the executable contract.
     handler.operations = this.contracts;
 
-    /**
-     * Who listens to what — noted HERE because this is where a contract becomes real,
-     * and read from the PLAN rather than from the AST: `{ kind: 'fact' }` is a sentence
-     * `computeBindingPlan` already wrote.
-     *
-     * A subscriber is an ordinary op. It keeps its door, its judge and its middlewares —
-     * an emission and a direct call are the same call, which is why nothing here has to
-     * build a second path.
-     */
+    // Emissions use the same contracts and execution path as direct calls.
     wiring.emissions.note(this.contracts, door.key);
     this.judgeFactsByTheirShape();
 
-    // The surface IS the contract table. A method nobody declared is not an op: it stays
-    // a method, callable from inside, unreachable from the wire.
+    // Only declared operations become callable façade members.
     for (const op of this.contracts.keys()) this.ops[op] = this.wrap(op);
 
     if (this.inheritsCrud && !entity) {
-      // A Crud handler whose subject is not among the scanned entities is either broken
-      // or installed — `Crud(Note)` from a published package is legitimate and the scan
-      // cannot see it (heritage resolution is workspace-only). Refusing at boot would
-      // break the second case to catch the first, so it is said, not thrown.
+      // An installed Crud subject may be absent from the local scan.
       wiring.log.debug(`${handler.ctor.name} extends Crud() and no scanned entity is named `
         + `'${this.ormBase}' — installed entity, or a missing one: no ORM will be injected`);
     }
   }
 
-  /**
-   * The ORM belongs to the SUBJECT, never to the address. `StockHandler extends Crud(Item)`
-   * is called `stock` and reads `Item`; asking for `StockOrm` would be asking the address
-   * for a table. The two coincide in the ordinary case and that is why it went unnoticed.
-   */
+  /** Storage follows the Crud subject, which may differ from the door address. */
   private get ormBase(): string {
     return this.door.entity?.name ?? this.door.handler.address;
   }
@@ -156,13 +117,7 @@ export class HandlerFacade {
     return this.inheritsCrud ? [repositoryKeyOf(this.ormBase)] : [];
   }
 
-  /**
-   * Declaring a constructor turns the automatic injection OFF — the handler now states what
-   * it takes, and that is the whole DI convention. But a Crud handler that forgets to state
-   * its storage used to get `this.orm === undefined` and break on the FIRST REQUEST,
-   * silently: `super()` assigns whatever it was handed. Refused at boot instead, naming the
-   * fix — the clause is deducible, so it is stated, not configured.
-   */
+  /** A custom Crud constructor must explicitly receive its repository. */
   private refuseCrudWithoutRepository(): void {
     const { handler } = this.door;
     const repoTypeName = repositoryKeyOf(this.ormBase);
@@ -175,17 +130,7 @@ export class HandlerFacade {
     );
   }
 
-  /**
-   * A fact is judged on arrival, by the entity it IS.
-   *
-   * The scan never fills `input` from a parameter type, so a subscriber's payload met no
-   * judge at all — tolerable while it came from an emitter in this very process, false the
-   * moment it comes off a wire, from another repository, from an older emitter, or out of a
-   * queue that held it for three days. A fact is an entity: it has a card, `reconstruct`
-   * rebuilds it on the far side, so the same judge stands on both ends.
-   *
-   * A contract that states its own `input` wins: the three producers keep their order.
-   */
+  /** Infer a fact input contract from its announced shape when none is explicit. */
   private judgeFactsByTheirShape(): void {
     for (const [op, contract] of this.contracts) {
       if (contract.input) continue;
@@ -196,13 +141,7 @@ export class HandlerFacade {
     }
   }
 
-  /**
-   * The field set an op's result is projected onto — the view declared for THAT op
-   * (`Crud(Post, { list: PostCard })`), else the handler-wide view (`Crud(Post,
-   * PostPublic)`), else the entity. Each op is the audience of its own view: a public
-   * index emits cards while `bySlug` emits the full row, from one handler reading one
-   * full-row ORM. Resolved once per op, on first call.
-   */
+  /** Resolve and cache the output view declared for one operation. */
   private viewOf(op: string): View {
     const known = this.cachedViews.get(op);
     if (known) return known;
@@ -213,11 +152,8 @@ export class HandlerFacade {
       ?? this.contracts.get(op)?.output
       ?? handler.outputOverride
       ?? (handler.ctor as { __output?: unknown })?.__output
-      // No entity and nothing declared: there is no shape to project onto, so the result
-      // travels as the handler returned it (`encodeFields({}, r)` is `{…r}`).
+      // Without a declared shape, projection preserves the returned object.
       ?? entity?.entityClass) as { getFields?: () => Fields };
-    // A view named for THIS op is a closed list: the author said what this audience gets.
-    // The handler-wide forms already narrow at the ORM.
     const resolved: View = {
       fields: typeof schema?.getFields === 'function' ? schema.getFields() : {},
       closed: perOp !== undefined,
