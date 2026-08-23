@@ -16,6 +16,20 @@ export interface ReceiveHttpOptions extends ReceiveOptions {
   maxBodyBytes?: number;
   /** The path this door answers. Default: `/_fougere/call`. */
   path?: string;
+  /**
+   * Take unsigned calls, deliberately.
+   *
+   * `serve()` reads the decision off the ADDRESS — loopback by default, and widening it
+   * is written down. This door binds nothing: its host mounts it wherever it likes, and a
+   * `Request` arrives with no bound address to consult. So the decision has to be stated,
+   * and the default is the safe one: with no `verify` and no word here, this REFUSES to
+   * be built. A door that starts and then believes whatever `state` it is handed is the
+   * hole `identity.ts` exists to close, and it was open here.
+   *
+   * The one case that legitimately needs it beyond local development is the same as
+   * `serve`'s: something in front already established the peer.
+   */
+  allowUnsigned?: boolean;
 }
 
 const json = (body: unknown, status = 200) =>
@@ -64,6 +78,17 @@ export function receive(
   runner: Transport,
   options: ReceiveHttpOptions = {},
 ): (request: Request) => Promise<Response> {
+  // At CONSTRUCTION and not per call, for the reason `serve` refuses at bind: a receiver
+  // that starts and then rejects everything is found in production.
+  if (!options.verify && !options.allowUnsigned) {
+    throw new Error(
+      'A Fougere receiver takes the `state` it is handed, so this door needs to know who is calling.\n'
+      + '  Wire `verify` (see `verifyEnvelope`, and `fougere keys` / `fougere grant`),\n'
+      + '  or say `allowUnsigned: true` — which is right for local development and for a\n'
+      + '  mesh whose sidecar already established the peer.',
+    );
+  }
+
   const max = options.maxBodyBytes ?? MAX_BODY_BYTES;
   const path = options.path ?? CALL_PATH;
 
