@@ -7,8 +7,7 @@
     "dev": "nuxt dev --port 3010",
     "build": "NITRO_PRESET=cloudflare_module nuxt build",
     "preview": "pnpm build && wrangler dev .output/server/index.mjs --assets .output/public",
-    "deploy": "pnpm build && wrangler deploy .output/server/index.mjs --assets .output/public",
-    "typecheck": "tsc -p fronds"
+    "deploy": "pnpm build && wrangler deploy .output/server/index.mjs --assets .output/public"
   },
   "dependencies": {
     "@fougere/container": "workspace:*",

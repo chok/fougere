@@ -7,6 +7,12 @@
  * a live object that exists only in this process. The generated plugin states the scan
  * and the config, both known at build; this states the transport, which is not.
  *
+ * NOT TYPECHECKED, and the repo's other consumer is not either: every name here is
+ * Nuxt's — `defineNitroPlugin`, the auto-imported `extendFougere`, the `cloudflare:`
+ * module — and none of them exists outside the scaffolding `nuxt prepare` writes, which
+ * has no server tsconfig to extend in Nuxt 4.5. A frond needs none of that, which is why
+ * `tsc -p fronds` works everywhere a frond exists and nowhere a consumer does.
+ *
  * `extendFougere` and not `configureFougere`: the generated plugin already spoke, and
  * replacing its word would throw away the scan. It is auto-imported — the module calls
  * `addServerImportsDir` on its own server utils, which is how a bare name resolves here
