@@ -15,7 +15,7 @@
  * at the stand-in it leaves from. That is why the numbers line up across processes, and
  * why the difference between the two spans is what the wire cost.
  */
-import { AsyncLocalStorage } from 'node:async_hooks';
+import { traceContext } from '#trace-context';
 import type { AppMiddleware } from '@fougere/core';
 import { parseTraceparent, traceparentOf, randomHex, type SpanContext } from './traceparent.js';
 
@@ -67,12 +67,16 @@ export type SpanSink = (span: FinishedSpan) => void;
  * It exists for the call the wire cannot describe: a handler reaching a second frond
  * builds a fresh invocation, so the parent is not on that call — it is in the context
  * the first one is still running inside.
+ *
+ * Behind `#trace-context` because that context is a runtime capability, not ours: a
+ * Worker has none unless the deployment asks. `traceContext.ambient` says which one is
+ * running, and `trace()` reports it once at install rather than letting a reader
+ * discover it in a trace viewer.
  */
-const current = new AsyncLocalStorage<Running>();
 
 /** The step running right now, if any. */
 export function currentSpan(): SpanContext | undefined {
-  return current.getStore();
+  return traceContext.current<Running>();
 }
 
 /**
@@ -116,7 +120,7 @@ export function trace(): AppMiddleware {
     // The wire first, the ambient context second: an arriving call names its parent on
     // the invocation, an outgoing one inherits from the call it is made inside.
     const inherited = parseTraceparent(ctx.invocation?.trace);
-    const ambient = current.getStore();
+    const ambient = traceContext.current<Running>();
     const parent = inherited ?? ambient;
     const span: Running = {
       traceId: parent?.traceId ?? randomHex(16),
@@ -158,7 +162,7 @@ export function trace(): AppMiddleware {
       for (const take of sinks) { try { take(done); } catch { /* observing never refuses */ } }
     };
 
-    return current.run(span, async () => {
+    return traceContext.within(span, async () => {
       try {
         const result = await next();
         finish(undefined);
