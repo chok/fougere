@@ -7,6 +7,7 @@
  */
 import type { Container } from '@fougere/container';
 import type { Fronds } from '../scan/Fronds.js';
+import type { ScanResult } from '../scan/frond.js';
 import type { SchemaView } from '@fougere/schema';
 import type { OrmFactory } from '../orm.js';
 import type { AppMiddleware } from '../wire/middleware.js';
@@ -16,8 +17,6 @@ import type { AuthConfig, AuthRuntime } from './auth.js';
 
 /** Options for createApp(). */
 export interface CreateAppOptions {
-  /** Project root directory. Defaults to process.cwd(). */
-  root?: string;
   /** Factory function to create the container. Required. */
   createContainer: () => Container;
   /** Factory to auto-generate EntityOrm for each scanned entity. */
@@ -45,8 +44,15 @@ export interface CreateAppOptions {
    * name would make the reader resolve the schema a second time.
    */
   sourcesFactory?: (reads: unknown[], frond: string) => Promise<unknown> | unknown;
-  /** Only load these fronds (by name). If absent, load all. */
-  fronds?: string[];
+  /**
+   * What this app is built from — required, because producing it is what reads a disk.
+   *
+   * `scanProject` (`@fougere/core/node`) reads the fronds off the filesystem; a module a
+   * build wrote holds the same value with no disk at all. `createApp` cannot tell them
+   * apart, and that is the point: it names no builtin, so a runtime without `node:fs`
+   * runs it. `root` and `fronds` used to live here — both were arguments to the scan.
+   */
+  scan: ScanResult | (() => Promise<ScanResult> | ScanResult);
   /**
    * Remote fronds — label → address. What each remote hosts is discovered
    * at the first miss (rpc.discover), never declared here.

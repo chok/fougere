@@ -9,13 +9,12 @@
  * importer anywhere in the workspace.
  */
 export { createApp } from './boot/bootstrap.js';
-export { boot } from './boot/boot.js';
 export { orderSeeds, runSeeds, seeding } from './boot/seed.js';
 export { Lifecycle, migrating } from './boot/Lifecycle.js';
 export type { Extension } from './boot/Lifecycle.js';
 export { defineFougere } from './define.js';
-export { loadConfig, loadCascadedConfig, type AdapterConfig, type FougereConfig } from './config-loader.js';
-export { defineFrond, type FrondConfig, type OperationOverride } from './frond-config.js';
+export type { AdapterConfig, FougereConfig } from './config-loader.js';
+export type { FrondConfig, OperationOverride } from './frond-config.js';
 export { buildGraph, clusterEntities, suggestSplit, type EntityNode, type DomainCluster } from './graph.js';
 export { Crud } from './prefab/crud.js';
 export type { CrudOps, CrudOpName, CrudViews, CrudConstructor } from './prefab/crud.js';
@@ -29,7 +28,7 @@ export type { InvocationContext } from './wire/invocation.js';
 export { EMPTY_INVOCATION } from './wire/invocation.js';
 export { resolveIsReadOp, resolveContracts } from './wire/operation.js';
 export type { OperationContract, OperationsMap } from './wire/operation.js';
-export { scanProject, frondAliases, FROND_DIRS, setModuleLoader, type ModuleLoader } from './scan/scanner.js';
+export type { ModuleLoader } from './loader.js';
 export { FougereError, ErrorCode, validationErrorsOf, type FougereErrorOptions } from './wire/errors.js';
 export type { OperationContext, AppNext, AppMiddleware } from './wire/middleware.js';
 export { createLocalRunner, createAppRunner, assertIdentityCard } from './wire/call.js';
@@ -68,7 +67,9 @@ export type { AuthConfig, AuthContext, AuthRuntime } from './boot/auth.js';
 export { Fronds } from './scan/Fronds.js';
 export { verify, assertSplittable, type Violation } from './verify.js';
 // Same question as verify(), answered from the source text instead of the model.
-export { crossFrondImports, type CrossFrondImport } from './imports.js';
+export type { CrossFrondImport } from './imports.js';
 // Who is calling, established rather than accepted — the proof beside `state`'s claim.
-export { generateKeyPair, issueGrant, signEnvelope, verifyEnvelope, identityFromEnv } from './identity.js';
+// `generateKeyPair` and `issueGrant` are NOT here: they make keys at a deployment and
+// need `node:crypto` for a gesture WebCrypto has no equal of. They sit on `/node`.
+export { signEnvelope, verifyEnvelope, identityFromEnv } from './identity.js';
 export type { FrondIdentity, VerifiedCall, CallIdentity, SignedCall } from './identity.js';

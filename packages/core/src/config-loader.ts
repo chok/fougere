@@ -2,7 +2,7 @@ import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
 import type { AuthConfig } from './boot/auth.js';
 import type { LogLevel } from './builtins/logger.js';
-import { getModuleLoader } from './scan/scanner.js';
+import { getModuleLoader } from './loader.js';
 
 // ── Types ────────────────────────────────────────
 

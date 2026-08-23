@@ -1,7 +1,6 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { existsSync, type Dirent } from 'node:fs';
 import { join, dirname, basename, resolve as resolvePath } from 'node:path';
-import { pathToFileURL } from 'node:url';
 import type { FrondDescriptor, ProviderEntry, EntityEntry, HandlerEntry, PresenterEntry, CollectorEntry, SeedEntry, ScanResult, ScanDiagnostic } from './frond.js';
 import { ANONYMOUS_SCHEMA_NAME, type SchemaView } from '@fougere/schema';
 import type { OperationContract, OperationsMap } from '../wire/operation.js';
@@ -15,38 +14,7 @@ import { ormKeyOf, togetherKeyOf } from '../orm.js';
 import { targetOf, viewsOf, outputOf } from '../prefab/prefab.js';
 import { registrationKeyOf } from '@fougere/schema';
 import { Fronds } from './Fronds.js';
-
-/**
- * Module loader — can be swapped (e.g. jiti for TS files in Nuxt context).
- *
- * `fresh` asks for a file that may have changed since it was last read. Every loader
- * caches, so without it a second read of an EDITED file hands back the first one —
- * which is what re-reading a config is for. A loader that cannot honour it may ignore
- * the flag; it then answers with what it already had.
- */
-export type ModuleLoader = (
-  filePath: string,
-  options?: { fresh?: boolean },
-) => Promise<Record<string, unknown>>;
-
-const defaultLoader: ModuleLoader = async (filePath, options) => {
-  // On the URL, never on the path: `pathToFileURL` percent-encodes a `?` into the
-  // filename, and the import then looks for a file whose name ends in `%3Fv=…`.
-  const url = pathToFileURL(filePath).href;
-  return await import(options?.fresh ? `${url}?v=${Date.now()}` : url);
-};
-
-let activeLoader: ModuleLoader = defaultLoader;
-
-/** Override the module loader used by the scanner (e.g. for jiti/tsx support). */
-export function setModuleLoader(loader: ModuleLoader): void {
-  activeLoader = loader;
-}
-
-/** Used by config-loader to load fougere.config.ts via the same TS-aware loader. */
-export function getModuleLoader(): ModuleLoader {
-  return activeLoader;
-}
+import { getModuleLoader } from '../loader.js';
 
 // FS
 
@@ -103,7 +71,7 @@ async function files(path: string): Promise<string[]> {
 // Module
 
 async function loadModule(filePath: string): Promise<Record<string, unknown>> {
-  return await activeLoader(filePath);
+  return await getModuleLoader()(filePath);
 }
 
 async function loadDefault(filePath: string): Promise<unknown> {

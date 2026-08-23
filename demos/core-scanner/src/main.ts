@@ -1,10 +1,11 @@
+import { scanProject } from '@fougere/core/node';
 import { createApp } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { join } from 'node:path';
 import type { Container } from '@fougere/container';
 
 const app = await createApp({
-  root: join(import.meta.dirname, '..'),
+  scan: await scanProject(join(import.meta.dirname, '..')),
   createContainer,
 });
 

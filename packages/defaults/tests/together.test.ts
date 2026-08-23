@@ -6,6 +6,7 @@
  * either way, that only the isolation differs, and that the difference is announced
  * rather than discovered.
  */
+import { scanProject } from '@fougere/core/node';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
@@ -13,7 +14,7 @@ import { tmpdir } from 'node:os';
 import { createApp, createLocalRunner, togetherKeyOf } from '@fougere/core';
 import { EMPTY_INVOCATION } from '@fougere/core/contract';
 import { createContainer } from '@fougere/container';
-import { setupSqlite } from '@fougere/adapter-sql';
+import { setupSqlite } from '@fougere/adapter-sql/sqlite';
 import { storageFrom } from '../src/storage.js';
 
 const root = join(import.meta.dirname, 'fixtures-together');
@@ -38,7 +39,7 @@ async function boot(split: boolean) {
   const spies = (['debug', 'info', 'log', 'warn', 'error'] as const)
     .map((method) => vi.spyOn(console, method).mockImplementation(take));
   const app = await createApp({
-    root,
+    scan: await scanProject(root),
     createContainer,
     ormFactory: storage.ormFactory,
     sourceOf: storage.sourceOf,
@@ -223,7 +224,7 @@ describe('what a frame refuses at boot', () => {
     const storage = storageFrom({ db: setupSqlite({ path: join(dir, 'app.db') }) });
     try {
       await createApp({
-        root: join(import.meta.dirname, fixture),
+        scan: await scanProject(join(import.meta.dirname, fixture)),
         createContainer,
         ormFactory: storage.ormFactory,
         sourceOf: storage.sourceOf,

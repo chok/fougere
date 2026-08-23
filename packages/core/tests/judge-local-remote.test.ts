@@ -10,6 +10,7 @@
  * façade in this process, once to a façade reached through a transport. The two
  * verdicts are compared as VALUES, not eyeballed.
  */
+import { scanProject } from '../src/node.js';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
@@ -48,7 +49,7 @@ const ormFactory: OrmFactory = () => {
 /** Stands in for the wire: the other app's own runner, called in memory. */
 async function shopOnAnotherProcess(): Promise<Transport> {
   // Plain `const` — this app must outlive the function that builds it.
-  const host = await createApp({ root, createContainer, ormFactory });
+  const host = await createApp({ scan: await scanProject(root), createContainer, ormFactory });
   return createLocalRunner(host);
 }
 
@@ -123,13 +124,12 @@ const CASES: { name: string; op: string; body: unknown }[] = [
 
 describe('juge local = juge distant', () => {
   it('returns the same verdict on both sides, case by case', async () => {
-    await using local = await createApp({ root, createContainer, ormFactory });
+    await using local = await createApp({ scan: await scanProject(root), createContainer, ormFactory });
     const remoteTransport = await shopOnAnotherProcess();
     await using consumer = await createApp({
-      root,
+      scan: await scanProject(root, []),
       createContainer,
       ormFactory,
-      fronds: [],
       remotes: { shop: 'stub://shop' },
       remoteTransport: () => remoteTransport,
     });
@@ -170,7 +170,7 @@ describe('what a refusal names', () => {
     // shape of the claim is what matters: an entity the app does not serve must not be
     // listed as hosted. The message used to print `entityNames()` — every scanned class —
     // so it answered "not hosted here. Hosted here: <the very name>."
-    await using app = await createApp({ root, createContainer, ormFactory });
+    await using app = await createApp({ scan: await scanProject(root), createContainer, ormFactory });
 
     await expect(
       createLocalRunner(app)({ entity: 'nowhere', op: 'list' }, EMPTY_INVOCATION),

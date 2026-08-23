@@ -6,8 +6,9 @@
  */
 import { createServer } from 'node:http';
 import type { Transport } from '@fougere/core';
-import { PARSE_ERROR, type RpcResponse } from './jsonrpc.js';
+import type { RpcResponse } from './jsonrpc.js';
 import { handleRpc, type ReceiveOptions } from './server.js';
+import { MAX_BODY_BYTES, CALL_PATH, parseError, tooLarge } from './policy.js';
 
 export interface ServeOptions extends ReceiveOptions {
   /** Port to listen on. 0 (default) picks a free one. */
@@ -84,9 +85,9 @@ export function serve(runner: Transport, options: ServeOptions = {}): Promise<Ru
     );
   }
 
-  const maxBodyBytes = options.maxBodyBytes ?? 1024 * 1024;
+  const maxBodyBytes = options.maxBodyBytes ?? MAX_BODY_BYTES;
   const server = createServer(async (req, res) => {
-    if (req.method !== 'POST' || req.url !== '/_fougere/call') {
+    if (req.method !== 'POST' || req.url !== CALL_PATH) {
       res.writeHead(404).end();
       return;
     }
@@ -97,7 +98,7 @@ export function serve(runner: Transport, options: ServeOptions = {}): Promise<Ru
       const chunk = Buffer.from(value as Uint8Array);
       size += chunk.length;
       if (size > maxBodyBytes) {
-        res.writeHead(413, { 'content-type': 'application/json' }).end(JSON.stringify({ error: 'Payload too large' }));
+        res.writeHead(413, { 'content-type': 'application/json' }).end(JSON.stringify(tooLarge()));
         return;
       }
       chunks.push(chunk);
@@ -108,7 +109,7 @@ export function serve(runner: Transport, options: ServeOptions = {}): Promise<Ru
       const raw = JSON.parse(Buffer.concat(chunks).toString('utf8'));
       response = await handleRpc(runner, raw, options);
     } catch {
-      response = { jsonrpc: '2.0', id: null, error: { code: PARSE_ERROR, message: 'Parse error' } };
+      response = parseError();
     }
     res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(response));
   });

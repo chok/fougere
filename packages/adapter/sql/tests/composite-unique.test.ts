@@ -7,7 +7,8 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { entity, primary, text, created } from '@fougere/schema';
-import { setupSqlite, autoMigrate, toTable, type SqliteSetup } from '../src/index.js';
+import { autoMigrate, toTable } from '../src/index.js';
+import { setupSqlite, type SqliteSetup } from '../src/sqlite.js';
 
 class ListBook extends entity(
   {

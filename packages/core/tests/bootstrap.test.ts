@@ -1,3 +1,4 @@
+import { scanProject } from '../src/node.js';
 import { describe, it, expect, vi } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
@@ -35,19 +36,19 @@ function fakeOrm(overrides: Partial<EntityOrm> = {}): EntityOrm {
 
 describe('createApp', () => {
   it('registers builtins', async () => {
-    await using app = await createApp({ root: fixturesRoot, createContainer });
+    await using app = await createApp({ scan: await scanProject(fixturesRoot), createContainer });
     expect(app.container.has('Logger')).toBe(true);
     expect(app.container.has('Config')).toBe(true);
   });
 
   it('discovers fronds', async () => {
-    await using app = await createApp({ root: fixturesRoot, createContainer });
+    await using app = await createApp({ scan: await scanProject(fixturesRoot), createContainer });
     const names = app.fronds.map((f) => f.name).sort();
     expect(names).toEqual(['catalog', 'inventory', 'orders']);
   });
 
   it('registers frond scopes accessible from root', async () => {
-    await using app = await createApp({ root: fixturesRoot, createContainer });
+    await using app = await createApp({ scan: await scanProject(fixturesRoot), createContainer });
     const ordersScope = app.resolve<Container>('frond:orders');
     expect(ordersScope).toBeDefined();
     expect(ordersScope.has('OrderService')).toBe(true);
@@ -55,7 +56,7 @@ describe('createApp', () => {
   });
 
   it('resolves providers from frond scope with builtins', async () => {
-    await using app = await createApp({ root: fixturesRoot, createContainer });
+    await using app = await createApp({ scan: await scanProject(fixturesRoot), createContainer });
     const ordersScope = app.resolve<Container>('frond:orders');
     const service = ordersScope.resolve('OrderService');
     expect(service).toBeDefined();
@@ -63,7 +64,7 @@ describe('createApp', () => {
 
   it('works with no fronds directory', async () => {
     await using app = await createApp({
-      root: '/tmp/nonexistent-fougere-test',
+      scan: await scanProject('/tmp/nonexistent-fougere-test'),
       createContainer,
     });
     expect(app.fronds).toEqual([]);
@@ -71,7 +72,7 @@ describe('createApp', () => {
   });
 
   it('resolve shortcut delegates to container', async () => {
-    await using app = await createApp({ root: fixturesRoot, createContainer });
+    await using app = await createApp({ scan: await scanProject(fixturesRoot), createContainer });
     const logger = app.resolve('Logger');
     expect(logger).toBeDefined();
   });
@@ -87,7 +88,7 @@ describe('createApp on a flat project', () => {
 
   it('hosts the root frond and answers an operation', async () => {
     const orm = fakeOrm({ list: vi.fn(async () => [{ id: '1', name: 'Fern', price: 12.5 }]) });
-    await using app = await createApp({ root: flatRoot, createContainer, ormFactory: () => orm });
+    await using app = await createApp({ scan: await scanProject(flatRoot), createContainer, ormFactory: () => orm });
 
     expect(app.fronds.map((f) => f.name)).toEqual(['shop']);
     const scope = app.resolve<Container>('frond:shop');
@@ -104,7 +105,7 @@ describe('createApp + ormFactory', () => {
     const orm = fakeOrm();
     const ormFactory: OrmFactory = vi.fn(() => orm);
 
-    await using app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
+    await using app = await createApp({ scan: await scanProject(fixturesRoot), createContainer, ormFactory });
     const catalogScope = app.resolve<Container>('frond:catalog');
 
     // Both entities get an orm
@@ -121,7 +122,7 @@ describe('createApp + ormFactory', () => {
     const orm = fakeOrm();
     const ormFactory: OrmFactory = vi.fn(() => orm);
 
-    await using app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
+    await using app = await createApp({ scan: await scanProject(fixturesRoot), createContainer, ormFactory });
 
     // Should have been called for Brand, Item, and Product
     expect(ormFactory).toHaveBeenCalledTimes(3);
@@ -130,7 +131,7 @@ describe('createApp + ormFactory', () => {
   });
 
   it('skips orm registration when no ormFactory provided', async () => {
-    await using app = await createApp({ root: fixturesRoot, createContainer });
+    await using app = await createApp({ scan: await scanProject(fixturesRoot), createContainer });
     const catalogScope = app.resolve<Container>('frond:catalog');
 
     expect(catalogScope.has('BrandOrm')).toBe(false);
@@ -142,7 +143,7 @@ describe('handler facades', () => {
     const orm = fakeOrm();
     const ormFactory: OrmFactory = vi.fn(() => orm);
 
-    await using app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
+    await using app = await createApp({ scan: await scanProject(fixturesRoot), createContainer, ormFactory });
 
     expect(app.container.has('productHandler')).toBe(true);
     // Brand is an entity with no handler — a shape, not a surface.
@@ -153,7 +154,7 @@ describe('handler facades', () => {
     const orm = fakeOrm();
     const ormFactory: OrmFactory = vi.fn(() => orm);
 
-    await using app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
+    await using app = await createApp({ scan: await scanProject(fixturesRoot), createContainer, ormFactory });
 
     // ProductHandler has static operations = ['list', 'findById']
     const productHandler = app.resolve<Record<string, Function>>('productHandler');
@@ -168,7 +169,7 @@ describe('handler facades', () => {
     const orm = fakeOrm();
     const ormFactory: OrmFactory = vi.fn(() => orm);
 
-    await using app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
+    await using app = await createApp({ scan: await scanProject(fixturesRoot), createContainer, ormFactory });
 
     // Brand is scanned, gets its ORM, and answers nothing: exposing it would be
     // the framework deciding, for the author, that its rows are public.
@@ -185,7 +186,7 @@ describe('handler facades', () => {
     });
     const ormFactory: OrmFactory = vi.fn(() => orm);
 
-    await using app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
+    await using app = await createApp({ scan: await scanProject(fixturesRoot), createContainer, ormFactory });
     // ItemHandler extends Crud(Item) — it declares the five by inheriting them.
     const itemHandler = app.resolve<Record<string, Function>>('itemHandler');
 
@@ -198,7 +199,7 @@ describe('handler facades', () => {
     const orm = fakeOrm({ list: vi.fn(async () => [{ id: 'from-orm' }]) });
     const ormFactory: OrmFactory = vi.fn(() => orm);
 
-    await using app = await createApp({ root: fixturesRoot, createContainer, ormFactory });
+    await using app = await createApp({ scan: await scanProject(fixturesRoot), createContainer, ormFactory });
 
     // Product has a custom ProductService → handler is instantiated with service as delegate
     const productHandler = app.resolve<Record<string, Function>>('productHandler');
@@ -217,7 +218,7 @@ describe('a Crud handler that declares a constructor', () => {
   const trapRoot = join(import.meta.dirname, 'fixtures-ctor-trap');
 
   it('is refused at boot when it does not take its ORM, and the message says how', async () => {
-    const boot = createApp({ root: trapRoot, createContainer, ormFactory: () => fakeOrm() });
+    const boot = createApp({ scan: await scanProject(trapRoot), createContainer, ormFactory: () => fakeOrm() });
     await expect(boot).rejects.toThrow(/ItemHandler extends Crud\(\)/);
     await expect(boot).rejects.toThrow(/constructor\(orm: ItemOrm, …\) \{ super\(orm\); \}/);
   });

@@ -2,6 +2,7 @@
  * The third signal, and the property that makes it one: a line written inside a call
  * leaves with that call's trace id. Without it, exporting logs only moves them.
  */
+import { scanProject } from '@fougere/core/node';
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import { join } from 'node:path';
 import { createApp, Logger, onLog, setLogLevel } from '@fougere/core';
@@ -18,7 +19,7 @@ let app: App;
 const undo: Array<() => void> = [];
 
 beforeAll(async () => {
-  app = await createApp({ root: fixturesDir, createContainer, ormFactory: createOrmFactory() });
+  app = await createApp({ scan: await scanProject(fixturesDir), createContainer, ormFactory: createOrmFactory() });
   app.use(trace());
 }, 30_000);
 

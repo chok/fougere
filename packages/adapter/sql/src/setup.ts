@@ -1,15 +1,13 @@
 /**
- * Storage setup — convention for SQLite, an escape hatch for the rest.
+ * Storage setup — the shape every engine answers, and no driver at all.
  *
- * SQLite is the default a first run meets, so it gets a concrete helper that
- * owns its driver. Every other engine needs a driver Fougere has no business
- * choosing (`pg`, `mysql2`, `tedious`), so the caller builds the Kysely dialect
- * and hands it over — no dynamic import, no optional dependency.
+ * Fougere has no business choosing a driver (`pg`, `mysql2`, `tedious`, `better-sqlite3`,
+ * a D1 binding), so the caller builds the Kysely dialect and hands it over — no dynamic
+ * import, no optional dependency. This file therefore reaches for nothing: it is what a
+ * runtime with no filesystem imports. The one driver this package does own lives behind
+ * `@fougere/adapter-sql/sqlite`.
  */
-import { mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
-import { Kysely, SqliteDialect, sql, type Dialect as KyselyDialect } from 'kysely';
-import Database from 'better-sqlite3';
+import { Kysely, sql, type Dialect as KyselyDialect } from 'kysely';
 import { createOrmFactory, type OrmFactoryOptions } from './crud.js';
 import type { DialectName } from './dialect.js';
 import type { SqlSink } from './ddl.js';
@@ -17,11 +15,6 @@ import type { SqlSink } from './ddl.js';
 export interface SetupOptions {
   /** Override naming for specific entities (e.g. better-auth wants singular table names). */
   ormFactoryOptions?: OrmFactoryOptions;
-}
-
-export interface SqliteSetupOptions extends SetupOptions {
-  /** Filesystem path to the database. Defaults to a project-local file. */
-  path?: string;
 }
 
 export interface Setup {
@@ -48,11 +41,6 @@ export interface Setup {
   transacted<R>(fn: (ormFactory: ReturnType<typeof createOrmFactory>) => Promise<R>): Promise<R>;
 }
 
-export interface SqliteSetup extends Setup {
-  /** The raw handle, for pragmas and synchronous exec. */
-  sqlite: Database.Database;
-}
-
 /** A sink that runs statements through Kysely — works on every engine. */
 export function sqlSink(db: Kysely<any>): SqlSink {
   return { execute: (statement: string) => sql.raw(statement).execute(db) };
@@ -71,23 +59,5 @@ export function setupKysely(
     ormFactory: createOrmFactory(db, opts.ormFactoryOptions, dialect),
     sink: sqlSink(db),
     transacted: (fn) => db.transaction().execute((trx) => fn(createOrmFactory(trx, opts.ormFactoryOptions, dialect))),
-  };
-}
-
-export function setupSqlite(opts: SqliteSetupOptions = {}): SqliteSetup {
-  const path = opts.path ?? 'fougere.db';
-  // A file-backed DB needs its directory — SQLite won't create it.
-  if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
-  const sqlite = new Database(path);
-  sqlite.pragma('journal_mode = WAL');
-  sqlite.pragma('foreign_keys = ON');
-  const db = new Kysely<any>({ dialect: new SqliteDialect({ database: sqlite }) });
-  return {
-    db,
-    sqlite,
-    dialect: 'sqlite',
-    ormFactory: createOrmFactory(db, opts.ormFactoryOptions, 'sqlite'),
-    sink: sqlSink(db),
-    transacted: (fn) => db.transaction().execute((trx) => fn(createOrmFactory(trx, opts.ormFactoryOptions, 'sqlite'))),
   };
 }

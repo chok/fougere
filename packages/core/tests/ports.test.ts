@@ -6,6 +6,7 @@
  * runtime TypeError, from a signature TypeScript had blessed. Nothing was missing;
  * the wrong thing answered.
  */
+import { scanProject } from '../src/node.js';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer, type Container } from '@fougere/container';
@@ -17,7 +18,7 @@ const two = join(import.meta.dirname, 'fixtures-ports-two');
 
 describe('a port declared by extension', () => {
   it('hands the handler the implementation, not the base it declared', async () => {
-    await using app = await createApp({ root: one, createContainer });
+    await using app = await createApp({ scan: await scanProject(one), createContainer });
 
     const out = await createLocalRunner(app)({ entity: 'checkout', op: 'pay' }, EMPTY_INVOCATION);
 
@@ -25,7 +26,7 @@ describe('a port declared by extension', () => {
   });
 
   it('leaves a class that extends nothing scanned under its own name only', async () => {
-    await using app = await createApp({ root: one, createContainer });
+    await using app = await createApp({ scan: await scanProject(one), createContainer });
     const scope = app.resolve<Container>('frond:billing');
 
     // Registered, as before. And it opened no second key: nothing extends it.
@@ -34,7 +35,7 @@ describe('a port declared by extension', () => {
   });
 
   it('still answers under the implementation\'s own name', async () => {
-    await using app = await createApp({ root: one, createContainer });
+    await using app = await createApp({ scan: await scanProject(one), createContainer });
     const scope = app.resolve<Container>('frond:billing');
 
     const direct = scope.resolve<{ charge(n: number): { provider: string } }>('StripePayment');
@@ -47,15 +48,15 @@ describe('a port declared by extension', () => {
 
 describe('two implementations of one port', () => {
   it('refuses at boot, naming both and the remedy', async () => {
-    await expect(createApp({ root: two, createContainer })).rejects.toThrow(
+    await expect(createApp({ scan: await scanProject(two), createContainer })).rejects.toThrow(
       /OgonePayment|StripePayment/,
     );
-    await expect(createApp({ root: two, createContainer })).rejects.toThrow(/ports: \{ Payment:/);
+    await expect(createApp({ scan: await scanProject(two), createContainer })).rejects.toThrow(/ports: \{ Payment:/);
   });
 
   it('is settled by `ports:`, and the handler charges through the named one', async () => {
     await using app = await createApp({
-      root: two,
+      scan: await scanProject(two),
       createContainer,
       ports: { Payment: 'OgonePayment' },
     });
@@ -67,7 +68,7 @@ describe('two implementations of one port', () => {
 
   it('refuses a `ports:` entry naming a class that does not extend the port', async () => {
     await expect(
-      createApp({ root: two, createContainer, ports: { Payment: 'Mailer' } }),
+      createApp({ scan: await scanProject(two), createContainer, ports: { Payment: 'Mailer' } }),
     ).rejects.toThrow(/does not extend it/);
   });
 });
@@ -76,7 +77,7 @@ describe('a framework builtin is a port too', () => {
   const overridden = join(import.meta.dirname, 'fixtures-logger-override');
 
   it('hands the handler the declared subclass, not the default Logger', async () => {
-    await using app = await createApp({ root: overridden, createContainer });
+    await using app = await createApp({ scan: await scanProject(overridden), createContainer });
 
     const out = await createLocalRunner(app)({ entity: 'report', op: 'run' }, EMPTY_INVOCATION);
 
@@ -84,14 +85,14 @@ describe('a framework builtin is a port too', () => {
   });
 
   it('leaves the default in place for a frond that declares none', async () => {
-    await using app = await createApp({ root: one, createContainer });
+    await using app = await createApp({ scan: await scanProject(one), createContainer });
 
     expect(app.resolve<object>('Logger').constructor.name).toBe('Logger');
   });
 
   it('never treats a prefab base as a port — a repository is not one', async () => {
     const repo = join(import.meta.dirname, 'fixtures-repository');
-    await using app = await createApp({ root: repo, createContainer });
+    await using app = await createApp({ scan: await scanProject(repo), createContainer });
     const scope = app.resolve<Container>('frond:mesures');
 
     expect(scope.has('RepositoryBase')).toBe(false);

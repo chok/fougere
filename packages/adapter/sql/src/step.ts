@@ -12,6 +12,7 @@
  */
 import { sql, type Kysely } from 'kysely';
 import type { Change as ShapeChange, SetDiff } from '@fougere/schema';
+import { same } from '@fougere/schema';
 import { compiler } from './ddl.js';
 import { type DialectName } from './dialect.js';
 import { toSnakeCase, toTableName, type TableDef } from './table.js';
@@ -236,7 +237,6 @@ function restated(entity: string, change: Extract<ShapeChange, { kind: 'restated
   return {};
 }
 
-const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
 
 /** The value a lifecycle declares at create, when it declares one — what reaches DEFAULT. */
 function literalOf(rules: { create?: unknown } | undefined): unknown {

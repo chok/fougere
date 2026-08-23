@@ -17,6 +17,7 @@
 import type { BoundaryRef } from '../axis/boundary/Boundary.js';
 import type { LifecycleRules } from '../axis/lifecycle/Lifecycle.js';
 import type { FieldDescriptor, FieldExtension, RoleDescriptor, SchemaBundle, SchemaDescriptor } from './Descriptor.js';
+import { same } from '../same.js';
 
 /** One named difference, at one place. Each kind exists because a reader asks for it. */
 export type Change =
@@ -102,7 +103,6 @@ function boundsOf(descriptor: FieldDescriptor): Record<string, unknown> {
   return rest;
 }
 
-const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
 
 /**
  * What separates two shapes.
@@ -185,7 +185,14 @@ function candidates(
       if (same(shapeOf(before[gone]), shapeOf(after[appeared]))) found.push({ removed: gone, added: appeared });
     }
   }
-  return found;
+
+  // Nearest first: a rename usually leaves the field where it was, so the declaration's
+  // own order ranks the pairs. It ORDERS them and decides nothing — the list is whole.
+  const was = Object.keys(before);
+  const now = Object.keys(after);
+  const apart = ({ removed: gone, added: appeared }: RenameCandidate): number =>
+    Math.abs(now.indexOf(appeared) - was.indexOf(gone));
+  return found.sort((a, b) => apart(a) - apart(b));
 }
 
 /**

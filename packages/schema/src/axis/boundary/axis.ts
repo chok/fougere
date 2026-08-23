@@ -1,5 +1,5 @@
 import type { Axis } from '../Axis.js';
-import { isObject } from '../../judge/form.js';
+import { admitWire, isObject } from '../../judge/form.js';
 import type { BoundaryRef } from './Boundary.js';
 
 export const boundaryAxis: Axis<BoundaryRef, BoundaryRef> = {
@@ -24,5 +24,8 @@ export const boundaryAxis: Axis<BoundaryRef, BoundaryRef> = {
   },
 
   describe: (value) => value,
-  reconstruct: (wire) => wire,
+  reconstruct: (wire) => {
+    admitWire(boundaryAxis.judge, wire, 'boundary');
+    return wire;
+  },
 };

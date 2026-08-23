@@ -1,14 +1,10 @@
-import { readFile, readdir } from 'node:fs/promises';
-import { join } from 'node:path';
-import { loadConfig } from '@fougere/core';
+import { loadConfig } from '@fougere/core/node';
 import { resolveStorage } from '@fougere/defaults';
 import { actualState, desiredTables, planStep, collapseChain, applyStep, type Plan, type StepChange } from '@fougere/adapter-sql';
 import type { SetDiff } from '@fougere/schema';
 import ProjectScan from '../services/ProjectScan.js';
+import { chainOf } from '../versions.js';
 import type Migrate from '../entities/Migrate.js';
-
-/** Beside the frond's source, and committed — see `FreezeHandler`. */
-const VERSIONS = 'versions';
 
 export interface MigrationPlan {
   /** Versions whose step was read, oldest first. */
@@ -37,7 +33,7 @@ export default class MigrateHandler {
   /** Realise the frozen steps this database has not caught up with. */
   async execute(input: Migrate): Promise<MigrationPlan> {
     const scan = await this.projectScan.at(input.root ?? undefined);
-    const perFrond = await Promise.all(scan.fronds.map((frond) => chainOf(frond.source.path)));
+    const perFrond = await Promise.all(scan.fronds.map((frond) => stepsOf(frond.source.path)));
     const steps = perFrond.flat();
     if (steps.length === 0) return { chain: [], changes: [], refusals: [], ran: [] };
 
@@ -94,19 +90,8 @@ function onSource(step: SetDiff, source: string, sourceOf: (entity: string) => s
 }
 
 /** Every recorded step, oldest first — the chain composes, so it is replayed whole. */
-async function chainOf(frondPath: string): Promise<Array<{ version: string; step: SetDiff }>> {
-  const directory = join(frondPath, VERSIONS);
-  const found = await readdir(directory, { withFileTypes: true }).catch(() => []);
-  const versions = found
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name)
-    .sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
-
-  const chain: Array<{ version: string; step: SetDiff }> = [];
-  for (const version of versions) {
-    // The first version has a shape and no step — there was nothing before it to move from.
-    const raw = await readFile(join(directory, version, 'from.json'), 'utf8').catch(() => undefined);
-    if (raw) chain.push({ version, step: JSON.parse(raw) as SetDiff });
-  }
-  return chain;
+async function stepsOf(frondPath: string): Promise<Array<{ version: string; step: SetDiff }>> {
+  const chain = await chainOf(frondPath);
+  // The first version has a shape and no step — there was nothing before it to move from.
+  return chain.flatMap(({ name, step }) => (step ? [{ version: name, step }] : []));
 }

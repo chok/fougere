@@ -9,6 +9,7 @@
  * The fix is that a presenter binds like a handler: what its signature declares
  * after the rows is resolved from the same invocation, by the same collectors.
  */
+import { scanProject } from '../src/node.js';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
@@ -33,7 +34,8 @@ const ormFactory: OrmFactory = (() => ({
 
 beforeEach(() => { ListPresenter.calls = 0; });
 
-const app = () => createApp({ root, createContainer, ormFactory });
+const scan = await scanProject(root);
+const app = () => createApp({ scan, createContainer, ormFactory });
 
 describe('a computed field sees the reader', () => {
   it('answers differently for two readers, on the same rows', async () => {

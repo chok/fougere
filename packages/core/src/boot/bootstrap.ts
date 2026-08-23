@@ -4,7 +4,6 @@ import type { EntityEntry, HandlerEntry, PresenterEntry } from '../scan/frond.js
 import type { AuthRuntime } from './auth.js';
 import type { CreateAppOptions, App } from './types.js';
 import type { AppMiddleware } from '../wire/middleware.js';
-import { scanProject } from '../scan/scanner.js';
 import { Logger } from '../builtins/logger.js';
 import { Config } from '../builtins/config.js';
 import { createRemoteRouter, createRemoteFacade } from './remote.js';
@@ -81,7 +80,6 @@ function assertOneOwnerPerKey(
 
 /** Bootstrap a fougere application. */
 export async function createApp(options: CreateAppOptions): Promise<App> {
-  const root = options.root ?? process.cwd();
   const container = options.createContainer();
   // Boot chatter is debug by default; a host (e.g. the CLI) can quiet it.
   const log = new Logger('boot:app');
@@ -95,12 +93,14 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   container.register('Config', Config, { lifetime: 'singleton' });
   log.debug('builtins registered (Logger, Config)');
 
-  // Scan (with optional filter)
+  // The scan is HANDED IN. Producing it reads a disk, consuming it does not — which is
+  // the whole reason this file names no builtin and a Worker can run what it builds.
+  // `scanProject` (`@fougere/core/node`) is one producer; a module a build wrote is another.
   const scanStart = performance.now();
-  const { fronds, diagnostics } = await scanProject(root, options.fronds);
+  const { fronds, diagnostics } = await (typeof options.scan === 'function' ? options.scan() : options.scan);
   const scanMs = (performance.now() - scanStart).toFixed(0);
   const blocking = diagnostics.filter((d) => d.severity === 'blocking');
-  log.info(`scanned ${fronds.length} frond(s) in ${scanMs}ms`
+  log.info(`read ${fronds.length} frond(s) in ${scanMs}ms`
     + (diagnostics.length ? ` — ${diagnostics.length} thing(s) the scan could not do` : ''));
 
   /**

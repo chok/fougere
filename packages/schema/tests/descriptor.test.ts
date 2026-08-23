@@ -269,3 +269,43 @@ group('a view says what it is a view of', () => {
     expect(describe(Note)['x-fougere-derived']).toBeUndefined();
   });
 });
+
+group('a card is admitted before it becomes a judge', () => {
+  const card = () => ({
+    type: 'object' as const,
+    properties: { id: { type: 'string' as const } },
+    'x-fougere-version': 1 as const,
+    'x-fougere-vendor': 'fougere' as const,
+  });
+
+  it('reads a well-formed one', () => {
+    expect(reconstruct(card()).getFields()).toHaveProperty('id');
+  });
+
+  it('refuses a version it does not speak, and an absent one', () => {
+    expect(() => reconstruct({ ...card(), 'x-fougere-version': 2 } as never)).toThrow(/speaks 1/);
+    expect(() => reconstruct({ ...card(), 'x-fougere-version': undefined } as never)).toThrow(/speaks 1/);
+  });
+
+  it('refuses a schema that is not its fields', () => {
+    expect(() => reconstruct({ ...card(), properties: undefined } as never)).toThrow(/no `properties` object/);
+  });
+
+  it('refuses a relation whose kind is not one of the two', () => {
+    const bad = { ...card(), properties: { a: { type: 'string' as const, 'x-fougere': { role: { relation: { to: 'post', kind: 'plusieurs' } } } } } };
+    expect(() => reconstruct(bad as never)).toThrow(/role\.relation\.kind is "plusieurs"/);
+  });
+
+  it('refuses an onDelete outside the closed list', () => {
+    const bad = { ...card(), properties: { a: { type: 'string' as const, 'x-fougere': { role: { relation: { to: 'post', kind: 'one', onDelete: 'boom' } } } } } };
+    expect(() => reconstruct(bad as never)).toThrow(/role\.relation\.onDelete is "boom"/);
+  });
+
+  // lifecycle and boundary describe themselves as themselves, so their own judge reads the wire.
+  it('refuses a lifecycle and a boundary through the judge that already reads them', () => {
+    const lifecycle = { ...card(), properties: { a: { type: 'string' as const, 'x-fougere': { lifecycle: { update: 'jamais' } } } } };
+    expect(() => reconstruct(lifecycle as never)).toThrow(/lifecycle\.update/);
+    const boundary = { ...card(), properties: { a: { type: 'string' as const, 'x-fougere': { boundary: { in: 42 } } } } };
+    expect(() => reconstruct(boundary as never)).toThrow(/boundary\.in/);
+  });
+});

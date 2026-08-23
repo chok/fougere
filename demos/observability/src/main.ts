@@ -12,7 +12,8 @@
  *   pnpm load             # k6 against the shop, in stages
  *   pnpm signoz           # a collector, if you want to see it
  */
-import { createApp, createLocalRunner, setModuleLoader, frondAliases, type EntityOrm } from '@fougere/core';
+import { createApp, createLocalRunner, type EntityOrm } from '@fougere/core';
+import { scanProject, setModuleLoader, frondAliases } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { serve, createHttpTransport } from '@fougere/transport-http';
 import { createJiti } from 'jiti';
@@ -56,12 +57,12 @@ const stopping: Array<() => Promise<void>> = [];
 // ── catalog — holds Product, answers about it ───
 // Observing is declared with the app, not wired onto it after the fact — so `dispose()`
 // flushes the telemetry and this file no longer owes a `stop()` it could forget.
-const catalog = await createApp({ root: join(root, 'catalog'), createContainer, ormFactory: memoryOrm, extensions: [observed('catalog')] });
+const catalog = await createApp({ scan: await scanProject(join(root, 'catalog')), createContainer, ormFactory: memoryOrm, extensions: [observed('catalog')] });
 const catalogReceiver = await serve(createLocalRunner(catalog), { port: CATALOG });
 stopping.push(async () => { await catalogReceiver.close(); await catalog.dispose(); });
 
 // ── shipping — a Frond with no entity at all ────
-const shipping = await createApp({ root: join(root, 'shipping'), createContainer, extensions: [observed('shipping')] });
+const shipping = await createApp({ scan: await scanProject(join(root, 'shipping')), createContainer, extensions: [observed('shipping')] });
 const shippingReceiver = await serve(createLocalRunner(shipping), { port: SHIPPING });
 stopping.push(async () => { await shippingReceiver.close(); await shipping.dispose(); });
 

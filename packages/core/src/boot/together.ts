@@ -7,7 +7,7 @@
  * inverses (`frame.ts`). Same user code, two guarantees, and the boot says which — the
  * one thing a gradient must never leave to assumption.
  */
-import { AsyncLocalStorage } from 'node:async_hooks';
+import { ambient } from '#ambient';
 import { classNameOf, registrationKeyOf, type SchemaView } from '@fougere/schema';
 import type { Container } from '@fougere/container';
 import { membersOfTogetherKey, ormKeyOf, type EntityOrm, type OrmFactory } from '../orm.js';
@@ -15,43 +15,6 @@ import type { Logger } from '../builtins/logger.js';
 import type { ProviderEntry } from '../scan/frond.js';
 import { guardStorage } from './egress.js';
 import { recording, unwind, type Undo } from './frame.js';
-
-/**
- * The frame running right now, if any — carried in async context because a frame is a
- * BLOCK and nothing inside it takes a parameter saying so.
- *
- * It exists for one reader: an announcement. Everything else a frame does is already
- * covered by handing the members a different ORM.
- */
-const running = new AsyncLocalStorage<string>();
-
-/** The frame this call is inside, or `undefined`. Read by `Emissions.announce`. */
-export function currentFrame(): string | undefined {
-  return running.getStore();
-}
-
-/**
- * Enter a frame, refusing to open one inside another.
- *
- * Measured on SQLite: a second transaction on the same connection WAITS for the first, so
- * a nested frame on one engine hangs — five seconds and no error. Split across engines the
- * same code returns. One declaration, two behaviours and one of them a deadlock, is worse
- * than a refusal.
- *
- * And a nested frame is the wrong shape anyway: two frames that must both hold are one
- * frame, and its member list is the union. The message says so.
- */
-function enter<R>(key: string, fn: () => Promise<R>): Promise<R> {
-  const held = running.getStore();
-  if (held !== undefined) {
-    return Promise.reject(new Error(
-      `Together<[…]> (${key}) cannot be opened inside ${held}: on one engine the second ` +
-      `transaction waits for the first and the call hangs. Two frames that must both hold ` +
-      `are ONE frame — declare a single Together naming every member.`,
-    ));
-  }
-  return running.run(key, fn);
-}
 
 /** Everything the boot knows that a frame needs, gathered once for every frond. */
 export interface FrameWorld {
@@ -194,9 +157,11 @@ export function registerFrames(
   providers: readonly ProviderEntry[],
   world: FrameWorld,
 ): void {
+  let registered = 0;
   for (const key of new Set(keys)) {
     const names = membersOfTogetherKey(key);
     if (!names) continue;
+    registered += 1;
     if (!world.ormFactory) {
       throw new Error(`Together<[${names.entities.join(', ')}]> needs storage, and this boot declares none.`);
     }
@@ -215,7 +180,7 @@ export function registerFrames(
       world.log.info(`${key} — transaction, source '${source}'`);
       scope.registerValue(key, {
         run: <R>(fn: (entities: never, providers: never) => Promise<R>) =>
-          enter(key, () =>
+          ambient.enterFrame(key, () =>
             world.transacted!(source, (factory) => inScope(scope, members, factory, judge, fn as never))),
       });
       continue;
@@ -229,7 +194,7 @@ export function registerFrames(
       : 'this storage hands out no transaction';
     world.log.info(`${key} — compensated: ${why} — no isolation`);
     scope.registerValue(key, {
-      run: <R>(fn: (entities: never, providers: never) => Promise<R>): Promise<R> => enter(key, async () => {
+      run: <R>(fn: (entities: never, providers: never) => Promise<R>): Promise<R> => ambient.enterFrame(key, async () => {
         const journal: Undo[] = [];
         const record = (orm: EntityOrm, name: string, schema: SchemaView) =>
           judge(recording(orm, name, schema.getFields(), journal), name, schema);
@@ -240,5 +205,11 @@ export function registerFrames(
         }
       }),
     });
+  }
+  if (registered > 0 && ambient.degraded) {
+    world.log.warn(
+      'no async context on this runtime — frames run one at a time, and a frame opened '
+      + 'inside another times out instead of being refused',
+    );
   }
 }

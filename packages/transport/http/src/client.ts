@@ -67,7 +67,7 @@ export interface HttpTransportOptions {
    * Absent, the state travels as a bare claim and only a receiver that asks for nothing
    * will take it.
    */
-  sign?: (call: SignedCall) => string;
+  sign?: (call: SignedCall) => Promise<string>;
 }
 
 /** Failures where the request never reached the other side — safe to retry. */
@@ -87,7 +87,7 @@ export function createHttpTransport(baseUrl: string, options: HttpTransportOptio
     // It travels outside the envelope anyway, so a stale one would be unsigned too.
     const { caller: _established, ...forwarded } = invocation;
     const sent = options.sign
-      ? { ...forwarded, state: {}, identity: options.sign({ ...call, ...invocation }) }
+      ? { ...forwarded, state: {}, identity: await options.sign({ ...call, ...invocation }) }
       : forwarded;
     const request = frameCall(call, sent, nextId++);
 

@@ -23,6 +23,7 @@
  * worth keeping; the printing is assertions now, because a measurement nobody can
  * re-run is just a memory.
  */
+import { scanProject } from '../src/node.js';
 import { describe, expect, it } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
@@ -31,7 +32,7 @@ import { createApp, createLocalRunner } from '../src/index.js';
 const root = join(import.meta.dirname, 'fixtures-narrow-signature');
 
 async function billing() {
-  const app = await createApp({ root, createContainer });
+  const app = await createApp({ scan: await scanProject(root), createContainer });
   const run = createLocalRunner(app);
   const call = (op: string, invocation: Record<string, unknown>) =>
     run({ entity: 'invoice', op }, { params: {}, query: {}, body: undefined, state: {}, ...invocation } as never);

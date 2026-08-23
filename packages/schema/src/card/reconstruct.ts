@@ -1,4 +1,5 @@
 import { clean } from '../clean.js';
+import { isObject, refuse } from '../judge/form.js';
 import { EXTENSION_AXES } from '../axis/Axis.js';
 import type { Resolver } from '../axis/Axis.js';
 import { Field, type Fields } from '../Field.js';
@@ -55,6 +56,18 @@ function reconstructField(prop: FieldDescriptor, key: string, resolve?: Resolver
 }
 
 function buildSchema(descriptor: SchemaDescriptor, resolve?: Resolver, name?: string): SchemaView {
+  const where = name ? `schema '${name}'` : 'this schema';
+  if (!isObject(descriptor)) refuse(`${where} is not an object`, 'A card carries one JSON Schema per door.');
+  const version = descriptor['x-fougere-version'];
+  if (version !== 1) {
+    refuse(
+      `${where} states \`x-fougere-version: ${JSON.stringify(version)}\` and this reader speaks 1`,
+      'A producer and its readers move together: re-sync the consumer, or serve the version it speaks.',
+    );
+  }
+  if (!isObject(descriptor.properties)) {
+    refuse(`${where} carries no \`properties\` object`, 'A schema is its fields; there is nothing to rebuild.');
+  }
   const fields: Fields = {};
   for (const [key, prop] of Object.entries(descriptor.properties)) {
     fields[key] = reconstructField(prop, key, resolve);

@@ -9,13 +9,12 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import {
   EMPTY_INVOCATION,
-  generateKeyPair,
-  issueGrant,
   signEnvelope,
   verifyEnvelope,
   type Transport,
   type FrondIdentity,
 } from '@fougere/core';
+import { generateKeyPair, issueGrant } from '@fougere/core/node';
 import { createHttpTransport, serve } from '../src/index.js';
 import type { RunningReceiver } from '../src/index.js';
 
@@ -108,7 +107,7 @@ describe('a receiver that establishes its caller', () => {
       params: {},
       query: {},
       state: { user: { role: 'admin' } },
-      identity: signEnvelope(app, { entity: 'post', op: 'list', state: { user: { role: 'reader' } } }),
+      identity: await signEnvelope(app, { entity: 'post', op: 'list', state: { user: { role: 'reader' } } }),
     });
 
     expect(answer.result).toEqual({ state: { user: { role: 'reader' } }, caller: 'app' });
@@ -204,7 +203,7 @@ describe('an envelope proves WHAT, not only WHO', () => {
   it('refuses a captured envelope replayed against another operation', async () => {
     // Signed for `post.list`, posted as `post.delete`: same signature, same grant, same
     // 60-second window. Binding the call is what closes it.
-    const captured = signEnvelope(app, { entity: 'post', op: 'list' });
+    const captured = await signEnvelope(app, { entity: 'post', op: 'list' });
     const res = await fetch(`${base}/_fougere/call`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -222,7 +221,7 @@ describe('an envelope proves WHAT, not only WHO', () => {
   });
 
   it('refuses one replayed with a swapped body', async () => {
-    const captured = signEnvelope(app, { entity: 'post', op: 'list', body: { title: 'hello' } });
+    const captured = await signEnvelope(app, { entity: 'post', op: 'list', body: { title: 'hello' } });
     const res = await fetch(`${base}/_fougere/call`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },

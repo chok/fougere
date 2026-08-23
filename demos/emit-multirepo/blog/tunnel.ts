@@ -10,7 +10,8 @@
  * and nothing is held when the link drops.
  */
 import { createServer, type Socket } from 'node:net';
-import { createApp, createLocalRunner, setModuleLoader, frondAliases } from '@fougere/core';
+import { createApp, createLocalRunner } from '@fougere/core';
+import { scanProject, setModuleLoader, frondAliases } from '@fougere/core/node';
 import type { InvocationContext } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 
@@ -53,7 +54,7 @@ async function main() {
   });
 
   const app = await createApp({
-    root: import.meta.dirname,
+    scan: await scanProject(import.meta.dirname),
     createContainer,
     onEmit: (fact, payload) => {
       let reached = 0;

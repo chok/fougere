@@ -6,6 +6,7 @@
  * instead: the ORM keeps handing full rows (judges can read every field), and the
  * façade projects each op's result onto the view that op declared.
  */
+import { scanProject } from '../src/node.js';
 import { describe, it, expect, vi } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
@@ -33,7 +34,7 @@ function fullRowOrm() {
 
 async function boot() {
   const orm = fullRowOrm();
-  const app = await createApp({ root, createContainer, ormFactory: vi.fn(() => orm) as unknown as OrmFactory });
+  const app = await createApp({ scan: await scanProject(root), createContainer, ormFactory: vi.fn(() => orm) as unknown as OrmFactory });
   return { app, orm, run: createLocalRunner(app) };
 }
 

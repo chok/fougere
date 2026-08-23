@@ -16,6 +16,7 @@
  * input that triggers it are both computable. Not fuzzing: a projection of the schema,
  * like the SQL table and the GraphQL type.
  */
+import { scanProject } from '../src/node.js';
 import { Judge } from '@fougere/schema';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
@@ -75,7 +76,7 @@ describe('un corps, deux juges', () => {
   });
 
   it('le formulaire et la façade rendent le même verdict, sur le schéma que le contrat nomme', async () => {
-    await using app = await createApp({ root, createContainer, ormFactory: fakeOrm });
+    await using app = await createApp({ scan: await scanProject(root), createContainer, ormFactory: fakeOrm });
     const run = createLocalRunner(app);
 
     for (const { why, body } of table) {
@@ -86,7 +87,7 @@ describe('un corps, deux juges', () => {
   });
 
   it("le même corps, en mémoire et après l'aller-retour JSON du fil", async () => {
-    await using app = await createApp({ root, createContainer, ormFactory: fakeOrm });
+    await using app = await createApp({ scan: await scanProject(root), createContainer, ormFactory: fakeOrm });
     const run = createLocalRunner(app);
 
     for (const { why, body } of table) {

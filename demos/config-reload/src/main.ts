@@ -6,7 +6,8 @@
  * constructed at its first call and keeps the very Logger it was handed, because the
  * level is held for the process and consulted at each emission.
  */
-import { boot, createLocalRunner, EMPTY_INVOCATION, loadConfig, applyConfig, logLevel } from '@fougere/core';
+import { createLocalRunner, EMPTY_INVOCATION, applyConfig, logLevel } from '@fougere/core';
+import { boot, loadConfig } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';

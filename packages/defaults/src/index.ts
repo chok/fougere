@@ -8,7 +8,8 @@
  * package supplies them on top of `core.boot()`. Nuxt's fallback, the CLI's
  * `serve`/`call`, and a standalone frond host are all projections of it.
  */
-import { boot, loadConfig, type App, type CreateAppOptions } from '@fougere/core';
+import { type App, type CreateAppOptions } from '@fougere/core';
+import { boot, loadConfig } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { createHttpTransport } from '@fougere/transport-http';
 import { resolveStorage, type DbConfig } from './storage.js';

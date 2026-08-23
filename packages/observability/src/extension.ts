@@ -10,6 +10,7 @@
  * reads the process it runs in — moved, it would report the observer instead of the observed.
  */
 import { loggerMiddleware, Logger, onLog, type App, type Extension } from '@fougere/core';
+import { traceContext } from '#trace-context';
 import { trace, onSpan } from './index.js';
 import { metrics, serveTopology } from './metrics.js';
 import { otlp } from './otlp.js';
@@ -57,6 +58,19 @@ export function observability(options: ObservabilityOptions = {}): Extension {
       // call will carry. Installed the other way round, the lines leave uncorrelated.
       app.use(trace());
       app.use(loggerMiddleware(new Logger(service)));
+
+      // Said once, here, because the alternative is finding it in a trace viewer three
+      // weeks later: without an ambient context a call that crossed NO wire cannot name
+      // its parent, so it starts its own trace. What still works is stated too — a
+      // warning that only names the loss reads as "tracing is broken", and it is not.
+      if (!traceContext.ambient) {
+        new Logger(service).warn(
+          'no async context: a call that crosses no wire starts its own trace '
+          + '(an emission subscriber, a handler reaching another frond in this process). '
+          + 'An arriving call and a call to a frond behind `remotes:` are unaffected — both carry '
+          + 'traceparent on the invocation. Add "nodejs_als" to compatibility_flags to restore the rest.',
+        );
+      }
 
       const measured = metrics(app);
       undo.push(onSpan(measured.sink));

@@ -14,6 +14,7 @@
  * Found by `demos/sse-live`, whose first signature was `draft(id, title, user: User | null)`
  * and which answered `title: Unknown field, name: Required` to a perfectly good draft.
  */
+import { scanProject } from '../src/node.js';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
@@ -28,7 +29,7 @@ const state = { user: { id: 'u-1', email: 'alice@example.com', role: 'author' } 
 
 describe('an op whose collected parameter comes first', () => {
   it('binds both parameters correctly — the collector is not the problem', async () => {
-    await using app = await createApp({ root, createContainer });
+    await using app = await createApp({ scan: await scanProject(root), createContainer });
 
     const out = await createLocalRunner(app)(
       { entity: 'post', op: 'bodyFirst' },
@@ -39,7 +40,7 @@ describe('an op whose collected parameter comes first', () => {
   });
 
   it('refuses the same body once the collected parameter is written first', async () => {
-    await using app = await createApp({ root, createContainer });
+    await using app = await createApp({ scan: await scanProject(root), createContainer });
 
     const call = createLocalRunner(app)(
       { entity: 'post', op: 'collectorFirst' },
@@ -62,7 +63,7 @@ describe('an op whose collected parameter comes first', () => {
   });
 
   it('says nothing when no body is sent — which is why nothing had caught it', async () => {
-    await using app = await createApp({ root, createContainer });
+    await using app = await createApp({ scan: await scanProject(root), createContainer });
 
     // The façade only judges when there IS a body (`bootstrap.ts`, `schema && inv.body`),
     // so the wrong contract is invisible without one. Every collector op in this repo's

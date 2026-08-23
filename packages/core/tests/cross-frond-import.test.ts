@@ -10,7 +10,7 @@ import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { crossFrondImports } from '../src/index.js';
+import { crossFrondImports } from '../src/node.js';
 
 const frond = (name: string, path: string) => ({ name, source: { path, package: `@frond/${name}` } });
 

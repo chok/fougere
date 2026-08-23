@@ -110,13 +110,24 @@ group('a rename is declared, never guessed', () => {
   });
 
   it('reports every candidate rather than picking the likeliest', () => {
-    // Two fields of the same shape appeared: nothing in a snapshot can rank them.
+    // Two fields of the same shape appeared: both are reported, and neither is applied.
     const V3 = shapeOf({ id: primary(), title: text(), content: text(), excerpt: text() });
     const answer = diff(V1, V3);
 
     expect(answer.ambiguous).toEqual([
       { removed: 'body', added: 'content' },
       { removed: 'body', added: 'excerpt' },
+    ]);
+  });
+
+  it('offers the nearest candidate first — the order ranks, it never decides', () => {
+    // `body` sat third and `content` sits third too, while `lede` opens the entity.
+    // Both are still reported; the one that did not move is proposed first.
+    const V4 = shapeOf({ lede: text(), id: primary(), title: text(), content: text() });
+
+    expect(diff(V1, V4).ambiguous).toEqual([
+      { removed: 'body', added: 'content' },
+      { removed: 'body', added: 'lede' },
     ]);
   });
 });

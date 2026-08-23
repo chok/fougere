@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { entity, number, primary, text } from '@fougere/schema';
 import { migrate } from '../src/index.js';
-import { setupSqlite } from '../src/setup.js';
+import { setupSqlite } from '../src/sqlite.js';
 
 /**
  * `orm.client` — ce que l'ORM enveloppe, nommé sur l'ORM plutôt que posé à côté.

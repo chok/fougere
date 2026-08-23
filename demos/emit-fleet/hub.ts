@@ -8,7 +8,8 @@
  * Devices behind a NAT cannot be called, so they call. One socket carries both directions.
  */
 import { createServer, type Socket } from 'node:net';
-import { createApp, createLocalRunner, setModuleLoader, frondAliases } from '@fougere/core';
+import { createApp, createLocalRunner } from '@fougere/core';
+import { scanProject, setModuleLoader, frondAliases } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 
 const PORT = Number(process.env.FLEET_PORT ?? 4500);
@@ -37,9 +38,8 @@ async function main() {
   setModuleLoader((path) => jiti.import(path) as Promise<Record<string, unknown>>);
 
   const app = await createApp({
-    root: import.meta.dirname,
+    scan: await scanProject(import.meta.dirname, ['fleet', 'hub']),
     createContainer,
-    fronds: ['fleet', 'hub'],
     onEmit: (fact, payload) => {
       let reached = 0;
       for (const [socket, { topics }] of fleet) {

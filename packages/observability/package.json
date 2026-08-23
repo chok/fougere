@@ -48,5 +48,12 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "imports": {
+    "#trace-context": {
+      "types": "./src/context/als.ts",
+      "workerd": "./dist/context/none.js",
+      "default": "./dist/context/als.js"
+    }
   }
 }

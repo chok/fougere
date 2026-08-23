@@ -13,6 +13,9 @@ import { EMPTY_INVOCATION, type InvocationContext } from './wire/invocation.js';
 import type { FrondCall } from './wire/call.js';
 
 export { FougereError, ErrorCode, validationErrorsOf } from './wire/errors.js';
+// A receiver turns a refusal into what may cross a process boundary, and it is not
+// core's boot — reaching it through the main entry dragged the scanner into a bundle.
+export { toPublicError } from './wire/http-error.js';
 export type { FougereErrorOptions } from './wire/errors.js';
 export { EMPTY_INVOCATION } from './wire/invocation.js';
 export type { InvocationContext } from './wire/invocation.js';

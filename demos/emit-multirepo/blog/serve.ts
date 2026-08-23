@@ -7,7 +7,8 @@
  *
  * Nothing here is about emission. It is the same app, reachable.
  */
-import { createApp, createAppRunner, setModuleLoader, frondAliases } from '@fougere/core';
+import { createApp, createAppRunner } from '@fougere/core';
+import { scanProject, setModuleLoader, frondAliases } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { serve } from '@fougere/transport-http';
 
@@ -22,7 +23,7 @@ async function main() {
   });
   setModuleLoader((path) => jiti.import(path) as Promise<Record<string, unknown>>);
 
-  const app = await createApp({ root: import.meta.dirname, createContainer });
+  const app = await createApp({ scan: await scanProject(import.meta.dirname), createContainer });
 
   await serve(createAppRunner(app), { port: PORT });
   console.log(`\x1b[33m[blog · pid ${process.pid}]\x1b[0m card on http://127.0.0.1:${PORT}/_fougere/call`);

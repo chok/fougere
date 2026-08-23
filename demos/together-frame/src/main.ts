@@ -5,10 +5,11 @@
  * frames are transactions. Uncomment the block in fougere.config.ts and run again — the
  * same handlers, the same results, and one line of boot output that is not the same.
  */
+import { scanProject } from '@fougere/core/node';
 import { createApp, createLocalRunner, migrating, EMPTY_INVOCATION, type App, type EntityOrm } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { storageFrom } from '@fougere/defaults';
-import { setupSqlite } from '@fougere/adapter-sql';
+import { setupSqlite } from '@fougere/adapter-sql/sqlite';
 import { observeWith } from '../fronds/banking/observe.js';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
@@ -38,7 +39,7 @@ console.log(split
 console.log('─'.repeat(72));
 
 const app: App = await createApp({
-  root,
+  scan: await scanProject(root),
   createContainer,
   ormFactory: storage.ormFactory,
   sourceOf: storage.sourceOf,

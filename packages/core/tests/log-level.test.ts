@@ -11,7 +11,8 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Logger, setLogLevel, logLevel, applyConfig, loadConfig } from '../src/index.js';
+import { Logger, setLogLevel, logLevel, applyConfig } from '../src/index.js';
+import { loadConfig } from '../src/node.js';
 
 afterEach(() => { setLogLevel('info'); vi.restoreAllMocks(); });
 

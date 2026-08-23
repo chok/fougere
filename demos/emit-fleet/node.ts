@@ -8,7 +8,8 @@
  * it with a keyboard — on a fleet, the difference between a demo and a deployment.
  */
 import { connect, type Socket } from 'node:net';
-import { createApp, createLocalRunner, setModuleLoader, frondAliases } from '@fougere/core';
+import { createApp, createLocalRunner } from '@fougere/core';
+import { scanProject, setModuleLoader, frondAliases } from '@fougere/core/node';
 import type { App } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 
@@ -27,9 +28,8 @@ async function main() {
   let live: Socket | undefined;
 
   const app: App = await createApp({
-    root: import.meta.dirname,
+    scan: await scanProject(import.meta.dirname, ['fleet', 'node']),
     createContainer,
-    fronds: ['fleet', 'node'],
     // Upward, on the very socket the device opened. A NAT lets nothing in; it lets this out.
     onEmit: (fact, payload) => { live?.write(`${JSON.stringify({ fact, payload })}\n`); },
   });

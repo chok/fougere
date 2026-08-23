@@ -36,6 +36,9 @@ allowBuilds:
   sharp: true
   '@parcel/watcher': true
   vue-demi: true
+  # workerd ships its runtime in a per-platform optional package, so the postinstall
+  # would fetch a binary that is already unpacked — the same answer as better-sqlite3.
+  workerd: false
 
 minimumReleaseAgeExclude:
   - '@tanstack/react-router@1.170.25'

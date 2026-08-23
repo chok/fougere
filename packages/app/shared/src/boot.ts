@@ -18,7 +18,8 @@ import { Lifecycle } from '@fougere/schema';
  * host's own startup (a Nitro plugin, a Next instrumentation hook) if the user
  * wants a custom data layer — alternative driver, managed migrations, etc.
  */
-import { createApp, loadCascadedConfig, setModuleLoader, frondAliases, identityFromEnv, Logger, migrating, seeding } from '@fougere/core';
+import { createApp, identityFromEnv, Logger, migrating, seeding } from '@fougere/core';
+import { scanProject, loadCascadedConfig, setModuleLoader, frondAliases } from '@fougere/core/node';
 import type { Extension } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import type { App, CreateAppOptions, EntityOrm, FougereConfig, Transport } from '@fougere/core';
@@ -46,6 +47,19 @@ export interface FougereServerConfig {
    * importable is the hidden runtime the doctrine refuses.
    */
   host?: string;
+  /**
+   * What this app is built from, when the host already knows.
+   *
+   * Absent, `boot()` reads the fronds off the disk — right on a server, impossible on a
+   * runtime that has none: measured on workerd, `readdir` throws through unenv's shim and
+   * the app comes up with ZERO fronds, so every page renders and every door answers
+   * NOT_FOUND. A host that scanned at BUILD time can say so instead, and `fougere build`
+   * writes exactly this value down.
+   *
+   * Same slot as `CreateAppOptions.scan` and for the same reason: producing the value
+   * reads a disk, consuming it does not.
+   */
+  scan?: CreateAppOptions['scan'];
 }
 
 // ── State ────────────────────────────────────────
@@ -164,12 +178,14 @@ async function boot(): Promise<App> {
     // A call that leaves this process carries a proof of who sent it, when the
     // deployment gave one. Without a key it travels as a bare claim, which only a
     // receiver that trusts no root will take.
-    const { sign } = identityFromEnv();
+    const { sign } = await identityFromEnv();
     remoteTransport = (url) => createHttpTransport(url, { ...(sign ? { sign } : {}) });
   }
 
   const app = await createApp({
-    root,
+    // The host's word wins: it scanned at build, and a second scan here would either
+    // repeat that work or — where there is no disk — find nothing and say so quietly.
+    scan: _config.scan ?? (await scanProject(root)),
     createContainer,
     ormFactory,
     sourceOf,
