@@ -1,7 +1,7 @@
 import { type Fields } from '@fougere/schema';
 import type { Container } from '@fougere/container';
 import type { AppMiddleware } from '../wire/middleware.js';
-import { computeBindingPlan, type CollectorResolver } from './binding.js';
+import type { CollectorResolver } from './binding.js';
 import { collectorKeyOf } from '../prefab/collector.js';
 import { presenterKeyOf } from '../prefab/presenter.js';
 import { repositoryKeyOf } from '../prefab/repository.js';
@@ -15,7 +15,8 @@ import { InputValidator } from '../dispatch/InputValidator.js';
 import { ArgumentResolver } from '../dispatch/ArgumentResolver.js';
 import { OperationExecutor } from '../dispatch/OperationExecutor.js';
 import { OutputProjector } from '../dispatch/OutputProjector.js';
-import { PresenterExecutor, type PresenterArgs } from '../dispatch/PresenterExecutor.js';
+import { PresenterExecutor } from '../dispatch/PresenterExecutor.js';
+import { PresenterArgumentResolver } from '../dispatch/PresenterArgumentResolver.js';
 
 /** What this door is about: a handler, the entity behind it when there is one, and where it resolves. */
 export interface Doorway {
@@ -86,9 +87,14 @@ export class HandlerFacade {
   private readonly argumentResolver = new ArgumentResolver(
     (typeName) => this.collectorResolver(typeName),
   );
+  private readonly presenterArguments: PresenterArgumentResolver;
 
   constructor(private readonly door: Doorway, private readonly wiring: Wiring) {
     const { handler, entity } = door;
+    this.presenterArguments = new PresenterArgumentResolver(
+      this.argumentResolver,
+      wiring.collectors,
+    );
     this.refuseCrudWithoutRepository();
 
     door.scope.register(this.handlerKey, handler.ctor, { deps: this.deps() });
@@ -254,27 +260,10 @@ export class HandlerFacade {
             presenter.fields,
             address,
             op,
-          ).present(result, await this.presenterArgs(presenter, effective)),
+          ).present(result, await this.presenterArguments.resolve(presenter, effective)),
       }),
     });
 
     return (invocation) => executor.execute(invocation);
-  }
-
-  /**
-   * A computed field is bound like an op: what it declares after the rows is resolved from
-   * the same invocation, by the same collectors. The plan is computed here and not at scan
-   * time because the scan meets presenters before it meets collectors.
-   */
-  private async presenterArgs(meta: PresenterEntry, inv: InvocationContext): Promise<PresenterArgs> {
-    const args: PresenterArgs = {};
-    for (const field of meta.fieldMeta) {
-      if (!field.params?.length) continue;
-      args[field.name] = await this.argumentResolver.resolve(
-        computeBindingPlan(field.params, this.wiring.collectors),
-        inv,
-      );
-    }
-    return args;
   }
 }
