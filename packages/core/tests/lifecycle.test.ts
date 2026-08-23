@@ -10,7 +10,7 @@ import { scanProject } from '../src/node.js';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
-import { createApp, Lifecycle, migrating } from '../src/index.js';
+import { AppLifecycle, createApp, Lifecycle, migrating } from '../src/index.js';
 import type { Extension } from '../src/index.js';
 
 const root = join(import.meta.dirname, 'fixtures-ports');
@@ -23,6 +23,10 @@ const recording = (name: string, log: string[]): Extension => ({
 });
 
 describe('Lifecycle', () => {
+  it('keeps Lifecycle as a compatibility alias', () => {
+    expect(Lifecycle).toBe(AppLifecycle);
+  });
+
   it('runs up in declaration order and down in reverse', async () => {
     const log: string[] = [];
     await using app = await createApp({
@@ -44,7 +48,7 @@ describe('Lifecycle', () => {
    */
   it('replaces a member of the same name, and keeps its position', async () => {
     const log: string[] = [];
-    const lifecycle = new Lifecycle()
+    const lifecycle = new AppLifecycle()
       .add(recording('migrate', log), recording('seeds', log), recording('extra', log))
       .add({ name: 'seeds', up: () => { log.push('MY seeds'); } });
 
@@ -54,7 +58,7 @@ describe('Lifecycle', () => {
   });
 
   it('skips an absent member, so a host writes a conditional one inline', () => {
-    expect(new Lifecycle().add(undefined, migrating(() => {})).names()).toEqual(['migrate']);
+    expect(new AppLifecycle().add(undefined, migrating(() => {})).names()).toEqual(['migrate']);
   });
 
   /**
@@ -66,7 +70,7 @@ describe('Lifecycle', () => {
     const slot = migrating(undefined)!;
     expect(slot.name).toBe('migrate');
     expect(slot.up).toBeUndefined();
-    await new Lifecycle().add(slot).up({} as never);
+    await new AppLifecycle().add(slot).up({} as never);
   });
 
   /**
@@ -75,7 +79,7 @@ describe('Lifecycle', () => {
    */
   it('stops the ascent at the first refusal', async () => {
     const log: string[] = [];
-    const lifecycle = new Lifecycle().add(
+    const lifecycle = new AppLifecycle().add(
       { name: 'migrate', up: () => { throw new Error('no such table'); } },
       recording('seeds', log),
     );
@@ -132,7 +136,7 @@ describe('Lifecycle', () => {
 
   it('releases every member even when one refuses, and reports them together', async () => {
     const log: string[] = [];
-    const lifecycle = new Lifecycle().add(
+    const lifecycle = new AppLifecycle().add(
       recording('first', log),
       { name: 'broken', down: () => { throw new Error('socket already gone'); } },
       recording('last', log),

@@ -10,8 +10,8 @@
  */
 export { createApp } from './boot/bootstrap.js';
 export { orderSeeds, runSeeds, seeding } from './boot/seed.js';
-export { Lifecycle, migrating } from './boot/Lifecycle.js';
-export type { Extension } from './boot/Lifecycle.js';
+export { AppLifecycle, AppLifecycle as Lifecycle, migrating } from './boot/AppLifecycle.js';
+export type { Extension } from './boot/AppLifecycle.js';
 export { defineFougere } from './define.js';
 export type { AdapterConfig, FougereConfig } from './config-loader.js';
 export type { FrondConfig, OperationOverride } from './frond-config.js';

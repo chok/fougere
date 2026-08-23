@@ -18,7 +18,7 @@ import { portBindings } from './ports.js';
 import { InFlight } from './inflight.js';
 // The keys, each read from where its concept is declared — never respelled here.
 import { facadeKeyOf, contractsKeyOf, identityCardOf, type RpcAnswer } from '../wire/call.js';
-import { Lifecycle } from './Lifecycle.js';
+import { AppLifecycle } from './AppLifecycle.js';
 import { repositoryKeyOf } from '../prefab/repository.js';
 import { ormKeyOf } from '../orm.js';
 import { presenterKeyOf } from '../prefab/presenter.js';
@@ -163,7 +163,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   const globalMiddlewares: AppMiddleware[] = [];
   const scopedMiddlewares = new Map<string, AppMiddleware[]>();
   /** What this app took on beyond its fronds. Its `up` is the last thing the boot does. */
-  const appLifecycle = new Lifecycle().add(...(options.extensions ?? []));
+  const appLifecycle = new AppLifecycle().add(...(options.extensions ?? []));
   const routeRegistry = new RouteRegistry();
   const dispatchLifecycle = new DispatchLifecycle(options.dispatchObservers);
   const dispatcher = new Dispatcher(routeRegistry, dispatchLifecycle);

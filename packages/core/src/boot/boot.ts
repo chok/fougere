@@ -5,7 +5,7 @@ import { loadConfig, type FougereConfig } from '../config-loader.js';
 import { Logger } from '../builtins/logger.js';
 import { applyConfig } from './apply.js';
 import type { App, CreateAppOptions } from './types.js';
-import { migrating, type Extension } from './Lifecycle.js';
+import { migrating, type Extension } from './AppLifecycle.js';
 import type { Transport } from '../wire/call.js';
 import type { Container } from '@fougere/container';
 

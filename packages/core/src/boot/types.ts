@@ -12,7 +12,7 @@ import type { SchemaView } from '@fougere/schema';
 import type { OrmFactory } from '../orm.js';
 import type { AppMiddleware } from '../wire/middleware.js';
 import type { RpcAnswer, Transport } from '../wire/call.js';
-import type { Extension } from './Lifecycle.js';
+import type { Extension } from './AppLifecycle.js';
 import type { AuthConfig, AuthRuntime } from './auth.js';
 import type { DispatchObserver } from '../dispatch/DispatchEvent.js';
 import type { DispatchPort } from '../dispatch/DispatchPort.js';
