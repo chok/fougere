@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { entity, number, primary, ref, text } from '@fougere/schema';
 import { migrate } from '../src/index.js';
-import { setupSqlite } from '../src/setup.js';
+import { setupSqlite } from '../src/sqlite.js';
 
 /**
  * La lecture filtrée : ce que l'ORM sait faire, ce qu'il déclare, et ce qu'un appelant obtient.

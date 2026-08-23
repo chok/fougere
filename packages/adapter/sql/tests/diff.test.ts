@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { entity, primary, text, number, optional, bool, ref, type EntityConstructor } from '@fougere/schema';
-import { setupSqlite, type SqliteSetup } from '../src/index.js';
+import { setupSqlite, type SqliteSetup } from '../src/sqlite.js';
 import { actualState, delta, desiredTables, orderChanges, planMigration, migrate, changeSQL } from '../src/diff.js';
 
 class PostV1 extends entity({

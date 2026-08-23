@@ -14,7 +14,7 @@ import { tmpdir } from 'node:os';
 import { createApp, createLocalRunner, togetherKeyOf } from '@fougere/core';
 import { EMPTY_INVOCATION } from '@fougere/core/contract';
 import { createContainer } from '@fougere/container';
-import { setupSqlite } from '@fougere/adapter-sql';
+import { setupSqlite } from '@fougere/adapter-sql/sqlite';
 import { storageFrom } from '../src/storage.js';
 
 const root = join(import.meta.dirname, 'fixtures-together');

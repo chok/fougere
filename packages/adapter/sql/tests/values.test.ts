@@ -7,7 +7,8 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { entity, primary, text, bool, date, list, json, optional } from '@fougere/schema';
-import { setupSqlite, autoMigrate } from '../src/index.js';
+import { autoMigrate } from '../src/index.js';
+import { setupSqlite } from '../src/sqlite.js';
 import { codecFor } from '../src/values.js';
 
 class Task extends entity({

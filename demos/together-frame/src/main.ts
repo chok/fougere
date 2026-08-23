@@ -9,7 +9,7 @@ import { scanProject } from '@fougere/core/node';
 import { createApp, createLocalRunner, migrating, EMPTY_INVOCATION, type App, type EntityOrm } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { storageFrom } from '@fougere/defaults';
-import { setupSqlite } from '@fougere/adapter-sql';
+import { setupSqlite } from '@fougere/adapter-sql/sqlite';
 import { observeWith } from '../fronds/banking/observe.js';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';

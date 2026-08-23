@@ -8,7 +8,8 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { entity, primary, created, text } from '@fougere/schema';
-import { setupSqlite, autoMigrate } from '../src/index.js';
+import { autoMigrate } from '../src/index.js';
+import { setupSqlite } from '../src/sqlite.js';
 
 class Reading extends entity({
   // A timestamp AS the key: legal, and the value the entity declares is a Date.

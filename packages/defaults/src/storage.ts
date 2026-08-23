@@ -11,7 +11,8 @@
 import type { App } from '@fougere/core';
 import { Fronds, type FrondDescriptor } from '@fougere/core';
 import { registrationKeyOf } from '@fougere/core/contract';
-import { setupSqlite, migrate, type DialectName, type Setup } from '@fougere/adapter-sql';
+import { migrate, type DialectName, type Setup } from '@fougere/adapter-sql';
+import { setupSqlite } from '@fougere/adapter-sql/sqlite';
 
 /** The `db` field of fougere.config.ts, read structurally. */
 export type DbConfig =
