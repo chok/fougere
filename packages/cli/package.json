@@ -35,7 +35,7 @@
     "templates"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc && chmod +x dist/bin.js",
+    "build": "rm -rf dist && tsc && chmod +x dist/bin.js && node dist/bin.js build",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.runtime.json && tsc -p tsconfig.templates.json",
