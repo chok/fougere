@@ -91,7 +91,13 @@ describe('a storage that could not be opened', () => {
     // facts were sharing one failure.
     const out = generateBootPlugin({ db: 'sqlite' }, [], '/app/boot', '/nuxt/scan.mjs');
 
-    expect(out.indexOf('configureFougere({ scan })')).toBeLessThan(out.indexOf('resolveStorage("sqlite")'));
+    // Both positions asserted present first: `indexOf` answers -1 for an absent needle,
+    // and -1 is less than anything — this very assertion passed for that reason once.
+    const stated = out.indexOf('configureFougere({ scan,');
+    const opened = out.indexOf('resolveStorage("sqlite")');
+    expect(stated).toBeGreaterThan(-1);
+    expect(opened).toBeGreaterThan(-1);
+    expect(stated).toBeLessThan(opened);
   });
 
   it('reports it rather than dying quietly', () => {
@@ -106,7 +112,20 @@ describe('a storage that could not be opened', () => {
     // storage — and an app with no database still has fronds.
     const out = generateBootPlugin({ db: false }, [], '/app/boot', '/nuxt/scan.mjs');
 
-    expect(out).toContain('configureFougere({ scan })');
+    expect(out).toContain('configureFougere({ scan,');
     expect(out).not.toContain('resolveStorage');
+  });
+
+  it('carries the topology, because a consumer has nothing else', () => {
+    // `remotes:` is the whole reason an app that hosts nothing boots at all, and `boot()`
+    // used to re-read it off a disk the Worker does not have. `auth` is deliberately not
+    // carried: it holds a live provider, not a value.
+    const out = generateBootPlugin(
+      { db: false, remotes: { catalog: 'https://x.workers.dev' }, auth: (() => {}) as never },
+      [], '/app/boot', '/nuxt/scan.mjs',
+    );
+
+    expect(out).toContain('"remotes":{"catalog":"https://x.workers.dev"}');
+    expect(out).not.toContain('auth');
   });
 });

@@ -68,6 +68,15 @@ export interface HttpTransportOptions {
    * will take it.
    */
   sign?: (call: SignedCall) => Promise<string>;
+  /**
+   * Who performs the request. Defaults to the global `fetch`.
+   *
+   * A Cloudflare service binding answers this shape (`env.CATALOG.fetch`), and on that
+   * platform it is not an optimization: a Worker calling a sibling's public URL is
+   * refused by the edge (error 1042), so a binding is the only route between two Workers
+   * of one account. Nothing else about the call changes — same envelope, same retries.
+   */
+  fetch?: (input: string, init: RequestInit) => Promise<Response>;
 }
 
 /** Failures where the request never reached the other side — safe to retry. */
@@ -75,6 +84,13 @@ const CONNECTION_FAILURES = new Set(['ECONNREFUSED', 'ENOTFOUND', 'EAI_AGAIN']);
 
 export function createHttpTransport(baseUrl: string, options: HttpTransportOptions = {}): Transport {
   const url = `${baseUrl.replace(/\/$/, '')}/_fougere/call`;
+  // Who performs the request, when it is not the global one. A Cloudflare service binding
+  // is exactly this shape — and on that platform it is the ONLY way two Workers of one
+  // account reach each other: measured, a Worker fetching a sibling's public URL is
+  // refused by the edge with error 1042 before the request leaves. The framing above and
+  // below is identical either way, which is the whole reason this is one option and not
+  // a second transport.
+  const send = options.fetch ?? fetch;
   const timeoutMs = options.timeoutMs ?? 10_000;
   const retries = options.retries ?? 1;
   let nextId = 1;
@@ -94,7 +110,7 @@ export function createHttpTransport(baseUrl: string, options: HttpTransportOptio
     for (let attempt = 0; ; attempt++) {
       let res: Response;
       try {
-        res = await fetch(url, {
+        res = await send(url, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify(request),

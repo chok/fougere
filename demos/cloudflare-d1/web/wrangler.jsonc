@@ -1,0 +1,11 @@
+{
+  "name": "fougere-catalog-web",
+  "main": ".output/server/index.mjs",
+  "compatibility_date": "2026-08-01",
+  // Nitro's cloudflare preset polyfills what it needs through unenv, so this app does
+  // not get the "no node: builtin" guarantee the frond worker next door does. It does
+  // not need one either: it stores nothing and opens nothing.
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": { "directory": ".output/public", "binding": "ASSETS" },
+  "observability": { "enabled": true }
+}

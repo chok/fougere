@@ -19,7 +19,7 @@ import { Lifecycle } from '@fougere/schema';
  * wants a custom data layer — alternative driver, managed migrations, etc.
  */
 import { createApp, identityFromEnv, Logger, migrating, seeding } from '@fougere/core';
-import { scanProject, loadCascadedConfig, setModuleLoader, frondAliases } from '@fougere/core/node';
+import { scanProject, loadCascadedConfig, setModuleLoader, frondAliases, resolveConventions } from '@fougere/core/node';
 import type { Extension } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import type { App, CreateAppOptions, EntityOrm, FougereConfig, Transport } from '@fougere/core';
@@ -72,6 +72,19 @@ export interface FougereServerConfig {
    * provider, not a value. An app that authenticates reads its own config.
    */
   config?: Partial<FougereConfig>;
+  /**
+   * Who performs an outgoing call, when the default cannot.
+   *
+   * `boot()` builds an HTTP transport from `remotes:` and that is right nearly
+   * everywhere. It is not right on Cloudflare: a Worker calling a sibling's public URL
+   * is refused by the edge with error 1042, so two Workers of one account reach each
+   * other through a SERVICE BINDING and through nothing else. A binding is a value only
+   * the host holds, so only the host can state this.
+   *
+   * It replaces the default entirely — signing included, since a host that builds its
+   * own transport is the one that knows what to put on the wire.
+   */
+  remoteTransport?: (url: string) => Transport;
 }
 
 // ── State ────────────────────────────────────────
@@ -138,11 +151,14 @@ async function boot(): Promise<App> {
   const { createJiti } = await import('jiti');
   // Nitro serves from a bundle, but the scan still reads frond sources from disk — so the
   // named form a frond uses for its neighbour has to resolve here too.
-  const jiti = createJiti(import.meta.url, {
-    interopDefault: true,
-    alias: await frondAliases(process.env.FOUGERE_ROOT ?? process.cwd()),
-  });
-  setModuleLoader((filePath) => jiti.import(filePath) as Promise<Record<string, unknown>>);
+  //
+  // Installed twice: the config names the scope the aliases are built from, so reading it
+  // must not need them. Nothing in `fougere.config.ts` may import `@fronds/*`.
+  const installLoader = (alias?: Record<string, string>): void => {
+    const jiti = createJiti(import.meta.url, { interopDefault: true, ...(alias ? { alias } : {}) });
+    setModuleLoader((filePath) => jiti.import(filePath) as Promise<Record<string, unknown>>);
+  };
+  installLoader();
 
   // Config cascades along the workspace→app frontier: the workspace root (via
   // FOUGERE_ROOT, where `remotes`/shared db live) is the base, the app (cwd)
@@ -153,6 +169,8 @@ async function boot(): Promise<App> {
   // and where there is no file a second read finds nothing and says nothing.
   const fileConfig: FougereConfig = (_config.config as FougereConfig | undefined)
     ?? (await loadCascadedConfig(root, configRoot));
+  const conventions = resolveConventions(fileConfig.conventions);
+  installLoader(await frondAliases(root, conventions));
 
   // Auto-resolve the data layer from config.db when the user didn't provide a
   // custom one via configureFougere. The resolution itself lives in @fougere/defaults
@@ -186,8 +204,11 @@ async function boot(): Promise<App> {
 
   // Layer-2 wiring: `remotes: { catalog: 'http://...' }` in fougere.config.ts
   // is all the user writes — the default transport comes from here.
-  let remoteTransport: ((url: string) => Transport) | undefined;
-  if (Object.keys(fileConfig.remotes ?? {}).length > 0) {
+  // The host's word wins here too — and where it speaks, nothing below runs: building
+  // the default would import the transport and read the environment for a key, both
+  // pointless once the caller has said who carries the call.
+  let remoteTransport: ((url: string) => Transport) | undefined = _config.remoteTransport;
+  if (!remoteTransport && Object.keys(fileConfig.remotes ?? {}).length > 0) {
     log.debug(`remotes declared (${Object.keys(fileConfig.remotes!).join(', ')}) — wiring HTTP transport`);
     const { createHttpTransport } = await import('@fougere/transport-http');
     // A call that leaves this process carries a proof of who sent it, when the
@@ -200,7 +221,7 @@ async function boot(): Promise<App> {
   const app = await createApp({
     // The host's word wins: it scanned at build, and a second scan here would either
     // repeat that work or — where there is no disk — find nothing and say so quietly.
-    scan: _config.scan ?? (await scanProject(root)),
+    scan: _config.scan ?? (await scanProject(root, undefined, conventions)),
     createContainer,
     ormFactory,
     sourceOf,
