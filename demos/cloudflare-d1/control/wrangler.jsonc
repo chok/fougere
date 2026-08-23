@@ -1,0 +1,11 @@
+{
+  "name": "fougere-catalog-control",
+  "main": "dist/control.mjs",
+  "compatibility_date": "2026-08-01",
+  "compatibility_flags": [],
+  // The SAME database. A control reading different rows measures the rows, not the code.
+  "d1_databases": [
+    { "binding": "DB", "database_name": "fougere-catalog", "database_id": "4f3ab059-1f1c-4ae3-ba42-58b361a27a72" }
+  ],
+  "observability": { "enabled": true }
+}

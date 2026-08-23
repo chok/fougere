@@ -1,0 +1,33 @@
+{
+  "name": "fougere-demo-cloudflare-d1",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "schema": "node scripts/schema.mjs",
+    "dev": "pnpm build && wrangler dev",
+    "deploy": "pnpm build && wrangler deploy",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fougere/adapter-sql": "workspace:*",
+    "@fougere/container": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/schema": "workspace:*",
+    "@fougere/transport-http": "workspace:*",
+    "kysely": "^0.28.17",
+    "kysely-d1": "^0.4.0",
+    "@fougere/adapter-rest": "workspace:*",
+    "@fougere/http": "workspace:*",
+    "hono": "^4.7.0",
+    "@fougere/observability": "workspace:*"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250801.0",
+    "esbuild": "^0.25.12",
+    "jiti": "^2.4.2",
+    "wrangler": "^4.0.0",
+    "@fougere/cli": "workspace:*"
+  }
+}

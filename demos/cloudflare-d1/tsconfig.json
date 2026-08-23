@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": ".",
+    "noEmit": true,
+    // A Worker has no `process`, no `Buffer` and no `node:` — but it HAS the DOM's
+    // Request/Response, plus Cloudflare's own bindings. `types` is explicit since TS 7
+    // dropped the automatic pull, so naming node here would be naming a lie.
+    "types": ["@cloudflare/workers-types"]
+  },
+  "include": ["src", "fronds", "build.mjs", "scripts"]
+}

@@ -1,0 +1,14 @@
+{
+  // A Frond is autonomous TypeScript domain code — it typechecks on its own, with no
+  // knowledge of the runtime that will host it. That is the claim this demo exists to
+  // make, so it is checked here rather than asserted in a README.
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".",
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false
+  },
+  "include": ["."]
+}

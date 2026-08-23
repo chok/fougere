@@ -4,6 +4,8 @@
 **/.next/
 **/.output/
 **/.fougere/
+# wrangler's local state — a workerd sandbox and its D1 files, rebuilt on every `dev`
+**/.wrangler/
 .claude/settings.local.json
 **/*.generated.ts
 **/*.db

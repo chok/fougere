@@ -1,0 +1,21 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "fougere-catalog",
+  // The bundle is built by `pnpm build` — esbuild with `--conditions=workerd`, which is
+  // what picks the queue realization of `#ambient` and the Web door of the transport.
+  "main": "dist/worker.mjs",
+  "compatibility_date": "2026-08-01",
+  // Deliberately EMPTY. `nodejs_compat` would make this run by shipping a Node shim, and
+  // then nothing would ever tell us which builtin had crept back in.
+  "compatibility_flags": [],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "fougere-catalog",
+      // Created 2026-08-23 in WEUR. A fresh clone runs `wrangler d1 create fougere-catalog`
+      // and puts its own id here — the name is the same, the id never is.
+      "database_id": "4f3ab059-1f1c-4ae3-ba42-58b361a27a72"
+    }
+  ],
+  "observability": { "enabled": true }
+}
