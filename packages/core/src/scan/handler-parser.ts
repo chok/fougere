@@ -88,6 +88,36 @@ function compilerProjectOf(filePath: string, projectRoot?: string): { key: strin
   return configured;
 }
 
+/**
+ * Declare every file a run will read, so one program covers it.
+ *
+ * `checkedSourceOf` rebuilds whenever it meets a root it has not seen, and a frond lives
+ * outside its project's tsconfig `include`, so every declaration was a new root: 44 files
+ * cost 7.3 s that way against 0.34 s for one program.
+ */
+export async function seedTypeProgram(filePaths: readonly string[], projectRoot?: string): Promise<void> {
+  const typescript = await loadTS();
+  const grouped = new Map<string, { options: ts.CompilerOptions; paths: string[] }>();
+
+  for (const filePath of filePaths) {
+    const absolute = resolvePath(filePath);
+    const configured = compilerProjectOf(absolute, projectRoot);
+    const held = grouped.get(configured.key) ?? { options: configured.options, paths: [] };
+    held.paths.push(absolute);
+    grouped.set(configured.key, held);
+  }
+
+  for (const [key, { options, paths }] of grouped) {
+    const roots = new Set(typeProjects.get(key)?.roots ?? []);
+    for (const path of paths) roots.add(path);
+    typeProjects.set(key, {
+      roots,
+      options,
+      program: typescript.createProgram({ rootNames: [...roots], options }),
+    });
+  }
+}
+
 function checkedSourceOf(filePath: string, projectRoot?: string): { source: ts.SourceFile; checker: ts.TypeChecker } {
   const typescript = getTS();
   const absolute = resolvePath(filePath);

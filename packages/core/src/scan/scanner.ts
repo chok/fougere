@@ -11,6 +11,7 @@ import {
   parsePresenterMethods,
   parseConstructorParams,
   resetTypePrograms,
+  seedTypeProgram,
   type ParsedType,
 } from './handler-parser.js';
 import { loadFrondConfig } from '../frond-config.js';
@@ -24,7 +25,7 @@ import { Fronds } from './Fronds.js';
 import { getModuleLoader } from '../loader.js';
 import {
   type Conventions, type ConventionsInput,
-  DEFAULT_CONVENTIONS, resolveConventions, frondPackage, providerDirsOf,
+  DEFAULT_CONVENTIONS, resolveConventions, frondPackage, providerDirsOf, frondDirsOf,
 } from './conventions.js';
 
 // FS
@@ -696,6 +697,16 @@ export async function scanProject(
   // Resolve workspace root (parent of packages/) for package import resolution
   // For monorepo: root is the project dir (e.g. demos/nuxt-blog), workspace root is the repo root
   const workspaceRoot = findWorkspaceRoot(root);
+
+  // One program for this run. Seeded here because the parser rebuilds on every root it
+  // has not seen, and a frond lives outside its project's tsconfig `include`. Both keys
+  // are seeded: heritage reads under the workspace root, a constructor under none.
+  const declarations = (await Promise.all(
+    [root, ...dirNames.map((dir) => join(frondsDir, dir))].flatMap((frondPath) =>
+      frondDirsOf(conventions).map((dir) => files(join(frondPath, dir)))),
+  )).flat();
+  await seedTypeProgram(declarations, workspaceRoot);
+  await seedTypeProgram(declarations);
 
   const [rootFrond, under] = await Promise.all([
     rootFrondOf(root, workspaceRoot, conventions),
