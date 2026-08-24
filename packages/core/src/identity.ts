@@ -211,7 +211,7 @@ function pemOf(value: string): string {
  * that names an authority and then accepts unsigned calls has said two things at once.
  */
 export async function identityFromEnv(env: Record<string, string | undefined> = envOfProcess()): Promise<CallIdentity> {
-  const root = env.FOUGERE_ROOT ? pemOf(env.FOUGERE_ROOT) : undefined;
+  const root = env.FOUGERE_ROOT_KEY ? pemOf(env.FOUGERE_ROOT_KEY) : undefined;
   const privateKey = env.FOUGERE_KEY ? pemOf(env.FOUGERE_KEY) : undefined;
   const grant = env.FOUGERE_GRANT;
 

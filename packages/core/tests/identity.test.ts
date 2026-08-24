@@ -123,7 +123,7 @@ describe('what the deployment injected', () => {
   /** The seam most likely to be wrong: what the CLI PRINTS and what a boot READS. */
   it('reads back what `fougere keys` and `fougere grant` print', async () => {
     const caller = await identityFromEnv({ FOUGERE_KEY: packed(frond.privateKey), FOUGERE_GRANT: grant });
-    const receiver = await identityFromEnv({ FOUGERE_ROOT: packed(root.publicKey) });
+    const receiver = await identityFromEnv({ FOUGERE_ROOT_KEY: packed(root.publicKey) });
 
     const envelope = await caller.sign!({ ...CALL, state: { user: { id: 'alice' } } });
 
@@ -134,14 +134,14 @@ describe('what the deployment injected', () => {
   });
 
   it('takes a pasted PEM too — base64 is a convenience, not a decree', async () => {
-    const receiver = await identityFromEnv({ FOUGERE_ROOT: root.publicKey });
+    const receiver = await identityFromEnv({ FOUGERE_ROOT_KEY: root.publicKey });
     const caller = await identityFromEnv({ FOUGERE_KEY: frond.privateKey, FOUGERE_GRANT: grant });
 
     expect((await receiver.verify!(await caller.sign!(CALL), CALL)).caller).toBe('blog');
   });
 
   it('trusting a root IS asking to refuse — no second flag says so', async () => {
-    expect((await identityFromEnv({ FOUGERE_ROOT: packed(root.publicKey) })).requireIdentity).toBe(true);
+    expect((await identityFromEnv({ FOUGERE_ROOT_KEY: packed(root.publicKey) })).requireIdentity).toBe(true);
     expect((await identityFromEnv({})).requireIdentity).toBe(false);
   });
 
@@ -152,7 +152,7 @@ describe('what the deployment injected', () => {
   });
 
   it('a frond that only ANSWERS holds no key, and that is not an error', async () => {
-    const receiver = await identityFromEnv({ FOUGERE_ROOT: packed(root.publicKey) });
+    const receiver = await identityFromEnv({ FOUGERE_ROOT_KEY: packed(root.publicKey) });
 
     expect(receiver.sign).toBeUndefined();
     expect(receiver.verify).toBeTypeOf('function');

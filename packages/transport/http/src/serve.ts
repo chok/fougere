@@ -78,7 +78,7 @@ export function serve(runner: Transport, options: ServeOptions = {}): Promise<Ru
       new Error(
         `A Fougere receiver on '${host}' is reachable from outside this machine and would believe whatever `
         + 'state it is handed.\n'
-        + '  - `fougere keys` once, then inject FOUGERE_ROOT here (and `fougere grant <frond>` for each caller), or\n'
+        + '  - `fougere keys` once, then inject FOUGERE_ROOT_KEY here (and `fougere grant <frond>` for each caller), or\n'
         + '  - keep it on loopback, or\n'
         + '  - pass `allowUnsigned: true` if a mesh or an ingress already authenticated the caller.',
       ),

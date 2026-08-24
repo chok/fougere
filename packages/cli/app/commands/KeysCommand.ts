@@ -36,7 +36,7 @@ export default class KeysCommand {
 
     this.ui.success(`root created — ${ROOT_KEY} (never commit it; added to .gitignore)`);
     this.ui.note(
-      `FOUGERE_ROOT=${packed(publicKey)}`,
+      `FOUGERE_ROOT_KEY=${packed(publicKey)}`,
       'Every frond that ANSWERS — public, safe in an image or a manifest',
     );
     this.ui.info('Then `fougere grant <frond>` for each frond that CALLS.');

@@ -77,7 +77,7 @@ export default class ServeCommand {
     const { verify, requireIdentity } = await identityFromEnv();
     const { port: bound } = await serve((call, inv) => current(call, inv), { port, verify, requireIdentity });
     this.ui.step(`frond ${frond} servie — POST http://127.0.0.1:${bound}/_fougere/call`);
-    this.ui.info(requireIdentity ? 'signed calls only (FOUGERE_ROOT is set)' : 'unsigned calls accepted — no FOUGERE_ROOT');
+    this.ui.info(requireIdentity ? 'signed calls only (FOUGERE_ROOT_KEY is set)' : 'unsigned calls accepted — no FOUGERE_ROOT_KEY');
 
     if (!watching) {
       this.ui.info('Ctrl-C pour arrêter.');
