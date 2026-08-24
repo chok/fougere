@@ -23,7 +23,7 @@ import {
 import { declaresStorage } from '@fougere/defaults';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
 import { createJiti } from 'jiti';
-import { resolve } from 'node:path';
+import { resolve, relative } from 'node:path';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 
 export interface FougereModuleOptions {
@@ -37,6 +37,13 @@ export interface FougereModuleOptions {
   root?: string;
 }
 
+
+/**
+ * A frond directory as the pattern Nuxt tests for a restart: it matches the changed
+ * file against the path relative to the layer's app dir, so that is the base here.
+ */
+const restartsOnFrom = (srcDir: string) => (dir: string): RegExp =>
+  new RegExp(`^${relative(srcDir, dir).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[\\\\/]`);
 
 const module = defineNuxtModule<FougereModuleOptions>({
   meta: {
@@ -114,7 +121,12 @@ const module = defineNuxtModule<FougereModuleOptions>({
     // and a field you just added is simply absent with no error anywhere.
     for (const frond of fronds) {
       nuxt.options.alias[frond.source.package] = frond.source.path;
-      nuxt.options.watch.push(...watchPathsOf(frond, scanRoot, conventions));
+      const watched = watchPathsOf(frond, scanRoot, conventions);
+      // Nuxt reads this list TWICE and a directory serves only the first read: the
+      // watcher adds string entries, while the restart test is `pattern === path`
+      // against the changed FILE — which a directory never equals. So each dir goes
+      // in twice, as itself and as the pattern that matches what lives under it.
+      nuxt.options.watch.push(...watched, ...watched.map(restartsOnFrom(nuxt.options.srcDir)));
     }
 
     // ── 1b-bis. Keep entity names through minification ──────────────────────
@@ -241,10 +253,10 @@ const module = defineNuxtModule<FougereModuleOptions>({
     // `emitScan` writes imports relative to where the module SITS, so the destination is
     // settled before the source is produced — `dst` is that path.
     const scanTpl = addTemplate({
-      filename: 'fougere-scan.mjs',
+      filename: 'fougere-scan.ts',
       write: true,
       getContents: ({ nuxt: n }) =>
-        emitScan(scan, { outFile: resolve(n!.options.buildDir, 'fougere-scan.mjs') }),
+        emitScan(scan, { outFile: resolve(n!.options.buildDir, 'fougere-scan.ts') }),
     });
 
     // ── 6b. Boot plugin (virtual — lives in .nuxt/) ───
