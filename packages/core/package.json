@@ -1,6 +1,6 @@
 {
   "name": "@fougere/core",
-  "version": "0.2.0-alpha.2",
+  "version": "0.3.0-alpha.0",
   "description": "The core \u2014 scan, call contract, fa\u00e7ades, remote stand-ins.",
   "keywords": [
     "fougere",

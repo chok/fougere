@@ -1,6 +1,6 @@
 {
   "name": "@fougere/nuxt",
-  "version": "0.2.0-alpha.2",
+  "version": "0.3.0-alpha.0",
   "description": "The Nuxt module: Fougere's client primitives and server surface.",
   "keywords": [
     "fougere",

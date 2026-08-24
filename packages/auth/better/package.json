@@ -1,6 +1,6 @@
 {
   "name": "@fougere/auth-better",
-  "version": "0.2.0-alpha.2",
+  "version": "0.3.0-alpha.0",
   "description": "Fougere's auth — a translation layer onto better-auth.",
   "keywords": [
     "fougere",

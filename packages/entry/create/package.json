@@ -1,6 +1,6 @@
 {
   "name": "create-fougere",
-  "version": "0.2.0-alpha.2",
+  "version": "0.3.0-alpha.0",
   "description": "Scaffold a Fougere workspace — `npm create fougere`.",
   "keywords": [
     "fougere",

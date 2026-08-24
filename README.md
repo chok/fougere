@@ -128,7 +128,7 @@ Rust whose rules — not just its types — are enforced by the TypeScript judge
 
 ## Alpha today
 
-`0.2.0-alpha.2`, published under the `alpha` tag. The version is the whole promise: the
+`0.3.0-alpha.0`, published under `latest` and `alpha`. The version is the whole promise: the
 surface can still move. Seen running, not planned — a judged draft→publish exercised in a
 browser, the split lived daily, identical user code either side through a production
 build, and [this site](./site) is itself a Fougere app.

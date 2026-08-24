@@ -1,6 +1,6 @@
 {
   "name": "@fougere/app",
-  "version": "0.2.0-alpha.2",
+  "version": "0.3.0-alpha.0",
   "description": "The host-independent half of a Fougere app: boot, call envelope, REST table, form contract.",
   "keywords": [
     "fougere",
@@ -63,7 +63,7 @@
     "access": "public"
   },
   "peerDependencies": {
-    "@fougere/adapter-graphql": "^0.2.0-alpha.0"
+    "@fougere/adapter-graphql": "^0.3.0-alpha.0"
   },
   "peerDependenciesMeta": {
     "@fougere/adapter-graphql": {

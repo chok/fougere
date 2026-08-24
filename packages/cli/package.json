@@ -1,6 +1,6 @@
 {
   "name": "@fougere/cli",
-  "version": "0.2.0-alpha.2",
+  "version": "0.3.0-alpha.0",
   "description": "The Fougere CLI \u2014 compose a workspace, serve a frond, call an operation.",
   "keywords": [
     "fougere",
