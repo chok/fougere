@@ -24,3 +24,4 @@ CLAUDE.local.md
 
 # pnpm content-addressable store, if one lands in the tree
 .pnpm-store/
+benchmarks/
