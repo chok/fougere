@@ -8,7 +8,7 @@
     "schema": "node scripts/schema.mjs",
     "dev": "pnpm build && wrangler dev",
     "deploy": "pnpm build && wrangler deploy",
-    "typecheck": "fougere build && tsc --noEmit"
+    "typecheck": "pnpm build && tsc --noEmit"
   },
   "dependencies": {
     "@fougere/adapter-sql": "workspace:*",
