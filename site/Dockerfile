@@ -17,15 +17,24 @@ RUN pnpm --filter "./packages/**" -r run build \
   && pnpm --filter "@fougere/site" run build
 # Known monorepo issue: Nitro's trace of packages with lazy internals is
 # partial under pnpm (jiti misses its babel transform for the runtime frond
-# scanner). Replace them with the real packages, and add core's pinned TS 5.9
-# (dynamically imported by the scanner; the root TS 7 has no JS API and goes
-# untraced). drizzle-orm used to sit in this list — the ORM is Kysely now, a
-# single-entrypoint package that has not needed the same treatment.
+# scanner). Replace them with the real packages, and add the TS the scanner
+# dynamically imports — `@typescript/typescript6`, the JS compiler API, which the
+# root TS 7 does not expose. drizzle-orm used to sit in this list; the ORM is
+# Kysely now, a single-entrypoint package that needs no such treatment.
+#
+# Each entry is `store-glob:package-name`, and the two are NOT the same string for
+# a scoped package: pnpm writes `@typescript+typescript6@6.0.2` in the store while
+# the name resolution needs `@typescript/typescript6`. Deriving the name from the
+# glob is what broke this: it copied `typescript` (5.9, still in the store because
+# something else pulls it), so the loop SUCCEEDED and exited 0 while the package the
+# scanner imports was absent — a break that only surfaced at the first scan, which
+# for the site is at boot.
 RUN mkdir -p site/.output/server/node_modules \
-  && for pkg in jiti@ typescript@5; do \
-       name="${pkg%@*}"; \
+  && for spec in "jiti@:jiti" "@typescript+typescript6@:@typescript/typescript6"; do \
+       glob="${spec%%:*}"; name="${spec#*:}"; \
        rm -rf "site/.output/server/node_modules/$name"; \
-       cp -RL "$(ls -d node_modules/.pnpm/${pkg}*/node_modules/$name | head -1)" \
+       mkdir -p "$(dirname "site/.output/server/node_modules/$name")"; \
+       cp -RL "$(ls -d node_modules/.pnpm/${glob}*/node_modules/$name | head -1)" \
          "site/.output/server/node_modules/$name" || exit 1; \
      done
 # The @fougere/* workspace packages are inlined in the Nitro bundle, but the
