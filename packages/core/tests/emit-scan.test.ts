@@ -74,7 +74,7 @@ describe('a scan written down', () => {
     const scan = await scanProject(root);
     writeFileSync(outFile, emitScan(scan, { outFile }));
 
-    const ts = await import('typescript');
+    const ts = await import('@typescript/typescript6');
     const parsed = ts.createSourceFile(outFile, emitScan(scan, { outFile }), ts.ScriptTarget.ESNext, true);
     // A syntax error surfaces as a parse diagnostic; nothing else is asked of it here.
     expect((parsed as unknown as { parseDiagnostics: unknown[] }).parseDiagnostics).toHaveLength(0);
