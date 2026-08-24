@@ -31,7 +31,7 @@ for manifest in packages/*/package.json packages/*/*/package.json; do
   [ "$private" = "public" ] || continue
   [ "$name" != "-" ] || continue
 
-  current=$(npm view "$name" dist-tags.latest 2>/dev/null || true)
+  current=$(pnpm view "$name" dist-tags.latest 2>/dev/null || true)
 
   if [ "$current" = "$version" ]; then
     printf '  %-26s latest déjà sur %s\n' "$name" "$version"
@@ -39,7 +39,7 @@ for manifest in packages/*/package.json packages/*/*/package.json; do
   fi
 
   if [ "$APPLY" = "--apply" ]; then
-    if npm dist-tag add "$name@$version" latest >/dev/null 2>&1; then
+    if pnpm dist-tag add "$name@$version" latest >/dev/null 2>&1; then
       printf '  %-26s %s → %s\n' "$name" "${current:-aucun}" "$version"
     else
       printf '  %-26s ÉCHEC (publié en %s ?)\n' "$name" "$version"
