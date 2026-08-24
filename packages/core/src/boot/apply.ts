@@ -1,5 +1,6 @@
 import type { FougereConfig } from '../config-loader.js';
 import { setLogLevel, logLevel, envLevel } from '../builtins/logger.js';
+import { same } from '@fougere/schema';
 
 export interface ConfigApplication {
   /** What this call changed in the running process. */
@@ -43,14 +44,4 @@ export function applyConfig(next: FougereConfig, inForce?: FougereConfig): Confi
     }
   }
   return { applied, pending };
-}
-
-/** Equal enough to decide "nothing changed". Anything unserialisable counts as changed. */
-function same(a: unknown, b: unknown): boolean {
-  if (a === b) return true;
-  try {
-    return JSON.stringify(a) === JSON.stringify(b);
-  } catch {
-    return false;
-  }
 }

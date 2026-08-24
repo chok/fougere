@@ -75,6 +75,31 @@ describe('applyConfig', () => {
     expect(out.pending.sort()).toEqual(['db', 'ports']);
   });
 
+  /**
+   * The key order of an object literal is not a change, and a hand-written comparison by
+   * serialisation said it was. `applyConfig` now shares the one equality Schema declares,
+   * so a re-read config that only moved its members reports nothing pending.
+   */
+  it('does not report a key as pending when only the member order moved', () => {
+    setLogLevel('warn');
+    const out = applyConfig(
+      { logLevel: 'warn', remotes: { blog: 'http://a', shop: 'http://b' } },
+      { logLevel: 'warn', remotes: { shop: 'http://b', blog: 'http://a' } },
+    );
+
+    expect(out.pending).toEqual([]);
+  });
+
+  it('still reports a key whose value actually moved', () => {
+    setLogLevel('warn');
+    const out = applyConfig(
+      { logLevel: 'warn', remotes: { blog: 'http://a' } },
+      { logLevel: 'warn', remotes: { blog: 'http://elsewhere' } },
+    );
+
+    expect(out.pending).toEqual(['remotes']);
+  });
+
   it('lets the environment win over the file — the CLI speaks that way', () => {
     vi.stubEnv('FOUGERE_LOG_LEVEL', 'error');
     setLogLevel('info');

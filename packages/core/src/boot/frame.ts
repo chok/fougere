@@ -16,7 +16,7 @@
  * than declared: a saga asks its author for an `undo` per step because its steps are
  * arbitrary code. Here they are not.
  */
-import { FieldGroup, Unique, primaryFieldOf, type Fields } from '@fougere/schema';
+import { FieldGroup, Unique, primaryFieldOf, same, type Fields } from '@fougere/schema';
 import type { Logger } from '../builtins/logger.js';
 
 /** One write that landed, and how to take it back. */
@@ -41,14 +41,6 @@ interface Undoable {
   findByKeys(ids: readonly string[], ...rest: unknown[]): Promise<Map<string, Record<string, unknown>>>;
   upsert?(input: Record<string, unknown>, ...rest: unknown[]): Promise<Record<string, unknown>>;
   upsertAll?(inputs: readonly Record<string, unknown>[], ...rest: unknown[]): Promise<number>;
-}
-
-/** Field by field, the way a stored value compares — a Date and its clone are the same one. */
-function same(a: unknown, b: unknown): boolean {
-  if (Object.is(a, b)) return true;
-  if (a instanceof Date && b instanceof Date) return a.getTime() === b.getTime();
-  if (a === null || b === null || typeof a !== 'object' || typeof b !== 'object') return false;
-  return JSON.stringify(a) === JSON.stringify(b);
 }
 
 const pick = (row: Record<string, unknown>, keys: readonly string[]): Record<string, unknown> =>
