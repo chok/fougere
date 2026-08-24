@@ -5,7 +5,7 @@
  * TypeScript is lazy-loaded to avoid bundling the compiler in production builds.
  */
 import type ts from '@typescript/typescript6';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, statSync } from 'node:fs';
 import { join, dirname, resolve as resolvePath } from 'node:path';
 
 /** Lazy-loaded TypeScript module — avoids bundling the 9MB compiler. */
@@ -36,9 +36,58 @@ interface TypeProject {
 const typeProjects = new Map<string, TypeProject>();
 const compilerProjects = new Map<string, { key: string; roots: string[]; options: ts.CompilerOptions }>();
 
+/**
+ * What survives a run: the parsed declarations, and the program built over them.
+ *
+ * Rebuilding a program re-reads `lib.d.ts` and every imported `.d.ts`, and that is FIXED
+ * work — measured, a second scan in one process cost the same at 16 frond files as at 406.
+ * The mtime is the guard, so a run still cannot see a stale type: a file that moved is
+ * re-read and TypeScript invalidates it and everything depending on it, which is a
+ * narrower rule than discarding the program and not a weaker one.
+ */
+const sourceFiles = new Map<string, { mtime: number; file: ts.SourceFile }>();
+const retained = new Map<string, { host: ts.CompilerHost; program: ts.Program }>();
+
 export function resetTypePrograms(): void {
   typeProjects.clear();
   compilerProjects.clear();
+}
+
+/** Drop what runs share. For a test that must prove a cold read. */
+export function forgetParsedSources(): void {
+  sourceFiles.clear();
+  retained.clear();
+}
+
+function keptHost(key: string, options: ts.CompilerOptions): ts.CompilerHost {
+  const held = retained.get(key);
+  if (held) return held.host;
+  const typescript = getTS();
+  const base = typescript.createCompilerHost(options);
+  const host: ts.CompilerHost = {
+    ...base,
+    getSourceFile(fileName, languageVersion, onError, shouldCreate) {
+      const path = resolvePath(fileName);
+      const mtime = statSync(path, { throwIfNoEntry: false })?.mtimeMs ?? -1;
+      const cached = sourceFiles.get(path);
+      if (cached && cached.mtime === mtime) return cached.file;
+      const file = base.getSourceFile(fileName, languageVersion, onError, shouldCreate);
+      if (file && mtime >= 0) sourceFiles.set(path, { mtime, file });
+      return file;
+    },
+  };
+  retained.set(key, { host, program: undefined as unknown as ts.Program });
+  return host;
+}
+
+function builtProgram(key: string, roots: readonly string[], options: ts.CompilerOptions): ts.Program {
+  const typescript = getTS();
+  const host = keptHost(key, options);
+  const program = typescript.createProgram({
+    rootNames: [...roots], options, host, oldProgram: retained.get(key)?.program,
+  });
+  retained.set(key, { host, program });
+  return program;
 }
 
 function compilerProjectOf(filePath: string, projectRoot?: string): { key: string; roots: string[]; options: ts.CompilerOptions } {
@@ -110,11 +159,7 @@ export async function seedTypeProgram(filePaths: readonly string[], projectRoot?
   for (const [key, { options, paths }] of grouped) {
     const roots = new Set(typeProjects.get(key)?.roots ?? []);
     for (const path of paths) roots.add(path);
-    typeProjects.set(key, {
-      roots,
-      options,
-      program: typescript.createProgram({ rootNames: [...roots], options }),
-    });
+    typeProjects.set(key, { roots, options, program: builtProgram(key, [...roots], options) });
   }
 }
 
@@ -130,16 +175,12 @@ function checkedSourceOf(filePath: string, projectRoot?: string): { source: ts.S
     // cache exposed that first-run-only failure.
     const roots = new Set(configured.roots.map((root) => resolvePath(root)));
     roots.add(absolute);
-    const program = typescript.createProgram({ rootNames: [...roots], options: configured.options });
+    const program = builtProgram(configured.key, [...roots], configured.options);
     held = { roots, options: configured.options, program };
     typeProjects.set(configured.key, held);
   } else if (!held.roots.has(absolute)) {
     held.roots.add(absolute);
-    held.program = typescript.createProgram({
-      rootNames: [...held.roots],
-      options: held.options,
-      oldProgram: held.program,
-    });
+    held.program = builtProgram(configured.key, [...held.roots], held.options);
   }
 
   const source = held.program.getSourceFile(absolute);
