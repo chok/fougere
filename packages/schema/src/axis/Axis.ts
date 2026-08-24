@@ -1,6 +1,6 @@
-import { roleAxis } from './role/axis.js';
-import { lifecycleAxis } from './lifecycle/axis.js';
-import { boundaryAxis } from './boundary/axis.js';
+import { roleAxis } from './role/RoleAxis.js';
+import { lifecycleAxis } from './lifecycle/LifecycleAxis.js';
+import { boundaryAxis } from './boundary/BoundaryAxis.js';
 import type { ValidationError } from '../judge/result.js';
 
 export interface Axis<Declared = unknown, Wire = unknown> {

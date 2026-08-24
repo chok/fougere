@@ -1,5 +1,6 @@
 import type { Axis, Resolver } from '../Axis.js';
-import { isObject, oneOfTokens, refuse } from '../../judge/form.js';
+import { refuse } from '../../card/admission.js';
+import { isObject, oneOfTokens } from '../../judge/ValueForm.js';
 import type { ValidationError } from '../../judge/result.js';
 import { ON_DELETE, RELATION_KINDS, type EntityConstructor, type Relation } from './Relation.js';
 import { type RoleRules } from './Role.js';

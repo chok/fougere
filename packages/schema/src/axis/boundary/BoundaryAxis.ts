@@ -1,5 +1,6 @@
 import type { Axis } from '../Axis.js';
-import { admitWire, isObject } from '../../judge/form.js';
+import { admitWire } from '../../card/admission.js';
+import { isObject } from '../../judge/ValueForm.js';
 import type { BoundaryRef } from './Boundary.js';
 
 export const boundaryAxis: Axis<BoundaryRef, BoundaryRef> = {
