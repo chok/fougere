@@ -71,7 +71,7 @@ export function entitySourceOf(descriptor: SchemaDescriptor, options: TypeSource
     .map((line, i) => (i === 0 ? line : `  ${line}`))
     .join('\n');
 
-  return `${exported}class ${name} extends reconstruct<${shapeTypeOf(descriptor)}>(${card}) {}`;
+  return `${exported}class ${name} extends Card.fromDescriptor<${shapeTypeOf(descriptor)}>(${card}).toSchema() {}`;
 }
 
 function identifierOf(name: string): string {

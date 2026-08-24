@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { entity, primary, text, number, bool, created, optional, many, ref, reconstruct, unique, indexed, type EntityConstructor } from '@fougere/schema';
+import { Card, entity, primary, text, number, bool, created, optional, many, ref, unique, indexed, type EntityConstructor } from '@fougere/schema';
 import { createTableSQL, createIndexSQL, generateSQL, toTable, addForeignKeyConstraintSQL } from '../src/index.js';
 
 // ─── Fixtures ──────────────────────────────────────
@@ -291,7 +291,7 @@ describe('a card is enough', () => {
   };
 
   it('generates DDL from a foreign schema, with no entity class', () => {
-    const Sensor = reconstruct(card as any);
+    const Sensor = Card.fromDescriptor(card as any).toSchema();
     expect(ddl('sensors', Sensor, 'pg')).toContain('"celsius" double precision not null');
     expect(ddl('sensors', Sensor, 'mssql')).toContain('"id" nvarchar(255) not null primary key');
     expect(ddl('sensors', Sensor, 'sqlite')).toContain('"recorded_at" text not null');

@@ -12,7 +12,7 @@ import {
   entity, primary, text, email, number, bool, date, list, json,
   oneOf, ref, many, created, updated, immutable, optional, nullable,
   unique, indexed, readOnly, writeOnly,
-  describe as describeCard, reconstruct, inputFields, outputFields, FieldGroup, Unique,
+  Card, inputFields, outputFields, FieldGroup, Unique,
   type Fields,
 } from '@fougere/schema';
 import { generateRoutes } from '../src/index.js';
@@ -102,9 +102,9 @@ function fakeApp(entityClass: unknown) {
 }
 
 suite('a card is a schema source', () => {
-  it('carries every axis through describe → reconstruct', () => {
+  it('carries every axis through a card round-trip', () => {
     const before = Post.getFields() as Fields;
-    const after = reconstruct(describeCard(Post)).getFields() as Fields;
+    const after = Card.fromSchema(Post).toSchema().getFields() as Fields;
 
     expect(axesOf(outputFields(after))).toEqual(axesOf(outputFields(before)));
     expect(axesOf(inputFields(after))).toEqual(axesOf(inputFields(before)));
@@ -113,13 +113,13 @@ suite('a card is a schema source', () => {
   it('emits the same card again after a round-trip', () => {
     // Idempotence is the sharper statement: a card that rebuilds into a schema which
     // re-describes to the same document has lost nothing a second consumer could want.
-    const once = describeCard(Post);
-    expect(describeCard(reconstruct(once))).toEqual(once);
+    const once = Card.fromSchema(Post);
+    expect(Card.fromSchema(once.toSchema()).descriptor).toEqual(once.descriptor);
   });
 
   it('projects the same REST routes from a card as from the class', () => {
     const fromClass = generateRoutes(fakeApp(Post));
-    const fromCard = generateRoutes(fakeApp(describeCard(Post)));
+    const fromCard = generateRoutes(fakeApp(Card.fromSchema(Post).descriptor));
 
     expect(fromCard.map((r) => `${r.method} ${r.path}`))
       .toEqual(fromClass.map((r) => `${r.method} ${r.path}`));
@@ -145,7 +145,7 @@ suite('a card is a schema source', () => {
 
     expect(ListBook.getUnique()).toEqual([['listId', 'docId']]);
 
-    const card = describeCard(ListBook);
+    const card = Card.fromSchema(ListBook).descriptor;
     for (const member of ['listId', 'docId'] as const) {
       expect((card.properties[member]!['x-fougere'] as any).role.unique)
         .toEqual([['listId', 'docId']]);
@@ -153,9 +153,9 @@ suite('a card is a schema source', () => {
 
     // …and a consumer rebuilding it recovers the entity-level declaration, de-duplicated:
     // the card states the group once per member, the author wrote it once.
-    const rebuilt = reconstruct(card);
+    const rebuilt = Card.fromDescriptor(card).toSchema();
     expect(rebuilt.getUnique()).toEqual([['listId', 'docId']]);
-    expect(describeCard(rebuilt)).toEqual(card);
+    expect(Card.fromSchema(rebuilt).descriptor).toEqual(card);
   });
 
   it('drops a group a derivation amputated, and keeps a whole one', () => {
@@ -171,7 +171,7 @@ suite('a card is a schema source', () => {
     expect(amputated.getUnique()).toBeUndefined();
     expect(amputated.getFields().listId!.role?.rules).toBeUndefined();
     // The rest of the role is untouched — dropping the group is not dropping the ref.
-    expect((describeCard(amputated).properties.listId!['x-fougere'] as any).role)
+    expect((Card.fromSchema(amputated).descriptor.properties.listId!['x-fougere'] as any).role)
       .toEqual({ relation: { to: 'author', kind: 'one' } });
 
     const whole = ListBook.pick('listId', 'docId');

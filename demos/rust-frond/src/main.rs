@@ -86,7 +86,7 @@ macro_rules! frond_entity {
 //
 // `shape` EST du JSON Schema, au niveau supérieur. Les trois autres axes
 // (role, lifecycle, boundary) vivent sous `x-fougere`, le slot d'extension
-// standard. Un `reconstruct()` côté TS rebâtit un schéma vivant depuis ça.
+// standard. `Card.toSchema()` rebuilds a living schema on the TypeScript side.
 
 frond_entity! {
     Sensor as "sensor" {

@@ -4,8 +4,7 @@ import { Formats,
   text,
   email,
   optional,
-  describe as describeSchema,
-  reconstruct,
+  Card,
 } from '../src/index.js';
 
 // A deliberately trivial predicate — what matters is that the NAME is what the
@@ -44,16 +43,16 @@ describe('registerFormat — a named predicate on the shape axis', () => {
 });
 
 describe('the name is the contract — it survives the card', () => {
-  it('travels through describe() and still judges after reconstruct()', () => {
+  it('travels through a card and still judges after reconstruction', () => {
     class Firm extends entity({ siret: text({ format: 'siret' }) }) {}
 
-    const card = describeSchema(Firm);
+    const card = Card.fromSchema(Firm).descriptor;
     // The card carries a plain JSON Schema `format`, which is what makes the rule
     // readable by a consumer that has never heard of Fougere.
     expect((card.properties.siret as { format?: string }).format).toBe('siret');
     expect(JSON.parse(JSON.stringify(card)).properties.siret.format).toBe('siret');
 
-    const Rebuilt = reconstruct(card);
+    const Rebuilt = Card.fromDescriptor(card).toSchema();
     expect(Rebuilt.validate({ siret: '73282932000074' }).success).toBe(true);
     expect(Rebuilt.validate({ siret: 'nope' }).success).toBe(false);
   });

@@ -5,7 +5,7 @@
  * make of it — the SQL dialect, the wire, the io projection, the judge. Nobody
  * wrote any of the four. Run it and read the arrows.
  */
-import { entity, primary, text, number, created, describe, inputFields, outputFields } from '@fougere/schema';
+import { Card, entity, primary, text, number, created, inputFields, outputFields } from '@fougere/schema';
 import { toTable, createTableSQL } from '@fougere/adapter-sql';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -51,7 +51,7 @@ console.log(D(`
 
 // ── 2. the wire ──────────────────────────────────────────────────────────────
 section('→', 'The identity card', 'what crosses to another language — plain JSON Schema');
-const card = describe(Reading as never, 'reading');
+const card = Card.fromSchema(Reading as never, 'reading').descriptor;
 console.log(JSON.stringify(card, null, 2).split('\n').map((l) => '     ' + l).join('\n'));
 console.log(D(`
      ${JSON.stringify(card).length} bytes, and any validator on earth reads it. This is the

@@ -9,7 +9,7 @@
  * Two projections of the same shape, and they are the pair `form.ts` already draws:
  * `tableColumnsOf` for what a list SHOWS, `formFieldsOf` for what a form SUPPLIES.
  */
-import { reconstruct, primaryFieldOf, type SchemaView } from '@fougere/schema';
+import { Card, primaryFieldOf, type SchemaView } from '@fougere/schema';
 import {
   CALL_ENDPOINT,
   fetcher as browserFetcher,
@@ -96,7 +96,7 @@ export function resourcesOf(card: IdentityCard): AdminResource[] {
   for (const frond of card.fronds) {
     for (const door of frond.doors) {
       if (!door.schema) continue;
-      const entity = reconstruct(door.schema) as unknown as SchemaView;
+      const entity = Card.fromDescriptor(door.schema).toSchema() as unknown as SchemaView;
       const primary = primaryFieldOf(entity.getFields());
       // No primary means no row identity — a list could be drawn, but nothing could be
       // opened, edited or deleted. Refusing here is the same answer `primaryFieldOf`

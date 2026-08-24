@@ -6,7 +6,7 @@
  * runner below is the reference realization. Transports move the value,
  * they never reshape it.
  */
-import { describe as describeSchema, type SchemaDescriptor } from '@fougere/schema';
+import { Card, type SchemaDescriptor } from '@fougere/schema';
 import { factsAnnouncedBy } from '../emit.js';
 import type { InvocationContext } from './invocation.js';
 import { FougereError, ErrorCode } from './errors.js';
@@ -169,7 +169,7 @@ export interface TopologyReport {
  * card.fronds is not iterable` was what a malformed card produced at the boot,
  * naming neither the remote nor the address.
  *
- * The descriptor behind a door is NOT checked here — `reconstruct` refuses it, and
+ * The descriptor behind a door is NOT checked here — `Card.toSchema` refuses it, and
  * only where one is consumed.
  */
 export function assertIdentityCard(value: unknown, source: string): IdentityCard {
@@ -286,7 +286,7 @@ export function identityCardOf(app: App, surface?: string): IdentityCard {
             name: address,
             ops,
             // Absent when nothing of that name is stored. A door is still a door.
-            ...(entity ? { schema: describeSchema(entity.entityClass, address) } : {}),
+            ...(entity ? { schema: Card.fromSchema(entity.entityClass, address).descriptor } : {}),
           }];
         }),
         /**
@@ -300,7 +300,7 @@ export function identityCardOf(app: App, surface?: string): IdentityCard {
          */
         facts: factsAnnouncedBy(frond.handlers).map((name) => {
           const entityClass = declared.get(name);
-          return { name, ...(entityClass ? { schema: describeSchema(entityClass, name) } : {}) };
+          return { name, ...(entityClass ? { schema: Card.fromSchema(entityClass, name).descriptor } : {}) };
         }),
       };
     }),
@@ -334,8 +334,8 @@ function facadeOps(app: App, entityName: string, surface?: string): CardOp[] {
     return {
       name,
       ...(contract?.description && { description: contract.description }),
-      ...(contract?.input && { input: describeSchema(contract.input, name) }),
-      ...(contract?.output && { output: describeSchema(contract.output, name) }),
+      ...(contract?.input && { input: Card.fromSchema(contract.input, name).descriptor }),
+      ...(contract?.output && { output: Card.fromSchema(contract.output, name).descriptor }),
       ...(contract?.cardinality && { cardinality: contract.cardinality }),
       kind: contract.kind,
     };

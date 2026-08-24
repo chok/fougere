@@ -13,7 +13,7 @@ import { assertIdentityCard, RPC_ENTITY } from '../wire/call.js';
 import { runMiddlewares, type AppMiddleware, type OperationContext } from '../wire/middleware.js';
 import { EMPTY_INVOCATION, type InvocationContext } from '../wire/invocation.js';
 import { FougereError, ErrorCode } from '../wire/errors.js';
-import { reconstruct, type SchemaView, type SchemaDescriptor } from '@fougere/schema';
+import { Card, type SchemaView, type SchemaDescriptor } from '@fougere/schema';
 import { DynamicFacade } from '../entry/DynamicFacade.js';
 
 interface Route {
@@ -110,7 +110,7 @@ export function createRemoteRouter(
           byEntity.set(door.name, {
             frond: frond.name,
             transport,
-            ...(door.schema ? { schema: reconstruct(door.schema as SchemaDescriptor) } : {}),
+            ...(door.schema ? { schema: Card.fromDescriptor(door.schema as SchemaDescriptor).toSchema() } : {}),
           });
         }
       }

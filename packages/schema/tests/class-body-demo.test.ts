@@ -6,7 +6,7 @@
  *   1. Le nom de l'entity est un TYPE → handler `(o: Order)` sans Infer.
  *   2. Le corps est une vraie classe → getters / toString / validate cross-champ marchent.
  *   3. MAIS tout ce qui est dans le corps est INVISIBLE au pipeline déclaratif
- *      (describe / reconstruct / adapters). C'est ça l'arbitrage.
+ *      (Card / adapters). That is the trade-off.
  */
 import { describe as group, it, expect } from 'vitest';
 import { entity } from '../src/entity.js';
@@ -14,8 +14,7 @@ import { primary } from '../src/vocabulary/primary.js';
 import { text } from '../src/vocabulary/text.js';
 import { number } from '../src/vocabulary/number.js';
 import { oneOf } from '../src/vocabulary/oneOf.js';
-import { describe } from '../src/card/describe.js';
-import { reconstruct } from '../src/card/reconstruct.js';
+import { Card } from '../src/card/Card.js';
 
 // ─── 1 · Le payoff de la classe : un nom = type + valeur ──────────────
 
@@ -64,10 +63,10 @@ group('2 · class body conveniences', () => {
   });
 
   it('MAIS le pipeline déclaratif ne voit pas `label` — il dérive des FIELDS', () => {
-    // describe() lit getFields(), pas le prototype → `label` absent du descripteur.
-    expect(Object.keys(describe(Invoice).properties)).toEqual(['number', 'customer', 'amount']);
+    // Card.fromSchema() reads getFields(), not the prototype, so `label` is absent.
+    expect(Object.keys(Card.fromSchema(Invoice).descriptor.properties)).toEqual(['number', 'customer', 'amount']);
     // donc un schéma reconstruit depuis la carte n'a PAS le getter.
-    const rebuilt = reconstruct(describe(Invoice));
+    const rebuilt = Card.fromSchema(Invoice).toSchema();
     // `in` already answers a boolean, so the `?? {}` that used to sit here was dead
     // and, worse, applied to the whole comparison rather than to the prototype.
     expect('label' in (rebuilt as { prototype: object }).prototype).toBe(false);
@@ -97,8 +96,8 @@ group('3 · overriding validate (cross-field)', () => {
     expect(DateRange.validate({ start: 5, end: 10 }).success).toBe(true);
   });
 
-  it('COÛT : la règle ne traverse pas describe/reconstruct (elle vit hors des axes)', () => {
-    const rebuilt = reconstruct(describe(DateRange));
+  it('the cost: the rule does not travel through a card because it lives outside the axes', () => {
+    const rebuilt = Card.fromSchema(DateRange).toSchema();
     // le schéma reconstruit ignore la règle cross-champ → accepte un range invalide
     expect(rebuilt.validate({ start: 10, end: 5 }).success).toBe(true);
   });

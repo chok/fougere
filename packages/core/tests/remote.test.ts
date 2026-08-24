@@ -221,7 +221,7 @@ describe('remote façade (repli)', () => {
 
     // `schemaFor` promises `SchemaView` — the minimum an adapter needs, and all a
     // hand-rolled `{ getFields() }` entity can honour. This one came off the wire and
-    // through `reconstruct()`, which builds a real schema constructor, so it judges.
+    // through `Card.toSchema()`, which builds a real schema constructor, so it judges.
     const Product = await consumer.schemaFor('product') as SchemaView;
 
     // Not just present — actually exploitable: same field set as the host's

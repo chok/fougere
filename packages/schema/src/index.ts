@@ -13,10 +13,11 @@ export { Unique } from './constraint/Unique.js';
 
 export { Schema, ANONYMOUS_SCHEMA_NAME, type SchemaConstructor } from './Schema.js';
 export { SchemaDerivation } from './SchemaDerivation.js';
-export { isObject } from './judge/form.js';
+export { isObject } from './judge/ValueForm.js';
 export { casesFor, holds, refusalBranches, type Case } from './judge/cases.js';
+export { RowRefusal } from './judge/RowRefusal.js';
 export { type SchemaView, type Row, type PartialRow } from './SchemaView.js';
-export { type FougereHints, type Hints } from './EntityDeclarations.js';
+export { type FougereHints, type Hints } from './Hints.js';
 export { same } from './same.js';
 
 export { primary } from './vocabulary/primary.js';
@@ -45,18 +46,18 @@ export { applyCreate, applyUpdate, freezeClock } from './axis/lifecycle/apply.js
 export { encodeFields } from './projection/encode.js';
 export { inputFields, outputFields } from './projection/io.js';
 export { registrationKeyOf, classNameOf } from './name.js';
-export { describe, describeSet, sourceNameOf } from './card/describe.js';
-export { reconstruct, reconstructSet } from './card/reconstruct.js';
-// What separates two descriptors — one calculation, read by a DDL, a codec and a boot.
-export { diff, diffSet } from './card/diff.js';
+export { Card } from './card/Card.js';
+export { Bundle } from './card/Bundle.js';
 export type { Change, Diff, DiffOptions, SetDiff, SetDiffOptions, RenameCandidate, TypeSet } from './card/diff.js';
 export { entitySourceOf, facadeTypeSourceOf, type TypeSourceOptions, type OpDescriptor } from './card/typescript.js';
 export { type SchemaBundle, type SchemaDescriptor, type FieldDescriptor, type FieldExtension, type RoleDescriptor, type RelationDescriptor } from './card/Descriptor.js';
-export { type SchemaSource, schemaOf, fieldsOf } from './projection/source.js';
+export { type SchemaOrCard, schemaOf, fieldsOf } from './projection/SchemaOrCard.js';
 export type { StandardSchemaV1 } from './projection/standard.js';
 
 export { entity } from './entity.js';
 
-export { Judge } from './judge/Judge.js';
+export { FieldJudge } from './judge/FieldJudge.js';
+export { ValueJudge } from './judge/ValueJudge.js';
+export { RowJudge } from './judge/RowJudge.js';
 export { type ValidateOptions } from './judge/options.js';
 export { type ValidationError, type ValidationResult, type Checked } from './judge/result.js';

@@ -1,6 +1,5 @@
 import { Field } from '../Field.js';
 import { registerGenerator, type GeneratorRef } from '../axis/lifecycle/Generators.js';
-import { Judge } from '../judge/Judge.js';
 
 interface PrimaryOptions {
   generate?: GeneratorRef | [name: string, fn: () => string];
@@ -9,7 +8,7 @@ interface PrimaryOptions {
 export function primary(opts?: PrimaryOptions): Field<string>;
 export function primary<T>(field: Field<T>): Field<T>;
 export function primary(fieldOrOptions?: Field | PrimaryOptions): Field {
-  if (Judge.isField(fieldOrOptions)) {
+  if (Field.is(fieldOrOptions)) {
     const field = fieldOrOptions;
     return field.with({
       role: { ...field.role, primary: true },

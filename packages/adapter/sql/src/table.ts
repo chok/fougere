@@ -7,7 +7,7 @@ import { Lifecycle, Role } from '@fougere/schema';
  * other — the entity never mentions a column type, the dialect never mentions a
  * field. Adding a dialect touches only the second half.
  */
-import { Anatomy, FieldGroup, Unique, fieldsOf, registrationKeyOf, schemaOf, type Field, type SchemaView, type SchemaSource } from '@fougere/schema';
+import { Anatomy, FieldGroup, Unique, fieldsOf, registrationKeyOf, schemaOf, type Field, type SchemaView, type SchemaOrCard } from '@fougere/schema';
 import { boundsOf, type ShapeBounds } from './check.js';
 
 /** The shape keywords a dialect needs to choose a column type. */
@@ -76,8 +76,7 @@ function isStored(field: Field): boolean {
 
 /**
  * The target's primary key column. A live thunk (an in-process entity) answers
- * for real; a relation reconstructed from a lone card (`reconstruct()`, no
- * bundle — `packages/schema/src/projections/card.ts:18-22`) has lost it to a
+ * for real; a relation reconstructed from a lone `Card` (without a `Bundle`) has lost it to a
  * name stand-in with no `getFields` — the convention there is to assume `id`.
  */
 function primaryColumnOf(target: Partial<SchemaView>): string {
@@ -109,7 +108,7 @@ function primaryColumnOf(target: Partial<SchemaView>): string {
 function referenceFor(
   field: Field,
   resolve: (name: string) => string,
-  tableNameOf?: Map<SchemaSource, string>,
+  tableNameOf?: Map<SchemaOrCard, string>,
   hosted?: HostedNames,
 ): ColumnReference | undefined {
   const relation = Role.of(field).relation;
@@ -148,7 +147,7 @@ function toColumn(
   fieldName: string,
   field: Field,
   resolve: (name: string) => string,
-  tableNameOf?: Map<SchemaSource, string>,
+  tableNameOf?: Map<SchemaOrCard, string>,
   hosted?: HostedNames,
 ): ColumnDef {
   // The column type comes from the `shape` axis alone. `anatomy` strips the
@@ -184,7 +183,7 @@ export interface RelationResolve {
   /** Same resolver used for every entity's own table (default or a custom `tableName`). */
   resolve: (name: string) => string;
   /** Live entity class → its already-resolved table name, reused instead of re-derived. */
-  tableNameOf?: Map<SchemaSource, string>;
+  tableNameOf?: Map<SchemaOrCard, string>;
   /** Which entities this batch holds and which live in another source — decided by NAME. */
   hosted?: HostedNames;
 }
@@ -206,10 +205,10 @@ export interface HostedNames {
  *
  * A lone card has no live relation targets, so a `ref()` falls back to the conventions
  * `referenceFor`/`primaryColumnOf` already document (name-derived table, `id` as the key).
- * Pass a bundle through `reconstructSet` first when the FKs matter — it resolves the
+ * Pass a descriptor through `Bundle.toSchemas` first when the FKs matter — it resolves the
  * targets, and its output is the live-class case again.
  */
-export function toTable(tableName: string, entity: SchemaSource, relations?: RelationResolve): TableDef {
+export function toTable(tableName: string, entity: SchemaOrCard, relations?: RelationResolve): TableDef {
   const resolve = relations?.resolve ?? toTableName;
   const fields = fieldsOf(entity);
   const columns: ColumnDef[] = [];
@@ -269,7 +268,7 @@ export function toTableName(name: string): string {
 export interface EntityEntry {
   name: string;
   /** A live class in-process, a card from a frond whose class never crossed. */
-  entityClass: SchemaSource;
+  entityClass: SchemaOrCard;
 }
 
 export interface FrondLike {
@@ -280,7 +279,7 @@ export interface FrondLike {
 export interface AppLike {
   fronds: FrondLike[];
   /** Auth runtime entities are migrated alongside scanned fronds when present. */
-  auth?: { entities: Record<string, SchemaSource> };
+  auth?: { entities: Record<string, SchemaOrCard> };
   /**
    * Entities this app hosts in ANOTHER source — named so a miss can be read.
    *
@@ -306,10 +305,10 @@ export interface AppLike {
 
 /**
  * Does this schema come from another one? `Post` answers no, `Post.pick(…)` answers
- * `Post` — a derivation carries its origin, which `sourceNameOf` already reads for two
- * other projections. Recognised by that FORM, never by a brand.
+ * `Post` — a card carries the same origin for every projection. Recognised by that FORM,
+ * never by a brand.
  */
-function isDerivation(source: SchemaSource): boolean {
+function isDerivation(source: SchemaOrCard): boolean {
   return schemaOf(source).derivation !== undefined;
 }
 
@@ -324,7 +323,7 @@ function isDerivation(source: SchemaSource): boolean {
  *
  * An entity is untouched: it is not a copy of anything, and its rows are the truth.
  */
-function refuseUndated(name: string, source: SchemaSource): void {
+function refuseUndated(name: string, source: SchemaOrCard): void {
   const dated = Object.values(fieldsOf(source)).some((field) => Lifecycle.of(field).stampedOnUpdate);
   if (dated) return;
   throw new Error(
@@ -359,7 +358,7 @@ function collectEntities(app: AppLike): EntityEntry[] {
  */
 export function toTables(app: AppLike, resolve: (name: string) => string): TableDef[] {
   const entries = collectEntities(app);
-  const tableNameOf = new Map<SchemaSource, string>(entries.map((entry) => [entry.entityClass, resolve(entry.name)]));
+  const tableNameOf = new Map<SchemaOrCard, string>(entries.map((entry) => [entry.entityClass, resolve(entry.name)]));
   const hosted = app.elsewhere
     ? { here: new Set(entries.map((entry) => registrationKeyOf(entry.name))), elsewhere: new Set(app.elsewhere.map(registrationKeyOf)) }
     : undefined;

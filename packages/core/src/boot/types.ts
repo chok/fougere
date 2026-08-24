@@ -147,7 +147,7 @@ export interface App extends DispatchPort {
   /**
    * Resolve an entity's schema — the local `entityClass` when it's hosted or
    * scanned here, else reconstructed from the remote's identity card
-   * (rpc.discover → reconstruct()). The one way to get a live schema for an
+   * (`rpc.discover` to `Card.toSchema`). The one way to get a live schema for an
    * entity whose class may not be importable at all (another repo, another
    * language) — a card travelled, but until now its `schema` was thrown away.
    */

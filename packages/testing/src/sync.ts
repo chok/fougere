@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { describe as describeSchema, diff, type Change, type SchemaView } from '@fougere/schema';
+import { Card, type Change, type SchemaDescriptor, type SchemaView } from '@fougere/schema';
 import type { IdentityCard } from '@fougere/core';
 
 /** One entry of `.fougere/remotes.json`, written by `fougere sync`. */
@@ -44,15 +44,15 @@ export async function syncedRemotes(root: string): Promise<SyncedRemote[]> {
  * Closing that would mean `sync` writing the card beside the classes; it is a change to
  * the CLI, not to this file.
  */
-export async function heldShapes(remote: SyncedRemote): Promise<Map<string, ReturnType<typeof describeSchema>>> {
-  const held = new Map<string, ReturnType<typeof describeSchema>>();
+export async function heldShapes(remote: SyncedRemote): Promise<Map<string, SchemaDescriptor>> {
+  const held = new Map<string, SchemaDescriptor>();
   const index = pathToFileURL(join(remote.path, 'index.ts')).href;
   const module = await import(index) as Record<string, unknown>;
 
   for (const [name, exported] of Object.entries(module)) {
     const entity = exported as SchemaView | undefined;
     if (typeof entity !== 'function' || typeof (entity as SchemaView).getFields !== 'function') continue;
-    held.set(name, describeSchema(entity));
+    held.set(name, Card.fromSchema(entity).descriptor);
   }
   return held;
 }
@@ -76,7 +76,7 @@ function servedShapes(card: IdentityCard, frond: string): Map<string, unknown> {
  * a third time.
  */
 export function syncDriftOf(
-  held: Map<string, ReturnType<typeof describeSchema>>,
+  held: Map<string, SchemaDescriptor>,
   card: IdentityCard,
   frond: string,
 ): SyncDrift {
@@ -86,7 +86,7 @@ export function syncDriftOf(
   for (const [name, mine] of held) {
     const theirs = served.get(name) ?? served.get(name.toLowerCase());
     if (!theirs) { drift.gone.push(name); continue; }
-    const moved = diff(mine, theirs as typeof mine);
+    const moved = Card.fromDescriptor(mine).diff(Card.fromDescriptor(theirs as SchemaDescriptor));
     if (moved.changes.length > 0) drift.moved.push({ entity: name, changes: moved.changes });
   }
   return drift;

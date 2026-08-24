@@ -1,6 +1,6 @@
 import type { Field, Fields } from './Field.js';
-import type { Hints, Previous } from './EntityDeclarations.js';
-import type { CompositeUnique } from './EntityDeclarations.js';
+import type { CompositeUnique, Previous } from './EntityDeclarations.js';
+import type { Hints } from './Hints.js';
 import type { ValidationResult } from './judge/result.js';
 import type { ValidateOptions } from './judge/options.js';
 import type { SchemaDerivation } from './SchemaDerivation.js';

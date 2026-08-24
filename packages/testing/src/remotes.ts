@@ -1,4 +1,4 @@
-import { diff, type Change, type SchemaDescriptor } from '@fougere/schema';
+import { Card, type Change, type SchemaDescriptor } from '@fougere/schema';
 import type { IdentityCard } from '@fougere/core';
 
 /** What separates the copy a consumer holds from what the producer actually serves. */
@@ -42,7 +42,7 @@ function factsOf(card: IdentityCard, frond: string): Map<string, SchemaDescripto
  * is identical in-process and split, but one side may have aged. `fougere sync` wrote the
  * consumer's copy three weeks ago, the producer moved on, and it still compiles —
  * production is where that is found today. This is what Pact sells; the material was
- * already here, in `rpc.discover` and in `diff`.
+ * already here, in `rpc.discover` and in `Card.diff`.
  *
  * Read in ONE direction on purpose: what the consumer holds, checked against what is
  * served. A producer serving MORE than the consumer knows is not drift — it is a producer
@@ -62,10 +62,10 @@ export function driftOf(mine: IdentityCard, theirs: IdentityCard, frond: string)
     if (missing.length > 0) drift.missingOps.push({ door: name, ops: missing.sort() });
 
     if (door.schema && there.schema) {
-      // `diff` never guesses a rename — a field gone plus a field appeared lands in
+      // `Card.diff` never guesses a rename — a field gone plus a field appeared lands in
       // `ambiguous`, and only a declaration settles it. Here nobody can declare one, so
       // the pair is reported as it is and a human reads it.
-      const moved = diff(door.schema, there.schema);
+      const moved = Card.fromDescriptor(door.schema).diff(Card.fromDescriptor(there.schema));
       if (moved.changes.length > 0) drift.shapes.push({ door: name, changes: moved.changes });
     }
   }
@@ -76,7 +76,7 @@ export function driftOf(mine: IdentityCard, theirs: IdentityCard, frond: string)
     if (!servedFacts.has(name)) { drift.facts.push({ fact: name, changes: 'gone' }); continue; }
     const there = servedFacts.get(name);
     if (!shape || !there) continue;
-    const moved = diff(shape, there);
+    const moved = Card.fromDescriptor(shape).diff(Card.fromDescriptor(there));
     if (moved.changes.length > 0) drift.facts.push({ fact: name, changes: moved.changes });
   }
 

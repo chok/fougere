@@ -18,7 +18,7 @@ import { optional } from '../src/vocabulary/optional.js';
 import { nullable } from '../src/vocabulary/nullable.js';
 import { ref } from '../src/vocabulary/ref.js';
 import { many } from '../src/vocabulary/many.js';
-import { describe as describeSchema } from '../src/index.js';
+import { Card } from '../src/index.js';
 import { shapeTypeOf, entitySourceOf, facadeTypeSourceOf } from '../src/card/typescript.js';
 
 class Author extends entity({ id: primary(), name: text() }) {}
@@ -36,7 +36,7 @@ class Post extends entity({
   comments: many(Author),
 }) {}
 
-const source = shapeTypeOf(describeSchema(Post, 'post'));
+const source = shapeTypeOf(Card.fromSchema(Post, 'post').descriptor);
 
 describe('card → TypeScript type', () => {
   it('renders every field in the form the consumer receives', () => {
@@ -63,34 +63,38 @@ describe('card → TypeScript type', () => {
     // `required` on a card answers "what must a caller supply at creation". `id` is
     // absent from it (it is generated) and is always there on a row. Typing the read
     // shape from the create rule would make `post.id` possibly-undefined.
-    const card = describeSchema(Post, 'post');
+    const card = Card.fromSchema(Post, 'post').descriptor;
     expect(card.required).not.toContain('id');
     expect(source).toContain('  id: string;');
   });
 
   it('renders ONE class: the judge and the shape under a single name', () => {
-    const entitySource = entitySourceOf(describeSchema(Author, 'author'));
+    const entitySource = entitySourceOf(Card.fromSchema(Author, 'author').descriptor);
 
     // No interface beside a const: `class` is the language's own answer to
     // "a name that is both a value and a type".
-    expect(entitySource).toMatch(/^export class Author extends reconstruct<\{/);
+    expect(entitySource).toMatch(/^export class Author extends Card\.fromDescriptor<\{/);
     expect(entitySource).toContain('  name: string;');
     // The card travels inline — the rebuilt judge is exact, and the shape above it
     // is read off that same card.
     expect(entitySource).toContain('"x-fougere-vendor": "fougere"');
-    expect(entitySource.trimEnd()).toMatch(/\}\) \{\}$/);
+    expect(entitySource.trimEnd()).toMatch(/\}\)\.toSchema\(\) \{\}$/);
   });
 
   it('names the class after the card, or after what it is told', () => {
-    expect(entitySourceOf(describeSchema(Author, 'author'), { name: 'AuthorCard' })).toContain('class AuthorCard ');
-    expect(entitySourceOf(describeSchema(Author, 'author'), { exported: false })).toMatch(/^class /);
+    expect(entitySourceOf(Card.fromSchema(Author, 'author').descriptor, { name: 'AuthorCard' }))
+      .toContain('class AuthorCard ');
+    expect(entitySourceOf(Card.fromSchema(Author, 'author').descriptor, { exported: false })).toMatch(/^class /);
   });
 
   it('refuses a name that is not an identifier', () => {
     // Everything else emits DATA — a string lands inside `JSON.stringify`. A name lands
     // in a declaration: it is the one value that could stop being data, and it sometimes
     // comes from a stranger.
-    expect(() => entitySourceOf({ ...describeSchema(Author, 'author'), title: "Author; await import('node:fs')" }))
+    expect(() => entitySourceOf({
+      ...Card.fromSchema(Author, 'author').descriptor,
+      title: "Author; await import('node:fs')",
+    }))
       .toThrow(/not a TypeScript identifier/);
   });
 });

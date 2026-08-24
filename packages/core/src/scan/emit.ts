@@ -15,7 +15,7 @@
  * `Partial<X>` — the one derivation `resolveSchema` fabricates.
  */
 import { dirname, relative } from 'node:path';
-import { ANONYMOUS_SCHEMA_NAME, sourceNameOf, type SchemaView } from '@fougere/schema';
+import { ANONYMOUS_SCHEMA_NAME, Card, type SchemaView } from '@fougere/schema';
 import type {
   ScanResult, FrondDescriptor, EntityEntry, HandlerEntry,
   PresenterEntry, CollectorEntry, ProviderEntry, SeedEntry,
@@ -100,7 +100,8 @@ function schemaRef(schema: SchemaView | undefined, declaredIn: string, imports: 
   const name = (schema as { name?: string }).name;
   if (name && name !== ANONYMOUS_SCHEMA_NAME) return imports.named(schema as Live, declaredIn, name);
 
-  const source = sourceNameOf(schema);
+  const card = Card.fromSchema(schema);
+  const source = card.origin?.from ?? card.descriptor.title;
   const from = source ? imports.byClassName.get(source) : undefined;
   if (from) return `${imports.aliasOf(from)}.partial()`;
 

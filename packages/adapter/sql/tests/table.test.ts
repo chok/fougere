@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { entity, primary, text, number, bool, created, oneOf, ref, optional, many, json, reconstruct, type EntityConstructor } from '@fougere/schema';
+import { Card, entity, primary, text, number, bool, created, oneOf, ref, optional, many, json, type EntityConstructor } from '@fougere/schema';
 import { toTable, isKeyed, dialects, type ColumnDef } from '../src/index.js';
 
 // ─── Fixtures ──────────────────────────────────────
@@ -140,7 +140,7 @@ describe('references', () => {
       'x-fougere-version': 1 as const,
       'x-fougere-vendor': 'fougere' as const,
     };
-    const Post = reconstruct(card as any);
+    const Post = Card.fromDescriptor(card as any).toSchema();
     const table = toTable('posts', Post, { resolve: (n) => `${n}s` });
     expect(column(table, 'tagSlug').references).toEqual({ table: 'tags', column: 'id' });
   });

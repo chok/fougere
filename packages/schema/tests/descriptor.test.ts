@@ -11,8 +11,8 @@ import { json } from '../src/vocabulary/json.js';
 import { list } from '../src/vocabulary/list.js';
 import { email } from '../src/vocabulary/email.js';
 import { readOnly } from '../src/vocabulary/readOnly.js';
-import { describe, describeSet } from '../src/card/describe.js';
-import { reconstruct, reconstructSet } from '../src/card/reconstruct.js';
+import { Card } from '../src/card/Card.js';
+import { Bundle } from '../src/card/Bundle.js';
 import { type SchemaView } from '../src/SchemaView.js';
 import { type EntityConstructor, type Relation } from '../src/axis/role/Relation.js';
 import { type RoleRules } from '../src/axis/role/Role.js';
@@ -31,8 +31,8 @@ class Post extends entity({
   tags: many(Tag),
 }) {}
 
-group('describe — schema → JSON Schema card', () => {
-  const card = describe(Post, 'post');
+group('Card.fromSchema — schema to JSON Schema card', () => {
+  const card = Card.fromSchema(Post, 'post').descriptor;
 
   it('is a versioned, vendored JSON Schema object', () => {
     expect(card.type).toBe('object');
@@ -78,9 +78,9 @@ group('describe — schema → JSON Schema card', () => {
   });
 });
 
-group('reconstruct — card → working schema', () => {
-  const wire = JSON.parse(JSON.stringify(describe(Post, 'post')));
-  const Remote = reconstruct(wire);
+group('Card.toSchema — card to working schema', () => {
+  const wire = JSON.parse(JSON.stringify(Card.fromSchema(Post, 'post').descriptor));
+  const Remote = Card.fromDescriptor(wire).toSchema();
 
   it('rebuilds live validation (~standard) locally', () => {
     expect(Remote['~standard'].vendor).toBe('fougere');
@@ -109,47 +109,50 @@ group('reconstruct — card → working schema', () => {
     expect((author.role!.relation!.to() as { name: string }).name).toBe('author');
   });
 
-  it('round-trips: describe ∘ reconstruct ∘ describe = describe', () => {
-    expect(describe(Remote, 'post')).toEqual(describe(Post, 'post'));
+  it('round-trips through a schema and back to a card', () => {
+    expect(Card.fromSchema(Remote, 'post').descriptor).toEqual(Card.fromSchema(Post, 'post').descriptor);
   });
 
-  it('a value list and a format travel and still validate after reconstruct', () => {
+  it('a value list and a format travel and still validate after reconstruction', () => {
     class Profile extends entity({
       id: primary(),
       mail: email(),
       tags: optional(list(text({ min: 1 }), { max: 3 })),
     }) {}
-    const wire = JSON.parse(JSON.stringify(describe(Profile, 'profile')));
+    const wire = JSON.parse(JSON.stringify(Card.fromSchema(Profile, 'profile').descriptor));
     expect(wire.properties.mail).toEqual({ type: 'string', format: 'email' });
     expect(wire.properties.tags.type).toEqual(['array', 'null']); // a value list folds nullable
     expect(wire.properties.tags.items).toEqual({ type: 'string', minLength: 1 });
 
-    const Remote = reconstruct(wire);
-    expect(describe(Remote, 'profile')).toEqual(describe(Profile, 'profile'));
+    const Remote = Card.fromDescriptor(wire).toSchema();
+    expect(Card.fromSchema(Remote, 'profile').descriptor).toEqual(Card.fromSchema(Profile, 'profile').descriptor);
     expect(Remote.validate({ mail: 'a@b.co', tags: ['x'] }).success).toBe(true);
     expect(Remote.validate({ mail: 'a@b.co', tags: [''] }).success).toBe(false);
     expect(Remote.validate({ mail: 'nope', tags: ['x'] }).success).toBe(false);
     // a bare many() relation round-trips as an array WITHOUT items — the card always wrote
     // `type: 'array'` for it, and now the field it rebuilds says the same thing it did.
-    expect(reconstruct(JSON.parse(JSON.stringify(describe(Post, 'post')))).getFields().tags.shape).toEqual({ type: 'array' });
+    expect(Card.fromDescriptor(
+      JSON.parse(JSON.stringify(Card.fromSchema(Post, 'post').descriptor)),
+    ).toSchema().getFields().tags.shape).toEqual({ type: 'array' });
   });
 
-  it('an embedded value object (json(Entity)) travels and still validates after reconstruct', () => {
+  it('an embedded value object (json(Entity)) travels and still validates after reconstruction', () => {
     class Address extends entity({ street: text({ min: 1 }), zip: text() }) {}
     class Customer extends entity({ id: primary(), address: json(Address) }) {}
-    const wire = JSON.parse(JSON.stringify(describe(Customer, 'customer')));
+    const wire = JSON.parse(JSON.stringify(Card.fromSchema(Customer, 'customer').descriptor));
     expect(wire.properties.address.properties.street).toEqual({ type: 'string', minLength: 1 });
     expect(wire.properties.address.required).toEqual(['street', 'zip']);
 
-    const RemoteCustomer = reconstruct(wire);
-    expect(describe(RemoteCustomer, 'customer')).toEqual(describe(Customer, 'customer'));
+    const RemoteCustomer = Card.fromDescriptor(wire).toSchema();
+    expect(Card.fromSchema(RemoteCustomer, 'customer').descriptor)
+      .toEqual(Card.fromSchema(Customer, 'customer').descriptor);
     expect(RemoteCustomer.validate({ address: { street: 's', zip: 'z' } }).success).toBe(true);
     expect(RemoteCustomer.validate({ address: { street: 's' } }).success).toBe(false);
   });
 });
 
-group('describeSet / reconstructSet — self-contained $defs bundle', () => {
-  const bundle = describeSet({ author: Author, tag: Tag, post: Post });
+group('Bundle — self-contained $defs map', () => {
+  const bundle = Bundle.fromSchemas({ author: Author, tag: Tag, post: Post }).descriptor;
 
   it('packs every entity under $defs, keyed by name', () => {
     expect(Object.keys(bundle.$defs).sort()).toEqual(['author', 'post', 'tag']);
@@ -163,7 +166,7 @@ group('describeSet / reconstructSet — self-contained $defs bundle', () => {
 
   it('resolves a relation $ref to the REAL reconstructed target (feeds adapters)', () => {
     const wire = JSON.parse(JSON.stringify(bundle));
-    const schemas = reconstructSet(wire);
+    const schemas = Bundle.fromDescriptor(wire).toSchemas();
 
     const authorTarget = schemas.post.getFields().author.role!.relation!.to();
     // Not a {name} stand-in: the actual reconstructed Author, with its fields.
@@ -175,25 +178,29 @@ group('describeSet / reconstructSet — self-contained $defs bundle', () => {
   });
 
   it('a many relation resolves its element target too', () => {
-    const schemas = reconstructSet(JSON.parse(JSON.stringify(bundle)));
+    const schemas = Bundle.fromDescriptor(JSON.parse(JSON.stringify(bundle))).toSchemas();
     expect(schemas.post.getFields().tags.role!.relation!.to()).toBe(schemas.tag);
   });
 
-  it('round-trips: describeSet ∘ reconstructSet = describeSet', () => {
-    const schemas = reconstructSet(JSON.parse(JSON.stringify(bundle)));
-    expect(describeSet(schemas)).toEqual(bundle);
+  it('round-trips through schemas and back to a bundle', () => {
+    const schemas = Bundle.fromDescriptor(JSON.parse(JSON.stringify(bundle))).toSchemas();
+    expect(Bundle.fromSchemas(schemas).descriptor).toEqual(bundle);
   });
 
   it('handles a circular relation by reference (no infinite nesting)', () => {
     // The thunk defers the value, not the type: inferring `Node` would require `Node`.
     // Annotating it cuts the loop — `ref()` answers `Field<string>` whatever its target.
     class Node extends entity({ id: primary(), parent: optional(ref((): EntityConstructor => Node)) }) {}
-    const set = reconstructSet(JSON.parse(JSON.stringify(describeSet({ node: Node }))));
+    const set = Bundle.fromDescriptor(
+      JSON.parse(JSON.stringify(Bundle.fromSchemas({ node: Node }).descriptor)),
+    ).toSchemas();
     expect(set.node.getFields().parent.role!.relation!.to()).toBe(set.node);
   });
 
   it('keeps a name stand-in for a target absent from the set', () => {
-    const onlyPost = reconstructSet(JSON.parse(JSON.stringify(describeSet({ post: Post }))));
+    const onlyPost = Bundle.fromDescriptor(
+      JSON.parse(JSON.stringify(Bundle.fromSchemas({ post: Post }).descriptor)),
+    ).toSchemas();
     // author/tag not in the set → unresolved $ref → name stand-in
     expect((onlyPost.post.getFields().author.role!.relation!.to() as { name: string }).name).toBe('author');
   });
@@ -217,7 +224,7 @@ group('required and the judge answer the same question', () => {
 
   it('leaves a read-only field out of required, like the judge does', () => {
     expect(Owned.validate({ title: 'hello' }).success).toBe(true);
-    expect(describe(Owned, 'owned').required).toEqual(['title']);
+    expect(Card.fromSchema(Owned, 'owned').descriptor.required).toEqual(['title']);
   });
 });
 
@@ -246,27 +253,28 @@ group('a view says what it is a view of', () => {
   class Note extends entity({ id: primary(), title: text(), body: text() }) {}
 
   it('carries the origin and what the cut left', () => {
-    const card = describe(Note.pick('id', 'title'));
-    expect(card['x-fougere-derived']).toEqual({
+    const card = Card.fromSchema(Note.pick('id', 'title'));
+    expect(card.origin).toEqual({
       from: 'Note',
       survived: { id: 'id', title: 'title', body: null },
     });
+    expect(card.descriptor['x-fougere-derived']).toEqual(card.origin);
   });
 
   it('separates two views an identical title used to merge', () => {
-    const a = describe(Note.pick('id', 'title'));
-    const b = describe(Note.pick('id', 'body'));
+    const a = Card.fromSchema(Note.pick('id', 'title')).descriptor;
+    const b = Card.fromSchema(Note.pick('id', 'body')).descriptor;
     expect(a.title).toBe(b.title);
     expect(a['x-fougere-derived']).not.toEqual(b['x-fougere-derived']);
   });
 
   it('survives JSON — a dropped field is null, never erased', () => {
-    const card = JSON.parse(JSON.stringify(describe(Note.pick('id', 'title'))));
+    const card = JSON.parse(JSON.stringify(Card.fromSchema(Note.pick('id', 'title')).descriptor));
     expect(card['x-fougere-derived'].survived).toEqual({ id: 'id', title: 'title', body: null });
   });
 
   it('says nothing on a declaration that derives from nothing', () => {
-    expect(describe(Note)['x-fougere-derived']).toBeUndefined();
+    expect(Card.fromSchema(Note).origin).toBeUndefined();
   });
 });
 
@@ -279,33 +287,34 @@ group('a card is admitted before it becomes a judge', () => {
   });
 
   it('reads a well-formed one', () => {
-    expect(reconstruct(card()).getFields()).toHaveProperty('id');
+    expect(Card.fromDescriptor(card()).toSchema().getFields()).toHaveProperty('id');
   });
 
   it('refuses a version it does not speak, and an absent one', () => {
-    expect(() => reconstruct({ ...card(), 'x-fougere-version': 2 } as never)).toThrow(/speaks 1/);
-    expect(() => reconstruct({ ...card(), 'x-fougere-version': undefined } as never)).toThrow(/speaks 1/);
+    expect(() => Card.fromDescriptor({ ...card(), 'x-fougere-version': 2 } as never).toSchema()).toThrow(/speaks 1/);
+    expect(() => Card.fromDescriptor({ ...card(), 'x-fougere-version': undefined } as never).toSchema()).toThrow(/speaks 1/);
   });
 
   it('refuses a schema that is not its fields', () => {
-    expect(() => reconstruct({ ...card(), properties: undefined } as never)).toThrow(/no `properties` object/);
+    expect(() => Card.fromDescriptor({ ...card(), properties: undefined } as never).toSchema())
+      .toThrow(/no `properties` object/);
   });
 
   it('refuses a relation whose kind is not one of the two', () => {
     const bad = { ...card(), properties: { a: { type: 'string' as const, 'x-fougere': { role: { relation: { to: 'post', kind: 'plusieurs' } } } } } };
-    expect(() => reconstruct(bad as never)).toThrow(/role\.relation\.kind is "plusieurs"/);
+    expect(() => Card.fromDescriptor(bad as never).toSchema()).toThrow(/role\.relation\.kind is "plusieurs"/);
   });
 
   it('refuses an onDelete outside the closed list', () => {
     const bad = { ...card(), properties: { a: { type: 'string' as const, 'x-fougere': { role: { relation: { to: 'post', kind: 'one', onDelete: 'boom' } } } } } };
-    expect(() => reconstruct(bad as never)).toThrow(/role\.relation\.onDelete is "boom"/);
+    expect(() => Card.fromDescriptor(bad as never).toSchema()).toThrow(/role\.relation\.onDelete is "boom"/);
   });
 
   // lifecycle and boundary describe themselves as themselves, so their own judge reads the wire.
   it('refuses a lifecycle and a boundary through the judge that already reads them', () => {
     const lifecycle = { ...card(), properties: { a: { type: 'string' as const, 'x-fougere': { lifecycle: { update: 'jamais' } } } } };
-    expect(() => reconstruct(lifecycle as never)).toThrow(/lifecycle\.update/);
+    expect(() => Card.fromDescriptor(lifecycle as never).toSchema()).toThrow(/lifecycle\.update/);
     const boundary = { ...card(), properties: { a: { type: 'string' as const, 'x-fougere': { boundary: { in: 42 } } } } };
-    expect(() => reconstruct(boundary as never)).toThrow(/boundary\.in/);
+    expect(() => Card.fromDescriptor(boundary as never).toSchema()).toThrow(/boundary\.in/);
   });
 });

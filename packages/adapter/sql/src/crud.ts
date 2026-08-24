@@ -14,7 +14,7 @@ import { Lifecycle, Role } from '@fougere/schema';
  * `RETURNING` clause.
  */
 import { sql, type Kysely } from 'kysely';
-import { applyCreate, applyUpdate, schemaOf, type Fields, type SchemaView, type SchemaSource } from '@fougere/schema';
+import { applyCreate, applyUpdate, schemaOf, type Fields, type SchemaView, type SchemaOrCard } from '@fougere/schema';
 import { toTable, toTableName, type TableDef } from './table.js';
 import { resolveDialect, type Dialect, type DialectName } from './dialect.js';
 // The contract entry and not the main one: `FougereError` crosses a process boundary and
@@ -110,7 +110,7 @@ export class SqlEntityOrm {
 
   constructor(
     private db: Kysely<any>,
-    source: SchemaSource,
+    source: SchemaOrCard,
     tableName: string,
     selectFields?: Set<string>,
     dialect: DialectName = 'sqlite',
@@ -566,5 +566,5 @@ export interface OrmFactoryOptions {
  */
 export function createOrmFactory(db: Kysely<any>, options?: OrmFactoryOptions, dialect: DialectName = 'sqlite') {
   const resolve = options?.tableName ?? toTableName;
-  return (entity: SchemaSource, name: string) => new SqlEntityOrm(db, entity, resolve(name), undefined, dialect);
+  return (entity: SchemaOrCard, name: string) => new SqlEntityOrm(db, entity, resolve(name), undefined, dialect);
 }

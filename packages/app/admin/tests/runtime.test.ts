@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describe as describeSchema, entity, primary, text } from '@fougere/schema';
+import { Card, entity, primary, text } from '@fougere/schema';
 import type { Fetcher } from '@fougere/app/client';
 import type { IdentityCard } from '@fougere/core/contract';
 import { createAdminRuntime } from '../src/runtime.js';
@@ -11,7 +11,7 @@ const card: IdentityCard = {
     name: 'blog',
     doors: [{
       name: 'post',
-      schema: describeSchema(Post, 'post'),
+      schema: Card.fromSchema(Post, 'post').descriptor,
       ops: [{ name: 'list', kind: 'query', cardinality: 'page' }],
     }],
     facts: [],

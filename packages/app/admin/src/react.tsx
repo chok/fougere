@@ -23,7 +23,7 @@ import { actionsOf, type AdminOperation, type AdminResource } from './resources.
 import type { EditorialFacet, UsersFacet } from './facets.js';
 import type { Fetcher } from '@fougere/app/client';
 import { formFieldsOf, type FormField, type TableColumn } from '@fougere/app/client';
-import { reconstruct } from '@fougere/schema';
+import { Card as SchemaCard } from '@fougere/schema';
 import { FougereLayout, fougereDarkTheme, fougereLightTheme } from './theme.js';
 import { FougereTopology } from './topology-page.js';
 export { FougereTopology, type FougereTopologyProps } from './topology-page.js';
@@ -223,7 +223,11 @@ function OperationButton({
   const [values, setValues] = useState<Record<string, unknown>>({});
 
   const fields = useMemo(
-    () => (operation.input ? formFieldsOf(reconstruct(operation.input) as never, operation.name) : []),
+    () => (
+      operation.input
+        ? formFieldsOf(SchemaCard.fromDescriptor(operation.input).toSchema() as never, operation.name)
+        : []
+    ),
     [operation],
   );
   const asks = fields.length > 0 || !!operation.confirm;

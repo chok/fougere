@@ -9,7 +9,7 @@ import { classNameOf, primaryFieldOf, Role } from '@fougere/schema';
  * Relations (ref/many) are auto-wired between registered types.
  */
 import type SchemaBuilder from '@pothos/core';
-import type { Fields, SchemaView, SchemaSource } from '@fougere/schema';
+import type { Fields, SchemaView, SchemaOrCard } from '@fougere/schema';
 import { Anatomy, fieldsOf, } from '@fougere/schema';
 import { registerType, registerOperations } from './pothos.js';
 
@@ -146,7 +146,7 @@ interface OperationMeta {
 interface EntityEntry {
   name: string;
   /** A live class in-process, a card from a frond whose class never crossed. */
-  entityClass: SchemaSource;
+  entityClass: SchemaOrCard;
   exposed?: boolean;
 }
 

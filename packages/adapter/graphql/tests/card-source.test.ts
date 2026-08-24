@@ -11,7 +11,7 @@
  */
 import SchemaBuilder from '@pothos/core';
 import { describe as suite, expect, it } from 'vitest';
-import { entity, primary, ref, many, text, number, describe as describeCard, type EntityConstructor } from '@fougere/schema';
+import { Card, entity, primary, ref, many, text, number, type EntityConstructor } from '@fougere/schema';
 import { registerAll } from '../src/auto-register.js';
 
 class Author extends entity({
@@ -66,14 +66,20 @@ const fieldNamesOf = (schema: any, type: string) =>
 suite('the GraphQL projection reads a card as readily as a class', () => {
   it('registers the same types and fields', () => {
     const fromClasses = schemaFrom(fakeApp(Author, Post));
-    const fromCards = schemaFrom(fakeApp(describeCard(Author, 'author'), describeCard(Post, 'post')));
+    const fromCards = schemaFrom(fakeApp(
+      Card.fromSchema(Author, 'author').descriptor,
+      Card.fromSchema(Post, 'post').descriptor,
+    ));
 
     expect(fieldNamesOf(fromCards, 'Post')).toEqual(fieldNamesOf(fromClasses, 'Post'));
     expect(fieldNamesOf(fromCards, 'Author')).toEqual(fieldNamesOf(fromClasses, 'Author'));
   });
 
   it('wires the relation both ways, from cards', () => {
-    const schema = schemaFrom(fakeApp(describeCard(Author, 'author'), describeCard(Post, 'post')));
+    const schema = schemaFrom(fakeApp(
+      Card.fromSchema(Author, 'author').descriptor,
+      Card.fromSchema(Post, 'post').descriptor,
+    ));
 
     // ref → N:1. `authorId` yields an `author` field typed Author, and its absence is what
     // the object-keyed registry produced without complaining.
@@ -89,8 +95,8 @@ suite('the GraphQL projection reads a card as readily as a class', () => {
   });
 
   it('resolves a target whose name is cased differently on each side', () => {
-    // The scan yields the registration name, `describe` lowercases a relation target
-    // wholesale. Case-folding the key is what keeps one registry serving both.
+    // The scan yields the registration name while the card carries a canonical relation
+    // target. Case-folding the key is what keeps one registry serving both.
     class AuthorUser extends entity({ id: primary(), name: text() }) {}
     class Note extends entity({ id: primary(), authorUserId: ref(AuthorUser) }) {}
 
@@ -99,8 +105,8 @@ suite('the GraphQL projection reads a card as readily as a class', () => {
       fronds: [{
         name: 'notes',
         entities: [
-          { name: 'authorUser', entityClass: describeCard(AuthorUser, 'authorUser') },
-          { name: 'note', entityClass: describeCard(Note, 'note') },
+          { name: 'authorUser', entityClass: Card.fromSchema(AuthorUser, 'authorUser').descriptor },
+          { name: 'note', entityClass: Card.fromSchema(Note, 'note').descriptor },
         ],
         handlers: [
           { address: 'authorUser', operations: new Map() },

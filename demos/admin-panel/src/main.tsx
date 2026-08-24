@@ -11,7 +11,7 @@ import {
 } from '@fougere/admin/react';
 import type { Fetcher } from '@fougere/app/client';
 import type { IdentityCard, TopologyReport } from '@fougere/core/contract';
-import { created, describe, email, entity, oneOf, primary, readOnly, text } from '@fougere/schema';
+import { Card, created, email, entity, oneOf, primary, readOnly, text } from '@fougere/schema';
 // The theme names a variable family and cannot load one: a package that ships no CSS
 // has no way to. The host does it, and this is the line — without it every weight the
 // scale asks for (500/550/600/620) rounds to 700 on the system stack.
@@ -49,7 +49,7 @@ const card: IdentityCard = {
     doors: [
       {
         name: 'post',
-        schema: describe(Post, 'post'),
+        schema: Card.fromSchema(Post, 'post').descriptor,
         ops: [
           ...crud,
           {
@@ -60,7 +60,7 @@ const card: IdentityCard = {
           },
         ],
       },
-      { name: 'user', schema: describe(User, 'user'), ops: crud },
+      { name: 'user', schema: Card.fromSchema(User, 'user').descriptor, ops: crud },
     ],
     facts: [],
   }],

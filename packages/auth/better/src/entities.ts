@@ -31,7 +31,7 @@ export class AuthUser extends entity({
  * take, since `opts.user` may be any app's entity and `SchemaView` is the
  * shape-only contract used to stay decoupled from a specific one. Every real
  * entity satisfies both; the cast below only crosses that type-level gap, the
- * same bridge `@fougere/schema` uses internally in `reconstructSet`
+ * same bridge `@fougere/schema` uses internally in `Bundle.toSchemas`
  * (`schema as unknown as EntityConstructor`).
  */
 type LiveEntity = abstract new (...args: any[]) => unknown;

@@ -1,10 +1,11 @@
 import { Boundary } from './axis/boundary/Boundary.js';
 import { type Fields } from './Field.js';
-import { deriveHints, type Hints, type Previous } from './EntityDeclarations.js';
+import { type Previous } from './EntityDeclarations.js';
+import { deriveHints, type Hints } from './Hints.js';
 import { FieldGroup } from './constraint/FieldGroup.js';
 import { Unique } from './constraint/Unique.js';
 import { type CompositeUnique } from './EntityDeclarations.js';
-import { Judge } from './judge/Judge.js';
+import { RowJudge } from './judge/RowJudge.js';
 import { SchemaDerivation } from './SchemaDerivation.js';
 import { type ValidateOptions } from './judge/options.js';
 import type { StandardSchemaV1 } from './projection/standard.js';
@@ -49,7 +50,7 @@ export class Schema {
   static getOpts() { return this.opts; }
 
   static validate(input: unknown) {
-    return Judge.row(this.fields, input, this.opts);
+    return RowJudge.of(this.fields, this.opts).check(input);
   }
 
   static from(data: Record<string, unknown>) {
@@ -70,7 +71,7 @@ export class Schema {
       version: 1,
       vendor: "fougere",
       validate(value: unknown) {
-        const result = Judge.row(fields, value, opts);
+        const result = RowJudge.of(fields, opts).check(value);
         if (result.success) return { value: result.data };
         return {
           issues: result.errors.map((e) => ({

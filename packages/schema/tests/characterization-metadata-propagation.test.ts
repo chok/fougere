@@ -3,7 +3,7 @@ import { entity } from '../src/entity.js';
 import { Schema } from '../src/Schema.js';
 import { text } from '../src/vocabulary/text.js';
 
-declare module '../src/EntityDeclarations.js' {
+declare module '../src/Hints.js' {
   interface FougereHints<K extends string> {
     characterization?: Partial<Record<K, { marker?: string }>>;
   }

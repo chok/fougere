@@ -10,7 +10,7 @@ import { describe as suite, it, expect } from 'vitest';
 import {
   entity, primary, text, number, bool, date, json, oneOf, ref,
   created, updated, immutable, optional, nullable, unique, indexed,
-  describe as describeCard, reconstructSet, describeSet,
+  Bundle, Card,
 } from '@fougere/schema';
 import { toTable, toTables, toTableName } from '../src/table.js';
 
@@ -40,7 +40,7 @@ class Post extends entity({
 suite('a table is described from a card as from a class', () => {
   it('produces the same columns, keys and constraints', () => {
     const fromClass = toTable('posts', Post);
-    const fromCard = toTable('posts', describeCard(Post));
+    const fromCard = toTable('posts', Card.fromSchema(Post).descriptor);
 
     // The FK target is the documented exception: a LONE card has no live target, so
     // `referenceFor` falls back to the name convention. Compared separately below.
@@ -55,19 +55,19 @@ suite('a table is described from a card as from a class', () => {
   it('resolves the FK through a bundle, and falls back to the convention alone', () => {
     // A lone card: the target is a name stand-in, so the table name is derived and the
     // key column assumed to be `id` — right whenever the target follows the convention.
-    const lone = toTable('posts', describeCard(Post));
+    const lone = toTable('posts', Card.fromSchema(Post).descriptor);
     expect(lone.columns.find((c) => c.name === 'author_id')?.references)
       .toEqual({ table: 'authors', column: 'id' });
 
-    // A bundle: `reconstructSet` hands back the real sibling, so the FK is read off it.
-    const { post } = reconstructSet(describeSet({ post: Post, author: Author }));
+    // A bundle hands back the real sibling, so the FK is read off it.
+    const { post } = Bundle.fromSchemas({ post: Post, author: Author }).toSchemas();
     expect(toTable('posts', post!).columns.find((c) => c.name === 'author_id')?.references)
       .toEqual(toTable('posts', Post).columns.find((c) => c.name === 'author_id')?.references);
   });
 
   it('points a two-word target at the table the same pass creates', () => {
     // The fallback derives the FK's table from the name the card carries, so that name
-    // must be the one the entity is filed under. `describe` used to lowercase it whole:
+    // must be the one the entity is filed under. The old description used to lowercase it whole:
     // `AuthorUser` crossed as `authoruser`, and `toTableName` turned that into
     // `authorusers` while the table being created was `author_users`. One word hid it —
     // `author` folds to itself either way — so the two paths agreed everywhere the repo
@@ -84,8 +84,8 @@ suite('a table is described from a card as from a class', () => {
       { name: 'note', entityClass: Note },
     ] }] });
     const card = fks({ fronds: [{ name: 'n', entities: [
-      { name: 'authorUser', entityClass: describeCard(AuthorUser, 'authorUser') },
-      { name: 'note', entityClass: describeCard(Note, 'note') },
+      { name: 'authorUser', entityClass: Card.fromSchema(AuthorUser, 'authorUser').descriptor },
+      { name: 'note', entityClass: Card.fromSchema(Note, 'note').descriptor },
     ] }] });
 
     expect(live).toEqual(['notes.author_user_id -> author_users']);

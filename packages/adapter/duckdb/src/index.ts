@@ -22,7 +22,7 @@
  * - SQL Server cannot be attached at all — no `sqlserver` extension exists.
  */
 import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
-import { registrationKeyOf, fieldsOf, type SchemaSource } from '@fougere/schema';
+import { registrationKeyOf, fieldsOf, type SchemaOrCard } from '@fougere/schema';
 import { toTable, toTableName, toSnakeCase, codecsOf } from '@fougere/adapter-sql';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -162,8 +162,8 @@ export async function connectSources(options: ConnectOptions): Promise<Sources> 
     attached,
     close: async () => { db.closeSync(); },
     read<E extends ShapeClass>(shape: E) {
-      const fields = fieldsOf(shape as unknown as SchemaSource);
-      const codecs = codecsOf(toTable('x', shape as unknown as SchemaSource).columns);
+      const fields = fieldsOf(shape as unknown as SchemaOrCard);
+      const codecs = codecsOf(toTable('x', shape as unknown as SchemaOrCard).columns);
       const names = Object.keys(fields);
 
       return async (parts: TemplateStringsArray, ...refs: unknown[]) => {

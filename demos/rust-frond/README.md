@@ -20,7 +20,7 @@ The frond honours two contracts, and both are JSON:
 
 Everything else belongs to it: the language, the storage, the judge.
 
-The moment that counts is step 4 of the consumer. `reconstruct()`
+The moment that counts is step 4 of the consumer. `Card.toSchema()`
 (`packages/schema/src/projections/reconstruct.ts:103`) rebuilds a **live** schema from
 the map, and the TS judge refuses a payload before any network:
 
@@ -48,7 +48,7 @@ no line of TypeScript declares. "The truth travels, the realization varies" — 
 
 ## What the demo does not do
 
-- **The static type.** `reconstruct()` returns a `SchemaConstructor<Fields>` — full
+- **The static type.** `Card.toSchema()` returns a `SchemaConstructor<Fields>` — full
   runtime, literal keys lost. Getting `sensor.label` typed would need a map → `.d.ts`
   projection, which does not exist (no codegen in `packages/cli/src`).
 - **The map is hand-written** (`sensor_card()`). A real Rust frond would derive it —

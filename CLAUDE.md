@@ -277,11 +277,11 @@ belief, which costs a sentence, not a paragraph.
   `CREATE UNIQUE INDEX` on a table already holding duplicates FAILS, so the additive
   migration would start refusing to boot on real data. A decision about what auto-DDL may
   do, and it is the same question as the entry above.
-- **A schema can say what it WAS, and the missing reader is the API.** `diff`/`diffSet`
-  (`schema/src/card/diff.ts`), `fougere freeze`, `fougere migrate --apply` are shipped and
+- **A schema can say what it WAS, and the missing reader is the API.** `Card.diff`/`Bundle.diff`,
+  `fougere freeze`, `fougere migrate --apply` are shipped and
   pinned; what nothing does yet is serve an old API version through the same step.
 - **A stored fact is neither judged nor versioned.** `json()` admits any shape forever, and
-  `x-fougere-version` (`schema/src/card/describe.ts`) versions the DESCRIPTOR FORMAT, never
+  `x-fougere-version` (`schema/src/card/Card.ts`) versions the DESCRIPTOR FORMAT, never
   an entity's contract. `delta()` never changes a type nor drops a column. A row can be
   rewritten by hand when the shape moves; **a log cannot**, which is why this bites event
   sourcing first.

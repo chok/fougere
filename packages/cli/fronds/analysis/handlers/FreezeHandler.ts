@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { describeSet, diffSet, registrationKeyOf, type SchemaBundle, type SchemaView, type SetDiff } from '@fougere/schema';
+import { Bundle, registrationKeyOf, type SchemaBundle, type SchemaView, type SetDiff } from '@fougere/schema';
 import ProjectScan from '../services/ProjectScan.js';
 import { VERSIONS, chainOf } from '../versions.js';
 import type Freeze from '../entities/Freeze.js';
@@ -54,7 +54,9 @@ export default class FreezeHandler {
       path,
       bundle,
       previous,
-      step: previous ? diffSet(previous.bundle, bundle, { renamed }) : undefined,
+      step: previous
+        ? Bundle.fromDescriptor(previous.bundle).diff(Bundle.fromDescriptor(bundle), { renamed })
+        : undefined,
     }));
 
     const ambiguous: FreezeInspection['ambiguous'] = {};
@@ -102,7 +104,9 @@ export default class FreezeHandler {
         .filter((frond) => frond.entities.length > 0)
         .map(async (frond) => ({
           path: frond.source.path,
-          bundle: describeSet(Object.fromEntries(frond.entities.map((e) => [e.name, e.entityClass]))),
+          bundle: Bundle.fromSchemas(
+            Object.fromEntries(frond.entities.map((e) => [e.name, e.entityClass])),
+          ).descriptor,
           declared: declaredRenames(frond.entities),
           previous: await previousOf(frond.source.path, input.version),
         })),
@@ -114,7 +118,7 @@ type Inspected = { previous?: { name: string }; step?: SetDiff };
 
 /**
  * What the entities state about themselves — `previous` says what a field WAS, while
- * `diff` reads old → new, so the pair is turned around here and nowhere else.
+ * `Bundle.diff` reads old to new, so the pair is turned around here and nowhere else.
  */
 function declaredRenames(
   entities: ReadonlyArray<{ name: string; entityClass: unknown }>,
@@ -122,7 +126,7 @@ function declaredRenames(
   const out: Record<string, Record<string, string>> = {};
   for (const { name, entityClass } of entities) {
     const previous = (entityClass as SchemaView).previous;
-    // Keyed as `describeSet` keys `$defs`, which is what `diffSet` reads. Spelling the
+    // Keyed as `Bundle.fromSchemas` keys `$defs`, which is what `Bundle.diff` reads. Spelling the
     // convention a second way here is the defect this repo has already recorded twice.
     const key = registrationKeyOf(name);
     if (previous) out[key] = Object.fromEntries(Object.entries(previous).map(([now, was]) => [was, now]));

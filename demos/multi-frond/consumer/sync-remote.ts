@@ -70,9 +70,9 @@ async function sync() {
         .join('\n');
 
       const code = [
-        `import { reconstruct } from '@fougere/schema';`,
+        `import { Card } from '@fougere/schema';`,
         ``,
-        `const ${className} = reconstruct(${cardJson});`,
+        `const ${className} = Card.fromDescriptor(${cardJson}).toSchema();`,
         `export default ${className};`,
         ``,
       ].join('\n');

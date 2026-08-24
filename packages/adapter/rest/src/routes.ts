@@ -3,7 +3,7 @@
  *
  * Framework-agnostic: produces RouteDefinition[], consumed by an adapter (Fastify, Express, etc).
  */
-import type { Field, Fields, SchemaSource } from '@fougere/schema';
+import type { Field, Fields, SchemaOrCard } from '@fougere/schema';
 import { fieldsOf, inputFields as clientInputFields, outputFields as clientOutputFields } from '@fougere/schema';
 import type { HandlerEntry as CoreHandlerEntry } from '@fougere/core';
 
@@ -43,8 +43,8 @@ export interface RouteDefinition {
 }
 
 interface OperationMeta {
-  input?: SchemaSource;
-  output?: SchemaSource;
+  input?: SchemaOrCard;
+  output?: SchemaOrCard;
   /** Canonical kind from core's EffectiveOperation. */
   kind: 'query' | 'command';
   /** The operation in words — see `RouteDefinition.description`. */
@@ -54,7 +54,7 @@ interface OperationMeta {
 interface EntityEntry {
   name: string;
   /** A live class in-process, a card from a frond whose class never crossed. */
-  entityClass: SchemaSource;
+  entityClass: SchemaOrCard;
   exposed?: boolean;
 }
 
@@ -74,7 +74,7 @@ interface EntityEntry {
  */
 type HandlerEntry = Pick<CoreHandlerEntry, 'address' | 'surface'> & {
   /** `Crud(Post, PostPublic)` — the handler-wide output view, scoping every op. */
-  outputOverride?: SchemaSource;
+  outputOverride?: SchemaOrCard;
   /**
    * The scanned constructor, which carries the same statement made on the class.
    *
@@ -83,7 +83,7 @@ type HandlerEntry = Pick<CoreHandlerEntry, 'address' | 'surface'> & {
    * happens not to carry it — *has no properties in common*. So the narrow view was
    * unassignable from the real entry for a second reason after `operations`.
    */
-  ctor?: (new (...args: never[]) => unknown) & { __output?: SchemaSource };
+  ctor?: (new (...args: never[]) => unknown) & { __output?: SchemaOrCard };
 };
 // No `operations` here, and its absence is the point. It was declared, never read — this
 // file takes its table from `app.operationsFor()` — and it carried `OperationMeta`, whose
@@ -233,7 +233,7 @@ export function generateRoutes(app: AppLike, options?: GenerateRoutesOptions): R
       // Use handler's output schema if declared, otherwise entity. A live class or a
       // card — `fieldsOf` takes both, so a frond whose class never crossed the wire
       // projects the same routes as a local one.
-      const outputSchema: SchemaSource = handler?.outputOverride
+      const outputSchema: SchemaOrCard = handler?.outputOverride
         ?? handler?.ctor?.__output
         ?? entity.entityClass;
       const fields = fieldsOf(outputSchema);

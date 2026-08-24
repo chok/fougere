@@ -44,7 +44,7 @@ describe('remote frond sync', () => {
       const generated = readFileSync(join(root, '.fougere', 'remotes', 'blog', 'entities', 'Post.ts'), 'utf8');
       // The host's `title` names NOTHING: the class takes the already-sanitized name.
       // The string stays present INSIDE the card, as inert data.
-      expect(generated).toContain('export class Post extends reconstruct<');
+      expect(generated).toContain('export class Post extends Card.fromDescriptor<');
       expect(generated).not.toContain("class Post; await import");
 
       // The card carries what it takes to type, and until now nobody read it: a synced
@@ -186,7 +186,7 @@ describe('remote frond sync', () => {
       const out = await new SyncHandler().execute({ name: 'blog', from: 'https://example.test' });
       expect(out.entities).toEqual(['Post']);
       expect(readFileSync(join(root, '.fougere', 'remotes', 'blog', 'entities', 'Post.ts'), 'utf8'))
-        .toContain('class Post extends reconstruct<');
+        .toContain('class Post extends Card.fromDescriptor<');
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
@@ -279,7 +279,7 @@ describe('remote frond sync', () => {
 
       expect(out.entities).toEqual(['Post', 'PostPublished']);
       expect(readFileSync(join(dir, 'entities', 'PostPublished.ts'), 'utf8'))
-        .toContain('class PostPublished extends reconstruct<');
+        .toContain('class PostPublished extends Card.fromDescriptor<');
 
       // No façade type: nobody calls a fact, it arrives.
       expect(() => readFileSync(join(dir, 'handlers', 'PostPublishedHandler.ts'), 'utf8')).toThrow();

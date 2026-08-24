@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describe as describeSchema, email, entity, oneOf, primary, readOnly, text } from '@fougere/schema';
+import { Card, email, entity, oneOf, primary, readOnly, text } from '@fougere/schema';
 import type { CardOp, IdentityCard } from '@fougere/core/contract';
 import { applyAdminExtensions, defineAdminExtension, type AdminExtension } from '../src/extensions.js';
 import { actionsOf } from '../src/resources.js';
@@ -26,17 +26,17 @@ const card: IdentityCard = {
     doors: [
       {
         name: 'post',
-        schema: describeSchema(Post, 'post'),
+        schema: Card.fromSchema(Post, 'post').descriptor,
         ops: ops('list', 'findById', 'create', 'update', 'delete', 'publish'),
       },
       {
         name: 'author',
-        schema: describeSchema(Author, 'author'),
+        schema: Card.fromSchema(Author, 'author').descriptor,
         ops: ops('list', 'findById'),
       },
       {
         name: 'user',
-        schema: describeSchema(User, 'user'),
+        schema: Card.fromSchema(User, 'user').descriptor,
         ops: ops('list', 'findById', 'create', 'update'),
       },
       { name: 'health', ops: ops('get') },

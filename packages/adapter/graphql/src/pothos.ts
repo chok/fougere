@@ -4,8 +4,8 @@ import { classNameOf, Role } from '@fougere/schema';
  */
 import type SchemaBuilder from '@pothos/core';
 import { Anatomy, Schema, type Shape } from '@fougere/schema';
-import type { Field, Fields, SchemaView, SchemaSource } from '@fougere/schema';
-import { Boundary, Lifecycle, fieldsOf, inputFields, sourceNameOf } from '@fougere/schema';
+import type { Field, Fields, SchemaView, SchemaOrCard } from '@fougere/schema';
+import { Boundary, Card, Lifecycle, inputFields, schemaOf } from '@fougere/schema';
 
 // ─── Types ─────────────────────────────────────────
 
@@ -19,7 +19,7 @@ export interface TypeConfig {
   name: string;
   /** Entity source */
   /** The schema whose fields become the type — a live class, or a card that travelled. */
-  entity: SchemaSource;
+  entity: SchemaOrCard;
   /** Champs à exclure du type GraphQL */
   exclude?: string[];
   /** Relations à résoudre */
@@ -495,12 +495,13 @@ export function registerObjectType(
  */
 export function registerType(builder: InstanceType<typeof SchemaBuilder>, config: TypeConfig): any {
   // A live class or a card — an adapter needs the fields, never the constructor.
-  const fields = fieldsOf(config.entity);
+  const schema = schemaOf(config.entity);
+  const fields = schema.getFields();
   const exclude = new Set(config.exclude ?? []);
   // Who owns the enum names: the schema a view came from, so `PostCard.status` and
   // `CreatePostInput.status` land on the one `PostStatus`. A card that travelled carries no
   // class name — the GraphQL type name is then the best owner available.
-  const enumOwner = sourceNameOf(config.entity as SchemaView) ?? config.name;
+  const enumOwner = Card.fromSchema(schema).descriptor.title ?? config.name;
 
   return (builder as any).objectRef(config.name).implement({
     fields: (t: any) => {
@@ -648,7 +649,7 @@ export function registerInput(builder: InstanceType<typeof SchemaBuilder>, confi
   if (Object.keys(fields).length === 0) return undefined;
   // The view's SOURCE, not the input's name: `CreatePostInput` derives from `Post`, and its
   // `status` must be the same `PostStatus` the query emits.
-  const enumOwner = sourceNameOf(config.schema);
+  const enumOwner = Card.fromSchema(config.schema).descriptor.title;
   // Input-field omissibility is a projection of the view's MODE (partial() → patch),
   // never of forged per-field flags — the fields themselves stay untouched.
   const patch = config.schema.getOpts().patch ?? false;

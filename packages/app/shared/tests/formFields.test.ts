@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { entity, primary, text, email, url, number, bool, date, created, oneOf, ref, many, optional, writeOnly, describe as describeSchema, reconstruct } from '@fougere/schema';
+import { Card, entity, primary, text, email, url, number, bool, date, created, oneOf, ref, many, optional, writeOnly } from '@fougere/schema';
 import { formFieldsOf, tableColumnsOf, payloadOf, errorsByField } from '../src/form.js';
 
 class Author extends entity({ id: primary(), name: text() }) {}
@@ -187,7 +187,7 @@ describe('tableColumnsOf — the dual', () => {
   it('works on an entity rebuilt from the card — the back-office case', () => {
     // A page reads `rpc.discover`, not the class: what a remote frond serves has no
     // constructor here. The reference survives the trip as its target's name.
-    const rebuilt = reconstruct(describeSchema(Article as never, 'article'));
+    const rebuilt = Card.fromSchema(Article as never, 'article').toSchema();
     const cols = Object.fromEntries(
       tableColumnsOf(rebuilt as never, 'article').map((c) => [c.name, c]),
     );

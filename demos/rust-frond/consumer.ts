@@ -6,13 +6,13 @@
  *
  *   1. le CONTRAT voyage      — les opérations s'appellent, la doublure ne distingue rien
  *   2. la CARTE voyage        — rpc.discover rend le schéma déclaré en Rust
- *   3. le COMPORTEMENT se rebâtit — reconstruct() rend un juge vivant côté TS
+ *   3. le COMPORTEMENT se rebâtit — Card.toSchema() rend un juge vivant côté TS
  *
  * Le troisième point est celui qui compte : le juge local refuse un payload
  * sur des règles qu'aucune ligne de TypeScript ne déclare.
  */
 import { createHttpTransport } from '@fougere/transport-http/client';
-import { reconstruct, inputFields, outputFields } from '@fougere/schema';
+import { Card, inputFields, outputFields } from '@fougere/schema';
 import {
   EMPTY_INVOCATION,
   FougereError,
@@ -73,9 +73,9 @@ async function main(): Promise<void> {
   show(descriptor.properties.recordedAt);
 
   // ─── 3. Reconstruction ───────────────────────────────────────────
-  title('3.', 'reconstruct() — le comportement se rebâtit côté TS');
+  title('3.', 'Card.toSchema() — le comportement se rebâtit côté TS');
 
-  const Sensor = reconstruct(descriptor);
+  const Sensor = Card.fromDescriptor(descriptor).toSchema();
   console.log(`   entrée (ce qu'un client peut fournir) : ${Object.keys(inputFields(Sensor.getFields())).join(', ')}`);
   console.log(`   sortie (ce qu'un client peut lire)    : ${Object.keys(outputFields(Sensor.getFields())).join(', ')}`);
 

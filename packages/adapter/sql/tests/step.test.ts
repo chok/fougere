@@ -8,12 +8,14 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import Database from 'better-sqlite3';
 import { Kysely, SqliteDialect, sql } from 'kysely';
-import { entity, primary, text, number, optional, describeSet, diffSet, type Fields } from '@fougere/schema';
+import { Bundle, entity, primary, text, number, optional, type Fields, type SetDiffOptions } from '@fougere/schema';
 import { planStep, collapseChain, stepSQL, applyStep } from '../src/step.js';
 import { desiredTables, actualState, type SchemaState } from '../src/diff.js';
 import { createTableSQL } from '../src/ddl.js';
 
-const bundle = (fields: Fields) => describeSet({ post: class extends entity(fields) {} });
+const bundle = (fields: Fields) => Bundle.fromSchemas({ post: class extends entity(fields) {} });
+const between = (before: Fields, after: Fields, options: SetDiffOptions = {}) =>
+  bundle(before).diff(bundle(after), options);
 
 /** The app as it stands today — what the tables are built from. */
 const appOf = (fields: Fields) => ({
@@ -34,7 +36,7 @@ beforeEach(async () => {
 describe('a rename carries the data', () => {
   it('renames the column instead of dropping and re-adding it', async () => {
     const current = { id: primary(), title: text(), content: text() };
-    const step = diffSet(bundle(V1), bundle(current), { renamed: { post: { body: 'content' } } });
+    const step = between(V1, current, { renamed: { post: { body: 'content' } } });
     const plan = planStep(step, desiredTables(appOf(current)));
 
     expect(plan.refusals).toEqual([]);
@@ -50,7 +52,7 @@ describe('a rename carries the data', () => {
   it('snake_cases both ends — a field is not a column', async () => {
     const before = { id: primary(), publishedAt: text() };
     const after = { id: primary(), releasedAt: text() };
-    const step = diffSet(bundle(before), bundle(after), { renamed: { post: { publishedAt: 'releasedAt' } } });
+    const step = between(before, after, { renamed: { post: { publishedAt: 'releasedAt' } } });
 
     expect(planStep(step, desiredTables(appOf(after))).changes).toEqual([
       { kind: 'renameColumn', table: 'posts', from: 'published_at', to: 'released_at' },
@@ -61,7 +63,7 @@ describe('a rename carries the data', () => {
 describe('a removal is realised, and only from a step', () => {
   it('drops the column the step says left', async () => {
     const current = { id: primary(), title: text() };
-    const step = diffSet(bundle(V1), bundle(current));
+    const step = between(V1, current);
     const plan = planStep(step, desiredTables(appOf(current)));
 
     await applyStep(plan, db);
@@ -77,7 +79,7 @@ describe('what it will not decide alone', () => {
     // Measured on the way here: `addColumn` applies NOT NULL only when a default exists,
     // so this used to land as a nullable column while the entity called it required.
     const current = { ...V1, authorId: text() };
-    const step = diffSet(bundle(V1), bundle(current));
+    const step = between(V1, current);
     const plan = planStep(step, desiredTables(appOf(current)));
 
     expect(plan.changes).toEqual([]);
@@ -88,14 +90,14 @@ describe('what it will not decide alone', () => {
 
   it('says nothing when the new field declares one', () => {
     const current = { ...V1, authorId: text({ default: 'unknown' }) };
-    const step = diffSet(bundle(V1), bundle(current));
+    const step = between(V1, current);
 
     expect(planStep(step, desiredTables(appOf(current))).refusals).toEqual([]);
   });
 
   it('lets an added OPTIONAL field through — the additive pass covers it', () => {
     const current = { ...V1, slug: optional(text()) };
-    const step = diffSet(bundle(V1), bundle(current));
+    const step = between(V1, current);
     const plan = planStep(step, desiredTables(appOf(current)));
 
     expect(plan).toEqual({ changes: [], refusals: [] });
@@ -103,7 +105,7 @@ describe('what it will not decide alone', () => {
 
   it('refuses a type change rather than inventing a conversion', () => {
     const current = { id: primary(), title: text(), body: number() };
-    const step = diffSet(bundle(V1), bundle(current));
+    const step = between(V1, current);
 
     expect(planStep(step, desiredTables(appOf(current))).refusals[0]).toMatchObject({
       field: 'body',
@@ -113,7 +115,7 @@ describe('what it will not decide alone', () => {
 
   it('reports every refusal in one run, not the first', () => {
     const current = { id: primary(), title: number(), body: text(), authorId: text() };
-    const step = diffSet(bundle(V1), bundle(current));
+    const step = between(V1, current);
 
     expect(planStep(step, desiredTables(appOf(current))).refusals).toHaveLength(2);
   });
@@ -121,7 +123,7 @@ describe('what it will not decide alone', () => {
   it('runs nothing at all when anything is refused', async () => {
     // Half a rename is worse than none: the plan is read whole or not at all.
     const current = { id: primary(), title: text(), content: number() };
-    const step = diffSet(bundle(V1), bundle(current), { renamed: { post: { body: 'content' } } });
+    const step = between(V1, current, { renamed: { post: { body: 'content' } } });
     const plan = planStep(step, desiredTables(appOf(current)));
 
     await expect(applyStep(plan, db)).rejects.toThrow(/cannot be realised/);
@@ -144,7 +146,7 @@ describe('the statement itself', () => {
 describe('replaying a step changes nothing', () => {
   it('skips what the columns show has already happened', async () => {
     const current = { id: primary(), title: text(), content: text() };
-    const step = diffSet(bundle(V1), bundle(current), { renamed: { post: { body: 'content' } } });
+    const step = between(V1, current, { renamed: { post: { body: 'content' } } });
     const tables = desiredTables(appOf(current));
 
     await applyStep(planStep(step, tables), db);
@@ -161,7 +163,7 @@ describe('replaying a step changes nothing', () => {
 
   it('still proposes the half that has not run', async () => {
     const current = { id: primary(), content: text() };
-    const step = diffSet(bundle(V1), bundle(current), { renamed: { post: { body: 'content' } } });
+    const step = between(V1, current, { renamed: { post: { body: 'content' } } });
 
     // Rename by hand, leave the drop undone — the state a run interrupted halfway leaves.
     await sql.raw('alter table "posts" rename column "body" to "content"').execute(db);
@@ -176,7 +178,7 @@ describe('a chain composes before it is planned', () => {
     let was = V1 as Fields;
     return pairs.map(([from, to]) => {
       const now = Object.fromEntries(Object.entries(was).map(([key, f]) => [key === from ? to : key, f])) as Fields;
-      const step = diffSet(bundle(was), bundle(now), { renamed: { post: { [from]: to } } });
+      const step = between(was, now, { renamed: { post: { [from]: to } } });
       was = now;
       return step;
     });
@@ -208,7 +210,10 @@ describe('a chain composes before it is planned', () => {
 
   it('drops the column under the name the tables hold it by', () => {
     const [renaming] = chain(['body', 'content']);
-    const gone = diffSet(bundle({ id: primary(), title: text(), content: text() }), bundle({ id: primary(), title: text() }));
+    const gone = between(
+      { id: primary(), title: text(), content: text() },
+      { id: primary(), title: text() },
+    );
 
     const plan = planStep(collapseChain([renaming, gone]), desiredTables(appOf({ id: primary(), title: text() })));
     expect(plan.changes).toEqual([{ kind: 'dropColumn', table: 'posts', column: 'body' }]);

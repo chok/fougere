@@ -17,7 +17,7 @@ import {
 import type { Nuxt } from '@nuxt/schema';
 import { orderSeeds } from '@fougere/core';
 import {
-  scanProject, emitScan, frondAliases, watchPathsOf, resolveConventions, type Conventions,
+  scanProject, emitScan, frondAliases, frondPackage, watchPathsOf, resolveConventions, type Conventions,
   setModuleLoader, loadCascadedConfig,
 } from '@fougere/core/node';
 import { declaresStorage } from '@fougere/defaults';
@@ -177,7 +177,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
         const remotes = JSON.parse(readFileSync(remotesPath, 'utf-8')) as Record<string, { url: string; path: string }>;
         for (const [name, meta] of Object.entries(remotes)) {
           // Don't override locally scanned fronds
-          const specifier = `${conventions.scope}/${name}`;
+          const specifier = frondPackage(name, conventions);
           if (!nuxt.options.alias[specifier]) {
             nuxt.options.alias[specifier] = meta.path;
             // Ensure Vite/Nitro can resolve files inside synced remotes
