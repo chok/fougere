@@ -472,6 +472,33 @@ async function toPresenterEntry(filePath: string): Promise<PresenterEntry | null
       // Everything after the rows is bound like a handler's argument.
       params: m.params.slice(1),
     }));
+
+    // The rows parameter is stripped just above, and nothing used to check its SHAPE.
+    // A computed field receives the PAGE and answers one value per row, so a method
+    // written `items(order: Order)` compiles and dies at the first call with a 500
+    // (`expected 1 value(s) for 1 row(s), got 0`) — while the information sat here, at
+    // the scan. Every own method of a presenter IS a computed field
+    // (`getPresenterFields`), so there is no private helper to spare.
+    //
+    // An ERROR at boot, not a refusal: a `blocking` scan diagnostic is logged and the
+    // app still starts (`bootstrap.ts`, and the comment above that loop says why). Making
+    // it refuse means deciding that a declaration which cannot work is an unresolved
+    // CONTRACT — the one thing that does stop the boot — and that is a decision, not a
+    // severity.
+    for (const method of parsed) {
+      const rows = method.params[0];
+      if (rows && rows.type.array === true) continue;
+      record({
+        severity: 'blocking',
+        code: 'presenter-field-not-page',
+        filePath,
+        subject: `${(ctor as { name?: string }).name ?? 'Presenter'}.${method.name}`,
+        message: `${method.name}(${rows ? `${rows.name}: ${rows.type.raw}` : ''}) is a computed `
+          + `field, so it receives the PAGE and must answer one value per row. Declare `
+          + `${method.name}(${rows?.name ?? 'rows'}: ${(target as { name?: string }).name ?? 'Entity'}[]) `
+          + `and return an array of the same length.`,
+      });
+    }
   } catch { /* parse failure — fall back to untyped */ }
 
   // Declared at runtime on the class, so it survives a scan that resolved nothing.
