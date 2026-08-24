@@ -48,6 +48,22 @@ export class MalformedJsonError extends Error {
 
 export type Handler = (ctx: RequestContext) => Promise<ResponseResult>;
 export type Next = () => Promise<ResponseResult>;
+/**
+ * What `next()` answers when the host framework — not us — owns the chain.
+ *
+ * Express and Fastify build their own middleware chain here, so a middleware's return IS
+ * the response and there is nothing to distinguish. Hono owns its chain, so its adapter has
+ * to tell "the middleware answered" from "the middleware delegated", and it used
+ * `data === null` for the second. `null` is a legal body — `{ status: 403, data: null }` is
+ * the ordinary spelling of a deny — so a middleware that REFUSED with no body was read as
+ * having delegated: it was silently bypassed on Hono and honoured on Fastify. One contract,
+ * two verdicts, on a value inside the value space.
+ *
+ * A symbol cannot be produced by accident, and no middleware author ever writes it: only an
+ * adapter that does not own its chain returns it from the `next` it hands out.
+ */
+export const PASSTHROUGH: unique symbol = Symbol('fougere.http.passthrough');
+
 export type Middleware = (ctx: RequestContext, next: Next) => Promise<ResponseResult>;
 
 export interface HttpRouter {

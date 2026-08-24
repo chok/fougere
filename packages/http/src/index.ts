@@ -7,7 +7,7 @@ export type {
   Middleware,
   HttpRouter,
 } from './router.js';
-export { MalformedJsonError } from './router.js';
+export { MalformedJsonError, PASSTHROUGH } from './router.js';
 
 export { createHonoRouter } from './hono.js';
 export { createFastifyRouter } from './fastify.js';

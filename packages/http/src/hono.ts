@@ -1,7 +1,11 @@
 /**
  * Hono adapter — bridges a Hono app to the HttpRouter interface.
  */
-import { MalformedJsonError, type HttpRouter, type HttpMethod, type RequestContext, type ResponseResult, type Middleware, type Handler } from './router.js';
+import {
+  MalformedJsonError, PASSTHROUGH,
+  type HttpRouter, type HttpMethod, type RequestContext, type ResponseResult,
+  type Middleware, type Handler,
+} from './router.js';
 
 interface HonoLike {
   use(path: string, ...handlers: Function[]): void;
@@ -91,11 +95,12 @@ export function createHonoRouter(app: HonoLike): HttpRouter {
           const ctx = buildContext(c);
           const result = await mw(ctx, async () => {
             await next();
-            // After next(), Hono has already set the response — return a passthrough
-            return { status: c.res.status, data: null };
+            // After next(), Hono has already set the response. The sentinel says so, and it
+            // is a symbol on purpose — see PASSTHROUGH.
+            return { status: c.res.status, data: PASSTHROUGH };
           });
-          // If the middleware returned a custom response (short-circuit), send it
-          if (result.data !== null) {
+          // Anything else is the middleware's own response, empty body included.
+          if (result.data !== PASSTHROUGH) {
             return sendResponse(c, result);
           }
         } catch (err) {
