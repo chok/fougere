@@ -27,17 +27,15 @@ const ambiguousInputFixture = join(repoRoot, 'packages', 'core', 'tests', 'fixtu
 const check = () => new CheckHandler(new ProjectScan());
 
 describe('check', () => {
-  it('nomme un extends qu\'il n\'a pas pu suivre, et compte ce qu\'il a vu', async () => {
+  it('suit un extends vers une classe exportée par son nom, et compte ce qu\'il a vu', async () => {
     const result = await check().execute({ root: fixture });
 
     expect(result.fronds).toBe(1);
     expect(result.handlers).toBe(1);
 
-    const found = result.findings.find((f) => f.code === 'heritage-unresolved');
-    expect(found, 'aucun constat sur un extends non résolu').toBeDefined();
-    expect(found!.severity).toBe('warning');
-    expect(found!.message).toContain('BaseReporting');
-    expect(found!.filePath).toContain('ArticleHandler.ts');
+    // `BaseReporting` est exportée par son nom, pas en `default`. Le checker résout le
+    // symbole quel que soit son mode d'export, donc il n'y a plus d'extends à signaler.
+    expect(result.findings.find((f) => f.code === 'heritage-unresolved')).toBeUndefined();
   });
 
   it('ne signale rien sur une app du dépôt', async () => {

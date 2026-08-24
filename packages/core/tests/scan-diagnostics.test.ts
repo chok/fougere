@@ -49,23 +49,18 @@ describe('le scan dit ce qu\'il n\'a pas pu faire', () => {
     expect(diagnostics).toEqual([]);
   });
 
-  it('un héritage non résolu est nommé, et n\'arrête pas le boot', async () => {
+  it('une classe de base exportée par son NOM est résolue, et son op est servie', async () => {
     const { fronds, diagnostics } = await scanProject(blindHeritage);
 
-    // `BaseReporting` est exportée par son NOM, pas en `default` : la passe
-    // d'héritage cherche la classe par défaut du fichier, n'en trouve pas, et
-    // abandonnait sans un mot. `weekly` manque donc à la façade.
+    // `BaseReporting` est exportée par son nom, pas en `default`. La passe d'héritage
+    // cherchait la classe par défaut du fichier, n'en trouvait pas, et `weekly` manquait
+    // à la façade — avec un avertissement pour le dire. Le checker résout le symbole quel
+    // que soit son mode d'export, donc l'op est là et il n'y a plus rien à avertir.
     const ops = [...fronds[0].handlers[0].operations.keys()];
     expect(ops).toContain('ping');
-    expect(ops).not.toContain('weekly');
+    expect(ops).toContain('weekly');
 
-    const found = diagnostics.find((d) => d.code === 'heritage-unresolved');
-    expect(found, 'aucun diagnostic pour un extends non résolu').toBeDefined();
-    // Un avertissement, pas un blocage : une classe de base installée SANS opération
-    // est parfaitement ordinaire, et le boot ne peut pas trancher entre les deux.
-    expect(found!.severity).toBe('warning');
-    expect(found!.message).toContain('BaseReporting');
-    expect(found!.message).toContain('frond.config.ts');
+    expect(diagnostics.find((d) => d.code === 'heritage-unresolved')).toBeUndefined();
   });
 
   it('une exécution ne conserve pas les constats de la précédente', async () => {
