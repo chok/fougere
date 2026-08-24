@@ -44,7 +44,7 @@ export function tableOf(app: App): Matchable[] {
   if (cached) return cached;
 
   const table = app.fronds.flatMap((frond) =>
-    generateRoutes(app as never, {
+    generateRoutes(app, {
       prefix: `/${frond.name}`,
       filter: (_entity, frondName) => frondName === frond.name,
     }).map((route) => ({

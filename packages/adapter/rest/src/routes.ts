@@ -73,12 +73,25 @@ interface EntityEntry {
  * package stay structurally typed. There the duplication is the doctrine, not an oversight.
  */
 type HandlerEntry = Pick<CoreHandlerEntry, 'address' | 'surface'> & {
-  operations: Map<string, OperationMeta>;
   /** `Crud(Post, PostPublic)` — the handler-wide output view, scoping every op. */
   outputOverride?: SchemaSource;
-  /** The scanned constructor, which carries the same statement made on the class. */
-  ctor?: { __output?: SchemaSource };
+  /**
+   * The scanned constructor, which carries the same statement made on the class.
+   *
+   * Typed as a constructor that MAY carry the static, not as `{ __output?: … }` alone:
+   * a type whose every property is optional is weak, and TS refuses a constructor that
+   * happens not to carry it — *has no properties in common*. So the narrow view was
+   * unassignable from the real entry for a second reason after `operations`.
+   */
+  ctor?: (new (...args: never[]) => unknown) & { __output?: SchemaSource };
 };
+// No `operations` here, and its absence is the point. It was declared, never read — this
+// file takes its table from `app.operationsFor()` — and it carried `OperationMeta`, whose
+// `kind` is REQUIRED because that is true of an EffectiveOperation. A scanned handler's
+// contract leaves `kind` empty, so the narrow type was not a supertype of the real one and
+// `generateRoutes(app)` did not typecheck against a real `App`. The framework's own caller
+// wrote `generateRoutes(app as never, …)`, and the tests only ever passed narrow literals,
+// so nothing caught it. Declaring what you consume means not declaring the rest.
 
 interface PresenterEntry {
   entityName: string;
