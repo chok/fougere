@@ -53,16 +53,16 @@
     "dist"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc",
+    "build": "rm -rf dist && tsc6",
     "test": "vitest run --maxWorkers=2",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit -p tsconfig.test.json",
+    "typecheck": "tsc6 --noEmit -p tsconfig.test.json",
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
     "@fougere/container": "workspace:*",
     "@fougere/schema": "workspace:*",
-    "typescript": "^5.5.0"
+    "@typescript/typescript6": "^6.0.2"
   },
   "devDependencies": {
     "@types/node": "^22.0.0"

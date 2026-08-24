@@ -4,14 +4,14 @@
  * The AST says what the author declared; TypeScript's checker says what those types mean.
  * TypeScript is lazy-loaded to avoid bundling the compiler in production builds.
  */
-import type ts from 'typescript';
+import type ts from '@typescript/typescript6';
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname, resolve as resolvePath } from 'node:path';
 
 /** Lazy-loaded TypeScript module — avoids bundling the 9MB compiler. */
 let _ts: typeof ts | undefined;
 async function loadTS(): Promise<typeof ts> {
-  if (!_ts) _ts = (await import('typescript')).default;
+  if (!_ts) _ts = (await import('@typescript/typescript6')).default;
   return _ts;
 }
 function getTS(): typeof ts {
@@ -411,39 +411,6 @@ const TS_KEYWORDS = new Set([
   'never', 'object', 'symbol', 'bigint',
 ]);
 
-/**
- * Resolve an imported identifier to its source file path.
- * Handles relative imports (./) and workspace packages (@fougere/*).
- */
-function resolveImportPath(
-  source: ts.SourceFile,
-  identifierName: string,
-  filePath: string,
-  projectRoot: string,
-): string | undefined {
-  const ts = getTS();
-  for (const stmt of source.statements) {
-    if (!ts.isImportDeclaration(stmt)) continue;
-    if (!ts.isStringLiteral(stmt.moduleSpecifier)) continue;
-
-    const bindings = stmt.importClause;
-    if (!bindings) continue;
-
-    // Named imports: import { Crud } from '...'
-    if (bindings.namedBindings && ts.isNamedImports(bindings.namedBindings)) {
-      const found = bindings.namedBindings.elements.some((e) => e.name.text === identifierName);
-      if (!found) continue;
-    }
-    // Default import: import X from '...'
-    else if (bindings.name?.text !== identifierName) {
-      continue;
-    }
-
-    const specifier = stmt.moduleSpecifier.text;
-    return resolveSpecifier(specifier, filePath, projectRoot);
-  }
-  return undefined;
-}
 
 /** Resolve an import specifier to an absolute file path. */
 function resolveSpecifier(specifier: string, fromFile: string, projectRoot: string): string | undefined {
@@ -469,59 +436,7 @@ function resolveSpecifier(specifier: string, fromFile: string, projectRoot: stri
   return undefined;
 }
 
-/**
- * Follow re-exports in an index file to find the source of a named export.
- * e.g. `export { Crud } from '../prefab/crud.js'` → resolves to crud.ts
- */
-function followReExport(
-  indexPath: string,
-  identifierName: string,
-  projectRoot: string,
-): string | undefined {
-  const ts = getTS();
-  const source = sourceOf(indexPath);
 
-  for (const stmt of source.statements) {
-    if (!ts.isExportDeclaration(stmt)) continue;
-    if (!stmt.moduleSpecifier || !ts.isStringLiteral(stmt.moduleSpecifier)) continue;
-
-    // export { Crud } from '../prefab/crud.js'
-    if (stmt.exportClause && ts.isNamedExports(stmt.exportClause)) {
-      const found = stmt.exportClause.elements.some((e) => {
-        const exportedName = e.name.text;
-        const localName = e.propertyName?.text ?? e.name.text;
-        return exportedName === identifierName || localName === identifierName;
-      });
-      if (!found) continue;
-    }
-
-    // export * from '../prefab/crud.js' — also follow (could contain the identifier)
-    const resolved = resolveSpecifier(stmt.moduleSpecifier.text, indexPath, projectRoot);
-    if (resolved) return resolved;
-  }
-
-  return undefined;
-}
-
-/**
- * Find the full source file for an identifier, following re-exports if needed.
- */
-function resolveIdentifierSource(
-  source: ts.SourceFile,
-  identifierName: string,
-  filePath: string,
-  projectRoot: string,
-): string | undefined {
-  const importPath = resolveImportPath(source, identifierName, filePath, projectRoot);
-  if (!importPath) return undefined;
-
-  // If it's an index file, follow re-exports
-  if (importPath.endsWith('index.ts')) {
-    return followReExport(importPath, identifierName, projectRoot) ?? importPath;
-  }
-
-  return importPath;
-}
 
 // ── Mixin / heritage parsing ─────────────────
 
@@ -578,58 +493,8 @@ function findClassInFunction(source: ts.SourceFile, functionName: string): ts.Cl
   return undefined;
 }
 
-/** Recursively substitute type names in a ParsedType. */
-function substituteType(type: ParsedType, sub: Map<string, string>): ParsedType {
-  const newName = sub.get(type.name) ?? type.name;
-  const newGenerics = type.generics?.map((g) => substituteType(g, sub));
-  if (newName === type.name && !newGenerics) return type;
-  return { ...type, name: newName, generics: newGenerics ?? type.generics };
-}
 
-/** Substitute all type references in parsed methods. */
-function substituteMethods(methods: ParsedMethod[], sub: Map<string, string>): ParsedMethod[] {
-  return methods.map((m) => ({
-    ...m,
-    params: m.params.map((p) => ({
-      ...p,
-      type: substituteType(p.type, sub),
-    })),
-    returnType: m.returnType ? substituteType(m.returnType, sub) : undefined,
-  }));
-}
 
-/**
- * Detect generic type references in methods — names that are not keywords
- * and not imported in the given source file.
- */
-function detectGenericNames(methods: ParsedMethod[], source: ts.SourceFile): Set<string> {
-  const ts = getTS();
-  const imported = new Set<string>();
-  for (const stmt of source.statements) {
-    if (!ts.isImportDeclaration(stmt)) continue;
-    const bindings = stmt.importClause;
-    if (!bindings) continue;
-    if (bindings.name) imported.add(bindings.name.text);
-    if (bindings.namedBindings && ts.isNamedImports(bindings.namedBindings)) {
-      for (const el of bindings.namedBindings.elements) imported.add(el.name.text);
-    }
-  }
-
-  const generics = new Set<string>();
-  const collectFromType = (t: ParsedType) => {
-    if (t.name.length <= 2 && /^[A-Z]/.test(t.name) && !TS_KEYWORDS.has(t.name) && !imported.has(t.name)) {
-      generics.add(t.name);
-    }
-    t.generics?.forEach(collectFromType);
-  };
-
-  for (const m of methods) {
-    m.params.forEach((p) => collectFromType(p.type));
-    if (m.returnType) collectFromType(m.returnType);
-  }
-
-  return generics;
-}
 
 /**
  * Extract methods from a class node (no file reading — works on already-parsed AST).
@@ -698,11 +563,70 @@ function docSentenceOf(member: ts.Node, source: ts.SourceFile): string | undefin
  * Parse inherited methods from a class's heritage clause.
  * Handles both `extends Crud(Entity)` (mixin) and `extends BaseClass` patterns.
  */
+/**
+ * Where a name used here is declared. The checker follows the import, the re-export chain
+ * and an installed package's types — the three cases three hand-rolled functions treated
+ * separately.
+ */
+function declarationFileOf(node: ts.Node, checker: ts.TypeChecker): string | undefined {
+  const typescript = getTS();
+  let symbol = checker.getSymbolAtLocation(node);
+  if (!symbol) return undefined;
+  if (symbol.flags & typescript.SymbolFlags.Alias) symbol = checker.getAliasedSymbol(symbol);
+  return symbol.declarations?.[0]?.getSourceFile().fileName;
+}
+
+/**
+ * The methods a base class contributes, read from the INSTANTIATED type.
+ *
+ * `extends Crud(Post)` gives `create(input: Partial<Post>)` directly: the checker has
+ * already substituted the mixin's type parameter. The three functions this replaces
+ * detected the generic names and mapped them to the mixin's arguments by position.
+ */
+function inheritedFromBase(
+  base: ts.ExpressionWithTypeArguments,
+  checker: ts.TypeChecker,
+  skip: Set<string>,
+): ParsedMethod[] {
+  const typescript = getTS();
+  const results: ParsedMethod[] = [];
+
+  for (const property of checker.getPropertiesOfType(checker.getTypeAtLocation(base))) {
+    if (skip.has(property.name)) continue;
+
+    // `private`/`protected` is a statement about the surface, and the declaration carries
+    // it. A door is what the author declares public.
+    const declaration = property.declarations?.[0];
+    if (declaration && typescript.canHaveModifiers(declaration)
+      && typescript.getModifiers(declaration)?.some((m) => m.kind === typescript.SyntaxKind.PrivateKeyword
+        || m.kind === typescript.SyntaxKind.ProtectedKeyword)) continue;
+
+    const signature = checker.getTypeOfSymbolAtLocation(property, base).getCallSignatures()[0];
+    if (!signature) continue;
+
+    const returned = signature.getReturnType();
+    const sentence = typescript.displayPartsToString(property.getDocumentationComment(checker)).trim();
+    results.push({
+      name: property.name,
+      params: signature.getParameters().map((parameter) => {
+        const type = checker.getTypeOfSymbolAtLocation(parameter, base);
+        return {
+          name: parameter.name,
+          type: parseCheckedType(type, checker.typeToString(type), checker),
+          optional: (parameter.flags & typescript.SymbolFlags.Optional) !== 0,
+        };
+      }),
+      returnType: parseCheckedType(returned, checker.typeToString(returned), checker),
+      ...(sentence ? { description: sentence.split(/(?<=\.)\s/)[0] } : {}),
+    });
+  }
+  return results;
+}
+
 function parseInheritedMethods(
   cls: ts.ClassDeclaration,
   source: ts.SourceFile,
-  filePath: string,
-  projectRoot: string,
+  checker: ts.TypeChecker,
   skip: Set<string>,
   /**
    * Base classes this pass could not open — an INSTALLED one, typically, whose
@@ -718,54 +642,26 @@ function parseInheritedMethods(
   for (const clause of cls.heritageClauses) {
     if (clause.token !== ts.SyntaxKind.ExtendsKeyword) continue;
 
-    for (const baseType of clause.types) {
-      const expr = baseType.expression;
+    for (const base of clause.types) {
+      const fromType = inheritedFromBase(base, checker, skip);
+      if (fromType.length > 0) return fromType;
 
-      // extends Crud(Entity) — mixin pattern (CallExpression)
-      if (ts.isCallExpression(expr) && ts.isIdentifier(expr.expression)) {
-        const mixinName = expr.expression.text;
-        // Extract mixin argument name (the entity identifier)
-        const mixinArgs = expr.arguments
-          .filter(ts.isIdentifier)
-          .map((a) => a.text);
+      // A factory that ERASES its own type — `assertShape<unknown>(class …)`, `as unknown`
+      // — leaves the checker with nothing to enumerate. The written class is still there,
+      // so read it. This is the one case where what the author wrote beats what it means.
+      const expression = base.expression;
+      const declared = ts.isCallExpression(expression) && ts.isIdentifier(expression.expression)
+        ? declarationFileOf(expression.expression, checker)
+        : ts.isIdentifier(expression) ? declarationFileOf(expression, checker) : undefined;
+      if (!declared) { unresolved.push(expression.getText(source)); continue; }
 
-        const mixinFile = resolveIdentifierSource(source, mixinName, filePath, projectRoot);
-        if (!mixinFile) { unresolved.push(`${mixinName}(…)`); continue; }
+      const declaredSource = sourceOf(declared);
+      const written = ts.isCallExpression(expression) && ts.isIdentifier(expression.expression)
+        ? findClassInFunction(declaredSource, expression.expression.text)
+        : findDefaultClass(declaredSource);
+      if (!written) { unresolved.push(expression.getText(source)); continue; }
 
-        const mixinSource = sourceOf(mixinFile);
-
-        const innerClass = findClassInFunction(mixinSource, mixinName);
-        if (!innerClass) { unresolved.push(`${mixinName}(…)`); continue; }
-
-        const parentMethods = extractClassMethods(innerClass, mixinSource, skip);
-
-        // Build substitution map: detect generics in parent methods, map to mixin args
-        const genericNames = detectGenericNames(parentMethods, mixinSource);
-        if (genericNames.size > 0 && mixinArgs.length > 0) {
-          const sub = new Map<string, string>();
-          const genericArr = [...genericNames];
-          // Map generics to mixin arguments by position (usually just T → Entity)
-          for (let i = 0; i < Math.min(genericArr.length, mixinArgs.length); i++) {
-            sub.set(genericArr[i], mixinArgs[i]);
-          }
-          return substituteMethods(parentMethods, sub);
-        }
-
-        return parentMethods;
-      }
-
-      // extends BaseClass — simple inheritance (Identifier)
-      if (ts.isIdentifier(expr)) {
-        const parentName = expr.text;
-        const parentFile = resolveIdentifierSource(source, parentName, filePath, projectRoot);
-        if (!parentFile) { unresolved.push(parentName); continue; }
-
-        const parentSource = sourceOf(parentFile);
-        const parentClass = findDefaultClass(parentSource);
-        if (!parentClass) { unresolved.push(parentName); continue; }
-
-        return extractClassMethods(parentClass, parentSource, skip);
-      }
+      return extractClassMethods(written, declaredSource, skip);
     }
   }
 
@@ -869,7 +765,7 @@ function parseClassMethods(
 
   // Parse inherited methods (if projectRoot is provided for resolution)
   if (heritageRoot) {
-    const inherited = parseInheritedMethods(cls, source, filePath, heritageRoot, skip, unresolved);
+    const inherited = parseInheritedMethods(cls, source, checker, skip, unresolved);
     // Merge: child methods win over inherited
     const parentOnly = inherited
       .filter((m) => !childNames.has(m.name))

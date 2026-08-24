@@ -22,14 +22,14 @@
  * and to `remotes:`. The named form states the same dependency in terms the model can
  * read — and it is the form `fougere sync` writes, so it survives the move.
  */
-import type ts from 'typescript';
+import type ts from '@typescript/typescript6';
 import { readdir, readFile } from 'node:fs/promises';
 import { join, resolve, dirname, relative, isAbsolute } from 'node:path';
 import type { FrondDescriptor } from './scan/frond.js';
 
 let _ts: typeof ts | undefined;
 async function loadTs(): Promise<typeof ts> {
-  if (!_ts) _ts = (await import('typescript')).default;
+  if (!_ts) _ts = (await import('@typescript/typescript6')).default;
   return _ts;
 }
 
