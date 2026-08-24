@@ -816,7 +816,7 @@ function buildArgsFromSignature(
       name: inputName,
       // A real schema over those fields, not a forged stand-in: an update input is the
       // same fields seen through the patch mode.
-      schema: Schema.of(opInputFields, undefined, undefined, { patch: opName === 'update' }),
+      schema: Schema.of({ fields: opInputFields, opts: { patch: opName === 'update' } }),
     });
   }
 

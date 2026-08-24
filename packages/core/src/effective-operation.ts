@@ -492,8 +492,7 @@ function structural(type: ParsedType | undefined): boolean {
 }
 
 function schemaMatches(schema: SchemaView, type: ParsedType | undefined): boolean {
-  const view = schema as unknown as { name?: string; source?: { name?: string } };
-  const names = new Set([view.name, view.source?.name].filter(Boolean));
+  const names = new Set([schema.name, schema.derivation?.sourceName].filter(Boolean));
   if (type?.name && names.has(type.name)) return true;
   return type?.generics?.some((generic) => generic.name && names.has(generic.name)) ?? false;
 }

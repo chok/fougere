@@ -11,7 +11,7 @@ class Post extends entity({
 
 describe('survived composition', () => {
   it('records which origin fields survive a pick', () => {
-    expect(Post.pick('a', 'b').survived).toEqual({
+    expect(Post.pick('a', 'b').derivation?.survived).toEqual({
       a: 'a',
       b: 'b',
       c: undefined,
@@ -20,7 +20,7 @@ describe('survived composition', () => {
   });
 
   it('records which origin fields survive an omit', () => {
-    expect(Post.omit('b').survived).toEqual({
+    expect(Post.omit('b').derivation?.survived).toEqual({
       a: 'a',
       b: undefined,
       c: 'c',
@@ -29,7 +29,7 @@ describe('survived composition', () => {
   });
 
   it('records current names after a rename', () => {
-    expect(Post.rename({ a: 'alpha', c: 'gamma' }).survived).toEqual({
+    expect(Post.rename({ a: 'alpha', c: 'gamma' }).derivation?.survived).toEqual({
       a: 'alpha',
       b: 'b',
       c: 'gamma',
@@ -40,7 +40,7 @@ describe('survived composition', () => {
   it('composes pick, omit, and rename in that order', () => {
     const derived = Post.pick('a', 'b', 'c').omit('b').rename({ c: 'gamma' });
 
-    expect(derived.survived).toEqual({
+    expect(derived.derivation?.survived).toEqual({
       a: 'a',
       b: undefined,
       c: 'gamma',
@@ -51,7 +51,7 @@ describe('survived composition', () => {
   it('composes rename, omit, and pick in the reverse order', () => {
     const derived = Post.rename({ a: 'alpha', c: 'gamma' }).omit('b').pick('alpha', 'gamma');
 
-    expect(derived.survived).toEqual({
+    expect(derived.derivation?.survived).toEqual({
       a: 'alpha',
       b: undefined,
       c: 'gamma',
@@ -62,7 +62,7 @@ describe('survived composition', () => {
   it('marks a renamed field absent when its current name is removed', () => {
     const derived = Post.rename({ b: 'beta' }).omit('beta');
 
-    expect(derived.survived).toEqual({
+    expect(derived.derivation?.survived).toEqual({
       a: 'a',
       b: undefined,
       c: 'c',
@@ -74,12 +74,12 @@ describe('survived composition', () => {
     const derived = Post.pick('a').extend({ extra: text() });
 
     expect(Object.keys(derived.getFields())).toEqual(['a', 'extra']);
-    expect(derived.survived).toEqual({
+    expect(derived.derivation?.survived).toEqual({
       a: 'a',
       b: undefined,
       c: undefined,
       d: undefined,
     });
-    expect(derived.survived).not.toHaveProperty('extra');
+    expect(derived.derivation?.survived).not.toHaveProperty('extra');
   });
 });

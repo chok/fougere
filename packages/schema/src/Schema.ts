@@ -1,29 +1,22 @@
 import { Boundary } from './axis/boundary/Boundary.js';
 import { type Fields } from './Field.js';
-import { deriveHints, type Hints } from './EntityDeclarations.js';
+import { deriveHints, type Hints, type Previous } from './EntityDeclarations.js';
 import { FieldGroup } from './constraint/FieldGroup.js';
 import { Unique } from './constraint/Unique.js';
 import { type CompositeUnique } from './EntityDeclarations.js';
 import { Judge } from './judge/Judge.js';
+import { SchemaDerivation } from './SchemaDerivation.js';
 import { type ValidateOptions } from './judge/options.js';
 import type { StandardSchemaV1 } from './projection/standard.js';
 import type { PartialRow, Row, SchemaView } from './SchemaView.js';
 
 export const ANONYMOUS_SCHEMA_NAME = "Schema";
 
-/**
- * What a derivation kept, keyed by the ORIGIN's field names: the name a field
- * carries here, or `undefined` when this view dropped it. `source` says what a
- * view was cut from; this says what the cut left.
- */
-export type Survived = Record<string, string | undefined>;
-
 export interface SchemaConstructor<TFields extends Fields> extends SchemaView<TFields> {
   new (data: PartialRow<TFields>): Row<TFields>;
   readonly "~standard": StandardSchemaV1.Props<Record<string, unknown>, Row<TFields>>;
-  readonly source?: abstract new (...args: never[]) => unknown;
-  readonly survived?: Survived;
-  readonly previous?: Readonly<Record<string, string>>;
+  readonly derivation?: SchemaDerivation;
+  readonly previous?: Previous<TFields>;
   from(data: Record<string, unknown>): Row<TFields>;
   pick<K extends string & keyof TFields>(...keys: K[]): SchemaConstructor<Pick<TFields, K>>;
   omit<K extends string & keyof TFields>(...keys: K[]): SchemaConstructor<Omit<TFields, K>>;
@@ -37,9 +30,8 @@ export class Schema {
   static fields: Fields = {};
   static hints: Hints<Fields> | undefined;
   static opts: ValidateOptions = {};
-  static source: (abstract new (...args: never[]) => unknown) | undefined;
-  static survived: Survived | undefined;
-  static previous: Readonly<Record<string, string>> | undefined;
+  static derivation: SchemaDerivation | undefined;
+  static previous: Previous<Fields> | undefined;
 
   constructor(data?: Record<string, unknown>) {
     if (!data) return;
@@ -112,12 +104,18 @@ export class Schema {
   }
 
   static partial() {
-    return Schema.of({ ...this.fields }, this.source ?? this, this.hints, { ...this.opts, patch: true }, this.survived);
+    return Schema.of({
+      fields: { ...this.fields }, derivation: this.origin(), hints: this.hints,
+      opts: { ...this.opts, patch: true },
+    });
   }
 
   static extend(extra: Fields) {
-    // The added fields have no origin, so the trace is unchanged: it speaks of the source.
-    return Schema.of({ ...this.fields, ...extra }, this.source ?? this, this.hints, this.opts, this.survived);
+    // The added fields have no origin, so the derivation is unchanged: it speaks of the root.
+    return Schema.of({
+      fields: { ...this.fields, ...extra }, derivation: this.origin(),
+      hints: this.hints, opts: this.opts,
+    });
   }
 
   static named(name: string) {
@@ -147,18 +145,18 @@ export class Schema {
     mergedOpts = { ...mergedOpts, ...source.getOpts() };
   }
   const hints = Object.keys(mergedHints).length ? (mergedHints as Hints<Fields>) : undefined;
-  return Schema.of(merged, undefined, hints, mergedOpts) as unknown as SchemaConstructor<Merged<T>>;
+  return Schema.of({ fields: merged, hints, opts: mergedOpts }) as unknown as SchemaConstructor<Merged<T>>;
   }
 
-  static of<TFields extends Fields>(
-    fields: TFields,
-    source?: abstract new (...args: never[]) => unknown,
-    hints?: Hints<TFields>,
-    opts: ValidateOptions = {},
-    survived?: Survived,
-  ): SchemaConstructor<TFields> {
+  static of<TFields extends Fields>(stated: {
+    fields: TFields;
+    derivation?: SchemaDerivation;
+    hints?: Hints<TFields>;
+    opts?: ValidateOptions;
+    previous?: Previous<TFields>;
+  }): SchemaConstructor<TFields> {
     class Derived extends Schema {}
-    Object.assign(Derived, { fields, source, hints, opts, survived });
+    Object.assign(Derived, { opts: {}, ...stated });
     Object.defineProperty(Derived, "name", { value: ANONYMOUS_SCHEMA_NAME, configurable: true });
     return Derived as unknown as SchemaConstructor<TFields>;
   }
@@ -166,18 +164,17 @@ export class Schema {
   private static derive(fields: Fields, survives: (key: string) => string | undefined) {
     const renamed: Fields = {};
     for (const [key, field] of Object.entries(fields)) renamed[key] = field.rename(survives);
-    return Schema.of(renamed, this.source ?? this, deriveHints(this.hints, survives), this.opts, this.trace(survives));
+    return Schema.of({
+      fields: renamed,
+      derivation: this.origin().compose(survives),
+      hints: deriveHints(this.hints, survives),
+      opts: this.opts,
+    });
   }
 
-  /**
-   * The trace, composed with the parent's — so `Post.pick(a, b).omit(b)` reports against
-   * `Post` and not against the intermediate, exactly as `source` skips it.
-   */
-  private static trace(survives: (key: string) => string | undefined): Survived {
-    const parent = this.survived ?? Object.fromEntries(Object.keys(this.fields).map((k) => [k, k]));
-    return Object.fromEntries(
-      Object.entries(parent).map(([origin, here]) => [origin, here === undefined ? undefined : survives(here)]),
-    );
+  /** The derivation this schema already carries, or the one it becomes the root of. */
+  private static origin(): SchemaDerivation {
+    return this.derivation ?? SchemaDerivation.first(this, this.fields);
   }
 }
 

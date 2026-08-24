@@ -5,6 +5,7 @@ import {
 } from '@fougere/core';
 import { relative } from 'node:path';
 import ProjectScan from '../services/ProjectScan.js';
+import { ANONYMOUS_SCHEMA_NAME, type SchemaView } from '@fougere/schema';
 
 type Cardinality = NonNullable<OperationContract['cardinality']>;
 type Binding = EffectiveOperation['binding'][number];
@@ -197,11 +198,10 @@ function outputOf(operation: EffectiveOperation): ExplainResult['output'] {
   return type ? { type, cardinality: operation.cardinality ?? null } : null;
 }
 
-function schemaName(schema: unknown): string | undefined {
-  const view = schema as { name?: string; source?: { name?: string } } | undefined;
-  if (!view) return undefined;
-  if (view.name && view.name !== 'Schema') return view.name;
-  return view.source?.name;
+function schemaName(schema: SchemaView | undefined): string | undefined {
+  if (!schema) return undefined;
+  if (schema.name && schema.name !== ANONYMOUS_SCHEMA_NAME) return schema.name;
+  return schema.derivation?.sourceName;
 }
 
 function parsedOutput(raw: string | undefined): string | undefined {

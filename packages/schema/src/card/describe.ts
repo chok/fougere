@@ -57,15 +57,14 @@ export function describe(schema: SchemaView, name?: string): SchemaDescriptor {
  * different fields, and nothing in the card said which was which.
  */
 export function derivedOf(schema: SchemaView): DerivedFrom | undefined {
-  const s = schema as { source?: { name?: string }; survived?: Record<string, string | undefined> };
-  if (!s.source?.name || !s.survived) return undefined;
-  const survived = Object.fromEntries(Object.entries(s.survived).map(([k, v]) => [k, v ?? null]));
-  return { from: s.source.name, survived };
+  const { derivation } = schema;
+  if (!derivation) return undefined;
+  const survived = Object.fromEntries(Object.entries(derivation.survived).map(([k, v]) => [k, v ?? null]));
+  return { from: derivation.sourceName, survived };
 }
 
 export function sourceNameOf(schema: SchemaView): string | undefined {
-  const s = schema as { source?: { name?: string }; name?: string };
-  return s.source?.name ?? s.name;
+  return schema.derivation?.sourceName ?? schema.name;
 }
 
 export function describeSet(schemas: Record<string, SchemaView> | SchemaView[]): SchemaBundle {

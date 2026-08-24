@@ -7,7 +7,7 @@ import { Lifecycle, Role } from '@fougere/schema';
  * other — the entity never mentions a column type, the dialect never mentions a
  * field. Adding a dialect touches only the second half.
  */
-import { Anatomy, FieldGroup, Unique, fieldsOf, registrationKeyOf, type Field, type SchemaView, type SchemaSource } from '@fougere/schema';
+import { Anatomy, FieldGroup, Unique, fieldsOf, registrationKeyOf, schemaOf, type Field, type SchemaView, type SchemaSource } from '@fougere/schema';
 import { boundsOf, type ShapeBounds } from './check.js';
 
 /** The shape keywords a dialect needs to choose a column type. */
@@ -310,7 +310,7 @@ export interface AppLike {
  * other projections. Recognised by that FORM, never by a brand.
  */
 function isDerivation(source: SchemaSource): boolean {
-  return (source as { source?: unknown }).source !== undefined;
+  return schemaOf(source).derivation !== undefined;
 }
 
 /**

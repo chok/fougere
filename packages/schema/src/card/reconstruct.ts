@@ -72,7 +72,7 @@ function buildSchema(descriptor: SchemaDescriptor, resolve?: Resolver, name?: st
   for (const [key, prop] of Object.entries(descriptor.properties)) {
     fields[key] = reconstructField(prop, key, resolve);
   }
-  const schema = Schema.of(fields, undefined, undefined, {});
+  const schema = Schema.of({ fields });
 
   const title = name ?? descriptor.title;
   if (title) Object.defineProperty(schema, 'name', { value: title, configurable: true });

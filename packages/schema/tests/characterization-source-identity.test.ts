@@ -14,29 +14,29 @@ describe('source identity across derivations', () => {
     const intermediate = Post.pick('a', 'b');
     const derived = intermediate.omit('b');
 
-    expect(derived.source).toBe(Post);
-    expect(derived.source).not.toBe(intermediate);
+    expect(derived.derivation?.source).toBe(Post);
+    expect(derived.derivation?.source).not.toBe(intermediate);
   });
 
   it('keeps the current root source through partial', () => {
     const derived = Post.pick('a', 'b');
 
-    expect(derived.partial().source).toBe(Post);
+    expect(derived.partial().derivation?.source).toBe(Post);
   });
 
   it('keeps the current root source through extend', () => {
     const derived = Post.pick('a', 'b');
 
-    expect(derived.extend({ extra: text() }).source).toBe(Post);
+    expect(derived.extend({ extra: text() }).derivation?.source).toBe(Post);
   });
 
   it('does not give a composed schema a source', () => {
     const composed = Schema.compose(Post.pick('a'), Post.omit('a', 'b'));
 
-    expect(composed.source).toBeUndefined();
+    expect(composed.derivation?.source).toBeUndefined();
   });
 
   it('does not give a non-derived entity a source', () => {
-    expect(Post.source).toBeUndefined();
+    expect(Post.derivation?.source).toBeUndefined();
   });
 });

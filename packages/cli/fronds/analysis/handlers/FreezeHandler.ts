@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { describeSet, diffSet, registrationKeyOf, type SchemaBundle, type SetDiff } from '@fougere/schema';
+import { describeSet, diffSet, registrationKeyOf, type SchemaBundle, type SchemaView, type SetDiff } from '@fougere/schema';
 import ProjectScan from '../services/ProjectScan.js';
 import { VERSIONS, chainOf } from '../versions.js';
 import type Freeze from '../entities/Freeze.js';
@@ -121,7 +121,7 @@ function declaredRenames(
 ): Record<string, Record<string, string>> {
   const out: Record<string, Record<string, string>> = {};
   for (const { name, entityClass } of entities) {
-    const previous = (entityClass as { previous?: Record<string, string> }).previous;
+    const previous = (entityClass as SchemaView).previous;
     // Keyed as `describeSet` keys `$defs`, which is what `diffSet` reads. Spelling the
     // convention a second way here is the defect this repo has already recorded twice.
     const key = registrationKeyOf(name);
