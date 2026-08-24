@@ -4,7 +4,8 @@ import { Lifecycle } from '../axis/lifecycle/Lifecycle.js';
 import { Role } from '../axis/role/Role.js';
 import type { Field } from '../Field.js';
 import type { SchemaView } from '../SchemaView.js';
-import { Judge } from './Judge.js';
+import { RowJudge } from './RowJudge.js';
+import { RowRefusal } from './RowRefusal.js';
 
 /**
  * One input, and what the judge must answer.
@@ -69,6 +70,7 @@ function outOfBoundsFor(field: Field): { why: string; value: unknown }[] {
  */
 export function casesFor(entity: SchemaView, valid: Record<string, unknown>): Case[] {
   const fields = entity.getFields();
+  const judge = RowJudge.of(fields);
   const cases: Case[] = [];
   const withField = (name: string, value: unknown) => ({ ...valid, [name]: value });
 
@@ -81,7 +83,7 @@ export function casesFor(entity: SchemaView, valid: Record<string, unknown>): Ca
     // get to invent a second one, so the only case we can state about it is the bound one.
     const isRef = Role.of(field).isReference;
 
-    if (Judge.onAbsent(field) === null && name in valid) {
+    if (judge.onAbsent(field) === null && name in valid) {
       const body = { ...valid };
       delete body[name];
       cases.push({ why: `${name} absent`, body, patch: false, expect: { reject: name } });
@@ -118,12 +120,11 @@ export function holds(expected: Case['expect'], result: { success: boolean; erro
 }
 
 /**
- * Every way `Judge.row` can refuse, read from its own source.
+ * Every way a row is refused for its structure.
  *
  * Returning names instead of a count makes an uncovered branch identifiable. Custom
  * decoder failures remain outside the derived table because user code defines them.
  */
 export function refusalBranches(): string[] {
-  const source = Judge.row.toString();
-  return [...source.matchAll(/message:\s*([^,}]+)/g)].map((match) => match[1].trim().replace(/^['"]|['"]$/g, ''));
+  return Object.values(RowRefusal);
 }

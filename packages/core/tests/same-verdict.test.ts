@@ -5,7 +5,7 @@
  * is built on it, and nothing demonstrated it. Two judges are genuinely independent:
  *
  *   - the FORM calls `Schema.validate(body)` in the browser (`useFormFor.ts:46`);
- *   - the FAÇADE calls `Judge.row(schema.getFields(), inv.body, …)` (`bootstrap.ts:334`).
+ *   - the FAÇADE calls `RowJudge.of(schema.getFields(), …).check(inv.body)`.
  *
  * REST and GraphQL are NOT a third and fourth: both resolve the façade and call it
  * (`routes.ts:214`, `pothos.ts:862`), so they are the same judge by construction.
@@ -17,7 +17,6 @@
  * like the SQL table and the GraphQL type.
  */
 import { scanProject } from '../src/node.js';
-import { Judge } from '@fougere/schema';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';

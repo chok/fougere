@@ -1,11 +1,11 @@
 import { Anatomy } from '../src/axis/shape/Shape.js';
-import { Judge } from '../src/judge/Judge.js';
+import { RowJudge } from '../src/judge/RowJudge.js';
 import { FieldGroup } from '../src/constraint/FieldGroup.js';
 import { Unique } from '../src/constraint/Unique.js';
 import { describe, it, expect } from 'vitest';
 import {
   entity, primary, text, number, oneOf, list, optional, nullable,
-  registerGenerator, unique, indexed, immutable, created, updated, describe as describeSchema, reconstruct,
+  Card, registerGenerator, unique, indexed, immutable, created, updated,
 } from '../src/index.js';
 // The read half is the framework's own business, so the barrel no longer carries it.
 import { resolveCustomGenerator } from '../src/axis/lifecycle/Generators.js';
@@ -77,44 +77,44 @@ describe('anatomy — the single customs post for readers', () => {
 describe('quadrant présence × nullité', () => {
   it('nullable(): null legal, field still REQUIRED (the new quadrant)', () => {
     const fields = { note: nullable(text()) };
-    expect(Judge.row(fields, {}).success).toBe(false); // absent → Required
-    expect(Judge.row(fields, { note: null }).success).toBe(true); // explicit null legal
-    expect(Judge.row(fields, { note: 'x' }).success).toBe(true);
+    expect(RowJudge.of(fields).check({}).success).toBe(false); // absent → Required
+    expect(RowJudge.of(fields).check({ note: null }).success).toBe(true); // explicit null legal
+    expect(RowJudge.of(fields).check({ note: 'x' }).success).toBe(true);
   });
 
   it('optional(): null legal AND absence permitted', () => {
     const fields = { note: optional(text()) };
-    const absent = Judge.row(fields, {});
+    const absent = RowJudge.of(fields).check({});
     expect(absent.success).toBe(true);
     if (absent.success) expect('note' in absent.data).toBe(false); // omitted, not nulled
-    expect(Judge.row(fields, { note: null }).success).toBe(true);
+    expect(RowJudge.of(fields).check({ note: null }).success).toBe(true);
   });
 
   it('bare field: null illegal, absence illegal', () => {
     const fields = { note: text() };
-    expect(Judge.row(fields, {}).success).toBe(false);
-    expect(Judge.row(fields, { note: null }).success).toBe(false);
+    expect(RowJudge.of(fields).check({}).success).toBe(false);
+    expect(RowJudge.of(fields).check({ note: null }).success).toBe(false);
   });
 
   it('nullable(oneOf(...)): null joins the enum, other values stay constrained', () => {
     const fields = { status: nullable(oneOf('pending', 'paid')) };
-    expect(Judge.row(fields, { status: null }).success).toBe(true);
-    expect(Judge.row(fields, { status: 'paid' }).success).toBe(true);
-    expect(Judge.row(fields, { status: 'nope' }).success).toBe(false);
+    expect(RowJudge.of(fields).check({ status: null }).success).toBe(true);
+    expect(RowJudge.of(fields).check({ status: 'paid' }).success).toBe(true);
+    expect(RowJudge.of(fields).check({ status: 'nope' }).success).toBe(false);
   });
 
   it('nullable(number(...)): constraints apply to the base type only, null passes', () => {
     const fields = { n: nullable(number({ min: 0, integer: true })) };
-    expect(Judge.row(fields, { n: null }).success).toBe(true);
-    expect(Judge.row(fields, { n: 3 }).success).toBe(true);
-    expect(Judge.row(fields, { n: -1 }).success).toBe(false);
-    expect(Judge.row(fields, { n: 1.5 }).success).toBe(false);
+    expect(RowJudge.of(fields).check({ n: null }).success).toBe(true);
+    expect(RowJudge.of(fields).check({ n: 3 }).success).toBe(true);
+    expect(RowJudge.of(fields).check({ n: -1 }).success).toBe(false);
+    expect(RowJudge.of(fields).check({ n: 1.5 }).success).toBe(false);
   });
 
   it('nullable elements inside a list validate natively', () => {
     const fields = { tags: list(nullable(text({ min: 1 }))) };
-    expect(Judge.row(fields, { tags: ['a', null] }).success).toBe(true);
-    expect(Judge.row(fields, { tags: [''] }).success).toBe(false);
+    expect(RowJudge.of(fields).check({ tags: ['a', null] }).success).toBe(true);
+    expect(RowJudge.of(fields).check({ tags: [''] }).success).toBe(false);
   });
 });
 
@@ -141,9 +141,9 @@ describe('registerGenerator — custom generators travel by name', () => {
 
 describe('descriptor carries the axes verbatim', () => {
   it('nullable() folds into the type union on the wire, and required keeps the field', async () => {
-    const { describe: describeCard } = await import('../src/index.js');
+    const { Card } = await import('../src/index.js');
     class Memo extends entity({ id: primary(), note: nullable(text()) }) {}
-    const card = describeCard(Memo, 'memo');
+    const card = Card.fromSchema(Memo, 'memo').descriptor;
     expect(card.properties.note.type).toEqual(['string', 'null']);
     expect(card.required).toContain('note'); // nullable-but-required survives the wire
   });
@@ -182,13 +182,13 @@ describe('unique / indexed — declared here, enforced by the storage', () => {
   });
 
   it('travels on the card, both ways', () => {
-    const card = describeSchema(Account, 'account');
+    const card = Card.fromSchema(Account, 'account').descriptor;
     // Members are NAMED on the wire: a consumer reads the constraint without having to
     // know which property the group hangs on.
     expect(card.properties.email['x-fougere']).toMatchObject({ role: { unique: [['email']] } });
     expect(card.properties.city['x-fougere']).toMatchObject({ role: { index: true } });
 
-    const rebuilt = reconstruct(card);
+    const rebuilt = Card.fromDescriptor(card).toSchema();
     expect(FieldGroup.on(rebuilt.getFields().email!, Unique).map((g) => g.members)).toEqual([['email']]);
     expect(rebuilt.getFields().city.role?.index).toBe(true);
     // A constraint of one is not a composite — it is fully stated by the field itself.

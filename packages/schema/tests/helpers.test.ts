@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Anatomy } from '../src/axis/shape/Shape.js';
-import { Judge } from '../src/judge/Judge.js';
+import { Field } from '../src/Field.js';
 import { entity } from '../src/entity.js';
 import { primary } from '../src/vocabulary/primary.js';
 import { text } from '../src/vocabulary/text.js';
@@ -22,7 +22,7 @@ import { url } from '../src/vocabulary/url.js';
 describe('helpers', () => {
   it('primary() creates an auto-generated id field (cuid2 default)', () => {
     const f = primary();
-    expect(Judge.isField(f)).toBe(true);
+    expect(Field.is(f)).toBe(true);
     expect(f.shape).toEqual({ type: 'string' });
     expect(f.role?.primary).toBe(true);
     // identity in the graph implies immutability in time (default 2026-07-15)

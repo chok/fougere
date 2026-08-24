@@ -1,13 +1,13 @@
 /**
  * The decision table, checked against the judge it describes.
  *
- * Every case is posed to `Judge.row` — the same function the façade calls. A case whose
+ * Every case is posed to `RowJudge.check` — the same function the façade calls. A case whose
  * verdict the judge does not share is a case this file got wrong, and the assertion says
  * which one by carrying `why`.
  */
 import { describe, it, expect } from 'vitest';
 import {
-  entity, primary, text, number, oneOf, bool, email, created, immutable, readOnly, list, Judge,
+  entity, primary, text, number, oneOf, bool, email, created, immutable, readOnly, list, RowJudge,
   casesFor, holds, refusalBranches,
 } from '../src/index.js';
 
@@ -32,7 +32,8 @@ const baseline = {
   featured: false, contact: 'a@b.co', tags: ['one'], reference: 'AB',
 };
 const table = casesFor(Article, baseline);
-const verdict = (body: unknown, patch: boolean) => Judge.row(Article.getFields(), body, { patch });
+const verdict = (body: unknown, patch: boolean) =>
+  RowJudge.of(Article.getFields(), { patch }).check(body);
 
 describe('the table', () => {
   it('is not empty — a table that silently drains proves nothing', () => {
@@ -77,15 +78,15 @@ describe('each case', () => {
 describe('the guard on the judge itself', () => {
   it('names every refusal branch, so a new one cannot be added in silence', () => {
     // If the judge grows a branch, this fails naming it, and the table above has to state
-    // the case that reaches it.
+    // the case that reaches it. Two refusals stay out on purpose: a value refused by its
+    // own shape carries the engine's message, and a named boundary codec carries user
+    // code's — neither is structural, and neither can be enumerated ahead of time.
     expect(refusalBranches()).toEqual([
       'Expected an object',
       'Unknown field',
       'Required',
       'Read-only',
       'Immutable',
-      'checked.error',   // the shape — covered by the wrong-type and out-of-bounds cases
-      'decoded.error',   // a NAMED boundary codec — user code, so not derivable
     ]);
   });
 });

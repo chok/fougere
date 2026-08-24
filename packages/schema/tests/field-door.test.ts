@@ -10,7 +10,7 @@ import { optional } from '../src/vocabulary/optional.js';
 import { primary } from '../src/vocabulary/primary.js';
 import { text } from '../src/vocabulary/text.js';
 import { updated } from '../src/vocabulary/updated.js';
-import { Judge } from '../src/judge/Judge.js';
+import { FieldJudge } from '../src/judge/FieldJudge.js';
 
 /**
  * The constructor is the only way to obtain a field, so it is where a field is judged —
@@ -44,7 +44,7 @@ describe('the field door', () => {
   });
 
   it('reports every fault at once, not the first', () => {
-    const verdict = Judge.field({ shape: 42, lifecycle: { update: 'nawak' }, meta: 7 });
+    const verdict = FieldJudge.of({ shape: 42, lifecycle: { update: 'nawak' }, meta: 7 }).verdict;
     expect(verdict.success).toBe(false);
     if (!verdict.success) {
       expect(verdict.errors.map((e) => e.path)).toEqual(['shape', 'lifecycle.update', 'meta']);
