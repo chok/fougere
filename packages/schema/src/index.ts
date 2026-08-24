@@ -13,6 +13,7 @@ export { Unique } from './constraint/Unique.js';
 
 export { Schema, ANONYMOUS_SCHEMA_NAME, type SchemaConstructor } from './Schema.js';
 export { SchemaDerivation } from './SchemaDerivation.js';
+export { isObject } from './judge/form.js';
 export { casesFor, holds, refusalBranches, type Case } from './judge/cases.js';
 export { type SchemaView, type Row, type PartialRow } from './SchemaView.js';
 export { type FougereHints, type Hints } from './EntityDeclarations.js';

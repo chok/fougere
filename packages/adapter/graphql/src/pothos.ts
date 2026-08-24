@@ -1,4 +1,4 @@
-import { Role } from '@fougere/schema';
+import { classNameOf, Role } from '@fougere/schema';
 /**
  * @fougere/adapter-graphql — Pothos types derived from Fougere entities
  */
@@ -123,10 +123,6 @@ function operationIsQuery(
     );
   }
   return resolved === 'query';
-}
-
-function capitalize(s: string): string {
-  return s[0].toUpperCase() + s.slice(1);
 }
 
 function pluralize(name: string): string {
@@ -337,7 +333,7 @@ function enumTypeFor(
 
 /** `Post` + `status` → `PostStatus`. Undefined when the schema has no name to build on. */
 function enumNameFor(owner: string | undefined, fieldName: string): string | undefined {
-  return owner ? `${owner}${capitalize(fieldName)}` : undefined;
+  return owner ? `${owner}${classNameOf(fieldName)}` : undefined;
 }
 
 function fieldToInput(
@@ -664,7 +660,7 @@ export function registerInput(builder: InstanceType<typeof SchemaBuilder>, confi
       for (const [fieldName, field] of Object.entries(fields)) {
         result[fieldName] = fieldToInput(
           t, field, patch,
-          (shape, suffix) => nestedInputType(builder, shape, `${config.name}${capitalize(fieldName)}${suffix}`),
+          (shape, suffix) => nestedInputType(builder, shape, `${config.name}${classNameOf(fieldName)}${suffix}`),
           (values) => {
             const name = enumNameFor(enumOwner, fieldName);
             return name ? enumTypeFor(builder, name, values) : undefined;
@@ -808,7 +804,7 @@ function buildArgsFromSignature(
     // Only strip non-client fields for create/update — other ops may legitimately use them (e.g. publish(id))
     const isMutation = opName === 'create' || opName === 'update';
     const opInputFields = isMutation ? inputFields(meta.input.getFields()) : meta.input.getFields();
-    const inputName = `${capitalize(opName)}${entityName}Input`;
+    const inputName = `${classNameOf(opName)}${entityName}Input`;
 
     // `undefined` when the view asks for nothing, and `argsDef` already guards on it —
     // the op then takes no input, which is the truth.

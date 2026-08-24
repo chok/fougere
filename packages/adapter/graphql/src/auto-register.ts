@@ -1,4 +1,4 @@
-import { Role } from '@fougere/schema';
+import { classNameOf, primaryFieldOf, Role } from '@fougere/schema';
 /**
  * Auto-register GraphQL types and operations from a fougere App.
  *
@@ -25,10 +25,12 @@ function relationNameFor(fieldName: string): string | undefined {
   return stripped && stripped !== fieldName ? stripped : undefined;
 }
 
-/** The field a target is keyed by — what a batch read indexes its answer on. */
+/**
+ * The field a target is keyed by — what a batch read indexes its answer on. The shape
+ * answers the absence and this door defaults it: `id` is what a node id falls back to.
+ */
 function primaryNameOf(fields: Fields): string {
-  for (const [name, field] of Object.entries(fields)) if (Role.of(field).isPrimary) return name;
-  return 'id';
+  return primaryFieldOf(fields) ?? 'id';
 }
 
 interface Batch {
@@ -202,10 +204,6 @@ interface AppLike {
 
 // ─── Helpers ────────────────────────────────────
 
-function capitalize(s: string): string {
-  return s[0].toUpperCase() + s.slice(1);
-}
-
 /**
  * The key an entity is filed under — case-folded, because the same entity is spelled
  * differently depending on where its name came from: the scan yields the registration name
@@ -306,7 +304,7 @@ export function registerAll(
       const handler = (surfaceName
         ? frond.handlers.find((h) => h.address === entity.name && h.surface === surfaceName)
         : undefined) ?? handlerMap.get(entity.name);
-      const typeName = capitalize(entity.name);
+      const typeName = classNameOf(entity.name);
 
       const presenterMeta = presenterMap.get(entity.name);
       let presenter: Record<string, Function> | undefined;
@@ -326,7 +324,7 @@ export function registerAll(
         presenterFields: presenterMeta?.fields,
         presenterFieldMeta: presenterMeta?.fieldMeta,
         presenterViews: presenterMeta?.views as any,
-        viewType: (view, fieldName) => viewTypeOf(builder, view, `${typeName}${capitalize(fieldName)}`),
+        viewType: (view, fieldName) => viewTypeOf(builder, view, `${typeName}${classNameOf(fieldName)}`),
       });
 
       // Track for relation wiring. The presenter's computed field names travel too: pass 2
@@ -359,7 +357,7 @@ export function registerAll(
         viewType: (view, opName) =>
           view === outputSchema || view === entity.entityClass
             ? type
-            : viewTypeOf(builder, view, `${typeName}${capitalize(opName)}`),
+            : viewTypeOf(builder, view, `${typeName}${classNameOf(opName)}`),
       });
     }
   }

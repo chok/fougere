@@ -1,3 +1,4 @@
+import { classNameOf } from '../name.js';
 import type { FieldDescriptor, SchemaDescriptor } from './Descriptor.js';
 
 function typeOf(field: FieldDescriptor): string {
@@ -63,7 +64,7 @@ export function shapeTypeOf(descriptor: SchemaDescriptor, indent = ''): string {
 }
 
 export function entitySourceOf(descriptor: SchemaDescriptor, options: TypeSourceOptions = {}): string {
-  const name = identifierOf(options.name ?? capitalize(descriptor.title ?? 'Schema'));
+  const name = identifierOf(options.name ?? classNameOf(descriptor.title ?? 'Schema'));
   const exported = options.exported === false ? '' : 'export ';
   const card = JSON.stringify(descriptor, null, 2)
     .split('\n')
@@ -78,10 +79,6 @@ function identifierOf(name: string): string {
     throw new Error(`'${name}' is not a TypeScript identifier — it cannot name a generated declaration`);
   }
   return name;
-}
-
-function capitalize(s: string): string {
-  return s ? s[0].toUpperCase() + s.slice(1) : s;
 }
 
 export interface OpDescriptor {

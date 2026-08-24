@@ -22,7 +22,7 @@
  * - SQL Server cannot be attached at all — no `sqlserver` extension exists.
  */
 import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
-import { fieldsOf, type SchemaSource } from '@fougere/schema';
+import { registrationKeyOf, fieldsOf, type SchemaSource } from '@fougere/schema';
 import { toTable, toTableName, toSnakeCase, codecsOf } from '@fougere/adapter-sql';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -96,7 +96,6 @@ const TYPE_CLAUSE: Record<Attachable, string> = {
 const DEFAULT_ALIAS = 'db';
 
 /** 'Book' and 'book' name the same rows — the spelling `sources:` accepts either way. */
-const keyOf = (name: string): string => name.charAt(0).toLowerCase() + name.slice(1);
 
 function targetOf(declaration: { path?: string; attach?: string }, alias: string): string {
   const target = declaration.attach ?? declaration.path;
@@ -123,14 +122,14 @@ export async function connectSources(options: ConnectOptions): Promise<Sources> 
   // Where each named entity lives; anything unnamed is in the default source.
   const home = new Map<string, string>();
   for (const [alias, declaration] of Object.entries(options.sources ?? {})) {
-    for (const entity of declaration.entities) home.set(keyOf(entity), alias);
+    for (const entity of declaration.entities) home.set(registrationKeyOf(entity), alias);
   }
 
   // Only what this scope reads is attached — the declaration IS the environment.
   const wanted = new Set<string>();
   const placed = new Map<ShapeClass, { alias: string; table: string }>();
   for (const shape of options.reads) {
-    const name = keyOf((shape as { name?: string }).name ?? '');
+    const name = registrationKeyOf((shape as { name?: string }).name ?? '');
     const alias = home.get(name) ?? DEFAULT_ALIAS;
     wanted.add(alias);
     placed.set(shape, { alias, table: resolve(name) });

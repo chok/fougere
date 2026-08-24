@@ -360,9 +360,8 @@ function collectEntities(app: AppLike): EntityEntry[] {
 export function toTables(app: AppLike, resolve: (name: string) => string): TableDef[] {
   const entries = collectEntities(app);
   const tableNameOf = new Map<SchemaSource, string>(entries.map((entry) => [entry.entityClass, resolve(entry.name)]));
-  const lower = (name: string) => name.charAt(0).toLowerCase() + name.slice(1);
   const hosted = app.elsewhere
-    ? { here: new Set(entries.map((entry) => lower(entry.name))), elsewhere: new Set(app.elsewhere.map(lower)) }
+    ? { here: new Set(entries.map((entry) => registrationKeyOf(entry.name))), elsewhere: new Set(app.elsewhere.map(registrationKeyOf)) }
     : undefined;
   return entries.map((entry) => toTable(resolve(entry.name), entry.entityClass, { resolve, tableNameOf, hosted }));
 }

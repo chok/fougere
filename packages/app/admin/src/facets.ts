@@ -1,3 +1,4 @@
+import { isObject } from '@fougere/schema';
 /**
  * A semantic notion a renderer can act on, DECLARED — never guessed.
  *
@@ -66,14 +67,10 @@ export function defineAdminFacet<const Name extends string, const Value>(
   return { [name]: value } as Record<Name, Value>;
 }
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return !!value && typeof value === 'object' && !Array.isArray(value);
-}
-
 /** Arrays replace; semantic objects merge recursively so small project deltas stay small. */
 export function mergeAdminFacets(base: AdminFacets, patch: AdminFacets): AdminFacets {
   const merge = (left: unknown, right: unknown): unknown => {
-    if (!isPlainObject(left) || !isPlainObject(right)) return right;
+    if (!isObject(left) || !isObject(right)) return right;
     const out: Record<string, unknown> = { ...left };
     for (const [key, value] of Object.entries(right)) out[key] = merge(out[key], value);
     return out;
