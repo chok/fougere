@@ -17,7 +17,7 @@ import {
 import type { Nuxt } from '@nuxt/schema';
 import { orderSeeds } from '@fougere/core';
 import {
-  scanProject, emitScan, frondAliases, frondDirsOf, resolveConventions, type Conventions,
+  scanProject, emitScan, frondAliases, watchPathsOf, resolveConventions, type Conventions,
   setModuleLoader, loadCascadedConfig,
 } from '@fougere/core/node';
 import { declaresStorage } from '@fougere/defaults';
@@ -112,15 +112,9 @@ const module = defineNuxtModule<FougereModuleOptions>({
     // frond under `apps/../..` sits outside rootDir, so Nuxt never restarts: the scan,
     // the additive migration (once per boot) and the seeds all keep the previous shape,
     // and a field you just added is simply absent with no error anywhere.
-    // The root frond IS the scan root, so watching its path would match every write in
-    // the project — `.nuxt/`, `node_modules/`, the build output. Its convention
-    // directories are the frond, and they are what changes when the domain changes.
     for (const frond of fronds) {
       nuxt.options.alias[frond.source.package] = frond.source.path;
-      const watched = frond.source.path === scanRoot
-        ? frondDirsOf(conventions).map((dir) => resolve(scanRoot, dir))
-        : [frond.source.path];
-      nuxt.options.watch.push(...watched);
+      nuxt.options.watch.push(...watchPathsOf(frond, scanRoot, conventions));
     }
 
     // ── 1b-bis. Keep entity names through minification ──────────────────────

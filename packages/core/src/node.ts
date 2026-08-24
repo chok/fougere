@@ -14,7 +14,7 @@ export { boot } from './boot/boot.js';
 export { scanProject, frondAliases } from './scan/scanner.js';
 export {
   type Conventions, type ConventionsInput, DEFAULT_CONVENTIONS,
-  resolveConventions, frondPackage, frondDirsOf, providerDirsOf,
+  resolveConventions, frondPackage, frondDirsOf, providerDirsOf, watchPathsOf,
 } from './scan/conventions.js';
 export { emitScan, type EmitOptions } from './scan/emit.js';
 export { setModuleLoader, getModuleLoader } from './loader.js';
