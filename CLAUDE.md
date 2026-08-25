@@ -107,7 +107,7 @@ depth is encoded there: check it when a package moves families.
 **Entity declarations** — the 2nd arg of `entity()` is what the entity states about *itself*: `unique` (field groups unique together, realized as a table constraint by `adapter/sql`) and `hints` (per-adapter, per-field). One object, not a growing parameter list. A derivation that drops a member of a unique group drops the group.
 
 **Field = 4 axes** — `shape` (the shape IS JSON Schema), `role` (primary, ref…), `lifecycle` (who writes the value and when: create `{value}|'now'|{generate}|'optional'`, update `'now'|'forbidden'`), `boundary` (readOnly/writeOnly → `Visibility.input`/`Visibility.output`).
-**La validation juge, le storage réalise** : the façade judges client input (unknown keys → `Unknown field`); handlers write freely through the ORM, which realizes lifecycle rules — by calling `applyCreate`/`applyUpdate` (`schema/src/axis/lifecycle/apply.ts`), the one realization every storage shares. Refusing is still the judge's: `update: 'forbidden'` lives in `Judge.row`, patch mode.
+**La validation juge, le storage réalise** : the façade judges client input (unknown keys → `Unknown field`); handlers write freely through the ORM, which realizes lifecycle rules — by calling `applyCreate`/`applyUpdate` (`schema/src/axis/lifecycle/apply.ts`), the one realization every storage shares. Refusing is still the judge's: `update: 'forbidden'` lives in `RowJudge`, patch mode.
 
 **Repository(…entities)** — who OWNS an entity's storage, and where its questions are named. **The arity is the declaration**, second reading of what `orm.ts` states for `EntityOrm` against `Together`. At ONE, the repository IS that entity's storage: `RepositoryBase` forwards all thirteen gestures over a `protected orm`, so the default the boot registers under `ReadingRepository` can be the guarded port ITSELF — the `{ orm }` wrapper that used to sit there existed to make `repo.orm` true in both forms, back when `.orm` was the way in. Same shape either way, which is what makes the convention true. From TWO on it is an **aggregate**: it owns them, and three things follow from the SHAPE rather than from a rule — no default repository for any member (`boot/bootstrap.ts`, skipping every one, not just the key's namesake, which was the whole hole), no forwarded gesture (which `T` would `create` write to?), and `ownersOf` refusing two aggregates over one entity. The one thing the shape refuses LAZILY is said out loud instead: `Crud` on an owned entity resolves `<E>Repository`, which does not exist, and measured that let the app BOOT CLEAN and answer every request with the container's sentence — so `refuseCrudOnOwned` names it at boot, recognizing the handler by FORM (`list` + `findById` on the prototype) exactly as the façade does. That is what gives a rule spanning two tables a home at last: `withdraw` compares a balance to a sum in ordinary TypeScript, and nothing else can write those tables. **`EntityOrm<E>` is not a word of the user's vocabulary** — `boot/ownership.ts`, `refuseOrmInUserCode`: a handler, a presenter and a collector are refused by name and pointed at `<E>Repository` (`RepositoryOf<E>` is its other spelling, read by `depKeyOf` like `EntityOrm<E>`), while a HOLDER may name the port of what its prefab was built on, which covers `Mirror` without naming it. A door judges and projects; a holder keeps the storage. **The boundary is not the unit of work**: deriving the frame from the membership would make a read-only aggregate carry one — refusals included — and put `Together<[A, B], [Mirror]>` out of reach, so a frame is ASKED FOR. Not a door: a repository has no façade, so a judge about who may act still belongs in the handler. Pinned by `tests/aggregate.test.ts`.
 
@@ -126,7 +126,7 @@ depth is encoded there: check it when a package moves families.
 **Prefab ops** — `Crud(Post)` gives the five typed CRUD ops. `Crud(Post, { list: PostCard })` names the view **one op** emits: a declaration only, the handler keeps its full-row ORM so judges still read every field, and the façade projects each result onto its view. `Crud(Post, PostPublic)` is the handler-wide form and does scope the injected ORM.
 
 **A test states what it expects, and nothing else** — `@fougere/testing`. The CASES come
-from `Judge.row`'s closed list of refusals read against the four axes (`casesFor`, which
+from `RowRefusal`'s closed set read against the four axes (`Cases`, which
 lives in `@fougere/schema` because deriving them reads the axes and nothing else — the
 FABRICATION of a value needs a generator, and that half stays in `testing` so a 426 KB
 faker never reaches the package a browser loads; measured, a devDependency the other way
@@ -137,7 +137,7 @@ test under `fronds/blog/tests/` says its subject is `blog`, which is the stateme
 where Fougere's vocabulary does — a service's return type is a bare TypeScript type,
 erased at runtime, so `stub(X).m` returns what the test says and nothing else. `checkDoors`
 is the first thing in the repo to compare REST against GraphQL; `driftOf` compares two
-`rpc.discover` cards through `diff`, which is the gap TypeScript cannot see — a consumer's
+`rpc.discover` cards through `Card.diff`, which is the gap TypeScript cannot see — a consumer's
 synced copy still compiles three weeks after the producer moved.
 
 **Operation contract, three producers** — the façade consumes `OperationContract` and nothing else, so the scan is a convenience, not a dependency. A prefab **declares** (`Crud.__ops`, runtime, survives a scan that resolved nothing), the scan **derives** from source, `frond.config.ts` **states** (`operations: { archive: { binding: [...] } }`) and wins over both. Config also *creates* an op neither producer found — the only answer for a method inherited from an **installed** base class, which the workspace-only heritage scan cannot see. `input`, `binding` and `description` — `description` being the method's own doc sentence, which the scan reads from the AST (`scan/handler-parser.ts`, `docSentenceOf`) and the identity card carries. `OperationContract.output` is read by the façade too (`boot/HandlerFacade.ts`, `viewOf`: under `__opOutputs` and above `__output`), so one contract answers all three doors.
@@ -296,6 +296,10 @@ belief, which costs a sentence, not a paragraph.
   icon collections are listed for the server bundle in `site/nuxt.config.ts`. The copy names
   the package it copies since 237eaa4; before that it derived the name from the store glob,
   which is true only for an unscoped package.
+- **Four free functions in `schema` are candidates nobody has judged.** `clean` decides
+  nothing, so under the rule it is a private detail rather than a barrel export; `deriveHints`,
+  `fieldsOf` and `schemaOf` are methods of owners that now exist (`Hints`, `SchemaOrCard`).
+  Scraping, not structure — listed so the next pass does not re-derive the list.
 - `graphql` dual ESM/CJS hazard in tests — use `schema.getTypeMap()`, not `printSchema()`
 
 ### Settled
@@ -304,6 +308,22 @@ One line each, kept because a past version of this file asserted the opposite an
 one might again. The full account of each — what it did before, what the measurement was —
 lives in the notes.
 
+- A decision has ONE owner, and it is instantiated on its subject when the subject can be
+  held: `RowJudge.of(fields, opts).check(row)`, `Card.fromSchema(Post)`, `FieldSet.of(f).primary`,
+  `Visibility.of(f).input`. A registry stays static — one per process, no subject to hold
+  (`Formats`, `Boundaries`, `Generators`, `Clock`). Measured over the pass: 11 classes and 36
+  free functions became 24 and 12.
+- `Bundle` REFUSES two schemas claiming one registration key (`card/Bundle.ts`). The silent
+  overwrite it replaces is what a free function could not refuse — there was nowhere the
+  refusal would have belonged.
+- `FieldSet.primary` refuses two primaries, naming both. `primaryFieldOf` returned the first
+  one for as long as its own comment recorded that two primaries were the bug it existed to
+  fix; the absence is still answered and not defaulted.
+- A registry that cannot say what it holds is not the owner: `Generators` registers its three
+  builtins rather than switching on them, so the unknown name is refused inside it.
+- **A copy does not import, so no reader count can see it.** Measured 2026-08-25: nine
+  hand-written copies of four declared functions, five of them divergent, one INSIDE the
+  package that declares the original. The scan that finds them compares BODIES, not imports.
 - The shape is held on **three** paths: the façade judges input, `guardStorage` judges every
   write through the port, and the DDL emits `CHECK` for `oneOf`/`min`/`max`
   (`adapter/sql/src/check.ts`). `pattern`/`format` stay at the façade on purpose — regex
