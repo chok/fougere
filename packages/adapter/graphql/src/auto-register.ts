@@ -1,4 +1,4 @@
-import { classNameOf, primaryFieldOf, Role } from '@fougere/schema';
+import { classNameOf, FieldSet, Role } from '@fougere/schema';
 /**
  * Auto-register GraphQL types and operations from a fougere App.
  *
@@ -30,7 +30,7 @@ function relationNameFor(fieldName: string): string | undefined {
  * answers the absence and this door defaults it: `id` is what a node id falls back to.
  */
 function primaryNameOf(fields: Fields): string {
-  return primaryFieldOf(fields) ?? 'id';
+  return FieldSet.of(fields).primary ?? 'id';
 }
 
 interface Batch {

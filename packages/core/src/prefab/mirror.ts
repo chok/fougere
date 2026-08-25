@@ -1,4 +1,4 @@
-import { Lifecycle, primaryFieldOf, type EntityConstructor, type Fields, type ValidationResult } from '@fougere/schema';
+import { FieldSet, Lifecycle, type EntityConstructor, type Fields, type ValidationResult } from '@fougere/schema';
 import type { EntityOrm } from '../orm.js';
 
 /**
@@ -110,7 +110,7 @@ function judgePage<T>(shape: unknown, page: Partial<T>[]): Record<string, unknow
 
   const name = (shape as { name?: string }).name ?? 'mirror';
   const fields = (shape as { getFields?: () => Fields }).getFields?.();
-  const primary = fields ? primaryFieldOf(fields) : undefined;
+  const primary = fields ? FieldSet.of(fields).primary : undefined;
   return page.map((row, index) => {
     const verdict = judge.call(shape, row);
     if (verdict.success) return verdict.data as Record<string, unknown>;

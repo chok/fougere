@@ -16,7 +16,7 @@
  * than declared: a saga asks its author for an `undo` per step because its steps are
  * arbitrary code. Here they are not.
  */
-import { FieldGroup, Unique, primaryFieldOf, same, type Fields } from '@fougere/schema';
+import { FieldGroup, FieldSet, Unique, same, type Fields } from '@fougere/schema';
 import type { Logger } from '../builtins/logger.js';
 
 /** One write that landed, and how to take it back. */
@@ -88,7 +88,7 @@ export function recording<T extends object>(orm: T, entity: string, fields: Fiel
   const base = orm as unknown as Undoable;
   if (typeof base.create !== 'function' || typeof base.update !== 'function') return orm;
 
-  const key = primaryFieldOf(fields);
+  const key = FieldSet.of(fields).primary;
   if (!key) {
     throw new Error(
       `${entity} declares no primary field, so a write to it cannot be taken back by ` +
