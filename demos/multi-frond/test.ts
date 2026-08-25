@@ -114,7 +114,7 @@ async function main() {
     // 6. Verify generated code imports and works
     log('Testing generated schemas...');
     const postContent = readFileSync(postFile, 'utf-8');
-    if (!postContent.includes('reconstruct')) fail('Missing reconstruct');
+    if (!postContent.includes('Card.fromDescriptor')) fail('Missing Card.fromDescriptor');
     pass('Generated code uses correct imports');
 
     // 7. Actually import and test the generated schema
