@@ -7,7 +7,7 @@
  * about the run.
  */
 import { describe, it, expect, afterEach } from 'vitest';
-import { entity, primary, text, created, updated, applyCreate, applyUpdate, freezeClock } from '../src/index.js';
+import { entity, primary, text, created, updated, applyCreate, applyUpdate, Clock } from '../src/index.js';
 
 class Post extends entity({
   id: primary(),
@@ -22,7 +22,7 @@ afterEach(() => { restore?.(); restore = undefined; });
 describe('a frozen clock', () => {
   it('stamps the instant the test named', () => {
     const at = new Date('2026-01-02T03:04:05.000Z');
-    restore = freezeClock(at);
+    restore = Clock.freeze(at);
 
     const row = applyCreate(Post.getFields(), { title: 'A title' }) as { createdAt: Date };
 
@@ -30,7 +30,7 @@ describe('a frozen clock', () => {
   });
 
   it('holds across two stamps, so a created and an updated row agree', () => {
-    restore = freezeClock(1_767_000_000_000);
+    restore = Clock.freeze(1_767_000_000_000);
 
     const created = applyCreate(Post.getFields(), { title: 'A' }) as { createdAt: Date };
     const updated = applyUpdate(Post.getFields(), {}) as { updatedAt: Date };
@@ -39,7 +39,7 @@ describe('a frozen clock', () => {
   });
 
   it('moves again once released', () => {
-    const release = freezeClock(0);
+    const release = Clock.freeze(0);
     const frozen = applyCreate(Post.getFields(), { title: 'A' }) as { createdAt: Date };
     release();
 

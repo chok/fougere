@@ -5,10 +5,9 @@ import { Unique } from '../src/constraint/Unique.js';
 import { describe, it, expect } from 'vitest';
 import {
   entity, primary, text, number, oneOf, list, optional, nullable,
-  Card, registerGenerator, unique, indexed, immutable, created, updated,
+  Card, Generators, unique, indexed, immutable, created, updated,
 } from '../src/index.js';
 // The read half is the framework's own business, so the barrel no longer carries it.
-import { resolveCustomGenerator } from '../src/axis/lifecycle/Generators.js';
 
 // ─── nullableShape / anatomy — the two gates of the union, per shape genre ──
 
@@ -120,20 +119,20 @@ describe('quadrant présence × nullité', () => {
 
 // ─── Generator registry — named tokens, loud failure ──
 
-describe('registerGenerator — custom generators travel by name', () => {
+describe('Generators — custom generators travel by name', () => {
   it('a registered name resolves to its function', () => {
-    registerGenerator('monId', () => 'fixed-id');
-    expect(resolveCustomGenerator('monId')?.()).toBe('fixed-id');
+    Generators.register('monId', () => 'fixed-id');
+    expect(Generators.resolve('monId')()).toBe('fixed-id');
   });
 
   it('an unknown name resolves to undefined (the storage adapter turns this into a loud error)', () => {
-    expect(resolveCustomGenerator('jamais-vu')).toBeUndefined();
+    expect(Generators.holds('jamais-vu')).toBe(false);
   });
 
   it('primary({ generate: [name, fn] }) registers and names in one gesture', () => {
     const f = primary({ generate: ['tupleId', () => 'from-tuple'] });
     expect(f.lifecycle?.create).toEqual({ generate: 'tupleId' });
-    expect(resolveCustomGenerator('tupleId')?.()).toBe('from-tuple');
+    expect(Generators.resolve('tupleId')()).toBe('from-tuple');
   });
 });
 

@@ -1,5 +1,5 @@
 import { Field } from '../Field.js';
-import { registerGenerator, type GeneratorRef } from '../axis/lifecycle/Generators.js';
+import { Generators, type GeneratorRef } from '../axis/lifecycle/Generators.js';
 
 interface PrimaryOptions {
   generate?: GeneratorRef | [name: string, fn: () => string];
@@ -20,7 +20,7 @@ export function primary(fieldOrOptions?: Field | PrimaryOptions): Field {
   let generate: GeneratorRef;
   if (Array.isArray(opts.generate)) {
     const [name, fn] = opts.generate;
-    registerGenerator(name, fn);
+    Generators.register(name, fn);
     generate = name;
   } else {
     generate = opts.generate ?? "cuid2";

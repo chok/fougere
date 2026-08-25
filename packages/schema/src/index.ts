@@ -5,7 +5,8 @@ export { type StringFormat, type FormatPredicate, Formats } from './axis/shape/F
 export { Role, type RoleRules } from './axis/role/Role.js';
 export { type Relation, type EntityConstructor } from './axis/role/Relation.js';
 export { Lifecycle, type LifecycleRules } from './axis/lifecycle/Lifecycle.js';
-export { type GeneratorRef, registerGenerator } from './axis/lifecycle/Generators.js';
+export { type GeneratorRef, Generators } from './axis/lifecycle/Generators.js';
+export { Clock } from './axis/lifecycle/Clock.js';
 export { Boundary, type BoundaryRules, type BoundaryRef } from './axis/boundary/Boundary.js';
 export { type Decoder, type Encoder, Boundaries } from './axis/boundary/Boundaries.js';
 export { type Meta } from './axis/Meta.js';
@@ -15,7 +16,7 @@ export { Unique } from './constraint/Unique.js';
 export { Schema, ANONYMOUS_SCHEMA_NAME, type SchemaConstructor } from './Schema.js';
 export { SchemaDerivation } from './SchemaDerivation.js';
 export { isObject } from './judge/ValueForm.js';
-export { casesFor, holds, refusalBranches, type Case } from './judge/cases.js';
+export { Cases, type Case } from './judge/Cases.js';
 export { RowRefusal } from './judge/RowRefusal.js';
 export { type SchemaView, type Row, type PartialRow } from './SchemaView.js';
 export { type FougereHints, type Hints } from './Hints.js';
@@ -43,7 +44,7 @@ export { readOnly } from './vocabulary/readOnly.js';
 export { writeOnly } from './vocabulary/writeOnly.js';
 export { json } from './vocabulary/json.js';
 
-export { applyCreate, applyUpdate, freezeClock } from './axis/lifecycle/apply.js';
+export { applyCreate, applyUpdate } from './axis/lifecycle/apply.js';
 export { Visibility } from './projection/Visibility.js';
 export { registrationKeyOf, classNameOf } from './name.js';
 export { Card } from './card/Card.js';

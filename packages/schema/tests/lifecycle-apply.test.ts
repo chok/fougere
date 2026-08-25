@@ -19,7 +19,7 @@ import { optional } from '../src/vocabulary/optional.js';
 import { date } from '../src/vocabulary/date.js';
 import { number } from '../src/vocabulary/number.js';
 import { applyCreate, applyUpdate } from '../src/axis/lifecycle/apply.js';
-import { registerGenerator } from '../src/axis/lifecycle/Generators.js';
+import { Generators } from '../src/axis/lifecycle/Generators.js';
 
 class Product extends entity({
   id: primary({ generate: 'uuid' }),
@@ -73,7 +73,7 @@ describe('applyCreate — what the system writes at creation', () => {
   });
 
   it('a registered generator now reaches every storage, not just the one that knew it', () => {
-    registerGenerator('sequential', () => 'seq-1');
+    Generators.register('sequential', () => 'seq-1');
     class Ticket extends entity({ id: primary({ generate: 'sequential' }) }) {}
     expect(applyCreate(Ticket.getFields(), {}).id).toBe('seq-1');
   });
