@@ -1,12 +1,13 @@
 import { Boundary } from './axis/boundary/Boundary.js';
 import { type Fields } from './Field.js';
 import { type Previous } from './EntityDeclarations.js';
-import { deriveHints, type Hints } from './Hints.js';
+import { type Hints } from './Hints.js';
 import { FieldGroup } from './constraint/FieldGroup.js';
 import { Unique } from './constraint/Unique.js';
 import { type CompositeUnique } from './EntityDeclarations.js';
 import { RowJudge } from './judge/RowJudge.js';
 import { SchemaDerivation } from './SchemaDerivation.js';
+import { SchemaDefinition } from './SchemaDefinition.js';
 import { type ValidateOptions } from './judge/options.js';
 import type { StandardSchemaV1 } from './projection/standard.js';
 import type { PartialRow, Row, SchemaView } from './SchemaView.js';
@@ -28,11 +29,14 @@ export interface SchemaConstructor<TFields extends Fields> extends SchemaView<TF
 }
 
 export class Schema {
-  static fields: Fields = {};
-  static hints: Hints<Fields> | undefined;
-  static opts: ValidateOptions = {};
-  static derivation: SchemaDerivation | undefined;
-  static previous: Previous<Fields> | undefined;
+  /** The one place a schema holds what it is. The five readings below are its projections. */
+  static definition: SchemaDefinition = SchemaDefinition.stated({ fields: {} });
+
+  static get fields(): Fields { return this.definition.fields; }
+  static get hints(): Hints<Fields> | undefined { return this.definition.hints; }
+  static get opts(): ValidateOptions { return this.definition.opts; }
+  static get derivation(): SchemaDerivation | undefined { return this.definition.derivation; }
+  static get previous(): Previous<Fields> | undefined { return this.definition.previous; }
 
   constructor(data?: Record<string, unknown>) {
     if (!data) return;
@@ -105,18 +109,11 @@ export class Schema {
   }
 
   static partial() {
-    return Schema.of({
-      fields: { ...this.fields }, derivation: this.origin(), hints: this.hints,
-      opts: { ...this.opts, patch: true },
-    });
+    return Schema.subclass(this.definition.patched(this));
   }
 
   static extend(extra: Fields) {
-    // The added fields have no origin, so the derivation is unchanged: it speaks of the root.
-    return Schema.of({
-      fields: { ...this.fields, ...extra }, derivation: this.origin(),
-      hints: this.hints, opts: this.opts,
-    });
+    return Schema.subclass(this.definition.extended(extra, this));
   }
 
   static named(name: string) {
@@ -131,22 +128,7 @@ export class Schema {
   }
 
   static compose<T extends SchemaView[]>(...sources: T): SchemaConstructor<Merged<T>> {
-  const merged: Fields = {};
-  const mergedHints: Record<string, Record<string, unknown>> = {};
-  let mergedOpts: ValidateOptions = {};
-  for (const source of sources) {
-    Object.assign(merged, source.getFields());
-    const hints = source.getHints();
-    if (hints) {
-      for (const [adapter, perField] of Object.entries(hints as Record<string, Record<string, unknown> | undefined>)) {
-        if (!perField || typeof perField !== "object") continue;
-        mergedHints[adapter] = { ...mergedHints[adapter], ...perField };
-      }
-    }
-    mergedOpts = { ...mergedOpts, ...source.getOpts() };
-  }
-  const hints = Object.keys(mergedHints).length ? (mergedHints as Hints<Fields>) : undefined;
-  return Schema.of({ fields: merged, hints, opts: mergedOpts }) as unknown as SchemaConstructor<Merged<T>>;
+    return Schema.subclass(SchemaDefinition.merged(sources)) as unknown as SchemaConstructor<Merged<T>>;
   }
 
   static of<TFields extends Fields>(stated: {
@@ -156,26 +138,19 @@ export class Schema {
     opts?: ValidateOptions;
     previous?: Previous<TFields>;
   }): SchemaConstructor<TFields> {
+    return Schema.subclass(SchemaDefinition.stated(stated)) as unknown as SchemaConstructor<TFields>;
+  }
+
+  /** The class a definition becomes. The one place a Schema subclass is born. */
+  private static subclass(definition: SchemaDefinition): SchemaConstructor<Fields> {
     class Derived extends Schema {}
-    Object.assign(Derived, { opts: {}, ...stated });
+    Derived.definition = definition;
     Object.defineProperty(Derived, "name", { value: ANONYMOUS_SCHEMA_NAME, configurable: true });
-    return Derived as unknown as SchemaConstructor<TFields>;
+    return Derived as unknown as SchemaConstructor<Fields>;
   }
 
   private static derive(fields: Fields, survives: (key: string) => string | undefined) {
-    const renamed: Fields = {};
-    for (const [key, field] of Object.entries(fields)) renamed[key] = field.rename(survives);
-    return Schema.of({
-      fields: renamed,
-      derivation: this.origin().compose(survives),
-      hints: deriveHints(this.hints, survives),
-      opts: this.opts,
-    });
-  }
-
-  /** The derivation this schema already carries, or the one it becomes the root of. */
-  private static origin(): SchemaDerivation {
-    return this.derivation ?? SchemaDerivation.first(this, this.fields);
+    return Schema.subclass(this.definition.cut(fields, survives, this));
   }
 }
 
