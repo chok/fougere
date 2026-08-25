@@ -29,8 +29,8 @@
 
   **Breaking**
 
-  - `shapeTypeOf` is no longer exported from `@fougere/schema`. It is internal machinery
-    above the judge; `entitySourceOf` is what a consumer calls.
+  - TypeScript generation belongs to `EntityTypeSource` and `FacadeTypeSource`; the shape
+    renderer stays private to the entity source.
   - A field declaration is judged on all five axes rather than the shape alone, so a
     malformed `lifecycle`, `role` or `boundary` is refused at `entity()` instead of at the
     first call that trips over it. Declarations that were already correct are unaffected.
