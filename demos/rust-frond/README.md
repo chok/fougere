@@ -41,8 +41,8 @@ no line of TypeScript declares. "The truth travels, the realization varies" — 
 
 | axis | in `src/main.rs` | effect on the TS side |
 |---|---|---|
-| `role.primary` | `id` | excluded from `inputFields` |
-| `lifecycle.create: 'now'` | `recordedAt` | excluded from `inputFields`, stamped by Rust |
+| `role.primary` | `id` | excluded from `Visibility.input` |
+| `lifecycle.create: 'now'` | `recordedAt` | excluded from `Visibility.input`, stamped by Rust |
 | `lifecycle.create: {generate}` | `id` | not required at creation |
 | `boundary.in: 'closed'` | `checksum` | `Read-only` if a client supplies it |
 

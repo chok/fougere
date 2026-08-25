@@ -4,7 +4,7 @@ import { Lifecycle } from '@fougere/schema';
  * from the entity's field axes. No Vue, no Nuxt: testable headless,
  * usable by any renderer (the page owns the widgets).
  */
-import { Anatomy, inputFields, outputFields, registrationKeyOf, Role } from '@fougere/schema';
+import { Anatomy, registrationKeyOf, Role, Visibility } from '@fougere/schema';
 import type { Field, SchemaView, ValidationError, ValidationResult } from '@fougere/schema';
 
 /**
@@ -142,11 +142,11 @@ function labelOf(name: string, entityKey: string): Pick<FormField, 'labelKey' | 
 
 /**
  * The fields a create form is made of: membership from the io projection
- * (`inputFields` — what a client may supply), requiredness from the
+ * (`Visibility.input` — what a client may supply), requiredness from the
  * lifecycle axis (any create rule makes absence legal).
  */
 export function formFieldsOf(entity: FormEntity, entityKey: string): FormField[] {
-  return Object.entries(inputFields(entity.getFields())).map(([name, field]) => {
+  return Object.entries(Visibility.of(entity.getFields()).input).map(([name, field]) => {
     const f = field;
     const control = controlOf(f);
     const required = Lifecycle.of(f).requiredAtCreate;
@@ -195,14 +195,14 @@ function renderOf(field: Field): TableColumn['render'] {
 }
 
 /**
- * The columns a list is made of: membership from the io projection (`outputFields` — what
+ * The columns a list is made of: membership from the io projection (`Visibility.output` — what
  * may leave), minus collections, because a cell holds one value and a `many()` is a page.
  *
- * Which column identifies the row is NOT answered here — `primaryFieldOf` answers it for a
+ * Which column identifies the row is NOT answered here — `FieldSet.primary` answers it for a
  * shape, and its own doc records what five private copies of that loop cost.
  */
 export function tableColumnsOf(entity: FormEntity, entityKey: string): TableColumn[] {
-  return Object.entries(outputFields(entity.getFields()))
+  return Object.entries(Visibility.of(entity.getFields()).output)
     .filter(([, field]) => !Role.of(field).isCollection)
     .map(([name, field]) => {
       const target = Role.of(field).target;

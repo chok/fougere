@@ -5,7 +5,7 @@
  */
 import type { App } from '@fougere/core';
 import type { Field } from '@fougere/schema';
-import { inputFields } from '@fougere/schema';
+import { Visibility } from '@fougere/schema';
 
 function toKebab(name: string): string {
   return name.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase()).replace(/^-/, '');
@@ -31,7 +31,7 @@ function extractCommandMeta(app: App): CommandMeta[] {
       if (typeof facade.execute !== 'function') continue;
 
       const fields = entity.entityClass.getFields();
-      const flags = Object.keys(inputFields(fields))
+      const flags = Object.keys(Visibility.of(fields).input)
         .map((key) => `--${toKebab(key)}`);
 
       commands.push({ name: toKebab(entity.name), flags });

@@ -48,7 +48,7 @@ takes nothing away.
 
 `/new` renders two inputs, not six — `title` and `body`. `id` and `createdAt` are
 filled by the lifecycle axis; `status` and `publishedAt` are `readOnly`, so they are
-not in `inputFields` and no form can offer them — the same reason a `create`
+not in `Visibility.input` and no form can offer them — the same reason a `create`
 naming `status` is refused at the façade. Try it:
 
 ```bash

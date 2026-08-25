@@ -29,7 +29,7 @@ export interface ResourceKey {
   name: string;
   /**
    * The field that identifies a row. react-admin insists on `id`; an entity does not,
-   * so the provider renames it on the way out and back. `primaryFieldOf` reads it off
+   * so the provider renames it on the way out and back. `FieldSet.primary` reads it off
    * the card, and answers `undefined` rather than defaulting — a shape with no primary
    * has no row identity to invent.
    */

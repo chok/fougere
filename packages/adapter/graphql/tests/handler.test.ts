@@ -751,7 +751,7 @@ describe('the operation in words', () => {
 
 describe('an entity a client can supply nothing for', () => {
   it('gets an op with no input, not an input object with no field', () => {
-    // Every field is system-owned: `inputFields` answers {}. An input object with zero
+    // Every field is system-owned: `Visibility.input` answers {}. An input object with zero
     // fields is invalid GraphQL and takes the WHOLE schema down, not just this op.
     class Stamp extends entity({ id: primary(), createdAt: created() }) {}
 

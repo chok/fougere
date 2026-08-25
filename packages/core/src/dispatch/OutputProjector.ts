@@ -1,4 +1,4 @@
-import { encodeFields } from '@fougere/schema';
+import { Visibility } from '@fougere/schema';
 import { preserveArrayProperties } from './ArrayResult.js';
 import type { OutputView } from './OutputView.js';
 
@@ -27,6 +27,6 @@ export class OutputProjector {
             .map((key) => [key, record[key]]),
         )
       : record;
-    return encodeFields(this.view.fields, scoped);
+    return Visibility.of(this.view.fields).encode(scoped);
   }
 }

@@ -7,7 +7,7 @@ import Post from '@fronds/blog/entities/Post';
 /**
  * The form contract, not a form widget. `fields` comes from the entity's own axes:
  * `status` and `publishedAt` are absent because they are `readOnly` (they are not in
- * `inputFields`), `title` carries `minlength`/`maxlength` from its shape, and the
+ * `Visibility.input`), `title` carries `minlength`/`maxlength` from its shape, and the
  * local judge is the same one the handler runs — one declaration, both sides.
  *
  * The page owns every tag below. Fougere states what a field IS; it never renders.

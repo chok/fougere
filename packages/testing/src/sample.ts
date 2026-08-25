@@ -1,4 +1,4 @@
-import { inputFields, Role, type Field, type Fields, type SchemaView } from '@fougere/schema';
+import { Role, Visibility, type Field, type Fields, type SchemaView } from '@fougere/schema';
 import { generateSync, type JsonSchema } from 'json-schema-faker';
 
 /**
@@ -6,7 +6,7 @@ import { generateSync, type JsonSchema } from 'json-schema-faker';
  *
  * The shape IS JSON Schema, so the value itself is not ours to invent — `json-schema-faker`
  * honours `minLength`, `enum`, `format`, `pattern`, `items` and `required`. What is ours is
- * WHICH fields belong in a body, and that is `inputFields`: the one reader of the boundary
+ * WHICH fields belong in a body, and that is `Visibility.input`: the one reader of the boundary
  * and lifecycle axes the façade and the form already stand on. Re-deriving "not primary,
  * not stamped, not read-only" here would make this a second opinion on the axes.
  */
@@ -59,7 +59,7 @@ export function sampleInput(
   given: Record<string, unknown> = {},
   options: SampleOptions = {},
 ): Record<string, unknown> {
-  const fields = inputFields(entity.getFields());
+  const fields = Visibility.of(entity.getFields()).input;
   const missing = referencesIn(fields).filter((name) => !(name in given));
   if (missing.length > 0) {
     throw new Error(

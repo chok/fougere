@@ -4,7 +4,7 @@
  * Framework-agnostic: produces RouteDefinition[], consumed by an adapter (Fastify, Express, etc).
  */
 import type { Field, Fields, SchemaOrCard } from '@fougere/schema';
-import { fieldsOf, inputFields as clientInputFields, outputFields as clientOutputFields } from '@fougere/schema';
+import { fieldsOf, Visibility } from '@fougere/schema';
 import type { HandlerEntry as CoreHandlerEntry } from '@fougere/core';
 
 // ─── Types ──────────────────────────────────────
@@ -170,7 +170,7 @@ function derivePath(entityName: string, opName: string): string {
 
 // Update routes carry the SAME fields: input omissibility is a projection of the
 // route's MODE (operationName 'update' → patch), never forged per-field flags.
-// Membership is the axes-derived `inputFields` projection from @fougere/schema.
+// Membership is the axes-derived `Visibility.input` projection from @fougere/schema.
 
 // ─── Public API ─────────────────────────────────
 
@@ -252,13 +252,13 @@ export function generateRoutes(app: AppLike, options?: GenerateRoutesOptions): R
         // Input/output fields: use meta if available, fallback to entity fields for CRUD.
         // Both pass through the client-surface projections (write-only out, read-only in).
         let inputFields: Fields | undefined;
-        let outputFields: Fields | undefined = clientOutputFields(fields);
+        let outputFields: Fields | undefined = Visibility.of(fields).output;
         if (meta?.input) {
           inputFields = fieldsOf(meta.input);
         } else if (opName === 'create' || opName === 'update') {
-          inputFields = clientInputFields(fields);
+          inputFields = Visibility.of(fields).input;
         }
-        if (meta?.output) outputFields = clientOutputFields(fieldsOf(meta.output));
+        if (meta?.output) outputFields = Visibility.of(fieldsOf(meta.output)).output;
 
         // Handler/method overrides are already executed by the facade from the same
         // EffectiveOperation local and RPC use. The adapter never resolves DI itself.

@@ -12,7 +12,7 @@
  * sur des règles qu'aucune ligne de TypeScript ne déclare.
  */
 import { createHttpTransport } from '@fougere/transport-http/client';
-import { Card, inputFields, outputFields } from '@fougere/schema';
+import { Card, Visibility } from '@fougere/schema';
 import {
   EMPTY_INVOCATION,
   FougereError,
@@ -76,8 +76,8 @@ async function main(): Promise<void> {
   title('3.', 'Card.toSchema() — le comportement se rebâtit côté TS');
 
   const Sensor = Card.fromDescriptor(descriptor).toSchema();
-  console.log(`   entrée (ce qu'un client peut fournir) : ${Object.keys(inputFields(Sensor.getFields())).join(', ')}`);
-  console.log(`   sortie (ce qu'un client peut lire)    : ${Object.keys(outputFields(Sensor.getFields())).join(', ')}`);
+  console.log(`   entrée (ce qu'un client peut fournir) : ${Object.keys(Visibility.of(Sensor.getFields()).input).join(', ')}`);
+  console.log(`   sortie (ce qu'un client peut lire)    : ${Object.keys(Visibility.of(Sensor.getFields()).output).join(', ')}`);
 
   // ─── 4. Le juge local ────────────────────────────────────────────
   title('4.', 'Le juge local refuse AVANT tout réseau — règles venues de Rust');

@@ -5,7 +5,7 @@
  * make of it — the SQL dialect, the wire, the io projection, the judge. Nobody
  * wrote any of the four. Run it and read the arrows.
  */
-import { Card, entity, primary, text, number, created, inputFields, outputFields } from '@fougere/schema';
+import { Card, entity, primary, text, number, created, Visibility } from '@fougere/schema';
 import { toTable, createTableSQL } from '@fougere/adapter-sql';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -60,8 +60,8 @@ console.log(D(`
 
 // ── 3. the io projection ─────────────────────────────────────────────────────
 section('→', 'What a client may send, and what it gets back', 'the boundary axis — nobody listed these');
-const may = Object.keys(inputFields(Reading.getFields() as never));
-const gets = Object.keys(outputFields(Reading.getFields() as never));
+const may = Object.keys(Visibility.of(Reading.getFields() as never).input);
+const gets = Object.keys(Visibility.of(Reading.getFields() as never).output);
 console.log(`     ${D('a client may send   ')} ${may.join(', ')}`);
 console.log(`     ${D('a client receives   ')} ${gets.join(', ')}`);
 console.log(D(`

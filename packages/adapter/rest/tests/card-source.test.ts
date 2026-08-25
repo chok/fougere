@@ -1,7 +1,7 @@
 /**
  * An adapter stands on the fields, not on the class.
  *
- * REST reads a schema for exactly two things — `inputFields` and `outputFields`.
+ * REST reads a schema for exactly two things — `Visibility.input` and `Visibility.output`.
  * Everything else (verbs, paths, op names, presenters) comes from the App. So a frond
  * whose class never crossed the wire must project the same routes from its card as a
  * local one does from its class. These tests hold that, and they are also where a new
@@ -12,7 +12,7 @@ import {
   entity, primary, text, email, number, bool, date, list, json,
   oneOf, ref, many, created, updated, immutable, optional, nullable,
   unique, indexed, readOnly, writeOnly,
-  Card, inputFields, outputFields, FieldGroup, Unique,
+  Card, FieldGroup, Unique, Visibility,
   type Fields,
 } from '@fougere/schema';
 import { generateRoutes } from '../src/index.js';
@@ -106,8 +106,8 @@ suite('a card is a schema source', () => {
     const before = Post.getFields() as Fields;
     const after = Card.fromSchema(Post).toSchema().getFields() as Fields;
 
-    expect(axesOf(outputFields(after))).toEqual(axesOf(outputFields(before)));
-    expect(axesOf(inputFields(after))).toEqual(axesOf(inputFields(before)));
+    expect(axesOf(Visibility.of(after).output)).toEqual(axesOf(Visibility.of(before).output));
+    expect(axesOf(Visibility.of(after).input)).toEqual(axesOf(Visibility.of(before).input));
   });
 
   it('emits the same card again after a round-trip', () => {

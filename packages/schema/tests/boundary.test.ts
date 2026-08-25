@@ -9,7 +9,7 @@ import { date } from '../src/vocabulary/date.js';
 import { optional } from '../src/vocabulary/optional.js';
 import { readOnly } from '../src/vocabulary/readOnly.js';
 import { writeOnly } from '../src/vocabulary/writeOnly.js';
-import { encodeFields } from '../src/projection/encode.js';
+import { Visibility } from '../src/projection/Visibility.js';
 import { Field } from '../src/Field.js';
 
 class Event extends entity({
@@ -107,7 +107,7 @@ describe("boundary · 'closed' permissions (readOnly / writeOnly)", () => {
     const v = RowJudge.of(fields).check({ password: 'hunter22', name: 'Ada' });
     expect(v.success).toBe(true);
     if (v.success) expect(v.data.password).toBe('hunter22'); // ingress open, shape judged
-    const wire = encodeFields(fields, { password: 'hunter22', name: 'Ada' });
+    const wire = Visibility.of(fields).encode({ password: 'hunter22', name: 'Ada' });
     expect('password' in wire).toBe(false);
     expect(wire.name).toBe('Ada');
   });

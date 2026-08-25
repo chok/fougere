@@ -6,7 +6,7 @@ import { Lifecycle, Role } from '@fougere/schema';
  * The Entity IS the CLI definition — no duplicate schema.
  */
 import type { Fields } from '@fougere/schema';
-import { Anatomy, inputFields } from '@fougere/schema';
+import { Anatomy, Visibility } from '@fougere/schema';
 import type { ArgsDef, ArgDef } from 'citty';
 
 function toKebab(name: string): string {
@@ -20,7 +20,7 @@ export function entityToArgs(fields: Fields): ArgsDef {
 
   // Axes-derived ingress membership; the CLI additionally skips ALL relations
   // (a ref is not a flag — supplying related rows is not a CLI gesture).
-  for (const [key, field] of Object.entries(inputFields(fields))) {
+  for (const [key, field] of Object.entries(Visibility.of(fields).input)) {
     if (Role.of(field).relation) continue;
 
     // A `default(v)` travels as the create rule `{ value }` — citty shows it.

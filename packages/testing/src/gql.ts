@@ -1,4 +1,4 @@
-import { Anatomy, Role, outputFields, type Field, type SchemaView } from '@fougere/schema';
+import { Anatomy, Role, Visibility, type Field, type SchemaView } from '@fougere/schema';
 
 /** One field of a root type, in the shape this file reads it. */
 interface RootField {
@@ -20,7 +20,7 @@ interface Introspectable {
  * is a syntax error, and following it would compare a neighbour's rows rather than these.
  */
 export function selectionOf(entity: SchemaView): string {
-  return Object.entries(outputFields(entity.getFields()))
+  return Object.entries(Visibility.of(entity.getFields()).output)
     .filter(([, field]) => !Role.of(field as Field).relation)
     .map(([name]) => name)
     .join(' ');

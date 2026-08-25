@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createLocalRunner, validationErrorsOf, type App } from '@fougere/core';
 import { EMPTY_INVOCATION } from '@fougere/core/contract';
-import { outputFields, registrationKeyOf, type SchemaView, type ValidationError } from '@fougere/schema';
+import { registrationKeyOf, Visibility, type SchemaView, type ValidationError } from '@fougere/schema';
 import { holds } from '@fougere/schema';
 import { derivedCases } from './derive.js';
 import { sampleInput, replaySeed, type SampleOptions } from './sample.js';
@@ -69,14 +69,14 @@ export function checkContract(app: App, entity: SchemaView, options: CheckOption
 /**
  * What may leave, checked against what the entity says may leave.
  *
- * Costs nothing to state: `outputFields` already answers it, and a field the boundary
+ * Costs nothing to state: `Visibility.output` already answers it, and a field the boundary
  * closes has no business in any response. A `password: text({ boundary: 'writeOnly' })`
  * that reaches a caller is the one leak no reviewer catches by reading a handler.
  */
 export function checkOutput(app: App, entity: SchemaView, options: CheckOptions = {}): void {
   const { name, create } = opsFor(entity);
   const run = createLocalRunner(app);
-  const allowed = new Set(Object.keys(outputFields(entity.getFields())));
+  const allowed = new Set(Object.keys(Visibility.of(entity.getFields()).output));
   const closed = Object.keys(entity.getFields()).filter((field) => !allowed.has(field));
 
   describe(`${entity.name} — what leaves it`, () => {
