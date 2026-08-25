@@ -8,7 +8,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   entity, primary, text, number, oneOf, bool, email, created, immutable, readOnly, list, RowJudge,
-  casesFor, holds, refusalBranches,
+  Cases,
 } from '../src/index.js';
 
 class Article extends entity({
@@ -31,7 +31,7 @@ const baseline = {
   title: 'A stated title', body: 'A body', status: 'draft', views: 3,
   featured: false, contact: 'a@b.co', tags: ['one'], reference: 'AB',
 };
-const table = casesFor(Article, baseline);
+const table = Cases.of(Article, baseline).all;
 const verdict = (body: unknown, patch: boolean) =>
   RowJudge.of(Article.getFields(), { patch }).check(body);
 
@@ -70,7 +70,7 @@ describe('each case', () => {
     for (const one of table) {
       const result = verdict(one.body, one.patch);
 
-      expect(holds(one.expect, result), `${one.why} → ${JSON.stringify(result)}`).toBe(true);
+      expect(Cases.holds(one.expect, result), `${one.why} → ${JSON.stringify(result)}`).toBe(true);
     }
   });
 });
@@ -81,7 +81,7 @@ describe('the guard on the judge itself', () => {
     // the case that reaches it. Two refusals stay out on purpose: a value refused by its
     // own shape carries the engine's message, and a named boundary codec carries user
     // code's — neither is structural, and neither can be enumerated ahead of time.
-    expect(refusalBranches()).toEqual([
+    expect(Cases.refusals).toEqual([
       'Expected an object',
       'Unknown field',
       'Required',

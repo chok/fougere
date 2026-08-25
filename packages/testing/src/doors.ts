@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createLocalRunner, validationErrorsOf, type App } from '@fougere/core';
 import { EMPTY_INVOCATION } from '@fougere/core/contract';
 import { registrationKeyOf, Visibility, type SchemaView, type ValidationError } from '@fougere/schema';
-import { holds } from '@fougere/schema';
+import { Cases } from '@fougere/schema';
 import { derivedCases } from './derive.js';
 import { sampleInput, replaySeed, type SampleOptions } from './sample.js';
 
@@ -60,7 +60,7 @@ export function checkContract(app: App, entity: SchemaView, options: CheckOption
           { ...EMPTY_INVOCATION, params: one.patch ? { id: '__absent__' } : {}, body: one.body },
         ));
 
-        expect(holds(one.expect, verdict), `${JSON.stringify(verdict)} — replay: ${replaySeed()}`).toBe(true);
+        expect(Cases.holds(one.expect, verdict), `${JSON.stringify(verdict)} — replay: ${replaySeed()}`).toBe(true);
       });
     }
   });

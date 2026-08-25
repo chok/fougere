@@ -68,7 +68,38 @@ function outOfBoundsFor(field: Field): { why: string; value: unknown }[] {
  * Use the complete entity so a derived view cannot hide a divergent field. The caller
  * supplies a valid row; generating data belongs to the testing package.
  */
-export function casesFor(entity: SchemaView, valid: Record<string, unknown>): Case[] {
+export class Cases {
+  private constructor(
+    readonly all: readonly Case[],
+  ) {}
+
+  static of(entity: SchemaView, valid: Record<string, unknown>): Cases {
+    return new Cases(enumerate(entity, valid));
+  }
+
+  /**
+   * Whether a verdict is the one a case expected.
+   *
+   * Takes the RESULT rather than the input so the same reader serves the local judge, the
+   * façade and a door — the three that have to agree.
+   */
+  static holds(expected: Case['expect'], result: { success: boolean; errors?: { path: string }[] }): boolean {
+    if (expected === 'accept') return result.success;
+    if (result.success) return false;
+    return (result.errors ?? []).some((error) => error.path === expected.reject);
+  }
+
+  /** Every way a row is refused for its structure — the closed set this table must cover. */
+  static get refusals(): string[] {
+    return Object.values(RowRefusal);
+  }
+
+  [Symbol.iterator](): Iterator<Case> {
+    return this.all[Symbol.iterator]();
+  }
+}
+
+function enumerate(entity: SchemaView, valid: Record<string, unknown>): Case[] {
   const fields = entity.getFields();
   const judge = RowJudge.of(fields);
   const cases: Case[] = [];
@@ -105,26 +136,4 @@ export function casesFor(entity: SchemaView, valid: Record<string, unknown>): Ca
   }
 
   return cases;
-}
-
-/**
- * The verdict a case expects, obtained from any judge.
- *
- * Takes the RESULT rather than the input so the same reader serves the local judge, the
- * façade and a door — the three that have to agree.
- */
-export function holds(expected: Case['expect'], result: { success: boolean; errors?: { path: string }[] }): boolean {
-  if (expected === 'accept') return result.success;
-  if (result.success) return false;
-  return (result.errors ?? []).some((error) => error.path === expected.reject);
-}
-
-/**
- * Every way a row is refused for its structure.
- *
- * Returning names instead of a count makes an uncovered branch identifiable. Custom
- * decoder failures remain outside the derived table because user code defines them.
- */
-export function refusalBranches(): string[] {
-  return Object.values(RowRefusal);
 }

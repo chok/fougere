@@ -17,7 +17,7 @@ import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, createAppRunner, FougereError } from '../src/index.js';
 import type { Transport, EntityOrm, OrmFactory } from '../src/index.js';
 import { EMPTY_INVOCATION } from '../src/wire/invocation.js';
-import { casesFor } from '@fougere/schema';
+import { Cases } from '@fougere/schema';
 import Product from './fixtures-judge/fronds/shop/entities/Product.js';
 
 const root = join(import.meta.dirname, 'fixtures-judge');
@@ -103,7 +103,7 @@ async function judge(run: ReturnType<typeof createLocalRunner>, op: string, body
 /**
  * One payload per branch, DERIVED from what `Product` declares.
  *
- * `casesFor` (`schema/src/judge/cases.ts`) reads the same closed list of refusals this
+ * `Cases` (`schema/src/judge/Cases.ts`) reads the same closed list of refusals this
  * file exists to compare — so the payloads follow the entity instead of being retyped
  * beside it. Change a bound in `Product` and the table changes; it used to keep passing
  * while proving something about a shape that had moved.
@@ -112,7 +112,7 @@ async function judge(run: ReturnType<typeof createLocalRunner>, op: string, body
  * contract, a body that is not an object, and one legal payload the run needs as a floor.
  */
 const baseline = { name: 'lampe', price: 10, status: 'draft' };
-const DERIVED = casesFor(Product, baseline).map((one) => ({
+const DERIVED = Cases.of(Product, baseline).all.map((one) => ({
   name: one.why, op: 'create', body: one.body,
 }));
 

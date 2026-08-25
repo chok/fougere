@@ -22,7 +22,7 @@ import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, FougereError } from '../src/index.js';
 import { EMPTY_INVOCATION } from '../src/wire/invocation.js';
-import { casesFor, type SchemaView } from '@fougere/schema';
+import { Cases, type SchemaView } from '@fougere/schema';
 import type { EntityOrm, OrmFactory } from '../src/orm.js';
 import Article from './fixtures-same-verdict/fronds/press/entities/Article.js';
 import { NewArticle } from './fixtures-same-verdict/fronds/press/handlers/ArticleHandler.js';
@@ -62,9 +62,9 @@ async function verdictOfFacade(run: ReturnType<typeof createLocalRunner>, op: st
  * version of this file had that blind spot, and passed while proving less.
  */
 const baseline = { title: 'Un titre', body: 'Un corps' };
-// `casesFor` (`schema/src/judge/cases.ts`) IS this table now. It was written here first,
+// `Cases` (`schema/src/judge/Cases.ts`) IS this table now. It was written here first,
 // against this very theorem, and lived in a test file where no other reader could have it.
-const table = casesFor(Article, baseline).map((one) => ({ why: one.why, body: one.body }));
+const table = Cases.of(Article, baseline).all.map((one) => ({ why: one.why, body: one.body }));
 
 describe('un corps, deux juges', () => {
   it('énumère la table de décision plutôt que des exemples choisis', () => {

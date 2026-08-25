@@ -1,7 +1,7 @@
 export { sampleInput, replaySeed, type SampleOptions } from './sample.js';
 export { derivedCases } from './derive.js';
 // The derivation itself lives with the axes it reads.
-export { casesFor, holds, refusalBranches, type Case } from '@fougere/schema';
+export { Cases, type Case } from '@fougere/schema';
 export { testApp, type TestAppOptions, type TestApp } from './app.js';
 export { checkContract, checkOutput, verdictOf, type Verdict, type CheckOptions } from './doors.js';
 export { stubOf, methodsOf, installStubs, type Port, type Stub } from './stub.js';
