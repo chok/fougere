@@ -1,7 +1,8 @@
 export { Field, type Fields } from './Field.js';
+export { FieldSet } from './FieldSet.js';
 export { type Shape, Anatomy } from './axis/shape/Shape.js';
 export { type StringFormat, type FormatPredicate, Formats } from './axis/shape/Formats.js';
-export { Role, primaryFieldOf, type RoleRules } from './axis/role/Role.js';
+export { Role, type RoleRules } from './axis/role/Role.js';
 export { type Relation, type EntityConstructor } from './axis/role/Relation.js';
 export { Lifecycle, type LifecycleRules } from './axis/lifecycle/Lifecycle.js';
 export { type GeneratorRef, registerGenerator } from './axis/lifecycle/Generators.js';
@@ -43,13 +44,13 @@ export { writeOnly } from './vocabulary/writeOnly.js';
 export { json } from './vocabulary/json.js';
 
 export { applyCreate, applyUpdate, freezeClock } from './axis/lifecycle/apply.js';
-export { encodeFields } from './projection/encode.js';
-export { inputFields, outputFields } from './projection/io.js';
+export { Visibility } from './projection/Visibility.js';
 export { registrationKeyOf, classNameOf } from './name.js';
 export { Card } from './card/Card.js';
 export { Bundle } from './card/Bundle.js';
 export type { Change, Diff, DiffOptions, SetDiff, SetDiffOptions, RenameCandidate, TypeSet } from './card/diff.js';
-export { entitySourceOf, facadeTypeSourceOf, type TypeSourceOptions, type OpDescriptor } from './card/typescript.js';
+export { EntityTypeSource, type EntityTypeSourceOptions } from './card/EntityTypeSource.js';
+export { FacadeTypeSource, type FacadeTypeSourceOptions, type OpDescriptor } from './card/FacadeTypeSource.js';
 export { type SchemaBundle, type SchemaDescriptor, type FieldDescriptor, type FieldExtension, type RoleDescriptor, type RelationDescriptor } from './card/Descriptor.js';
 export { type SchemaOrCard, schemaOf, fieldsOf } from './projection/SchemaOrCard.js';
 export type { StandardSchemaV1 } from './projection/standard.js';

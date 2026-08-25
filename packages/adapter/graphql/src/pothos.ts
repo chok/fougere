@@ -5,7 +5,7 @@ import { classNameOf, Role } from '@fougere/schema';
 import type SchemaBuilder from '@pothos/core';
 import { Anatomy, Schema, type Shape } from '@fougere/schema';
 import type { Field, Fields, SchemaView, SchemaOrCard } from '@fougere/schema';
-import { Boundary, Card, Lifecycle, inputFields, schemaOf } from '@fougere/schema';
+import { Boundary, Card, Lifecycle, schemaOf, Visibility } from '@fougere/schema';
 
 // ─── Types ─────────────────────────────────────────
 
@@ -625,7 +625,7 @@ export function registerType(builder: InstanceType<typeof SchemaBuilder>, config
  * The GraphQL input for EXACTLY this view — or none, when the view asks for nothing.
  *
  * The caller derives the view and this projects it; it holds no policy of its own. What
- * a client may supply at CREATION is `inputFields`, which the op path applies for
+ * a client may supply at CREATION is `Visibility.input`, which the op path applies for
  * create/update alone — `publish(input: Post)` must still name the post.
  *
  * Two things are dropped here because GraphQL cannot carry them, not because of any
@@ -804,7 +804,7 @@ function buildArgsFromSignature(
   if (bodyParam && meta.input) {
     // Only strip non-client fields for create/update — other ops may legitimately use them (e.g. publish(id))
     const isMutation = opName === 'create' || opName === 'update';
-    const opInputFields = isMutation ? inputFields(meta.input.getFields()) : meta.input.getFields();
+    const opInputFields = isMutation ? Visibility.of(meta.input.getFields()).input : meta.input.getFields();
     const inputName = `${classNameOf(opName)}${entityName}Input`;
 
     // `undefined` when the view asks for nothing, and `argsDef` already guards on it —

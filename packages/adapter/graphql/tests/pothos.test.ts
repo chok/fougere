@@ -212,7 +212,7 @@ describe("boundary 'closed' → type membership", () => {
     const inFields = (typeMap['AccountInput'] as any).getFields();
     expect(inFields['loginCount']).toBeUndefined(); // never accepted
     expect(inFields['password']).toBeDefined(); // write-only still writable
-    // Identity STAYS: a generic input is not a creation. `inputFields` drops it, and the
+    // Identity STAYS: a generic input is not a creation. `Visibility.input` drops it, and the
     // op path applies that for create/update alone — `publish(input: Post)` must be able
     // to name the post. Filtering it here was tried on 2026-08-19 and reverted.
     expect(inFields['id']).toBeDefined();

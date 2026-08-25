@@ -47,12 +47,12 @@ function docCommentOf(text: string | undefined, indent: string): string {
   return `${indent}/** ${text.replace(/\*\//g, '*\\/')} */\n`;
 }
 
-export interface TypeSourceOptions {
+export interface EntityTypeSourceOptions {
   name?: string;
   exported?: boolean;
 }
 
-export function shapeTypeOf(descriptor: SchemaDescriptor, indent = ''): string {
+function shapeTypeOf(descriptor: SchemaDescriptor, indent = ''): string {
   const entries = Object.entries(descriptor.properties ?? {});
   if (entries.length === 0) return '{}';
 
@@ -63,15 +63,23 @@ export function shapeTypeOf(descriptor: SchemaDescriptor, indent = ''): string {
   return `{\n${lines.join('\n')}\n${indent}}`;
 }
 
-export function entitySourceOf(descriptor: SchemaDescriptor, options: TypeSourceOptions = {}): string {
-  const name = identifierOf(options.name ?? classNameOf(descriptor.title ?? 'Schema'));
-  const exported = options.exported === false ? '' : 'export ';
-  const card = JSON.stringify(descriptor, null, 2)
-    .split('\n')
-    .map((line, i) => (i === 0 ? line : `  ${line}`))
-    .join('\n');
+export class EntityTypeSource {
+  private constructor(private readonly descriptor: SchemaDescriptor) {}
 
-  return `${exported}class ${name} extends Card.fromDescriptor<${shapeTypeOf(descriptor)}>(${card}).toSchema() {}`;
+  static of(descriptor: SchemaDescriptor): EntityTypeSource {
+    return new EntityTypeSource(descriptor);
+  }
+
+  render(options: EntityTypeSourceOptions = {}): string {
+    const name = identifierOf(options.name ?? classNameOf(this.descriptor.title ?? 'Schema'));
+    const exported = options.exported === false ? '' : 'export ';
+    const card = JSON.stringify(this.descriptor, null, 2)
+      .split('\n')
+      .map((line, i) => (i === 0 ? line : `  ${line}`))
+      .join('\n');
+
+    return `${exported}class ${name} extends Card.fromDescriptor<${shapeTypeOf(this.descriptor)}>(${card}).toSchema() {}`;
+  }
 }
 
 function identifierOf(name: string): string {
@@ -79,39 +87,4 @@ function identifierOf(name: string): string {
     throw new Error(`'${name}' is not a TypeScript identifier — it cannot name a generated declaration`);
   }
   return name;
-}
-
-export interface OpDescriptor {
-  name: string;
-  description?: string;
-  output?: SchemaDescriptor;
-  cardinality?: 'one' | 'maybe' | 'many' | 'page' | 'none';
-}
-
-function returnTypeOf(op: OpDescriptor, rowType: string): string {
-  switch (op.cardinality) {
-    case 'many': return `${rowType}[]`;
-    case 'page': return `${rowType}[] & { total?: number; endCursor?: string; hasMore?: boolean }`;
-    case 'maybe': return `${rowType} | undefined`;
-    case 'one': return rowType;
-    case 'none': return 'unknown';
-    default: return 'unknown';
-  }
-}
-
-export function facadeTypeSourceOf(
-  ops: readonly OpDescriptor[],
-  options: TypeSourceOptions & { rowType?: string } = {},
-): string {
-  const name = options.name ?? 'Facade';
-  const exported = options.exported === false ? '' : 'export ';
-  const rowType = options.rowType ?? 'unknown';
-
-  const members = ops.map((op) => {
-    const doc = docCommentOf(op.description, '  ');
-    return `${doc}  ${propertyKey(op.name)}(invocation?: Invocation): Promise<${returnTypeOf(op, rowType)}>;`;
-  });
-
-  if (members.length === 0) return `${exported}interface ${name} {}`;
-  return `${exported}interface ${name} {\n${members.join('\n')}\n}`;
 }
