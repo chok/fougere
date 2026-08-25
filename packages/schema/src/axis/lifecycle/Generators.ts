@@ -40,7 +40,7 @@ export class Generators {
   }
 
   /** Whether a name is answered, for a caller that must not throw to find out. */
-  static holds(ref: GeneratorRef): boolean {
+  static answers(ref: GeneratorRef): boolean {
     return this.registry.has(ref);
   }
 }

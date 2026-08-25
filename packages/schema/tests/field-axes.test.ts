@@ -126,7 +126,7 @@ describe('Generators — custom generators travel by name', () => {
   });
 
   it('an unknown name resolves to undefined (the storage adapter turns this into a loud error)', () => {
-    expect(Generators.holds('jamais-vu')).toBe(false);
+    expect(Generators.answers('jamais-vu')).toBe(false);
   });
 
   it('primary({ generate: [name, fn] }) registers and names in one gesture', () => {
