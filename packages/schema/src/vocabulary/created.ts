@@ -1,4 +1,4 @@
-import { Field } from '../Field.js';
+import { Field } from '../fields/Field.js';
 import { date } from './date.js';
 
 export function created(): Field<Date> {

@@ -1,4 +1,4 @@
-import type { Field, Fields } from "../Field.js";
+import type { Field, Fields } from "../fields/Field.js";
 
 export abstract class FieldGroup {
   constructor(readonly members: readonly string[]) {}

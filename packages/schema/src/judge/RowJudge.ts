@@ -1,7 +1,7 @@
 import { Boundary } from '../axis/boundary/Boundary.js';
 import { Lifecycle } from '../axis/lifecycle/Lifecycle.js';
 import { Role } from '../axis/role/Role.js';
-import type { Field, Fields } from '../Field.js';
+import type { Field, Fields } from '../fields/Field.js';
 import type { ValidateOptions } from './options.js';
 import type { ValidationError, ValidationResult } from './result.js';
 import { ValueJudge } from './ValueJudge.js';

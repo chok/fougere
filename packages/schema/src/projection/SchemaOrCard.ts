@@ -1,5 +1,5 @@
-import type { Fields } from '../Field.js';
-import type { SchemaView } from '../SchemaView.js';
+import type { Fields } from '../fields/Field.js';
+import type { SchemaView } from '../schema/SchemaView.js';
 import type { SchemaDescriptor } from '../card/Descriptor.js';
 import { Card } from '../card/Card.js';
 

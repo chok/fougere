@@ -1,7 +1,7 @@
 import type { Resolver } from '../axis/Axis.js';
 import type { EntityConstructor } from '../axis/role/Relation.js';
 import { lowerFirst } from '../utils.js';
-import type { SchemaView } from '../SchemaView.js';
+import type { SchemaView } from '../schema/SchemaView.js';
 import { Card } from './Card.js';
 import type { SchemaBundle, SchemaDescriptor } from './Descriptor.js';
 import type { Diff, SetDiff, SetDiffOptions } from './diff.js';

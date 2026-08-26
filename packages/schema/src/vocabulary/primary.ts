@@ -1,4 +1,4 @@
-import { Field } from '../Field.js';
+import { Field } from '../fields/Field.js';
 import { Generators, type GeneratorRef } from '../axis/lifecycle/Generators.js';
 
 interface PrimaryOptions {

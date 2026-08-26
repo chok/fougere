@@ -1,6 +1,6 @@
 import { EXTENSION_AXES } from "../axis/Axis.js";
 import { Anatomy } from "../axis/shape/Shape.js";
-import type { Field } from "../Field.js";
+import type { Field } from "../fields/Field.js";
 import { isObject } from "./ValueForm.js";
 import type { ValidationError, ValidationResult } from "./result.js";
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Field } from '../src/Field.js';
+import { Field } from '../src/fields/Field.js';
 import { Schema } from '../src/schema/Schema.js';
 import { Unique } from '../src/constraint/Unique.js';
 import { created } from '../src/vocabulary/created.js';

@@ -1,5 +1,5 @@
 import { created } from './created.js';
-import { Field } from '../Field.js';
+import { Field } from '../fields/Field.js';
 
 export function updated(): Field<Date> {
   const base = created();

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FieldSet } from '../src/FieldSet.js';
+import { FieldSet } from '../src/fields/FieldSet.js';
 import { entity } from '../src/entity.js';
 import { primary } from '../src/vocabulary/primary.js';
 import { text } from '../src/vocabulary/text.js';

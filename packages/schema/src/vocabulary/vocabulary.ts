@@ -1,4 +1,4 @@
-import { Field } from '../Field.js';
+import { Field } from '../fields/Field.js';
 import { EXTENSION_SLOTS } from '../axis/Axis.js';
 import { dequal } from 'dequal';
 

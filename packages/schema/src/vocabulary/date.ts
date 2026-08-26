@@ -1,4 +1,4 @@
-import { Field } from '../Field.js';
+import { Field } from '../fields/Field.js';
 
 export function date(): Field<Date> {
   return new Field<Date>({ shape: { type: 'string', format: 'date-time' } });

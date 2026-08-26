@@ -1,4 +1,4 @@
-import type { FieldName, Fields } from './Field.js';
+import type { FieldName, Fields } from './fields/Field.js';
 import type { Hints } from './Hints.js';
 
 export type CompositeUnique<TFields extends Fields> = readonly (readonly FieldName<TFields>[])[];

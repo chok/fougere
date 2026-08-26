@@ -1,5 +1,5 @@
-import { type Fields } from '../Field.js';
-import type { SchemaView } from '../SchemaView.js';
+import { type Fields } from '../fields/Field.js';
+import type { SchemaView } from './SchemaView.js';
 
 /**
  * What a derived schema says about its ORIGIN: the class it was cut from, and what the cut

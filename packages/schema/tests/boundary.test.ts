@@ -10,7 +10,7 @@ import { optional } from '../src/vocabulary/optional.js';
 import { readOnly } from '../src/vocabulary/readOnly.js';
 import { writeOnly } from '../src/vocabulary/writeOnly.js';
 import { Visibility } from '../src/projection/Visibility.js';
-import { Field } from '../src/Field.js';
+import { Field } from '../src/fields/Field.js';
 
 class Event extends entity({
   id: primary(),

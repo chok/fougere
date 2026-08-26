@@ -1,4 +1,4 @@
-import type { FieldName, Fields } from './Field.js';
+import type { FieldName, Fields } from './fields/Field.js';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-object-type
 export interface FougereHints<K extends string> {}

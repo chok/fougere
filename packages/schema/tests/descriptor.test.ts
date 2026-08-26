@@ -13,7 +13,7 @@ import { email } from '../src/vocabulary/email.js';
 import { readOnly } from '../src/vocabulary/readOnly.js';
 import { Card } from '../src/card/Card.js';
 import { Bundle } from '../src/card/Bundle.js';
-import { type SchemaView } from '../src/SchemaView.js';
+import { type SchemaView } from '../src/schema/SchemaView.js';
 import { type EntityConstructor, type Relation } from '../src/axis/role/Relation.js';
 import { type RoleRules } from '../src/axis/role/Role.js';
 import { type RoleDescriptor, type RelationDescriptor } from '../src/card/Descriptor.js';

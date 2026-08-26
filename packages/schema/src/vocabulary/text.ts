@@ -1,4 +1,4 @@
-import { Field } from '../Field.js';
+import { Field } from '../fields/Field.js';
 import { type StringFormat } from '../axis/shape/Formats.js';
 
 export interface TextOptions {

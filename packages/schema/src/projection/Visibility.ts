@@ -1,7 +1,7 @@
 import { Boundary } from '../axis/boundary/Boundary.js';
 import { Lifecycle } from '../axis/lifecycle/Lifecycle.js';
 import { Role } from '../axis/role/Role.js';
-import type { Fields } from '../Field.js';
+import type { Fields } from '../fields/Field.js';
 
 export class Visibility {
   private constructor(private readonly fields: Fields) {}

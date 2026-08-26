@@ -1,9 +1,9 @@
-import type { Field, Fields } from './Field.js';
-import type { CompositeUnique, PreviousNames } from './EntityDeclarations.js';
-import type { Hints } from './Hints.js';
-import type { ValidationResult } from './judge/result.js';
-import type { ValidateOptions } from './judge/options.js';
-import type { SchemaDerivation } from './schema/SchemaDerivation.js';
+import type { Field, Fields } from '../fields/Field.js';
+import type { CompositeUnique, PreviousNames } from '../EntityDeclarations.js';
+import type { Hints } from '../Hints.js';
+import type { ValidationResult } from '../judge/result.js';
+import type { ValidateOptions } from '../judge/options.js';
+import type { SchemaDerivation } from './SchemaDerivation.js';
 
 export type Row<TFields extends Fields> = {
   [K in keyof TFields]: TFields[K] extends Field<infer T> ? T : never;

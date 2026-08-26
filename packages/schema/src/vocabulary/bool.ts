@@ -1,4 +1,4 @@
-import { Field } from '../Field.js';
+import { Field } from '../fields/Field.js';
 
 export function bool(opts?: { default?: boolean; description?: string }): Field<boolean> {
   return new Field<boolean>({

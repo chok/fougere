@@ -1,5 +1,5 @@
-export { Field, type Fields } from './Field.js';
-export { FieldSet } from './FieldSet.js';
+export { Field, type Fields } from './fields/Field.js';
+export { FieldSet } from './fields/FieldSet.js';
 export { type Shape, Anatomy } from './axis/shape/Shape.js';
 export { type StringFormat, type FormatPredicate, Formats } from './axis/shape/Formats.js';
 export { Role, type RoleRules } from './axis/role/Role.js';
@@ -18,7 +18,7 @@ export { SchemaDerivation } from './schema/SchemaDerivation.js';
 export { isObject } from './judge/ValueForm.js';
 export { Cases, type Case } from './judge/Cases.js';
 export { RowRefusal } from './judge/RowRefusal.js';
-export { type SchemaView, type Row, type PartialRow } from './SchemaView.js';
+export { type SchemaView, type Row, type PartialRow } from './schema/SchemaView.js';
 export { type FougereHints, type Hints } from './Hints.js';
 export { lowerFirst, upperFirst } from './utils.js';
 

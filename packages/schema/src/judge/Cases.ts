@@ -2,8 +2,8 @@ import { Anatomy } from '../axis/shape/Shape.js';
 import { Boundary } from '../axis/boundary/Boundary.js';
 import { Lifecycle } from '../axis/lifecycle/Lifecycle.js';
 import { Role } from '../axis/role/Role.js';
-import type { Field } from '../Field.js';
-import type { SchemaView } from '../SchemaView.js';
+import type { Field } from '../fields/Field.js';
+import type { SchemaView } from '../schema/SchemaView.js';
 import { RowJudge } from './RowJudge.js';
 import { RowRefusal } from './RowRefusal.js';
 

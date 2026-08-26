@@ -1,5 +1,5 @@
-import { Field } from '../Field.js';
-import type { SchemaView } from '../SchemaView.js';
+import { Field } from '../fields/Field.js';
+import type { SchemaView } from '../schema/SchemaView.js';
 import { RowJudge } from '../judge/RowJudge.js';
 
 export function json<T = unknown>(): Field<T>;
