@@ -1,5 +1,4 @@
 import { Field } from '../Field.js';
-import type { FieldData } from '../Field.js';
 import { EXTENSION_AXES } from '../axis/Axis.js';
 import { same } from '../same.js';
 
@@ -7,14 +6,14 @@ const MEMBER_SLOTS = [...EXTENSION_AXES.map((axis) => axis.slot), 'meta'] as con
 
 export function vocabulary(
   name: string,
-  states: (field: Field) => Partial<FieldData>,
+  states: (field: Field) => Partial<Field>,
 ): FieldWord {
   return (field) => field.with(merge(name, field, states(field)));
 }
 
 export type FieldWord = (field: Field<any>) => Field<any>;
 
-function merge(name: string, field: Field, stated: Partial<FieldData>): Partial<FieldData> {
+function merge(name: string, field: Field, stated: Partial<Field>): Partial<Field> {
   const out: Record<string, unknown> = {};
   if ('shape' in stated) out.shape = stated.shape;
 
@@ -36,6 +35,6 @@ function merge(name: string, field: Field, stated: Partial<FieldData>): Partial<
     }
     out[slot] = { ...held, ...members };
   }
-  return out as Partial<FieldData>;
+  return out as Partial<Field>;
 }
 

@@ -2,13 +2,28 @@ import { Role } from './axis/role/Role.js';
 import { FieldGroup } from './constraint/FieldGroup.js';
 import { Unique } from './constraint/Unique.js';
 import type { CompositeUnique } from './EntityDeclarations.js';
-import type { Fields } from './Field.js';
+import { Field, type Fields } from './Field.js';
 
 export class FieldSet<TFields extends Fields = Fields> {
   private constructor(private readonly fields: TFields) {}
 
   static of<TFields extends Fields>(fields: TFields): FieldSet<TFields> {
     return new FieldSet(fields);
+  }
+
+  /**
+   * Every entry through the field door, then the groups declared over several of them.
+   * A group written here names its members; one written on a field named itself, and the
+   * key it sat under resolved it.
+   */
+  static declared<TFields extends Fields>(
+    declared: TFields,
+    unique?: CompositeUnique<TFields>,
+  ): TFields {
+    let fields: Fields = {};
+    for (const [key, field] of Object.entries(declared)) fields[key] = new Field(field, key);
+    for (const group of unique ?? []) fields = new Unique(group).onto(fields);
+    return fields as TFields;
   }
 
   /**

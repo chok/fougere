@@ -1,5 +1,5 @@
-import type { Fields } from './Field.js';
-import type { Hints } from './Hints.js';
+import type { Fields } from "./Field.js";
+import type { Hints } from "./Hints.js";
 
 export type CompositeUnique<TFields extends Fields> = ReadonlyArray<
   ReadonlyArray<Extract<keyof TFields, string>>
