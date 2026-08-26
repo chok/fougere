@@ -14,7 +14,7 @@
 import { sql, type Kysely } from 'kysely';
 import { addForeignKeyConstraintSQL, compiler, createTableSQL, indexSQL, type GenerateOptions } from './ddl.js';
 import { checkFor } from './check.js';
-import { resolveDialect, type DialectName } from './dialect.js';
+import { columnTypeFor, resolveDialect, type DialectName } from './dialect.js';
 import {
   isKeyed,
   orderTables,
@@ -136,7 +136,7 @@ export function changeSQL(change: Change, dialectName: DialectName): string {
     return indexSQL(change.table, change.column, dialectName);
   }
   const { table, column } = change;
-  const type = dialect.columnType(column, isKeyed(table, column));
+  const type = columnTypeFor(dialect, column, isKeyed(table, column));
   return compiler(dialectName)
     .schema.alterTable(table.name)
     .addColumn(column.name, sql.raw(type) as any, (col) => {

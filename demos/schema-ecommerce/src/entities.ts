@@ -2,6 +2,8 @@
  * Entités fougere — source de vérité unique
  */
 import { entity, primary, text, number, oneOf, ref, created, optional, bool } from '@fougere/schema';
+// Loads the SQL adapter's augmentation of `hints`: without this import, `sql:` does not exist.
+import '@fougere/adapter-sql';
 
 // ─── Entités ─────────────────────────────────────
 
@@ -11,15 +13,21 @@ export class Category extends entity({
   slug: text({ pattern: '^[a-z0-9-]+$' }),
 }) {}
 
-export class Product extends entity({
-  id: primary(),
-  categoryId: ref(Category),
-  name: text({ min: 1, max: 255 }),
-  price: number({ min: 0 }),
-  stock: number({ min: 0, integer: true }),
-  active: bool({ default: true }),
-  createdAt: created(),
-}) {}
+export class Product extends entity(
+  {
+    id: primary(),
+    categoryId: ref(Category),
+    name: text({ min: 1, max: 255 }),
+    price: number({ min: 0 }),
+    stock: number({ min: 0, integer: true }),
+    active: bool({ default: true }),
+    description: optional(text()),
+    createdAt: created(),
+  },
+  // A preference, not a requirement: this demo runs on SQLite, which is not named here and
+  // so emits `text` as before. The same entity boots on all four engines.
+  { hints: { sql: { description: { columnType: { pg: 'tsvector', mysql: 'longtext' } } } } },
+) {}
 
 export class Customer extends entity({
   id: primary(),

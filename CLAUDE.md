@@ -106,6 +106,8 @@ depth is encoded there: check it when a package moves families.
 
 **Entity declarations** — the 2nd arg of `entity()` is what the entity states about *itself*: `unique` (field groups unique together, realized as a table constraint by `adapter/sql`) and `hints` (per-adapter, per-field). One object, not a growing parameter list. A derivation that drops a member of a unique group drops the group.
 
+**A hint is a PREFERENCE, and that is what lets it sit in the declaration.** `FougereHints` (`schema/src/Hints.ts`) is an EMPTY interface an adapter augments from outside, so `schema` learns no engine and no column type. `adapter/sql` is its first reader (`adapter/sql/src/hints.ts`, `SqlFieldHint`) and states the rule in its shape: `columnType` is indexed BY ENGINE, so an engine the entity did not name keeps what the shape would have given — `columnTypeFor` (`adapter/sql/src/dialect.ts`) is one `??`, and the four `Dialect`s learn nothing. Measured on `demos/schema-ecommerce`, whose `Product.description` names `pg` and `mysql`: SQLite still emits `text` and the demo still boots. **What an engine must HONOR is not a hint** — it is a decision, and it belongs in `fougere.config.ts` beside `remotes:` (where a CALL goes), `sources:` (where a ROW is) and `ports:` (who performs an ACTION); the test is whether ignoring it changes the answer. Vocabulary would be sugar over the same landing (`tsvector()` writing `hints.sql`), and it buys one thing the bare hint cannot: a word RECEIVES the field, so it can refuse `tsvector()` on a `number()`. Not built — `vocabulary()` is not exported, and a `Field` does not retain its key, which is exactly what a hint is addressed by. Pinned by `adapter/sql/tests/hint.test.ts`.
+
 **Field = 4 axes** — `shape` (the shape IS JSON Schema), `role` (primary, ref…), `lifecycle` (who writes the value and when: create `{value}|'now'|{generate}|'optional'`, update `'now'|'forbidden'`), `boundary` (readOnly/writeOnly → `Visibility.input`/`Visibility.output`).
 **La validation juge, le storage réalise** : the façade judges client input (unknown keys → `Unknown field`); handlers write freely through the ORM, which realizes lifecycle rules — by calling `applyCreate`/`applyUpdate` (`schema/src/axis/lifecycle/apply.ts`), the one realization every storage shares. Refusing is still the judge's: `update: 'forbidden'` lives in `RowJudge`, patch mode.
 
@@ -200,6 +202,14 @@ synced copy still compiles three weeks after the producer moved.
 Fact — where — state. The reasoning lives in the notes, not here, and *Settled* below is
 one line each: what the entry protects against is a future reader re-asserting the old
 belief, which costs a sentence, not a paragraph.
+
+- **An un-augmented `hints:` accepts anything, silently.** With no adapter in the program
+  `FougereHints` is empty, `Hints<TFields>` maps over `never` and becomes `{}` — which in
+  TypeScript means "anything non-nullish", not "no keys". Measured: `hints: { sqll: … }`
+  compiles clean in `packages/schema`. So the registry fails OPEN, giving neither
+  completion nor a guard, and the two only appear once something imports the adapter
+  (declaration merging is program-wide, not per-file). The fix is a decision about the
+  empty case, not a patch.
 
 - **A seed cycle is not satisfiable by ordering** — `core/src/boot/seed.ts`, `orderSeeds`
   (Kahn, like `orderTables`). Its members keep scan order and fail at the driver.

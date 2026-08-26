@@ -4,11 +4,15 @@ import { Lifecycle, Role } from '@fougere/schema';
  *
  * This is the neutral middle term: one projection reads the entity's axes and
  * produces a `TableDef`; a `Dialect` turns that into SQL. Neither half knows the
- * other — the entity never mentions a column type, the dialect never mentions a
- * field. Adding a dialect touches only the second half.
+ * other — the dialect never mentions a field. Adding a dialect touches only the
+ * second half.
+ *
+ * `ColumnDef.hint` is the one member the axes did not produce. It carries a
+ * PREFERENCE, so dropping it leaves every column describable.
  */
 import { Anatomy, FieldGroup, Unique, fieldsOf, registrationKeyOf, schemaOf, type Field, type SchemaView, type SchemaOrCard } from '@fougere/schema';
 import { boundsOf, type ShapeBounds } from './check.js';
+import type { SqlFieldHint } from './hints.js';
 
 /** The shape keywords a dialect needs to choose a column type. */
 export interface ColumnShape {
@@ -17,7 +21,7 @@ export interface ColumnShape {
   maxLength?: number;
 }
 
-/** One column, described by the axes — never by a SQL type. */
+/** One column, described by the axes — plus, at most, the preference the entity stated here. */
 export interface ColumnDef {
   /** Field key on the entity. */
   field: string;
@@ -40,6 +44,11 @@ export interface ColumnDef {
   bounds?: ShapeBounds;
   /** The FK target, from `role.relation` when it's a `ref()` (kind `'one'`). */
   references?: ColumnReference;
+  /**
+   * What the entity stated for THIS adapter — a preference, never an axis. It says how
+   * the column is realized here; drop it and the column is still describable.
+   */
+  hint?: SqlFieldHint;
 }
 
 export interface ColumnReference {
@@ -149,6 +158,7 @@ function toColumn(
   resolve: (name: string) => string,
   tableNameOf?: Map<SchemaOrCard, string>,
   hosted?: HostedNames,
+  hint?: SqlFieldHint,
 ): ColumnDef {
   // The column type comes from the `shape` axis alone. `anatomy` strips the
   // nullable union so a nullable integer stays an integer instead of falling
@@ -175,6 +185,7 @@ function toColumn(
   if (Role.of(field).isIndexed && !column.primary && !column.unique) column.index = true;
   const references = referenceFor(field, resolve, tableNameOf, hosted);
   if (references) column.references = references;
+  if (hint) column.hint = hint;
   return column;
 }
 
@@ -211,10 +222,12 @@ export interface HostedNames {
 export function toTable(tableName: string, entity: SchemaOrCard, relations?: RelationResolve): TableDef {
   const resolve = relations?.resolve ?? toTableName;
   const fields = fieldsOf(entity);
+  // Read off the entity, since that is where a hint is declared and addressed by field key.
+  const hints = schemaOf(entity).getHints()?.sql;
   const columns: ColumnDef[] = [];
   for (const [fieldName, field] of Object.entries(fields)) {
     if (!isStored(field)) continue;
-    columns.push(toColumn(fieldName, field, resolve, relations?.tableNameOf, relations?.hosted));
+    columns.push(toColumn(fieldName, field, resolve, relations?.tableNameOf, relations?.hosted, hints?.[fieldName]));
   }
   const primaries = columns.filter((column) => column.primary).map((column) => column.name);
   const stored = new Set(columns.map((column) => column.name));

@@ -14,6 +14,7 @@ export type {
   AppLike,
 } from './table.js';
 export {
+  columnTypeFor,
   dialects,
   resolveDialect,
   sqliteDialect,
@@ -22,6 +23,7 @@ export {
   mssqlDialect,
 } from './dialect.js';
 export type { Dialect, DialectName } from './dialect.js';
+export type { SqlFieldHint } from './hints.js';
 export { SqlEntityOrm, createOrmFactory } from './crud.js';
 export type { OrmFactoryOptions } from './crud.js';
 export { codecFor, codecsOf } from './values.js';

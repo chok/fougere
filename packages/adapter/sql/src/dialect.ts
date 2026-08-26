@@ -191,3 +191,14 @@ export function resolveDialect(name: DialectName): Dialect {
   if (!dialect) throw new Error(`Unknown SQL dialect '${name}'. Known: ${Object.keys(dialects).join(', ')}`);
   return dialect;
 }
+
+/**
+ * The type this column is emitted with — the entity's preference when it stated one for
+ * THIS engine, the shape's own answer otherwise.
+ *
+ * The fallback is what makes a hint a hint: `columnType: { pg: 'tsvector' }` leaves
+ * SQLite exactly where it was, so the same entity still boots on every dialect.
+ */
+export function columnTypeFor(dialect: Dialect, column: ColumnDef, keyed: boolean): string {
+  return column.hint?.columnType?.[dialect.name] ?? dialect.columnType(column, keyed);
+}

@@ -25,7 +25,7 @@ import {
   type ColumnDef,
   type TableDef,
 } from './table.js';
-import { resolveDialect, type DialectName } from './dialect.js';
+import { columnTypeFor, resolveDialect, type DialectName } from './dialect.js';
 import { checkFor } from './check.js';
 
 // ─── Compile-only engines ──────────────────────────
@@ -82,7 +82,7 @@ export function createTableSQL(
   if (dialectName !== 'mssql') builder = builder.ifNotExists();
 
   for (const column of table.columns) {
-    const type = dialect.columnType(column, isKeyed(table, column));
+    const type = columnTypeFor(dialect, column, isKeyed(table, column));
     builder = builder.addColumn(column.name, sql.raw(type) as any, (col) => {
       let built = col;
       // A simple key is inline; a composite one becomes a table constraint.
