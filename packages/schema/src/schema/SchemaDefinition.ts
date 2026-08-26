@@ -1,6 +1,6 @@
 import { type Fields } from '../fields/Field.js';
 import { type PreviousNames } from '../EntityDeclarations.js';
-import { deriveHints, type Hints } from '../Hints.js';
+import { HintSet, type Hints } from '../Hints.js';
 import { SchemaDerivation } from './SchemaDerivation.js';
 import { type ValidateOptions } from '../judge/options.js';
 import type { SchemaView } from './SchemaView.js';
@@ -32,7 +32,9 @@ export class SchemaDefinition {
     previous?: PreviousNames<Fields>;
     derivation?: SchemaDerivation;
   }): SchemaDefinition {
-    return new SchemaDefinition(said.fields, said.hints, said.opts ?? {}, said.previous, said.derivation);
+    return new SchemaDefinition(
+      said.fields, HintSet.of(said.hints)?.stated, said.opts ?? {}, said.previous, said.derivation,
+    );
   }
 
   /**
@@ -44,7 +46,7 @@ export class SchemaDefinition {
     for (const [key, field] of Object.entries(fields)) renamed[key] = field.rename(survives);
     return new SchemaDefinition(
       renamed,
-      deriveHints(this.hints, survives),
+      HintSet.of(this.hints)?.cut(survives)?.stated,
       this.opts,
       undefined,
       this.origin(root).compose(survives),
@@ -68,19 +70,14 @@ export class SchemaDefinition {
   /** Several views folded into one definition, which therefore has no single origin. */
   static merged(views: readonly SchemaView[]): SchemaDefinition {
     const fields: Fields = {};
-    const hints: Record<string, Record<string, unknown>> = {};
     let opts: ValidateOptions = {};
     for (const view of views) {
       Object.assign(fields, view.getFields());
-      const stated = view.getHints() as Record<string, Record<string, unknown> | undefined> | undefined;
-      for (const [adapter, perField] of Object.entries(stated ?? {})) {
-        if (!perField || typeof perField !== 'object') continue;
-        hints[adapter] = { ...hints[adapter], ...perField };
-      }
       opts = { ...opts, ...view.getOpts() };
     }
-    const merged = Object.keys(hints).length ? (hints as Hints<Fields>) : undefined;
-    return new SchemaDefinition(fields, merged, opts, undefined, undefined);
+    const hints = HintSet.merged(views.map((view) => view.getHints()))?.stated;
+
+    return new SchemaDefinition(fields, hints, opts, undefined, undefined);
   }
 
   /** The origin this definition already carries, or the one `root` becomes. */

@@ -82,3 +82,27 @@ describe('entity() per-consumer hints', () => {
     expect(true).toBe(true);
   });
 });
+
+describe('HintSet refuses what it addresses, and carries the rest', () => {
+  it('an adapter whose hints are not addressed by field name is refused, by name', () => {
+    expect(() =>
+      // @ts-expect-error — the runtime refusal is the point; the type already says no
+      entity({ id: primary(), body: text() }, { hints: { sql: 'tsvector' } }),
+    ).toThrow(/hints\.sql: expected an object keyed by field name, got string/);
+  });
+
+  it('a field hint is the adapter\'s shape and is carried, never judged', () => {
+    // `schema` knows no sql option, so a bare string reaches the adapter untouched.
+    class Loose extends entity(
+      { id: primary(), body: text() },
+      // @ts-expect-error — the sql adapter of this test file declares an object
+      { hints: { sql: { body: 'tsvector' } } },
+    ) {}
+    expect(Loose.getHints()?.sql?.body).toBe('tsvector');
+  });
+
+  it('an empty set is an absence, not an empty object', () => {
+    class Empty extends entity({ id: primary() }, { hints: { sql: {} } }) {}
+    expect(Empty.getHints()).toBeUndefined();
+  });
+});
