@@ -3,10 +3,14 @@ import { Role, type RoleRules } from "./axis/role/Role.js";
 import type { LifecycleRules } from "./axis/lifecycle/Lifecycle.js";
 import type { BoundaryRef } from "./axis/boundary/Boundary.js";
 import type { Meta } from "./axis/Meta.js";
+import type { Axis } from "./axis/Axis.js";
 import { FieldJudge } from "./judge/FieldJudge.js";
 import { ValueJudge } from "./judge/ValueJudge.js";
 
 export type Fields = Record<string, Field>;
+
+/** The carrier, the three extension axes, the annotation — the five the judge reads. */
+export type FieldDeclaration = Pick<Field, "shape" | Axis["slot"] | "meta">;
 
 export class Field<T = unknown> {
   readonly shape: Shape;
@@ -17,7 +21,7 @@ export class Field<T = unknown> {
 
   declare readonly _type?: T;
 
-  constructor(init: Partial<Field> & Pick<Field, "shape">, key?: string) {
+  constructor(init: FieldDeclaration, key?: string) {
     const verdict = FieldJudge.of(init).verdict;
 
     if (!verdict.success) {
@@ -48,7 +52,7 @@ export class Field<T = unknown> {
     return FieldJudge.of(value).verdict.success;
   }
 
-  with<U = T>(overrides: Partial<Field>): Field<U> {
+  with<U = T>(overrides: Partial<FieldDeclaration>): Field<U> {
     return new Field<U>({ ...this, ...overrides });
   }
 

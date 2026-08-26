@@ -13,8 +13,8 @@ export { type Meta } from './axis/Meta.js';
 export { FieldGroup } from './constraint/FieldGroup.js';
 export { Unique } from './constraint/Unique.js';
 
-export { Schema, ANONYMOUS_SCHEMA_NAME, type SchemaConstructor } from './Schema.js';
-export { SchemaDerivation } from './SchemaDerivation.js';
+export { Schema, ANONYMOUS_SCHEMA_NAME, type SchemaConstructor } from './schema/Schema.js';
+export { SchemaDerivation } from './schema/SchemaDerivation.js';
 export { isObject } from './judge/ValueForm.js';
 export { Cases, type Case } from './judge/Cases.js';
 export { RowRefusal } from './judge/RowRefusal.js';

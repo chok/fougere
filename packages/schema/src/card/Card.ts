@@ -1,10 +1,10 @@
-import { EXTENSION_AXES, type Resolver } from '../axis/Axis.js';
+import { EXTENSION_AXES, EXTENSION_SLOTS, type Resolver } from '../axis/Axis.js';
 import { dequal } from 'dequal';
 import { clean } from '../utils.js';
 import { Field, type Fields } from '../Field.js';
 import { isObject } from '../judge/ValueForm.js';
 import { RowJudge } from '../judge/RowJudge.js';
-import { Schema, type SchemaConstructor } from '../Schema.js';
+import { Schema, type SchemaConstructor } from '../schema/Schema.js';
 import type { Row, SchemaView } from '../SchemaView.js';
 import { refuse } from './admission.js';
 import type {
@@ -214,11 +214,8 @@ function reconstructField(property: FieldDescriptor, key: string, resolve?: Reso
   } as never);
 }
 
-/** The three axes a JSON Schema shape does not carry by itself. */
-const AXES = ['role', 'lifecycle', 'boundary'] as const;
-
 function restated(field: string, before: FieldExtension | undefined, after: FieldExtension | undefined): Change[] {
-  return AXES.filter((axis) => !dequal(before?.[axis], after?.[axis])).map(
+  return EXTENSION_SLOTS.filter((axis) => !dequal(before?.[axis], after?.[axis])).map(
     (axis) => ({ kind: 'restated', field, axis, from: before?.[axis], to: after?.[axis] }) as Change,
   );
 }

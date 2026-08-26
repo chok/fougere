@@ -1,9 +1,9 @@
-import { type Fields } from './Field.js';
-import { type Previous } from './EntityDeclarations.js';
-import { deriveHints, type Hints } from './Hints.js';
+import { type Fields } from '../Field.js';
+import { type Previous } from '../EntityDeclarations.js';
+import { deriveHints, type Hints } from '../Hints.js';
 import { SchemaDerivation } from './SchemaDerivation.js';
-import { type ValidateOptions } from './judge/options.js';
-import type { SchemaView } from './SchemaView.js';
+import { type ValidateOptions } from '../judge/options.js';
+import type { SchemaView } from '../SchemaView.js';
 
 /**
  * Everything a schema IS, apart from being a class whose instances are rows.

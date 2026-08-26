@@ -1,8 +1,8 @@
 import { Field } from '../Field.js';
-import { EXTENSION_AXES } from '../axis/Axis.js';
+import { EXTENSION_SLOTS } from '../axis/Axis.js';
 import { dequal } from 'dequal';
 
-const MEMBER_SLOTS = [...EXTENSION_AXES.map((axis) => axis.slot), 'meta'] as const;
+const MEMBER_SLOTS = [...EXTENSION_SLOTS, 'meta'] as const;
 
 export function vocabulary(
   name: string,

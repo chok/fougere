@@ -20,3 +20,6 @@ export const EXTENSION_AXES: readonly Axis[] = [
   lifecycleAxis,
   boundaryAxis,
 ];
+
+/** The slots they occupy: the keys of `x-fougere` on a field descriptor. */
+export const EXTENSION_SLOTS = EXTENSION_AXES.map((axis) => axis.slot);

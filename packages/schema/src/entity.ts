@@ -1,7 +1,7 @@
 import { type Fields } from "./Field.js";
 import { FieldSet } from "./FieldSet.js";
 import { type EntityDeclarations } from "./EntityDeclarations.js";
-import { Schema, type SchemaConstructor } from "./Schema.js";
+import { Schema, type SchemaConstructor } from "./schema/Schema.js";
 
 export function entity<TFields extends Fields>(
   originalFields: TFields,
