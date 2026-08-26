@@ -9,6 +9,9 @@ import { ValueJudge } from "./judge/ValueJudge.js";
 
 export type Fields = Record<string, Field>;
 
+/** A key of a field set — the name a declaration addresses a field by. */
+export type FieldName<TFields extends Fields> = Extract<keyof TFields, string>;
+
 /** The carrier, the three extension axes, the annotation — the five the judge reads. */
 export type FieldDeclaration = Pick<Field, "shape" | Axis["slot"] | "meta">;
 

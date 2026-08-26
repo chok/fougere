@@ -2,7 +2,7 @@ import { Role } from './axis/role/Role.js';
 import { FieldGroup } from './constraint/FieldGroup.js';
 import { Unique } from './constraint/Unique.js';
 import type { CompositeUnique } from './EntityDeclarations.js';
-import { Field, type Fields } from './Field.js';
+import { Field, type FieldName, type Fields } from './Field.js';
 
 export class FieldSet<TFields extends Fields = Fields> {
   private constructor(private readonly fields: TFields) {}
@@ -38,7 +38,7 @@ export class FieldSet<TFields extends Fields = Fields> {
    * The absence is answered and not defaulted: `'id'` is a fine fallback for a form and a
    * lie for a DDL, so the caller decides.
    */
-  get primary(): Extract<keyof TFields, string> | undefined {
+  get primary(): FieldName<TFields> | undefined {
     const primaries = Object.entries(this.fields)
       .filter(([, field]) => Role.of(field).isPrimary)
       .map(([name]) => name);
@@ -50,7 +50,7 @@ export class FieldSet<TFields extends Fields = Fields> {
       );
     }
 
-    return primaries[0] as Extract<keyof TFields, string> | undefined;
+    return primaries[0] as FieldName<TFields> | undefined;
   }
 
   get uniqueGroups(): CompositeUnique<TFields> | undefined {

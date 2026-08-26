@@ -1,13 +1,9 @@
-import type { Fields } from './Field.js';
+import type { FieldName, Fields } from './Field.js';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-object-type
 export interface FougereHints<K extends string> {}
 
-export type Hints<TFields extends Fields> = {
-  [A in keyof FougereHints<Extract<keyof TFields, string>>]?: FougereHints<
-    Extract<keyof TFields, string>
-  >[A];
-};
+export type Hints<TFields extends Fields> = Partial<FougereHints<FieldName<TFields>>>;
 
 export function deriveHints(
   hints: Hints<Fields> | undefined,

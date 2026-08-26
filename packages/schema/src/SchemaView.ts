@@ -1,5 +1,5 @@
 import type { Field, Fields } from './Field.js';
-import type { CompositeUnique, Previous } from './EntityDeclarations.js';
+import type { CompositeUnique, PreviousNames } from './EntityDeclarations.js';
 import type { Hints } from './Hints.js';
 import type { ValidationResult } from './judge/result.js';
 import type { ValidateOptions } from './judge/options.js';
@@ -16,7 +16,7 @@ export interface SchemaView<TFields extends Fields = Fields> {
   /** What this schema was cut from, when it was cut from anything. */
   readonly derivation?: SchemaDerivation;
   /** What its fields were called before, keyed by the names they carry now. */
-  readonly previous?: Previous<TFields>;
+  readonly previous?: PreviousNames<TFields>;
   getFields(): TFields;
   getHints(): Hints<TFields> | undefined;
   getUnique(): CompositeUnique<TFields> | undefined;

@@ -1,5 +1,5 @@
 import { type Fields } from '../Field.js';
-import { type Previous } from '../EntityDeclarations.js';
+import { type PreviousNames } from '../EntityDeclarations.js';
 import { deriveHints, type Hints } from '../Hints.js';
 import { SchemaDerivation } from './SchemaDerivation.js';
 import { type ValidateOptions } from '../judge/options.js';
@@ -21,7 +21,7 @@ export class SchemaDefinition {
     readonly fields: Fields,
     readonly hints: Hints<Fields> | undefined,
     readonly opts: ValidateOptions,
-    readonly previous: Previous<Fields> | undefined,
+    readonly previous: PreviousNames<Fields> | undefined,
     readonly derivation: SchemaDerivation | undefined,
   ) {}
 
@@ -29,7 +29,7 @@ export class SchemaDefinition {
     fields: Fields;
     hints?: Hints<Fields>;
     opts?: ValidateOptions;
-    previous?: Previous<Fields>;
+    previous?: PreviousNames<Fields>;
     derivation?: SchemaDerivation;
   }): SchemaDefinition {
     return new SchemaDefinition(said.fields, said.hints, said.opts ?? {}, said.previous, said.derivation);

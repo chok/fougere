@@ -1,6 +1,6 @@
 import { Boundary } from '../axis/boundary/Boundary.js';
 import { type Fields } from '../Field.js';
-import { type Previous } from '../EntityDeclarations.js';
+import { type PreviousNames } from '../EntityDeclarations.js';
 import { type Hints } from '../Hints.js';
 import { FieldGroup } from '../constraint/FieldGroup.js';
 import { Unique } from '../constraint/Unique.js';
@@ -18,7 +18,7 @@ export interface SchemaConstructor<TFields extends Fields> extends SchemaView<TF
   new (data: PartialRow<TFields>): Row<TFields>;
   readonly "~standard": StandardSchemaV1.Props<Record<string, unknown>, Row<TFields>>;
   readonly derivation?: SchemaDerivation;
-  readonly previous?: Previous<TFields>;
+  readonly previous?: PreviousNames<TFields>;
   from(data: Record<string, unknown>): Row<TFields>;
   pick<K extends string & keyof TFields>(...keys: K[]): SchemaConstructor<Pick<TFields, K>>;
   omit<K extends string & keyof TFields>(...keys: K[]): SchemaConstructor<Omit<TFields, K>>;
@@ -36,7 +36,7 @@ export class Schema {
   static get hints(): Hints<Fields> | undefined { return this.definition.hints; }
   static get opts(): ValidateOptions { return this.definition.opts; }
   static get derivation(): SchemaDerivation | undefined { return this.definition.derivation; }
-  static get previous(): Previous<Fields> | undefined { return this.definition.previous; }
+  static get previous(): PreviousNames<Fields> | undefined { return this.definition.previous; }
 
   constructor(data?: Record<string, unknown>) {
     if (!data) return;
@@ -136,7 +136,7 @@ export class Schema {
     derivation?: SchemaDerivation;
     hints?: Hints<TFields>;
     opts?: ValidateOptions;
-    previous?: Previous<TFields>;
+    previous?: PreviousNames<TFields>;
   }): SchemaConstructor<TFields> {
     return Schema.subclass(SchemaDefinition.stated(stated)) as unknown as SchemaConstructor<TFields>;
   }
