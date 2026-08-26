@@ -7,6 +7,8 @@
  * It is a sink and nothing more — `onSpan(otlp({...}).sink)` is the whole wiring. What
  * a span IS was decided by the middleware; this file only renames its fields.
  */
+import { Beat } from './Beat.js';
+import { Endpoint } from './Endpoint.js';
 import type { FinishedSpan, SpanSink } from './index.js';
 import { metricsPayload, type Metrics } from './metrics.js';
 
@@ -47,21 +49,12 @@ const ERROR = 2;
 
 export function otlp(options: OtlpOptions): OtlpExporter {
   const url = options.url ?? 'http://localhost:4318/v1/traces';
-  const metricsUrl = options.metricsUrl ?? url.replace(/\/v1\/traces$/, '/v1/metrics');
+  const traces = Endpoint.at(url, options.onError);
+  const metrics = Endpoint.at(
+    options.metricsUrl ?? url.replace(/\/v1\/traces$/, '/v1/metrics'),
+    options.onError,
+  );
   let buffer: FinishedSpan[] = [];
-
-  async function post(to: string, body: unknown): Promise<void> {
-    try {
-      const response = await fetch(to, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!response.ok) options.onError?.(new Error(`${to} answered HTTP ${response.status}`));
-    } catch (err) {
-      options.onError?.(err);
-    }
-  }
 
   async function flush(): Promise<void> {
     const batch = buffer;
@@ -69,28 +62,17 @@ export function otlp(options: OtlpOptions): OtlpExporter {
     // Metrics go on every beat even when no span finished: a gauge that stops being
     // published reads as "gone", not as "idle".
     await Promise.all([
-      batch.length > 0 ? post(url, payload(options.service, batch)) : Promise.resolve(),
-      options.metrics ? post(metricsUrl, metricsPayload(options.service, options.metrics.snapshot())) : Promise.resolve(),
+      batch.length > 0 ? traces.post(payload(options.service, batch)) : Promise.resolve(),
+      options.metrics ? metrics.post(metricsPayload(options.service, options.metrics.snapshot())) : Promise.resolve(),
     ]);
   }
 
-  // `flushMs: 0` means "nobody is on a timer here, I will say when" — and on a Worker it
-  // is not a preference, it is the only legal form: Cloudflare REFUSES a deployment whose
-  // module scope sets a timeout ("Disallowed operation called within global scope"), and
-  // an app built at module scope builds its exporter there. Measured 2026-08-23, the
-  // deploy failed with error 10021. The isolate is frozen at the response anyway, so the
-  // timer could never have fired; `ctx.waitUntil(flushTelemetry())` is what sends.
-  //
-  // `unref` so a buffered span never keeps a process alive: exporting is something the
-  // process does on its way, never a reason for it to stay.
-  const every = options.flushMs ?? 1_000;
-  const timer = every > 0 ? setInterval(() => void flush(), every) : undefined;
-  timer?.unref?.();
+  const beat = Beat.every(options.flushMs, flush);
 
   return {
     sink: (span) => { buffer.push(span); },
     flush,
-    stop: async () => { if (timer) clearInterval(timer); await flush(); },
+    stop: () => beat.stop(),
   };
 }
 

@@ -9,6 +9,8 @@
  * The logger emits a structured record and nothing more (`onLog` in core). Attaching the
  * trace, naming the severity and speaking OTLP all happen here.
  */
+import { Beat } from './Beat.js';
+import { Endpoint } from './Endpoint.js';
 import { currentSpan } from './index.js';
 import type { LogRecord } from '@fougere/core';
 
@@ -53,30 +55,20 @@ export interface LogsOptions {
 }
 
 export function logs(options: LogsOptions): LogExporter {
-  const url = options.url ?? 'http://localhost:4318/v1/logs';
+  const collector = Endpoint.at(options.url ?? 'http://localhost:4318/v1/logs', options.onError);
   const floor = options.minimum ? SEVERITY[options.minimum].number : 0;
   let buffer: CapturedLog[] = [];
 
+  // Nothing leaves when nothing was written — unlike the span exporter, which publishes
+  // its metrics on every beat regardless.
   async function flush(): Promise<void> {
     if (buffer.length === 0) return;
     const batch = buffer;
     buffer = [];
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(payload(options.service, batch)),
-      });
-      if (!response.ok) options.onError?.(new Error(`${url} answered HTTP ${response.status}`));
-    } catch (err) {
-      options.onError?.(err);
-    }
+    await collector.post(payload(options.service, batch));
   }
 
-  const every = options.flushMs ?? 1_000;
-  // Same rule as the span exporter: a timer at module scope makes a Worker undeployable.
-  const timer = every > 0 ? setInterval(() => void flush(), every) : undefined;
-  timer?.unref?.();
+  const beat = Beat.every(options.flushMs, flush);
 
   return {
     // The span is read HERE, while the line is being written — not at flush time, when
@@ -87,7 +79,7 @@ export function logs(options: LogsOptions): LogExporter {
       buffer.push({ ...record, traceId: span?.traceId, spanId: span?.spanId });
     },
     flush,
-    stop: async () => { if (timer) clearInterval(timer); await flush(); },
+    stop: () => beat.stop(),
   };
 }
 
