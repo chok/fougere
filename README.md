@@ -13,7 +13,7 @@ the code calling it does not change.
 [![npm](https://img.shields.io/npm/v/@fougere/schema/alpha.svg)](https://www.npmjs.com/package/@fougere/schema)
 [![Status](https://img.shields.io/badge/status-alpha-orange.svg)](#alpha-today)
 
-**[Documentation →](https://chok.github.io/fougere/)**
+**[Documentation →](https://fougere.dev/)**
 
 </div>
 
@@ -142,11 +142,11 @@ already authenticated the caller. The full list is in
 
 ## Learn more
 
-- [Getting started](https://chok.github.io/fougere/docs/getting-started)
-- [Philosophy](https://chok.github.io/fougere/docs/concepts/philosophy)
-- [Entities and the four axes](https://chok.github.io/fougere/docs/schema/entities)
-- [The gradient](https://chok.github.io/fougere/docs/infra/gradient)
-- [Adopting it in an existing app](https://chok.github.io/fougere/docs/existing-app)
+- [Getting started](https://fougere.dev/docs/getting-started)
+- [Philosophy](https://fougere.dev/docs/concepts/philosophy)
+- [Entities and the four axes](https://fougere.dev/docs/schema/entities)
+- [The gradient](https://fougere.dev/docs/infra/gradient)
+- [Adopting it in an existing app](https://fougere.dev/docs/existing-app)
 
 [`demos/`](./demos) isolates one idea per project; `nuxt-blog` is the flagship.
 

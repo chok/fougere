@@ -15,7 +15,7 @@ single volume to mount when deploying.
 ## Static
 
 The site prerenders to static hosting — that is what `.github/workflows/pages.yml` does
-on every push to `main`, publishing to https://chok.github.io/fougere/.
+on every push to `main`, publishing to https://fougere.dev/.
 
 ```bash
 NITRO_PRESET=github_pages NUXT_APP_BASE_URL=/fougere/ pnpm generate

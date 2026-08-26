@@ -62,11 +62,13 @@ jobs:
       # already pinned every dependency.
       - name: generate
         working-directory: site
-        # The base path is the repo name — derived, so renaming the repo
-        # does not silently produce a site with broken asset URLs.
+        # The site is served at the apex of its own domain, so the base path is
+        # the root. It was the repo name while the site lived under
+        # chok.github.io/fougere/ — keeping that derivation once a custom domain
+        # is set points every asset at /fougere/_nuxt/, which 404s.
         env:
           NITRO_PRESET: github_pages
-          NUXT_APP_BASE_URL: /${{ github.event.repository.name }}/
+          NUXT_APP_BASE_URL: /
           SITE_URL: ${{ steps.pages.outputs.base_url }}
         run: ./node_modules/.bin/nuxt generate
 
