@@ -16,7 +16,8 @@
  * than declared: a saga asks its author for an `undo` per step because its steps are
  * arbitrary code. Here they are not.
  */
-import { FieldGroup, FieldSet, Unique, same, type Fields } from '@fougere/schema';
+import { FieldGroup, FieldSet, Unique, type Fields } from '@fougere/schema';
+import { dequal } from 'dequal';
 import type { Logger } from '../builtins/logger.js';
 
 /** One write that landed, and how to take it back. */
@@ -120,7 +121,7 @@ export function recording<T extends object>(orm: T, entity: string, fields: Fiel
       run: async () => {
         const current = await base.findById.call(this, id);
         if (!current) throw new Error(`${entity}#${id} is gone`);
-        const moved = touched.filter((field) => !same(current[field], wrote[field]));
+        const moved = touched.filter((field) => !dequal(current[field], wrote[field]));
         if (moved.length > 0) {
           throw new Error(`${entity}#${id} was changed by someone else since (${moved.join(', ')})`);
         }

@@ -12,7 +12,7 @@
  */
 import { sql, type Kysely } from 'kysely';
 import type { Change as ShapeChange, SetDiff } from '@fougere/schema';
-import { same } from '@fougere/schema';
+import { dequal } from 'dequal';
 import { compiler } from './ddl.js';
 import { type DialectName } from './dialect.js';
 import { toSnakeCase, toTableName, type TableDef } from './table.js';
@@ -225,12 +225,12 @@ function restated(entity: string, change: Extract<ShapeChange, { kind: 'restated
   const from = change.from ?? {};
   const to = change.to ?? {};
   if (from.primary !== to.primary) return refuse(`primary moved — a key is not something a step may take from live rows`);
-  if (!same(from.unique, to.unique)) {
+  if (!dequal(from.unique, to.unique)) {
     // The same reason `delta` cannot add one: CREATE UNIQUE INDEX fails on a table that
     // already holds duplicates, so it is a decision about the rows, not about the DDL.
     return refuse(`unique group moved — rows already stored may contradict it, so it is declared and applied by hand`);
   }
-  if (!same(from.relation, to.relation)) return refuse(`relation moved — a foreign key is a constraint, and nothing here alters one`);
+  if (!dequal(from.relation, to.relation)) return refuse(`relation moved — a foreign key is a constraint, and nothing here alters one`);
   // What is left is the index, and only its appearance: the additive pass proposes every
   // declared index at every boot, and nothing has ever dropped one.
   if (from.index && !to.index) return refuse(`index gone — nothing drops an index today, so the table keeps it`);

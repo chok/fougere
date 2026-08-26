@@ -1082,6 +1082,9 @@ importers:
       better-sqlite3:
         specifier: ^13.0.3
         version: 13.0.3
+      dequal:
+        specifier: ^2.0.3
+        version: 2.0.3
     devDependencies:
       '@types/better-sqlite3':
         specifier: ^7.6.13
@@ -1359,6 +1362,9 @@ importers:
       '@typescript/typescript6':
         specifier: ^6.0.2
         version: 6.0.2
+      dequal:
+        specifier: ^2.0.3
+        version: 2.0.3
     devDependencies:
       '@types/node':
         specifier: ^22.0.0

@@ -1,6 +1,6 @@
 import type { FougereConfig } from '../config-loader.js';
 import { setLogLevel, logLevel, envLevel } from '../builtins/logger.js';
-import { same } from '@fougere/schema';
+import { dequal } from 'dequal';
 
 export interface ConfigApplication {
   /** What this call changed in the running process. */
@@ -39,7 +39,7 @@ export function applyConfig(next: FougereConfig, inForce?: FougereConfig): Confi
 
   for (const key of new Set([...Object.keys(next), ...Object.keys(inForce ?? {})])) {
     if (key === 'logLevel' || !inForce) continue;
-    if (!same((next as Record<string, unknown>)[key], (inForce as Record<string, unknown>)[key])) {
+    if (!dequal((next as Record<string, unknown>)[key], (inForce as Record<string, unknown>)[key])) {
       pending.push(key);
     }
   }
