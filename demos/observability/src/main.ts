@@ -70,7 +70,7 @@ stopping.push(async () => { await shippingReceiver.close(); await shipping.dispo
 // This is the entire topology statement. Comment it out and the same CartHandler runs
 // against local Fronds, with one span instead of three.
 const shop = await createApp({
-  root: join(root, 'shop'),
+  scan: await scanProject(join(root, 'shop')),
   createContainer,
   remotes: {
     catalog: `http://127.0.0.1:${CATALOG}`,
