@@ -33,7 +33,7 @@ import { updated } from '../src/vocabulary/updated.js';
 class Target extends entity({ id: primary() }) {}
 
 /** Every word, paired with whether it should answer a create rule. */
-const words: ReadonlyArray<readonly [string, { lifecycle?: { create?: unknown } }, boolean]> = [
+const words: readonly (readonly [string, { lifecycle?: { create?: unknown } }, boolean])[] = [
   // no rule — the caller must supply a value
   ['text()', text(), false],
   ['text({min})', text({ min: 1 }), false],

@@ -27,7 +27,7 @@ class Post extends entity({
 
 /** The wire, stubbed: one JSON-RPC answer per call, and the calls recorded. */
 function wire(answer: (method: string, params: unknown) => unknown) {
-  const calls: Array<{ method: string; params: any }> = [];
+  const calls: { method: string; params: any }[] = [];
   globalThis.fetch = vi.fn(async (_url: any, init: any) => {
     const body = JSON.parse(init.body);
     calls.push({ method: body.method, params: body.params });

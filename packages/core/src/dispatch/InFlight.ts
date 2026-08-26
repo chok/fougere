@@ -4,7 +4,7 @@ import { FougereError, ErrorCode } from '../wire/errors.js';
 export class InFlight {
   private running = 0;
   private accepting = true;
-  private idle: Array<() => void> = [];
+  private idle: (() => void)[] = [];
 
   get count(): number {
     return this.running;

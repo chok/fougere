@@ -74,7 +74,7 @@ export default class FreezeCommand {
           this.ui.warn(`${entity}.${removed} treated as dropped — say so explicitly if that is right.`);
           return undefined;
         }
-        renamed[entity] = { ...(renamed[entity] ?? {}), [removed]: answer };
+        renamed[entity] = { ...renamed[entity], [removed]: answer };
       }
     }
     return renamed;

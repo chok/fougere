@@ -79,7 +79,7 @@ async function sourcesUnder(dir: string): Promise<string[]> {
  * and a specifier split across lines still is.
  */
 export async function crossFrondImports(
-  fronds: ReadonlyArray<Pick<FrondDescriptor, 'name' | 'source'>>,
+  fronds: readonly Pick<FrondDescriptor, 'name' | 'source'>[],
 ): Promise<CrossFrondImport[]> {
   const typescript = await loadTs();
   // `source.package` is the scoped name the scan already resolved — the remedy this rule

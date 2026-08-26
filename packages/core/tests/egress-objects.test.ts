@@ -32,12 +32,12 @@ describe('PresenterExecutor', () => {
   it('adds computed fields once per page and keeps list metadata', async () => {
     const input = Object.assign([{ name: 'Fern' }], { total: 1 });
     const presenter = {
-      label: (rows: Array<{ name: string }>, prefix: string) =>
+      label: (rows: { name: string }[], prefix: string) =>
         rows.map((row) => `${prefix}${row.name}`),
     };
 
     const output = await new PresenterExecutor(presenter, ['label'], 'product', 'list')
-      .present(input, { label: ['#'] }) as typeof input & Array<{ label: string }>;
+      .present(input, { label: ['#'] }) as typeof input & { label: string }[];
 
     expect(output[0]).toEqual({ name: 'Fern', label: '#Fern' });
     expect(output.total).toBe(1);

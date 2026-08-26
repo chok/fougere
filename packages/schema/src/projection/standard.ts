@@ -20,12 +20,12 @@ export declare namespace StandardSchemaV1 {
   }
 
   interface FailureResult {
-    readonly issues: ReadonlyArray<Issue>;
+    readonly issues: readonly Issue[];
   }
 
   interface Issue {
     readonly message: string;
-    readonly path?: ReadonlyArray<PropertyKey | PathSegment> | undefined;
+    readonly path?: readonly (PropertyKey | PathSegment)[] | undefined;
   }
 
   interface PathSegment {

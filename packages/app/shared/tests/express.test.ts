@@ -17,7 +17,7 @@ import { configureFougere, useFougereApp } from '../src/boot.js';
 class Post extends entity({ id: primary(), title: text() }) {}
 
 /** Boot once and wait for it — the middlewares are lazy, and a 5ms settle is not a boot. */
-async function bootWith(rows: Array<{ id: string; title: string }>) {
+async function bootWith(rows: { id: string; title: string }[]) {
   configureFougere({
     ormFactory: () =>
       ({

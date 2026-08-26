@@ -166,11 +166,11 @@ export function fougereAdapter(ormMap: OrmMap) {
  * after fetching the eq-filtered rows. Fine for auth volumes (orgs/sessions/accounts).
  */
 function applyClientSidePagination(
-  rows: Array<Record<string, unknown>>,
+  rows: Record<string, unknown>[],
   sortBy?: { field: string; direction: 'asc' | 'desc' },
   offset?: number,
   limit?: number,
-): Array<Record<string, unknown>> {
+): Record<string, unknown>[] {
   let result = rows;
   if (sortBy) {
     const { field, direction } = sortBy;

@@ -239,7 +239,7 @@ async function boot(): Promise<App> {
     // deployment gave one. Without a key it travels as a bare claim, which only a
     // receiver that trusts no root will take.
     const { sign } = await identityFromEnv();
-    remoteTransport = (url) => createHttpTransport(url, { ...(sign ? { sign } : {}) });
+    remoteTransport = (url) => createHttpTransport(url, (sign ? { sign } : {}));
   }
 
   const app = await createApp({

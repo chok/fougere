@@ -5,7 +5,7 @@ import { fougereAdapter } from '../src/adapter.js';
 /** In-memory ORM that satisfies what the adapter needs (EntityOrm + findBy/findAllBy). */
 function makeMemoryOrm(): EntityOrm & {
   findBy(c: Record<string, unknown>): Promise<Record<string, unknown> | undefined>;
-  findAllBy(c: Record<string, unknown>): Promise<Array<Record<string, unknown>>>;
+  findAllBy(c: Record<string, unknown>): Promise<Record<string, unknown>[]>;
 } {
   const store = new Map<string, Record<string, unknown>>();
   let seq = 0;

@@ -4,7 +4,7 @@ import { Boundaries, number, type Fields } from '@fougere/schema';
 import { registerRoutes, type RouteDefinition } from '../src/index.js';
 
 function fakeRouter() {
-  const registered: Array<{ method: HttpMethod; path: string; handler: Handler }> = [];
+  const registered: { method: HttpMethod; path: string; handler: Handler }[] = [];
   const router: HttpRouter = {
     use: vi.fn(),
     on(method: HttpMethod, path: string, handler: Handler) {

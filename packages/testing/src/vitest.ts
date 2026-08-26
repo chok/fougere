@@ -30,9 +30,7 @@ export function fougereTest(overrides: Record<string, unknown> = {}): Record<str
   }
 
   const base = {
-    resolve: {
-      ...(graphqlDir ? { alias: { graphql: graphqlDir }, dedupe: ['graphql'] } : {}),
-    },
+    resolve: (graphqlDir ? { alias: { graphql: graphqlDir }, dedupe: ['graphql'] } : {}),
     test: {
       // Both spellings of where a test lives: beside the frond it is about, and above
       // the fronds when it is about several of them.

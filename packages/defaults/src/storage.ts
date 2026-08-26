@@ -110,7 +110,7 @@ function partition(
   materialize: string[],
 ): unknown {
   const typed = app as unknown as {
-    fronds: Array<{ name: string; entities: Array<{ name: string }> }>;
+    fronds: { name: string; entities: { name: string }[] }[];
     auth?: unknown;
   };
   const fronds = typed.fronds

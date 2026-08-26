@@ -62,7 +62,7 @@ class OrderPageView extends Order.pick('id', 'status', 'total', 'createdAt').ext
 function buildOrderPage(
   order: { id: string; status: string; total: number; createdAt: Date; customerId: string },
   customer: { name: string },
-  lines: Array<{ id: string; productId: string; quantity: number; unitPrice: number }>,
+  lines: { id: string; productId: string; quantity: number; unitPrice: number }[],
 ) {
   return OrderPageView.from({
     id: order.id,

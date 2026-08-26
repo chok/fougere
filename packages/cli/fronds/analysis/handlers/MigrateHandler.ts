@@ -77,7 +77,7 @@ export default class MigrateHandler {
 }
 
 /** The versions read, oldest first and each named once however many fronds cut it. */
-function versionsOf(steps: ReadonlyArray<{ version: string }>): string[] {
+function versionsOf(steps: readonly { version: string }[]): string[] {
   return [...new Set(steps.map(({ version }) => version))].sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
 }
 
@@ -90,7 +90,7 @@ function onSource(step: SetDiff, source: string, sourceOf: (entity: string) => s
 }
 
 /** Every recorded step, oldest first — the chain composes, so it is replayed whole. */
-async function stepsOf(frondPath: string): Promise<Array<{ version: string; step: SetDiff }>> {
+async function stepsOf(frondPath: string): Promise<{ version: string; step: SetDiff }[]> {
   const chain = await chainOf(frondPath);
   // The first version has a shape and no step — there was nothing before it to move from.
   return chain.flatMap(({ name, step }) => (step ? [{ version: name, step }] : []));

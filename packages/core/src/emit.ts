@@ -80,7 +80,7 @@ export function factOfEmitKey(key: string): string | undefined {
  * `Fact<T>` parameter is a fact about one operation, and `computeBindingPlan` has already
  * written it into the plan (`app.listensTo()`).
  */
-export function factsAnnouncedBy(handlers: ReadonlyArray<{ deps: readonly string[] }>): string[] {
+export function factsAnnouncedBy(handlers: readonly { deps: readonly string[] }[]): string[] {
   return [...new Set(
     handlers
       .flatMap((handler) => handler.deps)

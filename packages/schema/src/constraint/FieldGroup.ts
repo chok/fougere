@@ -60,9 +60,9 @@ export abstract class FieldGroup {
   }
 
   static normalize<R extends FieldGroup>(
-    groups: ReadonlyArray<R | ReadonlyArray<string>> | undefined,
+    groups: readonly (R | readonly string[])[] | undefined,
     make: (members: readonly string[]) => R,
-  ): ReadonlyArray<R> | undefined {
+  ): readonly R[] | undefined {
     if (!groups) return undefined;
     return groups.map((group) =>
       group instanceof FieldGroup ? (group as R) : make(group),

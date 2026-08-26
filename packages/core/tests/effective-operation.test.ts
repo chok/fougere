@@ -125,7 +125,7 @@ describe('deterministic operation resolution', () => {
 
   const signature = (
     name: string,
-    params: Array<{ name: string; raw: string; typeName: string }> = [],
+    params: { name: string; raw: string; typeName: string }[] = [],
   ): OperationContract => ({
     signature: {
       name,

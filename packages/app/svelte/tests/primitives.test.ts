@@ -25,7 +25,7 @@ class Post extends entity({
 
 /** The wire, stubbed: one JSON-RPC answer per call, and the calls recorded. */
 function wire(answer: (method: string, params: unknown) => unknown) {
-  const calls: Array<{ method: string; params: any }> = [];
+  const calls: { method: string; params: any }[] = [];
   globalThis.fetch = vi.fn(async (_url: any, init: any) => {
     const body = JSON.parse(init.body);
     calls.push({ method: body.method, params: body.params });
@@ -49,7 +49,7 @@ const settle = () => new Promise((r) => setTimeout(r, 0));
  * not hypothetical: it happened here, and the symptom looked like a double fetch in
  * the framework. Disposal belongs in teardown, not after an assertion that can fail.
  */
-const mounted: Array<{ dispose(): void }> = [];
+const mounted: { dispose(): void }[] = [];
 const track = <T extends { dispose(): void }>(store: T): T => (mounted.push(store), store);
 
 beforeEach(() => {

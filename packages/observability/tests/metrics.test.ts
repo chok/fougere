@@ -108,7 +108,7 @@ describe('saturation and topology', () => {
     await app.resolve<Facade>('productHandler').list();
 
     const report = await run({ entity: 'rpc', op: 'topology' }, { params: {}, query: {}, body: undefined, state: {} }) as {
-      fronds: Array<{ frond: string; placement: string }>;
+      fronds: { frond: string; placement: string }[];
       edges: unknown[];
       active: number;
       since: number;
@@ -165,7 +165,7 @@ describe('what leaves as OTLP', () => {
     await app.resolve<Facade>('productHandler').list();
 
     const published = metricsPayload('catalog', measured.snapshot())
-      .resourceMetrics[0].scopeMetrics[0].metrics as Array<Record<string, any>>;
+      .resourceMetrics[0].scopeMetrics[0].metrics as Record<string, any>[];
 
     for (const metric of published) {
       const points = (metric.histogram ?? metric.gauge ?? metric.sum).dataPoints;

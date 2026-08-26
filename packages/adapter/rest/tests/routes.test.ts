@@ -84,7 +84,7 @@ function fakeApp(
       if (!facade) return undefined;
       return new Map(Object.keys(facade).map((name) => [
         name,
-        { kind: operationKinds[name], ...(handler?.operations.get(name) ?? {}) },
+        { kind: operationKinds[name], ...handler?.operations.get(name) },
       ]));
     },
   };

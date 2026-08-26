@@ -148,7 +148,7 @@ function sendResponse(res: any, result: ResponseResult): void {
  */
 export function createExpressRouter(app: ExpressLike): HttpRouter {
   const globalMiddlewares: Middleware[] = [];
-  const scopedMiddlewares: Array<{ path: string; mw: Middleware }> = [];
+  const scopedMiddlewares: { path: string; mw: Middleware }[] = [];
 
   // Run matching middlewares as an onion chain around the handler
   function runMiddlewares(ctx: RequestContext, handler: Handler): Promise<ResponseResult> {

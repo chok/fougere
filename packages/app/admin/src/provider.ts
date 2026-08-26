@@ -151,7 +151,7 @@ export function createDataProvider(options: ProviderOptions) {
      * not one of `Crud`'s five ops, so there is no door to ask for several rows by id.
      * Said here rather than hidden — the day `Crud` names that op this becomes one call.
      */
-    getMany: async (resource: string, params: { ids: Array<string | number> }) => {
+    getMany: async (resource: string, params: { ids: (string | number)[] }) => {
       const key = keyOf(resource);
       const rows = await Promise.all(
         params.ids.map((id) => call(resource, 'findById', { params: { id } })),
@@ -206,7 +206,7 @@ export function createDataProvider(options: ProviderOptions) {
      * asks for, and this is a browser. Making these atomic means naming an operation
      * in the frond that says so, which is the app's sentence to write, not ours.
      */
-    updateMany: async (resource: string, params: { ids: Array<string | number>; data: Row }) => {
+    updateMany: async (resource: string, params: { ids: (string | number)[]; data: Row }) => {
       const key = keyOf(resource);
       await Promise.all(params.ids.map((id) => call(resource, 'update', {
         params: { id }, body: deidentified(params.data, key),
@@ -214,7 +214,7 @@ export function createDataProvider(options: ProviderOptions) {
       return { data: params.ids };
     },
 
-    deleteMany: async (resource: string, params: { ids: Array<string | number> }) => {
+    deleteMany: async (resource: string, params: { ids: (string | number)[] }) => {
       await Promise.all(params.ids.map((id) => call(resource, 'delete', { params: { id } })));
       return { data: params.ids };
     },

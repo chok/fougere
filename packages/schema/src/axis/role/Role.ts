@@ -6,14 +6,14 @@ export interface RoleRules {
   primary?: boolean;
   index?: boolean;
   relation?: Relation;
-  rules?: ReadonlyArray<FieldGroup>;
+  rules?: readonly FieldGroup[];
 }
 
 export class Role implements RoleRules {
   readonly primary?: boolean;
   readonly index?: boolean;
   readonly relation?: Relation;
-  readonly rules?: ReadonlyArray<FieldGroup>;
+  readonly rules?: readonly FieldGroup[];
 
   private constructor(declared: RoleRules = {}) {
     this.primary = declared.primary;

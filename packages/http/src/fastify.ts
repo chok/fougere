@@ -75,7 +75,7 @@ function sendResponse(reply: any, result: ResponseResult): void {
  */
 export function createFastifyRouter(server: FastifyLike): HttpRouter {
   const globalMiddlewares: Middleware[] = [];
-  const scopedMiddlewares: Array<{ path: string; mw: Middleware }> = [];
+  const scopedMiddlewares: { path: string; mw: Middleware }[] = [];
 
   // Run matching middlewares as an onion chain around the handler
   function runMiddlewares(

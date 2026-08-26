@@ -51,7 +51,7 @@ interface BootOptions {
    * What this app takes on beyond its fronds. Appended after the framework's own, so a
    * host adds to the ascent — or replaces a member of it by declaring the same name.
    */
-  extensions?: ReadonlyArray<Extension | undefined>;
+  extensions?: readonly (Extension | undefined)[];
 }
 
 /**

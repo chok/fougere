@@ -13,7 +13,7 @@ export interface FreezeInspection {
   /** What the step contains — absent when there is nothing before to step from. */
   step?: SetDiff;
   /** Per entity, the pairs the calculation refuses to decide. Empty means it was written. */
-  ambiguous: Record<string, Array<{ removed: string; added: string }>>;
+  ambiguous: Record<string, { removed: string; added: string }[]>;
   /** Whether anything reached the disk — false while a question stands. */
   written: boolean;
 }
@@ -121,7 +121,7 @@ type Inspected = { previous?: { name: string }; step?: SetDiff };
  * `Bundle.diff` reads old to new, so the pair is turned around here and nowhere else.
  */
 function declaredRenames(
-  entities: ReadonlyArray<{ name: string; entityClass: unknown }>,
+  entities: readonly { name: string; entityClass: unknown }[],
 ): Record<string, Record<string, string>> {
   const out: Record<string, Record<string, string>> = {};
   for (const { name, entityClass } of entities) {
@@ -136,12 +136,12 @@ function declaredRenames(
 
 /** Every source of an answer, folded per entity — later sources win field by field. */
 function settled(
-  sources: ReadonlyArray<Record<string, Record<string, string>>>,
+  sources: readonly Record<string, Record<string, string>>[],
   answers: Record<string, Record<string, string>>,
 ): Record<string, Record<string, string>> {
   const out: Record<string, Record<string, string>> = {};
   for (const source of [...sources, answers]) {
-    for (const [entity, pairs] of Object.entries(source)) out[entity] = { ...(out[entity] ?? {}), ...pairs };
+    for (const [entity, pairs] of Object.entries(source)) out[entity] = { ...out[entity], ...pairs };
   }
   return out;
 }

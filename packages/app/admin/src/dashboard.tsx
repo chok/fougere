@@ -38,7 +38,7 @@ export interface FougereResourceOptions extends ResourceOptions {
   /** The frond that owns this door — the card groups by it, so the panel can too. */
   frond?: string;
   /** What the door answers, with each op's kind. `query` reads, `command` writes. */
-  operations?: ReadonlyArray<{ name: string; kind: 'query' | 'command' }>;
+  operations?: readonly { name: string; kind: 'query' | 'command' }[];
   /** How many columns the shape yields — a rough measure of an entity's width. */
   fieldCount?: number;
 }
@@ -52,7 +52,7 @@ export interface FougereDashboardResource {
   hasEdit: boolean;
   hasShow: boolean;
   total: number;
-  rows: Array<Record<string, unknown>>;
+  rows: Record<string, unknown>[];
   states: Record<string, number>;
 }
 
@@ -429,7 +429,7 @@ function StructureWidget(): ReactElement {
     };
   }, [definitions]);
 
-  const totals: Array<[string, string, number]> = [
+  const totals: [string, string, number][] = [
     ['structure.fronds', 'Fronds', structure.fronds.length],
     ['structure.doors', 'Doors', structure.doors],
     ['structure.queries', 'Queries', structure.queries],
@@ -554,7 +554,7 @@ export function FougereDashboard({ extensions = EMPTY_EXTENSIONS }: { extensions
             return [state, filtered.total ?? filtered.data.length] as const;
           } catch { return [state, 0] as const; }
         }))) : {};
-        return { name: definition.name, label: options?.label ?? definition.name, primary, facets, hasCreate: !!definition.hasCreate, hasEdit: !!definition.hasEdit, hasShow: !!definition.hasShow, total: page.total ?? page.data.length, rows: page.data as Array<Record<string, unknown>>, states };
+        return { name: definition.name, label: options?.label ?? definition.name, primary, facets, hasCreate: !!definition.hasCreate, hasEdit: !!definition.hasEdit, hasShow: !!definition.hasShow, total: page.total ?? page.data.length, rows: page.data as Record<string, unknown>[], states };
       } catch {
         return { name: definition.name, label: options?.label ?? definition.name, primary, facets, hasCreate: !!definition.hasCreate, hasEdit: !!definition.hasEdit, hasShow: !!definition.hasShow, total: 0, rows: [], states: {} };
       }

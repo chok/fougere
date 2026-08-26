@@ -48,12 +48,12 @@ export function observability(options: ObservabilityOptions = {}): Extension {
    * list meant the old app's `down` withdrew — and erased — the new app's sinks too, after
    * which every counter stayed frozen and nothing said so.
    */
-  const undoing = new WeakMap<App, Array<() => void | Promise<void>>>();
+  const undoing = new WeakMap<App, (() => void | Promise<void>)[]>();
 
   return {
     name: 'observability',
     up(app: App) {
-      const undo: Array<() => void | Promise<void>> = [];
+      const undo: (() => void | Promise<void>)[] = [];
       undoing.set(app, undo);
       // Order matters: `trace()` opens the span that every log line written inside the
       // call will carry. Installed the other way round, the lines leave uncorrelated.

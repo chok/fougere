@@ -66,7 +66,7 @@ const notLoaded = (entity: string) =>
  * check does not reach.
  */
 function assertOneOwnerPerKey(
-  fronds: Array<{ name: string; handlers: HandlerEntry[]; presenters: PresenterEntry[] }>,
+  fronds: { name: string; handlers: HandlerEntry[]; presenters: PresenterEntry[] }[],
   remotes: Record<string, string> | undefined,
 ): void {
   const owner = new Map<string, string>();

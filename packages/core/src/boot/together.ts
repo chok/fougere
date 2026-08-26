@@ -31,7 +31,7 @@ export interface FrameWorld {
 
 /** An entity the block writes through, and a provider rebuilt so that its writes count too. */
 interface Members {
-  entities: Array<{ name: string; schema: SchemaView }>;
+  entities: { name: string; schema: SchemaView }[];
   providers: ProviderEntry[];
 }
 

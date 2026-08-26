@@ -90,9 +90,9 @@ export interface CardOp {
  * every entry and refused whole cards over a health check.
  */
 export interface IdentityCard {
-  fronds: Array<{
+  fronds: {
     name: string;
-    doors: Array<{
+    doors: {
       name: string;
       ops: CardOp[];
       /**
@@ -102,7 +102,7 @@ export interface IdentityCard {
        * several shapes. A reader that needs the shape must say what it does without one.
        */
       schema?: SchemaDescriptor;
-    }>;
+    }[];
     /**
      * The facts this frond ANNOUNCES — one entry per `Emit<T>` its handlers inject.
      *
@@ -120,8 +120,8 @@ export interface IdentityCard {
      * requires a fact to be one) and worth saying rather than hiding: the name travels, the
      * shape does not, and a consumer can see exactly that.
      */
-    facts: Array<{ name: string; schema?: SchemaDescriptor }>;
-  }>;
+    facts: { name: string; schema?: SchemaDescriptor }[];
+  }[];
 }
 
 /** A frond this process knows about, and whether it runs here. */

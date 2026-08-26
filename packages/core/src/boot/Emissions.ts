@@ -214,7 +214,7 @@ export class Emissions {
    * It returns the promises rather than settling them, because the two callers want
    * opposite things and only one of them is wrong to wait.
    */
-  private handToListeners(fact: string, payload: unknown): Array<Listener & { done: Promise<unknown> }> {
+  private handToListeners(fact: string, payload: unknown): (Listener & { done: Promise<unknown> })[] {
     const walked = ambient.currentChain();
     if (walked.includes(fact)) {
       throw new Error(

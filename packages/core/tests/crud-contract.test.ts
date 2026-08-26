@@ -184,7 +184,7 @@ describe('the façade answers what it declares, and nothing JS lends it', () => 
   it('leaves an entity with no façade out of the identity card', async () => {
     const { app, run } = await boot(root);
     const card = await run({ entity: 'rpc', op: 'discover' }, call(undefined)) as {
-      fronds: Array<{ doors: Array<{ name: string; ops: string[] }> }>;
+      fronds: { doors: { name: string; ops: string[] }[] }[];
     };
     // Note has a handler, so it is hosted; every listed entity must be callable.
     const listed = card.fronds.flatMap((f) => f.doors);

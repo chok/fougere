@@ -174,7 +174,7 @@ describe('replaying a step changes nothing', () => {
 });
 
 describe('a chain composes before it is planned', () => {
-  const chain = (...pairs: Array<[string, string]>) => {
+  const chain = (...pairs: [string, string][]) => {
     let was = V1 as Fields;
     return pairs.map(([from, to]) => {
       const now = Object.fromEntries(Object.entries(was).map(([key, f]) => [key === from ? to : key, f])) as Fields;

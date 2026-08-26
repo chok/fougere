@@ -533,7 +533,7 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
     dir: string,
     read: (filePath: string) => Promise<T | null>,
   ): Promise<T[]> => {
-    const entries: Array<T | null> = await Promise.all((await files(join(frondPath, dir))).map(read));
+    const entries: (T | null)[] = await Promise.all((await files(join(frondPath, dir))).map(read));
     return entries.filter((entry): entry is T => entry !== null);
   };
 

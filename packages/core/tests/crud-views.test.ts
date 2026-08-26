@@ -44,7 +44,7 @@ describe('a view named for one op', () => {
   it('projects that op onto its view — the index ships cards', async () => {
     const { app, run } = await boot();
 
-    const rows = await run({ entity: 'note', op: 'list' }, call()) as Array<Record<string, unknown>>;
+    const rows = await run({ entity: 'note', op: 'list' }, call()) as Record<string, unknown>[];
 
     expect(Object.keys(rows[0]!).sort()).toEqual(['id', 'title']);
     await app.dispose();
@@ -86,7 +86,7 @@ describe('a computed field meets the same boundary', () => {
   it('stays out of an op that named its view — the author stated the list', async () => {
     const { app, run } = await boot();
 
-    const rows = await run({ entity: 'note', op: 'list' }, call()) as Array<Record<string, unknown>>;
+    const rows = await run({ entity: 'note', op: 'list' }, call()) as Record<string, unknown>[];
 
     expect(Object.keys(rows[0]!).sort()).toEqual(['id', 'title']);
     expect(rows[0]).not.toHaveProperty('excerpt');

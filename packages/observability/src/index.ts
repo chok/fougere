@@ -106,7 +106,7 @@ export function activeCalls(): number {
  * never fires and what it held is lost. `ctx.waitUntil(flushTelemetry())` is the whole
  * remedy — the platform's way of saying "this work outlives the response".
  */
-const flushes: Array<() => Promise<void>> = [];
+const flushes: (() => Promise<void>)[] = [];
 
 /**
  * Send what is buffered, now. Safe to call where there is nothing to send.

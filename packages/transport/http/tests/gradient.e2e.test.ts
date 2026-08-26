@@ -89,7 +89,7 @@ async function outcomeOf(run: () => Promise<unknown>): Promise<unknown> {
 }
 
 describe('gradient — the moved Frond behaves identically', () => {
-  const cases: Array<[string, string, InvocationContext]> = [
+  const cases: [string, string, InvocationContext][] = [
     ['list', 'list', inv()],
     ['findById (hit)', 'findById', inv({ params: { id: 'p1' } })],
     ['findById (miss)', 'findById', inv({ params: { id: 'ghost' } })],

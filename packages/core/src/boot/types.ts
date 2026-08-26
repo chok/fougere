@@ -85,7 +85,7 @@ export interface CreateAppOptions {
    * empty slot when nothing migrates: a host filling it later REPLACES that member in
    * place instead of adding one after the seeds.
    */
-  extensions?: ReadonlyArray<Extension | undefined>;
+  extensions?: readonly (Extension | undefined)[];
   /**
    * Released by `app.dispose()` AFTER the container, for a resource handed in rather
    * than built here — a storage connection is the one case today.

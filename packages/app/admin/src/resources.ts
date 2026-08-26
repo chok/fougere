@@ -73,7 +73,7 @@ export function actionsOf(operations: readonly AdminOperation[]): AdminOperation
 }
 
 /** Capabilities are a reading of the visible operations, never a second list to maintain. */
-export function capabilitiesOf(operations: ReadonlyArray<Pick<AdminOperation, 'name'>>): AdminResource['can'] {
+export function capabilitiesOf(operations: readonly Pick<AdminOperation, 'name'>[]): AdminResource['can'] {
   const serves = new Set(operations.map((op) => op.name));
   return {
     list: serves.has('list'),

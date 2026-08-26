@@ -27,7 +27,7 @@ describe('the field door', () => {
 
   it('judges every axis against its own vocabulary, and names the one that failed', () => {
     const shape = { type: 'string' } as const;
-    const refused: ReadonlyArray<readonly [object, RegExp]> = [
+    const refused: readonly (readonly [object, RegExp])[] = [
       [{ shape, lifecycle: 'nawak' }, /lifecycle: Expected an object/],
       [{ shape, lifecycle: { create: 'nawak' } }, /lifecycle\.create: Expected 'now', 'optional'/],
       [{ shape, lifecycle: { update: 'nawak' } }, /lifecycle\.update: Expected 'now' or 'forbidden'/],

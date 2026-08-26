@@ -133,7 +133,7 @@ export function fougere(options: FougereViteOptions = {}): Plugin {
           ...config.build.terserOptions,
           keep_classnames: true,
           mangle: {
-            ...(config.build.terserOptions?.mangle ?? {}),
+            ...config.build.terserOptions?.mangle,
             reserved: [...new Set([...(config.build.terserOptions?.mangle?.reserved ?? []), ...reserved])],
           },
         };

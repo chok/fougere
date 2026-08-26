@@ -148,7 +148,7 @@ async function outcomeOf(run: () => Promise<unknown>): Promise<unknown> {
 }
 
 describe('the protocol changes, the call does not', () => {
-  const cases: Array<[string, string, InvocationContext]> = [
+  const cases: [string, string, InvocationContext][] = [
     ['list', 'list', inv()],
     ['findById (hit)', 'findById', inv({ params: { id: 'p1' } })],
     ['findById (miss)', 'findById', inv({ params: { id: 'ghost' } })],
@@ -198,7 +198,7 @@ describe('asynchrony — what the socket makes visible and HTTP hid', () => {
     expect(second).toEqual(PRODUCTS[1]);
     expect(first).toEqual(PRODUCTS[0]);
     expect(failure).toMatchObject({ failed: { code: ErrorCode.CONFLICT } });
-    expect((card as { fronds: Array<{ name: string }> }).fronds.map((f) => f.name)).toEqual(['catalog']);
+    expect((card as { fronds: { name: string }[] }).fronds.map((f) => f.name)).toEqual(['catalog']);
   }, 15_000);
 
   it('a fire-and-forget command is REFUSED: the receiver has no notification', async () => {

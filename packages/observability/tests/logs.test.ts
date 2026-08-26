@@ -16,7 +16,7 @@ const fixturesDir = join(import.meta.dirname, 'fixtures');
 type Facade = Record<string, (invocation?: InvocationContext) => Promise<unknown>>;
 
 let app: App;
-const undo: Array<() => void> = [];
+const undo: (() => void)[] = [];
 
 beforeAll(async () => {
   app = await createApp({ scan: await scanProject(fixturesDir), createContainer, ormFactory: createOrmFactory() });
@@ -93,7 +93,7 @@ describe('a line carries the call it was written inside', () => {
     undo.push(onSpan((s) => spans.push(s)));
 
     const exporter = logs({ service: 'catalog' });
-    const sent: Array<{ traceId?: string }> = [];
+    const sent: { traceId?: string }[] = [];
     undo.push(onLog((r) => { exporter.sink(r); }));
     vi.spyOn(console, 'info').mockImplementation(() => {});
 
@@ -118,7 +118,7 @@ describe('a line carries the call it was written inside', () => {
 
   it('leaves a boot line with no trace rather than a forged one', () => {
     const exporter = logs({ service: 'catalog' });
-    const kept: Array<{ traceId: string | undefined }> = [];
+    const kept: { traceId: string | undefined }[] = [];
     undo.push(onLog((r) => {
       exporter.sink(r);
       kept.push({ traceId: currentSpan()?.traceId });
