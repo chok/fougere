@@ -20,7 +20,7 @@ export { Cases, type Case } from './judge/Cases.js';
 export { RowRefusal } from './judge/RowRefusal.js';
 export { type SchemaView, type Row, type PartialRow } from './SchemaView.js';
 export { type FougereHints, type Hints } from './Hints.js';
-export { same } from './same.js';
+export { same } from './utils/same.js';
 
 export { primary } from './vocabulary/primary.js';
 export { text } from './vocabulary/text.js';
@@ -46,7 +46,7 @@ export { json } from './vocabulary/json.js';
 
 export { applyCreate, applyUpdate } from './axis/lifecycle/apply.js';
 export { Visibility } from './projection/Visibility.js';
-export { registrationKeyOf, classNameOf } from './name.js';
+export { registrationKeyOf, classNameOf } from './utils/name.js';
 export { Card } from './card/Card.js';
 export { Bundle } from './card/Bundle.js';
 export type { Change, Diff, DiffOptions, SetDiff, SetDiffOptions, RenameCandidate, TypeSet } from './card/diff.js';

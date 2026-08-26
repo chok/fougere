@@ -7,7 +7,7 @@ import { type RoleRules } from './Role.js';
 import { FieldGroup } from '../../constraint/FieldGroup.js';
 import { Unique } from '../../constraint/Unique.js';
 import type { RoleDescriptor } from '../../card/Descriptor.js';
-import { registrationKeyOf } from '../../name.js';
+import { registrationKeyOf } from '../../utils/name.js';
 
 export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
   slot: 'role',

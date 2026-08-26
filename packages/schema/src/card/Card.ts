@@ -1,9 +1,9 @@
 import { EXTENSION_AXES, type Resolver } from '../axis/Axis.js';
-import { clean } from '../clean.js';
+import { clean } from '../utils/clean.js';
 import { Field, type Fields } from '../Field.js';
 import { isObject } from '../judge/ValueForm.js';
 import { RowJudge } from '../judge/RowJudge.js';
-import { same } from '../same.js';
+import { same } from '../utils/same.js';
 import { Schema, type SchemaConstructor } from '../Schema.js';
 import type { Row, SchemaView } from '../SchemaView.js';
 import { refuse } from './admission.js';

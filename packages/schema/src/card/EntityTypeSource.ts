@@ -1,4 +1,4 @@
-import { classNameOf } from '../name.js';
+import { classNameOf } from '../utils/name.js';
 import type { FieldDescriptor, SchemaDescriptor } from './Descriptor.js';
 
 function typeOf(field: FieldDescriptor): string {

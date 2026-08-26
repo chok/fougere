@@ -1,6 +1,6 @@
 import { Field } from '../Field.js';
 import { EXTENSION_AXES } from '../axis/Axis.js';
-import { same } from '../same.js';
+import { same } from '../utils/same.js';
 
 const MEMBER_SLOTS = [...EXTENSION_AXES.map((axis) => axis.slot), 'meta'] as const;
 

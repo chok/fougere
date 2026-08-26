@@ -1,6 +1,6 @@
 import type { Resolver } from '../axis/Axis.js';
 import type { EntityConstructor } from '../axis/role/Relation.js';
-import { registrationKeyOf } from '../name.js';
+import { registrationKeyOf } from '../utils/name.js';
 import type { SchemaView } from '../SchemaView.js';
 import { Card } from './Card.js';
 import type { SchemaBundle, SchemaDescriptor } from './Descriptor.js';
