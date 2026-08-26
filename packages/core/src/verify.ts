@@ -1,5 +1,5 @@
 import type { FrondDescriptor } from './scan/frond.js';
-import { registrationKeyOf } from '@fougere/schema';
+import { lowerFirst } from '@fougere/schema';
 import { repositoryKeyOf } from './prefab/repository.js';
 import { ormKeyOf } from './orm.js';
 import { presenterKeyOf } from './prefab/presenter.js';
@@ -153,7 +153,7 @@ export function verify(app: { fronds: readonly FrondDescriptor[] }): Violation[]
           // Same key the scan writes and the binding plan looks up — `toLowerCase()`
           // here missed a two-word type in BOTH directions: neither confirmed the
           // collector was local nor found it elsewhere, so the rule reported nothing.
-          const wanted = registrationKeyOf(param.type.name);
+          const wanted = lowerFirst(param.type.name);
           if (own.has(wanted)) continue;
           const elsewhere = collectorFronds.get(wanted);
           // No collector anywhere for that type may be an ordinary body parameter.

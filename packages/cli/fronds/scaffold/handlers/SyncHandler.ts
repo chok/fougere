@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { classNameOf, EntityTypeSource, FacadeTypeSource, type SchemaDescriptor } from '@fougere/schema';
+import { upperFirst, EntityTypeSource, FacadeTypeSource, type SchemaDescriptor } from '@fougere/schema';
 // The card's shape is declared once, in core, and imported here. A private copy of it
 // lived in this file and went stale the day an op stopped being a bare name: nothing
 // compared the copy to the original, so the drift cost nothing until someone read it.
@@ -26,7 +26,7 @@ export function entityClassName(name: string): string {
   const identifier = name
     .split('-')
     .filter(Boolean)
-    .map(classNameOf)
+    .map(upperFirst)
     .join('');
   if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(identifier)) {
     throw new Error(`Entity name '${name}' cannot be represented as a TypeScript identifier`);

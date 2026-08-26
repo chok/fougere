@@ -40,7 +40,8 @@
   },
   "dependencies": {
     "@cfworker/json-schema": "^4.1.1",
-    "@paralleldrive/cuid2": "^3.3.0"
+    "@paralleldrive/cuid2": "^3.3.0",
+    "dequal": "^2.0.3"
   },
   "devDependencies": {
     "@types/json-schema": "^7.0.15"

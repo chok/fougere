@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createLocalRunner, type App } from '@fougere/core';
 import { EMPTY_INVOCATION } from '@fougere/core/contract';
 import { serveRest, serveRpc, tableOf } from '@fougere/app';
-import { registrationKeyOf, type SchemaView } from '@fougere/schema';
+import { lowerFirst, type SchemaView } from '@fougere/schema';
 import { listQuery, findQuery, mutationFor, at } from './gql.js';
 import { sampleInput, type SampleOptions } from './sample.js';
 
@@ -73,7 +73,7 @@ export interface DoorContractCase {
  * matching the two means guessing which is which — a guess this file exists to avoid.
  */
 export function checkDoors(app: App, entity: SchemaView, options: DoorOptions = {}): void {
-  const name = registrationKeyOf(entity.name ?? '');
+  const name = lowerFirst(entity.name ?? '');
   const doors = doorsOf(app, entity, name, options.surface);
   const bodyOf = () => sampleInput(entity, options.given ?? {}, options);
 
@@ -165,7 +165,7 @@ export function checkDoorContract(
   cases: readonly DoorContractCase[],
   options: Pick<DoorOptions, 'surface'> = {},
 ): void {
-  const name = registrationKeyOf(entity.name ?? '');
+  const name = lowerFirst(entity.name ?? '');
   const doors = doorsOf(app, entity, name, options.surface);
   const names = ['local', 'rpc', 'rest', 'graphql'] as const;
 

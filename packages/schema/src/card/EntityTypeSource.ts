@@ -1,4 +1,4 @@
-import { classNameOf } from '../utils/name.js';
+import { upperFirst } from '../utils.js';
 import type { FieldDescriptor, SchemaDescriptor } from './Descriptor.js';
 
 function typeOf(field: FieldDescriptor): string {
@@ -71,7 +71,7 @@ export class EntityTypeSource {
   }
 
   render(options: EntityTypeSourceOptions = {}): string {
-    const name = identifierOf(options.name ?? classNameOf(this.descriptor.title ?? 'Schema'));
+    const name = identifierOf(options.name ?? upperFirst(this.descriptor.title ?? 'Schema'));
     const exported = options.exported === false ? '' : 'export ';
     const card = JSON.stringify(this.descriptor, null, 2)
       .split('\n')

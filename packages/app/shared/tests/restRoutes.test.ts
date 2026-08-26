@@ -22,7 +22,7 @@ const facade = {
   bySlug: () => {},
 };
 
-// The scan registers an entity under its lowercase-first name (`registrationKeyOf`,
+// The scan registers an entity under its lowercase-first name (`lowerFirst`,
 // scanner.ts:385) — which is what makes the served path `/blog/posts`, as documented.
 function appOf(options: { exposed?: boolean; overrides?: Record<string, { kind?: 'query' | 'command' }> } = {}) {
   return {

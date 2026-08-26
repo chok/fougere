@@ -22,7 +22,7 @@
  * ```
  */
 
-import { classNameOf, type EntityConstructor } from '@fougere/schema';
+import { upperFirst, type EntityConstructor } from '@fougere/schema';
 
 /**
  * The view a computed field emits — `OrderItemView` for one, `[OrderItemView]` for many.
@@ -59,5 +59,5 @@ export function getPresenterFields(ctor: Function): string[] {
 
 /** Container key of an entity's presenter — 'post' → 'PostPresenter'. */
 export function presenterKeyOf(entity: string): string {
-  return `${classNameOf(entity)}Presenter`;
+  return `${upperFirst(entity)}Presenter`;
 }

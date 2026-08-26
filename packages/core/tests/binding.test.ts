@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { computeBindingPlan, resolveArgs, type BindingPlan } from '../src/boot/binding.js';
-import { registrationKeyOf } from '@fougere/schema';
+import { lowerFirst } from '@fougere/schema';
 import type { ParsedParam } from '../src/scan/handler-parser.js';
 import type { InvocationContext } from '../src/wire/invocation.js';
 
@@ -64,11 +64,11 @@ describe('computeBindingPlan', () => {
     expect(plan[1].source).toEqual({ kind: 'collector', typeName: 'user' });
   });
 
-  // The set is keyed by `registrationKeyOf`, the way the scan spells it. Looking a
+  // The set is keyed by `lowerFirst`, the way the scan spells it. Looking a
   // parameter up with `toLowerCase()` agreed on one word and diverged on two, so
   // `AuthorUser` fell through to branch 4 and the parameter took the request body.
   it('draft(author: AuthorUser) with AuthorUserCollector → [collector], not [body]', () => {
-    const collectors = new Set([registrationKeyOf('AuthorUser')]);
+    const collectors = new Set([lowerFirst('AuthorUser')]);
     const plan = computeBindingPlan([param('author', 'AuthorUser')], collectors);
     expect(plan[0].source).toEqual({ kind: 'collector', typeName: 'authorUser' });
   });

@@ -1,4 +1,4 @@
-import { registrationKeyOf, type EntityConstructor } from '@fougere/schema';
+import { lowerFirst, type EntityConstructor } from '@fougere/schema';
 import type { FrondDescriptor, ProviderEntry } from '../scan/frond.js';
 import { targetOf } from '../prefab/prefab.js';
 import { ownedBy, repositoryKeyOf } from '../prefab/repository.js';
@@ -18,7 +18,7 @@ export function ownersOf(providers: readonly ProviderEntry[]): Map<string, strin
     const owned = ownedBy(provider.ctor);
     if (owned.length < 2) continue;
     for (const entity of owned) {
-      const name = registrationKeyOf((entity as { name: string }).name);
+      const name = lowerFirst((entity as { name: string }).name);
       const first = owners.get(name);
       if (first && first !== provider.ctor.name) {
         // Refused rather than settled, for the reason `ports:` refuses two implementations
@@ -41,9 +41,9 @@ export function ownersOf(providers: readonly ProviderEntry[]): Map<string, strin
  */
 function builtOn(ctor: unknown): string[] {
   const owned = ownedBy(ctor);
-  if (owned.length > 0) return owned.map((e) => registrationKeyOf((e as { name: string }).name));
+  if (owned.length > 0) return owned.map((e) => lowerFirst((e as { name: string }).name));
   const target = targetOf(ctor) as { name?: string } | undefined;
-  return target?.name ? [registrationKeyOf(target.name)] : [];
+  return target?.name ? [lowerFirst(target.name)] : [];
 }
 
 /**
@@ -132,7 +132,7 @@ export function refuseCrudOnOwned(frond: FrondDescriptor, owners: Map<string, st
 /** `'PostOrm'` → `'post'`, and nothing for a key that is not one. */
 function entityOfOrmKey(dep: string): string | undefined {
   if (!dep.endsWith('Orm') || dep === 'Orm') return undefined;
-  const entity = registrationKeyOf(dep.slice(0, -'Orm'.length));
+  const entity = lowerFirst(dep.slice(0, -'Orm'.length));
   return ormKeyOf(entity) === dep ? entity : undefined;
 }
 

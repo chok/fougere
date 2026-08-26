@@ -1,4 +1,4 @@
-import { classNameOf, type SchemaView } from '@fougere/schema';
+import { upperFirst, type SchemaView } from '@fougere/schema';
 
 /** Options for list queries — pagination, sorting, counting. */
 export interface ListOptions {
@@ -169,7 +169,7 @@ export type OrmFactory = (entity: SchemaView, name: string) => EntityOrm;
  * so a rename would have moved one and left the other resolving to nothing.
  */
 export function ormKeyOf(entity: string): string {
-  return `${classNameOf(entity)}Orm`;
+  return `${upperFirst(entity)}Orm`;
 }
 
 /**
@@ -228,8 +228,8 @@ export interface Together<E extends readonly unknown[], P extends readonly unkno
  * between runs.
  */
 export function togetherKeyOf(entities: readonly string[], providers: readonly string[] = []): string {
-  const named = entities.map(classNameOf).join(SEPARATOR);
-  return `${named}${providers.length ? KINDS + providers.map(classNameOf).join(SEPARATOR) : ''}${FRAME}`;
+  const named = entities.map(upperFirst).join(SEPARATOR);
+  return `${named}${providers.length ? KINDS + providers.map(upperFirst).join(SEPARATOR) : ''}${FRAME}`;
 }
 
 const FRAME = 'Together';

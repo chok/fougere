@@ -1,4 +1,4 @@
-import { classNameOf, FieldSet, Role } from '@fougere/schema';
+import { upperFirst, FieldSet, Role } from '@fougere/schema';
 /**
  * Auto-register GraphQL types and operations from a fougere App.
  *
@@ -304,7 +304,7 @@ export function registerAll(
       const handler = (surfaceName
         ? frond.handlers.find((h) => h.address === entity.name && h.surface === surfaceName)
         : undefined) ?? handlerMap.get(entity.name);
-      const typeName = classNameOf(entity.name);
+      const typeName = upperFirst(entity.name);
 
       const presenterMeta = presenterMap.get(entity.name);
       let presenter: Record<string, Function> | undefined;
@@ -324,7 +324,7 @@ export function registerAll(
         presenterFields: presenterMeta?.fields,
         presenterFieldMeta: presenterMeta?.fieldMeta,
         presenterViews: presenterMeta?.views as any,
-        viewType: (view, fieldName) => viewTypeOf(builder, view, `${typeName}${classNameOf(fieldName)}`),
+        viewType: (view, fieldName) => viewTypeOf(builder, view, `${typeName}${upperFirst(fieldName)}`),
       });
 
       // Track for relation wiring. The presenter's computed field names travel too: pass 2
@@ -357,7 +357,7 @@ export function registerAll(
         viewType: (view, opName) =>
           view === outputSchema || view === entity.entityClass
             ? type
-            : viewTypeOf(builder, view, `${typeName}${classNameOf(opName)}`),
+            : viewTypeOf(builder, view, `${typeName}${upperFirst(opName)}`),
       });
     }
   }

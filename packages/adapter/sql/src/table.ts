@@ -10,7 +10,7 @@ import { Lifecycle, Role } from '@fougere/schema';
  * `ColumnDef.hint` is the one member the axes did not produce. It carries a
  * PREFERENCE, so dropping it leaves every column describable.
  */
-import { Anatomy, FieldGroup, Unique, fieldsOf, registrationKeyOf, schemaOf, type Field, type SchemaView, type SchemaOrCard } from '@fougere/schema';
+import { Anatomy, FieldGroup, Unique, fieldsOf, lowerFirst, schemaOf, type Field, type SchemaView, type SchemaOrCard } from '@fougere/schema';
 import { boundsOf, type ShapeBounds } from './check.js';
 import type { SqlFieldHint } from './hints.js';
 
@@ -138,7 +138,7 @@ function referenceFor(
     // `ref(Subscription)` while the table was in the very batch being built. Everything
     // else that resolves a relation target already resolves it by name, for the same
     // reason — a target rebuilt from a card is a `{ name }` stand-in.
-    const key = registrationKeyOf(target.name ?? '');
+    const key = lowerFirst(target.name ?? '');
     if (hosted.elsewhere.has(key)) return undefined;
     if (!hosted.here.has(key)) {
       throw new Error(
@@ -147,7 +147,7 @@ function referenceFor(
       );
     }
   }
-  const table = mapped ?? resolve(registrationKeyOf(target.name ?? ''));
+  const table = mapped ?? resolve(lowerFirst(target.name ?? ''));
   const column = primaryColumnOf(target);
   return relation.onDelete ? { table, column, onDelete: relation.onDelete } : { table, column };
 }
@@ -346,12 +346,12 @@ function refuseUndated(name: string, source: SchemaOrCard): void {
 }
 
 function collectEntities(app: AppLike): EntityEntry[] {
-  const stored = new Set((app.materialize ?? []).map((name) => registrationKeyOf(name)));
+  const stored = new Set((app.materialize ?? []).map((name) => lowerFirst(name)));
   const entries: EntityEntry[] = [];
   for (const frond of app.fronds) {
     for (const entry of frond.entities) {
       if (isDerivation(entry.entityClass)) {
-        if (!stored.has(registrationKeyOf(entry.name))) continue;
+        if (!stored.has(lowerFirst(entry.name))) continue;
         refuseUndated(entry.name, entry.entityClass);
       }
       entries.push(entry);
@@ -373,7 +373,7 @@ export function toTables(app: AppLike, resolve: (name: string) => string): Table
   const entries = collectEntities(app);
   const tableNameOf = new Map<SchemaOrCard, string>(entries.map((entry) => [entry.entityClass, resolve(entry.name)]));
   const hosted = app.elsewhere
-    ? { here: new Set(entries.map((entry) => registrationKeyOf(entry.name))), elsewhere: new Set(app.elsewhere.map(registrationKeyOf)) }
+    ? { here: new Set(entries.map((entry) => lowerFirst(entry.name))), elsewhere: new Set(app.elsewhere.map(lowerFirst)) }
     : undefined;
   return entries.map((entry) => toTable(resolve(entry.name), entry.entityClass, { resolve, tableNameOf, hosted }));
 }

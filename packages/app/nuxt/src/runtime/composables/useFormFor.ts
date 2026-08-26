@@ -9,7 +9,7 @@
  * the same `{ path, message }` shape whoever judged.
  */
 import { reactive, computed } from 'vue';
-import { registrationKeyOf, validationErrorsOf } from '@fougere/core/contract';
+import { lowerFirst, validationErrorsOf } from '@fougere/core/contract';
 import { useCommand } from './useFougereData.js';
 import { formFieldsOf, payloadOf, errorsByField, type FormEntity, type FormField } from '@fougere/app/client';
 
@@ -23,7 +23,7 @@ export interface FormOptions {
 }
 
 export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, options: FormOptions = {}) {
-  const entityKey = registrationKeyOf(entity.name);
+  const entityKey = lowerFirst(entity.name);
   const fields: FormField[] = formFieldsOf(entity, entityKey);
 
   // `initial` wins over the declared default: editing a row shows the row, including a

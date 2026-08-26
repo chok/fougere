@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createLocalRunner, validationErrorsOf, type App } from '@fougere/core';
 import { EMPTY_INVOCATION } from '@fougere/core/contract';
-import { registrationKeyOf, Visibility, type SchemaView, type ValidationError } from '@fougere/schema';
+import { lowerFirst, Visibility, type SchemaView, type ValidationError } from '@fougere/schema';
 import { Cases } from '@fougere/schema';
 import { derivedCases } from './derive.js';
 import { sampleInput, replaySeed, type SampleOptions } from './sample.js';
@@ -31,7 +31,7 @@ export async function verdictOf(call: () => Promise<unknown>): Promise<Verdict> 
 }
 
 function opsFor(entity: SchemaView): { create: string; update: string; name: string } {
-  const name = registrationKeyOf(entity.name ?? '');
+  const name = lowerFirst(entity.name ?? '');
   return { name, create: 'create', update: 'update' };
 }
 

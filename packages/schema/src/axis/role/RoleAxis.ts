@@ -7,7 +7,7 @@ import { type RoleRules } from './Role.js';
 import { FieldGroup } from '../../constraint/FieldGroup.js';
 import { Unique } from '../../constraint/Unique.js';
 import type { RoleDescriptor } from '../../card/Descriptor.js';
-import { registrationKeyOf } from '../../utils/name.js';
+import { lowerFirst } from '../../utils.js';
 
 export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
   slot: 'role',
@@ -52,7 +52,7 @@ export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
     if (role.relation) {
       const target = role.relation.to() as { name?: string };
       out.relation = {
-        to: registrationKeyOf(target.name ?? ''),
+        to: lowerFirst(target.name ?? ''),
         kind: role.relation.kind,
         ...(role.relation.onDelete ? { onDelete: role.relation.onDelete } : {}),
       };

@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { Bundle, registrationKeyOf, type SchemaBundle, type SchemaView, type SetDiff } from '@fougere/schema';
+import { Bundle, lowerFirst, type SchemaBundle, type SchemaView, type SetDiff } from '@fougere/schema';
 import ProjectScan from '../services/ProjectScan.js';
 import { VERSIONS, chainOf } from '../versions.js';
 import type Freeze from '../entities/Freeze.js';
@@ -128,7 +128,7 @@ function declaredRenames(
     const previous = (entityClass as SchemaView).previous;
     // Keyed as `Bundle.fromSchemas` keys `$defs`, which is what `Bundle.diff` reads. Spelling the
     // convention a second way here is the defect this repo has already recorded twice.
-    const key = registrationKeyOf(name);
+    const key = lowerFirst(name);
     if (previous) out[key] = Object.fromEntries(Object.entries(previous).map(([now, was]) => [was, now]));
   }
   return out;

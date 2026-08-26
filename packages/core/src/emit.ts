@@ -19,7 +19,7 @@
  * day at-least-once is wanted, a real channel goes UNDER this, in the transport — the
  * dispatch line becomes a publish and a consumer calls the same door on the far side.
  */
-import { registrationKeyOf } from '@fougere/schema';
+import { lowerFirst } from '@fougere/schema';
 
 /**
  * What an emitter injects. Resolved by type, like `EntityOrm<Post>` and `Facade<T>`.
@@ -57,7 +57,7 @@ export type Fact<T> = T;
  * pair that is split is the pair that drifts.
  */
 export function emitKeyOf(fact: string): string {
-  return `${registrationKeyOf(fact)}Emit`;
+  return `${lowerFirst(fact)}Emit`;
 }
 
 const SUFFIX = 'Emit';

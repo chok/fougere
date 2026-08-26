@@ -8,7 +8,7 @@
  * one thing a gradient must never leave to assumption.
  */
 import { ambient } from '#ambient';
-import { classNameOf, registrationKeyOf, type SchemaView } from '@fougere/schema';
+import { upperFirst, lowerFirst, type SchemaView } from '@fougere/schema';
 import type { Container } from '@fougere/container';
 import { membersOfTogetherKey, ormKeyOf, type EntityOrm, type OrmFactory } from '../orm.js';
 import type { Logger } from '../builtins/logger.js';
@@ -45,7 +45,7 @@ interface Members {
  */
 function resolve(names: { entities: string[]; providers: string[] }, declared: readonly ProviderEntry[], world: FrameWorld): Members {
   const entities = names.entities.map((member) => {
-    const name = registrationKeyOf(member);
+    const name = lowerFirst(member);
     const schema = world.entityByName.get(name);
     if (!schema) {
       throw new Error(
@@ -101,12 +101,12 @@ function refuseUncoveredWrites(members: Members, key: string): void {
   for (const provider of members.providers) {
     for (const dep of provider.deps) {
       if (!dep.endsWith('Orm')) continue;
-      const entity = registrationKeyOf(dep.slice(0, -'Orm'.length));
+      const entity = lowerFirst(dep.slice(0, -'Orm'.length));
       if (covered.has(entity)) continue;
       throw new Error(
         `Together<[…]> (${key}): ${provider.ctor.name} writes ${entity}, which is not in the ` +
         `frame's entity list — its writes would escape the unwind. Add it: ` +
-        `Together<[…, ${classNameOf(entity)}], [… ${provider.ctor.name} …]>.`,
+        `Together<[…, ${upperFirst(entity)}], [… ${provider.ctor.name} …]>.`,
       );
     }
   }

@@ -4,7 +4,7 @@ import { Lifecycle } from '@fougere/schema';
  * from the entity's field axes. No Vue, no Nuxt: testable headless,
  * usable by any renderer (the page owns the widgets).
  */
-import { Anatomy, registrationKeyOf, Role, Visibility } from '@fougere/schema';
+import { Anatomy, lowerFirst, Role, Visibility } from '@fougere/schema';
 import type { Field, SchemaView, ValidationError, ValidationResult } from '@fougere/schema';
 
 /**
@@ -210,7 +210,7 @@ export function tableColumnsOf(entity: FormEntity, entityKey: string): TableColu
         name,
         render: renderOf(field),
         ...labelOf(name, entityKey),
-        ...(target ? { to: registrationKeyOf(target.name) } : {}),
+        ...(target ? { to: lowerFirst(target.name) } : {}),
       };
     });
 }

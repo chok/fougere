@@ -1,4 +1,4 @@
-import { classNameOf, Role } from '@fougere/schema';
+import { upperFirst, Role } from '@fougere/schema';
 /**
  * @fougere/adapter-graphql — Pothos types derived from Fougere entities
  */
@@ -333,7 +333,7 @@ function enumTypeFor(
 
 /** `Post` + `status` → `PostStatus`. Undefined when the schema has no name to build on. */
 function enumNameFor(owner: string | undefined, fieldName: string): string | undefined {
-  return owner ? `${owner}${classNameOf(fieldName)}` : undefined;
+  return owner ? `${owner}${upperFirst(fieldName)}` : undefined;
 }
 
 function fieldToInput(
@@ -661,7 +661,7 @@ export function registerInput(builder: InstanceType<typeof SchemaBuilder>, confi
       for (const [fieldName, field] of Object.entries(fields)) {
         result[fieldName] = fieldToInput(
           t, field, patch,
-          (shape, suffix) => nestedInputType(builder, shape, `${config.name}${classNameOf(fieldName)}${suffix}`),
+          (shape, suffix) => nestedInputType(builder, shape, `${config.name}${upperFirst(fieldName)}${suffix}`),
           (values) => {
             const name = enumNameFor(enumOwner, fieldName);
             return name ? enumTypeFor(builder, name, values) : undefined;
@@ -805,7 +805,7 @@ function buildArgsFromSignature(
     // Only strip non-client fields for create/update — other ops may legitimately use them (e.g. publish(id))
     const isMutation = opName === 'create' || opName === 'update';
     const opInputFields = isMutation ? Visibility.of(meta.input.getFields()).input : meta.input.getFields();
-    const inputName = `${classNameOf(opName)}${entityName}Input`;
+    const inputName = `${upperFirst(opName)}${entityName}Input`;
 
     // `undefined` when the view asks for nothing, and `argsDef` already guards on it —
     // the op then takes no input, which is the truth.

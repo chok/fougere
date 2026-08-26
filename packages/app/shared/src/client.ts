@@ -16,7 +16,7 @@
 import {
   FougereError,
   ErrorCode,
-  registrationKeyOf,
+  lowerFirst,
   type InvocationContext,
   type FrondCall,
 } from '@fougere/core/contract';
@@ -37,7 +37,7 @@ let nextId = 1;
 
 /** The registration key an entity class designates. */
 export function entityKeyOf(entity: EntityClass): string {
-  return registrationKeyOf(entity.name);
+  return lowerFirst(entity.name);
 }
 
 export function callOf(entity: EntityClass, op: string): FrondCall {

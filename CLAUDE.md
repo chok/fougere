@@ -296,7 +296,7 @@ belief, which costs a sentence, not a paragraph.
   rewritten by hand when the shape moves; **a log cannot**, which is why this bites event
   sourcing first.
 - **`ProviderEntry.name` is a documented lie.** Its comment says *"Registration key"* and
-  `toProvider` fills it with `registrationKeyOf(ctor.name)` — camelCase — while
+  `toProvider` fills it with `lowerFirst(ctor.name)` — camelCase — while
   `boot/bootstrap.ts` and `verify.ts` both register and read `ctor.name`, PascalCase. So the
   field named "registration key" is the registration key nowhere. It IS read, as a
   scan-level identifier under a name describing something else. A `/degraissage` pass, not a

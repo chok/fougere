@@ -1,6 +1,6 @@
 import type { Resolver } from '../axis/Axis.js';
 import type { EntityConstructor } from '../axis/role/Relation.js';
-import { registrationKeyOf } from '../utils/name.js';
+import { lowerFirst } from '../utils.js';
 import type { SchemaView } from '../SchemaView.js';
 import { Card } from './Card.js';
 import type { SchemaBundle, SchemaDescriptor } from './Descriptor.js';
@@ -23,7 +23,7 @@ export class Bundle {
       : Object.entries(schemas).map(([name, schema]) => ({ name, schema }));
 
     for (const entry of entries) {
-      const key = registrationKeyOf(entry.name);
+      const key = lowerFirst(entry.name);
       const previous = claimedBy.get(key);
       if (previous !== undefined) {
         throw new Error(

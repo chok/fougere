@@ -10,7 +10,7 @@
  */
 import type { App } from '@fougere/core';
 import { Fronds, type FrondDescriptor } from '@fougere/core';
-import { registrationKeyOf } from '@fougere/core/contract';
+import { lowerFirst } from '@fougere/core/contract';
 import { migrate, type DialectName, type Setup } from '@fougere/adapter-sql';
 import { setupSqlite } from '@fougere/adapter-sql/sqlite';
 
@@ -197,7 +197,7 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
   for (const [name, placement] of Object.entries(sources ?? {})) {
     engines.set(name, placement.setup);
     for (const entity of placement.entities) {
-      const key = registrationKeyOf(entity);
+      const key = lowerFirst(entity);
       const claimed = home.get(key);
       if (claimed) {
         throw new Error(
@@ -212,10 +212,10 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
   // The default source answers to the name the config gave it, so a refusal naming two
   // sources names things the author can find in their own file.
   const DEFAULT = 'db';
-  const sourceOf = (entityName: string) => home.get(registrationKeyOf(entityName)) ?? DEFAULT;
+  const sourceOf = (entityName: string) => home.get(lowerFirst(entityName)) ?? DEFAULT;
   const engineOf = (source: string) => (source === DEFAULT ? base : engines.get(source));
   const engineFor = (entityName: string) => {
-    const source = home.get(registrationKeyOf(entityName));
+    const source = home.get(lowerFirst(entityName));
     return (source && engines.get(source)) || base;
   };
 
@@ -236,9 +236,9 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
     // One pass per source, each seeing only its own tables — which is what makes a
     // cross-source `ref()` a miss rather than a constraint against a stranger.
     migrate: async (app) => {
-      await migrate(partition(app, (name) => !home.has(registrationKeyOf(name)), true, named) as never, base.db);
+      await migrate(partition(app, (name) => !home.has(lowerFirst(name)), true, named) as never, base.db);
       for (const [name, engine] of engines) {
-        await migrate(partition(app, (e) => home.get(registrationKeyOf(e)) === name, false, named) as never, engine.db);
+        await migrate(partition(app, (e) => home.get(lowerFirst(e)) === name, false, named) as never, engine.db);
       }
     },
     // Every engine, the default one last: a named source may hold what the default

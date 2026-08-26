@@ -1,6 +1,6 @@
 import { Field } from '../Field.js';
 import { EXTENSION_AXES } from '../axis/Axis.js';
-import { same } from '../utils/same.js';
+import { dequal } from 'dequal';
 
 const MEMBER_SLOTS = [...EXTENSION_AXES.map((axis) => axis.slot), 'meta'] as const;
 
@@ -27,7 +27,7 @@ function merge(name: string, field: Field, stated: Partial<Field>): Partial<Fiel
     }
     for (const [member, value] of Object.entries(members)) {
       const previous = held?.[member];
-      if (previous === undefined || same(previous, value)) continue;
+      if (previous === undefined || dequal(previous, value)) continue;
       throw new Error(
         `vocabulary: \`${name}\` states ${slot}.${member} = ${JSON.stringify(value)}, but the ` +
           `field already states ${JSON.stringify(previous)}. Apply one or the other, not both.`,

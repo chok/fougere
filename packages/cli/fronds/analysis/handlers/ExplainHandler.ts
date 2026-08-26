@@ -5,7 +5,7 @@ import {
 } from '@fougere/core';
 import { relative } from 'node:path';
 import ProjectScan from '../services/ProjectScan.js';
-import { ANONYMOUS_SCHEMA_NAME, registrationKeyOf, type SchemaView } from '@fougere/schema';
+import { ANONYMOUS_SCHEMA_NAME, lowerFirst, type SchemaView } from '@fougere/schema';
 
 type Cardinality = NonNullable<OperationContract['cardinality']>;
 type Binding = EffectiveOperation['binding'][number];
@@ -185,7 +185,7 @@ function matches(operation: EffectiveOperation, selector: Selector): boolean {
 
 function addressOf(value: string): string {
   const base = value.endsWith('Handler') ? value.slice(0, -'Handler'.length) : value;
-  return registrationKeyOf(base);
+  return lowerFirst(base);
 }
 
 function inputTypeOf(operation: EffectiveOperation): string | null {

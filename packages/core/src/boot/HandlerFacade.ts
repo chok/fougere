@@ -1,4 +1,4 @@
-import { registrationKeyOf, type Fields } from '@fougere/schema';
+import { lowerFirst, type Fields } from '@fougere/schema';
 import type { Container } from '@fougere/container';
 import type { AppMiddleware } from '../wire/middleware.js';
 import type { CollectorResolver } from './binding.js';
@@ -113,7 +113,7 @@ export class HandlerFacade {
   /** Storage follows the Crud subject, which may differ from the door address. */
   private subjectOf(handler: HandlerEntry): string {
     const target = targetOf(handler.ctor);
-    return target?.name ? registrationKeyOf(target.name) : handler.address;
+    return target?.name ? lowerFirst(target.name) : handler.address;
   }
 
   private inheritsCrud(handler: HandlerEntry): boolean {

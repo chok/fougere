@@ -21,7 +21,7 @@
  * ```
  */
 
-import { classNameOf } from '@fougere/schema';
+import { upperFirst } from '@fougere/schema';
 
 export function Collector<T extends abstract new (...args: any[]) => any>(target: T) {
   class CollectorBase {
@@ -32,5 +32,5 @@ export function Collector<T extends abstract new (...args: any[]) => any>(target
 
 /** Container key of a collector — 'user' → 'UserCollector', 'ability' → 'AbilityCollector'. */
 export function collectorKeyOf(type: string): string {
-  return `${classNameOf(type)}Collector`;
+  return `${upperFirst(type)}Collector`;
 }

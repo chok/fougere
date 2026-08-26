@@ -5,7 +5,7 @@
  * boot, check, explain and protocol projections consume. It is deliberately pure: no
  * container, filesystem, migration or handler construction is involved.
  */
-import { registrationKeyOf, type SchemaView } from '@fougere/schema';
+import { lowerFirst, type SchemaView } from '@fougere/schema';
 import type { BindingPlan } from './boot/binding.js';
 import { targetOf } from './prefab/prefab.js';
 import type {
@@ -457,7 +457,7 @@ function validateProvenance(
     }
     if (source.kind !== 'body' || explicitBinding || ambiguousInput) continue;
 
-    const typeName = registrationKeyOf(contract.signature?.params[parameter.position]?.type.name ?? '');
+    const typeName = lowerFirst(contract.signature?.params[parameter.position]?.type.name ?? '');
     const elsewhere = fronds.flatMap((candidate) => candidate === frond
       ? []
       : candidate.collectors.filter((collector) => collector.typeName === typeName));
@@ -558,7 +558,7 @@ function effectiveOutput(
   if (handlerWide) return { schema: handlerWide, closed: false };
 
   const target = targetOf(handler.ctor) as { name?: string } | undefined;
-  const address = target?.name ? registrationKeyOf(target.name) : handler.address;
+  const address = target?.name ? lowerFirst(target.name) : handler.address;
   const entity = frond.entities.find((candidate) => candidate.name === address);
   return { ...(entity ? { schema: entity.entityClass } : {}), closed: false };
 }

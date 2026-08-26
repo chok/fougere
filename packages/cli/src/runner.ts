@@ -9,7 +9,7 @@
  */
 import type { App } from '@fougere/core';
 import { createAppRunner } from '@fougere/core';
-import { registrationKeyOf } from '@fougere/core/contract';
+import { lowerFirst } from '@fougere/core/contract';
 import { defineCommand, runMain } from 'citty';
 import { ui } from './ui.js';
 import { entityToArgs } from './bridge.js';
@@ -116,7 +116,7 @@ export async function run(app: App): Promise<void> {
             } else {
               // Ride the call contract — the same envelope every consumer uses.
               await createAppRunner(app)(
-                { entity: registrationKeyOf(entity.name), op: 'execute' },
+                { entity: lowerFirst(entity.name), op: 'execute' },
                 { params: {}, query: {}, body: input, state: {} },
               );
             }

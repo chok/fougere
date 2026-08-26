@@ -4,7 +4,7 @@ import { createContainer } from '@fougere/container';
 import { resolveStorage, type DbConfig } from '@fougere/defaults';
 import { installStubs, type Port, type Stub } from './stub.js';
 import { scopeOfRun } from './scope.js';
-import { registrationKeyOf } from '@fougere/schema';
+import { lowerFirst } from '@fougere/schema';
 
 export interface TestAppOptions {
   /**
@@ -98,8 +98,8 @@ export async function testApp(options: TestAppOptions = {}): Promise<TestApp> {
       // A fact travels under its REGISTRATION key — `postPublished`, not `PostPublished`
       // — the same lowering every entity gets. Both spellings are accepted here and
       // lowered before comparing, so a caller may hand in the class or the name.
-      const wanted = registrationKeyOf(typeof fact === 'string' ? fact : fact.name);
-      return heard.filter((one) => registrationKeyOf(one.fact) === wanted).map((one) => one.payload);
+      const wanted = lowerFirst(typeof fact === 'string' ? fact : fact.name);
+      return heard.filter((one) => lowerFirst(one.fact) === wanted).map((one) => one.payload);
     },
     stub<T>(port: abstract new (...args: never[]) => T): Stub<T> {
       const found = doubles.get(port as Port);

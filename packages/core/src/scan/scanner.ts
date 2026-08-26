@@ -20,7 +20,7 @@ import { getPresenterFields } from '../prefab/presenter.js';
 import { ormKeyOf, togetherKeyOf } from '../orm.js';
 import { targetOf, viewsOf, outputOf } from '../prefab/prefab.js';
 import { ownedBy, repositoryKeyOf } from '../prefab/repository.js';
-import { registrationKeyOf } from '@fougere/schema';
+import { lowerFirst } from '@fougere/schema';
 import { Fronds } from './Fronds.js';
 import { getModuleLoader } from '../loader.js';
 import {
@@ -123,7 +123,7 @@ function findWorkspaceRoot(from: string): string {
  */
 function toAddress(className: string): string {
   const base = className.endsWith('Handler') ? className.slice(0, -7) : className;
-  return registrationKeyOf(base);
+  return lowerFirst(base);
 }
 
 // Scan
@@ -148,7 +148,7 @@ function depKeyOf(type: ParsedType): string {
   // injected), but the door built in front of it. Same key whether that door is the local
   // façade or a doublure, which is what makes the topology invisible from a signature.
   const facadeOf = type.name === 'Facade' ? type.generics?.[0]?.name : undefined;
-  if (facadeOf) return registrationKeyOf(facadeOf);
+  if (facadeOf) return lowerFirst(facadeOf);
 
   // `Emit<PostPublished>` — the third port, and the only one that names a SUBJECT rather
   // than an interlocutor. Read like the other two: the type names what arrives, here a
@@ -216,9 +216,9 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
   const owned = ownedBy(ctor);
   const target = targetOf(ctor);
   if (owned.length > 1 && deps.length === 0) {
-    deps.push(...owned.map((entity) => ormKeyOf(registrationKeyOf((entity as { name: string }).name))));
+    deps.push(...owned.map((entity) => ormKeyOf(lowerFirst((entity as { name: string }).name))));
   } else if (target && deps.length === 0) {
-    deps.push(ormKeyOf(registrationKeyOf((target as { name: string }).name)));
+    deps.push(ormKeyOf(lowerFirst((target as { name: string }).name)));
   }
 
   // No `name` beside `ctor`: a provider registers under `ctor.name`, which is what
@@ -238,7 +238,7 @@ async function toEntityEntry(filePath: string): Promise<EntityEntry | null> {
   const declaredName = runtimeName && runtimeName !== ANONYMOUS_SCHEMA_NAME
     ? runtimeName
     : basename(filePath).replace(/\.[^.]+$/, '');
-  const name = registrationKeyOf(declaredName);
+  const name = lowerFirst(declaredName);
   return { name, entityClass: exported, filePath };
 }
 
@@ -423,7 +423,7 @@ async function toHandlerEntry(
     : undefined;
 
   return {
-    name: registrationKeyOf(ctor.name),
+    name: lowerFirst(ctor.name),
     address,
     ctor: ctor as ProviderEntry['ctor'],
     operations,
@@ -437,7 +437,7 @@ async function toHandlerEntry(
 /** Strip '.seed' suffix → entity name. 'Author.seed.ts' → 'author'. */
 function toSeedEntityName(fileName: string): string {
   const base = fileName.replace(/\.seed\.(ts|js)$/, '').replace(/\.(ts|js)$/, '');
-  return registrationKeyOf(base);
+  return lowerFirst(base);
 }
 
 async function toSeedEntry(filePath: string): Promise<SeedEntry | null> {
@@ -453,7 +453,7 @@ async function toPresenterEntry(filePath: string): Promise<PresenterEntry | null
   const ctor = await loadClass(filePath);
   const target = targetOf(ctor);
   if (!target) return null;
-  const entityName = registrationKeyOf((target as any).name);
+  const entityName = lowerFirst((target as any).name);
   const fields = getPresenterFields(ctor);
   const presenterParams = await ctorParamsOf(filePath);
   const deps = presenterParams.map((p) => depKeyOf(p.type));
@@ -511,7 +511,7 @@ async function toCollectorEntry(filePath: string): Promise<CollectorEntry | null
   if (!target) return null;
   // The target's NAME and nothing else — a collector reads no fields, so the class it
   // was built on needs no schema.
-  const typeName = registrationKeyOf((target as any).name);
+  const typeName = lowerFirst((target as any).name);
   const collectorParams = await ctorParamsOf(filePath);
   const deps = collectorParams.map((p) => depKeyOf(p.type));
   return { typeName, ctor, deps, filePath };

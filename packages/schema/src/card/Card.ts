@@ -1,9 +1,9 @@
 import { EXTENSION_AXES, type Resolver } from '../axis/Axis.js';
-import { clean } from '../utils/clean.js';
+import { dequal } from 'dequal';
+import { clean } from '../utils.js';
 import { Field, type Fields } from '../Field.js';
 import { isObject } from '../judge/ValueForm.js';
 import { RowJudge } from '../judge/RowJudge.js';
-import { same } from '../utils/same.js';
 import { Schema, type SchemaConstructor } from '../Schema.js';
 import type { Row, SchemaView } from '../SchemaView.js';
 import { refuse } from './admission.js';
@@ -108,8 +108,8 @@ export class Card<T = Row<Fields>> {
 
       const wasType = typesOf(descriptor);
       const isType = typesOf(target);
-      if (!same(wasType, isType)) changes.push({ kind: 'retyped', field: now, from: wasType, to: isType });
-      else if (!same(boundsOf(descriptor), boundsOf(target))) {
+      if (!dequal(wasType, isType)) changes.push({ kind: 'retyped', field: now, from: wasType, to: isType });
+      else if (!dequal(boundsOf(descriptor), boundsOf(target))) {
         changes.push({ kind: 'reshaped', field: now, from: descriptor, to: target });
       }
 
@@ -218,7 +218,7 @@ function reconstructField(property: FieldDescriptor, key: string, resolve?: Reso
 const AXES = ['role', 'lifecycle', 'boundary'] as const;
 
 function restated(field: string, before: FieldExtension | undefined, after: FieldExtension | undefined): Change[] {
-  return AXES.filter((axis) => !same(before?.[axis], after?.[axis])).map(
+  return AXES.filter((axis) => !dequal(before?.[axis], after?.[axis])).map(
     (axis) => ({ kind: 'restated', field, axis, from: before?.[axis], to: after?.[axis] }) as Change,
   );
 }
@@ -248,7 +248,7 @@ function candidates(
   const found: RenameCandidate[] = [];
   for (const gone of removed) {
     for (const appeared of added) {
-      if (same(shapeOf(before[gone]), shapeOf(after[appeared]))) found.push({ removed: gone, added: appeared });
+      if (dequal(shapeOf(before[gone]), shapeOf(after[appeared]))) found.push({ removed: gone, added: appeared });
     }
   }
   const was = Object.keys(before);

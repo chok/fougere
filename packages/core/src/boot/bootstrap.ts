@@ -1,5 +1,5 @@
 import type { Container } from '@fougere/container';
-import { registrationKeyOf, type SchemaView } from '@fougere/schema';
+import { lowerFirst, type SchemaView } from '@fougere/schema';
 import type { EntityEntry, HandlerEntry, PresenterEntry } from '../scan/frond.js';
 import type { AuthRuntime } from './auth.js';
 import type { CreateAppOptions, App } from './types.js';
@@ -270,10 +270,10 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       // `Book` next door — so restricting the list to its own would make it useless.
       // Naming one IS the authorization; that is what the declaration is for.
       const named = frond.reads
-        .map((name) => entityByName.get(registrationKeyOf(name)))
+        .map((name) => entityByName.get(lowerFirst(name)))
         .filter((entity): entity is NonNullable<typeof entity> => entity !== undefined);
       if (named.length !== frond.reads.length) {
-        const missing = frond.reads.filter((name) => !entityByName.has(registrationKeyOf(name)));
+        const missing = frond.reads.filter((name) => !entityByName.has(lowerFirst(name)));
         frondLog.warn(
           `[reads] ${missing.join(', ')} — named in frond.config.ts but scanned nowhere in this app, `
           + 'so a query naming one would find no table. Check the spelling, or the entity file.',
@@ -479,7 +479,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       // the handler imports it through the runtime's, so the same class arrives as two
       // objects. `===` compares module instances, which is not the question being asked.
       const crudTarget = targetOf(handler.ctor);
-      const subject = crudTarget?.name ? registrationKeyOf(crudTarget.name) : handler.address;
+      const subject = crudTarget?.name ? lowerFirst(crudTarget.name) : handler.address;
       const entity = frond.entities.find((e) => e.name === subject);
       const facadeKey = facadeKeyOf(handler.address);
       buildFacade(entity, handler, scope, facadeKey);
@@ -576,12 +576,12 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     if (!remoteRouter) return undefined;
     if (!name.endsWith('Handler') || name.includes(':')) return undefined;
     // Façade-shaped stand-in; routing happens lazily at the first call. Through
-    // `registrationKeyOf` because a DEPENDENCY names the type as written — `ProductHandler`,
+    // `lowerFirst` because a DEPENDENCY names the type as written — `ProductHandler`,
     // PascalCase — while a card declares `product`, so the raw strip asked the router for
     // 'Product' and every by-type dependency on a remote handler answered NOT_FOUND.
     return new FacadeEntry(
       dispatcher,
-      registrationKeyOf(name.replace(/Handler$/, '')),
+      lowerFirst(name.replace(/Handler$/, '')),
     ).operations;
   });
 

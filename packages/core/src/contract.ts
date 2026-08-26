@@ -8,7 +8,7 @@
  * bundles never touch the full index (scanner, config loader). `@fougere/schema`
  * is allowed in — measured, it imports no node builtin either.
  */
-import { registrationKeyOf } from '@fougere/schema';
+import { lowerFirst } from '@fougere/schema';
 import { canonicalInvocation, type InvocationContext } from './wire/invocation.js';
 import type { FrondCall } from './wire/call.js';
 
@@ -47,7 +47,7 @@ export { assertIdentityCard } from './wire/call.js';
  * `@fougere/schema` directly: routing four modules through here bought nothing and put
  * this file inside a cycle.
  */
-export { registrationKeyOf } from '@fougere/schema';
+export { lowerFirst } from '@fougere/schema';
 
 /** A call, fully fabricated: the designation and its completed invocation. */
 export interface CallValue {
@@ -68,7 +68,7 @@ export function callValueOf(
 ): CallValue {
   const [call, given] =
     typeof opOrInput === 'string'
-      ? [{ entity: registrationKeyOf((target as { name: string }).name), op: opOrInput }, input]
+      ? [{ entity: lowerFirst((target as { name: string }).name), op: opOrInput }, input]
       : [target as FrondCall, opOrInput];
   return { call, invocation: canonicalInvocation(given) };
 }

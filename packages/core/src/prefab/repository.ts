@@ -1,4 +1,4 @@
-import { classNameOf, type EntityConstructor } from '@fougere/schema';
+import { upperFirst, type EntityConstructor } from '@fougere/schema';
 import type { EntityOrm, ListOptions, ListResult, SelectOption } from '../orm.js';
 import type { SchemaView } from '@fougere/schema';
 
@@ -156,7 +156,7 @@ function many<E extends readonly EntityConstructor[]>(entities: E): AggregateCon
 
 /** Container key of an entity's repository — 'reading' → 'ReadingRepository'. */
 export function repositoryKeyOf(entity: string): string {
-  return `${classNameOf(entity)}Repository`;
+  return `${upperFirst(entity)}Repository`;
 }
 
 /**
