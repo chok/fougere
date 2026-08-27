@@ -7,16 +7,15 @@
  * app/   → loaded at runtime by jiti (presentation)
  */
 import { createApp, setLogLevel, envLevel, type ScanResult } from '@fougere/core';
-import { scanProject, setModuleLoader, frondDirsOf, DEFAULT_CONVENTIONS } from '@fougere/core/node';
+import { scanProject, getModuleLoader, frondDirsOf, DEFAULT_CONVENTIONS } from '@fougere/core/node';
 import { readdir, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { ui } from './ui.js';
 import { run } from './runner.js';
+import { installLoader } from './loader.js';
 
-const { createJiti } = await import('jiti');
-const jiti = createJiti(import.meta.url, { interopDefault: true });
-setModuleLoader((filePath) => jiti.import(filePath) as Promise<Record<string, unknown>>);
+await installLoader(process.cwd());
 
 const cliRoot = new URL('..', import.meta.url).pathname;
 const container = createContainer();
@@ -63,7 +62,7 @@ async function scanOf(root: string): Promise<ScanResult> {
   const written = join(root, '.fougere/scan.generated.ts');
   const writtenAt = await stat(written).then((s) => s.mtimeMs).catch(() => 0);
   if (writtenAt > 0 && writtenAt >= await newestDeclaration(root)) {
-    return ((await jiti.import(written)) as { scan: ScanResult }).scan;
+    return ((await getModuleLoader()(written)) as unknown as { scan: ScanResult }).scan;
   }
 
   // The only slow phase, and it announced nothing: the boot states it at `info`, which the

@@ -1,7 +1,6 @@
 import { createLocalRunner, identityFromEnv } from '@fougere/core';
-import {
-  setModuleLoader, loadConfig, resolveConventions, frondAliases, watchPathsOf,
-} from '@fougere/core/node';
+import { watchPathsOf } from '@fougere/core/node';
+import { installLoader } from '../../src/loader.js';
 import type { Conventions } from '@fougere/core/node';
 import { bootAppFromConfig } from '@fougere/defaults';
 import { serve } from '@fougere/transport-http';
@@ -16,30 +15,6 @@ const DRAIN_MS = 5_000;
 
 /** One save fires several events; the boot must not start once per event. */
 const SETTLE_MS = 60;
-
-/**
- * The loader a served frond needs. `alias` is what makes `@fronds/user/entities/User.js`
- * resolve: `bin.ts` installs a bare jiti, so a frond naming its neighbour died on that
- * import and every demo shipped its own host to work around it.
- *
- * `reread` drops the module cache. Every loader caches by specifier, so a second boot in
- * this process would be handed the modules the first one read — a reload changing nothing.
- */
-async function installLoader(root: string, reread: boolean): Promise<Conventions> {
-  const { createJiti } = await import('jiti');
-  const bare = createJiti(import.meta.url, { interopDefault: true });
-  setModuleLoader((filePath) => bare.import(filePath) as Promise<Record<string, unknown>>);
-
-  // The config is read BEFORE the aliases, because it names the scope they are built from.
-  const conventions = resolveConventions((await loadConfig(root)).conventions);
-  const jiti = createJiti(import.meta.url, {
-    interopDefault: true,
-    alias: await frondAliases(root, conventions),
-    ...(reread ? { moduleCache: false } : {}),
-  });
-  setModuleLoader((filePath) => jiti.import(filePath) as Promise<Record<string, unknown>>);
-  return conventions;
-}
 
 /**
  * The host end of the gradient: one frond, alone in this process, reachable
