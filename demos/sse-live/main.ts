@@ -25,10 +25,10 @@ const settle = () => new Promise((r) => setTimeout(r, 120));
 
 /** What a reader sees when it asks — always through the door, never from the push. */
 async function seenBy(app: App, name: string): Promise<string> {
-  const rows = (await createLocalRunner(app)({ entity: 'post', op: 'list' }, as(name))) as Array<{
+  const rows = (await createLocalRunner(app)({ entity: 'post', op: 'list' }, as(name))) as {
     title: string;
     status: string;
-  }>;
+  }[];
   if (rows.length === 0) return dim('0 rows');
   return rows.map((r) => `${r.title} ${dim(`(${r.status})`)}`).join(', ');
 }

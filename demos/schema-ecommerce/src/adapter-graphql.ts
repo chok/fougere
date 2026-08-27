@@ -193,7 +193,7 @@ builder.mutationType({});
     args: { input: f.arg({ type: CreateOrderInput, required: true }) },
     resolve: async (_: any, { input }: any) => {
       let total = 0;
-      const lines: Array<{ productId: string; quantity: number; unitPrice: number }> = [];
+      const lines: { productId: string; quantity: number; unitPrice: number }[] = [];
 
       for (const line of input.lines) {
         const product = await productOrm.findById(line.productId);

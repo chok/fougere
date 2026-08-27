@@ -96,7 +96,7 @@ async function main(): Promise<void> {
 
   const sensor = doublure('sensor', transport);
 
-  const listed = (await sensor.list()) as Array<{ id: string; label: string }>;
+  const listed = (await sensor.list()) as { id: string; label: string }[];
   console.log(`   sensor.list()      → ${listed.length} relevés : ${listed.map((s) => s.label).join(', ')}`);
 
   const created = (await sensor.record({ body: good })) as { id: string; checksum: string; recordedAt: string };

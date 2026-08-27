@@ -17,7 +17,7 @@ import { createServer, type ServerResponse } from 'node:http';
 const PORT = Number(process.env.BROKER_PORT ?? 4300);
 
 /** The log. In a real broker this is on disk; here it is an array, and that is the only lie. */
-const log: Array<{ seq: number; topic: string; payload: unknown }> = [];
+const log: { seq: number; topic: string; payload: unknown }[] = [];
 /** Where each NAMED subscriber got to. Survives its process, which is the point. */
 const cursor = new Map<string, number>();
 const live = new Map<ServerResponse, { name: string; topics: Set<string> }>();

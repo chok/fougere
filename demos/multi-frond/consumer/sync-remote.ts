@@ -20,11 +20,11 @@ const CWD = import.meta.dirname;
  * one; a door may store nothing and a fact may announce a type that is not an entity.
  */
 interface IdentityCard {
-  fronds: Array<{
+  fronds: {
     name: string;
-    doors: Array<{ name: string; ops: Array<{ name: string }>; schema?: SchemaDescriptor }>;
-    facts?: Array<{ name: string; schema?: SchemaDescriptor }>;
-  }>;
+    doors: { name: string; ops: { name: string }[]; schema?: SchemaDescriptor }[];
+    facts?: { name: string; schema?: SchemaDescriptor }[];
+  }[];
 }
 
 function capitalize(s: string): string {

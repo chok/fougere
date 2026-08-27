@@ -44,7 +44,7 @@ console.log(`
 // ── 1. the database ──────────────────────────────────────────────────────────
 section('→', 'The table', 'schema-sql, sqlite dialect — nobody wrote this DDL');
 const ddl = createTableSQL(toTable('reading', Reading as never), 'sqlite');
-console.log(ddl.replace(/, (constraint)/g, ',\n       $1').replace(/\((\"id\")/, '(\n       $1').replace(/, (\"station\"|\"celsius\"|\"recorded_at\")/g, ',\n       $1'));
+console.log(ddl.replace(/, (constraint)/g, ',\n       $1').replace(/\(("id")/, '(\n       $1').replace(/, ("station"|"celsius"|"recorded_at")/g, ',\n       $1'));
 console.log(D(`
      The bounds became CHECK constraints. So raw SQL, another process, or a
      human at a prompt meets "at least 2 characters" too — not just this app.`));

@@ -52,7 +52,7 @@ const memoryOrm = () => ({
   output() { return this; },
 }) as unknown as EntityOrm;
 
-const stopping: Array<() => Promise<void>> = [];
+const stopping: (() => Promise<void>)[] = [];
 
 // ── catalog — holds Product, answers about it ───
 // Observing is declared with the app, not wired onto it after the fact — so `dispose()`

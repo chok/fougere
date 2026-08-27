@@ -59,13 +59,13 @@ async function main() {
   const http = await serve(local, { port: 0 });
   const socket = await serveSocket(local);
 
-  const paths: Array<[string, Transport]> = [
+  const paths: [string, Transport][] = [
     ['in-process', local],
     [`http     :${http.port}`, createHttpTransport(`http://127.0.0.1:${http.port}`)],
     [`tcp      :${socket.port}`, createSocketTransport(socket.port)],
   ];
 
-  const calls: Array<[string, string, InvocationContext]> = [
+  const calls: [string, string, InvocationContext][] = [
     ['list()', 'list', inv()],
     ['create({ station: "" })', 'create', inv({ body: { station: '', celsius: 3 } })],
     ['create({ celsius: 200 })', 'create', inv({ body: { station: 'dune', celsius: 200 } })],

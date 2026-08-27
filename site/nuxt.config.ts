@@ -1,9 +1,9 @@
-const locales: Array<{
+const locales: {
   code: 'en' | 'fr';
   name: string;
   language: string;
   file: string;
-}> = [
+}[] = [
   { code: 'en', name: 'English', language: 'en-US', file: 'en.json' },
   { code: 'fr', name: 'Français', language: 'fr-FR', file: 'fr.json' },
 ];

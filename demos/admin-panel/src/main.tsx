@@ -66,7 +66,7 @@ const card: IdentityCard = {
   }],
 };
 
-const collections: Record<string, Array<Record<string, unknown>>> = {
+const collections: Record<string, Record<string, unknown>[]> = {
   post: [
     {
       id: 'post_1',
