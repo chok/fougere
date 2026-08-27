@@ -100,7 +100,8 @@ export async function run(app: App): Promise<void> {
         run: async ({ args: parsed }) => {
           // JSON is a protocol: a branded intro before `{` makes it unparsable. The
           // explain command owns its machine output and therefore gets a clean stdout.
-          const machineOutput = cmdName === 'explain' && parsed.json === true;
+          const machineOutput = cmdName === 'explain'
+            && (parsed.json === true || typeof parsed.names === 'string');
           if (cmdName !== 'completion' && !machineOutput) terminal.intro();
 
           // citty adds `_` (raw positionals) and `--` (passthrough); strip them

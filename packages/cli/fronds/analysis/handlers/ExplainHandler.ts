@@ -61,6 +61,17 @@ export interface ExplainResult {
   };
 }
 
+/** What this project serves, when no single operation was named. */
+export interface ExplainListing {
+  fronds: {
+    name: string;
+    runtime: 'local' | 'remote';
+    remote: string | null;
+    operations: number;
+  }[];
+  operations: string[];
+}
+
 interface Selector {
   frond?: string;
   surface?: string;
@@ -72,17 +83,46 @@ interface Selector {
 export default class ExplainHandler {
   constructor(private projectScan: ProjectScan) {}
 
+  /** The names this project serves — the list `explain` used to spell in a refusal only. */
+  async list(input: { root?: string }): Promise<ExplainListing> {
+    const { scan, model } = await this.modelOf(input.root);
+    const remotes = scan.config.remotes ?? {};
+    const counted = new Map<string, number>();
+    for (const operation of model.operations) {
+      const frond = operation.placement.frond;
+      counted.set(frond, (counted.get(frond) ?? 0) + 1);
+    }
+
+    return {
+      fronds: scan.fronds.map((frond) => ({
+        name: frond.name,
+        runtime: remotes[frond.name] ? 'remote' as const : 'local' as const,
+        remote: remotes[frond.name] ?? null,
+        operations: counted.get(frond.name) ?? 0,
+      })).sort((a, b) => a.name.localeCompare(b.name)),
+      operations: model.operations.map((operation) => operation.id).sort(),
+    };
+  }
+
+  private async modelOf(root?: string) {
+    const scan = await this.projectScan.at(root);
+    return {
+      scan,
+      model: resolveEffectiveOperations(scan.fronds, {
+        diagnostics: scan.diagnostics,
+        remotes: scan.config.remotes,
+        adapters: scan.config.adapters,
+      }),
+    };
+  }
+
+  /** Print the contract one operation will be served under. */
   async execute(input: { operation?: string; root?: string; json?: boolean }): Promise<ExplainResult> {
     const requested = input.operation?.trim();
     if (!requested) throw new Error('Usage: fougere explain <Operation> [--json] [--root <directory>]');
 
     const selector = parseSelector(requested);
-    const scan = await this.projectScan.at(input.root);
-    const model = resolveEffectiveOperations(scan.fronds, {
-      diagnostics: scan.diagnostics,
-      remotes: scan.config.remotes,
-      adapters: scan.config.adapters,
-    });
+    const { scan, model } = await this.modelOf(input.root);
     const candidates = model.operations.filter((operation) => matches(operation, selector));
 
     if (candidates.length === 0) {

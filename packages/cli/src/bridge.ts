@@ -41,8 +41,14 @@ export function entityToArgs(fields: Fields): ArgsDef {
       case 'number':
       case 'integer':
       case 'string':
+        // A closed set is citty's `enum`: the shape already names the legal values, so the
+        // refusal and the `--help` listing come from the declaration rather than a check
+        // written beside it.
+        if (shape.type === 'string' && shape.enum?.length) {
+          (def as Record<string, unknown>).type = 'enum';
+          (def as Record<string, unknown>).options = shape.enum.filter((v) => v !== null);
         // A date-time string stays a named string — never a positional arg.
-        if (shape.type === 'string' && shape.format === 'date-time') {
+        } else if (shape.type === 'string' && shape.format === 'date-time') {
           (def as Record<string, unknown>).type = 'string';
         } else if (positionalIndex === 0 && def.required && key !== 'force') {
           // First non-bool required field becomes positional
