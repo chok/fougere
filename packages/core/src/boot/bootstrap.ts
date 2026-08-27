@@ -680,12 +680,13 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
    * else. It used to live twice, verbatim, in the REST and GraphQL adapters,
    * and two other readers invented their own answer.
    *
-   * Naming an audience closes it. Three ways to name an entity into a surface,
+   * Naming an audience closes it. Two ways to name an entity into a surface,
    * in precedence order:
    *   - `surfaces:` in frond.config.ts — when the list exists, it IS the list;
-   *   - a handler under `handlers/<surface>/` — which also restricts the façade;
-   *   - the `@expose` sugar, resolved into the same two by the scan.
-   * What none of them names is not served. It used to be the reverse: no
+   *   - a handler under `handlers/<surface>/` — which also restricts the façade.
+   * `@expose` is a THIRD way and this rule does not read it: the scan sets a
+   * boolean, and the REST and GraphQL adapters are its only readers.
+   * What neither of the two names is not served. It used to be the reverse: no
    * `public:categoryHandler` meant the FULL CategoryHandler rode the public
    * door, create/update/delete included (measured on demos/nuxt-blog).
    *
