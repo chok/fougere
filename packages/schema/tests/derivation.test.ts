@@ -176,10 +176,10 @@ describe('derivation', () => {
       if (result.success) expect('note' in result.data).toBe(false);
     });
 
-    it('applies the same merge law to hints — per adapter, per field, later wins', () => {
-      const A = entity({ a: text(), shared: text() }, { hints: { sql: { a: { columnType: 'x' }, shared: { columnType: 'old' } } } } as never);
-      const B = entity({ b: text(), shared: text() }, { hints: { sql: { shared: { columnType: 'new' } } } } as never);
-      const h = Schema.compose(A, B).getHints() as Record<string, Record<string, { columnType: string }>> | undefined;
+    it('applies the same merge law per adapter, per field — later wins', () => {
+      const A = entity({ a: text(), shared: text() }, { adapters: { sql: { a: { columnType: 'x' }, shared: { columnType: 'old' } } } } as never);
+      const B = entity({ b: text(), shared: text() }, { adapters: { sql: { shared: { columnType: 'new' } } } } as never);
+      const h = Schema.compose(A, B).getAdapters() as Record<string, Record<string, { columnType: string }>> | undefined;
       expect(h?.sql?.a?.columnType).toBe('x');
       expect(h?.sql?.shared?.columnType).toBe('new');
     });

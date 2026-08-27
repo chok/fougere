@@ -19,7 +19,7 @@ export { isObject } from './judge/ValueForm.js';
 export { Cases, type Case } from './judge/Cases.js';
 export { RowRefusal } from './judge/RowRefusal.js';
 export { type SchemaView, type Row, type PartialRow } from './schema/SchemaView.js';
-export { type FougereHints, type Hints } from './Hints.js';
+export { type FougereEntityAdapters, type EntityAdapters } from './EntityAdapters.js';
 export { lowerFirst, upperFirst } from './utils.js';
 
 export { primary } from './vocabulary/primary.js';

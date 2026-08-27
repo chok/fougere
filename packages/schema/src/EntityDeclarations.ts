@@ -1,5 +1,5 @@
 import type { FieldName, Fields } from './fields/Field.js';
-import type { Hints } from './Hints.js';
+import type { EntityAdapters } from './EntityAdapters.js';
 
 export type CompositeUnique<TFields extends Fields> = readonly (readonly FieldName<TFields>[])[];
 
@@ -10,7 +10,7 @@ export type PreviousNames<TFields extends Fields> = Partial<
 
 export interface EntityDeclarations<TFields extends Fields> {
   unique?: CompositeUnique<TFields>;
-  hints?: Hints<TFields>;
+  adapters?: EntityAdapters<TFields>;
   /**
    * What a field used to be called — read by `fougere freeze` and by nothing else.
    * It answers the one question two shapes cannot, and is meant to be deleted after.

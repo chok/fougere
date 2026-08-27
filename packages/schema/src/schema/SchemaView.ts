@@ -1,6 +1,6 @@
 import type { Field, Fields } from '../fields/Field.js';
 import type { CompositeUnique, PreviousNames } from '../EntityDeclarations.js';
-import type { Hints } from '../Hints.js';
+import type { EntityAdapters } from '../EntityAdapters.js';
 import type { ValidationResult } from '../judge/result.js';
 import type { ValidateOptions } from '../judge/options.js';
 import type { SchemaDerivation } from './SchemaDerivation.js';
@@ -18,7 +18,7 @@ export interface SchemaView<TFields extends Fields = Fields> {
   /** What its fields were called before, keyed by the names they carry now. */
   readonly previous?: PreviousNames<TFields>;
   getFields(): TFields;
-  getHints(): Hints<TFields> | undefined;
+  getAdapters(): EntityAdapters<TFields> | undefined;
   getUnique(): CompositeUnique<TFields> | undefined;
   getOpts(): ValidateOptions;
   validate(input: unknown): ValidationResult<Row<TFields>>;

@@ -1,7 +1,7 @@
 import { Boundary } from '../axis/boundary/Boundary.js';
 import { type Fields } from '../fields/Field.js';
 import { type PreviousNames } from '../EntityDeclarations.js';
-import { type Hints } from '../Hints.js';
+import { type EntityAdapters } from '../EntityAdapters.js';
 import { FieldGroup } from '../constraint/FieldGroup.js';
 import { Unique } from '../constraint/Unique.js';
 import { type CompositeUnique } from '../EntityDeclarations.js';
@@ -33,7 +33,7 @@ export class Schema {
   static definition: SchemaDefinition = SchemaDefinition.stated({ fields: {} });
 
   static get fields(): Fields { return this.definition.fields; }
-  static get hints(): Hints<Fields> | undefined { return this.definition.hints; }
+  static get adapters(): EntityAdapters<Fields> | undefined { return this.definition.adapters; }
   static get opts(): ValidateOptions { return this.definition.opts; }
   static get derivation(): SchemaDerivation | undefined { return this.definition.derivation; }
   static get previous(): PreviousNames<Fields> | undefined { return this.definition.previous; }
@@ -46,7 +46,7 @@ export class Schema {
   }
 
   static getFields() { return this.fields; }
-  static getHints() { return this.hints; }
+  static getAdapters() { return this.adapters; }
   static getUnique(): CompositeUnique<Fields> | undefined {
     const groups = FieldGroup.groupsOf(this.fields, Unique);
     return groups.length ? groups.map((group) => [...group.members]) : undefined;
@@ -134,7 +134,7 @@ export class Schema {
   static of<TFields extends Fields>(stated: {
     fields: TFields;
     derivation?: SchemaDerivation;
-    hints?: Hints<TFields>;
+    adapters?: EntityAdapters<TFields>;
     opts?: ValidateOptions;
     previous?: PreviousNames<TFields>;
   }): SchemaConstructor<TFields> {

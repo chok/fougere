@@ -3,8 +3,8 @@ import { entity } from '../src/entity.js';
 import { Schema } from '../src/schema/Schema.js';
 import { text } from '../src/vocabulary/text.js';
 
-declare module '../src/Hints.js' {
-  interface FougereHints<K extends string> {
+declare module '../src/EntityAdapters.js' {
+  interface FougereEntityAdapters<K extends string> {
     characterization?: Partial<Record<K, { marker?: string }>>;
   }
 }
@@ -16,7 +16,7 @@ class Post extends entity(
     body: text(),
   },
   {
-    hints: {
+    adapters: {
       characterization: {
         title: { marker: 'title' },
         body: { marker: 'body' },
@@ -28,13 +28,13 @@ class Post extends entity(
 
 class Supplement extends entity(
   { summary: text() },
-  { hints: { characterization: { summary: { marker: 'summary' } } } },
+  { adapters: { characterization: { summary: { marker: 'summary' } } } },
 ) {}
 
 describe('metadata propagation across every schema operation', () => {
   describe('pick', () => {
-    it('filters hints to picked fields', () => {
-      expect(Post.pick('id', 'title').getHints()).toEqual({
+    it('filters adapter entries to picked fields', () => {
+      expect(Post.pick('id', 'title').getAdapters()).toEqual({
         characterization: { title: { marker: 'title' } },
       });
     });
@@ -49,8 +49,8 @@ describe('metadata propagation across every schema operation', () => {
   });
 
   describe('omit', () => {
-    it('filters hints to retained fields', () => {
-      expect(Post.omit('body').getHints()).toEqual({
+    it('filters adapter entries to retained fields', () => {
+      expect(Post.omit('body').getAdapters()).toEqual({
         characterization: { title: { marker: 'title' } },
       });
     });
@@ -65,8 +65,8 @@ describe('metadata propagation across every schema operation', () => {
   });
 
   describe('rename', () => {
-    it('remaps hint keys to current field names', () => {
-      expect(Post.rename({ title: 'headline' }).getHints()).toEqual({
+    it('remaps adapter entry keys to current field names', () => {
+      expect(Post.rename({ title: 'headline' }).getAdapters()).toEqual({
         characterization: {
           headline: { marker: 'title' },
           body: { marker: 'body' },
@@ -84,8 +84,8 @@ describe('metadata propagation across every schema operation', () => {
   });
 
   describe('partial', () => {
-    it('keeps hints unchanged', () => {
-      expect(Post.partial().getHints()).toEqual({
+    it('keeps adapter entries unchanged', () => {
+      expect(Post.partial().getAdapters()).toEqual({
         characterization: {
           title: { marker: 'title' },
           body: { marker: 'body' },
@@ -103,8 +103,8 @@ describe('metadata propagation across every schema operation', () => {
   });
 
   describe('extend', () => {
-    it('keeps existing hints without adding hints for new fields', () => {
-      expect(Post.extend({ summary: text() }).getHints()).toEqual({
+    it('keeps existing entries without adding any for new fields', () => {
+      expect(Post.extend({ summary: text() }).getAdapters()).toEqual({
         characterization: {
           title: { marker: 'title' },
           body: { marker: 'body' },
@@ -122,8 +122,8 @@ describe('metadata propagation across every schema operation', () => {
   });
 
   describe('compose', () => {
-    it('merges hints from every source', () => {
-      expect(Schema.compose(Post.pick('title'), Supplement).getHints()).toEqual({
+    it('merges adapter entries from every source', () => {
+      expect(Schema.compose(Post.pick('title'), Supplement).getAdapters()).toEqual({
         characterization: {
           title: { marker: 'title' },
           summary: { marker: 'summary' },

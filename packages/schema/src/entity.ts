@@ -5,11 +5,11 @@ import { Schema, type SchemaConstructor } from './schema/Schema.js';
 
 export function entity<TFields extends Fields>(
   originalFields: TFields,
-  { unique, hints, previous }: EntityDeclarations<TFields> = {},
+  { unique, adapters, previous }: EntityDeclarations<TFields> = {},
 ): SchemaConstructor<TFields> {
   return Schema.of({
     fields: FieldSet.declared(originalFields, unique),
-    hints,
+    adapters,
     previous,
   });
 }
