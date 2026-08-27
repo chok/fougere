@@ -278,8 +278,10 @@ belief, which costs a sentence, not a paragraph.
 - **A required field with no default is `NOT NULL` on a fresh table and NULLABLE on a
   migrated one.** `changeSQL` (`adapter/sql/src/diff.ts`) applies `notNull()` only when a
   default exists, because engines refuse it on a populated table. Its BOUNDS do land on
-  both — the `CHECK` is emitted inline. The answer upstream is `planStep`
-  (`adapter/sql/src/step.ts`), which refuses the step naming the field and the remedy.
+  both — the `CHECK` is emitted inline. The refusal that names the field and its remedy
+  lives on the OTHER road: `planStep` (`adapter/sql/src/step.ts`), whose only caller is
+  `fougere migrate`. A booting app goes through `defaults/src/storage.ts` → `migrate()` →
+  `delta()`, which never reaches it, so nothing covers the path an app starts on.
 - **`unique()` added to a live table never lands.** `delta()` (`adapter/sql/src/diff.ts`)
   proposes `addColumn` and, separately, `createIndex` for anything carrying `column.index` —
   and a sole `unique()` deliberately carries none. Measured on SQLite: the migrated table
