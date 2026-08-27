@@ -36,7 +36,7 @@ export default class CallCommand {
   constructor(private app: App, private ui: Ui) {}
 
   async run(raw: Record<string, unknown>) {
-    const target = raw.target as string | undefined;
+    const target = raw.operation as string | undefined;
     if (!target || !target.includes('.')) {
       this.ui.error('Usage: fougere call <entity>.<op> [--field value …]');
       return;

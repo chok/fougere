@@ -8,17 +8,17 @@ export default class BuildFrondHandler {
   private cwd = process.cwd();
 
   /** Build a frond into a standalone deployable package. */
-  async execute(input: { name: string }): Promise<{ path: string; entities: string[] }> {
+  async execute(input: { frond: string }): Promise<{ path: string; entities: string[] }> {
     const conventions = resolveConventions((await loadConfig(this.cwd)).conventions);
-    const frondDir = join(this.cwd, conventions.fronds, input.name);
+    const frondDir = join(this.cwd, conventions.fronds, input.frond);
 
     if (!existsSync(frondDir)) {
-      throw new Error(`Frond '${input.name}' not found at ${frondDir}`);
+      throw new Error(`Frond '${input.frond}' not found at ${frondDir}`);
     }
 
     const entitiesDir = join(frondDir, conventions.dirs.entities);
     if (!existsSync(entitiesDir)) {
-      throw new Error(`No ${conventions.dirs.entities}/ directory in frond '${input.name}'`);
+      throw new Error(`No ${conventions.dirs.entities}/ directory in frond '${input.frond}'`);
     }
 
     // Discover entity files
@@ -67,7 +67,7 @@ export default class BuildFrondHandler {
     const pkgPath = join(frondDir, 'package.json');
     const pkg = existsSync(pkgPath)
       ? JSON.parse(readFileSync(pkgPath, 'utf-8'))
-      : { name: frondPackage(input.name, conventions), version: '0.0.1', type: 'module' };
+      : { name: frondPackage(input.frond, conventions), version: '0.0.1', type: 'module' };
 
     pkg.exports = {
       '.': {

@@ -93,8 +93,8 @@ export default class SyncHandler {
   private cwd = process.cwd();
 
   /** Mirror a remote frond's contract into local entities. */
-  async execute(input: { name: string; from: string }): Promise<{ path: string; entities: string[]; removed: string[] }> {
-    assertSafeName('frond', input.name);
+  async execute(input: { frond: string; from: string }): Promise<{ path: string; entities: string[]; removed: string[] }> {
+    assertSafeName('frond', input.frond);
     let remoteUrl: URL;
     try {
       remoteUrl = new URL(input.from);
@@ -121,9 +121,9 @@ export default class SyncHandler {
     if (rpc.error) throw new Error(`Remote error: ${rpc.error.message}`);
     const card = identityCardOf(rpc.result);
 
-    const target = card.fronds.find((f) => f.name === input.name);
+    const target = card.fronds.find((f) => f.name === input.frond);
     if (!target) {
-      throw new Error(`Frond '${input.name}' not found on ${baseUrl}. Available: ${card.fronds.map((f) => f.name).join(', ')}`);
+      throw new Error(`Frond '${input.frond}' not found on ${baseUrl}. Available: ${card.fronds.map((f) => f.name).join(', ')}`);
     }
 
     // The consumer's own convention: a synced frond is laid out like the ones they wrote,
@@ -132,7 +132,7 @@ export default class SyncHandler {
     const entities = conventions.dirs.entities;
     const handlers = conventions.dirs.handlers;
 
-    const frondDir = join(this.cwd, '.fougere', 'remotes', input.name);
+    const frondDir = join(this.cwd, '.fougere', 'remotes', input.frond);
     const entitiesDir = join(frondDir, entities);
     const handlersDir = join(frondDir, handlers);
     mkdirSync(entitiesDir, { recursive: true });
@@ -239,10 +239,10 @@ export default class SyncHandler {
 
     // Package.json
     writeFileSync(join(frondDir, 'package.json'), JSON.stringify({
-      name: frondPackage(input.name, conventions),
+      name: frondPackage(input.frond, conventions),
       version: '0.0.0-synced',
       type: 'module',
-      fougere: { frond: input.name, synced: true, source: baseUrl },
+      fougere: { frond: input.frond, synced: true, source: baseUrl },
       exports: {
         '.': './index.ts',
         [`./${entities}/*`]: `./${entities}/*.ts`,
@@ -252,10 +252,10 @@ export default class SyncHandler {
     }, null, 2) + '\n');
 
     // Update .fougere/remotes.json — central registry of synced remotes
-    this.updateRemotesRegistry(input.name, baseUrl, frondDir);
+    this.updateRemotesRegistry(input.frond, baseUrl, frondDir);
 
     // Update tsconfig paths if tsconfig.json exists (non-Nuxt projects)
-    this.updateTsconfigPaths(input.name, frondDir, conventions);
+    this.updateTsconfigPaths(input.frond, frondDir, conventions);
 
     /**
      * What the host no longer serves stops being importable here.
