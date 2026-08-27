@@ -68,6 +68,7 @@ packages/
     sql/               @fougere/adapter-sql       Entity → Kysely tables (SQLite/PG/MySQL/MSSQL)
     graphql/           @fougere/adapter-graphql   Entity → Pothos types/inputs/CRUD
     rest/              @fougere/adapter-rest      REST projection
+    duckdb/            @fougere/adapter-duckdb    one SQL query across `sources:`
 
   app/                                        the front-end
     shared/            @fougere/app           useQuery/useCommand/useFormFor, framework-free
@@ -204,9 +205,10 @@ one line each: what the entry protects against is a future reader re-asserting t
 belief, which costs a sentence, not a paragraph.
 
 - **An un-augmented `adapters:` accepts anything, silently.** With no adapter in the program
-  `FougereEntityAdapters` is empty, `EntityAdapters<TFields>` maps over `never` and becomes `{}` — which in
-  TypeScript means "anything non-nullish", not "no keys". Measured: `adapters: { sqll: … }`
-  compiles clean in `packages/schema`. So the registry fails OPEN, giving neither
+  `FougereEntityAdapters` is an empty interface, so `EntityAdapters<TFields>` is `Partial<{}>`
+  — which in TypeScript means "anything non-nullish", not "no keys". Remeasured 2026-08-28:
+  `adapters: { sqll: { titlee: 'anything at all' } }` compiles clean in `packages/schema`,
+  the invented FIELD name included. So the registry fails OPEN, giving neither
   completion nor a guard, and the two only appear once something imports the adapter
   (declaration merging is program-wide, not per-file). The fix is a decision about the
   empty case, not a patch.
@@ -239,9 +241,10 @@ belief, which costs a sentence, not a paragraph.
   `facadeFor` resolves a surface key in the local container only, so a consumer's `public`
   door over a remote frond answers NOT_FOUND on everything. True of all three doors. The
   coherent answer is composition; not shipped.
-- **`expose` is a THIRD membership mechanism, and `facadeFor`'s comment claims there are
-  two.** The scan sets a boolean (`scan/scanner.ts`, `e.exposed`/`h.exposed`) and never
-  touches `surfaces`, so the flag has two readers — `adapter/rest/src/routes.ts` and
+- **`expose` is a THIRD membership mechanism, and `facadeFor`'s comment says the scan
+  resolves it into the other two.** It does not: the scan sets a boolean
+  (`scan/scanner.ts`, `e.exposed`/`h.exposed`) and never writes `surfaces`, which comes from
+  `frond.config.ts` alone. So the flag has two readers — `adapter/rest/src/routes.ts` and
   `adapter/graphql/src/auto-register.ts` — while `facadeFor` and the runner ignore it.
   `handler.exposed` is read nowhere. The method-level `@expose` lives in
   `packages/decorators`, which has **zero importers** and is `private: false`, so it ships
