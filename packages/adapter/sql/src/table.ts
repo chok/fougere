@@ -7,12 +7,12 @@ import { Lifecycle, Role } from '@fougere/schema';
  * other — the dialect never mentions a field. Adding a dialect touches only the
  * second half.
  *
- * `ColumnDef.hint` is the one member the axes did not produce. It carries a
- * PREFERENCE, so dropping it leaves every column describable.
+ * `ColumnDef.stated` is the one member the axes did not produce. It names one engine's
+ * column type, so dropping it leaves every column describable.
  */
 import { Anatomy, FieldGroup, Unique, fieldsOf, lowerFirst, schemaOf, type Field, type SchemaView, type SchemaOrCard } from '@fougere/schema';
 import { boundsOf, type ShapeBounds } from './check.js';
-import type { SqlFieldHint } from './hints.js';
+import type { SqlField } from './fields.js';
 
 /** The shape keywords a dialect needs to choose a column type. */
 export interface ColumnShape {
@@ -21,7 +21,7 @@ export interface ColumnShape {
   maxLength?: number;
 }
 
-/** One column, described by the axes — plus, at most, the preference the entity stated here. */
+/** One column, described by the axes — plus, at most, what the entity stated for sql. */
 export interface ColumnDef {
   /** Field key on the entity. */
   field: string;
@@ -45,10 +45,10 @@ export interface ColumnDef {
   /** The FK target, from `role.relation` when it's a `ref()` (kind `'one'`). */
   references?: ColumnReference;
   /**
-   * What the entity stated for THIS adapter — a preference, never an axis. It says how
-   * the column is realized here; drop it and the column is still describable.
+   * What the entity stated for THIS adapter — never an axis. It says how the column is
+   * realized here; drop it and the column is still describable.
    */
-  hint?: SqlFieldHint;
+  stated?: SqlField;
 }
 
 export interface ColumnReference {
@@ -158,7 +158,7 @@ function toColumn(
   resolve: (name: string) => string,
   tableNameOf?: Map<SchemaOrCard, string>,
   hosted?: HostedNames,
-  hint?: SqlFieldHint,
+  stated?: SqlField,
 ): ColumnDef {
   // The column type comes from the `shape` axis alone. `anatomy` strips the
   // nullable union so a nullable integer stays an integer instead of falling
@@ -185,7 +185,7 @@ function toColumn(
   if (Role.of(field).isIndexed && !column.primary && !column.unique) column.index = true;
   const references = referenceFor(field, resolve, tableNameOf, hosted);
   if (references) column.references = references;
-  if (hint) column.hint = hint;
+  if (stated) column.stated = stated;
   return column;
 }
 
@@ -222,12 +222,12 @@ export interface HostedNames {
 export function toTable(tableName: string, entity: SchemaOrCard, relations?: RelationResolve): TableDef {
   const resolve = relations?.resolve ?? toTableName;
   const fields = fieldsOf(entity);
-  // Read off the entity, since that is where a hint is declared and addressed by field key.
-  const hints = schemaOf(entity).getHints()?.sql;
+  // Read off the entity, since that is where it is declared and addressed by field key.
+  const stated = schemaOf(entity).getAdapters()?.sql;
   const columns: ColumnDef[] = [];
   for (const [fieldName, field] of Object.entries(fields)) {
     if (!isStored(field)) continue;
-    columns.push(toColumn(fieldName, field, resolve, relations?.tableNameOf, relations?.hosted, hints?.[fieldName]));
+    columns.push(toColumn(fieldName, field, resolve, relations?.tableNameOf, relations?.hosted, stated?.[fieldName]));
   }
   const primaries = columns.filter((column) => column.primary).map((column) => column.name);
   const stored = new Set(columns.map((column) => column.name));

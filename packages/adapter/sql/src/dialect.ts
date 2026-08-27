@@ -193,12 +193,12 @@ export function resolveDialect(name: DialectName): Dialect {
 }
 
 /**
- * The type this column is emitted with — the entity's preference when it stated one for
- * THIS engine, the shape's own answer otherwise.
+ * The type this column is emitted with — what the entity stated when it named THIS
+ * engine, the shape's own answer otherwise.
  *
- * The fallback is what makes a hint a hint: `columnType: { pg: 'tsvector' }` leaves
+ * The fallback is what keeps the statement local: `columnType: { pg: 'tsvector' }` leaves
  * SQLite exactly where it was, so the same entity still boots on every dialect.
  */
 export function columnTypeFor(dialect: Dialect, column: ColumnDef, keyed: boolean): string {
-  return column.hint?.columnType?.[dialect.name] ?? dialect.columnType(column, keyed);
+  return column.stated?.columnType?.[dialect.name] ?? dialect.columnType(column, keyed);
 }
