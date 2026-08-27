@@ -26,10 +26,15 @@ PREFIXES = ('', 'packages/', 'packages/core/src/', 'packages/core/')
 # path that no longer exists answers nothing — so it falls off the top of the list by
 # itself, which is the signal.
 EXTENSIONS = ('.ts', '.py', '.json', '.md', '.yaml', '.yml', '.vue', '.sql')
-# A version bump is not the code moving. Without this, the release commit touches every
-# package.json and lifts every entry citing a DIRECTORY to the top of the list at once —
-# which is the whole answer being wrong, not a rounding error.
-BUMPS = (':(exclude)**/package.json', ':(exclude)package.json', ':(exclude)pnpm-lock.yaml')
+# What moves for a reason that has nothing to do with the entry being true. A release
+# touches every package.json, and a docs pass touches every README — either one lifts every
+# entry citing a DIRECTORY to the top of the list at once, which is the whole answer being
+# wrong, not a rounding error. Measured 2026-08-28: 573f567 is eighteen READMEs and no
+# TypeScript, and it had put two entries first.
+NOT_THE_CODE = (
+    ':(exclude)**/package.json', ':(exclude)package.json', ':(exclude)pnpm-lock.yaml',
+    ':(exclude)**/README.md', ':(exclude)**/CHANGELOG.md',
+)
 
 
 def resolve(cited: str) -> str | None:
@@ -62,7 +67,7 @@ def last_touched(path: str) -> tuple[str, str] | None:
     # Sorted on the full timestamp, shown on the day: two commits of the same afternoon are
     # ordered by WHEN, and ordering them by hash put a fix below the commit it followed.
     done = subprocess.run(['git', '-C', str(REPO), 'log', '-1', '--format=%cI %cs %h',
-                           '--', path, *BUMPS], capture_output=True, text=True)
+                           '--', path, *NOT_THE_CODE], capture_output=True, text=True)
     if not done.stdout.strip():
         return None
     stamp, day, sha = done.stdout.split()
