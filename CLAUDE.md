@@ -241,17 +241,19 @@ belief, which costs a sentence, not a paragraph.
   `facadeFor` resolves a surface key in the local container only, so a consumer's `public`
   door over a remote frond answers NOT_FOUND on everything. True of all three doors. The
   coherent answer is composition; not shipped.
-- **`expose` is a THIRD membership mechanism, and `facadeFor`'s comment says the scan
-  resolves it into the other two.** It does not: the scan sets a boolean
-  (`scan/scanner.ts`, `e.exposed`/`h.exposed`) and never writes `surfaces`, which comes from
-  `frond.config.ts` alone. So the flag has two readers — `adapter/rest/src/routes.ts` and
-  `adapter/graphql/src/auto-register.ts` — while `facadeFor` and the runner ignore it.
-  `handler.exposed` is read nowhere. The method-level `@expose` lives in
+- **`expose` is a THIRD membership mechanism, and THE membership rule is the one thing
+  blind to it.** The scan sets a boolean (`scan/scanner.ts`, `e.exposed`/`h.exposed`) and
+  never writes `surfaces`, which comes from `frond.config.ts` alone. Measured 2026-08-28:
+  three readers, one of them inside core — `adapter/rest/src/routes.ts`,
+  `adapter/graphql/src/auto-register.ts`, and `effective-operation.ts`, `exposedAdapters`,
+  where `handler.exposed === false` serves the op to NO adapter. So `facadeFor` and the
+  runner ignore a flag that already decides elsewhere. The method-level `@expose` lives in
   `packages/decorators`, which has **zero importers** and is `private: false`, so it ships
   on npm-day unless someone decides otherwise — while the convention above says this repo
   has no decorators. Two shapes for the fix and they are different decisions: resolve
-  `expose:` into `surfaces:` at the scan, or give the flag a third reader in the runner.
-  One instance exists in the repo, so nothing leaks today. Not decided.
+  `expose:` into `surfaces:` at the scan, or give `facadeFor` the reading
+  `exposedAdapters` already does. One instance exists in the repo, so nothing leaks
+  today. Not decided.
 - **A computed field that reads still issues N queries** — the façade hands the presenter
   the PAGE (`core/src/boot/egress.ts`, `presentEgress`), so the shape allows one query per
   page, but `Promise.all(rows.map(...))` inside the field body is not refused and nothing
