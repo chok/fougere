@@ -2,7 +2,7 @@
  * Entités fougere — source de vérité unique
  */
 import { entity, primary, text, number, oneOf, ref, created, optional, bool } from '@fougere/schema';
-// Loads the SQL adapter's augmentation of `hints`: without this import, `sql:` does not exist.
+// Loads the SQL adapter's augmentation of `adapters`: without this import, `sql:` does not exist.
 import '@fougere/adapter-sql';
 
 // ─── Entités ─────────────────────────────────────
@@ -24,9 +24,9 @@ export class Product extends entity(
     description: optional(text()),
     createdAt: created(),
   },
-  // A preference, not a requirement: this demo runs on SQLite, which is not named here and
-  // so emits `text` as before. The same entity boots on all four engines.
-  { hints: { sql: { description: { columnType: { pg: 'tsvector', mysql: 'longtext' } } } } },
+  // Named per engine: this demo runs on SQLite, which is absent here and so emits `text`
+  // as before. The same entity boots on all four engines.
+  { adapters: { sql: { description: { columnType: { pg: 'tsvector', mysql: 'longtext' } } } } },
 ) {}
 
 export class Customer extends entity({
