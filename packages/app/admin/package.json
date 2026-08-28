@@ -1,7 +1,7 @@
 {
   "name": "@fougere/admin",
-  "version": "0.3.0-alpha.0",
-  "description": "A back-office derived from what the app already says it hosts \u2014 a react-admin DataProvider over the Fougere wire.",
+  "version": "0.4.0-alpha.0",
+  "description": "A back-office derived from what the app already says it hosts — a react-admin DataProvider over the Fougere wire.",
   "keywords": [
     "fougere",
     "react-admin",

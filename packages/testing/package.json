@@ -1,7 +1,7 @@
 {
   "name": "@fougere/testing",
-  "version": "0.3.0-alpha.0",
-  "description": "Tests derived from the declaration \u2014 cases, stubs and a gradient of realities.",
+  "version": "0.4.0-alpha.0",
+  "description": "Tests derived from the declaration — cases, stubs and a gradient of realities.",
   "keywords": [
     "fougere",
     "typescript",

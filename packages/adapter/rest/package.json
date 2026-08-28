@@ -1,7 +1,7 @@
 {
   "name": "@fougere/adapter-rest",
-  "version": "0.3.0-alpha.0",
-  "description": "Entity \u2192 REST routes.",
+  "version": "0.4.0-alpha.0",
+  "description": "Entity → REST routes.",
   "keywords": [
     "fougere",
     "typescript",
