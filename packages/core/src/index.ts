@@ -35,6 +35,7 @@ export { Dispatcher } from './dispatch/Dispatcher.js';
 // them — or a test of one — has to be able to make one through the door.
 export { DispatchEvent } from './dispatch/DispatchEvent.js';
 export type { CallPage, CallRecord } from './contract/CallLog.js';
+export { driftOf, agrees, explain, type CardDrift } from './wire/drift.js';
 export type { DispatchObserver } from './dispatch/DispatchEvent.js';
 export type { DispatchPort } from './dispatch/DispatchPort.js';
 export {
@@ -67,6 +68,10 @@ export type { ModuleLoader } from './loader.js';
 export { FougereError, ErrorCode, validationErrorsOf, type FougereErrorOptions } from './wire/errors.js';
 export type { OperationContext, AppNext, AppMiddleware } from './wire/middleware.js';
 export { createLocalRunner, createAppRunner, assertIdentityCard, RPC_ENTITY } from './wire/call.js';
+// What this app would answer to `rpc.discover`. Served by the boot, and reached until now
+// only by tests through a deep path — a consumer comparing its own card to a producer's
+// had to dispatch a call to ask a question about itself.
+export { identityCardOf } from './wire/call.js';
 export type {
   FrondCall, Transport, IdentityCard, CardOp, Facade, RpcAnswer,
   TopologyReport, FrondPlacement, Edge,

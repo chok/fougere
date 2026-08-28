@@ -140,6 +140,8 @@ export interface App extends DispatchPort {
    * the answer is still "not here".
    */
   adapters: Record<string, boolean | undefined>;
+  /** Where a call goes, as the config declared it — frond name to address. */
+  remotes: Readonly<Record<string, string>>;
   /** Discovered fronds metadata. */
   fronds: Fronds;
   /** Resolve from root container (shortcut). */

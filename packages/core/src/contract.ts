@@ -29,6 +29,10 @@ export type { FrondCall, Transport, SignedCall } from './wire/call.js';
 // call log ignoring its own reader — has to be able to name it.
 export { RPC_ENTITY } from './wire/call.js';
 export type { CallPage, CallRecord } from './contract/CallLog.js';
+// The comparison of two cards, which a consumer runs about a producer — browser-safe on
+// purpose: a panel showing the drift holds only the two cards, never the app.
+export { driftOf, agrees, explain } from './wire/drift.js';
+export type { CardDrift } from './wire/drift.js';
 
 /**
  * What `rpc.discover` answers. It belongs here and not to the runtime: the

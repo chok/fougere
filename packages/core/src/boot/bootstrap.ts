@@ -786,6 +786,10 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // What this app publishes, straight from fougere.config.ts — the doors read it,
     // so an undeclared adapter serves nothing whatever a host mounted.
     adapters: options.adapters ?? {},
+    // Where a call goes, as DECLARED. Kept because a reader needs it beside what the
+    // runtime OBSERVED — `rpc.topology` calls a frond remote because it answered, never
+    // because a key said so, and the two disagree exactly when something is misconfigured.
+    remotes: Object.freeze({ ...(options.remotes ?? {}) }),
     dispatch: (call) => dispatcher.dispatch(call),
     local: localDispatcher,
     resolve,
