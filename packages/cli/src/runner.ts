@@ -126,7 +126,11 @@ export async function run(app: App): Promise<void> {
               );
             }
           } catch (err) {
-            terminal.error(err instanceof Error ? err.message : String(err));
+            const said = err instanceof Error ? err.message : String(err);
+            // A machine reader parses stdout: a refusal printed there is a refusal that
+            // breaks the parse instead of being read. stderr is where it belongs.
+            if (machineOutput) process.stderr.write(said + '\n');
+            else terminal.error(said);
             process.exit(1);
           }
         },

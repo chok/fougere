@@ -39,7 +39,8 @@ export default class BuildHandler {
   constructor(private projectScan: ProjectScan) {}
 
   /** Write down what a scan found, so a deployment reads no disk. */
-  async execute(input: Build): Promise<BuildReport> {
+  /** `json` is the presentation's, so it is not part of what this operation receives. */
+  async execute(input: Omit<Build, 'json'>): Promise<BuildReport> {
     const scan = await this.projectScan.at(input.root ?? undefined);
     const out = resolve(scan.root, input.out || DEFAULT_OUT);
 

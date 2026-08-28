@@ -40,7 +40,8 @@ export default class FreezeHandler {
    * ambiguities and calls again with `renamed`. Splitting it would let a caller write
    * a version it never inspected.
    */
-  async execute(input: Freeze & { renamed?: Record<string, Record<string, string>> }): Promise<FreezeInspection> {
+  /** `json` is the presentation's, so it is not part of what this operation receives. */
+  async execute(input: Omit<Freeze, 'json'> & { renamed?: Record<string, Record<string, string>> }): Promise<FreezeInspection> {
     const fronds = await this.read(input);
     const version = input.version;
     const entities = fronds.flatMap(({ bundle }) => Object.keys(bundle.$defs ?? {}));
@@ -97,7 +98,7 @@ export default class FreezeHandler {
    * `Fronds.schemas()` is deliberately flat — a fact heard in one frond is declared in
    * another — so the per-frond map is built here, where the question IS per frond.
    */
-  private async read(input: Freeze) {
+  private async read(input: Omit<Freeze, 'json'>) {
     const scan = await this.projectScan.at(input.root ?? undefined);
     return Promise.all(
       scan.fronds
