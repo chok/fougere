@@ -24,6 +24,7 @@ export class CallRing {
   private readonly open = new WeakMap<object, CallRecord>();
   private seq = 0;
   private lost = 0;
+  private readonly watching = new Set<(record: CallRecord) => void>();
 
   constructor(
     private readonly max = 500,
@@ -50,6 +51,11 @@ export class CallRing {
       record.ms = Date.now() - record.startedAt;
       if (event.routeKind) record.route = event.routeKind;
       this.open.delete(event.call);
+      for (const told of this.watching) {
+        // A watcher's own failure is not the dispatch's problem — the same rule
+        // `DispatchLifecycle` applies to an observer.
+        try { told(record); } catch { /* observational */ }
+      }
     }
   }
 
@@ -73,6 +79,19 @@ export class CallRing {
     this.open.set(event.call, record);
 
     if (this.held.length > this.max) this.lost += this.held.splice(0, this.held.length - this.max).length;
+  }
+
+  /**
+   * Be told when a record settles, and get the unsubscription back.
+   *
+   * A page that polls is a page that is always a little wrong; this is what lets a door
+   * push instead. Told at `settled` and not at `received`, because a record is only
+   * complete then — a reader would otherwise redraw the same line four times.
+   */
+  watch(told: (record: CallRecord) => void): () => void {
+    this.watching.add(told);
+
+    return () => this.watching.delete(told);
   }
 
   /** Everything above `cursor`, and what was lost while the reader was away. */

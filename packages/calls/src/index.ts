@@ -1,8 +1,10 @@
 import type { App, Extension, InvocationContext } from '@fougere/core';
 import { CallRing } from './CallRing.js';
+import { servePanel, type PanelOptions } from './panel.js';
 
 export type { CallPage, CallRecord } from '@fougere/core';
 export { CallRing } from './CallRing.js';
+export { servePanel, type PanelOptions } from './panel.js';
 
 /** The rpc operation this extension answers under. */
 export const CALLS_OP = 'calls';
@@ -10,16 +12,78 @@ export const CALLS_OP = 'calls';
 export interface CallsOptions {
   /** How many calls the ring keeps. Beyond it, the oldest are dropped and counted. */
   max?: number;
+  /**
+   * Serve the page too, on its own loopback port. `true` takes a free one.
+   *
+   * Node only — it opens an `http` server, which workerd has not. Without it the extension
+   * stays universal and `fougere devtools` is the reader.
+   */
+  panel?: boolean | number | PanelOptions;
 }
 
-/** `entity -> frond`, resolved once at boot: an address does not carry its frond. */
-function frondIndex(app: App): (entity: string) => string | undefined {
-  const byEntity = new Map<string, string>();
+/**
+ * What this process serves, read from the app itself.
+ *
+ * Not a second source: `operationsFor` is the same effective model the façade consumes, so
+ * the page shows what will actually answer — including the ops nobody has called yet, which
+ * is what makes an empty panel useful instead of blank.
+ */
+function servedModel(app: App): unknown {
+  return {
+    fronds: app.fronds.map((frond) => ({
+      name: frond.name,
+      entities: frond.entities.map((entity) => entity.name),
+      operations: frond.handlers.flatMap((handler) => {
+        const ops = app.operationsFor(handler.address);
+        return [...(ops?.values() ?? [])].map((op) => ({
+          id: op.id,
+          operation: op.operation,
+          kind: op.kind,
+          address: `${op.handler.address}.${op.implementation.method}`,
+          handler: op.handler.className,
+          description: op.description ?? null,
+          input: nameOf(op.input),
+          output: nameOf(op.output),
+          cardinality: op.cardinality ?? null,
+          parameters: op.parameters.map((one) => ({
+            name: one.name,
+            type: one.type,
+            optional: one.optional,
+            binding: one.binding.source.kind,
+          })),
+          surfaces: op.exposure.surfaces,
+          adapters: op.exposure.adapters,
+          placement: op.placement.runtime,
+          file: op.implementation.filePath,
+        }));
+      }),
+    })),
+  };
+}
+
+function nameOf(schema: unknown): string | null {
+  const held = schema as { getName?: () => string; name?: string } | undefined;
+  if (!held) return null;
+
+  return typeof held.getName === 'function' ? held.getName() : held.name ?? null;
+}
+
+/**
+ * `address -> frond`, resolved once at boot: a call's address does not carry its frond.
+ *
+ * Indexed on HANDLERS and not on entities, because a frond may hold no entity at all —
+ * `demos/observability` has two — and then every one of its calls came back unnamed. The
+ * entities are indexed after, and only where a handler left the address free: an entity
+ * with no handler is served by `Crud`, which answers under the same address.
+ */
+function frondIndex(app: App): (address: string) => string | undefined {
+  const byAddress = new Map<string, string>();
   for (const frond of app.fronds) {
-    for (const entity of frond.entities) byEntity.set(entity.name, frond.name);
+    for (const entity of frond.entities) byAddress.set(entity.name, frond.name);
+    for (const handler of frond.handlers) byAddress.set(handler.address, frond.name);
   }
 
-  return (entity) => byEntity.get(entity);
+  return (address) => byAddress.get(address);
 }
 
 function cursorOf(invocation: InvocationContext): number {
@@ -48,19 +112,38 @@ export function calls(options: CallsOptions = {}): Extension {
    * goes up on the new app before the old one is released — one shared ring would mix two
    * processes' worth of calls, and the older `down` would erase the newer subscription.
    */
-  const stopping = new WeakMap<App, () => void>();
+  const stopping = new WeakMap<App, () => void | Promise<void>>();
 
   return {
     name: 'calls',
 
-    up(app: App) {
+    async up(app: App) {
       const ring = new CallRing(options.max ?? 500, frondIndex(app));
-      stopping.set(app, app.observe((event) => ring.record(event)));
+      const stop = app.observe((event) => ring.record(event));
       app.serveRpc(CALLS_OP, (invocation) => ring.since(cursorOf(invocation), app.inFlight()));
+
+      if (!options.panel) {
+        stopping.set(app, stop);
+        return;
+      }
+
+      const asked = typeof options.panel === 'object' ? options.panel : {};
+      const port = typeof options.panel === 'number' ? options.panel : asked.port;
+      const close = await servePanel(ring, {
+        ...asked,
+        ...(port !== undefined ? { port } : {}),
+        title: asked.title ?? app.fronds[0]?.name ?? 'fougere',
+        fronds: app.fronds.map((frond) => frond.name),
+        model: servedModel(app),
+        inFlight: () => app.inFlight(),
+        announce: asked.announce ?? ((url) => console.log(`  calls panel  ${url}`)),
+      });
+
+      stopping.set(app, async () => { stop(); await close(); });
     },
 
-    down(app: App) {
-      stopping.get(app)?.();
+    async down(app: App) {
+      await stopping.get(app)?.();
       stopping.delete(app);
     },
   };
