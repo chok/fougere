@@ -12,6 +12,10 @@ export interface PanelOptions {
   fronds?: string[];
   /** What this process serves — read once at boot, since a boot does not change it. */
   model?: unknown;
+  /** The three other rings, each answering what a reader has not seen. */
+  logs?: (cursor: number) => unknown;
+  errors?: (cursor: number) => unknown;
+  queries?: (cursor: number) => unknown;
   /** In flight, right now — asked at each beat rather than held. */
   inFlight?: () => number;
   /** Told where it is listening, once. */
@@ -67,6 +71,16 @@ export function servePanel(ring: CallRing, options: PanelOptions = {}): Promise<
       return;
     }
 
+    // One door per ring, each taking a cursor: a reader asks for what is above its own,
+    // which is the whole protocol — no subscription to hold, nothing to replay.
+    for (const [name, read] of [['logs', options.logs], ['errors', options.errors], ['queries', options.queries]] as const) {
+      if (path !== `/${name}.json`) continue;
+      const since = Number(new URL(request.url ?? '/', 'http://panel').searchParams.get('since') ?? 0);
+      response.writeHead(200, { 'content-type': 'application/json' });
+      response.end(JSON.stringify(read?.(Number.isFinite(since) ? since : 0) ?? { lines: [], cursor: 0, dropped: 0 }));
+      return;
+    }
+
     if (path === '/model.json') {
       response.writeHead(200, { 'content-type': 'application/json' });
       response.end(JSON.stringify(options.model ?? { fronds: [] }));
@@ -86,7 +100,7 @@ export function servePanel(ring: CallRing, options: PanelOptions = {}): Promise<
     }
 
     response.writeHead(404, { 'content-type': 'text/plain' });
-    response.end('the panel serves /, /events, /calls.json and /model.json\n');
+    response.end('the panel serves /, /events, /calls.json, /model.json, /logs.json, /errors.json and /queries.json\n');
   });
 
   return new Promise((ready, refuse) => {

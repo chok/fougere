@@ -1,9 +1,12 @@
-import type { App, Extension, InvocationContext } from '@fougere/core';
+import { onLog, type App, type Extension, type InvocationContext } from '@fougere/core';
 import { CallRing } from './CallRing.js';
+import { ErrorRing, LogRing, QueryRing } from './rings.js';
 import { servePanel, type PanelOptions } from './panel.js';
 
 export type { CallPage, CallRecord } from '@fougere/core';
 export { CallRing } from './CallRing.js';
+export { LogRing, QueryRing, ErrorRing } from './rings.js';
+export type { LogLine, QueryLine, ErrorGroup } from './rings.js';
 export { servePanel, type PanelOptions } from './panel.js';
 
 /** The rpc operation this extension answers under. */
@@ -101,6 +104,21 @@ function frondIndex(app: App): (address: string) => string | undefined {
   return (address) => byAddress.get(address);
 }
 
+/**
+ * Subscribe to SQL when there is SQL. Absence is an answer, not a blank tab.
+ *
+ * `logQueries` is installed in every Kysely this process builds, so the subscription is all
+ * that is missing — and it is taken here, in `up(app)`, like the other two.
+ */
+async function queriesFrom(queries: QueryRing): Promise<() => void> {
+  try {
+    const { onQuery } = await import('@fougere/adapter-sql');
+    return onQuery((event) => queries.record(event));
+  } catch {
+    return () => {};
+  }
+}
+
 function cursorOf(invocation: InvocationContext): number {
   const body = invocation.body as { since?: unknown } | undefined;
   const since = Number(body?.since ?? 0);
@@ -134,7 +152,26 @@ export function calls(options: CallsOptions = {}): Extension {
 
     async up(app: App) {
       const ring = new CallRing(options.max ?? 500, frondIndex(app));
-      const stop = app.observe((event) => ring.record(event));
+      const logs = new LogRing();
+      const errors = new ErrorRing();
+      const queries = new QueryRing();
+
+      const undo = [
+        app.observe((event) => {
+          ring.record(event);
+          if (event.stage === 'failed') errors.fromDispatch(event);
+        }),
+        onLog((line) => {
+          logs.record(line);
+          errors.fromLog(line);
+        }),
+        // `@fougere/adapter-sql` is optional — an app on another storage, or none, simply
+        // never resolves it, and the Queries tab says there is none rather than staying
+        // blank. Dynamic on purpose: this package declares no dependency on it.
+        await queriesFrom(queries),
+      ];
+      const stop = () => { for (const one of undo) one(); };
+
       app.serveRpc(CALLS_OP, (invocation) => ring.since(cursorOf(invocation), app.inFlight()));
 
       if (!options.panel) {
@@ -150,6 +187,9 @@ export function calls(options: CallsOptions = {}): Extension {
         title: asked.title ?? app.fronds[0]?.name ?? 'fougere',
         fronds: app.fronds.map((frond) => frond.name),
         model: servedModel(app),
+        logs: (cursor) => logs.since(cursor),
+        errors: (cursor) => errors.since(cursor),
+        queries: (cursor) => queries.since(cursor),
         inFlight: () => app.inFlight(),
         announce: asked.announce ?? ((url) => console.log(`  calls panel  ${url}`)),
       });

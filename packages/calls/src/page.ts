@@ -116,6 +116,9 @@ export function page(title: string): string {
   <nav id="nav">
     <a href="#flow" aria-current="page">Flow</a>
     <a href="#traces">Traces</a>
+    <a href="#errors">Errors</a>
+    <a href="#logs">Logs</a>
+    <a href="#queries">Queries</a>
     <a href="#served">Served</a>
   </nav>
 </header>
@@ -123,7 +126,7 @@ export function page(title: string): string {
 <aside id="detail"><button id="close" aria-label="close">×</button><div id="detailBody"></div></aside>
 
 <script>
-const state = { calls: [], model: null, view: 'flow', filter: 'all', slowest: 1, fronds: [] };
+const state = { calls: [], model: null, logs: [], errors: [], queries: [], cursors: {}, view: 'flow', filter: 'all', slowest: 1, fronds: [] };
 const main = document.getElementById('main');
 const el = (tag, attrs = {}, html = '') => {
   const node = document.createElement(tag);
@@ -271,9 +274,94 @@ function served() {
   });
 }
 
+// ── Errors ───────────────────────────────────────────────────────────────────
+function errors() {
+  if (state.errors.length === 0) {
+    return [el('div', { class: 'empty' },
+      'Nothing refused. This screen has two sources — what a call carried, and what was '
+      + 'logged at <code>error</code> outside any call — so a boot that failed shows here too.')];
+  }
+
+  const out = [];
+  for (const one of [...state.errors].sort((a, b) => b.lastAt - a.lastAt)) {
+    const card = el('div', { class: 'card' });
+    const where = one.entity ? esc(one.entity + '.' + one.operation) : esc(one.code);
+    card.append(el('h2', {},
+      '<span class="tag failed">' + esc(one.code) + '</span> ' + where
+      + (one.count > 1 ? ' <span class="soft">×' + one.count + '</span>' : '')
+      + '<span class="tag ' + (one.from === 'log' ? 'system' : 'remote') + '">' + one.from + '</span>'));
+    card.append(el('p', {}, esc(one.message)));
+
+    // The whole reason this source beats a span: a span keeps the code, this keeps which
+    // field was refused and why.
+    if (one.fields.length > 0) {
+      const grid = el('div', { class: 'grid' });
+      for (const field of one.fields) {
+        grid.append(el('div', { class: 'served' }, '<b>' + esc(field.path) + '</b><div>' + esc(field.message) + '</div>'));
+      }
+      card.append(grid);
+    }
+    out.push(card);
+  }
+
+  return out;
+}
+
+// ── Logs ─────────────────────────────────────────────────────────────────────
+function logs() {
+  if (state.logs.length === 0) {
+    return [el('div', { class: 'empty' },
+      'No line yet. The threshold filters before this panel sees anything — '
+      + '<code>FOUGERE_LOG_LEVEL=debug</code> lowers it. Lines written before this extension '
+      + 'was mounted (the scan, the seeding) are already gone.')];
+  }
+
+  const table = el('table', {}, '<thead><tr><th>level</th><th>logger</th><th>message</th></tr></thead>');
+  const body = el('tbody');
+  for (const line of state.logs.slice(-400).reverse()) {
+    const tone = line.level === 'error' ? 'failed' : line.level === 'warn' ? 'command' : 'soft';
+    body.append(el('tr', {},
+      '<td><span class="tag ' + tone + '">' + line.level + '</span></td>'
+      + '<td class="soft mono">' + esc(line.name) + '</td>'
+      + '<td>' + esc(line.message)
+        + (line.args.length ? ' <span class="soft mono">' + esc(line.args.join(' ')) + '</span>' : '') + '</td>'));
+  }
+  table.append(body);
+
+  // Said in the screen, not left to be discovered: no async context, no correlation.
+  return [el('p', { class: 'soft' }, 'Chronological. Tying a line to the call it was written '
+    + 'inside needs an async context this package does not open.'), table];
+}
+
+// ── Queries ──────────────────────────────────────────────────────────────────
+function queries() {
+  if (state.queries.length === 0) {
+    return [el('div', { class: 'empty' },
+      'No statement seen. Either nothing has read the database yet, or this process has no '
+      + 'SQL storage — <code>@fougere/adapter-sql</code> is what reports them.')];
+  }
+
+  const slowest = Math.max(1, ...state.queries.map((one) => one.ms));
+  const table = el('table', {}, '<thead><tr><th>storage</th><th>statement</th>'
+    + '<th class="num">params</th><th class="num">took</th></tr></thead>');
+  const body = el('tbody');
+  for (const one of state.queries.slice(-400).reverse()) {
+    const width = Math.max(2, Math.round((one.ms / slowest) * 64));
+    body.append(el('tr', one.failed ? { class: 'failed' } : {},
+      '<td class="soft">' + esc(one.storage) + '</td>'
+      + '<td class="mono">' + esc(one.sql.length > 160 ? one.sql.slice(0, 160) + '…' : one.sql) + '</td>'
+      + '<td class="num soft">' + one.parameters + '</td>'
+      + '<td class="num">' + one.ms + 'ms<span class="meter local" style="width:' + width + 'px"></span></td>'));
+  }
+  table.append(body);
+
+  // The values are user data nobody chose to expose — the rule the call log states for a body.
+  return [el('p', { class: 'soft' }, 'Parameters are counted, never shown.'), table];
+}
+
 // ── the shell ────────────────────────────────────────────────────────────────
 function draw() {
-  const views = { flow, traces, served };
+  const views = { flow, traces, served, errors, logs, queries };
   main.replaceChildren(...views[state.view]());
   document.getElementById('total').textContent = String(state.calls.length);
   for (const link of document.querySelectorAll('#nav a')) {
@@ -321,6 +409,33 @@ const remember = (calls) => {
 };
 
 fetch('./model.json').then((answer) => answer.json()).then((model) => { state.model = model; draw(); });
+
+// The three other rings are polled, not pushed: they fill far faster than calls do, and a
+// frame per statement would spend the panel's budget on redrawing rather than on being read.
+function pull() {
+  for (const name of ['logs', 'errors', 'queries']) {
+    fetch('./' + name + '.json?since=' + (state.cursors[name] ?? 0))
+      .then((answer) => answer.json())
+      .then((page) => {
+        if (!page.lines || page.lines.length === 0) return;
+        state.cursors[name] = page.cursor;
+        // Errors are GROUPS: one that grew comes back with a higher count, so it replaces
+        // rather than piling up beside itself.
+        if (name === 'errors') {
+          for (const group of page.lines) {
+            const at = state.errors.findIndex((one) => one.key === group.key);
+            if (at === -1) state.errors.push(group); else state.errors[at] = group;
+          }
+        } else {
+          state[name].push(...page.lines);
+        }
+        if (state.view === name) draw();
+      })
+      .catch(() => {});
+  }
+}
+setInterval(pull, 1000);
+pull();
 
 const events = new EventSource('./events');
 events.addEventListener('open', () => {

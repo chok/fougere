@@ -1313,6 +1313,9 @@ importers:
 
   packages/calls:
     devDependencies:
+      '@fougere/adapter-sql':
+        specifier: workspace:*
+        version: link:../adapter/sql
       '@fougere/container':
         specifier: workspace:*
         version: link:../container

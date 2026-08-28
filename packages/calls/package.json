@@ -37,9 +37,11 @@
     "prepublishOnly": "pnpm run build"
   },
   "peerDependencies": {
-    "@fougere/core": "workspace:^"
+    "@fougere/core": "workspace:^",
+    "@fougere/adapter-sql": "workspace:^"
   },
   "devDependencies": {
+    "@fougere/adapter-sql": "workspace:*",
     "@fougere/container": "workspace:*",
     "@fougere/core": "workspace:*",
     "@fougere/schema": "workspace:*",
@@ -48,5 +50,10 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "peerDependenciesMeta": {
+    "@fougere/adapter-sql": {
+      "optional": true
+    }
   }
 }
