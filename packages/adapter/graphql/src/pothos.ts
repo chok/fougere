@@ -566,7 +566,7 @@ export function registerType(builder: InstanceType<typeof SchemaBuilder>, config
           const meta = metaMap.get(name);
           const nullable = meta?.nullable ?? true;
           // READ the value, never recompute it. The façade applies the presenter on every
-          // door (`presentEgress`), so the row arrives carrying its computed fields; calling
+          // door (`PresenterExecutor`), so the row arrives carrying its computed fields; calling
           // the method again ran the work twice — and once the method started receiving the
           // PAGE rather than one row, the second call was handed a single object and threw
           // `posts.map is not a function`. What GraphQL owes the field is its declaration.

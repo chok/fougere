@@ -13,7 +13,7 @@ import { tmpdir } from 'node:os';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner } from '../src/index.js';
 import type { OrmFactory } from '../src/index.js';
-import { presentEgress } from '../src/boot/egress.js';
+import { PresenterExecutor } from '../src/dispatch/PresenterExecutor.js';
 
 const packagesDir = join(import.meta.dirname, '..', '..');
 const coreDist = join(packagesDir, 'core', 'dist', 'index.js');
@@ -128,7 +128,7 @@ describe('a write-only field never crosses the façade outbound', () => {
   });
 });
 
-describe('presentEgress — computed fields, added last', () => {
+describe('the presenter — computed fields, added last', () => {
   // The page, not the row: a computed field answers as many values as it was given,
   // in the same order — which is what lets a field that reads do it once.
   const presenter = {
@@ -138,7 +138,7 @@ describe('presentEgress — computed fields, added last', () => {
   const names = ['excerpt', 'authorName'];
 
   it('adds one field per presenter method, on a single row', async () => {
-    const out = await presentEgress({ id: '1', body: 'abcdefgh', authorId: 'a' }, presenter, names);
+    const out = await new PresenterExecutor(presenter, names).present({ id: '1', body: 'abcdefgh', authorId: 'a' });
     expect(out).toEqual({ id: '1', body: 'abcdefgh', authorId: 'a', excerpt: 'abcde', authorName: 'author:a' });
   });
 
@@ -147,16 +147,16 @@ describe('presentEgress — computed fields, added last', () => {
       [{ id: '1', body: 'abcdefgh', authorId: 'a' }],
       { total: 12, hasMore: true },
     );
-    const out = await presentEgress(rows, presenter, names) as { total?: number; hasMore?: boolean }[];
+    const out = await new PresenterExecutor(presenter, names).present(rows) as { total?: number; hasMore?: boolean }[];
     expect(out[0]).toMatchObject({ excerpt: 'abcde', authorName: 'author:a' });
     expect((out as unknown as { total: number }).total).toBe(12);
     expect((out as unknown as { hasMore: boolean }).hasMore).toBe(true);
   });
 
   it('is a no-op without a presenter, and leaves scalars alone', async () => {
-    expect(await presentEgress({ id: '1' }, undefined, names)).toEqual({ id: '1' });
-    expect(await presentEgress({ id: '1' }, presenter, [])).toEqual({ id: '1' });
-    expect(await presentEgress(true, presenter, names)).toBe(true);
-    expect(await presentEgress(null, presenter, names)).toBeNull();
+    expect(await new PresenterExecutor(undefined, names).present({ id: '1' })).toEqual({ id: '1' });
+    expect(await new PresenterExecutor(presenter, []).present({ id: '1' })).toEqual({ id: '1' });
+    expect(await new PresenterExecutor(presenter, names).present(true)).toBe(true);
+    expect(await new PresenterExecutor(presenter, names).present(null)).toBeNull();
   });
 })

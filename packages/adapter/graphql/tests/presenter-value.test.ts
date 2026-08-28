@@ -6,7 +6,7 @@ import { registerType } from '../src/pothos.js';
 /**
  * A computed field is READ from the row, never recomputed here.
  *
- * The façade applies the presenter on every door (`presentEgress` in @fougere/core), so a
+ * The façade applies the presenter on every door (`PresenterExecutor` in @fougere/core), so a
  * row reaches GraphQL already carrying its computed fields. This projection used to call the
  * method a second time — duplicated work, and outright broken once a computed field started
  * receiving the PAGE rather than one row: the second call handed it a single object and it

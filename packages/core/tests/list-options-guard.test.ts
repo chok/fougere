@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
-import { guardStorage } from '../src/boot/egress.js';
+import { StorageGuard } from '../src/dispatch/StorageGuard.js';
 import type { ListOptions } from '../src/orm.js';
 
 /**
@@ -15,12 +15,12 @@ class Line extends entity({ id: primary(), label: text() }) {}
 
 function guardedOrm() {
   // `list` déclare son paramètre : inspecter les options EST le travail du garde, et
-  // `guardStorage` rend le type qu'on lui donne — un faux sans paramètre rendrait donc
+  // `StorageGuard.guard` rend le type qu'on lui donne — un faux sans paramètre rendrait donc
   // les appels ci-dessous incompilables. `Record` ouvre la porte aux clés inconnues,
   // qui sont précisément ce que ces tests envoient.
   const list = vi.fn(async (_options?: ListOptions & Record<string, unknown>) => []);
   const orm = { list, create: vi.fn(async () => ({})), update: vi.fn(async () => ({})) };
-  return { orm, guarded: guardStorage(orm, Line.getFields(), 'line') };
+  return { orm, guarded: new StorageGuard(Line.getFields(), 'line').guard(orm) };
 }
 
 describe('les options de lecture sont jugées', () => {

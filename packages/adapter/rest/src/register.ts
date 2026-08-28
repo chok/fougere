@@ -43,7 +43,7 @@ export function registerRoutes(
         }
 
         // The computed fields are already here: the façade applies the presenter on every
-        // door (`presentEgress`), so a route that re-applied it did the work twice — and
+        // door (`PresenterExecutor`), so a route that re-applied it did the work twice — and
         // once a computed field started receiving the PAGE rather than one row, the second
         // pass handed it a single object and threw `posts.map is not a function`.
 

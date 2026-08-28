@@ -1,7 +1,7 @@
 /**
  * A computed field may depend on who is asking, and it runs once for the page.
  *
- * Both used to be impossible, and for the same reason: `presentEgress` called the
+ * Both used to be impossible, and for the same reason: `PresenterExecutor` called the
  * method with the row and nothing else, once per row. So `canEdit` — which is just
  * `ownerUserId === user.id` — had nowhere to live, and any field doing a read cost
  * one query per row.

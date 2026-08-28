@@ -17,7 +17,7 @@ import {
   resolveEffectiveOperations,
   type EffectiveOperationsMap,
 } from '../effective-operation.js';
-import { guardStorage } from './egress.js';
+import { StorageGuard } from '../dispatch/StorageGuard.js';
 import { portBindings } from './ports.js';
 import { InFlight } from '../dispatch/InFlight.js';
 // The keys, each read from where its concept is declared — never respelled here.
@@ -320,7 +320,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
           : baseOrm;
 
         // Storage is a way out like the client surface — see `StorageGuard`.
-        const guarded = guardStorage(scoped, entity.entityClass.getFields(), entity.name);
+        const guarded = new StorageGuard(entity.entityClass.getFields(), entity.name).guard(scoped);
         scope.registerValue(ormName, guarded);
 
         // The default repository IS the guarded port — it already answers every gesture a
@@ -515,7 +515,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         const scoped = outputSchema && outputSchema !== entity.entityClass
           ? baseOrm.output(outputSchema)
           : baseOrm;
-        const guarded = guardStorage(scoped, entity.entityClass.getFields(), entity.name);
+        const guarded = new StorageGuard(entity.entityClass.getFields(), entity.name).guard(scoped);
         surfaceScope.registerValue(ormKeyOf(entity.name), guarded);
         surfaceScope.registerValue(repositoryKeyOf(entity.name), guarded);
       }

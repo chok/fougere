@@ -82,7 +82,7 @@ function refuseAmbiguousUpsert(entity: string, gesture: string): never {
  * The ORM a member is handed inside a compensated frame: the same port, writing the same
  * rows, leaving an inverse behind each time.
  *
- * `Object.create` for the same reason `guardStorage` uses it — the ORM keeps every gesture
+ * `Object.create` for the same reason `StorageGuard` uses it — the ORM keeps every gesture
  * it had, including the ones this knows nothing about.
  */
 export function recording<T extends object>(orm: T, entity: string, fields: Fields, journal: Undo[]): T {

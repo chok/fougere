@@ -39,7 +39,7 @@ export interface RouteDefinition {
   description?: string;
   // No presenter here. A route used to carry the instance and its field names so the
   // registration could enrich each row; the façade does that for every door now
-  // (`presentEgress`), so the rows arrive computed and a second pass was duplicated work.
+  // (`PresenterExecutor`), so the rows arrive computed and a second pass was duplicated work.
 }
 
 interface OperationMeta {

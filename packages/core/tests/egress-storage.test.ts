@@ -10,7 +10,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { entity, primary, text, oneOf, email, number, optional, readOnly } from '@fougere/schema';
-import { guardStorage } from '../src/boot/egress.js';
+import { StorageGuard } from '../src/dispatch/StorageGuard.js';
 import { FougereError, ErrorCode } from '../src/wire/errors.js';
 
 class Contact extends entity({
@@ -34,7 +34,7 @@ function spyOrm() {
 
 const judged = () => {
   const orm = spyOrm();
-  return { orm, guarded: guardStorage(orm, Contact.getFields(), 'contact') };
+  return { orm, guarded: new StorageGuard(Contact.getFields(), 'contact').guard(orm) };
 };
 
 const ok = { id: 'c1', name: 'Ada', status: 'draft', ownerId: 'u1' };

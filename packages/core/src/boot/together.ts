@@ -13,7 +13,7 @@ import type { Container } from '@fougere/container';
 import { membersOfTogetherKey, ormKeyOf, type EntityOrm, type OrmFactory } from '../orm.js';
 import type { Logger } from '../builtins/logger.js';
 import type { ProviderEntry } from '../scan/frond.js';
-import { guardStorage } from './egress.js';
+import { StorageGuard } from '../dispatch/StorageGuard.js';
 import { recording, unwind, type Undo } from './frame.js';
 
 /** Everything the boot knows that a frame needs, gathered once for every frond. */
@@ -172,7 +172,7 @@ export function registerFrames(
 
     const sources = new Set(members.entities.map((member) => world.sourceOf?.(member.name) ?? 'db'));
     const judge = (orm: EntityOrm, name: string, schema: SchemaView) =>
-      guardStorage(orm, schema.getFields(), name);
+      new StorageGuard(schema.getFields(), name).guard(orm);
 
     // One engine and a way into it: the engine gives the unwind AND the isolation.
     if (world.transacted && sources.size === 1) {

@@ -41,7 +41,7 @@ describe('orm.client', () => {
     const { orm } = await app();
     const client = (orm as { client: any }).client;
 
-    // `price_cents` déclare `min: 0`. Le port le refuse par `guardStorage` ; le client
+    // `price_cents` déclare `min: 0`. Le port le refuse par `StorageGuard` ; le client
     // ne rencontre pas ce juge-là — c'est le contrat de cette porte. Mais la borne est
     // aussi descendue dans le schéma, et la base ne fait de faveur à personne.
     await expect(

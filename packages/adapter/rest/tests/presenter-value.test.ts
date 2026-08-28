@@ -5,7 +5,7 @@ import { generateRoutes, registerRoutes } from '../src/index.js';
 /**
  * A computed field travels with the row; this projection adds nothing to it.
  *
- * The façade applies the presenter on every door (`presentEgress` in @fougere/core), so a
+ * The façade applies the presenter on every door (`PresenterExecutor` in @fougere/core), so a
  * route that enriched the result again did the work twice — and outright broke once a
  * computed field started receiving the PAGE rather than one row: the second pass handed it
  * a single object and it threw `posts.map is not a function`. REST hit this on every

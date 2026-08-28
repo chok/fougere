@@ -54,7 +54,7 @@ packages/
   container/           @fougere/container     type-based DI, zero deps
   core/                @fougere/core          the four phases below, and what sits outside them
     src/scan/            what a scan run finds: scanner, handler-parser, its cache, the descriptors
-    src/boot/            what createApp does with it: bootstrap, HandlerFacade, Emissions, Lifecycle, binding, egress, seed, remote
+    src/boot/            what createApp does with it: bootstrap, HandlerFacade, Emissions, Lifecycle, binding, seed, remote
     src/wire/            what travels: the call, the invocation, the operation contract, errors, middleware
     src/prefab/          what a user declares: Crud, Presenter, Collector, Repository, Mirror
     src/*.ts             what belongs to no phase: the two published entry points, the ORM port, emit, the checkers
@@ -255,9 +255,9 @@ belief, which costs a sentence, not a paragraph.
   `exposedAdapters` already does. One instance exists in the repo, so nothing leaks
   today. Not decided.
 - **A computed field that reads still issues N queries** — the façade hands the presenter
-  the PAGE (`core/src/boot/egress.ts`, `presentEgress`), so the shape allows one query per
-  page, but `Promise.all(rows.map(...))` inside the field body is not refused and nothing
-  says so.
+  the PAGE (`core/src/dispatch/PresenterExecutor.ts`, `present`), so the shape allows one
+  query per page, but `Promise.all(rows.map(...))` inside the field body is not refused and
+  nothing says so.
 - **`BindingPlan.optional` is written five times by core and ignored by `resolveArgs`**, so
   at the façade `user?: User` and `user: User | null` behave identically while
   `adapter/graphql` reads the same field and makes the argument nullable. **It is NOT a
@@ -341,7 +341,7 @@ lives in the notes.
 - **A copy does not import, so no reader count can see it.** Measured 2026-08-25: nine
   hand-written copies of four declared functions, five of them divergent, one INSIDE the
   package that declares the original. The scan that finds them compares BODIES, not imports.
-- The shape is held on **three** paths: the façade judges input, `guardStorage` judges every
+- The shape is held on **three** paths: the façade judges input, `StorageGuard` judges every
   write through the port, and the DDL emits `CHECK` for `oneOf`/`min`/`max`
   (`adapter/sql/src/check.ts`). `pattern`/`format` stay at the façade on purpose — regex
   dialects diverge.
