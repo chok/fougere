@@ -215,18 +215,6 @@ belief, which costs a sentence, not a paragraph.
 
 - **A seed cycle is not satisfiable by ordering** — `core/src/boot/seed.ts`, `orderSeeds`
   (Kahn, like `orderTables`). Its members keep scan order and fail at the driver.
-- **An installed base class still warns `heritage-unresolved`** (`scan/handler-parser.ts`) — the checker path yields
-  nothing under a tarball install and the AST fallback reads the written class, which a
-  `.d.ts` does not have. Measured 2026-08-24: three warnings, one per `extends Crud(…)`.
-  The CAUSE was found 2026-08-28 and it is not the parser: `declarationMap` is on, so every
-  `.d.ts.map` points at `../../src/…`, and `"files": ["dist"]` shipped the maps without
-  their target. In the workspace the symlink exposes `src/`, the checker follows the map to
-  the written class and `fougere check` on `demos/crud-auto` reports NOTHING — which is why
-  the defect only ever appeared installed. `src` is published now (24 packages, core's
-  tarball 233 → 334 kB); UNVERIFIED under a real install, and that is the measurement to
-  make on npm-day. Benign either way — a prefab declares its ops at runtime (`Crud.__ops`)
-  so all five routes exist — and a warning rather than a refusal, because an installed base
-  with no operation is ordinary and the boot cannot tell the two apart.
 - **Nothing generates OpenAPI at all**, so an operation's `description` is carried on
   `RouteDefinition.description` and read by nobody. GraphQL does read it
   (`adapter/graphql/src/pothos.ts`, `registerOperations`).
@@ -342,6 +330,13 @@ lives in the notes.
 - `FieldSet.primary` refuses two primaries, naming both. `primaryFieldOf` returned the first
   one for as long as its own comment recorded that two primaries were the bug it existed to
   fix; the absence is still answered and not defaulted.
+- **`heritage-unresolved` under an installed package was fixed before the entry describing
+  it was written.** `87b4738` (2026-08-24 10:06) taught the checker to resolve a base class;
+  the entry landed at 13:26 quoting an earlier count. Remeasured 2026-08-28 against real
+  tarballs of all 24 packages installed outside the workspace: `fougere check` on the same
+  three `extends Crud(…)` reports nothing, WITH and WITHOUT `src/` present. The publishing
+  fix that came out of that probe stands on its own ground — a `.d.ts.map` shipped without
+  its target is a file that lies — and it is not what silenced this.
 - A registry that cannot say what it holds is not the owner: `Generators` registers its three
   builtins rather than switching on them, so the unknown name is refused inside it.
 - **A copy does not import, so no reader count can see it.** Measured 2026-08-25: nine
