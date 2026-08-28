@@ -81,6 +81,20 @@ describe('the ring', () => {
     expect(page.cursor).toBe(5);
   });
 
+  it('keeps the traceparent, which is what lets two processes be sewn', () => {
+    const ring = new CallRing();
+    const call = new Call(
+      new RouteAddress({ entity: 'order', operation: 'list' }),
+      { trace: '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01' },
+    );
+
+    ring.record(DispatchEvent.received(call));
+
+    expect(ring.since(0).calls[0]).toMatchObject({
+      trace: '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
+    });
+  });
+
   it('answers only what a reader has not seen', () => {
     const ring = new CallRing();
     ring.record(DispatchEvent.received(callTo('order', 'first')));

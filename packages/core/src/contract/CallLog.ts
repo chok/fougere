@@ -19,6 +19,14 @@ export interface CallRecord {
   surface?: string;
   /** Known at `resolved`, so absent on a call that never found a route. */
   route?: NonNullable<DispatchEvent['routeKind']>;
+  /**
+   * The traceparent the invocation carried, when one did.
+   *
+   * One panel reads one process, so this is what lets two of them be sewn: the process
+   * that sent and the process that executed share it, and the gap between their two
+   * durations IS the cost of the wire rather than a deduction.
+   */
+  trace?: string;
   startedAt: number;
   /** Known at `settled`. */
   ms?: number;
