@@ -32,7 +32,8 @@
     "dist",
     "app",
     "fronds",
-    "templates"
+    "templates",
+    "src"
   ],
   "scripts": {
     "build": "rm -rf dist && tsc && chmod +x dist/bin.js && node dist/bin.js build",

@@ -1,7 +1,7 @@
 {
   "name": "create-fougere",
   "version": "0.3.0-alpha.0",
-  "description": "Scaffold a Fougere workspace — `npm create fougere`.",
+  "description": "Scaffold a Fougere workspace \u2014 `npm create fougere`.",
   "keywords": [
     "fougere",
     "create",
@@ -21,7 +21,8 @@
     "create-fougere": "dist/bin.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "scripts": {
     "build": "rm -rf dist && tsc && chmod +x dist/bin.js",

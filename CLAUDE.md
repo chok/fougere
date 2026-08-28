@@ -218,9 +218,15 @@ belief, which costs a sentence, not a paragraph.
 - **An installed base class still warns `heritage-unresolved`** (`scan/handler-parser.ts`) — the checker path yields
   nothing under a tarball install and the AST fallback reads the written class, which a
   `.d.ts` does not have. Measured 2026-08-24: three warnings, one per `extends Crud(…)`.
-  Benign — a prefab declares its ops at runtime (`Crud.__ops`) so all five routes exist —
-  and a warning rather than a refusal, because an installed base with no operation is
-  ordinary and the boot cannot tell the two apart.
+  The CAUSE was found 2026-08-28 and it is not the parser: `declarationMap` is on, so every
+  `.d.ts.map` points at `../../src/…`, and `"files": ["dist"]` shipped the maps without
+  their target. In the workspace the symlink exposes `src/`, the checker follows the map to
+  the written class and `fougere check` on `demos/crud-auto` reports NOTHING — which is why
+  the defect only ever appeared installed. `src` is published now (24 packages, core's
+  tarball 233 → 334 kB); UNVERIFIED under a real install, and that is the measurement to
+  make on npm-day. Benign either way — a prefab declares its ops at runtime (`Crud.__ops`)
+  so all five routes exist — and a warning rather than a refusal, because an installed base
+  with no operation is ordinary and the boot cannot tell the two apart.
 - **Nothing generates OpenAPI at all**, so an operation's `description` is carried on
   `RouteDefinition.description` and read by nobody. GraphQL does read it
   (`adapter/graphql/src/pothos.ts`, `registerOperations`).

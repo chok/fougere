@@ -1,7 +1,7 @@
 {
   "name": "@fougere/react",
   "version": "0.3.0-alpha.0",
-  "description": "Fougere's four primitives as React hooks — host-independent.",
+  "description": "Fougere's four primitives as React hooks \u2014 host-independent.",
   "keywords": [
     "fougere",
     "react",
@@ -26,7 +26,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "scripts": {
     "build": "rm -rf dist && tsc",

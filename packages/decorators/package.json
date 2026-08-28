@@ -1,7 +1,7 @@
 {
   "name": "@fougere/decorators",
   "version": "0.3.0-alpha.0",
-  "description": "Configuration sugar (@config) — declarative, never hidden runtime.",
+  "description": "Configuration sugar (@config) \u2014 declarative, never hidden runtime.",
   "keywords": [
     "fougere",
     "typescript",
@@ -25,7 +25,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "scripts": {
     "build": "rm -rf dist && tsc",

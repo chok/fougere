@@ -1,7 +1,7 @@
 {
   "name": "@fougere/svelte",
   "version": "0.3.0-alpha.0",
-  "description": "Fougere's four primitives as Svelte stores — host-independent.",
+  "description": "Fougere's four primitives as Svelte stores \u2014 host-independent.",
   "keywords": [
     "fougere",
     "svelte",
@@ -26,7 +26,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "scripts": {
     "build": "rm -rf dist && tsc",

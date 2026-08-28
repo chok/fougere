@@ -28,7 +28,7 @@
   },
   "files": [
     "dist",
-    "src/runtime"
+    "src"
   ],
   "scripts": {
     "build": "rm -rf dist && tsc",
