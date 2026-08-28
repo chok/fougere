@@ -1,8 +1,8 @@
-import { entity, bool, number, text } from '@fougere/schema';
+import { entity, bool, text, optional } from '@fougere/schema';
 
-/** `fougere devtools` — what a running app is dispatching, as it happens. */
+/** `fougere devtools` — what the running apps of this project are dispatching. */
 export default class Devtools extends entity({
-  url: text({ default: 'http://127.0.0.1:3000', description: 'The running app to read. Its host serves /_fougere/call' }),
-  since: number({ default: 0, description: 'Only calls above this cursor' }),
+  url: optional(text({ description: 'One app to read. Absent: every address this project declares' })),
+  root: optional(text({ description: 'Project to read the addresses from. Default: the current directory' })),
   json: bool({ default: false, description: 'Print one page as JSON and stop, instead of following' }),
 }) {}
