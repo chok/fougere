@@ -9,12 +9,21 @@
  */
 import { Kysely, sql, type Dialect as KyselyDialect } from 'kysely';
 import { createOrmFactory, type OrmFactoryOptions } from './crud.js';
+import { logQueries } from './query.js';
 import type { DialectName } from './dialect.js';
 import type { SqlSink } from './ddl.js';
 
 export interface SetupOptions {
   /** Override naming for specific entities (e.g. better-auth wants singular table names). */
   ormFactoryOptions?: OrmFactoryOptions;
+  /**
+   * What to call this storage when a query is reported.
+   *
+   * A process may open several (`sources:`), and a module-level sink sees them all — without
+   * a name, two statements from two databases read as one stream. Defaults to what
+   * distinguishes them anyway: the engine here, the file path for SQLite.
+   */
+  name?: string;
 }
 
 export interface Setup {
@@ -52,7 +61,7 @@ export function setupKysely(
   dialect: DialectName,
   opts: SetupOptions = {},
 ): Setup {
-  const db = new Kysely<any>({ dialect: kyselyDialect });
+  const db = new Kysely<any>({ dialect: kyselyDialect, log: logQueries(opts.name ?? dialect) });
   return {
     db,
     dialect,

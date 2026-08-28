@@ -1,4 +1,5 @@
 export { createTableSQL, createIndexSQL, indexSQL, addForeignKeyConstraintSQL, generateSQL, autoMigrate, compiler } from './ddl.js';
+export { onQuery, logQueries, type QueryEvent, type QuerySink } from './query.js';
 export type { GenerateOptions, SqlSink } from './ddl.js';
 export { toTable, toTables, toTableName, toSnakeCase, isKeyed, orderTables } from './table.js';
 export type {

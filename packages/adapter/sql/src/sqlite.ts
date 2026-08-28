@@ -12,6 +12,7 @@ import { dirname } from 'node:path';
 import { Kysely, SqliteDialect } from 'kysely';
 import Database from 'better-sqlite3';
 import { createOrmFactory } from './crud.js';
+import { logQueries } from './query.js';
 import { sqlSink, type Setup, type SetupOptions } from './setup.js';
 
 export interface SqliteSetupOptions extends SetupOptions {
@@ -31,7 +32,7 @@ export function setupSqlite(opts: SqliteSetupOptions = {}): SqliteSetup {
   const sqlite = new Database(path);
   sqlite.pragma('journal_mode = WAL');
   sqlite.pragma('foreign_keys = ON');
-  const db = new Kysely<any>({ dialect: new SqliteDialect({ database: sqlite }) });
+  const db = new Kysely<any>({ dialect: new SqliteDialect({ database: sqlite }), log: logQueries(opts.name ?? path) });
   return {
     db,
     sqlite,
