@@ -13,6 +13,7 @@ import { createContainer } from '@fougere/container';
 import { migrate } from '@fougere/adapter-sql';
 import { setupSqlite } from '@fougere/adapter-sql/sqlite';
 import { serve } from '@fougere/transport-http';
+import { calls } from '@fougere/calls';
 
 // `frondAliases` is what makes `@fronds/user/entities/User.js` resolve — the named
 // form a frond uses for its neighbour. Without it this entry point loaded frond
@@ -39,7 +40,15 @@ const { hostname, port: declaredPort } = new URL(address);
 const log = new Logger('blog-host');
 const { ormFactory, db } = setupSqlite({ path: './nuxt-blog.db' });
 
-const app = await createApp({ scan: await scanProject(process.cwd(), ['blog']), createContainer, ormFactory,});
+// The panel, on its own loopback port: every call this frond executes, as it happens.
+// Click through the Nuxt app on :3000 and they land here — including the ones that
+// arrived over the wire, which is the half a browser's devtools cannot show.
+const app = await createApp({
+  scan: await scanProject(process.cwd(), ['blog']),
+  createContainer,
+  ormFactory,
+  extensions: [calls({ panel: 4400 })],
+});
 await migrate({ fronds: app.fronds }, db);
 
 const { port } = await serve(createLocalRunner(app), { port: Number(declaredPort), host: hostname });

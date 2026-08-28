@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@fougere/auth-better": "workspace:*",
+    "@fougere/calls": "workspace:*",
     "@fougere/http": "workspace:*",
     "@fougere/core": "workspace:*",
     "@fougere/nuxt": "workspace:*",

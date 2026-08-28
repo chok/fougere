@@ -604,6 +604,9 @@ importers:
       '@fougere/auth-better':
         specifier: workspace:*
         version: link:../../packages/auth/better
+      '@fougere/calls':
+        specifier: workspace:*
+        version: link:../../packages/calls
       '@fougere/container':
         specifier: workspace:*
         version: link:../../packages/container
@@ -668,6 +671,9 @@ importers:
 
   demos/observability:
     dependencies:
+      '@fougere/calls':
+        specifier: workspace:*
+        version: link:../../packages/calls
       '@fougere/container':
         specifier: workspace:*
         version: link:../../packages/container
