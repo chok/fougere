@@ -1,0 +1,52 @@
+{
+  "name": "@fougere/calls",
+  "version": "0.4.0-alpha.0",
+  "description": "Optional call log for Fougere: a bounded ring of every dispatch, served as an rpc operation. Read it with `fougere devtools`.",
+  "keywords": [
+    "fougere",
+    "typescript",
+    "devtools",
+    "observability",
+    "dispatch"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chok/fougere.git",
+    "directory": "packages/calls"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit -p tsconfig.test.json",
+    "prepublishOnly": "pnpm run build"
+  },
+  "peerDependencies": {
+    "@fougere/core": "workspace:^"
+  },
+  "devDependencies": {
+    "@fougere/container": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/schema": "workspace:*",
+    "@fougere/transport-http": "workspace:*",
+    "vitest": "^4.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
