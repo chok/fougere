@@ -105,6 +105,57 @@ describe('the ring', () => {
 });
 
 describe('the extension', () => {
+  it('names the frond of each entity when the app holds several', async () => {
+    await using app = await createApp({
+      scan: await scanProject(fixtures),
+      createContainer,
+      ormFactory,
+      extensions: [calls()],
+    });
+
+    await app.dispatch(callTo('order', 'list'));
+    await app.dispatch(callTo('crate', 'list'));
+
+    const page = await createAppRunner(app)(
+      { entity: 'rpc', op: 'calls' },
+      { params: {}, query: {}, body: { since: 0 }, state: {} },
+    ) as CallPage;
+
+    expect(page.calls.map((one) => `${one.frond}/${one.entity}`)).toEqual(['shop/order', 'warehouse/crate']);
+  });
+
+  it('gives each app its own ring, so releasing one does not blind the other', async () => {
+    // A host declares its extensions ONCE, so the same instance goes up on the new app
+    // before the old one is released — the shape that made observability's shared list a bug.
+    const shared = calls();
+    const boot = async () => await createApp({
+      scan: await scanProject(fixtures),
+      createContainer,
+      ormFactory,
+      extensions: [shared],
+    });
+
+    const older = await boot();
+    const newer = await boot();
+    const read = (app: Awaited<ReturnType<typeof boot>>) => createAppRunner(app)(
+      { entity: 'rpc', op: 'calls' },
+      { params: {}, query: {}, body: { since: 0 }, state: {} },
+    ) as Promise<CallPage>;
+
+    await older.dispatch(callTo('order', 'list'));
+    await newer.dispatch(callTo('crate', 'list'));
+
+    expect((await read(older)).calls.map((one) => one.entity)).toEqual(['order']);
+    expect((await read(newer)).calls.map((one) => one.entity)).toEqual(['crate']);
+
+    await older.dispose();
+
+    await newer.dispatch(callTo('order', 'list'));
+    expect((await read(newer)).calls.map((one) => one.entity)).toEqual(['crate', 'order']);
+
+    await newer.dispose();
+  });
+
   it('records what the app dispatched, and serves it as an rpc operation', async () => {
     await using app = await createApp({
       scan: await scanProject(fixtures),

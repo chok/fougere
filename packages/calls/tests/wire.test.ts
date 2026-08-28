@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { describe, expect, it, vi } from 'vitest';
-import { Call, RouteAddress, createApp, createLocalRunner, type CallPage, type OrmFactory } from '@fougere/core';
+import { Call, RouteAddress, createApp, createAppRunner, createLocalRunner, type CallPage, type OrmFactory } from '@fougere/core';
 import { scanProject } from '@fougere/core/node';
 import { serve } from '@fougere/transport-http';
 import { createHttpTransport } from '@fougere/transport-http/client';
@@ -47,6 +47,64 @@ describe('over the wire', () => {
         { params: {}, query: {}, body: { since: page.cursor }, state: {} },
       ) as CallPage;
       expect(second.calls).toHaveLength(0);
+    } finally {
+      await door.close();
+    }
+  });
+});
+
+/**
+ * Two consumers, one hosted frond — what its own ring shows.
+ *
+ * This is the shape that matters in a split deployment: the hosted process serves several
+ * apps, so its log mixes them, and what separates them is what the callers put on the
+ * invocation. Nothing else can: an address carries no consumer.
+ */
+describe('two apps against one hosted frond', () => {
+  it('mixes both consumers in the hosted ring, and separates them only by what they signed', async () => {
+    await using hosted = await createApp({
+      scan: await scanProject(fixtures),
+      createContainer,
+      ormFactory,
+      extensions: [calls()],
+    });
+    const door = await serve(createLocalRunner(hosted), { port: 0 });
+    const at = `http://127.0.0.1:${door.port}`;
+
+    try {
+      // Two consumers, each with its own ring, both reaching the same hosted frond.
+      const consumers = await Promise.all([1, 2].map(async () => await createApp({
+        scan: await scanProject(fixtures),
+        createContainer,
+        ormFactory,
+        remotes: { shop: at },
+        remoteTransport: (url) => createHttpTransport(url),
+        extensions: [calls()],
+      })));
+
+      for (const consumer of consumers) {
+        await consumer.dispatch(new Call(new RouteAddress({ entity: 'order', operation: 'list' })));
+      }
+
+      const read = (app: (typeof consumers)[number]) => createAppRunner(app)(
+        { entity: 'rpc', op: 'calls' },
+        { params: {}, query: {}, body: { since: 0 }, state: {} },
+      ) as Promise<CallPage>;
+
+      // Each consumer's own ring holds ONE call — its own.
+      for (const consumer of consumers) {
+        const page = await read(consumer);
+        expect(page.calls).toHaveLength(1);
+        expect(page.calls[0]).toMatchObject({ entity: 'order', operation: 'list' });
+      }
+
+      // The hosted ring holds BOTH executions, and — with nobody signing on loopback —
+      // nothing on them says which consumer sent which. That absence is the finding.
+      const hostedPage = await read(hosted as never);
+      expect(hostedPage.calls).toHaveLength(2);
+      expect(hostedPage.calls.every((one) => one.caller === undefined)).toBe(true);
+
+      for (const consumer of consumers) await consumer.dispose();
     } finally {
       await door.close();
     }

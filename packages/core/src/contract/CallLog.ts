@@ -27,6 +27,13 @@ export interface CallRecord {
    * durations IS the cost of the wire rather than a deduction.
    */
   trace?: string;
+  /**
+   * The peer that established this call, when one did.
+   *
+   * A hosted frond serves several consumers, so its own ring mixes them: this is what
+   * separates them. Absent on a call nobody signed — a loopback dev boot has no identity.
+   */
+  caller?: string;
   startedAt: number;
   /** Known at `settled`. */
   ms?: number;

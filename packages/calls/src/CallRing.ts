@@ -56,7 +56,7 @@ export class CallRing {
   private opened(event: DispatchEvent): void {
     const { entity, operation, surface } = event.call.address;
     const frond = this.frondOf(entity);
-    const trace = event.call.invocation.trace;
+    const { trace, caller } = event.call.invocation;
     const record: CallRecord = {
       seq: ++this.seq,
       ...(frond ? { frond } : {}),
@@ -64,6 +64,7 @@ export class CallRing {
       operation,
       ...(surface !== undefined ? { surface } : {}),
       ...(trace ? { trace } : {}),
+      ...(caller ? { caller } : {}),
       startedAt: Date.now(),
       verdict: 'running',
     };
