@@ -31,7 +31,11 @@ export { RouteAddress } from './contract/RouteAddress.js';
 export type { RouteAddressInput } from './contract/RouteAddress.js';
 export { DispatchLifecycle } from './dispatch/DispatchLifecycle.js';
 export { Dispatcher } from './dispatch/Dispatcher.js';
-export type { DispatchEvent, DispatchObserver } from './dispatch/DispatchEvent.js';
+// The class and not only its type: an observer RECEIVES these, so a package that folds
+// them — or a test of one — has to be able to make one through the door.
+export { DispatchEvent } from './dispatch/DispatchEvent.js';
+export type { CallPage, CallRecord } from './contract/CallLog.js';
+export type { DispatchObserver } from './dispatch/DispatchEvent.js';
 export type { DispatchPort } from './dispatch/DispatchPort.js';
 export {
   inferOperationKind,
@@ -62,7 +66,7 @@ export type {
 export type { ModuleLoader } from './loader.js';
 export { FougereError, ErrorCode, validationErrorsOf, type FougereErrorOptions } from './wire/errors.js';
 export type { OperationContext, AppNext, AppMiddleware } from './wire/middleware.js';
-export { createLocalRunner, createAppRunner, assertIdentityCard } from './wire/call.js';
+export { createLocalRunner, createAppRunner, assertIdentityCard, RPC_ENTITY } from './wire/call.js';
 export type {
   FrondCall, Transport, IdentityCard, CardOp, Facade, RpcAnswer,
   TopologyReport, FrondPlacement, Edge,

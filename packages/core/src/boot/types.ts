@@ -253,6 +253,8 @@ export interface App extends DispatchPort {
    */
   serveRpc(op: string, answer: RpcAnswer): void;
   /** Register a global app middleware (runs on every operation). */
+  /** Watch every dispatch transition; the returned function unsubscribes. */
+  observe(observer: DispatchObserver): () => void;
   use(middleware: AppMiddleware): void;
   /** Register an app middleware scoped to a specific entity. */
   use(entity: string, middleware: AppMiddleware): void;

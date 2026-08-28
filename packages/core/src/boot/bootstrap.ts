@@ -814,6 +814,9 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       ));
     },
     extensions: () => appLifecycle.names(),
+    observe(observer) {
+      return dispatchLifecycle.add(observer);
+    },
     use(...args: [AppMiddleware] | [string, AppMiddleware]): void {
       if (typeof args[0] === 'string') {
         const [entity, mw] = args as [string, AppMiddleware];

@@ -40,6 +40,24 @@ describe('App.dispatch', () => {
     expect(events.find(({ stage }) => stage === 'resolved')).toMatchObject({ routeKind: 'local' });
   });
 
+  it('lets a late subscriber watch, and stop watching', async () => {
+    const seen: string[] = [];
+    await using app = await createApp({
+      scan: await scanProject(fixtures),
+      createContainer,
+      ormFactory,
+    });
+
+    // `app.use` adds a middleware this late; this is its dual — participate, or watch.
+    const stop = app.observe((event) => seen.push(event.stage));
+    await app.dispatch(new Call(new RouteAddress({ entity: 'product', operation: 'list' })));
+    expect(seen).toEqual(['received', 'resolved', 'completed', 'settled']);
+
+    stop();
+    await app.dispatch(new Call(new RouteAddress({ entity: 'product', operation: 'list' })));
+    expect(seen).toHaveLength(4);
+  });
+
   it('makes createAppRunner an entry over the same dispatcher', async () => {
     const events: DispatchEvent[] = [];
     await using app = await createApp({

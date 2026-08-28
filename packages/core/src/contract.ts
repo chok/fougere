@@ -25,6 +25,10 @@ export { Call } from './contract/Call.js';
 export { RouteAddress } from './contract/RouteAddress.js';
 export type { RouteAddressInput } from './contract/RouteAddress.js';
 export type { FrondCall, Transport, SignedCall } from './wire/call.js';
+// The reserved entity, VALUE and not type: a consumer that wants to leave it alone — a
+// call log ignoring its own reader — has to be able to name it.
+export { RPC_ENTITY } from './wire/call.js';
+export type { CallPage, CallRecord } from './contract/CallLog.js';
 
 /**
  * What `rpc.discover` answers. It belongs here and not to the runtime: the
