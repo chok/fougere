@@ -50,9 +50,15 @@ describe('the panel', () => {
       // What this process would answer, whether or not anything called it yet — the view
       // that makes an untouched panel useful instead of blank.
       const model = await (await fetch(`${at}/model.json`)).json() as {
-        fronds: { name: string; entities: string[]; operations: { address: string; kind: string; placement: string; parameters: unknown[] }[] }[];
+        fronds: {
+          name: string; declared: 'local' | 'remote'; at: string | null; entities: string[];
+          operations: { address: string; kind: string; placement: string; parameters: unknown[] }[];
+        }[];
       };
       expect(model.fronds.map((one) => one.name)).toEqual(['shop', 'warehouse']);
+      // Declared placement, beside what the ring observed: the config says where a call
+      // GOES, the ring says where it WENT, and they disagree when something is misconfigured.
+      expect(model.fronds.every((one) => one.declared === 'local' && one.at === null)).toBe(true);
       const shop = model.fronds[0]!;
       expect(shop.entities).toEqual(['order']);
       expect(shop.operations.map((one) => one.address)).toContain('order.list');

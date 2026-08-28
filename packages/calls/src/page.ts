@@ -239,6 +239,19 @@ function served() {
       ? esc(frond.entities.join(', '))
       : 'no entity — handlers only'));
 
+    // Declared against observed. The config says where a call GOES; the ring says where it
+    // WENT. Nobody else can show this line: elsewhere the placement is not the developer's
+    // to declare, so there is only ever one value.
+    const seen = new Set(state.calls
+      .filter((call) => call.frond === frond.name && call.route)
+      .map((call) => call.route));
+    const observed = seen.size === 0 ? null : [...seen].join(' + ');
+    const disagrees = observed !== null && !seen.has(frond.declared);
+    card.append(el('p', { class: disagrees ? 'failed' : 'soft' },
+      'declared <b>' + frond.declared + '</b>' + (frond.at ? ' ' + esc(frond.at) : '')
+      + ' · observed ' + (observed === null ? '<i>nothing called yet</i>' : '<b>' + observed + '</b>')
+      + (disagrees ? ' — they disagree' : '')));
+
     const grid = el('div', { class: 'grid' });
     for (const op of frond.operations) {
       const io = [op.input ? 'takes ' + esc(op.input) : null,
