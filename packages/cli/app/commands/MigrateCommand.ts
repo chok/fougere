@@ -3,6 +3,7 @@ import type { App } from '@fougere/core';
 import type { ui as createUi } from '../../src/ui.js';
 import type { MigrationPlan } from '../../fronds/analysis/handlers/MigrateHandler.js';
 import pc from 'picocolors';
+import { machineWanted, printMachine } from '../../src/machine.js';
 
 type Ui = ReturnType<typeof createUi>;
 
@@ -20,6 +21,8 @@ export default class MigrateCommand {
       { entity: 'migrate', op: 'execute' },
       { params: {}, query: {}, body: raw, state: {} },
     )) as MigrationPlan;
+
+    if (machineWanted(raw)) return printMachine(result);
 
     if (result.chain.length === 0) {
       this.ui.warn('No frozen step to apply. `fougere freeze <version>` records one.');

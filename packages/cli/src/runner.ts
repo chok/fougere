@@ -12,6 +12,7 @@ import { createAppRunner } from '@fougere/core';
 import { lowerFirst } from '@fougere/core/contract';
 import { defineCommand, runMain } from 'citty';
 import { ui } from './ui.js';
+import { machineWanted } from './machine.js';
 import { entityToArgs } from './bridge.js';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -98,10 +99,13 @@ export async function run(app: App): Promise<void> {
         },
         args,
         run: async ({ args: parsed }) => {
-          // JSON is a protocol: a branded intro before `{` makes it unparsable. The
-          // explain command owns its machine output and therefore gets a clean stdout.
-          const machineOutput = cmdName === 'explain'
-            && (parsed.json === true || typeof parsed.names === 'string');
+          // JSON is a protocol: a branded intro before `{` makes it unparsable. Read from
+          // the invocation's own args, so any command declaring `json` gets a clean stdout
+          // — naming `explain` here is what let `graph --json` print its decorated box.
+          const machineOutput = machineWanted(parsed as Record<string, unknown>);
+
+          // `completion` is exempt by nature, not by flag: its output IS a shell script,
+          // there is no invocation of it that wants decoration.
           if (cmdName !== 'completion' && !machineOutput) terminal.intro();
 
           // citty adds `_` (raw positionals) and `--` (passthrough); strip them

@@ -3,6 +3,7 @@ import type { App } from '@fougere/core';
 import type { ui as createUi } from '../../src/ui.js';
 import type { BuildReport } from '../../fronds/analysis/handlers/BuildHandler.js';
 import pc from 'picocolors';
+import { machineWanted, printMachine } from '../../src/machine.js';
 
 type Ui = ReturnType<typeof createUi>;
 
@@ -21,6 +22,8 @@ export default class BuildCommand {
       { entity: 'build', op: 'execute' },
       { params: {}, query: {}, body: raw, state: {} },
     )) as BuildReport;
+
+    if (machineWanted(raw)) return printMachine(built);
 
     if (built.fronds.length === 0) {
       this.ui.warn('No fronds found. Run this from a Fougere project root.');

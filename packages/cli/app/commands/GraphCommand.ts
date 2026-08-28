@@ -3,6 +3,7 @@ import type { EntityNode, DomainCluster, App } from '@fougere/core';
 import { createAppRunner } from '@fougere/core';
 import type { ui as createUi } from '../../src/ui.js';
 import pc from 'picocolors';
+import { machineWanted, printMachine } from '../../src/machine.js';
 
 type Ui = ReturnType<typeof createUi>;
 
@@ -15,6 +16,8 @@ export default class GraphCommand {
       { entity: 'graph', op: 'execute' },
       { params: {}, query: {}, body: raw, state: {} },
     ) as GraphResult;
+
+    if (machineWanted(raw)) return printMachine(result);
 
     if (result.fronds.length === 0) {
       this.ui.warn('No fronds found. Run this from a Fougere project root.');

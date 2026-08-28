@@ -4,6 +4,7 @@ import { createAppRunner } from '@fougere/core';
 import type { ui as createUi } from '../../src/ui.js';
 import pc from 'picocolors';
 import { relative } from 'node:path';
+import { machineWanted, printMachine } from '../../src/machine.js';
 
 type Ui = ReturnType<typeof createUi>;
 
@@ -16,6 +17,13 @@ export default class CheckCommand {
       { entity: 'check', op: 'execute' },
       { params: {}, query: {}, body: raw, state: {} },
     ) as CheckResult;
+
+    // A non-zero exit is what makes this usable in CI, so it is decided before the two
+    // renderings rather than inside the terminal one.
+    const blocking = result.findings.filter((f) => f.severity === 'blocking').length;
+    if (blocking > 0) process.exitCode = 1;
+
+    if (machineWanted(raw)) return printMachine(result);
 
     if (result.fronds === 0) {
       this.ui.warn('No fronds found. Run this from a Fougere project root.');
@@ -31,14 +39,9 @@ export default class CheckCommand {
 
     this.ui.note(result.findings.map(render).join('\n\n'), 'Findings');
 
-    const blocking = result.findings.filter((f) => f.severity === 'blocking').length;
-    const warnings = result.findings.length - blocking;
-    this.ui.info(`${blocking} blocking, ${warnings} warning(s)`);
-
-    // A non-zero exit is what makes this usable in CI. Warnings do not fail:
-    // an unresolvable base class with no operation is ordinary, and a check that
-    // cries wolf stops being read.
-    if (blocking > 0) process.exitCode = 1;
+    // Warnings do not fail: an unresolvable base class with no operation is ordinary,
+    // and a check that cries wolf stops being read.
+    this.ui.info(`${blocking} blocking, ${result.findings.length - blocking} warning(s)`);
   }
 }
 

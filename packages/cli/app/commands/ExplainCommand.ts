@@ -7,6 +7,7 @@ import type {
   ExplainedBinding,
 } from '../../fronds/analysis/handlers/ExplainHandler.js';
 import pc from 'picocolors';
+import { machineText, printMachine } from '../../src/machine.js';
 
 type Ui = ReturnType<typeof createUi>;
 
@@ -23,10 +24,7 @@ export default class ExplainCommand {
 
     const result = await this.ask('execute', raw) as ExplainResult;
 
-    if (raw.json === true) {
-      process.stdout.write(renderExplainJson(result) + '\n');
-      return;
-    }
+    if (raw.json === true) return printMachine(result);
 
     this.ui.note(renderExplain(result), result.operation);
   }
@@ -43,10 +41,7 @@ export default class ExplainCommand {
       return;
     }
 
-    if (raw.json === true) {
-      process.stdout.write(JSON.stringify(listing, null, 2) + '\n');
-      return;
-    }
+    if (raw.json === true) return printMachine(listing);
 
     this.ui.note(renderListing(listing), 'what this project serves');
   }
@@ -59,8 +54,9 @@ export default class ExplainCommand {
   }
 }
 
+/** Kept as the name `tests/explain.test.ts` pins the key order through. */
 export function renderExplainJson(result: ExplainResult): string {
-  return JSON.stringify(result, null, 2);
+  return machineText(result);
 }
 
 export function renderExplain(result: ExplainResult): string {

@@ -4,6 +4,7 @@ import type { App } from '@fougere/core';
 import type { ui as createUi } from '../../src/ui.js';
 import type { FreezeInspection } from '../../fronds/analysis/handlers/FreezeHandler.js';
 import pc from 'picocolors';
+import { machineWanted, printMachine } from '../../src/machine.js';
 
 type Ui = ReturnType<typeof createUi>;
 
@@ -29,6 +30,10 @@ export default class FreezeCommand {
     // Idempotent while it refuses: this writes when nothing is ambiguous, and reports
     // otherwise — so the first call is both the inspection and the happy path.
     const seen = await freeze(raw);
+
+    // The question below cannot be put to a machine, so the inspection is the answer:
+    // `ambiguous` says what a human still has to settle, and nothing was written.
+    if (machineWanted(raw)) return printMachine(seen);
 
     if (seen.entities.length === 0) {
       this.ui.warn('No entities found. Run this from a Fougere project root.');
