@@ -192,8 +192,9 @@ function traces() {
 
   if (byTrace.size === 0) {
     return [el('div', { class: 'empty' },
-      'No trace yet. A traceparent travels on the invocation, so install <code>@fougere/observability</code> '
-      + 'on the callers and one call across processes appears here as one line.')];
+      'No trace on this side. A call this process RECEIVES carries its traceparent already; '
+      + 'one it ORIGINATES gets it inside the middleware, after this ring saw the call — so a '
+      + 'consumer\\'s panel stays empty here while the frond it calls shows the same work.')];
   }
 
   const out = [];

@@ -619,6 +619,9 @@ importers:
       '@fougere/nuxt':
         specifier: workspace:*
         version: link:../../packages/app/nuxt
+      '@fougere/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema

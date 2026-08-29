@@ -31,6 +31,19 @@ export class CallRing {
     private readonly frondOf: (entity: string) => string | undefined = () => undefined,
   ) {}
 
+  /**
+   * KNOWN LIMIT — a call this process ORIGINATES carries no trace here.
+   *
+   * `trace()` writes the traceparent inside the middleware chain, so inside
+   * `route.execute(call)`; the observer saw the `Call` at `received`, and that object is
+   * frozen. An ARRIVING call is unaffected: its traceparent is already on the invocation
+   * the transport handed over, which is why a hosted frond shows traces and its consumer
+   * does not.
+   *
+   * Closing it means `DispatchEvent` carrying the invocation as it ENDED rather than as it
+   * arrived — a core change, deliberately not smuggled in here. Until then the Traces view
+   * speaks for the side that receives.
+   */
   record(event: DispatchEvent): void {
     // A reader reaches this ring through `rpc`, so recording that would make the panel
     // watch itself — one reader, one line, forever.

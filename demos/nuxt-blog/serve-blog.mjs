@@ -14,6 +14,7 @@ import { migrate } from '@fougere/adapter-sql';
 import { setupSqlite } from '@fougere/adapter-sql/sqlite';
 import { serve } from '@fougere/transport-http';
 import { calls } from '@fougere/calls';
+import { observability } from '@fougere/observability';
 
 // `frondAliases` is what makes `@fronds/user/entities/User.js` resolve — the named
 // form a frond uses for its neighbour. Without it this entry point loaded frond
@@ -47,7 +48,7 @@ const app = await createApp({
   scan: await scanProject(process.cwd(), ['blog']),
   createContainer,
   ormFactory,
-  extensions: [calls({ panel: 4400 })],
+  extensions: [observability({ service: 'blog-host' }), calls({ panel: 4400 })],
 });
 await migrate({ fronds: app.fronds }, db);
 
