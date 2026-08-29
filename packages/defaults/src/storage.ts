@@ -107,7 +107,6 @@ function partition(
   app: App,
   holds: (name: string) => boolean,
   withAuth: boolean,
-  materialize: string[],
 ): unknown {
   const typed = app as unknown as {
     fronds: { name: string; entities: { name: string }[] }[];
@@ -122,8 +121,6 @@ function partition(
     // Lifted, because this function reads its app structurally on purpose — a caller
     // may hand it a shape that is app-LIKE, and the question is still the same one.
     elsewhere: Fronds.scanned(typed.fronds as FrondDescriptor[]).entityNames().filter((name) => !holds(name)),
-    // A derivation makes no table unless a source names it — see AppLike.materialize.
-    materialize,
   };
 }
 
@@ -192,8 +189,6 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
   // registration ran last — the same silent duplicate `remotes:` refuses one level up.
   const home = new Map<string, string>();
   const engines = new Map<string, Setup>();
-  /** Everything a source names — the opt-in that turns a derivation into stored rows. */
-  const named: string[] = [];
   for (const [name, placement] of Object.entries(sources ?? {})) {
     engines.set(name, placement.setup);
     for (const entity of placement.entities) {
@@ -205,7 +200,6 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
         );
       }
       home.set(key, name);
-      named.push(entity);
     }
   }
 
@@ -236,9 +230,9 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
     // One pass per source, each seeing only its own tables — which is what makes a
     // cross-source `ref()` a miss rather than a constraint against a stranger.
     migrate: async (app) => {
-      await migrate(partition(app, (name) => !home.has(lowerFirst(name)), true, named) as never, base.db);
+      await migrate(partition(app, (name) => !home.has(lowerFirst(name)), true) as never, base.db);
       for (const [name, engine] of engines) {
-        await migrate(partition(app, (e) => home.get(lowerFirst(e)) === name, false, named) as never, engine.db);
+        await migrate(partition(app, (e) => home.get(lowerFirst(e)) === name, false) as never, engine.db);
       }
     },
     // Every engine, the default one last: a named source may hold what the default

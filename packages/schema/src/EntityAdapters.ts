@@ -60,6 +60,11 @@ export class EntityAdapterSet {
     return EntityAdapterSet.made(out);
   }
 
+  /** Every field name these entries address — what a caller checks against its own shape. */
+  get fieldNames(): string[] {
+    return [...new Set(Object.values(this.byAdapter).flatMap((perField) => Object.keys(perField)))];
+  }
+
   /** The plain object, which is what a reader outside this package receives. */
   get stated(): EntityAdapters<Fields> {
     return this.byAdapter as EntityAdapters<Fields>;

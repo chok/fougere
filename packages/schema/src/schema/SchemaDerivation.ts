@@ -36,6 +36,17 @@ export class SchemaDerivation {
   }
 
   /**
+   * The anchor whose rows this describes — the nearest one going up, and a schema with no
+   * origin of its own is one. An answer borrows its rows; this says from whom. Whether
+   * those rows carry a key is a separate question: an anchor may have none.
+   */
+  get anchor(): SchemaView {
+    const source = this.source;
+
+    return source.anchored !== undefined || !source.derivation ? source : source.derivation.anchor;
+  }
+
+  /**
    * What the ROOT calls `key`, translated to the name it carries here — `undefined` when a
    * cut dropped it. A reader that needs something the root declared about a field asks the
    * root and comes back through this; it does not keep a copy of the answer.

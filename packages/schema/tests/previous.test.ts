@@ -27,10 +27,10 @@ describe('a field can say what it was called', () => {
     expect(Object.keys(Post.getFields())).toEqual(['id', 'title', 'mail']);
   });
 
-  it('only names a field of this entity', () => {
-    // @ts-expect-error — 'nope' is not a field of this entity
-    entity({ id: primary() }, { previous: { nope: 'old' } });
-
-    expect(true).toBe(true);
+  it('only names a field of this entity, and says so at runtime too', () => {
+    expect(() =>
+      // @ts-expect-error — 'nope' is not a field of this entity
+      entity({ id: primary() }, { previous: { nope: 'old' } }),
+    ).toThrow(/unknown field `nope`/);
   });
 });

@@ -20,6 +20,11 @@ export { Cases, type Case } from './judge/Cases.js';
 export { RowRefusal } from './judge/RowRefusal.js';
 export { type SchemaView, type Row, type PartialRow } from './schema/SchemaView.js';
 export { type FougereEntityAdapters, type EntityAdapters } from './EntityAdapters.js';
+export {
+  type EntityDeclarations,
+  type CompositeUnique,
+  type PreviousNames,
+} from './EntityDeclarations.js';
 export { lowerFirst, upperFirst } from './utils.js';
 
 export { primary } from './vocabulary/primary.js';

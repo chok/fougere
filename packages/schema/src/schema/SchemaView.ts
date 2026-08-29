@@ -17,6 +17,8 @@ export interface SchemaView<TFields extends Fields = Fields> {
   readonly derivation?: SchemaDerivation;
   /** What its fields were called before, keyed by the names they carry now. */
   readonly previous?: PreviousNames<TFields>;
+  /** Does it hold rows of its own? False on a derivation means an answer. */
+  readonly anchored?: boolean;
   getFields(): TFields;
   getAdapters(): EntityAdapters<TFields> | undefined;
   getUnique(): CompositeUnique<TFields> | undefined;

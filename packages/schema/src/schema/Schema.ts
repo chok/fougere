@@ -1,10 +1,13 @@
 import { Boundary } from '../axis/boundary/Boundary.js';
 import { type Fields } from '../fields/Field.js';
-import { type PreviousNames } from '../EntityDeclarations.js';
-import { type EntityAdapters } from '../EntityAdapters.js';
+import {
+  type CompositeUnique,
+  type EntityDeclarations,
+  type PreviousNames,
+} from '../EntityDeclarations.js';
+import { EntityAdapterSet, type EntityAdapters } from '../EntityAdapters.js';
 import { FieldGroup } from '../constraint/FieldGroup.js';
 import { Unique } from '../constraint/Unique.js';
-import { type CompositeUnique } from '../EntityDeclarations.js';
 import { RowJudge } from '../judge/RowJudge.js';
 import { SchemaDerivation } from './SchemaDerivation.js';
 import { SchemaDefinition } from './SchemaDefinition.js';
@@ -19,17 +22,20 @@ export interface SchemaConstructor<TFields extends Fields> extends SchemaView<TF
   readonly "~standard": StandardSchemaV1.Props<Record<string, unknown>, Row<TFields>>;
   readonly derivation?: SchemaDerivation;
   readonly previous?: PreviousNames<TFields>;
+  readonly anchored?: boolean;
   from(data: Record<string, unknown>): Row<TFields>;
   pick<K extends string & keyof TFields>(...keys: K[]): SchemaConstructor<Pick<TFields, K>>;
   omit<K extends string & keyof TFields>(...keys: K[]): SchemaConstructor<Omit<TFields, K>>;
   partial(): SchemaConstructor<TFields>;
   extend<E extends Fields>(extra: E): SchemaConstructor<TFields & E>;
+  declares(declarations: EntityDeclarations<TFields>): SchemaConstructor<TFields>;
+  anchor(): SchemaConstructor<TFields>;
   named(name: string): SchemaConstructor<TFields>;
   rename(mapping: Partial<Record<string & keyof TFields, string>>): SchemaConstructor<Fields>;
 }
 
 export class Schema {
-  /** The one place a schema holds what it is. The five readings below are its projections. */
+  /** The one place a schema holds what it is. The readings below are its projections. */
   static definition: SchemaDefinition = SchemaDefinition.stated({ fields: {} });
 
   static get fields(): Fields { return this.definition.fields; }
@@ -37,6 +43,7 @@ export class Schema {
   static get opts(): ValidateOptions { return this.definition.opts; }
   static get derivation(): SchemaDerivation | undefined { return this.definition.derivation; }
   static get previous(): PreviousNames<Fields> | undefined { return this.definition.previous; }
+  static get anchored(): boolean { return this.definition.anchored; }
 
   constructor(data?: Record<string, unknown>) {
     if (!data) return;
@@ -108,6 +115,28 @@ export class Schema {
     return this.derive(renamed, (k) => mapping[k] ?? k);
   }
 
+  /**
+   * Everything a schema states about ITSELF, available wherever a schema is. `entity(fields, …)`
+   * is this same gesture at the declaration site; the fields do not move, so neither does the type.
+   */
+  static declares(declarations: EntityDeclarations<Fields>) {
+    const addressed = EntityAdapterSet.of(declarations.adapters)?.fieldNames ?? [];
+    assertKnownKeys("declares", [...addressed, ...Object.keys(declarations.previous ?? {})], this.fields);
+
+    return Schema.subclass(this.definition.declaring(declarations));
+  }
+
+  /**
+   * This schema holds rows of its own — every entity is one, and a derivation says so.
+   *
+   * An anchor is where a walk STOPS: `derivation.anchor` climbs to the nearest one, and what
+   * is cut from an anchor roots on it. Two anchors are two entities that happen to share a
+   * shape, never a hierarchy — nothing here subtypes, so a relation between them is `ref()`.
+   */
+  static anchor() {
+    return Schema.subclass(this.definition.anchoring());
+  }
+
   static partial() {
     return Schema.subclass(this.definition.patched(this));
   }
@@ -137,6 +166,7 @@ export class Schema {
     adapters?: EntityAdapters<TFields>;
     opts?: ValidateOptions;
     previous?: PreviousNames<TFields>;
+    anchored?: boolean;
   }): SchemaConstructor<TFields> {
     return Schema.subclass(SchemaDefinition.stated(stated)) as unknown as SchemaConstructor<TFields>;
   }

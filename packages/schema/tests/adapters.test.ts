@@ -70,8 +70,10 @@ describe('entity() per-adapter statements', () => {
     // @ts-expect-error — 'mongo' is not a registered adapter
     entity({ id: primary() }, { adapters: { mongo: { id: {} } } });
 
-    // @ts-expect-error — 'missing' is not a field of this entity
-    entity({ id: primary() }, { adapters: { sql: { missing: { columnType: 'x' } } } });
+    expect(() =>
+      // @ts-expect-error — 'missing' is not a field of this entity
+      entity({ id: primary() }, { adapters: { sql: { missing: { columnType: 'x' } } } }),
+    ).toThrow(/unknown field `missing`/);
 
     // @ts-expect-error — 'wat' is not a known sql option
     entity({ id: primary() }, { adapters: { sql: { id: { wat: 1 } } } });

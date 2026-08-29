@@ -192,16 +192,15 @@ describe('the same entity reached as two class objects', () => {
  *
  * Recognised by the inheritance chain and not by where the file sits: a class extending
  * `entity({…})` carries no origin, everything derived from it carries one — an inherited
- * static, so it survives two derivations and still names the ROOT.
+ * static, so it survives two derivations and still names the ROOT. The whole verdict
+ * lives with its owner, in `adapter/sql`'s `anchor.test.ts`; what is checked here is that
+ * a source's own partitioning does not reopen it.
  */
 describe('a derivation', () => {
   // A CLASS, never `const Card = Book.pick(…)`: a derivation held in a const answers
   // `Schema` to `.name`, and the name is what registers it, names its table and titles
   // it on the card. Extending is what gives the shape an identity.
-  //
-  // And it carries `pulledAt`, because a stored copy has to be able to say its age —
-  // `toTables` refuses one that cannot.
-  class BookCard extends Book.pick('id', 'title').extend({ pulledAt: updated() }) {}
+  class BookCard extends Book.pick('title') {}
   const withCard = {
     fronds: [
       ...app.fronds,
@@ -214,13 +213,17 @@ describe('a derivation', () => {
     expect(named(toTables(withCard as never, (n) => `${n}s`))).not.toContain('bookCards');
   });
 
-  it('makes one when a source names it — the opt-in that turns it into stored rows', () => {
-    const tables = toTables({ ...withCard, materialize: ['BookCard'] } as never, (n) => `${n}s`);
-    expect(named(tables)).toContain('bookCards');
+  it("makes one when the ENTITY anchors — never when a source names it", () => {
+    class Archive extends Book.pick('title').anchor() {}
+    const withArchive = {
+      fronds: [...app.fronds, { name: 'views', entities: [{ name: 'archive', entityClass: Archive }] }],
+    };
+
+    expect(named(toTables(withArchive as never, (n) => `${n}s`))).toContain('archives');
   });
 
   it('is recognised through the chain, not the file — a class extending one is one too', () => {
-    class Deeper extends BookCard.pick('id') {}
+    class Deeper extends BookCard.pick('title') {}
     const deep = { fronds: [{ name: 'views', entities: [{ name: 'deeper', entityClass: Deeper }] }] };
     expect(toTables(deep as never, (n) => `${n}s`)).toHaveLength(0);
   });
@@ -230,33 +233,3 @@ describe('a derivation', () => {
   });
 });
 
-/**
- * A copy that cannot say when it was pulled reads exactly like live rows.
- *
- * Nothing new is declared for it: a field with `update: 'now'` already records when a
- * row last changed HERE, which for a copy is its age. What is new is that forgetting
- * it is refused — at boot, by name, rather than discovered the day a report is wrong.
- */
-describe('a stored derivation must be able to say how old it is', () => {
-  class Undated extends Book.pick('id', 'title') {}
-  class Dated extends entity({ id: primary(), title: text(), pulledAt: updated() }) {}
-
-  const withView = (View: unknown) => ({
-    fronds: [{ name: 'views', entities: [{ name: 'view', entityClass: View }] }],
-    materialize: ['view'],
-  });
-
-  it('refuses one with no updated() field, naming the remedy', () => {
-    expect(() => toTables(withView(Undated) as never, (n) => `${n}s`))
-      .toThrow(/carries no `updated\(\)` field/);
-  });
-
-  it('accepts one that carries it', () => {
-    expect(toTables(withView(Dated) as never, (n) => `${n}s`)).toHaveLength(1);
-  });
-
-  it('leaves an ENTITY alone — it is not a copy of anything', () => {
-    // `Reader` declares no `updated()` either, and never needed to: its rows are the truth.
-    expect(toTables(app as never, (n) => `${n}s`)).toHaveLength(3);
-  });
-});

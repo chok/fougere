@@ -1,5 +1,6 @@
 import { type Fields } from '../fields/Field.js';
-import { type PreviousNames } from '../EntityDeclarations.js';
+import { FieldSet } from '../fields/FieldSet.js';
+import { type EntityDeclarations, type PreviousNames } from '../EntityDeclarations.js';
 import { EntityAdapterSet, type EntityAdapters } from '../EntityAdapters.js';
 import { SchemaDerivation } from './SchemaDerivation.js';
 import { type ValidateOptions } from '../judge/options.js';
@@ -8,7 +9,7 @@ import type { SchemaView } from './SchemaView.js';
 /**
  * Everything a schema IS, apart from being a class whose instances are rows.
  *
- * The five members used to be five statics assigned side by side, and every derivation
+ * The members used to be that many statics assigned side by side, and every derivation
  * re-threaded them by hand — which is how one of them came to be dropped from a list
  * without anyone noticing. A transformation here returns a COMPLETE definition or it does
  * not compile, so no gesture can mix the fields of one with the options of another.
@@ -23,6 +24,7 @@ export class SchemaDefinition {
     readonly opts: ValidateOptions,
     readonly previous: PreviousNames<Fields> | undefined,
     readonly derivation: SchemaDerivation | undefined,
+    readonly anchored: boolean,
   ) {}
 
   static stated(said: {
@@ -31,9 +33,34 @@ export class SchemaDefinition {
     opts?: ValidateOptions;
     previous?: PreviousNames<Fields>;
     derivation?: SchemaDerivation;
+    anchored?: boolean;
   }): SchemaDefinition {
     return new SchemaDefinition(
-      said.fields, EntityAdapterSet.of(said.adapters)?.stated, said.opts ?? {}, said.previous, said.derivation,
+      said.fields, EntityAdapterSet.of(said.adapters)?.stated, said.opts ?? {}, said.previous, said.derivation, said.anchored ?? false,
+    );
+  }
+
+  /**
+   * What a schema states about ITSELF, folded into what it already states — one adapter
+   * entry per field wins the later spelling, and a unique group is stamped on its members.
+   */
+  declaring(said: EntityDeclarations<Fields>): SchemaDefinition {
+    return new SchemaDefinition(
+      FieldSet.declared(this.fields, said.unique),
+      EntityAdapterSet.merged([this.adapters, said.adapters])?.stated,
+      this.opts,
+      said.previous ?? this.previous,
+      this.derivation,
+      this.anchored,
+    );
+  }
+
+  /**
+   * The same schema, holding rows of its own. A derivation is an answer until it says this.
+   */
+  anchoring(): SchemaDefinition {
+    return new SchemaDefinition(
+      this.fields, this.adapters, this.opts, this.previous, this.derivation, true,
     );
   }
 
@@ -50,20 +77,21 @@ export class SchemaDefinition {
       this.opts,
       undefined,
       this.origin(root).compose(survives),
+      false,
     );
   }
 
   /** The same fields, judged as an update. */
   patched(root: SchemaView): SchemaDefinition {
     return new SchemaDefinition(
-      { ...this.fields }, this.adapters, { ...this.opts, patch: true }, undefined, this.origin(root),
+      { ...this.fields }, this.adapters, { ...this.opts, patch: true }, undefined, this.origin(root), false,
     );
   }
 
   /** The added fields have no origin, so the derivation is unchanged: it speaks of the root. */
   extended(extra: Fields, root: SchemaView): SchemaDefinition {
     return new SchemaDefinition(
-      { ...this.fields, ...extra }, this.adapters, this.opts, undefined, this.origin(root),
+      { ...this.fields, ...extra }, this.adapters, this.opts, undefined, this.origin(root), false,
     );
   }
 
@@ -77,11 +105,16 @@ export class SchemaDefinition {
     }
     const adapters = EntityAdapterSet.merged(views.map((view) => view.getAdapters()))?.stated;
 
-    return new SchemaDefinition(fields, adapters, opts, undefined, undefined);
+    return new SchemaDefinition(fields, adapters, opts, undefined, undefined, false);
   }
 
-  /** The origin this definition already carries, or the one `root` becomes. */
+  /**
+   * The origin this definition already carries, or the one `root` becomes. A schema that
+   * is an ANCHOR holds rows of its own, so what is cut from it roots on IT and not on its own origin.
+   */
   private origin(root: SchemaView): SchemaDerivation {
-    return this.derivation ?? SchemaDerivation.first(root, this.fields);
+    if (!this.anchored && this.derivation) return this.derivation;
+
+    return SchemaDerivation.first(root, this.fields);
   }
 }

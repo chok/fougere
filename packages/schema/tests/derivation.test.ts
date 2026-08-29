@@ -218,4 +218,44 @@ describe('derivation', () => {
       expect(Order.derivation).toBeUndefined();
     });
   });
+
+  /**
+   * An ANCHOR holds rows of its own, and an anchor is an origin: what is cut from
+   * it roots on IT. A chain articulates at places and stays flat between them.
+   */
+  describe('a schema that anchors', () => {
+    class Archived extends Order.extend({ archivedBy: text() }).anchor() {}
+
+    it('keeps the origin it was cut from — declaring does not move it', () => {
+      expect(Archived.derivation?.source).toBe(Order);
+      expect(Archived.anchored).toBe(true);
+    });
+
+    it('becomes the origin of what is cut FROM it', () => {
+      const view = Archived.pick('id', 'archivedBy');
+
+      expect(view.derivation?.source).toBe(Archived);
+      expect(view.derivation?.survived).toEqual({
+        id: 'id',
+        status: undefined,
+        total: undefined,
+        note: undefined,
+        createdAt: undefined,
+        archivedBy: 'archivedBy',
+      });
+    });
+
+    it('gives the chain its second link — a cut of a cut of a place still reaches Order', () => {
+      const view = Archived.pick('id', 'archivedBy');
+
+      expect(view.derivation?.source.derivation?.source).toBe(Order);
+    });
+
+    it('does not hand the anchor on: what is cut from one is an answer again', () => {
+      expect(Archived.pick('id').anchored).toBe(false);
+      expect(Archived.partial().anchored).toBe(false);
+      expect(Archived.extend({ extra: text() }).anchored).toBe(false);
+    });
+
+  });
 });

@@ -301,65 +301,46 @@ export interface AppLike {
    * one source, where a miss can only be a mistake.
    */
   elsewhere?: string[];
-  /**
-   * The DERIVATIONS this app stores — registration names.
-   *
-   * A derivation makes no table by default: `Post.pick('id','title')` describes an
-   * answer, not a place rows live, and one dropped under `entities/` used to get a
-   * table of its own — measured on a real app, where a projection of an archived
-   * entity created a duplicate in the OTHER database.
-   *
-   * Naming it in `sources:` is the opt-in, and it changes what the thing is: a stored
-   * derivation is a dated COPY, not a projection, and it owes what any copy owes —
-   * who fills it, and how old it is.
-   */
-  materialize?: string[];
 }
 
 /**
- * Does this schema come from another one? `Post` answers no, `Post.pick(…)` answers
- * `Post` — a card carries the same origin for every projection. Recognised by that FORM,
- * never by a brand.
+ * A schema says whether it holds rows; this adapter decides what to emit for it.
+ *
+ * A root always did. A derivation describes ANOTHER's rows — `Post.pick('id','title')` is
+ * a shape, and one dropped under `entities/` used to get a table of its own: measured on a
+ * real app, where a projection of an archived entity created a duplicate in the OTHER
+ * database. `.anchor()` is what says otherwise, and it is the entity's own word, never a
+ * key of the app's config: a frond stays mountable without its host knowing.
  */
-function isDerivation(source: SchemaOrCard): boolean {
-  return schemaOf(source).derivation !== undefined;
+function verdictOn(entry: EntityEntry): 'table' | 'answer' {
+  const schema = schemaOf(entry.entityClass);
+
+  return !schema.derivation || schema.anchored ? 'table' : 'answer';
 }
 
 /**
- * A stored derivation must be able to say HOW OLD it is.
- *
- * It is a copy, and a copy read as if it were live is the silent loss this whole
- * design exists to refuse: rows from yesterday typed exactly like rows from now. The
- * vocabulary already carries the answer — a field with `update: 'now'` records when
- * this row last changed HERE, which for a copy is when it was last pulled. So nothing
- * new is declared; what is new is that forgetting it is refused, at boot, by name.
- *
- * An entity is untouched: it is not a copy of anything, and its rows are the truth.
+ * Every entity this app hosts, once each. The same class reaches here under one
+ * registration name from two lists — a frond's `entities/` and the auth runtime's map —
+ * and two entries for one name are two CREATE TABLE for one table.
  */
-function refuseUndated(name: string, source: SchemaOrCard): void {
-  const dated = Object.values(fieldsOf(source)).some((field) => Lifecycle.of(field).stampedOnUpdate);
-  if (dated) return;
-  throw new Error(
-    `${name} is stored as a derivation but carries no \`updated()\` field — a copy that ` +
-    `cannot say when it was pulled reads exactly like live rows. Add one, or drop it from \`sources\`.`,
-  );
-}
-
 function collectEntities(app: AppLike): EntityEntry[] {
-  const stored = new Set((app.materialize ?? []).map((name) => lowerFirst(name)));
   const entries: EntityEntry[] = [];
+  const held = new Set<string>();
+  const hold = (entry: EntityEntry) => {
+    if (held.has(lowerFirst(entry.name))) return;
+    held.add(lowerFirst(entry.name));
+    entries.push(entry);
+  };
+
   for (const frond of app.fronds) {
     for (const entry of frond.entities) {
-      if (isDerivation(entry.entityClass)) {
-        if (!stored.has(lowerFirst(entry.name))) continue;
-        refuseUndated(entry.name, entry.entityClass);
-      }
-      entries.push(entry);
+      if (verdictOn(entry) === 'table') hold(entry);
     }
   }
   if (app.auth?.entities) {
-    for (const [name, entityClass] of Object.entries(app.auth.entities)) entries.push({ name, entityClass });
+    for (const [name, entityClass] of Object.entries(app.auth.entities)) hold({ name, entityClass });
   }
+
   return entries;
 }
 

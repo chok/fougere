@@ -1,0 +1,16 @@
+{
+  "name": "fougere-demo-anchor-chain",
+  "version": "0.0.2-alpha.3",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/main.ts"
+  },
+  "dependencies": {
+    "@fougere/adapter-sql": "workspace:*",
+    "@fougere/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0"
+  }
+}

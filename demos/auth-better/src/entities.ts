@@ -12,10 +12,12 @@ import { AuthUser } from '@fougere/auth-better';
  * User entity — extends the package default with a `role`.
  * Optional because better-auth's sign-up flow doesn't know about app-specific
  * fields; downstream code can populate it (e.g. via a databaseHook or admin UI).
+ * `.anchor()` says these rows are its own: it drops nothing from `AuthUser`, so
+ * nothing else could tell an entity from a shape of one.
  */
 export class User extends AuthUser.extend({
   role: optional(oneOf('admin', 'user')),
-}) {}
+}).anchor() {}
 
 /** A simple note — domain entity unrelated to auth. */
 export class Note extends entity({
