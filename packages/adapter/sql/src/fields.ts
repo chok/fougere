@@ -10,11 +10,11 @@
 import type { DialectName } from './dialect.js';
 
 /** What sql holds, addressed by field — the shape every augmentation of the registry takes. */
-export type SqlFields<K extends string> = Partial<Record<K, SqlField>>;
+export type SqlFields<K extends string> = Readonly<Partial<Record<K, SqlField>>>;
 
 export interface SqlField {
   /** The column type to emit, per engine. An engine absent here keeps the shape's own. */
-  columnType?: Partial<Record<DialectName, string>>;
+  readonly columnType?: Readonly<Partial<Record<DialectName, string>>>;
 }
 
 declare module '@fougere/schema' {

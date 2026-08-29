@@ -4,7 +4,7 @@ import { isObject } from './judge/ValueForm.js';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-object-type
 export interface FougereEntityAdapters<K extends string> {}
 
-export type EntityAdapters<TFields extends Fields> = Partial<FougereEntityAdapters<FieldName<TFields>>>;
+export type EntityAdapters<TFields extends Fields> = Readonly<Partial<FougereEntityAdapters<FieldName<TFields>>>>;
 
 /** What `cut` REQUIRES of an augmentation, and the open registry cannot state: addressed by field. */
 type FieldEntries = Record<FieldName<Fields>, unknown>;
