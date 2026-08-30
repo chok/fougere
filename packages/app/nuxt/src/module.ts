@@ -286,11 +286,16 @@ const module = defineNuxtModule<FougereModuleOptions>({
     //
     // `emitScan` writes imports relative to where the module SITS, so the destination is
     // settled before the source is produced — `dst` is that path.
+    // `.mjs`, not `.ts`: the reader is Nitro's rollup, and `emitScan` reads the extension
+    // to decide BOTH whether to emit `import type` and how to spell a specifier. A `.ts`
+    // destination means "tsc will compile this" — it emits a type annotation rollup cannot
+    // parse, and rewrites `Post.ts` to `Post.js`, a file that is not on disk. Measured: the
+    // cloudflare preset refused the template at `import type { ScanResult }`.
     const scanTpl = addTemplate({
-      filename: 'fougere-scan.ts',
+      filename: 'fougere-scan.mjs',
       write: true,
       getContents: ({ nuxt: n }) =>
-        emitScan(scan, { outFile: resolve(n!.options.buildDir, 'fougere-scan.ts') }),
+        emitScan(scan, { outFile: resolve(n!.options.buildDir, 'fougere-scan.mjs') }),
     });
 
     // ── 6b. Boot plugin (virtual — lives in .nuxt/) ───

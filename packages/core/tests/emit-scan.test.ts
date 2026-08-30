@@ -79,4 +79,32 @@ describe('a scan written down', () => {
     // A syntax error surfaces as a parse diagnostic; nothing else is asked of it here.
     expect((parsed as unknown as { parseDiagnostics: unknown[] }).parseDiagnostics).toHaveLength(0);
   });
+
+  /**
+   * The `.mjs` half, which nothing covered — and a bundler found it before a test did.
+   *
+   * The Nuxt module writes this template into `.nuxt/`, where Nitro's rollup reads it as
+   * JavaScript. It used to ask for `.ts`, so the emitter added `import type { ScanResult }`
+   * and rollup stopped at the `{`: `Expected ',', got '{'`. The extension is the only thing
+   * that says who reads the file, and it must say `bundler` here.
+   */
+  it('emits plain JavaScript for a .mjs destination', async () => {
+    const scan = await scanProject(root);
+    const source = emitScan(scan, { outFile: join(root, 'scan.generated.mjs') });
+
+    expect(source, 'a bundler cannot parse `import type`').not.toContain('import type');
+    expect(source, 'nor a type annotation').not.toContain(': ScanResult');
+    expect(source, 'the value itself is unchanged').toContain('export const scan = {');
+  });
+
+  it('rewrites a specifier only where a TypeScript compiler will read it', async () => {
+    const scan = await scanProject(root);
+    const asTs = emitScan(scan, { outFile: join(root, 'scan.generated.ts') });
+    const asMjs = emitScan(scan, { outFile: join(root, 'scan.generated.mjs') });
+
+    // Node16 resolution spells a `.ts` source as `.js`; a bundler resolves the path as it
+    // is ON DISK, and asking it for a `.js` that was never written is how it refuses.
+    expect(asTs).toMatch(/from '\.\/[^']*\.js'/);
+    expect(asMjs).toMatch(/from '\.\/[^']*\.ts'/);
+  });
 });
