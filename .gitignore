@@ -6,7 +6,9 @@
 **/.fougere/
 # wrangler's local state — a workerd sandbox and its D1 files, rebuilt on every `dev`
 **/.wrangler/
-.claude/settings.local.json
+# Claude Code's working directory. It named only the settings file, so a `worktrees/`
+# holding a whole checkout each came through — none of it describes this repository.
+.claude/
 **/*.generated.ts
 **/*.db
 **/*.db-shm
