@@ -1,6 +1,6 @@
 {
   "name": "@fougere/defaults",
-  "version": "0.4.0-alpha.0",
+  "version": "0.5.0-alpha.0",
   "description": "The conventional boot of a Fougere app — the one place storage is wired.",
   "keywords": [
     "fougere",

@@ -1,6 +1,6 @@
 {
   "name": "@fougere/adapter-duckdb",
-  "version": "0.4.0-alpha.0",
+  "version": "0.5.0-alpha.0",
   "description": "Read across an app's sources — one SQL query over what DuckDB can attach.",
   "keywords": [
     "fougere",
