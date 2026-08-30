@@ -51,7 +51,6 @@ export async function run(app: App): Promise<void> {
   const terminal = ui();
   const cliRoot = new URL('..', import.meta.url).pathname;
 
-  // Load app commands (presentation layer)
   const { createJiti } = await import('jiti');
   const jiti = createJiti(import.meta.url, { interopDefault: true });
   const loader = (path: string) => jiti.import(path) as Promise<Record<string, unknown>>;

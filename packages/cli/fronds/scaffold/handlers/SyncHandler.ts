@@ -251,10 +251,10 @@ export default class SyncHandler {
       },
     }, null, 2) + '\n');
 
-    // Update .fougere/remotes.json — central registry of synced remotes
+    // .fougere/remotes.json is the central registry of synced remotes.
     this.updateRemotesRegistry(input.frond, baseUrl, frondDir);
 
-    // Update tsconfig paths if tsconfig.json exists (non-Nuxt projects)
+    // Non-Nuxt projects only: Nuxt writes its own paths.
     this.updateTsconfigPaths(input.frond, frondDir, conventions);
 
     /**

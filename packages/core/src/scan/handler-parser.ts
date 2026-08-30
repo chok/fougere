@@ -800,7 +800,6 @@ function parseClassMethods(
   const cls = findDefaultClass(source);
   if (!cls) return { methods: [], unresolvedHeritage: unresolved };
 
-  // Parse child class methods
   const childMethods = extractClassMethods(cls, source, skip, checker);
   const childNames = new Set(childMethods.map((m) => m.name));
 

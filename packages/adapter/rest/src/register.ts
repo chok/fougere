@@ -21,7 +21,6 @@ export function registerRoutes(
     router.on(route.method, route.path, async (ctx) => {
       const body = (await ctx.body()) as Record<string, unknown> | undefined;
 
-      // Build unified InvocationContext for the binding algorithm
       const invocation = {
         params: ctx.params,
         query: ctx.query,

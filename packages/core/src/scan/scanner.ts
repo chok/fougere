@@ -458,7 +458,6 @@ async function toPresenterEntry(filePath: string): Promise<PresenterEntry | null
   const presenterParams = await ctorParamsOf(filePath);
   const deps = presenterParams.map((p) => depKeyOf(p.type));
 
-  // Parse method return types from source
   let fieldMeta: PresenterEntry['fieldMeta'] = [];
   try {
     const parsed = await presenterMethodsOf(filePath);
