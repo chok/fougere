@@ -6,6 +6,7 @@
  * container, filesystem, migration or handler construction is involved.
  */
 import { lowerFirst, type SchemaView } from '@fougere/schema';
+import { statementDrift } from './boot/statement-drift.js';
 import type { BindingPlan } from './boot/binding.js';
 import { targetOf } from './prefab/prefab.js';
 import type {
@@ -166,6 +167,9 @@ export function resolveEffectiveOperations(
       const effective = new Map<string, EffectiveOperation>();
       byHandler.set(handler, effective);
       const contracts = resolveContracts(handler, frond.operationsOverrides, collectorNames);
+      // A statement wins over the scan on purpose; saying so out loud is what keeps the
+      // win from hiding a rename. Compared here, where both readings are in hand.
+      resolutionDiagnostics.push(...statementDrift(frond, handler));
 
       for (const [name, rawContract] of contracts) {
         const subject = `${handler.ctor.name}.${name}`;
