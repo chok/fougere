@@ -1,6 +1,7 @@
 /**
  * Fastify adapter — bridges a Fastify server to the HttpRouter interface.
  */
+import { chain } from './router.js';
 import type { HttpRouter, HttpMethod, RequestContext, ResponseResult, Middleware, Handler } from './router.js';
 
 interface FastifyLike {
@@ -77,28 +78,6 @@ export function createFastifyRouter(server: FastifyLike): HttpRouter {
   const globalMiddlewares: Middleware[] = [];
   const scopedMiddlewares: { path: string; mw: Middleware }[] = [];
 
-  // Run matching middlewares as an onion chain around the handler
-  function runMiddlewares(
-    ctx: RequestContext,
-    handler: Handler,
-  ): Promise<ResponseResult> {
-    const matching = [
-      ...globalMiddlewares,
-      ...scopedMiddlewares
-        .filter((s) => ctx.path.startsWith(s.path))
-        .map((s) => s.mw),
-    ];
-
-    let index = 0;
-    const next = (): Promise<ResponseResult> => {
-      if (index < matching.length) {
-        return matching[index++](ctx, next);
-      }
-      return handler(ctx);
-    };
-    return next();
-  }
-
   return {
     use(...args: [Middleware] | [string, Middleware]): void {
       const [pathOrMw, maybeMw] = args;
@@ -115,7 +94,7 @@ export function createFastifyRouter(server: FastifyLike): HttpRouter {
       const m = METHOD_MAP[method];
       server[m](path, async (req: any, reply: any) => {
         const ctx = buildContext(req);
-        const result = await runMiddlewares(ctx, handler);
+        const result = await chain(globalMiddlewares, scopedMiddlewares, ctx, handler);
         sendResponse(reply, result);
       });
     },

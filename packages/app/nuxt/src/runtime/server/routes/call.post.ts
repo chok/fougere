@@ -9,6 +9,7 @@
  */
 import { defineEventHandler } from 'h3';
 import { serveRpc, rpcParseError, useFougereApp } from '@fougere/app';
+import { MAX_BODY_BYTES } from '@fougere/core';
 
 type NodeReq = {
   body?: unknown;
@@ -22,7 +23,6 @@ type WebReq = {
   json?: () => Promise<unknown>;
 };
 
-const MAX_BODY_BYTES = 1024 * 1024;
 
 function payloadTooLarge(): Error & { statusCode: number; statusMessage: string } {
   return Object.assign(new Error('Payload too large'), { statusCode: 413, statusMessage: 'Payload too large' });

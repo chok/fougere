@@ -11,7 +11,7 @@
  * works when the host app is configured a particular way is a footgun, and this
  * one is meant to be dropped into an app that already exists.
  */
-import { MalformedJsonError, type HttpRouter, type HttpMethod, type RequestContext, type ResponseResult, type Middleware, type Handler } from './router.js';
+import { MalformedJsonError, chain, type HttpRouter, type HttpMethod, type RequestContext, type ResponseResult, type Middleware, type Handler } from './router.js';
 
 interface ExpressLike {
   use(...handlers: Function[]): void;
@@ -30,6 +30,9 @@ const METHOD_MAP: Record<HttpMethod, 'get' | 'post' | 'put' | 'patch' | 'delete'
   DELETE: 'delete',
 };
 
+// Core declares this cap (`wire/call.ts`) and three doors read it there. This package
+// declares NO Fougere dependency — a leaf port does not take one on the kernel for a
+// number — so it keeps the fourth copy, deliberately.
 const MAX_BODY_BYTES = 1024 * 1024;
 
 /** Drain the Node stream. Only reached when no body parser ran before us. */
@@ -150,21 +153,6 @@ export function createExpressRouter(app: ExpressLike): HttpRouter {
   const globalMiddlewares: Middleware[] = [];
   const scopedMiddlewares: { path: string; mw: Middleware }[] = [];
 
-  // Run matching middlewares as an onion chain around the handler
-  function runMiddlewares(ctx: RequestContext, handler: Handler): Promise<ResponseResult> {
-    const matching = [
-      ...globalMiddlewares,
-      ...scopedMiddlewares.filter((s) => ctx.path.startsWith(s.path)).map((s) => s.mw),
-    ];
-
-    let index = 0;
-    const next = (): Promise<ResponseResult> => {
-      if (index < matching.length) return matching[index++](ctx, next);
-      return handler(ctx);
-    };
-    return next();
-  }
-
   return {
     use(...args: [Middleware] | [string, Middleware]): void {
       const [pathOrMw, maybeMw] = args;
@@ -180,7 +168,7 @@ export function createExpressRouter(app: ExpressLike): HttpRouter {
     on(method: HttpMethod, path: string, handler: Handler): void {
       app[METHOD_MAP[method]](path, async (req: any, res: any, next: Function) => {
         try {
-          sendResponse(res, await runMiddlewares(buildContext(req), handler));
+          sendResponse(res, await chain(globalMiddlewares, scopedMiddlewares, buildContext(req), handler));
         } catch (err) {
           // This adapter is the one that parses JSON, so it is the one that answers
           // for it — same 400 the Hono adapter gives, which is the other self-parsing

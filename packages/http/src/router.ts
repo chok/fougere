@@ -74,3 +74,28 @@ export interface HttpRouter {
   /** Register a route handler. */
   on(method: HttpMethod, path: string, handler: Handler): void;
 }
+
+/**
+ * The onion chain both adapters run: matching middlewares around the handler.
+ *
+ * Stated once because it was stated twice, identically, in `express.ts` and `fastify.ts` —
+ * the same package, and the same place `PASSTHROUGH` already lives. A scoped middleware
+ * matches by `startsWith`, which is what makes the two adapters agree on a mounted path.
+ */
+export function chain(
+  global: Middleware[],
+  scoped: { path: string; mw: Middleware }[],
+  ctx: RequestContext,
+  handler: Handler,
+): Promise<ResponseResult> {
+  const matching = [
+    ...global,
+    ...scoped.filter((s) => ctx.path.startsWith(s.path)).map((s) => s.mw),
+  ];
+
+  let index = 0;
+  const next = (): Promise<ResponseResult> =>
+    index < matching.length ? matching[index++](ctx, next) : handler(ctx);
+
+  return next();
+}

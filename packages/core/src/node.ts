@@ -16,6 +16,7 @@ export {
   type Conventions, type ConventionsInput, DEFAULT_CONVENTIONS,
   resolveConventions, frondPackage, frondDirsOf, providerDirsOf, watchPathsOf,
 } from './scan/conventions.js';
+export { RUNTIME_PACKAGES } from './scan/bundling.js';
 export { emitScan, type EmitOptions } from './scan/emit.js';
 export { setModuleLoader, getModuleLoader } from './loader.js';
 export { loadConfig, loadCascadedConfig } from './config-loader.js';

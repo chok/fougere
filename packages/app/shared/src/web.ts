@@ -12,10 +12,10 @@
  * what a NON-Web-standard host costs.
  */
 import { serveRest, serveRpc, rpcParseError, useFougereApp, serveGraphQL } from './index.js';
+import { MAX_BODY_BYTES } from '@fougere/core';
 import { sessionViewOf } from './session.js';
 import { stateFor } from './state.js';
 
-const MAX_BODY_BYTES = 1024 * 1024;
 const WITH_BODY = new Set(['POST', 'PUT', 'PATCH']);
 
 /**

@@ -34,16 +34,7 @@
 import TerserPlugin from 'terser-webpack-plugin';
 import type { NextConfig } from 'next';
 
-/** Packages a Fougere boot loads at runtime — they must not be bundled. */
-const RUNTIME_PACKAGES = [
-  '@fougere/app',
-  '@fougere/core',
-  '@fougere/next',
-  '@fougere/adapter-sql',
-  'better-sqlite3',
-  'jiti',
-  'typescript',
-];
+import { RUNTIME_PACKAGES } from '@fougere/core/node';
 
 export function withFougere(config: NextConfig = {}): NextConfig {
   const userWebpack = config.webpack;
@@ -52,7 +43,9 @@ export function withFougere(config: NextConfig = {}): NextConfig {
     ...config,
     // Additive: whatever the app already listed is kept.
     serverExternalPackages: [
-      ...new Set([...(config.serverExternalPackages ?? []), ...RUNTIME_PACKAGES]),
+      // `@fougere/next` is this plugin's own package: it externalizes itself, which is a
+      // fact about Next and not about a Fougere boot, so it is added here and not to the list.
+      ...new Set([...(config.serverExternalPackages ?? []), ...RUNTIME_PACKAGES, '@fougere/next']),
     ],
     webpack: (webpackConfig, context) => {
       // The app's own webpack function runs FIRST, so it sees an untouched config

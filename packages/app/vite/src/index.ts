@@ -44,7 +44,7 @@
 import { readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Plugin } from 'vite';
-import { type Conventions, DEFAULT_CONVENTIONS } from '@fougere/core/node';
+import { type Conventions, DEFAULT_CONVENTIONS, RUNTIME_PACKAGES } from '@fougere/core/node';
 
 /**
  * The entity names a build must not rename, read off the filesystem.
@@ -71,18 +71,7 @@ export function entityNamesIn(root: string, conventions: Conventions = DEFAULT_C
   return [...names];
 }
 
-/** Packages a Fougere boot loads at runtime — they must not be bundled. */
-export const RUNTIME_PACKAGES = [
-  '@fougere/app',
-  '@fougere/core',
-  '@fougere/schema',
-  '@fougere/adapter-sql',
-  '@fougere/adapter-graphql',
-  '@fougere/auth-better',
-  'better-sqlite3',
-  'jiti',
-  'typescript',
-];
+export { RUNTIME_PACKAGES } from '@fougere/core/node';
 
 export interface FougereViteOptions {
   /** Extra packages the boot loads at runtime, added to the defaults. */
