@@ -7,7 +7,7 @@
  */
 import type { Container } from '@fougere/container';
 import type { Fronds } from '../scan/Fronds.js';
-import type { ScanResult } from '../scan/frond.js';
+import type { FrondDescriptor, ScanResult } from '../scan/frond.js';
 import type { SchemaView } from '@fougere/schema';
 import type { OrmFactory } from '../orm.js';
 import type { AppMiddleware } from '../wire/middleware.js';
@@ -55,7 +55,16 @@ export interface CreateAppOptions {
    * apart, and that is the point: it names no builtin, so a runtime without `node:fs`
    * runs it. `root` and `fronds` used to live here — both were arguments to the scan.
    */
-  scan: ScanResult | (() => Promise<ScanResult> | ScanResult);
+  scan?: ScanResult | (() => Promise<ScanResult> | ScanResult);
+  /**
+   * What this app STATES it hosts — `frond('blog', { entities: [Post] })`.
+   *
+   * Passing this and not `scan:` is how an app says "do not scan": nothing reads a disk,
+   * nothing loads `typescript`, and what was not named does not exist. Passing both fills
+   * the members left unnamed from what the scan found — the app's word wins, the way
+   * `frond.config.ts` wins over the scan one level down.
+   */
+  fronds?: readonly FrondDescriptor[];
   /**
    * Remote fronds — label → address. What each remote hosts is discovered
    * at the first miss (rpc.discover), never declared here.

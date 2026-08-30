@@ -13,7 +13,7 @@
 import { describe, it, expect } from 'vitest';
 import { createContainer } from '@fougere/container';
 import { entity, primary, text, optional } from '@fougere/schema';
-import { createApp, frond, Fronds, Crud, Call, RouteAddress, EMPTY_INVOCATION } from '../src/index.js';
+import { createApp, frond, Crud, Call, RouteAddress, EMPTY_INVOCATION } from '../src/index.js';
 
 class Post extends entity({ id: primary(), title: text(), body: optional(text()) }) {}
 class PostHandler extends Crud(Post) {}
@@ -25,10 +25,11 @@ const ormFactory = () => ({
   findById: async (id: string) => rows.find((r) => r.id === id),
 }) as never;
 
+// `fronds:` and no `scan:` — the app states what it hosts and nothing reads a disk.
 const appOf = () => createApp({
   createContainer,
   ormFactory,
-  scan: { fronds: Fronds.scanned([frond('blog', { entities: [Post], handlers: [PostHandler] })]), diagnostics: [] },
+  fronds: [frond('blog', { entities: [Post], handlers: [PostHandler] })],
 });
 
 describe('a frond the app states', () => {

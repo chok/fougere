@@ -1,6 +1,7 @@
 import type { Container } from '@fougere/container';
 import { lowerFirst, type SchemaView } from '@fougere/schema';
 import type { EntityEntry, HandlerEntry, PresenterEntry } from '../scan/frond.js';
+import { hostedBy } from './hosted.js';
 import type { AuthRuntime } from './auth.js';
 import type { CreateAppOptions, App } from './types.js';
 import type { AppMiddleware } from '../wire/middleware.js';
@@ -106,11 +107,11 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   container.register('Config', Config, { lifetime: 'singleton' });
   log.debug('builtins registered (Logger, Config)');
 
-  // The scan is HANDED IN. Producing it reads a disk, consuming it does not — which is
-  // the whole reason this file names no builtin and a Worker can run what it builds.
-  // `scanProject` (`@fougere/core/node`) is one producer; a module a build wrote is another.
+  // What this app hosts is HANDED IN — stated, scanned, or both (`hostedBy`). Producing
+  // it may read a disk; consuming it never does, which is the whole reason this file names
+  // no builtin and a Worker can run what it builds.
   const scanStart = performance.now();
-  const { fronds, diagnostics } = await (typeof options.scan === 'function' ? options.scan() : options.scan);
+  const { fronds, diagnostics } = await hostedBy(options);
   const operationModel = resolveEffectiveOperations(fronds, {
     diagnostics,
     remotes: options.remotes,
