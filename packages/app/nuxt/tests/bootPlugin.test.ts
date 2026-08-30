@@ -85,15 +85,15 @@ describe('generateBootPlugin — db path convergence', () => {
 });
 
 describe('a storage that could not be opened', () => {
-  it('states the scan before it tries, so a failure costs the storage alone', () => {
+  it('states what it hosts before it tries, so a failure costs the storage alone', () => {
     // Measured on workerd: `resolveStorage` threw on a native driver, Nitro swallowed the
     // plugin whole, and the app came up with ZERO fronds and not a word. Two unrelated
     // facts were sharing one failure.
-    const out = generateBootPlugin({ db: 'sqlite' }, [], '/app/boot', '/nuxt/scan.mjs');
+    const out = generateBootPlugin({ db: 'sqlite' }, [], '/app/boot', [], '/app/fronds.ts');
 
     // Both positions asserted present first: `indexOf` answers -1 for an absent needle,
     // and -1 is less than anything — this very assertion passed for that reason once.
-    const stated = out.indexOf('configureFougere({ scan,');
+    const stated = out.indexOf('configureFougere({');
     const opened = out.indexOf('resolveStorage("sqlite")');
     expect(stated).toBeGreaterThan(-1);
     expect(opened).toBeGreaterThan(-1);
@@ -101,18 +101,18 @@ describe('a storage that could not be opened', () => {
   });
 
   it('reports it rather than dying quietly', () => {
-    const out = generateBootPlugin({ db: 'sqlite' }, [], '/app/boot', '/nuxt/scan.mjs');
+    const out = generateBootPlugin({ db: 'sqlite' }, [], '/app/boot', [], '/app/fronds.ts');
 
     expect(out).toContain('try {');
     expect(out).toContain('storage could not be opened');
   });
 
-  it('states the scan even when no storage is declared', () => {
+  it('states what it hosts even when no storage is declared', () => {
     // The early return used to emit an empty plugin, which threw the scan away with the
     // storage — and an app with no database still has fronds.
-    const out = generateBootPlugin({ db: false }, [], '/app/boot', '/nuxt/scan.mjs');
+    const out = generateBootPlugin({ db: false }, [], '/app/boot', [], '/app/fronds.ts');
 
-    expect(out).toContain('configureFougere({ scan,');
+    expect(out).toContain('configureFougere({ fronds,');
     expect(out).not.toContain('resolveStorage');
   });
 
@@ -122,7 +122,7 @@ describe('a storage that could not be opened', () => {
     // carried: it holds a live provider, not a value.
     const out = generateBootPlugin(
       { db: false, remotes: { catalog: 'https://x.workers.dev' }, auth: (() => {}) as never },
-      [], '/app/boot', '/nuxt/scan.mjs',
+      [], '/app/boot', [], '/app/fronds.ts',
     );
 
     expect(out).toContain('"remotes":{"catalog":"https://x.workers.dev"}');
@@ -133,14 +133,14 @@ describe('a storage that could not be opened', () => {
 describe('generateBootPlugin — extensions named in the fougere: section', () => {
   it('changes nothing when the section names none', () => {
     const before = generateBootPlugin({ db: 'sqlite' } as FougereConfig, [], '@fougere/nuxt/fougereApp');
-    const after = generateBootPlugin({ db: 'sqlite' } as FougereConfig, [], '@fougere/nuxt/fougereApp', undefined, []);
+    const after = generateBootPlugin({ db: 'sqlite' } as FougereConfig, [], '@fougere/nuxt/fougereApp', []);
 
     expect(after).toBe(before);
   });
 
   it('writes one import and one member per key, the key being both', () => {
     const out = generateBootPlugin(
-      { db: 'sqlite' } as FougereConfig, [], '@fougere/nuxt/fougereApp', undefined,
+      { db: 'sqlite' } as FougereConfig, [], '@fougere/nuxt/fougereApp',
       [{ key: 'observability', options: { service: 'blog' } }, { key: 'calls', options: { panel: 4400 } }],
     );
 
@@ -152,7 +152,7 @@ describe('generateBootPlugin — extensions named in the fougere: section', () =
 
   it('mounts them after the framework members, never before', () => {
     const out = generateBootPlugin(
-      { db: 'sqlite' } as FougereConfig, [], '@fougere/nuxt/fougereApp', undefined,
+      { db: 'sqlite' } as FougereConfig, [], '@fougere/nuxt/fougereApp',
       [{ key: 'calls', options: {} }],
     );
 
@@ -179,33 +179,35 @@ describe('extensionsOf', () => {
   /**
    * A `fronds.ts` beside `fougere.config.ts` is the app stating what it hosts.
    *
-   * The generated plugin then imports the AUTHOR's file — no module is emitted, and the
-   * scan that ran at build stays a check rather than becoming code nobody reads. It is the
-   * same door `configureFougere({ fronds })` opens for every host that is not Nuxt.
+   * The generated plugin imports the AUTHOR's file. No module of classes is emitted: one
+   * used to be, and it re-stated what the classes already carry — signatures the checker
+   * owns, operations `Crud` declares at runtime — while being imported by a path a bundler
+   * treats as external, which broke `nuxt dev` in-process. It is the same door
+   * `configureFougere({ fronds })` opens for every host that is not Nuxt.
    */
   describe('when the app states its fronds', () => {
-    it('imports the stated file and passes `fronds`, not `scan`', () => {
+    it('imports the stated file and passes `fronds`', () => {
       const out = generateBootPlugin(
-        { db: 'sqlite' } as FougereConfig, [], '/app/boot', '/nuxt/scan.mjs', [], '/app/fronds.ts');
+        { db: 'sqlite' } as FougereConfig, [], '/app/boot', [], '/app/fronds.ts');
 
-      // BOTH: here the scan is a build artifact, so an app may own the frond it states and
-      // let the build answer for the rest. `hostedBy` merges them, the statement winning.
       expect(out).toContain("import fronds from '/app/fronds';");
-      expect(out).toContain("import { scan } from '/nuxt/scan.mjs';");
-      expect(out).toContain('configureFougere({ fronds, scan,');
+      expect(out).toContain('configureFougere({');
+      expect(out).toContain('fronds,');
     });
 
     it('drops the extension a bundler would refuse to resolve', () => {
       const out = generateBootPlugin(
-        { db: 'sqlite' } as FougereConfig, [], '/app/boot', '/nuxt/scan.mjs', [], '/app/fronds.mts');
+        { db: 'sqlite' } as FougereConfig, [], '/app/boot', [], '/app/fronds.mts');
 
       expect(out).toContain("import fronds from '/app/fronds';");
     });
 
-    it('still emits the scanned form when the app states nothing', () => {
-      const out = generateBootPlugin({ db: 'sqlite' } as FougereConfig, [], '/app/boot', '/nuxt/scan.mjs');
+    it('configures even when the app states nothing, so the absence is answered', () => {
+      // `hostedBy` names both keys and refuses. Skipping the call boots a silent app whose
+      // every door answers NOT_FOUND with nothing said.
+      const out = generateBootPlugin({ db: 'sqlite' } as FougereConfig, [], '/app/boot');
 
-      expect(out).toContain('configureFougere({ scan,');
+      expect(out).toContain('configureFougere({');
       expect(out).not.toContain('import fronds');
     });
   });

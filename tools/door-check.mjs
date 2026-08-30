@@ -74,21 +74,42 @@ try {
 
   const deadline = Date.now() + BOOT_MS;
   let status = 0;
+  let body = '';
   while (Date.now() < deadline && server.exitCode === null) {
     await new Promise((r) => setTimeout(r, 2000));
     try {
-      status = (await fetch(`http://localhost:${PORT}/`)).status;
+      const res = await fetch(`http://localhost:${PORT}/`);
+      status = res.status;
       if (status === 200) break;
+      body = await res.text();
     } catch {
       /* not listening yet */
     }
   }
 
   if (status !== 200) {
+    // A status alone does not say what to fix: a boot that failed and a page that threw
+    // both answer non-200, and only the body separates them.
     console.error(log);
+    if (body) console.error(body.slice(0, 4000));
     throw new Error(`the published door did not open: GET / answered ${status || 'nothing'}`);
   }
-  console.log(`the door opens: GET / → 200`);
+
+  // A PAGE is not the door. An app that boots with zero fronds renders every page and
+  // answers NOT_FOUND to every call — the exact failure the scan exists to prevent, and
+  // one a 200 cannot see. So the check asks the domain: the scaffold's own entity, listed.
+  const call = await fetch(`http://localhost:${PORT}/_fougere/call`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'post.list', params: {} }),
+  });
+  const answer = await call.json().catch(() => null);
+  if (!answer || !('result' in answer)) {
+    console.error(log);
+    console.error(JSON.stringify(answer)?.slice(0, 2000));
+    throw new Error(`the door opens but answers nothing: post.list returned no result`);
+  }
+  console.log(`the door opens: GET / → 200, and post.list answers`);
 } finally {
   server?.kill('SIGTERM');
   rmSync(work, { recursive: true, force: true });

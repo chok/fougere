@@ -17,7 +17,7 @@ import {
 import type { Nuxt } from '@nuxt/schema';
 import { orderSeeds } from '@fougere/core';
 import {
-  scanProject, emitScan, frondAliases, frondPackage, watchPathsOf, resolveConventions, type Conventions,
+  scanProject, frondAliases, frondPackage, watchPathsOf, resolveConventions, type Conventions,
   setModuleLoader, loadCascadedConfig,
 } from '@fougere/core/node';
 import { declaresStorage } from '@fougere/defaults';
@@ -276,44 +276,29 @@ const module = defineNuxtModule<FougereModuleOptions>({
       });
     }
 
-    // ── 6. The scan, written down (virtual — lives in .nuxt/) ───
+    // ── 6. What this app hosts ───
     //
-    // The module ALREADY scanned, above. Without this the generated plugin scanned a
-    // second time, at runtime — which is right on a server and impossible on a Worker:
-    // measured on workerd, `readdir` throws through unenv's shim and the app boots with
-    // ZERO fronds. Every page renders, every door answers NOT_FOUND, and only the scan
-    // diagnostics say why. One scan, one value, handed to the boot.
+    // A `fronds.ts` beside `fougere.config.ts` is the app STATING it — the same shape
+    // `configureFougere({ fronds })` gives every other host, made where the author can
+    // make it. The scan still runs at build and stays a CHECK: its diagnostics reach the
+    // console, and it becomes no module.
     //
-    // `emitScan` writes imports relative to where the module SITS, so the destination is
-    // settled before the source is produced — `dst` is that path.
-    // `.mjs`, not `.ts`: the reader is Nitro's rollup, and `emitScan` reads the extension
-    // to decide BOTH whether to emit `import type` and how to spell a specifier. A `.ts`
-    // destination means "tsc will compile this" — it emits a type annotation rollup cannot
-    // parse, and rewrites `Post.ts` to `Post.js`, a file that is not on disk. Measured: the
-    // cloudflare preset refused the template at `import type { ScanResult }`.
-    // A `fronds.ts` beside `fougere.config.ts` is the app STATING what it hosts — the same
-    // shape `configureFougere({ fronds })` gives every other host.
-    //
-    // The scan is emitted EITHER WAY, and the plugin gets both: here the scan is a BUILD
-    // artifact, so leaning on it costs a runtime nothing, and an app may state the frond it
-    // wants to own while the build answers for the rest. `hostedBy` merges, the statement
-    // winning. An app that states everything is never read from the module it ignores.
+    // Nothing is generated, because a generated module was imported by ABSOLUTE path,
+    // which a bundler sees as `file://` and therefore external. Externalized, Node read
+    // the frond's `.ts` itself — stripping types but resolving `../entities/Post.js`
+    // literally, a file that is not on disk. Measured on demos/nuxt-blog in-process:
+    // 500 on every call in `nuxt dev`, 200 once the statement is the only source.
+    // A codegen inside one repo also had nothing to carry: `fougere sync` writes classes
+    // because its source is ANOTHER repo, and here the author can just import.
     const statedPath = ['fronds.ts', 'fronds.mts', 'fronds.js', 'fronds.mjs']
       .map((f) => resolve(scanRoot, f)).find((f) => existsSync(f));
-
-    const scanTpl = addTemplate({
-      filename: 'fougere-scan.mjs',
-      write: true,
-      getContents: ({ nuxt: n }) =>
-        emitScan(scan, { outFile: resolve(n!.options.buildDir, 'fougere-scan.mjs') }),
-    });
 
     // ── 6b. Boot plugin (virtual — lives in .nuxt/) ───
     const allSeeds = orderSeeds(fronds);
     const bootTpl = addTemplate({
       filename: 'fougere-boot.ts',
       write: true,
-      getContents: () => generateBootPlugin(config, allSeeds, runtimeResolve('server/utils/boot'), scanTpl.dst, extensionsOf(options), statedPath),
+      getContents: () => generateBootPlugin(config, allSeeds, runtimeResolve('server/utils/boot'), extensionsOf(options), statedPath),
     });
     addServerPlugin(bootTpl.dst);
 
@@ -373,8 +358,6 @@ export function generateBootPlugin(
   config: FougereConfig,
   seeds: SeedEntry[],
   fougereAppPath: string,
-  /** The module `emitScan` wrote. Absent only in the tests that predate it. */
-  scanPath?: string,
   /** What `fougere:` named, in mount order. Empty is the whole of "changed nothing". */
   extensions: { key: string; options: unknown }[] = [],
   /** The app's own `fronds.ts`, when it states what it hosts instead of being scanned. */
@@ -387,10 +370,8 @@ export function generateBootPlugin(
   lines.push(`import { configureFougere } from '${fougereAppPath}';`);
   // A STATIC import, because that is the one thing a bundler needs spelled out — and the
   // whole point is that nothing reads a directory once this file is built.
-  // One or the other, never both: the app either states its fronds or is scanned.
-  // Both, when both exist: `hostedBy` merges them and the statement wins.
+  // The author's own file — no module of classes is emitted beside it.
   if (statedPath) lines.push(`import fronds from '${statedPath.replace(/\.(m?)ts$/, '')}';`);
-  if (scanPath) lines.push(`import { scan } from '${scanPath}';`);
 
   const db = config.db ?? 'sqlite';
   const sources = (config as { sources?: unknown }).sources;
@@ -405,8 +386,10 @@ export function generateBootPlugin(
   if (!declaresStorage(db as Parameters<typeof declaresStorage>[0])) {
     lines.push(``);
     lines.push(`export default defineNitroPlugin(() => {`);
-    const held = [statedPath && 'fronds', scanPath && 'scan'].filter(Boolean).join(', ');
-    if (held) lines.push(`  configureFougere({ ${held}, config: ${JSON.stringify(carried(config))} });`);
+    // Always configure, even with nothing to host: `hostedBy` is where the absence is
+    // answered, by name and with both keys. Skipping the call boots a silent app instead.
+    const states = statedPath ? 'fronds, ' : '';
+    lines.push(`  configureFougere({ ${states}config: ${JSON.stringify(carried(config))} });`);
     lines.push(`});`);
     return lines.join('\n') + '\n';
   }
@@ -432,15 +415,14 @@ export function generateBootPlugin(
 
   // Wrap all init in the plugin callback to avoid top-level native calls
   lines.push(`export default defineNitroPlugin(async () => {`);
-  // The SCAN first, and on its own line: it names no engine, so nothing below can stop it
-  // from being stated. Measured on workerd — `resolveStorage` threw on a native driver,
+  // What it HOSTS first, and on its own line: it names no engine, so nothing below can stop
+  // it from being stated. Measured on workerd — `resolveStorage` threw on a native driver,
   // Nitro swallowed the plugin whole, and the app came up with zero fronds and not a word.
-  // Two unrelated facts had been sharing one failure.
-  // The scan AND what the config says about topology — both read at build, both stated
-  // here rather than re-derived. `remotes` is the whole reason a consumer boots at all:
-  // without it the app hosts nothing and reaches nothing, and its pages render empty.
-  const held = [statedPath && 'fronds', scanPath && 'scan'].filter(Boolean).join(', ');
-  if (held) lines.push(`  configureFougere({ ${held}, config: ${JSON.stringify(carried(config))} });`);
+  // Two unrelated facts had been sharing one failure. `remotes` rides along for the same
+  // reason: it is the whole of why a consumer that hosts nothing boots at all.
+  const states = statedPath ? 'fronds, ' : '';
+  lines.push(`  configureFougere({ ${states}config: ${JSON.stringify(carried(config))} });`);
+  lines.push(``);
   lines.push(`  try {`);
   // Pass `db` through unchanged — resolveStorage (@fougere/defaults → setupSqlite)
   // is the one place that defaults an absent path, so both call sites (this
@@ -452,7 +434,6 @@ export function generateBootPlugin(
   lines.push(``);
   lines.push(`    configureFougere({`);
   if (statedPath) lines.push(`      fronds,`);
-  if (scanPath) lines.push(`      scan,`);
   lines.push(`      config: ${JSON.stringify(carried(config))},`);
   lines.push(`      db: storage.db,`);
   lines.push(`      ormFactory: storage.ormFactory,`);
