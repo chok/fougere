@@ -1,47 +1,11 @@
-export interface StandardSchemaV1<Input = unknown, Output = Input> {
-  readonly '~standard': StandardSchemaV1.Props<Input, Output>;
-}
-
-export declare namespace StandardSchemaV1 {
-  interface Props<Input = unknown, Output = Input> {
-    readonly version: 1;
-    readonly vendor: string;
-    readonly validate: (
-      value: unknown,
-    ) => Result<Output> | Promise<Result<Output>>;
-    readonly types?: Types<Input, Output> | undefined;
-  }
-
-  type Result<Output> = SuccessResult<Output> | FailureResult;
-
-  interface SuccessResult<Output> {
-    readonly value: Output;
-    readonly issues?: undefined;
-  }
-
-  interface FailureResult {
-    readonly issues: readonly Issue[];
-  }
-
-  interface Issue {
-    readonly message: string;
-    readonly path?: readonly (PropertyKey | PathSegment)[] | undefined;
-  }
-
-  interface PathSegment {
-    readonly key: PropertyKey;
-  }
-
-  interface Types<Input = unknown, Output = Input> {
-    readonly input: Input;
-    readonly output: Output;
-  }
-
-  type InferInput<Schema extends StandardSchemaV1> = NonNullable<
-    Schema['~standard']['types']
-  >['input'];
-
-  type InferOutput<Schema extends StandardSchemaV1> = NonNullable<
-    Schema['~standard']['types']
-  >['output'];
-}
+/**
+ * The Standard Schema interface, from the package that owns it.
+ *
+ * This file used to CARRY the spec — 47 lines of hand-copied interface — and the copy had
+ * silently fallen a version behind: v1.1 gave `Props` a base it extends (`StandardTypedV1`)
+ * and gave `validate` a second `options` parameter. Nothing broke, because a realization may
+ * ignore an optional argument, which is exactly why nobody noticed. A standard is owned by
+ * whoever publishes it; the package is types only (`index.js` is zero bytes), so importing
+ * it costs a browser nothing.
+ */
+export type { StandardSchemaV1 } from '@standard-schema/spec';

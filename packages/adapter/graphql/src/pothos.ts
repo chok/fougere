@@ -57,13 +57,13 @@ export interface InputConfig {
 }
 
 /** Parsed method signature (mirrors core OperationMeta.signature). */
-interface ParsedSignature {
+export interface ParsedSignature {
   name: string;
   params: { name: string; type: { raw: string; name: string; array?: boolean; nullable?: boolean; undefined?: boolean; generics?: ParsedSignature['params'][0]['type'][] }; optional?: boolean }[];
   returnType?: { raw: string; name: string; array?: boolean; nullable?: boolean; undefined?: boolean; generics?: ParsedSignature['params'][0]['type'][] };
 }
 
-interface OperationBinding {
+export interface OperationBinding {
   name: string;
   optional: boolean;
   source:
@@ -73,7 +73,7 @@ interface OperationBinding {
 }
 
 /** The projection-facing subset of core's EffectiveOperation. */
-interface OperationMeta {
+export interface OperationMeta {
   input?: SchemaView;
   output?: SchemaView;
   /** Canonical kind from core's EffectiveOperation. */

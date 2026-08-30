@@ -11,7 +11,7 @@ import { upperFirst, FieldSet, Role } from '@fougere/schema';
 import type SchemaBuilder from '@pothos/core';
 import type { Fields, SchemaView, SchemaOrCard } from '@fougere/schema';
 import { Anatomy, fieldsOf, } from '@fougere/schema';
-import { registerType, registerOperations } from './pothos.js';
+import { registerType, registerOperations, type OperationMeta } from './pothos.js';
 
 type HandlerFacade = Record<string, Function>;
 
@@ -123,25 +123,6 @@ function loadByKey<R>(
 }
 
 // ─── Types ──────────────────────────────────────
-
-interface OperationMeta {
-  input?: SchemaView;
-  output?: SchemaView;
-  kind: 'query' | 'command';
-  binding?: {
-    name: string;
-    optional: boolean;
-    source:
-      | { kind: 'collector' | 'context' | 'fact' }
-      | { kind: 'param'; name: string }
-      | { kind: 'body' | 'query' };
-  }[];
-  signature?: {
-    name: string;
-    params: { name: string; type: { raw: string; name: string; array?: boolean; nullable?: boolean; undefined?: boolean; generics?: any[] }; optional?: boolean }[];
-    returnType?: { raw: string; name: string; array?: boolean; nullable?: boolean; undefined?: boolean; generics?: any[] };
-  };
-}
 
 interface EntityEntry {
   name: string;

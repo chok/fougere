@@ -14,6 +14,13 @@ export interface GraphQLServeOptions {
   playground?: boolean;
 }
 
+/** What a GraphQL request is, wherever the method read it from. */
+interface GraphQLRequest {
+  query: string;
+  variables?: Record<string, unknown>;
+  operationName?: string;
+}
+
 function graphiqlHtml(path: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -58,76 +65,70 @@ export function registerGraphQL(
   const path = options?.path ?? '/graphql';
   const playground = options?.playground ?? false;
 
+  /**
+   * The one place this file states what a GraphQL request answers.
+   *
+   * A GraphQL error is not an HTTP error — the transport succeeded and the errors ride
+   * in the body — so every executed request is 200 whatever the resolvers said. The two
+   * methods differ in where they READ the request, never in how they answer it.
+   */
+  const answer = async (request: GraphQLRequest): Promise<ResponseResult> => ({
+    status: 200,
+    data: await graphql({
+      schema,
+      source: request.query,
+      variableValues: request.variables,
+      operationName: request.operationName,
+    }),
+    headers: { 'content-type': 'application/json' },
+  });
+
   router.on('POST', path, async (ctx) => {
-    const body = (await ctx.body()) as {
-      query?: string;
-      variables?: Record<string, unknown>;
-      operationName?: string;
-    };
+    const body = (await ctx.body()) as Partial<GraphQLRequest> | undefined;
 
     if (!body?.query) {
       return { status: 400, data: { errors: [{ message: 'Missing query' }] } };
     }
 
-    const result = await graphql({
-      schema,
-      source: body.query,
-      variableValues: body.variables,
-      operationName: body.operationName,
-    });
-
-    return {
-      status: 200,
-      data: result,
-      headers: { 'content-type': 'application/json' },
-    };
+    return answer(body as GraphQLRequest);
   });
 
   router.on('GET', path, async (ctx): Promise<ResponseResult> => {
-    // If there's a query param, execute it
-    if (ctx.query.query) {
-      let variables: Record<string, unknown> | undefined;
-      let document;
-      try {
-        variables = ctx.query.variables ? JSON.parse(ctx.query.variables) : undefined;
-        document = parse(ctx.query.query);
-      } catch (err) {
-        return { status: 400, data: { errors: [{ message: (err as Error).message }] } };
-      }
+    // No query param → GraphiQL, when it was asked for.
+    if (!ctx.query.query) {
+      return playground
+        ? {
+            status: 200,
+            data: graphiqlHtml(path),
+            headers: { 'content-type': 'text/html' },
+            raw: true,
+          }
+        : { status: 400, data: { errors: [{ message: 'Missing query parameter' }] } };
+    }
 
-      const operation = getOperationAST(document, ctx.query.operationName);
-      if (operation && operation.operation !== 'query') {
-        return {
-          status: 405,
-          data: { errors: [{ message: 'Only GraphQL queries may be executed over GET' }] },
-          headers: { allow: 'POST' },
-        };
-      }
+    let variables: Record<string, unknown> | undefined;
+    let document;
+    try {
+      variables = ctx.query.variables ? JSON.parse(ctx.query.variables) : undefined;
+      document = parse(ctx.query.query);
+    } catch (err) {
+      return { status: 400, data: { errors: [{ message: (err as Error).message }] } };
+    }
 
-      const result = await graphql({
-        schema,
-        source: ctx.query.query,
-        variableValues: variables,
-        operationName: ctx.query.operationName,
-      });
-
+    // GET is the cacheable half of the protocol, so a mutation is refused rather than run.
+    const operation = getOperationAST(document, ctx.query.operationName);
+    if (operation && operation.operation !== 'query') {
       return {
-        status: 200,
-        data: result,
-        headers: { 'content-type': 'application/json' },
+        status: 405,
+        data: { errors: [{ message: 'Only GraphQL queries may be executed over GET' }] },
+        headers: { allow: 'POST' },
       };
     }
 
-    // No query param → serve GraphiQL if enabled
-    if (playground) {
-      return {
-        status: 200,
-        data: graphiqlHtml(path),
-        headers: { 'content-type': 'text/html' },
-        raw: true,
-      };
-    }
-
-    return { status: 400, data: { errors: [{ message: 'Missing query parameter' }] } };
+    return answer({
+      query: ctx.query.query,
+      variables,
+      operationName: ctx.query.operationName,
+    });
   });
 }
