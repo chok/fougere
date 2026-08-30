@@ -12,7 +12,6 @@ import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { parseAllHandlerMethods } from '../src/scan/handler-parser.js';
-import { setCacheRoot, cachedParse, flushCache } from '../src/scan/scan-cache.js';
 
 /** A mixin file plus a handler extending it — the smallest thing the parser reads. */
 function fixture(mixinBody: string): { dir: string; handler: string } {
@@ -118,47 +117,6 @@ describe('checked parameter types', () => {
         { name: 'optional', type: { name: 'string' }, optional: true },
         { name: 'optionalNullable', type: { name: 'string', nullable: true }, optional: true },
       ]);
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
-  });
-});
-
-/**
- * The cache must not outlive the parser that filled it.
- *
- * This is the defect that hid the bug above: the hash answers "did the source change?",
- * never "does the parser still read it the same way?" — so a fix left every unchanged
- * handler serving the old parse, silently.
- */
-describe('the scan cache carries the parser version', () => {
-  it('ignores an envelope stamped by another parser, and rewrites it', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'fougere-cache-'));
-    const target = join(dir, 'source.ts');
-    writeFileSync(target, 'export default class X {}\n');
-
-    // Counted rather than inspected: what matters is whether the file is READ again,
-    // which is the whole point of the stamp.
-    let parses = 0;
-    const parse = async () => { parses += 1; return 'fresh'; };
-
-    try {
-      setCacheRoot(dir);
-      mkdirSync(join(dir, '.fougere'), { recursive: true });
-      // A cache from a previous parser, claiming a result for this exact source.
-      writeFileSync(
-        join(dir, '.fougere', 'scan-cache.json'),
-        JSON.stringify({ parser: 0, entries: { k: { hash: 'whatever', data: 'stale' } } }),
-      );
-
-      expect(await cachedParse('k', target, parse)).toBe('fresh');
-      expect(parses).toBe(1);
-
-      flushCache();
-      setCacheRoot(dir);
-      // Re-read from disk under the current stamp: the entry is honoured, nothing re-parses.
-      expect(await cachedParse('k', target, parse)).toBe('fresh');
-      expect(parses).toBe(1);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

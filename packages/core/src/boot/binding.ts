@@ -7,7 +7,7 @@
  * load-bearing, since the fall-through would otherwise hand it the caller's body.
  */
 import type { ParsedParam } from '../scan/handler-parser.js';
-import type { InvocationContext } from '../wire/invocation.js';
+import type { InvocationContext } from '../contract/Invocation.js';
 import { lowerFirst } from '@fougere/schema';
 
 // ── Types ─────────────────────────────────────

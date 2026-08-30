@@ -8,7 +8,7 @@ import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner } from '../src/index.js';
-import { EMPTY_INVOCATION } from '../src/wire/invocation.js';
+import { EMPTY_INVOCATION } from '../src/contract/Invocation.js';
 
 const root = join(import.meta.dirname, 'fixtures-collector-input');
 

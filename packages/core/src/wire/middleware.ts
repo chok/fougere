@@ -20,7 +20,7 @@ export interface OperationContext {
   /** Extensible bag — middlewares deposit data here (user, permissions, etc.). */
   state: Record<string, unknown>;
   /** Transport-agnostic invocation context (params, query, body, state). */
-  invocation?: import('./invocation.js').InvocationContext;
+  invocation?: import('../contract/Invocation.js').InvocationContext;
 }
 
 export type AppNext = () => Promise<unknown>;

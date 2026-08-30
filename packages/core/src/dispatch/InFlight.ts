@@ -10,10 +10,6 @@ export class InFlight {
     return this.running;
   }
 
-  get open(): boolean {
-    return this.accepting;
-  }
-
   enter(entity: string, operation: string): () => void {
     if (!this.accepting) {
       throw new FougereError({

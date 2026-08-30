@@ -8,7 +8,7 @@
  */
 import { Card, type SchemaDescriptor } from '@fougere/schema';
 import { factsAnnouncedBy } from '../emit.js';
-import type { InvocationContext } from './invocation.js';
+import type { InvocationContext } from '../contract/Invocation.js';
 import { FougereError, ErrorCode } from './errors.js';
 import type { App } from '../boot/types.js';
 import { createTransportEntry } from '../entry/TransportEntry.js';
@@ -27,6 +27,18 @@ export interface FrondCall {
 export type Transport = (call: FrondCall, invocation: InvocationContext) => Promise<unknown>;
 
 /** Reserved namespace — calls the runner answers itself, never a façade. */
+/**
+ * What a receiver accepts before it stops reading a body.
+ *
+ * Stated once because it was stated FOUR times — `transport/http/policy.ts` said so in its
+ * own comment ("spelled in four packages") while three doors kept their own literal, so
+ * raising the cap here used to leave three of them refusing at the old one.
+ *
+ * `@fougere/http` keeps a fourth copy on purpose: it declares no Fougere dependency at all,
+ * and giving a leaf port a dependency on the kernel to share a number is the wrong trade.
+ */
+export const MAX_BODY_BYTES = 1024 * 1024;
+
 export const RPC_ENTITY = 'rpc';
 
 /**

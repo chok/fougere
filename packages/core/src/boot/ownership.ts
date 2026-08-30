@@ -1,4 +1,4 @@
-import { lowerFirst, type EntityConstructor } from '@fougere/schema';
+import { lowerFirst } from '@fougere/schema';
 import type { FrondDescriptor, ProviderEntry } from '../scan/frond.js';
 import { targetOf } from '../prefab/prefab.js';
 import { ownedBy, repositoryKeyOf } from '../prefab/repository.js';
@@ -135,6 +135,3 @@ function entityOfOrmKey(dep: string): string | undefined {
   const entity = lowerFirst(dep.slice(0, -'Orm'.length));
   return ormKeyOf(entity) === dep ? entity : undefined;
 }
-
-/** Placeholder so the module's imports stay honest if a caller wants the entity list. */
-export type { EntityConstructor };

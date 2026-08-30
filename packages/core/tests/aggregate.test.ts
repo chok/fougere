@@ -17,7 +17,7 @@ import { scanProject } from '../src/node.js';
 import { createApp, createLocalRunner, Repository } from '../src/index.js';
 import { repositoryKeyOf, ownedBy } from '../src/prefab/repository.js';
 import { ormKeyOf, type OrmFactory } from '../src/orm.js';
-import { EMPTY_INVOCATION } from '../src/wire/invocation.js';
+import { EMPTY_INVOCATION } from '../src/contract/Invocation.js';
 
 function makeOrm() {
   const orm = {

@@ -9,7 +9,7 @@
  * is allowed in — measured, it imports no node builtin either.
  */
 import { lowerFirst } from '@fougere/schema';
-import { canonicalInvocation, type InvocationContext } from './wire/invocation.js';
+import { canonicalInvocation, type InvocationContext } from './contract/Invocation.js';
 import type { FrondCall } from './wire/call.js';
 
 export { FougereError, ErrorCode, validationErrorsOf } from './wire/errors.js';
@@ -17,14 +17,15 @@ export { FougereError, ErrorCode, validationErrorsOf } from './wire/errors.js';
 // core's boot — reaching it through the main entry dragged the scanner into a bundle.
 export { toPublicError } from './wire/http-error.js';
 export type { FougereErrorOptions } from './wire/errors.js';
-export { canonicalInvocation, EMPTY_INVOCATION } from './wire/invocation.js';
-export type { InvocationContext } from './wire/invocation.js';
+export { canonicalInvocation, EMPTY_INVOCATION } from './contract/Invocation.js';
+export type { InvocationContext } from './contract/Invocation.js';
 export { Invocation } from './contract/Invocation.js';
 export type { InvocationInput } from './contract/Invocation.js';
 export { Call } from './contract/Call.js';
 export { RouteAddress } from './contract/RouteAddress.js';
 export type { RouteAddressInput } from './contract/RouteAddress.js';
 export type { FrondCall, Transport, SignedCall } from './wire/call.js';
+export { MAX_BODY_BYTES } from './wire/call.js';
 // The reserved entity, VALUE and not type: a consumer that wants to leave it alone — a
 // call log ignoring its own reader — has to be able to name it.
 export { RPC_ENTITY } from './wire/call.js';

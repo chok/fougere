@@ -8,7 +8,7 @@ import { repositoryKeyOf } from '../prefab/repository.js';
 import { targetOf } from '../prefab/prefab.js';
 import type { OperationContract, OperationsMap } from '../wire/operation.js';
 import type { EffectiveOperation, EffectiveOperationsMap } from '../effective-operation.js';
-import type { InvocationContext } from '../wire/invocation.js';
+import type { InvocationContext } from '../contract/Invocation.js';
 import type { Emissions } from './Emissions.js';
 import type { Logger } from '../builtins/logger.js';
 import type { EntityEntry, HandlerEntry, PresenterEntry } from '../scan/frond.js';

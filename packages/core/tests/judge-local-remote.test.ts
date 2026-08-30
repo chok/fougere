@@ -16,7 +16,7 @@ import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, createAppRunner, FougereError } from '../src/index.js';
 import type { Transport, EntityOrm, OrmFactory } from '../src/index.js';
-import { EMPTY_INVOCATION } from '../src/wire/invocation.js';
+import { EMPTY_INVOCATION } from '../src/contract/Invocation.js';
 import { Cases } from '@fougere/schema';
 import Product from './fixtures-judge/fronds/shop/entities/Product.js';
 

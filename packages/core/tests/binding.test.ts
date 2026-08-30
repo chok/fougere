@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { computeBindingPlan, resolveArgs, type BindingPlan } from '../src/boot/binding.js';
 import { lowerFirst } from '@fougere/schema';
 import type { ParsedParam } from '../src/scan/handler-parser.js';
-import type { InvocationContext } from '../src/wire/invocation.js';
+import type { InvocationContext } from '../src/contract/Invocation.js';
 
 function param(name: string, typeName: string, optional = false): ParsedParam {
   return { name, type: { raw: typeName, name: typeName }, optional };
