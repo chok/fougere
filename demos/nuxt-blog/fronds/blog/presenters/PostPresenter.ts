@@ -28,9 +28,8 @@ export default class PostPresenter extends Presenter(Post) {
    */
   async authorName(posts: Post[]): Promise<string[]> {
     const ids = [...new Set(posts.map((p) => p.authorId).filter(Boolean))] as string[];
-    const authors = await Promise.all(ids.map((id) => this.authors.findById(id)));
-    const byId = new Map(authors.filter(Boolean).map((a) => [a!.id, a!.name]));
+    const byId = await this.authors.findByKeys(ids);
 
-    return posts.map((post) => (post.authorId && byId.get(post.authorId)) || 'Anonymous');
+    return posts.map((post) => (post.authorId && byId.get(post.authorId)?.name) || 'Anonymous');
   }
 }
