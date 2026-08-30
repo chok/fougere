@@ -175,4 +175,36 @@ describe('extensionsOf', () => {
     ]);
     expect(extensionsOf({})).toEqual([]);
   });
+
+  /**
+   * A `fronds.ts` beside `fougere.config.ts` is the app stating what it hosts.
+   *
+   * The generated plugin then imports the AUTHOR's file — no module is emitted, and the
+   * scan that ran at build stays a check rather than becoming code nobody reads. It is the
+   * same door `configureFougere({ fronds })` opens for every host that is not Nuxt.
+   */
+  describe('when the app states its fronds', () => {
+    it('imports the stated file and passes `fronds`, not `scan`', () => {
+      const out = generateBootPlugin(
+        { db: 'sqlite' } as FougereConfig, [], '/app/boot', undefined, [], '/app/fronds.ts');
+
+      expect(out).toContain("import fronds from '/app/fronds';");
+      expect(out).toContain('configureFougere({ fronds,');
+      expect(out, 'nothing was emitted, so nothing is imported from it').not.toContain('{ scan }');
+    });
+
+    it('drops the extension a bundler would refuse to resolve', () => {
+      const out = generateBootPlugin(
+        { db: 'sqlite' } as FougereConfig, [], '/app/boot', undefined, [], '/app/fronds.mts');
+
+      expect(out).toContain("import fronds from '/app/fronds';");
+    });
+
+    it('still emits the scanned form when the app states nothing', () => {
+      const out = generateBootPlugin({ db: 'sqlite' } as FougereConfig, [], '/app/boot', '/nuxt/scan.mjs');
+
+      expect(out).toContain('configureFougere({ scan,');
+      expect(out).not.toContain('fronds,');
+    });
+  });
 });
