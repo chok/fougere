@@ -17,7 +17,7 @@ import {
 import type { Nuxt } from '@nuxt/schema';
 import { orderSeeds } from '@fougere/core';
 import {
-  scanProject, frondAliases, frondPackage, watchPathsOf, resolveConventions, type Conventions,
+  scanProject, emitStatement, frondAliases, frondPackage, watchPathsOf, resolveConventions, type Conventions,
   setModuleLoader, loadCascadedConfig,
 } from '@fougere/core/node';
 import { declaresStorage } from '@fougere/defaults';
@@ -290,8 +290,22 @@ const module = defineNuxtModule<FougereModuleOptions>({
     // 500 on every call in `nuxt dev`, 200 once the statement is the only source.
     // A codegen inside one repo also had nothing to carry: `fougere sync` writes classes
     // because its source is ANOTHER repo, and here the author can just import.
-    const statedPath = ['fronds.ts', 'fronds.mts', 'fronds.js', 'fronds.mjs']
+    const stated = ['fronds.ts', 'fronds.mts', 'fronds.js', 'fronds.mjs']
       .map((f) => resolve(scanRoot, f)).find((f) => existsSync(f));
+
+    // No statement of its own: the build writes the one the scan implies, so the runtime
+    // never reaches `scanProject`. That fallback works — it has a disk under Nuxt — but it
+    // loads `typescript` into a production boot, which is the whole of what a build is for.
+    // What is written is the STATEMENT (imports + `frond()`), never the scan result.
+    // `.ts`, and it is not cosmetic: the file spells its imports the way TypeScript sources
+    // do (`Post.js` for `Post.ts`), and Nitro externalizes a `.mjs` it can hand to Node —
+    // which then resolves `@fronds/*` against a package that does not exist, since an alias
+    // is a bundler's. Measured both ways, in-process: `.mjs` answers 500, `.ts` answers.
+    const statedPath = stated ?? addTemplate({
+      filename: 'fougere-fronds.ts',
+      write: true,
+      getContents: () => emitStatement(scan),
+    }).dst;
 
     // ── 6b. Boot plugin (virtual — lives in .nuxt/) ───
     const allSeeds = orderSeeds(fronds);
@@ -370,8 +384,12 @@ export function generateBootPlugin(
   lines.push(`import { configureFougere } from '${fougereAppPath}';`);
   // A STATIC import, because that is the one thing a bundler needs spelled out — and the
   // whole point is that nothing reads a directory once this file is built.
-  // The author's own file — no module of classes is emitted beside it.
-  if (statedPath) lines.push(`import fronds from '${statedPath.replace(/\.(m?)ts$/, '')}';`);
+  // The extension is DROPPED, and that is what decides who reads the file: an extensionless
+  // specifier cannot be resolved by Node, so the bundler resolves it — and only a bundler
+  // applies the `@fronds/*` aliases the statement's own imports are written with. Left in
+  // place, the path resolves natively, Node reads the frond's `.ts` and every call answers
+  // 500. Measured both ways on demos/nuxt-blog, in-process.
+  if (statedPath) lines.push(`import fronds from '${statedPath.replace(/\.(m?)[jt]sx?$/, '')}';`);
 
   const db = config.db ?? 'sqlite';
   const sources = (config as { sources?: unknown }).sources;

@@ -18,6 +18,7 @@ export {
 } from './scan/conventions.js';
 export { RUNTIME_PACKAGES } from './scan/bundling.js';
 export { emitScan, type EmitOptions } from './scan/emit.js';
+export { emitStatement } from './scan/statement.js';
 export { setModuleLoader, getModuleLoader } from './loader.js';
 export { loadConfig, loadCascadedConfig } from './config-loader.js';
 export { defineFrond } from './frond-config.js';
