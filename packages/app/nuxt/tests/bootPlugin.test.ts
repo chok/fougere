@@ -186,16 +186,18 @@ describe('extensionsOf', () => {
   describe('when the app states its fronds', () => {
     it('imports the stated file and passes `fronds`, not `scan`', () => {
       const out = generateBootPlugin(
-        { db: 'sqlite' } as FougereConfig, [], '/app/boot', undefined, [], '/app/fronds.ts');
+        { db: 'sqlite' } as FougereConfig, [], '/app/boot', '/nuxt/scan.mjs', [], '/app/fronds.ts');
 
+      // BOTH: here the scan is a build artifact, so an app may own the frond it states and
+      // let the build answer for the rest. `hostedBy` merges them, the statement winning.
       expect(out).toContain("import fronds from '/app/fronds';");
-      expect(out).toContain('configureFougere({ fronds,');
-      expect(out, 'nothing was emitted, so nothing is imported from it').not.toContain('{ scan }');
+      expect(out).toContain("import { scan } from '/nuxt/scan.mjs';");
+      expect(out).toContain('configureFougere({ fronds, scan,');
     });
 
     it('drops the extension a bundler would refuse to resolve', () => {
       const out = generateBootPlugin(
-        { db: 'sqlite' } as FougereConfig, [], '/app/boot', undefined, [], '/app/fronds.mts');
+        { db: 'sqlite' } as FougereConfig, [], '/app/boot', '/nuxt/scan.mjs', [], '/app/fronds.mts');
 
       expect(out).toContain("import fronds from '/app/fronds';");
     });
@@ -204,7 +206,7 @@ describe('extensionsOf', () => {
       const out = generateBootPlugin({ db: 'sqlite' } as FougereConfig, [], '/app/boot', '/nuxt/scan.mjs');
 
       expect(out).toContain('configureFougere({ scan,');
-      expect(out).not.toContain('fronds,');
+      expect(out).not.toContain('import fronds');
     });
   });
 });

@@ -254,12 +254,15 @@ async function boot(): Promise<App> {
   const app = await createApp({
     // The host's word wins: it scanned at build, and a second scan here would either
     // repeat that work or — where there is no disk — find nothing and say so quietly.
-    // Stated first, scanned only when nothing was stated — `hostedBy` merges the two when
-    // both arrive. A host that names its fronds never reaches `scanProject`, which is what
-    // keeps `typescript` out of a production boot.
+    // A host that names its fronds never reaches `scanProject` — that is what keeps
+    // `typescript` out of a production boot. It may still hand over a scan of its own, and
+    // then `hostedBy` merges the two: under Nuxt that scan is a BUILD artifact, so leaning
+    // on it costs the runtime nothing. What is never done is scanning a disk BECAUSE a
+    // statement was incomplete — half a statement would buy nothing the whole one does.
     ...(_config.fronds ? { fronds: _config.fronds } : {}),
-    ...(_config.scan || !_config.fronds
-      ? { scan: _config.scan ?? (await scanProject(root, undefined, conventions)) }
+    ...(_config.scan ? { scan: _config.scan } : {}),
+    ...(!_config.fronds && !_config.scan
+      ? { scan: await scanProject(root, undefined, conventions) }
       : {}),
     createContainer,
     ormFactory,

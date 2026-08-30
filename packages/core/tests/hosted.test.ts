@@ -1,9 +1,9 @@
 /**
  * Where an app's fronds come from — stated, scanned, or both.
  *
- * The PRESENCE of the key is the decision, the way `remotes:` states a topology. There is
- * no mode to configure because there is no third behaviour to name: passing only `fronds:`
- * IS "do not scan", and passing both IS "fill what I did not name".
+ * The PRESENCE of the key is the decision, the way `remotes:` states a topology. Both may
+ * arrive: under Nuxt the scan is a BUILD artifact, so an app may own the frond it states
+ * and let the build answer for the rest, at no runtime cost.
  */
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
@@ -24,6 +24,14 @@ describe('what an app hosts', () => {
     expect(hosted.fronds.entityNames()).toEqual(['post']);
     // Nothing ran, so there is nothing a run could have failed to do.
     expect(hosted.diagnostics).toEqual([]);
+  });
+
+  it('hands back what a scanner found, diagnostics and all, when nothing is stated', async () => {
+    const failed = { severity: 'blocking' as const, code: 'handler-parse-failed', filePath: '/x.ts', message: 'no' };
+
+    const hosted = await hostedBy({ scan: { fronds: Fronds.scanned([]), diagnostics: [failed] } });
+
+    expect(hosted.diagnostics).toEqual([failed]);
   });
 
   it('refuses a boot that states nothing and scans nothing, naming both doors', async () => {
@@ -58,15 +66,5 @@ describe('what an app hosts', () => {
     });
 
     expect(hosted.fronds.map((f) => f.name)).toEqual(['blog', 'user']);
-  });
-
-  it('carries the scan diagnostics through, and invents none', async () => {
-    const failed = { severity: 'blocking' as const, code: 'handler-parse-failed', filePath: '/x.ts', message: 'no' };
-    const hosted = await hostedBy({
-      fronds: [frond('blog', { entities: [Post] })],
-      scan: { fronds: Fronds.scanned([]), diagnostics: [failed] },
-    });
-
-    expect(hosted.diagnostics).toEqual([failed]);
   });
 });

@@ -291,15 +291,17 @@ const module = defineNuxtModule<FougereModuleOptions>({
     // destination means "tsc will compile this" — it emits a type annotation rollup cannot
     // parse, and rewrites `Post.ts` to `Post.js`, a file that is not on disk. Measured: the
     // cloudflare preset refused the template at `import type { ScanResult }`.
-    // A `fronds.ts` beside `fougere.config.ts` is the app STATING what it hosts, and its
-    // presence is the decision — the same shape `configureFougere({ fronds })` gives every
-    // other host. Nothing is generated then: the plugin imports the author's own file, and
-    // the scan that just ran stays a check (its diagnostics still reach the console) rather
-    // than becoming a module nobody reads.
+    // A `fronds.ts` beside `fougere.config.ts` is the app STATING what it hosts — the same
+    // shape `configureFougere({ fronds })` gives every other host.
+    //
+    // The scan is emitted EITHER WAY, and the plugin gets both: here the scan is a BUILD
+    // artifact, so leaning on it costs a runtime nothing, and an app may state the frond it
+    // wants to own while the build answers for the rest. `hostedBy` merges, the statement
+    // winning. An app that states everything is never read from the module it ignores.
     const statedPath = ['fronds.ts', 'fronds.mts', 'fronds.js', 'fronds.mjs']
       .map((f) => resolve(scanRoot, f)).find((f) => existsSync(f));
 
-    const scanTpl = statedPath ? undefined : addTemplate({
+    const scanTpl = addTemplate({
       filename: 'fougere-scan.mjs',
       write: true,
       getContents: ({ nuxt: n }) =>
@@ -311,7 +313,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
     const bootTpl = addTemplate({
       filename: 'fougere-boot.ts',
       write: true,
-      getContents: () => generateBootPlugin(config, allSeeds, runtimeResolve('server/utils/boot'), scanTpl?.dst, extensionsOf(options), statedPath),
+      getContents: () => generateBootPlugin(config, allSeeds, runtimeResolve('server/utils/boot'), scanTpl.dst, extensionsOf(options), statedPath),
     });
     addServerPlugin(bootTpl.dst);
 
@@ -386,8 +388,9 @@ export function generateBootPlugin(
   // A STATIC import, because that is the one thing a bundler needs spelled out — and the
   // whole point is that nothing reads a directory once this file is built.
   // One or the other, never both: the app either states its fronds or is scanned.
+  // Both, when both exist: `hostedBy` merges them and the statement wins.
   if (statedPath) lines.push(`import fronds from '${statedPath.replace(/\.(m?)ts$/, '')}';`);
-  else if (scanPath) lines.push(`import { scan } from '${scanPath}';`);
+  if (scanPath) lines.push(`import { scan } from '${scanPath}';`);
 
   const db = config.db ?? 'sqlite';
   const sources = (config as { sources?: unknown }).sources;
@@ -402,8 +405,8 @@ export function generateBootPlugin(
   if (!declaresStorage(db as Parameters<typeof declaresStorage>[0])) {
     lines.push(``);
     lines.push(`export default defineNitroPlugin(() => {`);
-    if (statedPath) lines.push(`  configureFougere({ fronds, config: ${JSON.stringify(carried(config))} });`);
-    else if (scanPath) lines.push(`  configureFougere({ scan, config: ${JSON.stringify(carried(config))} });`);
+    const held = [statedPath && 'fronds', scanPath && 'scan'].filter(Boolean).join(', ');
+    if (held) lines.push(`  configureFougere({ ${held}, config: ${JSON.stringify(carried(config))} });`);
     lines.push(`});`);
     return lines.join('\n') + '\n';
   }
@@ -436,8 +439,8 @@ export function generateBootPlugin(
   // The scan AND what the config says about topology — both read at build, both stated
   // here rather than re-derived. `remotes` is the whole reason a consumer boots at all:
   // without it the app hosts nothing and reaches nothing, and its pages render empty.
-  if (statedPath) lines.push(`  configureFougere({ fronds, config: ${JSON.stringify(carried(config))} });`);
-  else if (scanPath) lines.push(`  configureFougere({ scan, config: ${JSON.stringify(carried(config))} });`);
+  const held = [statedPath && 'fronds', scanPath && 'scan'].filter(Boolean).join(', ');
+  if (held) lines.push(`  configureFougere({ ${held}, config: ${JSON.stringify(carried(config))} });`);
   lines.push(`  try {`);
   // Pass `db` through unchanged — resolveStorage (@fougere/defaults → setupSqlite)
   // is the one place that defaults an absent path, so both call sites (this
@@ -449,7 +452,7 @@ export function generateBootPlugin(
   lines.push(``);
   lines.push(`    configureFougere({`);
   if (statedPath) lines.push(`      fronds,`);
-  else if (scanPath) lines.push(`      scan,`);
+  if (scanPath) lines.push(`      scan,`);
   lines.push(`      config: ${JSON.stringify(carried(config))},`);
   lines.push(`      db: storage.db,`);
   lines.push(`      ormFactory: storage.ormFactory,`);
