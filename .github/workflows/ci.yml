@@ -76,6 +76,12 @@ jobs:
       # `arch` — the six invariants this repo used to state in prose only.
       - run: pnpm publish:check
 
+      # `publish:check` asks what a tarball PROMISES in its `exports`. This asks what it
+      # RESOLVES once installed: it packs every package, scaffolds outside the workspace
+      # and boots the result. Four published versions shipped a Nuxt module pointing at
+      # uncompiled `.ts`, which every workspace-reading check saw as fine.
+      - run: pnpm door:check
+
       - run: pnpm arch
 
   audit:

@@ -88,7 +88,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
   async setup(options: FougereModuleOptions, nuxt: Nuxt) {
     const { resolve: resolveModule } = createResolver(import.meta.url);
     const runtimeResolve = (...path: string[]) =>
-      resolveModule('../src/runtime', ...path);
+      resolveModule('./runtime', ...path);
     const rootDir = nuxt.options.rootDir;
     // Fronds may live at the workspace root (app under apps/*); config/.fougere stay app-local.
     const scanRoot = options.root ? resolve(rootDir, options.root) : rootDir;

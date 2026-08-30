@@ -1,4 +1,4 @@
-import { defineEventHandler } from 'h3';
+import { defineEventHandler, toWebRequest, sendWebResponse } from 'h3';
 import { useFougereAuth } from '@fougere/app';
 
 export default defineEventHandler(async (event) => {

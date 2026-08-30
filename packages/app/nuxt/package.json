@@ -31,9 +31,9 @@
     "src"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc",
+    "build": "rm -rf dist && tsc && tsc -p tsconfig.runtime.json",
     "test": "vitest run --passWithNoTests",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.runtime.json --noEmit",
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {

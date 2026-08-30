@@ -1,0 +1,17 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "jsx": "preserve",
+    "paths": {
+      "nitropack/runtime": [
+        "./node_modules/nitropack/dist/runtime/index.d.ts"
+      ]
+    }
+  },
+  "include": [
+    "src/runtime",
+    "src/shims.d.ts"
+  ]
+}

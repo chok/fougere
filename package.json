@@ -14,6 +14,7 @@
     "lint": "oxlint packages site demos",
     "knip": "knip",
     "publish:check": "node tools/publish-check.mjs",
+    "door:check": "node tools/door-check.mjs",
     "arch": "depcruise packages --output-type err",
     "coverage": "pnpm -r --filter './packages/**' exec vitest run --passWithNoTests --coverage --coverage.provider=v8 --coverage.reporter=text --coverage.include=src/**",
     "changeset": "changeset",

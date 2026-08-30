@@ -63,7 +63,17 @@ export async function useQuery<T = Record<string, unknown>>(
   const total = computed(() => pageOf(data.value).total);
   const hasMore = computed(() => pageOf(data.value).hasMore);
 
-  return { data: data as Ref<T | null>, items, total, hasMore, loading: pending, error, refresh };
+  return {
+    data: data as Ref<T | null>,
+    items,
+    total,
+    hasMore,
+    loading: pending,
+    error,
+    // Nuxt does not export AsyncDataExecuteOptions, so the inferred signature cannot
+    // be named from outside; callers pass nothing.
+    refresh: refresh as () => Promise<void>,
+  };
 }
 
 export function useCommand<T = unknown>(entity: EntityClass, op: string) {
