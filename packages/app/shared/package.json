@@ -64,7 +64,7 @@
     "access": "public"
   },
   "peerDependencies": {
-    "@fougere/adapter-graphql": "^0.3.0-alpha.0"
+    "@fougere/adapter-graphql": "workspace:*"
   },
   "peerDependenciesMeta": {
     "@fougere/adapter-graphql": {
