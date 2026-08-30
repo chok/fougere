@@ -61,6 +61,15 @@ export interface FougereServerConfig {
    */
   scan?: CreateAppOptions['scan'];
   /**
+   * What this app STATES it hosts — `frond('blog', { entities: [Post] })`.
+   *
+   * Stating this and no `scan` is how a host stops scanning at boot: nothing reads a
+   * disk, nothing loads `typescript`, and what was not named does not exist. It is the
+   * one door Next, Vite, React, Svelte and a bare Express share — none of them scans on
+   * its own, they all arrive here, and this line used to end in a scan for every one.
+   */
+  fronds?: CreateAppOptions['fronds'];
+  /**
    * What `fougere.config.ts` says, when the host already read it.
    *
    * The same rule as `scan`, and found the same way: `boot()` re-reads the file at
@@ -245,7 +254,13 @@ async function boot(): Promise<App> {
   const app = await createApp({
     // The host's word wins: it scanned at build, and a second scan here would either
     // repeat that work or — where there is no disk — find nothing and say so quietly.
-    scan: _config.scan ?? (await scanProject(root, undefined, conventions)),
+    // Stated first, scanned only when nothing was stated — `hostedBy` merges the two when
+    // both arrive. A host that names its fronds never reaches `scanProject`, which is what
+    // keeps `typescript` out of a production boot.
+    ...(_config.fronds ? { fronds: _config.fronds } : {}),
+    ...(_config.scan || !_config.fronds
+      ? { scan: _config.scan ?? (await scanProject(root, undefined, conventions)) }
+      : {}),
     createContainer,
     ormFactory,
     sourceOf,
