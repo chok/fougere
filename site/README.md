@@ -18,8 +18,8 @@ The site prerenders to static hosting — that is what `.github/workflows/pages.
 on every push to `main`, publishing to https://fougere.dev/.
 
 ```bash
-NITRO_PRESET=github_pages NUXT_APP_BASE_URL=/fougere/ pnpm generate
-npx serve .output/public          # note: serves at the root, not under /fougere/
+NITRO_PRESET=github_pages NUXT_APP_BASE_URL=/ pnpm generate
+npx serve .output/public
 ```
 
 What survives the export: the landing page, the docs (en/fr), and the **read side** of
@@ -41,6 +41,6 @@ SITE_AUTH_SECRET='...32+ chars...' SITE_URL='https://fougere.example' \
   docker compose -f site/docker-compose.yml up -d --build
 ```
 
-The docker build starts from the **root** (`workspace:*` deps), drops the `../sylvauth`
-workspace reference (a sibling repo, out of context) and replaces Nitro's partial trace of
-`jiti` with the full package (a known pnpm issue).
+The docker build starts from the **root** (`workspace:*` deps), trims `demos/*` out of
+`pnpm-workspace.yaml` (the image needs none of them) and replaces Nitro's partial trace of
+`jiti` and `@typescript/typescript6` with the full packages (a known pnpm issue).

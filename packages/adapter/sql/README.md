@@ -3,8 +3,10 @@
 The SQL realization of the schema: the tables, the additive migration and the
 per-entity scoped ORM. Four dialects — SQLite, PostgreSQL, MySQL, SQL Server.
 
-Validation judges, storage realizes: this ORM passes no judgment on what a handler
-hands it — it applies the `lifecycle` rules.
+Validation judges, storage realizes: this ORM decides nothing of its own — it applies
+the `lifecycle` rules on the way in. The shape is still held on this path, twice: the
+DDL emits a `CHECK` for `oneOf`, `min` and `max`, and core's `StorageGuard` judges every
+write through the port. `orm.client` meets neither.
 
 ## Installation
 ```bash
