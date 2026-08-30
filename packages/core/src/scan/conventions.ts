@@ -6,7 +6,6 @@
  * literals in five packages, so a project could not move any of them and `frondsDir` was
  * a declared key with no reader.
  */
-import { join } from 'node:path';
 
 export interface Conventions {
   /**
@@ -102,21 +101,4 @@ export function frondDirsOf(conventions: Conventions): string[] {
   return [...new Set([
     entities, handlers, presenters, collectors, seeds, versions, ...providerDirsOf(conventions),
   ])];
-}
-
-/**
- * What changes when a frond's domain changes — the paths a dev loop watches.
- *
- * The root frond IS the scan root, so watching its path would match every write in the
- * project: `.nuxt/`, `node_modules/`, the build output. Its convention directories are
- * the frond, and they are what a scan re-reads.
- */
-export function watchPathsOf(
-  frond: { source: { path: string } },
-  scanRoot: string,
-  conventions: Conventions,
-): string[] {
-  return frond.source.path === scanRoot
-    ? frondDirsOf(conventions).map((dir) => join(scanRoot, dir))
-    : [frond.source.path];
 }

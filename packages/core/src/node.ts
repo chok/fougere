@@ -11,10 +11,10 @@
  */
 export { boot } from './boot/boot.js';
 
-export { scanProject, frondAliases } from './scan/scanner.js';
+export { scanProject, frondAliases, watchPathsOf } from './scan/scanner.js';
 export {
   type Conventions, type ConventionsInput, DEFAULT_CONVENTIONS,
-  resolveConventions, frondPackage, frondDirsOf, providerDirsOf, watchPathsOf,
+  resolveConventions, frondPackage, frondDirsOf, providerDirsOf,
 } from './scan/conventions.js';
 export { RUNTIME_PACKAGES } from './scan/bundling.js';
 export { emitScan, type EmitOptions } from './scan/emit.js';

@@ -755,3 +755,25 @@ export async function scanProject(
 
   return { fronds, diagnostics };
 }
+
+/**
+ * What changes when a frond's domain changes — the paths a dev loop watches.
+ *
+ * It lives beside the scan rather than beside the conventions it reads, because it turns
+ * names into DISK paths: `join` is `node:path`, and `conventions.ts` is reached from
+ * `index` through `frond()`, which an edge bundle imports. Measured — esbuild refused the
+ * Worker with `Could not resolve "node:path"`.
+ *
+ * The root frond IS the scan root, so watching its path would match every write in the
+ * project: `.nuxt/`, `node_modules/`, the build output. Its convention directories are
+ * the frond, and they are what a scan re-reads.
+ */
+export function watchPathsOf(
+  frond: { source: { path: string } },
+  scanRoot: string,
+  conventions: Conventions,
+): string[] {
+  return frond.source.path === scanRoot
+    ? frondDirsOf(conventions).map((dir) => join(scanRoot, dir))
+    : [frond.source.path];
+}
