@@ -133,7 +133,7 @@ export function fougereAdapter(ormMap: OrmMap) {
         const orm = getOrm(ormMap, model);
         const criteria = whereToCriteria(where);
         const targets = await orm.findAllBy(criteria);
-        await Promise.all(targets.map((t) => orm.update(t.id as string, update)));
+        for (const target of targets) await orm.update(target.id as string, update);
         return targets.length;
       },
 
@@ -150,7 +150,7 @@ export function fougereAdapter(ormMap: OrmMap) {
         const orm = getOrm(ormMap, model);
         const criteria = whereToCriteria(where);
         const targets = await orm.findAllBy(criteria);
-        await Promise.all(targets.map((t) => orm.delete(t.id as string)));
+        for (const target of targets) await orm.delete(target.id as string);
         return targets.length;
       },
     }),
