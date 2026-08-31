@@ -1,8 +1,7 @@
 import { EXTENSION_AXES, EXTENSION_SLOTS, type Resolver } from '../../schema/axis/Axis.js';
 import { dequal } from 'dequal';
-import { clean } from '../../utils.js';
+import { clean, isObject } from '../../utils.js';
 import { Field, type Fields } from '../../schema/fields/Field.js';
-import { isObject } from '../../judge/ValueForm.js';
 import { RowJudge } from '../../judge/RowJudge.js';
 import { Schema, type SchemaConstructor } from '../../schema/Schema.js';
 import type { Row, SchemaView } from '../../schema/SchemaView.js';

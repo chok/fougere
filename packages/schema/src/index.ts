@@ -27,8 +27,7 @@ export {
   type SchemaConstructor,
 } from './schema/Schema.js';
 export { SchemaDerivation } from './schema/SchemaDerivation.js';
-export { isObject } from './judge/ValueForm.js';
-export { Cases, type Case } from './judge/Cases.js';
+export { Cases, type Case } from './projection/Cases.js';
 export { RowRefusal } from './judge/RowRefusal.js';
 export { type SchemaView, type Row, type PartialRow } from './schema/SchemaView.js';
 export { type FougereEntityAdapters, type EntityAdapters } from './entity/EntityAdapters.js';
@@ -37,7 +36,7 @@ export {
   type CompositeUnique,
   type PreviousNames,
 } from './entity/EntityDeclarations.js';
-export { lowerFirst, upperFirst } from './utils.js';
+export { lowerFirst, upperFirst, isObject } from './utils.js';
 
 export { primary } from './vocabulary/primary.js';
 export { text } from './vocabulary/text.js';

@@ -1,7 +1,7 @@
 import { EXTENSION_AXES } from '../schema/axis/Axis.js';
 import { Anatomy } from '../schema/axis/shape/Shape.js';
 import type { Field } from '../schema/fields/Field.js';
-import { isObject } from './ValueForm.js';
+import { isObject } from '../utils.js';
 import type { ValidationError, ValidationResult } from './result.js';
 
 export class FieldJudge {

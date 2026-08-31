@@ -4,8 +4,8 @@ import { Lifecycle } from '../schema/axis/lifecycle/Lifecycle.js';
 import { Role } from '../schema/axis/role/Role.js';
 import type { Field } from '../schema/fields/Field.js';
 import type { SchemaView } from '../schema/SchemaView.js';
-import { RowJudge } from './RowJudge.js';
-import { RowRefusal } from './RowRefusal.js';
+import { RowJudge } from '../judge/RowJudge.js';
+import { RowRefusal } from '../judge/RowRefusal.js';
 
 /**
  * One input, and what the judge must answer.

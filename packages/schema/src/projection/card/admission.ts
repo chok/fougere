@@ -23,3 +23,8 @@ export function admitWire(
     );
   }
 }
+
+export const oneOfTokens = <T extends readonly string[]>(
+  value: unknown,
+  tokens: T,
+): value is T[number] => typeof value === 'string' && (tokens as readonly string[]).includes(value);

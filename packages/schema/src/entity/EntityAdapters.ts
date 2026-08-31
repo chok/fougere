@@ -1,5 +1,5 @@
 import type { FieldName, Fields } from '../schema/fields/Field.js';
-import { isObject } from '../judge/ValueForm.js';
+import { isObject } from '../utils.js';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-object-type
 export interface FougereEntityAdapters<K extends string> {}
