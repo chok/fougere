@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Call } from '../src/contract/Call.js';
-import { RouteAddress } from '../src/contract/RouteAddress.js';
-import type { Route, RouteKind } from '../src/dispatch/Route.js';
+import { RouteAddress, type RouteKind } from '../src/contract/RouteAddress.js';
+import type { Route } from '../src/dispatch/Route.js';
 import { RouteRegistry } from '../src/dispatch/RouteRegistry.js';
 
 function route(address: RouteAddress, kind: RouteKind = 'local'): Route {

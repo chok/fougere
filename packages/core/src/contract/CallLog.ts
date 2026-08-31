@@ -1,4 +1,4 @@
-import type { DispatchEvent } from '../dispatch/DispatchEvent.js';
+import type { RouteKind } from './RouteAddress.js';
 
 /**
  * What crosses the door: the address, the route it took, and the verdict.
@@ -18,7 +18,7 @@ export interface CallRecord {
   operation: string;
   surface?: string;
   /** Known at `resolved`, so absent on a call that never found a route. */
-  route?: NonNullable<DispatchEvent['routeKind']>;
+  route?: RouteKind;
   /**
    * The traceparent the invocation carried, when one did.
    *

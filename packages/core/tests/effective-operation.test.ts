@@ -11,7 +11,7 @@ import {
   type HandlerEntry,
   type OperationContract,
 } from '../src/index.js';
-import { identityCardOf } from '../src/wire/call.js';
+import { identityCardOf } from '../src/boot/card.js';
 import { scanProject } from '../src/node.js';
 
 const fixture = join(import.meta.dirname, 'fixtures-collector-input');

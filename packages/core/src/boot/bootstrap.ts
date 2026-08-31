@@ -22,7 +22,8 @@ import { StorageGuard } from '../dispatch/StorageGuard.js';
 import { portBindings } from './ports.js';
 import { InFlight } from '../dispatch/InFlight.js';
 // The keys, each read from where its concept is declared — never respelled here.
-import { facadeKeyOf, contractsKeyOf, identityCardOf, type RpcAnswer } from '../wire/call.js';
+import { facadeKeyOf, contractsKeyOf, type RpcAnswer } from '../wire/call.js';
+import { identityCardOf } from './card.js';
 import { AppLifecycle } from './AppLifecycle.js';
 import { repositoryKeyOf } from '../prefab/repository.js';
 import { ormKeyOf } from '../orm.js';

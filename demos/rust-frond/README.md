@@ -21,7 +21,7 @@ The frond honours two contracts, and both are JSON:
 Everything else belongs to it: the language, the storage, the judge.
 
 The moment that counts is step 4 of the consumer. `Card.toSchema()`
-(`packages/schema/src/projections/reconstruct.ts:103`) rebuilds a **live** schema from
+(`packages/schema/src/projection/card/Card.ts`, `toSchema`) rebuilds a **live** schema from
 the map, and the TS judge refuses a payload before any network:
 
 ```

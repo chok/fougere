@@ -12,7 +12,7 @@ import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner } from '../src/index.js';
 import { scanProject } from '../src/node.js';
 import { emitKeyOf, factOfEmitKey } from '../src/emit.js';
-import { identityCardOf } from '../src/wire/call.js';
+import { identityCardOf } from '../src/boot/card.js';
 import { EMPTY_INVOCATION } from '../src/contract/Invocation.js';
 
 const root = join(import.meta.dirname, 'fixtures-emit');

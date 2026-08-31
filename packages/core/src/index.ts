@@ -67,7 +67,8 @@ export type {
 export type { ModuleLoader } from './loader.js';
 export { FougereError, ErrorCode, validationErrorsOf, type FougereErrorOptions } from './wire/errors.js';
 export type { OperationContext, AppNext, AppMiddleware } from './wire/middleware.js';
-export { createLocalRunner, createAppRunner, assertIdentityCard, RPC_ENTITY, MAX_BODY_BYTES } from './wire/call.js';
+export { assertIdentityCard, RPC_ENTITY, MAX_BODY_BYTES } from './wire/call.js';
+export { createLocalRunner, createAppRunner } from './boot/runner.js';
 
 // A frond an app STATES, for a boot that will not scan. No disk, no `typescript` — which
 // is why it sits here and not in `/node`, beside the scanner that reads a project.
@@ -76,7 +77,7 @@ export type { FrondDeclaration, Declared, DeclaredSubject } from './declare.js';
 // What this app would answer to `rpc.discover`. Served by the boot, and reached until now
 // only by tests through a deep path — a consumer comparing its own card to a producer's
 // had to dispatch a call to ask a question about itself.
-export { identityCardOf } from './wire/call.js';
+export { identityCardOf } from './boot/card.js';
 export type {
   FrondCall, Transport, IdentityCard, CardOp, Facade, RpcAnswer,
   TopologyReport, FrondPlacement, Edge,
