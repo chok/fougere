@@ -1,5 +1,43 @@
 # @fougere/nuxt
 
+## 0.5.0-alpha.1
+
+### Minor Changes
+
+- 934d74d: Go to definition lands on the code, not on a `.d.ts`.
+
+  Every package compiles with `declarationMap`, so each `.d.ts` shipped a map pointing at
+  `../../src/…` — and `"files": ["dist"]` left that target behind. The map resolved to
+  nothing, in every editor, for every consumer. `src` is published now.
+
+  Measured on `@fougere/core`: 233 → 334 kB packed, 854 kB → 1.3 MB unpacked. That is still
+  below `kysely` (1.7 MB), which the same install pulls in anyway. What it buys is that a
+  reader who follows a symbol arrives in the commented source rather than in a stripped
+  signature — and in this codebase the comments carry the reasoning.
+
+### Patch Changes
+
+- ff3cab8: The published Nuxt module ships the runtime it points the host at.
+
+  `src/runtime` sat outside the build because three of its files import `#imports`, so
+  four released versions carried raw `.ts` and `nuxt dev` died in Rollup on the first
+  file it bundled — reproducible in five minutes from `npm create fougere`, invisible to
+  every check that reads the workspace, where pnpm links make `src/` and `dist/` alike.
+
+  A shim states where Nuxt types its virtual barrel, and `pnpm door:check` packs every
+  package, scaffolds outside the workspace, installs the tarballs and boots: it fails on
+  the four published versions and passes here.
+
+  `@fougere/app` carried the repo's only hand-written @fougere range, `^0.3.0-alpha.0`,
+  which semver does not satisfy with `0.4.0-alpha.0`.
+
+- Updated dependencies
+- Updated dependencies [934d74d]
+- Updated dependencies [ff3cab8]
+  - @fougere/core@0.5.0-alpha.1
+  - @fougere/app@1.0.0-alpha.1
+  - @fougere/defaults@0.5.0-alpha.1
+
 ## 0.2.0-alpha.2
 
 ### Minor Changes

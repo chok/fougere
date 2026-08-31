@@ -277,6 +277,17 @@ belief, which costs a sentence, not a paragraph.
   behaviour change either way. Do not "fix" it by rewriting those tests.
 - **`orm.client` remains the anonymous multi-statement path, judge off** — everything else
   writes through a guarded port, `Together<[…]>` included (`core/src/orm.ts`).
+- **`Mirror` writes two useful lines, and 120 that belong to the port.**
+  `core/src/prefab/mirror.ts` — `refresh` reads the high-water mark and loops `pull` into
+  `upsertAll`; all the rest is `judgePage`, which validates a page on the way in because
+  `StorageGuard` (`core/src/dispatch/StorageGuard.ts`) guards `create` and `update` and NOT
+  `upsert`/`upsertAll`. Measured 2026-08-30: 122 lines, ZERO readers in boot or dispatch
+  (`targetOf` reads `__entity`, the mark all five prefabs carry), and `mirror.ts` is the only
+  caller of `upsertAll` in the repo. A middleware is not the shape either: nothing intercepts
+  `refresh()`, a handler calls it. Decided, not done: delete the prefab — the two lines go to
+  that caller, the judgement joins the port beside `create` and `update`. It touches
+  `demos/mirror-catalog` and `demos/together-frame`; `Together`'s second list is providers in
+  general and does not depend on it.
 - **An announcement realizes a fact's `lifecycle.create`, and no typed emitter can use it.**
   `Emit<T>` names the ROW type where `created()` is present and required, so
   `announce({ id, title })` is a compile error and the author writes the field anyway
