@@ -31,7 +31,8 @@ export function applyUpdate(fields: Fields, patch: Row): Row {
   const instant = Clock.now();
 
   for (const [name, field] of Object.entries(fields) as [string, Field][]) {
-    if (Lifecycle.of(field).stampedOnUpdate && !(name in out)) out[name] = new Date(instant);
+    if (Lifecycle.of(field).stampedOnUpdate && !(name in out))
+      out[name] = new Date(instant);
   }
 
   return out;

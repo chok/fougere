@@ -1,11 +1,11 @@
-import type { Shape } from "../axis/shape/Shape.js";
-import { Role, type RoleRules } from "../axis/role/Role.js";
-import type { LifecycleRules } from "../axis/lifecycle/Lifecycle.js";
-import type { BoundaryRef } from "../axis/boundary/Boundary.js";
-import type { Meta } from "../axis/Meta.js";
-import type { Axis } from "../axis/Axis.js";
-import { FieldJudge } from "../judge/FieldJudge.js";
-import { ValueJudge } from "../judge/ValueJudge.js";
+import type { Shape } from '../axis/shape/Shape.js';
+import { Role, type RoleRules } from '../axis/role/Role.js';
+import type { LifecycleRules } from '../axis/lifecycle/Lifecycle.js';
+import type { BoundaryRef } from '../axis/boundary/Boundary.js';
+import type { Meta } from '../axis/Meta.js';
+import type { Axis } from '../axis/Axis.js';
+import { FieldJudge } from '../../judge/FieldJudge.js';
+import { ValueJudge } from '../../judge/ValueJudge.js';
 
 export type Fields = Record<string, Field>;
 
@@ -13,7 +13,7 @@ export type Fields = Record<string, Field>;
 export type FieldName<TFields extends Fields> = Extract<keyof TFields, string>;
 
 /** The carrier, the three extension axes, the annotation — the five the judge reads. */
-export type FieldDeclaration = Pick<Field, "shape" | Axis["slot"] | "meta">;
+export type FieldDeclaration = Pick<Field, 'shape' | Axis['slot'] | 'meta'>;
 
 export class Field<T = unknown> {
   readonly shape: Shape;
@@ -29,8 +29,8 @@ export class Field<T = unknown> {
 
     if (!verdict.success) {
       throw new Error(
-        `${key ? `Field '${key}': ` : ""}` +
-          verdict.errors.map((e) => `${e.path}: ${e.message}`).join("; "),
+        `${key ? `Field '${key}': ` : ''}` +
+          verdict.errors.map((e) => `${e.path}: ${e.message}`).join('; '),
       );
     }
 
@@ -41,11 +41,11 @@ export class Field<T = unknown> {
     this.meta = init.meta;
 
     const create = this.lifecycle?.create;
-    if (typeof create === "object" && create !== null && "value" in create) {
+    if (typeof create === 'object' && create !== null && 'value' in create) {
       const checked = ValueJudge.of(this).check(create.value);
-      if ("error" in checked)
+      if ('error' in checked)
         throw new Error(
-          `${key ? `Field '${key}': ` : ""}the declared default ${JSON.stringify(create.value)} ` +
+          `${key ? `Field '${key}': ` : ''}the declared default ${JSON.stringify(create.value)} ` +
             `is not a legal value for it — ${checked.error}.`,
         );
     }
@@ -77,4 +77,3 @@ export class Field<T = unknown> {
     });
   }
 }
-

@@ -1,7 +1,8 @@
-import type { FieldName, Fields } from './fields/Field.js';
+import type { FieldName, Fields } from '../schema/fields/Field.js';
 import type { EntityAdapters } from './EntityAdapters.js';
 
-export type CompositeUnique<TFields extends Fields> = readonly (readonly FieldName<TFields>[])[];
+export type CompositeUnique<TFields extends Fields> =
+  readonly (readonly FieldName<TFields>[])[];
 
 /** New name to old name: the field states what it WAS, which is how a human writes it. */
 export type PreviousNames<TFields extends Fields> = Readonly<

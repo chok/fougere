@@ -1,8 +1,8 @@
-import { Anatomy } from '../axis/shape/Shape.js';
-import { Boundary } from '../axis/boundary/Boundary.js';
-import { Lifecycle } from '../axis/lifecycle/Lifecycle.js';
-import { Role } from '../axis/role/Role.js';
-import type { Field } from '../fields/Field.js';
+import { Anatomy } from '../schema/axis/shape/Shape.js';
+import { Boundary } from '../schema/axis/boundary/Boundary.js';
+import { Lifecycle } from '../schema/axis/lifecycle/Lifecycle.js';
+import { Role } from '../schema/axis/role/Role.js';
+import type { Field } from '../schema/fields/Field.js';
 import type { SchemaView } from '../schema/SchemaView.js';
 import { RowJudge } from './RowJudge.js';
 import { RowRefusal } from './RowRefusal.js';
@@ -50,14 +50,19 @@ function outOfBoundsFor(field: Field): { why: string; value: unknown }[] {
     if (shape.enum) out.push({ why: 'outside the stated set', value: '__not-in-enum__' });
   }
   if (shape?.type === 'number' || shape?.type === 'integer') {
-    if (typeof shape.minimum === 'number') out.push({ why: 'below minimum', value: shape.minimum - 1 });
-    if (typeof shape.maximum === 'number') out.push({ why: 'above maximum', value: shape.maximum + 1 });
+    if (typeof shape.minimum === 'number')
+      out.push({ why: 'below minimum', value: shape.minimum - 1 });
+    if (typeof shape.maximum === 'number')
+      out.push({ why: 'above maximum', value: shape.maximum + 1 });
   }
   if (shape?.type === 'array') {
     if (typeof shape.minItems === 'number' && shape.minItems > 0)
       out.push({ why: 'fewer items than min', value: [] });
     if (typeof shape.maxItems === 'number')
-      out.push({ why: 'more items than max', value: Array.from({ length: shape.maxItems + 1 }, () => null) });
+      out.push({
+        why: 'more items than max',
+        value: Array.from({ length: shape.maxItems + 1 }, () => null),
+      });
   }
   return out;
 }
@@ -69,9 +74,7 @@ function outOfBoundsFor(field: Field): { why: string; value: unknown }[] {
  * supplies a valid row; generating data belongs to the testing package.
  */
 export class Cases {
-  private constructor(
-    readonly all: readonly Case[],
-  ) {}
+  private constructor(readonly all: readonly Case[]) {}
 
   static of(entity: SchemaView, valid: Record<string, unknown>): Cases {
     return new Cases(enumerate(entity, valid));
@@ -83,7 +86,10 @@ export class Cases {
    * Takes the RESULT rather than the input so the same reader serves the local judge, the
    * façade and a door — the three that have to agree.
    */
-  static holds(expected: Case['expect'], result: { success: boolean; errors?: { path: string }[] }): boolean {
+  static holds(
+    expected: Case['expect'],
+    result: { success: boolean; errors?: { path: string }[] },
+  ): boolean {
     if (expected === 'accept') return result.success;
     if (result.success) return false;
     return (result.errors ?? []).some((error) => error.path === expected.reject);
@@ -106,8 +112,18 @@ function enumerate(entity: SchemaView, valid: Record<string, unknown>): Case[] {
   const withField = (name: string, value: unknown) => ({ ...valid, [name]: value });
 
   cases.push({ why: 'a valid body', body: valid, patch: false, expect: 'accept' });
-  cases.push({ why: 'a key outside the contract', body: { ...valid, __unknown__: 'x' }, patch: false, expect: { reject: '__unknown__' } });
-  cases.push({ why: 'not an object at all', body: 'a string', patch: false, expect: { reject: '.' } });
+  cases.push({
+    why: 'a key outside the contract',
+    body: { ...valid, __unknown__: 'x' },
+    patch: false,
+    expect: { reject: '__unknown__' },
+  });
+  cases.push({
+    why: 'not an object at all',
+    body: 'a string',
+    patch: false,
+    expect: { reject: '.' },
+  });
 
   for (const [name, field] of Object.entries(fields) as [string, Field][]) {
     // A reference names a row that must exist; the caller supplied its id and we do not
@@ -121,17 +137,37 @@ function enumerate(entity: SchemaView, valid: Record<string, unknown>): Case[] {
     }
 
     if (Boundary.of(field).readOnly) {
-      cases.push({ why: `${name} supplied although read-only`, body: withField(name, wrongTypeFor(field)), patch: false, expect: { reject: name } });
+      cases.push({
+        why: `${name} supplied although read-only`,
+        body: withField(name, wrongTypeFor(field)),
+        patch: false,
+        expect: { reject: name },
+      });
     }
 
     if (Lifecycle.of(field).immutable && !Role.of(field).isPrimary) {
-      cases.push({ why: `${name} supplied on an update`, body: { [name]: valid[name] ?? wrongTypeFor(field) }, patch: true, expect: { reject: name } });
+      cases.push({
+        why: `${name} supplied on an update`,
+        body: { [name]: valid[name] ?? wrongTypeFor(field) },
+        patch: true,
+        expect: { reject: name },
+      });
     }
 
     if (name in valid && !isRef) {
-      cases.push({ why: `${name} of the wrong type`, body: withField(name, wrongTypeFor(field)), patch: false, expect: { reject: name } });
+      cases.push({
+        why: `${name} of the wrong type`,
+        body: withField(name, wrongTypeFor(field)),
+        patch: false,
+        expect: { reject: name },
+      });
       for (const { why, value } of outOfBoundsFor(field))
-        cases.push({ why: `${name} ${why}`, body: withField(name, value), patch: false, expect: { reject: name } });
+        cases.push({
+          why: `${name} ${why}`,
+          body: withField(name, value),
+          patch: false,
+          expect: { reject: name },
+        });
     }
   }
 

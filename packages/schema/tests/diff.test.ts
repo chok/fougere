@@ -1,8 +1,8 @@
 import { describe as group, it, expect } from 'vitest';
 import { entity, text, number, primary, optional, date, readOnly, created, indexed } from '../src/index.js';
-import { Bundle } from '../src/card/Bundle.js';
-import { Card } from '../src/card/Card.js';
-import { type Change } from '../src/card/diff.js';
+import { Bundle } from '../src/projection/card/Bundle.js';
+import { Card } from '../src/projection/card/Card.js';
+import { type Change } from '../src/projection/card/diff.js';
 
 /** Two shapes, as `fougere freeze` would have written them a year apart. */
 const shapeOf = (fields: Parameters<typeof entity>[0]) => Card.fromSchema(class extends entity(fields) {}, 'post');

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { Anatomy } from '../src/axis/shape/Shape.js';
-import { Field } from '../src/fields/Field.js';
+import { Anatomy } from '../src/schema/axis/shape/Shape.js';
+import { Field } from '../src/schema/fields/Field.js';
 import { entity } from '../src/entity.js';
 import { primary } from '../src/vocabulary/primary.js';
 import { text } from '../src/vocabulary/text.js';

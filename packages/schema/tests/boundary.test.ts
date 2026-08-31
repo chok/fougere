@@ -1,5 +1,5 @@
-import { Boundaries } from '../src/axis/boundary/Boundaries.js';
-import { Boundary } from '../src/axis/boundary/Boundary.js';
+import { Boundaries } from '../src/schema/axis/boundary/Boundaries.js';
+import { Boundary } from '../src/schema/axis/boundary/Boundary.js';
 import { RowJudge } from '../src/judge/RowJudge.js';
 import { describe, it, expect } from 'vitest';
 import { entity } from '../src/entity.js';
@@ -10,7 +10,7 @@ import { optional } from '../src/vocabulary/optional.js';
 import { readOnly } from '../src/vocabulary/readOnly.js';
 import { writeOnly } from '../src/vocabulary/writeOnly.js';
 import { Visibility } from '../src/projection/Visibility.js';
-import { Field } from '../src/fields/Field.js';
+import { Field } from '../src/schema/fields/Field.js';
 
 class Event extends entity({
   id: primary(),

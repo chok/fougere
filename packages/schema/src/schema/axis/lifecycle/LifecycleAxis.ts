@@ -1,7 +1,7 @@
 import type { Axis } from '../Axis.js';
-import type { ValidationError } from '../../judge/result.js';
-import { admitWire } from '../../card/admission.js';
-import { isObject, oneOfTokens } from '../../judge/ValueForm.js';
+import type { ValidationError } from '../../../judge/result.js';
+import { admitWire } from '../../../projection/card/admission.js';
+import { isObject, oneOfTokens } from '../../../judge/ValueForm.js';
 import { CREATE_TOKENS, UPDATE_TOKENS, type LifecycleRules } from './Lifecycle.js';
 
 export const lifecycleAxis: Axis<LifecycleRules, LifecycleRules> = {

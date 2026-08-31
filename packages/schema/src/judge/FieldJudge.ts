@@ -1,8 +1,8 @@
-import { EXTENSION_AXES } from "../axis/Axis.js";
-import { Anatomy } from "../axis/shape/Shape.js";
-import type { Field } from "../fields/Field.js";
-import { isObject } from "./ValueForm.js";
-import type { ValidationError, ValidationResult } from "./result.js";
+import { EXTENSION_AXES } from '../schema/axis/Axis.js';
+import { Anatomy } from '../schema/axis/shape/Shape.js';
+import type { Field } from '../schema/fields/Field.js';
+import { isObject } from './ValueForm.js';
+import type { ValidationError, ValidationResult } from './result.js';
 
 export class FieldJudge {
   private constructor(private readonly declaration: unknown) {}
@@ -19,7 +19,7 @@ export class FieldJudge {
         success: false,
         errors: [
           {
-            path: ".",
+            path: '.',
             message: `Expected an object — got ${JSON.stringify(declaration)}`,
           },
         ],
@@ -30,7 +30,7 @@ export class FieldJudge {
 
     if (!Anatomy.is(declaration.shape)) {
       errors.push({
-        path: "shape",
+        path: 'shape',
         message: `Every field states a shape — got ${JSON.stringify(declaration.shape)}`,
       });
     }
@@ -43,14 +43,14 @@ export class FieldJudge {
     if (declaration.meta !== undefined) {
       if (!isObject(declaration.meta)) {
         errors.push({
-          path: "meta",
+          path: 'meta',
           message: `Expected an object — got ${JSON.stringify(declaration.meta)}`,
         });
       } else if (
         declaration.meta.description !== undefined &&
-        typeof declaration.meta.description !== "string"
+        typeof declaration.meta.description !== 'string'
       ) {
-        errors.push({ path: "meta.description", message: "Expected a string" });
+        errors.push({ path: 'meta.description', message: 'Expected a string' });
       }
     }
 

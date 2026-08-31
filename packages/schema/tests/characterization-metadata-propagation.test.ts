@@ -3,7 +3,7 @@ import { entity } from '../src/entity.js';
 import { Schema } from '../src/schema/Schema.js';
 import { text } from '../src/vocabulary/text.js';
 
-declare module '../src/EntityAdapters.js' {
+declare module '../src/entity/EntityAdapters.js' {
   interface FougereEntityAdapters<K extends string> {
     characterization?: Partial<Record<K, { marker?: string }>>;
   }

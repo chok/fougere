@@ -1,6 +1,6 @@
-import type { Field, Fields } from '../fields/Field.js';
-import type { CompositeUnique, PreviousNames } from '../EntityDeclarations.js';
-import type { EntityAdapters } from '../EntityAdapters.js';
+import type { Field, Fields } from './fields/Field.js';
+import type { CompositeUnique, PreviousNames } from '../entity/EntityDeclarations.js';
+import type { EntityAdapters } from '../entity/EntityAdapters.js';
 import type { ValidationResult } from '../judge/result.js';
 import type { ValidateOptions } from '../judge/options.js';
 import type { SchemaDerivation } from './SchemaDerivation.js';

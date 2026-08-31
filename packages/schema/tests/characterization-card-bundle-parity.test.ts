@@ -1,6 +1,6 @@
 import { describe as group, expect, it } from 'vitest';
-import { Bundle } from '../src/card/Bundle.js';
-import { Card } from '../src/card/Card.js';
+import { Bundle } from '../src/projection/card/Bundle.js';
+import { Card } from '../src/projection/card/Card.js';
 import { entity } from '../src/entity.js';
 import { optional } from '../src/vocabulary/optional.js';
 import { primary } from '../src/vocabulary/primary.js';

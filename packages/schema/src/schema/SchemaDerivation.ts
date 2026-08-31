@@ -1,4 +1,4 @@
-import { type Fields } from '../fields/Field.js';
+import { type Fields } from './fields/Field.js';
 import type { SchemaView } from './SchemaView.js';
 
 /**
@@ -18,7 +18,10 @@ export class SchemaDerivation {
 
   /** The first cut: every field of the origin still answers to its own name. */
   static first(source: SchemaView, fields: Fields): SchemaDerivation {
-    return new SchemaDerivation(source, Object.fromEntries(Object.keys(fields).map((key) => [key, key])));
+    return new SchemaDerivation(
+      source,
+      Object.fromEntries(Object.keys(fields).map((key) => [key, key])),
+    );
   }
 
   /** The same origin, seen through one more cut. */
@@ -26,7 +29,10 @@ export class SchemaDerivation {
     return new SchemaDerivation(
       this.source,
       Object.fromEntries(
-        Object.entries(this.survived).map(([origin, here]) => [origin, here === undefined ? undefined : survives(here)]),
+        Object.entries(this.survived).map(([origin, here]) => [
+          origin,
+          here === undefined ? undefined : survives(here),
+        ]),
       ),
     );
   }
@@ -43,7 +49,9 @@ export class SchemaDerivation {
   get anchor(): SchemaView {
     const source = this.source;
 
-    return source.anchored !== undefined || !source.derivation ? source : source.derivation.anchor;
+    return source.anchored !== undefined || !source.derivation
+      ? source
+      : source.derivation.anchor;
   }
 
   /**

@@ -18,8 +18,8 @@ import { updated } from '../src/vocabulary/updated.js';
 import { optional } from '../src/vocabulary/optional.js';
 import { date } from '../src/vocabulary/date.js';
 import { number } from '../src/vocabulary/number.js';
-import { applyCreate, applyUpdate } from '../src/axis/lifecycle/apply.js';
-import { Generators } from '../src/axis/lifecycle/Generators.js';
+import { applyCreate, applyUpdate } from '../src/schema/axis/lifecycle/apply.js';
+import { Generators } from '../src/schema/axis/lifecycle/Generators.js';
 
 class Product extends entity({
   id: primary({ generate: 'uuid' }),

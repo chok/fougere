@@ -1,4 +1,4 @@
-import type { ValidationError } from '../judge/result.js';
+import type { ValidationError } from '../../judge/result.js';
 
 /** A card is refused by naming what is wrong AND the remedy — never by a bare throw. */
 export function refuse(what: string, fix: string): never {

@@ -1,30 +1,42 @@
-export { Field, type Fields } from './fields/Field.js';
-export { FieldSet } from './fields/FieldSet.js';
-export { type Shape, Anatomy } from './axis/shape/Shape.js';
-export { type StringFormat, type FormatPredicate, Formats } from './axis/shape/Formats.js';
-export { Role, type RoleRules } from './axis/role/Role.js';
-export { type Relation, type EntityConstructor } from './axis/role/Relation.js';
-export { Lifecycle, type LifecycleRules } from './axis/lifecycle/Lifecycle.js';
-export { type GeneratorRef, Generators } from './axis/lifecycle/Generators.js';
-export { Clock } from './axis/lifecycle/Clock.js';
-export { Boundary, type BoundaryRules, type BoundaryRef } from './axis/boundary/Boundary.js';
-export { type Decoder, type Encoder, Boundaries } from './axis/boundary/Boundaries.js';
-export { type Meta } from './axis/Meta.js';
-export { FieldGroup } from './constraint/FieldGroup.js';
-export { Unique } from './constraint/Unique.js';
+export { Field, type Fields } from './schema/fields/Field.js';
+export { FieldSet } from './schema/fields/FieldSet.js';
+export { type Shape, Anatomy } from './schema/axis/shape/Shape.js';
+export {
+  type StringFormat,
+  type FormatPredicate,
+  Formats,
+} from './schema/axis/shape/Formats.js';
+export { Role, type RoleRules } from './schema/axis/role/Role.js';
+export { type Relation, type EntityConstructor } from './schema/axis/role/Relation.js';
+export { Lifecycle, type LifecycleRules } from './schema/axis/lifecycle/Lifecycle.js';
+export { type GeneratorRef, Generators } from './schema/axis/lifecycle/Generators.js';
+export { Clock } from './schema/axis/lifecycle/Clock.js';
+export {
+  Boundary,
+  type BoundaryRules,
+  type BoundaryRef,
+} from './schema/axis/boundary/Boundary.js';
+export { type Decoder, type Encoder, Boundaries } from './schema/axis/boundary/Boundaries.js';
+export { type Meta } from './schema/axis/Meta.js';
+export { FieldGroup } from './schema/fields/constraint/FieldGroup.js';
+export { Unique } from './schema/fields/constraint/Unique.js';
 
-export { Schema, ANONYMOUS_SCHEMA_NAME, type SchemaConstructor } from './schema/Schema.js';
+export {
+  Schema,
+  ANONYMOUS_SCHEMA_NAME,
+  type SchemaConstructor,
+} from './schema/Schema.js';
 export { SchemaDerivation } from './schema/SchemaDerivation.js';
 export { isObject } from './judge/ValueForm.js';
 export { Cases, type Case } from './judge/Cases.js';
 export { RowRefusal } from './judge/RowRefusal.js';
 export { type SchemaView, type Row, type PartialRow } from './schema/SchemaView.js';
-export { type FougereEntityAdapters, type EntityAdapters } from './EntityAdapters.js';
+export { type FougereEntityAdapters, type EntityAdapters } from './entity/EntityAdapters.js';
 export {
   type EntityDeclarations,
   type CompositeUnique,
   type PreviousNames,
-} from './EntityDeclarations.js';
+} from './entity/EntityDeclarations.js';
 export { lowerFirst, upperFirst } from './utils.js';
 
 export { primary } from './vocabulary/primary.js';
@@ -49,14 +61,36 @@ export { readOnly } from './vocabulary/readOnly.js';
 export { writeOnly } from './vocabulary/writeOnly.js';
 export { json } from './vocabulary/json.js';
 
-export { applyCreate, applyUpdate } from './axis/lifecycle/apply.js';
+export { applyCreate, applyUpdate } from './schema/axis/lifecycle/apply.js';
 export { Visibility } from './projection/Visibility.js';
-export { Card } from './card/Card.js';
-export { Bundle } from './card/Bundle.js';
-export type { Change, Diff, DiffOptions, SetDiff, SetDiffOptions, RenameCandidate, TypeSet } from './card/diff.js';
-export { EntityTypeSource, type EntityTypeSourceOptions } from './card/EntityTypeSource.js';
-export { FacadeTypeSource, type FacadeTypeSourceOptions, type OpDescriptor } from './card/FacadeTypeSource.js';
-export { type SchemaBundle, type SchemaDescriptor, type FieldDescriptor, type FieldExtension, type RoleDescriptor, type RelationDescriptor } from './card/Descriptor.js';
+export { Card } from './projection/card/Card.js';
+export { Bundle } from './projection/card/Bundle.js';
+export type {
+  Change,
+  Diff,
+  DiffOptions,
+  SetDiff,
+  SetDiffOptions,
+  RenameCandidate,
+  TypeSet,
+} from './projection/card/diff.js';
+export {
+  EntityTypeSource,
+  type EntityTypeSourceOptions,
+} from './projection/card/EntityTypeSource.js';
+export {
+  FacadeTypeSource,
+  type FacadeTypeSourceOptions,
+  type OpDescriptor,
+} from './projection/card/FacadeTypeSource.js';
+export {
+  type SchemaBundle,
+  type SchemaDescriptor,
+  type FieldDescriptor,
+  type FieldExtension,
+  type RoleDescriptor,
+  type RelationDescriptor,
+} from './projection/card/Descriptor.js';
 export { type SchemaOrCard, schemaOf, fieldsOf } from './projection/SchemaOrCard.js';
 export type { StandardSchemaV1 } from './projection/standard.js';
 
@@ -66,4 +100,8 @@ export { FieldJudge } from './judge/FieldJudge.js';
 export { ValueJudge } from './judge/ValueJudge.js';
 export { RowJudge } from './judge/RowJudge.js';
 export { type ValidateOptions } from './judge/options.js';
-export { type ValidationError, type ValidationResult, type Checked } from './judge/result.js';
+export {
+  type ValidationError,
+  type ValidationResult,
+  type Checked,
+} from './judge/result.js';

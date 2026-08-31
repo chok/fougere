@@ -19,8 +19,8 @@ import { nullable } from '../src/vocabulary/nullable.js';
 import { ref } from '../src/vocabulary/ref.js';
 import { many } from '../src/vocabulary/many.js';
 import { Card } from '../src/index.js';
-import { EntityTypeSource } from '../src/card/EntityTypeSource.js';
-import { FacadeTypeSource } from '../src/card/FacadeTypeSource.js';
+import { EntityTypeSource } from '../src/projection/card/EntityTypeSource.js';
+import { FacadeTypeSource } from '../src/projection/card/FacadeTypeSource.js';
 
 class Author extends entity({ id: primary(), name: text() }) {}
 

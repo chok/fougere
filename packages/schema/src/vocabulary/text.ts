@@ -1,5 +1,5 @@
-import { Field } from '../fields/Field.js';
-import { type StringFormat } from '../axis/shape/Formats.js';
+import { Field } from '../schema/fields/Field.js';
+import { type StringFormat } from '../schema/axis/shape/Formats.js';
 
 export interface TextOptions {
   min?: number;
@@ -12,8 +12,15 @@ export interface TextOptions {
 
 export function text(opts?: TextOptions): Field<string> {
   return new Field<string>({
-    shape: { type: 'string', minLength: opts?.min, maxLength: opts?.max, pattern: opts?.pattern, format: opts?.format },
-    lifecycle: opts?.default !== undefined ? { create: { value: opts.default } } : undefined,
+    shape: {
+      type: 'string',
+      minLength: opts?.min,
+      maxLength: opts?.max,
+      pattern: opts?.pattern,
+      format: opts?.format,
+    },
+    lifecycle:
+      opts?.default !== undefined ? { create: { value: opts.default } } : undefined,
     meta: opts?.description !== undefined ? { description: opts.description } : undefined,
   });
 }

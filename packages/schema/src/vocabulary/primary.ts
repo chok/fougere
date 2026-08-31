@@ -1,5 +1,5 @@
-import { Field } from '../fields/Field.js';
-import { Generators, type GeneratorRef } from '../axis/lifecycle/Generators.js';
+import { Field } from '../schema/fields/Field.js';
+import { Generators, type GeneratorRef } from '../schema/axis/lifecycle/Generators.js';
 
 interface PrimaryOptions {
   generate?: GeneratorRef | [name: string, fn: () => string];
@@ -12,7 +12,7 @@ export function primary(fieldOrOptions?: Field | PrimaryOptions): Field {
     const field = fieldOrOptions;
     return field.with({
       role: { ...field.role, primary: true },
-      lifecycle: { ...field.lifecycle, update: "forbidden" },
+      lifecycle: { ...field.lifecycle, update: 'forbidden' },
     });
   }
 
@@ -23,11 +23,11 @@ export function primary(fieldOrOptions?: Field | PrimaryOptions): Field {
     Generators.register(name, fn);
     generate = name;
   } else {
-    generate = opts.generate ?? "cuid2";
+    generate = opts.generate ?? 'cuid2';
   }
   return new Field<string>({
-    shape: { type: "string" },
+    shape: { type: 'string' },
     role: { primary: true },
-    lifecycle: { create: { generate }, update: "forbidden" },
+    lifecycle: { create: { generate }, update: 'forbidden' },
   });
 }

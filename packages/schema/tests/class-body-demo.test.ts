@@ -14,7 +14,7 @@ import { primary } from '../src/vocabulary/primary.js';
 import { text } from '../src/vocabulary/text.js';
 import { number } from '../src/vocabulary/number.js';
 import { oneOf } from '../src/vocabulary/oneOf.js';
-import { Card } from '../src/card/Card.js';
+import { Card } from '../src/projection/card/Card.js';
 
 // ─── 1 · Le payoff de la classe : un nom = type + valeur ──────────────
 

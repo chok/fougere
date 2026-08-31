@@ -1,7 +1,7 @@
-import { Boundary } from '../axis/boundary/Boundary.js';
-import { Lifecycle } from '../axis/lifecycle/Lifecycle.js';
-import { Role } from '../axis/role/Role.js';
-import type { Fields } from '../fields/Field.js';
+import { Boundary } from '../schema/axis/boundary/Boundary.js';
+import { Lifecycle } from '../schema/axis/lifecycle/Lifecycle.js';
+import { Role } from '../schema/axis/role/Role.js';
+import type { Fields } from '../schema/fields/Field.js';
 
 export class Visibility {
   private constructor(private readonly fields: Fields) {}
@@ -37,7 +37,10 @@ export class Visibility {
     for (const [key, field] of Object.entries(this.fields)) {
       if (!(key in record)) continue;
       const boundary = Boundary.of(field);
-      if (boundary.writeOnly) { delete out[key]; continue; }
+      if (boundary.writeOnly) {
+        delete out[key];
+        continue;
+      }
       const value = record[key];
       if (value === null || value === undefined) continue;
       out[key] = boundary.encode(value);

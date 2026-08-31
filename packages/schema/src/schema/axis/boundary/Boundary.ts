@@ -19,7 +19,10 @@ export class Boundary implements BoundaryRules {
   readonly decode: Decoder;
   readonly encode: Encoder;
 
-  private constructor(rules: BoundaryRules = {}, codecs?: { decode: Decoder; encode: Encoder }) {
+  private constructor(
+    rules: BoundaryRules = {},
+    codecs?: { decode: Decoder; encode: Encoder },
+  ) {
     this.in = rules.in;
     this.out = rules.out;
     this.decode = codecs?.decode ?? identityDecoder;
@@ -39,10 +42,19 @@ export class Boundary implements BoundaryRules {
   static of(field: Field): Boundary {
     const declared = Boundary.declared(field);
     const derived = Boundary.forShape(field.shape);
-    const rules: BoundaryRules = { in: declared.in ?? derived.in, out: declared.out ?? derived.out };
+    const rules: BoundaryRules = {
+      in: declared.in ?? derived.in,
+      out: declared.out ?? derived.out,
+    };
     return new Boundary(rules, {
-      decode: typeof rules.in === 'object' ? Boundaries.decoder(rules.in.decode) : identityDecoder,
-      encode: typeof rules.out === 'object' ? Boundaries.encoder(rules.out.encode) : identityEncoder,
+      decode:
+        typeof rules.in === 'object'
+          ? Boundaries.decoder(rules.in.decode)
+          : identityDecoder,
+      encode:
+        typeof rules.out === 'object'
+          ? Boundaries.encoder(rules.out.encode)
+          : identityEncoder,
     });
   }
 
@@ -65,5 +77,4 @@ export class Boundary implements BoundaryRules {
   get writeOnly(): boolean {
     return this.out === 'closed';
   }
-
 }

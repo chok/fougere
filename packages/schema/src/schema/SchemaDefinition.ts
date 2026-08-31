@@ -1,7 +1,10 @@
-import { type Fields } from '../fields/Field.js';
-import { FieldSet } from '../fields/FieldSet.js';
-import { type EntityDeclarations, type PreviousNames } from '../EntityDeclarations.js';
-import { EntityAdapterSet, type EntityAdapters } from '../EntityAdapters.js';
+import { type Fields } from './fields/Field.js';
+import { FieldSet } from './fields/FieldSet.js';
+import {
+  type EntityDeclarations,
+  type PreviousNames,
+} from '../entity/EntityDeclarations.js';
+import { EntityAdapterSet, type EntityAdapters } from '../entity/EntityAdapters.js';
 import { SchemaDerivation } from './SchemaDerivation.js';
 import { type ValidateOptions } from '../judge/options.js';
 import type { SchemaView } from './SchemaView.js';
@@ -36,7 +39,12 @@ export class SchemaDefinition {
     anchored?: boolean;
   }): SchemaDefinition {
     return new SchemaDefinition(
-      said.fields, EntityAdapterSet.of(said.adapters)?.stated, said.opts ?? {}, said.previous, said.derivation, said.anchored ?? false,
+      said.fields,
+      EntityAdapterSet.of(said.adapters)?.stated,
+      said.opts ?? {},
+      said.previous,
+      said.derivation,
+      said.anchored ?? false,
     );
   }
 
@@ -60,7 +68,12 @@ export class SchemaDefinition {
    */
   anchoring(): SchemaDefinition {
     return new SchemaDefinition(
-      this.fields, this.adapters, this.opts, this.previous, this.derivation, true,
+      this.fields,
+      this.adapters,
+      this.opts,
+      this.previous,
+      this.derivation,
+      true,
     );
   }
 
@@ -68,9 +81,14 @@ export class SchemaDefinition {
    * `pick`, `omit` and `rename` are one gesture: the fields that remain, and what became
    * of each name. What each adapter was handed follows the same correspondence, and so does the origin.
    */
-  cut(fields: Fields, survives: (key: string) => string | undefined, root: SchemaView): SchemaDefinition {
+  cut(
+    fields: Fields,
+    survives: (key: string) => string | undefined,
+    root: SchemaView,
+  ): SchemaDefinition {
     const renamed: Fields = {};
-    for (const [key, field] of Object.entries(fields)) renamed[key] = field.rename(survives);
+    for (const [key, field] of Object.entries(fields))
+      renamed[key] = field.rename(survives);
     return new SchemaDefinition(
       renamed,
       EntityAdapterSet.of(this.adapters)?.cut(survives)?.stated,
@@ -84,14 +102,24 @@ export class SchemaDefinition {
   /** The same fields, judged as an update. */
   patched(root: SchemaView): SchemaDefinition {
     return new SchemaDefinition(
-      { ...this.fields }, this.adapters, { ...this.opts, patch: true }, undefined, this.origin(root), false,
+      { ...this.fields },
+      this.adapters,
+      { ...this.opts, patch: true },
+      undefined,
+      this.origin(root),
+      false,
     );
   }
 
   /** The added fields have no origin, so the derivation is unchanged: it speaks of the root. */
   extended(extra: Fields, root: SchemaView): SchemaDefinition {
     return new SchemaDefinition(
-      { ...this.fields, ...extra }, this.adapters, this.opts, undefined, this.origin(root), false,
+      { ...this.fields, ...extra },
+      this.adapters,
+      this.opts,
+      undefined,
+      this.origin(root),
+      false,
     );
   }
 
@@ -103,7 +131,9 @@ export class SchemaDefinition {
       Object.assign(fields, view.getFields());
       opts = { ...opts, ...view.getOpts() };
     }
-    const adapters = EntityAdapterSet.merged(views.map((view) => view.getAdapters()))?.stated;
+    const adapters = EntityAdapterSet.merged(
+      views.map((view) => view.getAdapters()),
+    )?.stated;
 
     return new SchemaDefinition(fields, adapters, opts, undefined, undefined, false);
   }

@@ -1,7 +1,7 @@
-import { Boundary } from '../axis/boundary/Boundary.js';
-import { Lifecycle } from '../axis/lifecycle/Lifecycle.js';
-import { Role } from '../axis/role/Role.js';
-import type { Field, Fields } from '../fields/Field.js';
+import { Boundary } from '../schema/axis/boundary/Boundary.js';
+import { Lifecycle } from '../schema/axis/lifecycle/Lifecycle.js';
+import { Role } from '../schema/axis/role/Role.js';
+import type { Field, Fields } from '../schema/fields/Field.js';
 import type { ValidateOptions } from './options.js';
 import type { ValidationError, ValidationResult } from './result.js';
 import { ValueJudge } from './ValueJudge.js';

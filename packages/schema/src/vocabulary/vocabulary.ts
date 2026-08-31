@@ -1,5 +1,5 @@
-import { Field } from '../fields/Field.js';
-import { EXTENSION_SLOTS } from '../axis/Axis.js';
+import { Field } from '../schema/fields/Field.js';
+import { EXTENSION_SLOTS } from '../schema/axis/Axis.js';
 import { dequal } from 'dequal';
 
 const MEMBER_SLOTS = [...EXTENSION_SLOTS, 'meta'] as const;
@@ -37,4 +37,3 @@ function merge(name: string, field: Field, stated: Partial<Field>): Partial<Fiel
   }
   return out as Partial<Field>;
 }
-

@@ -1,12 +1,10 @@
-import type { Field, Fields } from "../fields/Field.js";
+import type { Field, Fields } from '../Field.js';
 
 export abstract class FieldGroup {
   constructor(readonly members: readonly string[]) {}
 
   protected withMembers(members: readonly string[]): this {
-    return new (this.constructor as new (members: readonly string[]) => this)(
-      members,
-    );
+    return new (this.constructor as new (members: readonly string[]) => this)(members);
   }
 
   get isSelf(): boolean {
@@ -33,8 +31,8 @@ export abstract class FieldGroup {
     const missing = this.members.filter((key) => !(key in fields));
     if (missing.length)
       throw new Error(
-        `${this.constructor.name.toLowerCase()}: [${this.members.join(", ")}] names ` +
-          `${missing.map((m) => `'${m}'`).join(", ")}, which the entity does not declare.`,
+        `${this.constructor.name.toLowerCase()}: [${this.members.join(', ')}] names ` +
+          `${missing.map((m) => `'${m}'`).join(', ')}, which the entity does not declare.`,
       );
 
     const out: Fields = { ...fields };
@@ -69,13 +67,8 @@ export abstract class FieldGroup {
     );
   }
 
-  static on<R extends FieldGroup>(
-    field: Field,
-    kind: Function & { prototype: R },
-  ): R[] {
-    return (field.role?.rules ?? []).filter(
-      (rule): rule is R => rule instanceof kind,
-    );
+  static on<R extends FieldGroup>(field: Field, kind: Function & { prototype: R }): R[] {
+    return (field.role?.rules ?? []).filter((rule): rule is R => rule instanceof kind);
   }
 
   static groupsOf<R extends FieldGroup>(
@@ -85,7 +78,7 @@ export abstract class FieldGroup {
     const seen = new Map<string, R>();
     for (const field of Object.values(fields))
       for (const rule of FieldGroup.on(field, kind))
-        if (rule.members.length > 1) seen.set(rule.members.join(" "), rule);
+        if (rule.members.length > 1) seen.set(rule.members.join(' '), rule);
     return [...seen.values()];
   }
 }

@@ -11,7 +11,7 @@ import { entity } from '../src/entity.js';
 import { primary } from '../src/vocabulary/primary.js';
 import { text } from '../src/vocabulary/text.js';
 
-declare module '../src/EntityAdapters.js' {
+declare module '../src/entity/EntityAdapters.js' {
   interface FougereEntityAdapters<K extends string> {
     warehouse?: Partial<Record<K, { columnType?: string }>>;
   }

@@ -1,11 +1,11 @@
-import { EXTENSION_AXES, EXTENSION_SLOTS, type Resolver } from '../axis/Axis.js';
+import { EXTENSION_AXES, EXTENSION_SLOTS, type Resolver } from '../../schema/axis/Axis.js';
 import { dequal } from 'dequal';
-import { clean } from '../utils.js';
-import { Field, type Fields } from '../fields/Field.js';
-import { isObject } from '../judge/ValueForm.js';
-import { RowJudge } from '../judge/RowJudge.js';
-import { Schema, type SchemaConstructor } from '../schema/Schema.js';
-import type { Row, SchemaView } from '../schema/SchemaView.js';
+import { clean } from '../../utils.js';
+import { Field, type Fields } from '../../schema/fields/Field.js';
+import { isObject } from '../../judge/ValueForm.js';
+import { RowJudge } from '../../judge/RowJudge.js';
+import { Schema, type SchemaConstructor } from '../../schema/Schema.js';
+import type { Row, SchemaView } from '../../schema/SchemaView.js';
 import { refuse } from './admission.js';
 import type {
   DerivedFrom,
@@ -21,7 +21,10 @@ type FieldsOf<T> = { [K in keyof T]-?: Field<T[K]> };
 export class Card<T = Row<Fields>> {
   private constructor(readonly descriptor: SchemaDescriptor) {}
 
-  static fromSchema<TFields extends Fields>(schema: SchemaView<TFields>, name?: string): Card<Row<TFields>> {
+  static fromSchema<TFields extends Fields>(
+    schema: SchemaView<TFields>,
+    name?: string,
+  ): Card<Row<TFields>> {
     const fields = schema.getFields();
     const judge = RowJudge.of(fields);
     const properties: Record<string, FieldDescriptor> = {};
@@ -62,7 +65,8 @@ export class Card<T = Row<Fields>> {
   toSchema(resolve?: Resolver, name?: string): SchemaConstructor<FieldsOf<T>> {
     const descriptor = this.descriptor;
     const where = name ? `schema '${name}'` : 'this schema';
-    if (!isObject(descriptor)) refuse(`${where} is not an object`, 'A card carries one JSON Schema per door.');
+    if (!isObject(descriptor))
+      refuse(`${where} is not an object`, 'A card carries one JSON Schema per door.');
     const version = descriptor['x-fougere-version'];
     if (version !== 1) {
       refuse(
@@ -71,7 +75,10 @@ export class Card<T = Row<Fields>> {
       );
     }
     if (!isObject(descriptor.properties)) {
-      refuse(`${where} carries no \`properties\` object`, 'A schema is its fields; there is nothing to rebuild.');
+      refuse(
+        `${where} carries no \`properties\` object`,
+        'A schema is its fields; there is nothing to rebuild.',
+      );
     }
 
     const fields: Fields = {};
@@ -80,7 +87,8 @@ export class Card<T = Row<Fields>> {
     }
     const schema = Schema.of({ fields });
     const title = name ?? descriptor.title;
-    if (title) Object.defineProperty(schema, 'name', { value: title, configurable: true });
+    if (title)
+      Object.defineProperty(schema, 'name', { value: title, configurable: true });
     return schema as unknown as SchemaConstructor<FieldsOf<T>>;
   }
 
@@ -104,11 +112,13 @@ export class Card<T = Row<Fields>> {
         continue;
       }
 
-      if (now !== field) changes.push({ kind: 'renamed', from: field, to: now, field: target });
+      if (now !== field)
+        changes.push({ kind: 'renamed', from: field, to: now, field: target });
 
       const wasType = typesOf(descriptor);
       const isType = typesOf(target);
-      if (!dequal(wasType, isType)) changes.push({ kind: 'retyped', field: now, from: wasType, to: isType });
+      if (!dequal(wasType, isType))
+        changes.push({ kind: 'retyped', field: now, from: wasType, to: isType });
       else if (!dequal(boundsOf(descriptor), boundsOf(target))) {
         changes.push({ kind: 'reshaped', field: now, from: descriptor, to: target });
       }
@@ -122,12 +132,24 @@ export class Card<T = Row<Fields>> {
     }
 
     const claimed = new Set(Object.values(renamed));
-    const added = Object.keys(after).filter((field) => !(field in before) && !claimed.has(field));
+    const added = Object.keys(after).filter(
+      (field) => !(field in before) && !claimed.has(field),
+    );
     for (const field of removed) {
-      changes.push({ kind: 'removed', field, from: before[field], required: requiredBefore.has(field) });
+      changes.push({
+        kind: 'removed',
+        field,
+        from: before[field],
+        required: requiredBefore.has(field),
+      });
     }
     for (const field of added) {
-      changes.push({ kind: 'added', field, to: after[field], required: requiredAfter.has(field) });
+      changes.push({
+        kind: 'added',
+        field,
+        to: after[field],
+        required: requiredAfter.has(field),
+      });
     }
 
     return { changes, ambiguous: candidates(removed, added, before, after) };
@@ -160,18 +182,29 @@ function describeField(field: Field, key: string): FieldDescriptor {
 function originOf(schema: SchemaView): DerivedFrom | undefined {
   const { derivation } = schema;
   if (!derivation) return undefined;
-  const survived = Object.fromEntries(Object.entries(derivation.survived).map(([key, value]) => [key, value ?? null]));
+  const survived = Object.fromEntries(
+    Object.entries(derivation.survived).map(([key, value]) => [key, value ?? null]),
+  );
   return { from: derivation.sourceName, survived };
 }
 
 function reconstructShape(property: FieldDescriptor): Field['shape'] | undefined {
-  const types = Array.isArray(property.type) ? property.type : property.type ? [property.type] : [];
+  const types = Array.isArray(property.type)
+    ? property.type
+    : property.type
+      ? [property.type]
+      : [];
   const base = types.find((type) => type !== 'null');
   if (base === undefined) return undefined;
   const type = property.type as Field['shape']['type'];
   if (base === 'array') {
     const items = property.items ? reconstructShape(property.items) : undefined;
-    return clean({ type, items, minItems: property.minItems, maxItems: property.maxItems }) as Field['shape'];
+    return clean({
+      type,
+      items,
+      minItems: property.minItems,
+      maxItems: property.maxItems,
+    }) as Field['shape'];
   }
   switch (base) {
     case 'string':
@@ -185,20 +218,32 @@ function reconstructShape(property: FieldDescriptor): Field['shape'] | undefined
       }) as Field['shape'];
     case 'number':
     case 'integer':
-      return clean({ type, minimum: property.minimum, maximum: property.maximum }) as Field['shape'];
+      return clean({
+        type,
+        minimum: property.minimum,
+        maximum: property.maximum,
+      }) as Field['shape'];
     case 'boolean':
       return { type } as Field['shape'];
     default:
-      return clean({ type, properties: property.properties, required: property.required }) as Field['shape'];
+      return clean({
+        type,
+        properties: property.properties,
+        required: property.required,
+      }) as Field['shape'];
   }
 }
 
-function reconstructField(property: FieldDescriptor, key: string, resolve?: Resolver): Field {
+function reconstructField(
+  property: FieldDescriptor,
+  key: string,
+  resolve?: Resolver,
+): Field {
   const shape = reconstructShape(property);
   if (!shape) {
     throw new Error(
-      `Field '${key}': the card carries no \`type\` for it, so there is no shape to rebuild. `
-      + 'A field always states one.',
+      `Field '${key}': the card carries no \`type\` for it, so there is no shape to rebuild. ` +
+        'A field always states one.',
     );
   }
   const extension = property['x-fougere'];
@@ -210,13 +255,27 @@ function reconstructField(property: FieldDescriptor, key: string, resolve?: Reso
   return new Field({
     shape,
     ...axes,
-    meta: property.description !== undefined ? { description: property.description } : undefined,
+    meta:
+      property.description !== undefined
+        ? { description: property.description }
+        : undefined,
   } as never);
 }
 
-function restated(field: string, before: FieldExtension | undefined, after: FieldExtension | undefined): Change[] {
+function restated(
+  field: string,
+  before: FieldExtension | undefined,
+  after: FieldExtension | undefined,
+): Change[] {
   return EXTENSION_SLOTS.filter((axis) => !dequal(before?.[axis], after?.[axis])).map(
-    (axis) => ({ kind: 'restated', field, axis, from: before?.[axis], to: after?.[axis] }) as Change,
+    (axis) =>
+      ({
+        kind: 'restated',
+        field,
+        axis,
+        from: before?.[axis],
+        to: after?.[axis],
+      }) as Change,
   );
 }
 
@@ -245,7 +304,8 @@ function candidates(
   const found: RenameCandidate[] = [];
   for (const gone of removed) {
     for (const appeared of added) {
-      if (dequal(shapeOf(before[gone]), shapeOf(after[appeared]))) found.push({ removed: gone, added: appeared });
+      if (dequal(shapeOf(before[gone]), shapeOf(after[appeared])))
+        found.push({ removed: gone, added: appeared });
     }
   }
   const was = Object.keys(before);

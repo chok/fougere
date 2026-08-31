@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Fields } from '../src/fields/Field.js';
+import type { Fields } from '../src/schema/fields/Field.js';
 import type { ValidationResult } from '../src/judge/result.js';
 import { RowJudge } from '../src/judge/RowJudge.js';
 import type { StandardSchemaV1 } from '../src/projection/standard.js';

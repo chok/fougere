@@ -1,5 +1,5 @@
-import type { BoundaryRef } from '../axis/boundary/Boundary.js';
-import type { LifecycleRules } from '../axis/lifecycle/Lifecycle.js';
+import type { BoundaryRef } from '../../schema/axis/boundary/Boundary.js';
+import type { LifecycleRules } from '../../schema/axis/lifecycle/Lifecycle.js';
 import type { FieldDescriptor, RoleDescriptor } from './Descriptor.js';
 
 /** One named difference, at one place. Each kind exists because a reader asks for it. */

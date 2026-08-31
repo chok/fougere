@@ -1,9 +1,10 @@
-import { Field } from '../fields/Field.js';
+import { Field } from '../schema/fields/Field.js';
 
 export function bool(opts?: { default?: boolean; description?: string }): Field<boolean> {
   return new Field<boolean>({
     shape: { type: 'boolean' },
-    lifecycle: opts?.default !== undefined ? { create: { value: opts.default } } : undefined,
+    lifecycle:
+      opts?.default !== undefined ? { create: { value: opts.default } } : undefined,
     meta: opts?.description !== undefined ? { description: opts.description } : undefined,
   });
 }
