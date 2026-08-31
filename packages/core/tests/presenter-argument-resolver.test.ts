@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Invocation } from '../src/contract/Invocation.js';
 import { ArgumentResolver } from '../src/dispatch/ArgumentResolver.js';
 import { PresenterArgumentResolver } from '../src/dispatch/PresenterArgumentResolver.js';
-import type { PresenterEntry } from '../src/scan/frond.js';
+import type { PresenterEntry } from '../src/descriptor/frond.js';
 
 describe('PresenterArgumentResolver', () => {
   it('resolves only fields that declare invocation-dependent parameters', async () => {

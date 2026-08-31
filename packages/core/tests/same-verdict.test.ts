@@ -62,7 +62,7 @@ async function verdictOfFacade(run: ReturnType<typeof createLocalRunner>, op: st
  * version of this file had that blind spot, and passed while proving less.
  */
 const baseline = { title: 'Un titre', body: 'Un corps' };
-// `Cases` (`schema/src/judge/Cases.ts`) IS this table now. It was written here first,
+// `Cases` (`schema/src/projection/Cases.ts`) IS this table now. It was written here first,
 // against this very theorem, and lived in a test file where no other reader could have it.
 const table = Cases.of(Article, baseline).all.map((one) => ({ why: one.why, body: one.body }));
 

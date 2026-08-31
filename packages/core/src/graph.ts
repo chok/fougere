@@ -3,7 +3,7 @@ import { Role } from '@fougere/schema';
  * Entity dependency graph — analyzes ref() links between entities
  * to suggest domain boundaries for splitting fronds.
  */
-import type { FrondDescriptor } from './scan/frond.js';
+import type { FrondDescriptor } from './descriptor/frond.js';
 
 export interface EntityNode {
   name: string;

@@ -12,7 +12,7 @@ import { upperFirst, lowerFirst, type SchemaView } from '@fougere/schema';
 import type { Container } from '@fougere/container';
 import { membersOfTogetherKey, ormKeyOf, type EntityOrm, type OrmFactory } from '../orm.js';
 import type { Logger } from '../builtins/logger.js';
-import type { ProviderEntry } from '../scan/frond.js';
+import type { ProviderEntry } from '../descriptor/frond.js';
 import { StorageGuard } from '../dispatch/StorageGuard.js';
 import { recording, unwind, type Undo } from './frame.js';
 

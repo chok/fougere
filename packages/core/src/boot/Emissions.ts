@@ -5,7 +5,7 @@ import { emitKeyOf, factsAnnouncedBy } from '../emit.js';
 import { ambient } from '#ambient';
 import { EMPTY_INVOCATION } from '../contract/Invocation.js';
 import type { Logger } from '../builtins/logger.js';
-import type { Fronds } from '../scan/Fronds.js';
+import type { Fronds } from '../descriptor/Fronds.js';
 import type { OperationsMap } from '../wire/operation.js';
 
 /** A door and the op on it that accepts a fact. */
@@ -183,7 +183,7 @@ export class Emissions {
    * The announcement realizes the fact's own `lifecycle.create` — a `created()` stamped,
    * an id generated, a default applied.
    *
-   * `applyCreate` (`schema/src/axis/lifecycle/apply.ts`) is where the split is realized:
+   * `applyCreate` (`schema/src/schema/axis/lifecycle/apply.ts`) is where the split is realized:
    * the judge never fills a hole, the STORAGE does, at the point of persistence. A fact has no storage, so nobody did — the judge declared an
    * absent `created()` legal and omitted it, and a subscriber received a value missing a
    * field its own type promises. Announcing is a fact's point of persistence.

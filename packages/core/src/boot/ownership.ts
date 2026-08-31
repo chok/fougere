@@ -1,5 +1,5 @@
 import { lowerFirst } from '@fougere/schema';
-import type { FrondDescriptor, ProviderEntry } from '../scan/frond.js';
+import type { FrondDescriptor, ProviderEntry } from '../descriptor/frond.js';
 import { targetOf } from '../prefab/prefab.js';
 import { ownedBy, repositoryKeyOf } from '../prefab/repository.js';
 import { ormKeyOf } from '../orm.js';

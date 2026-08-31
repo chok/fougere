@@ -2,8 +2,7 @@ import type { SchemaView } from '@fougere/schema';
 import type { EntityEntry, FrondDescriptor } from './frond.js';
 
 /**
- * What this app hosts — the scan's answer, with the questions everyone was asking it
- * by hand.
+ * What this app hosts, with the questions everyone was asking it by hand.
  *
  * The list was a bare array, so every reader re-walked it: "which frond owns this
  * entity" was spelled four times, "every entity by name" three times as three literal
@@ -20,8 +19,8 @@ export class Fronds extends Array<FrondDescriptor> {
     return Array;
   }
 
-  /** What one scan run found. The only gate in — `Array.of` is taken, and named. */
-  static scanned(fronds: readonly FrondDescriptor[]): Fronds {
+  /** The fronds an app hosts, scanned or stated. The only gate in — `Array.of` is taken. */
+  static hosting(fronds: readonly FrondDescriptor[]): Fronds {
     const held = new Fronds();
     held.push(...fronds);
     return held;
@@ -32,7 +31,7 @@ export class Fronds extends Array<FrondDescriptor> {
     return this.find((frond) => frond.entities.some((e) => e.name === entity));
   }
 
-  /** The entity of that name, wherever it was scanned. */
+  /** The entity of that name, wherever it was declared. */
   entity(name: string): EntityEntry | undefined {
     for (const frond of this) {
       const found = frond.entities.find((e) => e.name === name);
@@ -42,7 +41,7 @@ export class Fronds extends Array<FrondDescriptor> {
   }
 
   /**
-   * Every scanned entity class, by name — across all fronds and never per-frond.
+   * Every entity class, by name — across all fronds and never per-frond.
    *
    * A fact is announced in one frond and heard in another, so the subscriber's own
    * frond does not hold the shape it must judge; a `reads:` clause names entities
@@ -52,7 +51,7 @@ export class Fronds extends Array<FrondDescriptor> {
     return new Map(this.flatMap((frond) => frond.entities.map((e) => [e.name, e.entityClass] as const)));
   }
 
-  /** Every scanned entity, sorted. What was FOUND, not what answers. */
+  /** Every declared entity, sorted. What is DECLARED, not what answers. */
   entityNames(): string[] {
     return this.flatMap((frond) => frond.entities.map((e) => e.name)).sort();
   }

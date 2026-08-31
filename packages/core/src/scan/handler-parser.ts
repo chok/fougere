@@ -4,6 +4,7 @@
  * The AST says what the author declared; TypeScript's checker says what those types mean.
  * TypeScript is lazy-loaded to avoid bundling the compiler in production builds.
  */
+import type { TypeRef, Param, Signature } from '../wire/signature.js';
 import type ts from '@typescript/typescript6';
 import { readFileSync, existsSync, statSync } from 'node:fs';
 import { join, dirname, resolve as resolvePath } from 'node:path';
@@ -195,7 +196,7 @@ function sourceOf(filePath: string): ts.SourceFile {
 }
 
 /** One declared parameter — a constructor's and a method's are read the same way. */
-function parsedParam(param: ts.ParameterDeclaration, source: ts.SourceFile, checker?: ts.TypeChecker): ParsedParam {
+function parsedParam(param: ts.ParameterDeclaration, source: ts.SourceFile, checker?: ts.TypeChecker): Param {
   const ts = getTS();
   const type = param.type ? parseTypeNode(param.type, source, checker) : { raw: 'unknown', name: 'unknown' };
   return {
@@ -207,63 +208,9 @@ function parsedParam(param: ts.ParameterDeclaration, source: ts.SourceFile, chec
   };
 }
 
-/** A parsed type reference — supports primitives, entities, arrays, generics. */
-export interface ParsedType {
-  /** Raw type text as written in source (e.g. 'Pagination<Post>'). */
-  raw: string;
-  /** Base type name (e.g. 'Pagination', 'string', 'Post'). */
-  name: string;
-  /** Whether this is an array (T[] or Array<T>) — true at any depth. */
-  array?: boolean;
-  /**
-   * How MANY array levels: `string[]` is 1, `string[][]` is 2. `array` only ever said
-   * "at least one", which sufficed while one level meant one thing. It stopped sufficing
-   * when a presenter method started taking the page — there the outer level IS the page
-   * and what remains is the field, so telling `string[]` from `string[][]` is telling a
-   * computed string from a computed list.
-   */
-  arrayDepth?: number;
-  /** Generic type arguments (e.g. for Pagination<Post> → [{ name: 'Post' }]). */
-  generics?: ParsedType[];
-  /** Whether `null` belongs to the type. */
-  nullable?: boolean;
-  /** Whether absence (`undefined` or `void`) belongs to the type. */
-  undefined?: boolean;
-  /** Whether this is a Promise wrapper (unwrapped in output). */
-  promise?: boolean;
-}
 
-/** A parsed method parameter. */
-export interface ParsedParam {
-  name: string;
-  type: ParsedType;
-  optional?: boolean;
-}
-
-/** A parsed method signature from a handler source file. */
-export interface ParsedMethod {
-  name: string;
-  params: ParsedParam[];
-  returnType?: ParsedType;
-  /**
-   * Came from a base class, not from the file being scanned. What a prefab
-   * handler declares about its own ops beats this — the scan reads a signature
-   * and guesses, the builder knows.
-   */
-  inherited?: boolean;
-  /**
-   * The operation in words — the first sentence of the method's doc comment.
-   *
-   * Not a new thing to write: handlers already carry it (`/** Judge: the author,
-   * a draft… *&#47;`), the AST already holds it, and nothing read it. A caller that
-   * discovers an operation over the wire has its name and its schema; what the
-   * operation is FOR lived only in the source.
-   */
-  description?: string;
-}
-
-/** Parse a TypeScript type node into a ParsedType. */
-function parseTypeNode(node: ts.TypeNode, source: ts.SourceFile, checker?: ts.TypeChecker): ParsedType {
+/** Parse a TypeScript type node into a TypeRef. */
+function parseTypeNode(node: ts.TypeNode, source: ts.SourceFile, checker?: ts.TypeChecker): TypeRef {
   const ts = getTS();
   const raw = node.getText(source);
 
@@ -373,7 +320,7 @@ function meaningfulSymbolName(type: ts.Type, checker: ts.TypeChecker): string {
 }
 
 /** Turn a checked TypeScript type into the small, serializable vocabulary the runtime reads. */
-function parseCheckedType(type: ts.Type, raw: string, checker: ts.TypeChecker, depth = 0): ParsedType {
+function parseCheckedType(type: ts.Type, raw: string, checker: ts.TypeChecker, depth = 0): TypeRef {
   const typescript = getTS();
   if (depth > 12) return { raw, name: checker.typeToString(type) };
 
@@ -545,9 +492,9 @@ function extractClassMethods(
   source: ts.SourceFile,
   skip: Set<string>,
   checker?: ts.TypeChecker,
-): ParsedMethod[] {
+): Signature[] {
   const ts = getTS();
-  const results: ParsedMethod[] = [];
+  const results: Signature[] = [];
 
   for (const member of cls.members) {
     if (!ts.isMethodDeclaration(member)) continue;
@@ -628,9 +575,9 @@ function inheritedFromBase(
   base: ts.ExpressionWithTypeArguments,
   checker: ts.TypeChecker,
   skip: Set<string>,
-): ParsedMethod[] {
+): Signature[] {
   const typescript = getTS();
-  const results: ParsedMethod[] = [];
+  const results: Signature[] = [];
 
   for (const property of checker.getPropertiesOfType(checker.getTypeAtLocation(base))) {
     if (skip.has(property.name)) continue;
@@ -676,7 +623,7 @@ function parseInheritedMethods(
    * published base class was absent from the façade without a word.
    */
   unresolved: string[],
-): ParsedMethod[] {
+): Signature[] {
   const ts = getTS();
   if (!cls.heritageClauses) return [];
 
@@ -747,7 +694,7 @@ function findDefaultClass(source: ts.SourceFile): ts.ClassDeclaration | undefine
  * pair travels through the scan cache, which is why {@link PARSER_VERSION} moved.
  */
 export interface HandlerParse {
-  methods: ParsedMethod[];
+  methods: Signature[];
   /** Base classes whose source this pass could not open. Empty is a claim. */
   unresolvedHeritage: string[];
 }
@@ -766,7 +713,7 @@ export async function parseAllHandlerMethods(filePath: string, projectRoot?: str
  *
  * Returns all methods (no CRUD filtering) — each method is a computed field.
  */
-export async function parsePresenterMethods(filePath: string, projectRoot?: string): Promise<ParsedMethod[]> {
+export async function parsePresenterMethods(filePath: string, projectRoot?: string): Promise<Signature[]> {
   await loadTS();
   // No `projectRoot`, so no heritage pass and nothing to report: a presenter's
   // computed fields are its own methods.
@@ -777,7 +724,7 @@ export async function parsePresenterMethods(filePath: string, projectRoot?: stri
  * Parse constructor parameter types from a source file's default class.
  * Returns type names (e.g. ['PostOrm', 'Logger']) for DI resolution.
  */
-export async function parseConstructorParams(filePath: string, projectRoot?: string): Promise<ParsedParam[]> {
+export async function parseConstructorParams(filePath: string, projectRoot?: string): Promise<Param[]> {
   const ts = await loadTS();
   const { source, checker } = checkedSourceOf(filePath, projectRoot);
   const cls = findDefaultClass(source);

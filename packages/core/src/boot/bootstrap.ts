@@ -1,6 +1,6 @@
 import type { Container } from '@fougere/container';
 import { lowerFirst, type SchemaView } from '@fougere/schema';
-import type { EntityEntry, HandlerEntry, PresenterEntry } from '../scan/frond.js';
+import type { EntityEntry, HandlerEntry, PresenterEntry } from '../descriptor/frond.js';
 import { hostedBy } from './hosted.js';
 import type { AuthRuntime } from './auth.js';
 import type { CreateAppOptions, App } from './types.js';

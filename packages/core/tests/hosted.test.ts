@@ -9,13 +9,13 @@ import { describe, it, expect } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
 import { frond } from '../src/index.js';
 import { hostedBy } from '../src/boot/hosted.js';
-import { Fronds } from '../src/scan/Fronds.js';
+import { Fronds } from '../src/descriptor/Fronds.js';
 
 class Post extends entity({ id: primary(), title: text() }) {}
 class Author extends entity({ id: primary(), name: text() }) {}
 class PostHandler { list() { return []; } }
 
-const scanFound = (d: ReturnType<typeof frond>) => ({ fronds: Fronds.scanned([d]), diagnostics: [] });
+const scanFound = (d: ReturnType<typeof frond>) => ({ fronds: Fronds.hosting([d]), diagnostics: [] });
 
 describe('what an app hosts', () => {
   it('takes the stated fronds when no scan is given, and reads no disk', async () => {
@@ -29,7 +29,7 @@ describe('what an app hosts', () => {
   it('hands back what a scanner found, diagnostics and all, when nothing is stated', async () => {
     const failed = { severity: 'blocking' as const, code: 'handler-parse-failed', filePath: '/x.ts', message: 'no' };
 
-    const hosted = await hostedBy({ scan: { fronds: Fronds.scanned([]), diagnostics: [failed] } });
+    const hosted = await hostedBy({ scan: { fronds: Fronds.hosting([]), diagnostics: [failed] } });
 
     expect(hosted.diagnostics).toEqual([failed]);
   });

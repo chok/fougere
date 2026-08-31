@@ -1,16 +1,20 @@
 import { describe, it, expect } from 'vitest';
-import { computeBindingPlan, resolveArgs, type BindingPlan } from '../src/boot/binding.js';
+import { computeBindingPlan, type BindingPlan } from '../src/wire/binding.js';
+import { ArgumentResolver, type CollectorLookup } from '../src/dispatch/ArgumentResolver.js';
 import { lowerFirst } from '@fougere/schema';
-import type { ParsedParam } from '../src/scan/handler-parser.js';
+import type { Param } from '../src/wire/signature.js';
 import type { InvocationContext } from '../src/contract/Invocation.js';
 
-function param(name: string, typeName: string, optional = false): ParsedParam {
+function param(name: string, typeName: string, optional = false): Param {
   return { name, type: { raw: typeName, name: typeName }, optional };
 }
 
 function ctx(overrides: Partial<InvocationContext> = {}): InvocationContext {
   return { params: {}, query: {}, body: undefined, state: {}, ...overrides };
 }
+
+const resolve = (plan: BindingPlan, invocation: InvocationContext, collectors?: CollectorLookup) =>
+  new ArgumentResolver(collectors).resolve(plan, invocation);
 
 describe('computeBindingPlan', () => {
   const noCollectors = new Set<string>();
@@ -92,25 +96,25 @@ describe('computeBindingPlan', () => {
   });
 });
 
-describe('resolveArgs', () => {
+describe('ArgumentResolver', () => {
   const optionalValue: BindingPlan = [
     { name: 'value', source: { kind: 'param', name: 'value' }, optional: true },
   ];
 
   it('resolves an absent optional parameter as undefined', async () => {
-    expect(await resolveArgs(optionalValue, ctx())).toEqual([undefined]);
+    expect(await resolve(optionalValue, ctx())).toEqual([undefined]);
   });
 
   it('keeps an explicit null instead of treating it as a missing param', async () => {
-    expect(await resolveArgs(optionalValue, ctx({
+    expect(await resolve(optionalValue, ctx({
       params: { value: null },
       query: { value: 'query fallback' },
     }))).toEqual([null]);
   });
 
   it('distinguishes absence from explicit null for an optional nullable parameter', async () => {
-    const absent = await resolveArgs(optionalValue, ctx());
-    const explicit = await resolveArgs(optionalValue, ctx({ query: { value: null } }));
+    const absent = await resolve(optionalValue, ctx());
+    const explicit = await resolve(optionalValue, ctx({ query: { value: null } }));
 
     expect(absent[0]).toBeUndefined();
     expect(explicit[0]).toBeNull();
@@ -120,7 +124,7 @@ describe('resolveArgs', () => {
     const plan: BindingPlan = [
       { name: 'id', source: { kind: 'param', name: 'id' }, optional: false },
     ];
-    const args = await resolveArgs(plan, ctx({ params: { id: 'abc-123' } }));
+    const args = await resolve(plan, ctx({ params: { id: 'abc-123' } }));
     expect(args).toEqual(['abc-123']);
   });
 
@@ -128,7 +132,7 @@ describe('resolveArgs', () => {
     const plan: BindingPlan = [
       { name: 'search', source: { kind: 'param', name: 'search' }, optional: false },
     ];
-    const args = await resolveArgs(plan, ctx({ query: { search: 'hello' } }));
+    const args = await resolve(plan, ctx({ query: { search: 'hello' } }));
     expect(args).toEqual(['hello']);
   });
 
@@ -136,7 +140,7 @@ describe('resolveArgs', () => {
     const plan: BindingPlan = [
       { name: 'limit', source: { kind: 'param', name: 'limit', coerce: 'number' }, optional: false },
     ];
-    const args = await resolveArgs(plan, ctx({ query: { limit: '25' } }));
+    const args = await resolve(plan, ctx({ query: { limit: '25' } }));
     expect(args).toEqual([25]);
   });
 
@@ -144,10 +148,10 @@ describe('resolveArgs', () => {
     const plan: BindingPlan = [
       { name: 'active', source: { kind: 'param', name: 'active', coerce: 'boolean' }, optional: false },
     ];
-    const args = await resolveArgs(plan, ctx({ query: { active: 'true' } }));
+    const args = await resolve(plan, ctx({ query: { active: 'true' } }));
     expect(args).toEqual([true]);
 
-    const args2 = await resolveArgs(plan, ctx({ query: { active: '0' } }));
+    const args2 = await resolve(plan, ctx({ query: { active: '0' } }));
     expect(args2).toEqual([false]);
   });
 
@@ -156,7 +160,7 @@ describe('resolveArgs', () => {
     const plan: BindingPlan = [
       { name: 'data', source: { kind: 'body' }, optional: false },
     ];
-    const args = await resolveArgs(plan, ctx({ body }));
+    const args = await resolve(plan, ctx({ body }));
     expect(args).toEqual([body]);
   });
 
@@ -165,7 +169,7 @@ describe('resolveArgs', () => {
     const plan: BindingPlan = [
       { name: 'ctx', source: { kind: 'context' }, optional: false },
     ];
-    const args = await resolveArgs(plan, invocation);
+    const args = await resolve(plan, invocation);
     expect(args[0]).toBe(invocation);
   });
 
@@ -174,7 +178,7 @@ describe('resolveArgs', () => {
     const plan: BindingPlan = [
       { name: 'author', source: { kind: 'collector', typeName: 'user' }, optional: false },
     ];
-    const args = await resolveArgs(plan, ctx({ state: { userId: 'u1' } }), (typeName) => {
+    const args = await resolve(plan, ctx({ state: { userId: 'u1' } }), (typeName) => {
       if (typeName === 'user') return { collect: async () => fakeUser };
       return undefined;
     });
@@ -187,7 +191,7 @@ describe('resolveArgs', () => {
       { name: 'data', source: { kind: 'body' }, optional: false },
     ];
     const body = { title: 'Updated' };
-    const args = await resolveArgs(plan, ctx({ params: { id: 'x-1' }, body }));
+    const args = await resolve(plan, ctx({ params: { id: 'x-1' }, body }));
     expect(args).toEqual(['x-1', body]);
   });
 
@@ -198,7 +202,7 @@ describe('resolveArgs', () => {
       { name: 'data', source: { kind: 'body' }, optional: false },
       { name: 'author', source: { kind: 'collector', typeName: 'user' }, optional: false },
     ];
-    const args = await resolveArgs(plan, ctx({ body, state: { userId: 'u1' } }), (name) => {
+    const args = await resolve(plan, ctx({ body, state: { userId: 'u1' } }), (name) => {
       if (name === 'user') return { collect: async () => user };
       return undefined;
     });

@@ -19,9 +19,9 @@ import { lowerFirst, type SchemaView } from '@fougere/schema';
 import type {
   CollectorEntry, EntityEntry, FrondDescriptor, HandlerEntry,
   PresenterEntry, ProviderEntry, SeedEntry,
-} from './frond.js';
-import { DEFAULT_CONVENTIONS } from './conventions.js';
-import { getPresenterFields } from '../prefab/presenter.js';
+} from './descriptor/frond.js';
+import { DEFAULT_CONVENTIONS } from './scan/conventions.js';
+import { getPresenterFields } from './prefab/presenter.js';
 
 /** A class, as a declaration hands it over: the constructor itself. */
 type Ctor = new (...args: never[]) => unknown;
@@ -98,7 +98,7 @@ export interface FrondDeclaration {
  *
  * ```ts
  * createApp({
- *   scan: { fronds: Fronds.scanned([frond('blog', { entities: [Post], handlers: [PostHandler] })]), diagnostics: [] },
+ *   scan: { fronds: Fronds.hosting([frond('blog', { entities: [Post], handlers: [PostHandler] })]), diagnostics: [] },
  * })
  * ```
  */

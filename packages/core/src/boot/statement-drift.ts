@@ -13,12 +13,13 @@
  * a refusal: the statement is still the author's word, and a boot that ran yesterday must
  * not stop running because a parameter moved. What it must not do is stay quiet.
  */
-import type { FrondDescriptor, HandlerEntry, ScanDiagnostic } from '../scan/frond.js';
-import type { BindingPlan } from './binding.js';
-import type { ParsedMethod } from '../scan/handler-parser.js';
+import type { FrondDescriptor, HandlerEntry } from '../descriptor/frond.js';
+import type { ScanDiagnostic } from '../scan/result.js';
+import type { BindingPlan } from '../wire/binding.js';
+import type { Signature } from '../wire/signature.js';
 
 /** The parameters a stated binding names, against the ones the method declares. */
-function namesDisagreeing(stated: BindingPlan, signature: ParsedMethod): string[] {
+function namesDisagreeing(stated: BindingPlan, signature: Signature): string[] {
   const declared = new Set(signature.params.map((p: { name: string }) => p.name));
 
   return stated.map((b) => b.name).filter((name) => !declared.has(name));

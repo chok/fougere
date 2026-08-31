@@ -40,17 +40,17 @@ export type { DispatchObserver } from './dispatch/DispatchEvent.js';
 export type { DispatchPort } from './dispatch/DispatchPort.js';
 export {
   inferOperationKind,
-  resolveContracts,
   resolveIsReadOp,
   resolveOperationKind,
 } from './wire/operation.js';
+export { resolveContracts } from './effective-operation.js';
 export type {
   OperationContract,
   OperationKind,
   OperationKindInference,
   OperationsMap,
-  ParsedParam,
-  ParsedType,
+  Param,
+  TypeRef,
 } from './wire/operation.js';
 export {
   EFFECTIVE_OPERATION_SEMANTICS,
@@ -71,8 +71,8 @@ export { createLocalRunner, createAppRunner, assertIdentityCard, RPC_ENTITY, MAX
 
 // A frond an app STATES, for a boot that will not scan. No disk, no `typescript` — which
 // is why it sits here and not in `/node`, beside the scanner that reads a project.
-export { frond } from './scan/declare.js';
-export type { FrondDeclaration, Declared, DeclaredSubject } from './scan/declare.js';
+export { frond } from './declare.js';
+export type { FrondDeclaration, Declared, DeclaredSubject } from './declare.js';
 // What this app would answer to `rpc.discover`. Served by the boot, and reached until now
 // only by tests through a deep path — a consumer comparing its own card to a producer's
 // had to dispatch a call to ask a question about itself.
@@ -94,9 +94,8 @@ export { Config } from './builtins/config.js';
 export type { EntityOrm, OrmFactory, ListOptions, ListResult, Together } from './orm.js';
 export { togetherKeyOf, membersOfTogetherKey } from './orm.js';
 export type { App, CreateAppOptions } from './boot/types.js';
+export type { ScanResult, ScanDiagnostic } from './scan/result.js';
 export type {
-  ScanResult,
-  ScanDiagnostic,
   FrondDescriptor,
   FrondSource,
   ProviderEntry,
@@ -107,9 +106,9 @@ export type {
   PresenterEntry,
   PresenterFieldMeta,
   CollectorEntry,
-} from './scan/frond.js';
+} from './descriptor/frond.js';
 export type { AuthConfig, AuthContext, AuthRuntime } from './boot/auth.js';
-export { Fronds } from './scan/Fronds.js';
+export { Fronds } from './descriptor/Fronds.js';
 export { verify, assertSplittable, type Violation } from './verify.js';
 // Same question as verify(), answered from the source text instead of the model.
 export type { CrossFrondImport } from './imports.js';

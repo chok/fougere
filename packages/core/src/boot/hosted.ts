@@ -16,8 +16,9 @@
  * because the point of stating is to decide. Empty is what "I named none" looks like, and
  * `frond()` builds every member, so an empty one is filled rather than enforced.
  */
-import type { FrondDescriptor, ScanResult } from '../scan/frond.js';
-import { Fronds } from '../scan/Fronds.js';
+import type { FrondDescriptor } from '../descriptor/frond.js';
+import type { ScanResult } from '../scan/result.js';
+import { Fronds } from '../descriptor/Fronds.js';
 
 /** Where an app's fronds come from — either, or both. */
 export interface HostedSources {
@@ -73,5 +74,5 @@ export async function hostedBy(sources: HostedSources): Promise<ScanResult> {
   const stated = sources.fronds.map((f) => completed(f, found.find((s) => s.name === f.name)));
   const unstated = found.filter((f) => !sources.fronds!.some((s) => s.name === f.name));
 
-  return { fronds: Fronds.scanned([...stated, ...unstated]), diagnostics: scanned?.diagnostics ?? [] };
+  return { fronds: Fronds.hosting([...stated, ...unstated]), diagnostics: scanned?.diagnostics ?? [] };
 }

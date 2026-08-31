@@ -16,10 +16,8 @@
  */
 import { dirname, relative } from 'node:path';
 import { ANONYMOUS_SCHEMA_NAME, Card, type SchemaView } from '@fougere/schema';
-import type {
-  ScanResult, FrondDescriptor, EntityEntry, HandlerEntry,
-  PresenterEntry, CollectorEntry, ProviderEntry, SeedEntry,
-} from './frond.js';
+import type { FrondDescriptor, EntityEntry, HandlerEntry, PresenterEntry, CollectorEntry, ProviderEntry, SeedEntry } from '../descriptor/frond.js';
+import type { ScanResult } from './result.js';
 import type { OperationContract } from '../wire/operation.js';
 
 export interface EmitOptions {
@@ -222,7 +220,7 @@ import { Fronds } from '${core}';
 ${typed ? `import type { ScanResult } from '${core}';\n` : ''}${imports.render()}
 
 export const scan${typed ? ': ScanResult' : ''} = {
-  fronds: Fronds.scanned([
+  fronds: Fronds.hosting([
 ${fronds}
   ]),
   diagnostics: [${diagnostics.join(', ')}],

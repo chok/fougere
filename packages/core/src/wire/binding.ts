@@ -6,8 +6,7 @@
  * be repeated here too, and it had already lost `Fact` — the one whose position is
  * load-bearing, since the fall-through would otherwise hand it the caller's body.
  */
-import type { ParsedParam } from '../scan/handler-parser.js';
-import type { InvocationContext } from '../contract/Invocation.js';
+import type { Param } from './signature.js';
 import { lowerFirst } from '@fougere/schema';
 
 // ── Types ─────────────────────────────────────
@@ -56,7 +55,7 @@ function coercionFor(typeName: string): 'number' | 'boolean' | undefined {
  * @param collectorTypeNames - Registration keys of the types a Collector answers for
  */
 export function computeBindingPlan(
-  params: ParsedParam[],
+  params: Param[],
   collectorTypeNames: Set<string>,
 ): BindingPlan {
   return params.map((param) => {
@@ -116,67 +115,4 @@ export function computeBindingPlan(
       optional: param.optional ?? false,
     };
   });
-}
-
-// ── Resolve ───────────────────────────────────
-
-export interface CollectorResolver {
-  collect(ctx: InvocationContext): Promise<unknown>;
-}
-
-/**
- * Resolve handler arguments from a BindingPlan + InvocationContext.
- */
-export async function resolveArgs(
-  plan: BindingPlan,
-  ctx: InvocationContext,
-  resolveCollector?: (typeName: string) => CollectorResolver | undefined,
-): Promise<unknown[]> {
-  const args: unknown[] = [];
-
-  for (const binding of plan) {
-    switch (binding.source.kind) {
-      case 'collector': {
-        const collector = resolveCollector?.(binding.source.typeName);
-        args.push(collector ? await collector.collect(ctx) : undefined);
-        break;
-      }
-      case 'context': {
-        args.push(ctx);
-        break;
-      }
-      case 'param': {
-        // `null` is a value, not a miss. Nullish coalescing used to make an explicit
-        // nullable path/GraphQL argument fall through to query (or become undefined),
-        // collapsing `T | null` into `T | undefined`. Only undefined means absent.
-        const fromParams = ctx.params[binding.source.name];
-        let val: unknown = fromParams === undefined
-          ? ctx.query[binding.source.name]
-          : fromParams;
-        if (val != null && binding.source.coerce === 'number') val = Number(val);
-        if (val != null && binding.source.coerce === 'boolean') val = val === 'true' || val === '1' || val === true;
-        args.push(val);
-        break;
-      }
-      case 'fact': {
-        // A fact IS the payload — the whole of what happened, never a piece of it.
-        // Identical to `body` today, and deliberately not sharing its branch: the two
-        // agree by coincidence, not by rule, and the day `body` learns to look up a
-        // value by parameter name a subscriber would receive ONE FIELD of the fact it
-        // subscribed to. Splitting it costs nothing and removes that trap.
-        args.push(ctx.body);
-        break;
-      }
-      case 'body': {
-        args.push(ctx.body);
-        break;
-      }
-      case 'query': {
-        args.push(ctx.query);
-        break;
-      }
-    }
-  }
-
-  return args;
 }

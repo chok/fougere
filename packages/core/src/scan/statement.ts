@@ -18,7 +18,8 @@
  * — same rows, same computed fields, and no `typescript` loaded at boot.
  */
 import { relative } from 'node:path';
-import type { FrondDescriptor, ScanResult } from './frond.js';
+import type { FrondDescriptor } from '../descriptor/frond.js';
+import type { ScanResult } from './result.js';
 
 type Live = { name?: string };
 

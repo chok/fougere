@@ -120,7 +120,7 @@ function partition(
     auth: withAuth ? typed.auth : undefined,
     // Lifted, because this function reads its app structurally on purpose — a caller
     // may hand it a shape that is app-LIKE, and the question is still the same one.
-    elsewhere: Fronds.scanned(typed.fronds as FrondDescriptor[]).entityNames().filter((name) => !holds(name)),
+    elsewhere: Fronds.hosting(typed.fronds as FrondDescriptor[]).entityNames().filter((name) => !holds(name)),
   };
 }
 

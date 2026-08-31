@@ -41,7 +41,7 @@ describe('build', () => {
     expect(source).toContain("from '../fronds/press/handlers/ArticleHandler.js'");
     // `Fronds` is an Array subclass, and a bare literal does not rebuild it — measured
     // when a worker booted from a plain object and answered NOT_FOUND on everything.
-    expect(source).toContain('Fronds.scanned(');
+    expect(source).toContain('Fronds.hosting(');
   });
 
   it('carries the diagnostics it has, and the written module says the same', async () => {

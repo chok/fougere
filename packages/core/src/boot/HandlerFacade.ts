@@ -1,7 +1,7 @@
 import { lowerFirst, type Fields } from '@fougere/schema';
 import type { Container } from '@fougere/container';
 import type { AppMiddleware } from '../wire/middleware.js';
-import type { CollectorResolver } from './binding.js';
+import type { CollectorResolver } from '../dispatch/ArgumentResolver.js';
 import { collectorKeyOf } from '../prefab/collector.js';
 import { presenterKeyOf } from '../prefab/presenter.js';
 import { repositoryKeyOf } from '../prefab/repository.js';
@@ -11,7 +11,7 @@ import type { EffectiveOperation, EffectiveOperationsMap } from '../effective-op
 import type { InvocationContext } from '../contract/Invocation.js';
 import type { Emissions } from './Emissions.js';
 import type { Logger } from '../builtins/logger.js';
-import type { EntityEntry, HandlerEntry, PresenterEntry } from '../scan/frond.js';
+import type { EntityEntry, HandlerEntry, PresenterEntry } from '../descriptor/frond.js';
 import { InputValidator } from '../dispatch/InputValidator.js';
 import { ArgumentResolver } from '../dispatch/ArgumentResolver.js';
 import { OperationExecutor } from '../dispatch/OperationExecutor.js';

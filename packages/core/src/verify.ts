@@ -1,4 +1,4 @@
-import type { FrondDescriptor } from './scan/frond.js';
+import type { FrondDescriptor } from './descriptor/frond.js';
 import { lowerFirst } from '@fougere/schema';
 import { repositoryKeyOf } from './prefab/repository.js';
 import { ormKeyOf } from './orm.js';

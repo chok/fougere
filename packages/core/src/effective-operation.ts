@@ -7,21 +7,17 @@
  */
 import { lowerFirst, type SchemaView } from '@fougere/schema';
 import { statementDrift } from './boot/statement-drift.js';
-import type { BindingPlan } from './boot/binding.js';
+import { computeBindingPlan, type BindingPlan } from './wire/binding.js';
 import { targetOf } from './prefab/prefab.js';
-import type {
-  CollectorEntry,
-  FrondDescriptor,
-  HandlerEntry,
-  ScanDiagnostic,
-} from './scan/frond.js';
+import type { CollectorEntry, FrondDescriptor, HandlerEntry } from './descriptor/frond.js';
+import type { ScanDiagnostic } from './scan/result.js';
 import { verify } from './verify.js';
 import {
   inferOperationKind,
-  resolveContracts,
   type OperationContract,
   type OperationKind,
-  type ParsedType,
+  type OperationsMap,
+  type TypeRef,
   knownVerbs,
 } from './wire/operation.js';
 
@@ -491,11 +487,11 @@ function validateProvenance(
   return valid;
 }
 
-function structural(type: ParsedType | undefined): boolean {
+function structural(type: TypeRef | undefined): boolean {
   return type !== undefined && type.raw.includes('{');
 }
 
-function schemaMatches(schema: SchemaView, type: ParsedType | undefined): boolean {
+function schemaMatches(schema: SchemaView, type: TypeRef | undefined): boolean {
   const names = new Set([schema.name, schema.derivation?.sourceName].filter(Boolean));
   if (type?.name && names.has(type.name)) return true;
   return type?.generics?.some((generic) => generic.name && names.has(generic.name)) ?? false;
@@ -598,4 +594,60 @@ function uniqueDiagnostics(diagnostics: readonly ScanDiagnostic[]): ScanDiagnost
     seen.add(key);
     return true;
   });
+}
+
+/**
+ * The contract of every operation a handler serves — the three producers, merged once.
+ *
+ * This lived inline in `buildFacade`, which made the façade the only thing that could
+ * answer "what is this op's contract, really?". Anything else asking — a checker, a
+ * client generator, a descriptor — had to redo the merge, and a second opinion that
+ * drifts reports nothing wrong while looking at the wrong thing.
+ *
+ * The order is a claim about authority, not a convenience:
+ *
+ *   1. a prefab DECLARES what it built (`Crud(E).__ops`) — runtime, so it survives a
+ *      scan that resolved nothing;
+ *   2. the scan DERIVES from source — a method written in this very file is the
+ *      author's own word and beats everything; a method it merely READ on a base
+ *      class is a guess about someone else's code, and yields to that code's own
+ *      declaration;
+ *   3. `frond.config.ts` STATES — the most explicit statement, made by whoever
+ *      assembles the app, and the only answer for an op inherited from an installed
+ *      base class the workspace-only scan cannot see. Merged per key, so stating a
+ *      `binding` alone does not erase an `input` the scan found.
+ *
+ * Pure: no container, no instance, no disk. The binding plan is resolved here, so
+ * nothing downstream ever meets an AST.
+ */
+export function resolveContracts(
+  handler: Pick<HandlerEntry, 'ctor' | 'operations'>,
+  overrides: FrondDescriptor['operationsOverrides'],
+  collectorTypeNames: Set<string>,
+): OperationsMap {
+  const declared = (handler.ctor as { __ops?: Record<string, OperationContract> }).__ops ?? {};
+  const contracts: OperationsMap = new Map(Object.entries(declared));
+
+  for (const [opName, scanned] of handler.operations) {
+    if (scanned.signature?.inherited && opName in declared) continue;
+    contracts.set(opName, {
+      ...scanned,
+      binding: scanned.binding
+        ?? (scanned.signature ? computeBindingPlan(scanned.signature.params, collectorTypeNames) : undefined),
+    });
+  }
+
+  for (const [opName, override] of Object.entries(overrides ?? {})) {
+    const { input, output, binding, description } = override;
+    if (input === undefined && output === undefined && binding === undefined && description === undefined) continue;
+    contracts.set(opName, {
+      ...contracts.get(opName),
+      ...(input !== undefined && { input }),
+      ...(output !== undefined && { output }),
+      ...(binding !== undefined && { binding }),
+      ...(description !== undefined && { description }),
+    });
+  }
+
+  return contracts;
 }

@@ -103,7 +103,7 @@ async function judge(run: ReturnType<typeof createLocalRunner>, op: string, body
 /**
  * One payload per branch, DERIVED from what `Product` declares.
  *
- * `Cases` (`schema/src/judge/Cases.ts`) reads the same closed list of refusals this
+ * `Cases` (`schema/src/projection/Cases.ts`) reads the same closed list of refusals this
  * file exists to compare — so the payloads follow the entity instead of being retyped
  * beside it. Change a bound in `Product` and the table changes; it used to keep passing
  * while proving something about a shape that had moved.

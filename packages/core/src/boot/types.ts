@@ -6,8 +6,9 @@
  * landed in it, seventeen notions deep.
  */
 import type { Container } from '@fougere/container';
-import type { Fronds } from '../scan/Fronds.js';
-import type { FrondDescriptor, ScanResult } from '../scan/frond.js';
+import type { Fronds } from '../descriptor/Fronds.js';
+import type { FrondDescriptor } from '../descriptor/frond.js';
+import type { ScanResult } from '../scan/result.js';
 import type { SchemaView } from '@fougere/schema';
 import type { OrmFactory } from '../orm.js';
 import type { AppMiddleware } from '../wire/middleware.js';

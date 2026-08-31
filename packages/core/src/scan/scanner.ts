@@ -1,19 +1,20 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { existsSync, type Dirent } from 'node:fs';
 import { join, dirname, basename, resolve as resolvePath } from 'node:path';
-import type { FrondDescriptor, ProviderEntry, EntityEntry, HandlerEntry, PresenterEntry, CollectorEntry, SeedEntry, ScanResult, ScanDiagnostic } from './frond.js';
+import type { FrondDescriptor, ProviderEntry, EntityEntry, HandlerEntry, PresenterEntry, CollectorEntry, SeedEntry } from '../descriptor/frond.js';
+import type { ScanResult, ScanDiagnostic } from './result.js';
 import { ANONYMOUS_SCHEMA_NAME, type SchemaView } from '@fougere/schema';
 import type { OperationContract, OperationsMap } from '../wire/operation.js';
 import { cardinalityOf } from '../wire/operation.js';
-import { computeBindingPlan } from '../boot/binding.js';
+import { computeBindingPlan } from '../wire/binding.js';
 import {
   parseAllHandlerMethods,
   parsePresenterMethods,
   parseConstructorParams,
   resetTypePrograms,
   seedTypeProgram,
-  type ParsedType,
 } from './handler-parser.js';
+import type { TypeRef } from '../wire/signature.js';
 import { loadFrondConfig } from '../frond-config.js';
 import { emitKeyOf } from '../emit.js';
 import { getPresenterFields } from '../prefab/presenter.js';
@@ -21,7 +22,7 @@ import { ormKeyOf, togetherKeyOf } from '../orm.js';
 import { targetOf, viewsOf, outputOf } from '../prefab/prefab.js';
 import { ownedBy, repositoryKeyOf } from '../prefab/repository.js';
 import { lowerFirst } from '@fougere/schema';
-import { Fronds } from './Fronds.js';
+import { Fronds } from '../descriptor/Fronds.js';
 import { getModuleLoader } from '../loader.js';
 import {
   type Conventions, type ConventionsInput,
@@ -139,10 +140,10 @@ function toAddress(className: string): string {
  * written out in full asked for `'EntityOrm'`, which nothing registers.
  *
  * `EntityOrm<X>` names X's storage, so that is the key. The generic argument was already
- * parsed (`ParsedType.generics`) and thrown away. Anything else keeps its own name: a
+ * parsed (`TypeRef.generics`) and thrown away. Anything else keeps its own name: a
  * plain service IS designated by its class name.
  */
-function depKeyOf(type: ParsedType): string {
+function depKeyOf(type: TypeRef): string {
   // `Facade<PostHandler>` — the second port, read exactly like the first. The type names
   // what arrives: not the handler (its methods take positional arguments and it is never
   // injected), but the door built in front of it. Same key whether that door is the local
@@ -243,10 +244,10 @@ async function toEntityEntry(filePath: string): Promise<EntityEntry | null> {
 }
 
 /**
- * Resolve a ParsedType to a runtime schema if available in module exports.
+ * Resolve a TypeRef to a runtime schema if available in module exports.
  * Handles arrays, generics (uses base name), and simple references.
  */
-function resolveSchema(type: ParsedType, moduleExports: Record<string, unknown>): SchemaView | undefined {
+function resolveSchema(type: TypeRef, moduleExports: Record<string, unknown>): SchemaView | undefined {
   // An array's element type IS `type.name` — the arity rides beside it, so nothing has
   // to be unwrapped here.
   // For generics like Pagination<Post>, also check inner types
@@ -751,7 +752,7 @@ export async function scanProject(
 
   // The app's own domain first, then the ones it took in.
   const all = rootFrond ? [rootFrond, ...under] : under;
-  const fronds = Fronds.scanned(filter ? all.filter((f) => filter.includes(f.name)) : all);
+  const fronds = Fronds.hosting(filter ? all.filter((f) => filter.includes(f.name)) : all);
 
   return { fronds, diagnostics };
 }

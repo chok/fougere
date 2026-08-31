@@ -1,4 +1,4 @@
-import type { ProviderEntry } from '../scan/frond.js';
+import type { ProviderEntry } from '../descriptor/frond.js';
 
 /**
  * A port is a class something already answers under. Nothing declares one — the

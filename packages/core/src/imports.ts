@@ -25,7 +25,7 @@
 import type ts from '@typescript/typescript6';
 import { readdir, readFile } from 'node:fs/promises';
 import { join, resolve, dirname, relative, isAbsolute } from 'node:path';
-import type { FrondDescriptor } from './scan/frond.js';
+import type { FrondDescriptor } from './descriptor/frond.js';
 
 let _ts: typeof ts | undefined;
 async function loadTs(): Promise<typeof ts> {

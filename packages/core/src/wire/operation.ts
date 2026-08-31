@@ -1,8 +1,6 @@
 import type { SchemaView } from '@fougere/schema';
-import type { BindingPlan } from '../boot/binding.js';
-import { computeBindingPlan } from '../boot/binding.js';
-import type { HandlerEntry, FrondDescriptor } from '../scan/frond.js';
-import type { ParsedMethod, ParsedType, ParsedParam } from '../scan/handler-parser.js';
+import type { BindingPlan } from './binding.js';
+import type { Signature, TypeRef, Param } from './signature.js';
 
 /**
  * The contract of one operation — everything the façade needs to serve a call.
@@ -46,7 +44,7 @@ export interface OperationContract {
    * private material: a prefab fills it too, from signatures it wrote itself. `binding`
    * still wins on where an argument comes from.
    */
-  signature?: ParsedMethod;
+  signature?: Signature;
 }
 
 /**
@@ -56,7 +54,7 @@ export interface OperationContract {
  * `Array<T>`, so it must be recognised BEFORE the array test or a page would read as
  * a plain list and lose its `total`/`hasMore`.
  */
-export function cardinalityOf(type: ParsedType | undefined): OperationContract['cardinality'] {
+export function cardinalityOf(type: TypeRef | undefined): OperationContract['cardinality'] {
   if (!type) return undefined;
   const inner = type.name === 'Promise' ? type.generics?.[0] : type;
   if (!inner) return 'none';
@@ -72,7 +70,7 @@ const PRIMITIVE_RETURNS = new Set(['boolean', 'string', 'number', 'void', 'undef
 /** Map of operation name → its contract. */
 export type OperationsMap = Map<string, OperationContract>;
 
-export type { ParsedType, ParsedParam };
+export type { TypeRef, Param };
 
 // ─── Operation intent (read vs write) ──────────
 // Naming convention for inferred handlers — scheduled to die with the
@@ -201,58 +199,3 @@ function requireOperationKind(
 }
 
 
-/**
- * The contract of every operation a handler serves — the three producers, merged once.
- *
- * This lived inline in `buildFacade`, which made the façade the only thing that could
- * answer "what is this op's contract, really?". Anything else asking — a checker, a
- * client generator, a descriptor — had to redo the merge, and a second opinion that
- * drifts reports nothing wrong while looking at the wrong thing.
- *
- * The order is a claim about authority, not a convenience:
- *
- *   1. a prefab DECLARES what it built (`Crud(E).__ops`) — runtime, so it survives a
- *      scan that resolved nothing;
- *   2. the scan DERIVES from source — a method written in this very file is the
- *      author's own word and beats everything; a method it merely READ on a base
- *      class is a guess about someone else's code, and yields to that code's own
- *      declaration;
- *   3. `frond.config.ts` STATES — the most explicit statement, made by whoever
- *      assembles the app, and the only answer for an op inherited from an installed
- *      base class the workspace-only scan cannot see. Merged per key, so stating a
- *      `binding` alone does not erase an `input` the scan found.
- *
- * Pure: no container, no instance, no disk. The binding plan is resolved here, so
- * nothing downstream ever meets an AST.
- */
-export function resolveContracts(
-  handler: Pick<HandlerEntry, 'ctor' | 'operations'>,
-  overrides: FrondDescriptor['operationsOverrides'],
-  collectorTypeNames: Set<string>,
-): OperationsMap {
-  const declared = (handler.ctor as { __ops?: Record<string, OperationContract> }).__ops ?? {};
-  const contracts: OperationsMap = new Map(Object.entries(declared));
-
-  for (const [opName, scanned] of handler.operations) {
-    if (scanned.signature?.inherited && opName in declared) continue;
-    contracts.set(opName, {
-      ...scanned,
-      binding: scanned.binding
-        ?? (scanned.signature ? computeBindingPlan(scanned.signature.params, collectorTypeNames) : undefined),
-    });
-  }
-
-  for (const [opName, override] of Object.entries(overrides ?? {})) {
-    const { input, output, binding, description } = override;
-    if (input === undefined && output === undefined && binding === undefined && description === undefined) continue;
-    contracts.set(opName, {
-      ...contracts.get(opName),
-      ...(input !== undefined && { input }),
-      ...(output !== undefined && { output }),
-      ...(binding !== undefined && { binding }),
-      ...(description !== undefined && { description }),
-    });
-  }
-
-  return contracts;
-}
