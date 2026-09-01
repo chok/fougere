@@ -73,7 +73,7 @@ interface SeedDoor {
  * Plant a set of seeds, in the order given. Reports what it did, one line per entity.
  *
  * The one seeding loop. `boot()` had one and the Nuxt module generated a second into its
- * Nitro plugin, which had drifted: no ORM fallback, so an entity with no façade was
+ * Nitro plugin, which had drifted: no storage fallback, so an entity with no façade was
  * skipped there and planted here. Two answers to "how does a row get in at boot" is one
  * too many, and the second was the one running in the browser.
  */
@@ -88,7 +88,7 @@ export async function runSeeds(
 
     const door = doorFor(app, seed.entityName);
     if (!door) {
-      report(`  ${seed.entityName}: no handler façade nor ORM — skipping seed`);
+      report(`  ${seed.entityName}: no handler façade nor storage — skipping seed`);
       continue;
     }
 
@@ -130,12 +130,12 @@ function doorFor(app: App, entityName: string): SeedDoor | undefined {
     };
   }
 
-  const orm = app.ormFor(entityName) as
+  const storage = app.storageFor(entityName) as
     | { list: () => Promise<unknown[]>; create: (input: unknown) => Promise<unknown> }
     | undefined;
-  if (!orm) return undefined;
+  if (!storage) return undefined;
 
-  return { list: () => orm.list(), write: (item) => orm.create(item) };
+  return { list: () => storage.list(), write: (item) => storage.create(item) };
 }
 
 /**

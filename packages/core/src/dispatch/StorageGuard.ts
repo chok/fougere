@@ -1,5 +1,5 @@
 import { ValueJudge, type Fields } from '@fougere/schema';
-import { assertListOptions } from '../orm.js';
+import { assertListOptions } from '../storage.js';
 import { ErrorCode, FougereError } from '../wire/errors.js';
 
 interface Writer {
@@ -8,7 +8,7 @@ interface Writer {
 }
 
 /**
- * Judges storage writes and list options without narrowing the ORM interface.
+ * Judges storage writes and list options without narrowing the storage interface.
  *
  * Storage is a way out like the client surface, so what goes to it is judged too — the
  * same rule `OutputProjector` applies on the other exit.
@@ -19,12 +19,12 @@ export class StorageGuard {
     private readonly entity: string,
   ) {}
 
-  guard<T extends object>(orm: T): T {
-    const writer = orm as unknown as Writer;
-    if (typeof writer.create !== 'function' || typeof writer.update !== 'function') return orm;
+  guard<T extends object>(storage: T): T {
+    const writer = storage as unknown as Writer;
+    if (typeof writer.create !== 'function' || typeof writer.update !== 'function') return storage;
 
     const validation = this;
-    const guarded = Object.create(orm) as T & Writer;
+    const guarded = Object.create(storage) as T & Writer;
 
     guarded.create = async function (...args) {
       validation.judge(args[0], 'create');
@@ -36,7 +36,7 @@ export class StorageGuard {
       return writer.update.apply(this, args);
     };
 
-    const reader = orm as unknown as { list?: (...args: unknown[]) => unknown };
+    const reader = storage as unknown as { list?: (...args: unknown[]) => unknown };
     if (typeof reader.list === 'function') {
       (guarded as unknown as typeof reader).list = async function (...args: unknown[]) {
         assertListOptions(args[0] as object | undefined, validation.entity);

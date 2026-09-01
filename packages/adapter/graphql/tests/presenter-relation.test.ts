@@ -40,7 +40,7 @@ function fakeApp(presenterFields: string[], views?: Record<string, any>) {
     // Une instance de classe, comme le vrai presenter : les méthodes sont sur le prototype,
     // et les dépendances injectées sont les seules propriétés propres.
     presenterFor: () => new (class {
-      itemOrm = { list: async () => [] };
+      itemStorage = { list: async () => [] };
       async user() { return { id: '1', name: 'depuis le presenter' }; }
       async items() { return []; }
       async total_cents() { return 0; }
@@ -84,7 +84,7 @@ describe('presenter et relation sur un même nom', () => {
 
   it('les champs calculés du presenter arrivent dans le type', () => {
     // Un presenter est une INSTANCE : ses méthodes vivent sur le prototype. Les énumérer
-    // avec `Object.entries` ne rendait que les champs du constructeur (les ORM injectés),
+    // avec `Object.entries` ne rendait que les champs du constructeur (les storage injectés),
     // donc aucun champ calculé n'atteignait le schéma — une commande GraphQL sortait sans
     // son client, ses lignes ni son total, quand REST les portait tous les trois.
     const schema = build(['user', 'items', 'total_cents']);
@@ -95,7 +95,7 @@ describe('presenter et relation sur un même nom', () => {
   it("n'expose pas les dépendances injectées du presenter", () => {
     const schema = build(['user', 'items', 'total_cents']);
     const fields = (schema.getTypeMap()['Order'] as never as { getFields(): Record<string, unknown> }).getFields();
-    expect(Object.keys(fields)).not.toContain('itemOrm');
+    expect(Object.keys(fields)).not.toContain('itemStorage');
   });
 });
 

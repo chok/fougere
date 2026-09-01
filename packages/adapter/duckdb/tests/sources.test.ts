@@ -11,7 +11,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import Database from 'better-sqlite3';
 import { entity, primary, text, number, ref } from '@fougere/schema';
-import { connectSources, type Sources } from '../src/index.js';
+import { connectSources, type Reads } from '../src/index.js';
 
 class Book extends entity({ id: primary(), title: text(), language: text() }) {}
 class Loan extends entity({ id: primary(), bookId: ref(Book), reader: text() }) {}
@@ -20,7 +20,7 @@ class Loan extends entity({ id: primary(), bookId: ref(Book), reader: text() }) 
 class LoansByLanguage extends entity({ language: text(), loans: number({ integer: true }) }) {}
 
 let dir: string;
-let sources: Sources;
+let sources: Reads;
 
 beforeAll(async () => {
   dir = mkdtempSync(join(tmpdir(), 'fougere-duck-'));

@@ -17,7 +17,7 @@ import { serve, createHttpTransport, handleRpc, frameCall, unframeResponse } fro
 import type { RunningReceiver, RpcResponse } from '@fougere/transport-http';
 import { trace, onSpan, type FinishedSpan } from '../src/index.js';
 // @ts-expect-error plain-JS fixture
-import { createOrmFactory } from './fixtures/data.mjs';
+import { createStorageFactory } from './fixtures/data.mjs';
 
 const fixturesDir = join(import.meta.dirname, 'fixtures');
 type Facade = Record<string, (invocation?: InvocationContext) => Promise<unknown>>;
@@ -76,7 +76,7 @@ function halves(): [FinishedSpan, FinishedSpan] {
 }
 
 beforeAll(async () => {
-  host = await createApp({ scan: await scanProject(fixturesDir), createContainer, ormFactory: createOrmFactory() });
+  host = await createApp({ scan: await scanProject(fixturesDir), createContainer, storageFactory: createStorageFactory() });
   host.use(trace());
   const runner = createLocalRunner(host);
 

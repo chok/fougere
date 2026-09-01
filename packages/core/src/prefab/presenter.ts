@@ -9,14 +9,14 @@
  * Usage:
  * ```ts
  * export default class PostPresenter extends Presenter(Post) {
- *   constructor(private commentOrm: CommentOrm) { super(); }
+ *   constructor(private commentStorage: CommentStorage) { super(); }
  *
  *   excerpt(post: Post) {
  *     return post.body.slice(0, 200);
  *   }
  *
  *   async commentCount(post: Post) {
- *     return this.commentOrm.countFor(post.id);
+ *     return this.commentStorage.countFor(post.id);
  *   }
  * }
  * ```

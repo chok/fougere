@@ -91,7 +91,7 @@ export interface FrondConfig {
    * door on purpose ("it would publish the auth tables to anyone who asks"), and a SQL
    * door at app scope would hand them over; this is what keeps it shut.
    *
-   * Declaring it is what makes `Sources` injectable here. A frond that declares none
+   * Declaring it is what makes `Reads` injectable here. A frond that declares none
    * asks for none, and nothing is attached on its behalf.
    */
   reads?: string[];

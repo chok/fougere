@@ -2,16 +2,16 @@
  * Fougere Auth Better — full-stack demo.
  *
  * Wires @fougere/auth-better through the central fougere.config.ts, mounts the
- * better-auth handler on Hono, and shows that the same EntityOrm pipeline
+ * better-auth handler on Hono, and shows that the same Storage pipeline
  * serves both the auth tables and the app's domain entities.
  */
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
-import { createApp } from '@fougere/core';
+import { createApp, frond, type Storage } from '@fougere/core';
 import { createContainer } from '@fougere/container';
-import { createOrmFactory } from '@fougere/adapter-sql';
+import { createStorageFactory } from '@fougere/adapter-sql';
 import { db } from './db.js';
-import { Note, CreateNote } from './entities.js';
+import { Note, CreateNote, User } from './entities.js';
 import config from '../fougere.config.js';
 
 // ─── Boot Fougere ──────────────────────────────────
@@ -19,20 +19,21 @@ import config from '../fougere.config.js';
 // Auth tables follow better-auth convention (singular: user, session, account, verification).
 // App tables keep the Fougere default (snake_case + plural).
 const AUTH_TABLES = new Set(['user', 'session', 'account', 'verification']);
-const ormFactory = createOrmFactory(db, {
+const storageFactory = createStorageFactory(db, {
   tableName: (name) => AUTH_TABLES.has(name) ? name : name.replace(/[A-Z]/g, (c) => '_' + c.toLowerCase()) + 's',
 });
 
 const app = await createApp({
   createContainer,
-  ormFactory,
+  storageFactory,
   db,
   auth: config.auth,
+  fronds: [frond('notes', { entities: [User, Note] })],
 });
 
 if (!app.auth) throw new Error('auth not initialized');
 
-const noteOrm = ormFactory(Note, 'note');
+const noteStorage = app.storageFor('note') as Storage<Note>;
 
 // ─── HTTP layer (Hono) ─────────────────────────────
 
@@ -60,8 +61,8 @@ hono.use('/api/*', async (c, next) => {
 hono.get('/api/me', async (c) => {
   const user = c.get('user' as never) as Record<string, unknown> | undefined;
   if (!user) return c.json({ error: 'Not logged in' }, 401);
-  const sessions = await (app.auth!.orms.session as any).findAllBy({ userId: user.id });
-  const accounts = await (app.auth!.orms.account as any).findAllBy({ userId: user.id });
+  const sessions = await (app.auth!.storages.session as any).findAllBy({ userId: user.id });
+  const accounts = await (app.auth!.storages.account as any).findAllBy({ userId: user.id });
   return c.json({
     user: { id: user.id, email: user.email, name: user.name, role: user.role },
     activeSessions: sessions.length,
@@ -72,7 +73,7 @@ hono.get('/api/me', async (c) => {
 hono.get('/api/notes', async (c) => {
   const user = c.get('user' as never) as Record<string, unknown> | undefined;
   if (!user) return c.json({ error: 'Not logged in' }, 401);
-  const notes = await (noteOrm as any).findAllBy({ userId: user.id });
+  const notes = await noteStorage.findAllBy({ userId: user.id });
   return c.json(notes);
 });
 
@@ -82,7 +83,7 @@ hono.post('/api/notes', async (c) => {
   const body = await c.req.json();
   const validation = CreateNote.validate(body);
   if (!validation.success) return c.json({ errors: validation.errors }, 400);
-  const note = await noteOrm.create({ ...validation.data, userId: user.id as string });
+  const note = await noteStorage.create({ ...validation.data, userId: user.id as string });
   return c.json(note, 201);
 });
 
@@ -90,9 +91,9 @@ hono.delete('/api/notes/:id', async (c) => {
   const user = c.get('user' as never) as Record<string, unknown> | undefined;
   if (!user) return c.json({ error: 'Not logged in' }, 401);
   const id = c.req.param('id');
-  const note = await noteOrm.findById(id);
+  const note = await noteStorage.findById(id);
   if (!note || (note as any).userId !== user.id) return c.json({ error: 'Not found' }, 404);
-  await noteOrm.delete(id);
+  await noteStorage.delete(id);
   return c.json({ success: true });
 });
 
@@ -143,7 +144,7 @@ const HOME_PAGE = `<!DOCTYPE html>
 </head><body>
 <h1>Fougere Auth Better Demo</h1>
 <p>Single config in <code>fougere.config.ts</code> — no Nitro plugin, no <code>configureAuth()</code>.</p>
-<p><code>auth: { provider: 'better', user: User, ... }</code> wires better-auth through Fougere EntityOrm.</p>
+<p><code>auth: { provider: 'better', user: User, ... }</code> wires better-auth through Fougere Storage.</p>
 
 <div class="card">
   <h2>Sign up</h2>

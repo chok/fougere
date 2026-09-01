@@ -109,13 +109,13 @@ describe('migrate', () => {
 
   it('the added column is usable, and existing rows survive', async () => {
     await migrate(appOf(PostV1), setup.db);
-    const ormV1 = setup.ormFactory(PostV1, 'post');
-    // The ORM answers rows as `Record<string, unknown>` — it realises a schema it
+    const ormV1 = setup.storageFactory(PostV1, 'post');
+    // The storage answers rows as `Record<string, unknown>` — it realises a schema it
     // does not carry as a type. The generated id is a string; say so once here.
     const id = String((await ormV1.create({ title: 'Hello' })).id);
 
     await migrate(appOf(PostV2), setup.db);
-    const ormV2 = setup.ormFactory(PostV2, 'post');
+    const ormV2 = setup.storageFactory(PostV2, 'post');
 
     const row: any = await ormV2.findById(id);
     expect(row.title).toBe('Hello');
@@ -161,9 +161,9 @@ describe('foreign keys, enforced', () => {
       { name: 'product', entityClass: Product },
     ]), setup.db);
 
-    const productOrm = setup.ormFactory(Product, 'product');
+    const productStorage = setup.storageFactory(Product, 'product');
     await expect(
-      productOrm.create({ categoryId: 'does-not-exist', name: 'Fern' }),
+      productStorage.create({ categoryId: 'does-not-exist', name: 'Fern' }),
     ).rejects.toThrow(/FOREIGN KEY constraint failed/);
   });
 
@@ -173,10 +173,10 @@ describe('foreign keys, enforced', () => {
       { name: 'product', entityClass: Product },
     ]), setup.db);
 
-    const categoryOrm = setup.ormFactory(Category, 'category');
-    const productOrm = setup.ormFactory(Product, 'product');
-    const plants = await categoryOrm.create({ name: 'Plants' });
-    const fern = await productOrm.create({ categoryId: (plants as any).id, name: 'Fern' });
+    const categoryStorage = setup.storageFactory(Category, 'category');
+    const productStorage = setup.storageFactory(Product, 'product');
+    const plants = await categoryStorage.create({ name: 'Plants' });
+    const fern = await productStorage.create({ categoryId: (plants as any).id, name: 'Fern' });
     expect((fern as any).categoryId).toBe((plants as any).id);
   });
 
@@ -225,14 +225,14 @@ describe('a relation cycle does not break the migration', () => {
 
   it('a captain can reference its club, and the club its captain back', async () => {
     await migrate(clubApp, setup.db);
-    const clubOrm = setup.ormFactory(Club, 'club');
-    const captainOrm = setup.ormFactory(Captain, 'captain');
+    const clubStorage = setup.storageFactory(Club, 'club');
+    const captainStorage = setup.storageFactory(Captain, 'captain');
     // Break the loop where it's nullable: club first (no captain yet), then the
     // captain referencing it, then close the loop with an update.
-    const club = await clubOrm.create({ name: 'Rovers' });
-    const captain = await captainOrm.create({ name: 'Sam', clubId: (club as any).id });
-    await clubOrm.update((club as any).id, { captainId: (captain as any).id });
-    expect((await clubOrm.findById((club as any).id) as any).captainId).toBe((captain as any).id);
+    const club = await clubStorage.create({ name: 'Rovers' });
+    const captain = await captainStorage.create({ name: 'Sam', clubId: (club as any).id });
+    await clubStorage.update((club as any).id, { captainId: (captain as any).id });
+    expect((await clubStorage.findById((club as any).id) as any).captainId).toBe((captain as any).id);
   });
 
   it.each(['pg', 'mysql', 'mssql'] as const)('%s plans it as two creates plus a deferred constraint', async (dialect) => {

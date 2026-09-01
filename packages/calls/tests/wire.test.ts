@@ -1,14 +1,14 @@
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { describe, expect, it, vi } from 'vitest';
-import { Call, RouteAddress, createApp, createAppRunner, createLocalRunner, type CallPage, type OrmFactory } from '@fougere/core';
+import { Call, RouteAddress, createApp, createAppRunner, createLocalRunner, type CallPage, type StorageFactory } from '@fougere/core';
 import { scanProject } from '@fougere/core/node';
 import { serve } from '@fougere/transport-http';
 import { createHttpTransport } from '@fougere/transport-http/client';
 import { calls } from '../src/index.js';
 
 const fixtures = join(import.meta.dirname, 'fixtures');
-const ormFactory: OrmFactory = () => ({
+const storageFactory: StorageFactory = () => ({
   list: vi.fn(async () => [{ id: '1', label: 'a first order' }]),
   findById: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn(),
 }) as never;
@@ -23,7 +23,7 @@ describe('over the wire', () => {
     await using app = await createApp({
       scan: await scanProject(fixtures),
       createContainer,
-      ormFactory,
+      storageFactory,
       extensions: [calls()],
     });
     const door = await serve(createLocalRunner(app), { port: 0 });
@@ -65,7 +65,7 @@ describe('two apps against one hosted frond', () => {
     await using hosted = await createApp({
       scan: await scanProject(fixtures),
       createContainer,
-      ormFactory,
+      storageFactory,
       extensions: [calls()],
     });
     const door = await serve(createLocalRunner(hosted), { port: 0 });
@@ -76,7 +76,7 @@ describe('two apps against one hosted frond', () => {
       const consumers = await Promise.all([1, 2].map(async () => await createApp({
         scan: await scanProject(fixtures),
         createContainer,
-        ormFactory,
+        storageFactory,
         remotes: { shop: at },
         remoteTransport: (url) => createHttpTransport(url),
         extensions: [calls()],

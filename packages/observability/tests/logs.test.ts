@@ -10,7 +10,7 @@ import type { App, InvocationContext, LogRecord } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { trace, onSpan, logs, currentSpan, type FinishedSpan } from '../src/index.js';
 // @ts-expect-error plain-JS fixture
-import { createOrmFactory } from './fixtures/data.mjs';
+import { createStorageFactory } from './fixtures/data.mjs';
 
 const fixturesDir = join(import.meta.dirname, 'fixtures');
 type Facade = Record<string, (invocation?: InvocationContext) => Promise<unknown>>;
@@ -19,7 +19,7 @@ let app: App;
 const undo: (() => void)[] = [];
 
 beforeAll(async () => {
-  app = await createApp({ scan: await scanProject(fixturesDir), createContainer, ormFactory: createOrmFactory() });
+  app = await createApp({ scan: await scanProject(fixturesDir), createContainer, storageFactory: createStorageFactory() });
   app.use(trace());
 }, 30_000);
 

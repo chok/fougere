@@ -23,7 +23,7 @@ const judgeSnippet = `class PostHandler extends Crud(Post) {
     if (!user) throw new FougereError({
       code: ErrorCode.UNAUTHORIZED, /* … */ });
     // author-only, draft-only — then realize:
-    return this.orm.update(id, {
+    return this.storage.update(id, {
       status: 'published',
       publishedAt: new Date().toISOString(),
     });

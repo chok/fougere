@@ -11,29 +11,29 @@ import { describe, it, expect, vi } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, FougereError, ErrorCode } from '../src/index.js';
-import type { OrmFactory } from '../src/index.js';
+import type { StorageFactory } from '../src/index.js';
 import type { InvocationContext } from '../src/contract/Invocation.js';
 
 const root = join(import.meta.dirname, 'fixtures-config-contract');
 
-function noteOrm() {
+function noteStorage() {
   const row = { id: 'note-1', title: 'Titre', body: 'Le corps', ownerId: 'u1', createdAt: 'now' };
-  const orm = {
+  const storage = {
     list: vi.fn(async () => [row]),
     findById: vi.fn(async () => row),
     create: vi.fn(async () => row),
     update: vi.fn(async () => row),
     delete: vi.fn(async () => true),
-    output: vi.fn(() => orm),
+    output: vi.fn(() => storage),
   };
-  return orm;
+  return storage;
 }
 
 async function boot() {
   const app = await createApp({
     scan: await scanProject(root),
     createContainer,
-    ormFactory: vi.fn(() => noteOrm()) as unknown as OrmFactory,
+    storageFactory: vi.fn(() => noteStorage()) as unknown as StorageFactory,
   });
   return { app, run: createLocalRunner(app) };
 }

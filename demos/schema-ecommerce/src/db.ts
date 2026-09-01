@@ -10,9 +10,9 @@ import { Category, Product, Customer, OrderLine, Order } from './entities.js';
 const IRREGULAR_PLURALS: Record<string, string> = { category: 'categories' };
 const tableName = (name: string) => IRREGULAR_PLURALS[name] ?? toTableName(name);
 
-const { db, ormFactory } = setupSqlite({
+const { db, storageFactory } = setupSqlite({
   path: 'demo.db',
-  ormFactoryOptions: { tableName },
+  storageFactoryOptions: { tableName },
 });
 
 export { db };
@@ -29,8 +29,8 @@ const entities = [
 // hand-written CREATE TABLE block.
 await migrate({ fronds: [{ name: 'ecommerce', entities }] }, db, { tableName });
 
-export const categoryOrm = ormFactory(Category, 'category');
-export const productOrm = ormFactory(Product, 'product');
-export const customerOrm = ormFactory(Customer, 'customer');
-export const orderLineOrm = ormFactory(OrderLine, 'orderLine');
-export const orderOrm = ormFactory(Order, 'order');
+export const categoryStorage = storageFactory(Category, 'category');
+export const productStorage = storageFactory(Product, 'product');
+export const customerStorage = storageFactory(Customer, 'customer');
+export const orderLineStorage = storageFactory(OrderLine, 'orderLine');
+export const orderStorage = storageFactory(Order, 'order');

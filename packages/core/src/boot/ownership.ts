@@ -2,7 +2,7 @@ import { lowerFirst } from '@fougere/schema';
 import type { FrondDescriptor, ProviderEntry } from '../descriptor/frond.js';
 import { targetOf } from '../prefab/prefab.js';
 import { ownedBy, repositoryKeyOf } from '../prefab/repository.js';
-import { ormKeyOf } from '../orm.js';
+import { entityOfStorageKey } from '../storage.js';
 
 /**
  * Who owns an entity's storage.
@@ -37,7 +37,7 @@ export function ownersOf(providers: readonly ProviderEntry[]): Map<string, strin
 
 /**
  * The entities a class was BUILT ON — what a prefab may legitimately be handed the storage
- * of. Empty for a plain service, which is why one cannot ask for an ORM at all.
+ * of. Empty for a plain service, which is why one cannot ask for a storage at all.
  */
 function builtOn(ctor: unknown): string[] {
   const owned = ownedBy(ctor);
@@ -47,19 +47,25 @@ function builtOn(ctor: unknown): string[] {
 }
 
 /**
- * `EntityOrm<E>` is not a word of the user's vocabulary — `<E>Repository` is the one way in.
+ * `Storage<E>` is not a word of the user's vocabulary — `<E>Repository` is the one way in.
  *
  * A door judges and projects; a HOLDER keeps the storage. So the rule is not about which
  * directory a file sits in but about which of the two a class is: a handler, a presenter and
- * a collector may never name an ORM, and a provider may name only the ORM of what its prefab
- * was built on — which is `Repository` and `Mirror`, without either being named here.
+ * a collector may never name the port, and a provider may name only the storage of what its
+ * prefab was built on — which is `Repository` and `Mirror`, without either being named here.
  *
  * What it buys beyond one word instead of two: an entity that becomes owned later needs no
  * call site to move, because none of them ever spelled the storage.
  *
+ * `known` answers what the key's suffix cannot: `FileStorage` is an ordinary class name.
+ *
  * Refused at boot rather than reported by `verify`, which nothing calls at startup.
  */
-export function refuseOrmInUserCode(frond: FrondDescriptor, owners: Map<string, string>): void {
+export function refuseStorageInUserCode(
+  frond: FrondDescriptor,
+  owners: Map<string, string>,
+  known: (entity: string) => boolean,
+): void {
   const doors = [
     ...frond.handlers.map((h) => ({ ...h, kind: 'handler' })),
     ...frond.presenters.map((p) => ({ ...p, kind: 'presenter' })),
@@ -70,7 +76,7 @@ export function refuseOrmInUserCode(frond: FrondDescriptor, owners: Map<string, 
   for (const decl of [...doors, ...holders]) {
     const allowed = decl.kind === 'provider' ? builtOn(decl.ctor) : [];
     for (const dep of decl.deps) {
-      const entity = entityOfOrmKey(dep);
+      const entity = entityOfStorageKey(dep, known);
       if (!entity) continue;
 
       const owner = owners.get(entity);
@@ -127,11 +133,4 @@ export function refuseCrudOnOwned(frond: FrondDescriptor, owners: Map<string, st
       + `  ${handler.filePath}`,
     );
   }
-}
-
-/** `'PostOrm'` → `'post'`, and nothing for a key that is not one. */
-function entityOfOrmKey(dep: string): string | undefined {
-  if (!dep.endsWith('Orm') || dep === 'Orm') return undefined;
-  const entity = lowerFirst(dep.slice(0, -'Orm'.length));
-  return ormKeyOf(entity) === dep ? entity : undefined;
 }

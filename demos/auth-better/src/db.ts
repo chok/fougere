@@ -11,7 +11,7 @@ const setup = setupSqlite({ path: 'auth-better-demo.db' });
 const sqlite = setup.sqlite;
 
 export const db = setup.db;
-export const ormFactory = setup.ormFactory;
+export const storageFactory = setup.storageFactory;
 
 sqlite.exec(`
   CREATE TABLE IF NOT EXISTS user (

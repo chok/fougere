@@ -31,7 +31,7 @@ type Ctor = new (...args: never[]) => unknown;
  *
  * `deps` is the one thing no runtime can recover: TypeScript erases the parameter types,
  * and `registerFrames` reads them to know which frames to build — asking for one IS
- * declaring it. A handler that takes only its own entity's ORM needs nothing here.
+ * declaring it. A handler that takes only its own entity's storage needs nothing here.
  */
 export interface DeclaredSubject {
   ctor: Ctor;

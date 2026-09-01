@@ -106,7 +106,7 @@ export class HandlerFacade {
     if (this.inheritsCrud(handler) && !entity) {
       // An installed Crud subject may be absent from the local scan.
       wiring.log.debug(`${handler.ctor.name} extends Crud() and no scanned entity is named `
-        + `'${this.subjectOf(handler)}' — installed entity, or a missing one: no ORM will be injected`);
+        + `'${this.subjectOf(handler)}' — installed entity, or a missing one: no storage will be injected`);
     }
   }
 

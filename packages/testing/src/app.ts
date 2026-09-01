@@ -25,7 +25,7 @@ export interface TestAppOptions {
    * `CHECK` constraints, `unique` and real transactions are all exercised, and nothing is
    * written to disk.
    *
-   * Not an in-memory ORM: `createMemoryOrm` realizes the axes but is not the engine
+   * Not an in-memory storage: `createMemoryStorage` realizes the axes but is not the engine
    * production runs, and a tool whose thesis is *the realizations must agree* cannot pick
    * the one that does not ship.
    */

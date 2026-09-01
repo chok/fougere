@@ -22,29 +22,29 @@ class Contact extends entity({
   ownerId: readOnly(text()),
 }) {}
 
-function spyOrm() {
-  const orm = {
+function spyStorage() {
+  const storage = {
     create: vi.fn(async (input: Record<string, unknown>) => input),
     update: vi.fn(async (_id: unknown, input: Record<string, unknown>) => input),
     findById: vi.fn(async () => ({ id: 'c1' })),
     output: vi.fn(function (this: unknown) { return Object.create(this as object); }),
   };
-  return orm;
+  return storage;
 }
 
 const judged = () => {
-  const orm = spyOrm();
-  return { orm, guarded: new StorageGuard(Contact.getFields(), 'contact').guard(orm) };
+  const storage = spyStorage();
+  return { storage, guarded: new StorageGuard(Contact.getFields(), 'contact').guard(storage) };
 };
 
 const ok = { id: 'c1', name: 'Ada', status: 'draft', ownerId: 'u1' };
 
 describe('what the shape refuses never reaches storage', () => {
   it('refuses a value outside a closed set', async () => {
-    const { orm, guarded } = judged();
+    const { storage, guarded } = judged();
 
     await expect(guarded.create({ ...ok, status: 'n-importe-quoi' })).rejects.toThrow(FougereError);
-    expect(orm.create).not.toHaveBeenCalled();
+    expect(storage.create).not.toHaveBeenCalled();
   });
 
   it('refuses a malformed email and a non-number', async () => {
@@ -66,38 +66,38 @@ describe('what the shape refuses never reaches storage', () => {
   });
 
   it('lets a legal write through untouched', async () => {
-    const { orm, guarded } = judged();
+    const { storage, guarded } = judged();
 
     await guarded.create(ok);
-    expect(orm.create).toHaveBeenCalledWith(ok);
+    expect(storage.create).toHaveBeenCalledWith(ok);
   });
 });
 
 describe('what this judge must NOT do', () => {
   it('never reads the client-only axes — a read-only field is legal here', async () => {
-    const { orm, guarded } = judged();
+    const { storage, guarded } = judged();
 
     // The façade refuses `ownerId` from a client. The domain writes it freely.
     await guarded.create(ok);
-    expect(orm.create).toHaveBeenCalled();
+    expect(storage.create).toHaveBeenCalled();
   });
 
   it('says nothing about the fields a patch does not mention', async () => {
-    const { orm, guarded } = judged();
+    const { storage, guarded } = judged();
 
     await guarded.update('c1', { status: 'published' });
-    expect(orm.update).toHaveBeenCalledWith('c1', { status: 'published' });
+    expect(storage.update).toHaveBeenCalledWith('c1', { status: 'published' });
   });
 
   it('still refuses a bad value inside a patch', async () => {
-    const { orm, guarded } = judged();
+    const { storage, guarded } = judged();
 
     await expect(guarded.update('c1', { status: 'nope' })).rejects.toThrow(FougereError);
-    expect(orm.update).not.toHaveBeenCalled();
+    expect(storage.update).not.toHaveBeenCalled();
   });
 });
 
-describe('the wrapper leaves the rest of the ORM alone', () => {
+describe('the wrapper leaves the rest of the storage alone', () => {
   it('keeps reads reachable', async () => {
     const { guarded } = judged();
     expect(await (guarded as never as { findById(): Promise<unknown> }).findById()).toEqual({ id: 'c1' });

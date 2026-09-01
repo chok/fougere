@@ -8,14 +8,17 @@
  * `@fougere/adapter-sql/sqlite`.
  */
 import { Kysely, sql, type Dialect as KyselyDialect } from 'kysely';
-import { createOrmFactory, type OrmFactoryOptions } from './crud.js';
+import type { Source, SourceView } from '@fougere/core';
+import { createStorageFactory, type StorageFactoryOptions } from './crud.js';
 import { logQueries } from './query.js';
+import { migrate } from './diff.js';
+import { toTableName } from './table.js';
 import type { DialectName } from './dialect.js';
 import type { SqlSink } from './ddl.js';
 
 export interface SetupOptions {
   /** Override naming for specific entities (e.g. better-auth wants singular table names). */
-  ormFactoryOptions?: OrmFactoryOptions;
+  storageFactoryOptions?: StorageFactoryOptions;
   /**
    * What to call this storage when a query is reported.
    *
@@ -26,28 +29,54 @@ export interface SetupOptions {
   name?: string;
 }
 
-export interface Setup {
+/**
+ * A `Source` realized by SQL — and the three members that are SQL's, not the routing's.
+ *
+ * `dialect`, `db` and `sink` are to a source what `Kysely` is to `SqlStorage.client`: what
+ * this adapter is MADE OF, reached by narrowing. Nothing that routes entities across
+ * sources reads them.
+ */
+export interface SqlSource extends Source {
   dialect: DialectName;
-  ormFactory: ReturnType<typeof createOrmFactory>;
+  storageFactory: ReturnType<typeof createStorageFactory>;
   /** Runs raw statements — what `autoMigrate` writes through. */
   sink: SqlSink;
   /**
    * The Kysely instance, for what precedes any entity: `migrate(app, setup)` writes the
    * schema through it, and a script may need it before a container exists.
    *
-   * It is not the way to reach data from inside an app — that is the injected `EntityOrm`,
+   * It is not the way to reach data from inside an app — that is the injected `Storage`,
    * whose `client` gives the same handle while keeping the scope of its entity.
    */
   db: Kysely<any>;
   /**
-   * Run `fn` inside one transaction of this engine, with an ORM factory bound to it.
+   * Run `fn` inside one transaction of this engine, with a storage factory bound to it.
    *
    * The transaction belongs to the engine, so obtaining one is a gesture on the engine and
    * nowhere else. Nothing new is handed back: `Transaction<DB> extends Kysely<DB>` and
-   * `SqlEntityOrm` takes a `Kysely<any>`, so the SAME ORM is rebuilt over the substituted
+   * `SqlStorage` takes a `Kysely<any>`, so the SAME storage is rebuilt over the substituted
    * connection — which is why a frame needs no support in this package.
    */
-  transacted<R>(fn: (ormFactory: ReturnType<typeof createOrmFactory>) => Promise<R>): Promise<R>;
+  transacted<R>(fn: (storageFactory: ReturnType<typeof createStorageFactory>) => Promise<R>): Promise<R>;
+}
+
+/** The name this shape answered to before it was one realization among several. */
+export type Setup = SqlSource;
+
+/**
+ * The migration of what lives in ONE sql source, carrying its own dialect.
+ *
+ * It was the router's gesture, which had to know how SQL migrates — and did not pass the
+ * dialect, so every source was migrated as sqlite, the documented Postgres case included.
+ * A source knows its own engine, so the gesture is its own.
+ */
+function migrating(db: Kysely<any>, dialect: DialectName, opts: SetupOptions) {
+  return async (view: SourceView): Promise<void> => {
+    await migrate(view as never, db, {
+      dialect,
+      tableName: opts.storageFactoryOptions?.tableName ?? toTableName,
+    });
+  };
 }
 
 /** A sink that runs statements through Kysely — works on every engine. */
@@ -60,13 +89,16 @@ export function setupKysely(
   kyselyDialect: KyselyDialect,
   dialect: DialectName,
   opts: SetupOptions = {},
-): Setup {
+): SqlSource {
   const db = new Kysely<any>({ dialect: kyselyDialect, log: logQueries(opts.name ?? dialect) });
   return {
     db,
     dialect,
-    ormFactory: createOrmFactory(db, opts.ormFactoryOptions, dialect),
+    storageFactory: createStorageFactory(db, opts.storageFactoryOptions, dialect),
     sink: sqlSink(db),
-    transacted: (fn) => db.transaction().execute((trx) => fn(createOrmFactory(trx, opts.ormFactoryOptions, dialect))),
+    migrate: migrating(db, dialect, opts),
+    close: () => db.destroy(),
+    name: opts.name ?? dialect,
+    transacted: (fn) => db.transaction().execute((trx) => fn(createStorageFactory(trx, opts.storageFactoryOptions, dialect))),
   };
 }

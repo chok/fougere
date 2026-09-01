@@ -22,31 +22,31 @@ beforeEach(async () => {
 
 describe('a duplicate', () => {
   it('leaves as CONFLICT, not as an internal error', async () => {
-    const orm = setup.ormFactory(Member as never, 'Member');
-    await orm.create({ id: 'a', email: 'ada@x.io' });
+    const storage = setup.storageFactory(Member as never, 'Member');
+    await storage.create({ id: 'a', email: 'ada@x.io' });
 
     // `.rejects.toMatchObject` and not a try/catch: the point is the SHAPE of the refusal.
-    await expect(orm.create({ id: 'b', email: 'ada@x.io' })).rejects.toMatchObject({
+    await expect(storage.create({ id: 'b', email: 'ada@x.io' })).rejects.toMatchObject({
       code: ErrorCode.CONFLICT,
     });
   });
 
   it("never repeats the engine's words", async () => {
-    const orm = setup.ormFactory(Member as never, 'Member');
-    await orm.create({ id: 'a', email: 'ada@x.io' });
+    const storage = setup.storageFactory(Member as never, 'Member');
+    await storage.create({ id: 'a', email: 'ada@x.io' });
 
-    const refused = await orm.create({ id: 'b', email: 'ada@x.io' }).catch((e) => e as Error);
+    const refused = await storage.create({ id: 'b', email: 'ada@x.io' }).catch((e) => e as Error);
 
     expect(refused.message).not.toMatch(/UNIQUE constraint/);
     expect(refused.message).toContain('members');
   });
 
   it('refuses an UPDATE onto an existing value too', async () => {
-    const orm = setup.ormFactory(Member as never, 'Member');
-    await orm.create({ id: 'a', email: 'ada@x.io' });
-    await orm.create({ id: 'b', email: 'grace@x.io' });
+    const storage = setup.storageFactory(Member as never, 'Member');
+    await storage.create({ id: 'a', email: 'ada@x.io' });
+    await storage.create({ id: 'b', email: 'grace@x.io' });
 
-    await expect(orm.update('b', { email: 'ada@x.io' })).rejects.toMatchObject({
+    await expect(storage.update('b', { email: 'ada@x.io' })).rejects.toMatchObject({
       code: ErrorCode.CONFLICT,
     });
   });
@@ -54,9 +54,9 @@ describe('a duplicate', () => {
   it('lets anything else through untouched', async () => {
     // A false negative costs an INTERNAL_ERROR where a CONFLICT was due — which is what
     // every engine answered before. Swallowing an unrelated failure would be worse.
-    const orm = setup.ormFactory(Member as never, 'Member');
+    const storage = setup.storageFactory(Member as never, 'Member');
 
-    await expect(orm.create({ id: 'a', email: 'ada@x.io', nope: 1 })).rejects.not.toMatchObject({
+    await expect(storage.create({ id: 'a', email: 'ada@x.io', nope: 1 })).rejects.not.toMatchObject({
       code: ErrorCode.CONFLICT,
     });
   });

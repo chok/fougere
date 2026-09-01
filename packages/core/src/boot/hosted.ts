@@ -53,22 +53,18 @@ function completed(stated: FrondDescriptor, found: FrondDescriptor | undefined):
   };
 }
 
-/** What the app hosts, and what the scan — if it ran — could not do. */
+/**
+ * What the app hosts, and what the scan — if it ran — could not do.
+ *
+ * Neither key is EMPTY rather than refused: whether an app with no frond is legitimate
+ * depends on what else it declares, and this function is handed none of that.
+ */
 export async function hostedBy(sources: HostedSources): Promise<ScanResult> {
   const scanned = sources.scan
     ? await (typeof sources.scan === 'function' ? sources.scan() : sources.scan)
     : undefined;
 
-  if (!sources.fronds) {
-    if (!scanned) {
-      throw new Error(
-        'createApp needs `fronds:` (what this app states) or `scan:` (what a scanner found). '
-        + 'Neither was given, so nothing is hosted.',
-      );
-    }
-
-    return scanned;
-  }
+  if (!sources.fronds) return scanned ?? { fronds: Fronds.hosting([]), diagnostics: [] };
 
   const found = scanned?.fronds ?? [];
   const stated = sources.fronds.map((f) => completed(f, found.find((s) => s.name === f.name)));

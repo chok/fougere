@@ -12,7 +12,7 @@ import { registerFrames } from './together.js';
 import { Emissions } from './Emissions.js';
 import { HandlerFacade } from './HandlerFacade.js';
 import { targetOf } from '../prefab/prefab.js';
-import { ownersOf, refuseOrmInUserCode, refuseCrudOnOwned } from './ownership.js';
+import { ownersOf, refuseStorageInUserCode, refuseCrudOnOwned } from './ownership.js';
 import type { OperationContract, OperationsMap } from '../wire/operation.js';
 import {
   resolveEffectiveOperations,
@@ -26,7 +26,7 @@ import { facadeKeyOf, contractsKeyOf, type RpcAnswer } from '../wire/call.js';
 import { identityCardOf } from './card.js';
 import { AppLifecycle } from './AppLifecycle.js';
 import { repositoryKeyOf } from '../prefab/repository.js';
-import { ormKeyOf } from '../orm.js';
+import { storageKeyOf } from '../storage.js';
 import { presenterKeyOf } from '../prefab/presenter.js';
 import { collectorKeyOf } from '../prefab/collector.js';
 import { RouteAddress } from '../contract/RouteAddress.js';
@@ -113,6 +113,16 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   // no builtin and a Worker can run what it builds.
   const scanStart = performance.now();
   const { fronds, diagnostics } = await hostedBy(options);
+  // An app that states nothing AND scans nothing is a mistake — unless something else it
+  // declares brings its own entities, which an auth provider does. Refused here and not in
+  // `hostedBy`, which is handed the frond sources and cannot see the rest of the app. The
+  // condition is the KEYS, not the count: a scan that found nothing is an ordinary answer.
+  if (!options.fronds && !options.scan && !options.auth) {
+    throw new Error(
+      'createApp needs `fronds:` (what this app states) or `scan:` (what a scanner found). '
+      + 'Neither was given, and nothing else declares entities of its own.',
+    );
+  }
   const operationModel = resolveEffectiveOperations(fronds, {
     diagnostics,
     remotes: options.remotes,
@@ -153,11 +163,11 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
   // Auth runtime — built once from the lazy AuthConfig produced by a provider factory
   // (e.g. betterAuth({...})) in fougere.config.ts. The provider receives our db +
-  // ormFactory so all auth writes flow through EntityOrm.
+  // storageFactory so all auth writes flow through Storage.
   let authRuntime: AuthRuntime | undefined;
   if (options.auth) {
-    if (!options.ormFactory) {
-      throw new Error('createApp: `auth` is set but `ormFactory` is missing — auth providers need it to back their adapter.');
+    if (!options.storageFactory) {
+      throw new Error('createApp: `auth` is set but `storageFactory` is missing — auth providers need it to back their adapter.');
     }
     if (options.db === undefined) {
       throw new Error('createApp: `auth` is set but `db` is missing — pass the storage handle through CreateAppOptions.db.');
@@ -165,7 +175,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     log.info('initializing auth runtime');
     authRuntime = await options.auth.create({
       db: options.db,
-      ormFactory: options.ormFactory,
+      storageFactory: options.storageFactory,
     });
     log.info(`auth ready — mounted at ${authRuntime.basePath}`);
   }
@@ -255,14 +265,14 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // `reads:` is what makes a cross-source reader exist here, and the list IS its
     // environment — a source holding none of these is never opened. Registered under
     // the type's own name, which is the key `depKeyOf` already derives for a plain
-    // parameter: `constructor(private sources: Sources)` and nothing else to say.
+    // parameter: `constructor(private reads: Reads)` and nothing else to say.
     // Declaring `reads:` with nothing to build the reader is a boot that ignores a
-    // clause: the handler asking for `Sources` then dies at its first call, on a
+    // clause: the handler asking for `Reads` then dies at its first call, on a
     // container message that names neither the clause nor what is missing.
     if (frond.reads?.length && !options.sourcesFactory) {
       frondLog.warn(
         `[reads] ${frond.reads.join(', ')} — declared in frond.config.ts, but this boot passes no `
-        + '`sourcesFactory`, so no reader is registered and a handler asking for `Sources` will fail '
+        + '`sourcesFactory`, so no reader is registered and a handler asking for `Reads` will fail '
         + 'at its first call. Pass one (`@fougere/adapter-duckdb`), or drop the clause.',
       );
     }
@@ -281,14 +291,14 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
           + 'so a query naming one would find no table. Check the spelling, or the entity file.',
         );
       }
-      scope.registerValue('Sources', await options.sourcesFactory(named, frond.name));
+      scope.registerValue('Reads', await options.sourcesFactory(named, frond.name));
       frondLog.debug(`cross-source reader over ${named.length} entit(ies)`);
     }
 
     // Who owns what, and the rule that makes owning mean something. Before anything is
     // registered, so a bad line is named by this refusal rather than by the container's.
     const owners = ownersOf(frond.providers);
-    refuseOrmInUserCode(frond, owners);
+    refuseStorageInUserCode(frond, owners, (entity) => entityByName.has(entity));
     refuseCrudOnOwned(frond, owners);
 
     for (const provider of frond.providers) {
@@ -307,28 +317,28 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       frondLog.debug(`${frond.providers.length} provider(s): ${frond.providers.map((p) => p.ctor.name).join(', ')}`);
     }
 
-    // Register EntityOrm for each entity — PascalCase type name (e.g. 'PostOrm')
-    // When a handler declares Crud(Entity, Output), scope the ORM via .output(Output)
-    if (options.ormFactory) {
+    // Register Storage for each entity — PascalCase type name (e.g. 'PostStorage')
+    // When a handler declares Crud(Entity, Output), scope the storage via .output(Output)
+    if (options.storageFactory) {
       for (const entity of frond.entities) {
-        const ormName = ormKeyOf(entity.name);
-        const baseOrm = options.ormFactory(entity.entityClass, entity.name);
+        const key = storageKeyOf(entity.name);
+        const baseStorage = options.storageFactory(entity.entityClass, entity.name);
 
         // Check if the default handler (no surface) declares an output override
         const defaultHandler = frond.handlers.find((h) => h.address === entity.name && !h.surface);
         const outputSchema = defaultHandler?.outputOverride ?? (defaultHandler?.ctor as any)?.__output;
         const scoped = outputSchema && outputSchema !== entity.entityClass
-          ? baseOrm.output(outputSchema)
-          : baseOrm;
+          ? baseStorage.output(outputSchema)
+          : baseStorage;
 
         // Storage is a way out like the client surface — see `StorageGuard`.
         const guarded = new StorageGuard(entity.entityClass.getFields(), entity.name).guard(scoped);
-        scope.registerValue(ormName, guarded);
+        scope.registerValue(key, guarded);
 
         // The default repository IS the guarded port — it already answers every gesture a
         // declared one forwards, so the two forms have the same shape and a handler reads
-        // `repo.list()` either way. The wrapper that used to sit here (`{ orm: guarded }`)
-        // existed to make `repo.orm` true in both, back when `.orm` was the way in.
+        // `repo.list()` either way. The wrapper that used to sit here (`{ storage: guarded }`)
+        // existed to make `repo.storage` true in both, back when `.storage` was the way in.
         //
         // Not registered for an OWNED entity: an aggregate's members are reached through it
         // and nowhere else, and the default would be a second door under a name a handler
@@ -343,7 +353,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         }
       }
       if (frond.entities.length > 0) {
-        frondLog.debug(`${frond.entities.length} entity ORM(s): ${frond.entities.map((e) => e.name).join(', ')}`);
+        frondLog.debug(`${frond.entities.length} entity storage(s): ${frond.entities.map((e) => e.name).join(', ')}`);
       }
     }
 
@@ -358,7 +368,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         entityByName,
         frondOf,
         hostedHere: (name) => !(options.remotes && name in options.remotes),
-        ormFactory: options.ormFactory,
+        storageFactory: options.storageFactory,
         sourceOf: options.sourceOf,
         transacted: options.transacted,
         log: frondLog,
@@ -486,7 +496,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       const facadeKey = facadeKeyOf(handler.address);
       buildFacade(entity, handler, scope, facadeKey);
       frondLog.debug(`${facadeKey} [${Object.keys(container.resolve(facadeKey) as any).join(', ')}]`
-        + (entity ? '' : ' — no entity of that name: no ORM, no projection, no presenter'));
+        + (entity ? '' : ' — no entity of that name: no storage, no projection, no presenter'));
     }
 
     // The dual, and it stays: a shape that declares no operation answers nothing. Said
@@ -497,7 +507,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       }
     }
 
-    // Surface handlers — create sub-scope per surface handler with scoped ORM
+    // Surface handlers — create sub-scope per surface handler with scoped storage
     //
     // Pointing at nothing is legal HERE TOO. This loop used to `continue` when no entity
     // carried the handler's name, so `handlers/public/SearchHandler.ts` with no `Search`
@@ -507,25 +517,25 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       const entity = frond.entities.find((e) => e.name === handler.address);
       const surfaceScope = scope.createScope();
 
-      // Register scoped ORM if output override differs from entity — under the REPOSITORY
+      // Register scoped storage if output override differs from entity — under the REPOSITORY
       // key, which is what a Crud handler asks for, and under the port's own for a holder
       // that legitimately names it. Registering only the latter left a named surface with
       // no door at all once the façade stopped spelling the storage.
-      if (entity && options.ormFactory) {
-        const baseOrm = options.ormFactory(entity.entityClass, entity.name);
+      if (entity && options.storageFactory) {
+        const baseStorage = options.storageFactory(entity.entityClass, entity.name);
         const outputSchema = handler.outputOverride ?? (handler.ctor as any).__output;
         const scoped = outputSchema && outputSchema !== entity.entityClass
-          ? baseOrm.output(outputSchema)
-          : baseOrm;
+          ? baseStorage.output(outputSchema)
+          : baseStorage;
         const guarded = new StorageGuard(entity.entityClass.getFields(), entity.name).guard(scoped);
-        surfaceScope.registerValue(ormKeyOf(entity.name), guarded);
+        surfaceScope.registerValue(storageKeyOf(entity.name), guarded);
         surfaceScope.registerValue(repositoryKeyOf(entity.name), guarded);
       }
 
       const facadeKey = facadeKeyOf(handler.address, handler.surface);
       buildFacade(entity, handler, surfaceScope, facadeKey);
       frondLog.debug(`${facadeKey} [${Object.keys(container.resolve(facadeKey) as any).join(', ')}]`
-        + (entity ? '' : ' — no entity of that name: no ORM, no projection, no presenter'));
+        + (entity ? '' : ' — no entity of that name: no storage, no projection, no presenter'));
     }
 
     // A named surface is closed, so what it contains is a fact worth stating.
@@ -747,15 +757,15 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
    * client-facing door. Both are ways in; an entity that opens none of them still has rows.
    *
    * It resolves through the owning frond's scope, because that is where entity ORMs live:
-   * `resolve('UserOrm')` reads the ROOT container and never finds one, so callers outside
+   * `resolve('UserStorage')` reads the ROOT container and never finds one, so callers outside
    * the frond concluded there was no storage. The seed loop did exactly that, and skipped
    * every entity with no façade — the one case its own fallback existed for.
    */
-  const ormFor = (entity: string): unknown | undefined => {
+  const storageFor = (entity: string): unknown | undefined => {
     const owner = fronds.owner(entity);
     if (!owner) return undefined;
 
-    const key = ormKeyOf(entity);
+    const key = storageKeyOf(entity);
     try {
       return container.resolve<Container>(`frond:${owner.name}`).resolve(key);
     } catch {
@@ -766,7 +776,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   /**
    * The presenter of an entity, resolved through its owning frond's scope.
    *
-   * Same shape as `ormFor`, and it exists for the same reason: without it an adapter
+   * Same shape as `storageFor`, and it exists for the same reason: without it an adapter
    * has to spell the container key itself. `schema-graphql` did — a hand-written
    * `${Name}Presenter` — and a key respelled elsewhere finds nothing and says nothing
    * the day the convention moves, which is exactly the failure `verify.ts` refuses.
@@ -800,7 +810,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     operationsFor,
     listensTo: () => emissions.listensTo(),
     deliver: (fact, payload) => emissions.deliver(fact, payload),
-    ormFor,
+    storageFor,
     presenterFor,
     dispose: release,
     drain,

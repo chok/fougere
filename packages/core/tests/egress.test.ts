@@ -12,7 +12,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner } from '../src/index.js';
-import type { OrmFactory } from '../src/index.js';
+import type { StorageFactory } from '../src/index.js';
 import { PresenterExecutor } from '../src/dispatch/PresenterExecutor.js';
 
 const packagesDir = join(import.meta.dirname, '..', '..');
@@ -42,7 +42,7 @@ import Secret from '../entities/Secret.js';
 export default class SecretHandler extends Crud(Secret) {
   /** A handler legitimately reads the hash — it just must not leak it. */
   async audit() {
-    const all = await this.orm.list();
+    const all = await this.storage.list();
     return { checked: all.length, computedByHand: 'kept' };
   }
 }
@@ -59,15 +59,15 @@ function listResult(rows: Record<string, unknown>[]) {
 }
 
 async function boot(root: string) {
-  const orm = {
+  const storage = {
     list: vi.fn(async () => listResult([row])),
     findById: vi.fn(async () => row),
     create: vi.fn(async () => row),
     update: vi.fn(async () => row),
     delete: vi.fn(async () => true),
-    output: () => orm,
+    output: () => storage,
   };
-  const app = await createApp({ scan: await scanProject(root), createContainer, ormFactory: (() => orm) as unknown as OrmFactory });
+  const app = await createApp({ scan: await scanProject(root), createContainer, storageFactory: (() => storage) as unknown as StorageFactory });
   return { app, run: createLocalRunner(app) };
 }
 

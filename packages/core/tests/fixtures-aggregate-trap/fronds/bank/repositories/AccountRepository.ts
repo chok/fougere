@@ -8,7 +8,7 @@ import Ledger from '../entities/Ledger.js';
  */
 export default class AccountRepository extends Repository(Account, Ledger) {
   async withdraw(id: string, amount: number) {
-    const [accounts, ledger] = this.orms;
+    const [accounts, ledger] = this.storages;
     const account = await accounts.findById(id);
     await accounts.update(id, { balance: account!.balance - amount });
     await ledger.create({ account: id, amount: -amount });

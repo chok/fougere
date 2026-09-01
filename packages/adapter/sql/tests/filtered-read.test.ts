@@ -4,7 +4,7 @@ import { migrate } from '../src/index.js';
 import { setupSqlite } from '../src/sqlite.js';
 
 /**
- * La lecture filtrée : ce que l'ORM sait faire, ce qu'il déclare, et ce qu'un appelant obtient.
+ * La lecture filtrée : ce que le storage sait faire, ce qu'il déclare, et ce qu'un appelant obtient.
  *
  * `findBy` lit UN enregistrement par critère. Son dual — « les plusieurs dont le champ vaut X »,
  * c'est-à-dire toute relation un-à-plusieurs — doit exister et être déclaré, sans quoi un
@@ -18,15 +18,15 @@ class Line extends entity({
 }) {}
 
 async function seed() {
-  const { db, ormFactory } = setupSqlite({ path: ':memory:' });
+  const { db, storageFactory } = setupSqlite({ path: ':memory:' });
   const app = { fronds: [{ name: 'test', entities: [
     { name: 'order', entityClass: Order },
     { name: 'line', entityClass: Line },
   ] }] };
   await migrate(app as never, db);
 
-  const orders = ormFactory(Order, 'order');
-  const lines = ormFactory(Line, 'line');
+  const orders = storageFactory(Order, 'order');
+  const lines = storageFactory(Line, 'line');
 
   const a = await orders.create({ label: 'A' });
   const b = await orders.create({ label: 'B' });

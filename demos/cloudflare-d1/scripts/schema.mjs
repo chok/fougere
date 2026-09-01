@@ -23,11 +23,11 @@ const jiti = createJiti(import.meta.url, { interopDefault: true, alias: await fr
 setModuleLoader((filePath) => jiti.import(filePath));
 
 // No storage: generating DDL reads the entities and nothing else, so the app never
-// needs a connection. `ormFactory` is required, and a handler is never called here.
+// needs a connection. `storageFactory` is required, and a handler is never called here.
 const app = await createApp({
   scan: await scanProject(root),
   createContainer,
-  ormFactory: () => ({}),
+  storageFactory: () => ({}),
 });
 
 const sql = generateSQL(app, { dialect: 'sqlite' }).map((statement) => `${statement};`).join('\n');

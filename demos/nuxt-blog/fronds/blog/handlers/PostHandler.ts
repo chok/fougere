@@ -8,13 +8,13 @@ export class SearchByTitleOutput extends Post.pick('id', 'title') {}
 export default class PostHandler extends Crud(Post) {
   /** Public reading: only published posts exist for the outside world. */
   async list(): Promise<Post[]> {
-    const all = await this.orm.list();
+    const all = await this.storage.list();
     return all.filter((p) => p.status === 'published');
   }
 
   /** A post is visible when published, or when it's the reader's own draft. */
   async findById(id: string, user?: User): Promise<Post | undefined> {
-    const post = await this.orm.findById(id);
+    const post = await this.storage.findById(id);
     if (!post) return undefined;
     const own = user && post.authorId === user.id;
     return post.status === 'published' || own ? post : undefined;
@@ -28,7 +28,7 @@ export default class PostHandler extends Crud(Post) {
     if (!user) {
       throw new FougereError({ code: ErrorCode.UNAUTHORIZED, message: 'Login required to publish', entity: 'post', operation: 'publish' });
     }
-    const post = await this.orm.findById(id);
+    const post = await this.storage.findById(id);
     if (!post) {
       throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `Post '${id}' not found`, entity: 'post', operation: 'publish' });
     }
@@ -38,11 +38,11 @@ export default class PostHandler extends Crud(Post) {
     if (post.status === 'published') {
       throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published', entity: 'post', operation: 'publish' });
     }
-    return this.orm.update(id, { status: 'published', publishedAt: new Date() });
+    return this.storage.update(id, { status: 'published', publishedAt: new Date() });
   }
 
   async searchByTitle(input: SearchByTitleInput): Promise<SearchByTitleOutput[]> {
-    const all = await this.orm.list();
+    const all = await this.storage.list();
     return all
       .filter((p) => p.status === 'published')
       .filter((p) => p.title.toLowerCase().includes(input.title.toLowerCase()))
@@ -55,7 +55,7 @@ export default class PostHandler extends Crud(Post) {
    */
   async mine(user?: User): Promise<Post[]> {
     if (!user) return [];
-    const all = await this.orm.list();
+    const all = await this.storage.list();
     return all.filter((p) => p.authorId === user.id);
   }
 }

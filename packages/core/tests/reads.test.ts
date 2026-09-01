@@ -2,7 +2,7 @@
  * `reads:` is what makes a cross-source reader exist in a frond — and what bounds it.
  *
  * Nothing about the reader itself is here: core must not name a storage package, so it
- * takes a factory exactly as it takes `ormFactory`, and never learns what backs it.
+ * takes a factory exactly as it takes `storageFactory`, and never learns what backs it.
  */
 import { scanProject } from '../src/node.js';
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
@@ -55,11 +55,11 @@ describe('a frond that declares what it reads', () => {
   });
 
   it('lives in the FROND, not at the root — one scope, one environment', async () => {
-    // Like an entity's ORM: `resolve` reads the root container and finds none there.
+    // Like an entity's storage: `resolve` reads the root container and finds none there.
     // It has to be per frond, because `reads:` is per frond and the list IS what got
     // attached — a root-wide reader would be one frond's scope handed to every other.
     const app = await createApp({ scan: await scanProject(root), createContainer, sourcesFactory: async () => ({ tag: 'reader' }) });
-    expect(() => app.resolve('Sources')).toThrow();
+    expect(() => app.resolve('Reads')).toThrow();
     await app.dispose();
   });
 });
@@ -74,7 +74,7 @@ describe('a frond that declares none', () => {
     const app = await createApp({ scan: await scanProject(root), createContainer, sourcesFactory });
 
     expect(sourcesFactory).not.toHaveBeenCalled();
-    expect(() => app.resolve('Sources')).toThrow();
+    expect(() => app.resolve('Reads')).toThrow();
     await app.dispose();
   });
 });

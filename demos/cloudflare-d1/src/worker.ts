@@ -44,7 +44,7 @@ async function open(env: Env) {
   const app: App = await createApp({
     scan,
     createContainer,
-    ormFactory: storage.ormFactory,
+    storageFactory: storage.storageFactory,
     extensions: [observability({
       service: 'catalog',
       // The collector next door. Its exporter still buffers on a timer — which never

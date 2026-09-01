@@ -2,7 +2,7 @@
  * What the shape says, held by the storage — against a real SQLite database.
  *
  * The façade already refuses a bad value a client proposes. What is tested here is
- * the other path: a handler writing straight through the ORM, which is exactly where
+ * the other path: a handler writing straight through the storage, which is exactly where
  * `oneOf('draft','published')` used to let `'brouillon'` land and stay.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -20,47 +20,47 @@ class Post extends entity({
 }) {}
 
 let setup: SqliteSetup;
-let orm: any;
+let storage: any;
 
 beforeEach(async () => {
   setup = setupSqlite({ path: ':memory:' });
   await autoMigrate({ fronds: [{ name: 'test', entities: [{ name: 'post', entityClass: Post }] }] }, setup.sqlite);
-  orm = setup.ormFactory(Post, 'post');
+  storage = setup.storageFactory(Post, 'post');
 });
 
 const valid = { title: 'Hello', status: 'draft', score: 10 };
 
 describe('a value the shape forbids does not land', () => {
   it('accepts what the shape allows', async () => {
-    await expect(orm.create(valid)).resolves.toBeTruthy();
+    await expect(storage.create(valid)).resolves.toBeTruthy();
   });
 
   it('refuses a value outside oneOf — the case that used to persist in silence', async () => {
-    await expect(orm.create({ ...valid, status: 'brouillon' })).rejects.toThrow();
+    await expect(storage.create({ ...valid, status: 'brouillon' })).rejects.toThrow();
   });
 
   it('refuses a string under its minimum and over its maximum', async () => {
-    await expect(orm.create({ ...valid, title: 'ab' })).rejects.toThrow();
-    await expect(orm.create({ ...valid, title: 'x'.repeat(21) })).rejects.toThrow();
+    await expect(storage.create({ ...valid, title: 'ab' })).rejects.toThrow();
+    await expect(storage.create({ ...valid, title: 'x'.repeat(21) })).rejects.toThrow();
   });
 
   it('refuses a number outside its bounds', async () => {
-    await expect(orm.create({ ...valid, score: -1 })).rejects.toThrow();
-    await expect(orm.create({ ...valid, score: 101 })).rejects.toThrow();
+    await expect(storage.create({ ...valid, score: -1 })).rejects.toThrow();
+    await expect(storage.create({ ...valid, score: 101 })).rejects.toThrow();
   });
 
   it('refuses on update too — the rule is not about creation', async () => {
-    const post = await orm.create(valid);
+    const post = await storage.create(valid);
 
-    await expect(orm.update(post.id, { status: 'archivé' })).rejects.toThrow();
+    await expect(storage.update(post.id, { status: 'archivé' })).rejects.toThrow();
   });
 });
 
 describe('the bound does not swallow absence', () => {
   it('an optional column accepts null, and still bounds a value', async () => {
-    await expect(orm.create({ ...valid, note: undefined })).resolves.toBeTruthy();
-    await expect(orm.create({ ...valid, note: 'ok' })).resolves.toBeTruthy();
-    await expect(orm.create({ ...valid, note: 'too long' })).rejects.toThrow();
+    await expect(storage.create({ ...valid, note: undefined })).resolves.toBeTruthy();
+    await expect(storage.create({ ...valid, note: 'ok' })).resolves.toBeTruthy();
+    await expect(storage.create({ ...valid, note: 'too long' })).rejects.toThrow();
   });
 });
 

@@ -3,7 +3,7 @@
  */
 import SchemaBuilder from '@pothos/core';
 import { registerType, registerInput, registerOperations } from '@fougere/adapter-graphql/pothos';
-import { categoryOrm, productOrm, customerOrm, orderLineOrm, orderOrm } from './db.js';
+import { categoryStorage, productStorage, customerStorage, orderLineStorage, orderStorage } from './db.js';
 import {
   Category, Product, Customer, OrderLine, Order,
   CreateProduct, UpdateProduct,
@@ -25,7 +25,7 @@ const ProductType = registerType(builder, {
   relations: {
     category: {
       type: CategoryType,
-      resolve: (p: any) => categoryOrm.findById(p.categoryId),
+      resolve: (p: any) => categoryStorage.findById(p.categoryId),
     },
   },
 });
@@ -43,7 +43,7 @@ const OrderLineType = registerType(builder, {
   relations: {
     product: {
       type: ProductType,
-      resolve: (p: any) => productOrm.findById(p.productId),
+      resolve: (p: any) => productStorage.findById(p.productId),
     },
   },
 });
@@ -55,12 +55,12 @@ const OrderType = registerType(builder, {
   relations: {
     customer: {
       type: CustomerType,
-      resolve: (p: any) => customerOrm.findById(p.customerId),
+      resolve: (p: any) => customerStorage.findById(p.customerId),
     },
     lines: {
       type: OrderLineType,
       list: true,
-      resolve: (p: any) => orderLineOrm.findAllBy({ orderId: p.id }),
+      resolve: (p: any) => orderLineStorage.findAllBy({ orderId: p.id }),
     },
   },
 });
@@ -93,6 +93,7 @@ builder.queryType({});
 function readOnlyOps() {
   return new Map<string, any>([
     ['list', {
+      kind: 'query',
       signature: {
         name: 'list',
         params: [{ name: 'options', type: { raw: 'ListOptions', name: 'ListOptions' }, optional: true }],
@@ -100,6 +101,7 @@ function readOnlyOps() {
       },
     }],
     ['findById', {
+      kind: 'query',
       signature: {
         name: 'findById',
         params: [{ name: 'id', type: { raw: 'string', name: 'string' } }],
@@ -113,8 +115,8 @@ registerOperations(builder, {
   name: 'Product',
   type: ProductType,
   facade: {
-    list: (ctx: any) => productOrm.list(ctx.body),
-    findById: (ctx: any) => productOrm.findById(ctx.params.id),
+    list: (ctx: any) => productStorage.list(ctx.body),
+    findById: (ctx: any) => productStorage.findById(ctx.params.id),
   },
   operations: readOnlyOps(),
 });
@@ -123,8 +125,8 @@ registerOperations(builder, {
   name: 'Category',
   type: CategoryType,
   facade: {
-    list: (ctx: any) => categoryOrm.list(ctx.body),
-    findById: (ctx: any) => categoryOrm.findById(ctx.params.id),
+    list: (ctx: any) => categoryStorage.list(ctx.body),
+    findById: (ctx: any) => categoryStorage.findById(ctx.params.id),
   },
   operations: readOnlyOps(),
 });
@@ -133,8 +135,8 @@ registerOperations(builder, {
   name: 'Customer',
   type: CustomerType,
   facade: {
-    list: (ctx: any) => customerOrm.list(ctx.body),
-    findById: (ctx: any) => customerOrm.findById(ctx.params.id),
+    list: (ctx: any) => customerStorage.list(ctx.body),
+    findById: (ctx: any) => customerStorage.findById(ctx.params.id),
   },
   operations: readOnlyOps(),
 });
@@ -143,8 +145,8 @@ registerOperations(builder, {
   name: 'Order',
   type: OrderType,
   facade: {
-    list: (ctx: any) => orderOrm.list(ctx.body),
-    findById: (ctx: any) => orderOrm.findById(ctx.params.id),
+    list: (ctx: any) => orderStorage.list(ctx.body),
+    findById: (ctx: any) => orderStorage.findById(ctx.params.id),
   },
   operations: readOnlyOps(),
 });
@@ -161,9 +163,9 @@ builder.mutationType({});
       const v = CreateProduct.validate(input);
       if (!v.success) throw new Error(v.errors.map((e: any) => `${e.path}: ${e.message}`).join(', '));
 
-      // active/createdAt are realised by the ORM (SQL default, auto timestamp) —
+      // active/createdAt are realised by the storage (SQL default, auto timestamp) —
       // the caller only supplies what it owns.
-      return productOrm.create(input);
+      return productStorage.create(input);
     },
   }),
 
@@ -183,8 +185,8 @@ builder.mutationType({});
         if (val != null) updates[k] = val;
       }
       // An empty patch has no SET clause to run — just hand back the current row.
-      if (Object.keys(updates).length === 0) return (await productOrm.findById(id)) ?? null;
-      return productOrm.update(id, updates);
+      if (Object.keys(updates).length === 0) return (await productStorage.findById(id)) ?? null;
+      return productStorage.update(id, updates);
     },
   }),
 
@@ -196,13 +198,13 @@ builder.mutationType({});
       const lines: { productId: string; quantity: number; unitPrice: number }[] = [];
 
       for (const line of input.lines) {
-        const product = await productOrm.findById(line.productId);
+        const product = await productStorage.findById(line.productId);
         if (!product) throw new Error(`Product ${line.productId} not found`);
         total += (product as any).price * line.quantity;
         lines.push({ productId: line.productId, quantity: line.quantity, unitPrice: (product as any).price });
       }
 
-      const order = await orderOrm.create({
+      const order = await orderStorage.create({
         customerId: input.customerId,
         status: 'pending',
         total,
@@ -210,7 +212,7 @@ builder.mutationType({});
       });
 
       for (const line of lines) {
-        await orderLineOrm.create({ ...line, orderId: order.id });
+        await orderLineStorage.create({ ...line, orderId: order.id });
       }
 
       return order;

@@ -34,8 +34,13 @@ describe('what an app hosts', () => {
     expect(hosted.diagnostics).toEqual([failed]);
   });
 
-  it('refuses a boot that states nothing and scans nothing, naming both doors', async () => {
-    await expect(hostedBy({})).rejects.toThrow(/`fronds:`.*`scan:`/s);
+  it('hands back nothing when neither key is given, rather than refusing', async () => {
+    // Whether that is legitimate depends on what else the app declares — an auth provider
+    // brings entities of its own — and this function is handed none of it. `createApp` decides.
+    const hosted = await hostedBy({});
+
+    expect([...hosted.fronds]).toEqual([]);
+    expect(hosted.diagnostics).toEqual([]);
   });
 
   it('lets the statement win over what the scan found under the same name', async () => {

@@ -21,65 +21,65 @@ class Task extends entity({
 }) {}
 
 describe('the values a driver can bind', () => {
-  let orm: any;
+  let storage: any;
 
   beforeEach(async () => {
     const setup = setupSqlite({ path: ':memory:' });
     await autoMigrate({ fronds: [{ name: 'app', entities: [{ name: 'task', entityClass: Task }] }] }, setup.sqlite);
-    orm = setup.ormFactory(Task, 'task');
+    storage = setup.storageFactory(Task, 'task');
   });
 
   it('writes a boolean and reads a boolean', async () => {
-    const created = await orm.create({ id: 't1', title: 'x', done: true, tags: [], payload: {} });
+    const created = await storage.create({ id: 't1', title: 'x', done: true, tags: [], payload: {} });
     expect(created.done).toBe(true);
 
-    const read = await orm.findById('t1');
+    const read = await storage.findById('t1');
     expect(read!.done).toBe(true);
   });
 
   it('keeps false false — the value a truthiness bug would lose', async () => {
-    await orm.create({ id: 't2', title: 'x', done: false, tags: [], payload: {} });
-    expect((await orm.findById('t2'))!.done).toBe(false);
+    await storage.create({ id: 't2', title: 'x', done: false, tags: [], payload: {} });
+    expect((await storage.findById('t2'))!.done).toBe(false);
   });
 
   it('writes a Date and reads a Date', async () => {
     const dueAt = new Date('2026-07-28T10:00:00.000Z');
-    await orm.create({ id: 't3', title: 'x', done: false, dueAt, tags: [], payload: {} });
+    await storage.create({ id: 't3', title: 'x', done: false, dueAt, tags: [], payload: {} });
 
-    const read = await orm.findById('t3');
+    const read = await storage.findById('t3');
     expect(read!.dueAt).toBeInstanceOf(Date);
     expect((read!.dueAt as Date).toISOString()).toBe(dueAt.toISOString());
   });
 
   it('still accepts the ISO string the old casts passed', async () => {
-    await orm.create({ id: 't4', title: 'x', done: false, dueAt: '2026-07-28T10:00:00.000Z' as never, tags: [], payload: {} });
-    expect((await orm.findById('t4'))!.dueAt).toBeInstanceOf(Date);
+    await storage.create({ id: 't4', title: 'x', done: false, dueAt: '2026-07-28T10:00:00.000Z' as never, tags: [], payload: {} });
+    expect((await storage.findById('t4'))!.dueAt).toBeInstanceOf(Date);
   });
 
   it('writes a list and an object, reads them back', async () => {
-    await orm.create({ id: 't5', title: 'x', done: false, tags: ['a', 'b'], payload: { n: 1, deep: { ok: true } } });
+    await storage.create({ id: 't5', title: 'x', done: false, tags: ['a', 'b'], payload: { n: 1, deep: { ok: true } } });
 
-    const read = await orm.findById('t5');
+    const read = await storage.findById('t5');
     expect(read!.tags).toEqual(['a', 'b']);
     expect(read!.payload).toEqual({ n: 1, deep: { ok: true } });
   });
 
   it('leaves an absent optional alone instead of inventing one', async () => {
-    await orm.create({ id: 't6', title: 'x', done: false, tags: [], payload: {} });
-    expect((await orm.findById('t6'))!.dueAt).toBeNull();
+    await storage.create({ id: 't6', title: 'x', done: false, tags: [], payload: {} });
+    expect((await storage.findById('t6'))!.dueAt).toBeNull();
   });
 
   it('filters on the column value, not the entity value', async () => {
-    await orm.create({ id: 't7', title: 'yes', done: true, tags: [], payload: {} });
-    await orm.create({ id: 't8', title: 'no', done: false, tags: [], payload: {} });
+    await storage.create({ id: 't7', title: 'yes', done: true, tags: [], payload: {} });
+    await storage.create({ id: 't8', title: 'no', done: false, tags: [], payload: {} });
 
-    const found = await orm.findBy({ done: true });
+    const found = await storage.findBy({ done: true });
     expect(found!.id).toBe('t7');
   });
 
   it('updates through the same conversion', async () => {
-    await orm.create({ id: 't9', title: 'x', done: false, tags: [], payload: {} });
-    const updated = await orm.update('t9', { done: true, tags: ['z'] });
+    await storage.create({ id: 't9', title: 'x', done: false, tags: [], payload: {} });
+    const updated = await storage.update('t9', { done: true, tags: ['z'] });
 
     expect(updated.done).toBe(true);
     expect(updated.tags).toEqual(['z']);

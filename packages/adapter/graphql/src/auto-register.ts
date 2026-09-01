@@ -44,7 +44,7 @@ const directionKey = (entity: string, field: string) => `${entity}#${field}`;
 /**
  * How many keys go into one `list` call.
  *
- * A page has no ceiling, and `list` is the one read the ORM refuses to split (a limit
+ * A page has no ceiling, and `list` is the one read the storage refuses to split (a limit
  * and an order do not recompose across statements). So the slicing happens HERE, where
  * the answer is a map being assembled and slices merge for free. Below SQL Server's
  * 2100 bindings, the lowest of the four engines — this side does not know the dialect,
@@ -248,7 +248,7 @@ export function registerAll(
   // Collect registered types across all fronds for relation wiring, keyed by entity NAME.
   //
   // The name is the identity everywhere else in the system — `facadeFor(entity)`,
-  // `ormFor(entity)`, `schemaFor(entity)` all take one, and the table, the GraphQL type
+  // `storageFor(entity)`, `schemaFor(entity)` all take one, and the table, the GraphQL type
   // and the DI match are all derived from it. This registry keyed by class OBJECT was the
   // lone dissent, and it cost a silent failure: a relation target that is not the very
   // object registered (an entity rebuilt from a card, whose `to()` leaves a `{ name }`

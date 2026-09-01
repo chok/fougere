@@ -12,6 +12,6 @@ export default class CatalogHandler {
 
   /** Read the copy — an ordinary local query, which the source could not have served. */
   async findCheapest(): Promise<BookCard[]> {
-    return await this.catalog.orm.list({ orderBy: 'priceCents', order: 'asc', limit: 3 }) as BookCard[];
+    return await this.catalog.storage.list({ orderBy: 'priceCents', order: 'asc', limit: 3 }) as BookCard[];
   }
 }

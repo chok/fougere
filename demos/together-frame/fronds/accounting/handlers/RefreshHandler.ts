@@ -6,9 +6,9 @@ import type RateMirror from '../services/RateMirror.js';
 /**
  * A PROVIDER as a member — the case a list of entities alone cannot cover.
  *
- * `RateMirror` writes through `EntityOrm<RateCard>`. Naming both puts its pages under the
+ * `RateMirror` writes through `Storage<RateCard>`. Naming both puts its pages under the
  * same unwind as this handler's own writes: the mirror is rebuilt inside the frame's scope,
- * so it receives the framed ORM through its ordinary constructor. No locator, no second
+ * so it receives the framed storage through its ordinary constructor. No locator, no second
  * injection path, and not one line of `Mirror` knows a frame exists.
  *
  * An import is where the unwind earns its second query: a page is upserted, so some rows

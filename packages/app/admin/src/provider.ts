@@ -2,12 +2,12 @@
  * react-admin's `DataProvider`, answered by the Fougere wire.
  *
  * Nine functions, and every one of them had a counterpart already: `getList` is
- * `ListOptions`, `getManyReference` is the ORM's `findAllByKeys` (written for a
+ * `ListOptions`, `getManyReference` is the storage's `findAllByKeys` (written for a
  * presenter that wanted "the items of these lists"), `filter` is `where` — an
  * equality map that already refuses an unknown key, because a filter silently
  * dropped had once returned the whole table.
  *
- * It talks to the FAÇADE and never to an ORM, which is not a precaution here but a
+ * It talks to the FAÇADE and never to a storage, which is not a precaution here but a
  * consequence: this runs in a browser, and the only thing a browser can reach is the
  * call endpoint. Judges, presenters and middlewares are therefore on the path of
  * every read and every write the back-office makes.
@@ -147,7 +147,7 @@ export function createDataProvider(options: ProviderOptions) {
     },
 
     /**
-     * N calls, and the reason is upstream: `findByKeys` is a gesture of the ORM port,
+     * N calls, and the reason is upstream: `findByKeys` is a gesture of the storage port,
      * not one of `Crud`'s five ops, so there is no door to ask for several rows by id.
      * Said here rather than hidden — the day `Crud` names that op this becomes one call.
      */

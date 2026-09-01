@@ -23,7 +23,7 @@ import { createContainer } from '@fougere/container';
 import { frameCall, unframeResponse, handleRpc, serve, createHttpTransport } from '../src/index.js';
 import type { RpcResponse, RunningReceiver } from '../src/index.js';
 // @ts-expect-error plain-JS shared fixture
-import { createOrmFactory, PRODUCTS } from './fixtures/data.mjs';
+import { createStorageFactory, PRODUCTS } from './fixtures/data.mjs';
 
 const fixturesDir = join(import.meta.dirname, 'fixtures');
 const emptyRoot = '/tmp/fougere-socket-consumer';
@@ -106,7 +106,7 @@ let consumer: App;
 let facade: Facade;
 
 beforeAll(async () => {
-  app = await createApp({ scan: await scanProject(fixturesDir), createContainer, ormFactory: createOrmFactory() });
+  app = await createApp({ scan: await scanProject(fixturesDir), createContainer, storageFactory: createStorageFactory() });
   localRun = createLocalRunner(app);
 
   httpReceiver = await serve(localRun, { port: 0 });

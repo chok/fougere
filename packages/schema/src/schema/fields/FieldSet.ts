@@ -33,7 +33,7 @@ export class FieldSet<TFields extends Fields = Fields> {
    * `Role.of(field).isPrimary` answers about ONE field; this answers about a shape, which
    * is the question every reader actually had. It was the same three lines spelled five
    * times — a mirror's key, a form's row identity, GraphQL's node id, the DDL's primary
-   * key and the ORM's `findById` column — so a shape with two primaries meant whichever
+   * key and the storage's `findById` column — so a shape with two primaries meant whichever
    * one that loop happened to see first, five times over.
    *
    * The absence is answered and not defaulted: `'id'` is a fine fallback for a form and a

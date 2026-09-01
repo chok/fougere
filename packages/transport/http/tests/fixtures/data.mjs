@@ -1,5 +1,5 @@
 /**
- * Deterministic dataset + ORM shared by the host process and the control app —
+ * Deterministic dataset + storage shared by the host process and the control app —
  * parity only means something if both sides serve the exact same data.
  */
 export const PRODUCTS = [
@@ -7,7 +7,7 @@ export const PRODUCTS = [
   { id: 'p2', title: 'Moss', stock: 0 },
 ];
 
-export function createOrmFactory() {
+export function createStorageFactory() {
   return () => ({
     async list() {
       return PRODUCTS.map((p) => ({ ...p }));

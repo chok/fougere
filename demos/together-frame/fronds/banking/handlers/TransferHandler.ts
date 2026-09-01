@@ -9,7 +9,7 @@ let line = 0;
 /**
  * Two fronds, one frame — and this file says nothing about either.
  *
- * `EntityOrm<T>` is the port whose every gesture is ONE statement. `Together<[…]>` is
+ * `Storage<T>` is the port whose every gesture is ONE statement. `Together<[…]>` is
  * the port whose unit is a BLOCK: what the callback did happens entirely, or not at all.
  * Which realization backs it — the engine's transaction, or an unwind the frame replays
  * itself — is decided by `sources:` and announced at boot. Not here.

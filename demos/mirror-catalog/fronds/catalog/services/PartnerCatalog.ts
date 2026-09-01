@@ -1,4 +1,4 @@
-import { Mirror, type EntityOrm } from '@fougere/core';
+import { Mirror, type Storage } from '@fougere/core';
 import BookCard from '../entities/BookCard.js';
 import PartnerApi from './PartnerApi.js';
 
@@ -9,8 +9,8 @@ import PartnerApi from './PartnerApi.js';
  * yielding a page is the shape `upsertAll` already has.
  */
 export default class PartnerCatalog extends Mirror(BookCard) {
-  constructor(orm: EntityOrm<BookCard>, private partner: PartnerApi) {
-    super(orm);
+  constructor(storage: Storage<BookCard>, private partner: PartnerApi) {
+    super(storage);
   }
 
   async *pull(since?: Date): AsyncIterable<Partial<BookCard>[]> {

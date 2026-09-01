@@ -3,11 +3,11 @@
  *
  * A rule spanning two tables had nowhere to live: `RowJudge.check` sees one row, and a frame
  * makes two writes atomic without saying which ones may happen. The missing half was not a
- * checker but a DOOR — as long as `EntityOrm<Ledger>` is handed to whoever asks, no file can
+ * checker but a DOOR — as long as `Storage<Ledger>` is handed to whoever asks, no file can
  * be the only way in. Close that, and the rule is ordinary TypeScript inside the method that
  * writes. Nothing here verifies anything; it verifies who may write.
  *
- * The arity is the declaration, second reading of what `orm.ts` states for `EntityOrm`
+ * The arity is the declaration, second reading of what `storage.ts` states for `Storage`
  * against `Together`: a boundary between one thing and nothing is not a boundary.
  */
 import { describe, it, expect, vi } from 'vitest';
@@ -16,11 +16,11 @@ import { createContainer, type Container } from '@fougere/container';
 import { scanProject } from '../src/node.js';
 import { createApp, createLocalRunner, Repository } from '../src/index.js';
 import { repositoryKeyOf, ownedBy } from '../src/prefab/repository.js';
-import { ormKeyOf, type OrmFactory } from '../src/orm.js';
+import { storageKeyOf, type StorageFactory } from '../src/storage.js';
 import { EMPTY_INVOCATION } from '../src/contract/Invocation.js';
 
-function makeOrm() {
-  const orm = {
+function makeStorage() {
+  const storage = {
     list: vi.fn(async () => [] as unknown[]),
     findById: vi.fn(async () => ({ id: 'a1', holder: 'ada', balance: 1000 })),
     findBy: vi.fn(async () => undefined),
@@ -32,15 +32,15 @@ function makeOrm() {
     upsertAll: vi.fn(async () => 0),
     update: vi.fn(async (_id: string, input: unknown) => input),
     delete: vi.fn(async () => true),
-    output: vi.fn(() => orm),
+    output: vi.fn(() => storage),
     client: {},
   };
-  return orm;
+  return storage;
 }
 
-const ormFactory: OrmFactory = (() => makeOrm()) as unknown as OrmFactory;
+const storageFactory: StorageFactory = (() => makeStorage()) as unknown as StorageFactory;
 const boot = async (fixture: string) =>
-  createApp({ scan: await scanProject(join(import.meta.dirname, fixture)), createContainer, ormFactory });
+  createApp({ scan: await scanProject(join(import.meta.dirname, fixture)), createContainer, storageFactory });
 
 describe('the arity is the declaration', () => {
   it('owns nothing at one, and both at two', () => {
@@ -79,7 +79,7 @@ describe('an owned entity has no other door', () => {
   it('refuses a handler that reaches around it, naming the owner', async () => {
     const rejected = boot('fixtures-aggregate-trap');
 
-    await expect(rejected).rejects.toThrow(/\[aggregate\] LedgerHandler asks for LedgerOrm/);
+    await expect(rejected).rejects.toThrow(/\[aggregate\] LedgerHandler asks for LedgerStorage/);
     await expect(rejected).rejects.toThrow(/AccountRepository owns ledger/);
     await expect(rejected).rejects.toThrow(/constructor\(private ledger: AccountRepository\)/);
   });
@@ -88,18 +88,30 @@ describe('an owned entity has no other door', () => {
 describe('storage is reached through a repository, never through the port', () => {
   it('refuses a door that names the port, and points at the repository key', async () => {
     const rejected = boot('fixtures-aggregate-trap');
-    await expect(rejected).rejects.toThrow(/LedgerOrm/);
+    await expect(rejected).rejects.toThrow(/LedgerStorage/);
   });
 
   it('lets a HOLDER name the port of what its prefab was built on', async () => {
-    // A Mirror writes the copy it owns; naming `EntityOrm<BookCard>` is what `Mirror(BookCard)`
+    // A Mirror writes the copy it owns; naming `Storage<BookCard>` is what `Mirror(BookCard)`
     // exists for. The rule separates a door from a holder, not one directory from another —
     // which is why it covers `Mirror` without naming it.
     await using app = await boot('fixtures-holder');
     const catalog = app.resolve<Container>('frond:catalog');
 
     expect(catalog.resolve('PartnerCatalog')).toBeDefined();
-    expect(catalog.has(ormKeyOf('bookCard'))).toBe(true);
+    expect(catalog.has(storageKeyOf('bookCard'))).toBe(true);
+  });
+
+  it('lets a door depend on a class whose NAME ends in the key suffix', async () => {
+    // `FileStorage` is a provider, not `file`'s rows, and the suffix alone cannot tell.
+    // Without `entityOfStorageKey`'s `known`, measured: this boot is refused.
+    await using app = await boot('fixtures-holder');
+    const catalog = app.resolve<Container>('frond:catalog');
+
+    // The class's own name IS the key `Storage<File>` would ask for; an app declaring both
+    // would have them meet, which nothing here can tell apart.
+    const files = catalog.resolve<{ path(name: string): string }>(storageKeyOf('file'));
+    expect(files.path('a')).toBe('/files/a');
   });
 
   it('resolves a door that asks for RepositoryOf<E> with no file written', async () => {

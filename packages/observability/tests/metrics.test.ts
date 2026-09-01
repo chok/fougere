@@ -10,7 +10,7 @@ import type { App, InvocationContext } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { trace, onSpan, metrics, metricsPayload, activeCalls, serveTopology, type Metrics } from '../src/index.js';
 // @ts-expect-error plain-JS fixture
-import { createOrmFactory } from './fixtures/data.mjs';
+import { createStorageFactory } from './fixtures/data.mjs';
 
 const fixturesDir = join(import.meta.dirname, 'fixtures');
 type Facade = Record<string, (invocation?: InvocationContext) => Promise<unknown>>;
@@ -20,7 +20,7 @@ let measured: Metrics;
 let restore: (() => void) | undefined;
 
 beforeAll(async () => {
-  app = await createApp({ scan: await scanProject(fixturesDir), createContainer, ormFactory: createOrmFactory() });
+  app = await createApp({ scan: await scanProject(fixturesDir), createContainer, storageFactory: createStorageFactory() });
   app.use(trace());
 }, 30_000);
 

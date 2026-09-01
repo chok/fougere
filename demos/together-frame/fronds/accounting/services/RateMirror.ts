@@ -7,7 +7,7 @@ export const upstream: { code: string; rate: number }[][] = [
 ];
 
 /**
- * A copy that writes through `EntityOrm<RateCard>` — which is the whole reason a frame
+ * A copy that writes through `Storage<RateCard>` — which is the whole reason a frame
  * can cover it. Nothing here knows a frame exists.
  */
 export default class RateMirror extends Mirror(RateCard) {

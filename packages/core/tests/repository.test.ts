@@ -2,7 +2,7 @@
  * A repository is where an entity's queries are named — and it exists whether or not
  * anyone wrote one.
  *
- * `EntityOrm` is a port: five generic gestures. "The loud readings" is not one of
+ * `Storage` is a port: five generic gestures. "The loud readings" is not one of
  * them, so it used to be spelled at the call site, in the middle of the calculation
  * it feeds. The default repository IS the port, so asking for one never fails; a
  * declared one wins, exactly as a Crud op redefined in a subclass wins over the
@@ -15,15 +15,15 @@ import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, Repository } from '../src/index.js';
 import { repositoryKeyOf } from '../src/prefab/repository.js';
 import { targetOf } from '../src/prefab/prefab.js';
-import type { OrmFactory } from '../src/index.js';
+import type { StorageFactory } from '../src/index.js';
 import { EMPTY_INVOCATION } from '../src/contract/Invocation.js';
 
 const root = join(import.meta.dirname, 'fixtures-repository');
 
 const rows = [{ id: 'r1', db: 91, at: 'now' }];
 
-function makeOrm() {
-  const orm = {
+function makeStorage() {
+  const storage = {
     list: vi.fn(async () => rows),
     findById: vi.fn(async () => rows[0]),
     findBy: vi.fn(async () => rows[0]),
@@ -31,13 +31,13 @@ function makeOrm() {
     create: vi.fn(async () => rows[0]),
     update: vi.fn(async () => rows[0]),
     delete: vi.fn(async () => true),
-    output: vi.fn(() => orm),
+    output: vi.fn(() => storage),
     client: {},
   };
-  return orm;
+  return storage;
 }
 
-const ormFactory: OrmFactory = (() => makeOrm()) as unknown as OrmFactory;
+const storageFactory: StorageFactory = (() => makeStorage()) as unknown as StorageFactory;
 
 describe('Repository(Entity)', () => {
   it('remembers the entity it is for', () => {
@@ -53,8 +53,8 @@ describe('Repository(Entity)', () => {
 
   it('forwards the port, gesture by gesture — the same shape the default has', async () => {
     class Thing {}
-    const orm = makeOrm() as never;
-    const repo = new (Repository(Thing))(orm);
+    const storage = makeStorage() as never;
+    const repo = new (Repository(Thing))(storage);
 
     // The declared form and the default answer the same names: that is what makes a
     // handler read `this.things.list()` whether or not anyone wrote the file.
@@ -67,7 +67,7 @@ describe('Repository(Entity)', () => {
 
 describe('the declared one wins, the default is always there', () => {
   it('resolves a repository nobody wrote — it is the port itself', async () => {
-    await using app = await createApp({ scan: await scanProject(root), createContainer, ormFactory });
+    await using app = await createApp({ scan: await scanProject(root), createContainer, storageFactory });
     const out = await createLocalRunner(app)({ entity: 'node', op: 'all' }, EMPTY_INVOCATION);
 
     // NodeHandler asked for `NodeRepository`, no such file exists, and the call answered.
@@ -75,18 +75,18 @@ describe('the declared one wins, the default is always there', () => {
   });
 
   it('uses the written one when there is one', async () => {
-    await using app = await createApp({ scan: await scanProject(root), createContainer, ormFactory });
+    await using app = await createApp({ scan: await scanProject(root), createContainer, storageFactory });
     const out = await createLocalRunner(app)({ entity: 'reading', op: 'loud' }, EMPTY_INVOCATION);
 
-    // `loud()` exists on no ORM — answering it proves the declared class was injected.
+    // `loud()` exists on no storage — answering it proves the declared class was injected.
     expect(out).toEqual(rows);
   });
 
   it('is not a door — a repository method is unreachable from the wire', async () => {
-    await using app = await createApp({ scan: await scanProject(root), createContainer, ormFactory });
+    await using app = await createApp({ scan: await scanProject(root), createContainer, storageFactory });
 
     await expect(
-      createLocalRunner(app)({ entity: 'reading', op: 'orm' }, EMPTY_INVOCATION),
+      createLocalRunner(app)({ entity: 'reading', op: 'storage' }, EMPTY_INVOCATION),
     ).rejects.toThrow();
   });
 });

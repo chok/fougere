@@ -9,8 +9,8 @@ import { targetOf } from '../src/prefab/prefab.js';
 
 class Card extends entity({ id: primary(), title: text({ min: 1 }), pulledAt: updated() }) {}
 
-/** An ORM that records what it was handed — a mirror only ever uses two gestures. */
-function spyOrm(rows: Record<string, unknown>[] = []) {
+/** A storage that records what it was handed — a mirror only ever uses two gestures. */
+function spyStorage(rows: Record<string, unknown>[] = []) {
   const written: Record<string, unknown>[][] = [];
   return {
     written,
@@ -21,40 +21,40 @@ function spyOrm(rows: Record<string, unknown>[] = []) {
 
 describe('a mirror refreshes', () => {
   it('writes every page and reports the pass', async () => {
-    const orm = spyOrm();
+    const storage = spyStorage();
     class M extends Mirror(Card) {
       async *pull() { yield [{ id: 'a', title: 'A' }]; yield [{ id: 'b', title: 'B' }]; }
     }
-    const done = await new M(orm).refresh();
+    const done = await new M(storage).refresh();
 
     expect(done.written).toBe(2);
-    expect((orm as any).written).toHaveLength(2);
+    expect((storage as any).written).toHaveLength(2);
     expect(done.since).toBeUndefined();     // nothing stored yet
     expect(done.ms).toBeGreaterThanOrEqual(0);
   });
 
   it('hands the pull its own high-water mark — which is what makes it incremental', async () => {
     const pulled = new Date('2026-01-01T00:00:00.000Z');
-    const orm = spyOrm([{ id: 'a', title: 'A', pulledAt: pulled }]);
+    const storage = spyStorage([{ id: 'a', title: 'A', pulledAt: pulled }]);
     let asked: Date | undefined = new Date(0);
     class M extends Mirror(Card) {
       async *pull(since?: Date) { asked = since; yield []; }
     }
-    await new M(orm).refresh();
+    await new M(storage).refresh();
 
     // Read off the table and not remembered here: another process may have refreshed it.
     expect(asked).toEqual(pulled);
   });
 
   it('refuses a row that does not match the shape, naming it and every field', async () => {
-    const orm = spyOrm();
+    const storage = spyStorage();
     class M extends Mirror(Card) {
       async *pull() { yield [{ id: 'P-0', titre: 'oups' } as never]; }
     }
-    await expect(new M(orm).refresh())
+    await expect(new M(storage).refresh())
       .rejects.toThrow(/Card mirror refused row id "P-0" — titre: Unknown field, title: Required/);
     // And nothing of that page was written.
-    expect((orm as any).written).toHaveLength(0);
+    expect((storage as any).written).toHaveLength(0);
   });
 
   // Found by demos/mirror-catalog: the key was read as `row.id`, so every shape keyed on
@@ -65,27 +65,27 @@ describe('a mirror refreshes', () => {
     class M extends Mirror(Book) {
       async *pull() { yield [{ isbn: '978-0', title: '' } as never]; }
     }
-    await expect(new M(spyOrm()).refresh())
+    await expect(new M(spyStorage()).refresh())
       .rejects.toThrow(/Book mirror refused row isbn "978-0" —/);
   });
 
   it('writes what the judge PARSED, not what the caller handed over', async () => {
-    const orm = spyOrm();
+    const storage = spyStorage();
     class M extends Mirror(Card) {
       async *pull() { yield [{ id: 'a', title: 'A' }]; }
     }
-    await new M(orm).refresh();
+    await new M(storage).refresh();
     // The page written is the judge's output — the door a boundary would decode at.
-    expect((orm as any).written[0][0]).toEqual({ id: 'a', title: 'A' });
+    expect((storage as any).written[0][0]).toEqual({ id: 'a', title: 'A' });
   });
 
   it('skips an empty page rather than issuing a statement for nothing', async () => {
-    const orm = spyOrm();
+    const storage = spyStorage();
     class M extends Mirror(Card) {
       async *pull() { yield []; yield [{ id: 'a', title: 'A' }]; }
     }
-    expect((await new M(orm).refresh()).written).toBe(1);
-    expect((orm as any).written).toHaveLength(1);
+    expect((await new M(storage).refresh()).written).toBe(1);
+    expect((storage as any).written).toHaveLength(1);
   });
 });
 

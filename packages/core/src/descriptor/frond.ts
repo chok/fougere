@@ -74,7 +74,7 @@ export interface HandlerEntry {
   filePath: string;
   /** Whether this handler is part of the frond's public contract. */
   exposed?: boolean;
-  /** Output schema override — when Crud(Entity, Output), restricts ORM output. */
+  /** Output schema override — when Crud(Entity, Output), restricts storage output. */
   outputOverride?: SchemaView;
   /** Surface name — subdirectory in handlers/ (e.g. 'admin', 'public'). */
   surface?: string;

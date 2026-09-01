@@ -97,7 +97,7 @@ demande de réécrire ce que vous avez écrit.
 [Entités](/fr/docs/schema/entities) · [Vues](/fr/docs/schema/views) ·
 [Standard Schema](/fr/docs/schema/standard-schema) · [Handlers](/fr/docs/business/handlers) ·
 [Presenters](/fr/docs/business/presenters) · [Collectors](/fr/docs/business/collectors) · [Erreurs](/fr/docs/business/errors) · [Seeds](/fr/docs/business/seeds) ·
-[Les faits](/fr/docs/business/facts) · [Le port ORM](/fr/docs/business/orm) · [Les repositories](/fr/docs/business/repositories)
+[Les faits](/fr/docs/business/facts) · [Le port Storage](/fr/docs/business/storage) · [Les repositories](/fr/docs/business/repositories)
 
 **Côté client** — [Queries & commands](/fr/docs/client/queries-commands) ·
 [Formulaires](/fr/docs/client/forms) · [Session](/fr/docs/client/session) · [invoke](/fr/docs/client/invoke)

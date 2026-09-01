@@ -92,8 +92,10 @@ export type { LogLevel, LogRecord, LogSink } from './builtins/logger.js';
 // What a re-read config changes in a running process — and what it cannot.
 export { applyConfig, type ConfigApplication } from './boot/apply.js';
 export { Config } from './builtins/config.js';
-export type { EntityOrm, OrmFactory, ListOptions, ListResult, Together } from './orm.js';
-export { togetherKeyOf, membersOfTogetherKey } from './orm.js';
+export type { Storage, StorageFactory, Source, SourceConfig, SourceView, ListOptions, ListResult, Together } from './storage.js';
+export { Sources, togetherKeyOf, membersOfTogetherKey } from './storage.js';
+export { storageOver } from './rows.js';
+export type { Rows, Row } from './rows.js';
 export type { App, CreateAppOptions } from './boot/types.js';
 export type { ScanResult, ScanDiagnostic } from './scan/result.js';
 export type {

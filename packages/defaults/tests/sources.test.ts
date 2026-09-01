@@ -74,16 +74,16 @@ describe('resolveStorage with a second source', () => {
       );
       await storage.migrate!(app as never);
 
-      const readerOrm = storage.ormFactory!(Reader, 'reader');
-      const bookOrm = storage.ormFactory!(Book, 'book');
-      await readerOrm.create({ name: 'ada' });
-      await bookOrm.create({ title: 'the book' });
+      const readerStorage = storage.storageFactory!(Reader, 'reader');
+      const bookStorage = storage.storageFactory!(Book, 'book');
+      await readerStorage.create({ name: 'ada' });
+      await bookStorage.create({ title: 'the book' });
 
       // Each engine holds its own table and only its own — the proof the two are
       // really two, and not one handle handed out twice.
-      const inMain = (t: string) => (readerOrm.client as any)
+      const inMain = (t: string) => (readerStorage.client as any)
         .selectFrom('sqlite_master').select('name').where('name', '=', t).executeTakeFirst();
-      const inArchive = (t: string) => (bookOrm.client as any)
+      const inArchive = (t: string) => (bookStorage.client as any)
         .selectFrom('sqlite_master').select('name').where('name', '=', t).executeTakeFirst();
 
       expect(await inMain('readers')).toBeDefined();
@@ -102,16 +102,24 @@ describe('resolveStorage with a second source', () => {
     })).toThrow(/claimed by both 'archive' and 'cold'/);
   });
 
-  it('refuses an engine it cannot resolve from a name, on a source as on db', () => {
+  it('lets the named adapter refuse what it cannot build', () => {
+    // The refusal moved to `adapter/sql`, which is the only one that knows which drivers it
+    // owns — it used to live here, in the package that merely happened to import one.
     expect(() => resolveStorage({ path: ':memory:' }, {
       legacy: { dialect: 'postgres', entities: ['Book'] },
-    })).toThrow(/sources\.legacy\.dialect 'postgres' cannot be resolved from its name/);
+    })).toThrow(/dialect 'postgres': cannot be built from a name/);
+  });
+
+  it('refuses a source naming an adapter nothing answers, listing what does', () => {
+    expect(() => resolveStorage({ path: ':memory:' }, {
+      archive: { source: 'file', entities: ['Book'] },
+    })).toThrow(/'file' is not answered.*answers sql/s);
   });
 
   it('behaves exactly as before when no source is declared', () => {
     const storage = resolveStorage({ dialect: 'sqlite', path: ':memory:' });
-    expect(storage.ormFactory).toBeDefined();
-    expect(storage.dialect).toBe('sqlite');
+    expect(storage.storageFactory).toBeDefined();
+    expect(storage.transacted).toBeDefined();
   });
 });
 
@@ -127,12 +135,12 @@ describe('storageFrom — an engine the caller built', () => {
     );
     const storage = storageFrom({
       db: setupSqlite({ path: ':memory:' }),
-      sources: { archive: { setup: archive, entities: ['Book'] } },
+      sources: { archive: { source: archive, entities: ['Book'] } },
     });
 
     await storage.migrate!(app as never);
-    const bookOrm = storage.ormFactory!(Book, 'book');
-    await bookOrm.create({ title: 'brought my own engine' });
+    const bookStorage = storage.storageFactory!(Book, 'book');
+    await bookStorage.create({ title: 'brought my own engine' });
 
     const held = async (client: any, table: string) => client
       .selectFrom('sqlite_master').select('name').where('name', '=', table).executeTakeFirst();
@@ -147,8 +155,8 @@ describe('storageFrom — an engine the caller built', () => {
     const twice = () => storageFrom({
       db: setupSqlite({ path: ':memory:' }),
       sources: {
-        archive: { setup: setupSqlite({ path: ':memory:' }), entities: ['Book'] },
-        cold: { setup: setupSqlite({ path: ':memory:' }), entities: ['Book'] },
+        archive: { source: setupSqlite({ path: ':memory:' }), entities: ['Book'] },
+        cold: { source: setupSqlite({ path: ':memory:' }), entities: ['Book'] },
       },
     });
     expect(twice).toThrow(/claimed by both 'archive' and 'cold'/);

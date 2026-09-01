@@ -15,7 +15,7 @@ import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, createAppRunner, FougereError } from '../src/index.js';
-import type { Transport, EntityOrm, OrmFactory } from '../src/index.js';
+import type { Transport, Storage, StorageFactory } from '../src/index.js';
 import { EMPTY_INVOCATION } from '../src/contract/Invocation.js';
 import { Cases } from '@fougere/schema';
 import Product from './fixtures-judge/fronds/shop/entities/Product.js';
@@ -27,8 +27,8 @@ const root = join(import.meta.dirname, 'fixtures-judge');
  * the judge — never from a driver. `create` echoes what it was handed, which is
  * what makes the accepted case observable on both sides.
  */
-const ormFactory: OrmFactory = () => {
-  const orm: EntityOrm = {
+const storageFactory: StorageFactory = () => {
+  const storage: Storage = {
     list: async () => [],
     findById: async () => undefined,
     findBy: async () => undefined,
@@ -41,15 +41,15 @@ const ormFactory: OrmFactory = () => {
     update: async (_id: unknown, input: unknown) => ({ id: 'p-1', ...(input as object) }),
     delete: async () => true,
     client: undefined,
-    output: () => orm,
-  } as EntityOrm;
-  return orm;
+    output: () => storage,
+  } as Storage;
+  return storage;
 };
 
 /** Stands in for the wire: the other app's own runner, called in memory. */
 async function shopOnAnotherProcess(): Promise<Transport> {
   // Plain `const` — this app must outlive the function that builds it.
-  const host = await createApp({ scan: await scanProject(root), createContainer, ormFactory });
+  const host = await createApp({ scan: await scanProject(root), createContainer, storageFactory });
   return createLocalRunner(host);
 }
 
@@ -124,12 +124,12 @@ const CASES: { name: string; op: string; body: unknown }[] = [
 
 describe('juge local = juge distant', () => {
   it('returns the same verdict on both sides, case by case', async () => {
-    await using local = await createApp({ scan: await scanProject(root), createContainer, ormFactory });
+    await using local = await createApp({ scan: await scanProject(root), createContainer, storageFactory });
     const remoteTransport = await shopOnAnotherProcess();
     await using consumer = await createApp({
       scan: await scanProject(root, []),
       createContainer,
-      ormFactory,
+      storageFactory,
       remotes: { shop: 'stub://shop' },
       remoteTransport: () => remoteTransport,
     });
@@ -170,7 +170,7 @@ describe('what a refusal names', () => {
     // shape of the claim is what matters: an entity the app does not serve must not be
     // listed as hosted. The message used to print `entityNames()` — every scanned class —
     // so it answered "not hosted here. Hosted here: <the very name>."
-    await using app = await createApp({ scan: await scanProject(root), createContainer, ormFactory });
+    await using app = await createApp({ scan: await scanProject(root), createContainer, storageFactory });
 
     await expect(
       createLocalRunner(app)({ entity: 'nowhere', op: 'list' }, EMPTY_INVOCATION),

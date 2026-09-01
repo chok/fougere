@@ -1,7 +1,7 @@
 import type { FrondDescriptor } from './descriptor/frond.js';
 import { lowerFirst } from '@fougere/schema';
 import { repositoryKeyOf } from './prefab/repository.js';
-import { ormKeyOf } from './orm.js';
+import { storageKeyOf } from './storage.js';
 import { presenterKeyOf } from './prefab/presenter.js';
 import { collectorKeyOf } from './prefab/collector.js';
 
@@ -63,7 +63,7 @@ function registrationsOf(frond: FrondDescriptor): Map<string, Registration> {
   for (const p of frond.presenters) put(presenterKeyOf(p.entityName), 'presenter');
   for (const c of frond.collectors) put(collectorKeyOf(c.typeName), 'collector');
   for (const e of frond.entities) {
-    put(ormKeyOf(e.name), 'ORM');
+    put(storageKeyOf(e.name), 'storage');
     put(repositoryKeyOf(e.name), 'repository');
   }
   return out;

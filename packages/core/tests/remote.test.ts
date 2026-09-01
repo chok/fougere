@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, createAppRunner, FougereError, ErrorCode } from '../src/index.js';
-import type { App, OrmFactory, Transport } from '../src/index.js';
+import type { App, StorageFactory, Transport } from '../src/index.js';
 import type { SchemaView } from '@fougere/schema';
 import { EMPTY_INVOCATION } from '../src/contract/Invocation.js';
 
@@ -12,12 +12,12 @@ const emptyRoot = '/tmp/fougere-remote-test-empty';
 
 // `price` feeds ProductPresenter.displayPrice — the presenter runs on every call now.
 const products = [{ id: '1', name: 'Fern', price: 12.5 }, { id: '2', name: 'Moss', price: 320 }];
-const fakeOrm = {
+const fakeStorage = {
   list: vi.fn(async () => products),
   findById: vi.fn(async (id: string) => products.find((p) => p.id === id)),
   create: vi.fn(), update: vi.fn(), delete: vi.fn(),
 };
-const ormFactory: OrmFactory = () => fakeOrm as never;
+const storageFactory: StorageFactory = () => fakeStorage as never;
 
 /**
  * In-memory wire — an honest stand-in for HTTP: everything crosses as JSON,
@@ -36,7 +36,7 @@ const asWire = (runner: Transport): Transport => async (call, invocation) => {
 };
 
 async function bootHost(): Promise<App> {
-  return createApp({ scan: await scanProject(fixturesRoot), createContainer, ormFactory });
+  return createApp({ scan: await scanProject(fixturesRoot), createContainer, storageFactory });
 }
 
 async function bootConsumer(host: App, transportSpy?: Transport): Promise<App> {
@@ -265,7 +265,7 @@ describe('remote façade (repli)', () => {
     const consumer = await createApp({
       scan: await scanProject(fixturesRoot),
       createContainer,
-      ormFactory,
+      storageFactory,
       remotes: { catalog: 'mem://host' },
       remoteTransport: () => asWire(createLocalRunner(host)),
     });

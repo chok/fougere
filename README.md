@@ -94,11 +94,11 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
   /** Judge: the author, a draft, a body worth publishing. Realize: stamp the pair. */
   async publish(id: string, user?: User): Promise<Post> {
     const author = requireUser(user, 'publish');
-    const post = await requireOwn(this.orm, id, author, 'publish');
+    const post = await requireOwn(this.storage, id, author, 'publish');
     if (post.status === 'published') {
       throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published', entity: 'post', operation: 'publish' });
     }
-    return this.orm.update(id, { status: 'published', publishedAt: new Date() });
+    return this.storage.update(id, { status: 'published', publishedAt: new Date() });
   }
 }
 ```

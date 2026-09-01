@@ -454,7 +454,7 @@ export function generateBootPlugin(
   if (statedPath) lines.push(`      fronds,`);
   lines.push(`      config: ${JSON.stringify(carried(config))},`);
   lines.push(`      db: storage.db,`);
-  lines.push(`      ormFactory: storage.ormFactory,`);
+  lines.push(`      storageFactory: storage.storageFactory,`);
   // Two members of the ascent, named — not a claim on everything after the boot. The
   // storage's is core's own declaration (`migrating`), so this codegen states no order and
   // cannot mistype the name it would otherwise be silently adding beside.

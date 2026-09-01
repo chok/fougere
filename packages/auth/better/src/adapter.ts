@@ -1,18 +1,18 @@
 import { createAdapterFactory } from 'better-auth/adapters';
 import type { CleanedWhere, CustomAdapter } from 'better-auth/adapters';
-import type { EntityOrm } from '@fougere/core';
+import type { Storage } from '@fougere/core';
 
 /**
  * Map of better-auth model names ('user', 'session', 'account', ...)
- * to Fougere EntityOrm instances. Built once at boot by create() in index.ts.
+ * to Fougere Storage instances. Built once at boot by create() in index.ts.
  */
-export type OrmMap = Map<string, EntityOrm>;
+export type StorageMap = Map<string, Storage>;
 
 /**
  * Where[] supported subset:
  * - All clauses use 'eq' operator
  * - Implicit AND between clauses (no OR connector)
- * Anything else throws — extend EntityOrm or add an engine-level fallback when needed.
+ * Anything else throws — extend Storage or add an engine-level fallback when needed.
  */
 function whereToCriteria(where: readonly CleanedWhere[]): Record<string, unknown> {
   const criteria: Record<string, unknown> = {};
@@ -31,26 +31,26 @@ function whereToCriteria(where: readonly CleanedWhere[]): Record<string, unknown
   return criteria;
 }
 
-function getOrm(ormMap: OrmMap, model: string): EntityOrm {
-  const orm = ormMap.get(model);
-  if (!orm) {
+function storageOf(storageMap: StorageMap, model: string): Storage {
+  const storage = storageMap.get(model);
+  if (!storage) {
     throw new Error(
       `[fougereAdapter] Unknown model '${model}'. ` +
-      `Known models: ${[...ormMap.keys()].join(', ')}. ` +
+      `Known models: ${[...storageMap.keys()].join(', ')}. ` +
       `Plugins that ship their own schema need entities registered explicitly.`,
     );
   }
-  return orm;
+  return storage;
 }
 
 /**
- * Better-auth adapter that routes every operation through Fougere EntityOrm.
+ * Better-auth adapter that routes every operation through Fougere Storage.
  *
  * This closes the loop: the same `db` resolved by Fougere's bootstrap is the
- * one EntityOrm writes to, and better-auth never touches the storage directly.
+ * one Storage writes to, and better-auth never touches the storage directly.
  * If Fougere swaps Kysely for another backend, this adapter follows for free.
  */
-export function fougereAdapter(ormMap: OrmMap) {
+export function fougereAdapter(storageMap: StorageMap) {
   return createAdapterFactory({
     config: {
       adapterId: 'fougere',
@@ -58,25 +58,25 @@ export function fougereAdapter(ormMap: OrmMap) {
       usePlural: false,
       supportsArrays: false,
       supportsJSON: false,
-      // The ORM converts both ways now (`schema-sql/src/values.ts`), so better-auth
+      // The storage converts both ways now (`schema-sql/src/values.ts`), so better-auth
       // can hand over the Dates and booleans its own types declare.
       supportsDates: true,
       supportsBooleans: true,
     },
     adapter: (): CustomAdapter => ({
       create: async ({ model, data }: { model: string; data: Record<string, unknown> }) => {
-        const orm = getOrm(ormMap, model);
-        return (await orm.create(data)) as never;
+        const storage = storageOf(storageMap, model);
+        return (await storage.create(data)) as never;
       },
 
       findOne: async ({ model, where }: { model: string; where: CleanedWhere[] }) => {
-        const orm = getOrm(ormMap, model);
+        const storage = storageOf(storageMap, model);
         const criteria = whereToCriteria(where);
         if (Object.keys(criteria).length === 1 && 'id' in criteria) {
-          const found = await orm.findById(criteria.id as string);
+          const found = await storage.findById(criteria.id as string);
           return (found ?? null) as never;
         }
-        const found = await orm.findBy(criteria);
+        const found = await storage.findBy(criteria);
         return (found ?? null) as never;
       },
 
@@ -93,13 +93,13 @@ export function fougereAdapter(ormMap: OrmMap) {
         offset?: number;
         sortBy?: { field: string; direction: 'asc' | 'desc' };
       }) => {
-        const orm = getOrm(ormMap, model);
+        const storage = storageOf(storageMap, model);
         if (where && where.length > 0) {
           const criteria = whereToCriteria(where);
-          const rows = await orm.findAllBy(criteria);
+          const rows = await storage.findAllBy(criteria);
           return applyClientSidePagination(rows, sortBy, offset, limit) as never;
         }
-        const rows = await orm.list({
+        const rows = await storage.list({
           limit,
           offset,
           orderBy: sortBy?.field,
@@ -109,48 +109,48 @@ export function fougereAdapter(ormMap: OrmMap) {
       },
 
       count: async ({ model, where }: { model: string; where?: CleanedWhere[] }) => {
-        const orm = getOrm(ormMap, model);
+        const storage = storageOf(storageMap, model);
         if (where && where.length > 0) {
           const criteria = whereToCriteria(where);
-          const rows = await orm.findAllBy(criteria);
+          const rows = await storage.findAllBy(criteria);
           return rows.length;
         }
-        const rows = await orm.list({ count: true });
+        const rows = await storage.list({ count: true });
         return rows.total ?? rows.length;
       },
 
       update: async <T>({ model, where, update }: { model: string; where: CleanedWhere[]; update: T }): Promise<T | null> => {
-        const orm = getOrm(ormMap, model);
+        const storage = storageOf(storageMap, model);
         const criteria = whereToCriteria(where);
         const target = 'id' in criteria
-          ? await orm.findById(criteria.id as string)
-          : await orm.findBy(criteria);
+          ? await storage.findById(criteria.id as string)
+          : await storage.findBy(criteria);
         if (!target) return null;
-        return (await orm.update(target.id as string, update as Partial<Record<string, unknown>>)) as T;
+        return (await storage.update(target.id as string, update as Partial<Record<string, unknown>>)) as T;
       },
 
       updateMany: async ({ model, where, update }: { model: string; where: CleanedWhere[]; update: Record<string, unknown> }) => {
-        const orm = getOrm(ormMap, model);
+        const storage = storageOf(storageMap, model);
         const criteria = whereToCriteria(where);
-        const targets = await orm.findAllBy(criteria);
-        for (const target of targets) await orm.update(target.id as string, update);
+        const targets = await storage.findAllBy(criteria);
+        for (const target of targets) await storage.update(target.id as string, update);
         return targets.length;
       },
 
       delete: async ({ model, where }: { model: string; where: CleanedWhere[] }) => {
-        const orm = getOrm(ormMap, model);
+        const storage = storageOf(storageMap, model);
         const criteria = whereToCriteria(where);
         const target = 'id' in criteria
-          ? await orm.findById(criteria.id as string)
-          : await orm.findBy(criteria);
-        if (target) await orm.delete(target.id as string);
+          ? await storage.findById(criteria.id as string)
+          : await storage.findBy(criteria);
+        if (target) await storage.delete(target.id as string);
       },
 
       deleteMany: async ({ model, where }: { model: string; where: CleanedWhere[] }) => {
-        const orm = getOrm(ormMap, model);
+        const storage = storageOf(storageMap, model);
         const criteria = whereToCriteria(where);
-        const targets = await orm.findAllBy(criteria);
-        for (const target of targets) await orm.delete(target.id as string);
+        const targets = await storage.findAllBy(criteria);
+        for (const target of targets) await storage.delete(target.id as string);
         return targets.length;
       },
     }),
@@ -158,11 +158,11 @@ export function fougereAdapter(ormMap: OrmMap) {
 }
 
 /**
- * Augmented EntityOrm shape — the core interface doesn't expose findBy/findAllBy
- * but SqlEntityOrm (the only impl today) does. Cast locally to use them.
+ * Augmented Storage shape — the core interface doesn't expose findBy/findAllBy
+ * but SqlStorage (the only impl today) does. Cast locally to use them.
  */
 /**
- * EntityOrm.findAllBy doesn't expose pagination/sort, so we apply them in JS
+ * Storage.findAllBy doesn't expose pagination/sort, so we apply them in JS
  * after fetching the eq-filtered rows. Fine for auth volumes (orgs/sessions/accounts).
  */
 function applyClientSidePagination(

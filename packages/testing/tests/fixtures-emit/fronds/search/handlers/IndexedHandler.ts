@@ -9,6 +9,6 @@ export default class IndexedHandler extends Crud(Indexed) {
 
   /** Indexes a post the moment it is published. Accepting the fact IS the subscription. */
   async reindex(fact: Fact<PostPublished>): Promise<void> {
-    await this.orm.create({ postId: fact.id, title: fact.title });
+    await this.storage.create({ postId: fact.id, title: fact.title });
   }
 }

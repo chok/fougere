@@ -11,27 +11,27 @@ import { describe, it, expect, vi } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createAppRunner, ErrorCode } from '../src/index.js';
-import type { OrmFactory, IdentityCard } from '../src/index.js';
+import type { StorageFactory, IdentityCard } from '../src/index.js';
 import { EMPTY_INVOCATION } from '../src/contract/Invocation.js';
 
 const root = join(import.meta.dirname, 'fixtures-surface');
 
 /**
- * Full rows — and `output(view)` really narrows, as `SqlEntityOrm` does.
+ * Full rows — and `output(view)` really narrows, as `SqlStorage` does.
  *
  * That matters here: a handler-wide view (`Crud(Note, NoteCard)`) is realized by SCOPING
- * THE ORM, not by projecting at the façade — the façade's projection stays open, so it
+ * THE storage, not by projecting at the façade — the façade's projection stays open, so it
  * passes unknown keys through. A fake whose `output()` answered itself would therefore
  * have shown the secret leaking and blamed the framework.
  */
-function ormFor(entity: { name: string }) {
+function storageFor(entity: { name: string }) {
   const full: Record<string, unknown> = entity.name === 'note'
     ? { id: 'n1', title: 'Titre', secret: 'planqué' }
     : { id: 'l1', amount: 42 };
 
   const make = (keys?: string[]) => {
     const row = keys ? Object.fromEntries(keys.filter((k) => k in full).map((k) => [k, full[k]])) : full;
-    const orm: any = {
+    const storage: any = {
       list: vi.fn(async () => [row]),
       findById: vi.fn(async () => row),
       findBy: vi.fn(async () => row),
@@ -41,7 +41,7 @@ function ormFor(entity: { name: string }) {
       delete: vi.fn(async () => true),
       output: (schema: { getFields(): Record<string, unknown> }) => make(Object.keys(schema.getFields())),
     };
-    return orm;
+    return storage;
   };
   return make();
 }
@@ -50,7 +50,7 @@ const scan = await scanProject(root);
 const boot = () => createApp({
   scan,
   createContainer,
-  ormFactory: ((e: any, name: string) => ormFor({ name })) as unknown as OrmFactory,
+  storageFactory: ((e: any, name: string) => storageFor({ name })) as unknown as StorageFactory,
 });
 
 describe('the envelope, per audience', () => {

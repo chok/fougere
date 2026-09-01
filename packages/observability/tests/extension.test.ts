@@ -10,7 +10,7 @@ import type { InvocationContext } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { observability, trace, activeCalls, flushTelemetry, registerFlush } from '../src/index.js';
 // @ts-expect-error plain-JS fixture
-import { createOrmFactory } from './fixtures/data.mjs';
+import { createStorageFactory } from './fixtures/data.mjs';
 
 const fixturesDir = join(import.meta.dirname, 'fixtures');
 const EMPTY: InvocationContext = { params: {}, query: {}, body: undefined, state: {} };
@@ -18,7 +18,7 @@ type Facade = Record<string, (invocation?: InvocationContext) => Promise<unknown
 
 const scan = await scanProject(fixturesDir);
 const boot = (extensions: Parameters<typeof createApp>[0]['extensions']) => createApp({
-  scan, createContainer, ormFactory: createOrmFactory(), extensions,
+  scan, createContainer, storageFactory: createStorageFactory(), extensions,
 });
 
 describe('observability as an extension', () => {

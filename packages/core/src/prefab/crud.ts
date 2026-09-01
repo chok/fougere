@@ -1,4 +1,4 @@
-import type { EntityOrm, ListOptions, ListResult } from '../orm.js';
+import type { Storage, ListOptions, ListResult } from '../storage.js';
 import type { OperationContract } from '../wire/operation.js';
 import type { EntityConstructor, SchemaView } from '@fougere/schema';
 
@@ -79,7 +79,7 @@ function crudOps(entity: SchemaView & { partial?: () => SchemaView }): Record<st
 /**
  * The mixin's single "trust me" point — the twin of `asSchemaConstructor` in @fougere/schema.
  *
- * The implementation returns whatever the ORM hands back; the declaration names the view
+ * The implementation returns whatever the storage hands back; the declaration names the view
  * each op emits at the port. TypeScript cannot connect the two (the view is a runtime
  * argument, the type is a generic), so one assertion states that the mixin honours what it
  * declared — and the façade makes it true, projecting each op's result onto its view
@@ -121,7 +121,7 @@ type OutOf<V, K extends CrudOpName, T> =
  * a judged redefinition assignable.
  */
 export interface CrudOps<T, V = {}> {
-  orm: EntityOrm<T>;
+  storage: Storage<T>;
   list(options?: ListOptions, ...collected: never[]): Promise<ListResult<OutOf<V, 'list', T>>>;
   findById(id: string, ...collected: never[]): Promise<OutOf<V, 'findById', T> | undefined>;
   create(input: Partial<T>, ...collected: never[]): Promise<OutOf<V, 'create', T>>;
@@ -131,10 +131,10 @@ export interface CrudOps<T, V = {}> {
 
 /** The prefab handler class — its ops, plus the statics the bootstrap and adapters read. */
 export interface CrudConstructor<T, V = {}> {
-  // `EntityOrm<T>`, not the bare `EntityOrm`: a handler that injects a second ORM has to
-  // spell its own constructor, and `super(orm)` with the ORM the container hands it —
-  // typed on the entity, as the `orm` property below already says — was refused.
-  new (orm: EntityOrm<T>): CrudOps<T, V>;
+  // `Storage<T>`, not the bare `Storage`: a handler that injects a second storage has to
+  // spell its own constructor, and `super(storage)` with the storage the container hands it —
+  // typed on the entity, as the `storage` property below already says — was refused.
+  new (storage: Storage<T>): CrudOps<T, V>;
   readonly __entity: unknown;
   readonly __output: unknown;
   readonly __opOutputs?: CrudViews;
@@ -149,10 +149,10 @@ export interface CrudConstructor<T, V = {}> {
  *
  * Crud(Post)                      → every op emits Post
  * Crud(Post, { list: PostCard })  → list emits cards, the rest emit Post. Declaration
- *                                   only: the handler keeps its full-row ORM, so a
+ *                                   only: the handler keeps its full-row storage, so a
  *                                   judge can still read `body`.
  * Crud(Post, PostPublic)          → every op emits PostPublic, and the bootstrap
- *                                   scopes the injected ORM via .output(PostPublic) —
+ *                                   scopes the injected storage via .output(PostPublic) —
  *                                   the whole handler speaks the restricted view.
  */
 export function Crud<E extends EntityConstructor, V extends CrudViews | EntityConstructor = {}>(
@@ -168,21 +168,21 @@ export function Crud<E extends EntityConstructor, V extends CrudViews | EntityCo
 
   return asCrudConstructor<T, V>(class CrudHandler {
     static __entity = entity;
-    /** Handler-wide view only — a per-op map must NOT scope the ORM the judges read. */
+    /** Handler-wide view only — a per-op map must NOT scope the storage the judges read. */
     static __output = wholeHandler ?? entity;
     static __opOutputs = perOp;
     /** What this prefab handler declares — read by the façade, merged under the author's own methods. */
     static __ops: Record<string, OperationContract> = crudOps(entity as unknown as SchemaView & { partial?: () => SchemaView });
 
-    orm: EntityOrm<T>;
-    constructor(orm: EntityOrm) {
-      this.orm = orm as EntityOrm<T>;
+    storage: Storage<T>;
+    constructor(storage: Storage) {
+      this.storage = storage as Storage<T>;
     }
 
-    async list(options?: ListOptions): Promise<ListResult<T>> { return this.orm.list(options) as Promise<ListResult<T>>; }
-    async findById(id: string): Promise<T | undefined> { return this.orm.findById(id); }
-    async create(input: Partial<T>): Promise<T> { return this.orm.create(input); }
-    async update(id: string, input: Partial<T>): Promise<T> { return this.orm.update(id, input); }
-    async delete(id: string): Promise<boolean> { return this.orm.delete(id); }
+    async list(options?: ListOptions): Promise<ListResult<T>> { return this.storage.list(options) as Promise<ListResult<T>>; }
+    async findById(id: string): Promise<T | undefined> { return this.storage.findById(id); }
+    async create(input: Partial<T>): Promise<T> { return this.storage.create(input); }
+    async update(id: string, input: Partial<T>): Promise<T> { return this.storage.update(id, input); }
+    async delete(id: string): Promise<boolean> { return this.storage.delete(id); }
   });
 }

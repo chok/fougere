@@ -6,7 +6,7 @@ import type { ProviderEntry } from '../descriptor/frond.js';
  * registration, and so is `class MyLogger extends Logger` over a builtin.
  *
  * This is the fourth reading of the rule the other three already apply: the type
- * names the SUBJECT (`EntityOrm<E>`, `Emit<F>`, `Facade<H>`) and the container
+ * names the SUBJECT (`Storage<E>`, `Emit<F>`, `Facade<H>`) and the container
  * holds the realization. Providers were the one case where the type named the
  * realization instead, so `constructor(private payment: Payment)` resolved to the
  * base class and a handler got an object whose method did not exist.

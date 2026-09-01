@@ -12,10 +12,10 @@
  * Usage:
  * ```ts
  * export default class UserCollector extends Collector(User) {
- *   constructor(private userOrm: UserOrm) { super(); }
+ *   constructor(private userStorage: UserStorage) { super(); }
  *
  *   async collect(ctx: InvocationContext) {
- *     return this.userOrm.findById(ctx.state.userId as string);
+ *     return this.userStorage.findById(ctx.state.userId as string);
  *   }
  * }
  * ```

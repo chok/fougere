@@ -10,7 +10,7 @@
 import { ambient } from '#ambient';
 import { upperFirst, lowerFirst, type SchemaView } from '@fougere/schema';
 import type { Container } from '@fougere/container';
-import { membersOfTogetherKey, ormKeyOf, type EntityOrm, type OrmFactory } from '../orm.js';
+import { membersOfTogetherKey, storageKeyOf, entityOfStorageKey, type Storage, type StorageFactory } from '../storage.js';
 import type { Logger } from '../builtins/logger.js';
 import type { ProviderEntry } from '../descriptor/frond.js';
 import { StorageGuard } from '../dispatch/StorageGuard.js';
@@ -23,9 +23,9 @@ export interface FrameWorld {
   /** Which frond holds an entity — the question `remotes:` turns into a refusal. */
   frondOf: Map<string, string>;
   hostedHere: (frond: string) => boolean;
-  ormFactory?: OrmFactory;
+  storageFactory?: StorageFactory;
   sourceOf?: (entityName: string) => string;
-  transacted?: <R>(source: string, fn: (ormFactory: OrmFactory) => Promise<R>) => Promise<R>;
+  transacted?: <R>(source: string, fn: (storageFactory: StorageFactory) => Promise<R>) => Promise<R>;
   log: Logger;
 }
 
@@ -74,7 +74,7 @@ function resolve(names: { entities: string[]; providers: string[] }, declared: r
 /**
  * A member that cannot write here at all — its frond is hosted elsewhere.
  *
- * Refused rather than compensated: a compensated frame still writes through a local ORM,
+ * Refused rather than compensated: a compensated frame still writes through a local storage,
  * and a remote frond registers none. There is nothing to record and nothing to undo.
  */
 function refuseRemote(members: Members, world: FrameWorld, key: string): void {
@@ -96,13 +96,12 @@ function refuseRemote(members: Members, world: FrameWorld, key: string): void {
  * The frame does not widen itself to cover it: doing so would pull an entity from another
  * source into the group without anyone writing it down. Named instead, with the one-word fix.
  */
-function refuseUncoveredWrites(members: Members, key: string): void {
+function refuseUncoveredWrites(members: Members, key: string, world: FrameWorld): void {
   const covered = new Set(members.entities.map((member) => member.name));
   for (const provider of members.providers) {
     for (const dep of provider.deps) {
-      if (!dep.endsWith('Orm')) continue;
-      const entity = lowerFirst(dep.slice(0, -'Orm'.length));
-      if (covered.has(entity)) continue;
+      const entity = entityOfStorageKey(dep, (name) => world.entityByName.has(name));
+      if (!entity || covered.has(entity)) continue;
       throw new Error(
         `Together<[…]> (${key}): ${provider.ctor.name} writes ${entity}, which is not in the ` +
         `frame's entity list — its writes would escape the unwind. Add it: ` +
@@ -115,30 +114,30 @@ function refuseUncoveredWrites(members: Members, key: string): void {
 /**
  * Open the block: build every member over `factory`, in a scope of their own.
  *
- * The scope is what makes a provider member work without a locator — its ORM keys are
+ * The scope is what makes a provider member work without a locator — its storage keys are
  * registered here, so the container hands it the framed ones through the ordinary
  * constructor. It is disposed when the block ends, whichever way it ended.
  */
 async function inScope<R>(
   parent: Container,
   members: Members,
-  factory: OrmFactory,
-  wrap: (orm: EntityOrm, name: string, schema: SchemaView) => EntityOrm,
+  factory: StorageFactory,
+  wrap: (storage: Storage, name: string, schema: SchemaView) => Storage,
   fn: (entities: unknown[], providers: unknown[]) => Promise<R>,
 ): Promise<R> {
   const scope = parent.createScope();
   try {
-    const orms = members.entities.map((member) => {
-      const orm = wrap(factory(member.schema, member.name), member.name, member.schema);
-      scope.registerValue(ormKeyOf(member.name), orm);
-      return orm;
+    const storages = members.entities.map((member) => {
+      const storage = wrap(factory(member.schema, member.name), member.name, member.schema);
+      scope.registerValue(storageKeyOf(member.name), storage);
+      return storage;
     });
-    // Providers after every ORM is in place: one may depend on another member's.
+    // Providers after every storage is in place: one may depend on another member's.
     const built = members.providers.map((provider) => {
       scope.register(provider.ctor.name, provider.ctor, { deps: provider.deps });
       return scope.resolve(provider.ctor.name);
     });
-    return await fn(orms, built);
+    return await fn(storages, built);
   } finally {
     await scope.dispose();
   }
@@ -162,17 +161,17 @@ export function registerFrames(
     const names = membersOfTogetherKey(key);
     if (!names) continue;
     registered += 1;
-    if (!world.ormFactory) {
+    if (!world.storageFactory) {
       throw new Error(`Together<[${names.entities.join(', ')}]> needs storage, and this boot declares none.`);
     }
 
     const members = resolve(names, providers, world);
     refuseRemote(members, world, key);
-    refuseUncoveredWrites(members, key);
+    refuseUncoveredWrites(members, key, world);
 
     const sources = new Set(members.entities.map((member) => world.sourceOf?.(member.name) ?? 'db'));
-    const judge = (orm: EntityOrm, name: string, schema: SchemaView) =>
-      new StorageGuard(schema.getFields(), name).guard(orm);
+    const judge = (storage: Storage, name: string, schema: SchemaView) =>
+      new StorageGuard(schema.getFields(), name).guard(storage);
 
     // One engine and a way into it: the engine gives the unwind AND the isolation.
     if (world.transacted && sources.size === 1) {
@@ -196,10 +195,10 @@ export function registerFrames(
     scope.registerValue(key, {
       run: <R>(fn: (entities: never, providers: never) => Promise<R>): Promise<R> => ambient.enterFrame(key, async () => {
         const journal: Undo[] = [];
-        const record = (orm: EntityOrm, name: string, schema: SchemaView) =>
-          judge(recording(orm, name, schema.getFields(), journal), name, schema);
+        const record = (storage: Storage, name: string, schema: SchemaView) =>
+          judge(recording(storage, name, schema.getFields(), journal), name, schema);
         try {
-          return await inScope(scope, members, world.ormFactory!, record, fn as never);
+          return await inScope(scope, members, world.storageFactory!, record, fn as never);
         } catch (cause) {
           return unwind(journal, cause, world.log);
         }

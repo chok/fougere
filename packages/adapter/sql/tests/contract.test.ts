@@ -1,5 +1,5 @@
 /**
- * `SqlEntityOrm` honours `EntityOrm` — checked, not hoped.
+ * `SqlStorage` honours `Storage` — checked, not hoped.
  *
  * This package deliberately carries no dependency on `@fougere/core`: it matches
  * the port structurally, so nothing links the two at runtime. The cost of that
@@ -12,14 +12,14 @@
  * port gains a method or changes a signature, this file stops compiling.
  */
 import { describe, it, expect } from 'vitest';
-import type { EntityOrm } from '@fougere/core';
-import { SqlEntityOrm } from '../src/crud.js';
+import type { Storage } from '@fougere/core';
+import { SqlStorage } from '../src/crud.js';
 
-describe('the SQL ORM honours the port core declares', () => {
-  it('is assignable to EntityOrm — verified by the compiler, not at runtime', () => {
+describe('the SQL storage honours the port core declares', () => {
+  it('is assignable to Storage — verified by the compiler, not at runtime', () => {
     // The type-level assertion. `satisfies` would judge a value; the port is a
     // shape, so what must be judged is the class's instance type.
-    type Honoured = SqlEntityOrm extends EntityOrm<Record<string, unknown>> ? true : never;
+    type Honoured = SqlStorage extends Storage<Record<string, unknown>> ? true : never;
     const honoured: Honoured = true;
 
     expect(honoured).toBe(true);
@@ -28,7 +28,7 @@ describe('the SQL ORM honours the port core declares', () => {
   it('carries the five operations plus the output projection', () => {
     const ops = ['list', 'findById', 'create', 'update', 'delete', 'output'];
     for (const op of ops) {
-      expect(typeof SqlEntityOrm.prototype[op as keyof SqlEntityOrm]).toBe('function');
+      expect(typeof SqlStorage.prototype[op as keyof SqlStorage]).toBe('function');
     }
   });
 });

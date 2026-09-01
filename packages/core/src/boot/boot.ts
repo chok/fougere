@@ -32,12 +32,12 @@ interface BootOptions {
    */
   onEmit?: CreateAppOptions['onEmit'];
   /**
-   * ORM setup — returns the storage handle (db), an ormFactory, and its two halves.
+   * storage setup — returns the storage handle (db), an storageFactory, and its two halves.
    * The `db` value is forwarded to the auth provider via AuthContext when `auth` is set.
    */
   db?: (config: FougereConfig) => {
     db?: unknown;
-    ormFactory: CreateAppOptions['ormFactory'];
+    storageFactory: CreateAppOptions['storageFactory'];
     /**
      * Bring the schema up to date — an extension's `up`, because it runs after the
      * container. It used to be called `afterBoot`, a word that also meant the host's
@@ -88,7 +88,7 @@ export async function boot(options: BootOptions): Promise<App> {
     // handed the answer and reaches for nothing.
     scan: await scanProject(root, options.fronds, config.conventions),
     createContainer: options.createContainer,
-    ormFactory: dbSetup?.ormFactory,
+    storageFactory: dbSetup?.storageFactory,
     db: dbSetup?.db,
     auth: config.auth,
     remotes: options.remotes,

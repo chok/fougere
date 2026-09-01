@@ -1,5 +1,5 @@
 import { Mirror } from '../../../../../src/index.js';
-import type { EntityOrm } from '../../../../../src/index.js';
+import type { Storage } from '../../../../../src/index.js';
 import BookCard from '../entities/BookCard.js';
 
 /**
@@ -7,7 +7,7 @@ import BookCard from '../entities/BookCard.js';
  * prefab was built for. The rule that bans the port elsewhere lets this line stand.
  */
 export default class PartnerCatalog extends Mirror(BookCard) {
-  constructor(orm: EntityOrm<BookCard>) { super(orm); }
+  constructor(storage: Storage<BookCard>) { super(storage); }
 
   async *pull() { yield [{ isbn: '1', title: 'a' }]; }
 }

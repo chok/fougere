@@ -6,9 +6,9 @@ import type RateMirror from '../services/RateMirror.js';
 /**
  * A provider inside a frame — the case a member list of entities alone cannot cover.
  *
- * `RateMirror` writes through `EntityOrm<RateCard>`, so naming BOTH puts its pages under
+ * `RateMirror` writes through `Storage<RateCard>`, so naming BOTH puts its pages under
  * the same unwind as the handler's own writes. It is rebuilt in the frame's scope, so it
- * receives the framed ORM through its ordinary constructor — no locator, no second path.
+ * receives the framed storage through its ordinary constructor — no locator, no second path.
  */
 export default class RefreshHandler {
   constructor(private together: Together<[RateCard, Ledger], [RateMirror]>) {}

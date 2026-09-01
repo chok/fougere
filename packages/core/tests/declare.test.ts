@@ -20,7 +20,7 @@ class PostHandler extends Crud(Post) {}
 
 const rows = [{ id: '1', title: 'hello', body: 'world' }];
 
-const ormFactory = () => ({
+const storageFactory = () => ({
   list: async () => ({ items: rows, total: rows.length }),
   findById: async (id: string) => rows.find((r) => r.id === id),
 }) as never;
@@ -28,7 +28,7 @@ const ormFactory = () => ({
 // `fronds:` and no `scan:` — the app states what it hosts and nothing reads a disk.
 const appOf = () => createApp({
   createContainer,
-  ormFactory,
+  storageFactory,
   fronds: [frond('blog', { entities: [Post], handlers: [PostHandler] })],
 });
 

@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, callValueOf, FougereError, ErrorCode } from '../src/index.js';
-import type { IdentityCard, OrmFactory } from '../src/index.js';
+import type { IdentityCard, StorageFactory } from '../src/index.js';
 import { EMPTY_INVOCATION } from '../src/contract/Invocation.js';
 
 const fixturesRoot = join(import.meta.dirname, 'fixtures');
@@ -11,12 +11,12 @@ const fixturesRoot = join(import.meta.dirname, 'fixtures');
 // `price` is not decoration: ProductPresenter computes displayPrice from it, and a
 // presenter now runs on every façade call — a row missing the field it reads is a bug.
 const products = [{ id: '1', name: 'Fern', price: 12.5 }];
-const fakeOrm = {
+const fakeStorage = {
   list: vi.fn(async () => products),
   findById: vi.fn(async (id: string) => products.find((p) => p.id === id)),
   create: vi.fn(), update: vi.fn(), delete: vi.fn(),
 };
-const ormFactory: OrmFactory = () => fakeOrm as never;
+const storageFactory: StorageFactory = () => fakeStorage as never;
 
 describe('FougereError.fromJSON (dual of toJSON)', () => {
   it('survives a JSON round-trip with code, entity, operation, details intact', () => {
@@ -52,7 +52,7 @@ describe('FougereError.fromJSON (dual of toJSON)', () => {
 
 describe('createLocalRunner', () => {
   it('executes a façade operation', async () => {
-    const app = await createApp({ scan: await scanProject(fixturesRoot), createContainer, ormFactory });
+    const app = await createApp({ scan: await scanProject(fixturesRoot), createContainer, storageFactory });
     const run = createLocalRunner(app);
     const result = await run({ entity: 'product', op: 'list' }, EMPTY_INVOCATION);
     // The row, plus what ProductPresenter computes from it. The façade enriches now —
@@ -63,7 +63,7 @@ describe('createLocalRunner', () => {
 
 
   it('rejects an unknown operation with a typed NOT_FOUND', async () => {
-    const app = await createApp({ scan: await scanProject(fixturesRoot), createContainer, ormFactory });
+    const app = await createApp({ scan: await scanProject(fixturesRoot), createContainer, storageFactory });
     const run = createLocalRunner(app);
     const failure = run({ entity: 'product', op: 'explode' }, EMPTY_INVOCATION);
     await expect(failure).rejects.toBeInstanceOf(FougereError);
@@ -72,7 +72,7 @@ describe('createLocalRunner', () => {
   });
 
   it('rejects an entity it does not host with a typed NOT_FOUND, never a forward', async () => {
-    const app = await createApp({ scan: await scanProject(fixturesRoot), createContainer, ormFactory });
+    const app = await createApp({ scan: await scanProject(fixturesRoot), createContainer, storageFactory });
     const run = createLocalRunner(app);
     await expect(run({ entity: 'unicorn', op: 'list' }, EMPTY_INVOCATION))
       .rejects.toMatchObject({ code: ErrorCode.NOT_FOUND, entity: 'unicorn' });
@@ -85,7 +85,7 @@ describe('createLocalRunner', () => {
    */
   describe('the rpc door', () => {
     it('names what it serves when an op is unknown — how a missing package reads', async () => {
-      await using app = await createApp({ scan: await scanProject(fixturesRoot), createContainer, ormFactory });
+      await using app = await createApp({ scan: await scanProject(fixturesRoot), createContainer, storageFactory });
       const run = createLocalRunner(app);
       // The whole degradation for `@fougere/observability` not being wired: the op it
       // would have declared is simply not there, and the refusal says what is.
@@ -96,7 +96,7 @@ describe('createLocalRunner', () => {
     });
 
     it('serves what a package declared, on the same wire as the card', async () => {
-      await using app = await createApp({ scan: await scanProject(fixturesRoot), createContainer, ormFactory });
+      await using app = await createApp({ scan: await scanProject(fixturesRoot), createContainer, storageFactory });
       app.serveRpc('topology', () => ({ fronds: [{ frond: 'catalog', placement: 'local' }] }));
 
       expect(await createLocalRunner(app)({ entity: 'rpc', op: 'topology' }, EMPTY_INVOCATION))
@@ -104,7 +104,7 @@ describe('createLocalRunner', () => {
     });
 
     it('refuses a second declaration rather than replacing the first', async () => {
-      await using app = await createApp({ scan: await scanProject(fixturesRoot), createContainer, ormFactory });
+      await using app = await createApp({ scan: await scanProject(fixturesRoot), createContainer, storageFactory });
       app.serveRpc('topology', () => 1);
       // Two packages claiming one name would make the answer depend on wiring order.
       expect(() => app.serveRpc('topology', () => 2)).toThrow(/already served/);
@@ -114,7 +114,7 @@ describe('createLocalRunner', () => {
   });
 
   it('serves the identity card on rpc.discover, JSON-serializable', async () => {
-    const app = await createApp({ scan: await scanProject(fixturesRoot), createContainer, ormFactory });
+    const app = await createApp({ scan: await scanProject(fixturesRoot), createContainer, storageFactory });
     const run = createLocalRunner(app);
     const card = await run({ entity: 'rpc', op: 'discover' }, EMPTY_INVOCATION) as IdentityCard;
 
@@ -143,7 +143,7 @@ describe('createLocalRunner', () => {
   });
 
   it('rejects an unknown rpc operation', async () => {
-    const app = await createApp({ scan: await scanProject(fixturesRoot), createContainer, ormFactory });
+    const app = await createApp({ scan: await scanProject(fixturesRoot), createContainer, storageFactory });
     const run = createLocalRunner(app);
     await expect(run({ entity: 'rpc', op: 'selfdestruct' }, EMPTY_INVOCATION))
       .rejects.toMatchObject({ code: ErrorCode.NOT_FOUND });

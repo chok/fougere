@@ -23,7 +23,7 @@ import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, FougereError } from '../src/index.js';
 import { EMPTY_INVOCATION } from '../src/contract/Invocation.js';
 import { Cases, type SchemaView } from '@fougere/schema';
-import type { EntityOrm, OrmFactory } from '../src/orm.js';
+import type { Storage, StorageFactory } from '../src/storage.js';
 import Article from './fixtures-same-verdict/fronds/press/entities/Article.js';
 import { NewArticle } from './fixtures-same-verdict/fronds/press/handlers/ArticleHandler.js';
 
@@ -75,7 +75,7 @@ describe('un corps, deux juges', () => {
   });
 
   it('le formulaire et la façade rendent le même verdict, sur le schéma que le contrat nomme', async () => {
-    await using app = await createApp({ scan: await scanProject(root), createContainer, ormFactory: fakeOrm });
+    await using app = await createApp({ scan: await scanProject(root), createContainer, storageFactory: fakeStorage });
     const run = createLocalRunner(app);
 
     for (const { why, body } of table) {
@@ -86,7 +86,7 @@ describe('un corps, deux juges', () => {
   });
 
   it("le même corps, en mémoire et après l'aller-retour JSON du fil", async () => {
-    await using app = await createApp({ scan: await scanProject(root), createContainer, ormFactory: fakeOrm });
+    await using app = await createApp({ scan: await scanProject(root), createContainer, storageFactory: fakeStorage });
     const run = createLocalRunner(app);
 
     for (const { why, body } of table) {
@@ -98,11 +98,11 @@ describe('un corps, deux juges', () => {
 });
 
 /** Storage is not what is under test — the judge runs before it. */
-const fakeOrm: OrmFactory = () => {
+const fakeStorage: StorageFactory = () => {
   const row = { id: 'a1', ...baseline, status: 'draft', createdAt: new Date().toISOString() };
   return {
     list: async () => [], findById: async () => row, findBy: async () => row, findAllBy: async () => [],
     create: async () => row, update: async () => row, delete: async () => true,
     output(this: unknown) { return this; },
-  } as unknown as EntityOrm;
+  } as unknown as Storage;
 };

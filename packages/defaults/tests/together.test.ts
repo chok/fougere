@@ -1,7 +1,7 @@
 /**
  * `Together<[…]>` — one declaration, two realizations, and a boot that says which.
  *
- * `EntityOrm` is the port whose every gesture is one statement; this is the port whose
+ * `Storage` is the port whose every gesture is one statement; this is the port whose
  * unit is a block. What the tests hold is that the SAME handler gets all-or-nothing
  * either way, that only the isolation differs, and that the difference is announced
  * rather than discovered.
@@ -27,7 +27,7 @@ async function boot(split: boolean) {
   const storage = storageFrom(split
     ? {
       db: setupSqlite({ path: join(dir, 'app.db') }),
-      sources: { accounting: { setup: setupSqlite({ path: join(dir, 'accounting.db') }), entities: ['Ledger'] } },
+      sources: { accounting: { source: setupSqlite({ path: join(dir, 'accounting.db') }), entities: ['Ledger'] } },
     }
     : { db: setupSqlite({ path: join(dir, 'app.db') }) });
 
@@ -41,21 +41,21 @@ async function boot(split: boolean) {
   const app = await createApp({
     scan: await scanProject(root),
     createContainer,
-    ormFactory: storage.ormFactory,
+    storageFactory: storage.storageFactory,
     sourceOf: storage.sourceOf,
     transacted: storage.transacted as never,
   });
   for (const spy of spies) spy.mockRestore();
   await storage.migrate!(app);
 
-  const orm = (entity: string) => (app as never as { ormFor(e: string): any }).ormFor(entity);
-  await orm('account').create({ id: 'a', owner: 'Ada', balance: 1000 });
-  await orm('account').create({ id: 'b', owner: 'Bob', balance: 0 });
+  const storageOf = (entity: string) => (app as never as { storageFor(e: string): any }).storageFor(entity);
+  await storageOf('account').create({ id: 'a', owner: 'Ada', balance: 1000 });
+  await storageOf('account').create({ id: 'b', owner: 'Bob', balance: 0 });
 
   const call = createLocalRunner(app);
   return {
     said,
-    orm,
+    storage: storageOf,
     announceInside: () => call({ entity: 'transfer', op: 'moveAndAnnounceInside' },
       { ...EMPTY_INVOCATION, params: { from: 'a', to: 'b', amount: 100 } as never }),
     announceAfter: () => call({ entity: 'transfer', op: 'moveAndAnnounceAfter' },
@@ -99,17 +99,17 @@ describe('one source — the engine gives both', () => {
     await using app = await boot(false);
     await expect(app.moveAndFail(100)).rejects.toThrow(/boom/);
 
-    expect((await app.orm('account').findById('a')).balance).toBe(1000);
-    expect(await app.orm('ledger').list()).toHaveLength(0);
+    expect((await app.storage('account').findById('a')).balance).toBe(1000);
+    expect(await app.storage('ledger').list()).toHaveLength(0);
   });
 
   it('commits both when it does not', async () => {
     await using app = await boot(false);
     await app.move(100);
 
-    expect((await app.orm('account').findById('a')).balance).toBe(900);
-    expect((await app.orm('account').findById('b')).balance).toBe(100);
-    expect(await app.orm('ledger').list()).toHaveLength(1);
+    expect((await app.storage('account').findById('a')).balance).toBe(900);
+    expect((await app.storage('account').findById('b')).balance).toBe(100);
+    expect(await app.storage('ledger').list()).toHaveLength(1);
   });
 });
 
@@ -126,17 +126,17 @@ describe('two sources — the frame replays its own inverses', () => {
     await expect(app.moveAndFail(100)).rejects.toThrow(/boom/);
 
     // The unwind ran in reverse: the ledger line first, then each balance.
-    expect((await app.orm('account').findById('a')).balance).toBe(1000);
-    expect((await app.orm('account').findById('b')).balance).toBe(0);
-    expect(await app.orm('ledger').list()).toHaveLength(0);
+    expect((await app.storage('account').findById('a')).balance).toBe(1000);
+    expect((await app.storage('account').findById('b')).balance).toBe(0);
+    expect(await app.storage('ledger').list()).toHaveLength(0);
   });
 
   it('commits both when it does not', async () => {
     await using app = await boot(true);
     await app.move(100);
 
-    expect((await app.orm('account').findById('a')).balance).toBe(900);
-    expect(await app.orm('ledger').list()).toHaveLength(1);
+    expect((await app.storage('account').findById('a')).balance).toBe(900);
+    expect(await app.storage('ledger').list()).toHaveLength(1);
   });
 
   it('unwinds a write the ENTITY refused, not just one the block threw on', async () => {
@@ -145,8 +145,8 @@ describe('two sources — the frame replays its own inverses', () => {
     await using app = await boot(true);
     await expect(app.overdraw()).rejects.toThrow(/balance/);
 
-    expect(await app.orm('ledger').list()).toHaveLength(0);
-    expect((await app.orm('account').findById('a')).balance).toBe(1000);
+    expect(await app.storage('ledger').list()).toHaveLength(0);
+    expect((await app.storage('account').findById('a')).balance).toBe(1000);
   });
 });
 
@@ -161,9 +161,9 @@ describe('a provider as a member — the mirror case', () => {
     await expect(app.syncAndFail()).rejects.toThrow(/boom/);
 
     // `RateMirror` never appears in the unwind's code: it writes through the port, and
-    // naming it as a member is what put its ORM under the recorder.
-    expect(await app.orm('rateCard').list()).toHaveLength(0);
-    expect(await app.orm('ledger').list()).toHaveLength(0);
+    // naming it as a member is what put its storage under the recorder.
+    expect(await app.storage('rateCard').list()).toHaveLength(0);
+    expect(await app.storage('ledger').list()).toHaveLength(0);
   });
 
   it('leaves them when nothing fails', async () => {
@@ -171,7 +171,7 @@ describe('a provider as a member — the mirror case', () => {
     await using app = await boot(true);
 
     expect(await app.sync()).toEqual({ written: 2 });
-    expect(await app.orm('rateCard').list()).toHaveLength(2);
+    expect(await app.storage('rateCard').list()).toHaveLength(2);
   });
 
   it('restores a row the pull OVERWROTE, rather than deleting it', async () => {
@@ -179,11 +179,11 @@ describe('a provider as a member — the mirror case', () => {
     // Reading the keys first is what separates them.
     (await upstream()).pages = [[{ code: 'EUR', rate: 9 }, { code: 'GBP', rate: 3 }]];
     await using app = await boot(true);
-    await app.orm('rateCard').create({ code: 'EUR', rate: 1 });
+    await app.storage('rateCard').create({ code: 'EUR', rate: 1 });
 
     await expect(app.syncAndFail()).rejects.toThrow(/boom/);
 
-    const rates = await app.orm('rateCard').list();
+    const rates = await app.storage('rateCard').list();
     expect(rates).toHaveLength(1);
     expect(rates[0]).toMatchObject({ code: 'EUR', rate: 1 });
   });
@@ -201,14 +201,14 @@ describe('announcing a fact around a frame', () => {
     await using app = await boot(false);
     await app.announceInside().catch(() => undefined);
 
-    expect((await app.orm('account').findById('a')).balance).toBe(1000);
-    expect(await app.orm('ledger').list()).toHaveLength(0);
+    expect((await app.storage('account').findById('a')).balance).toBe(1000);
+    expect(await app.storage('ledger').list()).toHaveLength(0);
   });
 
   it('allows it AFTER run() returns, which is when it is true', async () => {
     await using app = await boot(false);
     await expect(app.announceAfter()).resolves.toBeTruthy();
-    expect((await app.orm('account').findById('a')).balance).toBe(900);
+    expect((await app.storage('account').findById('a')).balance).toBe(900);
   });
 
   it('refuses in a compensated frame too — the two realizations answer the same', async () => {
@@ -226,7 +226,7 @@ describe('what a frame refuses at boot', () => {
       await createApp({
         scan: await scanProject(join(import.meta.dirname, fixture)),
         createContainer,
-        ormFactory: storage.ormFactory,
+        storageFactory: storage.storageFactory,
         sourceOf: storage.sourceOf,
         transacted: storage.transacted as never,
         remotes,
@@ -239,7 +239,7 @@ describe('what a frame refuses at boot', () => {
   };
 
   it('a member whose frond is remote — there is no local storage to record or undo', async () => {
-    // Not "compensate what you can": a remote frond registers no ORM here, so there is
+    // Not "compensate what you can": a remote frond registers no storage here, so there is
     // nothing to write through and nothing to take back.
     await expect(bootOf('fixtures-together-remote', { accounting: 'http://elsewhere' }))
       .rejects.toThrow(/'ledger' belongs to frond 'accounting'.*remotes:/s);
@@ -269,7 +269,7 @@ describe('a frame opened inside another', () => {
   it('and the outer frame takes its own writes back, like any other failure', async () => {
     await using app = await boot(false);
     await app.nest().catch(() => undefined);
-    expect((await app.orm('account').findById('a')).balance).toBe(1000);
+    expect((await app.storage('account').findById('a')).balance).toBe(1000);
   });
 
   it('answers the same when the members are split — one rule, both realizations', async () => {

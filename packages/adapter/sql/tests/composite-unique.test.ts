@@ -21,26 +21,26 @@ class ListBook extends entity(
 ) {}
 
 let setup: SqliteSetup;
-let orm: any;
+let storage: any;
 
 beforeEach(async () => {
   setup = setupSqlite({ path: ':memory:' });
   await autoMigrate({ fronds: [{ name: 'test', entities: [{ name: 'listBook', entityClass: ListBook }] }] }, setup.sqlite);
-  orm = setup.ormFactory(ListBook, 'listBook');
+  storage = setup.storageFactory(ListBook, 'listBook');
 });
 
 describe('composite unique', () => {
   it('the storage refuses the duplicate pair', async () => {
-    await orm.create({ listId: 'l1', docId: 'd1' });
+    await storage.create({ listId: 'l1', docId: 'd1' });
 
-    await expect(orm.create({ listId: 'l1', docId: 'd1' })).rejects.toThrow();
+    await expect(storage.create({ listId: 'l1', docId: 'd1' })).rejects.toThrow();
   });
 
   it('either column alone stays free — the fact is about the pair', async () => {
-    await orm.create({ listId: 'l1', docId: 'd1' });
+    await storage.create({ listId: 'l1', docId: 'd1' });
 
-    await expect(orm.create({ listId: 'l1', docId: 'd2' })).resolves.toBeTruthy();
-    await expect(orm.create({ listId: 'l2', docId: 'd1' })).resolves.toBeTruthy();
+    await expect(storage.create({ listId: 'l1', docId: 'd2' })).resolves.toBeTruthy();
+    await expect(storage.create({ listId: 'l2', docId: 'd1' })).resolves.toBeTruthy();
   });
 
   it('an entity that declares none carries none', () => {

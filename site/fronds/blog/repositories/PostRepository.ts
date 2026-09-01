@@ -4,7 +4,7 @@ import Post from '../entities/Post.js';
 /**
  * The questions the blog asks of its posts.
  *
- * Each of these was `orm.list()` followed by a filter in JavaScript, inside the
+ * Each of these was `storage.list()` followed by a filter in JavaScript, inside the
  * calculation it fed: the whole table read to answer about a handful of rows.
  */
 export default class PostRepository extends Repository(Post) {

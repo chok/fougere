@@ -1,8 +1,8 @@
 import { Lifecycle, Role } from '@fougere/schema';
 /**
- * SqlEntityOrm — per-entity ORM over Kysely, one implementation for every engine.
+ * SqlStorage — per-entity storage over Kysely, one implementation for every engine.
  *
- * Structurally matches @fougere/core's EntityOrm (duck typed, no dep). There is
+ * Structurally matches @fougere/core's Storage (duck typed, no dep). There is
  * no generated table object: Kysely addresses tables and columns by name, so the
  * entity stays the only description. The field↔column mapping is explicit rather
  * than a global plugin — auth tables carry their own naming and must not be
@@ -89,7 +89,7 @@ function pickList<T extends Record<string, unknown>>(list: ListResult<T>, keys: 
   return result;
 }
 
-export class SqlEntityOrm {
+export class SqlStorage {
   private table: TableDef;
   private pk: PrimaryKeyInfo;
   /** The axes `applyCreate`/`applyUpdate` read — held once, they are asked per write. */
@@ -134,14 +134,14 @@ export class SqlEntityOrm {
     this.selectFields = selectFields;
   }
 
-  /** The Kysely instance this ORM wraps — no judge sits behind it. See EntityOrm.client. */
+  /** The Kysely instance this storage wraps — no judge sits behind it. See Storage.client. */
   get client(): Kysely<any> {
     return this.db;
   }
 
-  /** Returns a scoped ORM that restricts all read results to the fields of the given schema. */
-  output(schema: SchemaView): SqlEntityOrm {
-    const scoped = Object.create(this) as SqlEntityOrm;
+  /** Returns a scoped storage that restricts all read results to the fields of the given schema. */
+  output(schema: SchemaView): SqlStorage {
+    const scoped = Object.create(this) as SqlStorage;
     (scoped as any).selectFields = new Set(Object.keys(schema.getFields()));
     return scoped;
   }
@@ -552,19 +552,19 @@ export class SqlEntityOrm {
 }
 
 
-export interface OrmFactoryOptions {
+export interface StorageFactoryOptions {
   /** Override table name resolution. Default: camelCase → snake_case + 's'. */
   tableName?: (entityName: string) => string;
 }
 
 /**
- * Create an OrmFactory backed by Kysely — same call shape on every engine.
+ * Create a StorageFactory backed by Kysely — same call shape on every engine.
  *
  * ```ts
- * const app = await createApp({ createContainer, ormFactory: createOrmFactory(db) });
+ * const app = await createApp({ createContainer, storageFactory: createStorageFactory(db) });
  * ```
  */
-export function createOrmFactory(db: Kysely<any>, options?: OrmFactoryOptions, dialect: DialectName = 'sqlite') {
+export function createStorageFactory(db: Kysely<any>, options?: StorageFactoryOptions, dialect: DialectName = 'sqlite') {
   const resolve = options?.tableName ?? toTableName;
-  return (entity: SchemaOrCard, name: string) => new SqlEntityOrm(db, entity, resolve(name), undefined, dialect);
+  return (entity: SchemaOrCard, name: string) => new SqlStorage(db, entity, resolve(name), undefined, dialect);
 }

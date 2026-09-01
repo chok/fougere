@@ -39,7 +39,7 @@ if (!address) {
 const { hostname, port: declaredPort } = new URL(address);
 
 const log = new Logger('blog-host');
-const { ormFactory, db } = setupSqlite({ path: './nuxt-blog.db' });
+const { storageFactory, db } = setupSqlite({ path: './nuxt-blog.db' });
 
 // The panel, on its own loopback port: every call this frond executes, as it happens.
 // Click through the Nuxt app on :3000 and they land here — including the ones that
@@ -47,7 +47,7 @@ const { ormFactory, db } = setupSqlite({ path: './nuxt-blog.db' });
 const app = await createApp({
   scan: await scanProject(process.cwd(), ['blog']),
   createContainer,
-  ormFactory,
+  storageFactory,
   extensions: [observability({ service: 'blog-host' }), calls({ panel: 4400 })],
 });
 await migrate({ fronds: app.fronds }, db);

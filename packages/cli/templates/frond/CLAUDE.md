@@ -28,7 +28,7 @@ If you are about to write the same constraint in two places, you have missed the
 ## A surface is a door, never a logic
 
 Every door goes through the handler **façade**, which is the judge: validation, unknown-key refusal,
-collectors. A resolver or route you wire yourself against the ORM — or worse, against the database —
+collectors. A resolver or route you wire yourself against the storage — or worse, against the database —
 is a second door with no judge behind it, and the rules declared in the entities stop applying there.
 
 Before adding a surface, reach for its **projection**:
@@ -44,7 +44,7 @@ exist to add what a projection cannot derive — never to replace it.
 
 ## Reading data
 
-Storage is reached through a repository. Never inject `EntityOrm` directly into a handler,
+Storage is reached through a repository. Never inject `Storage` directly into a handler,
 presenter or collector — the boot refuses it. With no repository file, ask for the default shape:
 
 ```ts
@@ -54,7 +54,7 @@ import Product from '../entities/Product.js';
 constructor(private products: RepositoryOf<Product>) {}
 ```
 
-If the handler extends `Crud(Product)`, its inherited `this.orm` is already backed by that
+If the handler extends `Crud(Product)`, its inherited `this.storage` is already backed by that
 repository; do not add a constructor. The repository forwards the guarded storage gestures:
 
 ```

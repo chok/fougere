@@ -7,6 +7,6 @@ export class NewArticle extends Article.pick('title', 'body') {}
 export default class ArticleHandler extends Crud(Article) {
   /** Publish an article. */
   async create(input: NewArticle): Promise<Article> {
-    return this.orm.create(input as Partial<Article>);
+    return this.storage.create(input as Partial<Article>);
   }
 }

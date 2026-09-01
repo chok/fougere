@@ -1,12 +1,12 @@
 import { upperFirst, type EntityConstructor } from '@fougere/schema';
-import type { EntityOrm, ListOptions, ListResult, SelectOption } from '../orm.js';
+import type { Storage, ListOptions, ListResult, SelectOption } from '../storage.js';
 import type { SchemaView } from '@fougere/schema';
 
 /**
  * Repository(…entities) — who owns an entity's storage, and where its questions are named.
  *
- * **The arity decides**, which is the second reading of what `orm.ts` already states for
- * `EntityOrm` against `Together`: the arity of the unit is the whole distinction.
+ * **The arity decides**, which is the second reading of what `storage.ts` already states for
+ * `Storage` against `Together`: the arity of the unit is the whole distinction.
  *
  * ONE entity — the repository IS that entity's storage, with your methods added. The port's
  * thirteen gestures are forwarded, so a handler reads `this.posts.list()` whether or not
@@ -30,13 +30,13 @@ import type { SchemaView } from '@fougere/schema';
  * // repositories/CommandeRepository.ts
  * export default class CommandeRepository extends Repository(Commande, Stock) {
  *   avecLignes(id: string) {
- *     const [commandes, stock] = this.orms;
+ *     const [commandes, stock] = this.storages;
  *     …
  *   }
  * }
  * ```
  *
- * `this.orms` is protected, because the whole point is that the storage stops at this file.
+ * `this.storages` is protected, because the whole point is that the storage stops at this file.
  * `protected` is erased at runtime, like `abstract` on a port: a compile-time guarantee, not
  * a barrier. The same bargain, already accepted.
  *
@@ -48,12 +48,12 @@ import type { SchemaView } from '@fougere/schema';
  * frame is ASKED FOR here as anywhere else, which is what makes it declared:
  *
  * ```ts
- * constructor(commandes: CommandeOrm, stock: StockOrm, private frame: Together<[Commande, Stock]>) {
+ * constructor(commandes: CommandeStorage, stock: StockStorage, private frame: Together<[Commande, Stock]>) {
  *   super(commandes, stock);
  * }
  * ```
  *
- * The ORM words come back in that line, and only there: this class IS the holder, which is
+ * The storage words come back in that line, and only there: this class IS the holder, which is
  * the one case `boot/ownership.ts` lets name the storage it was built on.
  *
  * A repository is NOT a door: it has no façade, so nothing here is reachable from the wire.
@@ -62,14 +62,14 @@ import type { SchemaView } from '@fougere/schema';
 /**
  * The shape a repository of ONE entity has — the port itself, plus whatever the subclass
  * names on top. Written by an author who has not written the file: `RepositoryOf<Post>` is
- * to `PostRepository` what `EntityOrm<Post>` is to `PostOrm`, one spelling of one key, and
+ * to `PostRepository` what `Storage<Post>` is to `PostStorage`, one spelling of one key, and
  * `depKeyOf` reads both.
  */
-export type RepositoryOf<T> = EntityOrm<T>;
+export type RepositoryOf<T> = Storage<T>;
 
 /** The single-entity form: the port, plus whatever the subclass names. */
 export interface RepositoryConstructor<T> {
-  new (orm: EntityOrm<T>): EntityOrm<T>;
+  new (storage: Storage<T>): Storage<T>;
   readonly __entity: unknown;
 }
 
@@ -81,15 +81,15 @@ export interface RepositoryConstructor<T> {
  * value it describes is fabricated by `many()` for an arity only known at the call.
  */
 declare abstract class AggregateShape<E extends readonly EntityConstructor[]> {
-  protected orms: { [K in keyof E]: EntityOrm<InstanceType<E[K]>> };
+  protected storages: { [K in keyof E]: Storage<InstanceType<E[K]>> };
 }
 
 /** The tuple an aggregate holds — the readable form of {@link AggregateShape}'s member. */
 export type AggregateOf<E extends readonly EntityConstructor[]> =
-  { [K in keyof E]: EntityOrm<InstanceType<E[K]>> };
+  { [K in keyof E]: Storage<InstanceType<E[K]>> };
 
 export type AggregateConstructor<E extends readonly EntityConstructor[]> =
-  (new (...orms: unknown[]) => AggregateShape<E>) & {
+  (new (...storages: unknown[]) => AggregateShape<E>) & {
     readonly __entity: unknown;
     /** The entities this class owns. Present from two on — an owner of one owns nothing. */
     readonly __owns: E;
@@ -111,24 +111,24 @@ export function Repository(...entities: EntityConstructor[]): unknown {
 function one<E extends EntityConstructor>(entity: E): RepositoryConstructor<InstanceType<E>> {
   type T = InstanceType<E>;
 
-  class RepositoryBase implements EntityOrm<T> {
+  class RepositoryBase implements Storage<T> {
     static readonly __entity = entity;
 
-    constructor(protected orm: EntityOrm<T>) {}
+    constructor(protected storage: Storage<T>) {}
 
-    list(options?: ListOptions & SelectOption): Promise<ListResult<T>> { return this.orm.list(options); }
-    findById(id: string, options?: SelectOption) { return this.orm.findById(id, options); }
-    findBy(criteria: Partial<T> | Record<string, unknown>, options?: SelectOption) { return this.orm.findBy(criteria, options); }
-    findAllBy(criteria: Partial<T> | Record<string, unknown>, options?: SelectOption) { return this.orm.findAllBy(criteria, options); }
-    findByKeys(ids: readonly string[], options?: SelectOption) { return this.orm.findByKeys(ids, options); }
-    findAllByKeys(field: string, keys: readonly string[], options?: SelectOption) { return this.orm.findAllByKeys(field, keys, options); }
-    create(input: Partial<T>, options?: SelectOption) { return this.orm.create(input, options); }
-    upsert(input: Partial<T>, options?: SelectOption) { return this.orm.upsert(input, options); }
-    upsertAll(inputs: readonly Partial<T>[], options?: SelectOption) { return this.orm.upsertAll(inputs, options); }
-    update(id: string, input: Partial<T>, options?: SelectOption) { return this.orm.update(id, input, options); }
-    delete(id: string) { return this.orm.delete(id); }
-    output(schema: SchemaView) { return this.orm.output(schema); }
-    get client(): unknown { return this.orm.client; }
+    list(options?: ListOptions & SelectOption): Promise<ListResult<T>> { return this.storage.list(options); }
+    findById(id: string, options?: SelectOption) { return this.storage.findById(id, options); }
+    findBy(criteria: Partial<T> | Record<string, unknown>, options?: SelectOption) { return this.storage.findBy(criteria, options); }
+    findAllBy(criteria: Partial<T> | Record<string, unknown>, options?: SelectOption) { return this.storage.findAllBy(criteria, options); }
+    findByKeys(ids: readonly string[], options?: SelectOption) { return this.storage.findByKeys(ids, options); }
+    findAllByKeys(field: string, keys: readonly string[], options?: SelectOption) { return this.storage.findAllByKeys(field, keys, options); }
+    create(input: Partial<T>, options?: SelectOption) { return this.storage.create(input, options); }
+    upsert(input: Partial<T>, options?: SelectOption) { return this.storage.upsert(input, options); }
+    upsertAll(inputs: readonly Partial<T>[], options?: SelectOption) { return this.storage.upsertAll(inputs, options); }
+    update(id: string, input: Partial<T>, options?: SelectOption) { return this.storage.update(id, input, options); }
+    delete(id: string) { return this.storage.delete(id); }
+    output(schema: SchemaView) { return this.storage.output(schema); }
+    get client(): unknown { return this.storage.client; }
   }
 
   return RepositoryBase as unknown as RepositoryConstructor<T>;
@@ -144,10 +144,10 @@ function many<E extends readonly EntityConstructor[]>(entities: E): AggregateCon
     static readonly __entity = entities[0];
     static readonly __owns = entities;
 
-    protected orms: AggregateOf<E>;
+    protected storages: AggregateOf<E>;
 
-    constructor(...orms: unknown[]) {
-      this.orms = orms.slice(0, entities.length) as AggregateOf<E>;
+    constructor(...storages: unknown[]) {
+      this.storages = storages.slice(0, entities.length) as AggregateOf<E>;
     }
   }
 

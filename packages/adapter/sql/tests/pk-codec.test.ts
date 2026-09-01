@@ -20,24 +20,24 @@ class Reading extends entity({
 const appOf = () => ({ fronds: [{ entities: [{ name: 'reading', entityClass: Reading }] }] });
 
 describe('a Date primary key survives the round trip', () => {
-  let orm: any;
+  let storage: any;
 
   beforeEach(async () => {
     const setup = setupSqlite({ path: ':memory:' });
     autoMigrate(appOf() as never, setup.sqlite);
-    orm = setup.ormFactory(Reading as never, 'reading');
+    storage = setup.storageFactory(Reading as never, 'reading');
   });
 
   it('reads back the row it just wrote', async () => {
-    const created = await orm.create({ note: 'first' });
+    const created = await storage.create({ note: 'first' });
 
     // The insert encoded the Date to its ISO form; the read has to do the same, or the
     // driver is handed a Date it cannot bind — after the row is already persisted.
-    expect(await orm.findById(created.at)).toEqual(created);
+    expect(await storage.findById(created.at)).toEqual(created);
   });
 
   it('accepts the domain value from a caller too', async () => {
-    const created = await orm.create({ note: 'second' });
-    expect(await orm.findById(new Date(created.at))).toEqual(created);
+    const created = await storage.create({ note: 'second' });
+    expect(await storage.findById(new Date(created.at))).toEqual(created);
   });
 });

@@ -26,8 +26,8 @@ describe('agent templates describe the storage boundary', () => {
     it(`${file.slice(templatesRoot.length + 1)} points agents at Repository`, () => {
       const contents = readFileSync(file, 'utf8');
 
-      expect(contents).not.toContain('`EntityOrm`, injected by type, is the only data access');
-      expect(contents).toContain('Never inject `EntityOrm` directly');
+      expect(contents).not.toContain('`Storage`, injected by type, is the only data access');
+      expect(contents).toContain('Never inject `Storage` directly');
       expect(contents).toContain('RepositoryOf<Product>');
       expect(contents).toContain('extends Repository(Product)');
     });
@@ -37,7 +37,7 @@ describe('agent templates describe the storage boundary', () => {
     it(`${file.slice(templatesRoot.length + 1)} delegates model guidance to CLAUDE.md`, () => {
       const contents = readFileSync(file, 'utf8');
 
-      expect(contents).not.toContain('`EntityOrm`, injected by type, is the only data access');
+      expect(contents).not.toContain('`Storage`, injected by type, is the only data access');
       expect(contents).toContain('Read `CLAUDE.md`');
     });
   }

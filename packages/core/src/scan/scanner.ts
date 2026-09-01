@@ -18,7 +18,7 @@ import type { TypeRef } from '../wire/signature.js';
 import { loadFrondConfig } from '../frond-config.js';
 import { emitKeyOf } from '../emit.js';
 import { getPresenterFields } from '../prefab/presenter.js';
-import { ormKeyOf, togetherKeyOf } from '../orm.js';
+import { storageKeyOf, togetherKeyOf } from '../storage.js';
 import { targetOf, viewsOf, outputOf } from '../prefab/prefab.js';
 import { ownedBy, repositoryKeyOf } from '../prefab/repository.js';
 import { lowerFirst } from '@fougere/schema';
@@ -133,13 +133,13 @@ function toAddress(className: string): string {
  * The container key a constructor parameter asks for — derived from its TYPE, not from
  * how the type was spelled.
  *
- * `deps` used to be `p.type.name`, so the key WAS the alias's name: `type ListOrm =
- * EntityOrm<List>` resolved only because someone had spelled it exactly like the
- * registration key (`ListOrm`), while `type ListRepo = EntityOrm<List>` — the same type —
- * typechecked and died at boot on `'ListRepo' is not registered`. And `EntityOrm<List>`
- * written out in full asked for `'EntityOrm'`, which nothing registers.
+ * `deps` used to be `p.type.name`, so the key WAS the alias's name: `type ListStorage =
+ * Storage<List>` resolved only because someone had spelled it exactly like the
+ * registration key (`ListStorage`), while `type ListRepo = Storage<List>` — the same type —
+ * typechecked and died at boot on `'ListRepo' is not registered`. And `Storage<List>`
+ * written out in full asked for `'Storage'`, which nothing registers.
  *
- * `EntityOrm<X>` names X's storage, so that is the key. The generic argument was already
+ * `Storage<X>` names X's storage, so that is the key. The generic argument was already
  * parsed (`TypeRef.generics`) and thrown away. Anything else keeps its own name: a
  * plain service IS designated by its class name.
  */
@@ -169,10 +169,10 @@ function depKeyOf(type: TypeRef): string {
   const held = type.name === 'RepositoryOf' ? type.generics?.[0]?.name : undefined;
   if (held) return repositoryKeyOf(held);
 
-  const target = type.name === 'EntityOrm' ? type.generics?.[0]?.name : undefined;
+  const target = type.name === 'Storage' ? type.generics?.[0]?.name : undefined;
   if (!target) return type.name;
 
-  return ormKeyOf(target);
+  return storageKeyOf(target);
 }
 
 /**
@@ -180,7 +180,7 @@ function depKeyOf(type: TypeRef): string {
  *
  * The tuple was chosen over the variadic form the parser reads more cleanly, because the
  * variadic one costs arities-with-defaults and a `never` filter on the TypeScript side
- * while the tuple maps to `[EntityOrm<Account>, EntityOrm<Ledger>]` in one line. The
+ * while the tuple maps to `[Storage<Account>, Storage<Ledger>]` in one line. The
  * parser does not get to decide alone; this split is what that choice costs.
  */
 function tupleMembers(raw: string): string[] {
@@ -217,9 +217,9 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
   const owned = ownedBy(ctor);
   const target = targetOf(ctor);
   if (owned.length > 1 && deps.length === 0) {
-    deps.push(...owned.map((entity) => ormKeyOf(lowerFirst((entity as { name: string }).name))));
+    deps.push(...owned.map((entity) => storageKeyOf(lowerFirst((entity as { name: string }).name))));
   } else if (target && deps.length === 0) {
-    deps.push(ormKeyOf(lowerFirst((target as { name: string }).name)));
+    deps.push(storageKeyOf(lowerFirst((target as { name: string }).name)));
   }
 
   // No `name` beside `ctor`: a provider registers under `ctor.name`, which is what

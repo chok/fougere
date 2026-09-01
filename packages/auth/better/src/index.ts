@@ -3,7 +3,7 @@ import { createId } from '@paralleldrive/cuid2';
 import type { AuthConfig, AuthContext, AuthRuntime } from '@fougere/core';
 import type { SchemaView } from '@fougere/schema';
 import { AuthVerification, AuthUser, authEntities } from './entities.js';
-import { fougereAdapter, type OrmMap } from './adapter.js';
+import { fougereAdapter, type StorageMap } from './adapter.js';
 import {
   translateCredential,
   translateSocial,
@@ -45,7 +45,7 @@ export interface BetterAuthOptions {
  * ```
  *
  * Returns a lazy AuthConfig — the better-auth engine is only constructed when
- * the core calls `create(ctx)` at boot, with the resolved db + ormFactory.
+ * the core calls `create(ctx)` at boot, with the resolved db + storageFactory.
  */
 export function betterAuth(opts: BetterAuthOptions): AuthConfig {
   const userSchema = opts.user ?? AuthUser;
@@ -63,16 +63,16 @@ export function betterAuth(opts: BetterAuthOptions): AuthConfig {
       account: accountSchema,
       verification: verificationSchema,
     },
-    create({ ormFactory }: AuthContext): AuthRuntime {
-      const ormMap: OrmMap = new Map([
-        ['user', ormFactory(userSchema, 'user')],
-        ['session', ormFactory(sessionSchema, 'session')],
-        ['account', ormFactory(accountSchema, 'account')],
-        ['verification', ormFactory(verificationSchema, 'verification')],
+    create({ storageFactory }: AuthContext): AuthRuntime {
+      const storageMap: StorageMap = new Map([
+        ['user', storageFactory(userSchema, 'user')],
+        ['session', storageFactory(sessionSchema, 'session')],
+        ['account', storageFactory(accountSchema, 'account')],
+        ['verification', storageFactory(verificationSchema, 'verification')],
       ]);
 
       const engine = betterAuthLib({
-        database: fougereAdapter(ormMap),
+        database: fougereAdapter(storageMap),
         secret: opts.secret,
         baseURL: opts.baseUrl,
         basePath,
@@ -91,7 +91,7 @@ export function betterAuth(opts: BetterAuthOptions): AuthConfig {
           account: accountSchema,
           verification: verificationSchema,
         },
-        orms: Object.fromEntries(ormMap),
+        storages: Object.fromEntries(storageMap),
         handler: engine.handler,
         api: engine.api as Record<string, unknown>,
         basePath,

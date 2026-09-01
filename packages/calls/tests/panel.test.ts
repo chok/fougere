@@ -1,12 +1,12 @@
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { describe, expect, it, vi } from 'vitest';
-import { Call, RouteAddress, createApp, type OrmFactory } from '@fougere/core';
+import { Call, RouteAddress, createApp, type StorageFactory } from '@fougere/core';
 import { scanProject } from '@fougere/core/node';
 import { calls } from '../src/index.js';
 
 const fixtures = join(import.meta.dirname, 'fixtures');
-const ormFactory: OrmFactory = () => ({
+const storageFactory: StorageFactory = () => ({
   list: vi.fn(async () => [{ id: '1', label: 'a first order' }]),
   findById: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn(),
 }) as never;
@@ -18,7 +18,7 @@ describe('the panel', () => {
     const app = await createApp({
       scan: await scanProject(fixtures),
       createContainer,
-      ormFactory,
+      storageFactory,
       extensions: [calls({ panel: { port: 0, announce: (url) => { at = url; } } })],
     });
 

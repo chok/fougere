@@ -2,7 +2,7 @@
  * What an app costs to obtain, and what it is made of.
  *
  * The engine is real SQLite — the DDL runs, the constraints exist — and nothing reaches
- * a disk. A test that wanted `createMemoryOrm` would be testing a storage that does not
+ * a disk. A test that wanted `createMemoryStorage` would be testing a storage that does not
  * ship.
  */
 import { describe, it, expect } from 'vitest';

@@ -3,14 +3,14 @@
  * the contract between core and an `@fougere/auth-*` package.
  */
 import type { SchemaView } from '@fougere/schema';
-import type { EntityOrm, OrmFactory } from '../orm.js';
+import type { Storage, StorageFactory } from '../storage.js';
 
 /**
  * Lazy auth declaration written in fougere.config.ts.
  *
  * Each @fougere/auth-* package exports a factory (e.g. `betterAuth(opts)`) that
  * returns this shape. The `create()` method is called once at boot with the
- * resolved db + ormFactory, so the provider can wire its engine through Fougere.
+ * resolved db + storageFactory, so the provider can wire its engine through Fougere.
  */
 export interface AuthConfig {
   /** Build the runtime — invoked by createApp at boot with the resolved storage handles. */
@@ -29,8 +29,8 @@ export interface AuthConfig {
 export interface AuthContext {
   /** Storage handle (Kysely DB instance, Prisma client, etc.) — opaque to core. */
   db: unknown;
-  /** Per-entity ORM factory — auth provider uses this to back its adapter. */
-  ormFactory: OrmFactory;
+  /** Per-entity storage factory — auth provider uses this to back its adapter. */
+  storageFactory: StorageFactory;
 }
 
 /**
@@ -43,9 +43,9 @@ export interface AuthRuntime {
   /**
    * Per-entity ORMs the provider built for itself. Exposed so app code can
    * query auth tables (e.g. list active sessions for a user) without rebuilding
-   * the same EntityOrm.
+   * the same Storage.
    */
-  orms: Record<string, EntityOrm>;
+  storages: Record<string, Storage>;
   /** Web Standard handler that processes /auth/* requests. */
   handler: (request: Request) => Promise<Response>;
   /** Programmatic API exposed by the provider (getSession, signOut, ...). */

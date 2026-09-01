@@ -10,13 +10,13 @@ import Post from '../entities/Post.js';
 export default class PostHandler extends Crud(Post) {
   /** Public reading: only published posts exist for the outside world. */
   async list(): Promise<Post[]> {
-    const all = await this.orm.list();
+    const all = await this.storage.list();
     return all.filter((post) => post.status === 'published');
   }
 
   /** Everything, drafts included — what an author's own dashboard shows. */
   async listDrafts(): Promise<Post[]> {
-    const all = await this.orm.list();
+    const all = await this.storage.list();
     return all.filter((post) => post.status === 'draft');
   }
 
@@ -26,13 +26,13 @@ export default class PostHandler extends Crud(Post) {
    * door, and it states its own rules.
    */
   async publish(id: string): Promise<Post> {
-    const post = await this.orm.findById(id);
+    const post = await this.storage.findById(id);
     if (!post) {
       throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `Post '${id}' not found`, entity: 'post', operation: 'publish' });
     }
     if (post.status === 'published') {
       throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published', entity: 'post', operation: 'publish' });
     }
-    return this.orm.update(id, { status: 'published', publishedAt: new Date() });
+    return this.storage.update(id, { status: 'published', publishedAt: new Date() });
   }
 }

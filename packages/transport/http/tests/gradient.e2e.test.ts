@@ -14,7 +14,7 @@ import type { App, InvocationContext, Transport } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { createHttpTransport } from '../src/index.js';
 // @ts-expect-error plain-JS shared fixture
-import { createOrmFactory, PRODUCTS } from './fixtures/data.mjs';
+import { createStorageFactory, PRODUCTS } from './fixtures/data.mjs';
 
 const fixturesDir = join(import.meta.dirname, 'fixtures');
 const emptyRoot = '/tmp/fougere-gradient-consumer';
@@ -58,7 +58,7 @@ let facade: Facade;
 
 beforeAll(async () => {
   ({ child, port } = await startHost());
-  control = await createApp({ scan: await scanProject(fixturesDir), createContainer, ormFactory: createOrmFactory() });
+  control = await createApp({ scan: await scanProject(fixturesDir), createContainer, storageFactory: createStorageFactory() });
   localRun = createLocalRunner(control);
   consumer = await createApp({
     scan: await scanProject(emptyRoot),

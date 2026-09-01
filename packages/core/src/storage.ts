@@ -1,4 +1,4 @@
-import { upperFirst, type SchemaView } from '@fougere/schema';
+import { upperFirst, lowerFirst, type SchemaView } from '@fougere/schema';
 
 /** Options for list queries — pagination, sorting, counting. */
 export interface ListOptions {
@@ -68,8 +68,8 @@ export interface SelectOption {
   select?: SchemaView;
 }
 
-/** Per-entity ORM — scoped CRUD operations on a single entity type. */
-export interface EntityOrm<T = Record<string, unknown>> {
+/** Per-entity storage — scoped CRUD operations on a single entity type. */
+export interface Storage<T = Record<string, unknown>> {
   list(options?: ListOptions & SelectOption): Promise<ListResult<T>>;
   findById(id: string, options?: SelectOption): Promise<T | undefined>;
   /**
@@ -78,7 +78,7 @@ export interface EntityOrm<T = Record<string, unknown>> {
    *
    * Both existed on the SQL implementation from the start and neither was declared here.
    * A port that hides what it offers is a port nobody can use: `auth-better` cast its way
-   * in (`orm as OrmWithFindBy`), a presenter that needed the lines of an order read the
+   * in (`storage as StorageWithFindBy`), a presenter that needed the lines of an order read the
    * whole table instead, and the GraphQL relation resolver passed criteria to `list()`
    * — which drops what it does not know.
    */
@@ -137,15 +137,15 @@ export interface EntityOrm<T = Record<string, unknown>> {
   upsertAll(inputs: readonly Partial<T>[], options?: SelectOption): Promise<number>;
   update(id: string, input: Partial<T>, options?: SelectOption): Promise<T>;
   delete(id: string): Promise<boolean>;
-  /** Returns a scoped ORM that restricts all read results to the fields of the given schema. */
-  output(schema: SchemaView): EntityOrm<T>;
+  /** Returns a scoped storage that restricts all read results to the fields of the given schema. */
+  output(schema: SchemaView): Storage<T>;
   /**
-   * What this ORM wraps — the Kysely instance for the SQL one, something else elsewhere.
+   * What this storage wraps — the Kysely instance for the SQL one, something else elsewhere.
    *
-   * Every judge sits on the ORM's own methods, so a statement issued here meets none of
+   * Every judge sits on the storage's own methods, so a statement issued here meets none of
    * them: a value the entity refuses lands in the table without a word. It is the port's
    * own escape hatch rather than a handle on the side, so it keeps the scope the container
-   * gave you — `productOrm.client` reaches the products, not the whole database.
+   * gave you — `productStorage.client` reaches the products, not the whole database.
    *
    * `unknown` on purpose: the client belongs to the implementation, and narrowing it is
    * the caller saying out loud which one they are standing on.
@@ -154,13 +154,106 @@ export interface EntityOrm<T = Record<string, unknown>> {
 }
 
 /**
- * Factory that creates an EntityOrm for a given entity.
+ * Factory that creates a Storage for a given entity.
  * Called by bootstrap for every scanned entity.
  */
-export type OrmFactory = (entity: SchemaView, name: string) => EntityOrm;
+export type StorageFactory = (entity: SchemaView, name: string) => Storage;
 
 /**
- * Container key of an entity's storage — 'reading' → 'ReadingOrm'.
+ * A place rows live, whatever realizes it.
+ *
+ * `StorageFactory` plus its lifecycle, which is why it lives beside it. Three of the four
+ * gestures are optional and ABSENCE IS THE ANSWER: no `transacted` and a frame compensates
+ * instead of transacting (`boot/together.ts`), no `migrate` and there is no shape to bring
+ * up to date. What a source is MADE OF is not here — `adapter/sql` states `dialect`, `db`
+ * and `sink` on its own `SqlSource`, reached by narrowing, the rule {@link Storage.client}
+ * already obeys one level down.
+ */
+export interface Source {
+  storageFactory: StorageFactory;
+  /** Bring the shape of what lives here up to date. */
+  migrate?(view: SourceView): Promise<void>;
+  /** Run `fn` as ONE unit of work, with a factory bound to it. */
+  transacted?<R>(fn: (factory: StorageFactory) => Promise<R>): Promise<R>;
+  close?(): Promise<void>;
+  /** What distinguishes it when a query is reported. */
+  name?: string;
+}
+
+/**
+ * The app as ONE source sees it: what lives there, and the NAMES of what does not.
+ *
+ * The second half is what lets a DDL stop lying. A batch holding every entity cannot tell
+ * a cross-source target from a typo, so a `ref()` falls back to a derived table name and
+ * the constraint is emitted against a table that may not exist. `elsewhere` says which
+ * misses are legitimate — and a target in neither list is a mistake, out loud.
+ */
+export interface SourceView {
+  fronds: readonly { readonly name: string; readonly entities: readonly { readonly name: string }[] }[];
+  /** The auth provider's own entities, when they ride with this source. */
+  auth?: unknown;
+  elsewhere: readonly string[];
+}
+
+/**
+ * What a config file can carry about a source — values, never a live driver.
+ *
+ * `source` names the ADAPTER, and everything else belongs to the adapter it named:
+ * `adapter/sql` reads `dialect`, a file one reads `path`. That is the shape
+ * `EntityAdapters` already has — addressed by adapter, and what sits below is the
+ * adapter's own. Which is why the level `schema` owns is not repeated here.
+ */
+export interface SourceConfig {
+  /** The adapter that realizes it. Absent means the conventional one. */
+  source?: string;
+  /** The entities whose rows live here. Absent on the default source: it holds the rest. */
+  entities?: string[];
+  [key: string]: unknown;
+}
+
+/**
+ * Which adapter answers a source name — one per process, no subject to hold.
+ *
+ * The shape `Generators` already has, and the refusal `resolveStorage` already made: only
+ * `sqlite` could be resolved from its name, because it was the one driver `defaults`
+ * depended on. That refusal had no owner — it lived in the package that happened to import
+ * the driver — so a second adapter had nowhere to say it exists. Here it does, and an
+ * unknown name is refused naming what this process answers.
+ *
+ * Registered at IMPORT by each adapter, so nothing central lists them.
+ */
+export class Sources {
+  private static readonly registry = new Map<string, (conf: SourceConfig) => Source>();
+
+  static register(name: string, build: (conf: SourceConfig) => Source): void {
+    this.registry.set(name, build);
+  }
+
+  /** The source this name stands for, refused by name when nothing does. */
+  static resolve(name: string, conf: SourceConfig): Source {
+    const build = this.registry.get(name);
+    if (build) return build(conf);
+
+    throw new Error(
+      `Unknown source '${name}' — import the adapter that answers it, or register one with `
+      + `Sources.register('${name}', build). This process answers `
+      + `${[...this.registry.keys()].join(', ') || 'nothing yet'}.`,
+    );
+  }
+
+  /** Whether a name is answered, for a caller that must not throw to find out. */
+  static answers(name: string): boolean {
+    return this.registry.has(name);
+  }
+
+  /** What this process answers — what a refusal elsewhere prints. */
+  static answered(): string[] {
+    return [...this.registry.keys()];
+  }
+}
+
+/**
+ * Container key of an entity's storage — 'reading' → 'ReadingStorage'.
  *
  * The twin of {@link repositoryKeyOf} and of `facadeKeyOf`: the key of a thing
  * lives with the thing. This one was spelled by hand in four places in
@@ -168,14 +261,30 @@ export type OrmFactory = (entity: SchemaView, name: string) => EntityOrm;
  * constructor asks for. Two readers of one convention, neither of them naming it,
  * so a rename would have moved one and left the other resolving to nothing.
  */
-export function ormKeyOf(entity: string): string {
-  return `${upperFirst(entity)}Orm`;
+export function storageKeyOf(entity: string): string {
+  return `${upperFirst(entity)}${HELD}`;
 }
+
+/**
+ * The entity behind a storage key, or `undefined` when the key is not one.
+ *
+ * The dual of the line above, for the reason `membersOfTogetherKey` is. `known` is what the
+ * suffix alone cannot answer: `FileStorage` is an ordinary class name.
+ */
+export function entityOfStorageKey(key: string, known: (entity: string) => boolean): string | undefined {
+  if (key.length <= HELD.length || !key.endsWith(HELD)) return undefined;
+  const entity = lowerFirst(key.slice(0, -HELD.length));
+
+  return storageKeyOf(entity) === key && known(entity) ? entity : undefined;
+}
+
+/** What a holder keeps, said in the key it is registered under. */
+const HELD = 'Storage';
 
 /**
  * `Together<[Account, Ledger]>` — writes that stand or fall as one.
  *
- * `EntityOrm` is the port whose every gesture is ONE statement, and one statement is
+ * `Storage` is the port whose every gesture is ONE statement, and one statement is
  * atomic in every engine. This is the port whose unit is a BLOCK: what the callback did
  * happens entirely, or not at all. Nothing else separates them — the arity of the unit
  * of work is the whole distinction, which is why this lives here and not in a file of
@@ -191,7 +300,7 @@ export function ormKeyOf(entity: string): string {
  * ```
  *
  * **The second list is providers**, rebuilt inside the frame so that what THEY write is
- * covered too — a `Mirror` writes its pages through `EntityOrm<T>`, so naming it puts
+ * covered too — a `Mirror` writes its pages through `Storage<T>`, so naming it puts
  * them under the same unwind, with no locator and no second injection path:
  *
  * ```ts
@@ -214,7 +323,7 @@ export function ormKeyOf(entity: string): string {
  * than letting the author assume the stronger one.
  */
 export interface Together<E extends readonly unknown[], P extends readonly unknown[] = []> {
-  run<R>(fn: (entities: { [K in keyof E]: EntityOrm<E[K]> }, providers: P) => Promise<R>): Promise<R>;
+  run<R>(fn: (entities: { [K in keyof E]: Storage<E[K]> }, providers: P) => Promise<R>): Promise<R>;
 }
 
 /**

@@ -8,7 +8,7 @@ import { registerAll } from '../src/auto-register.js';
  *
  * graphql-js calls a field resolver once per parent, so before this a page of 50
  * orders asked for its user 50 times — measured, with 5 distinct users behind those
- * 50 calls. The read goes through the target's DOOR and not its ORM, because the
+ * 50 calls. The read goes through the target's DOOR and not its storage, because the
  * façade is what applies the presenter and the output view: sourcing the rows
  * elsewhere returned them stripped of their computed fields.
  *

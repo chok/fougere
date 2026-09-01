@@ -11,23 +11,24 @@
 import type { App } from '@fougere/core';
 import { Fronds, type FrondDescriptor } from '@fougere/core';
 import { lowerFirst } from '@fougere/core/contract';
-import { migrate, type DialectName, type Setup } from '@fougere/adapter-sql';
-import { setupSqlite } from '@fougere/adapter-sql/sqlite';
+import { Sources, type Source, type SourceView } from '@fougere/core';
+// Imported for its side effect: it is what makes `source: 'sql'` an answered name.
+import '@fougere/adapter-sql/sqlite';
 
 /** The `db` field of fougere.config.ts, read structurally. */
 export type DbConfig =
   | false
   | 'sqlite'
-  | { dialect?: string; path?: string }
+  | { source?: string; dialect?: string; path?: string }
   | undefined;
 
 /** A named source and the entities it holds — the `sources` field, read structurally. */
-export type SourcesConfig = Record<string, { dialect?: string; path?: string; entities: string[] }> | undefined;
+export type SourcesConfig = Record<string, { source?: string; dialect?: string; path?: string; entities: string[] }> | undefined;
 
 export interface ResolvedStorage {
   /** Opaque handle handed to auth providers. */
   db?: unknown;
-  ormFactory: ((entity: any, name: string) => any) | undefined;
+  storageFactory: ((entity: any, name: string) => any) | undefined;
   /**
    * The source an entity's rows live in — what decides whether a frame gets a real
    * transaction or an unwind it replays itself.
@@ -45,8 +46,8 @@ export interface ResolvedStorage {
   dbOf?: (source: string) => unknown;
   /** Every source that has an engine, the default one first. */
   sources?: () => string[];
-  /** Run `fn` inside one transaction of that source, with an ORM factory bound to it. */
-  transacted?: <R>(source: string, fn: (ormFactory: (entity: any, name: string) => any) => Promise<R>) => Promise<R>;
+  /** Run `fn` inside one transaction of that source, with a storage factory bound to it. */
+  transacted?: <R>(source: string, fn: (storageFactory: (entity: any, name: string) => any) => Promise<R>) => Promise<R>;
   /**
    * Brings the schema up to date once the app is scanned — the storage's `up`, handed to
    * `migrating()`. It was called `afterBoot`, a word that also meant the host's own
@@ -63,8 +64,6 @@ export interface ResolvedStorage {
    */
   close?: () => Promise<void>;
   /** Raw synchronous handle, when the engine exposes one. */
-  raw?: { exec(sql: string): void };
-  dialect?: DialectName;
 }
 
 /** Does this config ask for persistence at all? */
@@ -73,23 +72,6 @@ export function declaresStorage(dbConf: DbConfig): boolean {
   return true;
 }
 
-/**
- * Only sqlite is resolvable from a NAME — its driver is a dependency here. Any other
- * engine needs a Kysely dialect INSTANCE, which only the host can build because only
- * the host has its driver. So the name is refused, and the way in is named.
- *
- * `dialect` used to be declared and never read: `db: { dialect: 'postgres' }` started
- * SQLite and said nothing — a config whose central word was ignored.
- */
-function refuseUnresolvable(declared: string | undefined, field: string): void {
-  if (declared === undefined || declared === 'sqlite') return;
-  throw new Error(
-    `${field} '${declared}' cannot be resolved from its name — only 'sqlite' can, ` +
-    `because it is the one driver this package depends on. For ${declared}, build the ` +
-    `Kysely dialect yourself and call setupKysely(dialect, '${declared}') ` +
-    `from @fougere/adapter-sql.`,
-  );
-}
 
 /**
  * The app as ONE source sees it: the entities that live there, and the names of those
@@ -103,11 +85,11 @@ function refuseUnresolvable(declared: string | undefined, field: string): void {
  * Auth entities ride with the default source: a provider's tables are the app's own,
  * and nothing yet lets one declare where it lives.
  */
-function partition(
+function viewOf(
   app: App,
   holds: (name: string) => boolean,
   withAuth: boolean,
-): unknown {
+): SourceView {
   const typed = app as unknown as {
     fronds: { name: string; entities: { name: string }[] }[];
     auth?: unknown;
@@ -133,29 +115,50 @@ function partition(
  * exactly as before.
  */
 export function resolveStorage(dbConf: DbConfig, sources?: SourcesConfig): ResolvedStorage {
-  if (!declaresStorage(dbConf)) return { ormFactory: undefined };
+  if (!declaresStorage(dbConf)) return { storageFactory: undefined };
 
-  refuseUnresolvable(typeof dbConf === 'object' ? dbConf.dialect : (dbConf || undefined), 'db.dialect');
   const named: Record<string, Placement> = {};
   for (const [name, conf] of Object.entries(sources ?? {})) {
-    refuseUnresolvable(conf.dialect, `sources.${name}.dialect`);
-    named[name] = { setup: setupSqlite({ path: conf.path }), entities: conf.entities };
+    named[name] = { source: built(conf, `sources.${name}`), entities: conf.entities };
   }
   return storageFrom({
-    db: setupSqlite({ path: typeof dbConf === 'object' ? dbConf.path : undefined }),
+    db: built(typeof dbConf === 'object' ? dbConf : {}, 'db'),
     sources: named,
   });
 }
 
-/** One source: the engine that holds it, and the entities that live there. */
+/**
+ * One config entry, resolved to the adapter it names.
+ *
+ * `source:` defaults to `'sql'` — the convention a first run meets, and the reason a config
+ * saying only `db: 'sqlite'` keeps working. What the entry says BELOW that key belongs to the
+ * adapter it named, which is also the only one that can refuse it: this function knows no
+ * dialect and no driver.
+ */
+function built(conf: Record<string, unknown>, field: string): Source {
+  const name = (conf.source as string | undefined) ?? DEFAULT_ADAPTER;
+  if (!Sources.answers(name)) {
+    throw new Error(
+      `${field}.source '${name}' is not answered — import the adapter that does. `
+      + `This process answers ${Sources.answered().join(', ') || 'nothing yet'}.`,
+    );
+  }
+
+  return Sources.resolve(name, conf as never);
+}
+
+/** What a config naming no adapter means. */
+const DEFAULT_ADAPTER = 'sql';
+
+/** One source: what realizes it, and the entities that live there. */
 export interface Placement {
-  setup: Setup;
+  source: Source;
   entities: string[];
 }
 
 export interface DeclaredStorage {
   /** The default source — where an entity no placement names lands. */
-  db: Setup;
+  db: Source;
   /** The other places. Absent means one source, the way it always was. */
   sources?: Record<string, Placement>;
 }
@@ -188,9 +191,9 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
   // both: the rows would be read from one and written to the other, by whichever
   // registration ran last — the same silent duplicate `remotes:` refuses one level up.
   const home = new Map<string, string>();
-  const engines = new Map<string, Setup>();
+  const engines = new Map<string, Source>();
   for (const [name, placement] of Object.entries(sources ?? {})) {
-    engines.set(name, placement.setup);
+    engines.set(name, placement.source);
     for (const entity of placement.entities) {
       const key = lowerFirst(entity);
       const claimed = home.get(key);
@@ -214,32 +217,34 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
   };
 
   return {
-    db: base.db,
-    ormFactory: (entity: any, name: string) => engineFor(name).ormFactory(entity, name),
+    // Opaque, and narrowed by whoever needs it — auth wants a handle, the CLI wants Kysely.
+    db: (base as { db?: unknown }).db,
+    storageFactory: (entity: any, name: string) => engineFor(name).storageFactory(entity, name),
     sourceOf,
-    dbOf: (source) => engineOf(source)?.db,
+    dbOf: (source) => (engineOf(source) as { db?: unknown } | undefined)?.db,
     sources: () => [DEFAULT, ...engines.keys()],
-    transacted: (source, fn) => {
+    // A source that hands out no transaction leaves the key absent, and a frame reads the
+    // absence: `boot/together.ts` compensates instead, and says which of the two it built.
+    transacted: base.transacted ? async (source, fn) => {
       const engine = engineOf(source);
       if (!engine) throw new Error(`No source named '${source}' — declared sources are ${[DEFAULT, ...engines.keys()].join(', ')}.`);
+      if (!engine.transacted) throw new Error(`Source '${source}' hands out no transaction.`);
       return engine.transacted(fn);
-    },
-    raw: (base as { sqlite?: { exec(sql: string): void } }).sqlite,
-    dialect: base.dialect,
-    // Additive migration: creates missing tables AND adds columns an entity gained.
-    // One pass per source, each seeing only its own tables — which is what makes a
-    // cross-source `ref()` a miss rather than a constraint against a stranger.
+    } : undefined,
+    // One pass per source, each seeing only its own entities and the NAMES of the others —
+    // which is what makes a cross-source `ref()` a miss rather than a constraint against a
+    // stranger. What a pass DOES is the source's own: it knows its engine, this does not.
     migrate: async (app) => {
-      await migrate(partition(app, (name) => !home.has(lowerFirst(name)), true) as never, base.db);
+      await base.migrate?.(viewOf(app, (name) => !home.has(lowerFirst(name)), true));
       for (const [name, engine] of engines) {
-        await migrate(partition(app, (e) => home.get(lowerFirst(e)) === name, false) as never, engine.db);
+        await engine.migrate?.(viewOf(app, (e) => home.get(lowerFirst(e)) === name, false));
       }
     },
-    // Every engine, the default one last: a named source may hold what the default
-    // refers to, and closing in reverse of opening is the rule everywhere else.
+    // Every source, the default one last: a named source may hold what the default refers
+    // to, and closing in reverse of opening is the rule everywhere else.
     close: async () => {
-      for (const engine of [...engines.values()].reverse()) await engine.db.destroy();
-      await base.db.destroy();
+      for (const engine of [...engines.values()].reverse()) await engine.close?.();
+      await base.close?.();
     },
   };
 }

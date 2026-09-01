@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import type { EntityOrm } from '@fougere/core';
+import type { Storage } from '@fougere/core';
 import { fougereAdapter } from '../src/adapter.js';
 
-/** In-memory ORM that satisfies what the adapter needs (EntityOrm + findBy/findAllBy). */
-function makeMemoryOrm(): EntityOrm & {
+/** In-memory storage that satisfies what the adapter needs (Storage + findBy/findAllBy). */
+function makeMemoryStorage(): Storage & {
   findBy(c: Record<string, unknown>): Promise<Record<string, unknown> | undefined>;
   findAllBy(c: Record<string, unknown>): Promise<Record<string, unknown>[]>;
 } {
@@ -28,7 +28,7 @@ function makeMemoryOrm(): EntityOrm & {
       }
       if (opts?.offset !== undefined) items = items.slice(opts.offset);
       if (opts?.limit !== undefined) items = items.slice(0, opts.limit);
-      const result = items as ReturnType<EntityOrm['list']> extends Promise<infer R> ? R : never;
+      const result = items as ReturnType<Storage['list']> extends Promise<infer R> ? R : never;
       (result as { total?: number }).total = store.size;
       return result as never;
     },
@@ -65,30 +65,30 @@ function makeMemoryOrm(): EntityOrm & {
     async findAllByKeys() { return new Map(); },
     async upsert(i: any) { return i; },
     async upsertAll(rows: any[]) { return rows.length; },
-    /** What this ORM wraps — the Kysely instance for the SQL one, the Map here. */
+    /** What this storage wraps — the Kysely instance for the SQL one, the Map here. */
     client: store,
   };
 }
 
 describe('fougereAdapter', () => {
-  let userOrm: ReturnType<typeof makeMemoryOrm>;
+  let userStorage: ReturnType<typeof makeMemoryStorage>;
   let adapter: ReturnType<ReturnType<typeof fougereAdapter>>;
 
   beforeEach(() => {
-    userOrm = makeMemoryOrm();
-    const ormMap = new Map<string, EntityOrm>([['user', userOrm]]);
+    userStorage = makeMemoryStorage();
+    const storageMap = new Map<string, Storage>([['user', userStorage]]);
     // The factory returns a function — call it with empty BetterAuthOptions to get the runtime adapter.
-    adapter = fougereAdapter(ormMap)({} as any);
+    adapter = fougereAdapter(storageMap)({} as any);
   });
 
-  it('create routes to EntityOrm.create', async () => {
+  it('create routes to Storage.create', async () => {
     // createAdapterFactory injects a generated id; assert email round-trips.
     const created = await adapter.create({
       model: 'user',
       data: { email: 'a@b.c', name: 'A' } as never,
     });
     expect(created).toMatchObject({ email: 'a@b.c', name: 'A' });
-    const list = await userOrm.list();
+    const list = await userStorage.list();
     expect(list).toHaveLength(1);
     expect(list[0]).toMatchObject({ email: 'a@b.c' });
   });
@@ -134,7 +134,7 @@ describe('fougereAdapter', () => {
       model: 'user',
       where: [{ field: 'id', value: id, operator: 'eq', connector: 'AND', mode: 'sensitive' }],
     });
-    expect(await userOrm.findById(id)).toBeUndefined();
+    expect(await userStorage.findById(id)).toBeUndefined();
   });
 
   it('count returns the number of matching rows', async () => {

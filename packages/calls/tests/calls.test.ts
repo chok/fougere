@@ -7,7 +7,7 @@ import {
   RouteAddress,
   createApp,
   createAppRunner,
-  type OrmFactory,
+  type StorageFactory,
 } from '@fougere/core';
 import { scanProject } from '@fougere/core/node';
 import { CallRing } from '../src/CallRing.js';
@@ -16,7 +16,7 @@ import type { CallPage } from '@fougere/core';
 
 const fixtures = join(import.meta.dirname, 'fixtures');
 const rows = [{ id: '1', label: 'a first order' }];
-const ormFactory: OrmFactory = () => ({
+const storageFactory: StorageFactory = () => ({
   list: vi.fn(async () => rows),
   findById: vi.fn(),
   create: vi.fn(),
@@ -109,7 +109,7 @@ describe('the extension', () => {
     await using app = await createApp({
       scan: await scanProject(fixtures),
       createContainer,
-      ormFactory,
+      storageFactory,
       extensions: [calls()],
     });
 
@@ -131,7 +131,7 @@ describe('the extension', () => {
     const boot = async () => await createApp({
       scan: await scanProject(fixtures),
       createContainer,
-      ormFactory,
+      storageFactory,
       extensions: [shared],
     });
 
@@ -160,7 +160,7 @@ describe('the extension', () => {
     await using app = await createApp({
       scan: await scanProject(fixtures),
       createContainer,
-      ormFactory,
+      storageFactory,
       extensions: [calls()],
     });
 

@@ -19,7 +19,7 @@ class Doc extends entity({
 
 const fields = Doc.getFields();
 
-function ormReturning(current: Record<string, unknown>) {
+function storageReturning(current: Record<string, unknown>) {
   const updates: { id: string; patch: Record<string, unknown> }[] = [];
   return {
     updates,
@@ -36,15 +36,15 @@ function ormReturning(current: Record<string, unknown>) {
 
 async function updateThenUnwind(stored: Record<string, unknown>, wrote: Record<string, unknown>) {
   const journal: Undo[] = [];
-  const orm = ormReturning(stored);
-  const recorded = recording(orm, 'Doc', fields, journal);
+  const storage = storageReturning(stored);
+  const recorded = recording(storage, 'Doc', fields, journal);
 
   await (recorded as unknown as {
     update(id: string, patch: Record<string, unknown>): Promise<unknown>;
   }).update('1', wrote);
 
   expect(journal).toHaveLength(1);
-  return { journal, orm };
+  return { journal, storage };
 }
 
 describe('a compensated update, replayed', () => {

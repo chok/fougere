@@ -722,7 +722,7 @@ export async function parsePresenterMethods(filePath: string, projectRoot?: stri
 
 /**
  * Parse constructor parameter types from a source file's default class.
- * Returns type names (e.g. ['PostOrm', 'Logger']) for DI resolution.
+ * Returns type names (e.g. ['PostStorage', 'Logger']) for DI resolution.
  */
 export async function parseConstructorParams(filePath: string, projectRoot?: string): Promise<Param[]> {
   const ts = await loadTS();

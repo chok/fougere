@@ -8,14 +8,14 @@ import {
   createAppRunner,
   createLocalRunner,
   type DispatchEvent,
-  type OrmFactory,
+  type StorageFactory,
 } from '../src/index.js';
 import { scanProject } from '../src/node.js';
 import { EMPTY_INVOCATION } from '../src/contract/Invocation.js';
 
 const fixtures = join(import.meta.dirname, 'fixtures');
 const rows = [{ id: '1', name: 'Fern', price: 12.5 }];
-const ormFactory: OrmFactory = () => ({
+const storageFactory: StorageFactory = () => ({
   list: vi.fn(async () => rows),
   findById: vi.fn(),
   create: vi.fn(),
@@ -29,7 +29,7 @@ describe('App.dispatch', () => {
     await using app = await createApp({
       scan: await scanProject(fixtures),
       createContainer,
-      ormFactory,
+      storageFactory,
       dispatchObservers: [(event) => events.push(event)],
     });
     const call = new Call(new RouteAddress({ entity: 'product', operation: 'list' }));
@@ -45,7 +45,7 @@ describe('App.dispatch', () => {
     await using app = await createApp({
       scan: await scanProject(fixtures),
       createContainer,
-      ormFactory,
+      storageFactory,
     });
 
     // `app.use` adds a middleware this late; this is its dual — participate, or watch.
@@ -63,7 +63,7 @@ describe('App.dispatch', () => {
     await using app = await createApp({
       scan: await scanProject(fixtures),
       createContainer,
-      ormFactory,
+      storageFactory,
       dispatchObservers: [(event) => events.push(event)],
     });
 
@@ -78,7 +78,7 @@ describe('App.dispatch', () => {
     await using app = await createApp({
       scan: await scanProject(fixtures),
       createContainer,
-      ormFactory,
+      storageFactory,
       dispatchObservers: [(event) => events.push(event)],
     });
 

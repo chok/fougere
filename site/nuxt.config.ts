@@ -30,7 +30,7 @@ export default defineNuxtConfig({
   // being fetched from api.iconify.design at render time. Both halves are named: `scan`
   // inlines every name the source spells into the client bundle, and the collections are
   // listed for the server bundle because Nitro does not trace them into .output/server
-  // under pnpm — the same trap as drizzle-orm.
+  // under pnpm — the same trap as drizzle-storage.
   icon: {
     serverBundle: { collections: ['lucide', 'noto'] },
     clientBundle: { scan: true },

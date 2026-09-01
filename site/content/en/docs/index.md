@@ -96,7 +96,7 @@ asks you to rewrite what you wrote.
 [Entities](/docs/schema/entities) · [Views](/docs/schema/views) ·
 [Standard Schema](/docs/schema/standard-schema) · [Handlers](/docs/business/handlers) ·
 [Presenters](/docs/business/presenters) · [Collectors](/docs/business/collectors) · [Errors](/docs/business/errors) · [Seeds](/docs/business/seeds) ·
-[Facts](/docs/business/facts) · [The ORM port](/docs/business/orm) · [Repositories](/docs/business/repositories)
+[Facts](/docs/business/facts) · [Storage](/docs/business/storage) · [Repositories](/docs/business/repositories)
 
 **Client side** — [Queries & commands](/docs/client/queries-commands) ·
 [Forms](/docs/client/forms) · [Session](/docs/client/session) · [invoke](/docs/client/invoke)

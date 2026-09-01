@@ -1,7 +1,7 @@
 # @fougere/auth-better
 > Fougere's auth
 A translation layer onto [better-auth](https://better-auth.com): its writes go through
-Fougere's ORM, and the application's `User` stays its own — Session and Account are
+Fougere's storage, and the application's `User` stays its own — Session and Account are
 built against it.
 
 ## Installation

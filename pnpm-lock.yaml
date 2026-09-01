@@ -510,6 +510,9 @@ importers:
 
   demos/multi-frond/remote-blog:
     dependencies:
+      '@fougere/adapter-memory':
+        specifier: workspace:*
+        version: link:../../../packages/adapter/memory
       '@fougere/adapter-rest':
         specifier: workspace:*
         version: link:../../../packages/adapter/rest
@@ -540,6 +543,9 @@ importers:
 
   demos/multi-transport:
     dependencies:
+      '@fougere/adapter-memory':
+        specifier: workspace:*
+        version: link:../../packages/adapter/memory
       '@fougere/container':
         specifier: workspace:*
         version: link:../../packages/container
@@ -860,6 +866,9 @@ importers:
 
   demos/sse-live:
     dependencies:
+      '@fougere/adapter-memory':
+        specifier: workspace:*
+        version: link:../../packages/adapter/memory
       '@fougere/container':
         specifier: workspace:*
         version: link:../../packages/container
@@ -1026,6 +1035,9 @@ importers:
 
   demos/together-frame:
     dependencies:
+      '@fougere/adapter-file':
+        specifier: workspace:*
+        version: link:../../packages/adapter/file
       '@fougere/adapter-sql':
         specifier: workspace:*
         version: link:../../packages/adapter/sql
@@ -1065,6 +1077,18 @@ importers:
         specifier: ^13.0.3
         version: 13.0.3
 
+  packages/adapter/file:
+    dependencies:
+      '@fougere/adapter-memory':
+        specifier: workspace:*
+        version: link:../memory
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../schema
+
   packages/adapter/graphql:
     dependencies:
       '@fougere/http':
@@ -1080,6 +1104,15 @@ importers:
       graphql:
         specifier: ^16.13.1
         version: 16.13.1
+
+  packages/adapter/memory:
+    dependencies:
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../schema
 
   packages/adapter/rest:
     dependencies:
@@ -1238,6 +1271,9 @@ importers:
 
   packages/app/shared:
     dependencies:
+      '@fougere/adapter-memory':
+        specifier: workspace:*
+        version: link:../../adapter/memory
       '@fougere/adapter-rest':
         specifier: workspace:*
         version: link:../../adapter/rest

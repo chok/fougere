@@ -5,18 +5,18 @@ import { StorageGuard } from '../src/dispatch/StorageGuard.js';
 describe('StorageGuard', () => {
   const fields = { name: text(), stock: number({ min: 0 }) };
 
-  it('forwards valid writes without changing the ORM interface', async () => {
-    const orm = {
-      marker: 'orm',
+  it('forwards valid writes without changing the storage interface', async () => {
+    const storage = {
+      marker: 'storage',
       create: vi.fn(async (input: object) => input),
       update: vi.fn(async (_id: string, input: object) => input),
       list: vi.fn(async () => []),
     };
-    const guarded = new StorageGuard(fields, 'product').guard(orm);
+    const guarded = new StorageGuard(fields, 'product').guard(storage);
 
     await expect(guarded.create({ name: 'Fern', stock: 2 })).resolves
       .toEqual({ name: 'Fern', stock: 2 });
-    expect(guarded.marker).toBe('orm');
+    expect(guarded.marker).toBe('storage');
   });
 
   it('rejects invalid domain output on the promise boundary', async () => {

@@ -206,7 +206,7 @@ function cardRefusal(source: string, what: string): FougereError {
 /** A façade as the runtime holds it: op names to functions, nothing typed about them. */
 
 /**
- * The door built in front of a handler — the framework's second port, after `EntityOrm`.
+ * The door built in front of a handler — the framework's second port, after `Storage`.
  *
  * `Facade<PostHandler>` is what a neighbouring frond injects. It names what ARRIVES
  * rather than what is written: never the handler (nobody injects it, and its methods take

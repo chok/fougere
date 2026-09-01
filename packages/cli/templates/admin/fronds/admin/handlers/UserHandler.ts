@@ -9,19 +9,19 @@ export class UserCard extends User.pick('id', 'name', 'status') {}
 export default class UserHandler extends Crud(User) {
   /** active→inactive — an operation, not a field write. Judge: active only. */
   async deactivate(id: string): Promise<User> {
-    const user = await this.orm.findById(id);
+    const user = await this.storage.findById(id);
     if (!user) {
       throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `User '${id}' not found`, entity: 'user', operation: 'deactivate' });
     }
     if (user.status === 'inactive') {
       throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already inactive', entity: 'user', operation: 'deactivate' });
     }
-    return this.orm.update(id, { status: 'inactive' });
+    return this.storage.update(id, { status: 'inactive' });
   }
 
   /** Active users, projected to the card contract. */
   async active(): Promise<UserCard[]> {
-    const users = await this.orm.list({ where: { status: 'active' } });
+    const users = await this.storage.list({ where: { status: 'active' } });
     return users.map(({ id, name, status }) => ({ id, name, status }));
   }
 }

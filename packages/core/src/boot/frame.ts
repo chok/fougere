@@ -52,7 +52,7 @@ const pick = (row: Record<string, unknown>, keys: readonly string[]): Record<str
  *
  * The inverse of an upsert is derivable exactly when the conflict is the primary key: read
  * the rows by key first, then restore the ones that were there and delete the ones that
- * were not. `SqlEntityOrm` spells `onConflict(pk)` on SQLite and Postgres, so that holds —
+ * were not. `SqlStorage` spells `onConflict(pk)` on SQLite and Postgres, so that holds —
  * but MySQL's `onDuplicateKeyUpdate` fires on ANY unique constraint, and a row that
  * conflicts on a unique email while carrying a different key would be restored under a key
  * the write never touched.
@@ -79,15 +79,15 @@ function refuseAmbiguousUpsert(entity: string, gesture: string): never {
 }
 
 /**
- * The ORM a member is handed inside a compensated frame: the same port, writing the same
+ * The storage a member is handed inside a compensated frame: the same port, writing the same
  * rows, leaving an inverse behind each time.
  *
- * `Object.create` for the same reason `StorageGuard` uses it — the ORM keeps every gesture
+ * `Object.create` for the same reason `StorageGuard` uses it — the storage keeps every gesture
  * it had, including the ones this knows nothing about.
  */
-export function recording<T extends object>(orm: T, entity: string, fields: Fields, journal: Undo[]): T {
-  const base = orm as unknown as Undoable;
-  if (typeof base.create !== 'function' || typeof base.update !== 'function') return orm;
+export function recording<T extends object>(storage: T, entity: string, fields: Fields, journal: Undo[]): T {
+  const base = storage as unknown as Undoable;
+  if (typeof base.create !== 'function' || typeof base.update !== 'function') return storage;
 
   const key = FieldSet.of(fields).primary;
   if (!key) {
@@ -97,7 +97,7 @@ export function recording<T extends object>(orm: T, entity: string, fields: Fiel
     );
   }
 
-  const recorded = Object.create(orm) as T & Undoable;
+  const recorded = Object.create(storage) as T & Undoable;
 
   recorded.create = async function (...args) {
     const row = await base.create.apply(this, args);

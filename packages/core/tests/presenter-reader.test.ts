@@ -14,7 +14,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner } from '../src/index.js';
-import type { OrmFactory } from '../src/index.js';
+import type { StorageFactory } from '../src/index.js';
 import { EMPTY_INVOCATION } from '../src/contract/Invocation.js';
 import ListPresenter from './fixtures-presenter-reader/fronds/listes/presenters/ListPresenter.js';
 
@@ -25,17 +25,17 @@ const rows = [
   { id: 'l2', title: 'Celle d\'un autre', ownerUserId: 'u2' },
 ];
 
-const ormFactory: OrmFactory = (() => ({
+const storageFactory: StorageFactory = (() => ({
   list: vi.fn(async () => rows),
   findById: vi.fn(async () => rows[0]),
   create: vi.fn(), update: vi.fn(), delete: vi.fn(),
   output: vi.fn(function (this: unknown) { return this; }),
-})) as unknown as OrmFactory;
+})) as unknown as StorageFactory;
 
 beforeEach(() => { ListPresenter.calls = 0; });
 
 const scan = await scanProject(root);
-const app = () => createApp({ scan, createContainer, ormFactory });
+const app = () => createApp({ scan, createContainer, storageFactory });
 
 describe('a computed field sees the reader', () => {
   it('answers differently for two readers, on the same rows', async () => {

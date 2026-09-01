@@ -12,7 +12,7 @@
  *   pnpm load             # k6 against the shop, in stages
  *   pnpm signoz           # a collector, if you want to see it
  */
-import { createApp, createLocalRunner, type EntityOrm } from '@fougere/core';
+import { createApp, createLocalRunner, type Storage } from '@fougere/core';
 import { scanProject, setModuleLoader, frondAliases } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { serve, createHttpTransport } from '@fougere/transport-http';
@@ -44,21 +44,21 @@ const PRODUCTS = [
   { id: 'p2', title: 'Moss', stock: 0 },
 ];
 
-const memoryOrm = () => ({
+const memoryStorage = () => ({
   async list() { return PRODUCTS.map((p) => ({ ...p })); },
   async findById(id: string) { return PRODUCTS.find((p) => p.id === id); },
   async create(input: Record<string, unknown>) { return { id: 'created', ...input }; },
   async update() { throw new Error('not exercised'); },
   async delete() { return false; },
   output() { return this; },
-}) as unknown as EntityOrm;
+}) as unknown as Storage;
 
 const stopping: (() => Promise<void>)[] = [];
 
 // ── catalog — holds Product, answers about it ───
 // Observing is declared with the app, not wired onto it after the fact — so `dispose()`
 // flushes the telemetry and this file no longer owes a `stop()` it could forget.
-const catalog = await createApp({ scan: await scanProject(join(root, 'catalog')), createContainer, ormFactory: memoryOrm, extensions: [observed('catalog'), calls()] });
+const catalog = await createApp({ scan: await scanProject(join(root, 'catalog')), createContainer, storageFactory: memoryStorage, extensions: [observed('catalog'), calls()] });
 const catalogReceiver = await serve(createLocalRunner(catalog), { port: CATALOG });
 stopping.push(async () => { await catalogReceiver.close(); await catalog.dispose(); });
 

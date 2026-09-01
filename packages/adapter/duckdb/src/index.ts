@@ -61,7 +61,7 @@ export interface ConnectOptions {
 }
 
 /** A query's answer: the rows, projected onto the shape that was named. */
-export interface Sources {
+export interface Reads {
   /**
    * Name the shape the answer takes, then write the query.
    *
@@ -113,10 +113,10 @@ function targetOf(declaration: { path?: string; attach?: string }, alias: string
  *
  * `READ_ONLY` on every attach, and it is the engine that enforces it rather than a rule
  * anyone here remembers: this door reads across an app's whole storage, so it is
- * strictly more reachable than `orm.client` — which at least keeps the scope of its
+ * strictly more reachable than `storage.client` — which at least keeps the scope of its
  * entity — and a write through it would meet no judge at all.
  */
-export async function connectSources(options: ConnectOptions): Promise<Sources> {
+export async function connectSources(options: ConnectOptions): Promise<Reads> {
   const resolve = options.tableName ?? toTableName;
 
   // Where each named entity lives; anything unnamed is in the default source.
@@ -149,7 +149,7 @@ export async function connectSources(options: ConnectOptions): Promise<Sources> 
     if (!(type in EXTENSION)) {
       throw new Error(
         `source '${alias}' is a ${type} database, which DuckDB cannot attach — there is no ` +
-        `such extension. Read it by key through its own ORM, or mirror it into one of ` +
+        `such extension. Read it by key through its own storage, or mirror it into one of ` +
         `${Object.keys(EXTENSION).join(', ')}.`,
       );
     }

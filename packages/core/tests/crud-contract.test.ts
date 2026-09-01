@@ -5,7 +5,7 @@
  * resolve the mixin's source — and it resolves `@fougere/core` as
  * `<workspaceRoot>/packages/core/src`, a layout that exists only inside this
  * monorepo. An installed app falls back to its own root, finds nothing, and
- * every inherited op would reach the ORM unjudged.
+ * every inherited op would reach the storage unjudged.
  *
  * So both worlds are covered here: inside the workspace the scan discovers the
  * ops, outside it discovers nothing — and the façade must judge either way.
@@ -17,17 +17,17 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner } from '../src/index.js';
-import type { OrmFactory } from '../src/index.js';
+import type { StorageFactory } from '../src/index.js';
 import type { InvocationContext } from '../src/contract/Invocation.js';
 
 const packagesDir = join(import.meta.dirname, '..', '..');
 const coreDist = join(packagesDir, 'core', 'dist', 'index.js');
 const schemaDist = join(packagesDir, 'schema', 'dist', 'index.js');
 
-/** An ORM that realises and never judges — like the real one. */
-function spyOrm() {
+/** A storage that realises and never judges — like the real one. */
+function spyStorage() {
   const rows: Record<string, unknown>[] = [];
-  const orm = {
+  const storage = {
     rows,
     list: vi.fn(async () => ({ data: rows })),
     findById: vi.fn(async (id: string) => rows.find((r) => r.id === id)),
@@ -38,16 +38,16 @@ function spyOrm() {
     }),
     update: vi.fn(async (id: string, input: Record<string, unknown>) => ({ id, ...input })),
     delete: vi.fn(async () => true),
-    output: () => orm,
+    output: () => storage,
   };
-  return orm;
+  return storage;
 }
 
 async function boot(root: string) {
-  const orm = spyOrm();
-  const ormFactory: OrmFactory = vi.fn(() => orm) as unknown as OrmFactory;
-  const app = await createApp({ scan: await scanProject(root), createContainer, ormFactory });
-  return { app, orm, run: createLocalRunner(app) };
+  const storage = spyStorage();
+  const storageFactory: StorageFactory = vi.fn(() => storage) as unknown as StorageFactory;
+  const app = await createApp({ scan: await scanProject(root), createContainer, storageFactory });
+  return { app, storage, run: createLocalRunner(app) };
 }
 
 const call = (body: unknown): InvocationContext => ({ params: {}, query: {}, body, state: {} });
@@ -114,54 +114,54 @@ describe('as an installed app — the scan finds nothing, the façade judges any
   });
 
   it('refuses a read-only field supplied at create', async () => {
-    const { app, orm, run } = await boot(root);
+    const { app, storage, run } = await boot(root);
 
     await expect(
       run({ entity: 'note', op: 'create' }, call({ title: 'hello', ownerId: 'someone-else' })),
     ).rejects.toMatchObject({ code: 'VALIDATION_FAILED', message: expect.stringContaining('Read-only') });
 
-    expect(orm.create).not.toHaveBeenCalled();
+    expect(storage.create).not.toHaveBeenCalled();
     await app.dispose();
   });
 
   it('refuses a key outside the contract at create (mass assignment)', async () => {
-    const { app, orm, run } = await boot(root);
+    const { app, storage, run } = await boot(root);
 
     await expect(
       run({ entity: 'note', op: 'create' }, call({ title: 'hello', isAdmin: true })),
     ).rejects.toMatchObject({ code: 'VALIDATION_FAILED', message: expect.stringContaining('Unknown field') });
 
-    expect(orm.create).not.toHaveBeenCalled();
+    expect(storage.create).not.toHaveBeenCalled();
     await app.dispose();
   });
 
   it('refuses an immutable field re-supplied in a patch', async () => {
-    const { app, orm, run } = await boot(root);
+    const { app, storage, run } = await boot(root);
 
     await expect(
       run({ entity: 'note', op: 'update' }, { ...call({ id: 'forged', title: 'x' }), params: { id: 'note-1' } }),
     ).rejects.toMatchObject({ code: 'VALIDATION_FAILED', message: expect.stringContaining('Immutable') });
 
-    expect(orm.update).not.toHaveBeenCalled();
+    expect(storage.update).not.toHaveBeenCalled();
     await app.dispose();
   });
 
   it('lets a legal create through, untouched', async () => {
-    const { app, orm, run } = await boot(root);
+    const { app, storage, run } = await boot(root);
 
     const created = await run({ entity: 'note', op: 'create' }, call({ title: 'hello' }));
 
-    expect(orm.create).toHaveBeenCalledWith({ title: 'hello' });
+    expect(storage.create).toHaveBeenCalledWith({ title: 'hello' });
     expect(created).toMatchObject({ title: 'hello' });
     await app.dispose();
   });
 
   it('leaves a partial patch legal — an unsent field is untouched', async () => {
-    const { app, orm, run } = await boot(root);
+    const { app, storage, run } = await boot(root);
 
     await run({ entity: 'note', op: 'update' }, { ...call({ title: 'renamed' }), params: { id: 'note-1' } });
 
-    expect(orm.update).toHaveBeenCalledWith('note-1', { title: 'renamed' });
+    expect(storage.update).toHaveBeenCalledWith('note-1', { title: 'renamed' });
     await app.dispose();
   });
 });

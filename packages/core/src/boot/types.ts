@@ -10,7 +10,7 @@ import type { Fronds } from '../descriptor/Fronds.js';
 import type { FrondDescriptor } from '../descriptor/frond.js';
 import type { ScanResult } from '../scan/result.js';
 import type { SchemaView } from '@fougere/schema';
-import type { OrmFactory } from '../orm.js';
+import type { StorageFactory } from '../storage.js';
 import type { AppMiddleware } from '../wire/middleware.js';
 import type { RpcAnswer, Transport } from '../wire/call.js';
 import type { Extension } from './AppLifecycle.js';
@@ -23,23 +23,23 @@ import type { DispatchPort } from '../dispatch/DispatchPort.js';
 export interface CreateAppOptions {
   /** Factory function to create the container. Required. */
   createContainer: () => Container;
-  /** Factory to auto-generate EntityOrm for each scanned entity. */
-  ormFactory?: OrmFactory;
+  /** Factory to auto-generate Storage for each scanned entity. */
+  storageFactory?: StorageFactory;
   /**
    * Which source an entity's rows live in, and how to open a transaction on one — the two
    * questions that decide whether `Together<[…]>` gets the engine's own unwind or replays
    * inverses itself.
    *
-   * Optional together, because a host may hand in a bare `ormFactory` and know neither. A
+   * Optional together, because a host may hand in a bare `storageFactory` and know neither. A
    * frame then compensates: not knowing where the rows are and promising atomicity over
    * them are two different things, and only one of them is honest.
    */
   sourceOf?: (entityName: string) => string;
-  transacted?: <R>(source: string, fn: (ormFactory: OrmFactory) => Promise<R>) => Promise<R>;
+  transacted?: <R>(source: string, fn: (storageFactory: StorageFactory) => Promise<R>) => Promise<R>;
   /**
    * Builds the cross-source reader a frond gets when it declares `reads:`.
    *
-   * A factory rather than a value, for the same reason `ormFactory` is one: core must
+   * A factory rather than a value, for the same reason `storageFactory` is one: core must
    * not name a storage package, and this one costs 71 MB of downloaded extensions and a
    * native module — nothing a first run that only wanted sqlite should carry. The host
    * decides what backs it; `@fougere/adapter-duckdb` is one answer, not the contract.
@@ -220,14 +220,14 @@ export interface App extends DispatchPort {
    * the dual of {@link facadeFor}. `undefined` when no loaded frond hosts the entity,
    * or when the app booted with no storage at all.
    *
-   * `unknown` because the port belongs to whoever wired it: narrowing it to `EntityOrm`
+   * `unknown` because the port belongs to whoever wired it: narrowing it to `Storage`
    * is the caller saying which implementation they are standing on.
    */
-  ormFor(entity: string): unknown | undefined;
+  storageFor(entity: string): unknown | undefined;
   /**
    * The presenter of an entity, resolved through its owning frond's scope.
    *
-   * Same shape as {@link ormFor}, and it exists so an adapter never spells the container
+   * Same shape as {@link storageFor}, and it exists so an adapter never spells the container
    * key itself: `schema-graphql` wrote out `${Name}Presenter` by hand, and a key respelled
    * in a second place finds nothing and reports nothing the day the convention moves.
    */

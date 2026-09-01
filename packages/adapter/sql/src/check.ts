@@ -2,7 +2,7 @@
  * Shape → CHECK constraints.
  *
  * `oneOf`, `min`, `max` were declared on the field and read by the façade alone: a
- * handler writing through the ORM put `status: 'brouillon'` in a column that declares
+ * handler writing through the storage put `status: 'brouillon'` in a column that declares
  * two values, and nothing said a word. The rule was in the schema; no one held it on
  * that path.
  *

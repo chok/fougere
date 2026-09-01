@@ -11,7 +11,7 @@ export class CreateAuthorInput extends Author.omit('id') {}
 export default class AuthorHandler extends Crud(Author) {
   async create(input: CreateAuthorInput) {
     console.log(`[AuthorHandler] Creating author: ${input.name}`);
-    const author = await this.orm.create(input);
+    const author = await this.storage.create(input);
     console.log(`[AuthorHandler] Author created: ${author.id}`);
     return author;
   }

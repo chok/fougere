@@ -22,7 +22,7 @@
 import { lowerFirst } from '@fougere/schema';
 
 /**
- * What an emitter injects. Resolved by type, like `EntityOrm<Post>` and `Facade<T>`.
+ * What an emitter injects. Resolved by type, like `Storage<Post>` and `Facade<T>`.
  *
  * The returned promise settles when the fact has been **dispatched**, never when it has
  * been handled: a subscriber's failure is its own. The `EventBus` this replaces did

@@ -8,7 +8,7 @@ export type Change =
   | { kind: 'added'; field: string; to: FieldDescriptor; required: boolean }
   /** DDL: drop the column. Codec: the old caller still sends it, and it goes nowhere. */
   | { kind: 'removed'; field: string; from: FieldDescriptor; required: boolean }
-  /** DDL: rename the column. Codec and ORM: one more entry in the field-to-column map. */
+  /** DDL: rename the column. Codec and storage: one more entry in the field-to-column map. */
   | { kind: 'renamed'; from: string; to: string; field: FieldDescriptor }
   /** DDL: alter the type. Codec: convert the value, when it can. */
   | { kind: 'retyped'; field: string; from: TypeSet; to: TypeSet }

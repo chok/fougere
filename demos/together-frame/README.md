@@ -1,6 +1,6 @@
 # together-frame — two writes that stand or fall as one
 
-`EntityOrm<T>` is the port whose every gesture is **one statement**, and one statement is
+`Storage<T>` is the port whose every gesture is **one statement**, and one statement is
 atomic in every engine. `Together<[…]>` is the port whose unit is a **block**.
 
 ```ts
@@ -13,7 +13,7 @@ await this.together.run(async ([accounts, ledger]) => {
 });
 ```
 
-Resolved by type, like `EntityOrm<E>`, `Facade<H>` and `Emit<F>` — the type names the
+Resolved by type, like `Storage<E>`, `Facade<H>` and `Emit<F>` — the type names the
 subject, the container holds the realization. Nothing is registered, nothing is ambient:
 the block is visible at the call site.
 
@@ -67,7 +67,7 @@ await this.together.run(async ([rates, ledger], [mirror]) => { await mirror.refr
 
 The first list is the entities the unwind covers. The second is **providers**, rebuilt
 inside the frame so that what THEY write is covered too: `RateMirror` writes its pages
-through `EntityOrm<RateCard>`, so it receives the framed ORM through its ordinary
+through `Storage<RateCard>`, so it receives the framed storage through its ordinary
 constructor — no locator, no second injection path, and not one line of `Mirror` knows a
 frame exists.
 
