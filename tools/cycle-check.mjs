@@ -13,6 +13,12 @@
  * taking an `App` sat on the wire. A guard blind to those would have watched it happen.
  *
  * So both are reported; `(type-only)` marks the ones the emitted JS does not contain.
+ *
+ * It reads PAIRS, and that is its ceiling: the same commit read as a graph is ONE
+ * strongly connected component of eight directories out of ten, held by eight erased
+ * edges — three of which sufficed. Three pairs and one eight-way tangle are the same
+ * fact seen at two resolutions, and this file only reaches the first. It exists because
+ * the tool that reads the second is not published; when it is, delete this.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
