@@ -1,8 +1,14 @@
 {
   "name": "@fougere/adapter-memory",
-  "version": "0.5.0-alpha.1",
-  "description": "Rows in a Map — the source a first run meets, and the one that ships no driver.",
-  "keywords": ["fougere", "typescript", "storage", "in-memory", "testing"],
+  "version": "0.6.0-alpha.0",
+  "description": "Rows in a Map \u2014 the source a first run meets, and the one that ships no driver.",
+  "keywords": [
+    "fougere",
+    "typescript",
+    "storage",
+    "in-memory",
+    "testing"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -18,7 +24,10 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "src"],
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
     "build": "rm -rf dist && tsc",
     "test": "vitest run",
@@ -30,5 +39,7 @@
     "@fougere/core": "workspace:*",
     "@fougere/schema": "workspace:*"
   },
-  "publishConfig": { "access": "public" }
+  "publishConfig": {
+    "access": "public"
+  }
 }

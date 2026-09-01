@@ -1,7 +1,7 @@
 {
   "name": "@fougere/adapter-file",
-  "version": "0.5.0-alpha.1",
-  "description": "Rows as files — one JSON per row, in a directory per entity.",
+  "version": "0.6.0-alpha.0",
+  "description": "Rows as files \u2014 one JSON per row, in a directory per entity.",
   "keywords": [
     "fougere",
     "typescript",

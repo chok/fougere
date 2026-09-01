@@ -1,7 +1,7 @@
 {
   "name": "@fougere/adapter-graphql",
-  "version": "0.5.0-alpha.1",
-  "description": "Entity → GraphQL types, inputs and CRUD, through Pothos.",
+  "version": "0.6.0-alpha.0",
+  "description": "Entity \u2192 GraphQL types, inputs and CRUD, through Pothos.",
   "keywords": [
     "fougere",
     "typescript",

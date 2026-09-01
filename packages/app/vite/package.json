@@ -1,6 +1,6 @@
 {
   "name": "@fougere/vite",
-  "version": "0.5.0-alpha.1",
+  "version": "0.6.0-alpha.0",
   "description": "The Vite plugin: what any Vite-built host must know to run a Fougere app.",
   "keywords": [
     "fougere",

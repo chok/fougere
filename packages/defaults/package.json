@@ -1,7 +1,7 @@
 {
   "name": "@fougere/defaults",
-  "version": "0.5.0-alpha.1",
-  "description": "The conventional boot of a Fougere app — the one place storage is wired.",
+  "version": "0.6.0-alpha.0",
+  "description": "The conventional boot of a Fougere app \u2014 the one place storage is wired.",
   "keywords": [
     "fougere",
     "typescript",
