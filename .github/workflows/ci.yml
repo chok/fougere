@@ -84,6 +84,10 @@ jobs:
 
       - run: pnpm arch
 
+      # `arch` asks what a file REACHES; this asks where it LIVES — a family that
+      # depends on a family depending back. Needs no build: it reads `src/` alone.
+      - run: pnpm arch:cycles
+
   audit:
     runs-on: ubuntu-latest
     timeout-minutes: 10

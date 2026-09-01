@@ -16,6 +16,7 @@
     "publish:check": "node tools/publish-check.mjs",
     "door:check": "node tools/door-check.mjs",
     "arch": "depcruise packages --output-type err",
+    "arch:cycles": "node tools/cycle-check.mjs",
     "coverage": "pnpm -r --filter './packages/**' exec vitest run --passWithNoTests --coverage --coverage.provider=v8 --coverage.reporter=text --coverage.include=src/**",
     "changeset": "changeset",
     "version-packages": "changeset version",
