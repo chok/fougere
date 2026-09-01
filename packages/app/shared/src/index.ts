@@ -14,7 +14,6 @@ export {
   extendFougere,
   useFougereApp,
   reloadFougere,
-  createMemoryOrm,
   type FougereServerConfig,
 } from './boot.js';
 
@@ -53,3 +52,6 @@ export { sessionViewOf, type SessionView } from './session.js';
 export { stateFor } from './state.js';
 
 export { serveGraphQL, type GraphQLRequest } from './graphql.js';
+
+// Re-exported where every host already looks for it; it lives in its own adapter now.
+export { createMemoryStorage } from '@fougere/adapter-memory';

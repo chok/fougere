@@ -11,6 +11,7 @@ import { scanProject, setModuleLoader, frondAliases } from '@fougere/core/node';
 import type { App, InvocationContext, Transport } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { serve, createHttpTransport } from '@fougere/transport-http';
+import { createMemoryStorage } from '@fougere/adapter-memory';
 import { createSocketTransport, serveSocket } from './socket-transport.js';
 
 const inv = (over: Partial<InvocationContext> = {}): InvocationContext =>
@@ -44,7 +45,7 @@ async function main() {
   });
   setModuleLoader((path) => jiti.import(path) as Promise<Record<string, unknown>>);
 
-  const app = await createApp({ scan: await scanProject(import.meta.dirname), createContainer, ormFactory: createMemoryOrm });
+  const app = await createApp({ scan: await scanProject(import.meta.dirname), createContainer, storageFactory: createMemoryStorage });
 
   // Seed through the façade, so the judge sees the same rows a client would send.
   const local = createLocalRunner(app);
@@ -107,26 +108,5 @@ async function main() {
   process.exit(0);
 }
 
-function createMemoryOrm() {
-  const store = new Map<string, Record<string, unknown>>();
-  return {
-    async list() { return [...store.values()]; },
-    async findById(id: string) { return store.get(id); },
-    async create(input: Record<string, unknown>) {
-      const id = (input.id as string) ?? crypto.randomUUID();
-      const record = { ...input, id };
-      store.set(id, record);
-      return record;
-    },
-    async update(id: string, input: Record<string, unknown>) {
-      const existing = store.get(id);
-      if (!existing) throw new Error(`Not found: ${id}`);
-      const updated = { ...existing, ...input, id };
-      store.set(id, updated);
-      return updated;
-    },
-    async delete(id: string) { return store.delete(id); },
-  };
-}
 
 main();

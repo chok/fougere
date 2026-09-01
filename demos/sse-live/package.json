@@ -9,7 +9,8 @@
     "@fougere/core": "workspace:*",
     "@fougere/schema": "workspace:*",
     "@fougere/container": "workspace:*",
-    "jiti": "^2.0.0"
+    "jiti": "^2.0.0",
+    "@fougere/adapter-memory": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.0.0"

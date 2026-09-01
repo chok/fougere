@@ -54,7 +54,8 @@
     "@fougere/transport-http": "workspace:*",
     "jiti": "^2.6.1",
     "@fougere/http": "workspace:*",
-    "@fougere/container": "workspace:*"
+    "@fougere/container": "workspace:*",
+    "@fougere/adapter-memory": "workspace:*"
   },
   "devDependencies": {
     "vitest": "^4.1.0",

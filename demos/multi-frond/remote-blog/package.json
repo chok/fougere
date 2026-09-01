@@ -14,6 +14,7 @@
     "hono": "^4.0.0",
     "@hono/node-server": "^1.0.0",
     "jiti": "^2.0.0",
-    "@fougere/container": "workspace:*"
+    "@fougere/container": "workspace:*",
+    "@fougere/adapter-memory": "workspace:*"
   }
 }

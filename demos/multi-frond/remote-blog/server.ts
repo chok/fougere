@@ -15,11 +15,12 @@ import { createContainer } from '@fougere/container';
 import { createHonoRouter } from '@fougere/http';
 import { handleRpc } from '@fougere/transport-http';
 import { generateRoutes, registerRoutes } from '@fougere/adapter-rest';
+import { createMemoryStorage } from '@fougere/adapter-memory';
 
 const PORT = Number(process.env.PORT ?? 4001);
 
 async function main() {
-  // Boot fougere with in-memory ORM
+  // Boot fougere with in-memory storage
   const { createJiti } = await import('jiti');
   const jiti = createJiti(import.meta.url, {
     interopDefault: true,
@@ -31,7 +32,7 @@ async function main() {
   const app = await createApp({
     scan: await scanProject(import.meta.dirname),
     createContainer,
-    ormFactory: createMemoryOrm,
+    storageFactory: createMemoryStorage,
   });
 
   // HTTP
@@ -63,27 +64,5 @@ async function main() {
   });
 }
 
-// Simple in-memory ORM (same as Nuxt module fallback)
-function createMemoryOrm() {
-  const store = new Map<string, Record<string, unknown>>();
-  return {
-    async list() { return [...store.values()]; },
-    async findById(id: string) { return store.get(id); },
-    async create(input: any) {
-      const id = input.id ?? crypto.randomUUID();
-      const record = { ...input, id };
-      store.set(id, record);
-      return record;
-    },
-    async update(id: string, input: any) {
-      const existing = store.get(id);
-      if (!existing) throw new Error(`Not found: ${id}`);
-      const updated = { ...existing, ...input, id };
-      store.set(id, updated);
-      return updated;
-    },
-    async delete(id: string) { return store.delete(id); },
-  };
-}
 
 main();
