@@ -1,6 +1,6 @@
 {
   "name": "@fougere/app",
-  "version": "1.0.0",
+  "version": "0.6.0-alpha.0",
   "description": "The host-independent half of a Fougere app: boot, call envelope, REST table, form contract.",
   "keywords": [
     "fougere",
