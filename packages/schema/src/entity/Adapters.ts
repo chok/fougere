@@ -7,14 +7,14 @@ class AdapterRegistry extends Registry<EntryJudge> {
    * imported is skipped, not refused: here it looks exactly like a typo.
    * FR : valide `{ sql: … }` avec le juge qu'a enregistré `sql`. Un nom que ce process n'a
    * pas importé est ignoré, pas refusé : ici il ressemble exactement à une faute de frappe.
-   * `Adapters.check({ sql: { body: { columnTpye: {} } } }, 'Post.adapters')`
+   * `Adapters.assert({ sql: { body: { columnTpye: {} } } }, 'Post.adapters')`
    * → throws `Post.adapters.sql.body: Property "columnTpye" does not match …`
    */
-  check(stated: Readonly<Record<string, unknown>> | undefined, at: string): void {
+  assert(stated: Readonly<Record<string, unknown>> | undefined, at: string): void {
     if (!stated) return;
 
     for (const [name, entries] of Object.entries(stated)) {
-      this.find(name)?.check(entries, `${at}.${name}`);
+      this.find(name)?.assert(entries, `${at}.${name}`);
     }
   }
 }

@@ -29,7 +29,7 @@ export class EntryJudge {
    * `check({ body: { columnType: { postgre: 'x' } } }, 'Post.adapters.sql')`
    * → throws `Post.adapters.sql.body.columnType: Property "postgre" does not match …`
    */
-  check(entries: unknown, at: string): void {
+  assert(entries: unknown, at: string): void {
     if (entries === undefined) return;
 
     if (!isObject(entries)) {

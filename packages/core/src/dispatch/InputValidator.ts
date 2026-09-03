@@ -13,7 +13,7 @@ export class InputValidator {
     if (!schema || invocation.body === undefined || invocation.body === null) return invocation;
 
     const result = RowJudge.of(schema.getFields(), { patch: schema.getOpts().patch })
-      .check(invocation.body);
+      .validate(invocation.body);
     if (!result.success) {
       throw new FougereError({
         code: ErrorCode.VALIDATION_FAILED,

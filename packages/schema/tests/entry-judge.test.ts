@@ -15,7 +15,7 @@ const format: Shape = {
 };
 
 const judge = EntryJudge.of(format);
-const check = (entries: unknown) => () => judge.check(entries, 'Post.adapters.sql');
+const check = (entries: unknown) => () => judge.assert(entries, 'Post.adapters.sql');
 
 describe('EntryJudge', () => {
   it('accepts what the format admits', () => {

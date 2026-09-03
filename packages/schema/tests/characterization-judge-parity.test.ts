@@ -45,7 +45,7 @@ function expectJudgeParity<TFields extends Fields>(
   expected: Verdict,
 ): void {
   const entityVerdict = rowVerdict(schema.validate(input));
-  const directVerdict = rowVerdict(RowJudge.of(schema.getFields(), schema.getOpts()).check(input));
+  const directVerdict = rowVerdict(RowJudge.of(schema.getFields(), schema.getOpts()).validate(input));
   const standardSchemaVerdict = standardVerdict(schema['~standard'].validate(input));
 
   expect({ entityVerdict, directVerdict, standardSchemaVerdict }).toEqual({

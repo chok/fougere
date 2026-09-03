@@ -60,7 +60,7 @@ export class StorageGuard {
     for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
       const field = this.fields[key];
       if (!field || item === undefined) continue;
-      const checked = ValueJudge.of(field).check(item);
+      const checked = ValueJudge.of(field).validate(item);
       if ('error' in checked) errors.push(`${key}: ${checked.error}`);
     }
 

@@ -405,7 +405,7 @@ lives in the notes.
   nobody declared. Pinned by `tests/aggregate.test.ts`, *a door that depends on a class
   whose NAME ends in the key suffix*.
 - A decision has ONE owner, and it is instantiated on its subject when the subject can be
-  held: `RowJudge.of(fields, opts).check(row)`, `Card.fromSchema(Post)`, `FieldSet.of(f).primary`,
+  held: `RowJudge.of(fields, opts).validate(row)`, `Card.fromSchema(Post)`, `FieldSet.of(f).primary`,
   `Visibility.of(f).input`. Measured over the pass: 11 classes and 36 free functions became
   24 and 12.
 - **A registry is an INSTANCE of `Registry<T>`** (`schema/src/Registry.ts`), not a class of

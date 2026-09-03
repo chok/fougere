@@ -151,7 +151,7 @@ export class Schema {
    * `Post.validate({ ghost: 1 })` → `{ success: false, errors: [{ path: 'ghost', … }] }`
    */
   static validate(input: unknown) {
-    return RowJudge.of(this.fields, this.opts).check(input);
+    return RowJudge.of(this.fields, this.opts).validate(input);
   }
 
   /**
@@ -185,7 +185,7 @@ export class Schema {
       version: 1,
       vendor: 'fougere',
       validate(value: unknown) {
-        const result = RowJudge.of(fields, opts).check(value);
+        const result = RowJudge.of(fields, opts).validate(value);
         if (result.success) return { value: result.data };
         return {
           issues: result.errors.map((e) => ({

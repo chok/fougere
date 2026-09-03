@@ -31,7 +31,7 @@ export interface SqlField {
  * Registers this adapter under the name an entity addresses it by, and takes back the judge
  * of its own entries — so the name is a datum, not something implicit in whoever reads it.
  * FR : enregistre l'adaptateur sous le nom qui l'adresse, et reprend le juge de ses entrées.
- * `sqlEntries.check({ body: { columnTpye: {} } }, 'Post.adapters.sql')`
+ * `sqlEntries.assert({ body: { columnTpye: {} } }, 'Post.adapters.sql')`
  * → throws `Post.adapters.sql.body: Property "columnTpye" does not match …`
  */
 export const sqlEntries = Adapters.register('sql', EntryJudge.of(ENTRY_FORMAT as Shape));

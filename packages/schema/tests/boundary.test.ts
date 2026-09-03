@@ -93,18 +93,18 @@ describe('boundary · override slot', () => {
 describe("boundary · 'closed' permissions (readOnly / writeOnly)", () => {
   it("readOnly() closes in — present in an input is 'Read-only', absent is never 'Required'", () => {
     const fields = { views: readOnly(text()), title: text() };
-    const present = RowJudge.of(fields).check({ views: '9', title: 'x' });
+    const present = RowJudge.of(fields).validate({ views: '9', title: 'x' });
     expect(present.success).toBe(false);
     if (!present.success) expect(present.errors[0]).toEqual({ path: 'views', message: 'Read-only' });
     // absent: the server owns it — no Required error despite no create rule
-    expect(RowJudge.of(fields).check({ title: 'x' }).success).toBe(true);
+    expect(RowJudge.of(fields).validate({ title: 'x' }).success).toBe(true);
     // rejected in patch mode too
-    expect(RowJudge.of(fields, { patch: true }).check({ views: '9' }).success).toBe(false);
+    expect(RowJudge.of(fields, { patch: true }).validate({ views: '9' }).success).toBe(false);
   });
 
   it('writeOnly() closes out — accepted at ingress, omitted at egress', () => {
     const fields = { password: writeOnly(text({ min: 8 })), name: text() };
-    const v = RowJudge.of(fields).check({ password: 'hunter22', name: 'Ada' });
+    const v = RowJudge.of(fields).validate({ password: 'hunter22', name: 'Ada' });
     expect(v.success).toBe(true);
     if (v.success) expect(v.data.password).toBe('hunter22'); // ingress open, shape judged
     const wire = Visibility.of(fields).encode({ password: 'hunter22', name: 'Ada' });

@@ -48,7 +48,7 @@ export class Field<T = unknown> {
 
     const create = this.lifecycle?.create;
     if (typeof create === 'object' && create !== null && 'value' in create) {
-      const checked = ValueJudge.of(this).check(create.value);
+      const checked = ValueJudge.of(this).validate(create.value);
       if ('error' in checked)
         throw new Error(
           `${key ? `Field '${key}': ` : ''}the declared default ${JSON.stringify(create.value)} ` +

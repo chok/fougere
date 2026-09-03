@@ -18,7 +18,7 @@ export class ValueJudge {
   /**
    * So a value is judged against the field that declares it, and against nothing else.
    * FR : pour qu'une valeur soit jugée face au champ qui la déclare.
-   * `ValueJudge.of(email).check('a@b.c')` → `{ value: 'a@b.c' }`
+   * `ValueJudge.of(email).validate('a@b.c')` → `{ value: 'a@b.c' }`
    */
   static of(field: Field): ValueJudge {
     return new ValueJudge(field);
@@ -29,7 +29,7 @@ export class ValueJudge {
    * FR : pour que ce que JSON Schema ne voit pas se lise comme le reste.
    * `check(new Date('nope'))` on a `date-time` field → `{ error: 'Invalid date' }`
    */
-  check(value: unknown): Checked {
+  validate(value: unknown): Checked {
     const shape = this.field.shape;
     const base = Anatomy.of(shape).base;
     if (value !== null) {

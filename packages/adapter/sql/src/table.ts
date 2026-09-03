@@ -228,7 +228,7 @@ export function toTable(tableName: string, entity: SchemaOrCard, relations?: Rel
   // Judged HERE and not at `entity()`: this runs at boot, after every import, so the
   // format is always loaded. A judge registered with `schema` would depend on which
   // module was imported first.
-  sqlEntries.check(configuration, `${schema.name}.adapters.sql`);
+  sqlEntries.assert(configuration, `${schema.name}.adapters.sql`);
   const columns: ColumnDef[] = [];
   for (const [fieldName, field] of Object.entries(fields)) {
     if (!isStored(field)) continue;

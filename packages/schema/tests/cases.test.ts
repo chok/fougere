@@ -33,7 +33,7 @@ const baseline = {
 };
 const table = Cases.of(Article, baseline).all;
 const verdict = (body: unknown, patch: boolean) =>
-  RowJudge.of(Article.getFields(), { patch }).check(body);
+  RowJudge.of(Article.getFields(), { patch }).validate(body);
 
 describe('the table', () => {
   it('is not empty — a table that silently drains proves nothing', () => {

@@ -101,7 +101,7 @@ export default function () {
     JSON.stringify({ ...payload, id: ++id, method: op.method, params: { params: {}, query: {}, body: op.body, state: {} } }),
     { headers: { 'content-type': 'application/json' }, tags: { op: op.method } },
   );
-  check(response, { 'answered': (r) => r.status === 200 });
+  validate(response, { 'answered': (r) => r.status === 200 });
 }
 `;
 }

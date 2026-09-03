@@ -16,7 +16,7 @@ export class RowJudge {
   /**
    * So the same field set judges a create and a patch, told apart by one option.
    * FR : pour que le même ensemble juge une création et une modification.
-   * `RowJudge.of(fields, { patch: true }).check({ title: 'a' })` → no `Required` on what is absent
+   * `RowJudge.of(fields, { patch: true }).validate({ title: 'a' })` → no `Required` on what is absent
    */
   static of(fields: Fields, options: ValidateOptions = {}): RowJudge {
     return new RowJudge(fields, options);
@@ -40,7 +40,7 @@ export class RowJudge {
    * `check({ title: 'a', ghost: 1 })`
    * → `{ success: false, errors: [{ path: 'ghost', message: 'Unknown field' }] }`
    */
-  check(input: unknown): ValidationResult<Record<string, unknown>> {
+  validate(input: unknown): ValidationResult<Record<string, unknown>> {
     if (typeof input !== 'object' || input === null) {
       return { success: false, errors: [{ path: '.', message: RowRefusal.notAnObject }] };
     }
@@ -80,7 +80,7 @@ export class RowJudge {
         continue;
       }
 
-      const checked = ValueJudge.of(field).check(value);
+      const checked = ValueJudge.of(field).validate(value);
       if ('error' in checked) {
         errors.push({ path, message: checked.error });
         continue;

@@ -27,7 +27,7 @@ describe('Adapters', () => {
   });
 
   it('judges an entry through the adapter that stated its format', () => {
-    expect(() => Adapters.check({ probe: { body: { columnTpye: {} } } }, 'Post.adapters')).toThrow(
+    expect(() => Adapters.assert({ probe: { body: { columnTpye: {} } } }, 'Post.adapters')).toThrow(
       'Post.adapters.probe.body: Property "columnTpye" does not match additional properties schema.',
     );
   });
@@ -38,10 +38,10 @@ describe('Adapters', () => {
    * process cannot tell that from a typo — the project can, through its dependencies.
    */
   it('skips a name no adapter here claims, rather than refusing it', () => {
-    expect(() => Adapters.check({ mongo: { body: 'anything at all' } }, 'Post.adapters')).not.toThrow();
+    expect(() => Adapters.assert({ mongo: { body: 'anything at all' } }, 'Post.adapters')).not.toThrow();
   });
 
   it('says nothing about an entity that stated nothing', () => {
-    expect(() => Adapters.check(undefined, 'Post.adapters')).not.toThrow();
+    expect(() => Adapters.assert(undefined, 'Post.adapters')).not.toThrow();
   });
 });
