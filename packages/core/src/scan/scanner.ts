@@ -140,8 +140,10 @@ function toAddress(className: string): string {
  * written out in full asked for `'Storage'`, which nothing registers.
  *
  * `Storage<X>` names X's storage, so that is the key. The generic argument was already
- * parsed (`TypeRef.generics`) and thrown away. Anything else keeps its own name: a
- * plain service IS designated by its class name.
+ * parsed (`TypeRef.generics`) and thrown away. A realization narrowing the port reads the
+ * same way — the subject is in the generic, not in the prefix — which is what lets an
+ * adapter hand back `Storage<T>` plus the gestures it owns. Anything else keeps its own
+ * name: a plain service IS designated by its class name.
  */
 function depKeyOf(type: TypeRef): string {
   // `Facade<PostHandler>` — the second port, read exactly like the first. The type names
@@ -166,10 +168,14 @@ function depKeyOf(type: TypeRef): string {
   // `RepositoryOf<Post>` — what an author writes when no repository file exists. The dual
   // of the line below: one names the port, the other the holder, and both resolve to a key
   // rather than to a class the author would have to invent.
-  const held = type.name === 'RepositoryOf' ? type.generics?.[0]?.name : undefined;
-  if (held) return repositoryKeyOf(held);
+  const subject = type.name === 'RepositoryOf' ? type.generics?.[0]?.name : undefined;
+  if (subject) return repositoryKeyOf(subject);
 
-  const target = type.name === 'Storage' ? type.generics?.[0]?.name : undefined;
+  // The GENERIC names the subject, so a prefix does not change the key — `MeiliStorage<Card>`
+  // is `Card`'s storage. A class named `FileStorage` is untouched: it carries no generic.
+  const target = type.name.endsWith('Storage') && type.generics?.length === 1
+    ? type.generics[0]?.name
+    : undefined;
   if (!target) return type.name;
 
   return storageKeyOf(target);
