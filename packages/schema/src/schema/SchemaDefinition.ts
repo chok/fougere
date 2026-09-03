@@ -4,7 +4,8 @@ import {
   type EntityDeclarations,
   type PreviousNames,
 } from '../entity/EntityDeclarations.js';
-import { EntityAdapterSet, type EntityAdapters } from '../entity/EntityAdapters.js';
+import { type EntityAdapters } from '../entity/EntityAdapters.js';
+import { EntityAdapterSet } from '../entity/EntityAdapterSet.js';
 import { SchemaDerivation } from './SchemaDerivation.js';
 import { type ValidateOptions } from '../judge/options.js';
 import type { SchemaView } from './SchemaView.js';
@@ -23,13 +24,18 @@ import type { SchemaView } from './SchemaView.js';
 export class SchemaDefinition {
   private constructor(
     readonly fields: Fields,
-    readonly adapters: EntityAdapters<Fields> | undefined,
+    readonly adapterSet: EntityAdapterSet,
     readonly opts: ValidateOptions,
     readonly previous: PreviousNames<Fields> | undefined,
     readonly derivation: SchemaDerivation | undefined,
     readonly anchored: boolean,
   ) {}
 
+  /**
+   * So a definition is built complete or not at all, instead of statics assigned side by side.
+   * FR : pour qu'une définition soit construite complète ou pas du tout.
+   * `SchemaDefinition.stated({ fields })` → opts `{}`, anchored `false`, the rest undefined
+   */
   static stated(said: {
     fields: Fields;
     adapters?: EntityAdapters<Fields>;
@@ -40,7 +46,7 @@ export class SchemaDefinition {
   }): SchemaDefinition {
     return new SchemaDefinition(
       said.fields,
-      EntityAdapterSet.of(said.adapters)?.stated,
+      EntityAdapterSet.of(said.adapters),
       said.opts ?? {},
       said.previous,
       said.derivation,
@@ -49,13 +55,14 @@ export class SchemaDefinition {
   }
 
   /**
-   * What a schema states about ITSELF, folded into what it already states — one adapter
-   * entry per field wins the later spelling, and a unique group is stamped on its members.
+   * So what a schema says about itself folds into what it already said, without losing either.
+   * FR : pour que ce qu'un schéma dit de lui se replie dans ce qu'il disait.
+   * `declaring({ unique: [['email', 'tenant']] })` → both fields now carry the group
    */
   declaring(said: EntityDeclarations<Fields>): SchemaDefinition {
     return new SchemaDefinition(
       FieldSet.declared(this.fields, said.unique),
-      EntityAdapterSet.merged([this.adapters, said.adapters])?.stated,
+      EntityAdapterSet.merged([this.adapterSet, EntityAdapterSet.of(said.adapters)]),
       this.opts,
       said.previous ?? this.previous,
       this.derivation,
@@ -64,12 +71,14 @@ export class SchemaDefinition {
   }
 
   /**
-   * The same schema, holding rows of its own. A derivation is an answer until it says this.
+   * So a derivation can stop being an answer and start holding rows, changing nothing else.
+   * FR : pour qu'une dérivation cesse d'être une réponse et tienne des lignes.
+   * `Post.pick('id', 'title').anchor()` → same fields, `anchored: true`
    */
   anchoring(): SchemaDefinition {
     return new SchemaDefinition(
       this.fields,
-      this.adapters,
+      this.adapterSet,
       this.opts,
       this.previous,
       this.derivation,
@@ -78,8 +87,10 @@ export class SchemaDefinition {
   }
 
   /**
-   * `pick`, `omit` and `rename` are one gesture: the fields that remain, and what became
-   * of each name. What each adapter was handed follows the same correspondence, and so does the origin.
+   * So `pick`, `omit` and `rename` are one gesture: what remains, and what became of each name.
+   * FR : pour que `pick`, `omit` et `rename` soient un geste : ce qui reste, sous quel nom.
+   * `cut(kept, (k) => k === 'body' ? 'text' : k, Post)`
+   * → fields renamed, adapter entries re-addressed, origin composed
    */
   cut(
     fields: Fields,
@@ -91,7 +102,7 @@ export class SchemaDefinition {
       renamed[key] = field.rename(survives);
     return new SchemaDefinition(
       renamed,
-      EntityAdapterSet.of(this.adapters)?.cut(survives)?.stated,
+      this.adapterSet.cut(survives),
       this.opts,
       undefined,
       this.origin(root).compose(survives),
@@ -99,11 +110,15 @@ export class SchemaDefinition {
     );
   }
 
-  /** The same fields, judged as an update. */
+  /**
+   * So the same fields judge an update, and the mode is a property of the schema, not of a call.
+   * FR : pour que le mode de jugement soit une propriété du schéma, pas de l'appel.
+   * `Post.partial()` → `opts.patch` is `true`, fields untouched
+   */
   patched(root: SchemaView): SchemaDefinition {
     return new SchemaDefinition(
       { ...this.fields },
-      this.adapters,
+      this.adapterSet,
       { ...this.opts, patch: true },
       undefined,
       this.origin(root),
@@ -111,11 +126,15 @@ export class SchemaDefinition {
     );
   }
 
-  /** The added fields have no origin, so the derivation is unchanged: it speaks of the root. */
+  /**
+   * So an added field does not pretend to come from the root, which never declared it.
+   * FR : pour qu'un champ ajouté ne prétende pas venir de la racine.
+   * `Post.extend({ slug: text() })` → the derivation still speaks of `Post` alone
+   */
   extended(extra: Fields, root: SchemaView): SchemaDefinition {
     return new SchemaDefinition(
       { ...this.fields, ...extra },
-      this.adapters,
+      this.adapterSet,
       this.opts,
       undefined,
       this.origin(root),
@@ -123,7 +142,11 @@ export class SchemaDefinition {
     );
   }
 
-  /** Several views folded into one definition, which therefore has no single origin. */
+  /**
+   * So several schemas fold into one, which by construction has no single origin to name.
+   * FR : pour que plusieurs schémas n'en fassent qu'un, sans origine unique.
+   * `merged([Timestamps, Post])` → both field sets, `derivation` undefined
+   */
   static merged(views: readonly SchemaView[]): SchemaDefinition {
     const fields: Fields = {};
     let opts: ValidateOptions = {};
@@ -131,16 +154,17 @@ export class SchemaDefinition {
       Object.assign(fields, view.getFields());
       opts = { ...opts, ...view.getOpts() };
     }
-    const adapters = EntityAdapterSet.merged(
-      views.map((view) => view.getAdapters()),
-    )?.stated;
+    const adapterSet = EntityAdapterSet.merged(
+      views.map((view) => EntityAdapterSet.of(view.getAdapters())),
+    );
 
-    return new SchemaDefinition(fields, adapters, opts, undefined, undefined, false);
+    return new SchemaDefinition(fields, adapterSet, opts, undefined, undefined, false);
   }
 
   /**
-   * The origin this definition already carries, or the one `root` becomes. A schema that
-   * is an ANCHOR holds rows of its own, so what is cut from it roots on IT and not on its own origin.
+   * So what is cut from an anchor roots on that anchor, and not on where the anchor came from.
+   * FR : pour que ce qui est coupé d'une ancre s'enracine sur elle.
+   * `Post.pick('id').anchor().pick('id')` → the origin is the anchored schema, not `Post`
    */
   private origin(root: SchemaView): SchemaDerivation {
     if (!this.anchored && this.derivation) return this.derivation;

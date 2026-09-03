@@ -34,9 +34,9 @@ describe('entity() per-adapter statements', () => {
     expect(h?.graphql?.title?.description).toBe('The headline');
   });
 
-  it('an entity that names no adapter returns undefined', () => {
+  it('an entity that names no adapter states nothing to any of them', () => {
     class Plain extends entity({ id: primary(), name: text() }) {}
-    expect(Plain.getAdapters()).toBeUndefined();
+    expect(Plain.getAdapters()).toEqual({});
   });
 
   it('pick() carries them, filtered to surviving fields', () => {
@@ -63,7 +63,7 @@ describe('entity() per-adapter statements', () => {
   });
 
   it('a derivation dropping every named field carries nothing', () => {
-    expect(Article.pick('id').getAdapters()).toBeUndefined();
+    expect(Article.pick('id').getAdapters()).toEqual({});
   });
 
   it('type-level: only registered adapters / real fields / known options are accepted', () => {
@@ -103,8 +103,17 @@ describe('EntityAdapterSet refuses what it addresses, and carries the rest', () 
     expect(Loose.getAdapters()?.sql?.body).toBe('tsvector');
   });
 
-  it('an empty set is an absence, not an empty object', () => {
+  it('an adapter given no field is carried as declared', () => {
     class Empty extends entity({ id: primary() }, { adapters: { sql: {} } }) {}
-    expect(Empty.getAdapters()).toBeUndefined();
+    expect(Empty.getAdapters()).toEqual({ sql: {} });
+  });
+});
+
+describe('an adapter given nothing', () => {
+  it('is refused by name, rather than blowing up on a read further down', () => {
+    expect(() => entity(
+      { id: primary(), title: text() },
+      { adapters: { sql: undefined } } as never,
+    )).toThrow('adapters.sql: expected an object keyed by field name, got undefined.');
   });
 });
