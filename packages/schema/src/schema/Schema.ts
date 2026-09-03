@@ -346,7 +346,7 @@ export class Schema {
    * `derive(picked, (k) => keys.includes(k) ? k : undefined)`
    */
   private static derive(fields: Fields, survives: (key: string) => string | undefined) {
-    return Schema.subclass(this.definition.cut(fields, survives, this));
+    return Schema.subclass(this.definition.derived(fields, survives, this));
   }
 }
 

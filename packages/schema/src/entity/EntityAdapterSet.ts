@@ -69,21 +69,21 @@ export class EntityAdapterSet {
 
   /**
    * Follows a derivation — `pick`, `omit` and `rename` are one gesture: what remains, and
-   * under what name. Called by `SchemaDefinition.cut`, and by nothing else.
+   * under what name. Called by `SchemaDefinition.derived`, and by nothing else.
    * `Post` states `adapters: { sql: { body: { columnType: { pg: 'tsvector' } } } }`
    * `Post.rename({ body: 'text' })` → `{ sql: { text: { columnType: { pg: 'tsvector' } } } }`
    * `Post.pick('id')`              → `{}` — `sql` had only `body` to say
    */
-  cut(survives: (key: string) => string | undefined): EntityAdapterSet {
+  mapFields(transform: (key: string) => string | undefined): EntityAdapterSet {
     const renamed: AdapterConfigurations = {};
 
     for (const [adapter, configuration] of this.entries) {
       const mapped: AdapterConfiguration = {};
 
       for (const [key, entry] of Object.entries(configuration)) {
-        const next = survives(key);
+        const to = transform(key);
 
-        if (next !== undefined) mapped[next] = entry;
+        if (to !== undefined) mapped[to] = entry;
       }
 
       // Drop an adapter left with no field. `Post.pick('id')` would otherwise answer

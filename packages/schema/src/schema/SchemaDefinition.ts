@@ -89,10 +89,10 @@ export class SchemaDefinition {
   /**
    * So `pick`, `omit` and `rename` are one gesture: what remains, and what became of each name.
    * FR : pour que `pick`, `omit` et `rename` soient un geste : ce qui reste, sous quel nom.
-   * `cut(kept, (k) => k === 'body' ? 'text' : k, Post)`
+   * `derived(kept, (k) => k === 'body' ? 'text' : k, Post)`
    * → fields renamed, adapter entries re-addressed, origin composed
    */
-  cut(
+  derived(
     fields: Fields,
     survives: (key: string) => string | undefined,
     root: SchemaView,
@@ -102,7 +102,7 @@ export class SchemaDefinition {
       renamed[key] = field.rename(survives);
     return new SchemaDefinition(
       renamed,
-      this.adapterSet.cut(survives),
+      this.adapterSet.mapFields(survives),
       this.opts,
       undefined,
       this.origin(root).compose(survives),
