@@ -34,9 +34,9 @@ export class SchemaDefinition {
   /**
    * So a definition is built complete or not at all, instead of statics assigned side by side.
    * FR : pour qu'une définition soit construite complète ou pas du tout.
-   * `SchemaDefinition.stated({ fields })` → opts `{}`, anchored `false`, the rest undefined
+   * `SchemaDefinition.of({ fields })` → opts `{}`, anchored `false`, the rest undefined
    */
-  static stated(said: {
+  static of(declaration: {
     fields: Fields;
     adapters?: EntityAdapters<Fields>;
     opts?: ValidateOptions;
@@ -45,12 +45,12 @@ export class SchemaDefinition {
     anchored?: boolean;
   }): SchemaDefinition {
     return new SchemaDefinition(
-      said.fields,
-      EntityAdapterSet.of(said.adapters),
-      said.opts ?? {},
-      said.previous,
-      said.derivation,
-      said.anchored ?? false,
+      declaration.fields,
+      EntityAdapterSet.of(declaration.adapters),
+      declaration.opts ?? {},
+      declaration.previous,
+      declaration.derivation,
+      declaration.anchored ?? false,
     );
   }
 
@@ -59,12 +59,12 @@ export class SchemaDefinition {
    * FR : pour que ce qu'un schéma dit de lui se replie dans ce qu'il disait.
    * `declaring({ unique: [['email', 'tenant']] })` → both fields now carry the group
    */
-  declaring(said: EntityDeclarations<Fields>): SchemaDefinition {
+  declaring(declarations: EntityDeclarations<Fields>): SchemaDefinition {
     return new SchemaDefinition(
-      FieldSet.declared(this.fields, said.unique),
-      EntityAdapterSet.merged([this.adapterSet, EntityAdapterSet.of(said.adapters)]),
+      FieldSet.declared(this.fields, declarations.unique),
+      EntityAdapterSet.merged([this.adapterSet, EntityAdapterSet.of(declarations.adapters)]),
       this.opts,
-      said.previous ?? this.previous,
+      declarations.previous ?? this.previous,
       this.derivation,
       this.anchored,
     );

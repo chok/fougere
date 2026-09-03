@@ -28,22 +28,22 @@ export interface HostedSources {
   scan?: ScanResult | (() => Promise<ScanResult> | ScanResult);
 }
 
-/** The members a stated frond takes from a scan when it named none of its own. */
+/** The members a frond takes from a scan when it named none of its own. */
 type Fillable = 'providers' | 'entities' | 'handlers' | 'presenters' | 'collectors' | 'seeds';
 
-/** A stated frond, completed by what a scan found under the same name. */
-function completed(stated: FrondDescriptor, found: FrondDescriptor | undefined): FrondDescriptor {
-  if (!found) return stated;
+/** A frond the host passed, completed by what a scan found under the same name. */
+function completed(given: FrondDescriptor, found: FrondDescriptor | undefined): FrondDescriptor {
+  if (!found) return given;
 
   // Written out rather than looped: a loop over the key union asks TypeScript to prove
-  // `found[k]` fits `stated[k]` for every k at once, which it cannot — and the cast that
+  // `found[k]` fits `given[k]` for every k at once, which it cannot — and the cast that
   // silences it would also silence a member added to the descriptor and forgotten here.
   const fill = <K extends Fillable>(member: K): FrondDescriptor[K] =>
-    (stated[member].length === 0 ? found[member] : stated[member]);
+    (given[member].length === 0 ? found[member] : given[member]);
 
   return {
     ...found,
-    ...stated,
+    ...given,
     providers: fill('providers'),
     entities: fill('entities'),
     handlers: fill('handlers'),

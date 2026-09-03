@@ -23,12 +23,12 @@ export type FieldWord = (field: Field<any>) => Field<any>;
  * FR : pour que deux mots contredisant un même membre refusent, plutôt qu'un l'emporte.
  * `readOnly(writeOnly(text()))` → both close a different side, so both apply
  */
-function merge(name: string, field: Field, stated: Partial<Field>): Partial<Field> {
+function merge(name: string, field: Field, given: Partial<Field>): Partial<Field> {
   const out: Record<string, unknown> = {};
-  if ('shape' in stated) out.shape = stated.shape;
+  if ('shape' in given) out.shape = given.shape;
 
   for (const slot of MEMBER_SLOTS) {
-    const members = stated[slot];
+    const members = given[slot];
     if (members === undefined) continue;
     const already = field[slot] as Record<string, unknown> | undefined;
     if (typeof members !== 'object' || members === null || typeof already !== 'object') {

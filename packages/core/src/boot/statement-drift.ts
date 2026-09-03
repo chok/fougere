@@ -18,11 +18,11 @@ import type { ScanDiagnostic } from '../scan/result.js';
 import type { BindingPlan } from '../wire/binding.js';
 import type { Signature } from '../wire/signature.js';
 
-/** The parameters a stated binding names, against the ones the method declares. */
-function namesDisagreeing(stated: BindingPlan, signature: Signature): string[] {
+/** The parameters a binding plan names, against the ones the method declares. */
+function namesDisagreeing(plan: BindingPlan, signature: Signature): string[] {
   const declared = new Set(signature.params.map((p: { name: string }) => p.name));
 
-  return stated.map((b) => b.name).filter((name) => !declared.has(name));
+  return plan.map((b) => b.name).filter((name) => !declared.has(name));
 }
 
 /**

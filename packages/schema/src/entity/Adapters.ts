@@ -10,10 +10,10 @@ class AdapterRegistry extends Registry<EntryJudge> {
    * `Adapters.assert({ sql: { body: { columnTpye: {} } } }, 'Post.adapters')`
    * → throws `Post.adapters.sql.body: Property "columnTpye" does not match …`
    */
-  assert(stated: Readonly<Record<string, unknown>> | undefined, at: string): void {
-    if (!stated) return;
+  assert(adapters: Readonly<Record<string, unknown>> | undefined, at: string): void {
+    if (!adapters) return;
 
-    for (const [name, entries] of Object.entries(stated)) {
+    for (const [name, entries] of Object.entries(adapters)) {
       this.find(name)?.assert(entries, `${at}.${name}`);
     }
   }

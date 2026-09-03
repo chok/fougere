@@ -43,7 +43,7 @@ export interface SchemaConstructor<TFields extends Fields> extends SchemaView<TF
 
 export class Schema {
   /** The one place a schema holds what it is. The readings below are its projections. */
-  static definition: SchemaDefinition = SchemaDefinition.stated({ fields: {} });
+  static definition: SchemaDefinition = SchemaDefinition.of({ fields: {} });
 
   /**
    * So the judge, the adapters and every derivation read one same field set.
@@ -312,7 +312,7 @@ export class Schema {
    * FR : pour qu'une carte relue devienne une classe de schéma.
    * `Schema.of({ fields: { id: primary() } })` → a schema class with one field
    */
-  static of<TFields extends Fields>(stated: {
+  static of<TFields extends Fields>(declaration: {
     fields: TFields;
     derivation?: SchemaDerivation;
     adapters?: EntityAdapters<TFields>;
@@ -321,7 +321,7 @@ export class Schema {
     anchored?: boolean;
   }): SchemaConstructor<TFields> {
     return Schema.subclass(
-      SchemaDefinition.stated(stated),
+      SchemaDefinition.of(declaration),
     ) as unknown as SchemaConstructor<TFields>;
   }
 
