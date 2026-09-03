@@ -4,7 +4,7 @@ import {
   resolveEffectiveOperations,
   type ScanDiagnostic,
 } from '@fougere/core';
-import { crossFrondImports } from '@fougere/core/node';
+import { adaptersOf, crossFrondImports } from '@fougere/core/node';
 import ProjectScan from '../services/ProjectScan.js';
 
 /** One thing that does not hold, in the terms of whoever has to fix it. */
@@ -52,7 +52,7 @@ export default class CheckHandler {
 
   /** Report what does not hold in a Fougere app, without booting it. */
   async execute(input: { root?: string }): Promise<CheckResult> {
-    const { fronds, diagnostics, config } = await this.projectScan.at(input.root);
+    const { fronds, diagnostics, config, root } = await this.projectScan.at(input.root);
     // This is the same pure resolution the boot consumes. No app lifecycle, database,
     // migration, seed or adapter mount is needed for a global semantic check.
     const model = resolveEffectiveOperations(fronds, {
@@ -84,6 +84,35 @@ export default class CheckHandler {
             + `them (${clusters.map((c) => c.name).join(', ')}). Either a relation is missing, or `
             + `they are separate fronds — see \`fougere graph\`.`,
         });
+      }
+    }
+
+    /**
+     * An entity addressing an adapter this project does not depend on. Judged HERE and
+     * not at boot: a process only knows the adapters it loaded, so an entity stating a
+     * Postgres column type in an app running on `adapter/memory` is indistinguishable
+     * from a typo. A project's dependencies name every adapter it could ever load.
+     *
+     * Silent when the project depends on none — there would be nothing to compare against,
+     * and reporting every key as unknown is worse than saying nothing.
+     */
+    const known = await adaptersOf(root);
+    if (known.length > 0) {
+      for (const frond of fronds) {
+        for (const entity of frond.entities) {
+          for (const name of Object.keys(entity.entityClass.getAdapters() ?? {})) {
+            if (known.includes(name)) continue;
+            findings.push({
+              severity: 'warning',
+              code: 'unknown-adapter',
+              filePath: entity.filePath,
+              subject: entity.name,
+              message: `states \`adapters: { ${name} }\`, and this project depends on no adapter `
+                + `that answers to it. It depends on ${known.join(', ')}. Nothing reads the entry, `
+                + 'so it is inert — a typo, or a dependency that was never added.',
+            });
+          }
+        }
       }
     }
 

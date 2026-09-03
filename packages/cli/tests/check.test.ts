@@ -38,6 +38,20 @@ describe('check', () => {
     expect(result.findings.find((f) => f.code === 'heritage-unresolved')).toBeUndefined();
   });
 
+  it('reports an adapter name no dependency answers to, and names what it does answer to', async () => {
+    const root = join(import.meta.dirname, 'fixtures-adapter-name');
+    const result = await check().execute({ root });
+
+    const found = result.findings.filter((f) => f.code === 'unknown-adapter');
+    expect(found.map((f) => f.message)).toEqual([
+      expect.stringContaining('adapters: { sqll }'),
+      expect.stringContaining('adapters: { mongo }'),
+    ]);
+    expect(found[0]?.message).toContain('It depends on sql.');
+    expect(found[0]?.severity).toBe('warning');
+    expect(found[0]?.subject).toBe('article');
+  });
+
   it('ne signale rien sur une app du dépôt', async () => {
     // Le zéro ici ne dit pas « tout va bien » — il dit « aucun faux positif sur du
     // vrai code ». Un vérificateur qui crie au loup cesse d'être lu.

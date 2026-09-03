@@ -1,0 +1,8 @@
+{
+  "name": "fixture-adapter-name",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@fougere/adapter-sql": "workspace:*"
+  }
+}
