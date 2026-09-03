@@ -94,18 +94,18 @@ export class SchemaDefinition {
    */
   derived(
     fields: Fields,
-    survives: (key: string) => string | undefined,
+    transform: (key: string) => string | undefined,
     root: SchemaView,
   ): SchemaDefinition {
     const renamed: Fields = {};
     for (const [key, field] of Object.entries(fields))
-      renamed[key] = field.rename(survives);
+      renamed[key] = field.rename(transform);
     return new SchemaDefinition(
       renamed,
-      this.adapterSet.mapFields(survives),
+      this.adapterSet.mapFields(transform),
       this.opts,
       undefined,
-      this.origin(root).compose(survives),
+      this.origin(root).compose(transform),
       false,
     );
   }

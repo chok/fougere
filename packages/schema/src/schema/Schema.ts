@@ -345,8 +345,8 @@ export class Schema {
    * FR : pour que `pick`, `omit` et `rename` ne diffèrent que par les survivants et leur nom.
    * `derive(picked, (k) => keys.includes(k) ? k : undefined)`
    */
-  private static derive(fields: Fields, survives: (key: string) => string | undefined) {
-    return Schema.subclass(this.definition.derived(fields, survives, this));
+  private static derive(fields: Fields, transform: (key: string) => string | undefined) {
+    return Schema.subclass(this.definition.derived(fields, transform, this));
   }
 }
 

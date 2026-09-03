@@ -33,13 +33,13 @@ export class SchemaDerivation {
    * FR : pour qu'une chaîne de coupes reste à un saut de la racine.
    * `Post.pick('a', 'b').omit('b')` → the origin is `Post`, never the intermediate
    */
-  compose(survives: (key: string) => string | undefined): SchemaDerivation {
+  compose(transform: (key: string) => string | undefined): SchemaDerivation {
     return new SchemaDerivation(
       this.source,
       Object.fromEntries(
         Object.entries(this.survived).map(([origin, here]) => [
           origin,
-          here === undefined ? undefined : survives(here),
+          here === undefined ? undefined : transform(here),
         ]),
       ),
     );
