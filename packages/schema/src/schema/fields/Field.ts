@@ -24,6 +24,12 @@ export class Field<T = unknown> {
 
   declare readonly _type?: T;
 
+  /**
+   * So a plain object from anywhere becomes a field, or is refused by its key.
+   * FR : pour qu'un objet ordinaire devienne un champ, ou soit refusé sous son nom.
+   * `new Field({}, 'title')`
+   * → throws `Field 'title': shape: Every field states a shape — got undefined`
+   */
   constructor(init: FieldDeclaration, key?: string) {
     const verdict = FieldJudge.of(init).verdict;
 
@@ -51,29 +57,46 @@ export class Field<T = unknown> {
     }
   }
 
+  /**
+   * So a field is recognized by its form, never by a mark only this package can stamp.
+   * FR : pour qu'un champ soit reconnu à sa forme, jamais à une marque.
+   * `Field.is({ shape: { type: 'string' } })` → `true`
+   */
   static is(value: unknown): value is Field {
     return FieldJudge.of(value).verdict.success;
   }
 
+  /**
+   * So a derivation can change one axis without restating the whole field.
+   * FR : pour qu'une dérivation change un axe sans redire tout le champ.
+   * `text().with({ lifecycle: { update: 'forbidden' } })`
+   * → the same shape, now refusing updates
+   */
   with<U = T>(overrides: Partial<FieldDeclaration>): Field<U> {
     return new Field<U>({ ...this, ...overrides });
   }
 
+  /**
+   * So a `unique` group survives a rename, and dies with the member a cut removed.
+   * FR : pour qu'un groupe `unique` survive au renommage et meure avec un membre coupé.
+   * `unique(['email', 'tenant'])` under `email → mail` → `['mail', 'tenant']`;
+   * with `tenant` cut → the group is gone
+   */
   rename(map: (key: string) => string | undefined): Field<T> {
     const rules = this.role?.rules;
     if (!rules?.length) return this;
 
-    const carried = rules
+    const renamed = rules
       .map((group) => group.rename(map))
       .filter((group) => group !== null);
     const unchanged =
-      carried.length === rules.length &&
-      carried.every((group, i) => group.equals(rules[i]!));
+      renamed.length === rules.length &&
+      renamed.every((group, i) => group.equals(rules[i]!));
     if (unchanged) return this;
 
     const { rules: _dropped, ...rest } = this.role!;
     return this.with({
-      role: carried.length ? { ...rest, rules: carried } : rest,
+      role: renamed.length ? { ...rest, rules: renamed } : rest,
     });
   }
 }

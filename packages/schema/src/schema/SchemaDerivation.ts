@@ -16,7 +16,11 @@ export class SchemaDerivation {
     readonly survived: Readonly<Record<string, string | undefined>>,
   ) {}
 
-  /** The first cut: every field of the origin still answers to its own name. */
+  /**
+   * So the first cut records that every field of the origin still answers to its own name.
+   * FR : pour que la première coupe note que chaque champ garde son nom.
+   * `SchemaDerivation.first(Post, fields).hereFor('title')` → `'title'`
+   */
   static first(source: SchemaView, fields: Fields): SchemaDerivation {
     return new SchemaDerivation(
       source,
@@ -24,7 +28,11 @@ export class SchemaDerivation {
     );
   }
 
-  /** The same origin, seen through one more cut. */
+  /**
+   * So a chain of cuts stays one hop from the root, rather than a journal someone has to walk.
+   * FR : pour qu'une chaîne de coupes reste à un saut de la racine.
+   * `Post.pick('a', 'b').omit('b')` → the origin is `Post`, never the intermediate
+   */
   compose(survives: (key: string) => string | undefined): SchemaDerivation {
     return new SchemaDerivation(
       this.source,
@@ -37,14 +45,19 @@ export class SchemaDerivation {
     );
   }
 
+  /**
+   * So a card writes `'Post'` without carrying the `Post` class.
+   * FR : pour qu'une carte écrive `'Post'` sans embarquer la classe `Post`.
+   * `Post.pick('title').derivation.sourceName` → `'Post'`
+   */
   get sourceName(): string {
     return this.source.name;
   }
 
   /**
-   * The anchor whose rows this describes — the nearest one going up, and a schema with no
-   * origin of its own is one. An answer borrows its rows; this says from whom. Whether
-   * those rows carry a key is a separate question: an anchor may have none.
+   * So an answer knows whose rows it borrows, however many cuts away they are.
+   * FR : pour qu'une réponse sache à qui elle emprunte ses lignes.
+   * `Post.pick('title').omit('title').derivation.anchor` → `Post`
    */
   get anchor(): SchemaView {
     const source = this.source;
@@ -55,9 +68,9 @@ export class SchemaDerivation {
   }
 
   /**
-   * What the ROOT calls `key`, translated to the name it carries here — `undefined` when a
-   * cut dropped it. A reader that needs something the root declared about a field asks the
-   * root and comes back through this; it does not keep a copy of the answer.
+   * So a reader asks the root about a field and finds it here, under whatever name it now has.
+   * FR : pour qu'on interroge la racine sur un champ et le retrouve ici.
+   * `hereFor('body')` after `body → text` → `'text'`; after a cut → `undefined`
    */
   hereFor(key: string): string | undefined {
     return this.survived[key];

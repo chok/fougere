@@ -25,11 +25,21 @@ export class Generators {
     ['nanoid', nanoid],
   ]);
 
+  /**
+   * So an app can answer a `generate:` name this process never shipped.
+   * FR : pour qu'une application réponde à un `generate:` non livré ici.
+   * `Generators.register('ulid', ulid)` → `create: { generate: 'ulid' }` now resolves
+   */
   static register(name: string, fn: () => string): void {
     this.registry.set(name, fn);
   }
 
-  /** The generator this name stands for, refused by name when nothing does. */
+  /**
+   * So an unknown name is refused inside the registry, the only thing that knows what it holds.
+   * FR : pour qu'un nom inconnu soit refusé dans le registre, seul à savoir.
+   * `Generators.resolve('ulid')`, unregistered
+   * → throws `Unknown generator 'ulid' … This process answers cuid2, uuid, nanoid.`
+   */
   static resolve(ref: GeneratorRef): () => string {
     const found = this.registry.get(ref);
     if (found) return found;
@@ -39,7 +49,11 @@ export class Generators {
     );
   }
 
-  /** Whether a name is answered, for a caller that must not throw to find out. */
+  /**
+   * So a check can ask without throwing — reporting a gap is not the same as stopping a boot.
+   * FR : pour qu'un contrôle demande sans lever — signaler n'est pas arrêter.
+   * `Generators.answers('cuid2')` → `true`
+   */
   static answers(ref: GeneratorRef): boolean {
     return this.registry.has(ref);
   }

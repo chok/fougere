@@ -11,6 +11,11 @@ export function oneOf<const T extends readonly string[]>(
 export function oneOf<const T extends readonly string[]>(
   ...args: [...T, OneOfOptions<T[number]>]
 ): Field<T[number]>;
+/**
+ * So the set is in the type and in the CHECK constraint, from one declaration.
+ * FR : pour que l'ensemble soit dans le type et dans la contrainte CHECK, d'une déclaration.
+ * `oneOf('draft', 'published', { default: 'draft' })`
+ */
 export function oneOf<const T extends readonly string[]>(
   ...args: [...T] | [...T, OneOfOptions<T[number]>]
 ): Field<T[number]> {

@@ -8,6 +8,11 @@ export interface NumberOptions {
   description?: string;
 }
 
+/**
+ * So `integer` is a shape, not a second word to remember.
+ * FR : pour qu'`integer` soit une forme, pas un second mot à retenir.
+ * `number({ integer: true, min: 0 })` → `{ type: 'integer', minimum: 0 }`
+ */
 export function number(opts?: NumberOptions): Field<number> {
   return new Field<number>({
     shape: {

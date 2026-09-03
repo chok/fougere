@@ -1,6 +1,11 @@
 import { upperFirst } from '../../utils.js';
 import type { FieldDescriptor, SchemaDescriptor } from './Descriptor.js';
 
+/**
+ * So a nullable field lands as a union.
+ * FR : pour qu'un champ nullable atterrisse en union.
+ * `{ type: ['string', 'null'] }` → `string | null`
+ */
 function typeOf(field: FieldDescriptor): string {
   const types = Array.isArray(field.type) ? field.type : field.type ? [field.type] : [];
   const nullable = types.includes('null');
@@ -9,6 +14,11 @@ function typeOf(field: FieldDescriptor): string {
   return nullable ? `${inner} | null` : inner;
 }
 
+/**
+ * So `date-time` becomes a `Date`, the same thing the boundary decodes to.
+ * FR : pour que `date-time` devienne une `Date`, comme la frontière le décode.
+ * `{ type: 'string', format: 'date-time' }` → `Date`; `{ enum: ['a', 'b'] }` → `'a' | 'b'`
+ */
 function baseTypeOf(base: string | undefined, field: FieldDescriptor): string {
   if (field.enum?.length) {
     return field.enum.map((v) => (v === null ? 'null' : JSON.stringify(v))).join(' | ');
@@ -30,6 +40,11 @@ function baseTypeOf(base: string | undefined, field: FieldDescriptor): string {
   }
 }
 
+/**
+ * So a nested object keeps its optionality.
+ * FR : pour qu'un objet imbriqué garde ses champs optionnels.
+ * `{ street }` with `required: []` → `{ street?: string }`
+ */
 function objectTypeOf(properties: Record<string, FieldDescriptor>, required: readonly string[]): string {
   const members = Object.entries(properties).map(([name, field]) => {
     const optional = required.includes(name) ? '' : '?';
@@ -38,10 +53,19 @@ function objectTypeOf(properties: Record<string, FieldDescriptor>, required: rea
   return `{ ${members.join('; ')} }`;
 }
 
+/**
+ * So a field named `content-type` still compiles.
+ * FR : pour qu'un champ nommé `content-type` compile quand même.
+ * `propertyKey('content-type')` → `"content-type"`
+ */
 function propertyKey(name: string): string {
   return /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name) ? name : JSON.stringify(name);
 }
 
+/**
+ * So a field's description shows on hover — and cannot close the comment it sits in.
+ * FR : pour qu'une description s'affiche au survol sans fermer son commentaire.
+ */
 function docCommentOf(text: string | undefined, indent: string): string {
   if (!text) return '';
   return `${indent}/** ${text.replace(/\*\//g, '*\\/')} */\n`;
@@ -52,6 +76,11 @@ export interface EntityTypeSourceOptions {
   exported?: boolean;
 }
 
+/**
+ * So the generated class carries its row type.
+ * FR : pour que la classe générée porte son type de ligne.
+ * `{ properties: { title: { type: 'string' } } }` → `{ title: string; }`
+ */
 function shapeTypeOf(descriptor: SchemaDescriptor, indent = ''): string {
   const entries = Object.entries(descriptor.properties ?? {});
   if (entries.length === 0) return '{}';
@@ -66,10 +95,20 @@ function shapeTypeOf(descriptor: SchemaDescriptor, indent = ''): string {
 export class EntityTypeSource {
   private constructor(private readonly descriptor: SchemaDescriptor) {}
 
+  /**
+   * So the source comes from the card that crossed the wire, not from a local class.
+   * FR : pour que le source vienne de la carte qui a traversé le fil, pas d'une classe locale.
+   * `EntityTypeSource.of(card.descriptor).render()`
+   */
   static of(descriptor: SchemaDescriptor): EntityTypeSource {
     return new EntityTypeSource(descriptor);
   }
 
+  /**
+   * So `fougere sync` writes a class, not a type — the consumer needs it as a value too.
+   * FR : pour que `fougere sync` écrive une classe, aussi utilisable en valeur.
+   * → `export class Post extends Card.fromDescriptor<{ title: string }>({ … }).toSchema() {}`
+   */
   render(options: EntityTypeSourceOptions = {}): string {
     const name = identifierOf(options.name ?? upperFirst(this.descriptor.title ?? 'Schema'));
     const exported = options.exported === false ? '' : 'export ';
@@ -82,6 +121,11 @@ export class EntityTypeSource {
   }
 }
 
+/**
+ * So a name that cannot declare a class is refused before it reaches a file.
+ * FR : pour qu'un nom incapable de déclarer une classe soit refusé avant le fichier.
+ * `identifierOf('my-post')` → throws `'my-post' is not a TypeScript identifier`
+ */
 function identifierOf(name: string): string {
   if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name)) {
     throw new Error(`'${name}' is not a TypeScript identifier — it cannot name a generated declaration`);

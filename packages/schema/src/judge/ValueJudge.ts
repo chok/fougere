@@ -15,10 +15,20 @@ export class ValueJudge {
 
   private constructor(private readonly field: Field) {}
 
+  /**
+   * So a value is judged against the field that declares it, and against nothing else.
+   * FR : pour qu'une valeur soit jugée face au champ qui la déclare.
+   * `ValueJudge.of(email).check('a@b.c')` → `{ value: 'a@b.c' }`
+   */
   static of(field: Field): ValueJudge {
     return new ValueJudge(field);
   }
 
+  /**
+   * So what JSON Schema cannot see — a `Date`, a `NaN` — reads like the rest.
+   * FR : pour que ce que JSON Schema ne voit pas se lise comme le reste.
+   * `check(new Date('nope'))` on a `date-time` field → `{ error: 'Invalid date' }`
+   */
   check(value: unknown): Checked {
     const shape = this.field.shape;
     const base = Anatomy.of(shape).base;
@@ -48,6 +58,10 @@ export class ValueJudge {
     return { value };
   }
 
+  /**
+   * So a shape is compiled once and reused, instead of a validator built per value checked.
+   * FR : pour qu'une forme soit compilée une fois, pas à chaque valeur.
+   */
   private static planFor(shape: Shape): ShapePlan {
     let plan = this.plans.get(shape);
     if (!plan) {
@@ -63,6 +77,12 @@ export class ValueJudge {
     return plan;
   }
 
+  /**
+   * So a format nobody registered is refused at first use, not a field that quietly passes.
+   * FR : pour qu'un format non enregistré soit refusé dès le premier usage.
+   * `format: 'siret'`, unregistered
+   * → throws `Unknown format: 'siret'. Register it with Formats.register('siret', …)`
+   */
   private static customFormatOf(name: string): FormatPredicate | undefined {
     const custom = Formats.resolve(name);
     if (!custom && !(name in engineFormats)) {

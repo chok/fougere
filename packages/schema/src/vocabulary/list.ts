@@ -5,6 +5,11 @@ export interface ListOptions {
   max?: number;
 }
 
+/**
+ * So a list of values is told apart from a relation, which `many()` declares.
+ * FR : pour qu'une liste de valeurs se distingue d'une relation, que `many()` déclare.
+ * `list(text(), { max: 5 })`; `list(ref(User))` → throws
+ */
 export function list<T>(item: Field<T>, opts?: ListOptions): Field<T[]> {
   if (item.role?.relation)
     throw new Error(

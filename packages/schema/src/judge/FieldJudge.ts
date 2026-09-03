@@ -7,10 +7,21 @@ import type { ValidationError, ValidationResult } from './result.js';
 export class FieldJudge {
   private constructor(private readonly declaration: unknown) {}
 
+  /**
+   * So any value — a declaration, a card entry, a fixture — can be asked whether it is a field.
+   * FR : pour que n'importe quelle valeur soit interrogée sans être déjà un champ.
+   * `FieldJudge.of({ shape: { type: 'string' } }).verdict.success` → `true`
+   */
   static of(declaration: unknown): FieldJudge {
     return new FieldJudge(declaration);
   }
 
+  /**
+   * So every refusal a declaration earns comes back at once, not one throw per problem.
+   * FR : pour que tous les refus reviennent d'un coup, pas une exception par problème.
+   * `FieldJudge.of({}).verdict`
+   * → `{ success: false, errors: [{ path: 'shape', message: 'Every field states a shape — got undefined' }] }`
+   */
   get verdict(): ValidationResult<Field> {
     const declaration = this.declaration;
 

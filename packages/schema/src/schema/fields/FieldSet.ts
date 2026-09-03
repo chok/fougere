@@ -7,14 +7,20 @@ import { Field, type FieldName, type Fields } from './Field.js';
 export class FieldSet<TFields extends Fields = Fields> {
   private constructor(private readonly fields: TFields) {}
 
+  /**
+   * So a question about a whole set is asked of the set, not of each field in turn.
+   * FR : pour qu'une question sur l'ensemble soit posée à l'ensemble.
+   * `FieldSet.of({ id: primary(), title: text() }).primary` → `'id'`
+   */
   static of<TFields extends Fields>(fields: TFields): FieldSet<TFields> {
     return new FieldSet(fields);
   }
 
   /**
-   * Every entry through the field door, then the groups declared over several of them.
-   * A group written here names its members; one written on a field named itself, and the
-   * key it sat under resolved it.
+   * So a group written on the entity and a group written on a field end up the same thing.
+   * FR : pour qu'un groupe écrit sur l'entité et un écrit sur un champ soient pareils.
+   * `declared({ id: primary(), email: text(), tenant: text() }, [['email', 'tenant']])`
+   * → `email` and `tenant` both carry one group
    */
   static declared<TFields extends Fields>(
     declared: TFields,
@@ -28,16 +34,9 @@ export class FieldSet<TFields extends Fields = Fields> {
   }
 
   /**
-   * The name of the field that carries `primary`, or `undefined` when none does.
-   *
-   * `Role.of(field).isPrimary` answers about ONE field; this answers about a shape, which
-   * is the question every reader actually had. It was the same three lines spelled five
-   * times — a mirror's key, a form's row identity, GraphQL's node id, the DDL's primary
-   * key and the storage's `findById` column — so a shape with two primaries meant whichever
-   * one that loop happened to see first, five times over.
-   *
-   * The absence is answered and not defaulted: `'id'` is a fine fallback for a form and a
-   * lie for a DDL, so the caller decides.
+   * So one shape has one identity, and a second `primary` is a refusal rather than a coin toss.
+   * FR : pour qu'une forme ait une identité, un second `primary` étant un refus.
+   * `{ id: primary(), title: text() }` → `'id'`; two primaries → throws, naming both
    */
   get primary(): FieldName<TFields> | undefined {
     const primaries = Object.entries(this.fields)
@@ -54,6 +53,11 @@ export class FieldSet<TFields extends Fields = Fields> {
     return primaries[0] as FieldName<TFields> | undefined;
   }
 
+  /**
+   * So a card can carry the groups back out, read off the fields that hold them.
+   * FR : pour qu'une carte ressorte les groupes, lus sur les champs qui les portent.
+   * `{ email, tenant }` both carrying one group → `[['email', 'tenant']]`
+   */
   get uniqueGroups(): CompositeUnique<TFields> | undefined {
     const groups = FieldGroup.groupsOf(this.fields, Unique);
     return groups.length

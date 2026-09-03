@@ -12,6 +12,11 @@ type SchemaSet = Record<string, SchemaView> | SchemaView[];
 export class Bundle {
   private constructor(readonly descriptor: SchemaBundle) {}
 
+  /**
+   * So two schemas claiming one key are refused, naming both, instead of one silently winning.
+   * FR : pour que deux schémas sur une même clé soient refusés en les nommant.
+   * `Bundle.fromSchemas([Post, PostCard])` when both register as `post` → throws, naming both
+   */
   static fromSchemas(schemas: SchemaSet): Bundle {
     const definitions: Record<string, SchemaDescriptor> = {};
     const claimedBy = new Map<string, string>();
@@ -42,10 +47,20 @@ export class Bundle {
     });
   }
 
+  /**
+   * So a bundle read from a file or a wire is the same value as one built from classes.
+   * FR : pour qu'un lot lu d'un fichier vaille un lot bâti depuis des classes.
+   * `Bundle.fromDescriptor(JSON.parse(text))`
+   */
   static fromDescriptor(descriptor: SchemaBundle): Bundle {
     return new Bundle(descriptor);
   }
 
+  /**
+   * So a `ref()` between two entities of the bundle resolves, which one card alone cannot do.
+   * FR : pour qu'un `ref()` entre deux entités du lot se résolve.
+   * `bundle.toSchemas().post` → `author` resolves to the `user` schema of the same bundle
+   */
   toSchemas(): Record<string, SchemaView> {
     const map: Record<string, EntityConstructor> = {};
     const resolve: Resolver = (name) => map[name.toLowerCase()];
@@ -58,6 +73,11 @@ export class Bundle {
     return schemas;
   }
 
+  /**
+   * So a consumer sees what moved since it synced, which TypeScript cannot tell it.
+   * FR : pour qu'un consommateur voie ce qui a bougé depuis sa synchronisation.
+   * `mine.diff(theirs)` → `{ entitiesAdded: ['comment'], entities: { post: { changes: […] } } }`
+   */
   diff(other: Bundle, options: SetDiffOptions = {}): SetDiff {
     const before = this.descriptor.$defs ?? {};
     const after = other.descriptor.$defs ?? {};

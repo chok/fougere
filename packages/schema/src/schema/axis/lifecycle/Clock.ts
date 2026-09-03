@@ -12,11 +12,20 @@
 export class Clock {
   private static reading: () => number = Date.now;
 
+  /**
+   * So one substitution moves time for every stamp in the process at once.
+   * FR : pour qu'une substitution déplace le temps de tous les estampages.
+   * `Clock.now()` → the frozen instant while a test holds it, `Date.now()` otherwise
+   */
   static now(): number {
     return this.reading();
   }
 
-  /** Freeze the instant this clock reads. Returns the gesture that restores it. */
+  /**
+   * So a test states the instant, instead of intercepting `Date`.
+   * FR : pour qu'un test énonce l'instant au lieu d'intercepter `Date`.
+   * `const restore = Clock.freeze(new Date('2026-01-01')); … restore()`
+   */
   static freeze(at: number | Date): () => void {
     const previous = this.reading;
     const instant = at instanceof Date ? at.getTime() : at;

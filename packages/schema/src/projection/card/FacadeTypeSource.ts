@@ -13,15 +13,30 @@ export interface OpDescriptor {
   cardinality?: 'one' | 'maybe' | 'many' | 'page' | 'none';
 }
 
+/**
+ * So an operation named `list-all` is still callable on the generated interface.
+ * FR : pour qu'une opération nommée `list-all` reste appelable sur l'interface générée.
+ * `propertyKey('list-all')` → `"list-all"`
+ */
 function propertyKey(name: string): string {
   return /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name) ? name : JSON.stringify(name);
 }
 
+/**
+ * So the operation's own sentence shows on hover in the consumer's editor.
+ * FR : pour que la phrase de l'opération s'affiche au survol chez le consommateur.
+ * `description: 'Publishes a draft.'` → a doc comment on that member
+ */
 function docCommentOf(text: string | undefined, indent: string): string {
   if (!text) return '';
   return `${indent}/** ${text.replace(/\*\//g, '*\\/')} */\n`;
 }
 
+/**
+ * So a consumer sees the cardinality in the type, not in a doc line.
+ * FR : pour qu'un consommateur voie la cardinalité dans le type, pas dans une ligne de doc.
+ * `'maybe'` → `Post | undefined`; `'page'` → `Post[] & { total?: number; … }`
+ */
 function returnTypeOf(op: OpDescriptor, rowType: string): string {
   switch (op.cardinality) {
     case 'many': return `${rowType}[]`;
@@ -36,10 +51,20 @@ function returnTypeOf(op: OpDescriptor, rowType: string): string {
 export class FacadeTypeSource {
   private constructor(private readonly operations: readonly OpDescriptor[]) {}
 
+  /**
+   * So an identity card's operations become a typed door on the consumer's side.
+   * FR : pour que les opérations d'une carte deviennent une porte typée.
+   * `FacadeTypeSource.of(card.operations).render({ rowType: 'Post' })`
+   */
   static of(operations: readonly OpDescriptor[]): FacadeTypeSource {
     return new FacadeTypeSource(operations);
   }
 
+  /**
+   * So a remote frond is called with the same types as a local one.
+   * FR : pour qu'un frond distant s'appelle avec les mêmes types qu'un frond local.
+   * → `export interface PostFacade { publish(invocation?: Invocation): Promise<Post>; }`
+   */
   render(options: FacadeTypeSourceOptions = {}): string {
     const name = options.name ?? 'Facade';
     const exported = options.exported === false ? '' : 'export ';

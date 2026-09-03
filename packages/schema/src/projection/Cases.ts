@@ -28,14 +28,22 @@ export interface Case {
   expect: 'accept' | { reject: string };
 }
 
-/** A value of the wrong type for the declared shape — the one violation every field has. */
+/**
+ * So every field has at least one case, whatever else it declares.
+ * FR : pour que chaque champ ait un cas, quoi qu'il déclare par ailleurs.
+ * `text()` → `42`; `number()` → `'not-a-value-of-this-shape'`
+ */
 function wrongTypeFor(field: Field): unknown {
   const declared = (field.shape as { type?: string | readonly string[] }).type;
   const names = Array.isArray(declared) ? declared : [declared];
   return names.includes('string') ? 42 : 'not-a-value-of-this-shape';
 }
 
-/** Values that break a stated bound. Empty when the field states none. */
+/**
+ * So a bound stated in a shape produces the case that breaks it, and none is invented.
+ * FR : pour qu'une borne énoncée produise le cas qui la casse, et aucun autre.
+ * `text({ maxLength: 3 })` → one case with `'xxxx'`; `text()` → no case
+ */
 function outOfBoundsFor(field: Field): { why: string; value: unknown }[] {
   // Through `Anatomy`, not a cast: the cast admitted any keyword, and it declared
   // `maxItems` — which no branch below ever produced. In the one function whose job is
@@ -76,15 +84,19 @@ function outOfBoundsFor(field: Field): { why: string; value: unknown }[] {
 export class Cases {
   private constructor(readonly all: readonly Case[]) {}
 
+  /**
+   * So a test suite is derived from the entity instead of written field by field.
+   * FR : pour qu'une suite soit dérivée de l'entité, pas écrite champ par champ.
+   * `Cases.of(Post, { title: 'a' })` → the valid row, the unknown key, and one case per field
+   */
   static of(entity: SchemaView, valid: Record<string, unknown>): Cases {
     return new Cases(enumerate(entity, valid));
   }
 
   /**
-   * Whether a verdict is the one a case expected.
-   *
-   * Takes the RESULT rather than the input so the same reader serves the local judge, the
-   * façade and a door — the three that have to agree.
+   * So the local judge, the façade and a door are all read by one same assertion.
+   * FR : pour que le juge local, la façade et une porte partagent une assertion.
+   * `holds({ reject: 'title' }, result)` → `true` when an error carries that path
    */
   static holds(
     expected: Case['expect'],
@@ -95,16 +107,29 @@ export class Cases {
     return (result.errors ?? []).some((error) => error.path === expected.reject);
   }
 
-  /** Every way a row is refused for its structure — the closed set this table must cover. */
+  /**
+   * So a suite can assert it covers the closed set, rather than the messages it happened to see.
+   * FR : pour qu'une suite prouve qu'elle couvre l'ensemble fermé.
+   * `Cases.refusals` → `['Expected an object', 'Unknown field', 'Required', …]`
+   */
   static get refusals(): string[] {
     return Object.values(RowRefusal);
   }
 
+  /**
+   * So a suite writes `for (const c of cases)` without reaching for `.all`.
+   * FR : pour qu'une suite écrive `for (const c of cases)` sans passer par `.all`.
+   * `for (const { why, body } of Cases.of(Post, valid))`
+   */
   [Symbol.iterator](): Iterator<Case> {
     return this.all[Symbol.iterator]();
   }
 }
 
+/**
+ * So the four axes decide which cases exist, and no list of them is maintained by hand.
+ * FR : pour que les axes décident des cas, sans liste tenue à la main.
+ */
 function enumerate(entity: SchemaView, valid: Record<string, unknown>): Case[] {
   const fields = entity.getFields();
   const judge = RowJudge.of(fields);
