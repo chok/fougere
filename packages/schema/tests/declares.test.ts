@@ -66,7 +66,7 @@ describe('how a declaration folds into what the schema already states', () => {
     const stated = Post.pick('id', 'title').anchor();
 
     expect(stated.derivation?.source).toBe(Post);
-    expect(stated.derivation?.survived).toEqual({ id: 'id', tenantId: undefined, title: 'title' });
+    expect(stated.derivation?.here).toEqual({ id: 'id', tenantId: undefined, title: 'title' });
   });
 });
 

@@ -209,15 +209,15 @@ function describeField(field: Field, key: string): FieldDescriptor {
 /**
  * So a derived card names its root and what became of each field.
  * FR : pour qu'une carte dérivée nomme sa racine et le sort de chaque champ.
- * `Post.pick('title')` → `{ from: 'Post', survived: { title: 'title' } }`
+ * `Post.pick('title')` → `{ from: 'Post', here: { title: 'title' } }`
  */
 function originOf(schema: SchemaView): DerivedFrom | undefined {
   const { derivation } = schema;
   if (!derivation) return undefined;
-  const survived = Object.fromEntries(
-    Object.entries(derivation.survived).map(([key, value]) => [key, value ?? null]),
+  const here = Object.fromEntries(
+    Object.entries(derivation.here).map(([key, value]) => [key, value ?? null]),
   );
-  return { from: derivation.sourceName, survived };
+  return { from: derivation.sourceName, here };
 }
 
 /**

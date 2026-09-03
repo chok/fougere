@@ -186,9 +186,9 @@ describe('derivation', () => {
   });
 
   describe('the trace a derivation leaves', () => {
-    it('says what survived and what did not, keyed by the origin', () => {
+    it('says what is here and what is not, keyed by the origin', () => {
       const view = Order.pick('id', 'status');
-      expect(view.derivation?.survived).toEqual({
+      expect(view.derivation?.here).toEqual({
         id: 'id', status: 'status', total: undefined, note: undefined, createdAt: undefined,
       });
     });
@@ -196,20 +196,20 @@ describe('derivation', () => {
     it('reports against the origin, never the intermediate', () => {
       const view = Order.pick('id', 'status', 'total').omit('total');
       expect(view.derivation?.source).toBe(Order);
-      expect(view.derivation?.survived).toEqual({
+      expect(view.derivation?.here).toEqual({
         id: 'id', status: 'status', total: undefined, note: undefined, createdAt: undefined,
       });
     });
 
     it('carries the new name a rename gave a field', () => {
       const view = Order.rename({ note: 'comment' });
-      expect(view.derivation?.survived.note).toBe('comment');
+      expect(view.derivation?.here.note).toBe('comment');
     });
 
     it('speaks of the source only — an added field has no origin', () => {
       const view = Order.pick('id').extend({ at: created() });
       expect(Object.keys(view.getFields())).toEqual(['id', 'at']);
-      expect(view.derivation?.survived).toEqual({
+      expect(view.derivation?.here).toEqual({
         id: 'id', status: undefined, total: undefined, note: undefined, createdAt: undefined,
       });
     });
@@ -235,7 +235,7 @@ describe('derivation', () => {
       const view = Archived.pick('id', 'archivedBy');
 
       expect(view.derivation?.source).toBe(Archived);
-      expect(view.derivation?.survived).toEqual({
+      expect(view.derivation?.here).toEqual({
         id: 'id',
         status: undefined,
         total: undefined,

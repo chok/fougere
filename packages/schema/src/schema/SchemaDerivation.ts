@@ -7,13 +7,13 @@ import type { SchemaView } from './SchemaView.js';
  *
  * The origin is the ROOT — `Post.pick(a, b).omit(b)` answers `Post` and never the
  * intermediate — so a chain is flattened rather than journalled, and the two halves cannot
- * disagree: a derivation always carries both, which `source` and `survived` as independent
+ * disagree: a derivation always carries both, which `source` and `here` as independent
  * properties could not promise.
  */
 export class SchemaDerivation {
   private constructor(
     readonly source: SchemaView,
-    readonly survived: Readonly<Record<string, string | undefined>>,
+    readonly here: Readonly<Record<string, string | undefined>>,
   ) {}
 
   /**
@@ -37,7 +37,7 @@ export class SchemaDerivation {
     return new SchemaDerivation(
       this.source,
       Object.fromEntries(
-        Object.entries(this.survived).map(([origin, here]) => [
+        Object.entries(this.here).map(([origin, here]) => [
           origin,
           here === undefined ? undefined : transform(here),
         ]),
@@ -73,6 +73,6 @@ export class SchemaDerivation {
    * `hereFor('body')` after `body → text` → `'text'`; after a cut → `undefined`
    */
   hereFor(key: string): string | undefined {
-    return this.survived[key];
+    return this.here[key];
   }
 }

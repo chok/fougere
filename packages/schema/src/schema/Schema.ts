@@ -54,8 +54,8 @@ export class Schema {
     return this.definition.fields;
   }
   /**
-   * So an adapter's entry survives every derivation that kept the field.
-   * FR : pour que l'entrée d'un adaptateur survive à toute dérivation qui garde le champ.
+   * So an adapter's entry is carried by every derivation that kept the field.
+   * FR : pour que l'entrée d'un adaptateur soit portée par toute dérivation qui garde le champ.
    * `Post.pick('body').adapters` → still `{ sql: { body: … } }`
    */
   static get adapters(): EntityAdapters<Fields> {
@@ -341,8 +341,8 @@ export class Schema {
   }
 
   /**
-   * So `pick`, `omit` and `rename` differ only by which fields survive, and under what name.
-   * FR : pour que `pick`, `omit` et `rename` ne diffèrent que par les survivants et leur nom.
+   * So `pick`, `omit` and `rename` differ only by which fields remain, and under what name.
+   * FR : pour que `pick`, `omit` et `rename` ne diffèrent que par les champs restants et leur nom.
    * `derive(picked, (k) => keys.includes(k) ? k : undefined)`
    */
   private static derive(fields: Fields, transform: (key: string) => string | undefined) {

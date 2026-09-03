@@ -77,8 +77,8 @@ export class Field<T = unknown> {
   }
 
   /**
-   * So a `unique` group survives a rename, and dies with the member a cut removed.
-   * FR : pour qu'un groupe `unique` survive au renommage et meure avec un membre coupé.
+   * So a `unique` group follows a rename, and dies with the member a cut removed.
+   * FR : pour qu'un groupe `unique` suive le renommage et meure avec un membre coupé.
    * `unique(['email', 'tenant'])` under `email → mail` → `['mail', 'tenant']`;
    * with `tenant` cut → the group is gone
    */
