@@ -26,45 +26,65 @@ export function entityToArgs(fields: Fields): ArgsDef {
     // A `default(v)` travels as the create rule `{ value }` — citty shows it.
     const defaultValue = Lifecycle.of(field).literal?.value;
     const { base: shape, nullable } = Anatomy.of(field.shape);
-
-    const kebab = toKebab(key);
-    const def: ArgDef = {
+    const common = {
       description: field.meta?.description,
       required: !nullable && Lifecycle.of(field).requiredAtCreate,
     };
 
-    switch (shape?.type) {
-      case 'boolean':
-        (def as Record<string, unknown>).type = 'boolean';
-        if (defaultValue !== undefined) def.default = defaultValue as boolean;
-        break;
-      case 'number':
-      case 'integer':
-      case 'string':
-        // A closed set is citty's `enum`: the shape already names the legal values, so the
-        // refusal and the `--help` listing come from the declaration rather than a check
-        // written beside it.
-        if (shape.type === 'string' && shape.enum?.length) {
-          (def as Record<string, unknown>).type = 'enum';
-          (def as Record<string, unknown>).options = shape.enum.filter((v) => v !== null);
-        // A date-time string stays a named string — never a positional arg.
-        } else if (shape.type === 'string' && shape.format === 'date-time') {
-          (def as Record<string, unknown>).type = 'string';
-        } else if (positionalIndex === 0 && def.required && key !== 'force') {
-          // First non-bool required field becomes positional
-          (def as Record<string, unknown>).type = 'positional';
-          positionalIndex++;
-        } else {
-          (def as Record<string, unknown>).type = 'string';
-        }
-        if (defaultValue !== undefined) def.default = String(defaultValue);
-        break;
-      default:
-        (def as Record<string, unknown>).type = 'string';
-    }
+    // A closed set is citty's `enum`: the shape already names the legal values, so the
+    // refusal and the `--help` listing come from the declaration rather than a check
+    // written beside it.
+    const options = shape?.type === 'string' && shape.enum?.length
+      ? shape.enum.filter((value): value is string => value !== null)
+      : undefined;
+    // First required field becomes positional — but never a boolean, a closed set, or a
+    // date-time, which stay named flags.
+    const positional = positionalIndex === 0
+      && common.required
+      && key !== 'force'
+      && options === undefined
+      && shape?.type !== 'boolean'
+      && !(shape?.type === 'string' && shape.format === 'date-time');
+    if (positional) positionalIndex++;
 
-    args[kebab === key ? key : kebab] = def;
+    args[toKebab(key) === key ? key : toKebab(key)] = argFor(
+      shape?.type,
+      common,
+      defaultValue,
+      options,
+      positional,
+    );
   }
 
   return args;
+}
+
+/**
+ * One arg, built WITH its `type`. citty's `ArgDef` is a union discriminated on that key, so
+ * a def assembled first and typed afterwards is not one — which is why every branch here
+ * returns a complete literal instead of assigning into a shared object.
+ */
+function argFor(
+  type: string | undefined,
+  common: { description?: string; required: boolean },
+  defaultValue: unknown,
+  options: string[] | undefined,
+  positional: boolean,
+): ArgDef {
+  if (type === 'boolean') {
+    return defaultValue === undefined
+      ? { ...common, type: 'boolean' }
+      : { ...common, type: 'boolean', default: defaultValue as boolean };
+  }
+
+  // Only these three shapes carry a default onto the CLI; anything else is named and bare.
+  const carriesDefault = type === 'number' || type === 'integer' || type === 'string';
+  const withDefault = carriesDefault && defaultValue !== undefined
+    ? { default: String(defaultValue) }
+    : {};
+
+  if (options) return { ...common, ...withDefault, type: 'enum', options };
+  if (positional) return { ...common, ...withDefault, type: 'positional' };
+
+  return { ...common, ...withDefault, type: 'string' };
 }

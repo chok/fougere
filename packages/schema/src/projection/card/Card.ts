@@ -20,6 +20,11 @@ type FieldsOf<T> = { [K in keyof T]-?: Field<T[K]> };
 export class Card<T = Row<Fields>> {
   private constructor(readonly descriptor: SchemaDescriptor) {}
 
+  /**
+   * So a class becomes JSON Schema another language can read.
+   * FR : pour qu'une classe devienne du JSON Schema lisible par un autre langage.
+   * `Card.fromSchema(Post).descriptor` → `{ type: 'object', properties: { … }, title: 'Post' }`
+   */
   static fromSchema<TFields extends Fields>(
     schema: SchemaView<TFields>,
     name?: string,
@@ -48,18 +53,28 @@ export class Card<T = Row<Fields>> {
     return new Card<Row<TFields>>(descriptor);
   }
 
+  /**
+   * So a card read from a file or a wire is the same value as one built here.
+   * FR : pour qu'une carte lue d'un fichier vaille une carte construite ici.
+   * `Card.fromDescriptor(JSON.parse(text))`
+   */
   static fromDescriptor<T = Row<Fields>>(descriptor: SchemaDescriptor): Card<T> {
     return new Card<T>(descriptor);
   }
 
-  /** The root derivation recorded by this card, when its schema was cut from another. */
+  /**
+   * So a card says what its schema was cut from, which its fields cannot.
+   * FR : pour qu'une carte dise de quoi son schéma a été coupé, ce que ses champs ne disent pas.
+   * `Card.fromSchema(Post.pick('title')).origin` → `{ from: 'Post', … }`
+   */
   get origin(): DerivedFrom | undefined {
     return this.descriptor['x-fougere-derived'];
   }
 
   /**
-   * Rebuild the live schema. A bundle supplies `resolve` so relation thunks can find the
-   * other reconstructed cards; a lone card deliberately falls back to a name stand-in.
+   * So a card becomes a class again, judging exactly as the original did.
+   * FR : pour qu'une carte redevienne une classe, jugeant comme l'originale.
+   * `Card.fromDescriptor(d).toSchema().validate({ ghost: 1 })` → `Unknown field`
    */
   toSchema(resolve?: Resolver, name?: string): SchemaConstructor<FieldsOf<T>> {
     const descriptor = this.descriptor;
@@ -91,7 +106,11 @@ export class Card<T = Row<Fields>> {
     return schema as unknown as SchemaConstructor<FieldsOf<T>>;
   }
 
-  /** What must change to turn this card into `other`. */
+  /**
+   * So a consumer sees what moved since it synced — the gap TypeScript cannot see.
+   * FR : pour qu'un consommateur voie ce qui a bougé depuis sa synchronisation.
+   * `mine.diff(theirs)` → `{ changes: [{ kind: 'required', field: 'slug', … }] }`
+   */
   diff(other: Card, options: DiffOptions = {}): Diff {
     const changes: Change[] = [];
     const renamed = options.renamed ?? {};
@@ -155,6 +174,11 @@ export class Card<T = Row<Fields>> {
   }
 }
 
+/**
+ * So the three axes write themselves under `x-fougere`, each by its own hand.
+ * FR : pour que les trois axes s'écrivent sous `x-fougere`, chacun de sa main.
+ * `ref(User)` → `{ role: { relation: { to: 'user', kind: 'one' } } }`
+ */
 function describeExtension(field: Field, key: string): FieldExtension | undefined {
   const extension: Record<string, unknown> = {};
   for (const axis of EXTENSION_AXES) {
@@ -167,17 +191,26 @@ function describeExtension(field: Field, key: string): FieldExtension | undefine
   return Object.keys(extension).length ? (extension as FieldExtension) : undefined;
 }
 
+/**
+ * So the shape stays plain JSON Schema, and what is ours sits under one key.
+ * FR : pour que la forme reste du JSON Schema, ce qui est à nous tenant sous une clé.
+ * `text({ max: 200 })` → `{ type: 'string', maxLength: 200 }`
+ */
 function describeField(field: Field, key: string): FieldDescriptor {
-  const descriptor: FieldDescriptor = {};
-  for (const [shapeKey, value] of Object.entries(field.shape)) {
-    if (value !== undefined) (descriptor as Record<string, unknown>)[shapeKey] = value;
-  }
+  // The shape IS JSON Schema, so it lands whole rather than key by key — which is what let
+  // it be copied under a computed key into a type that names its own.
+  const descriptor: FieldDescriptor = clean({ ...field.shape }) as FieldDescriptor;
   if (field.meta?.description) descriptor.description = field.meta.description;
   const extension = describeExtension(field, key);
   if (extension) descriptor['x-fougere'] = extension;
   return descriptor;
 }
 
+/**
+ * So a derived card names its root and what became of each field.
+ * FR : pour qu'une carte dérivée nomme sa racine et le sort de chaque champ.
+ * `Post.pick('title')` → `{ from: 'Post', survived: { title: 'title' } }`
+ */
 function originOf(schema: SchemaView): DerivedFrom | undefined {
   const { derivation } = schema;
   if (!derivation) return undefined;
@@ -187,6 +220,11 @@ function originOf(schema: SchemaView): DerivedFrom | undefined {
   return { from: derivation.sourceName, survived };
 }
 
+/**
+ * So a shape read back keeps its bounds, and an unknown type is refused.
+ * FR : pour qu'une forme relue garde ses bornes, un type inconnu étant refusé.
+ * `{ type: 'string', maxLength: 200 }` → the same shape a `text({ max: 200 })` states
+ */
 function reconstructShape(property: FieldDescriptor): Field['shape'] | undefined {
   const types = Array.isArray(property.type)
     ? property.type
@@ -233,6 +271,11 @@ function reconstructShape(property: FieldDescriptor): Field['shape'] | undefined
   }
 }
 
+/**
+ * So a field read back carries its axes, rebuilt by the axes themselves.
+ * FR : pour qu'un champ relu porte ses axes, reconstruits par les axes eux-mêmes.
+ * `{ 'x-fougere': { lifecycle: { create: 'now' } } }` → a field stamped at create
+ */
 function reconstructField(
   property: FieldDescriptor,
   key: string,
@@ -261,6 +304,11 @@ function reconstructField(
   } as never);
 }
 
+/**
+ * So an axis that changed is one named difference, not a whole field marked dirty.
+ * FR : pour qu'un axe modifié soit une différence nommée, pas un champ entier marqué.
+ * `{ kind: 'restated', field: 'body', axis: 'boundary', … }`
+ */
 function restated(
   field: string,
   before: FieldExtension | undefined,
@@ -278,22 +326,42 @@ function restated(
   );
 }
 
+/**
+ * So two shapes are compared without what is not shape getting in the way.
+ * FR : pour que deux formes se comparent sans que le reste s'en mêle.
+ * `{ type: 'string', description: 'x' }` → `{ type: 'string' }`
+ */
 function shapeOf(descriptor: FieldDescriptor): Record<string, unknown> {
   const { 'x-fougere': _extension, ...shape } = descriptor;
   return shape as Record<string, unknown>;
 }
 
+/**
+ * So `['string','null']` and `['null','string']` are the same type, not a change.
+ * FR : pour que `['string','null']` et `['null','string']` soient un même type.
+ * `typesOf({ type: ['null', 'string'] })` → `['null', 'string']`
+ */
 function typesOf(descriptor: FieldDescriptor): TypeSet {
   const type = descriptor.type;
   if (type === undefined) return [];
   return (Array.isArray(type) ? [...type] : [type]).sort();
 }
 
+/**
+ * So a bound that moved is a `reshaped`, told apart from a type that changed.
+ * FR : pour qu'une borne déplacée soit un `reshaped`, distinct d'un type changé.
+ * `maxLength: 200` → `maxLength: 100` → one `reshaped`, never a `retyped`
+ */
 function boundsOf(descriptor: FieldDescriptor): Record<string, unknown> {
   const { type: _type, ...rest } = shapeOf(descriptor);
   return rest;
 }
 
+/**
+ * So a removal plus an addition of the same shape is a question, never a guess.
+ * FR : pour qu'une suppression plus un ajout de même forme soit une question, pas un pari.
+ * `body` gone, `content` appeared → `ambiguous: [{ removed: 'body', added: 'content' }]`
+ */
 function candidates(
   removed: string[],
   added: string[],

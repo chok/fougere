@@ -18,7 +18,7 @@ export function expose(
   context: ClassDecoratorContext | ClassMethodDecoratorContext,
 ): void {
   if (context.kind === 'class') {
-    (target as any).__exposed = true;
+    (target as { __exposed?: boolean }).__exposed = true;
   }
   if (context.kind === 'method') {
     context.addInitializer(function (this: any) {

@@ -159,7 +159,7 @@ export function recording<T extends object>(storage: T, entity: string, fields: 
   };
 
   if (typeof base.upsert === 'function') {
-    (recorded as unknown as Undoable).upsert = async function (input, ...rest) {
+    recorded.upsert = async function (input, ...rest) {
       if (mayConflictElsewhere(fields)) refuseAmbiguousUpsert(entity, 'upsert');
       const undo = await undoUpsert.call(this, [input]);
       const row = await base.upsert!.call(this, input, ...rest);
@@ -169,7 +169,7 @@ export function recording<T extends object>(storage: T, entity: string, fields: 
   }
 
   if (typeof base.upsertAll === 'function') {
-    (recorded as unknown as Undoable).upsertAll = async function (inputs, ...rest) {
+    recorded.upsertAll = async function (inputs, ...rest) {
       if (mayConflictElsewhere(fields)) refuseAmbiguousUpsert(entity, 'upsertAll');
       const undo = await undoUpsert.call(this, inputs);
       const written = await base.upsertAll!.call(this, inputs, ...rest);

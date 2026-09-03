@@ -142,7 +142,7 @@ export class SqlStorage {
   /** Returns a scoped storage that restricts all read results to the fields of the given schema. */
   output(schema: SchemaView): SqlStorage {
     const scoped = Object.create(this) as SqlStorage;
-    (scoped as any).selectFields = new Set(Object.keys(schema.getFields()));
+    scoped.selectFields = new Set(Object.keys(schema.getFields()));
     return scoped;
   }
 
@@ -187,8 +187,8 @@ export class SqlStorage {
    */
   private wherePk<Q extends { where(a: any, b: any, c: any): Q }>(query: Q, id: string | Record<string, unknown>): Q {
     if (this.pk.isComposite) {
-      const obj = id as Record<string, unknown>;
-      return this.pk.names.reduce((q, name) => q.where(this.column(name), '=', this.write(name, obj[name])), query);
+      const composite = id as Record<string, unknown>;
+      return this.pk.names.reduce((q, name) => q.where(this.column(name), '=', this.write(name, composite[name])), query);
     }
     const name = this.pk.names[0];
     return query.where(this.column(name), '=', this.write(name, id));
@@ -324,8 +324,8 @@ export class SqlStorage {
     const rows = await this.findAllBy({ [field]: [...keys] }, options);
     for (const row of rows) {
       const key = String(row[field]);
-      const held = grouped.get(key);
-      if (held) held.push(row); else grouped.set(key, [row]);
+      const bucket = grouped.get(key);
+      if (bucket) bucket.push(row); else grouped.set(key, [row]);
     }
     return grouped;
   }

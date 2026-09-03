@@ -83,7 +83,7 @@ export async function run(app: App): Promise<void> {
       // App commands handle their own prompting — don't let citty reject missing args
       if (AppCommand) {
         for (const def of Object.values(args)) {
-          if (typeof def === 'object' && def) (def as Record<string, unknown>).required = false;
+          if (typeof def === 'object' && def) def.required = false;
         }
       }
 
@@ -125,11 +125,11 @@ export async function run(app: App): Promise<void> {
               );
             }
           } catch (err) {
-            const said = err instanceof Error ? err.message : String(err);
+            const message = err instanceof Error ? err.message : String(err);
             // A machine reader parses stdout: a refusal printed there is a refusal that
             // breaks the parse instead of being read. stderr is where it belongs.
-            if (machineOutput) process.stderr.write(said + '\n');
-            else terminal.error(said);
+            if (machineOutput) process.stderr.write(message + '\n');
+            else terminal.error(message);
             process.exit(1);
           }
         },

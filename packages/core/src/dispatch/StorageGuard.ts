@@ -2,9 +2,15 @@ import { ValueJudge, type Fields } from '@fougere/schema';
 import { assertListOptions } from '../storage.js';
 import { ErrorCode, FougereError } from '../wire/errors.js';
 
+/**
+ * The three gestures this guard grafts onto. `list` is optional because not every storage
+ * answers it, and declared HERE rather than described inline at the graft: a member the
+ * intersection does not name cannot be assigned without a cast that hides the graft.
+ */
 interface Writer {
   create(...args: [Record<string, unknown>, ...unknown[]]): Promise<unknown>;
   update(...args: [unknown, Record<string, unknown>, ...unknown[]]): Promise<unknown>;
+  list?(...args: unknown[]): unknown;
 }
 
 /**
@@ -36,11 +42,11 @@ export class StorageGuard {
       return writer.update.apply(this, args);
     };
 
-    const reader = storage as unknown as { list?: (...args: unknown[]) => unknown };
-    if (typeof reader.list === 'function') {
-      (guarded as unknown as typeof reader).list = async function (...args: unknown[]) {
+    const list = writer.list;
+    if (typeof list === 'function') {
+      guarded.list = async function (...args: unknown[]) {
         assertListOptions(args[0] as object | undefined, validation.entity);
-        return (reader.list as Function).apply(this, args);
+        return list.apply(this, args);
       };
     }
 
