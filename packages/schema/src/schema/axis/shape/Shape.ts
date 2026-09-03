@@ -6,7 +6,7 @@ type Nullably<T extends string> = T | readonly [T, 'null'];
 interface StringConstraints { minLength?: number; maxLength?: number; pattern?: string; enum?: readonly (string | null)[]; format?: StringFormat }
 interface NumericConstraints { minimum?: number; maximum?: number }
 interface ArrayConstraints { items?: Shape; minItems?: number; maxItems?: number }
-interface ObjectConstraints { properties?: Record<string, unknown>; required?: readonly string[] }
+interface ObjectConstraints { properties?: Record<string, unknown>; required?: readonly string[]; additionalProperties?: boolean | Shape; propertyNames?: Shape }
 
 export type Shape =
   | ({ type: Nullably<'string'> } & StringConstraints)
@@ -49,10 +49,20 @@ interface ShapeAnatomy {
 }
 
 export class Anatomy {
+  /**
+   * So a shape is recognized by the type it states, and anything else is refused.
+   * FR : pour qu'une forme soit reconnue au type qu'elle énonce.
+   * `Anatomy.is({ type: 'string' })` → `true`; `Anatomy.is({ type: 'blob' })` → `false`
+   */
   static is(value: unknown): value is Shape {
     return isShapeImpl(value);
   }
 
+  /**
+   * So `null` is added to a shape without the caller knowing how a nullable type is spelled.
+   * FR : pour qu'on ajoute `null` sans savoir comment s'écrit un type nullable.
+   * `Anatomy.nullable({ type: 'string' })` → `{ type: ['string', 'null'] }`
+   */
   static nullable(shape: Shape): Shape {
     return nullableShapeImpl(shape);
   }
@@ -60,6 +70,12 @@ export class Anatomy {
   private static readonly cache = new WeakMap<object, ShapeAnatomy>();
   private static readonly none: ShapeAnatomy = { base: undefined, nullable: false };
 
+  /**
+   * So every reader sees the shape and its nullability apart.
+   * FR : pour que la forme et sa nullabilité se lisent séparément.
+   * `Anatomy.of({ type: ['string', 'null'], enum: ['a', null] })`
+   * → `{ base: { type: 'string', enum: ['a'] }, nullable: true }`
+   */
   static of(shape?: Shape): ShapeAnatomy {
     if (!shape) return this.none;
     let a = this.cache.get(shape);
@@ -79,6 +95,11 @@ export class Anatomy {
     return a;
   }
 
+  /**
+   * So the question every adapter asks costs one call instead of an anatomy to read.
+   * FR : pour que la question de chaque adaptateur coûte un appel.
+   * `Anatomy.isNullable({ type: ['string', 'null'] })` → `true`
+   */
   static isNullable(shape?: Shape): boolean {
     return this.of(shape).nullable;
   }

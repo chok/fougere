@@ -12,7 +12,7 @@ import { Lifecycle, Role } from '@fougere/schema';
  */
 import { Anatomy, FieldGroup, Unique, fieldsOf, lowerFirst, schemaOf, type Field, type SchemaView, type SchemaOrCard } from '@fougere/schema';
 import { boundsOf, type ShapeBounds } from './check.js';
-import type { SqlField } from './fields.js';
+import { sqlEntries, type SqlField } from './fields.js';
 
 /** The shape keywords a dialect needs to choose a column type. */
 export interface ColumnShape {
@@ -223,11 +223,16 @@ export function toTable(tableName: string, entity: SchemaOrCard, relations?: Rel
   const resolve = relations?.resolve ?? toTableName;
   const fields = fieldsOf(entity);
   // Read off the entity, since that is where it is declared and addressed by field key.
-  const stated = schemaOf(entity).getAdapters()?.sql;
+  const schema = schemaOf(entity);
+  const configuration = schema.getAdapters().sql;
+  // Judged HERE and not at `entity()`: this runs at boot, after every import, so the
+  // format is always loaded. A judge registered with `schema` would depend on which
+  // module was imported first.
+  sqlEntries.check(configuration, `${schema.name}.adapters.sql`);
   const columns: ColumnDef[] = [];
   for (const [fieldName, field] of Object.entries(fields)) {
     if (!isStored(field)) continue;
-    columns.push(toColumn(fieldName, field, resolve, relations?.tableNameOf, relations?.hosted, stated?.[fieldName]));
+    columns.push(toColumn(fieldName, field, resolve, relations?.tableNameOf, relations?.hosted, configuration?.[fieldName]));
   }
   const primaries = columns.filter((column) => column.primary).map((column) => column.name);
   const stored = new Set(columns.map((column) => column.name));
@@ -325,10 +330,10 @@ function verdictOn(entry: EntityEntry): 'table' | 'answer' {
  */
 function collectEntities(app: AppLike): EntityEntry[] {
   const entries: EntityEntry[] = [];
-  const held = new Set<string>();
+  const seen = new Set<string>();
   const hold = (entry: EntityEntry) => {
-    if (held.has(lowerFirst(entry.name))) return;
-    held.add(lowerFirst(entry.name));
+    if (seen.has(lowerFirst(entry.name))) return;
+    seen.add(lowerFirst(entry.name));
     entries.push(entry);
   };
 
@@ -360,69 +365,3 @@ export function toTables(app: AppLike, resolve: (name: string) => string): Table
 }
 
 // ─── Ordering — a referenced table before its referrer ─────────────────────
-
-export interface FkEdge {
-  table: TableDef;
-  column: ColumnDef;
-}
-
-export interface TableOrder {
-  /** Tables in dependency order — a `ref()` target always precedes its referrer. */
-  ordered: TableDef[];
-  /** FK columns whose target could not be ordered first — a cycle. Constrain after creation. */
-  deferred: FkEdge[];
-}
-
-/**
- * Order a table set so a `ref()`'s target always exists before the table that
- * points at it — required by every engine except SQLite, which resolves FK
- * targets lazily and accepts any order (and has no `ALTER TABLE ADD CONSTRAINT`
- * to close a cycle with — a caller on that dialect skips this function entirely).
- *
- * A cycle (`Post → Author → Post`, legal in the model — role.ts's relation
- * thunk exists precisely so two entities can reference each other) has no such
- * order: the loop is broken by deferring ONE of its edges per remaining cycle —
- * that FK is added after every table exists, instead of inline. A self-reference
- * (`parentId: ref(() => Category)`) is not a cycle here: a table may always
- * reference its own not-yet-populated rows inline, standard support across
- * every engine — so it's excluded from the dependency graph entirely.
- */
-export function orderTables(tables: TableDef[]): TableOrder {
-  const byName = new Map(tables.map((table) => [table.name, table]));
-  const needs = new Map(
-    tables.map((table) => [
-      table.name,
-      new Set(
-        table.columns
-          .filter((c) => c.references && c.references.table !== table.name && byName.has(c.references.table))
-          .map((c) => c.references!.table),
-      ),
-    ]),
-  );
-
-  const ordered: TableDef[] = [];
-  const deferred: FkEdge[] = [];
-  const done = new Set<string>();
-
-  while (needs.size > 0) {
-    const ready = [...needs.keys()].find((name) => [...needs.get(name)!].every((dep) => done.has(dep)));
-    if (ready) {
-      ordered.push(byName.get(ready)!);
-      done.add(ready);
-      needs.delete(ready);
-      continue;
-    }
-    // Every table left waits on another table left — a cycle. Break it by
-    // deferring one edge: every column of the first remaining table that points
-    // at its first unmet dependency.
-    const [name, deps] = [...needs.entries()][0];
-    const dep = [...deps].find((d) => !done.has(d))!;
-    const table = byName.get(name)!;
-    for (const column of table.columns) {
-      if (column.references?.table === dep) deferred.push({ table, column });
-    }
-    deps.delete(dep);
-  }
-
-  return { ordered, deferred };
-}

@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "properties": {
+    "columnType": {
+      "type": "object",
+      "properties": {
+        "sqlite": { "type": "string" },
+        "pg": { "type": "string" },
+        "mysql": { "type": "string" },
+        "mssql": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

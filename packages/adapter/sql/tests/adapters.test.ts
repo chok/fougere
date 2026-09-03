@@ -30,3 +30,45 @@ describe('what an entity states for sql', () => {
     expect(sqlFor('pg')).toContain('"body" tsvector not null');
   });
 });
+
+/**
+ * The format is stated in `src/adapter.schema.json` and judged where this adapter reads it,
+ * which is `toTable` — at boot, after every import. Nothing above judges below a field name.
+ */
+describe('what the format refuses', () => {
+  const stating = (adapters: unknown) => {
+    class Draft extends entity({ id: primary(), body: text() }, { adapters } as never) {}
+
+    return () => toTable('draft', Draft);
+  };
+
+  it('a key this adapter does not read', () => {
+    expect(stating({ sql: { body: { columnTpye: { pg: 'tsvector' } } } })).toThrow(
+      'Draft.adapters.sql.body: Property "columnTpye" does not match additional properties schema.',
+    );
+  });
+
+  it('a columnType that is not keyed by engine', () => {
+    expect(stating({ sql: { body: { columnType: 'tsvector' } } })).toThrow(
+      'Draft.adapters.sql.body.columnType: Instance type "string" is invalid. Expected "object".',
+    );
+  });
+
+  it('an engine no dialect answers to', () => {
+    expect(stating({ sql: { body: { columnType: { postgre: 'tsvector' } } } })).toThrow(
+      'Draft.adapters.sql.body.columnType: Property "postgre" does not match additional properties schema.',
+    );
+  });
+
+  it('a column type that is not a string', () => {
+    expect(stating({ sql: { body: { columnType: { pg: 3 } } } })).toThrow(
+      'Draft.adapters.sql.body.columnType.pg: Instance type "number" is invalid. Expected "string".',
+    );
+  });
+
+  it('says nothing about an entity that stated nothing', () => {
+    class Plain extends entity({ id: primary(), body: text() }) {}
+
+    expect(() => toTable('plain', Plain)).not.toThrow();
+  });
+});
