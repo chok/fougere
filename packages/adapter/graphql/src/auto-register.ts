@@ -74,8 +74,8 @@ const keepEach = <R>(into: Map<string, R>, from: Map<string, R>) => {
 /** A key answers a group: slices of the SAME key concatenate. */
 const concatEach = (into: Map<string, any[]>, from: Map<string, any[]>) => {
   for (const [key, rows] of from) {
-    const held = into.get(key);
-    if (held) held.push(...rows); else into.set(key, rows);
+    const bucket = into.get(key);
+    if (bucket) bucket.push(...rows); else into.set(key, rows);
   }
 };
 
@@ -431,8 +431,8 @@ export function registerAll(
                 const grouped = new Map<string, any[]>();
                 for (const row of rows) {
                   const key = String(row?.[reverseFkName]);
-                  const held = grouped.get(key);
-                  if (held) held.push(row); else grouped.set(key, [row]);
+                  const bucket = grouped.get(key);
+                  if (bucket) bucket.push(row); else grouped.set(key, [row]);
                 }
                 return grouped;
               }, concatEach),

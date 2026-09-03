@@ -64,8 +64,8 @@ export function servePanel(ring: CallRing, options: PanelOptions = {}): Promise<
       });
       // The page is handed the ring as it stands, so a reader that opens late is not
       // looking at an empty screen that suggests a quiet app.
-      const held = ring.since(0);
-      response.write(`event: hello\ndata: ${JSON.stringify({ calls: held.calls, fronds: options.fronds ?? [] })}\n\n`);
+      const backlog = ring.since(0);
+      response.write(`event: hello\ndata: ${JSON.stringify({ calls: backlog.calls, fronds: options.fronds ?? [] })}\n\n`);
       readers.add(response);
       request.on('close', () => readers.delete(response));
       return;

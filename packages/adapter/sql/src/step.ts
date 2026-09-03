@@ -70,9 +70,9 @@ export function collapseChain(steps: readonly SetDiff[]): SetDiff {
     added.push(...step.entitiesAdded);
     removed.push(...step.entitiesRemoved);
     for (const [entity, answer] of Object.entries(step.entities)) {
-      const held = (entities[entity] ??= { changes: [], ambiguous: [] });
-      held.ambiguous.push(...answer.ambiguous);
-      for (const change of answer.changes) compose(held.changes, change);
+      const entry = (entities[entity] ??= { changes: [], ambiguous: [] });
+      entry.ambiguous.push(...answer.ambiguous);
+      for (const change of answer.changes) compose(entry.changes, change);
     }
   }
 

@@ -51,11 +51,11 @@ class Ring<T extends { seq: number }> {
   constructor(private readonly max = KEPT) {}
 
   protected keep(make: (seq: number) => T): T {
-    const one = make(++this.seq);
-    this.held.push(one);
+    const record = make(++this.seq);
+    this.held.push(record);
     if (this.held.length > this.max) this.lost += this.held.splice(0, this.held.length - this.max).length;
 
-    return one;
+    return record;
   }
 
   since(cursor: number): { lines: T[]; cursor: number; dropped: number } {
@@ -125,20 +125,20 @@ export class ErrorRing extends Ring<ErrorGroup> {
 
   private group(one: Omit<ErrorGroup, 'seq' | 'key' | 'count' | 'firstAt' | 'lastAt'>): void {
     const key = [one.from, one.code, one.entity ?? '', one.operation ?? ''].join(' ');
-    const held = this.byKey.get(key);
+    const seen = this.byKey.get(key);
     const at = Date.now();
 
     // Grouped, because a refusal seen forty times is one line with a count — not forty
     // lines that push everything else out of a bounded ring.
-    if (held) {
-      held.count += 1;
-      held.lastAt = at;
-      held.message = one.message;
-      if (one.fields.length > 0) held.fields = one.fields;
+    if (seen) {
+      seen.count += 1;
+      seen.lastAt = at;
+      seen.message = one.message;
+      if (one.fields.length > 0) seen.fields = one.fields;
       // Re-numbered so a reader that already saw this group is handed the higher count.
       // Without it a refusal seen forty times reports one, forever: the group is mutated
       // in place, and a cursor asks only for what is above it.
-      held.seq = ++this.seq;
+      seen.seq = ++this.seq;
       return;
     }
 

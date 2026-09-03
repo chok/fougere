@@ -61,8 +61,8 @@ export function forgetParsedSources(): void {
 }
 
 function keptHost(key: string, options: ts.CompilerOptions): ts.CompilerHost {
-  const held = retained.get(key);
-  if (held) return held.host;
+  const cached = retained.get(key);
+  if (cached) return cached.host;
   const typescript = getTS();
   const base = typescript.createCompilerHost(options);
   const host: ts.CompilerHost = {
@@ -152,9 +152,9 @@ export async function seedTypeProgram(filePaths: readonly string[], projectRoot?
   for (const filePath of filePaths) {
     const absolute = resolvePath(filePath);
     const configured = compilerProjectOf(absolute, projectRoot);
-    const held = grouped.get(configured.key) ?? { options: configured.options, paths: [] };
-    held.paths.push(absolute);
-    grouped.set(configured.key, held);
+    const group = grouped.get(configured.key) ?? { options: configured.options, paths: [] };
+    group.paths.push(absolute);
+    grouped.set(configured.key, group);
   }
 
   for (const [key, { options, paths }] of grouped) {
@@ -168,25 +168,25 @@ function checkedSourceOf(filePath: string, projectRoot?: string): { source: ts.S
   const typescript = getTS();
   const absolute = resolvePath(filePath);
   const configured = compilerProjectOf(absolute, projectRoot);
-  let held = typeProjects.get(configured.key);
+  let project = typeProjects.get(configured.key);
 
-  if (!held) {
+  if (!project) {
     // `path.resolve` is variadic, so handing it directly to `map` also passed the
     // index and the whole roots array as path segments. A fixture without a warm scan
     // cache exposed that first-run-only failure.
     const roots = new Set(configured.roots.map((root) => resolvePath(root)));
     roots.add(absolute);
     const program = builtProgram(configured.key, [...roots], configured.options);
-    held = { roots, options: configured.options, program };
-    typeProjects.set(configured.key, held);
-  } else if (!held.roots.has(absolute)) {
-    held.roots.add(absolute);
-    held.program = builtProgram(configured.key, [...held.roots], held.options);
+    project = { roots, options: configured.options, program };
+    typeProjects.set(configured.key, project);
+  } else if (!project.roots.has(absolute)) {
+    project.roots.add(absolute);
+    project.program = builtProgram(configured.key, [...project.roots], project.options);
   }
 
-  const source = held.program.getSourceFile(absolute);
+  const source = project.program.getSourceFile(absolute);
   if (!source) throw new Error(`TypeScript did not include '${absolute}' in its program.`);
-  return { source, checker: held.program.getTypeChecker() };
+  return { source, checker: project.program.getTypeChecker() };
 }
 
 /** A file, opened. Five places read and parsed one, each spelling the same two calls. */

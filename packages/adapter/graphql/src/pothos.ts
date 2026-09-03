@@ -691,10 +691,10 @@ export function registerInput(builder: InstanceType<typeof SchemaBuilder>, confi
  */
 const claimed = new WeakMap<object, Map<string, string>>();
 function claimRootField(builder: object, fieldName: string, origin: string): void {
-  let held = claimed.get(builder);
-  if (!held) { held = new Map(); claimed.set(builder, held); }
+  let perField = claimed.get(builder);
+  if (!perField) { perField = new Map(); claimed.set(builder, perField); }
 
-  const first = held.get(fieldName);
+  const first = perField.get(fieldName);
   if (first !== undefined && first !== origin) {
     const opName = origin.split('.').pop();
     // `operations:` is keyed by op name PER FROND, so it cannot tell two handlers of the
@@ -710,7 +710,7 @@ function claimRootField(builder: object, fieldName: string, origin: string): voi
       + `A root field is global, so one of them has to give. ${remedy}`,
     );
   }
-  held.set(fieldName, origin);
+  perField.set(fieldName, origin);
 }
 
 function graphqlFieldName(opName: string, entityName: string): string {

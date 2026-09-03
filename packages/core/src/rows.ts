@@ -98,8 +98,8 @@ export function storageOver(open: (entity: SchemaView, name: string) => Rows): S
         for (const row of await rows.all()) {
           const key = String(row[field]);
           if (!wanted.has(key)) continue;
-          const held = grouped.get(key);
-          if (held) held.push(row); else grouped.set(key, [row]);
+          const bucket = grouped.get(key);
+          if (bucket) bucket.push(row); else grouped.set(key, [row]);
         }
         return grouped;
       },
@@ -108,10 +108,10 @@ export function storageOver(open: (entity: SchemaView, name: string) => Rows): S
         const record = applyCreate(fields, applyUpdate(fields, input));
         const id = record[pk] as string | undefined;
         if (id === undefined) throw new Error(`${name}.upsert(): no \`${pk}\` — an upsert needs the key it writes at.`);
-        const held = await rows.get(keyOf(id));
-        if (held) {
+        const previous = await rows.get(keyOf(id));
+        if (previous) {
           for (const [key, field] of Object.entries(fields)) {
-            if (key === pk || Lifecycle.of(field).stampedOnce) record[key] = held[key];
+            if (key === pk || Lifecycle.of(field).stampedOnce) record[key] = previous[key];
           }
         }
         await rows.set(keyOf(id), record);

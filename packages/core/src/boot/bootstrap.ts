@@ -74,10 +74,10 @@ function assertOneOwnerPerKey(
   const owner = new Map<string, string>();
 
   const claim = (key: string, frond: string, what: string) => {
-    const held = owner.get(key);
-    if (held !== undefined && held !== frond) {
+    const first = owner.get(key);
+    if (first !== undefined && first !== frond) {
       throw new Error(
-        `Two fronds claim the key '${key}': '${held}' and '${frond}'.\n`
+        `Two fronds claim the key '${key}': '${first}' and '${frond}'.\n`
         + `  A ${what} is registered under a key that names no frond, so one would silently replace the other.\n`
         + `  - Rename one of the two classes, or\n`
         + `  - keep one of the two fronds out of this process (--fronds), or declare it in remotes:`,

@@ -56,11 +56,11 @@ function factsOf(card: IdentityCard, frond: string): Map<string, SchemaDescripto
  * repo already states (re-sync the readers, then deploy the sender).
  */
 export function driftOf(mine: IdentityCard, theirs: IdentityCard, frond: string): CardDrift {
-  const held = doorsOf(mine, frond);
+  const mineDoors = doorsOf(mine, frond);
   const served = doorsOf(theirs, frond);
   const drift: CardDrift = { frond, missingDoors: [], missingOps: [], shapes: [], facts: [] };
 
-  for (const [name, door] of held) {
+  for (const [name, door] of mineDoors) {
     const there = served.get(name);
     if (!there) { drift.missingDoors.push(name); continue; }
 

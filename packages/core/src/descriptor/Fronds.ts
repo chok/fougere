@@ -21,9 +21,9 @@ export class Fronds extends Array<FrondDescriptor> {
 
   /** The fronds an app hosts, scanned or stated. The only gate in — `Array.of` is taken. */
   static hosting(fronds: readonly FrondDescriptor[]): Fronds {
-    const held = new Fronds();
-    held.push(...fronds);
-    return held;
+    const all = new Fronds();
+    all.push(...fronds);
+    return all;
   }
 
   /** The frond that hosts an entity — `undefined` when no loaded frond does. */

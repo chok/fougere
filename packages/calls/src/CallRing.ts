@@ -3,11 +3,11 @@ import { RPC_ENTITY, type CallPage, type CallRecord, type DispatchEvent } from '
 /** The message and the code of a refusal, without the stack that carries a body. */
 function refusalOf(error: unknown): CallRecord['refusal'] {
   if (error === null || error === undefined) return { message: 'unknown refusal' };
-  const held = error as { code?: unknown; message?: unknown };
+  const thrown = error as { code?: unknown; message?: unknown };
 
   return {
-    ...(typeof held.code === 'string' ? { code: held.code } : {}),
-    message: typeof held.message === 'string' ? held.message : String(error),
+    ...(typeof thrown.code === 'string' ? { code: thrown.code } : {}),
+    message: typeof thrown.message === 'string' ? thrown.message : String(error),
   };
 }
 

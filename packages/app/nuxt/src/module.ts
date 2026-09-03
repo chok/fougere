@@ -290,7 +290,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
     // 500 on every call in `nuxt dev`, 200 once the statement is the only source.
     // A codegen inside one repo also had nothing to carry: `fougere sync` writes classes
     // because its source is ANOTHER repo, and here the author can just import.
-    const stated = ['fronds.ts', 'fronds.mts', 'fronds.js', 'fronds.mjs']
+    const frondsFile = ['fronds.ts', 'fronds.mts', 'fronds.js', 'fronds.mjs']
       .map((f) => resolve(scanRoot, f)).find((f) => existsSync(f));
 
     // No statement of its own: the build writes the one the scan implies, so the runtime
@@ -301,7 +301,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
     // do (`Post.js` for `Post.ts`), and Nitro externalizes a `.mjs` it can hand to Node —
     // which then resolves `@fronds/*` against a package that does not exist, since an alias
     // is a bundler's. Measured both ways, in-process: `.mjs` answers 500, `.ts` answers.
-    const statedPath = stated ?? addTemplate({
+    const statedPath = frondsFile ?? addTemplate({
       filename: 'fougere-fronds.ts',
       write: true,
       getContents: () => emitStatement(scan),

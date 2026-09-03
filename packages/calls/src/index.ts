@@ -80,10 +80,10 @@ function hostOf(address: string): string {
 }
 
 function nameOf(schema: unknown): string | null {
-  const held = schema as { getName?: () => string; name?: string } | undefined;
-  if (!held) return null;
+  const named = schema as { getName?: () => string; name?: string } | undefined;
+  if (!named) return null;
 
-  return typeof held.getName === 'function' ? held.getName() : held.name ?? null;
+  return typeof named.getName === 'function' ? named.getName() : named.name ?? null;
 }
 
 /**

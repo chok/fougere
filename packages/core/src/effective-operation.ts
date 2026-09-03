@@ -326,9 +326,9 @@ export function resolveEffectiveOperations(
 function groupedCollectors(collectors: readonly CollectorEntry[]): Map<string, CollectorEntry[]> {
   const grouped = new Map<string, CollectorEntry[]>();
   for (const collector of collectors) {
-    const held = grouped.get(collector.typeName) ?? [];
-    held.push(collector);
-    grouped.set(collector.typeName, held);
+    const sameName = grouped.get(collector.typeName) ?? [];
+    sameName.push(collector);
+    grouped.set(collector.typeName, sameName);
   }
   return grouped;
 }
@@ -359,9 +359,9 @@ function normalizeBinding(
   // Array order is never allowed to become semantic authority.
   const byName = new Map<string, Binding[]>();
   for (const binding of contract.binding) {
-    const held = byName.get(binding.name) ?? [];
-    held.push(binding);
-    byName.set(binding.name, held);
+    const sameName = byName.get(binding.name) ?? [];
+    sameName.push(binding);
+    byName.set(binding.name, sameName);
   }
   const expected = new Set(params.map((param) => param.name));
   const invalid = params.filter((param) => (byName.get(param.name)?.length ?? 0) !== 1);

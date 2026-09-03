@@ -135,8 +135,8 @@ export class Emissions {
      * `deliver` deliberately does NOT come here: a hub that resolved this value to hand
      * on an incoming reading echoed it straight back to the whole fleet.
      */
-    const carried = this.carry?.(fact, payload);
-    if (carried) void Promise.resolve(carried).catch((cause) => this.log.error(`${fact} — carrier refused it`, cause));
+    const delivery = this.carry?.(fact, payload);
+    if (delivery) void Promise.resolve(delivery).catch((cause) => this.log.error(`${fact} — carrier refused it`, cause));
 
     for (const { door, op, done } of this.handToListeners(fact, payload)) {
       void done.catch((cause) => this.log.error(`${fact} → ${door}.${op}`, this.describeRefusal(fact, cause) ?? cause));

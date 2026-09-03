@@ -186,6 +186,6 @@ export async function invokeOn<T = unknown>(
   const { call, invocation } = callValueOf(target, opOrInput, input);
   // An explicit `state` on the input wins over the request's — the caller who spells
   // it is answering for it, which is what makes a call outside any request possible.
-  const given = typeof opOrInput === 'string' ? input : opOrInput;
-  return (await createAppRunner(app)(call, { ...invocation, state: given?.state ?? state })) as T;
+  const explicit = typeof opOrInput === 'string' ? input : opOrInput;
+  return (await createAppRunner(app)(call, { ...invocation, state: explicit?.state ?? state })) as T;
 }

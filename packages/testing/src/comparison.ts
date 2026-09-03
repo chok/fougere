@@ -134,8 +134,8 @@ export function checkDoors(app: App, entity: SchemaView, options: DoorOptions = 
       );
 
       // REST answers a deletion with no content at all, which is the protocol saying yes.
-      const said = answers.map((answer) => (answer === undefined || answer === null ? true : wire(answer)));
-      expect(new Set(said).size, `the doors disagree: ${JSON.stringify(said)}`).toBe(1);
+      const onTheWire = answers.map((answer) => (answer === undefined || answer === null ? true : wire(answer)));
+      expect(new Set(onTheWire).size, `the doors disagree: ${JSON.stringify(onTheWire)}`).toBe(1);
     });
 
     it('on a refusal', async () => {

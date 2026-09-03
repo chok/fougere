@@ -45,16 +45,16 @@ export async function syncedRemotes(root: string): Promise<SyncedRemote[]> {
  * the CLI, not to this file.
  */
 export async function heldShapes(remote: SyncedRemote): Promise<Map<string, SchemaDescriptor>> {
-  const held = new Map<string, SchemaDescriptor>();
+  const cards = new Map<string, SchemaDescriptor>();
   const index = pathToFileURL(join(remote.path, 'index.ts')).href;
   const module = await import(index) as Record<string, unknown>;
 
   for (const [name, exported] of Object.entries(module)) {
     const entity = exported as SchemaView | undefined;
     if (typeof entity !== 'function' || typeof (entity as SchemaView).getFields !== 'function') continue;
-    held.set(name, Card.fromSchema(entity).descriptor);
+    cards.set(name, Card.fromSchema(entity).descriptor);
   }
-  return held;
+  return cards;
 }
 
 /** The shapes a card announces, by the name a door carries. */

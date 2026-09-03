@@ -79,7 +79,7 @@ export function createRemoteRouter(
         // adding one here would answer a call with a transport to a door that
         // does not exist.
         for (const door of frond.doors) {
-          const held = claimedBy.get(door.name);
+          const first = claimedBy.get(door.name);
           /**
            * Two remotes claiming one name is refused, not silently arbitrated.
            *
@@ -95,11 +95,11 @@ export function createRemoteRouter(
            * `FrondCall` already carries an optional `frond`; the day it is required, this
            * becomes a disambiguation instead of a refusal.
            */
-          if (held !== undefined && held !== label) {
+          if (first !== undefined && first !== label) {
             throw new FougereError({
               code: ErrorCode.INTERNAL_ERROR,
               message:
-                `Two remotes serve '${door.name}': '${held}' and '${label}'.\n`
+                `Two remotes serve '${door.name}': '${first}' and '${label}'.\n`
                 + `  A call names an entity, not a frond, so nothing could choose between them.\n`
                 + `  - Keep one of the two out of \`remotes:\`, or\n`
                 + `  - expose one of them under a different entity name.`,

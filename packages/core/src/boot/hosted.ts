@@ -67,8 +67,8 @@ export async function hostedBy(sources: HostedSources): Promise<ScanResult> {
   if (!sources.fronds) return scanned ?? { fronds: Fronds.hosting([]), diagnostics: [] };
 
   const found = scanned?.fronds ?? [];
-  const stated = sources.fronds.map((f) => completed(f, found.find((s) => s.name === f.name)));
-  const unstated = found.filter((f) => !sources.fronds!.some((s) => s.name === f.name));
+  const configured = sources.fronds.map((f) => completed(f, found.find((s) => s.name === f.name)));
+  const discovered = found.filter((f) => !sources.fronds!.some((s) => s.name === f.name));
 
-  return { fronds: Fronds.hosting([...stated, ...unstated]), diagnostics: scanned?.diagnostics ?? [] };
+  return { fronds: Fronds.hosting([...configured, ...discovered]), diagnostics: scanned?.diagnostics ?? [] };
 }

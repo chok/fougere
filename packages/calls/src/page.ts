@@ -210,21 +210,21 @@ function pills(options, held, set) {
 }
 
 function calls() {
-  const kept = state.calls.filter((c) => state.filter === 'all' || routeOf(c) === state.filter);
+  const shown = state.calls.filter((c) => state.filter === 'all' || routeOf(c) === state.filter);
   const bar = pills(['all', 'local', 'remote', 'system'], state.filter, (v) => { state.filter = v; });
 
-  if (kept.length === 0) {
+  if (shown.length === 0) {
     return [bar, empty('Nothing dispatched yet — call an operation and it lands here.')];
   }
 
   // The recent window, not the session's high-water mark: one 4-second migration at boot
   // and every bar after it was 2px for good.
-  const slowest = Math.max(1, ...kept.slice(-100).map((c) => c.ms ?? 0));
+  const slowest = Math.max(1, ...shown.slice(-100).map((c) => c.ms ?? 0));
 
   // One frond, one word repeated 400 times, 112px stolen from what the eye scans.
   const many = new Set(state.calls.map((c) => c.frond)).size > 1;
 
-  const rows = kept.slice(-400).reverse().map((c) => {
+  const rows = shown.slice(-400).reverse().map((c) => {
     const route = routeOf(c);
     const width = c.ms ? Math.max(2, Math.round((c.ms / slowest) * 56)) : 0;
     // Cleared as it is drawn: the flag marks the first render of a call, and a redraw is
@@ -508,10 +508,10 @@ events.addEventListener('error', () => {
   document.getElementById('dot').className = 'dot off';
 });
 events.addEventListener('hello', (m) => {
-  const held = JSON.parse(m.data);
-  state.fronds = held.fronds ?? [];
+  const payload = JSON.parse(m.data);
+  state.fronds = payload.fronds ?? [];
   document.getElementById('where').textContent = state.fronds.length ? ' · ' + state.fronds.join(', ') : '';
-  state.calls = held.calls;
+  state.calls = payload.calls;
   draw();
 });
 events.addEventListener('call', (m) => {
