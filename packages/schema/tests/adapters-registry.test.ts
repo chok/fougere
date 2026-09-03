@@ -4,7 +4,7 @@ import type { Shape } from '../src/schema/axis/shape/Shape.js';
 
 /**
  * The population of the FIRST level — which adapters this process answers for. An adapter
- * declares itself at its own module load, so the name an entity addresses stops being
+ * registers itself at its own module load, so the name an entity addresses stops being
  * implicit in whoever happens to read it.
  */
 const format: Shape = {
@@ -13,10 +13,10 @@ const format: Shape = {
   additionalProperties: false,
 };
 
-Adapters.declare('probe', format);
+Adapters.register('probe', format);
 
 describe('Adapters', () => {
-  it('answers for a name that declared itself', () => {
+  it('answers for a name that registered itself', () => {
     expect(Adapters.names).toContain('probe');
     expect(Adapters.judge('probe')).toBeDefined();
   });

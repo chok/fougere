@@ -34,7 +34,7 @@ export interface SqlField {
  * `sqlEntries.check({ body: { columnTpye: {} } }, 'Post.adapters.sql')`
  * → throws `Post.adapters.sql.body: Property "columnTpye" does not match …`
  */
-export const sqlEntries = Adapters.declare('sql', ENTRY_FORMAT as Shape);
+export const sqlEntries = Adapters.register('sql', ENTRY_FORMAT as Shape);
 
 type Assert<T extends true> = T;
 /** A fifth dialect does not compile until `adapter.schema.json` names it. */

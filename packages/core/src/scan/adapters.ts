@@ -10,7 +10,7 @@ import { join } from 'node:path';
  * this is the one place a name can be judged — and it is a report, never a refusal.
  *
  * By CONVENTION, not by asking: an adapter registers under the suffix of its package
- * name (`@fougere/adapter-sql` → `sql`), the same way `Adapters.declare('sql', …)`
+ * name (`@fougere/adapter-sql` → `sql`), the same way `Adapters.register('sql', …)`
  * spells it. An adapter that registers under some other name is invisible here, which
  * costs a false report and never a false silence.
  */
