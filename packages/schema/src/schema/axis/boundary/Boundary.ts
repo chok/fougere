@@ -39,7 +39,7 @@ export class Boundary implements BoundaryRules {
     if (ref === undefined) return new Boundary();
     if (typeof ref !== 'string') return new Boundary(ref);
 
-    const alias = Boundaries.alias(ref);
+    const alias = Boundaries.aliases.find(ref);
     if (!alias) throw new Error(`Unknown boundary alias: '${ref}'`);
     return new Boundary(alias);
   }
@@ -58,11 +58,11 @@ export class Boundary implements BoundaryRules {
     return new Boundary(rules, {
       decode:
         typeof rules.in === 'object'
-          ? Boundaries.decoder(rules.in.decode)
+          ? Boundaries.decoders.resolve(rules.in.decode)
           : identityDecoder,
       encode:
         typeof rules.out === 'object'
-          ? Boundaries.encoder(rules.out.encode)
+          ? Boundaries.encoders.resolve(rules.out.encode)
           : identityEncoder,
     });
   }
@@ -75,7 +75,7 @@ export class Boundary implements BoundaryRules {
   static forShape(shape: Shape | undefined): Boundary {
     const base = Anatomy.of(shape).base;
     if (base?.type === 'string' && base.format === 'date-time') {
-      return new Boundary(Boundaries.alias('isoDate')!);
+      return new Boundary(Boundaries.aliases.find('isoDate')!);
     }
     return new Boundary();
   }

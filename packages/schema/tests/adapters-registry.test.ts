@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Adapters } from '../src/entity/Adapters.js';
+import { EntryJudge } from '../src/judge/EntryJudge.js';
 import type { Shape } from '../src/schema/axis/shape/Shape.js';
 
 /**
@@ -13,16 +14,16 @@ const format: Shape = {
   additionalProperties: false,
 };
 
-Adapters.register('probe', format);
+Adapters.register('probe', EntryJudge.of(format));
 
 describe('Adapters', () => {
   it('answers for a name that registered itself', () => {
     expect(Adapters.names).toContain('probe');
-    expect(Adapters.judge('probe')).toBeDefined();
+    expect(Adapters.find('probe')).toBeDefined();
   });
 
   it('answers nothing for a name this process never loaded', () => {
-    expect(Adapters.judge('mongo')).toBeUndefined();
+    expect(Adapters.find('mongo')).toBeUndefined();
   });
 
   it('judges an entry through the adapter that stated its format', () => {

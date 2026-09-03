@@ -146,8 +146,8 @@ describe('registerRoutes', () => {
   });
 
   it('does not encode a facade result a second time', async () => {
-    Boundaries.registerEncoder('rest-test-increment', (value) => typeof value === 'number' ? value + 1 : value);
-    Boundaries.registerAlias('rest-test-increment', { out: { encode: 'rest-test-increment' } });
+    Boundaries.encoders.register('rest-test-increment', (value) => typeof value === 'number' ? value + 1 : value);
+    Boundaries.aliases.register('rest-test-increment', { out: { encode: 'rest-test-increment' } });
     const outputFields: Fields = {
       value: number().with({ boundary: 'rest-test-increment' }),
     };

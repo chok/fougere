@@ -406,9 +406,18 @@ lives in the notes.
   whose NAME ends in the key suffix*.
 - A decision has ONE owner, and it is instantiated on its subject when the subject can be
   held: `RowJudge.of(fields, opts).check(row)`, `Card.fromSchema(Post)`, `FieldSet.of(f).primary`,
-  `Visibility.of(f).input`. A registry stays static — one per process, no subject to hold
-  (`Formats`, `Boundaries`, `Generators`, `Clock`). Measured over the pass: 11 classes and 36
-  free functions became 24 and 12.
+  `Visibility.of(f).input`. Measured over the pass: 11 classes and 36 free functions became
+  24 and 12.
+- **A registry is an INSTANCE of `Registry<T>`** (`schema/src/Registry.ts`), not a class of
+  statics. It holds a name → value map and refuses an unknown name ITSELF, being the only
+  place that can list the known ones — which four hand-written refusals could not agree on:
+  `Generators` and `Sources` listed what the process answers, `Boundaries` did not, and
+  `defaults/src/storage.ts` re-spelled the whole sentence before calling `Sources.resolve`.
+  `Formats`, `Generators` and the three of `Boundaries` (`decoders`, `encoders`, `aliases`)
+  are bare instances; `Adapters` and `Sources` extend it to add `check` and `open`, and
+  never redefine a member — which is why `register` hands the value back
+  (`Adapters.register('sql', EntryJudge.of(FORMAT))`) instead of taking a `Shape`. `Clock`
+  is not one: it registers nothing.
 - `Bundle` REFUSES two schemas claiming one registration key (`card/Bundle.ts`). The silent
   overwrite it replaces is what a free function could not refuse — there was nowhere the
   refusal would have belonged.

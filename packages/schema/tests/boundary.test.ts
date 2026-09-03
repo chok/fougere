@@ -57,9 +57,9 @@ describe('boundary · non-date kinds are identity', () => {
 
 describe('boundary · override slot', () => {
   it('a registered alias overrides the shape-derived default', () => {
-    Boundaries.registerDecoder('fromCents', (v) => ({ value: typeof v === 'number' ? v / 100 : v }));
-    Boundaries.registerEncoder('toCents', (v) => (typeof v === 'number' ? Math.round(v * 100) : v));
-    Boundaries.registerAlias('moneyCents', { in: { decode: 'fromCents' }, out: { encode: 'toCents' } });
+    Boundaries.decoders.register('fromCents', (v) => ({ value: typeof v === 'number' ? v / 100 : v }));
+    Boundaries.encoders.register('toCents', (v) => (typeof v === 'number' ? Math.round(v * 100) : v));
+    Boundaries.aliases.register('moneyCents', { in: { decode: 'fromCents' }, out: { encode: 'toCents' } });
 
     const price = new Field<number>({ shape: { type: 'number' }, boundary: 'moneyCents' });
     const { decode, encode } = Boundary.of(price);
@@ -83,10 +83,10 @@ describe('boundary · override slot', () => {
   // been converted, and nothing said a word.
   it('an unregistered NAMED codec throws too, in both directions', () => {
     const inbound = new Field<number>({ shape: { type: 'number' }, boundary: { in: { decode: 'celsius' } } });
-    expect(() => Boundary.of(inbound)).toThrow(/Unknown boundary decoder: 'celsius'/);
+    expect(() => Boundary.of(inbound)).toThrow(/Unknown boundary decoder 'celsius'/);
 
     const outbound = new Field<number>({ shape: { type: 'number' }, boundary: { out: { encode: 'celsius' } } });
-    expect(() => Boundary.of(outbound)).toThrow(/Unknown boundary encoder: 'celsius'/);
+    expect(() => Boundary.of(outbound)).toThrow(/Unknown boundary encoder 'celsius'/);
   });
 });
 
@@ -120,9 +120,9 @@ describe("boundary · 'closed' permissions (readOnly / writeOnly)", () => {
 });
 
 describe('boundary · survives every field transform', () => {
-  Boundaries.registerDecoder('fromCents', (v) => ({ value: typeof v === 'number' ? v / 100 : v }));
-  Boundaries.registerEncoder('toCents', (v) => (typeof v === 'number' ? Math.round(v * 100) : v));
-  Boundaries.registerAlias('moneyCents', { in: { decode: 'fromCents' }, out: { encode: 'toCents' } });
+  Boundaries.decoders.register('fromCents', (v) => ({ value: typeof v === 'number' ? v / 100 : v }));
+  Boundaries.encoders.register('toCents', (v) => (typeof v === 'number' ? Math.round(v * 100) : v));
+  Boundaries.aliases.register('moneyCents', { in: { decode: 'fromCents' }, out: { encode: 'toCents' } });
   const money = () => new Field<number>({ shape: { type: 'number' }, boundary: 'moneyCents' });
 
   it('optional() keeps the boundary', () => {

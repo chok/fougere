@@ -137,14 +137,8 @@ export function resolveStorage(dbConf: DbConfig, sources?: SourcesConfig): Resol
  */
 function built(conf: Record<string, unknown>, field: string): Source {
   const name = (conf.source as string | undefined) ?? DEFAULT_ADAPTER;
-  if (!Sources.answers(name)) {
-    throw new Error(
-      `${field}.source '${name}' is not answered — import the adapter that does. `
-      + `This process answers ${Sources.answered().join(', ') || 'nothing yet'}.`,
-    );
-  }
 
-  return Sources.resolve(name, conf as never);
+  return Sources.open(name, conf as never, `${field}.source`);
 }
 
 /** What a config naming no adapter means. */

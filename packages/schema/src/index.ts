@@ -100,6 +100,7 @@ export { ValueJudge } from './judge/ValueJudge.js';
 export { RowJudge } from './judge/RowJudge.js';
 export { EntryJudge } from './judge/EntryJudge.js';
 export { Adapters } from './entity/Adapters.js';
+export { Registry } from './Registry.js';
 export { type ValidateOptions } from './judge/options.js';
 export {
   type ValidationError,

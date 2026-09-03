@@ -1,4 +1,4 @@
-import type { SchemaView } from '@fougere/schema';
+import { Registry, type SchemaView } from '@fougere/schema';
 import type { StorageFactory } from './storage.js';
 
 /**
@@ -64,32 +64,14 @@ export interface SourceConfig {
  *
  * Registered at IMPORT by each adapter, so nothing central lists them.
  */
-export class Sources {
-  private static readonly registry = new Map<string, (conf: SourceConfig) => Source>();
-
-  static register(name: string, build: (conf: SourceConfig) => Source): void {
-    this.registry.set(name, build);
-  }
-
-  /** The source this name stands for, refused by name when nothing does. */
-  static resolve(name: string, conf: SourceConfig): Source {
-    const build = this.registry.get(name);
-    if (build) return build(conf);
-
-    throw new Error(
-      `Unknown source '${name}' — import the adapter that answers it, or register one with `
-      + `Sources.register('${name}', build). This process answers `
-      + `${[...this.registry.keys()].join(', ') || 'nothing yet'}.`,
-    );
-  }
-
-  /** Whether a name is answered, for a caller that must not throw to find out. */
-  static answers(name: string): boolean {
-    return this.registry.has(name);
-  }
-
-  /** What this process answers — what a refusal elsewhere prints. */
-  static answered(): string[] {
-    return [...this.registry.keys()];
+class SourceRegistry extends Registry<(conf: SourceConfig) => Source> {
+  /** The source this name stands for, built from the config entry that named it. */
+  open(name: string, conf: SourceConfig, at?: string): Source {
+    return this.resolve(name, at)(conf);
   }
 }
+
+export const Sources = new SourceRegistry(
+  'source',
+  'import the adapter that answers it, or call Sources.register(name, build)',
+);

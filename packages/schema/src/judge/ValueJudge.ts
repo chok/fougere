@@ -84,7 +84,7 @@ export class ValueJudge {
    * → throws `Unknown format: 'siret'. Register it with Formats.register('siret', …)`
    */
   private static customFormatOf(name: string): FormatPredicate | undefined {
-    const custom = Formats.resolve(name);
+    const custom = Formats.find(name);
     if (!custom && !(name in engineFormats)) {
       throw new Error(
         `Unknown format: '${name}'. Register it with Formats.register('${name}', …) — ` +

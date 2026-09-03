@@ -113,7 +113,7 @@ describe('resolveStorage with a second source', () => {
   it('refuses a source naming an adapter nothing answers, listing what does', () => {
     expect(() => resolveStorage({ path: ':memory:' }, {
       archive: { source: 'file', entities: ['Book'] },
-    })).toThrow(/'file' is not answered.*answers sql/s);
+    })).toThrow(/archive.source: Unknown source 'file'.*answers sql/s);
   });
 
   it('behaves exactly as before when no source is declared', () => {
