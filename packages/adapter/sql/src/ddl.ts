@@ -18,13 +18,13 @@ import {
 } from 'kysely';
 import {
   isKeyed,
-  orderTables,
   toTableName,
   toTables,
   type AppLike,
   type ColumnDef,
   type TableDef,
 } from './table.js';
+import { orderTables } from './order.js';
 import { columnTypeFor, resolveDialect, type DialectName } from './dialect.js';
 import { checkFor } from './check.js';
 

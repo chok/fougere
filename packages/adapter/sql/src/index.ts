@@ -1,15 +1,15 @@
 export { createTableSQL, createIndexSQL, indexSQL, addForeignKeyConstraintSQL, generateSQL, autoMigrate, compiler } from './ddl.js';
 export { onQuery, logQueries, type QueryEvent, type QuerySink } from './query.js';
+export type { FkEdge, TableOrder } from './order.js';
 export type { GenerateOptions, SqlSink } from './ddl.js';
-export { toTable, toTables, toTableName, toSnakeCase, isKeyed, orderTables } from './table.js';
+export { toTable, toTables, toTableName, toSnakeCase, isKeyed } from './table.js';
+export { orderTables } from './order.js';
 export type {
   TableDef,
   ColumnDef,
   ColumnShape,
   ColumnReference,
   RelationResolve,
-  FkEdge,
-  TableOrder,
   EntityEntry,
   FrondLike,
   AppLike,

@@ -17,13 +17,13 @@ import { checkFor } from './check.js';
 import { columnTypeFor, resolveDialect, type DialectName } from './dialect.js';
 import {
   isKeyed,
-  orderTables,
   toTables,
   toTableName,
   type AppLike,
   type ColumnDef,
   type TableDef,
 } from './table.js';
+import { orderTables } from './order.js';
 
 /** What the database actually holds: column names per table. */
 export type SchemaState = Map<string, Set<string>>;
