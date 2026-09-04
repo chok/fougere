@@ -124,344 +124,284 @@ depth is encoded there: check it when a package moves families.
 
 ## Architecture
 
-**Core flow:** Entity → adapters (SQL, GraphQL, REST, forms). The schema is the source of truth; adapters read `Entity.getFields()`.
+Entity → adapters (SQL, GraphQL, REST, forms). The schema is the source of truth; adapters
+read `Entity.getFields()`. The reasoning behind each line below lives in
+`fougere-notes/docs/notes/`, not here.
 
-**Entity declarations** — the 2nd arg of `entity()` is what the entity states about *itself*: `unique` (field groups unique together, realized as a table constraint by `adapter/sql`) and `adapters` (per-adapter, per-field). One object, not a growing parameter list. A derivation that drops a member of a unique group drops the group.
+**A field has four axes** — `shape` (which IS JSON Schema), `role` (primary, ref…),
+`lifecycle` (who writes the value and when), `boundary` (readOnly/writeOnly). A field is
+recognized by its FORM: it states a `shape`. `new Field(field, key)` is the door, and a
+shapeless entry is refused there.
 
-**What an entity states for an adapter is ADDRESSED, and the effect is the adapter's to name.** `FougereEntityAdapters` (`schema/src/entity/EntityAdapters.ts`) is an EMPTY interface an adapter augments from outside, so `schema` learns no engine and no column type. `adapter/sql` is its only reader today (`adapter/sql/src/fields.ts`, `SqlFields`/`SqlField`) and states the rule in its shape: `columnType` is indexed BY ENGINE, so an engine the entity did not name keeps what the shape would have given — `columnTypeFor` (`adapter/sql/src/dialect.ts`) is one `??`, and the four `Dialect`s learn nothing. Measured on `demos/schema-ecommerce`, whose `Product.description` names `pg` and `mysql`: SQLite still emits `text` and the demo still boots. The key is NOT named for an effect — `overrides` was tried and reverted (2026-08-27): `schema` cannot guarantee any effect below the field, and an effect has no OWNER, so a second spelling of it has nothing to be distinguished by — `adapter/rest` already says `overrides:` for a two-level map of its own. A key named for its ADDRESS reuses cleanly: `adapters:` is also a `FougereConfig` key (which adapters the app serves), and the two never meet because the owner is the object the key sits in — the entity here, the app there. So the key names the level `schema` OWNS, under one rule — **every name is its owner plus what it is addressed by**: `EntityAdapters` (an entity, keyed by adapter), `SqlFields` (sql, keyed by field), `SqlField` (one entry) — and `SqlFields` names what sql holds, addressed by field. **What the operator decides is not stated here** — it belongs in `fougere.config.ts` beside `remotes:` (where a CALL goes), `sources:` (where a ROW is) and `ports:` (who performs an ACTION); the line is ownership, not force: an entity owns the shape of its own column, an operator owns the address, the source and the actor. Vocabulary would be sugar over the same landing (`tsvector()` writing `adapters.sql`), and it buys one thing the bare entry cannot: a word RECEIVES the field, so it can refuse `tsvector()` on a `number()`. Not built — `vocabulary()` is not exported, and a `Field` does not retain its key, which is exactly what an entry is addressed by. Pinned by `adapter/sql/tests/adapters.test.ts`. **The structure has an owner**: `EntityAdapterSet` (`schema/src/entity/EntityAdapterSet.ts`) owns the two levels an entry is ADDRESSED by — adapter name, then field name — and judges nothing below them, because a field's entry is the adapter's shape. That is what makes a refusal possible at all: `adapters: { sql: 'tsvector' }` type-checks whenever no adapter is in the program, and the two hand-written walks it replaced (`deriveHints`, and `SchemaDefinition.merged` re-spelling the same guard) each swallowed it silently. **The set always exists** — `of`, `merged` and `mapFields` answer an `EntityAdapterSet` and never `undefined`, so `getAdapters()` is not optional and nothing collapses an empty declaration into an absence. A derivation that cuts every named field leaves `{ sql: {} }`, which reads exactly like `{}` one level down.
+**The façade judges, the storage realizes.** Client input goes through the façade (unknown
+keys → `Unknown field`); handlers write freely through the storage, which applies
+`applyCreate`/`applyUpdate` (`schema/src/axis/lifecycle/apply.ts`). Refusing stays the
+judge's: `update: 'forbidden'` lives in `RowJudge`, patch mode.
 
-**The level below has a judge too, and the adapter writes it.** `EntryJudge` (`schema/src/judge/EntryJudge.ts`, beside the other three) takes a format and refuses what it does not admit; the adapter states that format as DATA — `adapter/sql/src/adapter.schema.json`, imported with `with { type: 'json' }` — and `SqlField` is DERIVED from it (`type Engine = keyof typeof ENTRY_FORMAT.properties.columnType.properties`), so the engine list is written once and `_EnginesMatchDialects` refuses to compile when a fifth `DialectName` is not in the file. A TypeScript interface could not serve: it is erased before a JS caller, a config or a card from another language could be measured against it. **It is judged where the adapter READS, not at `entity()`** — `adapter/sql/src/table.ts`, `toTable`, the single reader of `getAdapters()` in the repo. That settles an ordering the other placement could not: `entity()` runs at the entity module's own evaluation, so a judge registered with `schema` would be there or not depending on which file was imported first. Measured, four mistakes that were silent before — `columnTpye`, a `columnType` that is not keyed by engine, an unknown engine, a type that is not a string — each now names the entity, the field and the offending key. The message rule is measured too: the engine reports outermost first and ends on `False boolean schema`, which names nothing, so the unit above it is the one that carries the key. Pinned by `schema/tests/entry-judge.test.ts` (the mechanism alone) and `adapter/sql/tests/adapters.test.ts` (the four refusals). **The NAME an entity addresses is NOT held anywhere** — an `Adapters` registry was built for it (2026-09-04) and reverted the same day: `adapter/sql` imports its own judge, so nothing ever asked who answers to `sql`, and a registry earns its place only when a name arrives as DATA — `generate: 'ulid'`, `boundary: 'isoDate'`, `source: 'file'` come from a config or a field, `sql` comes from an `import`. **A name no adapter reads is SKIPPED, never refused**, and that is not timidity: `adapters:` exists so an engine an entity did not name keeps what the shape would have given, so an entity stating a Postgres column type in an app booting on `adapter/memory` is legitimate — and a process that never loaded `sql` cannot tell it from a typo. The place that CAN is the project: its dependencies name every adapter it could ever load, so `fougere check` reports `unknown-adapter` (`cli/fronds/analysis/handlers/CheckHandler.ts`, off `adaptersOf` in `core/src/scan/adapters.ts`, which reads the manifest and maps `@fougere/adapter-<name>` to `<name>` by convention). Silent when the project depends on no adapter — there is nothing to compare against. Measured on four real demos including `schema-ecommerce`, the only one that declares `adapters:`: zero findings.
+**An entity states two things about itself** — `unique` and `adapters`, the 2nd argument of
+`entity()`. A derivation that drops a member of a unique group drops the group.
 
-**Field = 4 axes** — `shape` (the shape IS JSON Schema), `role` (primary, ref…), `lifecycle` (who writes the value and when: create `{value}|'now'|{generate}|'optional'`, update `'now'|'forbidden'`), `boundary` (readOnly/writeOnly → `Visibility.input`/`Visibility.output`).
-**La validation juge, le storage réalise** : the façade judges client input (unknown keys → `Unknown field`); handlers write freely through the storage, which realizes lifecycle rules — by calling `applyCreate`/`applyUpdate` (`schema/src/schema/axis/lifecycle/apply.ts`), the one realization every storage shares. Refusing is still the judge's: `update: 'forbidden'` lives in `RowJudge`, patch mode.
+**`adapters:` is addressed, and the effect is the adapter's to name.**
+`FougereEntityAdapters` (`schema/src/entity/EntityAdapters.ts`) is an EMPTY interface an
+adapter augments from outside, so `schema` learns no engine. `adapter/sql` is its only
+reader (`adapter/sql/src/fields.ts`), and `columnType` is indexed BY ENGINE, so an engine
+the entity did not name keeps what the shape would give. `EntityAdapterSet`
+(`schema/src/entity/EntityAdapterSet.ts`) owns the two levels an entry is addressed by —
+adapter name, then field name — and always exists, so `getAdapters()` is never `undefined`.
+What the OPERATOR decides is not stated here: it belongs in `fougere.config.ts` beside
+`remotes:`, `sources:` and `ports:`. Pinned by `adapter/sql/tests/adapters.test.ts`.
 
-**Repository(…entities)** — who OWNS an entity's storage, and where its questions are named. **The arity is the declaration**, second reading of what `storage.ts` states for `Storage` against `Together`. At ONE, the repository IS that entity's storage: `RepositoryBase` forwards all thirteen gestures over a `protected storage`, so the default the boot registers under `ReadingRepository` can be the guarded port ITSELF — the `{ storage }` wrapper that used to sit there existed to make `repo.storage` true in both forms, back when `.storage` was the way in. Same shape either way, which is what makes the convention true. From TWO on it is an **aggregate**: it owns them, and three things follow from the SHAPE rather than from a rule — no default repository for any member (`boot/bootstrap.ts`, skipping every one, not just the key's namesake, which was the whole hole), no forwarded gesture (which `T` would `create` write to?), and `ownersOf` refusing two aggregates over one entity. The one thing the shape refuses LAZILY is said out loud instead: `Crud` on an owned entity resolves `<E>Repository`, which does not exist, and measured that let the app BOOT CLEAN and answer every request with the container's sentence — so `refuseCrudOnOwned` names it at boot, recognizing the handler by FORM (`list` + `findById` on the prototype) exactly as the façade does. That is what gives a rule spanning two tables a home at last: `withdraw` compares a balance to a sum in ordinary TypeScript, and nothing else can write those tables. **`Storage<E>` is not a word of the user's vocabulary** — `boot/ownership.ts`, `refuseStorageInUserCode`: a handler, a presenter and a collector are refused by name and pointed at `<E>Repository` (`RepositoryOf<E>` is its other spelling, read by `depKeyOf` like `Storage<E>`), while a HOLDER may name the port of what its prefab was built on, which covers `Mirror` without naming it. A door judges and projects; a holder keeps the storage. **The boundary is not the unit of work**: deriving the frame from the membership would make a read-only aggregate carry one — refusals included — and put `Together<[A, B], [Mirror]>` out of reach, so a frame is ASKED FOR. Not a door: a repository has no façade, so a judge about who may act still belongs in the handler. Pinned by `tests/aggregate.test.ts`.
+**The entry has a judge, and the adapter writes it as DATA.** `EntryJudge`
+(`schema/src/judge/EntryJudge.ts`) takes a format and refuses what it does not admit;
+`adapter/sql/src/adapter.schema.json` is that format, imported with `with { type: 'json' }`,
+and `SqlField` is DERIVED from it. It is judged where the adapter READS
+(`adapter/sql/src/table.ts`, `toTable`), not at `entity()`, because `entity()` runs at its
+own module's evaluation. A name this process never loaded is SKIPPED: only the project can
+tell it from a typo, which is what `fougere check` reports as `unknown-adapter`.
 
-**Turning the ring** — a value the config CONSUMED cannot move under what it built, so the thing is built again: `reloadFougere()` (`app/shared/src/boot.ts`) instantiates the app and releases the previous one. It works because every door reaches the app through `useFougereApp()` INSIDE the request it serves and none holds it across two — measured, 18 call sites, all per-request. Releasing is `app.dispose()`, and it is THREE levels in reverse of construction: every extension's `down` (built last), then `container.dispose()`, then `CreateAppOptions.onDispose` (a resource handed IN — a storage connection is the one case, and `ResolvedStorage.close` declares it beside the opening; NOT an extension, because it was opened before the container and therefore closes after it). A scope now disposes the SCOPES it opened, deepest first: they were registered as VALUES under `frond:<name>` and a value is not the container's to dispose, so every provider of every frond — and every surface scope — was never released at all. **A running call finishes on the OLD app**: `app.drain(timeoutMs?)` closes the door and resolves once the running calls are done, counted in `dispatch/InFlight.ts`, entered by `dispatch/Dispatcher.dispatch` — the one path all three projections and the wire share, so one count covers them. `drain` REJECTS on its deadline naming what is left rather than resolving as if it had worked, because its caller is about to close a storage connection under whatever remains. A call arriving after the door closed is refused (`SERVICE_UNAVAILABLE`): the handle already points at the new app, so that caller kept a reference across the turn. Waiting and releasing stay two gestures — a test releases at once, a host turning the ring drains first. Pinned by `tests/dispose.test.ts`, `tests/drain.test.ts`, and container's *a scope closes what it opened*.
+**A registry is an instance of `Registry<T>`** (`schema/src/lib/Registry.ts`). `Formats`,
+`Generators` and the three of `Boundaries` are bare instances; `Sources` extends it to add
+`open`. `resolve` throws and lists what the process answers; `find` returns `undefined` for
+a caller that has its own words for the absence. `Clock` is not one: it registers nothing.
 
-**The ascent, named** — `boot/AppLifecycle.ts` (`boot/Lifecycle.ts` is a re-export kept for the old name). `dispose` always had a shape (reverse order, only what the container built); the way UP had four call sites under one word, `afterBoot`, with TWO senses — the storage's (migrations) and the host's (seeding, which REPLACED what the framework would have done) — and the Nuxt module GENERATED a third into its Nitro plugin. One declaration read by four copies is the disease this file already records for seeding, and it produced the same defect: the copy that runs when you open a Nuxt app had lost the storage fallback. So the pair is one value: an `Extension` states `up` and `down`, handed in through `CreateAppOptions.extensions`, run by `createApp` before it returns and by `dispose` in reverse. **A name already declared is REPLACED, not refused** — the delta rule `applyDashboardExtensions` states for widgets, and the only way a host can say "the seeding, but mine" without the framework guessing it from a position in a list. Two members are the framework's own and are ordinary members: `migrating(storage.migrate)` and `seeding(report)`. The two halves refuse in OPPOSITE ways, on purpose: `up` stops at the first refusal (a seed that assumes a migration must not run when it did not; a half-started app must not be handed out), `down` releases every member and sends the refusals together in an `AggregateError` (a release that abandons the rest leaks everything after it — the same answer `app.deliver` gives). `up` is also the one point in the boot that may AWAIT, which is where a provider that must OPEN something belongs. **An extension is not a frond and cannot become one**: a frond has entities and may move behind `remotes:`, an extension belongs to the PROCESS — `@fougere/observability` reads `app.fronds` and its state is a module's (`AsyncLocalStorage`, the sink list, the in-flight count), so moved it would report the observer instead of the observed. Pinned by `tests/lifecycle.test.ts`.
+**`Repository(…entities)` — the arity is the declaration.** At ONE, the repository IS that
+entity's storage and forwards all thirteen gestures. From TWO on it is an aggregate: no
+default repository for any member, no forwarded gesture, and `ownersOf` refuses two
+aggregates over one entity. `Crud` on an owned entity is refused at boot
+(`refuseCrudOnOwned`). `Storage<E>` is not a word of user code
+(`core/src/boot/ownership.ts`): a handler, a presenter and a collector are pointed at
+`<E>Repository`. Pinned by `core/tests/aggregate.test.ts`.
 
-**`rpc` is a registry, not an `if`** — `wire/call.ts`, `RPC_ENTITY`, served out of `dispatch/RouteRegistry.ts` like every other route and refused by `dispatch/RouteNotFoundError.ts`. The reserved entity is the door for what an app says about ITSELF, never about a row, and `discover` is registered in it like anything else (`bootstrap.ts`, last line before the return) so ONE refusal names what IS served. `app.serveRpc(op, answer)` is how an optional package declares a reading core does not hold, and a second declaration of one name is REFUSED (the winner would depend on wiring order — the reason `ports:` refuses two implementations). This is what lets `@fougere/observability` serve `rpc.topology`: an app that never installed it answers `Unknown rpc operation 'topology'. It serves discover.`, which is the whole degradation a reader needs. The REPORT's shape lives in core (`TopologyReport`/`FrondPlacement`/`Edge`, exported through `contract.ts`) for the reason `SignedCall` does: it crosses a process boundary, and putting a wire shape beside its producer had already produced a hand-copied duplicate. Nothing in it is declared — a frond is `remote` because it ANSWERED a call nobody hosts, deliberately not read from `remotes:`, because a config key states an intent and the two disagree exactly when something is misconfigured. Read by `@fougere/admin`'s Topology page, the one screen in that panel the card cannot answer.
+**Turning the ring** — `reloadFougere()` (`app/shared/src/boot.ts`) builds the app again and
+releases the previous one; it works because every door reaches the app through
+`useFougereApp()` inside the request it serves. `app.dispose()` runs three levels in reverse
+of construction: each extension's `down`, then `container.dispose()`, then
+`CreateAppOptions.onDispose`. `app.drain(timeoutMs?)` closes the door and resolves once
+running calls finish (counted in `dispatch/InFlight.ts`); it REJECTS on its deadline naming
+what is left. A call arriving after the door closed gets `SERVICE_UNAVAILABLE`. Pinned by
+`tests/dispose.test.ts` and `tests/drain.test.ts`.
 
-**The names the scan READS** — `scan/conventions.ts`. Everything else a frond states, it states by its SHAPE; the eight convention directories and the import scope are the one place where a NAME is the declaration, which is why they are the only ones a project may restate (`conventions:` in `fougere.config.ts`, only what differs). Two defects made this one change: `FougereConfig.frondsDir` was declared and read by NOBODY — five packages spelled `'fronds'` in their own literal, and the Nuxt module's homonym `FougereModuleOptions.frondsDir` always carried its default into `optionsOverride`, so a key from the file was overwritten by a key nothing read — and `FROND_DIRS` claimed in its own comment to be *"every directory `scanFrond` reads"* while `scanFrond` re-spelled six literals and the Nuxt module was its only reader. So the list is DERIVED now (`frondDirsOf`, `providerDirsOf`) and the producer consumes it: a source its own origin does not read is not a source, it is one more copy presenting itself as the original. **The order is the whole mechanism**: the config is read BEFORE the aliases, because it names the scope they are built from — measured, 0 of 57 `fougere.config.ts` in the repo import `@fronds/*`, which is what makes the inversion safe and is the invariant to keep. `ProjectScan` never loaded the config at all, so `check`/`graph`/`build`/`freeze` would have ignored the declaration. The scope reaches `FrondSource.package`, and a writer of a name reads THAT rather than rebuilding a prefix (`imports.ts`, whose refusal message used to print a remedy it had assembled itself). Not covered: `.fougere/` is the FRAMEWORK's working directory, not the user's vocabulary — 24 hardcoded spellings and four independent readers of `remotes.json`, which wants a constant, not a config key. Pinned by `tests/conventions.test.ts`, whose last case scans the same tree WITHOUT the declaration and finds nothing.
+**The ascent** — `boot/AppLifecycle.ts`. An `Extension` states `up` and `down`, handed in
+through `CreateAppOptions.extensions`. A name already declared is REPLACED, not refused.
+`migrating(storage.migrate)` and `seeding(report)` are ordinary members. The two halves
+refuse in opposite ways: `up` stops at the first refusal, `down` releases every member and
+sends the refusals together in an `AggregateError`. An extension belongs to the PROCESS, not
+to a frond. Pinned by `tests/lifecycle.test.ts`.
 
-**Config, consulted vs consumed** — `boot/apply.ts`, `applyConfig` is THE answer to "what does a re-read change in a running app". A value CONSULTED at use can move; a value CONSUMED to build something cannot, without rebuilding what it built. `logLevel` is the only consulted key today and the function reports every other difference as `pending` rather than ignoring it. The list of consulted keys is not declared: a key is consulted when `applyConfig` does something with it. `Logger` holds NO level — `setLogLevel` sets one threshold for the process, read at every emission, so a handler keeps the object it was handed and a `child()` obeys too (both used to copy, so there was no place where the level WAS). `FOUGERE_LOG_LEVEL` still wins over the file, the CLI speaking. **Core catches no signal** — a process belongs to its host, and the logger runs on Workers where `process.on` does not exist. A re-read needs `loadConfig(root, { fresh: true })`: a module is cached by its specifier, so a second load of an EDITED file hands back the first one — measured, and it made a reload return the config already in force. The LOADER is told (`ModuleLoader`'s second parameter), never the path: `pathToFileURL` percent-encodes a `?` into the filename. A jiti-backed loader ignores the flag today, so a TS config under Nuxt still answers stale. Pinned by `tests/log-level.test.ts`, *a file that changed*.
+**`rpc` is a registry, not an `if`** — `wire/call.ts`, `RPC_ENTITY`, served out of
+`dispatch/RouteRegistry.ts`. `app.serveRpc(op, answer)` is how an optional package declares
+a reading core does not hold, and a second declaration of one name is REFUSED. An app that
+never installed `@fougere/observability` answers `Unknown rpc operation 'topology'. It
+serves discover.` The report shapes live in core (`TopologyReport`, `FrondPlacement`, `Edge`)
+because they cross a process boundary.
 
-**Ports** — a class something already answers under, that a provider extends. Nothing declares one: `boot/ports.ts`, `portBindings` reads the prototype chain at boot, so `class StripePayment extends Payment` IS the registration and `constructor(private payment: Payment)` receives the realization. This is the FOURTH reading of the rule `depKeyOf` already applies three times (`Storage<E>`, `Emit<F>`, `Facade<H>`): the type names the SUBJECT, the container holds the realization. Providers were the one case where the type named the realization instead — measured, a handler declaring the base got the base, and with an `abstract` base a `charge is not a function` from a signature TypeScript had blessed. Two implementations REFUSE at boot naming both, for the reason `remotes` refuses two owners of an entity: the winner would depend on scan order. `ports: { Payment: 'StripePayment' }` in `fougere.config.ts` settles it and wins over the convention — beside `remotes:` (where a CALL goes) and `sources:` (where a ROW is), because it says who performs an ACTION, and none of the three belongs inside the frond. Only the direct base binds; a deeper chain binds each link to its own child, and `ports:` overrides. `abstract` is erased at runtime, so a base with no subclass is indistinguishable from an ordinary service. ONE condition decides — `scope.has(base)` — so a builtin is a port too: `class AuditLogger extends Logger` takes the `Logger` key for that frond, and the same condition excludes a prefab (nothing answers under `RepositoryBase`). The default `Logger` was built with NO options, so it sat on `'info'` and `FOUGERE_LOG_LEVEL` reached the two boot loggers only — never the one a handler receives. The line against a frond is checkable: a frond has entities, a port has none. Pinned by `tests/ports.test.ts`.
+**The names the scan reads** — `scan/conventions.ts`. Everything else a frond states, it
+states by its SHAPE; the eight convention directories and the import scope are the one place
+a NAME is the declaration, and the only ones a project may restate (`conventions:` in
+`fougere.config.ts`). The config is read BEFORE the aliases, because it names the scope they
+are built from. `.fougere/` is the framework's working directory, not user vocabulary.
+Pinned by `tests/conventions.test.ts`.
 
-**Sources** — a place rows live, and the four gestures it owns: `storageFactory` (required), `migrate?`, `transacted?`, `close?` (`core/src/source.ts`, `Source`). What a source is MADE OF is not there — `adapter/sql` states `dialect`, `db` and `sink` on its own `SqlSource`, reached by narrowing, the rule `Storage.client` already obeys one level down. `Setup` had that backwards: `storageFrom` (`defaults/src/storage.ts`) declared itself *"engine-agnostic … where any `Setup` is welcome"* while consuming a type naming `Kysely<any>` — and the contradiction had already produced a defect, `migrate(partition, engine.db)` with no `GenerateOptions`, so EVERY source was migrated as `'sqlite'`, the documented Postgres case included. **The migration is the source's own gesture** now: the router partitions and hands each source its `SourceView` (what lives here, plus the NAMES of what does not — which is what lets a cross-source `ref()` be a miss rather than a constraint against a stranger), and a source knows its own engine. **`source:` names the ADAPTER and `dialect` stays SQL's**, the shape `adapters:` already has on an entity: addressed by adapter, and what sits below is the adapter's own — so the refusal "only `sqlite` resolves from a name" moved to `adapter/sql/src/sqlite.ts`, where the reason is true. A name is answered by `Sources.register` at IMPORT (`Generators`' shape: register, resolve refusing by name, answers), so nothing central lists the adapters. **The absence answers**: no `transacted` and a frame compensates instead of transacting, which `boot/together.ts` already read (`if (world.transacted && sources.size === 1)`) — measured on two frames in one app, `RateCard+Ledger` over file+sqlite announced *compensated … no isolation*, `Account+Ledger` over one engine announced *transaction*, handlers untouched. Deleted rather than narrowed: `ResolvedStorage.raw` (0 readers) and `.dialect` (1, a test assertion). Pinned by `defaults/tests/sources.test.ts`.
+**Config, consulted vs consumed** — `boot/apply.ts`, `applyConfig`. A value CONSULTED at use
+can move; a value CONSUMED to build something cannot. `logLevel` is the only consulted key
+today, and every other difference is reported as `pending`. `Logger` holds NO level:
+`setLogLevel` sets one threshold for the process. `FOUGERE_LOG_LEVEL` wins over the file. A
+re-read needs `loadConfig(root, { fresh: true })` — a module is cached by its specifier.
+Core catches no signal: a process belongs to its host. Pinned by `tests/log-level.test.ts`.
 
-**The thirteen gestures are derived from four** — `core/src/rows.ts`, `storageOver(open)` over a `Rows` (`get`/`has`/`set`/`delete`/`all`/`client`). Measured on the Map realization: **14 lines of 140 touched the store**; the other 126 — what a page is, how a criterion matches, which stamps survive an upsert, the two refusals a `create` owes its caller — are the same wherever rows live. Without it `Sources.register` hands over a four-gesture contract and leaves the thirteen to be re-derived, which is exactly how THREE divergent copies of the same store reached this repo's own demos (six gestures each, the field name `id` forced, a uuid minted whatever the entity declared). `adapter/memory` is now 37 lines and `adapter/file` 105, half of them filesystem guards. `transacted` is deliberately NOT in the frame: a unit of work belongs to an engine that has one. `all()` reading everything is what bounds a file source — `list` with a `where` filters in memory, right for rows held for durability, wrong on a hot path.
+**Ports** — a class something already answers under, that a provider extends. Nothing
+declares one: `boot/ports.ts`, `portBindings` reads the prototype chain at boot, so
+`class StripePayment extends Payment` IS the registration. Two implementations REFUSE at
+boot naming both; `ports: { Payment: 'StripePayment' }` settles it. Only the direct base
+binds. A builtin is a port too: `class AuditLogger extends Logger` takes the `Logger` key
+for that frond. Pinned by `tests/ports.test.ts`.
 
-**Prefab ops** — `Crud(Post)` gives the five typed CRUD ops. `Crud(Post, { list: PostCard })` names the view **one op** emits: a declaration only, the handler keeps its full-row storage so judges still read every field, and the façade projects each result onto its view. `Crud(Post, PostPublic)` is the handler-wide form and does scope the injected storage.
+**Sources** — a place rows live, and the four gestures it owns: `storageFactory` (required),
+`migrate?`, `transacted?`, `close?` (`core/src/source.ts`). What a source is MADE OF is not
+there: `adapter/sql` states `dialect`, `db` and `sink` on its own `SqlSource`. The migration
+is the source's own gesture; the router partitions and hands each source its `SourceView`.
+`source:` names the ADAPTER and `dialect` stays SQL's. No `transacted` means a frame
+compensates instead of transacting, and the boot says so per frame. Pinned by
+`defaults/tests/sources.test.ts`.
 
-**A test states what it expects, and nothing else** — `@fougere/testing`. The CASES come
-from `RowRefusal`'s closed set read against the four axes (`Cases`, which
-lives in `@fougere/schema` because deriving them reads the axes and nothing else — the
-FABRICATION of a value needs a generator, and that half stays in `testing` so a 426 KB
-faker never reaches the package a browser loads; measured, a devDependency the other way
-round breaks `pnpm -r build`, whose topological order can no longer put core first), the
-DOUBLES from a port's own prototype (`stubOf`), and the LEVEL from where the file sits: a
-test under `fronds/blog/tests/` says its subject is `blog`, which is the statement
-`remotes:` makes in production and not a mode of testing. What is derivable stops exactly
-where Fougere's vocabulary does — a service's return type is a bare TypeScript type,
-erased at runtime, so `stub(X).m` returns what the test says and nothing else. `checkDoors`
-is the first thing in the repo to compare REST against GraphQL; `driftOf` compares two
-`rpc.discover` cards through `Card.diff`, which is the gap TypeScript cannot see — a consumer's
-synced copy still compiles three weeks after the producer moved.
+**The thirteen gestures derive from four** — `core/src/rows.ts`, `storageOver(open)` over a
+`Rows` (`get`/`has`/`set`/`delete`/`all`/`client`). `adapter/memory` is 37 lines and
+`adapter/file` 105. `transacted` is deliberately not in the frame: a unit of work belongs to
+an engine that has one. `all()` reading everything is what bounds a file source.
 
-**Operation contract, three producers** — the façade consumes `OperationContract` and nothing else, so the scan is a convenience, not a dependency. A prefab **declares** (`Crud.__ops`, runtime, survives a scan that resolved nothing), the scan **derives** from source, `frond.config.ts` **states** (`operations: { archive: { binding: [...] } }`) and wins over both. Config also *creates* an op neither producer found — the only answer for a method inherited from an **installed** base class, which the workspace-only heritage scan cannot see. `input`, `binding` and `description` — `description` being the method's own doc sentence, which the scan reads from the AST (`scan/handler-parser.ts`, `docSentenceOf`) and the identity card carries. `OperationContract.output` is read by the façade too (`boot/HandlerFacade.ts`, `viewOf`: under `__opOutputs` and above `__output`), so one contract answers all three doors.
+**Prefab ops** — `Crud(Post)` gives the five typed CRUD ops. `Crud(Post, { list: PostCard })`
+names the view ONE op emits: the handler keeps its full-row storage, and the façade projects.
+`Crud(Post, PostPublic)` is the handler-wide form and scopes the injected storage.
 
-**Call contract** (`core/src/wire/call.ts`) — a Frond call is a value `(entity, op, invocation)`. The shapes live there; what needs an App to be built does not — `createLocalRunner` (`boot/runner.ts`) executes locally, `createAppRunner` follows the topology (local façades + remote doublures), and `identityCardOf` (`boot/card.ts`) answers `rpc.discover`. Transports move the value, never reshape it. In-process = direct memory execution, no RPC. Browser-safe surface: `@fougere/core/contract`.
+**A test states what it expects** — `@fougere/testing`. The CASES come from `RowRefusal`'s
+closed set read against the four axes (`Cases`, in `@fougere/schema` because deriving them
+reads the axes and nothing else), the DOUBLES from a port's prototype (`stubOf`), and the
+LEVEL from where the file sits. `checkDoors` compares REST against GraphQL; `driftOf`
+compares two `rpc.discover` cards through `Card.diff`.
 
-**`Emit<T>` / `Fact<T>`** (`core/src/emit.ts`, dispatched by `boot/Emissions.ts`) — every other call names ONE recipient; an emission names a **subject**. `Emit<PostPublished>` is a constructor dependency resolved by type like `Storage<Post>`, and accepting a `Fact<T>` IS the subscription — no topic, no register call, the scan reads the signature. It is a **resolver, not a channel**: it answers *who*, then hands over to the door that already exists, which is why nothing is durable (a resolver holds nothing) and why a subscriber keeps its judge, its binding and its middlewares. Dispatch is not delivery; a ring is refused (`AsyncLocalStorage`, a chain not a depth), a diamond is legal. Announcing and receiving obey OPPOSITE rules, on purpose: an announcement returns once every subscriber has been HANDED the fact (`void` + `.catch`, so a publication is never hostage to its indexer), while `app.deliver` — the carrier's door — waits for them all and REJECTS with an `AggregateError` if one refused. At-least-once is retrying what failed, so a delivery that cannot report makes durability unbuildable above it; "dispatch is not delivery" protects the emitter, and a carrier is not the emitter. Fougere still holds nothing: the log, the per-subscriber cursor and the ack live in the carrier (`demos/emit-multirepo/broker.ts`, ~80 lines, shows all three and an offline subscriber catching up). Across a repository, `onEmit` carries the fact out under its name and `app.deliver` brings one in; the identity card's `facts` list carries the SHAPE so `fougere sync` writes the class the subscriber used to copy by hand. **A fact is judged strictly, like everything else** — a tolerant mode was built and reverted (2026-08-09): a reader silently ignoring a field it should have handled is worse than a loud refusal. The price is an order — re-sync and deploy the readers, then the sender — and when that order is not yours to impose, announce a SECOND fact rather than change the first. Pinned by `tests/emit.test.ts`, *a sender whose copy has moved ahead*.
+**Operation contract, three producers** — the façade consumes `OperationContract` and
+nothing else. A prefab DECLARES (`Crud.__ops`, runtime), the scan DERIVES from source,
+`frond.config.ts` STATES and wins over both. Config also creates an op neither producer
+found — the answer for a method inherited from an installed base class. `description` is the
+method's own doc sentence, read from the AST (`scan/handler-parser.ts`, `docSentenceOf`).
 
-**A family cycle is a check, not a claim** — `tools/cycle-check.mjs`, `pnpm arch:cycles`, run in CI beside `pnpm arch`. Two questions, not one: `arch` (dependency-cruiser) asks what a file REACHES, this asks where it LIVES — a directory of one `src/` depending on a directory that depends back. dependency-cruiser carries NO cycle rule and its own header says why: it runs on TS <7 while the root is TS 7, so it cannot tell an `import type` from a runtime import, and 30 of its module-level cycles are pairs TypeScript erases. **At FAMILY level that erasure settles nothing**, which is the whole reason this exists: a module cycle is a runtime hazard, a family cycle is a question of PLACEMENT, and a type the compiler drops still says a thing sits in the wrong family. Measured 2026-09-01, when core went from eleven upward edges to zero — **all three of its remaining cycles were type-only, and each was ONE misplaced thing**: `RouteKind` reached through `DispatchEvent` for a one-line union that travels in a `CallRecord`, and three functions taking an `App` sat on the wire (`identityCardOf`, the two runners, now `boot/card.ts` and `boot/runner.ts`). So the check reports both and marks what the emitted JS does not contain. It prints the THIN SIDE, because that is what moves — a cycle at 17 edges against 1 is not two tangled families. **It reads pairs, and that is its ceiling**: the same commit read as a graph is ONE strongly connected component of eight directories out of ten, held by eight erased edges of which three sufficed — measured 2026-09-01. Three pairs and one eight-way tangle are the same fact at two resolutions, and this file reaches only the first. The first version of it was written to refuse only runtime cycles and **passed on the tree it was meant to guard**; a guard is worth what it refuses, so it is run against the commit before the pass. Three exceptions are STATED with their reason rather than listed, the rule this file applies to config everywhere: `judge`↔`schema` (symmetric, 10 edges each way — two owners addressing each other), `projection`↔`schema` (a projection and its inverse, `card/admission.ts`), `entity`↔`schema` (type-only, two edges deep — an entity states `unique`/`adapters` about itself while its declarations name `Fields`). Reads `src/` alone, so unlike `arch` it needs no build.
+**Call contract** (`core/src/wire/call.ts`) — a Frond call is a value `(entity, op,
+invocation)`. `createLocalRunner` (`boot/runner.ts`) executes locally, `createAppRunner`
+follows the topology, `identityCardOf` (`boot/card.ts`) answers `rpc.discover`. Transports
+move the value, never reshape it. Browser-safe surface: `@fougere/core/contract`.
 
-**Nuxt primitives** — `useQuery`/`useCommand` (a command on X revalidates mounted queries on X), `useFormFor` (contract, not rendering; local judge = remote judge), `useCurrentUser`, `invoke` (server dual, state via async context). Metadata = the imported entity class, nothing serialized to the client.
+**`Emit<T>` / `Fact<T>`** (`core/src/emit.ts`, dispatched by `boot/Emissions.ts`) — every
+other call names ONE recipient; an emission names a SUBJECT. Accepting a `Fact<T>` IS the
+subscription — no topic, no register call. It is a resolver, not a channel: nothing is
+durable, and a subscriber keeps its judge, its binding and its middlewares. A ring is
+refused, a diamond is legal. Announcing returns once every subscriber has been HANDED the
+fact; `app.deliver` waits for them all and REJECTS with an `AggregateError`. A fact is
+judged strictly. Pinned by `tests/emit.test.ts`.
 
-**Validation** — `@cfworker/json-schema` (edge-safe). `Entity.validate(input)` → `{ success, data }` | `{ success: false, errors: [{path, message}] }`.
+**A family cycle is a check** — `tools/cycle-check.mjs`, `pnpm arch:cycles`, run in CI beside
+`pnpm arch`. `arch` asks what a file REACHES, this asks where it LIVES. It reports type-only
+cycles too and marks what the emitted JS does not contain, and it prints the THIN SIDE
+because that is what moves. It reads pairs, which is its ceiling. Three exceptions are stated
+with their reason: `judge`↔`schema`, `projection`↔`schema`, `entity`↔`schema`.
+
+**Nuxt primitives** — `useQuery`/`useCommand` (a command on X revalidates mounted queries on
+X), `useFormFor` (contract, not rendering; local judge = remote judge), `useCurrentUser`,
+`invoke` (server dual, state via async context). Metadata is the imported entity class.
+
+**Validation** — `@cfworker/json-schema` (edge-safe). `Entity.validate(input)` →
+`{ success, data }` | `{ success: false, errors: [{path, message}] }`.
 
 ## Conventions
 
 - TypeScript strict, ESM, ES2022, Node16 resolution ; pnpm ; vitest ; no decorators, no Zod
-- **`module` is `node20`, `moduleResolution` stays `Node16`** — the two differ on purpose.
-  `Node16` refuses an import attribute (TS2823), and an adapter states the format of its
-  entry as a `.json` it imports (`adapter/sql/src/adapter.schema.json`). Only three things
-  follow from the bump: attributes become legal, `require()` of an ESM does too (no reader,
-  everything here is ESM), and the default `target` would move to ES2023 — which
-  `tsconfig.base.json` overrides to ES2022 anyway. `resolveJsonModule` is on for the same
-  reason. Nothing else moved: `engines` was already `node >= 24` and CI runs 24, both far
-  above the 20.10 an import attribute needs, and the ten front-end packages that override
-  `module` locally are untouched. Measured on the edge rung, which is where a `.json` could
-  have cost something: `demos/cloudflare-d1` builds with esbuild inlining it, and still
-  reports *no node: builtin, no compatibility flag*.
-- **TS 7 (native tsc) at the root** ; `packages/core` compiles and scans with `@typescript/typescript6` — the JS compiler API, which TS 7 ships under `unstable/` rather than dropping. Measured: TS 6 builds the scan's program ~25 % faster than 5.9, same answer. The 7.1 plan stabilizes Content Mapper, Emit and Language Service — not `Program` and `Checker`, so `unstable/` is not a destination yet, and neither is oxc while the scan reads types
-- **`.vue` files are not type-checked** ; `typecheck` is `tsc -p fronds`, which covers the Frond and stops at the SFC. `vue-tsc` would cover them but requires `typescript/lib/tsc` — a path the native tsc no longer exports, and its `>=5.0.0` peer range does not say so. Adding it means lowering TS *and* carrying a pinned Nuxt dependency graph to keep it green. Rejected 2026-08-06; revisit when vue-tsc runs on TS 7.
+- **`module` is `node20`, `moduleResolution` stays `Node16`** — `Node16` refuses an import
+  attribute (TS2823), and an adapter states its entry format as a `.json` it imports.
+  `resolveJsonModule` is on for the same reason.
+- **TS 7 (native tsc) at the root** ; `packages/core` compiles and scans with
+  `@typescript/typescript6` — measured ~25 % faster than 5.9 on the scan's program, same
+  answer. `unstable/` is not a destination yet, and neither is oxc while the scan reads types.
+- **`.vue` files are not type-checked** — `typecheck` is `tsc -p fronds` and stops at the SFC.
+  `vue-tsc` needs `typescript/lib/tsc`, a path the native tsc no longer exports. Rejected
+  2026-08-06; revisit when vue-tsc runs on TS 7.
 - `"types": ["node"]` explicit in tsconfig.base — TS 7 dropped automatic @types
-- A field is recognized by its FORM — it states a `shape` — never by a brand. `entity()`
-  pushes every entry through `new Field(field, key)`, so a plain object may be handed in
-  (config, JS, a card from another language) and comes out canonical; the constructor is
-  the door and a shapeless entry is refused there, by name. The entry that named
-  `normalizeFields` quoted a function that does not exist. The `__brand` stamp this line used
-  to describe is gone (2026-08-13): it answered "did this come through us", which is not the
-  question, and it let three fixtures carrying a three-refactor-old vocabulary pass as fields
-  for months. **The rule does not extend to every mark.** `__entity` on a prefab
-  (`core/src/prefab/prefab.ts`) records what `Crud(Post)` was BUILT ON — nothing in the form
-  of `PostPresenter` says `Post`, so no form-based test can replace it. A mark carrying a
-  value and a mark carrying a yes/no are not the same animal; only the second is a brand.
-  The fixture failure repeated verbatim on the presenter marker (2026-08-17, three fixtures
-  stamping the symbol by hand had never once run `Presenter()`), and there the remedy was
-  the opposite: not removing the mark, making the fixture go through the door.
-- `resolveStorage()` (`@fougere/defaults`) is the **single** place that defaults a missing db path — never recompute it elsewhere
+- `resolveStorage()` (`@fougere/defaults`) is the single place that defaults a missing db path
 - `graphql` deduplicated across the workspace (override + hoist)
 - `better-sqlite3` bindings may need `npx prebuild-install` in its pnpm dir
-- **Measure before concluding.** On a design question — should this be a class, is this type
-  read anywhere, does this flag earn its place — run the grep or the probe FIRST and answer
-  with the number. A position defended before it was measured has been wrong every time.
-- **A comment states the invariant, not the argument for it.** Two lines. Needing ten to
-  justify a design means the design is wrong, not under-documented.
-- **Probe the *Known issues* by commit recency, not by how old an entry looks.**
-  `python3 scripts/stale-notes.py --since 7` orders the entries by the last commit touching
-  the code they cite. Measured 2026-08-24 over 31 entries: **6 were false or half false, and
-  all six cited code touched in the last seven days** — nothing older than 13 August was
-  wrong. An entry is written on the day of the fix and is then read by nobody, so what
-  predicts an error is the freshness of the CODE, never the age of the entry.
-- **Never cite a line number in this file.** Three entries below have already been caught
-  quoting one that had moved, and the file records each catch. A path plus a SYMBOL survives
-  a refactor; `bootstrap.ts:295` survived neither the edit that pushed it down nor the move
-  that renamed its file. Cite `boot/HandlerFacade.ts`, `viewOf` — a grep finds it, a diff
-  does not silently invalidate it. Measured when the rule was written (2026-08-17): of the
-  eleven line references outside `core`, **five already pointed at a blank line, a closing
-  brace or an unrelated comment**. Nobody had touched them; the files around them moved.
-- **When the measurement decides, execute.** Do not ask again for what it already answered.
+- **Measure before concluding.** On a design question, run the grep or the probe FIRST and
+  answer with the number.
+- **The code is meant to stand on its own.** If a comment is about to explain something,
+  change the code instead. Measured: he writes 4-5 % comments across fifteen years, this
+  repo was at 31-37 %. `fougere-notes/docs/notes/style-chok.md` holds the rest — how a tree
+  is cut, how a thing is named, and the words to avoid.
+- **Never cite a line number in this file.** A path plus a SYMBOL survives a refactor;
+  `bootstrap.ts:295` survives neither an edit nor a move. Measured 2026-08-17: five of eleven
+  line references already pointed at a blank line or an unrelated comment.
+- **Probe the Known issues by commit recency**, not by how old an entry looks —
+  `python3 scripts/stale-notes.py --since 7`. Measured over 31 entries: the six that were
+  false all cited code touched in the last seven days.
 - Commits: title + 1-3 lines. Never `git add -A` (parallel sessions)
-- **Everything committed to this repository is in English** — commit messages, PR bodies, code comments, doc comments, test names, `README.md`, `CLAUDE.md`. The repository is public and its readers are not assumed to read French. The one exception is `site/content/fr/`, which is a translation target and French by design; `site/content/en/` is its pair, and the two move together. Private design notes live outside this repo and are not covered by this rule.
+- **Everything committed here is in English** — commit messages, PR bodies, comments, tests,
+  `README.md`, `CLAUDE.md`. The one exception is `site/content/fr/`, a translation target.
 
 ## Known issues
 
-Fact — where — state. The reasoning lives in the notes, not here, and *Settled* below is
-one line each: what the entry protects against is a future reader re-asserting the old
-belief, which costs a sentence, not a paragraph.
+Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 
 - **An un-augmented `adapters:` accepts anything, silently.** With no adapter in the program
-  `FougereEntityAdapters` is an empty interface, so `EntityAdapters<TFields>` is `Partial<{}>`
-  — which in TypeScript means "anything non-nullish", not "no keys". Remeasured 2026-08-28:
-  `adapters: { sqll: { titlee: 'anything at all' } }` compiles clean in `packages/schema`,
-  the invented FIELD name included. So the registry fails OPEN, giving neither
-  completion nor a guard, and the two only appear once something imports the adapter
-  (declaration merging is program-wide, not per-file). The fix is a decision about the
-  empty case, not a patch. **The RUNTIME half is closed since `EntryJudge`** — an adapter
-  states its format as data and refuses where it reads — so what remains open is the type:
-  an invented adapter NAME still compiles, and nothing judges it either, since no adapter
-  reads a key that is not its own.
-
-- **A seed cycle is not satisfiable by ordering** — `core/src/boot/seed.ts`, `orderSeeds`
-  (Kahn, like `orderTables`). Its members keep scan order and fail at the driver.
-- **Nothing generates OpenAPI at all**, so an operation's `description` is carried on
-  `RouteDefinition.description` and read by nobody. The op's own sentence has two
-  readers, neither of them REST: `adapter/graphql/src/pothos.ts`, `registerOperations`,
-  and the CLI's `--help` (`cli/src/runner.ts`, off `OperationContract.description`).
-- **`CrudViews` (`core/src/prefab/crud.ts`) is typed on the five CRUD names, and what a
-  custom op lacks is not the ability to NAME a view** — it has two already, its return type
-  and `frond.config.ts`, both giving `closed: false`. Only `__opOutputs` CLOSES
-  (`core/src/effective-operation.ts`, `effectiveOutput`), and closing does two things at
-  once: `OutputProjector` keeps only the view's keys and `HandlerFacade` skips the
-  presenter, so a closed view cannot carry a computed field. Widening the type admits a
-  custom op AND admits `{ lst: Card }`, the typo the five names catch. Measured 2026-08-24:
-  two `Crud(E, { … })` declarations in the repo, zero custom ops wanting a closed view — so
-  nothing breaks the default, which is this repo's condition for adding an option.
-- **`remotes:` names one address per frond, so the same frond cannot be deployed twice.**
-  The key is the frond *name* — a type — while a deployment has *instances*. Today's answer
-  is modelling: make the node a datum and let one instance aggregate the others. Blocking
-  the day a consumer must address a specific instance. Not implemented.
-- **A named surface serves nothing when the frond is remote** — `core/src/boot/bootstrap.ts`,
-  `facadeFor` resolves a surface key in the local container only, so a consumer's `public`
-  door over a remote frond answers NOT_FOUND on everything. True of all three doors. The
-  coherent answer is composition; not shipped.
-- **`expose` is a THIRD membership mechanism, and THE membership rule is the one thing
-  blind to it.** The scan sets a boolean (`scan/scanner.ts`, `e.exposed`/`h.exposed`) and
-  never writes `surfaces`, which comes from `frond.config.ts` alone. Measured 2026-08-28:
-  three readers, one of them inside core — `adapter/rest/src/routes.ts`,
-  `adapter/graphql/src/auto-register.ts`, and `effective-operation.ts`, `exposedAdapters`,
-  where `handler.exposed === false` serves the op to NO adapter. So `facadeFor` and the
-  runner ignore a flag that already decides elsewhere. The method-level `@expose` lives in
-  `packages/decorators`, which has **zero importers** and is `private: false`, so it ships
-  on npm-day unless someone decides otherwise — while the convention above says this repo
-  has no decorators. Two shapes for the fix and they are different decisions: resolve
-  `expose:` into `surfaces:` at the scan, or give `facadeFor` the reading
-  `exposedAdapters` already does. One instance exists in the repo, so nothing leaks
-  today. Not decided.
+  `EntityAdapters<TFields>` is `Partial<{}>`, which in TypeScript means "anything
+  non-nullish". The RUNTIME half is closed since `EntryJudge`; what remains open is the type.
+- **A seed cycle is not satisfiable by ordering** — `core/src/boot/seed.ts`, `orderSeeds`.
+  Its members keep scan order and fail at the driver.
+- **Nothing generates OpenAPI**, so `RouteDefinition.description` is read by nobody. The op's
+  sentence has two readers, neither of them REST: `adapter/graphql/src/pothos.ts` and the
+  CLI's `--help`.
+- **`CrudViews` is typed on the five CRUD names** (`core/src/prefab/crud.ts`). Widening it to
+  admit a custom op also admits `{ lst: Card }`, the typo the five names catch. Measured
+  2026-08-24: zero custom ops want a closed view.
+- **`remotes:` names one address per frond**, so the same frond cannot be deployed twice. The
+  key is a frond NAME, a type, while a deployment has instances. Not implemented.
+- **A named surface serves nothing when the frond is remote** — `boot/bootstrap.ts`,
+  `facadeFor` resolves a surface key in the local container only. True of all three doors.
+- **`expose` is a third membership mechanism, and the membership rule is blind to it.** The
+  scan sets `e.exposed`/`h.exposed`, never `surfaces`. Three readers, one inside core
+  (`effective-operation.ts`, `exposedAdapters`). `packages/decorators` has zero importers and
+  ships anyway. Not decided.
 - **The Nuxt codegen reads three members of the storage and drops the rest** —
-  `packages/app/nuxt/src/module.ts`, `generateBootPlugin`: `db`, `storageFactory` and
-  `migrating(storage.migrate)`. So under Nuxt a `Together` ALWAYS compensates (no `transacted`
-  reaches `createApp`) and the connection is NEVER closed (no `onDispose`). Same shape one
-  level over: `boot.ts`'s `BootOptions.db` return type declares only four members, so
-  `sourceOf`/`transacted` are structurally dropped for `bootAppFromConfig` and `testApp` too.
-  An intermediary re-declaring a shape instead of passing it — the disease `Source` was
-  extracted to cure, still present on the host paths.
-- **The cross-source read is raw SQL while `ref()` already declares the join.** The case that
-  motivates `read()` — sorting or filtering on the other source — is derivable: 53 `ref()` in
-  the repo, and `orderBy: 'book.publishedAt'` would say it. Meanwhile `orderBy` swallows a path
-  in SILENCE: `if (options?.orderBy && this.toColumn.has(options.orderBy))`
-  (`adapter/sql/src/crud.ts`). Zero `reads:` outside tests is NOT an argument against — this
-  repo writes its own demos, so a capability with no caller means no demo exercises it. The
-  next step is the two-source demo the file/sqlite frame now makes possible: the moment it
-  wants "my loans, newest book first", the problem is met and the derived path has a control.
-- **A computed field that reads still issues N queries** — the façade hands the presenter
-  the PAGE (`core/src/dispatch/PresenterExecutor.ts`, `present`), so the shape allows one
-  query per page, but `Promise.all(rows.map(...))` inside the field body is not refused and
-  nothing says so.
-- **`BindingPlan.optional` is written five times by core and ignored by `resolveArgs`**, so
-  at the façade `user?: User` and `user: User | null` behave identically while
-  `adapter/graphql` reads the same field and makes the argument nullable. **It is NOT a
-  missing reader**: making `resolveArgs` refuse compiles and breaks four tests, two of which
-  state the opposite policy on purpose — `tests/config-contract.test.ts` carries the
-  rationale in its source, and `tests/aggregate.test.ts` invokes `withdraw` with
-  `EMPTY_INVOCATION`. Closing the gap means choosing which door is right, a public
-  behaviour change either way. Do not "fix" it by rewriting those tests.
+  `app/nuxt/src/module.ts`, `generateBootPlugin`. So a `Together` always compensates and the
+  connection is never closed. Same shape in `boot.ts`'s `BootOptions.db`.
+- **The cross-source read is raw SQL while `ref()` already declares the join.** `orderBy`
+  swallows a path in silence (`adapter/sql/src/crud.ts`). The next step is the two-source demo.
+- **A computed field that reads still issues N queries.** The façade hands the presenter the
+  PAGE (`dispatch/PresenterExecutor.ts`), so one query per page is possible, but
+  `Promise.all(rows.map(...))` inside the field body is not refused.
+- **`BindingPlan.optional` is written five times by core and ignored by `resolveArgs`.** Not a
+  missing reader: making it refuse breaks four tests, two of which state the opposite policy
+  on purpose. Closing it means choosing which door is right.
 - **`storage.client` remains the anonymous multi-statement path, judge off** — everything else
-  writes through a guarded port, `Together<[…]>` included (`core/src/storage.ts`).
-- **A provider class named `<Entity>Storage` TAKES that entity's key, silently.** A provider
-  registers under its own class name (`boot/bootstrap.ts`), an entity's rows under
-  `storageKeyOf(name)` — the same string when the two spellings meet. Measured in
-  `tests/aggregate.test.ts`: `catalog.resolve(storageKeyOf('file'))` answers the PROVIDER.
-  **The name is already wrong by two rules**, which is why nothing hits it: a port is named
-  for its SUBJECT and never for its mechanism (`Payment`, `Logger`, `HttpRouter` — no
-  `PaymentAdapter`), and a realization of `StorageFactory` is an ADAPTER anyway, the shape
-  `adapter/sql` has, so files-as-rows would be `adapter/file` and declare no per-entity class
-  at all. So this is a naming convention nothing checks, not a hole to patch;
-  `entityOfStorageKey`'s `known` settles the REFUSAL, and the registration is left as is.
-- **`Mirror` writes two useful lines, and 120 that belong to the port.**
-  `core/src/prefab/mirror.ts` — `refresh` reads the high-water mark and loops `pull` into
-  `upsertAll`; all the rest is `judgePage`, which validates a page on the way in because
-  `StorageGuard` (`core/src/dispatch/StorageGuard.ts`) guards `create` and `update` and NOT
-  `upsert`/`upsertAll`. Measured 2026-08-30: 122 lines, ZERO readers in boot or dispatch
-  (`targetOf` reads `__entity`, the mark all five prefabs carry), and `mirror.ts` is the only
-  caller of `upsertAll` in the repo. A middleware is not the shape either: nothing intercepts
-  `refresh()`, a handler calls it. Decided, not done: delete the prefab — the two lines go to
-  that caller, the judgement joins the port beside `create` and `update`. It touches
-  `demos/mirror-catalog` and `demos/together-frame`; `Together`'s second list is providers in
-  general and does not depend on it.
+  writes through a guarded port, `Together<[…]>` included.
+- **A provider class named `<Entity>Storage` takes that entity's key**, silently. The name is
+  already wrong by two rules, which is why nothing hits it; left as is.
+- **`Mirror` writes two useful lines and 120 that belong to the port**
+  (`core/src/prefab/mirror.ts`). `judgePage` exists because `StorageGuard` guards `create` and
+  `update` and not `upsert`. Decided, not done: delete the prefab.
 - **An announcement realizes a fact's `lifecycle.create`, and no typed emitter can use it.**
-  `Emit<T>` names the ROW type where `created()` is present and required, so
-  `announce({ id, title })` is a compile error and the author writes the field anyway
-  (`boot/Emissions.ts`, `stamped`). `PartialRow` is the wanted shape and derives from the
-  FIELDS, which the instance type has thrown away. Both closures leak elsewhere; neither is
-  worth doing before identity's home in a fact is decided.
+  `Emit<T>` names the ROW type where `created()` is required, so `announce({ id, title })` is a
+  compile error. `PartialRow` is the wanted shape.
 - **A nested object reports no path to the field that failed.** `Outer.validate({ addr: {
-  street: 'a' } })` answers `path: 'addr'` with the failing field in the PROSE, so
-  `useFormFor` cannot highlight it (`app/shared/src/form.ts`, first segment). The inner path
-  is already computed and thrown away — `@cfworker/json-schema`'s `instanceLocation` — so
-  what remains is a contract decision only: `path` is a flat string that eleven sites
-  interpret, and a nested path wants segments.
-- **A required field with no default is `NOT NULL` on a fresh table and NULLABLE on a
-  migrated one.** `changeSQL` (`adapter/sql/src/diff.ts`) applies `notNull()` only when a
-  default exists, because engines refuse it on a populated table. Its BOUNDS do land on
-  both — the `CHECK` is emitted inline. The refusal that names the field and its remedy
-  lives on the OTHER road: `planStep` (`adapter/sql/src/step.ts`), whose only caller is
-  `fougere migrate`. A booting app goes through `defaults/src/storage.ts` → `migrate()` →
-  `delta()`, which never reaches it, so nothing covers the path an app starts on.
-- **`unique()` added to a live table never lands.** `delta()` (`adapter/sql/src/diff.ts`)
-  proposes `addColumn` and, separately, `createIndex` for anything carrying `column.index` —
-  and a sole `unique()` deliberately carries none. Measured on SQLite: the migrated table
-  accepts two identical emails, the freshly created one refuses. Not patchable as is:
-  `CREATE UNIQUE INDEX` on a table already holding duplicates FAILS, so the additive
-  migration would start refusing to boot on real data. A decision about what auto-DDL may
-  do, and it is the same question as the entry above.
-- **A schema can say what it WAS, and the missing reader is the API.** `Card.diff`/`Bundle.diff`,
-  `fougere freeze`, `fougere migrate --apply` are shipped and
-  pinned; what nothing does yet is serve an old API version through the same step.
+  street: 'a' } })` answers `path: 'addr'`. The inner path is computed and thrown away; a
+  nested path wants segments, which eleven sites interpret as a flat string today.
+- **A required field with no default is `NOT NULL` on a fresh table and NULLABLE on a migrated
+  one** — `changeSQL` (`adapter/sql/src/diff.ts`). The refusal that names it lives on the
+  other road (`planStep`), which only `fougere migrate` reaches.
+- **`unique()` added to a live table never lands** — `delta()` proposes `createIndex` only for
+  a column carrying `index`, and a sole `unique()` carries none. Not patchable as is:
+  `CREATE UNIQUE INDEX` on a table holding duplicates fails.
+- **A schema can say what it WAS, and the missing reader is the API.** `Card.diff`,
+  `fougere freeze`, `fougere migrate --apply` are shipped; serving an old API version is not.
 - **A stored fact is neither judged nor versioned.** `json()` admits any shape forever, and
-  `x-fougere-version` (`schema/src/projection/card/Card.ts`) versions the DESCRIPTOR FORMAT, never
-  an entity's contract. `delta()` never changes a type nor drops a column. A row can be
-  rewritten by hand when the shape moves; **a log cannot**, which is why this bites event
-  sourcing first.
+  `x-fougere-version` versions the DESCRIPTOR FORMAT, never an entity's contract.
 - **Nitro's prod trace misses lazily-loaded packages under pnpm**, which is why the hand-copy
-  in `site/Dockerfile` exists at all — jiti misses its babel transform in the trace, and the
-  icon collections are listed for the server bundle in `site/nuxt.config.ts`. The copy names
-  the package it copies since 237eaa4; before that it derived the name from the store glob,
-  which is true only for an unscoped package.
-- **Three free functions in `schema` are candidates nobody has judged.** `clean` decides
-  nothing, so under the rule it is a private detail rather than a barrel export; `fieldsOf`
-  and `schemaOf` are methods of an owner that now exists (`SchemaOrCard`).
-  Scraping, not structure — listed so the next pass does not re-derive the list.
+  in `site/Dockerfile` exists.
+- **Three free functions in `schema` are candidates nobody has judged** — `clean` decides
+  nothing, `fieldsOf` and `schemaOf` are methods of an owner that now exists (`SchemaOrCard`).
 - `graphql` dual ESM/CJS hazard in tests — use `schema.getTypeMap()`, not `printSchema()`
 
 ### Settled
 
-One line each, kept because a past version of this file asserted the opposite and a future
-one might again. The full account of each — what it did before, what the measurement was —
-lives in the notes.
+One line each, kept because a past version of this file asserted the opposite.
 
 - **A container key and the way to undo it are declared together** — `storageKeyOf` /
-  `entityOfStorageKey` (`core/src/storage.ts`), the third pair beside
-  `togetherKeyOf`/`membersOfTogetherKey` and `emitKeyOf`/`factOfEmitKey`. The two readers
-  used to spell the suffix themselves (`boot/ownership.ts`, and `boot/together.ts`
-  re-writing the same `slice`), which was safe only while the suffix was `Orm` — nobody
-  names a class that. `endsWith('Storage')` reads an ordinary `FileStorage` as `file`'s
-  rows, so the dual asks whether the prefix names a SCANNED entity; measured, without that
-  question the boot refuses a correct door and points it at a repository for an entity
-  nobody declared. Pinned by `tests/aggregate.test.ts`, *a door that depends on a class
-  whose NAME ends in the key suffix*.
-- A decision has ONE owner, and it is instantiated on its subject when the subject can be
-  held: `RowJudge.of(fields, opts).validate(row)`, `Card.fromSchema(Post)`, `FieldSet.of(f).primary`,
-  `Visibility.of(f).input`. Measured over the pass: 11 classes and 36 free functions became
-  24 and 12.
-- **A registry is an INSTANCE of `Registry<T>`** (`schema/src/Registry.ts`), not a class of
-  statics. It holds a name → value map and refuses an unknown name ITSELF, being the only
-  place that can list the known ones — which four hand-written refusals could not agree on:
-  `Generators` and `Sources` listed what the process answers, `Boundaries` did not, and
-  `defaults/src/storage.ts` re-spelled the whole sentence before calling `Sources.resolve`.
-  `Formats`, `Generators` and the three of `Boundaries` (`decoders`, `encoders`, `aliases`)
-  are bare instances; only `Sources` extends it, to add `open`, and never redefines a
-  member — which is why `register` hands the value back
-  (`const isSiret = Formats.register('siret', predicate)`). `Clock` is not one: it
-  registers nothing, and neither is `adapter/sql`'s judge: see the entry above.
-- `Bundle` REFUSES two schemas claiming one registration key (`card/Bundle.ts`). The silent
-  overwrite it replaces is what a free function could not refuse — there was nowhere the
-  refusal would have belonged.
-- `FieldSet.primary` refuses two primaries, naming both. `primaryFieldOf` returned the first
-  one for as long as its own comment recorded that two primaries were the bug it existed to
-  fix; the absence is still answered and not defaulted.
-- **`heritage-unresolved` under an installed package was fixed before the entry describing
-  it was written.** `87b4738` (2026-08-24 10:06) taught the checker to resolve a base class;
-  the entry landed at 13:26 quoting an earlier count. Remeasured 2026-08-28 against real
-  tarballs of all 24 packages installed outside the workspace: `fougere check` on the same
-  three `extends Crud(…)` reports nothing, WITH and WITHOUT `src/` present. The publishing
-  fix that came out of that probe stands on its own ground — a `.d.ts.map` shipped without
-  its target is a file that lies — and it is not what silenced this.
+  `entityOfStorageKey` (`core/src/storage.ts`), the third pair beside `togetherKeyOf` and
+  `emitKeyOf`. The dual asks whether the prefix names a SCANNED entity.
+- A decision has ONE owner, instantiated on its subject when the subject can be held:
+  `RowJudge.of(fields, opts).validate(row)`, `Card.fromSchema(Post)`, `FieldSet.of(f).primary`.
+- **A registry is an instance of `Registry<T>`, not a class of statics.** An `Adapters`
+  registry was built and reverted the same day (2026-09-04): a registry earns its place when a
+  name arrives as DATA — `generate: 'ulid'`, `source: 'file'` — and `sql` arrives in an import.
+- `Bundle` REFUSES two schemas claiming one registration key (`card/Bundle.ts`).
+- `FieldSet.primary` refuses two primaries, naming both. The absence is answered, not defaulted.
+- `heritage-unresolved` under an installed package was fixed before the entry describing it was
+  written (`87b4738`). Remeasured 2026-08-28 against real tarballs: nothing reported.
 - A registry that cannot say what it holds is not the owner: `Generators` registers its three
-  builtins rather than switching on them, so the unknown name is refused inside it.
+  builtins rather than switching on them.
 - **A copy does not import, so no reader count can see it.** Measured 2026-08-25: nine
-  hand-written copies of four declared functions, five of them divergent, one INSIDE the
-  package that declares the original. The scan that finds them compares BODIES, not imports.
-- The shape is held on **three** paths: the façade judges input, `StorageGuard` judges every
-  write through the port, and the DDL emits `CHECK` for `oneOf`/`min`/`max`
-  (`adapter/sql/src/check.ts`). `pattern`/`format` stay at the façade on purpose — regex
-  dialects diverge.
-- The façade hands on the value it PARSED (`boot/HandlerFacade.ts`, `judged`), so a handler
-  receives a `Date` where the field declares one.
-- The `boundary` axis has ONE door, `Boundary.of` (`schema/src/schema/axis/boundary/Boundary.ts`) — alias and codecs resolved eagerly, both
-  directions, unknown names throwing.
+  hand-written copies of four declared functions, five of them divergent.
+- The shape is held on three paths: the façade judges input, `StorageGuard` judges every write,
+  and the DDL emits `CHECK` for `oneOf`/`min`/`max`. `pattern`/`format` stay at the façade.
+- The façade hands on the value it PARSED (`boot/HandlerFacade.ts`, `judged`).
+- The `boundary` axis has ONE door, `Boundary.of` — alias and codecs resolved eagerly.
 - Two remotes serving one entity is REFUSED, naming both (`boot/remote.ts`, `claimedBy`).
-- A split receiver ESTABLISHES its caller (`core/src/identity.ts`): `serve()` refuses to start beyond loopback with no
-  `verify`, an envelope signs the whole CALL (not just the state), and `invocation.caller` is
-  top-level, never a key of `state`. Do not reintroduce a link secret.
-- An operation's input contract is read from PROVENANCE (`scan/scanner.ts`, `inferOperations`), and two candidates REFUSE
-  (`input-contract-ambiguous`) rather than one being picked by parameter order.
-- A collector in the wrong frond REFUSES THE BOOT (`core/src/verify.ts`, `collector-in-another-frond`,
-  made blocking by `effective-operation.ts`); it used to hand the body to the parameter that wanted a user.
+- A split receiver ESTABLISHES its caller (`core/src/identity.ts`): `serve()` refuses to start
+  beyond loopback with no `verify`. Do not reintroduce a link secret.
+- An operation's input contract is read from PROVENANCE, and two candidates REFUSE rather than
+  one being picked by parameter order.
+- A collector in the wrong frond REFUSES THE BOOT (`core/src/verify.ts`).
 - The two HTTP adapters agree on a middleware's return: the passthrough sentinel is
   `PASSTHROUGH` (`http/src/router.ts`), a symbol, not the legal value `data === null`.
-- `@fronds/<name>` resolves in the scan (`scan/scanner.ts`, `frondAliases`); `fougere check`
-  reports the relative form as `cross-frond-import`.
-- `FougereError.details` is polymorphic on purpose — the shape belongs to the PAIR (code,
-  details) — and `validationErrorsOf` (`wire/errors.ts`) judges the elements rather than
-  casting them.
-- The signature parser reads the CHECKER (`core/tests/handler-parser.test.ts`), so `type CurrentUser = User | undefined` binds like
+- `@fronds/<name>` resolves in the scan; `fougere check` reports the relative form as
+  `cross-frond-import`.
+- `FougereError.details` is polymorphic on purpose — the shape belongs to the PAIR.
+- The signature parser reads the CHECKER, so `type CurrentUser = User | undefined` binds like
   `user?: User`.
-- `OperationContract.output` has three readers including the façade (`boot/HandlerFacade.ts`, `viewOf`); it gives the
-  FIELDS and does not close the view. `kind` is resolved by `core/src/effective-operation.ts`, not by the
-  scan, and `OperationContract.kind` stays empty at scan level — a relocation, not a
-  regression.
+- `OperationContract.output` has three readers including the façade; it gives the FIELDS and
+  does not close the view. `kind` is resolved by `core/src/effective-operation.ts`.
