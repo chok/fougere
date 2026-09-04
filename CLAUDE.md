@@ -324,8 +324,8 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   `facadeFor` resolves a surface key in the local container only. True of all three doors.
 - **`expose` is a third membership mechanism, and the membership rule is blind to it.** The
   scan sets `e.exposed`/`h.exposed`, never `surfaces`. Three readers, one inside core
-  (`effective-operation.ts`, `exposedAdapters`). `packages/decorators` has zero importers and
-  ships anyway. Not decided.
+  (`effective-operation.ts`, `exposedAdapters`). `packages/decorators` holds the method-level
+  `@expose` and is simply not wired yet — that is a state, not a defect.
 - **The Nuxt codegen reads three members of the storage and drops the rest** —
   `app/nuxt/src/module.ts`, `generateBootPlugin`. So a `Together` always compensates and the
   connection is never closed. Same shape in `boot.ts`'s `BootOptions.db`.
