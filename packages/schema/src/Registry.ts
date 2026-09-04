@@ -1,4 +1,3 @@
-/** A name → value map: Formats, Generators, Boundaries.decoders/encoders/aliases, Sources. */
 export class Registry<T> {
   private readonly entries: Map<string, T>;
 
@@ -17,12 +16,10 @@ export class Registry<T> {
     return value;
   }
 
-  /** For Formats and Boundaries.aliases, where an unregistered name is normal. */
   find(name: string): T | undefined {
     return this.entries.get(name);
   }
 
-  /** For Generators, Boundaries.decoders/encoders and Sources, where it is a mistake. */
   resolve(name: string, path?: string): T {
     const found = this.find(name);
 
