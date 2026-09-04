@@ -17,7 +17,4 @@ export type FormatPredicate = (value: string) => boolean;
  * FR : les formats de chaîne que le moteur ignore ; `find` rend `undefined` pour les siens.
  * `Formats.register('siret', (v) => /^\d{14}$/.test(v))`
  */
-export const Formats = new Registry<FormatPredicate>(
-  'format',
-  'call Formats.register(name, predicate)',
-);
+export const Formats = new Registry<FormatPredicate>('format');

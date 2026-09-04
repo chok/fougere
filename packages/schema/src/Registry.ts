@@ -7,13 +7,14 @@ export class Registry<T> {
   private readonly entries: Map<string, T>;
 
   /**
-   * `kind` is the word a refusal uses, `fix` the sentence telling the reader what to do.
+   * `kind` is the word a refusal uses, `fix` the sentence telling the reader what to do —
+   * left out by a registry nobody calls `resolve` on.
    * FR : `kind` est le mot qu'emploie un refus, `fix` la phrase qui dit quoi faire.
    * `new Registry<Decoder>('boundary decoder', 'call Boundaries.decoders.register(name, fn)')`
    */
   constructor(
     private readonly kind: string,
-    private readonly fix: string,
+    private readonly fix?: string,
     builtins?: Iterable<readonly [string, T]>,
   ) {
     this.entries = new Map(builtins);
@@ -51,7 +52,7 @@ export class Registry<T> {
     if (found !== undefined) return found;
 
     throw new Error(
-      `${at ? `${at}: ` : ''}Unknown ${this.kind} '${name}' — ${this.fix}. `
+      `${at ? `${at}: ` : ''}Unknown ${this.kind} '${name}'${this.fix ? ` — ${this.fix}` : ''}. `
       + `This process answers ${this.names.join(', ') || 'nothing yet'}.`,
     );
   }

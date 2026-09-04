@@ -20,10 +20,7 @@ export const Boundaries = {
     'boundary encoder',
     'call Boundaries.encoders.register(name, fn)',
   ),
-  aliases: new Registry<BoundaryRules>(
-    'boundary alias',
-    'call Boundaries.aliases.register(name, rules)',
-  ),
+  aliases: new Registry<BoundaryRules>('boundary alias'),
 };
 
 Boundaries.decoders.register('isoDate', (value) => {
