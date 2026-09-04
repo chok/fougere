@@ -117,10 +117,10 @@ export class Schema {
       version: 1,
       vendor: 'fougere',
       validate(value: unknown) {
-        const result = RowJudge.of(fields, opts).validate(value);
-        if (result.success) return { value: result.data };
+        const verdict = RowJudge.of(fields, opts).validate(value);
+        if (verdict.success) return { value: verdict.data };
         return {
-          issues: result.errors.map((e) => ({
+          issues: verdict.errors.map((e) => ({
             message: e.message,
             path: e.path && e.path !== '.' ? [{ key: e.path }] : undefined,
           })),
@@ -149,7 +149,7 @@ export class Schema {
     const renamed: Fields = {};
     for (const [key, field] of Object.entries(this.fields))
       renamed[mapping[key] ?? key] = field;
-    return this.derive(renamed, (k) => mapping[k] ?? k);
+    return this.derive(renamed, (key) => mapping[key] ?? key);
   }
 
   static declares(declarations: EntityDeclarations<Fields>) {

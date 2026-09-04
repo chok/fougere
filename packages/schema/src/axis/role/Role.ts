@@ -15,11 +15,11 @@ export class Role implements RoleRules {
   readonly relation?: Relation;
   readonly rules?: readonly FieldGroup[];
 
-  private constructor(declared: RoleRules = {}) {
-    this.primary = declared.primary;
-    this.index = declared.index;
-    this.relation = declared.relation;
-    this.rules = declared.rules;
+  private constructor(rules: RoleRules = {}) {
+    this.primary = rules.primary;
+    this.index = rules.index;
+    this.relation = rules.relation;
+    this.rules = rules.rules;
   }
 
   static of(field: { role?: RoleRules }): Role {

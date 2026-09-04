@@ -19,8 +19,8 @@ const SHAPE_TYPES = ['string', 'number', 'integer', 'boolean', 'array', 'object'
 
 function isShapeImpl(value: unknown): value is Shape {
   if (typeof value !== 'object' || value === null) return false;
-  const declared = (value as Shape).type;
-  const names = Array.isArray(declared) ? declared : [declared];
+  const type = (value as Shape).type;
+  const names = Array.isArray(type) ? type : [type];
   return (
     names.some((name) => (SHAPE_TYPES as readonly unknown[]).includes(name)) &&
     names.every((name) => name === 'null' || (SHAPE_TYPES as readonly unknown[]).includes(name))

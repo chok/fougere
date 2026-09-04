@@ -24,15 +24,15 @@ export type FieldWord = (field: Field<any>) => Field<any>;
  * `readOnly(writeOnly(text()))` → both close a different side, so both apply
  */
 function merge(name: string, field: Field, given: Partial<Field>): Partial<Field> {
-  const out: Record<string, unknown> = {};
-  if ('shape' in given) out.shape = given.shape;
+  const merged: Record<string, unknown> = {};
+  if ('shape' in given) merged.shape = given.shape;
 
   for (const slot of MEMBER_SLOTS) {
     const members = given[slot];
     if (members === undefined) continue;
     const already = field[slot] as Record<string, unknown> | undefined;
     if (typeof members !== 'object' || members === null || typeof already !== 'object') {
-      out[slot] = members;
+      merged[slot] = members;
       continue;
     }
     for (const [member, value] of Object.entries(members)) {
@@ -43,7 +43,7 @@ function merge(name: string, field: Field, given: Partial<Field>): Partial<Field
           `field already states ${JSON.stringify(previous)}. Apply one or the other, not both.`,
       );
     }
-    out[slot] = { ...already, ...members };
+    merged[slot] = { ...already, ...members };
   }
-  return out as Partial<Field>;
+  return merged as Partial<Field>;
 }

@@ -45,30 +45,30 @@ function outOfBoundsFor(field: Field): { why: string; value: unknown }[] {
   // `maxItems` — which no branch below ever produced. In the one function whose job is
   // to be exhaustive, a bound the type does not carry is a case nobody notices missing.
   const shape = Shapes.of(field.shape).base;
-  const out: { why: string; value: unknown }[] = [];
+  const cases: { why: string; value: unknown }[] = [];
   if (shape?.type === 'string') {
     if (typeof shape.minLength === 'number' && shape.minLength > 0)
-      out.push({ why: 'shorter than min', value: 'x'.repeat(shape.minLength - 1) });
+      cases.push({ why: 'shorter than min', value: 'x'.repeat(shape.minLength - 1) });
     if (typeof shape.maxLength === 'number')
-      out.push({ why: 'longer than max', value: 'x'.repeat(shape.maxLength + 1) });
-    if (shape.enum) out.push({ why: 'outside the stated set', value: '__not-in-enum__' });
+      cases.push({ why: 'longer than max', value: 'x'.repeat(shape.maxLength + 1) });
+    if (shape.enum) cases.push({ why: 'outside the stated set', value: '__not-in-enum__' });
   }
   if (shape?.type === 'number' || shape?.type === 'integer') {
     if (typeof shape.minimum === 'number')
-      out.push({ why: 'below minimum', value: shape.minimum - 1 });
+      cases.push({ why: 'below minimum', value: shape.minimum - 1 });
     if (typeof shape.maximum === 'number')
-      out.push({ why: 'above maximum', value: shape.maximum + 1 });
+      cases.push({ why: 'above maximum', value: shape.maximum + 1 });
   }
   if (shape?.type === 'array') {
     if (typeof shape.minItems === 'number' && shape.minItems > 0)
-      out.push({ why: 'fewer items than min', value: [] });
+      cases.push({ why: 'fewer items than min', value: [] });
     if (typeof shape.maxItems === 'number')
-      out.push({
+      cases.push({
         why: 'more items than max',
         value: Array.from({ length: shape.maxItems + 1 }, () => null),
       });
   }
-  return out;
+  return cases;
 }
 
 /**
