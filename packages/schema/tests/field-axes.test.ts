@@ -125,8 +125,8 @@ describe('Generators — custom generators travel by name', () => {
     expect(Generators.resolve('monId')()).toBe('fixed-id');
   });
 
-  it('an unknown name resolves to undefined (the storage adapter turns this into a loud error)', () => {
-    expect(Generators.answers('jamais-vu')).toBe(false);
+  it('an unknown name is refused, and the message lists what this process answers', () => {
+    expect(() => Generators.resolve('jamais-vu')).toThrow(/Unknown generator 'jamais-vu'.*cuid2/s);
   });
 
   it('primary({ generate: [name, fn] }) registers and names in one gesture', () => {

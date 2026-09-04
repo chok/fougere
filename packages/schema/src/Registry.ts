@@ -58,20 +58,8 @@ export class Registry<T> {
     );
   }
 
-  /**
-   * Use `answers` for feature detection without loading the registered value; use `find`
-   * when the next step needs that value.
-   * `Generators.answers('cuid2')` → `true`
-   */
-  answers(name: string): boolean {
-    return this.entries.has(name);
-  }
-
-  /**
-   * Use `names` to show the choices imported into this process; use `answers` to test one.
-   * `Sources.names` → `['sql', 'file']`
-   */
-  get names(): string[] {
+  /** What `resolve` lists after `This process answers`. */
+  private get names(): string[] {
     return [...this.entries.keys()];
   }
 }
