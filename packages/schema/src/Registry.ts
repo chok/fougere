@@ -31,15 +31,17 @@ export class Registry<T> {
   }
 
   /**
-   * The value under a name, or `undefined`.
-   * `Formats.find('email')` → `undefined` — the engine already judges that one
+   * Use it where nothing under that name is normal: a field with no alias, a format the
+   * JSON Schema engine already knows.
+   * `Formats.find('email')` → `undefined`, and `ValueJudge` moves on
    */
   find(name: string): T | undefined {
     return this.entries.get(name);
   }
 
   /**
-   * The value under a name. Throws when the name is not registered.
+   * Use it where nothing under that name means the user mistyped something in an entity
+   * or a config. `path` says where, so the message names the line to fix.
    * `Generators.resolve('ulid')`
    * → `Unknown generator 'ulid' — call Generators.register(name, fn). This process answers cuid2, uuid, nanoid.`
    * `Sources.resolve('file', 'archive.source')`
