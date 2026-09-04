@@ -53,7 +53,7 @@ export class RouteRegistry {
 
   private async resolveUnknown(address: RouteAddress): Promise<Route | undefined> {
     for (const resolver of this.resolvers) {
-      const route = await resolver.resolve(address);
+      const route = await resolver(address);
       if (!route) continue;
       this.register(route);
       return route;

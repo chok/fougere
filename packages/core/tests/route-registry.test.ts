@@ -75,7 +75,7 @@ describe('RouteRegistry', () => {
       await pending;
       return resolved;
     });
-    registry.addResolver({ resolve });
+    registry.addResolver(resolve);
 
     const first = registry.resolve(address);
     const second = registry.resolve(new RouteAddress(address.toJSON()));

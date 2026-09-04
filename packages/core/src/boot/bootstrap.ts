@@ -34,7 +34,7 @@ import { DispatchLifecycle } from '../dispatch/DispatchLifecycle.js';
 import { Dispatcher } from '../dispatch/Dispatcher.js';
 import { LocalRoutePolicy } from '../dispatch/LocalRoutePolicy.js';
 import { OperationRoute } from '../dispatch/OperationRoute.js';
-import { RemoteRouteResolver } from '../dispatch/RemoteRouteResolver.js';
+import { remoteRoutes } from '../dispatch/remoteRoutes.js';
 import { RouteRegistry } from '../dispatch/RouteRegistry.js';
 import { facadeOperations } from '../entry/facade.js';
 
@@ -655,7 +655,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
   if (remoteRouter) {
     const remoteFacades = new Map<string, Record<string, Function>>();
-    routeRegistry.addResolver(new RemoteRouteResolver((entity) => {
+    routeRegistry.addResolver(remoteRoutes((entity) => {
       const known = remoteFacades.get(entity);
       if (known) return known;
       const facade = createRemoteFacade(entity, remoteRouter, getMiddlewares);
