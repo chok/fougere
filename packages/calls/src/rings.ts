@@ -63,14 +63,7 @@ class Ring<T extends { seq: number }> {
   }
 }
 
-/**
- * What this process logged.
- *
- * Chronological and nothing more: correlating a line to its call needs an async context,
- * which core's `Ambient` port does not provide (it answers about frames and emission
- * chains) and only `@fougere/observability` has. Aligning by timestamp would be a guess
- * dressed as a fact — the failure mode of every panel that lies.
- */
+/** What this process logged. */
 export class LogRing extends Ring<LogLine> {
   record(line: LogRecord): void {
     this.keep((seq) => ({
@@ -90,14 +83,7 @@ export class QueryRing extends Ring<QueryLine> {
   }
 }
 
-/**
- * What was refused, from TWO sources — and that is the point.
- *
- * Fed by the call flow alone, this screen would miss exactly the failures that matter: a
- * storage that would not open, an export that could not be sent, an extension that fell
- * over. None of those is a dispatch. It is the blind spot Symfony's Headers panel and
- * Django's History panel both have, and the only cure is a second source.
- */
+/** What was refused, from TWO sources — and that is the point. */
 export class ErrorRing extends Ring<ErrorGroup> {
   private readonly byKey = new Map<string, ErrorGroup>();
 

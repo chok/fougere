@@ -6,13 +6,7 @@ import { lowerFirst, type SchemaView } from '@fougere/schema';
 import { listQuery, findQuery, mutationFor, at } from './gql.js';
 import { sampleInput, type SampleOptions } from './sample.js';
 
-/**
- * The rows a door hands back, with its own envelope taken off.
- *
- * Each door wraps differently by construction — REST answers a page, GraphQL nests under
- * its field, RPC returns the value — and comparing the wrappers would compare the
- * protocols. What must agree is what is inside.
- */
+/** The rows a door hands back, with its own envelope taken off. */
 function rowsOf(value: unknown): unknown {
   if (Array.isArray(value)) return [...value];
   const page = value as { items?: unknown } | null;
@@ -22,13 +16,7 @@ function rowsOf(value: unknown): unknown {
 /** Through the wire and back, so a `Date` and its ISO string are not read as a divergence. */
 const wire = (value: unknown): unknown => JSON.parse(JSON.stringify(value ?? null));
 
-/**
- * What is the SAME row seen twice, and what is merely a second row.
- *
- * A write creates a different row at each door — different id, different `createdAt` —
- * so comparing values would compare clocks. The generated fields are dropped and what the
- * caller sent is what remains, which is the part the doors must agree on.
- */
+/** What is the SAME row seen twice, and what is merely a second row. */
 function written(value: unknown, sent: Record<string, unknown>): unknown {
   const row = value as Record<string, unknown> | null;
   if (!row || typeof row !== 'object') return wire(row);
@@ -60,18 +48,7 @@ export interface DoorContractCase {
   expected: unknown;
 }
 
-/**
- * One entity, four doors, the same answers.
- *
- * The claim runs through the whole repo — a frond runs in-process or behind JSON-RPC with
- * identical user code, and REST, GraphQL and RPC are three projections of one contract —
- * and nothing compared REST to GraphQL until now. `transport-swap.test.ts` compares three
- * TRANSPORTS, which is a different sentence.
- *
- * The five CRUD operations, reads and writes. A CUSTOM op is not compared: REST addresses
- * it by a path the table states, GraphQL by a mutation whose input type is its own, and
- * matching the two means guessing which is which — a guess this file exists to avoid.
- */
+/** One entity, four doors, the same answers. */
 export function checkDoors(app: App, entity: SchemaView, options: DoorOptions = {}): void {
   const name = lowerFirst(entity.name ?? '');
   const doors = doorsOf(app, entity, name, options.surface);
@@ -152,13 +129,7 @@ export function checkDoors(app: App, entity: SchemaView, options: DoorOptions = 
   });
 }
 
-/**
- * Run one hand-written invocation contract through every door.
- *
- * `checkDoors` derives the generic CRUD gradient. This is its small explicit companion
- * for semantics only the handler can observe — notably omitted versus null input. A new
- * adapter joins the same harness instead of inventing its own interpretation.
- */
+/** Run one hand-written invocation contract through every door. */
 export function checkDoorContract(
   app: App,
   entity: SchemaView,

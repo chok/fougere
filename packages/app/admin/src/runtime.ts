@@ -38,16 +38,7 @@ export function createAdminRuntime(options: AdminRuntimeOptions = {}): AdminRunt
   } = options;
   let loading: Promise<LoadedAdmin> | undefined;
 
-  /**
-   * One card request, shared — and a REFUSED one is forgotten.
-   *
-   * `loading ??=` alone memoizes the rejection too, so a receiver that was down when the
-   * panel opened stays down for the life of the tab: every later attempt awaits the same
-   * dead promise and there is no path back. Clearing the slot on failure is what makes a
-   * retry mean anything, and the rejection is re-thrown so the caller can say so — a
-   * discovery that fails silently leaves react-admin on its loading page forever, which
-   * is the one state where the panel tells the operator nothing at all.
-   */
+  /** One card request, shared — and a REFUSED one is forgotten. */
   const load = (): Promise<LoadedAdmin> => loading ??= fetchCard(endpoint, fetcher)
     .then((card) => {
       const resources = applyAdminExtensions(resourcesOf(card), extensions);

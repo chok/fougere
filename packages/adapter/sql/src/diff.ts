@@ -1,16 +1,4 @@
-/**
- * Diff — what the database is missing, compared to what the entities describe.
- *
- * Two states, one comparison, one realisation. The desired state comes from the
- * entities; the actual one from Kysely's introspection, which is already
- * engine-agnostic. The comparison itself is pure — no IO, no SQL.
- *
- * ADDITIVE ONLY, and that incapacity is the guarantee: a missing table is
- * created, a missing column is added, and **nothing else ever happens**. Drops,
- * renames and type changes are human intentions — a rename is not even
- * detectable from a diff (it reads as a drop plus an add). Those belong in a
- * written migration, never in an automatic pass.
- */
+/** Diff — what the database is missing, compared to what the entities describe. */
 import { sql, type Kysely } from 'kysely';
 import { addForeignKeyConstraintSQL, compiler, createTableSQL, indexSQL, type GenerateOptions } from './ddl.js';
 import { checkFor } from './check.js';
@@ -74,19 +62,7 @@ export function delta(desired: TableDef[], actual: SchemaState): Change[] {
   return changes;
 }
 
-/**
- * Order the changes `delta` found, dialect-aware — `delta` itself stays pure and
- * unordered, this is the one place that adds engine knowledge to the plan.
- *
- * SQLite resolves FK targets lazily and accepts any order, with no `ALTER TABLE
- * ADD CONSTRAINT` to defer to — changes pass through unchanged. Every other
- * engine needs a `createTable`'s FK targets to already exist: `orderTables`
- * sorts the NEW tables among themselves and reports the edges a cycle forces to
- * defer as `addConstraint` changes. An `addColumn` always lands last — its
- * table already exists (that's why it's `addColumn` and not `createTable`), but
- * its FK target might be one of THIS batch's new tables, so it waits until
- * every `createTable`/`addConstraint` above it has run.
- */
+/** Order the changes `delta` found, dialect-aware — `delta` itself stays pure and unordered, this is… */
 export function orderChanges(changes: Change[], dialectName: DialectName): Change[] {
   if (dialectName === 'sqlite') return changes;
 
@@ -112,14 +88,7 @@ export function orderChanges(changes: Change[], dialectName: DialectName): Chang
   return [...createChanges, ...constraintChanges, ...addColumns, ...indexes];
 }
 
-/**
- * Render one change.
- *
- * A column added to a populated table cannot be `NOT NULL` without a default —
- * every engine refuses it. So an added column keeps its `NOT NULL` only when a
- * default answers the existing rows; otherwise it lands nullable, and tightening
- * it is a written migration.
- */
+/** Render one change. */
 export function changeSQL(change: Change, dialectName: DialectName): string {
   const dialect = resolveDialect(dialectName);
   if (change.kind === 'createTable') {
@@ -170,18 +139,8 @@ export async function planMigration(
   return { changes, statements: changes.map((change) => changeSQL(change, dialect)) };
 }
 
-/**
- * Bring the database up to what the entities describe — additively.
- *
- * Returns what it did, so a caller can log or refuse. Replaces the old
- * create-if-not-exists pass: it also catches a field added to an existing entity,
- * which used to be silently ignored.
- */
-/**
- * Bring the schema up to date. Takes the setup itself — `migrate(app, setup)` — so the
- * common case never has to reach into `setup.db`, the one handle that meets no judge.
- * A bare Kysely instance is still accepted, for a caller who holds only that.
- */
+/** Bring the database up to what the entities describe — additively. */
+/** Bring the schema up to date. */
 export async function migrate(
   app: AppLike,
   target: Kysely<any> | { db: Kysely<any> },

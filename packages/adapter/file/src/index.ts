@@ -1,19 +1,4 @@
-/**
- * Rows as files — one JSON per row, a directory per entity.
- *
- * The reason this package is short: `storageOver` derives the thirteen gestures from four,
- * so a source that keeps rows somewhere else supplies only where. Nothing about pages,
- * criteria or lifecycle stamps is written twice.
- *
- * What it costs, said here rather than discovered: `all()` reads the whole directory, so
- * `list` with a `where` or an `orderBy` filters in memory. That is the same trade
- * `@fougere/adapter-duckdb` documents for a page-sized read — fine for a few thousand rows
- * held for their durability, wrong on a hot read path. And two processes over one directory
- * have no lock: SQLite has one, a filesystem does not.
- *
- * No `transacted` — a directory has no unit of work, so a frame compensates and says so.
- * `migrate` is a `mkdir` per entity, which is the whole shape a directory has.
- */
+/** Rows as files — one JSON per row, a directory per entity. */
 import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { lowerFirst } from '@fougere/schema';

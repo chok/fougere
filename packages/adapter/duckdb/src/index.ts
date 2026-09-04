@@ -1,26 +1,4 @@
-/**
- * Read across an app's sources — one SQL query over what can be attached.
- *
- * The by-key path (`findByKeys` and its dual) ENRICHES a page: it answers "I hold
- * these rows, give me the related ones". It cannot SELECT one — filtering, sorting,
- * paginating or counting on the other side collapses into reading that side whole.
- * That is the hole this closes, and it is not a reporting nicety: "my loans, newest
- * book first" crosses.
- *
- * What it is NOT is a query builder. A cross-source builder would be a Calcite in
- * TypeScript, and it would promise a composability the sources have not got. The query
- * stays SQL; what Fougere contributes is the three derivations a hand-written one would
- * duplicate — where each entity lives, what its table and columns are called, and the
- * shape of the answer.
- *
- * Measured before writing any of it (2026-08-15):
- *
- * - attaching Postgres pushes the filter down — `Filters: lang='fr'` reaches it over
- *   100 000 rows, so a real database is queried where it is and never copied;
- * - at PAGE size DuckDB is ~100× slower than two indexed reads (7 ms of floor per
- *   query), so this must never sit on the ordinary read path;
- * - SQL Server cannot be attached at all — no `sqlserver` extension exists.
- */
+/** Read across an app's sources — one SQL query over what can be attached. */
 import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
 import { lowerFirst, fieldsOf, type SchemaOrCard } from '@fougere/schema';
 import { toTable, toTableName, toSnakeCase, codecsOf } from '@fougere/adapter-sql';
@@ -47,14 +25,7 @@ export interface ConnectOptions {
   db: { path?: string; attach?: string; type?: Attachable };
   /** The other places, exactly as `fougere.config.ts` states them. */
   sources?: Record<string, SourceDeclaration>;
-  /**
-   * What this scope may read — and therefore what gets attached at all.
-   *
-   * Not a check performed after the fact: a source holding none of these is never
-   * attached, so its tables do not exist in this connection. `facadeFor` excludes an
-   * entity with no door on purpose ("it would publish the auth tables to anyone who
-   * asks"), and a SQL door at app scope would hand them over — this is what stops it.
-   */
+  /** What this scope may read — and therefore what gets attached at all. */
   reads: readonly ShapeClass[];
   /** Same resolver the storage uses, when an app renames tables. */
   tableName?: (name: string) => string;
@@ -62,14 +33,7 @@ export interface ConnectOptions {
 
 /** A query's answer: the rows, projected onto the shape that was named. */
 export interface Reads {
-  /**
-   * Name the shape the answer takes, then write the query.
-   *
-   * The tag is only reachable THROUGH the shape, so "no query without a declared
-   * output" is held by the types rather than asked for. It matters: a raw `select *`
-   * would return the fields `boundary.out: 'closed'` promises never leave — the one
-   * strong guarantee the framework makes, walked around. The projection is the fence.
-   */
+  /** Name the shape the answer takes, then write the query. */
   read<E extends ShapeClass>(shape: E): (sql: TemplateStringsArray, ...refs: unknown[]) => Promise<InstanceType<E>[]>;
   /** The attached sources, by alias — what the scope actually opened. */
   attached: ReadonlyMap<string, string>;
@@ -88,11 +52,7 @@ const TYPE_CLAUSE: Record<Attachable, string> = {
   mysql: 'mysql',
 };
 
-/**
- * The default source's alias — the same word `fougere.config.ts` uses for it.
- *
- * Not `main`: DuckDB reserves it, and an attach under that name is refused outright.
- */
+/** The default source's alias — the same word `fougere.config.ts` uses for it. */
 const DEFAULT_ALIAS = 'db';
 
 /** 'Book' and 'book' name the same rows — the spelling `sources:` accepts either way. */
@@ -108,14 +68,7 @@ function targetOf(declaration: { path?: string; attach?: string }, alias: string
   return target;
 }
 
-/**
- * Open a read-only view of the app's sources.
- *
- * `READ_ONLY` on every attach, and it is the engine that enforces it rather than a rule
- * anyone here remembers: this door reads across an app's whole storage, so it is
- * strictly more reachable than `storage.client` — which at least keeps the scope of its
- * entity — and a write through it would meet no judge at all.
- */
+/** Open a read-only view of the app's sources. */
 export async function connectSources(options: ConnectOptions): Promise<Reads> {
   const resolve = options.tableName ?? toTableName;
 
@@ -197,13 +150,7 @@ function qualify(ref: unknown, placed: Map<ShapeClass, { alias: string; table: s
 
 const quote = (identifier: string): string => `"${identifier.replace(/"/g, '""')}"`;
 
-/**
- * The column set, checked ONCE against the shape.
- *
- * Not the JSON Schema judge per row: an aggregate is not a client's input, and the
- * caller here is the query its own author wrote. What must not pass silently is the two
- * disagreeing — a renamed alias yielding a column of nulls under the right type.
- */
+/** The column set, checked ONCE against the shape. */
 function refuseMismatch(shape: ShapeClass, names: string[], row: Record<string, unknown>, sql: string): void {
   const missing = names.filter((name) => !(toSnakeCase(name) in row) && !(name in row));
   if (missing.length === 0) return;

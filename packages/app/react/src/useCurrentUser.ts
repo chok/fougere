@@ -1,15 +1,5 @@
 'use client';
-/**
- * The session: resolved once server-side, handed down through the provider, read
- * here as state. `refresh()` re-reads it after a client-side auth change (login,
- * logout) — no page reload, no hand-rolled /api/me.
- *
- * `session` is the whole view (extensible context); `user` is its everyday
- * projection. Nuxt hydrates through its own `useState` payload; React has no
- * ambient equivalent, so a layout that already resolved the session passes it to
- * `<FougereSession>` and the page arrives knowing its user. Without the provider
- * the hook fetches once, which is correct and one round-trip slower.
- */
+/** The session: */
 import { createContext, createElement, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { SessionView } from '@fougere/app/client';
 

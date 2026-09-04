@@ -1,12 +1,4 @@
-/**
- * The envelope door for a host that speaks `Request`/`Response` — hono, a Worker, Next,
- * SvelteKit. It reads a `Request` body; `serve` reads a `node:http` stream, and the two
- * stay separate on purpose: putting Node through this reader HALVED the Node door
- * (0.677 → 0.341 of its baseline, measured 2026-08-22).
- *
- * What they share is `policy.ts` — the cap and the answers. Nothing here is edge-specific
- * beyond that: `handleRpc` is the wire and knows no HTTP at all.
- */
+/** The envelope door for a host that speaks `Request`/`Response` — hono, a Worker, Next, SvelteKit. */
 import { handleRpc, type ReceiveOptions } from './server.js';
 import { MAX_BODY_BYTES, CALL_PATH, parseError, tooLarge } from './policy.js';
 import type { Transport } from '@fougere/core/contract';
@@ -16,19 +8,7 @@ export interface ReceiveHttpOptions extends ReceiveOptions {
   maxBodyBytes?: number;
   /** The path this door answers. Default: `/_fougere/call`. */
   path?: string;
-  /**
-   * Take unsigned calls, deliberately.
-   *
-   * `serve()` reads the decision off the ADDRESS — loopback by default, and widening it
-   * is written down. This door binds nothing: its host mounts it wherever it likes, and a
-   * `Request` arrives with no bound address to consult. So the decision has to be stated,
-   * and the default is the safe one: with no `verify` and no word here, this REFUSES to
-   * be built. A door that starts and then believes whatever `state` it is handed is the
-   * hole `identity.ts` exists to close, and it was open here.
-   *
-   * The one case that legitimately needs it beyond local development is the same as
-   * `serve`'s: something in front already established the peer.
-   */
+  /** Take unsigned calls, deliberately. */
   allowUnsigned?: boolean;
 }
 

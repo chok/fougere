@@ -11,14 +11,7 @@ function refusalOf(error: unknown): CallRecord['refusal'] {
   };
 }
 
-/**
- * A bounded log of what this process dispatched.
- *
- * The five transitions of one call are folded into one record: `received` opens it,
- * `resolved` names the route, `completed`/`failed` settle the verdict, `settled` closes
- * the duration. They are matched by the identity of the `Call`, which is the same frozen
- * object across all five.
- */
+/** A bounded log of what this process dispatched. */
 export class CallRing {
   private readonly held: CallRecord[] = [];
   private readonly open = new WeakMap<object, CallRecord>();
@@ -31,19 +24,7 @@ export class CallRing {
     private readonly frondOf: (entity: string) => string | undefined = () => undefined,
   ) {}
 
-  /**
-   * KNOWN LIMIT — a call this process ORIGINATES carries no trace here.
-   *
-   * `trace()` writes the traceparent inside the middleware chain, so inside
-   * `route.execute(call)`; the observer saw the `Call` at `received`, and that object is
-   * frozen. An ARRIVING call is unaffected: its traceparent is already on the invocation
-   * the transport handed over, which is why a hosted frond shows traces and its consumer
-   * does not.
-   *
-   * Closing it means `DispatchEvent` carrying the invocation as it ENDED rather than as it
-   * arrived — a core change, deliberately not smuggled in here. Until then the Traces view
-   * speaks for the side that receives.
-   */
+  /** KNOWN LIMIT — a call this process ORIGINATES carries no trace here. */
   record(event: DispatchEvent): void {
     // A reader reaches this ring through `rpc`, so recording that would make the panel
     // watch itself — one reader, one line, forever.
@@ -94,13 +75,7 @@ export class CallRing {
     if (this.held.length > this.max) this.lost += this.held.splice(0, this.held.length - this.max).length;
   }
 
-  /**
-   * Be told when a record settles, and get the unsubscription back.
-   *
-   * A page that polls is a page that is always a little wrong; this is what lets a door
-   * push instead. Told at `settled` and not at `received`, because a record is only
-   * complete then — a reader would otherwise redraw the same line four times.
-   */
+  /** Be told when a record settles, and get the unsubscription back. */
   watch(told: (record: CallRecord) => void): () => void {
     this.watching.add(told);
 

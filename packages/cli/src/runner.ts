@@ -1,12 +1,4 @@
-/**
- * CLI runner — scans frond entities for flags, looks for app commands
- * for presentation, dispatches via citty.
- *
- * Architecture:
- * - fronds/  → entities (flags) + handlers (domain logic)
- * - app/     → commands (prompts, TUI, presentation)
- * - src/     → runner + bridge (framework)
- */
+/** CLI runner — scans frond entities for flags, looks for app commands for presentation, dispatches… */
 import type { App } from '@fougere/core';
 import { createAppRunner } from '@fougere/core';
 import { lowerFirst } from '@fougere/core/contract';

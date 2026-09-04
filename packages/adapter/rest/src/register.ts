@@ -5,14 +5,7 @@ import type { HttpRouter } from '@fougere/http';
 import { toHttpError } from '@fougere/core';
 import type { RouteDefinition } from './routes.js';
 
-/**
- * Register all route definitions on an HttpRouter.
- *
- * ```ts
- * const routes = generateRoutes(app, { prefix: '/api' });
- * registerRoutes(router, routes);
- * ```
- */
+/** Register all route definitions on an HttpRouter. */
 export function registerRoutes(
   router: HttpRouter,
   routes: RouteDefinition[],

@@ -1,9 +1,4 @@
-/**
- * Where a batch goes, and what a failure to send is allowed to do — nothing.
- *
- * A trace must never break the call it describes, so a refusal is reported through
- * `onError` or not at all, and `post` resolves either way.
- */
+/** Where a batch goes, and what a failure to send is allowed to do — nothing. */
 export class Endpoint {
   private constructor(
     private readonly url: string,

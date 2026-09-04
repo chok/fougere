@@ -1,14 +1,4 @@
-/**
- * Log export — the third signal, and the only one whose value is entirely in its links.
- *
- * A log shipped without a trace id is a log stored somewhere else. What makes it the third
- * pillar is landing on a trace and reading the lines that call produced, so every record
- * leaves with the span it was written inside — which this package knows and the logger
- * deliberately does not.
- *
- * The logger emits a structured record and nothing more (`onLog` in core). Attaching the
- * trace, naming the severity and speaking OTLP all happen here.
- */
+/** Log export — the third signal, and the only one whose value is entirely in its links. */
 import { Beat } from './Beat.js';
 import { Endpoint } from './Endpoint.js';
 import { currentSpan } from './index.js';
@@ -46,11 +36,7 @@ export interface LogsOptions {
   flushMs?: number;
   /** Told when a batch could not be sent. Default: silence. */
   onError?: (err: unknown) => void;
-  /**
-   * Drop anything below this level before it leaves the process. Absent means "whatever
-   * the logger let through" — `setLogLevel` has already filtered, and a second threshold
-   * here would be a second place where the level lives.
-   */
+  /** Drop anything below this level before it leaves the process. */
   minimum?: 'debug' | 'info' | 'warn' | 'error';
 }
 

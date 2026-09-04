@@ -8,12 +8,7 @@ import type { Storage } from '@fougere/core';
  */
 export type StorageMap = Map<string, Storage>;
 
-/**
- * Where[] supported subset:
- * - All clauses use 'eq' operator
- * - Implicit AND between clauses (no OR connector)
- * Anything else throws — extend Storage or add an engine-level fallback when needed.
- */
+/** Where[] supported subset: */
 function whereToCriteria(where: readonly CleanedWhere[]): Record<string, unknown> {
   const criteria: Record<string, unknown> = {};
   for (const clause of where) {
@@ -43,13 +38,7 @@ function storageOf(storageMap: StorageMap, model: string): Storage {
   return storage;
 }
 
-/**
- * Better-auth adapter that routes every operation through Fougere Storage.
- *
- * This closes the loop: the same `db` resolved by Fougere's bootstrap is the
- * one Storage writes to, and better-auth never touches the storage directly.
- * If Fougere swaps Kysely for another backend, this adapter follows for free.
- */
+/** Better-auth adapter that routes every operation through Fougere Storage. */
 export function fougereAdapter(storageMap: StorageMap) {
   return createAdapterFactory({
     config: {

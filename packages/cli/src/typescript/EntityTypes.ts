@@ -1,11 +1,7 @@
 import { upperFirst, type FieldDescriptor, type SchemaDescriptor } from '@fougere/schema';
 import { docCommentOf, propertyKey } from './syntax.js';
 
-/**
- * So a nullable field lands as a union.
- * FR : pour qu'un champ nullable atterrisse en union.
- * `{ type: ['string', 'null'] }` → `string | null`
- */
+/** So a nullable field lands as a union. */
 function typeOf(field: FieldDescriptor): string {
   const types = Array.isArray(field.type) ? field.type : field.type ? [field.type] : [];
   const nullable = types.includes('null');
@@ -14,11 +10,7 @@ function typeOf(field: FieldDescriptor): string {
   return nullable ? `${inner} | null` : inner;
 }
 
-/**
- * So `date-time` becomes a `Date`, the same thing the boundary decodes to.
- * FR : pour que `date-time` devienne une `Date`, comme la frontière le décode.
- * `{ type: 'string', format: 'date-time' }` → `Date`; `{ enum: ['a', 'b'] }` → `'a' | 'b'`
- */
+/** So `date-time` becomes a `Date`, the same thing the boundary decodes to. */
 function baseTypeOf(base: string | undefined, field: FieldDescriptor): string {
   if (field.enum?.length) {
     return field.enum.map((v) => (v === null ? 'null' : JSON.stringify(v))).join(' | ');
@@ -40,11 +32,7 @@ function baseTypeOf(base: string | undefined, field: FieldDescriptor): string {
   }
 }
 
-/**
- * So a nested object keeps its optionality.
- * FR : pour qu'un objet imbriqué garde ses champs optionnels.
- * `{ street }` with `required: []` → `{ street?: string }`
- */
+/** So a nested object keeps its optionality. */
 function objectTypeOf(properties: Record<string, FieldDescriptor>, required: readonly string[]): string {
   const members = Object.entries(properties).map(([name, field]) => {
     const optional = required.includes(name) ? '' : '?';
@@ -58,11 +46,7 @@ export interface EntityTypesOptions {
   exported?: boolean;
 }
 
-/**
- * So the generated class carries its row type.
- * FR : pour que la classe générée porte son type de ligne.
- * `{ properties: { title: { type: 'string' } } }` → `{ title: string; }`
- */
+/** So the generated class carries its row type. */
 function shapeTypeOf(descriptor: SchemaDescriptor, indent = ''): string {
   const entries = Object.entries(descriptor.properties ?? {});
   if (entries.length === 0) return '{}';
@@ -93,11 +77,7 @@ export class EntityTypes {
   }
 }
 
-/**
- * So a name that cannot declare a class is refused before it reaches a file.
- * FR : pour qu'un nom incapable de déclarer une classe soit refusé avant le fichier.
- * `identifierOf('my-post')` → throws `'my-post' is not a TypeScript identifier`
- */
+/** So a name that cannot declare a class is refused before it reaches a file. */
 function identifierOf(name: string): string {
   if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name)) {
     throw new Error(`'${name}' is not a TypeScript identifier — it cannot name a generated declaration`);

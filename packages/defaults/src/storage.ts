@@ -1,13 +1,4 @@
-/**
- * Storage resolution — `config.db` → a working data layer.
- *
- * THE single place that names a storage package. Every host (the conventional
- * boot, the Nuxt fallback, the CLI's frond host) calls this instead of wiring an
- * engine itself; swapping the implementation is a change here and nowhere else.
- *
- * Before this existed, each host re-resolved `db: 'sqlite'` inline — which is
- * why an engine change looked like it touched seven files.
- */
+/** Storage resolution — `config.db` → a working data layer. */
 import type { App } from '@fougere/core';
 import { Fronds, type FrondDescriptor } from '@fougere/core';
 import { lowerFirst } from '@fougere/core/contract';
@@ -29,15 +20,7 @@ export interface ResolvedStorage {
   /** Opaque handle handed to auth providers. */
   db?: unknown;
   storageFactory: ((entity: any, name: string) => any) | undefined;
-  /**
-   * The source an entity's rows live in — what decides whether a frame gets a real
-   * transaction or an unwind it replays itself.
-   *
-   * Absent when the caller built a `ResolvedStorage` by hand: there is then one factory
-   * and no routing, so every entity IS on one engine — but nothing here can reach into it
-   * for a transaction, and a frame falls back to compensating. Not knowing and promising
-   * atomicity are two different things.
-   */
+  /** The source an entity's rows live in — what decides whether a frame gets a real transaction or an… */
   sourceOf?: (entityName: string) => string;
   /**
    * The engine a source runs on — the dual of `sourceOf`, which names it without
@@ -48,20 +31,9 @@ export interface ResolvedStorage {
   sources?: () => string[];
   /** Run `fn` inside one transaction of that source, with a storage factory bound to it. */
   transacted?: <R>(source: string, fn: (storageFactory: (entity: any, name: string) => any) => Promise<R>) => Promise<R>;
-  /**
-   * Brings the schema up to date once the app is scanned — the storage's `up`, handed to
-   * `migrating()`. It was called `afterBoot`, a word that also meant the host's own
-   * post-boot and was read in four places under the two senses.
-   */
+  /** Brings the schema up to date once the app is scanned — the storage's `up`, handed to `migrating()`. */
   migrate?: (app: App) => Promise<void> | void;
-  /**
-   * Close every engine this opened — the dual of opening them, declared by whoever did.
-   *
-   * `boot()` calls the factory that lands here, so `boot()` is what owns closing it: a
-   * container disposes what IT built, and this connection was handed in. Without this
-   * the pool of a discarded app stayed open, which is what turning the ring makes
-   * ordinary rather than rare.
-   */
+  /** Close every engine this opened — the dual of opening them, declared by whoever did. */
   close?: () => Promise<void>;
   /** Raw synchronous handle, when the engine exposes one. */
 }
@@ -73,18 +45,7 @@ export function declaresStorage(dbConf: DbConfig): boolean {
 }
 
 
-/**
- * The app as ONE source sees it: the entities that live there, and the names of those
- * that do not.
- *
- * The second half is what lets the DDL stop lying. A batch holding every entity could
- * never tell a cross-source target from a typo, so it derived a table name and emitted
- * a foreign key against a table that may not exist. Cut per source, `elsewhere` says
- * which misses are legitimate — and a target in neither list is a mistake, out loud.
- *
- * Auth entities ride with the default source: a provider's tables are the app's own,
- * and nothing yet lets one declare where it lives.
- */
+/** The app as ONE source sees it: */
 function viewOf(
   app: App,
   holds: (name: string) => boolean,
@@ -106,14 +67,7 @@ function viewOf(
   };
 }
 
-/**
- * Resolve the data layer. `db: false` (or absent) means a frond with no
- * persistence of its own — the caller decides what to fall back to.
- *
- * `sources` names the places that are NOT the default one. An entity it does not
- * name stays in `db`, so an app with one database declares nothing and behaves
- * exactly as before.
- */
+/** Resolve the data layer. */
 export function resolveStorage(dbConf: DbConfig, sources?: SourcesConfig): ResolvedStorage {
   if (!declaresStorage(dbConf)) return { storageFactory: undefined };
 
@@ -127,14 +81,7 @@ export function resolveStorage(dbConf: DbConfig, sources?: SourcesConfig): Resol
   });
 }
 
-/**
- * One config entry, resolved to the adapter it names.
- *
- * `source:` defaults to `'sql'` — the convention a first run meets, and the reason a config
- * saying only `db: 'sqlite'` keeps working. What the entry says BELOW that key belongs to the
- * adapter it named, which is also the only one that can refuse it: this function knows no
- * dialect and no driver.
- */
+/** One config entry, resolved to the adapter it names. */
 function built(conf: Record<string, unknown>, field: string): Source {
   const name = (conf.source as string | undefined) ?? DEFAULT_ADAPTER;
 
@@ -157,27 +104,7 @@ export interface DeclaredStorage {
   sources?: Record<string, Placement>;
 }
 
-/**
- * The same routing `resolveStorage` performs, over engines the CALLER built.
- *
- * `resolveStorage` reads a config file, and a config file cannot hold a live Kysely
- * dialect — so it can only ever resolve sqlite, the one driver this package depends
- * on. That was fine while `db:` was alone, because the escape hatch was to abandon
- * the convention entirely and hand `configureFougere` your own factory. With several
- * sources that stopped being an escape: a user wanting Postgres for ONE of them had
- * to re-implement the routing and the per-source migration to keep the other.
- *
- * So the two jobs are separated. Resolving a NAME into an engine is sqlite-only and
- * stays there; placing entities and migrating each source is engine-agnostic and
- * lives here, where any `Setup` is welcome:
- *
- * ```ts
- * configureFougere(storageFrom({
- *   db: setupSqlite({ path: '.data/app.db' }),
- *   sources: { legacy: { setup: setupKysely(pgDialect, 'postgres'), entities: ['Book'] } },
- * }));
- * ```
- */
+/** The same routing `resolveStorage` performs, over engines the CALLER built. */
 export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
   const { db: base, sources } = declared;
 

@@ -1,12 +1,4 @@
-/**
- * OTLP export — the spans this process finished, in the one shape every collector reads.
- *
- * OTLP has a JSON encoding over plain HTTP, so this needs no protobuf and no dependency:
- * a POST to `/v1/traces`, and Jaeger, Tempo, Datadog or Honeycomb ingest it as-is.
- *
- * It is a sink and nothing more — `onSpan(otlp({...}).sink)` is the whole wiring. What
- * a span IS was decided by the middleware; this file only renames its fields.
- */
+/** OTLP export — the spans this process finished, in the one shape every collector reads. */
 import { Beat } from './Beat.js';
 import { Endpoint } from './Endpoint.js';
 import type { FinishedSpan, SpanSink } from './index.js';
@@ -21,14 +13,7 @@ export interface OtlpOptions {
   flushMs?: number;
   /** Told when a batch could not be sent. Default: silence — a trace must never break a call. */
   onError?: (err: unknown) => void;
-  /**
-   * Publish these metrics on the same beat.
-   *
-   * Their endpoint defaults to the traces one with its last segment swapped — the OTLP
-   * convention when a single collector takes both. Name `metricsUrl` when they are two:
-   * traces and metrics are stored by different engines, and a deployment is free to run
-   * one of each rather than a collector in front.
-   */
+  /** Publish these metrics on the same beat. */
   metrics?: Metrics;
   /** Where metrics go when it is not the same collector as traces. */
   metricsUrl?: string;

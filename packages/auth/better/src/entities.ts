@@ -1,12 +1,6 @@
 import { entity, primary, text, bool, date, created, ref, optional, type SchemaView } from '@fougere/schema';
 
-/**
- * Default User entity — shipped as a fallback. Apps should declare their own
- * User entity in a frond and pass it via `auth.user` (with extra fields like roles).
- *
- * Field shape matches better-auth's expectations: name/email/emailVerified/image
- * + standard timestamps.
- */
+/** Default User entity — shipped as a fallback. */
 export class AuthUser extends entity({
   id: primary(),
   name: text(),
@@ -17,23 +11,7 @@ export class AuthUser extends entity({
   updatedAt: created(),
 }) {}
 
-/**
- * A `ref()` target is fixed at field-declaration time. Session and Account can't
- * be static classes built once against this package's `AuthUser` — that would
- * leave `userId` pointing at the wrong table whenever an app supplies its own
- * User (`opts.user` in `betterAuth()`). `authEntities(User)` builds them fresh
- * against whichever schema was actually resolved (the app's, or `AuthUser` as
- * fallback), called from `betterAuth()` once `User` is known.
- *
- * `ref()` wants a live class — a construct signature plus `.name`, which
- * `@fougere/adapter-sql`'s FK naming reads off the target — narrower than the
- * `SchemaView` interface (`getFields()` only) this package's public options
- * take, since `opts.user` may be any app's entity and `SchemaView` is the
- * shape-only contract used to stay decoupled from a specific one. Every real
- * entity satisfies both; the cast below only crosses that type-level gap, the
- * same bridge `@fougere/schema` uses internally in `Bundle.toSchemas`
- * (`schema as unknown as EntityConstructor`).
- */
+/** A `ref()` target is fixed at field-declaration time. */
 type LiveEntity = abstract new (...args: any[]) => unknown;
 
 export function authEntities(User: SchemaView): {

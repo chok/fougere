@@ -1,25 +1,12 @@
-/**
- * Receiving half — unframe the call, run it, frame what comes out.
- *
- * Judges nothing: validation and middlewares live with the handler, inside
- * the runner. The error a façade throws is framed whole, never flattened.
- */
+/** Receiving half — unframe the call, run it, frame what comes out. */
 import { FougereError, ErrorCode, toPublicError, type InvocationContext, type SignedCall, type Transport } from '@fougere/core/contract';
 import { APP_ERROR, INVALID_REQUEST, type RpcRequest, type RpcResponse } from './jsonrpc.js';
 
 /** What a receiver does with the caller's envelope. */
 export interface ReceiveOptions {
-  /**
-   * Establishes who signed, or throws. Supplied rather than built here for the reason
-   * the sender's `sign` is: verifying is `node:crypto` and this package carries none.
-   * `@fougere/app` wires it from `verifyEnvelope` and the root public key.
-   */
+  /** Establishes who signed, or throws. */
   verify?: (identity: string, presented: SignedCall) => Promise<{ caller: string; state: Record<string, unknown> }>;
-  /**
-   * Refuse a call carrying no verifiable identity — the whole of "secure by default"
-   * at the wire. Without it a receiver takes the state it is handed and its only
-   * protection is the address it bound.
-   */
+  /** Refuse a call carrying no verifiable identity — the whole of "secure by default" at the wire. */
   requireIdentity?: boolean;
 }
 
@@ -45,13 +32,7 @@ export async function handleRpc(runner: Transport, raw: unknown, options: Receiv
   // Fresh objects — middlewares deposit into state, nothing may be shared.
   const sent = (req.params ?? {}) as Partial<InvocationContext>;
 
-  /**
-   * State is ESTABLISHED here, or it is only claimed.
-   *
-   * `sent.state` is what the caller typed; a verified envelope is what it can prove, and
-   * when a verifier is wired the envelope REPLACES the claim rather than enriching it —
-   * carrying both would leave every reader downstream choosing between them.
-   */
+  /** State is ESTABLISHED here, or it is only claimed. */
   let state: Record<string, unknown> = sent.state ?? {};
   let caller: string | undefined;
   if (options.verify && sent.identity) {

@@ -1,36 +1,4 @@
-/**
- * `withFougere(config)` — what Next has to be told so a Fougere app builds.
- *
- * ```ts
- * // next.config.ts
- * import { withFougere } from '@fougere/next/config';
- *
- * export default withFougere({ reactStrictMode: true });
- * ```
- *
- * The adapter owns the host's quirks. Nothing here leaks into the framework, and
- * nothing here asks the developer to write anything twice — a Next-specific
- * problem gets a Next-specific answer, in the Next package.
- *
- * Two things are set, both measured against a real production build:
- *
- * 1. **Class names survive minification.** Designation is class + verb, so
- *    `invoke(Post, 'list')` and `useQuery(Post, 'list')` read `Post.name`. Next's
- *    minifier renames it, and the call goes looking for an entity nobody hosts —
- *    `Entity 'j' is not hosted here. Hosted here: post`. Next's own knob
- *    (`noMangling`) is internal and all-or-nothing, so the minimizer is replaced by
- *    terser with `keep_classnames`, which keeps mangling everything else.
- *    Verified: the production browser chunk contains `class Post extends`.
- *
- * 2. **The scan's dependencies stay out of the bundle.** A boot reads frond
- *    sources off disk through jiti, so those packages must be loaded at runtime
- *    rather than compiled in.
- *
- * **Limit, stated rather than discovered later:** this rides Next's `webpack()`
- * hook, which Turbopack ignores. Next 16 builds with Turbopack by default, so an
- * app on 16 needs `next build --webpack` until Turbopack exposes a minifier option.
- * Next also documents its webpack config as outside semver.
- */
+/** `withFougere(config)` — what Next has to be told so a Fougere app builds. */
 import TerserPlugin from 'terser-webpack-plugin';
 import type { NextConfig } from 'next';
 

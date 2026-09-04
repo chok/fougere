@@ -1,35 +1,4 @@
-/**
- * The doors as Express middlewares — the form an Express app expects.
- *
- * ```ts
- * const app = express();
- * app.use(express.json());
- * app.use(fougere());          // ← one line, like cors() or express.json()
- * ```
- *
- * This replaces an earlier `mountDoors(createExpressRouter(app))`, which was wrong in
- * two ways at once. It handed the app INTO a function instead of adding something to
- * the app, and it made the caller name Express 5's wildcard syntax (`/api/*splat`) —
- * a detail that belongs to the framework, not to its user. Worse, it mounted all
- * three doors together with no way to take two of them.
- *
- * A middleware fixes both by construction, because Express already says WHERE:
- *
- * ```ts
- * app.use(fougere());                 // the three doors, at the paths the client knows
- * app.use('/admin', fougereRest());   // REST only, wherever you want it
- * ```
- *
- * And `next()` is the passthrough these doors were already imitating: `serveRest`
- * answers `{ kind: 'pass' }` for a path it does not serve, which is exactly what
- * Express means by calling the next handler. The middleware stops inventing it.
- *
- * The names mirror `@fougere/app/web` on purpose — same doors, host-shaped. `/web`
- * gives you `Request` → `Response` handlers; this gives you middlewares.
- *
- * Nothing here imports express: the shapes are structural, so the package keeps its
- * dependency list and a test can hand it a plain object.
- */
+/** The doors as Express middlewares — the form an Express app expects. */
 import { readExpressBody } from '@fougere/http';
 import { serveRest, serveRpc, rpcParseError } from './serve.js';
 import { serveGraphQL } from './graphql.js';
@@ -59,14 +28,7 @@ interface ExpressResponse {
 type Next = (err?: unknown) => void;
 export type ExpressMiddleware = (req: any, res: any, next: Next) => void;
 
-/**
- * Who the caller is, from what ran before.
- *
- * Express has no ambient request, so an app that resolves its own session says so by
- * putting it on the request — `req.fougereState`, or a bare `req.user`, which is what
- * passport and most middlewares already set. Nothing is taken from the payload: the
- * browser sits outside the topology.
- */
+/** Who the caller is, from what ran before. */
 function stateOf(req: ExpressRequest): Record<string, unknown> {
   if (req.fougereState) return req.fougereState;
   return req.user ? { user: req.user } : {};
@@ -95,12 +57,7 @@ function fail(res: ExpressResponse, next: Next, err: unknown): void {
   next(err);
 }
 
-/**
- * The call envelope, at `/_fougere/call` — the door the browser primitives use.
- *
- * Mounted with `app.use()`, Express strips nothing, so the path still carries the
- * audience segment (`/_fougere/call/public`) that `surfaceOf` reads.
- */
+/** The call envelope, at `/_fougere/call` — the door the browser primitives use. */
 export function fougereCall(mountPath = '/_fougere/call'): ExpressMiddleware {
   return (req, res, next) => {
     const path = pathOf(req);
@@ -132,12 +89,7 @@ export function fougereSession(mountPath = '/_fougere/session'): ExpressMiddlewa
   };
 }
 
-/**
- * The REST projection, under `/api` by default.
- *
- * A path this app does not serve calls `next()` — so an app's own `/api/health` keeps
- * answering whether it was registered before or after this middleware.
- */
+/** The REST projection, under `/api` by default. */
 export function fougereRest(mountPath = '/api'): ExpressMiddleware {
   return (req, res, next) => {
     const path = pathOf(req);

@@ -1,24 +1,4 @@
-/**
- * Shape → CHECK constraints.
- *
- * `oneOf`, `min`, `max` were declared on the field and read by the façade alone: a
- * handler writing through the storage put `status: 'brouillon'` in a column that declares
- * two values, and nothing said a word. The rule was in the schema; no one held it on
- * that path.
- *
- * So the storage learns what the shape already says. `validate` judges what a client
- * proposes; this holds what anyone writes — including us.
- *
- * Only the keywords a database can decide alone. `pattern` and `format` are left to
- * the façade: regex dialects diverge (POSIX here, PCRE there, nothing in SQLite
- * without an extension), and a constraint that means something different per engine
- * is worse than none.
- *
- * Every value is inlined with `sql.lit`, not bound: SQLite answers `parameters
- * prohibited in CHECK constraints`, and a constraint is part of the schema rather
- * than of a query. The values are the author's own literals — `oneOf('draft', …)`,
- * `max: 160` — never anything a request carried, and Kysely escapes them.
- */
+/** Shape → CHECK constraints. */
 import { sql, type Expression, type SqlBool } from 'kysely';
 import type { ColumnDef } from './table.js';
 
@@ -31,12 +11,7 @@ export interface ShapeBounds {
   maximum?: number;
 }
 
-/**
- * The CHECK expression for one column, or nothing when its shape bounds nothing.
- *
- * A nullable column passes when it holds `null`: `NOT NULL` is the axis that decides
- * presence, and stacking the two would make `optional()` unwritable.
- */
+/** The CHECK expression for one column, or nothing when its shape bounds nothing. */
 export function checkFor(column: ColumnDef): Expression<SqlBool> | undefined {
   const bounds = column.bounds;
   if (!bounds) return undefined;

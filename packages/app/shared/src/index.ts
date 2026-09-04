@@ -1,14 +1,4 @@
-/**
- * `@fougere/app` — what an app host needs and what no host owns.
- *
- * Two adapters read this package: `@fougere/nuxt` and `@fougere/next`. Between
- * them they share the boot, the three doors' decisions, the REST table, the form
- * contract and the session view; what they do NOT share is how a request arrives,
- * how routes are mounted, and how a value becomes reactive.
- *
- * The root entry pulls in the boot, which reads the filesystem — client code wants
- * `@fougere/app/client`.
- */
+/** `@fougere/app` — what an app host needs and what no host owns. */
 export {
   configureFougere,
   extendFougere,

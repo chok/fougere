@@ -1,10 +1,4 @@
-/**
- * Sending half — frame the call, POST it, unframe the result.
- *
- * Failure vocabulary is FougereError only: a transport failure becomes a
- * typed error (SERVICE_UNAVAILABLE, GATEWAY_TIMEOUT, BAD_GATEWAY), an
- * application failure comes back as the FougereError the façade threw.
- */
+/** Sending half — frame the call, POST it, unframe the result. */
 import { FougereError, ErrorCode, type Transport, type FrondCall, type InvocationContext, type SignedCall } from '@fougere/core/contract';
 import type { RpcRequest, RpcResponse, RpcErrorShape } from './jsonrpc.js';
 export type { RpcRequest, RpcResponse } from './jsonrpc.js';
@@ -14,15 +8,7 @@ export function frameCall(call: FrondCall, invocation: InvocationContext, id: nu
   return { jsonrpc: '2.0', id, method: `${call.entity}.${call.op}`, params: invocation };
 }
 
-/**
- * Unframe a JSON-RPC response — the result, or the revived FougereError thrown.
- *
- * The answer is JUDGED first: it crossed a process boundary, and `as RpcResponse` at the
- * call site is a claim about it, not a check. A 200 carrying neither `result` nor `error`
- * — a proxy's own JSON, a receiver that is not one — used to return `undefined` as if the
- * op had succeeded, and a `null` body raised `Cannot use 'in' operator`, which is not the
- * failure vocabulary this file promises.
- */
+/** Unframe a JSON-RPC response — the result, or the revived FougereError thrown. */
 export function unframeResponse(response: unknown, call: FrondCall): unknown {
   if (!response || typeof response !== 'object' || !('result' in response || 'error' in response)) {
     throw new FougereError({
@@ -58,24 +44,9 @@ export interface HttpTransportOptions {
   timeoutMs?: number;
   /** Extra attempts on connection failures only — the request provably never left. */
   retries?: number;
-  /**
-   * Signs the state this transport sends, turning a claim into something the receiver
-   * can check. Supplied rather than built here: signing is `node:crypto`, and this
-   * module is published as the browser-safe `/client` subpath — a browser holds no key
-   * and never signs. `@fougere/app` wires it from `signEnvelope`.
-   *
-   * Absent, the state travels as a bare claim and only a receiver that asks for nothing
-   * will take it.
-   */
+  /** Signs the state this transport sends, turning a claim into something the receiver can check. */
   sign?: (call: SignedCall) => Promise<string>;
-  /**
-   * Who performs the request. Defaults to the global `fetch`.
-   *
-   * A Cloudflare service binding answers this shape (`env.CATALOG.fetch`), and on that
-   * platform it is not an optimization: a Worker calling a sibling's public URL is
-   * refused by the edge (error 1042), so a binding is the only route between two Workers
-   * of one account. Nothing else about the call changes — same envelope, same retries.
-   */
+  /** Who performs the request. */
   fetch?: (input: string, init: RequestInit) => Promise<Response>;
 }
 

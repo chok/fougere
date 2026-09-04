@@ -1,11 +1,4 @@
-/**
- * Shell completion generator — outputs a script for bash/zsh.
- *
- * Commands and flags are the CLI's own entities, read once at generation. The VALUES a
- * positional accepts belong to the project the shell sits in, so they are not written
- * down here: the script asks `fougere explain --names` at the moment of the TAB. A list
- * frozen into a script is stale the first time a handler is added.
- */
+/** Shell completion generator — outputs a script for bash/zsh. */
 import type { App } from '@fougere/core';
 import { entityToArgs } from './bridge.js';
 

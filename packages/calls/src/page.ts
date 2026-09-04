@@ -1,24 +1,4 @@
-/**
- * The panel, as one file with no dependency.
- *
- * Inline on purpose: this package ships no framework and no build step, and a dev tool that
- * needs `npm install` before it shows anything is a dev tool nobody opens. The page reads
- * its own origin — the door that served it also serves its events — so there is no address
- * to configure and no CORS to arrange.
- *
- * FOUR views, and the number is a decision. Six grew one tab at a time, each with its own
- * empty state and its own caveat, and the result read as noise rather than as an answer.
- * They fold along what a reader actually asks:
- *
- *   Calls     what happened, and did it hold — the screen that IS the argument
- *   Refused   what did not, from two sources, since one of them is never a call
- *   Activity  what the process did along the way — logs and statements are one stream,
- *             both chronological, both uncorrelated to a call; two tabs said that twice
- *   Served    what it would answer if asked, filled before anything is called
- *
- * Traces lost its tab: it spoke for the receiving side only, and a trace already shows in a
- * call's detail. A tab that half-delivers is worse than a field that says what it knows.
- */
+/** The panel, as one file with no dependency. */
 export function page(title: string): string {
   return `<!doctype html>
 <html lang="en">
@@ -355,16 +335,7 @@ function served() {
 }
 
 // ── Shape ────────────────────────────────────────────────────────────────────
-/**
- * What this process is arranged as — DECLARED and OBSERVED on one picture.
- *
- * Both halves are already on this page: the model says where a call is meant to go, the
- * ring says where it went. Nobody else can draw the pair, because elsewhere the placement
- * is not the developer's to declare — there is only ever one value, so there is nothing to
- * disagree with.
- *
- * One process's view, and it says so: a frond hosted elsewhere is a node with no inside.
- */
+/** What this process is arranged as — DECLARED and OBSERVED on one picture. */
 function shape() {
   if (!state.model || state.model.fronds.length === 0) return [empty('This process hosts no frond.')];
 

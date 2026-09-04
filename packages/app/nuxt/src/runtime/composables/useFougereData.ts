@@ -1,18 +1,4 @@
-/**
- * The couple — useQuery (reads) and useCommand (writes), the two dual gestures of
- * a page talking to a Frond, in Vue.
- *
- * What the gestures ARE lives in `@fougere/app/client`: designation is class +
- * verb, the key derives from designation plus input, and a successful command on
- * an entity revalidates every mounted query on that entity. What lives here is
- * Vue — `useAsyncData` for the read, refs for the pending flags, `onScopeDispose`
- * for unregistration. The React adapter states the same three facts against its
- * own primitives, and neither restates the rules.
- *
- * Both gestures ride the call envelope: the browser POSTs JSON-RPC to
- * /_fougere/call; during SSR Nuxt collapses the same call to an in-process fetch
- * (no network, no port).
- */
+/** The couple — useQuery (reads) and useCommand (writes), the two dual gestures of a page talking to… */
 import { useAsyncData, useRequestFetch, refreshNuxtData } from '#imports';
 import { ref, computed, toValue, onScopeDispose, type MaybeRefOrGetter, type Ref } from 'vue';
 import type { FougereError } from '@fougere/core/contract';

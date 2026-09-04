@@ -1,9 +1,4 @@
-/**
- * Standalone receiver — enough to host a Frond in its own process.
- *
- * Plain node:http, one route: POST /_fougere/call. Mounting the receiving
- * half inside an existing server (@fougere/http, Nitro) is layer-2 work.
- */
+/** Standalone receiver — enough to host a Frond in its own process. */
 import { createServer } from 'node:http';
 import type { Transport } from '@fougere/core';
 import type { RpcResponse } from './jsonrpc.js';
@@ -13,27 +8,11 @@ import { MAX_BODY_BYTES, CALL_PATH, parseError, tooLarge } from './policy.js';
 export interface ServeOptions extends ReceiveOptions {
   /** Port to listen on. 0 (default) picks a free one. */
   port?: number;
-  /**
-   * The addresses this receiver may bind. Default: loopback only.
-   *
-   * A receiver reads the caller's identity off the wire and re-establishes
-   * nothing, so reaching beyond the machine is a decision its operator takes
-   * — stating it here IS taking it. The default is what a frond on a laptop
-   * wants; a container wants `hosts: ['0.0.0.0']` and says so.
-   */
+  /** The addresses this receiver may bind. */
   hosts?: string[];
   /** Which address to bind. Must be one of `hosts`. Defaults to its first. */
   host?: string;
-  /**
-   * Serve unsigned calls beyond loopback, deliberately.
-   *
-   * The one case that legitimately needs it: something in front already established the
-   * peer — a service mesh whose sidecar terminated mTLS, an ingress doing client certs.
-   * Asking for a second signature there would redo what was just done a centimetre away.
-   *
-   * It is spelled separately from `requireIdentity` on purpose: that one arrives `false`
-   * by default from `identityFromEnv`, so it cannot also mean "I thought about this".
-   */
+  /** Serve unsigned calls beyond loopback, deliberately. */
   allowUnsigned?: boolean;
   /** Maximum JSON-RPC body size. Default: 1 MiB. */
   maxBodyBytes?: number;
@@ -64,15 +43,7 @@ export function serve(runner: Transport, options: ServeOptions = {}): Promise<Ru
       new Error(`A Fougere receiver binds one of [${allowed.join(', ')}], got '${host}' — add it to \`hosts\` to allow it`),
     );
   }
-  /**
-   * Loopback or signed — there is no third way to serve.
-   *
-   * The address already carries the decision: binding beyond loopback is a deliberate
-   * act (`hosts` says so), and a receiver reachable from outside that establishes nothing
-   * takes the `state` it is handed. Refusing at BOOT and not per call is the point — a
-   * receiver that starts and then rejects everything is discovered in production, one
-   * that will not start is discovered at deployment.
-   */
+  /** Loopback or signed — there is no third way to serve. */
   if (!LOOPBACK_HOSTS.includes(host) && !options.verify && !options.allowUnsigned) {
     return Promise.reject(
       new Error(

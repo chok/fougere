@@ -1,16 +1,4 @@
-/**
- * Express adapter — bridges an Express app to the HttpRouter interface.
- *
- * The one that is not Web-standard, and that is the whole substance of this file.
- * Hono hands over `c.req.raw`, Fastify parses the body for us; Express hands a
- * Node `IncomingMessage` and parses nothing unless the app happens to have mounted
- * `express.json()`. So the conversion lives here — read the stream when nobody
- * else did, and build the `Request` the interface promises.
- *
- * Working with or without `express.json()` is deliberate: an adapter that only
- * works when the host app is configured a particular way is a footgun, and this
- * one is meant to be dropped into an app that already exists.
- */
+/** Express adapter — bridges an Express app to the HttpRouter interface. */
 import { MalformedJsonError, chain, type HttpRouter, type HttpMethod, type RequestContext, type ResponseResult, type Middleware, type Handler } from './router.js';
 
 interface ExpressLike {
@@ -56,15 +44,7 @@ export function readRawBody(req: any): Promise<string> {
   });
 }
 
-/**
- * The JSON body of an Express request, whoever parsed it.
- *
- * Exported because two consumers need the same Express fact: this adapter, and the
- * middlewares in `@fougere/app/express`. `express.json()` may or may not have run —
- * an adapter that only works when the host app is configured a particular way is a
- * footgun — so this trusts `req.body` when it is there and drains the stream when it
- * is not. Parsed once per request: a drained stream answers empty the second time.
- */
+/** The JSON body of an Express request, whoever parsed it. */
 export function readExpressBody(req: any): Promise<unknown> {
   if (req.__fougereBody) return req.__fougereBody;
 
@@ -138,17 +118,7 @@ function sendResponse(res: any, result: ResponseResult): void {
   else res.json(result.data);
 }
 
-/**
- * Create an HttpRouter backed by an Express app.
- *
- * ```ts
- * import express from 'express'
- * import { createExpressRouter } from '@fougere/http'
- *
- * const app = express()
- * const router = createExpressRouter(app)
- * ```
- */
+/** Create an HttpRouter backed by an Express app. */
 export function createExpressRouter(app: ExpressLike): HttpRouter {
   const globalMiddlewares: Middleware[] = [];
   const scopedMiddlewares: { path: string; mw: Middleware }[] = [];

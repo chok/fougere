@@ -1,17 +1,4 @@
-/**
- * The couple — useQuery (reads) and useCommand (writes), in Svelte.
- *
- * Stores, not runes, and that is a packaging decision with a reason: a `.svelte.ts`
- * file needs the Svelte compiler to run over it, so a library shipping runes ships
- * SOURCE and forces every consumer's bundler to compile it. `svelte/store` is plain
- * TypeScript, compiles with `tsc` like every other package here, and a store still
- * auto-subscribes with `$query` inside a component. The consumer's ergonomics are
- * the same; the packaging is honest.
- *
- * The name is `useQuery`, not `createQuery`, on purpose — the four primitives are
- * one vocabulary across Nuxt, React and Svelte, and renaming them per ecosystem
- * would make the same gesture read as three different things.
- */
+/** The couple — useQuery (reads) and useCommand (writes), in Svelte. */
 import { writable, get, type Readable } from 'svelte/store';
 import type { FougereError } from '@fougere/core/contract';
 import {

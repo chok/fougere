@@ -1,20 +1,4 @@
-/**
- * @fougere/observability — one span per operation, and the trace that survives a wire.
- *
- * Named for the subject and not for today's reading of it: a span carries an op's
- * duration and its verdict, which is the matter of a metric as much as of a trace, and
- * an exporter for either hangs off the same `onSpan`.
- *
- * Optional in the strong sense: core holds no tracing code at all, only a `trace` field
- * on the invocation that it carries and never reads. Everything else is here, behind
- * `app.use(trace())`, and an app that does not install it pays nothing.
- *
- * It is an ordinary app middleware because an operation ALREADY has a lifecycle and it
- * is that one — a second hook system would be a second answer to a settled question.
- * The same middleware runs on both halves of a split: at the door a call arrives at, and
- * at the stand-in it leaves from. That is why the numbers line up across processes, and
- * why the difference between the two spans is what the wire cost.
- */
+/** @fougere/observability — one span per operation, and the trace that survives a wire. */
 import { traceContext } from '#trace-context';
 import type { AppMiddleware } from '@fougere/core';
 import { parseTraceparent, traceparentOf, randomHex, type SpanContext } from './traceparent.js';
@@ -22,11 +6,7 @@ import { parseTraceparent, traceparentOf, randomHex, type SpanContext } from './
 export { traceparentOf, parseTraceparent } from './traceparent.js';
 export type { SpanContext } from './traceparent.js';
 
-/**
- * A step while it runs. `SpanContext` is the part that TRAVELS (W3C Trace Context, three
- * fields, nothing else); the frond is ours and stays in this process — which is enough,
- * because the only place an edge is knowable is the side that made the call.
- */
+/** A step while it runs. */
 interface Running extends SpanContext {
   frond: string | undefined;
 }
@@ -34,25 +14,13 @@ interface Running extends SpanContext {
 /** A step that has finished, and what it did. */
 export interface FinishedSpan extends SpanContext {
   parentId: string | undefined;
-  /**
-   * The frond of the step this one is nested in, when it is a DIFFERENT one — an edge of
-   * the call graph, `shop → catalog`.
-   *
-   * Only the caller can say it: a traceparent carries no frond, so a receiver knows it
-   * has a parent and not whose. That is not a gap — the caller already published the edge.
-   */
+  /** The frond of the step this one is nested in, when it is a DIFFERENT one — an edge of the call gra… */
   callerFrond: string | undefined;
   /** Which frond owned the op — the deployment unit, so the first thing a reader groups by. */
   frond: string | undefined;
   entity: string;
   operation: string;
-  /**
-   * When it started, in epoch milliseconds — an INSTANT, not an offset.
-   *
-   * `performance.now()` measures the duration below and nothing else: it counts from
-   * this process's own start, so two processes' numbers cannot be put on one timeline,
-   * which is the only thing a trace is for.
-   */
+  /** When it started, in epoch milliseconds — an INSTANT, not an offset. */
   startedAt: number;
   ms: number;
   /** The FougereError code when it refused, absent when it answered. */
@@ -61,31 +29,14 @@ export interface FinishedSpan extends SpanContext {
 
 export type SpanSink = (span: FinishedSpan) => void;
 
-/**
- * The step running here and now.
- *
- * It exists for the call the wire cannot describe: a handler reaching a second frond
- * builds a fresh invocation, so the parent is not on that call — it is in the context
- * the first one is still running inside.
- *
- * Behind `#trace-context` because that context is a runtime capability, not ours: a
- * Worker has none unless the deployment asks. `traceContext.ambient` says which one is
- * running, and `trace()` reports it once at install rather than letting a reader
- * discover it in a trace viewer.
- */
+/** The step running here and now. */
 
 /** The step running right now, if any. */
 export function currentSpan(): SpanContext | undefined {
   return traceContext.current<Running>();
 }
 
-/**
- * Who takes the spans this process finishes, consulted at every end like the log level.
- *
- * A list rather than one: a span is the source of a trace AND of a metric, so the two
- * exporters read the same value rather than the middleware producing it twice.
- * Returns the way to withdraw.
- */
+/** Who takes the spans this process finishes, consulted at every end like the log level. */
 const sinks: SpanSink[] = [];
 
 /**
@@ -98,22 +49,10 @@ export function activeCalls(): number {
   return active;
 }
 
-/**
- * Every exporter this process installed, so something can make them send NOW.
- *
- * An exporter buffers and flushes on a timer, which assumes a process that lives between
- * two requests. An isolate does not: it is frozen the moment it answers, so the timer
- * never fires and what it held is lost. `ctx.waitUntil(flushTelemetry())` is the whole
- * remedy — the platform's way of saying "this work outlives the response".
- */
+/** Every exporter this process installed, so something can make them send NOW. */
 const flushes: (() => Promise<void>)[] = [];
 
-/**
- * Send what is buffered, now. Safe to call where there is nothing to send.
- *
- * Module-level like `sinks`, and for the same reason: an exporter belongs to the PROCESS,
- * and the handler that wants to flush it holds no reference to the extension that built it.
- */
+/** Send what is buffered, now. */
 export async function flushTelemetry(): Promise<void> {
   // Every one, and the refusals together — a flush that abandons the rest loses the
   // windows after it, which is the answer `app.deliver` gives for the same shape.
@@ -139,13 +78,7 @@ export function onSpan(next: SpanSink): () => void {
   };
 }
 
-/**
- * The middleware. `app.use(trace())` traces every operation; `app.use('post', trace())`
- * traces one entity's.
- *
- * Nothing is opened while no sink is set: observing is a decision, and the cost of one
- * nobody asked for is zero rather than small.
- */
+/** The middleware. */
 export function trace(): AppMiddleware {
   return (ctx, next) => {
     if (sinks.length === 0) return next();

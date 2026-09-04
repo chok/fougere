@@ -1,30 +1,12 @@
 import { Lifecycle } from '@fougere/schema';
-/**
- * Form contract, pure part — derives what a create/edit form is made of
- * from the entity's field axes. No Vue, no Nuxt: testable headless,
- * usable by any renderer (the page owns the widgets).
- */
+/** Form contract, pure part — derives what a create/edit form is made of from the entity's field axes. */
 import { Shapes, lowerFirst, Role, Visibility } from '@fougere/schema';
 import type { Field, SchemaView, ValidationError, ValidationResult } from '@fougere/schema';
 
-/**
- * What an entity class exposes to a form — the schema statics it already has.
- *
- * `SchemaView` and the real `Field`, not a local re-description of the axes: this file
- * used to declare its own `FieldLike` with `shape?` optional, so it kept judging by a
- * looser contract than the schema's own and would never have seen `shape` become
- * required.
- */
+/** What an entity class exposes to a form — the schema statics it already has. */
 export type FormEntity = SchemaView;
 
-/**
- * The literal a field is born with, when it declares one.
- *
- * `text({ default: 'x' })` and `oneOf('a', 'b', { default: 'a' })` both compile to
- * `lifecycle.create = { value }` — the create rule that answers the field's absence.
- * The other create rules ('now', { generate }, 'optional') name no literal: their value
- * is decided at write time, so a form has nothing to show for them.
- */
+/** The literal a field is born with, when it declares one. */
 function defaultOf(field: Field): unknown {
   return Lifecycle.of(field).literal?.value;
 }
@@ -40,30 +22,7 @@ export interface FormField {
   label: string;
   /** Enum values, when control is 'select'. */
   options?: string[];
-  /**
-   * What the browser enforces, under the names it already knows — spread this on the
-   * input and the page states no rule of its own.
-   *
-   * The shape holds `minLength`/`maximum`/`pattern`; a browser holds `minlength`/
-   * `max`/`pattern` and enforces them with no JavaScript at all. Carrying them here
-   * is a projection, not a second rule: the judge reads the same shape, and a form
-   * that ignores these still gets the same verdict — it just gets it later, and a
-   * screen reader never gets it at all.
-   *
-   * `type` is part of the contract, not decoration: `email` and `url` are formats the
-   * shape states and the browser checks live, per field, as one types. A page writing
-   * `type="email"` by hand is spelling a second time what the card already said.
-   *
-   * Three deliberate absences, each one a place where the attribute would mean
-   * something the shape does not say:
-   * - a `date` field gets no `type` — neither `date` nor `datetime-local` produces the
-   *   RFC 3339 string a `date-time` shape judges, so the browser would accept what the
-   *   judge refuses;
-   * - `select` and `boolean` are not inputs — the page picks the widget, `control` says
-   *   which;
-   * - a required `boolean` gets no `required` — on a checkbox that attribute means
-   *   "must be CHECKED", where the shape only says the value must be supplied.
-   */
+  /** What the browser enforces, under the names it already knows — spread this on the input and the pa… */
   attrs?: {
     type?: 'text' | 'email' | 'url' | 'number';
     required?: boolean;
@@ -73,11 +32,7 @@ export interface FormField {
     max?: number;
     pattern?: string;
   };
-  /**
-   * The value the field is born with — the literal its `lifecycle.create` rule names.
-   * Present so the form can SHOW what is about to be written; the storage realizes it
-   * either way, so a form that ignores this still produces the same row.
-   */
+  /** The value the field is born with — the literal its `lifecycle.create` rule names. */
   default?: unknown;
 }
 
@@ -140,11 +95,7 @@ function labelOf(name: string, entityKey: string): Pick<FormField, 'labelKey' | 
   return { labelKey: `${entityKey}.${name}`, label: name.charAt(0).toUpperCase() + name.slice(1) };
 }
 
-/**
- * The fields a create form is made of: membership from the io projection
- * (`Visibility.input` — what a client may supply), requiredness from the
- * lifecycle axis (any create rule makes absence legal).
- */
+/** The fields a create form is made of: */
 export function formFieldsOf(entity: FormEntity, entityKey: string): FormField[] {
   return Object.entries(Visibility.of(entity.getFields()).input).map(([name, field]) => {
     const f = field;
@@ -175,11 +126,7 @@ export interface TableColumn {
   /** The same key a form uses for the same field — one convention, two projections. */
   labelKey: string;
   label: string;
-  /**
-   * The entity a `link` points at, under the key its door is named by. Always present on a
-   * reference: the card carries the target's name, and a card rebuilt with no sibling to
-   * resolve to keeps it as a stand-in rather than losing it.
-   */
+  /** The entity a `link` points at, under the key its door is named by. */
   to?: string;
 }
 
@@ -194,13 +141,7 @@ function renderOf(field: Field): TableColumn['render'] {
   return 'text';
 }
 
-/**
- * The columns a list is made of: membership from the io projection (`Visibility.output` — what
- * may leave), minus collections, because a cell holds one value and a `many()` is a page.
- *
- * Which column identifies the row is NOT answered here — `FieldSet.primary` answers it for a
- * shape, and its own doc records what five private copies of that loop cost.
- */
+/** The columns a list is made of: */
 export function tableColumnsOf(entity: FormEntity, entityKey: string): TableColumn[] {
   return Object.entries(Visibility.of(entity.getFields()).output)
     .filter(([, field]) => !Role.of(field).isCollection)
@@ -215,11 +156,7 @@ export function tableColumnsOf(entity: FormEntity, entityKey: string): TableColu
     });
 }
 
-/**
- * The wire body of the form's values — an empty control is an absent value
- * at the create boundary (absence is judged by the lifecycle axis, an empty
- * string would be judged as a present bad value).
- */
+/** The wire body of the form's values — an empty control is an absent value at the create boundary (… */
 export function payloadOf(values: Record<string, unknown>): Record<string, unknown> {
   return Object.fromEntries(
     Object.entries(values).filter(([, v]) => v !== undefined && v !== ''),

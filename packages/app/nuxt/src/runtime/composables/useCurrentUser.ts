@@ -1,11 +1,4 @@
-/**
- * The session: resolved once server-side, hydrated with the page, read
- * here as reactive state. refresh() re-reads it after a client-side
- * auth change (login, logout) — no page reload, no hand-rolled /api/me.
- *
- * `session` is the whole view (extensible context); `user` is its
- * everyday projection.
- */
+/** The session: */
 import { useState, useRequestFetch } from '#imports';
 import { computed } from 'vue';
 import type { SessionView } from '@fougere/app/client';

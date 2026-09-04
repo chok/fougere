@@ -1,23 +1,6 @@
 import { Role } from '@fougere/schema';
 import { Lifecycle } from '@fougere/schema';
-/**
- * Fougere server bootstrap — single entry point for an app's lifecycle,
- * whatever hosts it.
- *
- * Nothing here knows h3, Nitro, Vue or React: a boot reads `fougere.config.ts`,
- * scans fronds off the filesystem and hands back an `App`. That is why it lives
- * in `@fougere/app` rather than in one of the two adapters — the second host
- * would otherwise have copied it, and a copied boot drifts (the seeding loop
- * already did, `core/src/boot/seed.ts`).
- *
- * Default path (zero-config): fougere.config.ts declares `db: 'sqlite'` and
- * everything else; this module auto-resolves the storage handle, builds an
- * storageFactory, runs auto-DDL from the entities, and boots the app.
- *
- * Escape hatch: `configureFougere({ db, storageFactory })` can be called from the
- * host's own startup (a Nitro plugin, a Next instrumentation hook) if the user
- * wants a custom data layer — alternative driver, managed migrations, etc.
- */
+/** Fougere server bootstrap — single entry point for an app's lifecycle, whatever hosts it. */
 import { createApp, identityFromEnv, Logger, migrating, seeding } from '@fougere/core';
 import { scanProject, loadCascadedConfig, setModuleLoader, frondAliases, resolveConventions } from '@fougere/core/node';
 import type { Extension } from '@fougere/core';
@@ -33,67 +16,17 @@ export interface FougereServerConfig {
   db?: unknown;
   /** Per-entity storage factory. */
   storageFactory?: (entity: SchemaView, name: string) => Storage;
-  /**
-   * What this app takes on beyond its fronds, each stating what it does and what it undoes.
-   *
-   * It replaced `afterBoot`, which a host used to CLAIM the whole post-boot to get its own
-   * seeding — Nuxt's generated plugin did exactly that, and its copy of the seeding loop
-   * drifted. Declaring `{ name: 'seeds', up }` replaces that one member and leaves the
-   * rest of the ascent alone.
-   */
+  /** What this app takes on beyond its fronds, each stating what it does and what it undoes. */
   extensions?: CreateAppOptions['extensions'];
-  /**
-   * What the boot line names as the host — 'Nuxt/Nitro', 'Next'. Stated by the
-   * adapter, never sniffed: a boot that guesses its host from what happens to be
-   * importable is the hidden runtime the doctrine refuses.
-   */
+  /** What the boot line names as the host — 'Nuxt/Nitro', 'Next'. */
   host?: string;
-  /**
-   * What this app is built from, when the host already knows.
-   *
-   * Absent, `boot()` reads the fronds off the disk — right on a server, impossible on a
-   * runtime that has none: measured on workerd, `readdir` throws through unenv's shim and
-   * the app comes up with ZERO fronds, so every page renders and every door answers
-   * NOT_FOUND. A host that scanned at BUILD time can say so instead, and `fougere build`
-   * writes exactly this value down.
-   *
-   * Same slot as `CreateAppOptions.scan` and for the same reason: producing the value
-   * reads a disk, consuming it does not.
-   */
+  /** What this app is built from, when the host already knows. */
   scan?: CreateAppOptions['scan'];
-  /**
-   * What this app STATES it hosts — `frond('blog', { entities: [Post] })`.
-   *
-   * Stating this and no `scan` is how a host stops scanning at boot: nothing reads a
-   * disk, nothing loads `typescript`, and what was not named does not exist. It is the
-   * one door Next, Vite, React, Svelte and a bare Express share — none of them scans on
-   * its own, they all arrive here, and this line used to end in a scan for every one.
-   */
+  /** What this app STATES it hosts — `frond('blog', { entities: */
   fronds?: CreateAppOptions['fronds'];
-  /**
-   * What `fougere.config.ts` says, when the host already read it.
-   *
-   * The same rule as `scan`, and found the same way: `boot()` re-reads the file at
-   * runtime, which a Worker cannot do — measured, a consumer's `remotes:` never reached
-   * the boot and its pages rendered empty with nothing said. A host that read the config
-   * at BUILD time states it here instead.
-   *
-   * `auth` is deliberately not part of what a codegen'd host can carry: it holds a live
-   * provider, not a value. An app that authenticates reads its own config.
-   */
+  /** What `fougere.config.ts` says, when the host already read it. */
   config?: Partial<FougereConfig>;
-  /**
-   * Who performs an outgoing call, when the default cannot.
-   *
-   * `boot()` builds an HTTP transport from `remotes:` and that is right nearly
-   * everywhere. It is not right on Cloudflare: a Worker calling a sibling's public URL
-   * is refused by the edge with error 1042, so two Workers of one account reach each
-   * other through a SERVICE BINDING and through nothing else. A binding is a value only
-   * the host holds, so only the host can state this.
-   *
-   * It replaces the default entirely — signing included, since a host that builds its
-   * own transport is the one that knows what to put on the wire.
-   */
+  /** Who performs an outgoing call, when the default cannot. */
   remoteTransport?: (url: string) => Transport;
 }
 
@@ -113,15 +46,7 @@ export function configureFougere(config: FougereServerConfig) {
   _appPromise = null;
 }
 
-/**
- * Add to what is already stated, instead of replacing it.
- *
- * A host states its app in PIECES when the pieces are known at different moments: a
- * build writes the scan and the config into a generated plugin, and a value only the
- * running process holds — a Cloudflare service binding — cannot be written there at all.
- * Its dual is `configureFougere`, which replaces; `reloadFougere` depends on that
- * replacement, so merging silently would have broken the turn of the ring.
- */
+/** Add to what is already stated, instead of replacing it. */
 export function extendFougere(config: Partial<FougereServerConfig>) {
   _config = { ..._config, ...config };
   _appPromise = null;
@@ -135,22 +60,7 @@ export function useFougereApp(): Promise<App> {
   return _appPromise;
 }
 
-/**
- * Turn the ring: instantiate the app again, then let the previous one go.
- *
- * This is what "reload" means for anything the config CONSUMED — a value that built
- * something cannot move under what it built, so the thing is built again. Its dual is
- * `applyConfig`, for values that are merely consulted and need no turn at all.
- *
- * Every door reaches the app through `useFougereApp()` inside the request it serves and
- * none holds it across two, which is what makes the swap invisible: the next request
- * lands on the new app whether or not the old one has finished being released.
- *
- * A call already running finishes on the OLD app: it is drained before being released,
- * so nothing has its storage closed underneath it. `timeoutMs` bounds that wait, and a
- * drain that runs out REJECTS — the app is left alone rather than released under work,
- * because a caller who cannot wait must choose that on purpose.
- */
+/** Turn the ring: */
 export async function reloadFougere(timeoutMs?: number): Promise<App> {
   const previous = _appPromise;
   _appPromise = null;
@@ -274,11 +184,7 @@ async function boot(): Promise<App> {
     adapters: fileConfig.adapters,
     remotes: fileConfig.remotes,
     remoteTransport,
-    /**
-     * The whole ascent, one ordered list: tables, then rows, then what the host adds.
-     * A host wanting its OWN seeding declares `{ name: 'seeds', … }` and replaces that
-     * member — it no longer has to claim everything after the boot to get it.
-     */
+    /** The whole ascent, one ordered list: */
     extensions: [
       // The slot is declared even when this host resolved no storage — a host that resolved
       // its own (the Nitro plugin does, for its bundler) then REPLACES this member in place

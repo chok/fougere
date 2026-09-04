@@ -15,22 +15,11 @@ export const CALLS_OP = 'calls';
 export interface CallsOptions {
   /** How many calls the ring keeps. Beyond it, the oldest are dropped and counted. */
   max?: number;
-  /**
-   * Serve the page too, on its own loopback port. `true` takes a free one.
-   *
-   * Node only — it opens an `http` server, which workerd has not. Without it the extension
-   * stays universal and `fougere devtools` is the reader.
-   */
+  /** Serve the page too, on its own loopback port. */
   panel?: boolean | number | PanelOptions;
 }
 
-/**
- * What this process serves, read from the app itself.
- *
- * Not a second source: `operationsFor` is the same effective model the façade consumes, so
- * the page shows what will actually answer — including the ops nobody has called yet, which
- * is what makes an empty panel useful instead of blank.
- */
+/** What this process serves, read from the app itself. */
 function servedModel(app: App): unknown {
   return {
     fronds: app.fronds.map((frond) => ({
@@ -86,14 +75,7 @@ function nameOf(schema: unknown): string | null {
   return typeof named.getName === 'function' ? named.getName() : named.name ?? null;
 }
 
-/**
- * `address -> frond`, resolved once at boot: a call's address does not carry its frond.
- *
- * Indexed on HANDLERS and not on entities, because a frond may hold no entity at all —
- * `demos/observability` has two — and then every one of its calls came back unnamed. The
- * entities are indexed after, and only where a handler left the address free: an entity
- * with no handler is served by `Crud`, which answers under the same address.
- */
+/** `address -> frond`, resolved once at boot: */
 function frondIndex(app: App): (address: string) => string | undefined {
   const byAddress = new Map<string, string>();
   for (const frond of app.fronds) {
@@ -104,12 +86,7 @@ function frondIndex(app: App): (address: string) => string | undefined {
   return (address) => byAddress.get(address);
 }
 
-/**
- * Subscribe to SQL when there is SQL. Absence is an answer, not a blank tab.
- *
- * `logQueries` is installed in every Kysely this process builds, so the subscription is all
- * that is missing — and it is taken here, in `up(app)`, like the other two.
- */
+/** Subscribe to SQL when there is SQL. */
 async function queriesFrom(queries: QueryRing): Promise<() => void> {
   try {
     const { onQuery } = await import('@fougere/adapter-sql');
@@ -126,25 +103,9 @@ function cursorOf(invocation: InvocationContext): number {
   return Number.isFinite(since) && since > 0 ? since : 0;
 }
 
-/**
- * What this process dispatched, kept in a bounded ring and served as an rpc operation.
- *
- * It watches rather than participates: `app.observe` is passive, `DispatchLifecycle`
- * swallows an observer's own failure, and the ring holds no reference to a body. What it
- * sees that a middleware cannot: a call refused BEFORE any handler — an unknown route, an
- * entity hosted elsewhere, a call arriving while the door drains — and the route kind of
- * every call, so a local execution and a hop to another process read the same way.
- *
- * The reader is `fougere devtools`, over `/_fougere/call` like any other consumer. No port
- * is opened here, and an app that never installed this package answers
- * `Unknown rpc operation 'calls'. It serves discover.`
- */
+/** What this process dispatched, kept in a bounded ring and served as an rpc operation. */
 export function calls(options: CallsOptions = {}): Extension {
-  /**
-   * Per APP, not per extension. A host declares its extensions once, so the same instance
-   * goes up on the new app before the old one is released — one shared ring would mix two
-   * processes' worth of calls, and the older `down` would erase the newer subscription.
-   */
+  /** Per APP, not per extension. */
   const stopping = new WeakMap<App, () => void | Promise<void>>();
 
   return {

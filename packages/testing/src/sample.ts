@@ -1,21 +1,9 @@
 import { Role, Visibility, type Field, type Fields, type SchemaView } from '@fougere/schema';
 import { generateSync, type JsonSchema } from 'json-schema-faker';
 
-/**
- * A body a client could legitimately send, built from what the entity declares.
- *
- * The shape IS JSON Schema, so the value itself is not ours to invent — `json-schema-faker`
- * honours `minLength`, `enum`, `format`, `pattern`, `items` and `required`. What is ours is
- * WHICH fields belong in a body, and that is `Visibility.input`: the one reader of the boundary
- * and lifecycle axes the façade and the form already stand on. Re-deriving "not primary,
- * not stamped, not read-only" here would make this a second opinion on the axes.
- */
+/** A body a client could legitimately send, built from what the entity declares. */
 export interface SampleOptions {
-  /**
-   * Fixes what is generated. Defaults to a value derived from the entity name, so two
-   * runs agree and a failure is replayable — a body drawn afresh every time produces the
-   * test that fails once in twenty and cannot be reproduced.
-   */
+  /** Fixes what is generated. */
   seed?: number;
 }
 
@@ -26,25 +14,14 @@ function seedOf(name: string): number {
   return Math.abs(hash) || 1;
 }
 
-/**
- * A relation has no value of its own to invent — `ref(Author)` names a row that must
- * exist, and a made-up id points at nothing. So it is REFUSED by name rather than
- * omitted: a body silently missing a required reference is a body the judge rejects for
- * a reason that has nothing to do with the test.
- */
+/** A relation has no value of its own to invent — `ref(Author)` names a row that must exist, and a m… */
 function referencesIn(fields: Fields): string[] {
   return Object.entries(fields)
     .filter(([, field]) => Role.of(field as Field).isReference)
     .map(([name]) => name);
 }
 
-/**
- * The seed the last sample used, so a failure can say how to replay it.
- *
- * A stable seed nobody can read is a stable seed for nothing: the value has to reach the
- * person looking at the red line. Held here rather than returned, so the signature stays
- * the body a caller wanted.
- */
+/** The seed the last sample used, so a failure can say how to replay it. */
 let lastSeed: { entity: string; seed: number } | undefined;
 
 /** How to reproduce the last generated body, in the words that reproduce it. */

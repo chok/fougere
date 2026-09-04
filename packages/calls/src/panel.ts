@@ -25,15 +25,7 @@ export interface PanelOptions {
 /** How often the page is told how many calls are in flight. */
 const BEAT_MS = 1000;
 
-/**
- * The panel's own door: the page, and the events that fill it.
- *
- * Its own server and not the app's, for one measured reason: `serve()` from
- * `@fougere/transport-http` answers 404 to everything that is not `POST /_fougere/call`,
- * which is what makes it safe to expose — a page cannot enter it without changing what it
- * is. So the panel binds 127.0.0.1 only, and serves both halves itself, which also means
- * the page reads its own origin and no CORS has to be arranged.
- */
+/** The panel's own door: */
 export function servePanel(ring: CallRing, options: PanelOptions = {}): Promise<() => Promise<void>> {
   const title = options.title ?? 'fougere';
   const readers = new Set<{ write: (chunk: string) => void; end: () => void }>();

@@ -1,8 +1,4 @@
-/**
- * @fougere/nuxt — Nuxt module: scans fronds, registers the four
- * primitives (useQuery/useCommand, useFormFor, useCurrentUser) and the
- * server surface (call envelope, session, REST bridge, auth).
- */
+/** @fougere/nuxt — Nuxt module: */
 import {
   defineNuxtModule,
   addServerHandler,
@@ -29,39 +25,17 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 export interface FougereModuleOptions {
   /** Override fougere.config.ts values from nuxt.config. Optional. */
   db?: FougereConfig['db'];
-  /**
-   * Where `fronds/` lives, relative to the app's rootDir. Default: the app
-   * itself. Set to `../..` for an app under `apps/*` in a workspace whose
-   * fronds are shared at the root. Config and `.fougere` stay app-local.
-   */
+  /** Where `fronds/` lives, relative to the app's rootDir. */
   root?: string;
 
-  /**
-   * One key per EXTENSION, and the key is the package suffix AND the export name —
-   * `calls` is `import { calls } from '@fougere/calls'`. So the module holds no table to
-   * keep in step with the packages, the same rule the scan applies to `@fronds/<name>`.
-   *
-   * An extension is a FUNCTION and this module writes a FILE, so a project cannot pass one
-   * here: it names one, and the options travel beside it as data.
-   *
-   * The keys are declared rather than left open on purpose. An open record would derive
-   * everything and accept `callz: {}` in silence — the failure this repo already records
-   * for `adapters:`, which "fails OPEN, giving neither completion nor a guard". The price
-   * is that a new extension package adds a key here.
-   */
+  /** One key per EXTENSION, and the key is the package suffix AND the export name — `calls` is `import… */
   /** `@fougere/observability` — a span per operation, the four signals, OTLP. */
   observability?: Record<string, unknown> | false;
   /** `@fougere/calls` — the dev panel: a bounded log of what this process dispatched. */
   calls?: Record<string, unknown> | false;
 }
 
-/**
- * The extension keys, in the order they are mounted.
- *
- * A list and not the options object's own keys: the ORDER is ours, not the project's.
- * `observability` installs the middleware that opens the span every log line written
- * inside a call will carry — mounted the other way round, the lines leave uncorrelated.
- */
+/** The extension keys, in the order they are mounted. */
 const EXTENSION_KEYS = ['observability', 'calls'] as const;
 
 /** What the project asked for, in mount order. `false` is how a key is turned off. */
@@ -325,13 +299,7 @@ export default module;
 // Exported (not just module-internal) so its output is unit-testable without
 // spinning up a whole Nuxt build.
 
-/**
- * What of the config a generated plugin can carry: values, never providers.
- *
- * `auth` holds a live object built by `betterAuth(...)`, so it cannot be written into a
- * module — and it needs a database, which a codegen'd host has already resolved its own
- * way. The rest is data and travels.
- */
+/** What of the config a generated plugin can carry: */
 function carried(config: FougereConfig): Partial<FougereConfig> {
   const { remotes, adapters, sources } = config as FougereConfig & { sources?: unknown };
   return {
@@ -341,13 +309,7 @@ function carried(config: FougereConfig): Partial<FougereConfig> {
   } as Partial<FougereConfig>;
 }
 
-/**
- * The entity names a SYNCED remote brought in — `fougere sync` writes the classes under
- * `.fougere/`, and a consumer designates them exactly as it designates its own.
- *
- * By filename and not by loading them: this runs before the loader is installed, and a
- * class file is named after its class by the same convention the scan reads.
- */
+/** The entity names a SYNCED remote brought in — `fougere sync` writes the classes under `.fougere/`… */
 async function syncedEntityNames(rootDir: string, conventions: Conventions): Promise<string[]> {
   const remotesPath = resolve(rootDir, '.fougere', 'remotes.json');
   if (!existsSync(remotesPath)) return [];

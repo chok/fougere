@@ -30,11 +30,7 @@ export interface TypeConfig {
   presenterFields?: string[];
   /** Per-field type metadata from source parsing. */
   presenterFieldMeta?: { name: string; returnType?: string; list?: boolean; nullable?: boolean }[];
-  /**
-   * The view a computed field emits, when the presenter declared one — the object type
-   * to build for it. Without a declaration the scan reads a scalar or nothing, and an
-   * object-valued field can only be serialized.
-   */
+  /** The view a computed field emits, when the presenter declared one — the object type to build for it. */
   presenterViews?: Record<string, EntityClass | [EntityClass]>;
   /** Builds (or reuses) the GraphQL object type for a declared view. */
   viewType?: (view: EntityClass, fieldName: string) => any;
@@ -104,11 +100,7 @@ export interface OperationsConfig {
    * one root field. Absent when a caller builds a type by hand.
    */
   origin?: string;
-  /**
-   * The GraphQL type for a schema an operation declares as its return. The caller owns
-   * this because it alone knows whether the schema IS the entity's (then: the type
-   * already registered) or something else (then: a new named type).
-   */
+  /** The GraphQL type for a schema an operation declares as its return. */
   viewType?: (view: SchemaView, opName: string) => any;
 }
 
@@ -135,13 +127,7 @@ const PRIMITIVES: Record<string, (t: any, required: boolean) => any> = {
   boolean: (t, r) => t.arg.boolean({ required: r }),
 };
 
-/**
- * Parameter types no GraphQL argument stands for. `ListOptions` is NOT one of
- * them: it has its own branch below that turns it into the six pagination
- * arguments. Listing it here classified it first — the skip branch runs before
- * the pagination one — so `kind: 'pagination'` was never assigned and every
- * `list(options?: ListOptions)` op reached GraphQL with no arguments at all.
- */
+/** Parameter types no GraphQL argument stands for. */
 const SKIP_TYPES = new Set(['InvocationContext']);
 
 // ─── Helpers ───────────────────────────────────────
@@ -240,14 +226,7 @@ function fieldToGraphQL(
   }
 }
 
-/**
- * A JSON-Schema object shape, turned into a GraphQL input type.
- *
- * `list(json(OrderLine))` inlines the line's shape as nested `properties` — good enough for
- * the judge, invisible to GraphQL until now: the `array` case fell through to `stringList`,
- * so `items` reached the schema as `[String!]!` and a client had to hand-encode every line
- * as JSON. The mutation was unusable (measured 2026-08-02).
- */
+/** A JSON-Schema object shape, turned into a GraphQL input type. */
 function nestedInputType(
   builder: InstanceType<typeof SchemaBuilder>,
   shape: Shape,
@@ -280,21 +259,13 @@ function nestedInputType(
   return type;
 }
 
-/**
- * One input type per name, PER BUILDER — Pothos refuses a duplicate name, and a ref built on
- * one builder is unknown to the next: a global cache handed a stale ref to the second schema
- * ("InputObjectRef has not been implemented"). The builder owns its types, so it owns the map.
- */
+/** One input type per name, PER BUILDER — Pothos refuses a duplicate name, and a ref built on one bu… */
 const nestedInputs = new WeakMap<object, Map<string, any>>();
 
 /** Same rule as {@link nestedInputs}, for the enum types — with the values, see below. */
 const enumTypes = new WeakMap<object, Map<string, { ref: any; values: string[] }>>();
 
-/**
- * A GraphQL enum value is an IDENTIFIER, not a string: `in-progress` or `à valider` cannot
- * be spelled in a query. `oneOf` is a JSON Schema keyword and accepts any string, so a set
- * that will not fit stays a `String` — the judge still refuses what is not in it.
- */
+/** A GraphQL enum value is an IDENTIFIER, not a string: */
 const GRAPHQL_NAME = /^[_A-Za-z][_0-9A-Za-z]*$/;
 
 function enumValuesOf(shape: Shape | undefined): string[] | undefined {
@@ -304,14 +275,7 @@ function enumValuesOf(shape: Shape | undefined): string[] | undefined {
   return values as string[];
 }
 
-/**
- * The enum type for one field's value set — one per NAME per builder, so `Post.status` and
- * `CreatePostInput.status` are the same `PostStatus` and a value read can be written back.
- *
- * A second field claiming the name with a different set falls back to `String` rather than
- * being served the first one: two different sets under one name would let a client send a
- * value this field never declared, which is the opposite of what the enum is for.
- */
+/** The enum type for one field's value set — one per NAME per builder, so `Post.status` and `CreateP… */
 function enumTypeFor(
   builder: InstanceType<typeof SchemaBuilder>,
   name: string,
@@ -416,21 +380,7 @@ export interface ObjectFieldDef {
   resolve?: (parent: any) => any;
 }
 
-/**
- * Register a GraphQL object type from a declarative field map.
- *
- * Each field auto-resolves from `parent[key]` unless a custom `resolve` is provided.
- * Works for wrapper types, result types, or any structural type.
- *
- * ```ts
- * const PostList = registerObjectType(builder, 'PostList', {
- *   items:     { type: [PostType] },
- *   total:     { type: 'int', nullable: true, resolve: async (p) => lazyCount(p) },
- *   hasMore:   { type: 'boolean', nullable: true },
- *   endCursor: { type: 'string', nullable: true },
- * });
- * ```
- */
+/** Register a GraphQL object type from a declarative field map. */
 export function registerObjectType(
   builder: InstanceType<typeof SchemaBuilder>,
   name: string,
@@ -476,23 +426,7 @@ export function registerObjectType(
 
 // ─── Public API ────────────────────────────────────
 
-/**
- * Enregistre un type GraphQL (lecture) depuis une entité fougere.
- *
- * ```ts
- * const ProductType = registerType(builder, {
- *   name: 'Product',
- *   entity: Product,
- *   exclude: ['categoryId'],
- *   relations: {
- *     category: {
- *       type: CategoryType,
- *       resolve: (parent) => db.select()...
- *     },
- *   },
- * });
- * ```
- */
+/** Enregistre un type GraphQL (lecture) depuis une entité fougere. */
 export function registerType(builder: InstanceType<typeof SchemaBuilder>, config: TypeConfig): any {
   // A live class or a card — an adapter needs the fields, never the constructor.
   const schema = schemaOf(config.entity);
@@ -621,26 +555,7 @@ export function registerType(builder: InstanceType<typeof SchemaBuilder>, config
   });
 }
 
-/**
- * The GraphQL input for EXACTLY this view — or none, when the view asks for nothing.
- *
- * The caller derives the view and this projects it; it holds no policy of its own. What
- * a client may supply at CREATION is `Visibility.input`, which the op path applies for
- * create/update alone — `publish(input: Post)` must still name the post.
- *
- * Two things are dropped here because GraphQL cannot carry them, not because of any
- * rule: a collection has no column to send, and `boundary in: 'closed'` is refused from
- * every client. A view left with nothing after that gets `undefined` rather than an
- * input object with zero fields, which is invalid GraphQL and takes the WHOLE schema
- * down — every other type included.
- *
- * ```ts
- * const CreateProductInput = registerInput(builder, {
- *   name: 'CreateProductInput',
- *   schema: CreateProduct,
- * });
- * ```
- */
+/** The GraphQL input for EXACTLY this view — or none, when the view asks for nothing. */
 export function registerInput(builder: InstanceType<typeof SchemaBuilder>, config: InputConfig): any {
   const fields = Object.fromEntries(
     Object.entries(config.schema.getFields())
@@ -676,19 +591,7 @@ export function registerInput(builder: InstanceType<typeof SchemaBuilder>, confi
 
 // ─── GraphQL field naming ────────────────────────
 
-/**
- * Who holds each root field — a GraphQL root is FLAT, and two ops can want one name.
- *
- * Refused here rather than left to Pothos: it answers `Duplicate field ofBook on
- * Mutation` with no file, no handler and no remedy, and it takes the whole schema down
- * — every other type included. The five CRUD names weave the entity in (`createBook`),
- * so they never meet this; a custom op keeps its method name, which is the author's and
- * says nothing about its subject. Four handlers named `ofBook` in one measured app.
- *
- * Nothing is renamed automatically: `chapterOfBook` would be this package's choice of
- * the app's public vocabulary, and adding an entity in some other frond would silently
- * rename a field already published.
- */
+/** Who holds each root field — a GraphQL root is FLAT, and two ops can want one name. */
 const claimed = new WeakMap<object, Map<string, string>>();
 function claimRootField(builder: object, fieldName: string, origin: string): void {
   let perField = claimed.get(builder);
@@ -895,17 +798,7 @@ function resolveOutputType(
     return { type: 'list-wrapper', isList: true, nullable: false };
   }
 
-  /**
-   * The type the operation SAYS it returns.
-   *
-   * `async stats(): Promise<StatsOutput[]>` is a declaration, and the scan already
-   * resolved it into a live schema class. Until now this threw it away and announced the
-   * entity's type instead, so a schema built from a handler with such an op was simply
-   * wrong: its own fields were not queryable, and the entity's came back null.
-   *
-   * Falls back to the entity when nothing is declared, or when what is declared IS the
-   * entity — `publish(): Promise<Post>` must not mint a second Post type.
-   */
+  /** The type the operation SAYS it returns. */
   const declared = meta?.output && opName && config.viewType
     ? config.viewType(meta.output, opName)
     : undefined;
@@ -919,19 +812,7 @@ function resolveOutputType(
 
 // ─── registerOperations ──────────────────────────
 
-/**
- * Register all GraphQL operations for an entity from parsed handler signatures.
- *
- * Each operation in the map is registered as a Query or Mutation field
- * based on naming convention (list*, find*, get*, search* → Query, else → Mutation).
- *
- * Args are generated from the parsed method signature:
- * - Primitives (string, number) → scalar args
- * - Entity/object params → input types (derived from meta.input)
- * - Partial<T> wrapper → all input fields nullable
- * - ListOptions → standard pagination args
- * - InvocationContext → skipped (injected by resolver)
- */
+/** Register all GraphQL operations for an entity from parsed handler signatures. */
 export function registerOperations(builder: InstanceType<typeof SchemaBuilder>, config: OperationsConfig): void {
   // Pre-register list wrapper type if list op exists
   let listWrapperType: any;

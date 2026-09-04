@@ -1,13 +1,4 @@
-/**
- * The form contract — state, validation, submission, error mapping.
- * Never a widget: the page owns the rendering, this owns the mechanics.
- *
- * The cycle composes the other primitives: fields from the io axes,
- * local pre-judgment with the same rules the handler enforces (one
- * declaration, both sides), submission through the command (so the
- * entity link revalidates mounted queries), and per-field errors in
- * the same `{ path, message }` shape whoever judged.
- */
+/** The form contract — state, validation, submission, error mapping. */
 import { reactive, computed } from 'vue';
 import { lowerFirst, validationErrorsOf } from '@fougere/core/contract';
 import { useCommand } from './useFougereData.js';
@@ -49,11 +40,7 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
     return false;
   }
 
-  /**
-   * Judge locally, then send through the command. Returns the created/updated
-   * value, or null when a judge (either side) rejected — the errors land per
-   * field either way, the form never knows who judged.
-   */
+  /** Judge locally, then send through the command. */
   async function submit(): Promise<T | null> {
     if (!judge()) return null;
     try {
@@ -70,12 +57,7 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
 
   return {
     fields,
-    /**
-     * The same fields, keyed by name — a form that lays its inputs out by hand binds
-     * one at a time (`v-bind="fieldsByName.email.attrs"`), and still states no rule of
-     * its own. Without it, a page retypes `type="email"` next to a card that says
-     * `format: 'email'`, and the browser enforces the page rather than the declaration.
-     */
+    /** The same fields, keyed by name — a form that lays its inputs out by hand binds one at a time (`v… */
     fieldsByName: Object.fromEntries(fields.map((f) => [f.name, f])) as Record<string, FormField>,
     values,
     errors,

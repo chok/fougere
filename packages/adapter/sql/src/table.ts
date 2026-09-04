@@ -1,15 +1,5 @@
 import { Lifecycle, Role } from '@fougere/schema';
-/**
- * Entity → table description, with no SQL in sight.
- *
- * This is the neutral middle term: one projection reads the entity's axes and
- * produces a `TableDef`; a `Dialect` turns that into SQL. Neither half knows the
- * other — the dialect never mentions a field. Adding a dialect touches only the
- * second half.
- *
- * `ColumnDef.stated` is the one member the axes did not produce. It names one engine's
- * column type, so dropping it leaves every column describable.
- */
+/** Entity → table description, with no SQL in sight. */
 import { Shapes, fieldsOf, lowerFirst, schemaOf, type Field, type SchemaView, type SchemaOrCard } from '@fougere/schema';
 import { boundsOf, type ShapeBounds } from './check.js';
 import { sqlEntries, type SqlField } from './fields.js';
@@ -62,11 +52,7 @@ export interface TableDef {
   columns: ColumnDef[];
   /** PK column names when the key is composite — empty for a simple key. */
   compositePrimary: string[];
-  /**
-   * Column groups unique together, from `entity(fields, { unique: [...] })`.
-   * A single-field group is left to the column's own `unique` — this is the
-   * table-level form, for facts no column can hold alone.
-   */
+  /** Column groups unique together, from `entity(fields, { unique: */
   uniqueGroups: string[][];
 }
 
@@ -83,11 +69,7 @@ function isStored(field: Field): boolean {
   return !Role.of(field).isCollection;
 }
 
-/**
- * The target's primary key column. A live thunk (an in-process entity) answers
- * for real; a relation reconstructed from a lone `Card` (without a `Bundle`) has lost it to a
- * name stand-in with no `getFields` — the convention there is to assume `id`.
- */
+/** The target's primary key column. */
 function primaryColumnOf(target: Partial<SchemaView>): string {
   if (typeof target.getFields !== 'function') return 'id';
   for (const [name, field] of Object.entries(target.getFields())) {
@@ -96,24 +78,7 @@ function primaryColumnOf(target: Partial<SchemaView>): string {
   return 'id'; // declared no primary() field — defensive, shouldn't happen
 }
 
-/**
- * The FK target for a `ref()` field: the table it points at plus its PK column.
- *
- * `tableNameOf` is an identity map — built once per app generation pass, see
- * {@link toTables} — from a LIVE entity class to the table name already resolved
- * for it. Reusing that name (instead of re-deriving one from the class name) is
- * what keeps a custom `tableName` resolver honest: `demos/schema-ecommerce`
- * names `Category`'s table `"categories"` (an irregular plural its resolver
- * special-cases) — re-deriving from `Category.name` through the DEFAULT
- * convention would silently produce `"categorys"` instead.
- *
- * A miss (the target isn't part of this batch — a cross-frond target, or a live
- * class the app substituted for one a package hardcoded — e.g.
- * `@fougere/auth-better`'s `AuthSession` always points at its own default
- * `AuthUser`, never at whatever `opts.user` the app actually registered) falls
- * back to deriving the name from the class — correct when that class follows
- * the default convention, wrong if the app ALSO overrides `tableName` for it.
- */
+/** The FK target for a `ref()` field: */
 function referenceFor(
   field: Field,
   resolve: (name: string) => string,
@@ -206,18 +171,7 @@ export interface HostedNames {
   elsewhere: ReadonlySet<string>;
 }
 
-/**
- * Describe one entity as a table — the single reader of the axes.
- *
- * Takes the entity as a live class or as a card. Read ONCE into `fields`: `fieldsOf`
- * reconstructs a descriptor on each call, so re-reading per loop would rebuild the schema
- * as many times as this function iterates.
- *
- * A lone card has no live relation targets, so a `ref()` falls back to the conventions
- * `referenceFor`/`primaryColumnOf` already document (name-derived table, `id` as the key).
- * Pass a descriptor through `Bundle.toSchemas` first when the FKs matter — it resolves the
- * targets, and its output is the live-class case again.
- */
+/** Describe one entity as a table — the single reader of the axes. */
 export function toTable(tableName: string, entity: SchemaOrCard, relations?: RelationResolve): TableDef {
   const resolve = relations?.resolve ?? toTableName;
   const fields = fieldsOf(entity);
@@ -250,14 +204,7 @@ export function toTable(tableName: string, entity: SchemaOrCard, relations?: Rel
   };
 }
 
-/**
- * Is this column part of a key? MySQL and SQL Server refuse an unbounded text
- * column in a primary key or an index, so the dialect needs to know.
- *
- * `unique` and `index` count, and until they could be declared nothing did but the
- * primary key — the comment above already said "or an index" while the code answered
- * for the key alone, because no vocabulary word produced one to answer for.
- */
+/** Is this column part of a key? MySQL and SQL Server refuse an unbounded text column in a primary k… */
 export function isKeyed(table: TableDef, column: ColumnDef): boolean {
   return column.primary
     || column.unique === true
@@ -287,36 +234,18 @@ export interface AppLike {
   fronds: FrondLike[];
   /** Auth runtime entities are migrated alongside scanned fronds when present. */
   auth?: { entities: Record<string, SchemaOrCard> };
-  /**
-   * Entities this app hosts in ANOTHER source — named so a miss can be read.
-   *
-   * Without it every miss looked alike, so a `ref()` fell back to a derived table name
-   * and the constraint was emitted against a table that might not exist. Absent means
-   * one source, where a miss can only be a mistake.
-   */
+  /** Entities this app hosts in ANOTHER source — named so a miss can be read. */
   elsewhere?: string[];
 }
 
-/**
- * A schema says whether it holds rows; this adapter decides what to emit for it.
- *
- * A root always did. A derivation describes ANOTHER's rows — `Post.pick('id','title')` is
- * a shape, and one dropped under `entities/` used to get a table of its own: measured on a
- * real app, where a projection of an archived entity created a duplicate in the OTHER
- * database. `.anchor()` is what says otherwise, and it is the entity's own word, never a
- * key of the app's config: a frond stays mountable without its host knowing.
- */
+/** A schema says whether it holds rows; this adapter decides what to emit for it. */
 function verdictOn(entry: EntityEntry): 'table' | 'answer' {
   const schema = schemaOf(entry.entityClass);
 
   return !schema.derivation || schema.anchored ? 'table' : 'answer';
 }
 
-/**
- * Every entity this app hosts, once each. The same class reaches here under one
- * registration name from two lists — a frond's `entities/` and the auth runtime's map —
- * and two entries for one name are two CREATE TABLE for one table.
- */
+/** Every entity this app hosts, once each. */
 function collectEntities(app: AppLike): EntityEntry[] {
   const entries: EntityEntry[] = [];
   const seen = new Set<string>();
@@ -338,12 +267,7 @@ function collectEntities(app: AppLike): EntityEntry[] {
   return entries;
 }
 
-/**
- * Every entity an app hosts, as FK-aware tables — the shared middle step behind
- * `generateSQL` (a from-scratch create pass) and `desiredTables` (the diff's
- * target state). Builds the identity map once (see `referenceFor`'s doc) so a
- * `ref()` target reuses the SAME resolved name as the entity's own table.
- */
+/** Every entity an app hosts, as FK-aware tables — the shared middle step behind `generateSQL` (a fr… */
 export function toTables(app: AppLike, resolve: (name: string) => string): TableDef[] {
   const entries = collectEntities(app);
   const tableNameOf = new Map<SchemaOrCard, string>(entries.map((entry) => [entry.entityClass, resolve(entry.name)]));

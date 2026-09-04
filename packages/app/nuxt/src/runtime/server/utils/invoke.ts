@@ -1,12 +1,4 @@
-/**
- * The server dual of the couple — same designation (class + verb), same return,
- * same errors. `invokeOn` places the call (local façade → direct in-memory
- * execution, a frond in `remotes` → JSON-RPC on the wire); what this file owns is
- * the one host-specific part: finding the current request.
- *
- * In request context the current session rides along (event.context →
- * invocation.state); outside a request, state is empty or explicit.
- */
+/** The server dual of the couple — same designation (class + verb), same return, same errors. */
 import { useEvent } from 'nitropack/runtime';
 import { invokeOn, useFougereApp } from '@fougere/app';
 import type { FrondCall, InvocationContext } from '@fougere/core';

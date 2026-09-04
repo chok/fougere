@@ -1,12 +1,4 @@
-/**
- * The REST table this app serves, and the rule that matches a request against it.
- *
- * Separated from the h3 handler on purpose: this file holds the whole of what the door
- * DECIDES — which operation a verb and a path name — while `api/crud.ts` only translates
- * that decision into h3. The rule was previously inline, untested, and had drifted into a
- * second REST projection that answered differently from `schema-rest` on all three counts
- * (verb, path, exposure).
- */
+/** The REST table this app serves, and the rule that matches a request against it. */
 import { generateRoutes } from '@fougere/adapter-rest';
 import type { App } from '@fougere/core';
 
@@ -31,14 +23,7 @@ export type RouteMatch =
 // it changes exactly when the app does.
 const tables = new WeakMap<App, Matchable[]>();
 
-/**
- * The table, per frond.
- *
- * `generateRoutes` prefixes every path the same way, while this door addresses a frond by
- * name (`/api/{frond}/{plural}`) — so it runs once per frond, each with its own prefix and
- * a filter naming it. That frond loop is the only thing this file knows that `schema-rest`
- * does not; the verbs, the paths and the membership rule all come from there.
- */
+/** The table, per frond. */
 export function tableOf(app: App): Matchable[] {
   const cached = tables.get(app);
   if (cached) return cached;
@@ -78,25 +63,10 @@ function openness(route: Matchable): number {
   return route.segments.filter((s) => s.startsWith(':')).length;
 }
 
-/**
- * Verbs this door accepts in place of the one the table names.
- *
- * `deriveMethod` gives `update` a single verb, PUT, while this door has always served
- * PATCH on it too — and says so (`docs/infra/surfaces`, "PUT · PATCH"). An alias keeps
- * that promise without giving the table a second row: both are mutations on a row, so
- * nothing is widened, and the one thing the table decides — WHICH operation a path names —
- * is still decided there alone.
- */
+/** Verbs this door accepts in place of the one the table names. */
 const ALIASES: Record<string, string> = { PATCH: 'PUT' };
 
-/**
- * Path first, method second — a router's order, and what makes a 405 possible at all.
- *
- * The order matters where the two overlap: `/posts/publish` and `/posts/:id` both accept
- * `GET /posts/publish`. Taking the most specific path first means the answer is "that verb
- * is refused here", not `findById('publish')` — and never `publish()`, which is what this
- * door used to do with the caller's session cookie attached.
- */
+/** Path first, method second — a router's order, and what makes a 405 possible at all. */
 export function matchRoute(table: Matchable[], method: string, segments: string[]): RouteMatch {
   const matches = table
     .map((route) => ({ route, params: paramsOf(route, segments) }))

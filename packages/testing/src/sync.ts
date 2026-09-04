@@ -33,17 +33,7 @@ export async function syncedRemotes(root: string): Promise<SyncedRemote[]> {
   }
 }
 
-/**
- * The shapes a consumer holds for one remote frond.
- *
- * Rebuilt from the classes rather than read back: `fougere sync` writes entities and an
- * index and does NOT keep the card it received. So the consumer's copy of the OPERATIONS
- * has no local counterpart at all, and only the shapes can be compared — which is the
- * narrower half, and the one that breaks a caller silently.
- *
- * Closing that would mean `sync` writing the card beside the classes; it is a change to
- * the CLI, not to this file.
- */
+/** The shapes a consumer holds for one remote frond. */
 export async function heldShapes(remote: SyncedRemote): Promise<Map<string, SchemaDescriptor>> {
   const cards = new Map<string, SchemaDescriptor>();
   const index = pathToFileURL(join(remote.path, 'index.ts')).href;
@@ -67,14 +57,7 @@ function servedShapes(card: IdentityCard, frond: string): Map<string, unknown> {
   return served;
 }
 
-/**
- * What the consumer's copy no longer matches.
- *
- * Compared by the shape's own `title` — the entity's name as the descriptor carries it —
- * rather than by the door's, because a door is addressed in lowercase (`post`) and a class
- * is not (`Post`), and matching those two by hand is where a name convention gets copied
- * a third time.
- */
+/** What the consumer's copy no longer matches. */
 export function syncDriftOf(
   held: Map<string, SchemaDescriptor>,
   card: IdentityCard,

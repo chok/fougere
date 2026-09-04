@@ -1,13 +1,7 @@
 import { genericOAuth } from 'better-auth/plugins';
 import type { BetterAuthOptions, BetterAuthPlugin } from 'better-auth';
 
-/**
- * Fougere-side provider declaration. Mirrors what users write in fougere.config.ts.
- *
- * - `credential`: email + password (better-auth's emailAndPassword)
- * - Standard OAuth keys (google, github, ...): become socialProviders
- * - `oidc`: dictionary of OIDC providers, become genericOAuth plugin entries
- */
+/** Fougere-side provider declaration. */
 export interface FougereProviders {
   credential?: {
     minPasswordLength?: number;
@@ -58,11 +52,7 @@ export function translateSocial(providers?: FougereProviders): BetterAuthOptions
   return social as BetterAuthOptions['socialProviders'];
 }
 
-/**
- * Build the plugin list from Fougere provider config.
- * Currently produces:
- * - `genericOAuth` plugin when `providers.oidc` is set (one entry per declared OIDC provider).
- */
+/** Build the plugin list from Fougere provider config. */
 export function translatePlugins(providers?: FougereProviders): BetterAuthPlugin[] {
   const plugins: BetterAuthPlugin[] = [];
   if (providers?.oidc) {

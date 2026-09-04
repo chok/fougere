@@ -1,18 +1,5 @@
 'use client';
-/**
- * The form contract — state, validation, submission, error mapping. Never a
- * widget: the page owns the rendering, this owns the mechanics.
- *
- * The cycle composes the other primitives: fields from the io axes, local
- * pre-judgment with the same rules the handler enforces (one declaration, both
- * sides), submission through the command (so the entity link revalidates mounted
- * queries), and per-field errors in the same `{ path, message }` shape whoever
- * judged.
- *
- * One visible difference from the Vue composable, and it is React's, not ours:
- * Vue hands back a reactive object a template mutates in place, React state is
- * replaced rather than mutated, so `setValue` is part of the contract here.
- */
+/** The form contract — state, validation, submission, error mapping. */
 import { useCallback, useMemo, useState } from 'react';
 import { validationErrorsOf } from '@fougere/core/contract';
 import {
@@ -60,11 +47,7 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
     return result.success;
   }, [entity, values]);
 
-  /**
-   * Judge locally, then send through the command. Returns the created/updated value,
-   * or null when a judge (either side) rejected — the errors land per field either
-   * way, the form never knows who judged.
-   */
+  /** Judge locally, then send through the command. */
   const submit = useCallback(async (): Promise<T | null> => {
     if (!judge()) return null;
     try {
@@ -86,12 +69,7 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
 
   return {
     fields,
-    /**
-     * The same fields, keyed by name — a form that lays its inputs out by hand binds
-     * one at a time (`{...fieldsByName.email.attrs}`) and still states no rule of its
-     * own. Without it, a page retypes `type="email"` next to a card that already says
-     * `format: 'email'`, and the browser enforces the page rather than the declaration.
-     */
+    /** The same fields, keyed by name — a form that lays its inputs out by hand binds one at a time (`{.… */
     fieldsByName,
     values,
     setValue,

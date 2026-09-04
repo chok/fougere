@@ -1,14 +1,4 @@
-/**
- * Fougere CLI UI — beautiful terminal interface.
- *
- * Wraps @clack/prompts + picocolors + consola into a cohesive API.
- *
- * This was `@fougere/cli-ui`, a published package with exactly one consumer —
- * the CLI it is named after. A second name in the registry that nobody would
- * ever install on purpose is a name, not a boundary. Same dependency profile,
- * so it folds in as a module; a subpath export is one line the day something
- * outside the CLI wants it.
- */
+/** Fougere CLI UI — beautiful terminal interface. */
 import * as clack from '@clack/prompts';
 import pc from 'picocolors';
 import { consola } from 'consola';

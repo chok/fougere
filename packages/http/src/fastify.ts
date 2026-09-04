@@ -63,17 +63,7 @@ function sendResponse(reply: any, result: ResponseResult): void {
   reply.status(result.status).send(result.data);
 }
 
-/**
- * Create an HttpRouter backed by a Fastify server.
- *
- * ```ts
- * import Fastify from 'fastify'
- * import { createFastifyRouter } from '@fougere/http'
- *
- * const fastify = Fastify()
- * const router = createFastifyRouter(fastify)
- * ```
- */
+/** Create an HttpRouter backed by a Fastify server. */
 export function createFastifyRouter(server: FastifyLike): HttpRouter {
   const globalMiddlewares: Middleware[] = [];
   const scopedMiddlewares: { path: string; mw: Middleware }[] = [];

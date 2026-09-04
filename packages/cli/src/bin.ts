@@ -1,11 +1,5 @@
 #!/usr/bin/env node
-/**
- * fougere CLI — a Fougere app powered by citty.
- *
- * src/   → compiled (tsc → dist/)
- * fronds/ → loaded at runtime by jiti (domain)
- * app/   → loaded at runtime by jiti (presentation)
- */
+/** fougere CLI — a Fougere app powered by citty. */
 import { createApp, setLogLevel, envLevel, type ScanResult } from '@fougere/core';
 import { scanProject, getModuleLoader, frondDirsOf, DEFAULT_CONVENTIONS } from '@fougere/core/node';
 import { readdir, stat } from 'node:fs/promises';
@@ -49,15 +43,7 @@ async function newestDeclaration(root: string): Promise<number> {
   return Math.max(0, ...times);
 }
 
-/**
- * The CLI is a Fougere app, so it reads its own written-down scan like any deployment —
- * producing the description reads the project, consuming it does not.
- *
- * Reading its own 44 declarations through the compiler cost 617 ms on every invocation,
- * for a domain fixed at publish time. Staleness is decided by mtime rather than by a flag:
- * editing a frond must not need a command, and a published package has nothing newer than
- * its artefact.
- */
+/** The CLI is a Fougere app, so it reads its own written-down scan like any deployment — producing t… */
 async function scanOf(root: string): Promise<ScanResult> {
   const written = join(root, '.fougere/scan.generated.ts');
   const writtenAt = await stat(written).then((s) => s.mtimeMs).catch(() => 0);

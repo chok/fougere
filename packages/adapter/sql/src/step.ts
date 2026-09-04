@@ -1,15 +1,4 @@
-/**
- * The half `delta()` refuses — realised from an intention that was written down.
- *
- * `diff.ts` states its own guarantee: additive only, because "a rename is not even
- * detectable from a diff (it reads as a drop plus an add)". That still holds, and this
- * file does not weaken it. What changed is upstream: a frozen step (`fougere freeze`)
- * carries a rename because a human declared it at the moment they made it. The intention
- * exists now, so it can be realised — and only what the step actually says.
- *
- * A drop and a rename both touch live data, so this is the only place either can come
- * from: never introspection, never a guess.
- */
+/** The half `delta()` refuses — realised from an intention that was written down. */
 import { sql, type Kysely } from 'kysely';
 import type { Change as ShapeChange, SetDiff } from '@fougere/schema';
 import { dequal } from 'dequal';
@@ -42,25 +31,11 @@ export interface Plan {
 export interface PlanOptions {
   /** Entity key → table name. Same resolver `desiredTables` takes. */
   tableName?: (name: string) => string;
-  /**
-   * What the database actually holds, from `actualState`. Given, a change already
-   * realised is skipped.
-   *
-   * Idempotence by OBSERVATION and not by bookkeeping — the same choice `delta` makes.
-   * A ledger of applied steps would be a second record of a fact the columns already
-   * carry, and the two would disagree the day someone renamed a column by hand.
-   */
+  /** What the database actually holds, from `actualState`. */
   actual?: SchemaState;
 }
 
-/**
- * Collapse a chain of steps into one, following each field through its renames.
- *
- * A step judges itself on two names — old gone, new here — so an intermediate rename is
- * unrecognisable once its target has been renamed again: both names are absent and it is
- * proposed forever. Composing the chain first asks the question about the name the field
- * ENDS on, which is the only one the tables can answer.
- */
+/** Collapse a chain of steps into one, following each field through its renames. */
 export function collapseChain(steps: readonly SetDiff[]): SetDiff {
   const entities: SetDiff['entities'] = {};
   const added: string[] = [];
@@ -79,11 +54,7 @@ export function collapseChain(steps: readonly SetDiff[]): SetDiff {
   return { entities, entitiesAdded: [...new Set(added)], entitiesRemoved: [...new Set(removed)] };
 }
 
-/**
- * Add one change to what the chain has said so far, rewriting rather than appending when
- * it continues a field already moved. A rename back to its origin cancels: the tables
- * never held the name in between, so there is nothing for them to do.
- */
+/** Add one change to what the chain has said so far, rewriting rather than appending when it continu… */
 function compose(held: ShapeChange[], change: ShapeChange): void {
   if (change.kind === 'renamed') {
     const at = held.findIndex((each) => each.kind === 'renamed' && each.to === change.from);
@@ -113,11 +84,7 @@ function compose(held: ShapeChange[], change: ShapeChange): void {
   held.push({ ...change, field: origin.from });
 }
 
-/**
- * Turn a frozen step into what the tables must do, and what nobody may decide for you.
- *
- * Pure, like `delta` — the comparison is one thing, running it is another.
- */
+/** Turn a frozen step into what the tables must do, and what nobody may decide for you. */
 export function planStep(step: SetDiff, tables: TableDef[], options: PlanOptions = {}): Plan {
   const resolve = options.tableName ?? toTableName;
   const actual = options.actual;
@@ -203,13 +170,7 @@ function realise(
   }
 }
 
-/**
- * An axis other than shape moved. Only some of it is a fact about the table.
- *
- * `boundary` never is — it says who may read or write, which no column holds. `lifecycle`
- * is one only through the DEFAULT clause. `role` is one three times over, and two of those
- * are constraints a live table may already contradict.
- */
+/** An axis other than shape moved. */
 function restated(entity: string, change: Extract<ShapeChange, { kind: 'restated' }>): { change?: StepChange } | Refusal {
   const refuse = (reason: string): Refusal => ({ entity, field: change.field, reason });
 
@@ -246,13 +207,7 @@ function literalOf(rules: { create?: unknown } | undefined): unknown {
 
 const show = (value: unknown): string => (value === undefined ? 'none' : JSON.stringify(value));
 
-/**
- * Has the table already moved? Read off the columns themselves.
- *
- * A rename whose old name is gone and whose new one is there has happened; a drop whose
- * column is absent has happened. Unknown state (no introspection given) answers no, so a
- * plan built without it proposes everything the step says.
- */
+/** Has the table already moved? Read off the columns themselves. */
 function done(change: StepChange, columns: Set<string> | undefined): boolean {
   if (!columns) return false;
   return change.kind === 'renameColumn'

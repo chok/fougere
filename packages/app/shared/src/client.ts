@@ -1,18 +1,4 @@
-/**
- * The couple, minus the reactivity — everything `useQuery`/`useCommand` decide
- * before a framework's state primitives get involved.
- *
- * Designation is class + verb: the imported entity class carries the metadata,
- * its name carries the registration key. That is true in Vue and in React, and so
- * is the link — a successful command on an entity revalidates every mounted query
- * on that entity, because the entity is designated on both sides and nothing has
- * to be declared. What differs between hosts is only HOW a value becomes reactive
- * and how a revalidation is triggered, which is ~50 lines each and belongs to them.
- *
- * Browser-safe by construction: this module reaches `@fougere/core/contract` and
- * the transport's client subpath, never the boot. `@fougere/app/client` is the
- * subpath that keeps it that way.
- */
+/** The couple, minus the reactivity — everything `useQuery`/`useCommand` decide before a framework's… */
 import {
   FougereError,
   ErrorCode,
@@ -48,11 +34,7 @@ export function invocationOf(input?: CallInput): InvocationContext {
   return { params: {}, query: {}, body: undefined, state: {}, ...input };
 }
 
-/**
- * The cache key of a read. Same designation and same input means the same key —
- * which is what lets two components asking the same thing share one request, and
- * what the command side matches against to revalidate.
- */
+/** The cache key of a read. */
 export function queryKeyOf(entityKey: string, op: string, input?: CallInput): string {
   return `fougere:${entityKey}.${op}:${JSON.stringify(input ?? {})}`;
 }
@@ -88,14 +70,7 @@ export function mountedKeys(entityKey: string): string[] {
   return [...(mounted.get(entityKey) ?? [])];
 }
 
-/**
- * `mountedKeys` says WHICH reads a command invalidates; these say how to make one
- * happen. Both halves turned out to be host-independent — Nuxt is the exception,
- * because `refreshNuxtData` already is this registry.
- *
- * They lived in `@fougere/react` until a second non-Nuxt client needed them, which
- * is when it became visible that nothing in them is React.
- */
+/** `mountedKeys` says WHICH reads a command invalidates; these say how to make one happen. */
 const refetchers = new Map<string, Set<() => void>>();
 
 /** Register a mounted read's refetch. Returns the unregistration. */
@@ -135,11 +110,7 @@ export function pageOf(data: unknown): { total?: number; hasMore?: boolean; endC
   return (data ?? {}) as { total?: number; hasMore?: boolean; endCursor?: string };
 }
 
-/**
- * Whatever failed, as the error the primitives promise. A transport failure is not
- * a domain refusal, so it arrives under SERVICE_UNAVAILABLE rather than borrowing a
- * code the server never sent.
- */
+/** Whatever failed, as the error the primitives promise. */
 export function asFougereError(err: unknown, entityKey: string, op: string): FougereError {
   return err instanceof FougereError
     ? err

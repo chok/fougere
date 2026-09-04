@@ -1,25 +1,9 @@
-/**
- * @fougere/http — framework-agnostic HTTP router interface.
- *
- * Adapters (Hono, Fastify, etc.) implement HttpRouter.
- * Consumers (schema-rest, schema-graphql) program against it.
- */
+/** @fougere/http — framework-agnostic HTTP router interface. */
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 export interface RequestContext {
-  /**
-   * The request as a Web Standard `Request`.
-   *
-   * Built on FIRST ACCESS. Every adapter used to build one eagerly, and no consumer
-   * in this repo reads it — measured, zero call sites outside the adapters and their
-   * tests, while the construction cost a fifth of the port's throughput on the engines
-   * that have no `Request` of their own (express, fastify). Hono hands over the one it
-   * already has, so nothing is deferred there.
-   *
-   * The fields beside it — `method`, `path`, `params`, `query`, `body` — are what the
-   * projections read, and they are not derived from this one.
-   */
+  /** The request as a Web Standard `Request`. */
   readonly request: Request;
   method: HttpMethod;
   path: string;
@@ -48,20 +32,7 @@ export class MalformedJsonError extends Error {
 
 export type Handler = (ctx: RequestContext) => Promise<ResponseResult>;
 export type Next = () => Promise<ResponseResult>;
-/**
- * What `next()` answers when the host framework — not us — owns the chain.
- *
- * Express and Fastify build their own middleware chain here, so a middleware's return IS
- * the response and there is nothing to distinguish. Hono owns its chain, so its adapter has
- * to tell "the middleware answered" from "the middleware delegated", and it used
- * `data === null` for the second. `null` is a legal body — `{ status: 403, data: null }` is
- * the ordinary spelling of a deny — so a middleware that REFUSED with no body was read as
- * having delegated: it was silently bypassed on Hono and honoured on Fastify. One contract,
- * two verdicts, on a value inside the value space.
- *
- * A symbol cannot be produced by accident, and no middleware author ever writes it: only an
- * adapter that does not own its chain returns it from the `next` it hands out.
- */
+/** What `next()` answers when the host framework — not us — owns the chain. */
 export const PASSTHROUGH: unique symbol = Symbol('fougere.http.passthrough');
 
 export type Middleware = (ctx: RequestContext, next: Next) => Promise<ResponseResult>;
@@ -75,13 +46,7 @@ export interface HttpRouter {
   on(method: HttpMethod, path: string, handler: Handler): void;
 }
 
-/**
- * The onion chain both adapters run: matching middlewares around the handler.
- *
- * Stated once because it was stated twice, identically, in `express.ts` and `fastify.ts` —
- * the same package, and the same place `PASSTHROUGH` already lives. A scoped middleware
- * matches by `startsWith`, which is what makes the two adapters agree on a mounted path.
- */
+/** The onion chain both adapters run: */
 export function chain(
   global: Middleware[],
   scoped: { path: string; mw: Middleware }[],

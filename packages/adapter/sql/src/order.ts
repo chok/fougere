@@ -16,20 +16,7 @@ export interface TableOrder {
   deferred: FkEdge[];
 }
 
-/**
- * Order a table set so a `ref()`'s target always exists before the table that
- * points at it — required by every engine except SQLite, which resolves FK
- * targets lazily and accepts any order (and has no `ALTER TABLE ADD CONSTRAINT`
- * to close a cycle with — a caller on that dialect skips this function entirely).
- *
- * A cycle (`Post → Author → Post`, legal in the model — role.ts's relation
- * thunk exists precisely so two entities can reference each other) has no such
- * order: the loop is broken by deferring ONE of its edges per remaining cycle —
- * that FK is added after every table exists, instead of inline. A self-reference
- * (`parentId: ref(() => Category)`) is not a cycle here: a table may always
- * reference its own not-yet-populated rows inline, standard support across
- * every engine — so it's excluded from the dependency graph entirely.
- */
+/** Order a table set so a `ref()`'s target always exists before the table that points at it — requir… */
 export function orderTables(tables: TableDef[]): TableOrder {
   const byName = new Map(tables.map((table) => [table.name, table]));
   const needs = new Map(

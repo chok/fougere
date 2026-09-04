@@ -3,14 +3,7 @@ import {
 } from '@fougere/core/node';
 import type { Conventions } from '@fougere/core/node';
 
-/**
- * The loader every command needs: `alias` is what makes `@fronds/user/entities/User.js`
- * resolve when one frond names its neighbour, in any command that loads user code.
- *
- * Two jitis, because the config is read BEFORE the aliases — it names the scope they are
- * built from. `reread` drops the module cache: every loader caches by specifier, so a
- * second boot in one process would be handed what the first one read.
- */
+/** The loader every command needs: */
 export async function installLoader(root: string, reread = false): Promise<Conventions> {
   const { createJiti } = await import('jiti');
   const bare = createJiti(import.meta.url, { interopDefault: true });

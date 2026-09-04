@@ -7,11 +7,7 @@ import { scopeOfRun } from './scope.js';
 import { lowerFirst } from '@fougere/schema';
 
 export interface TestAppOptions {
-  /**
-   * The project to scan. Read from the test file's own position when absent — a file
-   * under `fronds/blog/tests/` states that its subject is `blog` and that the project
-   * starts above `fronds/`.
-   */
+  /** The project to scan. */
   root?: string;
   /** Boot only these fronds, by name. Deduced from the position when absent. */
   fronds?: string[];
@@ -20,15 +16,7 @@ export interface TestAppOptions {
    * through `expect.getState()`; anything else hands its own path in.
    */
   testPath?: string;
-  /**
-   * Where the rows go. `':memory:'` by default — a real SQLite engine, so the DDL, the
-   * `CHECK` constraints, `unique` and real transactions are all exercised, and nothing is
-   * written to disk.
-   *
-   * Not an in-memory storage: `createMemoryStorage` realizes the axes but is not the engine
-   * production runs, and a tool whose thesis is *the realizations must agree* cannot pick
-   * the one that does not ship.
-   */
+  /** Where the rows go. */
   db?: string;
   /**
    * Follow `remotes:` from the config. False by default — a test that meant to exercise
@@ -46,30 +34,11 @@ export interface TestAppOptions {
 export interface TestApp extends App {
   /** The double installed for a port, to state a return or read what was called. */
   stub<T>(port: abstract new (...args: never[]) => T): Stub<T>;
-  /**
-   * What was announced under a fact's name, in order.
-   *
-   * Read from the carrier's own seat: `Emissions.announce` hands EVERY announced fact to
-   * `onEmit`, whether or not anything in this process listens. So watching costs nothing
-   * and adds no second dispatcher — the one thing `Emissions` refuses to become.
-   *
-   * Its dual needs no help at all: `app.deliver(fact, payload)` is already the carrier's
-   * door, and it rejects when a subscriber refuses.
-   */
+  /** What was announced under a fact's name, in order. */
   announced(fact: { name: string } | string): unknown[];
 }
 
-/**
- * An app to ask questions of, wired the conventional way.
- *
- * Wraps `boot()`, which already loads the config, creates the container, sets the storage
- * up and seeds — its own comment names tests among the surfaces it serves. What this adds
- * is the two decisions a test makes differently: the rows live in memory, and the
- * topology is not followed.
- *
- * Storage still goes through `resolveStorage`, the single place that knows a storage
- * package; calling `setupSqlite` here would be a second one.
- */
+/** An app to ask questions of, wired the conventional way. */
 export async function testApp(options: TestAppOptions = {}): Promise<TestApp> {
   const db: DbConfig = { dialect: 'sqlite', path: options.db ?? ':memory:' };
   // The position is consulted only for what the caller did not state: an explicit `root`
@@ -113,12 +82,7 @@ export async function testApp(options: TestAppOptions = {}): Promise<TestApp> {
   });
 }
 
-/**
- * Vitest's own answer to "which file is running", or nothing.
- *
- * Imported dynamically: a package that imports vitest at the top level stops being
- * loadable outside a test run, and `testApp` is meant to work under any host.
- */
+/** Vitest's own answer to "which file is running", or nothing. */
 function currentTestPath(): string | undefined {
   const globals = globalThis as { __vitest_worker__?: { filepath?: string } };
   return globals.__vitest_worker__?.filepath;

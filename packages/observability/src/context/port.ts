@@ -1,16 +1,4 @@
-/**
- * Where the step running right now is kept — the one thing a Worker cannot do.
- *
- * A trace has TWO ways to name its parent, and only one of them is ambient: an arriving
- * call carries `traceparent` on the invocation, which every transport moves and which
- * needs nothing from the runtime. This is the other way — the parent of a call that
- * crossed no wire, which is in the stack and nowhere else.
- *
- * `node:async_hooks` does not exist on workerd unless the deployment asks for it, so
- * `#trace-context` resolves to two realizations: the real store by default, and one that
- * answers "no parent here" under the `workerd` condition. What that costs is stated at
- * boot rather than discovered in a trace viewer — see `traceContext.ambient`.
- */
+/** Where the step running right now is kept — the one thing a Worker cannot do. */
 import type { SpanContext } from '../traceparent.js';
 
 export interface TraceContext {

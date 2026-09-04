@@ -1,13 +1,4 @@
-/**
- * `traceparent` — the one form a trace takes between two processes (W3C Trace Context).
- *
- * A standard rather than ours, so any collector reads it. It rides `InvocationContext.trace`
- * and never a header: a header is HTTP's alone, and the same call over a socket would have
- * arrived untraced.
- *
- * Pure — no runtime, no node builtin. What holds the CURRENT trace is `index.ts`, and the
- * line between the two is the line between a format and the thing that carries it.
- */
+/** `traceparent` — the one form a trace takes between two processes (W3C Trace Context). */
 
 /** A step in a trace, as both halves of a split agree on it. */
 export interface SpanContext {

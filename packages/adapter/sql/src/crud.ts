@@ -1,18 +1,5 @@
 import { Lifecycle, Role } from '@fougere/schema';
-/**
- * SqlStorage — per-entity storage over Kysely, one implementation for every engine.
- *
- * Structurally matches @fougere/core's Storage (duck typed, no dep). There is
- * no generated table object: Kysely addresses tables and columns by name, so the
- * entity stays the only description. The field↔column mapping is explicit rather
- * than a global plugin — auth tables carry their own naming and must not be
- * rewritten behind the caller's back.
- *
- * `create` and `update` re-read the row instead of using `RETURNING`: the
- * contract is to hand back the COMPLETE row, including defaults realised by SQL.
- * That also makes the code identical on MySQL and SQL Server, which have no
- * `RETURNING` clause.
- */
+/** SqlStorage — per-entity storage over Kysely, one implementation for every engine. */
 import { sql, type Kysely } from 'kysely';
 import { applyCreate, applyUpdate, schemaOf, type Fields, type SchemaView, type SchemaOrCard } from '@fougere/schema';
 import { toTable, toTableName, type TableDef } from './table.js';
@@ -48,14 +35,7 @@ interface PrimaryKeyInfo {
   isComposite: boolean;
 }
 
-/**
- * The primary key, read off the role axis.
- *
- * Used to answer "what identifies a row" — where to point a WHERE, what a cursor
- * carries. The generated ids and managed timestamps that used to be computed here
- * moved to `applyCreate`/`applyUpdate` (`@fougere/schema`): nothing in them was about
- * SQL, and every other storage was re-deriving them from scratch.
- */
+/** The primary key, read off the role axis. */
 function analyzeFields(entity: SchemaView): { pk: PrimaryKeyInfo } {
   const pkNames = Object.entries(entity.getFields())
     .filter(([, field]) => Role.of(field).isPrimary)
@@ -177,14 +157,7 @@ export class SqlStorage {
     return data;
   }
 
-  /**
-   * Apply a primary-key filter (simple or composite).
-   *
-   * The key crosses to the column exactly like every other value — `whereAll` states
-   * the rule two lines below and this did not follow it. It cost nothing while every
-   * generated key was a string; a key that holds a Date (`primary(created())`) inserted
-   * fine and then failed its own re-read, with the row already persisted.
-   */
+  /** Apply a primary-key filter (simple or composite). */
   private wherePk<Q extends { where(a: any, b: any, c: any): Q }>(query: Q, id: string | Record<string, unknown>): Q {
     if (this.pk.isComposite) {
       const composite = id as Record<string, unknown>;
@@ -276,13 +249,7 @@ export class SqlStorage {
     return sel ? pickList(result, sel) : result;
   }
 
-  /**
-   * One query for N keys, never N queries — what every page-level read stands on:
-   * a computed field, a relation, a resolver on the other side of a wire.
-   *
-   * A composite key has no list form: it is refused by name rather than answering a
-   * partial result that reads as complete.
-   */
+  /** One query for N keys, never N queries — what every page-level read stands on: */
   async findByKeys(ids: readonly string[], options?: SelectOption): Promise<Map<string, Record<string, unknown>>> {
     if (this.pk.isComposite) {
       throw new Error(`${this.table.name}.findByKeys: the primary key is composite (${this.pk.names.join(', ')}) — read them one by one, or filter with \`findAllBy\`.`);
@@ -307,13 +274,7 @@ export class SqlStorage {
     return found;
   }
 
-  /**
-   * The other direction of a relation, in one query — see the port's `findAllByKeys`.
-   *
-   * The grouping key is read off the ROW rather than trusted from the request: a codec
-   * may write a value one way and read it back another, and a group keyed on the
-   * request's spelling would then be empty while the rows sit there.
-   */
+  /** The other direction of a relation, in one query — see the port's `findAllByKeys`. */
   async findAllByKeys(
     field: string,
     keys: readonly string[],
@@ -330,19 +291,7 @@ export class SqlStorage {
     return grouped;
   }
 
-  /**
-   * Write the row, or make the existing one look like this — one statement.
-   *
-   * The gesture an import needs and the port did not have: `create` throws on the
-   * second run (`UNIQUE constraint failed`), so re-reading anything meant deleting
-   * first. Measured pulling 500 rows from an API twice.
-   *
-   * Both lifecycles are realized, each on the side it belongs to: `applyCreate` fills
-   * what a first write owes (a generated key, `created()`, a declared default) and
-   * `applyUpdate` stamps what every write owes (`updated()`). On conflict the key and
-   * the creation stamps are left alone — a row keeps the moment it appeared, whatever
-   * later overwrites say.
-   */
+  /** Write the row, or make the existing one look like this — one statement. */
   async upsert(input: Record<string, unknown>, options?: SelectOption): Promise<Record<string, unknown>> {
     if (this.upsertClause === false) {
       throw new Error(
@@ -373,17 +322,7 @@ export class SqlStorage {
     return (await this.findById(id as never, options))!;
   }
 
-  /**
-   * Upsert a whole page in one statement — what an import writes through.
-   *
-   * Row by row, 500 rows were 500 statements (measured pulling an API); the shape of
-   * an import is a page, so the write should be one too. Sliced like every other batch,
-   * but by rows × COLUMNS: a statement binds values, not rows, so the ceiling divides.
-   *
-   * Answers how many rows were written and not the rows themselves. `create` hands back
-   * the complete row because a caller acts on it; an import acts on none of them, and
-   * re-reading a page to satisfy a symmetry nobody uses would double the work.
-   */
+  /** Upsert a whole page in one statement — what an import writes through. */
   async upsertAll(inputs: readonly Record<string, unknown>[], _options?: SelectOption): Promise<number> {
     if (this.upsertClause === false) {
       throw new Error(
@@ -460,12 +399,7 @@ export class SqlStorage {
     return out;
   }
 
-  /**
-   * One criteria object per statement — the oversized set is the one that splits.
-   *
-   * Only ONE criterion may be split: two split sets would need their cross product,
-   * which is a different query, so the second is refused rather than silently wrong.
-   */
+  /** One criteria object per statement — the oversized set is the one that splits. */
   private refuseOversized(criteria: Record<string, unknown>, op: string): void {
     for (const [key, value] of Object.entries(criteria)) {
       if (!Array.isArray(value) || new Set(value).size <= this.maxBindings) continue;
@@ -522,14 +456,7 @@ export class SqlStorage {
     return sel ? pick(result, sel) : result;
   }
 
-  /**
-   * A duplicate is an ANSWER, not a failure — so it leaves as `CONFLICT` and not as the
-   * blank `Internal error` a caller used to get. The engine's own wording never travels:
-   * it names a table and a constraint, which is our schema and not the caller's business.
-   *
-   * Only the dialect can recognize it; this method knows no engine, which is the rule
-   * `dialect.ts` exists to keep.
-   */
+  /** A duplicate is an ANSWER, not a failure — so it leaves as `CONFLICT` and not as the blank `Intern… */
   private async refusal<R>(write: () => Promise<R>): Promise<R> {
     try {
       return await write();
@@ -557,13 +484,7 @@ export interface StorageFactoryOptions {
   tableName?: (entityName: string) => string;
 }
 
-/**
- * Create a StorageFactory backed by Kysely — same call shape on every engine.
- *
- * ```ts
- * const app = await createApp({ createContainer, storageFactory: createStorageFactory(db) });
- * ```
- */
+/** Create a StorageFactory backed by Kysely — same call shape on every engine. */
 export function createStorageFactory(db: Kysely<any>, options?: StorageFactoryOptions, dialect: DialectName = 'sqlite') {
   const resolve = options?.tableName ?? toTableName;
   return (entity: SchemaOrCard, name: string) => new SqlStorage(db, entity, resolve(name), undefined, dialect);

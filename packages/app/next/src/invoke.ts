@@ -1,16 +1,4 @@
-/**
- * The server dual of the couple, in Next — for server components, server actions
- * and route handlers.
- *
- * Same designation as the browser side (class + verb), same return, same errors.
- * `invokeOn` places the call: a local façade executes in memory, a frond listed in
- * `remotes:` goes over JSON-RPC, and the caller never learns which.
- *
- * `next/headers` is the ONLY Next-specific import in this package — measured, and
- * it is what a host actually owns: how to find the current request. It answers
- * inside a request scope and throws outside one, so a call from a script or a test
- * is simply anonymous, the same fallback Nitro's `useEvent()` gets.
- */
+/** The server dual of the couple, in Next — for server components, server actions and route handlers. */
 import { invokeOn, useFougereApp, sessionViewOf, stateFor, type SessionView } from '@fougere/app';
 import type { FrondCall, InvocationContext } from '@fougere/core';
 

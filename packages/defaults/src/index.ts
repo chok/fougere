@@ -1,13 +1,4 @@
-/**
- * @fougere/defaults — the conventional boot, declared once.
- *
- * Booting an app from `fougere.config.ts` means the same three opinionated
- * bindings every time: the container is `container`, `db: sqlite`
- * realizes through `schema-sql`, and `remotes:` are reached over
- * `transport-http`. core stays pure (it knows none of these); this layer-2
- * package supplies them on top of `core.boot()`. Nuxt's fallback, the CLI's
- * `serve`/`call`, and a standalone frond host are all projections of it.
- */
+/** @fougere/defaults — the conventional boot, declared once. */
 import { type App, type CreateAppOptions } from '@fougere/core';
 import { boot, loadConfig } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';

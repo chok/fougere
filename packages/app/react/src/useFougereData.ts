@@ -1,15 +1,5 @@
 'use client';
-/**
- * The couple — useQuery (reads) and useCommand (writes), the two dual gestures of
- * a page talking to a Frond, in React.
- *
- * What the gestures ARE lives in `@fougere/app/client` and is shared with Vue:
- * designation is class + verb, the cache key derives from designation plus input,
- * and a successful command on an entity revalidates every mounted query on that
- * entity. Nothing of that is restated here — this file is `useState` for the
- * values, `useEffect` for the mount, and the bus in `transport.ts` where Nuxt
- * calls `refreshNuxtData`.
- */
+/** The couple — useQuery (reads) and useCommand (writes), the two dual gestures of a page talking to… */
 import { useCallback, useEffect, useState } from 'react';
 import type { FougereError } from '@fougere/core/contract';
 import {

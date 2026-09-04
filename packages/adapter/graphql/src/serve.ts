@@ -1,9 +1,4 @@
-/**
- * Serve a GraphQL schema on an HttpRouter — no Apollo, no Yoga needed.
- *
- * Uses the `graphql` package directly for execution.
- * GraphiQL is available as an explicit opt-in for trusted development environments.
- */
+/** Serve a GraphQL schema on an HttpRouter — no Apollo, no Yoga needed. */
 import type { HttpRouter, ResponseResult } from '@fougere/http';
 import { getOperationAST, graphql, parse, type GraphQLSchema } from 'graphql';
 
@@ -44,19 +39,7 @@ function graphiqlHtml(path: string): string {
 </html>`;
 }
 
-/**
- * Register a GraphQL endpoint on an HttpRouter.
- *
- * - POST: execute queries/mutations
- * - GET with `query` param: execute queries
- * - GET from browser (no `query` param): serve GraphiQL only with `playground: true`
- *
- * ```ts
- * import { registerGraphQL } from '@fougere/adapter-graphql'
- *
- * registerGraphQL(router, schema, { playground: process.env.NODE_ENV === 'development' })
- * ```
- */
+/** Register a GraphQL endpoint on an HttpRouter. */
 export function registerGraphQL(
   router: HttpRouter,
   schema: GraphQLSchema,
@@ -65,13 +48,7 @@ export function registerGraphQL(
   const path = options?.path ?? '/graphql';
   const playground = options?.playground ?? false;
 
-  /**
-   * The one place this file states what a GraphQL request answers.
-   *
-   * A GraphQL error is not an HTTP error — the transport succeeded and the errors ride
-   * in the body — so every executed request is 200 whatever the resolvers said. The two
-   * methods differ in where they READ the request, never in how they answer it.
-   */
+  /** The one place this file states what a GraphQL request answers. */
   const answer = async (request: GraphQLRequest): Promise<ResponseResult> => ({
     status: 200,
     data: await graphql({

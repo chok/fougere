@@ -15,14 +15,7 @@ interface Reachable {
   body: unknown;
 }
 
-/**
- * Every operation the app answers, with a body for those that take one.
- *
- * Enumerated rather than chosen, and that is the whole point: a scenario written by hand
- * holds the operations its author thought of — `demos/observability/load.js` exercises
- * three — while this one holds all of them, and an operation given `weight: 0` becomes a
- * decision visible in the file instead of an omission nobody can see.
- */
+/** Every operation the app answers, with a body for those that take one. */
 export function reachableOps(app: App, given: LoadOptions['given'] = {}): Reachable[] {
   const found: Reachable[] = [];
   for (const frond of app.fronds) {
@@ -42,17 +35,7 @@ export function reachableOps(app: App, given: LoadOptions['given'] = {}): Reacha
   return found;
 }
 
-/**
- * A k6 scenario, written from what the app answers.
- *
- * k6 runs on its own runtime and cannot import from here, so the file is GENERATED rather
- * than made to import `frameCall` — but the envelope in it comes from `frameCall` itself,
- * called once at generation time. `demos/observability/load.js` spells that envelope by
- * hand, so it will go on claiming to be JSON-RPC the day the format moves.
- *
- * What stays the author's: the weights, the stages and the thresholds. The scan knows
- * which operations exist; it knows nothing about the traffic they receive.
- */
+/** A k6 scenario, written from what the app answers. */
 export function loadScript(app: App, options: LoadOptions = {}): string {
   const door = options.door ?? 'http://127.0.0.1:3000/_fougere/call';
   const ops = reachableOps(app, options.given);

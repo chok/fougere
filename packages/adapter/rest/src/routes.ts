@@ -1,8 +1,4 @@
-/**
- * @fougere/adapter-rest — generates REST route definitions from fougere handlers.
- *
- * Framework-agnostic: produces RouteDefinition[], consumed by an adapter (Fastify, Express, etc).
- */
+/** @fougere/adapter-rest — generates REST route definitions from fougere handlers. */
 import type { Field, Fields, SchemaOrCard } from '@fougere/schema';
 import { fieldsOf, Visibility } from '@fougere/schema';
 import type { HandlerEntry as CoreHandlerEntry } from '@fougere/core';
@@ -27,15 +23,7 @@ export interface RouteDefinition {
   outputFields?: Fields;
   /** Explicit success status. Defaults to 201 only for the canonical `create` op. */
   successStatus?: number;
-  /**
-   * The operation in words — the method's own doc sentence, carried by the contract.
-   *
-   * A route is what an OpenAPI `summary` is generated FROM, and the sentence reached
-   * this file already through core's `EffectiveOperation` table;
-   * only this type had no name for it, so every generated route was undocumented while
-   * the sentence sat one property away. Carried, not rendered: emitting OpenAPI is a
-   * reader's job, and this is what it reads.
-   */
+  /** The operation in words — the method's own doc sentence, carried by the contract. */
   description?: string;
   // No presenter here. A route used to carry the instance and its field names so the
   // registration could enrich each row; the façade does that for every door now
@@ -58,31 +46,11 @@ interface EntityEntry {
   exposed?: boolean;
 }
 
-/**
- * Only what this projection reads of a scanned handler — five fields of nine.
- *
- * The narrowness is deliberate: a consumer that declares what it consumes accepts a
- * minimal literal in a test and does not break when a field it ignores moves. What was
- * NOT deliberate is that the two names it does read were spelled again here, so renaming
- * `entityName` to `address` in core left this file compiling against a field the runtime
- * object no longer carried — a silent break, caught only because the same commit touched
- * the reads. `Pick` keeps the narrow view and makes core the one place the names live.
- *
- * `schema-graphql` holds a copy of this shape and cannot do the same: it depends on
- * `@fougere/schema` and `@fougere/http`, never on core, which is what lets a projection
- * package stay structurally typed. There the duplication is the doctrine, not an oversight.
- */
+/** Only what this projection reads of a scanned handler — five fields of nine. */
 type HandlerEntry = Pick<CoreHandlerEntry, 'address' | 'surface'> & {
   /** `Crud(Post, PostPublic)` — the handler-wide output view, scoping every op. */
   outputOverride?: SchemaOrCard;
-  /**
-   * The scanned constructor, which carries the same statement made on the class.
-   *
-   * Typed as a constructor that MAY carry the static, not as `{ __output?: … }` alone:
-   * a type whose every property is optional is weak, and TS refuses a constructor that
-   * happens not to carry it — *has no properties in common*. So the narrow view was
-   * unassignable from the real entry for a second reason after `operations`.
-   */
+  /** The scanned constructor, which carries the same statement made on the class. */
   ctor?: (new (...args: never[]) => unknown) & { __output?: SchemaOrCard };
 };
 // No `operations` here, and its absence is the point. It was declared, never read — this
@@ -185,20 +153,7 @@ export interface GenerateRoutesOptions {
   surface?: string;
 }
 
-/**
- * Generate REST route definitions from a fougere App.
- *
- * Conventions:
- * - Entity name → pluralized base path (/posts, /authors)
- * - list → GET /posts
- * - findById → GET /posts/:id
- * - create → POST /posts
- * - update → PUT /posts/:id
- * - delete → DELETE /posts/:id
- * - Custom: searchByTitle → GET /posts/search-by-title
- * - Custom with ById: archiveById → POST /posts/:id/archive
- * - Override any route via options.overrides
- */
+/** Generate REST route definitions from a fougere App. */
 export function generateRoutes(app: AppLike, options?: GenerateRoutesOptions): RouteDefinition[] {
   const prefix = options?.prefix ?? '';
   const overrides = options?.overrides ?? {};

@@ -1,11 +1,4 @@
-/**
- * JSON-RPC 2.0 framing — the standard written form of a call.
- *
- * The spec is the reuse: these few lines follow it, no lib adds anything.
- * `method` is `entity.op`; `params` is the InvocationContext untouched.
- * A FougereError travels whole in `error.data` (spec keeps `error.code`
- * for integers — the semantic code lives in the data).
- */
+/** JSON-RPC 2.0 framing — the standard written form of a call. */
 
 export interface RpcRequest {
   jsonrpc: '2.0';

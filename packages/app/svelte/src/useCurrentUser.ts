@@ -1,11 +1,4 @@
-/**
- * The session: resolved server-side, read here as a store. `refresh()` re-reads it
- * after a client-side auth change — no page reload, no hand-rolled /api/me.
- *
- * SvelteKit hands a `load` function's data down through the page, so a layout that
- * already resolved the session can `hydrate()` this store and the page arrives
- * knowing its user. Without it, the store fetches once on first read.
- */
+/** The session: */
 import { writable, derived, type Readable } from 'svelte/store';
 import type { SessionView } from '@fougere/app/client';
 

@@ -72,17 +72,7 @@ function malformedJsonResponse(c: any): Response {
   return sendResponse(c, { status: 400, data: { code: 'BAD_REQUEST', message: 'Malformed JSON body' } });
 }
 
-/**
- * Create an HttpRouter backed by a Hono app.
- *
- * ```ts
- * import { Hono } from 'hono'
- * import { createHonoRouter } from '@fougere/http'
- *
- * const hono = new Hono()
- * const router = createHonoRouter(hono)
- * ```
- */
+/** Create an HttpRouter backed by a Hono app. */
 export function createHonoRouter(app: HonoLike): HttpRouter {
   return {
     use(...args: [Middleware] | [string, Middleware]): void {

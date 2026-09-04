@@ -1,17 +1,4 @@
-/**
- * react-admin's `DataProvider`, answered by the Fougere wire.
- *
- * Nine functions, and every one of them had a counterpart already: `getList` is
- * `ListOptions`, `getManyReference` is the storage's `findAllByKeys` (written for a
- * presenter that wanted "the items of these lists"), `filter` is `where` — an
- * equality map that already refuses an unknown key, because a filter silently
- * dropped had once returned the whole table.
- *
- * It talks to the FAÇADE and never to a storage, which is not a precaution here but a
- * consequence: this runs in a browser, and the only thing a browser can reach is the
- * call endpoint. Judges, presenters and middlewares are therefore on the path of
- * every read and every write the back-office makes.
- */
+/** react-admin's `DataProvider`, answered by the Fougere wire. */
 import {
   sendCall,
   fetcher as browserFetcher,
@@ -27,12 +14,7 @@ import { validationErrorsOf } from '@fougere/core/contract';
 export interface ResourceKey {
   /** The registration key its door answers under — `post`, not `Post`. */
   name: string;
-  /**
-   * The field that identifies a row. react-admin insists on `id`; an entity does not,
-   * so the provider renames it on the way out and back. `FieldSet.primary` reads it off
-   * the card, and answers `undefined` rather than defaulting — a shape with no primary
-   * has no row identity to invent.
-   */
+  /** The field that identifies a row. */
   primary: string;
 }
 
@@ -46,14 +28,7 @@ export interface ProviderOptions {
 
 type Row = Record<string, unknown>;
 
-/**
- * A refusal, in the shape react-admin reads.
- *
- * `body.errors` keyed by field is what its forms display; `errorsByField` already
- * produces exactly that, and is the same function the Vue and React form primitives
- * use — so a field is highlighted identically whichever door the page came through.
- * A non-validation failure passes through untouched: it is not a form's business.
- */
+/** A refusal, in the shape react-admin reads. */
 function asAdminError(err: unknown): unknown {
   const refusals = validationErrorsOf(err);
   if (!refusals) return err;
@@ -106,16 +81,7 @@ export function createDataProvider(options: ProviderOptions) {
   };
 
   return {
-    /**
-     * One page, and how it knows there is another.
-     *
-     * `count: true` is asked for and read when it arrives — but `ListResult` extends
-     * `Array`, so `JSON.stringify` drops its `total` and nothing wraps a `page`
-     * result today. The same handler therefore answers a total in-process and none
-     * over the wire. Rather than depend on it, the page is fetched one row longer
-     * than asked: the surplus row IS the answer to "is there a next page", which is
-     * `pageInfo`, a form react-admin accepts in place of a total.
-     */
+    /** One page, and how it knows there is another. */
     getList: async (resource: string, params: {
       pagination?: { page: number; perPage: number };
       sort?: { field: string; order: string };
@@ -146,11 +112,7 @@ export function createDataProvider(options: ProviderOptions) {
       return { data: row };
     },
 
-    /**
-     * N calls, and the reason is upstream: `findByKeys` is a gesture of the storage port,
-     * not one of `Crud`'s five ops, so there is no door to ask for several rows by id.
-     * Said here rather than hidden — the day `Crud` names that op this becomes one call.
-     */
+    /** N calls, and the reason is upstream: */
     getMany: async (resource: string, params: { ids: (string | number)[] }) => {
       const key = keyOf(resource);
       const rows = await Promise.all(
@@ -199,13 +161,7 @@ export function createDataProvider(options: ProviderOptions) {
       return { data: (params.previousData ?? { id: params.id }) as Row };
     },
 
-    /**
-     * The bulk pair, one call per row.
-     *
-     * `Together<[…]>` would make them one unit of work — but it is a port a HANDLER
-     * asks for, and this is a browser. Making these atomic means naming an operation
-     * in the frond that says so, which is the app's sentence to write, not ours.
-     */
+    /** The bulk pair, one call per row. */
     updateMany: async (resource: string, params: { ids: (string | number)[]; data: Row }) => {
       const key = keyOf(resource);
       await Promise.all(params.ids.map((id) => call(resource, 'update', {
@@ -219,18 +175,7 @@ export function createDataProvider(options: ProviderOptions) {
       return { data: params.ids };
     },
 
-    /**
-     * A tenth method, because the other nine are CRUD and a Frond is not.
-     *
-     * react-admin's verbs describe a RESOURCE; `publish` describes an ACTION, and none of
-     * the nine can carry it. `DataProvider` has an index signature for exactly this case.
-     *
-     * **The id rides in `params`, and that is an assumption.** The card states an op's
-     * input SCHEMA and never its binding plan — `computeBindingPlan` lives in the boot and
-     * does not travel — so a button derived from a card must guess where each argument is
-     * read from, and it guesses the CRUD convention. True of every op the scan derives
-     * today; the honest fix is upstream, making the binding ride in `CardOp`.
-     */
+    /** A tenth method, because the other nine are CRUD and a Frond is not. */
     invoke: async (
       resource: string,
       params: { op: string; id?: string | number; data?: Row },
@@ -245,14 +190,7 @@ export function createDataProvider(options: ProviderOptions) {
 
 export type FougereDataProvider = ReturnType<typeof createDataProvider>;
 
-/**
- * The card arrives asynchronously; react-admin requires a provider synchronously.
- *
- * Spell the nine delegates instead of hiding them behind a Proxy. Apart from being
- * inspectable and type-checked, this survives object spreading — the prototype used a
- * Proxy and then spread it into `{}`, which enumerated no methods and handed react-admin
- * an empty provider.
- */
+/** The card arrives asynchronously; react-admin requires a provider synchronously. */
 export function createLazyDataProvider(load: () => Promise<FougereDataProvider>): FougereDataProvider {
   return {
     getList: async (...args) => (await load()).getList(...args),

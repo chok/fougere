@@ -1,13 +1,4 @@
-/**
- * How often a batch leaves, and how the beat stops.
- *
- * `flushMs: 0` means "nobody is on a timer here, I will say when" — and on a Worker it is
- * not a preference, it is the only legal form: Cloudflare REFUSES a deployment whose
- * module scope sets a timeout ("Disallowed operation called within global scope"), and an
- * app built at module scope builds its exporter there. Measured 2026-08-23, the deploy
- * failed with error 10021. The isolate is frozen at the response anyway, so the timer
- * could never have fired; `ctx.waitUntil(flushTelemetry())` is what sends.
- */
+/** How often a batch leaves, and how the beat stops. */
 export class Beat {
   private constructor(
     private readonly timer: ReturnType<typeof setInterval> | undefined,

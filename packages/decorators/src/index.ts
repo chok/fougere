@@ -1,13 +1,4 @@
-/**
- * TC39 Stage 3 decorator — marks a class or method as part of the frond's
- * public contract.
- *
- * On a class: sets `__exposed = true` (readable via `isExposed()`).
- * On a method: collects method name in a WeakMap keyed by class (readable via `getExposedMethods()`).
- *
- * This is syntactic sugar — the source of truth for exposure can also be
- * `defineFrond({ expose: [...] })` in `frond.config.ts`, which takes precedence.
- */
+/** TC39 Stage 3 decorator — marks a class or method as part of the frond's public contract. */
 
 const exposedMethods = new WeakMap<object, Set<string>>();
 

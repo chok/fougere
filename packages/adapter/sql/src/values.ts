@@ -1,20 +1,4 @@
-/**
- * The values a driver accepts, and the values an entity declares.
- *
- * A driver binds numbers, strings, buffers and null — nothing else. An entity declares
- * booleans, dates, lists and objects. Something has to sit between the two, and until
- * now nothing did: `done: bool()` threw at insert ("SQLite3 can only bind numbers,
- * strings, bigints, buffers, and null"), a `date()` could only be written as the ISO
- * string its own type forbids, and both came back as whatever the column held.
- *
- * The pair below is derived from the column's shape alone — no new declaration, no axis
- * to read. It lives in the storage adapter because that is where the driver's limits are
- * known; the entity keeps saying `boolean` and `Date`.
- *
- * Drivers differ in how much they already do (Postgres hands back real booleans and
- * Dates, SQLite hands back 0/1 and text), so every read guards on what it actually got
- * instead of assuming.
- */
+/** The values a driver accepts, and the values an entity declares. */
 import type { ColumnShape } from './table.js';
 
 export interface ValueCodec {
@@ -45,15 +29,7 @@ const json: ValueCodec = {
   read: (v) => (typeof v === 'string' ? JSON.parse(v) : v),
 };
 
-/**
- * A driver may answer a number as a BigInt — Postgres does it for `count(*)` and for
- * `bigint` columns, DuckDB for every count. The entity declares a number, so that is
- * what comes back.
- *
- * Out of range it REFUSES rather than rounding. `Number(9007199254740993n)` is
- * `9007199254740992` — a wrong answer, silently, and the row would look fine. A value
- * that large is a real identifier somewhere, and its field should say `text()`.
- */
+/** A driver may answer a number as a BigInt — Postgres does it for `count(*)` and for `bigint` colum… */
 const numeric: ValueCodec = {
   write: (v) => (typeof v === 'bigint' ? fits(v) : v),
   read: (v) => (typeof v === 'bigint' ? fits(v) : v),

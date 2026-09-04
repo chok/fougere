@@ -14,11 +14,7 @@ export interface OpDescriptor {
   cardinality?: 'one' | 'maybe' | 'many' | 'page' | 'none';
 }
 
-/**
- * So a consumer sees the cardinality in the type, not in a doc line.
- * FR : pour qu'un consommateur voie la cardinalité dans le type, pas dans une ligne de doc.
- * `'maybe'` → `Post | undefined`; `'page'` → `Post[] & { total?: number; … }`
- */
+/** So a consumer sees the cardinality in the type, not in a doc line. */
 function returnTypeOf(op: OpDescriptor, rowType: string): string {
   switch (op.cardinality) {
     case 'many': return `${rowType}[]`;

@@ -1,12 +1,4 @@
-/**
- * SQLite on a file — the convention a first run meets, and the only driver this package owns.
- *
- * It sits behind its own subpath because `better-sqlite3` is a NATIVE module and `node:fs`
- * is a builtin: a bundler cannot prune a module that imports them, so re-exporting this
- * from the index made the whole adapter unreachable from a runtime that has neither. Same
- * cut as `@fougere/transport-http/receive`, and for the same reason — share the projection,
- * never the plumbing.
- */
+/** SQLite on a file — the convention a first run meets, and the only driver this package owns. */
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { Kysely, SqliteDialect } from 'kysely';
@@ -51,14 +43,7 @@ export function setupSqlite(opts: SqliteSetupOptions = {}): SqliteSetup {
   };
 }
 
-/**
- * `source: 'sql'` — answered HERE and not in the driver-free index, because answering a
- * name means building a driver, and this is the one this package owns.
- *
- * The refusal is `refuseUnresolvable` moved: it lived in `@fougere/defaults`, which happened
- * to import the driver, so a second adapter had nowhere to say it exists. A dialect this
- * package cannot build from a name is refused here, where the reason is true.
- */
+/** `source: */
 Sources.register('sql', (conf: SourceConfig): Source => {
   const dialect = conf.dialect as string | undefined;
   if (dialect !== undefined && dialect !== 'sqlite') {

@@ -1,14 +1,4 @@
-/**
- * What the app hosts, read as a back-office.
- *
- * The card (`rpc.discover`) already answers every question a back-office asks: which
- * doors exist, what each one stores, and which of the five verbs it serves. So there
- * is nothing to generate and nothing to configure — a new entity appears in the menu
- * because the card grew a door, not because a file was written.
- *
- * Two projections of the same shape, and they are the pair `form.ts` already draws:
- * `tableColumnsOf` for what a list SHOWS, `formFieldsOf` for what a form SUPPLIES.
- */
+/** What the app hosts, read as a back-office. */
 import { Card, FieldSet, type SchemaView } from '@fougere/schema';
 import {
   CALL_ENDPOINT,
@@ -84,13 +74,7 @@ export function capabilitiesOf(operations: readonly Pick<AdminOperation, 'name'>
   };
 }
 
-/**
- * A door with no schema is not a resource.
- *
- * The card omits `schema` when nothing is stored under that name, and that is
- * ordinary — a health check, a search across several shapes. There is no table to
- * draw for it, and no form. It stays reachable by hand; it is simply not furniture.
- */
+/** A door with no schema is not a resource. */
 export function resourcesOf(card: IdentityCard): AdminResource[] {
   const out: AdminResource[] = [];
   for (const frond of card.fronds) {
@@ -126,14 +110,7 @@ export function keysOf(resources: AdminResource[]): Record<string, ResourceKey> 
   return Object.fromEntries(resources.map((r) => [r.name, { name: r.name, primary: r.primary }]));
 }
 
-/**
- * Ask the running app what it hosts.
- *
- * `rpc.discover` travels on the same wire as every other call — it is a reserved op,
- * not a second endpoint — so a back-office needs no configuration to find its
- * subject, and gets the same answer whether the frond is in this process or behind
- * an address in `remotes:`.
- */
+/** Ask the running app what it hosts. */
 export async function fetchCard(
   endpoint = CALL_ENDPOINT,
   fetcher: Fetcher = browserFetcher,

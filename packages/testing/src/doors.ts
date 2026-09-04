@@ -12,13 +12,7 @@ export interface Verdict {
   errors?: ValidationError[];
 }
 
-/**
- * What a door answers, in the shape a verdict is compared in.
- *
- * A refusal reaches a caller as a thrown `FougereError` carrying `details`, not as a
- * returned value — so the translation happens once, here, and every reader below compares
- * the same thing.
- */
+/** What a door answers, in the shape a verdict is compared in. */
 export async function verdictOf(call: () => Promise<unknown>): Promise<Verdict> {
   try {
     await call();
@@ -40,13 +34,7 @@ export interface CheckOptions extends SampleOptions {
   given?: Record<string, unknown>;
 }
 
-/**
- * The declared contract, posed to the façade that will receive it.
- *
- * Declares one `it` per case rather than looping inside a single one: a failure names the
- * case, and a suite that lists what it checked is the point — the list comes from the
- * entity, not from what the author remembered.
- */
+/** The declared contract, posed to the façade that will receive it. */
 export function checkContract(app: App, entity: SchemaView, options: CheckOptions = {}): void {
   const { name, create, update } = opsFor(entity);
   const run = createLocalRunner(app);
@@ -66,13 +54,7 @@ export function checkContract(app: App, entity: SchemaView, options: CheckOption
   });
 }
 
-/**
- * What may leave, checked against what the entity says may leave.
- *
- * Costs nothing to state: `Visibility.output` already answers it, and a field the boundary
- * closes has no business in any response. A `password: text({ boundary: 'writeOnly' })`
- * that reaches a caller is the one leak no reviewer catches by reading a handler.
- */
+/** What may leave, checked against what the entity says may leave. */
 export function checkOutput(app: App, entity: SchemaView, options: CheckOptions = {}): void {
   const { name, create } = opsFor(entity);
   const run = createLocalRunner(app);

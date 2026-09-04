@@ -1,11 +1,4 @@
-/**
- * The form contract — state, validation, submission, error mapping. Never a widget.
- *
- * `values` is a writable store, so a component binds straight into it with
- * `bind:value={$form.values[field.name]}`. That is the Svelte equivalent of Vue's
- * reactive object and of React's `setValue`: the same contract, three ways of
- * holding a value, none of which is a rule.
- */
+/** The form contract — state, validation, submission, error mapping. */
 import { writable, derived, get, type Readable, type Writable } from 'svelte/store';
 import { validationErrorsOf } from '@fougere/core/contract';
 import {

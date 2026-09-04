@@ -14,14 +14,7 @@ import {
 export { AuthUser, AuthVerification, authEntities } from './entities.js';
 export type { FougereProviders, OIDCProviderConfig } from './translate.js';
 
-/**
- * Options accepted by the betterAuth() factory in fougere.config.ts.
- *
- * `user` should come from the app's own frond (roles, extra columns, its own
- * table — Session/Account are built against it, see `authEntities`). Omitting
- * it falls back to the package's `AuthUser`. Other entities default to the
- * shapes shipped by this package and can be overridden too.
- */
+/** Options accepted by the betterAuth() factory in fougere.config.ts. */
 export interface BetterAuthOptions {
   user?: SchemaView;
   secret: string;
@@ -35,18 +28,7 @@ export interface BetterAuthOptions {
   verification?: SchemaView;
 }
 
-/**
- * Factory used in fougere.config.ts:
- *
- * ```ts
- * export default defineFougere({
- *   auth: betterAuth({ user: User, secret, providers: {...} }),
- * });
- * ```
- *
- * Returns a lazy AuthConfig — the better-auth engine is only constructed when
- * the core calls `create(ctx)` at boot, with the resolved db + storageFactory.
- */
+/** Factory used in fougere.config.ts: */
 export function betterAuth(opts: BetterAuthOptions): AuthConfig {
   const userSchema = opts.user ?? AuthUser;
   const { AuthSession, AuthAccount } = authEntities(userSchema);

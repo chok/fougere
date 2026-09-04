@@ -1,13 +1,5 @@
 import { upperFirst, FieldSet, Role } from '@fougere/schema';
-/**
- * Auto-register GraphQL types and operations from a fougere App.
- *
- * Reads scanned entities + handler facades and registers
- * types, inputs, queries and mutations automatically.
- * Respects handler method-based contracts and surfaces config.
- *
- * Relations (ref/many) are auto-wired between registered types.
- */
+/** Auto-register GraphQL types and operations from a fougere App. */
 import type SchemaBuilder from '@pothos/core';
 import type { Fields, SchemaView, SchemaOrCard } from '@fougere/schema';
 import { Shapes, fieldsOf, } from '@fougere/schema';
@@ -15,11 +7,7 @@ import { registerType, registerOperations, type OperationMeta } from './pothos.j
 
 type HandlerFacade = Record<string, Function>;
 
-/**
- * The relation a foreign key points at — `authorId → author`, `user_id → user`.
- * Returns undefined when the field carries no id suffix at all: there is nothing to
- * derive, and taking the scalar's own name would collide with it.
- */
+/** The relation a foreign key points at — `authorId → author`, `user_id → user`. */
 function relationNameFor(fieldName: string): string | undefined {
   const stripped = fieldName.replace(/(_id|Id|ID)$/, '');
   return stripped && stripped !== fieldName ? stripped : undefined;
@@ -41,15 +29,7 @@ interface Batch {
 /** The batch of ONE direction — the two sides of a relation must not share a read. */
 const directionKey = (entity: string, field: string) => `${entity}#${field}`;
 
-/**
- * How many keys go into one `list` call.
- *
- * A page has no ceiling, and `list` is the one read the storage refuses to split (a limit
- * and an order do not recompose across statements). So the slicing happens HERE, where
- * the answer is a map being assembled and slices merge for free. Below SQL Server's
- * 2100 bindings, the lowest of the four engines — this side does not know the dialect,
- * so it takes the floor rather than guessing.
- */
+/** How many keys go into one `list` call. */
 const KEYS_PER_READ = 1000;
 
 /** Read a key set in slices, merging what each answers. */
@@ -79,19 +59,7 @@ const concatEach = (into: Map<string, any[]>, from: Map<string, any[]>) => {
   }
 };
 
-/**
- * The keys asked for during one tick, answered by one read.
- *
- * graphql-js calls a field resolver once per parent, so a page of 50 rows asked for
- * its relation 50 times — measured, with 5 distinct keys behind those 50 calls. The
- * keys of a tick are collected and answered together, which is the shape the framework
- * already imposes one level up: a presenter receives the PAGE (`egress.ts`).
- *
- * Scoped by the request's context object, which graphql-js hands identically to every
- * resolver of one request and never shares with another — two callers must never be
- * answered out of one read. When there is no context (a resolver called directly, as
- * the tests do), the scope is a shared object and the tick alone bounds the batch.
- */
+/** The keys asked for during one tick, answered by one read. */
 const batches = new WeakMap<object, Map<string, Batch>>();
 const NO_CONTEXT: object = {};
 
@@ -174,32 +142,18 @@ interface AppLike {
   facadeFor(entity: string, surface?: string): Record<string, Function> | undefined;
   /** Canonical operation table produced by core. */
   operationsFor(entity: string, surface?: string): Map<string, OperationMeta> | undefined;
-  /**
-   * The presenter of an entity — `undefined` when none. Asked for rather than
-   * resolved by a key spelled here: this adapter used to build `${Name}Presenter`
-   * itself, and a convention respelled in two places drifts silently on the day it
-   * changes, exactly as `facadeFor` exists to prevent for doors.
-   */
+  /** The presenter of an entity — `undefined` when none. */
   presenterFor(entity: string): unknown | undefined;
 }
 
 // ─── Helpers ────────────────────────────────────
 
-/**
- * The key an entity is filed under — case-folded, because the same entity is spelled
- * differently depending on where its name came from: the scan yields the registration name
- * (`authorUser`), while a card's relation target is fully lowercased by `describe`
- * (`authoruser`). Folding both is what lets one registry serve both sources.
- */
+/** The key an entity is filed under — case-folded, because the same entity is spelled differently de… */
 function registryKey(entityName: string): string {
   return entityName.toLowerCase();
 }
 
-/**
- * The key a relation points at. A live entity class answers with its class name; a target
- * rebuilt from a lone card is a `{ name }` stand-in and answers with the name `describe`
- * wrote. Both are names, which is the whole reason this resolves by name.
- */
+/** The key a relation points at. */
 function targetKey(target: unknown): string {
   return registryKey(String((target as { name?: string } | undefined)?.name ?? ''));
 }
@@ -213,20 +167,8 @@ export interface RegisterAllOptions {
   surface?: string;
 }
 
-/**
- * Auto-register GraphQL types and operations for all entities
- * in the app that have a matching handler facade.
- *
- * Operations are driven by parsed handler signatures (from the scanner).
- * Relations (ref/many) are auto-wired between registered entity types.
- */
-/**
- * The GraphQL type of a declared presenter view, built once per view class.
- *
- * Named after the field that emits it (`OrderItems`, `OrderUser`) rather than after the view
- * class, so two fields sharing one view still land on the same type and a view used twice is
- * registered once — Pothos refuses a duplicate type name and would take the schema down.
- */
+/** Auto-register GraphQL types and operations for all entities in the app that have a matching handl… */
+/** The GraphQL type of a declared presenter view, built once per view class. */
 const viewTypes = new WeakMap<object, any>();
 function viewTypeOf(
   builder: InstanceType<typeof SchemaBuilder>,

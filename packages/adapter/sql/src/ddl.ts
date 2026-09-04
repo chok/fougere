@@ -1,12 +1,4 @@
-/**
- * DDL — the table description, rendered as SQL.
- *
- * Kysely's schema builder is what makes this dialect-agnostic: it owns the
- * identifier quoting and the per-engine syntax, so this module only decides
- * *what* to emit. Compilation needs no connection — a `DummyDriver` paired with
- * a real query compiler renders the statement for any engine, which is why the
- * whole surface is testable without a database.
- */
+/** DDL — the table description, rendered as SQL. */
 import {
   Kysely,
   DummyDriver,
@@ -58,18 +50,7 @@ export function compiler(name: DialectName): Kysely<any> {
 
 // ─── CREATE TABLE ──────────────────────────────────
 
-/**
- * Render `CREATE TABLE` for one described table.
- *
- * `IF NOT EXISTS` is emitted everywhere it exists — SQL Server has no such
- * clause, so there the statement is bare and the caller must not replay it
- * blindly (the diff pass, once it lands, answers that properly).
- *
- * `skipReferences` names the columns whose FK is rendered WITHOUT the inline
- * `references()` — the column itself still gets created; `orderTables` sends a
- * column here when its target is part of a cycle, so the constraint reaches the
- * table separately, once every table involved exists (`addForeignKeyConstraintSQL`).
- */
+/** Render `CREATE TABLE` for one described table. */
 export function createTableSQL(
   table: TableDef,
   dialectName: DialectName,
@@ -121,13 +102,7 @@ export function createTableSQL(
   return builder.compile().sql;
 }
 
-/**
- * `CREATE INDEX` for every column that asked for one.
- *
- * Separate statements, never part of `CREATE TABLE`: an index is not a constraint, it
- * changes no answer — only what a read costs. `IF NOT EXISTS` everywhere it exists, so
- * replaying the batch is safe (SQL Server has no such clause, same rule as the tables).
- */
+/** `CREATE INDEX` for every column that asked for one. */
 export function indexSQL(table: TableDef, column: ColumnDef, dialectName: DialectName): string {
   let builder = compiler(dialectName)
     .schema.createIndex(`${table.name}_${column.name}_idx`)
@@ -144,12 +119,7 @@ export function createIndexSQL(table: TableDef, dialectName: DialectName): strin
     .map((column) => indexSQL(table, column, dialectName));
 }
 
-/**
- * `ALTER TABLE ADD CONSTRAINT` for one FK `orderTables` deferred — closes a
- * relation cycle once every table in it exists. Not available on SQLite (its
- * `ALTER TABLE` is limited to RENAME/ADD COLUMN/RENAME COLUMN/DROP COLUMN) — a
- * caller on that dialect never produces a deferred edge to render here.
- */
+/** `ALTER TABLE ADD CONSTRAINT` for one FK `orderTables` deferred — closes a relation cycle once eve… */
 export function addForeignKeyConstraintSQL(table: TableDef, column: ColumnDef, dialectName: DialectName): string {
   const ref = column.references!;
   const name = `${table.name}_${column.name}_fk`;
@@ -169,22 +139,7 @@ export interface GenerateOptions {
   dialect?: DialectName;
 }
 
-/**
- * `CREATE TABLE` for every entity the app hosts — scanned frond entities plus
- * auth runtime entities when present.
- *
- * SQLite resolves FK targets lazily and accepts any order, and it has no
- * `ALTER TABLE ADD CONSTRAINT` to close a cycle with — every FK stays inline,
- * unordered. Every other engine needs a referenced table to exist first:
- * `orderTables` sorts the batch and reports the edges a cycle forces to defer,
- * rendered as `ALTER TABLE ADD CONSTRAINT` after every `CREATE TABLE`.
- *
- * Caveat for a repeat call (`autoMigrate`): `CREATE TABLE IF NOT EXISTS` is
- * idempotent, `ADD CONSTRAINT` is not — on pg/mysql/mssql, calling this twice
- * for an app with a relation cycle re-issues the same constraint and errors.
- * The introspection-based `migrate()` (`diff.ts`) doesn't have this problem: it
- * only ever emits a table's constraints once, the run that creates it.
- */
+/** `CREATE TABLE` for every entity the app hosts — scanned frond entities plus auth runtime entities… */
 export function generateSQL(app: AppLike, options?: GenerateOptions): string[] {
   const resolve = options?.tableName ?? toTableName;
   const dialect = options?.dialect ?? 'sqlite';
@@ -227,13 +182,7 @@ function runOn(sink: SqlSink, statement: string): unknown {
   return 'execute' in sink ? sink.execute(statement) : sink.exec(statement);
 }
 
-/**
- * Create every missing table. Additive only — an existing table is left alone.
- *
- * Stays SYNCHRONOUS when the sink is (a raw better-sqlite3 handle), so a caller
- * that doesn't await still gets its tables before the next statement. Returns a
- * promise only when the sink actually returns one.
- */
+/** Create every missing table. */
 export function autoMigrate(app: AppLike, sink: SqlSink, options?: GenerateOptions): void | Promise<void> {
   const pending = generateSQL(app, options)
     .map((statement) => runOn(sink, statement))

@@ -15,15 +15,7 @@ const STATUS_COLORS: Record<string, string> = {
   '5': '\x1b[31m', // red
 };
 
-/**
- * HTTP request logger — logs method, path, status, and duration.
- *
- * ```ts
- * import { httpLogger } from '@fougere/http'
- *
- * router.use(httpLogger(logger))
- * ```
- */
+/** HTTP request logger — logs method, path, status, and duration. */
 export function httpLogger(logger: LoggerLike): Middleware {
   return async (ctx, next) => {
     const start = performance.now();

@@ -13,12 +13,7 @@ interface Introspectable {
   getMutationType?(): { getFields(): Record<string, RootField> } | null | undefined;
 }
 
-/**
- * The scalar fields of an entity, as a GraphQL selection.
- *
- * Relations are left out: they resolve to an object, so naming one without a sub-selection
- * is a syntax error, and following it would compare a neighbour's rows rather than these.
- */
+/** The scalar fields of an entity, as a GraphQL selection. */
 export function selectionOf(entity: SchemaView): string {
   return Object.entries(Visibility.of(entity.getFields()).output)
     .filter(([, field]) => !Role.of(field as Field).relation)
@@ -26,14 +21,7 @@ export function selectionOf(entity: SchemaView): string {
     .join(' ');
 }
 
-/**
- * The Query field that answers an operation, asked of the schema rather than recomputed.
- *
- * `pluralize` is written privately in `adapter/rest/src/routes.ts` AND in
- * `adapter/graphql/src/pothos.ts`; a third copy here would be the one that drifts. The
- * schema already states the answer, so it is read: a list is the field whose type is the
- * entity's list type, and a find is the field of the entity's own type that takes an id.
- */
+/** The Query field that answers an operation, asked of the schema rather than recomputed. */
 export function queryFieldFor(
   schema: Introspectable,
   entity: SchemaView,
@@ -74,14 +62,7 @@ export function at(data: unknown, path: string[]): unknown {
   return path.reduce<unknown>((value, key) => (value as Record<string, unknown>)?.[key], data);
 }
 
-/**
- * The Mutation field that answers an operation.
- *
- * By NAME here, unlike the Query side: `createProduct` and `quote` both take a single
- * `input` argument and both return `Product!`, so their shapes do not separate them. Two
- * candidates are tried against the real fields — `<op><Entity>` for a CRUD write, and the
- * bare op for a custom one — which needs no pluralization and invents nothing.
- */
+/** The Mutation field that answers an operation. */
 export function mutationFieldFor(schema: Introspectable, entity: SchemaView, op: string): string | undefined {
   const fields = schema.getMutationType?.()?.getFields() ?? {};
   const candidates = [`${op}${entity.name}`, op];
@@ -116,14 +97,7 @@ function enumsOf(entity: SchemaView): Set<string> {
     .map(([name]) => name));
 }
 
-/**
- * A JS value as a GraphQL literal.
- *
- * `JSON.stringify` is not it, twice over: an input object's keys are NAMES, so
- * `{"sku": "x"}` is a syntax error where `{sku: "x"}` is the value — and an ENUM value is
- * a name too, so `status: "draft"` is refused where `status: draft` is taken. Which
- * fields are enums is read from the entity (`shape.enum`), not guessed from the string.
- */
+/** A JS value as a GraphQL literal. */
 function literalOf(value: unknown, enums: Set<string> = new Set(), key?: string): string {
   if (value === null) return 'null';
   if (key !== undefined && enums.has(key) && typeof value === 'string') return value;

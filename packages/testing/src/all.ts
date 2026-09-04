@@ -11,13 +11,7 @@ export interface CheckAllOptions extends DoorOptions, CheckOptions {
   doors?: boolean;
 }
 
-/**
- * Every entity the app SERVES, with its handler.
- *
- * Not every entity it scanned: one with no handler has no façade, so there is no door to
- * ask — the distinction the NOT_FOUND message used to miss. A relation is not followed
- * either; the entity it points at is checked on its own turn if it has a door.
- */
+/** Every entity the app SERVES, with its handler. */
 export function servedEntities(app: App): { name: string; entity: SchemaView }[] {
   const served: { name: string; entity: SchemaView }[] = [];
   for (const frond of app.fronds) {
@@ -29,16 +23,7 @@ export function servedEntities(app: App): { name: string; entity: SchemaView }[]
   return served;
 }
 
-/**
- * The whole suite, for every entity, from a file that names none of them.
- *
- * The list comes from the scan rather than from imports, and that is the point: a list of
- * imports is a second copy of what the project already declares, and it goes stale the day
- * an entity is added — silently, because a missing test cannot fail.
- *
- * An entity whose frond is declared in `remotes:` is not here at all: it is not this app's
- * to serve, and `testApp` does not follow the topology in the first place.
- */
+/** The whole suite, for every entity, from a file that names none of them. */
 export function checkAll(app: App, options: CheckAllOptions = {}): void {
   const except = new Set(options.except ?? []);
   const served = servedEntities(app).filter((one) => !except.has(one.name));

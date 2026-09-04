@@ -1,18 +1,4 @@
-/**
- * Additive presentation changes over the model derived from `rpc.discover`.
- *
- * An extension names only what it changes. It never snapshots a resource, its fields,
- * or its operations, so a field added to the entity tomorrow still appears in the
- * admin. Ordered extensions compose; the last explicit value wins.
- *
- * **It cannot remove a resource or an operation, and that absence is the design.**
- * Both used to carry `hidden`, which hid in the browser what the façade still served
- * — read by anyone as a permission, and enforcing nothing. Membership already has a
- * mechanism: a named surface says what a door serves to one audience, the card
- * answers restricted, and the admin renders what it was told. So the remedy is an
- * endpoint (`/_fougere/call/admin`), not a flag here. A FIELD may still be hidden:
- * that one changes nothing about what is reachable, only about what is drawn.
- */
+/** Additive presentation changes over the model derived from `rpc.discover`. */
 import type { FormField, TableColumn } from '@fougere/app/client';
 import { capabilitiesOf, type AdminOperation, type AdminResource } from './resources.js';
 import { mergeAdminFacets, type AdminFacets } from './facets.js';

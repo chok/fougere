@@ -1,10 +1,5 @@
 import { Lifecycle, Role } from '@fougere/schema';
-/**
- * Entity → citty bridge.
- *
- * Converts Entity fields into citty ArgsDef.
- * The Entity IS the CLI definition — no duplicate schema.
- */
+/** Entity → citty bridge. */
 import type { Fields } from '@fougere/schema';
 import { Shapes, Visibility } from '@fougere/schema';
 import type { ArgsDef, ArgDef } from 'citty';
@@ -59,11 +54,7 @@ export function entityToArgs(fields: Fields): ArgsDef {
   return args;
 }
 
-/**
- * One arg, built WITH its `type`. citty's `ArgDef` is a union discriminated on that key, so
- * a def assembled first and typed afterwards is not one — which is why every branch here
- * returns a complete literal instead of assigning into a shared object.
- */
+/** One arg, built WITH its `type`. */
 function argFor(
   type: string | undefined,
   common: { description?: string; required: boolean },

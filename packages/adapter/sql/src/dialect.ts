@@ -1,62 +1,22 @@
-/**
- * Dialect — the only place that speaks SQL.
- *
- * A dialect answers two questions and nothing else: which column type carries
- * this shape, and does this engine support `RETURNING`. Everything structural
- * (which columns exist, which are keys) is decided upstream in `TableDef`.
- */
+/** Dialect — the only place that speaks SQL. */
 import type { ColumnDef } from './table.js';
 
 export type DialectName = 'sqlite' | 'pg' | 'mysql' | 'mssql';
 
 export interface Dialect {
   name: DialectName;
-  /**
-   * SQL type for a column. `keyed` is true when the column belongs to a primary
-   * key — MySQL and SQL Server cannot index an unbounded text column, so they
-   * narrow to a bounded varchar there.
-   */
+  /** SQL type for a column. */
   columnType(column: ColumnDef, keyed: boolean): string;
   /**
    * Does `INSERT … RETURNING` work? MySQL has no such clause and SQL Server
    * spells it `OUTPUT`; both take the insert-then-select path instead.
    */
   supportsReturning: boolean;
-  /**
-   * How many values one statement may bind — what splits a batch read into several.
-   *
-   * A key set comes from a PAGE, and a page has no ceiling (`list()` with no limit
-   * reads the table), so `where id in (…)` eventually meets the engine's limit.
-   * Measured on SQLite: 32 766 binds, and 32 767 answers `too many SQL variables`.
-   * SQL Server is the low one at 2100, which is why this is per dialect and not one
-   * constant — a batch that works on SQLite and dies on SQL Server is the same value
-   * behaving differently per engine, the thing this file exists to absorb.
-   *
-   * The number below is the limit MINUS a margin for the other values a statement
-   * carries (a filter, a cursor): a batch read is never the only thing in the query.
-   */
+  /** How many values one statement may bind — what splits a batch read into several. */
   maxBindings: number;
-  /**
-   * How this engine spells "write it, or replace what is there".
-   *
-   * `'on conflict'` is the standard clause (SQLite, Postgres); MySQL spells the same
-   * thing `ON DUPLICATE KEY UPDATE`; SQL Server has only `MERGE`, a different statement
-   * with different semantics — so it answers `false` and the port refuses by name
-   * rather than emulating a write with a read in front of it, which would be a lie
-   * about atomicity in an engine that has no transaction here either.
-   */
+  /** How this engine spells "write it, or replace what is there". */
   upsert: 'on conflict' | 'on duplicate key' | false;
-  /**
-   * Is this the engine refusing a duplicate, rather than failing?
-   *
-   * A driver reports it as a plain `Error` whose wording is the engine's own, so only a
-   * dialect can tell — the same reason `maxBindings` and `upsert` live here. Without it
-   * every engine's phrasing would be matched in one place, and this file exists so no
-   * other one learns a dialect.
-   *
-   * A false negative costs an INTERNAL_ERROR where a CONFLICT was due — which is what
-   * every engine answered before this existed, so nothing is made worse by a gap.
-   */
+  /** Is this the engine refusing a duplicate, rather than failing? A driver reports it as a plain `Err… */
   isUniqueViolation(error: unknown): boolean;
 }
 
@@ -192,13 +152,7 @@ export function resolveDialect(name: DialectName): Dialect {
   return dialect;
 }
 
-/**
- * The type this column is emitted with — what the entity stated when it named THIS
- * engine, the shape's own answer otherwise.
- *
- * The fallback is what keeps the statement local: `columnType: { pg: 'tsvector' }` leaves
- * SQLite exactly where it was, so the same entity still boots on every dialect.
- */
+/** The type this column is emitted with — what the entity stated when it named THIS engine, the shap… */
 export function columnTypeFor(dialect: Dialect, column: ColumnDef, keyed: boolean): string {
   return column.stated?.columnType?.[dialect.name] ?? dialect.columnType(column, keyed);
 }

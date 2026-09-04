@@ -1,14 +1,4 @@
-/**
- * Who the caller is, resolved server-side from the request's own headers.
- *
- * Nuxt answers this with a Nitro middleware that stamps `event.context`; a
- * Web-standard host has no such seam on a route handler, so it resolves here
- * instead. Same source (the auth runtime mounted on `app.auth`), same result shape
- * (`{ user, session }`), so `serveRpc` and `serveRest` cannot tell hosts apart.
- *
- * What must stay true in both: this is what the SERVER resolved. A browser sits
- * outside the topology, so nothing here may come from the payload.
- */
+/** Who the caller is, resolved server-side from the request's own headers. */
 import { useFougereApp } from './boot.js';
 
 type SessionApi = {
