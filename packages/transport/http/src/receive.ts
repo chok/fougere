@@ -1,5 +1,9 @@
 /**
  * The envelope door for a host that speaks `Request`/`Response` — hono, a Worker, Next, SvelteKit.
+ *
+ * It reads a `Request` body and `serve` reads a `node:http` stream; the two stay separate
+ * because putting Node through this reader HALVED the Node door — 0.677 to 0.341 of its
+ * baseline, measured 2026-08-22.
  */
 import { handleRpc, type ReceiveOptions } from './server.js';
 import { MAX_BODY_BYTES, CALL_PATH, parseError, tooLarge } from './policy.js';
