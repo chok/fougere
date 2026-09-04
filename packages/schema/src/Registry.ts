@@ -1,16 +1,17 @@
 /**
- * A name → value map, one per kind: formats, generators, adapters, sources, codecs.
+ * A name → value map: formats, generators, codecs, sources.
  *
- * It refuses an unknown name itself, being the only place that can list the known ones.
+ * The error is thrown here because this is where the known names are.
  */
 export class Registry<T> {
   private readonly entries: Map<string, T>;
 
   /**
-   * `kind` is the word a refusal uses, `fix` the sentence telling the reader what to do —
-   * left out by a registry nobody calls `resolve` on.
-   * FR : `kind` est le mot qu'emploie un refus, `fix` la phrase qui dit quoi faire.
-   * `new Registry<Decoder>('boundary decoder', 'call Boundaries.decoders.register(name, fn)')`
+   * The error message, when a name is not registered:
+   * `Unknown boundary decoder 'celsius' — call Boundaries.decoders.register(name, fn).`
+   *          └─ kind ──────┘              └─ fix ───────────────────────────────────┘
+   * FR : le message d'erreur quand un nom n'est pas enregistré.
+   * `fix` is omitted where nothing calls `resolve` — `Formats`, `Boundaries.aliases`.
    */
   constructor(
     private readonly kind: string,
@@ -41,8 +42,8 @@ export class Registry<T> {
   }
 
   /**
-   * The value under a name, refusing when nothing is registered. `at` says where the name was read.
-   * FR : la valeur sous un nom, refusée s'il n'y a rien. `at` dit où le nom a été lu.
+   * The value under a name. Throws when the name is not registered; `at` prefixes the message.
+   * FR : la valeur sous un nom. Lève si le nom n'est pas enregistré ; `at` préfixe le message.
    * `Generators.resolve('ulid')`
    * → throws `Unknown generator 'ulid' — call Generators.register(name, fn). This process answers cuid2, uuid, nanoid.`
    */
@@ -58,8 +59,8 @@ export class Registry<T> {
   }
 
   /**
-   * Whether a name is registered, for a caller that must not throw to find out.
-   * FR : si un nom est enregistré, pour un appelant qui ne doit pas lever pour le savoir.
+   * Whether a name is registered, without throwing.
+   * FR : si un nom est enregistré, sans lever.
    * `Generators.answers('cuid2')` → `true`
    */
   answers(name: string): boolean {
