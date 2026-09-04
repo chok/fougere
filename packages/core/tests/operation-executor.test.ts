@@ -2,9 +2,7 @@ import { entity, text } from '@fougere/schema';
 import { describe, expect, it, vi } from 'vitest';
 import type { OperationContract } from '../src/wire/operation.js';
 import { ArgumentResolver } from '../src/dispatch/ArgumentResolver.js';
-import { InputValidator } from '../src/dispatch/InputValidator.js';
 import { OperationExecutor } from '../src/dispatch/OperationExecutor.js';
-import { OutputProjector } from '../src/dispatch/OutputProjector.js';
 import { OutputView } from '../src/dispatch/OutputView.js';
 
 class Product extends entity({ name: text() }) {}
@@ -32,10 +30,9 @@ describe('OperationExecutor', () => {
         order.push('middleware:after');
         return result;
       }],
-      validator: new InputValidator(),
       arguments: new ArgumentResolver(),
       invoke,
-      projector: new OutputProjector(new OutputView(Product.getFields(), true)),
+      view: new OutputView(Product.getFields(), true),
       present: async (result) => {
         order.push('present');
         return result;
@@ -61,10 +58,9 @@ describe('OperationExecutor', () => {
       operation: 'create',
       contract,
       middlewares: () => [],
-      validator: new InputValidator(),
       arguments: new ArgumentResolver(),
       invoke,
-      projector: new OutputProjector(new OutputView(Product.getFields())),
+      view: new OutputView(Product.getFields()),
     });
 
     await expect(executor.execute({ body: { unknown: true } }))

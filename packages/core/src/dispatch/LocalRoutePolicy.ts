@@ -2,7 +2,7 @@ import type { Call } from '../contract/Call.js';
 import { ErrorCode, FougereError } from '../wire/errors.js';
 import type { Route } from './Route.js';
 import type { RoutePolicy } from './RoutePolicy.js';
-import { RouteNotFoundError } from './RouteNotFoundError.js';
+import { routeNotFound, servedOperations } from './routeNotFound.js';
 
 /** Incoming calls may execute here but never forward to another host. */
 export class LocalRoutePolicy implements RoutePolicy {
@@ -15,8 +15,8 @@ export class LocalRoutePolicy implements RoutePolicy {
   notFound(call: Call, routes: readonly Route[]): Error | undefined {
     if (call.address.entity === 'rpc') return undefined;
 
-    const unknownRoute = new RouteNotFoundError(call, routes, this);
-    if (unknownRoute.servedOperations.length > 0) return unknownRoute;
+    const served = servedOperations(call, routes, this);
+    if (served.length > 0) return routeNotFound(call, served);
 
     const hosted = this.hostedNames(call.address.surface);
     const entity = call.address.entity;

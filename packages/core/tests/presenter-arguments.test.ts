@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { Invocation } from '../src/contract/Invocation.js';
 import { ArgumentResolver } from '../src/dispatch/ArgumentResolver.js';
-import { PresenterArgumentResolver } from '../src/dispatch/PresenterArgumentResolver.js';
+import { presenterArguments } from '../src/dispatch/presenterArguments.js';
 import type { PresenterEntry } from '../src/descriptor/frond.js';
 
-describe('PresenterArgumentResolver', () => {
+describe('presenterArguments', () => {
   it('resolves only fields that declare invocation-dependent parameters', async () => {
     const meta = {
       fieldMeta: [
@@ -19,9 +19,8 @@ describe('PresenterArgumentResolver', () => {
         },
       ],
     } as PresenterEntry;
-    const resolver = new PresenterArgumentResolver(new ArgumentResolver(), new Set());
 
-    await expect(resolver.resolve(meta, Invocation.from({ query: { prefix: '#' } })))
+    await expect(presenterArguments(meta, Invocation.from({ query: { prefix: '#' } }), new ArgumentResolver(), new Set()))
       .resolves.toEqual({ viewerLabel: ['#'] });
   });
 });

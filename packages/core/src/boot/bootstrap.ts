@@ -36,7 +36,7 @@ import { LocalRoutePolicy } from '../dispatch/LocalRoutePolicy.js';
 import { OperationRoute } from '../dispatch/OperationRoute.js';
 import { RemoteRouteResolver } from '../dispatch/RemoteRouteResolver.js';
 import { RouteRegistry } from '../dispatch/RouteRegistry.js';
-import { FacadeEntry } from '../entry/FacadeEntry.js';
+import { facadeOperations } from '../entry/facade.js';
 
 
 /** The one wording for "nobody hosts this here", with both ways out. */
@@ -424,13 +424,13 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         }
       }
 
-      const entry = new FacadeEntry(
+      const operations = facadeOperations(
         handler.surface ? localDispatcher : dispatcher,
         handler.address,
         routeRegistry.operationNames(handler.address, handler.surface),
         handler.surface,
       );
-      container.registerValue(facadeKey, entry.operations);
+      container.registerValue(facadeKey, operations);
     };
 
     // A presenter is about an entity — computed fields sit on a shape — so this walks
@@ -549,10 +549,10 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // `lowerFirst` because a DEPENDENCY names the type as written — `ProductHandler`,
     // PascalCase — while a card declares `product`, so the raw strip asked the router for
     // 'Product' and every by-type dependency on a remote handler answered NOT_FOUND.
-    return new FacadeEntry(
+    return facadeOperations(
       dispatcher,
       lowerFirst(name.replace(/Handler$/, '')),
-    ).operations;
+    );
   });
 
   /** Everything this app holds, let go in reverse of how it was taken: */
@@ -644,12 +644,12 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
     const fallback = facadeAt(facadeKeyOf(entity), false);
     return fallback
-      ? new FacadeEntry(
+      ? facadeOperations(
           localDispatcher,
           entity,
           routeRegistry.operationNames(entity, surface),
           surface,
-        ).operations
+        )
       : undefined;
   };
 

@@ -5,7 +5,7 @@ import type { DispatchPort } from './DispatchPort.js';
 import type { Route } from './Route.js';
 import type { RoutePolicy } from './RoutePolicy.js';
 import { RouteRegistry } from './RouteRegistry.js';
-import { RouteNotFoundError } from './RouteNotFoundError.js';
+import { routeNotFound, servedOperations } from './routeNotFound.js';
 import type { InFlight } from './InFlight.js';
 
 /** Resolves and executes every call through the same transverse lifecycle. */
@@ -29,7 +29,7 @@ export class Dispatcher implements DispatchPort {
       route = resolved && (!this.policy || this.policy.accepts(resolved)) ? resolved : undefined;
       if (!route) {
         throw this.policy?.notFound?.(call, this.routes.routes())
-          ?? new RouteNotFoundError(call, this.routes.routes(), this.policy);
+          ?? routeNotFound(call, servedOperations(call, this.routes.routes(), this.policy));
       }
 
       this.lifecycle.publish(DispatchEvent.resolved(call, route.kind));

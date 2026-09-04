@@ -7,8 +7,8 @@ import {
   type OperationContext,
 } from '../wire/middleware.js';
 import type { ArgumentResolver } from './ArgumentResolver.js';
-import type { InputValidator } from './InputValidator.js';
-import type { OutputProjector } from './OutputProjector.js';
+import type { OutputView } from './OutputView.js';
+import { validateInput } from './validateInput.js';
 
 export interface OperationExecution {
   entity: string;
@@ -16,10 +16,9 @@ export interface OperationExecution {
   operation: string;
   contract: OperationContract | undefined;
   middlewares: () => AppMiddleware[];
-  validator: InputValidator;
   arguments: ArgumentResolver;
   invoke: (args: unknown[]) => unknown | Promise<unknown>;
-  projector: OutputProjector;
+  view: OutputView;
   present?: (result: unknown, invocation: InvocationContext) => Promise<unknown>;
 }
 
@@ -38,7 +37,7 @@ export class OperationExecutor {
       invocation,
     };
     return runMiddlewares(this.execution.middlewares(), context, async () => {
-      const effective = this.execution.validator.validate(
+      const effective = validateInput(
         this.execution.contract?.input,
         invocation,
         context.entity,
@@ -49,7 +48,7 @@ export class OperationExecutor {
       const args = this.execution.contract?.binding
         ? await this.execution.arguments.resolve(this.execution.contract.binding, effective)
         : [];
-      const projected = this.execution.projector.project(
+      const projected = this.execution.view.project(
         await this.execution.invoke(args),
       );
       return this.execution.present

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Call } from '../src/contract/Call.js';
 import type { DispatchPort } from '../src/dispatch/DispatchPort.js';
-import { createTransportEntry } from '../src/entry/TransportEntry.js';
+import { createTransportEntry } from '../src/entry/transport.js';
 
 describe('createTransportEntry', () => {
   it('normalizes legacy transport input before dispatch', async () => {

@@ -5,7 +5,7 @@ import { runMiddlewares, type AppMiddleware, type OperationContext } from '../wi
 import { EMPTY_INVOCATION, type InvocationContext } from '../contract/Invocation.js';
 import { FougereError, ErrorCode } from '../wire/errors.js';
 import { Card, type SchemaView, type SchemaDescriptor } from '@fougere/schema';
-import { DynamicFacade } from '../entry/DynamicFacade.js';
+import { dynamicOperations } from '../entry/facade.js';
 
 interface Route {
   frond: string;
@@ -125,5 +125,5 @@ export function createRemoteFacade(
       transport(call, ctx.invocation ?? invocation));
   };
 
-  return new DynamicFacade(opFn).operations as Facade;
+  return dynamicOperations(opFn) as Facade;
 }

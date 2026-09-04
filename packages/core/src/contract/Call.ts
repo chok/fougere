@@ -12,9 +12,4 @@ export class Call {
     this.invocation = Invocation.from(invocation);
     Object.freeze(this);
   }
-
-  /** Keeps the destination and swaps what the caller supplied — how a middleware rewrites input. */
-  withInvocation(invocation: Invocation): Call {
-    return new Call(this.address, invocation);
-  }
 }

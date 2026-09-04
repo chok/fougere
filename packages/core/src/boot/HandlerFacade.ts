@@ -12,13 +12,11 @@ import type { InvocationContext } from '../contract/Invocation.js';
 import type { Emissions } from './Emissions.js';
 import type { Logger } from '../builtins/logger.js';
 import type { EntityEntry, HandlerEntry, PresenterEntry } from '../descriptor/frond.js';
-import { InputValidator } from '../dispatch/InputValidator.js';
 import { ArgumentResolver } from '../dispatch/ArgumentResolver.js';
 import { OperationExecutor } from '../dispatch/OperationExecutor.js';
-import { OutputProjector } from '../dispatch/OutputProjector.js';
 import { OutputView } from '../dispatch/OutputView.js';
 import { PresenterExecutor } from '../dispatch/PresenterExecutor.js';
-import { PresenterArgumentResolver } from '../dispatch/PresenterArgumentResolver.js';
+import { presenterArguments } from '../dispatch/presenterArguments.js';
 
 /** What this door is about: a handler, the entity behind it when there is one, and where it resolves. */
 export interface Doorway {
@@ -64,18 +62,12 @@ export class HandlerFacade {
   private instance: any;
   private readonly implementationKeys = new Map<string, string>();
   private readonly implementationInstances = new Map<string, any>();
-  private readonly inputValidator = new InputValidator();
   private readonly argumentResolver = new ArgumentResolver(
     (typeName) => this.collectorResolver(typeName),
   );
-  private readonly presenterArguments: PresenterArgumentResolver;
 
   constructor(private readonly door: Doorway, private readonly wiring: Wiring) {
     const { handler, entity } = door;
-    this.presenterArguments = new PresenterArgumentResolver(
-      this.argumentResolver,
-      wiring.collectors,
-    );
     this.refuseCrudWithoutRepository(handler);
 
     door.scope.register(this.handlerKey, handler.ctor, { deps: this.depsOf(handler) });
@@ -219,13 +211,12 @@ export class HandlerFacade {
       operation: op,
       contract,
       middlewares: () => this.wiring.middlewaresFor(address),
-      validator: this.inputValidator,
       arguments: this.argumentResolver,
       invoke: async (args) => {
         const implementation = this.resolvedImplementation(op);
         return implementation.instance[implementation.method](...args);
       },
-      projector: new OutputProjector(view),
+      view,
       ...(view.closed || !presenter ? {} : {
         present: async (result: unknown, effective: InvocationContext) =>
           new PresenterExecutor(
@@ -233,7 +224,7 @@ export class HandlerFacade {
             presenter.fields,
             address,
             op,
-          ).present(result, await this.presenterArguments.resolve(presenter, effective)),
+          ).present(result, await presenterArguments(presenter, effective, this.argumentResolver, this.wiring.collectors)),
       }),
     });
 

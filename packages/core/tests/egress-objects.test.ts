@@ -1,10 +1,9 @@
 import { text, writeOnly } from '@fougere/schema';
 import { describe, expect, it } from 'vitest';
-import { OutputProjector } from '../src/dispatch/OutputProjector.js';
 import { OutputView } from '../src/dispatch/OutputView.js';
 import { PresenterExecutor } from '../src/dispatch/PresenterExecutor.js';
 
-describe('OutputProjector', () => {
+describe('OutputView.project', () => {
   const fields = { name: text(), secret: writeOnly(text()) };
 
   it('applies output boundaries and keeps list metadata', () => {
@@ -13,7 +12,7 @@ describe('OutputProjector', () => {
       { total: 1, hasMore: false },
     );
 
-    const output = new OutputProjector(new OutputView(fields)).project(input) as typeof input;
+    const output = new OutputView(fields).project(input) as typeof input;
 
     expect(output[0]).toEqual({ name: 'Fern' });
     expect(output.total).toBe(1);
@@ -21,7 +20,7 @@ describe('OutputProjector', () => {
   });
 
   it('drops undeclared fields for a closed operation view', () => {
-    const output = new OutputProjector(new OutputView({ name: text() }, true))
+    const output = new OutputView({ name: text() }, true)
       .project({ name: 'Fern', internal: true });
 
     expect(output).toEqual({ name: 'Fern' });
