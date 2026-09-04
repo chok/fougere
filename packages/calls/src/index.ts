@@ -75,7 +75,7 @@ function nameOf(schema: unknown): string | null {
   return typeof named.getName === 'function' ? named.getName() : named.name ?? null;
 }
 
-/** `address -> frond`, resolved once at boot: */
+/** `address -> frond`, resolved once at boot: a call's address does not carry its frond. */
 function frondIndex(app: App): (address: string) => string | undefined {
   const byAddress = new Map<string, string>();
   for (const frond of app.fronds) {

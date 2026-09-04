@@ -3,7 +3,10 @@ import type { Fronds } from '../descriptor/Fronds.js';
 /** Result of scanning a project directory. */
 /** Something the scan could NOT do — recorded instead of swallowed. */
 export interface ScanDiagnostic {
-  /** `blocking` — the app now serves less than its source declares, and no caller can know it: */
+  /**
+   * `blocking` — the app now serves less than its source declares, and no caller can know it: a
+   * handler that failed to parse contributes zero operations.
+   */
   severity: 'blocking' | 'warning';
   /** Stable rule name — `handler-parse-failed`, `directory-unreadable`. */
   code: string;

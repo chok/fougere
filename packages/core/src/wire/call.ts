@@ -49,7 +49,10 @@ export interface SignedCall {
   state?: Record<string, unknown>;
 }
 
-/** One operation, as a stranger meets it — its name, what it is for, what it takes and whether it re… */
+/**
+ * One operation, as a stranger meets it — its name, what it is for, what it takes and whether it
+ * reads or writes.
+ */
 export interface CardOp {
   name: string;
   /** The author's own doc sentence, when the method carries one. */
@@ -60,7 +63,7 @@ export interface CardOp {
   output?: SchemaDescriptor;
   /** `query` reads, `command` writes — the same call REST turns into GET vs POST. */
   kind: 'query' | 'command';
-  /** How much `output` describes: */
+  /** How much `output` describes. */
   cardinality?: 'one' | 'maybe' | 'many' | 'page' | 'none';
 }
 

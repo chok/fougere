@@ -1,4 +1,6 @@
-/** The envelope door for a host that speaks `Request`/`Response` — hono, a Worker, Next, SvelteKit. */
+/**
+ * The envelope door for a host that speaks `Request`/`Response` — hono, a Worker, Next, SvelteKit.
+ */
 import { handleRpc, type ReceiveOptions } from './server.js';
 import { MAX_BODY_BYTES, CALL_PATH, parseError, tooLarge } from './policy.js';
 import type { Transport } from '@fougere/core/contract';

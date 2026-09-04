@@ -1,5 +1,8 @@
 import { Lifecycle } from '@fougere/schema';
-/** Form contract, pure part — derives what a create/edit form is made of from the entity's field axes. */
+/**
+ * Form contract, pure part — derives what a create/edit form is made of from the entity's field
+ * axes.
+ */
 import { Shapes, lowerFirst, Role, Visibility } from '@fougere/schema';
 import type { Field, SchemaView, ValidationError, ValidationResult } from '@fougere/schema';
 
@@ -22,7 +25,10 @@ export interface FormField {
   label: string;
   /** Enum values, when control is 'select'. */
   options?: string[];
-  /** What the browser enforces, under the names it already knows — spread this on the input and the pa… */
+  /**
+   * What the browser enforces, under the names it already knows — spread this on the input and the
+   * page states no rule of its own.
+   */
   attrs?: {
     type?: 'text' | 'email' | 'url' | 'number';
     required?: boolean;
@@ -95,7 +101,7 @@ function labelOf(name: string, entityKey: string): Pick<FormField, 'labelKey' | 
   return { labelKey: `${entityKey}.${name}`, label: name.charAt(0).toUpperCase() + name.slice(1) };
 }
 
-/** The fields a create form is made of: */
+/** The fields a create form is made of. */
 export function formFieldsOf(entity: FormEntity, entityKey: string): FormField[] {
   return Object.entries(Visibility.of(entity.getFields()).input).map(([name, field]) => {
     const f = field;
@@ -141,7 +147,7 @@ function renderOf(field: Field): TableColumn['render'] {
   return 'text';
 }
 
-/** The columns a list is made of: */
+/** The columns a list is made of. */
 export function tableColumnsOf(entity: FormEntity, entityKey: string): TableColumn[] {
   return Object.entries(Visibility.of(entity.getFields()).output)
     .filter(([, field]) => !Role.of(field).isCollection)
@@ -156,7 +162,11 @@ export function tableColumnsOf(entity: FormEntity, entityKey: string): TableColu
     });
 }
 
-/** The wire body of the form's values — an empty control is an absent value at the create boundary (… */
+/**
+ * The wire body of the form's values — an empty control is an absent value at the create boundary
+ * (absence is judged by the lifecycle axis, an empty string would be judged as a present bad
+ * value).
+ */
 export function payloadOf(values: Record<string, unknown>): Record<string, unknown> {
   return Object.fromEntries(
     Object.entries(values).filter(([, v]) => v !== undefined && v !== ''),

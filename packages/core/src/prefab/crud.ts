@@ -58,7 +58,7 @@ export type CrudOpName = 'list' | 'findById' | 'create' | 'update' | 'delete';
 /** Which view each op speaks — omitted ops speak the entity, the trivial view. */
 export type CrudViews = Partial<Record<CrudOpName, EntityConstructor>>;
 
-/** The view an op emits, fabricated: */
+/** The view an op emits, fabricated. */
 type OutOf<V, K extends CrudOpName, T> =
   // Bracketed on purpose: a naked `V extends …` DISTRIBUTES, and the no-view default
   // is the empty map, whose `keyof` is `never` — distribution would then collapse
@@ -106,7 +106,10 @@ export function Crud<E extends EntityConstructor, V extends CrudViews | EntityCo
     /** Handler-wide view only — a per-op map must NOT scope the storage the judges read. */
     static __output = wholeHandler ?? entity;
     static __opOutputs = perOp;
-    /** What this prefab handler declares — read by the façade, merged under the author's own methods. */
+    /**
+     * What this prefab handler declares — read by the façade, merged under the author's own
+     * methods.
+     */
     static __ops: Record<string, OperationContract> = crudOps(entity as unknown as SchemaView & { partial?: () => SchemaView });
 
     storage: Storage<T>;

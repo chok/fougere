@@ -1,6 +1,6 @@
 import type { RouteKind } from './RouteAddress.js';
 
-/** What crosses the door: */
+/** What crosses the door. */
 export interface CallRecord {
   /** Monotonic, and the whole cursor protocol: a reader asks for what is above its own. */
   seq: number;

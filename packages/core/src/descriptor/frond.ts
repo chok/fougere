@@ -30,7 +30,10 @@ export interface EntityEntry {
 export interface HandlerEntry {
   /** Registration key (e.g. 'postHandler'). */
   name: string;
-  /** The name this handler answers to — its class name minus `Handler`, lowercased (`PostHandler` → `p… */
+  /**
+   * The name this handler answers to — its class name minus `Handler`, lowercased (`PostHandler` →
+   * `post`).
+   */
   address: string;
   /** The handler class. */
   ctor: new (...args: never[]) => unknown;
@@ -53,7 +56,7 @@ export interface PresenterFieldMeta {
   name: string;
   /** Inferred return type name: 'string', 'number', 'boolean', or a class name. */
   returnType?: string;
-  /** The field emits a LIST per row — `tags(posts: */
+  /** The field emits a LIST per row — `tags(posts: Post[]): string[][]`. */
   list?: boolean;
   /** Whether the return is nullable. */
   nullable?: boolean;
@@ -71,7 +74,10 @@ export interface PresenterEntry {
   fields: string[];
   /** Per-field type metadata (inferred from source via parser). */
   fieldMeta: PresenterFieldMeta[];
-  /** The view each computed field emits, when the presenter declares one (`Presenter(Order, { items: */
+  /**
+   * The view each computed field emits, when the presenter declares one (`Presenter(Order, {
+   * items: [OrderItemView] })`).
+   */
   views?: PresenterViews;
   /** Constructor dependency type names (from AST scan). */
   deps: string[];
@@ -121,7 +127,10 @@ export interface FrondDescriptor {
   presenters: PresenterEntry[];
   collectors: CollectorEntry[];
   seeds: SeedEntry[];
-  /** Per-surface entity lists from frond.config.ts (e.g. { graphql: ['Post'], rest: ['Post', 'Author'] }). */
+  /**
+   * Per-surface entity lists from frond.config.ts (e.g. { graphql: ['Post'], rest: ['Post',
+   * 'Author'] }).
+   */
   surfaces?: Record<string, string[]>;
   /** Entities this frond may read across sources — see `FrondConfig.reads`. */
   reads?: string[];

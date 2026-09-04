@@ -20,7 +20,10 @@ export interface ResolvedStorage {
   /** Opaque handle handed to auth providers. */
   db?: unknown;
   storageFactory: ((entity: any, name: string) => any) | undefined;
-  /** The source an entity's rows live in — what decides whether a frame gets a real transaction or an… */
+  /**
+   * The source an entity's rows live in — what decides whether a frame gets a real transaction or
+   * an unwind it replays itself.
+   */
   sourceOf?: (entityName: string) => string;
   /**
    * The engine a source runs on — the dual of `sourceOf`, which names it without
@@ -31,7 +34,10 @@ export interface ResolvedStorage {
   sources?: () => string[];
   /** Run `fn` inside one transaction of that source, with a storage factory bound to it. */
   transacted?: <R>(source: string, fn: (storageFactory: (entity: any, name: string) => any) => Promise<R>) => Promise<R>;
-  /** Brings the schema up to date once the app is scanned — the storage's `up`, handed to `migrating()`. */
+  /**
+   * Brings the schema up to date once the app is scanned — the storage's `up`, handed to
+   * `migrating()`.
+   */
   migrate?: (app: App) => Promise<void> | void;
   /** Close every engine this opened — the dual of opening them, declared by whoever did. */
   close?: () => Promise<void>;
@@ -45,7 +51,7 @@ export function declaresStorage(dbConf: DbConfig): boolean {
 }
 
 
-/** The app as ONE source sees it: */
+/** The app as ONE source sees it. */
 function viewOf(
   app: App,
   holds: (name: string) => boolean,

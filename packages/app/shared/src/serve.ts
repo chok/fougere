@@ -36,7 +36,11 @@ export function surfaceOf(path: string): string | undefined {
   return named?.[1];
 }
 
-/** Receiving end for the browser — same wire as process-to-process (JSON-RPC), different trust bound… */
+/**
+ * Receiving end for the browser — same wire as process-to-process (JSON-RPC), different trust
+ * boundary: the browser sits outside the topology, so `state` is whatever the host resolved
+ * server-side, never what the payload claims.
+ */
 export async function serveRpc(app: App, request: Pick<DoorRequest, 'path' | 'body' | 'state'>): Promise<unknown> {
   const runner = createAppRunner(app, surfaceOf(request.path));
   return handleRpc((call, invocation) => runner(call, { ...invocation, state: request.state }), request.body);
@@ -49,7 +53,9 @@ export function rpcParseError() {
 
 // ── REST ─────────────────────────────────────────
 
-/** Match the URL against the canonical table, invoke the call it names, shape the result for HTTP. */
+/**
+ * Match the URL against the canonical table, invoke the call it names, shape the result for HTTP.
+ */
 export async function serveRest(app: App, request: DoorRequest): Promise<Outcome> {
   // The app decides, not the host. A route file may exist and a middleware may be
   // installed; if `fougere.config.ts` does not declare `adapters: { rest: true }`,
@@ -119,7 +125,10 @@ export function shapeRest(operationName: string, result: unknown): Outcome {
 type EntityClass = { name: string };
 type CallInput = Partial<InvocationContext>;
 
-/** Name a call server-side and let the runner place it — local façade → direct in-memory execution… */
+/**
+ * Name a call server-side and let the runner place it — local façade → direct in-memory execution,
+ * a frond in `remotes` → JSON-RPC on the wire.
+ */
 export async function invokeOn<T = unknown>(
   app: App,
   target: EntityClass | FrondCall,

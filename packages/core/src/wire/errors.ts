@@ -86,7 +86,10 @@ export class FougereError extends Error {
   }
 }
 
-/** The refusals behind a VALIDATION_FAILED, or nothing — the ONE place that reads `details` under th… */
+/**
+ * The refusals behind a VALIDATION_FAILED, or nothing — the ONE place that reads `details` under
+ * that code.
+ */
 export function validationErrorsOf(error: unknown): ValidationError[] | undefined {
   if (!(error instanceof FougereError) || error.code !== ErrorCode.VALIDATION_FAILED) return undefined;
   const { details } = error;

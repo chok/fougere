@@ -249,7 +249,10 @@ export class SqlStorage {
     return sel ? pickList(result, sel) : result;
   }
 
-  /** One query for N keys, never N queries — what every page-level read stands on: */
+  /**
+   * One query for N keys, never N queries — what every page-level read stands on: a computed
+   * field, a relation, a resolver on the other side of a wire.
+   */
   async findByKeys(ids: readonly string[], options?: SelectOption): Promise<Map<string, Record<string, unknown>>> {
     if (this.pk.isComposite) {
       throw new Error(`${this.table.name}.findByKeys: the primary key is composite (${this.pk.names.join(', ')}) — read them one by one, or filter with \`findAllBy\`.`);
@@ -456,7 +459,10 @@ export class SqlStorage {
     return sel ? pick(result, sel) : result;
   }
 
-  /** A duplicate is an ANSWER, not a failure — so it leaves as `CONFLICT` and not as the blank `Intern… */
+  /**
+   * A duplicate is an ANSWER, not a failure — so it leaves as `CONFLICT` and not as the blank
+   * `Internal error` a caller used to get.
+   */
   private async refusal<R>(write: () => Promise<R>): Promise<R> {
     try {
       return await write();

@@ -21,7 +21,10 @@ export interface SqlSource extends Source {
   storageFactory: ReturnType<typeof createStorageFactory>;
   /** Runs raw statements — what `autoMigrate` writes through. */
   sink: SqlSink;
-  /** The Kysely instance, for what precedes any entity: */
+  /**
+   * The Kysely instance, for what precedes any entity: `migrate(app, setup)` writes the schema
+   * through it, and a script may need it before a container exists.
+   */
   db: Kysely<any>;
   /** Run `fn` inside one transaction of this engine, with a storage factory bound to it. */
   transacted<R>(fn: (storageFactory: ReturnType<typeof createStorageFactory>) => Promise<R>): Promise<R>;

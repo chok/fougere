@@ -1,4 +1,7 @@
-/** CLI runner — scans frond entities for flags, looks for app commands for presentation, dispatches… */
+/**
+ * CLI runner — scans frond entities for flags, looks for app commands for presentation, dispatches
+ * via citty.
+ */
 import type { App } from '@fougere/core';
 import { createAppRunner } from '@fougere/core';
 import { lowerFirst } from '@fougere/core/contract';

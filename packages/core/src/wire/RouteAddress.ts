@@ -48,7 +48,7 @@ export class RouteAddress {
     return `${audience}${this.entity}.${this.operation}`;
   }
 
-  /** Sends the address over the wire without `surface: */
+  /** Sends the address over the wire without `surface: undefined` riding along. */
   toJSON(): RouteAddressInput {
     return {
       entity: this.entity,

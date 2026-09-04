@@ -86,7 +86,7 @@ function refuseUncoveredWrites(members: Members, key: string, world: FrameWorld)
   }
 }
 
-/** Open the block: */
+/** Open the block. */
 async function inScope<R>(
   parent: Container,
   members: Members,

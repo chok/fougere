@@ -52,7 +52,7 @@ export interface OperationKindInference {
   commandMatches: string[];
 }
 
-/** Deliberately finite: */
+/** Deliberately finite. */
 const QUERY_VERBS = new Set([
   'all', 'check', 'count', 'exists', 'fetch', 'find', 'get', 'has', 'health', 'list',
   'load', 'mine', 'ping', 'quote', 'read', 'search', 'stats', 'status', 'who',
@@ -88,7 +88,10 @@ function wordsOf(name: string): string[] {
     .map((word) => word.toLowerCase());
 }
 
-/** Infer only when the leading word names one convention and a composed clause does not name the opp… */
+/**
+ * Infer only when the leading word names one convention and a composed clause does not name the
+ * opposite one.
+ */
 export function inferOperationKind(name: string): OperationKindInference {
   const words = wordsOf(name);
   const first = words[0];

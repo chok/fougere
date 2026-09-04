@@ -1,4 +1,4 @@
-/** The session: */
+/** The session. */
 import { useState, useRequestFetch } from '#imports';
 import { computed } from 'vue';
 import type { SessionView } from '@fougere/app/client';

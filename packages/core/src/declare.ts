@@ -18,7 +18,11 @@ export interface DeclaredSubject {
 
 /** A handler, and the surface it answers on when it is not the default one. */
 export interface DeclaredHandler extends DeclaredSubject {
-  /** The scan reads this from the directory (`handlers/public/`), so a statement has to say it: */
+  /**
+   * The scan reads this from the directory (`handlers/public/`), so a statement has to say it: two
+   * handlers over one entity collide on their address otherwise, and the refusal names the same
+   * route twice.
+   */
   surface?: string;
 }
 
@@ -27,7 +31,11 @@ export type Declared = Ctor | DeclaredSubject;
 
 const ctorOf = (d: Declared): Ctor => (typeof d === 'function' ? d : d.ctor);
 
-/** What a prefab was BUILT ON — `Presenter(Post)` and `Collector(User)` both keep it under `__entity… */
+/**
+ * What a prefab was BUILT ON — `Presenter(Post)` and `Collector(User)` both keep it under
+ * `__entity`, which is the only place it survives: nothing in the FORM of `PostPresenter` says
+ * `Post`.
+ */
 function subjectOf(ctor: Ctor, kind: string): { name: string } {
   const subject = (ctor as unknown as { __entity?: { name: string } }).__entity;
   if (!subject?.name) {

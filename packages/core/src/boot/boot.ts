@@ -89,7 +89,9 @@ export async function boot(options: BootOptions): Promise<App> {
     // boot() called the factory, so boot() owns closing what it opened. Not an extension:
     // it was opened before the container existed, so it closes after the container goes.
     onDispose: dbSetup?.close,
-    /** The whole ascent, in one ordered list — tables, then rows, then whatever the host takes on. */
+    /**
+     * The whole ascent, in one ordered list — tables, then rows, then whatever the host takes on.
+     */
     extensions: [
       migrating(dbSetup?.migrate),
       seeding((message) => log.debug(message)),

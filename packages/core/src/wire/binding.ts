@@ -1,4 +1,7 @@
-/** Where each parameter of an operation gets its value — decided once at boot from the parsed signat… */
+/**
+ * Where each parameter of an operation gets its value — decided once at boot from the parsed
+ * signature, replayed per call by `resolveArgs`.
+ */
 import type { Param } from './signature.js';
 import { lowerFirst } from '@fougere/schema';
 

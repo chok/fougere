@@ -100,7 +100,10 @@ interface EntityEntry {
 }
 
 interface HandlerEntry {
-  /** The name the door answers to — `PostHandler` → `post`. NOT an entity name: a handler may carry none. */
+  /**
+   * The name the door answers to — `PostHandler` → `post`. NOT an entity name: a handler may carry
+   * none.
+   */
   address: string;
   operations: Map<string, OperationMeta>;
   surface?: string;
@@ -148,7 +151,11 @@ interface AppLike {
 
 // ─── Helpers ────────────────────────────────────
 
-/** The key an entity is filed under — case-folded, because the same entity is spelled differently de… */
+/**
+ * The key an entity is filed under — case-folded, because the same entity is spelled differently
+ * depending on where its name came from: the scan yields the registration name (`authorUser`),
+ * while a card's relation target is fully lowercased by `describe` (`authoruser`).
+ */
 function registryKey(entityName: string): string {
   return entityName.toLowerCase();
 }
@@ -167,7 +174,7 @@ export interface RegisterAllOptions {
   surface?: string;
 }
 
-/** Auto-register GraphQL types and operations for all entities in the app that have a matching handl… */
+/** Auto-register GraphQL types and operations from a fougere App. */
 /** The GraphQL type of a declared presenter view, built once per view class. */
 const viewTypes = new WeakMap<object, any>();
 function viewTypeOf(

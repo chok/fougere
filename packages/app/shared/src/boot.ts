@@ -22,7 +22,7 @@ export interface FougereServerConfig {
   host?: string;
   /** What this app is built from, when the host already knows. */
   scan?: CreateAppOptions['scan'];
-  /** What this app STATES it hosts — `frond('blog', { entities: */
+  /** What this app STATES it hosts — `frond('blog', { entities: [Post] })`. */
   fronds?: CreateAppOptions['fronds'];
   /** What `fougere.config.ts` says, when the host already read it. */
   config?: Partial<FougereConfig>;
@@ -60,7 +60,7 @@ export function useFougereApp(): Promise<App> {
   return _appPromise;
 }
 
-/** Turn the ring: */
+/** Turn the ring. */
 export async function reloadFougere(timeoutMs?: number): Promise<App> {
   const previous = _appPromise;
   _appPromise = null;
@@ -184,7 +184,7 @@ async function boot(): Promise<App> {
     adapters: fileConfig.adapters,
     remotes: fileConfig.remotes,
     remoteTransport,
-    /** The whole ascent, one ordered list: */
+    /** The whole ascent, one ordered list. */
     extensions: [
       // The slot is declared even when this host resolved no storage — a host that resolved
       // its own (the Nitro plugin does, for its bundler) then REPLACES this member in place

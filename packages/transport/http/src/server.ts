@@ -6,7 +6,9 @@ import { APP_ERROR, INVALID_REQUEST, type RpcRequest, type RpcResponse } from '.
 export interface ReceiveOptions {
   /** Establishes who signed, or throws. */
   verify?: (identity: string, presented: SignedCall) => Promise<{ caller: string; state: Record<string, unknown> }>;
-  /** Refuse a call carrying no verifiable identity — the whole of "secure by default" at the wire. */
+  /**
+   * Refuse a call carrying no verifiable identity — the whole of "secure by default" at the wire.
+   */
   requireIdentity?: boolean;
 }
 

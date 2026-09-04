@@ -112,7 +112,7 @@ export function createDataProvider(options: ProviderOptions) {
       return { data: row };
     },
 
-    /** N calls, and the reason is upstream: */
+    /** N calls, and the reason is upstream. */
     getMany: async (resource: string, params: { ids: (string | number)[] }) => {
       const key = keyOf(resource);
       const rows = await Promise.all(

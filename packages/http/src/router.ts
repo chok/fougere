@@ -46,7 +46,7 @@ export interface HttpRouter {
   on(method: HttpMethod, path: string, handler: Handler): void;
 }
 
-/** The onion chain both adapters run: */
+/** The onion chain both adapters run. */
 export function chain(
   global: Middleware[],
   scoped: { path: string; mw: Middleware }[],

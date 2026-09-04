@@ -18,7 +18,10 @@ import { OutputView } from '../dispatch/OutputView.js';
 import { PresenterExecutor } from '../dispatch/PresenterExecutor.js';
 import { presenterArguments } from '../dispatch/presenterArguments.js';
 
-/** What this door is about: a handler, the entity behind it when there is one, and where it resolves. */
+/**
+ * What this door is about: a handler, the entity behind it when there is one, and where it
+ * resolves.
+ */
 export interface Doorway {
   handler: HandlerEntry;
   /** Handlers in the owning frond, used to realize a resolved implementation override. */

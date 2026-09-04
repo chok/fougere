@@ -44,7 +44,9 @@ export interface HttpTransportOptions {
   timeoutMs?: number;
   /** Extra attempts on connection failures only — the request provably never left. */
   retries?: number;
-  /** Signs the state this transport sends, turning a claim into something the receiver can check. */
+  /**
+   * Signs the state this transport sends, turning a claim into something the receiver can check.
+   */
   sign?: (call: SignedCall) => Promise<string>;
   /** Who performs the request. */
   fetch?: (input: string, init: RequestInit) => Promise<Response>;

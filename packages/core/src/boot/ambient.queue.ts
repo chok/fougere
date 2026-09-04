@@ -1,4 +1,7 @@
-/** The realization for a runtime with no async context: */
+/**
+ * The realization for a runtime with no async context: it cannot tell whose frame is open, so it
+ * never guesses — it waits its turn.
+ */
 import type { Ambient } from './ambient-port.js';
 
 /** What a nested frame waits before it is told what it did — the hang, measured, plus a name. */

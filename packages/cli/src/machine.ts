@@ -3,7 +3,11 @@ export function machineWanted(raw: Record<string, unknown>): boolean {
   return raw.json === true || typeof raw.names === 'string';
 }
 
-/** A `Map` serializes to `{}`, so the door converts it rather than each command flattening its own r… */
+/**
+ * A `Map` serializes to `{}`, so the door converts it rather than each command flattening its own
+ * result: `GraphResult.nodes` is a Map, and `graph --json` would have printed a report with an
+ * empty graph in it.
+ */
 export function machineText(value: unknown): string {
   return JSON.stringify(value, (_key, held) => (held instanceof Map ? Object.fromEntries(held) : held), 2);
 }

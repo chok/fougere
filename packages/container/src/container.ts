@@ -39,6 +39,6 @@ export interface Container {
   /** Create a child scope. Inherits parent registrations. */
   createScope(): Container;
 
-  /** Dispose the container: */
+  /** Dispose the container. */
   dispose(): Promise<void>;
 }

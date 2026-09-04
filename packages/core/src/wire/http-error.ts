@@ -1,7 +1,10 @@
 /** HTTP reading of an error — used by HTTP bridges (REST, Next, Inertia). */
 import { FougereError, ErrorCode } from './errors.js';
 import { Logger } from '../builtin/logger.js';
-/** An INTERNAL_ERROR is the one class of error whose message never leaves: */
+/**
+ * An INTERNAL_ERROR is the one class of error whose message never leaves: it was not written for a
+ * caller and may quote a path, a query or a row.
+ */
 const log = new Logger('error');
 
 const HTTP_STATUS: Record<ErrorCode, number> = {

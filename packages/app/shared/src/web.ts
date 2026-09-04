@@ -1,4 +1,4 @@
-/** The three doors as Web-standard handlers: */
+/** The three doors as Web-standard handlers: `Request` in, `Response` out. */
 import { serveRest, serveRpc, rpcParseError, useFougereApp, serveGraphQL } from './index.js';
 import { MAX_BODY_BYTES } from '@fougere/core';
 import { sessionViewOf } from './session.js';

@@ -19,7 +19,7 @@ export interface ValidationCase {
   /** What this input does, in one clause — carried into the assertion so a failure reads. */
   why: string;
   body: unknown;
-  /** Judged as an update rather than a creation. The two modes refuse different things: */
+  /** Judged as an update rather than a creation. */
   patch: boolean;
   expect: 'accept' | { reject: string };
 }

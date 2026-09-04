@@ -1,4 +1,7 @@
-/** The server dual of the couple, in Next — for server components, server actions and route handlers. */
+/**
+ * The server dual of the couple, in Next — for server components, server actions and route
+ * handlers.
+ */
 import { invokeOn, useFougereApp, sessionViewOf, stateFor, type SessionView } from '@fougere/app';
 import type { FrondCall, InvocationContext } from '@fougere/core';
 

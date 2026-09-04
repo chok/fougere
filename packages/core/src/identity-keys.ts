@@ -11,7 +11,10 @@ export function generateKeyPair(): { privateKey: string; publicKey: string } {
   };
 }
 
-/** Bind a name to a public key, signed by the root — the whole of what a receiver needs to recognize… */
+/**
+ * Bind a name to a public key, signed by the root — the whole of what a receiver needs to
+ * recognize a frond it has never seen.
+ */
 export function issueGrant(
   rootPrivateKey: string,
   name: string,

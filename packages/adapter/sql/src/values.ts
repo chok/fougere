@@ -29,7 +29,10 @@ const json: ValueCodec = {
   read: (v) => (typeof v === 'string' ? JSON.parse(v) : v),
 };
 
-/** A driver may answer a number as a BigInt — Postgres does it for `count(*)` and for `bigint` colum… */
+/**
+ * A driver may answer a number as a BigInt — Postgres does it for `count(*)` and for `bigint`
+ * columns, DuckDB for every count.
+ */
 const numeric: ValueCodec = {
   write: (v) => (typeof v === 'bigint' ? fits(v) : v),
   read: (v) => (typeof v === 'bigint' ? fits(v) : v),

@@ -38,7 +38,10 @@ function record(d: ScanDiagnostic): void {
   diagnostics.push(d);
 }
 
-/** An absent convention directory is the ordinary case — a frond without `presenters/` is not a defect. */
+/**
+ * An absent convention directory is the ordinary case — a frond without `presenters/` is not a
+ * defect.
+ */
 async function readEntries(path: string): Promise<Dirent[]> {
   try {
     return await readdir(path, { withFileTypes: true });
@@ -112,7 +115,10 @@ function toAddress(className: string): string {
 
 // Scan
 
-/** The container key a constructor parameter asks for — derived from its TYPE, not from how the type… */
+/**
+ * The container key a constructor parameter asks for — derived from its TYPE, not from how the
+ * type was spelled.
+ */
 function depKeyOf(type: TypeRef): string {
   // `Facade<PostHandler>` — the second port, read exactly like the first. The type names
   // what arrives: not the handler (its methods take positional arguments and it is never
@@ -154,7 +160,7 @@ function tupleMembers(raw: string): string[] {
   return raw.replace(/^\[|\]$/g, '').split(',').map((member) => member.trim()).filter(Boolean);
 }
 
-/** These readings are semantic: */
+/** These readings are semantic. */
 const ctorParamsOf = (filePath: string) =>
   parseConstructorParams(filePath);
 
@@ -265,7 +271,10 @@ async function inferOperations(
     return map;
   }
 
-  /** A base class the parse could not open — an installed package, typically, whose source is not in t… */
+  /**
+   * A base class the parse could not open — an installed package, typically, whose source is not
+   * in the workspace.
+   */
   for (const base of parsed.unresolvedHeritage) {
     record({
       severity: 'warning',
@@ -570,7 +579,10 @@ async function frondNameOf(frondPath: string, dirName: string): Promise<string> 
   }
 }
 
-/** A frond is a directory carrying the convention, and the project root is one such directory — so a… */
+/**
+ * A frond is a directory carrying the convention, and the project root is one such directory — so
+ * a single-domain app writes `entities/` next to `app/` and never names anything.
+ */
 async function rootFrondOf(root: string, workspaceRoot: string, conventions: Conventions): Promise<FrondDescriptor | null> {
   if ((await files(join(root, conventions.dirs.entities))).length === 0) return null;
   const name = await frondNameOf(root, basename(resolvePath(root)));

@@ -555,7 +555,10 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     );
   });
 
-  /** Everything this app holds, let go in reverse of how it was taken: */
+  /**
+   * Everything this app holds, let go in reverse of how it was taken: what an extension took on
+   * last, then the container's own, then whoever handed a resource in.
+   */
   const release = async (): Promise<void> => {
     // Every level is told to close even when one refuses, and the refusals leave together —
     // the rule `Lifecycle.down` applies INSIDE its list, applied ACROSS the three. Stated
@@ -676,7 +679,10 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       : undefined;
   };
 
-  /** The storage an entity is backed by — the dual of `facadeFor`, which serves its client-facing door. */
+  /**
+   * The storage an entity is backed by — the dual of `facadeFor`, which serves its client-facing
+   * door.
+   */
   const storageFor = (entity: string): unknown | undefined => {
     const owner = fronds.owner(entity);
     if (!owner) return undefined;

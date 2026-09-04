@@ -25,7 +25,7 @@ interface TypeProject {
 const typeProjects = new Map<string, TypeProject>();
 const compilerProjects = new Map<string, { key: string; roots: string[]; options: ts.CompilerOptions }>();
 
-/** What survives a run: */
+/** What survives a run. */
 const sourceFiles = new Map<string, { mtime: number; file: ts.SourceFile }>();
 const retained = new Map<string, { host: ts.CompilerHost; program: ts.Program }>();
 
@@ -560,7 +560,10 @@ function parseInheritedMethods(
   source: ts.SourceFile,
   checker: ts.TypeChecker,
   skip: Set<string>,
-  /** Base classes this pass could not open — an INSTALLED one, typically, whose source is not in the w… */
+  /**
+   * Base classes this pass could not open — an INSTALLED one, typically, whose source is not in
+   * the workspace.
+   */
   unresolved: string[],
 ): Signature[] {
   const ts = getTS();

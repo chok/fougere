@@ -1,5 +1,8 @@
 'use client';
-/** The couple — useQuery (reads) and useCommand (writes), the two dual gestures of a page talking to… */
+/**
+ * The couple — useQuery (reads) and useCommand (writes), the two dual gestures of a page talking
+ * to a Frond, in Vue.
+ */
 import { useCallback, useEffect, useState } from 'react';
 import type { FougereError } from '@fougere/core/contract';
 import {

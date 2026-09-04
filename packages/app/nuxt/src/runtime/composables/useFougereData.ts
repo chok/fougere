@@ -1,4 +1,7 @@
-/** The couple — useQuery (reads) and useCommand (writes), the two dual gestures of a page talking to… */
+/**
+ * The couple — useQuery (reads) and useCommand (writes), the two dual gestures of a page talking
+ * to a Frond, in Vue.
+ */
 import { useAsyncData, useRequestFetch, refreshNuxtData } from '#imports';
 import { ref, computed, toValue, onScopeDispose, type MaybeRefOrGetter, type Ref } from 'vue';
 import type { FougereError } from '@fougere/core/contract';

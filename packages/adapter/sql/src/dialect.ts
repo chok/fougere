@@ -16,7 +16,7 @@ export interface Dialect {
   maxBindings: number;
   /** How this engine spells "write it, or replace what is there". */
   upsert: 'on conflict' | 'on duplicate key' | false;
-  /** Is this the engine refusing a duplicate, rather than failing? A driver reports it as a plain `Err… */
+  /** Is this the engine refusing a duplicate, rather than failing? */
   isUniqueViolation(error: unknown): boolean;
 }
 
@@ -152,7 +152,10 @@ export function resolveDialect(name: DialectName): Dialect {
   return dialect;
 }
 
-/** The type this column is emitted with — what the entity stated when it named THIS engine, the shap… */
+/**
+ * The type this column is emitted with — what the entity stated when it named THIS engine, the
+ * shape's own answer otherwise.
+ */
 export function columnTypeFor(dialect: Dialect, column: ColumnDef, keyed: boolean): string {
   return column.stated?.columnType?.[dialect.name] ?? dialect.columnType(column, keyed);
 }

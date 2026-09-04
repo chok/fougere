@@ -1,4 +1,4 @@
-/** The session: */
+/** The session. */
 import { writable, derived, type Readable } from 'svelte/store';
 import type { SessionView } from '@fougere/app/client';
 

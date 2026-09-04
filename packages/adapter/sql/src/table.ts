@@ -52,7 +52,7 @@ export interface TableDef {
   columns: ColumnDef[];
   /** PK column names when the key is composite — empty for a simple key. */
   compositePrimary: string[];
-  /** Column groups unique together, from `entity(fields, { unique: */
+  /** Column groups unique together, from `entity(fields, { unique: [...] })`. */
   uniqueGroups: string[][];
 }
 
@@ -78,7 +78,7 @@ function primaryColumnOf(target: Partial<SchemaView>): string {
   return 'id'; // declared no primary() field — defensive, shouldn't happen
 }
 
-/** The FK target for a `ref()` field: */
+/** The FK target for a `ref()` field. */
 function referenceFor(
   field: Field,
   resolve: (name: string) => string,
@@ -204,7 +204,10 @@ export function toTable(tableName: string, entity: SchemaOrCard, relations?: Rel
   };
 }
 
-/** Is this column part of a key? MySQL and SQL Server refuse an unbounded text column in a primary k… */
+/**
+ * Is this column part of a key? MySQL and SQL Server refuse an unbounded text column in a primary
+ * key or an index, so the dialect needs to know.
+ */
 export function isKeyed(table: TableDef, column: ColumnDef): boolean {
   return column.primary
     || column.unique === true
@@ -267,7 +270,10 @@ function collectEntities(app: AppLike): EntityEntry[] {
   return entries;
 }
 
-/** Every entity an app hosts, as FK-aware tables — the shared middle step behind `generateSQL` (a fr… */
+/**
+ * Every entity an app hosts, as FK-aware tables — the shared middle step behind `generateSQL` (a
+ * from-scratch create pass) and `desiredTables` (the diff's target state).
+ */
 export function toTables(app: AppLike, resolve: (name: string) => string): TableDef[] {
   const entries = collectEntities(app);
   const tableNameOf = new Map<SchemaOrCard, string>(entries.map((entry) => [entry.entityClass, resolve(entry.name)]));

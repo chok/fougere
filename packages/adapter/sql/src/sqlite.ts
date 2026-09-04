@@ -43,7 +43,7 @@ export function setupSqlite(opts: SqliteSetupOptions = {}): SqliteSetup {
   };
 }
 
-/** `source: */
+/** `source. */
 Sources.register('sql', (conf: SourceConfig): Source => {
   const dialect = conf.dialect as string | undefined;
   if (dialect !== undefined && dialect !== 'sqlite') {

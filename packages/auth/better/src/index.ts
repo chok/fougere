@@ -28,7 +28,7 @@ export interface BetterAuthOptions {
   verification?: SchemaView;
 }
 
-/** Factory used in fougere.config.ts: */
+/** Factory used in fougere.config.ts. */
 export function betterAuth(opts: BetterAuthOptions): AuthConfig {
   const userSchema = opts.user ?? AuthUser;
   const { AuthSession, AuthAccount } = authEntities(userSchema);

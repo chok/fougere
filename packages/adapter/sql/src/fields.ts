@@ -1,4 +1,7 @@
-/** What an entity may state for THIS adapter, declared from OUTSIDE `@fougere/schema` — which names… */
+/**
+ * What an entity may state for THIS adapter, declared from OUTSIDE `@fougere/schema` — which names
+ * no engine and no column type, and must not learn one to let this exist.
+ */
 import { EntryJudge, type Shape } from '@fougere/schema';
 import ENTRY_FORMAT from './adapter.schema.json' with { type: 'json' };
 import type { DialectName } from './dialect.js';

@@ -1,4 +1,7 @@
-/** Contract surface — what a sender needs to speak to a receiver, and nothing that assumes a runtime: */
+/**
+ * Contract surface — what a sender needs to speak to a receiver, and nothing that assumes a
+ * runtime: the error vocabulary, the invocation shape, the call value, the naming convention.
+ */
 import { lowerFirst } from '@fougere/schema';
 import { canonicalInvocation, type InvocationContext } from './wire/Invocation.js';
 import type { FrondCall } from './wire/call.js';
@@ -39,7 +42,10 @@ export interface CallValue {
   invocation: InvocationContext;
 }
 
-/** Fabricate the call value — one designation, two spellings: */
+/**
+ * Fabricate the call value — one designation, two spellings: `callValueOf(Post, 'list', { query
+ * })` (class + verb) or `callValueOf({ entity, op }, input)` (raw, for dynamic bridges).
+ */
 export function callValueOf(
   target: { name: string } | FrondCall,
   opOrInput?: string | Partial<InvocationContext>,

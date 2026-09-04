@@ -38,7 +38,7 @@ export function fougere(options: FougereViteOptions = {}): Plugin {
 
   return {
     name: 'fougere',
-    /** `order: */
+    /** `order. */
     config: {
       order: 'post',
       handler(config: Record<string, any>) {

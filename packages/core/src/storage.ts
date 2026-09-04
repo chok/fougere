@@ -23,7 +23,10 @@ export interface ListOptions {
   /** If true, also returns total count (for pagination UIs). */
   count?: boolean;
 
-  /** Equality criteria, field by field — `{ orderId: */
+  /**
+   * Equality criteria, field by field — `{ orderId: '…' }`. Named rather than spread across the
+   * options so an unknown key stays ignored instead of silently becoming a filter.
+   */
   where?: Record<string, unknown>;
 }
 
@@ -63,12 +66,17 @@ export interface SelectOption {
 export interface Storage<T = Record<string, unknown>> {
   list(options?: ListOptions & SelectOption): Promise<ListResult<T>>;
   findById(id: string, options?: SelectOption): Promise<T | undefined>;
-  /** Read by criteria — `findBy({ email })` for the one, `findAllBy({ orderId })` for the many, which… */
+  /**
+   * Read by criteria — `findBy({ email })` for the one, `findAllBy({ orderId })` for the many,
+   * which is what a one-to-many relation *is*.
+   */
   findBy(criteria: Partial<T> | Record<string, unknown>, options?: SelectOption): Promise<T | undefined>;
   findAllBy(criteria: Partial<T> | Record<string, unknown>, options?: SelectOption): Promise<T[]>;
-  /** Read a SET of rows by their key, in one go — the gesture every other one was being bent into. */
+  /**
+   * Read a SET of rows by their key, in one go — the gesture every other one was being bent into.
+   */
   findByKeys(ids: readonly string[], options?: SelectOption): Promise<Map<string, T>>;
-  /** Its dual: */
+  /** The dual of `findByKeys`: many rows per key, not one. */
   findAllByKeys(field: string, keys: readonly string[], options?: SelectOption): Promise<Map<string, T[]>>;
   create(input: Partial<T>, options?: SelectOption): Promise<T>;
   /** Write the row, or make the existing one look like this — one statement. */
@@ -110,7 +118,10 @@ export interface Together<E extends readonly unknown[], P extends readonly unkno
   run<R>(fn: (entities: { [K in keyof E]: Storage<E[K]> }, providers: P) => Promise<R>): Promise<R>;
 }
 
-/** The container key of a frame — `[['Account', 'Ledger'], ['RateMirror']]` → 'Account+Ledger|RateMi… */
+/**
+ * The container key of a frame — `[['Account', 'Ledger'], ['RateMirror']]` →
+ * 'Account+Ledger|RateMirrorTogether'.
+ */
 export function togetherKeyOf(entities: readonly string[], providers: readonly string[] = []): string {
   const named = entities.map(upperFirst).join(SEPARATOR);
   return `${named}${providers.length ? KINDS + providers.map(upperFirst).join(SEPARATOR) : ''}${FRAME}`;

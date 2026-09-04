@@ -8,7 +8,7 @@ import { upperFirst, type EntityConstructor } from '@fougere/schema';
  */
 export type PresenterViews = Record<string, EntityConstructor | [EntityConstructor]>;
 
-/** `Presenter(Order, { items: */
+/** `Presenter(Order, { items. */
 export function Presenter<E extends EntityConstructor>(entity: E, views?: PresenterViews) {
   class PresenterBase {
     static readonly __entity = entity;

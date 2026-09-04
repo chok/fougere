@@ -119,7 +119,10 @@ export function createIndexSQL(table: TableDef, dialectName: DialectName): strin
     .map((column) => indexSQL(table, column, dialectName));
 }
 
-/** `ALTER TABLE ADD CONSTRAINT` for one FK `orderTables` deferred — closes a relation cycle once eve… */
+/**
+ * `ALTER TABLE ADD CONSTRAINT` for one FK `orderTables` deferred — closes a relation cycle once
+ * every table in it exists.
+ */
 export function addForeignKeyConstraintSQL(table: TableDef, column: ColumnDef, dialectName: DialectName): string {
   const ref = column.references!;
   const name = `${table.name}_${column.name}_fk`;
@@ -139,7 +142,10 @@ export interface GenerateOptions {
   dialect?: DialectName;
 }
 
-/** `CREATE TABLE` for every entity the app hosts — scanned frond entities plus auth runtime entities… */
+/**
+ * `CREATE TABLE` for every entity the app hosts — scanned frond entities plus auth runtime
+ * entities when present.
+ */
 export function generateSQL(app: AppLike, options?: GenerateOptions): string[] {
   const resolve = options?.tableName ?? toTableName;
   const dialect = options?.dialect ?? 'sqlite';

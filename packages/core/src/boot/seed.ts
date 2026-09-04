@@ -92,7 +92,7 @@ export async function runSeeds(
   }
 }
 
-/** A seed is not a client: */
+/** A seed is not a client. */
 function doorFor(app: App, entityName: string): SeedDoor | undefined {
   let handler: Record<string, Function> | undefined;
   try { handler = app.resolve<Record<string, Function>>(facadeKeyOf(entityName)); } catch {}
@@ -112,7 +112,10 @@ function doorFor(app: App, entityName: string): SeedDoor | undefined {
   return { list: () => storage.list(), write: (item) => storage.create(item) };
 }
 
-/** The framework's own ascent for rows, named — so a host can REPLACE it rather than take over the w… */
+/**
+ * The framework's own ascent for rows, named — so a host can REPLACE it rather than take over the
+ * whole post-boot to get its own.
+ */
 export function seeding(report?: (message: string) => void): Extension {
   return {
     name: 'seeds',

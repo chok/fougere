@@ -1,4 +1,7 @@
-/** The session view — the one place that turns the server-resolved request context (filled by the au… */
+/**
+ * The session view — the one place that turns the server-resolved request context (filled by the
+ * auth middleware) into what the client is allowed to see.
+ */
 
 export interface SessionView {
   user: Record<string, unknown> | null;

@@ -1,5 +1,5 @@
 'use client';
-/** The session: */
+/** The session. */
 import { createContext, createElement, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { SessionView } from '@fougere/app/client';
 

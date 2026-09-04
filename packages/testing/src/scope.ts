@@ -19,7 +19,7 @@ export function frondOf(path: string, frondsDir: string = DEFAULT_CONVENTIONS.fr
   return name && !name.endsWith('.ts') ? name : undefined;
 }
 
-/** Where the project starts: */
+/** Where the project starts. */
 export function rootOf(path: string): string | undefined {
   let at = dirname(path);
   let previous = '';

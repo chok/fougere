@@ -62,7 +62,10 @@ export function delta(desired: TableDef[], actual: SchemaState): Change[] {
   return changes;
 }
 
-/** Order the changes `delta` found, dialect-aware — `delta` itself stays pure and unordered, this is… */
+/**
+ * Order the changes `delta` found, dialect-aware — `delta` itself stays pure and unordered, this
+ * is the one place that adds engine knowledge to the plan.
+ */
 export function orderChanges(changes: Change[], dialectName: DialectName): Change[] {
   if (dialectName === 'sqlite') return changes;
 

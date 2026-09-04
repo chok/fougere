@@ -8,7 +8,7 @@ import type { Storage } from '@fougere/core';
  */
 export type StorageMap = Map<string, Storage>;
 
-/** Where[] supported subset: */
+/** Where[] supported subset. */
 function whereToCriteria(where: readonly CleanedWhere[]): Record<string, unknown> {
   const criteria: Record<string, unknown> = {};
   for (const clause of where) {

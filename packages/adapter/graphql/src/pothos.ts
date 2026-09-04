@@ -30,7 +30,10 @@ export interface TypeConfig {
   presenterFields?: string[];
   /** Per-field type metadata from source parsing. */
   presenterFieldMeta?: { name: string; returnType?: string; list?: boolean; nullable?: boolean }[];
-  /** The view a computed field emits, when the presenter declared one — the object type to build for it. */
+  /**
+   * The view a computed field emits, when the presenter declared one — the object type to build
+   * for it.
+   */
   presenterViews?: Record<string, EntityClass | [EntityClass]>;
   /** Builds (or reuses) the GraphQL object type for a declared view. */
   viewType?: (view: EntityClass, fieldName: string) => any;
@@ -259,13 +262,20 @@ function nestedInputType(
   return type;
 }
 
-/** One input type per name, PER BUILDER — Pothos refuses a duplicate name, and a ref built on one bu… */
+/**
+ * One input type per name, PER BUILDER — Pothos refuses a duplicate name, and a ref built on one
+ * builder is unknown to the next: a global cache handed a stale ref to the second schema
+ * ("InputObjectRef has not been implemented").
+ */
 const nestedInputs = new WeakMap<object, Map<string, any>>();
 
 /** Same rule as {@link nestedInputs}, for the enum types — with the values, see below. */
 const enumTypes = new WeakMap<object, Map<string, { ref: any; values: string[] }>>();
 
-/** A GraphQL enum value is an IDENTIFIER, not a string: */
+/**
+ * A GraphQL enum value is an IDENTIFIER, not a string: `in-progress` or `à valider` cannot be
+ * spelled in a query.
+ */
 const GRAPHQL_NAME = /^[_A-Za-z][_0-9A-Za-z]*$/;
 
 function enumValuesOf(shape: Shape | undefined): string[] | undefined {
@@ -275,7 +285,10 @@ function enumValuesOf(shape: Shape | undefined): string[] | undefined {
   return values as string[];
 }
 
-/** The enum type for one field's value set — one per NAME per builder, so `Post.status` and `CreateP… */
+/**
+ * The enum type for one field's value set — one per NAME per builder, so `Post.status` and
+ * `CreatePostInput.status` are the same `PostStatus` and a value read can be written back.
+ */
 function enumTypeFor(
   builder: InstanceType<typeof SchemaBuilder>,
   name: string,

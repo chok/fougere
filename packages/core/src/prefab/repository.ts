@@ -4,7 +4,10 @@ import type { SchemaView } from '@fougere/schema';
 
 /** Repository(…entities) — who owns an entity's storage, and where its questions are named. */
 
-/** The shape a repository of ONE entity has — the port itself, plus whatever the subclass names on top. */
+/**
+ * The shape a repository of ONE entity has — the port itself, plus whatever the subclass names on
+ * top.
+ */
 export type RepositoryOf<T> = Storage<T>;
 
 /** The single-entity form: the port, plus whatever the subclass names. */
@@ -13,7 +16,7 @@ export interface RepositoryConstructor<T> {
   readonly __entity: unknown;
 }
 
-/** What an aggregate's subclass sees: */
+/** What an aggregate's subclass sees. */
 declare abstract class AggregateShape<E extends readonly EntityConstructor[]> {
   protected storages: { [K in keyof E]: Storage<InstanceType<E[K]>> };
 }

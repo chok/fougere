@@ -10,7 +10,10 @@ import { dynamicOperations } from '../entry/facade.js';
 interface Route {
   frond: string;
   transport: Transport;
-  /** The entity's schema, rebuilt from the identity card — the same `SchemaConstructor` shape `entity(… */
+  /**
+   * The entity's schema, rebuilt from the identity card — the same `SchemaConstructor` shape
+   * `entity({...})` produces, live validation included.
+   */
   schema?: SchemaView;
 }
 

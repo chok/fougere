@@ -3,7 +3,7 @@ import {
 } from '@fougere/core/node';
 import type { Conventions } from '@fougere/core/node';
 
-/** The loader every command needs: */
+/** The loader every command needs. */
 export async function installLoader(root: string, reread = false): Promise<Conventions> {
   const { createJiti } = await import('jiti');
   const bare = createJiti(import.meta.url, { interopDefault: true });

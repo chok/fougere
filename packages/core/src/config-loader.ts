@@ -12,7 +12,10 @@ export interface FougereConfig {
   db?: 'sqlite' | { dialect: 'sqlite'; path?: string } | false;
   /** The other places rows live — a name, an engine, and the entities it holds. */
   sources?: Record<string, { dialect?: 'sqlite'; path?: string; entities: string[] }>;
-  /** The names the scan reads instead of deriving them — the import scope, the fronds directory, the s… */
+  /**
+   * The names the scan reads instead of deriving them — the import scope, the fronds directory,
+   * the seven convention directories.
+   */
   conventions?: ConventionsInput;
   /** How much every logger says. */
   logLevel?: LogLevel;
@@ -63,7 +66,11 @@ export async function loadConfig(root: string, options?: { fresh?: boolean }): P
 
 // ── Merging ──────────────────────────────────────
 
-/** Override a config with another, the invariant of every cascade level: */
+/**
+ * Override a config with another, the invariant of every cascade level: scalar keys replace, but
+ * `remotes` (the topology) MERGES — an override adds or redirects a frond without erasing the
+ * others.
+ */
 function mergeGlobal(base: FougereConfig, override: Partial<FougereConfig>): FougereConfig {
   const merged: FougereConfig = { ...base, ...override };
   if (base.remotes || override.remotes) {

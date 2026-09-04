@@ -43,7 +43,10 @@ async function newestDeclaration(root: string): Promise<number> {
   return Math.max(0, ...times);
 }
 
-/** The CLI is a Fougere app, so it reads its own written-down scan like any deployment — producing t… */
+/**
+ * The CLI is a Fougere app, so it reads its own written-down scan like any deployment — producing
+ * the description reads the project, consuming it does not.
+ */
 async function scanOf(root: string): Promise<ScanResult> {
   const written = join(root, '.fougere/scan.generated.ts');
   const writtenAt = await stat(written).then((s) => s.mtimeMs).catch(() => 0);

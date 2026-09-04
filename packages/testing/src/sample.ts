@@ -14,7 +14,10 @@ function seedOf(name: string): number {
   return Math.abs(hash) || 1;
 }
 
-/** A relation has no value of its own to invent — `ref(Author)` names a row that must exist, and a m… */
+/**
+ * A relation has no value of its own to invent — `ref(Author)` names a row that must exist, and a
+ * made-up id points at nothing.
+ */
 function referencesIn(fields: Fields): string[] {
   return Object.entries(fields)
     .filter(([, field]) => Role.of(field as Field).isReference)

@@ -7,7 +7,7 @@ export interface TypeRef {
   name: string;
   /** Whether this is an array (T[] or Array<T>) — true at any depth. */
   array?: boolean;
-  /** How MANY array levels: */
+  /** How MANY array levels. */
   arrayDepth?: number;
   /** Generic type arguments (e.g. for Pagination<Post> → [{ name: 'Post' }]). */
   generics?: TypeRef[];

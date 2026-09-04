@@ -25,7 +25,7 @@ export interface PanelOptions {
 /** How often the page is told how many calls are in flight. */
 const BEAT_MS = 1000;
 
-/** The panel's own door: */
+/** Serves the panel and returns how to close it. */
 export function servePanel(ring: CallRing, options: PanelOptions = {}): Promise<() => Promise<void>> {
   const title = options.title ?? 'fougere';
   const readers = new Set<{ write: (chunk: string) => void; end: () => void }>();

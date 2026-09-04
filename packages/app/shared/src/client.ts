@@ -1,4 +1,7 @@
-/** The couple, minus the reactivity — everything `useQuery`/`useCommand` decide before a framework's… */
+/**
+ * The couple, minus the reactivity — everything `useQuery`/`useCommand` decide before a
+ * framework's state primitives get involved.
+ */
 import {
   FougereError,
   ErrorCode,

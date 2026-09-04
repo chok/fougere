@@ -69,7 +69,10 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
 
   return {
     fields,
-    /** The same fields, keyed by name — a form that lays its inputs out by hand binds one at a time (`{.… */
+    /**
+     * The same fields, keyed by name — a form that lays its inputs out by hand binds one at a time
+     * (`v-bind="fieldsByName.email.attrs"`), and still states no rule of its own.
+     */
     fieldsByName,
     values,
     setValue,

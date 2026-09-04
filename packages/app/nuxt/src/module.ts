@@ -1,4 +1,4 @@
-/** @fougere/nuxt — Nuxt module: */
+/** @fougere/nuxt — Nuxt module. */
 import {
   defineNuxtModule,
   addServerHandler,
@@ -28,7 +28,10 @@ export interface FougereModuleOptions {
   /** Where `fronds/` lives, relative to the app's rootDir. */
   root?: string;
 
-  /** One key per EXTENSION, and the key is the package suffix AND the export name — `calls` is `import… */
+  /**
+   * One key per EXTENSION, and the key is the package suffix AND the export name — `calls` is
+   * `import { calls } from '@fougere/calls'`.
+   */
   /** `@fougere/observability` — a span per operation, the four signals, OTLP. */
   observability?: Record<string, unknown> | false;
   /** `@fougere/calls` — the dev panel: a bounded log of what this process dispatched. */
@@ -299,7 +302,7 @@ export default module;
 // Exported (not just module-internal) so its output is unit-testable without
 // spinning up a whole Nuxt build.
 
-/** What of the config a generated plugin can carry: */
+/** What of the config a generated plugin can carry: values, never providers. */
 function carried(config: FougereConfig): Partial<FougereConfig> {
   const { remotes, adapters, sources } = config as FougereConfig & { sources?: unknown };
   return {
@@ -309,7 +312,10 @@ function carried(config: FougereConfig): Partial<FougereConfig> {
   } as Partial<FougereConfig>;
 }
 
-/** The entity names a SYNCED remote brought in — `fougere sync` writes the classes under `.fougere/`… */
+/**
+ * The entity names a SYNCED remote brought in — `fougere sync` writes the classes under
+ * `.fougere/`, and a consumer designates them exactly as it designates its own.
+ */
 async function syncedEntityNames(rootDir: string, conventions: Conventions): Promise<string[]> {
   const remotesPath = resolve(rootDir, '.fougere', 'remotes.json');
   if (!existsSync(remotesPath)) return [];

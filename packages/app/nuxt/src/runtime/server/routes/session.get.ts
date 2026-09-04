@@ -1,4 +1,7 @@
-/** The session view over the wire — same resolution the hydration reads, for a client refreshing aft… */
+/**
+ * The session view over the wire — same resolution the hydration reads, for a client refreshing
+ * after login/logout.
+ */
 import { defineEventHandler } from 'h3';
 import { sessionViewOf } from '@fougere/app';
 

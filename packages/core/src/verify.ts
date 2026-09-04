@@ -26,7 +26,10 @@ export interface Violation {
 /** A dependency declared in a frond's scope, and what kind of thing it is. */
 type Registration = { frond: string; kind: string };
 
-/** The container keys a frond registers in its own scope, keyed as a handler's `deps` spell them — D… */
+/**
+ * The container keys a frond registers in its own scope, keyed as a handler's `deps` spell them —
+ * DI resolves by type name, so both sides are PascalCase.
+ */
 function registrationsOf(frond: FrondDescriptor): Map<string, Registration> {
   const out = new Map<string, Registration>();
   const put = (key: string, kind: string) => out.set(key, { frond: frond.name, kind });
@@ -50,7 +53,10 @@ function injectablesOf(frond: FrondDescriptor) {
   ];
 }
 
-/** Does this app survive being split? A frond runs in-process or in its own process behind JSON-RPC… */
+/**
+ * Does this app survive being split? A frond runs in-process or in its own process behind JSON-RPC
+ * with identical user code — that is the whole claim.
+ */
 export function verify(app: { fronds: readonly FrondDescriptor[] }): Violation[] {
   const index = new Map<string, Registration>();
   for (const frond of app.fronds) {

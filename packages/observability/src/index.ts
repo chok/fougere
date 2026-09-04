@@ -14,7 +14,10 @@ interface Running extends SpanContext {
 /** A step that has finished, and what it did. */
 export interface FinishedSpan extends SpanContext {
   parentId: string | undefined;
-  /** The frond of the step this one is nested in, when it is a DIFFERENT one — an edge of the call gra… */
+  /**
+   * The frond of the step this one is nested in, when it is a DIFFERENT one — an edge of the call
+   * graph, `shop → catalog`.
+   */
   callerFrond: string | undefined;
   /** Which frond owned the op — the deployment unit, so the first thing a reader groups by. */
   frond: string | undefined;

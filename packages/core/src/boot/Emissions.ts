@@ -22,7 +22,11 @@ export class Emissions {
   /** Who listens to what. Filled as each door's contracts are resolved. */
   private readonly subscribers = new Map<string, Listener[]>();
 
-  /** What is announced here, read from the DEPS and not from the subscribers: */
+  /**
+   * What is announced here, read from the DEPS and not from the subscribers: a handler declaring
+   * `Emit<PostPublished>` must resolve it whether or not anybody listens, and announcing to nobody
+   * is legal.
+   */
   private readonly announced: Set<string>;
 
   constructor(
@@ -35,7 +39,10 @@ export class Emissions {
     this.announced = new Set(fronds.flatMap((frond) => factsAnnouncedBy(frond.handlers)));
   }
 
-  /** Who listens to what — read from the PLAN, where `{ kind: */
+  /**
+   * Who listens to what — read from the PLAN, where `{ kind: 'fact' }` is a sentence
+   * `computeBindingPlan` already wrote, so nothing re-derives what a parameter is.
+   */
   note(contracts: OperationsMap, door: string): void {
     for (const [op, contract] of contracts) {
       for (const bound of contract.binding ?? []) {
@@ -69,7 +76,11 @@ export class Emissions {
 
   /** Announcing. */
   private async announce(fact: string, raw: unknown): Promise<void> {
-    /** A fact announced inside a frame that then rolls back is a lie, and nothing can take it back: */
+    /**
+     * A fact announced inside a frame that then rolls back is a lie, and nothing can take it back:
+     * announcing is DISPATCH — every subscriber has been handed the fact and the carrier has
+     * already put it on the wire — while the frame's writes are still provisional.
+     */
     await ambient.beforeAnnounce(fact);
 
     const payload = this.stamped(fact, raw);
@@ -103,7 +114,10 @@ export class Emissions {
     }
   }
 
-  /** The announcement realizes the fact's own `lifecycle.create` — a `created()` stamped, an id genera… */
+  /**
+   * The announcement realizes the fact's own `lifecycle.create` — a `created()` stamped, an id
+   * generated, a default applied.
+   */
   private stamped(fact: string, raw: unknown): unknown {
     const shape = this.shapes.get(fact);
     return shape && raw !== null && typeof raw === 'object' && !Array.isArray(raw)

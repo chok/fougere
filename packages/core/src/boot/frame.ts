@@ -1,4 +1,7 @@
-/** The compensated realization of a frame — what `Together` becomes when its members do not share an… */
+/**
+ * The compensated realization of a frame — what `Together` becomes when its members do not share
+ * an engine.
+ */
 import { FieldSet, Role, type SchemaView } from '@fougere/schema';
 import { dequal } from 'dequal';
 import type { Logger } from '../builtin/logger.js';
@@ -10,7 +13,10 @@ export interface Undo {
   run(): Promise<void>;
 }
 
-/** The subset of the port a frame has to watch: */
+/**
+ * The subset of the port a frame has to watch: every gesture that writes, plus the reads that take
+ * one back.
+ */
 interface Undoable {
   create(input: Record<string, unknown>, ...rest: unknown[]): Promise<Record<string, unknown>>;
   update(id: string, patch: Record<string, unknown>, ...rest: unknown[]): Promise<Record<string, unknown>>;
@@ -41,7 +47,10 @@ function refuseAmbiguousUpsert(entity: string, gesture: string): never {
   );
 }
 
-/** The storage a member is handed inside a compensated frame: */
+/**
+ * The storage a member is handed inside a compensated frame: the same port, writing the same rows,
+ * leaving an inverse behind each time.
+ */
 export function recording<T extends object>(storage: T, entity: string, schema: SchemaView, journal: Undo[]): T {
   const base = storage as unknown as Undoable;
   if (typeof base.create !== 'function' || typeof base.update !== 'function') return storage;

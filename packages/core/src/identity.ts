@@ -76,7 +76,7 @@ function headerOf(token: string): Record<string, unknown> {
   return JSON.parse(textOf(unb64url(encodedHeader))) as Record<string, unknown>;
 }
 
-/** Sign one call, whole: */
+/** Sign one call, whole. */
 export async function signEnvelope(identity: FrondIdentity, call: SignedCall): Promise<string> {
   return sealWith(await crypto.signerOf(identity.privateKey), identity.grant, call);
 }

@@ -1,4 +1,4 @@
-/** The realization that can tell whose frame is open: */
+/** The realization that can tell whose frame is open: an async context. */
 import { AsyncLocalStorage } from 'node:async_hooks';
 import type { Ambient } from './ambient-port.js';
 

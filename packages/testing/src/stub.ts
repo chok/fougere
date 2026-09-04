@@ -23,7 +23,7 @@ export function methodsOf(port: Port): string[] {
   return [...found];
 }
 
-/** A double for a port: */
+/** A double for a port. */
 export function stubOf<T>(port: Port): Stub<T> {
   const double: Record<string, Mock> = {};
   for (const method of methodsOf(port)) double[method] = vi.fn();

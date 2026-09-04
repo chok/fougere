@@ -1,4 +1,4 @@
-/** workerd with no flag: */
+/** workerd with no flag. */
 import type { SpanContext } from '../traceparent.js';
 import type { TraceContext } from './port.js';
 

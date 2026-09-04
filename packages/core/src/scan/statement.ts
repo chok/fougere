@@ -5,7 +5,11 @@ import type { ScanResult } from './result.js';
 
 type Live = { name?: string };
 
-/** A file becomes the specifier the PROJECT already uses for it: */
+/**
+ * A file becomes the specifier the PROJECT already uses for it: `@fronds/blog/…`, the import scope
+ * a handler names its neighbour by, and which the Nuxt module registers as an alias for every
+ * frond it found.
+ */
 function specifierOf(filePath: string, frond: FrondDescriptor): string {
   const inside = relative(frond.source.path, filePath).replace(/\.tsx?$/, '.js');
 

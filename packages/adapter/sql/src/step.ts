@@ -54,7 +54,10 @@ export function collapseChain(steps: readonly SetDiff[]): SetDiff {
   return { entities, entitiesAdded: [...new Set(added)], entitiesRemoved: [...new Set(removed)] };
 }
 
-/** Add one change to what the chain has said so far, rewriting rather than appending when it continu… */
+/**
+ * Add one change to what the chain has said so far, rewriting rather than appending when it
+ * continues a field already moved.
+ */
 function compose(held: ShapeChange[], change: ShapeChange): void {
   if (change.kind === 'renamed') {
     const at = held.findIndex((each) => each.kind === 'renamed' && each.to === change.from);
