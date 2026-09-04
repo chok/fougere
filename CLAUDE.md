@@ -58,13 +58,13 @@ packages/
     src/boot/            what createApp does with it: bootstrap, HandlerFacade, Emissions, AppLifecycle, seed,
                          remote, and what is BUILT from an app: its identity card, its runners
     src/dispatch/        what happens per call: Dispatcher, the route registry, the judges and projectors, argument resolution, InFlight
-    src/wire/            what travels: the call, the invocation, the operation contract, its signature and
-                         binding plan, errors, middleware
-    src/contract/        the values a call is made of: Call, Invocation, RouteAddress, CallLog
+    src/wire/            what travels, and the values a call is made of: Call, Invocation, RouteAddress,
+                         CallLog, the operation contract, its signature and binding plan, errors, middleware
     src/prefab/          what a user declares: Crud, Presenter, Collector, Repository, Mirror
-    src/builtins/        what every app has without asking: the logger, the config service
+    src/builtin/         what every app has without asking: the logger, the config service
     src/crypto/          one port, two realizations — node and webcrypto
-    src/entry/           the three ways in: a facade, a dynamic facade, a transport
+    src/entry/           the three ways in, in two files: facade.ts holds the facade and its dynamic
+                         form, transport.ts the transport
     src/*.ts             what belongs to no phase: the two published entry points, frond(), the storage port
                          and the frame that derives it (rows.ts),
                          emit, the effective operation model, the checkers
@@ -261,8 +261,8 @@ judged strictly. Pinned by `tests/emit.test.ts`.
 **A family cycle is a check** — `tools/cycle-check.mjs`, `pnpm arch:cycles`, run in CI beside
 `pnpm arch`. `arch` asks what a file REACHES, this asks where it LIVES. It reports type-only
 cycles too and marks what the emitted JS does not contain, and it prints the THIN SIDE
-because that is what moves. It reads pairs, which is its ceiling. Three exceptions are stated
-with their reason: `judge`↔`schema`, `projection`↔`schema`, `entity`↔`schema`.
+because that is what moves. It reads pairs, which is its ceiling. Four exceptions are stated
+with their reason: `field`↔`judge`, `axis`↔`projection`, `axis`↔`field`, `entity`↔`field`.
 
 **Nuxt primitives** — `useQuery`/`useCommand` (a command on X revalidates mounted queries on
 X), `useFormFor` (contract, not rendering; local judge = remote judge), `useCurrentUser`,
