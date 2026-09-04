@@ -53,20 +53,20 @@ export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
    * `ref(User)` → `{ relation: { to: 'user', kind: 'one' } }`
    */
   describe(role, key) {
-    const out: Mutable<RoleDescriptor> = {};
-    if (role.primary) out.primary = true;
+    const descriptor: Mutable<RoleDescriptor> = {};
+    if (role.primary) descriptor.primary = true;
     const unique = (role.rules ?? []).filter((rule) => rule instanceof Unique);
-    if (unique.length) out.unique = unique.map((rule) => [...rule.resolvedOn(key).members]);
-    if (role.index) out.index = true;
+    if (unique.length) descriptor.unique = unique.map((rule) => [...rule.resolvedOn(key).members]);
+    if (role.index) descriptor.index = true;
     if (role.relation) {
       const target = role.relation.to() as { name?: string };
-      out.relation = {
+      descriptor.relation = {
         to: lowerFirst(target.name ?? ''),
         kind: role.relation.kind,
         ...(role.relation.onDelete ? { onDelete: role.relation.onDelete } : {}),
       };
     }
-    return Object.keys(out).length ? out : undefined;
+    return Object.keys(descriptor).length ? descriptor : undefined;
   },
 
   /**
@@ -75,10 +75,10 @@ export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
    * `{ relation: { to: 'user', kind: 'one' } }` with no resolver → `to()` → `{ name: 'user' }`
    */
   reconstruct(wire, resolve?: Resolver) {
-    const out: RoleRules = {};
-    if (wire.primary) out.primary = true;
-    if (wire.unique?.length) out.rules = wire.unique.map((group) => new Unique(group));
-    if (wire.index) out.index = true;
+    const rules: RoleRules = {};
+    if (wire.primary) rules.primary = true;
+    if (wire.unique?.length) rules.rules = wire.unique.map((group) => new Unique(group));
+    if (wire.index) rules.index = true;
     if (wire.relation) {
       // `judge` cannot serve here: it demands `() => Post` where a card carries a name.
       if (!oneOfTokens(wire.relation.kind, RELATION_KINDS)) {
@@ -94,13 +94,13 @@ export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
         );
       }
       const name = wire.relation.to;
-      out.relation = {
+      rules.relation = {
         to: () => (resolve?.(name) ?? ({ name } as unknown)) as EntityConstructor,
         kind: wire.relation.kind as Relation['kind'],
         ...(wire.relation.onDelete ? { onDelete: wire.relation.onDelete as Relation['onDelete'] } : {}),
       } as RoleRules['relation'];
     }
-    return out;
+    return rules;
   },
 };
 

@@ -1,4 +1,4 @@
-import { Anatomy, Role, Visibility, type Field, type SchemaView } from '@fougere/schema';
+import { Shapes, Role, Visibility, type Field, type SchemaView } from '@fougere/schema';
 
 /** One field of a root type, in the shape this file reads it. */
 interface RootField {
@@ -112,7 +112,7 @@ export function mutationFor(
 /** The fields the entity declares as a bounded set — GraphQL turns each into an enum. */
 function enumsOf(entity: SchemaView): Set<string> {
   return new Set(Object.entries(entity.getFields())
-    .filter(([, field]) => { const base = Anatomy.of(field.shape).base; return base?.type === 'string' && Array.isArray(base.enum); })
+    .filter(([, field]) => { const base = Shapes.of(field.shape).base; return base?.type === 'string' && Array.isArray(base.enum); })
     .map(([name]) => name));
 }
 

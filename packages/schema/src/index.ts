@@ -1,6 +1,6 @@
 export { Field, type Fields } from './field/Field.js';
 export { FieldSet } from './field/FieldSet.js';
-export { type Shape, Anatomy } from './axis/shape/Shape.js';
+export { type Shape, Shapes } from './axis/shape/Shape.js';
 export {
   type StringFormat,
   type FormatPredicate,
@@ -74,14 +74,14 @@ export type {
   TypeSet,
 } from './projection/card/diff.js';
 export {
-  EntityTypeSource,
-  type EntityTypeSourceOptions,
-} from './projection/card/EntityTypeSource.js';
+  EntityTypes,
+  type EntityTypesOptions,
+} from './projection/card/EntityTypes.js';
 export {
-  FacadeTypeSource,
-  type FacadeTypeSourceOptions,
+  FacadeTypes,
+  type FacadeTypesOptions,
   type OpDescriptor,
-} from './projection/card/FacadeTypeSource.js';
+} from './projection/card/FacadeTypes.js';
 export {
   type SchemaBundle,
   type SchemaDescriptor,

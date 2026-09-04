@@ -1,6 +1,6 @@
 import type { SchemaDescriptor } from './Descriptor.js';
 
-export interface FacadeTypeSourceOptions {
+export interface FacadeTypesOptions {
   name?: string;
   exported?: boolean;
   rowType?: string;
@@ -48,16 +48,16 @@ function returnTypeOf(op: OpDescriptor, rowType: string): string {
   }
 }
 
-export class FacadeTypeSource {
+export class FacadeTypes {
   private constructor(private readonly operations: readonly OpDescriptor[]) {}
 
   /**
    * So an identity card's operations become a typed door on the consumer's side.
    * FR : pour que les opérations d'une carte deviennent une porte typée.
-   * `FacadeTypeSource.of(card.operations).render({ rowType: 'Post' })`
+   * `FacadeTypes.of(card.operations).render({ rowType: 'Post' })`
    */
-  static of(operations: readonly OpDescriptor[]): FacadeTypeSource {
-    return new FacadeTypeSource(operations);
+  static of(operations: readonly OpDescriptor[]): FacadeTypes {
+    return new FacadeTypes(operations);
   }
 
   /**
@@ -65,7 +65,7 @@ export class FacadeTypeSource {
    * FR : pour qu'un frond distant s'appelle avec les mêmes types qu'un frond local.
    * → `export interface PostFacade { publish(invocation?: Invocation): Promise<Post>; }`
    */
-  render(options: FacadeTypeSourceOptions = {}): string {
+  render(options: FacadeTypesOptions = {}): string {
     const name = options.name ?? 'Facade';
     const exported = options.exported === false ? '' : 'export ';
     const rowType = options.rowType ?? 'unknown';

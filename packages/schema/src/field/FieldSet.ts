@@ -19,10 +19,10 @@ export class FieldSet<TFields extends Fields = Fields> {
   /**
    * So a group written on the entity and a group written on a field end up the same thing.
    * FR : pour qu'un groupe écrit sur l'entité et un écrit sur un champ soient pareils.
-   * `declared({ id: primary(), email: text(), tenant: text() }, [['email', 'tenant']])`
+   * `withUnique({ id: primary(), email: text(), tenant: text() }, [['email', 'tenant']])`
    * → `email` and `tenant` both carry one group
    */
-  static declared<TFields extends Fields>(
+  static withUnique<TFields extends Fields>(
     declared: TFields,
     unique?: CompositeUnique<TFields>,
   ): TFields {

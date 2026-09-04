@@ -61,7 +61,7 @@ export class SchemaDefinition {
    */
   declaring(declarations: EntityDeclarations<Fields>): SchemaDefinition {
     return new SchemaDefinition(
-      FieldSet.declared(this.fields, declarations.unique),
+      FieldSet.withUnique(this.fields, declarations.unique),
       EntityAdapterSet.merged([this.adapterSet, EntityAdapterSet.of(declarations.adapters)]),
       this.opts,
       declarations.previous ?? this.previous,
@@ -102,10 +102,10 @@ export class SchemaDefinition {
       renamed[key] = field.rename(transform);
     return new SchemaDefinition(
       renamed,
-      this.adapterSet.mapFields(transform),
+      this.adapterSet.rename(transform),
       this.opts,
       undefined,
-      this.origin(root).compose(transform),
+      this.origin(root).rename(transform),
       false,
     );
   }

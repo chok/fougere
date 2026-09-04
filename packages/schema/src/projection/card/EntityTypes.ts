@@ -71,7 +71,7 @@ function docCommentOf(text: string | undefined, indent: string): string {
   return `${indent}/** ${text.replace(/\*\//g, '*\\/')} */\n`;
 }
 
-export interface EntityTypeSourceOptions {
+export interface EntityTypesOptions {
   name?: string;
   exported?: boolean;
 }
@@ -92,16 +92,16 @@ function shapeTypeOf(descriptor: SchemaDescriptor, indent = ''): string {
   return `{\n${lines.join('\n')}\n${indent}}`;
 }
 
-export class EntityTypeSource {
+export class EntityTypes {
   private constructor(private readonly descriptor: SchemaDescriptor) {}
 
   /**
    * So the source comes from the card that crossed the wire, not from a local class.
    * FR : pour que le source vienne de la carte qui a traversé le fil, pas d'une classe locale.
-   * `EntityTypeSource.of(card.descriptor).render()`
+   * `EntityTypes.of(card.descriptor).render()`
    */
-  static of(descriptor: SchemaDescriptor): EntityTypeSource {
-    return new EntityTypeSource(descriptor);
+  static of(descriptor: SchemaDescriptor): EntityTypes {
+    return new EntityTypes(descriptor);
   }
 
   /**
@@ -109,7 +109,7 @@ export class EntityTypeSource {
    * FR : pour que `fougere sync` écrive une classe, aussi utilisable en valeur.
    * → `export class Post extends Card.fromDescriptor<{ title: string }>({ … }).toSchema() {}`
    */
-  render(options: EntityTypeSourceOptions = {}): string {
+  render(options: EntityTypesOptions = {}): string {
     const name = identifierOf(options.name ?? upperFirst(this.descriptor.title ?? 'Schema'));
     const exported = options.exported === false ? '' : 'export ';
     const card = JSON.stringify(this.descriptor, null, 2)

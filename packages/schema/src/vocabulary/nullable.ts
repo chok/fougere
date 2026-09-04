@@ -1,5 +1,5 @@
 import { vocabulary } from './vocabulary.js';
-import { Anatomy } from '../axis/shape/Shape.js';
+import { Shapes } from '../axis/shape/Shape.js';
 import { type Field } from '../field/Field.js';
 
 /**
@@ -10,6 +10,6 @@ import { type Field } from '../field/Field.js';
 export const nullable: <T>(field: Field<T>) => Field<T | null> = vocabulary(
   'nullable',
   (field) => ({
-    shape: Anatomy.nullable(field.shape),
+    shape: Shapes.nullable(field.shape),
   }),
 );

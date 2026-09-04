@@ -10,7 +10,7 @@ import { Lifecycle, Role } from '@fougere/schema';
  * `ColumnDef.stated` is the one member the axes did not produce. It names one engine's
  * column type, so dropping it leaves every column describable.
  */
-import { Anatomy, FieldGroup, Unique, fieldsOf, lowerFirst, schemaOf, type Field, type SchemaView, type SchemaOrCard } from '@fougere/schema';
+import { Shapes, FieldGroup, Unique, fieldsOf, lowerFirst, schemaOf, type Field, type SchemaView, type SchemaOrCard } from '@fougere/schema';
 import { boundsOf, type ShapeBounds } from './check.js';
 import { sqlEntries, type SqlField } from './fields.js';
 
@@ -163,7 +163,7 @@ function toColumn(
   // The column type comes from the `shape` axis alone. `anatomy` strips the
   // nullable union so a nullable integer stays an integer instead of falling
   // through to text.
-  const { base, nullable } = Anatomy.of(field.shape);
+  const { base, nullable } = Shapes.of(field.shape);
   const lifecycle = Lifecycle.of(field);
   const column: ColumnDef = {
     field: fieldName,

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Anatomy } from '../src/axis/shape/Shape.js';
+import { Shapes } from '../src/axis/shape/Shape.js';
 import { Field } from '../src/field/Field.js';
 import { entity } from '../src/entity.js';
 import { primary } from '../src/vocabulary/primary.js';
@@ -57,7 +57,7 @@ describe('helpers', () => {
   it('text() creates a string field without options', () => {
     const f = text();
     expect(f.shape?.type).toBe('string');
-    expect(Anatomy.isNullable(f.shape)).toBe(false);
+    expect(Shapes.isNullable(f.shape)).toBe(false);
   });
 
   it('number() creates a number field with constraints', () => {
@@ -123,7 +123,7 @@ describe('helpers', () => {
   it('optional() puts null in the grammar and permits absence', () => {
     const f = optional(text());
     expect(f.shape?.type).toEqual(['string', 'null']);
-    expect(Anatomy.isNullable(f.shape)).toBe(true);
+    expect(Shapes.isNullable(f.shape)).toBe(true);
     expect(f.lifecycle?.create).toBe('optional');
   });
 

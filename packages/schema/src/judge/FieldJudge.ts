@@ -1,5 +1,5 @@
 import { EXTENSION_AXES } from '../axis/Axis.js';
-import { Anatomy } from '../axis/shape/Shape.js';
+import { Shapes } from '../axis/shape/Shape.js';
 import type { Field } from '../field/Field.js';
 import { isObject } from '../lib/utils.js';
 import type { ValidationError, ValidationResult } from './result.js';
@@ -39,7 +39,7 @@ export class FieldJudge {
 
     const errors: ValidationError[] = [];
 
-    if (!Anatomy.is(declaration.shape)) {
+    if (!Shapes.is(declaration.shape)) {
       errors.push({
         path: 'shape',
         message: `Every field states a shape — got ${JSON.stringify(declaration.shape)}`,

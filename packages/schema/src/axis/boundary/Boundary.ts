@@ -1,7 +1,7 @@
 import type { Decoder, Encoder } from './Boundaries.js';
 import { Boundaries } from './Boundaries.js';
 import type { Field } from '../../field/Field.js';
-import { Anatomy, type Shape } from '../shape/Shape.js';
+import { Shapes, type Shape } from '../shape/Shape.js';
 
 export interface BoundaryRules {
   in?: 'closed' | { decode: string };
@@ -73,7 +73,7 @@ export class Boundary implements BoundaryRules {
    * `{ type: 'string', format: 'date-time' }` → the `isoDate` boundary
    */
   static forShape(shape: Shape | undefined): Boundary {
-    const base = Anatomy.of(shape).base;
+    const base = Shapes.of(shape).base;
     if (base?.type === 'string' && base.format === 'date-time') {
       return new Boundary(Boundaries.aliases.find('isoDate')!);
     }

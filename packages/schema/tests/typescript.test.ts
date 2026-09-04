@@ -19,8 +19,8 @@ import { nullable } from '../src/vocabulary/nullable.js';
 import { ref } from '../src/vocabulary/ref.js';
 import { many } from '../src/vocabulary/many.js';
 import { Card } from '../src/index.js';
-import { EntityTypeSource } from '../src/projection/card/EntityTypeSource.js';
-import { FacadeTypeSource } from '../src/projection/card/FacadeTypeSource.js';
+import { EntityTypes } from '../src/projection/card/EntityTypes.js';
+import { FacadeTypes } from '../src/projection/card/FacadeTypes.js';
 
 class Author extends entity({ id: primary(), name: text() }) {}
 
@@ -37,7 +37,7 @@ class Post extends entity({
   comments: many(Author),
 }) {}
 
-const entitySource = EntityTypeSource.of(Card.fromSchema(Post, 'post').descriptor).render();
+const entitySource = EntityTypes.of(Card.fromSchema(Post, 'post').descriptor).render();
 const source = entitySource.slice(entitySource.indexOf('<') + 1, entitySource.indexOf('>('));
 
 describe('card → TypeScript type', () => {
@@ -71,7 +71,7 @@ describe('card → TypeScript type', () => {
   });
 
   it('renders ONE class: the judge and the shape under a single name', () => {
-    const entitySource = EntityTypeSource.of(Card.fromSchema(Author, 'author').descriptor).render();
+    const entitySource = EntityTypes.of(Card.fromSchema(Author, 'author').descriptor).render();
 
     // No interface beside a const: `class` is the language's own answer to
     // "a name that is both a value and a type".
@@ -84,16 +84,16 @@ describe('card → TypeScript type', () => {
   });
 
   it('names the class after the card, or after what it is told', () => {
-    expect(EntityTypeSource.of(Card.fromSchema(Author, 'author').descriptor).render({ name: 'AuthorCard' }))
+    expect(EntityTypes.of(Card.fromSchema(Author, 'author').descriptor).render({ name: 'AuthorCard' }))
       .toContain('class AuthorCard ');
-    expect(EntityTypeSource.of(Card.fromSchema(Author, 'author').descriptor).render({ exported: false })).toMatch(/^class /);
+    expect(EntityTypes.of(Card.fromSchema(Author, 'author').descriptor).render({ exported: false })).toMatch(/^class /);
   });
 
   it('refuses a name that is not an identifier', () => {
     // Everything else emits DATA — a string lands inside `JSON.stringify`. A name lands
     // in a declaration: it is the one value that could stop being data, and it sometimes
     // comes from a stranger.
-    expect(() => EntityTypeSource.of({
+    expect(() => EntityTypes.of({
       ...Card.fromSchema(Author, 'author').descriptor,
       title: "Author; await import('node:fs')",
     }).render())
@@ -111,7 +111,7 @@ describe('card → façade type', () => {
   ];
 
   it('says how much comes back, not only what shape', () => {
-    const source = FacadeTypeSource.of(ops).render({ name: 'PostFacade', rowType: 'Post' });
+    const source = FacadeTypes.of(ops).render({ name: 'PostFacade', rowType: 'Post' });
 
     // The trap this field exists to avoid: `list` does NOT return `Post[]`.
     // `ListResult<T> extends Array<T>` — an array carrying its own totals.
@@ -125,12 +125,12 @@ describe('card → façade type', () => {
   });
 
   it('carries the operation\'s own doc sentence', () => {
-    expect(FacadeTypeSource.of(ops).render({ rowType: 'Post' })).toContain('/** Every post. */');
+    expect(FacadeTypes.of(ops).render({ rowType: 'Post' })).toContain('/** Every post. */');
   });
 
   it('does not guess when the card gives no cardinality', () => {
     // A silent card must produce `unknown`, not a guess that compiles.
-    expect(FacadeTypeSource.of([{ name: 'weekly' }]).render({ rowType: 'Post' }))
+    expect(FacadeTypes.of([{ name: 'weekly' }]).render({ rowType: 'Post' }))
       .toContain('weekly(invocation?: Invocation): Promise<unknown>;');
   });
 });
@@ -150,7 +150,7 @@ describe('a description cannot stop being a comment', () => {
   const payload = '*/ } console.log("pwned"); interface X {';
 
   it('escapes the terminator in a field description', () => {
-    const entitySource = EntityTypeSource.of({
+    const entitySource = EntityTypes.of({
       type: 'object',
       title: 'post',
       properties: { title: { type: 'string', description: payload } },
@@ -164,7 +164,7 @@ describe('a description cannot stop being a comment', () => {
   });
 
   it('escapes the terminator in an operation description', () => {
-    const source = FacadeTypeSource.of([{ name: 'list', cardinality: 'many', description: payload }]).render({
+    const source = FacadeTypes.of([{ name: 'list', cardinality: 'many', description: payload }]).render({
       rowType: 'Post',
     });
 
@@ -173,7 +173,7 @@ describe('a description cannot stop being a comment', () => {
   });
 
   it('leaves the whole generated entity with no way out of its comments', () => {
-    const source = EntityTypeSource.of({
+    const source = EntityTypes.of({
       type: 'object',
       title: 'post',
       properties: {

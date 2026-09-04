@@ -71,14 +71,14 @@ export abstract class FieldGroup {
           `${missing.map((m) => `'${m}'`).join(', ')}, which the entity does not declare.`,
       );
 
-    const out: Fields = { ...fields };
+    const carrying: Fields = { ...fields };
     for (const key of this.members) {
-      const field = out[key]!;
-      out[key] = field.with({
+      const field = carrying[key]!;
+      carrying[key] = field.with({
         role: { ...field.role, rules: [...(field.role?.rules ?? []), this] },
       });
     }
-    return out;
+    return carrying;
   }
 
   /**

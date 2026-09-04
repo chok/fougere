@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Anatomy } from '../src/axis/shape/Shape.js';
+import { Shapes } from '../src/axis/shape/Shape.js';
 import { entity } from '../src/entity.js';
 import { Schema } from '../src/Schema.js';
 import { primary } from '../src/vocabulary/primary.js';
@@ -52,7 +52,7 @@ describe('derivation', () => {
       // patch mode is carried by the view's opts, not by mutated fields
       expect(view.getOpts().patch).toBe(true);
       // base fields are untouched — note: text() stays non-nullable
-      expect(Anatomy.isNullable(view.getFields().note.shape)).toBe(false);
+      expect(Shapes.isNullable(view.getFields().note.shape)).toBe(false);
     });
 
     it('omits an absent field instead of touching it', () => {

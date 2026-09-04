@@ -1,4 +1,4 @@
-import { Anatomy } from '../axis/shape/Shape.js';
+import { Shapes } from '../axis/shape/Shape.js';
 import { Boundary } from '../axis/boundary/Boundary.js';
 import { Lifecycle } from '../axis/lifecycle/Lifecycle.js';
 import { Role } from '../axis/role/Role.js';
@@ -45,10 +45,10 @@ function wrongTypeFor(field: Field): unknown {
  * `text({ maxLength: 3 })` → one case with `'xxxx'`; `text()` → no case
  */
 function outOfBoundsFor(field: Field): { why: string; value: unknown }[] {
-  // Through `Anatomy`, not a cast: the cast admitted any keyword, and it declared
+  // Through `Shapes`, not a cast: the cast admitted any keyword, and it declared
   // `maxItems` — which no branch below ever produced. In the one function whose job is
   // to be exhaustive, a bound the type does not carry is a case nobody notices missing.
-  const shape = Anatomy.of(field.shape).base;
+  const shape = Shapes.of(field.shape).base;
   const out: { why: string; value: unknown }[] = [];
   if (shape?.type === 'string') {
     if (typeof shape.minLength === 'number' && shape.minLength > 0)

@@ -43,13 +43,13 @@ export class EntityAdapterSet {
    * → `{ sql: { body: {} } }`
    */
   static merged(adapterSets: readonly EntityAdapterSet[]): EntityAdapterSet {
-    const out: AdapterConfigurations = {};
+    const configurations: AdapterConfigurations = {};
 
     for (const adapterSet of adapterSets)
       for (const [adapter, configuration] of adapterSet.entries)
-        out[adapter] = { ...out[adapter], ...configuration };
+        configurations[adapter] = { ...configurations[adapter], ...configuration };
 
-    return new EntityAdapterSet(out);
+    return new EntityAdapterSet(configurations);
   }
 
   private get entries(): [string, AdapterConfiguration][] {
@@ -74,7 +74,7 @@ export class EntityAdapterSet {
    * `Post.rename({ body: 'text' })` → `{ sql: { text: { columnType: { pg: 'tsvector' } } } }`
    * `Post.pick('id')`              → `{}` — `sql` had only `body` to say
    */
-  mapFields(transform: (key: string) => string | undefined): EntityAdapterSet {
+  rename(transform: (key: string) => string | undefined): EntityAdapterSet {
     const renamed: AdapterConfigurations = {};
 
     for (const [adapter, configuration] of this.entries) {

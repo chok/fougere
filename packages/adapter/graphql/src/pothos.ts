@@ -3,7 +3,7 @@ import { upperFirst, Role } from '@fougere/schema';
  * @fougere/adapter-graphql — Pothos types derived from Fougere entities
  */
 import type SchemaBuilder from '@pothos/core';
-import { Anatomy, Schema, type Shape } from '@fougere/schema';
+import { Shapes, Schema, type Shape } from '@fougere/schema';
 import type { Field, Fields, SchemaView, SchemaOrCard } from '@fougere/schema';
 import { Boundary, Card, Lifecycle, schemaOf, Visibility } from '@fougere/schema';
 
@@ -154,7 +154,7 @@ function fieldToGraphQL(
 ): any {
   // Dispatch on the BASE type via anatomy — `shape.type` may be the nullable
   // `[T,'null']` union, a direct comparison would fail silently on it.
-  const { base: shape, nullable } = Anatomy.of(field.shape);
+  const { base: shape, nullable } = Shapes.of(field.shape);
 
   // Before the type switch: a bounded set is its own GraphQL type whatever its base type
   // carries. `oneOf` fed the form's `select` and the DDL's `CHECK` from the day it was
@@ -199,7 +199,7 @@ function fieldToGraphQL(
     case 'array': {
       // A value list (`list(text())`) becomes a GraphQL list of the item scalar; a list
       // of objects becomes a list of JSON strings — the same rule 'object' follows.
-      const items = Anatomy.of(shape.items).base;
+      const items = Shapes.of(shape.items).base;
       const resolve = (parent: any) => parent[fieldName] ?? (nullable ? null : []);
       switch (items?.type) {
         case 'integer': return t.intList({ nullable, resolve });
@@ -266,7 +266,7 @@ function nestedInputType(
       const out: Record<string, any> = {};
       for (const [key, prop] of Object.entries(properties)) {
         const isRequired = required.has(key);
-        switch (Anatomy.of(prop).base?.type) {
+        switch (Shapes.of(prop).base?.type) {
           case 'integer': out[key] = t.int({ required: isRequired }); break;
           case 'number': out[key] = t.float({ required: isRequired }); break;
           case 'boolean': out[key] = t.boolean({ required: isRequired }); break;
@@ -346,7 +346,7 @@ function fieldToInput(
   // Required = the presence axis, projected onto GraphQL's single knob: the
   // caller must supply it (no `lifecycle.create` rule answers absence), null is
   // not legal, and the view is not in patch mode (a patch omits freely).
-  const { base: shape, nullable } = Anatomy.of(field.shape);
+  const { base: shape, nullable } = Shapes.of(field.shape);
   const required = !patch && !nullable && Lifecycle.of(field).requiredAtCreate;
 
   // The dual of the output side, and it must be the SAME type: an input left as `String`
@@ -369,7 +369,7 @@ function fieldToInput(
       return t.boolean({ required });
 
     case 'array': {
-      const items = Anatomy.of(shape.items).base;
+      const items = Shapes.of(shape.items).base;
       switch (items?.type) {
         case 'integer': return t.intList({ required });
         case 'number': return t.floatList({ required });

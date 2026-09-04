@@ -1,4 +1,4 @@
-import { Anatomy } from '../src/axis/shape/Shape.js';
+import { Shapes } from '../src/axis/shape/Shape.js';
 import { RowJudge } from '../src/judge/RowJudge.js';
 import { FieldGroup } from '../src/field/constraint/FieldGroup.js';
 import { Unique } from '../src/field/constraint/Unique.js';
@@ -13,61 +13,61 @@ import {
 
 describe('nullableShape — null enters the grammar', () => {
   it('scalar: the type becomes the [T, null] union', () => {
-    expect(Anatomy.nullable({ type: 'string' }).type).toEqual(['string', 'null']);
-    expect(Anatomy.nullable({ type: 'integer' }).type).toEqual(['integer', 'null']);
-    expect(Anatomy.nullable({ type: 'boolean' }).type).toEqual(['boolean', 'null']);
+    expect(Shapes.nullable({ type: 'string' }).type).toEqual(['string', 'null']);
+    expect(Shapes.nullable({ type: 'integer' }).type).toEqual(['integer', 'null']);
+    expect(Shapes.nullable({ type: 'boolean' }).type).toEqual(['boolean', 'null']);
   });
 
   it('enum: null joins the closed value set too', () => {
-    const s = Anatomy.nullable({ type: 'string', enum: ['a', 'b'] });
+    const s = Shapes.nullable({ type: 'string', enum: ['a', 'b'] });
     expect(s.type).toEqual(['string', 'null']);
     expect((s as { enum?: readonly (string | null)[] }).enum).toEqual(['a', 'b', null]);
   });
 
   it('array/object: the union wraps the container, items/properties untouched', () => {
-    const arr = Anatomy.nullable({ type: 'array', items: { type: 'string' } });
+    const arr = Shapes.nullable({ type: 'array', items: { type: 'string' } });
     expect(arr.type).toEqual(['array', 'null']);
     expect((arr as { items: object }).items).toEqual({ type: 'string' });
   });
 
   it('is idempotent', () => {
-    const once = Anatomy.nullable({ type: 'string', enum: ['a'] });
-    const twice = Anatomy.nullable(once);
+    const once = Shapes.nullable({ type: 'string', enum: ['a'] });
+    const twice = Shapes.nullable(once);
     expect(twice).toBe(once);
   });
 
   it('keeps constraints on the base type', () => {
-    expect(Anatomy.nullable({ type: 'string', minLength: 3 })).toEqual({ type: ['string', 'null'], minLength: 3 });
+    expect(Shapes.nullable({ type: 'string', minLength: 3 })).toEqual({ type: ['string', 'null'], minLength: 3 });
   });
 });
 
 describe('anatomy — the single customs post for readers', () => {
   it('splits the union back into base + nullable', () => {
-    const { base, nullable } = Anatomy.of({ type: ['integer', 'null'], minimum: 0 } as never);
+    const { base, nullable } = Shapes.of({ type: ['integer', 'null'], minimum: 0 } as never);
     expect(nullable).toBe(true);
     expect(base).toEqual({ type: 'integer', minimum: 0 });
   });
 
   it('a scalar shape is its own base, not nullable', () => {
     const shape = { type: 'string' as const };
-    const { base, nullable } = Anatomy.of(shape);
+    const { base, nullable } = Shapes.of(shape);
     expect(nullable).toBe(false);
     expect(base).toBe(shape);
   });
 
   it('strips null from enum in the base', () => {
-    const { base } = Anatomy.of(Anatomy.nullable({ type: 'string', enum: ['a', 'b'] }));
+    const { base } = Shapes.of(Shapes.nullable({ type: 'string', enum: ['a', 'b'] }));
     expect((base as { enum?: readonly (string | null)[] }).enum).toEqual(['a', 'b']);
   });
 
   it('no shape → no base, not nullable (a many relation)', () => {
-    expect(Anatomy.of(undefined)).toEqual({ base: undefined, nullable: false });
+    expect(Shapes.of(undefined)).toEqual({ base: undefined, nullable: false });
   });
 
   it('isNullable is the sugar for the flag', () => {
-    expect(Anatomy.isNullable(Anatomy.nullable({ type: 'string' }))).toBe(true);
-    expect(Anatomy.isNullable({ type: 'string' })).toBe(false);
-    expect(Anatomy.isNullable(undefined)).toBe(false);
+    expect(Shapes.isNullable(Shapes.nullable({ type: 'string' }))).toBe(true);
+    expect(Shapes.isNullable({ type: 'string' })).toBe(false);
+    expect(Shapes.isNullable(undefined)).toBe(false);
   });
 });
 

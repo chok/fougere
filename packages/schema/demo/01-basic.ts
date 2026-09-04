@@ -1,7 +1,7 @@
 /**
  * Demo 1 — Définition basique d'une entité
  */
-import { Anatomy, entity, primary, text, number, bool, created, } from '../src/index.js';
+import { Shapes, entity, primary, text, number, bool, created, } from '../src/index.js';
 
 // Une classe = une entité. Pas de decorators, pas de chaînage.
 class Product extends entity({
@@ -17,7 +17,7 @@ class Product extends entity({
 console.log('--- Fields ---');
 const fields = Product.getFields();
 for (const [name, field] of Object.entries(fields)) {
-  const { base, nullable } = Anatomy.of(field.shape);
+  const { base, nullable } = Shapes.of(field.shape);
   const kind = base?.type ?? (field.role?.relation ? `relation:${field.role.relation.kind}` : 'unknown');
   console.log(`  ${name}: ${kind}${nullable ? ' (nullable)' : ''}`);
 }

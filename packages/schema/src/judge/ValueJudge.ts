@@ -1,6 +1,6 @@
 import { Validator, format as engineFormats } from '@cfworker/json-schema';
 import { Formats, type FormatPredicate } from '../axis/shape/Formats.js';
-import { Anatomy, type Shape } from '../axis/shape/Shape.js';
+import { Shapes, type Shape } from '../axis/shape/Shape.js';
 import type { Field } from '../field/Field.js';
 import type { Checked } from './result.js';
 
@@ -31,7 +31,7 @@ export class ValueJudge {
    */
   validate(value: unknown): Checked {
     const shape = this.field.shape;
-    const base = Anatomy.of(shape).base;
+    const base = Shapes.of(shape).base;
     if (value !== null) {
       if (base?.type === 'object' && !base.properties) return { value };
       if (
@@ -65,7 +65,7 @@ export class ValueJudge {
   private static planFor(shape: Shape): ShapePlan {
     let plan = this.plans.get(shape);
     if (!plan) {
-      const base = Anatomy.of(shape).base;
+      const base = Shapes.of(shape).base;
       const formatName = base?.type === 'string' ? base.format : undefined;
       plan = {
         validator: new Validator(shape as object, '2020-12', true),

@@ -160,18 +160,18 @@ export class Schema {
    * `Post.from({ createdAt: '2026-01-01' })` → `createdAt` is a `Date`
    */
   static from(data: Record<string, unknown>) {
-    const out: Record<string, unknown> = {};
+    const row: Record<string, unknown> = {};
     for (const [key, field] of Object.entries(this.fields)) {
       if (!(key in data)) continue;
       const value = data[key];
       if (value === null || value === undefined) {
-        out[key] = value;
+        row[key] = value;
         continue;
       }
       const decoded = Boundary.of(field).decode(value);
-      out[key] = 'error' in decoded ? value : decoded.value;
+      row[key] = 'error' in decoded ? value : decoded.value;
     }
-    return out;
+    return row;
   }
 
   /**
@@ -206,7 +206,7 @@ export class Schema {
     assertKnownKeys('pick', keys, this.fields);
     const picked: Fields = {};
     for (const key of keys) if (this.fields[key]) picked[key] = this.fields[key];
-    return this.derive(picked, (k) => (keys.includes(k) ? k : undefined));
+    return this.derive(picked, (key) => (keys.includes(key) ? key : undefined));
   }
 
   /**
@@ -219,7 +219,7 @@ export class Schema {
     const kept: Fields = {};
     for (const [key, field] of Object.entries(this.fields))
       if (!keys.includes(key)) kept[key] = field;
-    return this.derive(kept, (k) => (keys.includes(k) ? undefined : k));
+    return this.derive(kept, (key) => (keys.includes(key) ? undefined : key));
   }
 
   /**
@@ -343,7 +343,7 @@ export class Schema {
   /**
    * So `pick`, `omit` and `rename` differ only by which fields remain, and under what name.
    * FR : pour que `pick`, `omit` et `rename` ne diffèrent que par les champs restants et leur nom.
-   * `derive(picked, (k) => keys.includes(k) ? k : undefined)`
+   * `derive(picked, (key) => keys.includes(key) ? key : undefined)`
    */
   private static derive(fields: Fields, transform: (key: string) => string | undefined) {
     return Schema.subclass(this.definition.derived(fields, transform, this));
