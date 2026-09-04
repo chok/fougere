@@ -19,11 +19,7 @@ export interface ValidationCase {
   /** What this input does, in one clause — carried into the assertion so a failure reads. */
   why: string;
   body: unknown;
-  /**
-   * Judged as an update rather than a creation. The two modes refuse different things:
-   * an absence is `Required` on create and legal on patch, an immutable field is legal
-   * on create and refused on patch.
-   */
+  /** Judged as an update rather than a creation. The two modes refuse different things: */
   patch: boolean;
   expect: 'accept' | { reject: string };
 }
@@ -84,20 +80,10 @@ function outOfBoundsFor(field: Field): { why: string; value: unknown }[] {
 export class Cases {
   private constructor(readonly all: readonly ValidationCase[]) {}
 
-  /**
-   * So a test suite is derived from the entity instead of written field by field.
-   * FR : pour qu'une suite soit dérivée de l'entité, pas écrite champ par champ.
-   * `Cases.of(Post, { title: 'a' })` → the valid row, the unknown key, and one case per field
-   */
   static of(entity: SchemaView, valid: Record<string, unknown>): Cases {
     return new Cases(enumerate(entity, valid));
   }
 
-  /**
-   * So the local judge, the façade and a door are all read by one same assertion.
-   * FR : pour que le juge local, la façade et une porte partagent une assertion.
-   * `holds({ reject: 'title' }, result)` → `true` when an error carries that path
-   */
   static holds(
     expected: ValidationCase['expect'],
     result: { success: boolean; errors?: { path: string }[] },
@@ -107,20 +93,10 @@ export class Cases {
     return (result.errors ?? []).some((error) => error.path === expected.reject);
   }
 
-  /**
-   * So a suite can assert it covers the closed set, rather than the messages it happened to see.
-   * FR : pour qu'une suite prouve qu'elle couvre l'ensemble fermé.
-   * `Cases.refusals` → `['Expected an object', 'Unknown field', 'Required', …]`
-   */
   static get refusals(): string[] {
     return Object.values(RowRefusal);
   }
 
-  /**
-   * So a suite writes `for (const c of cases)` without reaching for `.all`.
-   * FR : pour qu'une suite écrive `for (const c of cases)` sans passer par `.all`.
-   * `for (const { why, body } of Cases.of(Post, valid))`
-   */
   [Symbol.iterator](): Iterator<ValidationCase> {
     return this.all[Symbol.iterator]();
   }

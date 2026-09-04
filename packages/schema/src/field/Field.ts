@@ -24,12 +24,6 @@ export class Field<T = unknown> {
 
   declare readonly _type?: T;
 
-  /**
-   * So a plain object from anywhere becomes a field, or is refused by its key.
-   * FR : pour qu'un objet ordinaire devienne un champ, ou soit refusé sous son nom.
-   * `new Field({}, 'title')`
-   * → throws `Field 'title': shape: Every field states a shape — got undefined`
-   */
   constructor(init: FieldDeclaration, key?: string) {
     const verdict = FieldJudge.of(init).verdict;
 
@@ -57,31 +51,14 @@ export class Field<T = unknown> {
     }
   }
 
-  /**
-   * So a field is recognized by its form, never by a mark only this package can stamp.
-   * FR : pour qu'un champ soit reconnu à sa forme, jamais à une marque.
-   * `Field.is({ shape: { type: 'string' } })` → `true`
-   */
   static is(value: unknown): value is Field {
     return FieldJudge.of(value).verdict.success;
   }
 
-  /**
-   * So a derivation can change one axis without restating the whole field.
-   * FR : pour qu'une dérivation change un axe sans redire tout le champ.
-   * `text().with({ lifecycle: { update: 'forbidden' } })`
-   * → the same shape, now refusing updates
-   */
   with<U = T>(overrides: Partial<FieldDeclaration>): Field<U> {
     return new Field<U>({ ...this, ...overrides });
   }
 
-  /**
-   * So a `unique` group follows a rename, and dies with the member a cut removed.
-   * FR : pour qu'un groupe `unique` suive le renommage et meure avec un membre coupé.
-   * `unique(['email', 'tenant'])` under `email → mail` → `['mail', 'tenant']`;
-   * with `tenant` cut → the group is gone
-   */
   rename(map: (key: string) => string | undefined): Field<T> {
     const rules = this.role?.rules;
     if (!rules?.length) return this;

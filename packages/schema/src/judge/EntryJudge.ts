@@ -3,32 +3,18 @@ import type { Shape } from '../axis/shape/Shape.js';
 import { isObject } from '../lib/utils.js';
 
 /**
- * What an adapter accepts under a field name, judged by the engine `schema` already ships.
- *
- * `EntityAdapterSet` owns the two levels an entry is ADDRESSED by — adapter, then field —
- * and judges nothing below them. This is how the level below gets a judge without `schema`
- * learning what is in it: the adapter states its format as DATA, and `schema` reads it. A
- * TypeScript interface cannot serve: it is erased before a JS caller, a config or a card
- * from another language could be measured against it.
+ * The format is DATA, not a TypeScript interface: an interface is erased before a JS
+ * caller, a config or a card from another language could be measured against it.
  */
 export class EntryJudge {
   private constructor(private readonly validator: Validator) {}
 
-  /**
-   * Compiles the format an adapter states, once, at that adapter's own module load.
-   * FR : compile le format énoncé par un adaptateur, une fois, au chargement de son module.
-   * `EntryJudge.of(ENTRY_FORMAT)` in `adapter/sql/src/fields.ts`
-   */
+  /** Compiled once, at the adapter's own module load. */
   static of(format: Shape): EntryJudge {
     return new EntryJudge(new Validator(format as object, '2020-12', true));
   }
 
-  /**
-   * Refuses the first entry the format does not admit, naming the field and the key inside it.
-   * FR : refuse la première entrée hors format, en nommant le champ et la clé fautive.
-   * `check({ body: { columnType: { postgre: 'x' } } }, 'Post.adapters.sql')`
-   * → throws `Post.adapters.sql.body.columnType: Property "postgre" does not match …`
-   */
+  /** `Post.adapters.sql.body.columnType: Property "postgre" does not match …` */
   assert(entries: unknown, path: string): void {
     if (entries === undefined) return;
 

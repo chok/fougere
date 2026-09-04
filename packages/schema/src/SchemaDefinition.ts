@@ -31,11 +31,7 @@ export class SchemaDefinition {
     readonly anchored: boolean,
   ) {}
 
-  /**
-   * So a definition is built complete or not at all, instead of statics assigned side by side.
-   * FR : pour qu'une définition soit construite complète ou pas du tout.
-   * `SchemaDefinition.of({ fields })` → opts `{}`, anchored `false`, the rest undefined
-   */
+  /** Built complete or not at all — no static assigned on the side. */
   static of(declaration: {
     fields: Fields;
     adapters?: EntityAdapters<Fields>;
@@ -54,11 +50,6 @@ export class SchemaDefinition {
     );
   }
 
-  /**
-   * So what a schema says about itself folds into what it already said, without losing either.
-   * FR : pour que ce qu'un schéma dit de lui se replie dans ce qu'il disait.
-   * `declaring({ unique: [['email', 'tenant']] })` → both fields now carry the group
-   */
   declaring(declarations: EntityDeclarations<Fields>): SchemaDefinition {
     return new SchemaDefinition(
       FieldSet.withUnique(this.fields, declarations.unique),
@@ -70,11 +61,6 @@ export class SchemaDefinition {
     );
   }
 
-  /**
-   * So a derivation can stop being an answer and start holding rows, changing nothing else.
-   * FR : pour qu'une dérivation cesse d'être une réponse et tienne des lignes.
-   * `Post.pick('id', 'title').anchor()` → same fields, `anchored: true`
-   */
   anchoring(): SchemaDefinition {
     return new SchemaDefinition(
       this.fields,
@@ -86,12 +72,6 @@ export class SchemaDefinition {
     );
   }
 
-  /**
-   * So `pick`, `omit` and `rename` are one gesture: what remains, and what became of each name.
-   * FR : pour que `pick`, `omit` et `rename` soient un geste : ce qui reste, sous quel nom.
-   * `derived(kept, (k) => k === 'body' ? 'text' : k, Post)`
-   * → fields renamed, adapter entries re-addressed, origin composed
-   */
   derived(
     fields: Fields,
     transform: (key: string) => string | undefined,
@@ -110,11 +90,6 @@ export class SchemaDefinition {
     );
   }
 
-  /**
-   * So the same fields judge an update, and the mode is a property of the schema, not of a call.
-   * FR : pour que le mode de jugement soit une propriété du schéma, pas de l'appel.
-   * `Post.partial()` → `opts.patch` is `true`, fields untouched
-   */
   patched(root: SchemaView): SchemaDefinition {
     return new SchemaDefinition(
       { ...this.fields },
@@ -126,11 +101,7 @@ export class SchemaDefinition {
     );
   }
 
-  /**
-   * So an added field does not pretend to come from the root, which never declared it.
-   * FR : pour qu'un champ ajouté ne prétende pas venir de la racine.
-   * `Post.extend({ slug: text() })` → the derivation still speaks of `Post` alone
-   */
+  /** An added field does not pretend to come from the root, which never declared it. */
   extended(extra: Fields, root: SchemaView): SchemaDefinition {
     return new SchemaDefinition(
       { ...this.fields, ...extra },
@@ -142,11 +113,7 @@ export class SchemaDefinition {
     );
   }
 
-  /**
-   * So several schemas fold into one, which by construction has no single origin to name.
-   * FR : pour que plusieurs schémas n'en fassent qu'un, sans origine unique.
-   * `merged([Timestamps, Post])` → both field sets, `derivation` undefined
-   */
+  /** Several schemas fold into one, which has no single origin to point at. */
   static merged(views: readonly SchemaView[]): SchemaDefinition {
     const fields: Fields = {};
     let opts: ValidateOptions = {};
@@ -161,11 +128,6 @@ export class SchemaDefinition {
     return new SchemaDefinition(fields, adapterSet, opts, undefined, undefined, false);
   }
 
-  /**
-   * So what is cut from an anchor roots on that anchor, and not on where the anchor came from.
-   * FR : pour que ce qui est coupé d'une ancre s'enracine sur elle.
-   * `Post.pick('id').anchor().pick('id')` → the origin is the anchored schema, not `Post`
-   */
   private origin(root: SchemaView): SchemaDerivation {
     if (!this.anchored && this.derivation) return this.derivation;
 

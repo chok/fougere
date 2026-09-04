@@ -2,13 +2,7 @@ import { type Fields } from './field/Field.js';
 import type { SchemaView } from './SchemaView.js';
 
 /**
- * What a derived schema says about its ORIGIN: the class it was cut from, and what the cut
- * left of each of that class's fields.
- *
- * The origin is the ROOT — `Post.pick(a, b).omit(b)` answers `Post` and never the
- * intermediate — so a chain is flattened rather than journalled, and the two halves cannot
- * disagree: a derivation always carries both, which `source` and `nameOf` as independent
- * properties could not promise.
+ * The origin is the ROOT: `Post.pick(a, b).omit(b)` answers `Post`, never the intermediate.
  */
 export class SchemaDerivation {
   private constructor(
@@ -16,11 +10,6 @@ export class SchemaDerivation {
     readonly nameOf: Readonly<Record<string, string | undefined>>,
   ) {}
 
-  /**
-   * So the first cut records that every field of the origin still answers to its own name.
-   * FR : pour que la première coupe note que chaque champ garde son nom.
-   * `SchemaDerivation.first(Post, fields).nameOf` → `{ title: 'title' }`
-   */
   static first(source: SchemaView, fields: Fields): SchemaDerivation {
     return new SchemaDerivation(
       source,
@@ -28,11 +17,6 @@ export class SchemaDerivation {
     );
   }
 
-  /**
-   * So a chain of cuts stays one hop from the root, rather than a journal someone has to walk.
-   * FR : pour qu'une chaîne de coupes reste à un saut de la racine.
-   * `Post.pick('a', 'b').omit('b')` → the origin is `Post`, never the intermediate
-   */
   rename(transform: (key: string) => string | undefined): SchemaDerivation {
     return new SchemaDerivation(
       this.source,
@@ -45,20 +29,11 @@ export class SchemaDerivation {
     );
   }
 
-  /**
-   * So a card writes `'Post'` without carrying the `Post` class.
-   * FR : pour qu'une carte écrive `'Post'` sans embarquer la classe `Post`.
-   * `Post.pick('title').derivation.sourceName` → `'Post'`
-   */
   get sourceName(): string {
     return this.source.name;
   }
 
-  /**
-   * So an answer knows whose rows it borrows, however many cuts away they are.
-   * FR : pour qu'une réponse sache à qui elle emprunte ses lignes.
-   * `Post.pick('title').omit('title').derivation.anchor` → `Post`
-   */
+  /** Whose rows this one borrows, however many cuts away: `Post.pick('t').omit('t')` → `Post`. */
   get anchor(): SchemaView {
     const source = this.source;
 
@@ -66,5 +41,4 @@ export class SchemaDerivation {
       ? source
       : source.derivation.anchor;
   }
-
 }

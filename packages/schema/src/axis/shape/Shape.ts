@@ -49,20 +49,10 @@ interface ShapeParts {
 }
 
 export class Shapes {
-  /**
-   * So a shape is recognized by the type it states, and anything else is refused.
-   * FR : pour qu'une forme soit reconnue au type qu'elle énonce.
-   * `Shapes.is({ type: 'string' })` → `true`; `Shapes.is({ type: 'blob' })` → `false`
-   */
   static is(value: unknown): value is Shape {
     return isShapeImpl(value);
   }
 
-  /**
-   * So `null` is added to a shape without the caller knowing how a nullable type is spelled.
-   * FR : pour qu'on ajoute `null` sans savoir comment s'écrit un type nullable.
-   * `Shapes.nullable({ type: 'string' })` → `{ type: ['string', 'null'] }`
-   */
   static nullable(shape: Shape): Shape {
     return nullableShapeImpl(shape);
   }
@@ -70,12 +60,6 @@ export class Shapes {
   private static readonly cache = new WeakMap<object, ShapeParts>();
   private static readonly none: ShapeParts = { base: undefined, nullable: false };
 
-  /**
-   * So every reader sees the shape and its nullability apart.
-   * FR : pour que la forme et sa nullabilité se lisent séparément.
-   * `Shapes.of({ type: ['string', 'null'], enum: ['a', null] })`
-   * → `{ base: { type: 'string', enum: ['a'] }, nullable: true }`
-   */
   static of(shape?: Shape): ShapeParts {
     if (!shape) return this.none;
     let parts = this.cache.get(shape);
@@ -95,11 +79,6 @@ export class Shapes {
     return parts;
   }
 
-  /**
-   * So the question every adapter asks costs one call instead of an anatomy to read.
-   * FR : pour que la question de chaque adaptateur coûte un appel.
-   * `Shapes.isNullable({ type: ['string', 'null'] })` → `true`
-   */
   static isNullable(shape?: Shape): boolean {
     return this.of(shape).nullable;
   }

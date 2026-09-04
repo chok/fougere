@@ -51,20 +51,10 @@ function returnTypeOf(op: OpDescriptor, rowType: string): string {
 export class FacadeTypes {
   private constructor(private readonly operations: readonly OpDescriptor[]) {}
 
-  /**
-   * So an identity card's operations become a typed door on the consumer's side.
-   * FR : pour que les opérations d'une carte deviennent une porte typée.
-   * `FacadeTypes.of(card.operations).render({ rowType: 'Post' })`
-   */
   static of(operations: readonly OpDescriptor[]): FacadeTypes {
     return new FacadeTypes(operations);
   }
 
-  /**
-   * So a remote frond is called with the same types as a local one.
-   * FR : pour qu'un frond distant s'appelle avec les mêmes types qu'un frond local.
-   * → `export interface PostFacade { publish(invocation?: Invocation): Promise<Post>; }`
-   */
   render(options: FacadeTypesOptions = {}): string {
     const name = options.name ?? 'Facade';
     const exported = options.exported === false ? '' : 'export ';

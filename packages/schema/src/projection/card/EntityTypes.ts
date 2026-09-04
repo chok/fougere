@@ -95,20 +95,10 @@ function shapeTypeOf(descriptor: SchemaDescriptor, indent = ''): string {
 export class EntityTypes {
   private constructor(private readonly descriptor: SchemaDescriptor) {}
 
-  /**
-   * So the source comes from the card that crossed the wire, not from a local class.
-   * FR : pour que le source vienne de la carte qui a traversé le fil, pas d'une classe locale.
-   * `EntityTypes.of(card.descriptor).render()`
-   */
   static of(descriptor: SchemaDescriptor): EntityTypes {
     return new EntityTypes(descriptor);
   }
 
-  /**
-   * So `fougere sync` writes a class, not a type — the consumer needs it as a value too.
-   * FR : pour que `fougere sync` écrive une classe, aussi utilisable en valeur.
-   * → `export class Post extends Card.fromDescriptor<{ title: string }>({ … }).toSchema() {}`
-   */
   render(options: EntityTypesOptions = {}): string {
     const name = identifierOf(options.name ?? upperFirst(this.descriptor.title ?? 'Schema'));
     const exported = options.exported === false ? '' : 'export ';

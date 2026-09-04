@@ -13,20 +13,10 @@ export class RowJudge {
     private readonly options: ValidateOptions,
   ) {}
 
-  /**
-   * So the same field set judges a create and a patch, told apart by one option.
-   * FR : pour que le même ensemble juge une création et une modification.
-   * `RowJudge.of(fields, { patch: true }).validate({ title: 'a' })` → no `Required` on what is absent
-   */
   static of(fields: Fields, options: ValidateOptions = {}): RowJudge {
     return new RowJudge(fields, options);
   }
 
-  /**
-   * So an absent value has one answer per field, decided by the axes and not by the caller.
-   * FR : pour qu'une absence ait une réponse par champ, décidée par les axes.
-   * `created()` → `'skip'`; a required `list()` → `'empty-list'`; a required `text()` → `null`
-   */
   onAbsent(field: Field): 'skip' | 'empty-list' | null {
     if (Boundary.of(field).readOnly) return 'skip';
     if (!Lifecycle.of(field).requiredAtCreate) return 'skip';
@@ -34,12 +24,7 @@ export class RowJudge {
     return null;
   }
 
-  /**
-   * So a handler never receives a row it would have to check again — and gets parsed values.
-   * FR : pour qu'un handler ne revérifie rien, et reçoive des valeurs converties.
-   * `check({ title: 'a', ghost: 1 })`
-   * → `{ success: false, errors: [{ path: 'ghost', message: 'Unknown field' }] }`
-   */
+  /** Hands on the value it PARSED, so a handler never re-checks a row. */
   validate(input: unknown): ValidationResult<Record<string, unknown>> {
     if (typeof input !== 'object' || input === null) {
       return { success: false, errors: [{ path: '.', message: RowRefusal.notAnObject }] };

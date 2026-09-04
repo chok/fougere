@@ -19,35 +19,9 @@ export interface SchemaView<TFields extends Fields = Fields> {
   readonly previous?: PreviousNames<TFields>;
   /** Does it hold rows of its own? False on a derivation means an answer. */
   readonly anchored?: boolean;
-  /**
-   * So every reader — adapter, judge, card — asks the schema and never the class body.
-   * FR : pour que chaque lecteur interroge le schéma, jamais le corps de la classe.
-   * `Post.getFields()` → `{ id: Field, title: Field, … }`
-   */
   getFields(): TFields;
-  /**
-   * So an adapter reads what the entity said to IT, and learns nothing about the others.
-   * FR : pour qu'un adaptateur lise ce qui lui est adressé, et rien des autres.
-   * `Post.getAdapters().sql` → `{ body: { columnType: 'tsvector' } }`
-   */
   getAdapters(): EntityAdapters<TFields>;
-  /**
-   * So a DDL learns the groups without walking every field to collect them.
-   * FR : pour qu'un DDL apprenne les groupes sans parcourir chaque champ.
-   * `User.getUnique()` → `[['email', 'tenant']]`
-   */
   getUnique(): CompositeUnique<TFields> | undefined;
-  /**
-   * So a partial schema carries its own judging mode, instead of each caller passing it along.
-   * FR : pour qu'un schéma partiel porte son mode de jugement.
-   * `Post.partial().getOpts()` → `{ patch: true }`
-   */
   getOpts(): ValidateOptions;
-  /**
-   * So one gesture answers for a whole row, and the schema is the only judge there is.
-   * FR : pour qu'un geste réponde pour une ligne entière, le schéma étant seul juge.
-   * `Post.validate({ ghost: 1 })`
-   * → `{ success: false, errors: [{ path: 'ghost', message: 'Unknown field' }] }`
-   */
   validate(input: unknown): ValidationResult<Row<TFields>>;
 }

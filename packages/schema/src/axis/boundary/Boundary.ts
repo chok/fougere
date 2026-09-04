@@ -29,11 +29,7 @@ export class Boundary implements BoundaryRules {
     this.encode = codecs?.encode ?? identityEncoder;
   }
 
-  /**
-   * So an alias and a written pair arrive as the same value, and an unknown alias stops here.
-   * FR : pour qu'un alias et une paire écrite soient la même valeur.
-   * `boundary: 'nope'` → throws `Unknown boundary alias: 'nope'`
-   */
+  /** An unknown alias stops here. */
   static declared(field: Field): Boundary {
     const ref = field.boundary;
     if (ref === undefined) return new Boundary();
@@ -44,10 +40,6 @@ export class Boundary implements BoundaryRules {
     return new Boundary(alias);
   }
 
-  /**
-   * So a field gets the codecs its shape implies without ever declaring them.
-   * FR : pour qu'un champ reçoive les codecs que sa forme implique.
-   */
   static of(field: Field): Boundary {
     const declared = Boundary.declared(field);
     const derived = Boundary.forShape(field.shape);
@@ -67,11 +59,7 @@ export class Boundary implements BoundaryRules {
     });
   }
 
-  /**
-   * So `date-time` means a `Date` on both sides everywhere, without a word in the entity.
-   * FR : pour que `date-time` veuille dire une `Date` des deux côtés, partout.
-   * `{ type: 'string', format: 'date-time' }` → the `isoDate` boundary
-   */
+  /** `date-time` means a `Date` on both sides, without a word in the entity. */
   static forShape(shape: Shape | undefined): Boundary {
     const base = Shapes.of(shape).base;
     if (base?.type === 'string' && base.format === 'date-time') {
@@ -80,29 +68,14 @@ export class Boundary implements BoundaryRules {
     return new Boundary();
   }
 
-  /**
-   * So one side is changed without restating the other.
-   * FR : pour qu'on change un côté sans redire l'autre.
-   * `Boundary.of(f).with({ out: 'closed' })` → the way in is kept, the way out is closed
-   */
   with(overrides: BoundaryRules): Boundary {
     return new Boundary({ in: overrides.in ?? this.in, out: overrides.out ?? this.out });
   }
 
-  /**
-   * So the judge asks a question instead of comparing a value to a token.
-   * FR : pour que le juge pose une question au lieu de comparer à un jeton.
-   * `boundary: { in: 'closed' }` → `readOnly` is `true`, and a client writing it is refused
-   */
   get readOnly(): boolean {
     return this.in === 'closed';
   }
 
-  /**
-   * So the dual is asked the same way, and a secret never leaves in a response.
-   * FR : pour que le dual se demande pareil, et qu'un secret ne reparte pas.
-   * `boundary: { out: 'closed' }` → `writeOnly` is `true`
-   */
   get writeOnly(): boolean {
     return this.out === 'closed';
   }

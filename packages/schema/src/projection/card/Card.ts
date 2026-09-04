@@ -20,11 +20,6 @@ type FieldsOf<T> = { [K in keyof T]-?: Field<T[K]> };
 export class Card<T = Row<Fields>> {
   private constructor(readonly descriptor: SchemaDescriptor) {}
 
-  /**
-   * So a class becomes JSON Schema another language can read.
-   * FR : pour qu'une classe devienne du JSON Schema lisible par un autre langage.
-   * `Card.fromSchema(Post).descriptor` → `{ type: 'object', properties: { … }, title: 'Post' }`
-   */
   static fromSchema<TFields extends Fields>(
     schema: SchemaView<TFields>,
     name?: string,
@@ -53,29 +48,14 @@ export class Card<T = Row<Fields>> {
     return new Card<Row<TFields>>(descriptor);
   }
 
-  /**
-   * So a card read from a file or a wire is the same value as one built here.
-   * FR : pour qu'une carte lue d'un fichier vaille une carte construite ici.
-   * `Card.fromDescriptor(JSON.parse(text))`
-   */
   static fromDescriptor<T = Row<Fields>>(descriptor: SchemaDescriptor): Card<T> {
     return new Card<T>(descriptor);
   }
 
-  /**
-   * So a card says what its schema was cut from, which its fields cannot.
-   * FR : pour qu'une carte dise de quoi son schéma a été coupé, ce que ses champs ne disent pas.
-   * `Card.fromSchema(Post.pick('title')).origin` → `{ from: 'Post', … }`
-   */
   get origin(): DerivedFrom | undefined {
     return this.descriptor['x-fougere-derived'];
   }
 
-  /**
-   * So a card becomes a class again, judging exactly as the original did.
-   * FR : pour qu'une carte redevienne une classe, jugeant comme l'originale.
-   * `Card.fromDescriptor(d).toSchema().validate({ ghost: 1 })` → `Unknown field`
-   */
   toSchema(resolve?: Resolver, name?: string): SchemaConstructor<FieldsOf<T>> {
     const descriptor = this.descriptor;
     const subject = name ? `schema '${name}'` : 'this schema';
@@ -106,11 +86,6 @@ export class Card<T = Row<Fields>> {
     return schema as unknown as SchemaConstructor<FieldsOf<T>>;
   }
 
-  /**
-   * So a consumer sees what moved since it synced — the gap TypeScript cannot see.
-   * FR : pour qu'un consommateur voie ce qui a bougé depuis sa synchronisation.
-   * `mine.diff(theirs)` → `{ changes: [{ kind: 'required', field: 'slug', … }] }`
-   */
   diff(other: Card, options: DiffOptions = {}): Diff {
     const changes: Change[] = [];
     const renamed = options.renamed ?? {};

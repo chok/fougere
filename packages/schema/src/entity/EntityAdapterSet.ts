@@ -36,12 +36,7 @@ export class EntityAdapterSet {
     return new EntityAdapterSet(adapters);
   }
 
-  /**
-   * Folds several into one, a later field entry replacing the earlier. Takes sets only, so
-   * `of` stays the single way in and a caller says where a raw declaration enters.
-   * `merged([of({ sql: { body: { columnType: { pg: 'text' } } } }), of({ sql: { body: {} } })])`
-   * → `{ sql: { body: {} } }`
-   */
+  /** Folds several into one, a later field entry replacing the earlier. Takes sets only, so */
   static merged(adapterSets: readonly EntityAdapterSet[]): EntityAdapterSet {
     const configurations: AdapterConfigurations = {};
 
@@ -56,24 +51,14 @@ export class EntityAdapterSet {
     return Object.entries(this.adapters);
   }
 
-  /**
-   * Collects every field addressed, so a declaration aimed at a missing field is caught.
-   * `{ sql: { body: { columnType: { pg: 'tsvector' } } }, graphql: { body: {}, title: {} } }`
-   * → `['body', 'title']`
-   */
+  /** Collects every field addressed, so a declaration aimed at a missing field is caught. */
   get fieldNames(): string[] {
     return [
       ...new Set(this.entries.flatMap(([, configuration]) => Object.keys(configuration))),
     ];
   }
 
-  /**
-   * Follows a derivation — `pick`, `omit` and `rename` are one gesture: what remains, and
-   * under what name. Called by `SchemaDefinition.derived`, and by nothing else.
-   * `Post` states `adapters: { sql: { body: { columnType: { pg: 'tsvector' } } } }`
-   * `Post.rename({ body: 'text' })` → `{ sql: { text: { columnType: { pg: 'tsvector' } } } }`
-   * `Post.pick('id')`              → `{}` — `sql` had only `body` to say
-   */
+  /** Follows a derivation — `pick`, `omit` and `rename` are one gesture: what remains, and */
   rename(transform: (key: string) => string | undefined): EntityAdapterSet {
     const renamed: AdapterConfigurations = {};
 

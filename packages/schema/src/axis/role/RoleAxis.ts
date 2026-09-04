@@ -11,11 +11,6 @@ import type { RoleDescriptor } from '../../projection/card/Descriptor.js';
 export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
   slot: 'role',
 
-  /**
-   * So a role that is not one is refused key by key, each with the path that failed.
-   * FR : pour qu'un rôle fautif soit refusé clé par clé, avec le chemin en cause.
-   * `role: { primary: 'yes' }` → one error on `role.primary`
-   */
   judge(value, errors) {
     if (!isObject(value)) {
       errors.push({ path: 'role', message: `Expected an object — got ${JSON.stringify(value)}` });
@@ -47,11 +42,7 @@ export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
     if (value.relation !== undefined) judgeRelation(value.relation, errors);
   },
 
-  /**
-   * So a card carries the target's NAME, since a class cannot cross a process boundary.
-   * FR : pour qu'une carte porte le NOM de la cible, une classe ne voyageant pas.
-   * `ref(User)` → `{ relation: { to: 'user', kind: 'one' } }`
-   */
+  /** A card carries the target's NAME: a class cannot cross a process boundary. */
   describe(role, key) {
     const descriptor: Mutable<RoleDescriptor> = {};
     if (role.primary) descriptor.primary = true;
@@ -69,11 +60,6 @@ export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
     return Object.keys(descriptor).length ? descriptor : undefined;
   },
 
-  /**
-   * So a card read without the target class still yields a role, the name standing in for it.
-   * FR : pour qu'une carte sans la classe cible donne quand même un rôle.
-   * `{ relation: { to: 'user', kind: 'one' } }` with no resolver → `to()` → `{ name: 'user' }`
-   */
   reconstruct(wire, resolve?: Resolver) {
     const rules: RoleRules = {};
     if (wire.primary) rules.primary = true;

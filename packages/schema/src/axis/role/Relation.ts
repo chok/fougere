@@ -17,20 +17,11 @@ export interface Relation {
  * value: a class answers it, `() => Post` does not.
  */
 export const Relation = {
-  /**
-   * So two entities can point at each other, which a bare class reference cannot express.
-   * FR : pour que deux entités se pointent l'une l'autre, ce qu'une classe nue interdit.
-   * `Relation.one(() => User, true)` → `{ to: () => User, kind: 'one', onDelete: 'cascade' }`
-   */
+  /** `() => Post` so two entities can point at each other. */
   one(target: EntityConstructor | (() => EntityConstructor), cascade?: boolean): Relation {
     return { to: normalizeTarget(target), kind: 'one', onDelete: cascade ? 'cascade' : undefined };
   },
 
-  /**
-   * So the many side is declared exactly like the one side, `() => Post` included.
-   * FR : pour que le côté « plusieurs » se déclare comme le côté « un ».
-   * `Relation.many(Post)` → `{ to: () => Post, kind: 'many' }`
-   */
   many(target: EntityConstructor | (() => EntityConstructor)): Relation {
     return { to: normalizeTarget(target), kind: 'many' };
   },
