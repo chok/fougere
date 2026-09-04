@@ -5,7 +5,7 @@ import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, createAppRunner, FougereError, ErrorCode } from '../src/index.js';
 import type { App, StorageFactory, Transport } from '../src/index.js';
 import type { SchemaView } from '@fougere/schema';
-import { EMPTY_INVOCATION } from '../src/contract/Invocation.js';
+import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
 
 const fixturesRoot = join(import.meta.dirname, 'fixtures');
 const emptyRoot = '/tmp/fougere-remote-test-empty';

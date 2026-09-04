@@ -1,5 +1,5 @@
 import { RowJudge, type SchemaView } from '@fougere/schema';
-import type { InvocationContext } from '../contract/Invocation.js';
+import type { InvocationContext } from '../wire/Invocation.js';
 import { ErrorCode, FougereError } from '../wire/errors.js';
 
 /** Validates and decodes the input body declared by one operation contract. */

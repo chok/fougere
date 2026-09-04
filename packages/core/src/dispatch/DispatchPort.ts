@@ -1,4 +1,4 @@
-import type { Call } from '../contract/Call.js';
+import type { Call } from '../wire/call.js';
 
 /** The only capability an entry needs. */
 export interface DispatchPort {

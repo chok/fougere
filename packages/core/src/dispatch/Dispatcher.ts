@@ -1,4 +1,4 @@
-import type { Call } from '../contract/Call.js';
+import type { Call } from '../wire/call.js';
 import { DispatchEvent } from './DispatchEvent.js';
 import { DispatchLifecycle } from './DispatchLifecycle.js';
 import type { DispatchPort } from './DispatchPort.js';

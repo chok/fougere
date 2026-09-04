@@ -11,7 +11,7 @@ import {
   type StorageFactory,
 } from '../src/index.js';
 import { scanProject } from '../src/node.js';
-import { EMPTY_INVOCATION } from '../src/contract/Invocation.js';
+import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
 
 const fixtures = join(import.meta.dirname, 'fixtures');
 const rows = [{ id: '1', name: 'Fern', price: 12.5 }];

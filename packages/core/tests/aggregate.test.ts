@@ -17,7 +17,7 @@ import { scanProject } from '../src/node.js';
 import { createApp, createLocalRunner, Repository } from '../src/index.js';
 import { repositoryKeyOf, ownedBy } from '../src/prefab/repository.js';
 import { storageKeyOf, type StorageFactory } from '../src/storage.js';
-import { EMPTY_INVOCATION } from '../src/contract/Invocation.js';
+import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
 
 function makeStorage() {
   const storage = {

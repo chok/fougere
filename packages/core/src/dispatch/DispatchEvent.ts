@@ -1,5 +1,5 @@
-import type { Call } from '../contract/Call.js';
-import type { RouteKind } from '../contract/RouteAddress.js';
+import type { Call } from '../wire/call.js';
+import type { RouteKind } from '../wire/RouteAddress.js';
 
 export type DispatchStage = 'received' | 'resolved' | 'completed' | 'failed' | 'settled';
 

@@ -13,7 +13,7 @@ import { createApp, createLocalRunner } from '../src/index.js';
 import { scanProject } from '../src/node.js';
 import { emitKeyOf, factOfEmitKey } from '../src/emit.js';
 import { identityCardOf } from '../src/boot/card.js';
-import { EMPTY_INVOCATION } from '../src/contract/Invocation.js';
+import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
 
 const root = join(import.meta.dirname, 'fixtures-emit');
 

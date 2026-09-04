@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, callValueOf, FougereError, ErrorCode } from '../src/index.js';
 import type { IdentityCard, StorageFactory } from '../src/index.js';
-import { EMPTY_INVOCATION } from '../src/contract/Invocation.js';
+import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
 
 const fixturesRoot = join(import.meta.dirname, 'fixtures');
 

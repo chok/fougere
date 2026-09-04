@@ -29,7 +29,7 @@ import { repositoryKeyOf } from '../prefab/repository.js';
 import { storageKeyOf } from '../storage.js';
 import { presenterKeyOf } from '../prefab/presenter.js';
 import { collectorKeyOf } from '../prefab/collector.js';
-import { RouteAddress } from '../contract/RouteAddress.js';
+import { RouteAddress } from '../wire/RouteAddress.js';
 import { DispatchLifecycle } from '../dispatch/DispatchLifecycle.js';
 import { Dispatcher } from '../dispatch/Dispatcher.js';
 import { LocalRoutePolicy } from '../dispatch/LocalRoutePolicy.js';

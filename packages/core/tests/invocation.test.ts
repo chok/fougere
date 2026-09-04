@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Invocation, canonicalInvocation } from '../src/contract/Invocation.js';
+import { Invocation, canonicalInvocation } from '../src/wire/Invocation.js';
 
 describe('canonicalInvocation', () => {
   it('uses undefined as the canonical absence for optional parameters and fields', () => {

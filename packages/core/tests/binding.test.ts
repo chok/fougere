@@ -3,7 +3,7 @@ import { computeBindingPlan, type BindingPlan } from '../src/wire/binding.js';
 import { ArgumentResolver, type CollectorLookup } from '../src/dispatch/ArgumentResolver.js';
 import { lowerFirst } from '@fougere/schema';
 import type { Param } from '../src/wire/signature.js';
-import type { InvocationContext } from '../src/contract/Invocation.js';
+import type { InvocationContext } from '../src/wire/Invocation.js';
 
 function param(name: string, typeName: string, optional = false): Param {
   return { name, type: { raw: typeName, name: typeName }, optional };

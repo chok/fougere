@@ -1,5 +1,5 @@
-import type { Call } from '../contract/Call.js';
-import type { RouteAddress } from '../contract/RouteAddress.js';
+import type { Call } from '../wire/call.js';
+import type { RouteAddress } from '../wire/RouteAddress.js';
 import type { Route } from './Route.js';
 
 export type RouteExecution = (call: Call) => unknown | Promise<unknown>;

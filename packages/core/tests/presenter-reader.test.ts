@@ -15,7 +15,7 @@ import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner } from '../src/index.js';
 import type { StorageFactory } from '../src/index.js';
-import { EMPTY_INVOCATION } from '../src/contract/Invocation.js';
+import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
 import ListPresenter from './fixtures-presenter-reader/fronds/listes/presenters/ListPresenter.js';
 
 const root = join(import.meta.dirname, 'fixtures-presenter-reader');

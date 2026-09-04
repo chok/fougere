@@ -15,17 +15,17 @@ export { Presenter } from './prefab/presenter.js';
 export type { PresenterViews } from './prefab/presenter.js';
 export { Collector } from './prefab/collector.js';
 export { Repository, type RepositoryOf, type RepositoryConstructor, type AggregateOf, type AggregateConstructor } from './prefab/repository.js';
-export { Invocation, canonicalInvocation, EMPTY_INVOCATION } from './contract/Invocation.js';
-export type { InvocationContext, InvocationInput } from './contract/Invocation.js';
-export { Call } from './contract/Call.js';
-export { RouteAddress } from './contract/RouteAddress.js';
-export type { RouteAddressInput } from './contract/RouteAddress.js';
+export { Invocation, canonicalInvocation, EMPTY_INVOCATION } from './wire/Invocation.js';
+export type { InvocationContext, InvocationInput } from './wire/Invocation.js';
+export { Call } from './wire/call.js';
+export { RouteAddress } from './wire/RouteAddress.js';
+export type { RouteAddressInput } from './wire/RouteAddress.js';
 export { DispatchLifecycle } from './dispatch/DispatchLifecycle.js';
 export { Dispatcher } from './dispatch/Dispatcher.js';
 // The class and not only its type: an observer RECEIVES these, so a package that folds
 // them — or a test of one — has to be able to make one through the door.
 export { DispatchEvent } from './dispatch/DispatchEvent.js';
-export type { CallPage, CallRecord } from './contract/CallLog.js';
+export type { CallPage, CallRecord } from './wire/CallLog.js';
 export { driftOf, agrees, explain, type CardDrift } from './wire/drift.js';
 export type { DispatchObserver } from './dispatch/DispatchEvent.js';
 export type { DispatchPort } from './dispatch/DispatchPort.js';

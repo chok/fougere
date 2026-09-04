@@ -1,4 +1,4 @@
-import type { InvocationContext } from '../contract/Invocation.js';
+import type { InvocationContext } from '../wire/Invocation.js';
 import type { BindingPlan } from '../wire/binding.js';
 
 export interface CollectorResolver {

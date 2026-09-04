@@ -11,7 +11,7 @@ import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer, type Container } from '@fougere/container';
 import { createApp, createLocalRunner } from '../src/index.js';
-import { EMPTY_INVOCATION } from '../src/contract/Invocation.js';
+import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
 
 const one = join(import.meta.dirname, 'fixtures-ports');
 const two = join(import.meta.dirname, 'fixtures-ports-two');

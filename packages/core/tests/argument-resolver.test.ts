@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { BindingPlan } from '../src/wire/binding.js';
-import { Invocation } from '../src/contract/Invocation.js';
+import { Invocation } from '../src/wire/Invocation.js';
 import { ArgumentResolver } from '../src/dispatch/ArgumentResolver.js';
 
 describe('ArgumentResolver', () => {

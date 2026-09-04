@@ -1,6 +1,6 @@
-import { Call } from '../contract/Call.js';
-import type { InvocationInput } from '../contract/Invocation.js';
-import { RouteAddress } from '../contract/RouteAddress.js';
+import { Call } from '../wire/call.js';
+import type { InvocationInput } from '../wire/Invocation.js';
+import { RouteAddress } from '../wire/RouteAddress.js';
 import type { DispatchPort } from '../dispatch/DispatchPort.js';
 
 type Operation = (...args: any[]) => unknown;

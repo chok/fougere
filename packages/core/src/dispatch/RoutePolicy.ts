@@ -1,4 +1,4 @@
-import type { Call } from '../contract/Call.js';
+import type { Call } from '../wire/call.js';
 import type { Route } from './Route.js';
 
 /** Restricts which registered routes one dispatch capability may enter. */

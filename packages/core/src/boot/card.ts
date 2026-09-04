@@ -2,7 +2,7 @@
 import { Card } from '@fougere/schema';
 import type { App } from './types.js';
 import { factsAnnouncedBy } from '../emit.js';
-import type { InvocationContext } from '../contract/Invocation.js';
+import type { InvocationContext } from '../wire/Invocation.js';
 import { facadeKeyOf, contractsKeyOf, type CardOp, type IdentityCard } from '../wire/call.js';
 import type { OperationContract } from '../wire/operation.js';
 

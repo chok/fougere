@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { Call } from '../src/contract/Call.js';
-import { RouteAddress } from '../src/contract/RouteAddress.js';
+import { Call } from '../src/wire/call.js';
+import { RouteAddress } from '../src/wire/RouteAddress.js';
 
 describe('RouteAddress', () => {
   it('compares every routing dimension', () => {

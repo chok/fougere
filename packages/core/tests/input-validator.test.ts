@@ -1,6 +1,6 @@
 import { entity, number, text } from '@fougere/schema';
 import { describe, expect, it } from 'vitest';
-import { Invocation } from '../src/contract/Invocation.js';
+import { Invocation } from '../src/wire/Invocation.js';
 import { validateInput } from '../src/dispatch/validateInput.js';
 
 class Product extends entity({ name: text(), price: number({ min: 0 }) }) {}

@@ -1,4 +1,4 @@
-import type { Call } from '../contract/Call.js';
+import type { Call } from '../wire/call.js';
 import { ErrorCode, FougereError } from '../wire/errors.js';
 import type { Route } from './Route.js';
 import type { RoutePolicy } from './RoutePolicy.js';

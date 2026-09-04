@@ -1,6 +1,6 @@
 /** Contract surface — what a sender needs to speak to a receiver, and nothing that assumes a runtime: */
 import { lowerFirst } from '@fougere/schema';
-import { canonicalInvocation, type InvocationContext } from './contract/Invocation.js';
+import { canonicalInvocation, type InvocationContext } from './wire/Invocation.js';
 import type { FrondCall } from './wire/call.js';
 
 export { FougereError, ErrorCode, validationErrorsOf } from './wire/errors.js';
@@ -8,19 +8,19 @@ export { FougereError, ErrorCode, validationErrorsOf } from './wire/errors.js';
 // core's boot — reaching it through the main entry dragged the scanner into a bundle.
 export { toPublicError } from './wire/http-error.js';
 export type { FougereErrorOptions } from './wire/errors.js';
-export { canonicalInvocation, EMPTY_INVOCATION } from './contract/Invocation.js';
-export type { InvocationContext } from './contract/Invocation.js';
-export { Invocation } from './contract/Invocation.js';
-export type { InvocationInput } from './contract/Invocation.js';
-export { Call } from './contract/Call.js';
-export { RouteAddress } from './contract/RouteAddress.js';
-export type { RouteAddressInput } from './contract/RouteAddress.js';
+export { canonicalInvocation, EMPTY_INVOCATION } from './wire/Invocation.js';
+export type { InvocationContext } from './wire/Invocation.js';
+export { Invocation } from './wire/Invocation.js';
+export type { InvocationInput } from './wire/Invocation.js';
+export { Call } from './wire/call.js';
+export { RouteAddress } from './wire/RouteAddress.js';
+export type { RouteAddressInput } from './wire/RouteAddress.js';
 export type { FrondCall, Transport, SignedCall } from './wire/call.js';
 export { MAX_BODY_BYTES } from './wire/call.js';
 // The reserved entity, VALUE and not type: a consumer that wants to leave it alone — a
 // call log ignoring its own reader — has to be able to name it.
 export { RPC_ENTITY } from './wire/call.js';
-export type { CallPage, CallRecord } from './contract/CallLog.js';
+export type { CallPage, CallRecord } from './wire/CallLog.js';
 // The comparison of two cards, which a consumer runs about a producer — browser-safe on
 // purpose: a panel showing the drift holds only the two cards, never the app.
 export { driftOf, agrees, explain } from './wire/drift.js';

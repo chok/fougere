@@ -16,7 +16,7 @@ import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, createAppRunner } from '../src/index.js';
 import type { Transport } from '../src/index.js';
-import { EMPTY_INVOCATION } from '../src/contract/Invocation.js';
+import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
 
 const root = join(import.meta.dirname, 'fixtures-cross-frond');
 

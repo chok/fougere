@@ -2,7 +2,7 @@
 import type { FrondCall, Transport } from '../wire/call.js';
 import { assertIdentityCard, RPC_ENTITY } from '../wire/call.js';
 import { runMiddlewares, type AppMiddleware, type OperationContext } from '../wire/middleware.js';
-import { EMPTY_INVOCATION, type InvocationContext } from '../contract/Invocation.js';
+import { EMPTY_INVOCATION, type InvocationContext } from '../wire/Invocation.js';
 import { FougereError, ErrorCode } from '../wire/errors.js';
 import { Card, type SchemaView, type SchemaDescriptor } from '@fougere/schema';
 import { dynamicOperations } from '../entry/facade.js';

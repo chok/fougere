@@ -1,4 +1,4 @@
-import { RouteAddress } from '../contract/RouteAddress.js';
+import { RouteAddress } from '../wire/RouteAddress.js';
 import type { Route } from './Route.js';
 import type { RouteResolver } from './RouteResolver.js';
 

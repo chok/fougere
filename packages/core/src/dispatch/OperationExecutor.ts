@@ -1,5 +1,5 @@
-import type { InvocationContext } from '../contract/Invocation.js';
-import { canonicalInvocation } from '../contract/Invocation.js';
+import type { InvocationContext } from '../wire/Invocation.js';
+import { canonicalInvocation } from '../wire/Invocation.js';
 import type { OperationContract } from '../wire/operation.js';
 import {
   runMiddlewares,

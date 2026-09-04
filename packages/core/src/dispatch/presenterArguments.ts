@@ -1,5 +1,5 @@
 import { computeBindingPlan } from '../wire/binding.js';
-import type { InvocationContext } from '../contract/Invocation.js';
+import type { InvocationContext } from '../wire/Invocation.js';
 import type { PresenterEntry } from '../descriptor/frond.js';
 import type { ArgumentResolver } from './ArgumentResolver.js';
 import type { PresenterArgs } from './PresenterExecutor.js';

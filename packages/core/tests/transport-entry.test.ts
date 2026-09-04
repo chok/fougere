@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { Call } from '../src/contract/Call.js';
+import { Call } from '../src/wire/call.js';
 import type { DispatchPort } from '../src/dispatch/DispatchPort.js';
 import { createTransportEntry } from '../src/entry/transport.js';
 

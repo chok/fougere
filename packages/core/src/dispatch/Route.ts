@@ -1,5 +1,5 @@
-import type { Call } from '../contract/Call.js';
-import type { RouteAddress, RouteKind } from '../contract/RouteAddress.js';
+import type { Call } from '../wire/call.js';
+import type { RouteAddress, RouteKind } from '../wire/RouteAddress.js';
 
 /** Executable destination known by the dispatcher. */
 export interface Route {

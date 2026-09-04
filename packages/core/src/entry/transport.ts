@@ -1,5 +1,5 @@
-import { Call } from '../contract/Call.js';
-import { RouteAddress } from '../contract/RouteAddress.js';
+import { Call } from '../wire/call.js';
+import { RouteAddress } from '../wire/RouteAddress.js';
 import type { DispatchPort } from '../dispatch/DispatchPort.js';
 import type { Transport } from '../wire/call.js';
 

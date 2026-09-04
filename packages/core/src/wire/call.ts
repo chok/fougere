@@ -1,8 +1,21 @@
 /** Call contract — a frond call is a value. */
 import { Card, type SchemaDescriptor } from '@fougere/schema';
 import { factsAnnouncedBy } from '../emit.js';
-import type { InvocationContext } from '../contract/Invocation.js';
+import { Invocation, type InvocationContext, type InvocationInput } from './Invocation.js';
+import type { RouteAddress } from './RouteAddress.js';
 import { FougereError, ErrorCode } from './errors.js';
+
+/** One normalized request, frozen: where it goes and what the caller supplied. */
+export class Call {
+  readonly address: RouteAddress;
+  readonly invocation: Invocation;
+
+  constructor(address: RouteAddress, invocation?: InvocationInput) {
+    this.address = address;
+    this.invocation = Invocation.from(invocation);
+    Object.freeze(this);
+  }
+}
 
 /** Target of a call — which façade operation, wherever it lives. */
 export interface FrondCall {

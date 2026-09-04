@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Invocation } from '../src/contract/Invocation.js';
+import { Invocation } from '../src/wire/Invocation.js';
 import { ArgumentResolver } from '../src/dispatch/ArgumentResolver.js';
 import { presenterArguments } from '../src/dispatch/presenterArguments.js';
 import type { PresenterEntry } from '../src/descriptor/frond.js';

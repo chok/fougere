@@ -16,7 +16,7 @@ import { createApp, createLocalRunner, Repository } from '../src/index.js';
 import { repositoryKeyOf } from '../src/prefab/repository.js';
 import { targetOf } from '../src/prefab/prefab.js';
 import type { StorageFactory } from '../src/index.js';
-import { EMPTY_INVOCATION } from '../src/contract/Invocation.js';
+import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
 
 const root = join(import.meta.dirname, 'fixtures-repository');
 

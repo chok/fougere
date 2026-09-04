@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { Call } from '../src/contract/Call.js';
-import { RouteAddress } from '../src/contract/RouteAddress.js';
+import { Call } from '../src/wire/call.js';
+import { RouteAddress } from '../src/wire/RouteAddress.js';
 import type { DispatchEvent } from '../src/dispatch/DispatchEvent.js';
 import { DispatchLifecycle } from '../src/dispatch/DispatchLifecycle.js';
 import { Dispatcher } from '../src/dispatch/Dispatcher.js';
