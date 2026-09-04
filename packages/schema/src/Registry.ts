@@ -8,12 +8,12 @@ export class Registry<T> {
   /**
    * The error message, when a name is not registered:
    * `Unknown boundary decoder 'celsius' — call Boundaries.decoders.register(name, fn).`
-   *          └─ kind ──────┘              └─ fix ───────────────────────────────────┘
-   * `fix` is omitted where nothing calls `resolve` — Formats, Boundaries.aliases.
+   *          └─ label ─────┘              └─ hint ──────────────────────────────────┘
+   * `hint` is omitted where nothing calls `resolve` — Formats, Boundaries.aliases.
    */
   constructor(
-    private readonly kind: string,
-    private readonly fix?: string,
+    private readonly label: string,
+    private readonly hint?: string,
     builtins?: Iterable<readonly [string, T]>,
   ) {
     this.entries = new Map(builtins);
@@ -53,7 +53,7 @@ export class Registry<T> {
     if (found !== undefined) return found;
 
     throw new Error(
-      `${path ? `${path}: ` : ''}Unknown ${this.kind} '${name}'${this.fix ? ` — ${this.fix}` : ''}. ` +
+      `${path ? `${path}: ` : ''}Unknown ${this.label} '${name}'${this.hint ? ` — ${this.hint}` : ''}. ` +
         `This process answers ${this.names.join(', ') || 'nothing yet'}.`,
     );
   }
