@@ -81,9 +81,9 @@ export class EntityAdapterSet {
       const mapped: AdapterConfiguration = {};
 
       for (const [key, entry] of Object.entries(configuration)) {
-        const to = transform(key);
+        const targetFieldName = transform(key);
 
-        if (to !== undefined) mapped[to] = entry;
+        if (targetFieldName !== undefined) mapped[targetFieldName] = entry;
       }
 
       // Drop an adapter left with no field. `Post.pick('id')` would otherwise answer

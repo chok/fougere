@@ -62,12 +62,12 @@ export class Bundle {
    * `bundle.toSchemas().post` → `author` resolves to the `user` schema of the same bundle
    */
   toSchemas(): Record<string, SchemaView> {
-    const map: Record<string, EntityConstructor> = {};
-    const resolve: Resolver = (name) => map[name.toLowerCase()];
+    const byName: Record<string, EntityConstructor> = {};
+    const resolve: Resolver = (name) => byName[name.toLowerCase()];
     const schemas: Record<string, SchemaView> = {};
     for (const [name, descriptor] of Object.entries(this.descriptor.$defs)) {
       const schema = Card.fromDescriptor(descriptor).toSchema(resolve, name);
-      map[name.toLowerCase()] = schema as unknown as EntityConstructor;
+      byName[name.toLowerCase()] = schema as unknown as EntityConstructor;
       schemas[name] = schema;
     }
     return schemas;
@@ -85,11 +85,11 @@ export class Bundle {
     for (const [name, descriptor] of Object.entries(before)) {
       const target = after[name];
       if (target === undefined) continue;
-      const answer = Card.fromDescriptor(descriptor).diff(
+      const diff = Card.fromDescriptor(descriptor).diff(
         Card.fromDescriptor(target),
         { renamed: options.renamed?.[name] ?? {} },
       );
-      if (answer.changes.length > 0 || answer.ambiguous.length > 0) entities[name] = answer;
+      if (diff.changes.length > 0 || diff.ambiguous.length > 0) entities[name] = diff;
     }
     return {
       entitiesAdded: Object.keys(after).filter((name) => !(name in before)),

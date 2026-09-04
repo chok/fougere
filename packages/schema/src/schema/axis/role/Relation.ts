@@ -10,11 +10,11 @@ export interface Relation {
 }
 
 /**
- * How a relation is built — the one place a target becomes a thunk.
+ * How a relation is built — the one place a target becomes `() => Entity`.
  *
  * A target arrives as the class or as a function returning it, because a cycle between two
  * entities can only be written the second way. Recognised by FORM, `getFields` on the
- * value: a class answers it, a thunk does not.
+ * value: a class answers it, `() => Post` does not.
  */
 export const Relation = {
   /**
@@ -23,19 +23,19 @@ export const Relation = {
    * `Relation.one(() => User, true)` → `{ to: () => User, kind: 'one', onDelete: 'cascade' }`
    */
   one(target: EntityConstructor | (() => EntityConstructor), cascade?: boolean): Relation {
-    return { to: thunk(target), kind: 'one', onDelete: cascade ? 'cascade' : undefined };
+    return { to: normalizeTarget(target), kind: 'one', onDelete: cascade ? 'cascade' : undefined };
   },
 
   /**
-   * So the many side is declared exactly like the one side, thunk included.
+   * So the many side is declared exactly like the one side, `() => Post` included.
    * FR : pour que le côté « plusieurs » se déclare comme le côté « un ».
    * `Relation.many(Post)` → `{ to: () => Post, kind: 'many' }`
    */
   many(target: EntityConstructor | (() => EntityConstructor)): Relation {
-    return { to: thunk(target), kind: 'many' };
+    return { to: normalizeTarget(target), kind: 'many' };
   },
 };
 
-function thunk<E extends EntityConstructor>(target: E | (() => E)): () => E {
+function normalizeTarget<E extends EntityConstructor>(target: E | (() => E)): () => E {
   return 'getFields' in target ? () => target as E : (target as () => E);
 }

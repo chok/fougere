@@ -33,7 +33,7 @@ describe('the field door', () => {
       [{ shape, lifecycle: { update: 'nawak' } }, /lifecycle\.update: Expected 'now' or 'forbidden'/],
       [{ shape, role: 'nawak' }, /role: Expected an object/],
       [{ shape, role: { relation: { kind: 'nawak', to: () => ({}) } } }, /role\.relation\.kind/],
-      [{ shape, role: { relation: { kind: 'one' } } }, /role\.relation\.to: Expected a thunk/],
+      [{ shape, role: { relation: { kind: 'one' } } }, /role\.relation\.to: Expected a function returning the target entity/],
       [{ shape, role: { rules: ['not-a-group'] } }, /role\.rules/],
       [{ shape, boundary: { in: { nawak: 'x' } } }, /boundary\.in/],
       [{ shape, meta: 42 }, /meta: Expected an object/],

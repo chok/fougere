@@ -78,19 +78,19 @@ export class Card<T = Row<Fields>> {
    */
   toSchema(resolve?: Resolver, name?: string): SchemaConstructor<FieldsOf<T>> {
     const descriptor = this.descriptor;
-    const where = name ? `schema '${name}'` : 'this schema';
+    const subject = name ? `schema '${name}'` : 'this schema';
     if (!isObject(descriptor))
-      refuse(`${where} is not an object`, 'A card carries one JSON Schema per door.');
+      refuse(`${subject} is not an object`, 'A card carries one JSON Schema per door.');
     const version = descriptor['x-fougere-version'];
     if (version !== 1) {
       refuse(
-        `${where} states \`x-fougere-version: ${JSON.stringify(version)}\` and this reader speaks 1`,
+        `${subject} states \`x-fougere-version: ${JSON.stringify(version)}\` and this reader speaks 1`,
         'A producer and its readers move together: re-sync the consumer, or serve the version it speaks.',
       );
     }
     if (!isObject(descriptor.properties)) {
       refuse(
-        `${where} carries no \`properties\` object`,
+        `${subject} carries no \`properties\` object`,
         'A schema is its fields; there is nothing to rebuild.',
       );
     }

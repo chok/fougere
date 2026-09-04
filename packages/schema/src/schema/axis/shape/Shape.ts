@@ -78,21 +78,21 @@ export class Anatomy {
    */
   static of(shape?: Shape): ShapeAnatomy {
     if (!shape) return this.none;
-    let a = this.cache.get(shape);
-    if (!a) {
+    let parts = this.cache.get(shape);
+    if (!parts) {
       if (Array.isArray(shape.type)) {
         const baseType = shape.type.find((t) => t !== 'null');
         const base = { ...shape, type: baseType } as BaseShape;
         if ('enum' in base && base.enum) {
           (base as { enum: readonly (string | null)[] }).enum = base.enum.filter((v) => v !== null);
         }
-        a = { base, nullable: true };
+        parts = { base, nullable: true };
       } else {
-        a = { base: shape as BaseShape, nullable: false };
+        parts = { base: shape as BaseShape, nullable: false };
       }
-      this.cache.set(shape, a);
+      this.cache.set(shape, parts);
     }
-    return a;
+    return parts;
   }
 
   /**

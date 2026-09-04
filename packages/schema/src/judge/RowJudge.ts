@@ -47,7 +47,7 @@ export class RowJudge {
 
     const data = input as Record<string, unknown>;
     const errors: ValidationError[] = [];
-    const out: Record<string, unknown> = {};
+    const row: Record<string, unknown> = {};
 
     for (const key of Object.keys(data)) {
       if (!(key in this.fields)) {
@@ -66,7 +66,7 @@ export class RowJudge {
           errors.push({ path, message: RowRefusal.required });
           continue;
         }
-        if (absence === 'empty-list') out[key] = [];
+        if (absence === 'empty-list') row[key] = [];
         continue;
       }
 
@@ -86,15 +86,15 @@ export class RowJudge {
         continue;
       }
       if (checked.value === null) {
-        out[key] = null;
+        row[key] = null;
         continue;
       }
       const decoded = boundary.decode(checked.value);
       if ('error' in decoded) errors.push({ path, message: decoded.error });
-      else out[key] = decoded.value;
+      else row[key] = decoded.value;
     }
 
     if (errors.length > 0) return { success: false, errors };
-    return { success: true, data: out };
+    return { success: true, data: row };
   }
 }

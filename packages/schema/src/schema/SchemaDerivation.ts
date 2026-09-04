@@ -19,7 +19,7 @@ export class SchemaDerivation {
   /**
    * So the first cut records that every field of the origin still answers to its own name.
    * FR : pour que la première coupe note que chaque champ garde son nom.
-   * `SchemaDerivation.first(Post, fields).hereFor('title')` → `'title'`
+   * `SchemaDerivation.first(Post, fields).currentFieldName('title')` → `'title'`
    */
   static first(source: SchemaView, fields: Fields): SchemaDerivation {
     return new SchemaDerivation(
@@ -70,9 +70,9 @@ export class SchemaDerivation {
   /**
    * So a reader asks the root about a field and finds it here, under whatever name it now has.
    * FR : pour qu'on interroge la racine sur un champ et le retrouve ici.
-   * `hereFor('body')` after `body → text` → `'text'`; after a cut → `undefined`
+   * `currentFieldName('body')` after `body → text` → `'text'`; after a cut → `undefined`
    */
-  hereFor(key: string): string | undefined {
+  currentFieldName(key: string): string | undefined {
     return this.here[key];
   }
 }

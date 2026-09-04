@@ -27,7 +27,7 @@ export {
   type SchemaConstructor,
 } from './schema/Schema.js';
 export { SchemaDerivation } from './schema/SchemaDerivation.js';
-export { Cases, type Case } from './projection/Cases.js';
+export { Cases, type ValidationCase } from './projection/Cases.js';
 export { RowRefusal } from './judge/RowRefusal.js';
 export { type SchemaView, type Row, type PartialRow } from './schema/SchemaView.js';
 export { type FougereEntityAdapters, type EntityAdapters } from './entity/EntityAdapters.js';

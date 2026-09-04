@@ -45,10 +45,10 @@ export class EntryJudge {
       // The engine reports outermost first and ends on `False boolean schema`, which names
       // nothing. The last unit above that one is the one carrying the offending key.
       const units = verdict.errors.filter((unit) => unit.keyword !== 'false');
-      const named = units[units.length - 1] ?? verdict.errors[0];
-      const inside = (named?.instanceLocation ?? '#').slice(1).replaceAll('/', '.');
+      const failure = units[units.length - 1] ?? verdict.errors[0];
+      const nested = (failure?.instanceLocation ?? '#').slice(1).replaceAll('/', '.');
 
-      throw new Error(`${path}.${field}${inside}: ${named?.error ?? 'does not match the format'}`);
+      throw new Error(`${path}.${field}${nested}: ${failure?.error ?? 'does not match the format'}`);
     }
   }
 }

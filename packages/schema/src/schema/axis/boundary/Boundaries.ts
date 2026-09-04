@@ -26,8 +26,8 @@ export const Boundaries = {
 Boundaries.decoders.register('isoDate', (value) => {
   if (value instanceof Date) return { value };
   if (typeof value === 'string') {
-    const d = new Date(value);
-    return Number.isNaN(d.getTime()) ? { error: 'Invalid date' } : { value: d };
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? { error: 'Invalid date' } : { value: date };
   }
   return { error: 'Expected a date' };
 });

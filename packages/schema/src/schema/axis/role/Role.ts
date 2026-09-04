@@ -80,8 +80,8 @@ export class Role implements RoleRules {
   }
 
   /**
-   * So the entity at the other end is reached without any caller calling the thunk itself.
-   * FR : pour qu'on atteigne l'entité d'en face sans appeler le thunk soi-même.
+   * So the entity at the other end is reached without any caller calling `() => Post` itself.
+   * FR : pour qu'on atteigne l'entité d'en face sans appeler `() => Post` soi-même.
    * `Role.of(author).target` → `User`
    */
   get target(): EntityConstructor | undefined {

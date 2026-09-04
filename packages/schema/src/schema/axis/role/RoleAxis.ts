@@ -80,7 +80,7 @@ export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
     if (wire.unique?.length) out.rules = wire.unique.map((group) => new Unique(group));
     if (wire.index) out.index = true;
     if (wire.relation) {
-      // `judge` cannot serve here: it demands a thunk where a card carries a name.
+      // `judge` cannot serve here: it demands `() => Post` where a card carries a name.
       if (!oneOfTokens(wire.relation.kind, RELATION_KINDS)) {
         refuse(
           `role.relation.kind is ${JSON.stringify(wire.relation.kind)}`,
@@ -105,9 +105,9 @@ export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
 };
 
 /**
- * So a relation is judged where a thunk is required — a card carries a name.
- * FR : pour qu'une relation soit jugée là où un thunk est exigé, contrairement à une carte.
- * `{ to: User, kind: 'one' }` → error `Expected a thunk returning the target entity`
+ * So a relation is judged where `() => Post` is required — a card carries a name.
+ * FR : pour qu'une relation soit jugée là où `() => Post` est exigé, contrairement à une carte.
+ * `{ to: User, kind: 'one' }` → error `Expected a function returning the target entity, such as () => Post`
  */
 function judgeRelation(relation: unknown, errors: ValidationError[]): void {
   if (!isObject(relation)) {
@@ -121,7 +121,7 @@ function judgeRelation(relation: unknown, errors: ValidationError[]): void {
     });
   }
   if (typeof relation.to !== 'function') {
-    errors.push({ path: 'role.relation.to', message: 'Expected a thunk returning the target entity' });
+    errors.push({ path: 'role.relation.to', message: 'Expected a function returning the target entity, such as () => Post' });
   }
   if (relation.onDelete !== undefined && !oneOfTokens(relation.onDelete, ON_DELETE)) {
     errors.push({

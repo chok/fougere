@@ -15,7 +15,7 @@ import { RowRefusal } from '../judge/RowRefusal.js';
  * make this list a second judge, and the two would then have to be kept in step by hand —
  * which is the duplication the whole thing exists to remove.
  */
-export interface Case {
+export interface ValidationCase {
   /** What this input does, in one clause — carried into the assertion so a failure reads. */
   why: string;
   body: unknown;
@@ -82,7 +82,7 @@ function outOfBoundsFor(field: Field): { why: string; value: unknown }[] {
  * supplies a valid row; generating data belongs to the testing package.
  */
 export class Cases {
-  private constructor(readonly all: readonly Case[]) {}
+  private constructor(readonly all: readonly ValidationCase[]) {}
 
   /**
    * So a test suite is derived from the entity instead of written field by field.
@@ -99,7 +99,7 @@ export class Cases {
    * `holds({ reject: 'title' }, result)` → `true` when an error carries that path
    */
   static holds(
-    expected: Case['expect'],
+    expected: ValidationCase['expect'],
     result: { success: boolean; errors?: { path: string }[] },
   ): boolean {
     if (expected === 'accept') return result.success;
@@ -121,7 +121,7 @@ export class Cases {
    * FR : pour qu'une suite écrive `for (const c of cases)` sans passer par `.all`.
    * `for (const { why, body } of Cases.of(Post, valid))`
    */
-  [Symbol.iterator](): Iterator<Case> {
+  [Symbol.iterator](): Iterator<ValidationCase> {
     return this.all[Symbol.iterator]();
   }
 }
@@ -130,10 +130,10 @@ export class Cases {
  * So the four axes decide which cases exist, and no list of them is maintained by hand.
  * FR : pour que les axes décident des cas, sans liste tenue à la main.
  */
-function enumerate(entity: SchemaView, valid: Record<string, unknown>): Case[] {
+function enumerate(entity: SchemaView, valid: Record<string, unknown>): ValidationCase[] {
   const fields = entity.getFields();
   const judge = RowJudge.of(fields);
-  const cases: Case[] = [];
+  const cases: ValidationCase[] = [];
   const withField = (name: string, value: unknown) => ({ ...valid, [name]: value });
 
   cases.push({ why: 'a valid body', body: valid, patch: false, expect: 'accept' });
