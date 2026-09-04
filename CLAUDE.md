@@ -413,9 +413,9 @@ lives in the notes.
   place that can list the known ones — which four hand-written refusals could not agree on:
   `Generators` and `Sources` listed what the process answers, `Boundaries` did not, and
   `defaults/src/storage.ts` re-spelled the whole sentence before calling `Sources.resolve`.
-  `Formats`, `Generators` and the three of `Boundaries` (`decoders`, `encoders`, `aliases`)
-  are bare instances; `Adapters` and `Sources` extend it to add `check` and `open`, and
-  never redefine a member — which is why `register` hands the value back
+  `Formats`, `Generators`, `Adapters` and the three of `Boundaries` (`decoders`, `encoders`,
+  `aliases`) are bare instances; only `Sources` extends it, to add `open`, and never
+  redefines a member — which is why `register` hands the value back
   (`Adapters.register('sql', EntryJudge.of(FORMAT))`) instead of taking a `Shape`. `Clock`
   is not one: it registers nothing.
 - `Bundle` REFUSES two schemas claiming one registration key (`card/Bundle.ts`). The silent

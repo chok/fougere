@@ -14,34 +14,21 @@ const format: Shape = {
   additionalProperties: false,
 };
 
-Adapters.register('probe', EntryJudge.of(format));
+const probe = Adapters.register('probe', EntryJudge.of(format));
 
 describe('Adapters', () => {
   it('answers for a name that registered itself', () => {
     expect(Adapters.names).toContain('probe');
-    expect(Adapters.find('probe')).toBeDefined();
+    expect(Adapters.find('probe')).toBe(probe);
   });
 
   it('answers nothing for a name this process never loaded', () => {
     expect(Adapters.find('mongo')).toBeUndefined();
   });
 
-  it('judges an entry through the adapter that stated its format', () => {
-    expect(() => Adapters.assert({ probe: { body: { columnTpye: {} } } }, 'Post.adapters')).toThrow(
+  it('hands back a judge that refuses an entry the format does not admit', () => {
+    expect(() => probe.assert({ body: { columnTpye: {} } }, 'Post.adapters.probe')).toThrow(
       'Post.adapters.probe.body: Property "columnTpye" does not match additional properties schema.',
     );
-  });
-
-  /**
-   * The measured reason this is a skip and not a refusal: an entity may state a Postgres
-   * column type while this app boots on `adapter/memory`, which never loads `sql`. The
-   * process cannot tell that from a typo — the project can, through its dependencies.
-   */
-  it('skips a name no adapter here claims, rather than refusing it', () => {
-    expect(() => Adapters.assert({ mongo: { body: 'anything at all' } }, 'Post.adapters')).not.toThrow();
-  });
-
-  it('says nothing about an entity that stated nothing', () => {
-    expect(() => Adapters.assert(undefined, 'Post.adapters')).not.toThrow();
   });
 });
