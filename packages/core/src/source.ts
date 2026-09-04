@@ -66,8 +66,8 @@ export interface SourceConfig {
  */
 class SourceRegistry extends Registry<(conf: SourceConfig) => Source> {
   /** The source this name stands for, built from the config entry that named it. */
-  open(name: string, conf: SourceConfig, at?: string): Source {
-    return this.resolve(name, at)(conf);
+  open(name: string, conf: SourceConfig, path?: string): Source {
+    return this.resolve(name, path)(conf);
   }
 }
 

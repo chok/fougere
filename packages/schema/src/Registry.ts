@@ -45,13 +45,13 @@ export class Registry<T> {
    * `Sources.resolve('file', 'archive.source')`
    * → `archive.source: Unknown source 'file' — import the adapter that answers it, … answers sql.`
    */
-  resolve(name: string, at?: string): T {
+  resolve(name: string, path?: string): T {
     const found = this.find(name);
 
     if (found !== undefined) return found;
 
     throw new Error(
-      `${at ? `${at}: ` : ''}Unknown ${this.kind} '${name}'${this.fix ? ` — ${this.fix}` : ''}. ` +
+      `${path ? `${path}: ` : ''}Unknown ${this.kind} '${name}'${this.fix ? ` — ${this.fix}` : ''}. ` +
         `This process answers ${this.names.join(', ') || 'nothing yet'}.`,
     );
   }

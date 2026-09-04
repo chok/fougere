@@ -29,12 +29,12 @@ export class EntryJudge {
    * `check({ body: { columnType: { postgre: 'x' } } }, 'Post.adapters.sql')`
    * → throws `Post.adapters.sql.body.columnType: Property "postgre" does not match …`
    */
-  assert(entries: unknown, at: string): void {
+  assert(entries: unknown, path: string): void {
     if (entries === undefined) return;
 
     if (!isObject(entries)) {
       throw new Error(
-        `${at}: expected an object keyed by field name, got ${typeof entries}.`,
+        `${path}: expected an object keyed by field name, got ${typeof entries}.`,
       );
     }
 
@@ -48,7 +48,7 @@ export class EntryJudge {
       const named = units[units.length - 1] ?? verdict.errors[0];
       const inside = (named?.instanceLocation ?? '#').slice(1).replaceAll('/', '.');
 
-      throw new Error(`${at}.${field}${inside}: ${named?.error ?? 'does not match the format'}`);
+      throw new Error(`${path}.${field}${inside}: ${named?.error ?? 'does not match the format'}`);
     }
   }
 }
