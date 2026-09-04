@@ -1,7 +1,7 @@
 {
   "name": "@fougere/adapter-file",
   "version": "0.6.0-alpha.0",
-  "description": "Rows as files \u2014 one JSON per row, in a directory per entity.",
+  "description": "Rows as files — one JSON per row, in a directory per entity.",
   "keywords": [
     "fougere",
     "typescript",
@@ -37,8 +37,7 @@
   },
   "dependencies": {
     "@fougere/core": "workspace:*",
-    "@fougere/schema": "workspace:*",
-    "@fougere/adapter-memory": "workspace:*"
+    "@fougere/schema": "workspace:*"
   },
   "publishConfig": {
     "access": "public"

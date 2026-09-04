@@ -1,7 +1,7 @@
 {
   "name": "@fougere/adapter-memory",
   "version": "0.6.0-alpha.0",
-  "description": "Rows in a Map \u2014 the source a first run meets, and the one that ships no driver.",
+  "description": "Rows in a Map — the source a first run meets, and the one that ships no driver.",
   "keywords": [
     "fougere",
     "typescript",
@@ -36,10 +36,12 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@fougere/core": "workspace:*",
-    "@fougere/schema": "workspace:*"
+    "@fougere/core": "workspace:*"
   },
   "publishConfig": {
     "access": "public"
+  },
+  "devDependencies": {
+    "@fougere/schema": "workspace:*"
   }
 }

@@ -1079,9 +1079,6 @@ importers:
 
   packages/adapter/file:
     dependencies:
-      '@fougere/adapter-memory':
-        specifier: workspace:*
-        version: link:../memory
       '@fougere/core':
         specifier: workspace:*
         version: link:../../core
@@ -1110,6 +1107,7 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../core
+    devDependencies:
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../schema
