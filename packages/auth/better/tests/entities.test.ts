@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Anatomy, entity, primary, text, bool, optional, } from '@fougere/schema';
+import { Shapes, entity, primary, text, bool, optional, } from '@fougere/schema';
 import { toTable, createTableSQL } from '@fougere/adapter-sql';
 import { AuthUser, AuthVerification, authEntities } from '../src/entities.js';
 
@@ -12,9 +12,9 @@ describe('AuthUser', () => {
       ['createdAt', 'email', 'emailVerified', 'id', 'image', 'name', 'updatedAt'].sort(),
     );
     expect(fields.id.role?.primary).toBe(true);
-    expect(Anatomy.isNullable(fields.email.shape)).toBe(false);
+    expect(Shapes.isNullable(fields.email.shape)).toBe(false);
     expect(fields.emailVerified.shape?.type).toBe('boolean');
-    expect(Anatomy.isNullable(fields.image.shape)).toBe(true);
+    expect(Shapes.isNullable(fields.image.shape)).toBe(true);
   });
 });
 
@@ -25,7 +25,7 @@ describe('AuthSession', () => {
     expect('expiresAt' in fields).toBe(true);
     expect('ipAddress' in fields).toBe(true);
     expect('userAgent' in fields).toBe(true);
-    expect(Anatomy.isNullable(fields.ipAddress.shape)).toBe(true);
+    expect(Shapes.isNullable(fields.ipAddress.shape)).toBe(true);
   });
 
   it('id is single primary key', () => {
@@ -48,8 +48,8 @@ describe('AuthAccount', () => {
     expect('refreshToken' in fields).toBe(true);
     expect('idToken' in fields).toBe(true);
     expect('password' in fields).toBe(true);
-    expect(Anatomy.isNullable(fields.accessToken.shape)).toBe(true);
-    expect(Anatomy.isNullable(fields.password.shape)).toBe(true);
+    expect(Shapes.isNullable(fields.accessToken.shape)).toBe(true);
+    expect(Shapes.isNullable(fields.password.shape)).toBe(true);
   });
 });
 

@@ -4,7 +4,7 @@ import { Lifecycle } from '@fougere/schema';
  * from the entity's field axes. No Vue, no Nuxt: testable headless,
  * usable by any renderer (the page owns the widgets).
  */
-import { Anatomy, lowerFirst, Role, Visibility } from '@fougere/schema';
+import { Shapes, lowerFirst, Role, Visibility } from '@fougere/schema';
 import type { Field, SchemaView, ValidationError, ValidationResult } from '@fougere/schema';
 
 /**
@@ -98,7 +98,7 @@ function controlOf(field: Field): FormField['control'] {
   // Through `anatomy`, never `shape.type` directly: the nullable form is the `[T,'null']`
   // union, which a direct comparison misses in silence. It is also what narrows the shape
   // union, so `enum` and `format` are only reachable on the branches that carry them.
-  const base = Anatomy.of(field.shape).base;
+  const base = Shapes.of(field.shape).base;
   if (base?.type === 'string' && base.enum?.length) return 'select';
   if (base?.type === 'number' || base?.type === 'integer') return 'number';
   if (base?.type === 'boolean') return 'boolean';
@@ -108,7 +108,7 @@ function controlOf(field: Field): FormField['control'] {
 
 /** A closed set's members, when the shape declares one — `oneOf('draft','live')`. */
 function enumOf(field: Field): readonly (string | null)[] | undefined {
-  const base = Anatomy.of(field.shape).base;
+  const base = Shapes.of(field.shape).base;
   return base?.type === 'string' ? base.enum : undefined;
 }
 
@@ -117,7 +117,7 @@ const INPUT_TYPES = new Set(['text', 'email', 'url', 'number']);
 
 /** The shape's bounds, under the names a browser already enforces. */
 function attrsOf(field: Field, control: FormField['control'], required: boolean): NonNullable<FormField['attrs']> {
-  const base = Anatomy.of(field.shape).base;
+  const base = Shapes.of(field.shape).base;
   const text = base?.type === 'string' ? base : undefined;
   const numeric = base?.type === 'number' || base?.type === 'integer' ? base : undefined;
   const attrs = {
@@ -186,7 +186,7 @@ export interface TableColumn {
 /** Asked of the relation before the shape: a reference's own shape is a bare string. */
 function renderOf(field: Field): TableColumn['render'] {
   if (Role.of(field).isReference) return 'link';
-  const base = Anatomy.of(field.shape).base;
+  const base = Shapes.of(field.shape).base;
   if (base?.type === 'number' || base?.type === 'integer') return 'number';
   if (base?.type === 'boolean') return 'boolean';
   if (base?.type === 'object' || base?.type === 'array') return 'json';
