@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Field } from '../src/field/Field.js';
 import { Schema } from '../src/Schema.js';
-import { Unique } from '../src/field/constraint/Unique.js';
 import { created } from '../src/vocabulary/created.js';
 import { entity } from '../src/entity.js';
 import { list } from '../src/vocabulary/list.js';
@@ -11,6 +10,7 @@ import { primary } from '../src/vocabulary/primary.js';
 import { text } from '../src/vocabulary/text.js';
 import { updated } from '../src/vocabulary/updated.js';
 import { FieldJudge } from '../src/judge/FieldJudge.js';
+import { Role } from '../src/axis/role/Role.js';
 
 /**
  * The constructor is the only way to obtain a field, so it is where a field is judged —
@@ -34,7 +34,7 @@ describe('the field door', () => {
       [{ shape, role: 'nawak' }, /role: Expected an object/],
       [{ shape, role: { relation: { kind: 'nawak', to: () => ({}) } } }, /role\.relation\.kind/],
       [{ shape, role: { relation: { kind: 'one' } } }, /role\.relation\.to: Expected a function returning the target entity/],
-      [{ shape, role: { rules: ['not-a-group'] } }, /role\.rules/],
+      [{ shape, role: { unique: 'yes' } }, /role\.unique: Expected a boolean/],
       [{ shape, boundary: { in: { nawak: 'x' } } }, /boundary\.in/],
       [{ shape, meta: 42 }, /meta: Expected an object/],
     ];
@@ -63,10 +63,9 @@ describe('the field door', () => {
     })).not.toThrow();
   });
 
-  it('normalizes a plain role — the member list a config or another language writes', () => {
-    const f = new Field({ shape: { type: 'string' }, role: { rules: [['slug']] } } as never, 'slug');
-    expect(f.role!.rules![0]).toBeInstanceOf(Unique);
-    expect(f.role!.rules![0]!.members).toEqual(['slug']);
+  it('takes a plain role — the object a config or another language writes', () => {
+    const f = new Field({ shape: { type: 'string' }, role: { unique: true } } as never, 'slug');
+    expect(Role.of(f).isUnique).toBe(true);
   });
 
   it('takes a plain object — a config, plain JS, a card another language wrote', () => {

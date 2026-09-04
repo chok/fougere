@@ -2,7 +2,7 @@ import { Validator, format as engineFormats } from '@cfworker/json-schema';
 import { Formats, type FormatPredicate } from '../axis/shape/Formats.js';
 import { Shapes, type Shape } from '../axis/shape/Shape.js';
 import type { Field } from '../field/Field.js';
-import type { Checked } from './result.js';
+import type { Checked } from '../result.js';
 
 interface ShapePlan {
   validator: Validator;

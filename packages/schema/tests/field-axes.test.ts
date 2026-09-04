@@ -1,8 +1,7 @@
 import { Shapes } from '../src/axis/shape/Shape.js';
 import { RowJudge } from '../src/judge/RowJudge.js';
-import { FieldGroup } from '../src/field/constraint/FieldGroup.js';
-import { Unique } from '../src/field/constraint/Unique.js';
 import { describe, it, expect } from 'vitest';
+import { Role } from '../src/axis/role/Role.js';
 import {
   entity, primary, text, number, oneOf, list, optional, nullable,
   Card, Generators, unique, indexed, immutable, created, updated,
@@ -163,11 +162,11 @@ describe('unique / indexed — declared here, enforced by the storage', () => {
   it('sets the role flag and leaves every other axis alone', () => {
     // `entity()` names the carrier, so a group of one arrives already resolved — the live
     // schema and a reconstructed one now answer the same thing.
-    expect(FieldGroup.on(fields.email!, Unique).map((g) => g.members)).toEqual([['email']]);
+    expect(Role.of(fields.email!).isUnique).toBe(true);
     expect(fields.city.role?.index).toBe(true);
     // The wrapper composes: `indexed(optional(...))` keeps the optionality.
     expect(fields.city.lifecycle?.create).toBe('optional');
-    expect(fields.bio.role?.rules).toBeUndefined();
+    expect(Role.of(fields.bio).isUnique).toBe(false);
   });
 
   /**
@@ -188,7 +187,7 @@ describe('unique / indexed — declared here, enforced by the storage', () => {
     expect(card.properties.city['x-fougere']).toMatchObject({ role: { index: true } });
 
     const rebuilt = Card.fromDescriptor(card).toSchema();
-    expect(FieldGroup.on(rebuilt.getFields().email!, Unique).map((g) => g.members)).toEqual([['email']]);
+    expect(Role.of(rebuilt.getFields().email!).isUnique).toBe(true);
     expect(rebuilt.getFields().city.role?.index).toBe(true);
     // A constraint of one is not a composite — it is fully stated by the field itself.
     expect(rebuilt.getUnique()).toBeUndefined();

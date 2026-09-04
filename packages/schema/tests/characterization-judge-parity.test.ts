@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Fields } from '../src/field/Field.js';
-import type { ValidationResult } from '../src/judge/result.js';
+import type { ValidationResult } from '../src/result.js';
 import { RowJudge } from '../src/judge/RowJudge.js';
 import type { StandardSchemaV1 } from '../src/projection/standard.js';
 import type { SchemaConstructor } from '../src/Schema.js';

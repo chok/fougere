@@ -18,8 +18,6 @@ export {
 } from './axis/boundary/Boundary.js';
 export { type Decoder, type Encoder, Boundaries } from './axis/boundary/Boundaries.js';
 export { type Meta } from './axis/Meta.js';
-export { FieldGroup } from './field/constraint/FieldGroup.js';
-export { Unique } from './field/constraint/Unique.js';
 
 export {
   Schema,
@@ -96,4 +94,4 @@ export {
   type ValidationError,
   type ValidationResult,
   type Checked,
-} from './judge/result.js';
+} from './result.js';

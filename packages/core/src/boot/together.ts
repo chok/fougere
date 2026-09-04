@@ -159,7 +159,7 @@ export function registerFrames(
       run: <R>(fn: (entities: never, providers: never) => Promise<R>): Promise<R> => ambient.enterFrame(key, async () => {
         const journal: Undo[] = [];
         const record = (storage: Storage, name: string, schema: SchemaView) =>
-          judge(recording(storage, name, schema.getFields(), journal), name, schema);
+          judge(recording(storage, name, schema, journal), name, schema);
         try {
           return await inScope(scope, members, world.storageFactory!, record, fn as never);
         } catch (cause) {

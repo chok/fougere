@@ -12,7 +12,7 @@ import {
   entity, primary, text, email, number, bool, date, list, json,
   oneOf, ref, many, created, updated, immutable, optional, nullable,
   unique, indexed, readOnly, writeOnly,
-  Card, FieldGroup, Unique, Visibility,
+  Card, Visibility,
   type Fields,
 } from '@fougere/schema';
 import { generateRoutes } from '../src/index.js';
@@ -56,21 +56,9 @@ const axesOf = (fields: Fields) =>
   JSON.parse(JSON.stringify(
     Object.fromEntries(
       Object.entries(fields).map(([key, f]) => {
-        const role = (f as any).role;
         return [key, {
           shape: (f as any).shape ?? null,
-          // Self-references resolved before comparing: in memory a lone `unique()` holds
-          // `[]` (no key to name yet), while one read back from a card holds `["slug"]`.
-          // Same constraint whichever way it was stated — the group carries its members.
-          role: role
-            ? (() => {
-                const groups = FieldGroup.on(f as never, Unique);
-                const { rules: _rules, ...rest } = role;
-                return groups.length
-                  ? { ...rest, unique: groups.map((g) => g.resolvedOn(key).members) }
-                  : rest;
-              })()
-            : null,
+          role: (f as any).role ?? null,
           lifecycle: (f as any).lifecycle ?? null,
           boundary: (f as any).boundary ?? null,
         }];
@@ -169,7 +157,6 @@ suite('a card is a schema source', () => {
     // stronger fact than the author wrote, so both the declaration and the projection go.
     const amputated = ListBook.pick('id', 'listId');
     expect(amputated.getUnique()).toBeUndefined();
-    expect(amputated.getFields().listId!.role?.rules).toBeUndefined();
     // The rest of the role is untouched — dropping the group is not dropping the ref.
     expect((Card.fromSchema(amputated).descriptor.properties.listId!['x-fougere'] as any).role)
       .toEqual({ relation: { to: 'author', kind: 'one' } });

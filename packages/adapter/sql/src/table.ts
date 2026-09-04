@@ -10,7 +10,7 @@ import { Lifecycle, Role } from '@fougere/schema';
  * `ColumnDef.stated` is the one member the axes did not produce. It names one engine's
  * column type, so dropping it leaves every column describable.
  */
-import { Shapes, FieldGroup, Unique, fieldsOf, lowerFirst, schemaOf, type Field, type SchemaView, type SchemaOrCard } from '@fougere/schema';
+import { Shapes, fieldsOf, lowerFirst, schemaOf, type Field, type SchemaView, type SchemaOrCard } from '@fougere/schema';
 import { boundsOf, type ShapeBounds } from './check.js';
 import { sqlEntries, type SqlField } from './fields.js';
 
@@ -180,8 +180,7 @@ function toColumn(
   // redundant constraint on every engine. So would indexing what `unique` constrains.
   // Only a constraint of ONE becomes a column constraint; a group of several is a table
   // constraint, emitted once from `uniqueGroups` rather than once per member column.
-  const soleUnique = FieldGroup.on(field, Unique).some((group) => group.members.length <= 1);
-  if (soleUnique && !column.primary) column.unique = true;
+  if (Role.of(field).isUnique && !column.primary) column.unique = true;
   if (Role.of(field).isIndexed && !column.primary && !column.unique) column.index = true;
   const references = referenceFor(field, resolve, tableNameOf, hosted);
   if (references) column.references = references;
@@ -236,22 +235,12 @@ export function toTable(tableName: string, entity: SchemaOrCard, relations?: Rel
   }
   const primaries = columns.filter((column) => column.primary).map((column) => column.name);
   const stored = new Set(columns.map((column) => column.name));
-  // Read off the fields, not off `getUnique()`: a card has no entity-level declaration to
-  // offer, and the members carry the same fact either way. One reader for both forms.
-  //
-  // Declared in field names, realized in column names — and a group that names a field the
-  // storage does not keep is not enforceable, so it is dropped here rather than emitted
-  // against a column that will not exist.
-  const groups = new Map<string, string[]>();
-  for (const [fieldName, field] of Object.entries(fields)) {
-    for (const group of FieldGroup.on(field, Unique)) {
-      const members = group.resolvedOn(fieldName).members.map(toSnakeCase);
-      if (members.length > 1 && members.every((column) => stored.has(column))) {
-        groups.set(members.join(' '), members);
-      }
-    }
-  }
-  const uniqueGroups = [...groups.values()];
+  // Declared in field names, realized in column names — and a group naming a field the
+  // storage does not keep is not enforceable, so it is dropped rather than emitted against
+  // a column that will not exist.
+  const uniqueGroups = (schema.getUnique() ?? [])
+    .map((group) => group.map(toSnakeCase))
+    .filter((members) => members.every((column) => stored.has(column)));
 
   return {
     name: tableName,

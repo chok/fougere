@@ -3,7 +3,7 @@ import { Lifecycle } from '../axis/lifecycle/Lifecycle.js';
 import { Role } from '../axis/role/Role.js';
 import type { Field, Fields } from '../field/Field.js';
 import type { ValidateOptions } from './options.js';
-import type { ValidationError, ValidationResult } from './result.js';
+import type { ValidationError, ValidationResult } from '../result.js';
 import { ValueJudge } from './ValueJudge.js';
 import { RowRefusal } from './RowRefusal.js';
 

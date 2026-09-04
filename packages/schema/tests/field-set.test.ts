@@ -15,13 +15,13 @@ describe('FieldSet', () => {
       .toThrow(/"id".*"externalId"/);
   });
 
-  it('answers the composite unique groups declared by the field set', () => {
+  it('leaves a composite group to the schema, which is what it constrains', () => {
     class Account extends entity(
       { tenant: text(), email: text() },
       { unique: [['tenant', 'email']] },
     ) {}
 
-    expect(FieldSet.of(Account.getFields()).uniqueGroups).toEqual([['tenant', 'email']]);
-    expect(FieldSet.of({ email: text() }).uniqueGroups).toBeUndefined();
+    expect(Account.getUnique()).toEqual([['tenant', 'email']]);
+    expect(entity({ email: text() }).getUnique()).toBeUndefined();
   });
 });

@@ -1,5 +1,5 @@
 /** The compensated realization of a frame — what `Together` becomes when its members do not share an… */
-import { FieldGroup, FieldSet, Unique, type Fields } from '@fougere/schema';
+import { FieldSet, Role, type SchemaView } from '@fougere/schema';
 import { dequal } from 'dequal';
 import type { Logger } from '../builtin/logger.js';
 
@@ -25,11 +25,10 @@ const pick = (row: Record<string, unknown>, keys: readonly string[]): Record<str
   Object.fromEntries(keys.map((key) => [key, row[key]]));
 
 /** Whether an upsert's conflict can be something other than the primary key. */
-function mayConflictElsewhere(fields: Fields): boolean {
-  const groups = FieldGroup.groupsOf(fields, Unique);
-  if (groups.length > 0) return true;
-  // A sole `unique()` carries a one-member group, which `groupsOf` filters out.
-  return Object.values(fields).some((field) => FieldGroup.on(field, Unique).length > 0);
+function mayConflictElsewhere(schema: SchemaView): boolean {
+  if ((schema.getUnique() ?? []).length > 0) return true;
+
+  return Object.values(schema.getFields()).some((field) => Role.of(field).isUnique);
 }
 
 /** Refused where it is used, naming the group that makes the inverse ambiguous. */
@@ -43,11 +42,11 @@ function refuseAmbiguousUpsert(entity: string, gesture: string): never {
 }
 
 /** The storage a member is handed inside a compensated frame: */
-export function recording<T extends object>(storage: T, entity: string, fields: Fields, journal: Undo[]): T {
+export function recording<T extends object>(storage: T, entity: string, schema: SchemaView, journal: Undo[]): T {
   const base = storage as unknown as Undoable;
   if (typeof base.create !== 'function' || typeof base.update !== 'function') return storage;
 
-  const key = FieldSet.of(fields).primary;
+  const key = FieldSet.of(schema.getFields()).primary;
   if (!key) {
     throw new Error(
       `${entity} declares no primary field, so a write to it cannot be taken back by ` +
@@ -118,7 +117,7 @@ export function recording<T extends object>(storage: T, entity: string, fields: 
 
   if (typeof base.upsert === 'function') {
     recorded.upsert = async function (input, ...rest) {
-      if (mayConflictElsewhere(fields)) refuseAmbiguousUpsert(entity, 'upsert');
+      if (mayConflictElsewhere(schema)) refuseAmbiguousUpsert(entity, 'upsert');
       const undo = await undoUpsert.call(this, [input]);
       const row = await base.upsert!.call(this, input, ...rest);
       journal.push(undo);
@@ -128,7 +127,7 @@ export function recording<T extends object>(storage: T, entity: string, fields: 
 
   if (typeof base.upsertAll === 'function') {
     recorded.upsertAll = async function (inputs, ...rest) {
-      if (mayConflictElsewhere(fields)) refuseAmbiguousUpsert(entity, 'upsertAll');
+      if (mayConflictElsewhere(schema)) refuseAmbiguousUpsert(entity, 'upsertAll');
       const undo = await undoUpsert.call(this, inputs);
       const written = await base.upsertAll!.call(this, inputs, ...rest);
       journal.push(undo);

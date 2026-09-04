@@ -1,11 +1,9 @@
 import type { Axis, Resolver } from '../Axis.js';
 import { refuse, oneOfTokens } from '../../projection/card/admission.js';
 import { isObject, lowerFirst } from '../../lib/utils.js';
-import type { ValidationError } from '../../judge/result.js';
+import type { ValidationError } from '../../result.js';
 import { ON_DELETE, RELATION_KINDS, type EntityConstructor, type Relation } from './Relation.js';
 import { type RoleRules } from './Role.js';
-import { FieldGroup } from '../../field/constraint/FieldGroup.js';
-import { Unique } from '../../field/constraint/Unique.js';
 import type { RoleDescriptor } from '../../projection/card/Descriptor.js';
 
 export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
@@ -16,26 +14,11 @@ export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
       errors.push({ path: 'role', message: `Expected an object — got ${JSON.stringify(value)}` });
       return;
     }
-    for (const flag of ['primary', 'index'] as const) {
+    for (const flag of ['primary', 'index', 'unique'] as const) {
       if (value[flag] !== undefined && typeof value[flag] !== 'boolean') {
         errors.push({
           path: `role.${flag}`,
           message: `Expected a boolean — got ${JSON.stringify(value[flag])}`,
-        });
-      }
-    }
-    if (value.rules !== undefined) {
-      const legal =
-        Array.isArray(value.rules) &&
-        value.rules.every(
-          (rule) =>
-            rule instanceof FieldGroup ||
-            (Array.isArray(rule) && rule.every((member) => typeof member === 'string')),
-        );
-      if (!legal) {
-        errors.push({
-          path: 'role.rules',
-          message: 'Expected field groups, or the member lists they denote — string[][]',
         });
       }
     }
@@ -46,8 +29,7 @@ export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
   describe(role, key) {
     const descriptor: Mutable<RoleDescriptor> = {};
     if (role.primary) descriptor.primary = true;
-    const unique = (role.rules ?? []).filter((rule) => rule instanceof Unique);
-    if (unique.length) descriptor.unique = unique.map((rule) => [...rule.resolvedOn(key).members]);
+    if (role.unique) descriptor.unique = [[key]];
     if (role.index) descriptor.index = true;
     if (role.relation) {
       const target = role.relation.to() as { name?: string };
@@ -63,7 +45,7 @@ export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
   reconstruct(wire, resolve?: Resolver) {
     const rules: RoleRules = {};
     if (wire.primary) rules.primary = true;
-    if (wire.unique?.length) rules.rules = wire.unique.map((group) => new Unique(group));
+    if (wire.unique?.some((group) => group.length === 1)) rules.unique = true;
     if (wire.index) rules.index = true;
     if (wire.relation) {
       // `judge` cannot serve here: it demands `() => Post` where a card carries a name.

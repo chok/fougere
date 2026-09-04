@@ -17,7 +17,6 @@ class Doc extends entity({
   payload: json(),
 }) {}
 
-const fields = Doc.getFields();
 
 function storageReturning(current: Record<string, unknown>) {
   const updates: { id: string; patch: Record<string, unknown> }[] = [];
@@ -37,7 +36,7 @@ function storageReturning(current: Record<string, unknown>) {
 async function updateThenUnwind(stored: Record<string, unknown>, wrote: Record<string, unknown>) {
   const journal: Undo[] = [];
   const storage = storageReturning(stored);
-  const recorded = recording(storage, 'Doc', fields, journal);
+  const recorded = recording(storage, 'Doc', Doc, journal);
 
   await (recorded as unknown as {
     update(id: string, patch: Record<string, unknown>): Promise<unknown>;

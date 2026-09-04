@@ -1,5 +1,5 @@
 import type { Axis } from '../Axis.js';
-import type { ValidationError } from '../../judge/result.js';
+import type { ValidationError } from '../../result.js';
 import { admitWire, oneOfTokens } from '../../projection/card/admission.js';
 import { isObject } from '../../lib/utils.js';
 import { CREATE_TOKENS, UPDATE_TOKENS, type LifecycleRules } from './Lifecycle.js';

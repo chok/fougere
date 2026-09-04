@@ -1,12 +1,11 @@
 import { vocabulary } from './vocabulary.js';
 import { Field } from '../field/Field.js';
-import { Unique } from '../field/constraint/Unique.js';
 
 /**
- * So a single-field group needs no name: the key it sits under resolves it.
- * FR : pour qu'un groupe d'un champ n'ait pas besoin de nom : sa clé le résout.
- * `unique(email)` under the key `email` → the group `['email']`
+ * So a field is unique on its own, whatever key it ends up under.
+ * FR : pour qu'un champ soit unique à lui seul, quelle que soit sa clé.
+ * `unique(email)` → `role.unique` is true
  */
-export const unique: <T>(field: Field<T>) => Field<T> = vocabulary('unique', (field) => ({
-  role: { rules: [...(field.role?.rules ?? []), new Unique([])] },
+export const unique: <T>(field: Field<T>) => Field<T> = vocabulary('unique', () => ({
+  role: { unique: true },
 }));

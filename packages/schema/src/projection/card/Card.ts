@@ -2,6 +2,7 @@ import { EXTENSION_AXES, EXTENSION_SLOTS, type Resolver } from '../../axis/Axis.
 import { dequal } from 'dequal';
 import { clean, isObject } from '../../lib/utils.js';
 import { Field, type Fields } from '../../field/Field.js';
+import { deduplicated } from '../../field/FieldSet.js';
 import { RowJudge } from '../../judge/RowJudge.js';
 import { Schema, type SchemaConstructor } from '../../Schema.js';
 import type { Row, SchemaView } from '../../SchemaView.js';
@@ -32,6 +33,8 @@ export class Card<T = Row<Fields>> {
       properties[key] = describeField(field, key);
       if (judge.onAbsent(field) === null) required.push(key);
     }
+    for (const group of schema.getUnique() ?? [])
+      for (const member of group) carryGroup(properties[member], group);
 
     const descriptor: SchemaDescriptor = {
       type: 'object',
@@ -76,10 +79,13 @@ export class Card<T = Row<Fields>> {
     }
 
     const fields: Fields = {};
+    const groups: string[][] = [];
     for (const [key, property] of Object.entries(descriptor.properties)) {
       fields[key] = reconstructField(property, key, resolve);
+      for (const group of property['x-fougere']?.role?.unique ?? [])
+        if (group.length > 1) groups.push([...group]);
     }
-    const schema = Schema.of({ fields });
+    const schema = Schema.of({ fields, constraints: { unique: deduplicated(groups) } });
     const title = name ?? descriptor.title;
     if (title)
       Object.defineProperty(schema, 'name', { value: title, configurable: true });
@@ -355,4 +361,16 @@ function candidates(
   const apart = ({ removed: gone, added: appeared }: RenameCandidate): number =>
     Math.abs(now.indexOf(appeared) - was.indexOf(gone));
   return found.sort((a, b) => apart(a) - apart(b));
+}
+
+/**
+ * So a group spanning several fields reaches a reader that only ever sees one field.
+ * FR : pour qu'un groupe couvrant plusieurs champs atteigne un lecteur qui n'en voit qu'un.
+ * `carryGroup(properties.listId, ['listId', 'docId'])` → the pair lands under its `role`
+ */
+function carryGroup(property: FieldDescriptor | undefined, group: readonly string[]): void {
+  if (!property) return;
+  const extension = (property['x-fougere'] ??= {}) as { role?: { unique?: string[][] } };
+  const role = (extension.role ??= {});
+  (role.unique ??= []).push([...group]);
 }

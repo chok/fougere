@@ -35,7 +35,7 @@ export class Field<T = unknown> {
     }
 
     this.shape = init.shape;
-    this.role = Role.resolvedOn(init.role, key);
+    this.role = init.role;
     this.lifecycle = init.lifecycle;
     this.boundary = init.boundary;
     this.meta = init.meta;
@@ -59,21 +59,4 @@ export class Field<T = unknown> {
     return new Field<U>({ ...this, ...overrides });
   }
 
-  rename(map: (key: string) => string | undefined): Field<T> {
-    const rules = this.role?.rules;
-    if (!rules?.length) return this;
-
-    const renamed = rules
-      .map((group) => group.rename(map))
-      .filter((group) => group !== null);
-    const unchanged =
-      renamed.length === rules.length &&
-      renamed.every((group, i) => group.equals(rules[i]!));
-    if (unchanged) return this;
-
-    const { rules: _dropped, ...rest } = this.role!;
-    return this.with({
-      role: renamed.length ? { ...rest, rules: renamed } : rest,
-    });
-  }
 }

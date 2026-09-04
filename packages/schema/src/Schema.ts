@@ -7,11 +7,9 @@ import {
 } from './entity/EntityDeclarations.js';
 import { type EntityAdapters } from './entity/EntityAdapters.js';
 import { EntityAdapterSet } from './entity/EntityAdapterSet.js';
-import { FieldGroup } from './field/constraint/FieldGroup.js';
-import { Unique } from './field/constraint/Unique.js';
 import { RowJudge } from './judge/RowJudge.js';
 import { SchemaDerivation } from './SchemaDerivation.js';
-import { SchemaDefinition } from './SchemaDefinition.js';
+import { SchemaDefinition, type SchemaConstraints } from './SchemaDefinition.js';
 import { type ValidateOptions } from './judge/options.js';
 import type { StandardSchemaV1 } from './projection/standard.js';
 import type { PartialRow, Row, SchemaView } from './SchemaView.js';
@@ -85,8 +83,7 @@ export class Schema {
     return this.adapters;
   }
   static getUnique(): CompositeUnique<Fields> | undefined {
-    const groups = FieldGroup.groupsOf(this.fields, Unique);
-    return groups.length ? groups.map((group) => [...group.members]) : undefined;
+    return this.definition.constraints.unique;
   }
   static getOpts() {
     return this.opts;
@@ -201,6 +198,7 @@ export class Schema {
     opts?: ValidateOptions;
     previous?: PreviousNames<TFields>;
     anchored?: boolean;
+    constraints?: SchemaConstraints;
   }): SchemaConstructor<TFields> {
     return Schema.subclass(
       SchemaDefinition.of(declaration),

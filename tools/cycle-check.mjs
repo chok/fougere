@@ -25,17 +25,20 @@ import path from 'node:path';
 
 /** A cycle this repo has WEIGHED and keeps. Anything else fails the check. */
 const STATED = new Map([
-  ['packages/schema judge↔schema',
-    'Two owners addressing each other, symmetric (10 edges each way): the schema holds ' +
-    'the facts, the judge holds the verdict, and neither owns the other. Nesting `judge/` ' +
-    'under `schema/` would say the schema owns the decision, which `RowJudge.of(fields)` denies.'],
-  ['packages/schema projection↔schema',
+  ['packages/schema field↔judge',
+    'Two owners addressing each other: the field holds the facts, the judge holds the ' +
+    'verdict, and neither owns the other. Nesting `judge/` under `field/` would say the ' +
+    'field owns the decision, which `FieldJudge.of(value)` denies.'],
+  ['packages/schema axis↔projection',
     'A projection and its inverse: the three axes reach `card/admission.ts` to ADMIT a ' +
     'wire value back into a schema. The return edge is the dual, not a leak.'],
-  ['packages/schema entity↔schema',
+  ['packages/schema axis↔field',
+    'Type-only, two edges: an axis reads the field it qualifies, and a field declares ' +
+    'the axes it carries. Mutual by definition — neither can be named without the other.'],
+  ['packages/schema entity↔field',
     'Type-only and shallow: an entity states `unique`, `adapters` and `previousNames` ' +
-    'about ITSELF and the schema reads them, while the two declarations name `Fields` ' +
-    'because the field vocabulary is the schema\'s. Mutual by definition, two edges deep.'],
+    'about ITSELF and the field set reads them, while the two declarations name `Fields` ' +
+    'because the field vocabulary is what they address.'],
 ]);
 
 const familyOf = (rel) => (rel.includes(path.sep) ? rel.split(path.sep)[0] : '(root)');
