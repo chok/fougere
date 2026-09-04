@@ -7,7 +7,7 @@
  * rather than discovered.
  */
 import { scanProject } from '@fougere/core/node';
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -18,6 +18,11 @@ import { setupSqlite } from '@fougere/adapter-sql/sqlite';
 import { storageFrom } from '../src/storage.js';
 
 const root = join(import.meta.dirname, 'fixtures-together');
+
+// Scanned once: the seventeen boots below read the same directory, and a cold scan on CI
+// costs more than the 5 s a single test is given.
+let scan: Awaited<ReturnType<typeof scanProject>>;
+beforeAll(async () => { scan = await scanProject(root); }, 60_000);
 
 afterEach(() => { vi.restoreAllMocks(); });
 
@@ -39,7 +44,7 @@ async function boot(split: boolean) {
   const spies = (['debug', 'info', 'log', 'warn', 'error'] as const)
     .map((method) => vi.spyOn(console, method).mockImplementation(take));
   const app = await createApp({
-    scan: await scanProject(root),
+    scan,
     createContainer,
     storageFactory: storage.storageFactory,
     sourceOf: storage.sourceOf,
