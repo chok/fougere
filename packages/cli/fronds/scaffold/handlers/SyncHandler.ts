@@ -1,6 +1,8 @@
 import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { upperFirst, EntityTypes, FacadeTypes, type SchemaDescriptor } from '@fougere/schema';
+import { upperFirst, type SchemaDescriptor } from '@fougere/schema';
+import { EntityTypes } from '../../../src/typescript/EntityTypes.js';
+import { FacadeTypes } from '../../../src/typescript/FacadeTypes.js';
 // The card's shape is declared once, in core, and imported here. A private copy of it
 // lived in this file and went stale the day an op stopped being a bare name: nothing
 // compared the copy to the original, so the drift cost nothing until someone read it.
