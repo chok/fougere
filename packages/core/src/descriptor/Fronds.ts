@@ -1,19 +1,7 @@
 import type { SchemaView } from '@fougere/schema';
 import type { EntityEntry, FrondDescriptor } from './frond.js';
 
-/**
- * What this app hosts, with the questions everyone was asking it by hand.
- *
- * The list was a bare array, so every reader re-walked it: "which frond owns this
- * entity" was spelled four times, "every entity by name" three times as three literal
- * copies of the same `Map`, and the two inside the boot even carried comments saying so.
- * A concept nobody can question is a concept everyone rebuilds.
- *
- * It IS an array — the same reason `ListResult` is one: twenty call sites iterate,
- * filter and spread it, and none of them is wrong to. `Symbol.species` is `Array` so a
- * `.map()` over it answers a plain array rather than something that claims to be a
- * hosting table and holds strings.
- */
+/** What this app hosts, with the questions everyone was asking it by hand. */
 export class Fronds extends Array<FrondDescriptor> {
   static override get [Symbol.species](): ArrayConstructor {
     return Array;
@@ -40,13 +28,7 @@ export class Fronds extends Array<FrondDescriptor> {
     return undefined;
   }
 
-  /**
-   * Every entity class, by name — across all fronds and never per-frond.
-   *
-   * A fact is announced in one frond and heard in another, so the subscriber's own
-   * frond does not hold the shape it must judge; a `reads:` clause names entities
-   * that belong to neighbours by definition.
-   */
+  /** Every entity class, by name — across all fronds and never per-frond. */
   schemas(): Map<string, SchemaView> {
     return new Map(this.flatMap((frond) => frond.entities.map((e) => [e.name, e.entityClass] as const)));
   }
@@ -56,14 +38,7 @@ export class Fronds extends Array<FrondDescriptor> {
     return this.flatMap((frond) => frond.entities.map((e) => e.name)).sort();
   }
 
-  /**
-   * The names a call may address, sorted — what a NOT_FOUND must print.
-   *
-   * Not `entityNames()`, which is what the scan found: an entity with no handler is
-   * scanned and serves nothing, so the refusal read *"Entity 'indexed' is not hosted
-   * here. Hosted here: indexed."* — naming the very thing it had just refused. A façade
-   * is keyed on a HANDLER's address, and that is what this lists.
-   */
+  /** The names a call may address, sorted — what a NOT_FOUND must print. */
   servedNames(surface?: string): string[] {
     return this.flatMap((frond) => frond.handlers
       .filter((handler) => (handler.surface ?? undefined) === surface)

@@ -1,10 +1,4 @@
-/**
- * The operation model after every declaration and convention has been resolved.
- *
- * The scanner produces evidence. This module turns that evidence into the one table
- * boot, check, explain and protocol projections consume. It is deliberately pure: no
- * container, filesystem, migration or handler construction is involved.
- */
+/** The operation model after every declaration and convention has been resolved. */
 import { lowerFirst, type SchemaView } from '@fougere/schema';
 import { statementDrift } from './boot/statement-drift.js';
 import { computeBindingPlan, type BindingPlan } from './wire/binding.js';
@@ -596,30 +590,7 @@ function uniqueDiagnostics(diagnostics: readonly ScanDiagnostic[]): ScanDiagnost
   });
 }
 
-/**
- * The contract of every operation a handler serves — the three producers, merged once.
- *
- * This lived inline in `buildFacade`, which made the façade the only thing that could
- * answer "what is this op's contract, really?". Anything else asking — a checker, a
- * client generator, a descriptor — had to redo the merge, and a second opinion that
- * drifts reports nothing wrong while looking at the wrong thing.
- *
- * The order is a claim about authority, not a convenience:
- *
- *   1. a prefab DECLARES what it built (`Crud(E).__ops`) — runtime, so it survives a
- *      scan that resolved nothing;
- *   2. the scan DERIVES from source — a method written in this very file is the
- *      author's own word and beats everything; a method it merely READ on a base
- *      class is a guess about someone else's code, and yields to that code's own
- *      declaration;
- *   3. `frond.config.ts` STATES — the most explicit statement, made by whoever
- *      assembles the app, and the only answer for an op inherited from an installed
- *      base class the workspace-only scan cannot see. Merged per key, so stating a
- *      `binding` alone does not erase an `input` the scan found.
- *
- * Pure: no container, no instance, no disk. The binding plan is resolved here, so
- * nothing downstream ever meets an AST.
- */
+/** The contract of every operation a handler serves — the three producers, merged once. */
 export function resolveContracts(
   handler: Pick<HandlerEntry, 'ctor' | 'operations'>,
   overrides: FrondDescriptor['operationsOverrides'],

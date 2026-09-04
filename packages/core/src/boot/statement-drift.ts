@@ -1,18 +1,4 @@
-/**
- * Where a STATED contract and the signature it is about have stopped agreeing.
- *
- * `frond.config.ts` states an operation's contract and wins over the scan — that order is
- * deliberate, and it is the only answer for a method inherited from an installed base class
- * the workspace scan cannot see. But winning silently is how a statement made about
- * `publish(id: string)` keeps applying after the parameter was renamed to `postId`: the
- * façade binds what the config said, the method receives `undefined`, and nothing anywhere
- * says the two disagree.
- *
- * So this compares, and only where BOTH exist — a statement about a signature the scan
- * never read is not drift, it is the case config was built for. It is a `warning` and not
- * a refusal: the statement is still the author's word, and a boot that ran yesterday must
- * not stop running because a parameter moved. What it must not do is stay quiet.
- */
+/** Where a STATED contract and the signature it is about have stopped agreeing. */
 import type { FrondDescriptor, HandlerEntry } from '../descriptor/frond.js';
 import type { ScanDiagnostic } from '../scan/result.js';
 import type { BindingPlan } from '../wire/binding.js';
@@ -25,12 +11,7 @@ function namesDisagreeing(plan: BindingPlan, signature: Signature): string[] {
   return plan.map((b) => b.name).filter((name) => !declared.has(name));
 }
 
-/**
- * What a frond's stated contracts no longer match.
- *
- * Read by `resolveEffectiveOperations`, so the same answer reaches `fougere check` and a
- * boot — one comparison, two readers, no second opinion to drift on its own.
- */
+/** What a frond's stated contracts no longer match. */
 export function statementDrift(frond: FrondDescriptor, handler: HandlerEntry): ScanDiagnostic[] {
   const found: ScanDiagnostic[] = [];
 

@@ -1,9 +1,4 @@
-/**
- * Handler signature parser — extracts method signatures from handler source files.
- *
- * The AST says what the author declared; TypeScript's checker says what those types mean.
- * TypeScript is lazy-loaded to avoid bundling the compiler in production builds.
- */
+/** Handler signature parser — extracts method signatures from handler source files. */
 import type { TypeRef, Param, Signature } from '../wire/signature.js';
 import type ts from '@typescript/typescript6';
 import { readFileSync, existsSync, statSync } from 'node:fs';
@@ -26,26 +21,11 @@ interface TypeProject {
   program: ts.Program;
 }
 
-/**
- * One checked program per project/configuration during a scan.
- *
- * A checker is a project reader, not a file parser: creating one per handler would reopen
- * the standard library and every imported declaration for each method. `scanProject`
- * resets this map at the start of a run, so an edited source can never meet a program from
- * the previous run.
- */
+/** One checked program per project/configuration during a scan. */
 const typeProjects = new Map<string, TypeProject>();
 const compilerProjects = new Map<string, { key: string; roots: string[]; options: ts.CompilerOptions }>();
 
-/**
- * What survives a run: the parsed declarations, and the program built over them.
- *
- * Rebuilding a program re-reads `lib.d.ts` and every imported `.d.ts`, and that is FIXED
- * work — measured, a second scan in one process cost the same at 16 frond files as at 406.
- * The mtime is the guard, so a run still cannot see a stale type: a file that moved is
- * re-read and TypeScript invalidates it and everything depending on it, which is a
- * narrower rule than discarding the program and not a weaker one.
- */
+/** What survives a run: */
 const sourceFiles = new Map<string, { mtime: number; file: ts.SourceFile }>();
 const retained = new Map<string, { host: ts.CompilerHost; program: ts.Program }>();
 
@@ -138,13 +118,7 @@ function compilerProjectOf(filePath: string, projectRoot?: string): { key: strin
   return configured;
 }
 
-/**
- * Declare every file a run will read, so one program covers it.
- *
- * `checkedSourceOf` rebuilds whenever it meets a root it has not seen, and a frond lives
- * outside its project's tsconfig `include`, so every declaration was a new root: 44 files
- * cost 7.3 s that way against 0.34 s for one program.
- */
+/** Declare every file a run will read, so one program covers it. */
 export async function seedTypeProgram(filePaths: readonly string[], projectRoot?: string): Promise<void> {
   const typescript = await loadTS();
   const grouped = new Map<string, { options: ts.CompilerOptions; paths: string[] }>();
@@ -428,20 +402,7 @@ function resolveSpecifier(specifier: string, fromFile: string, projectRoot: stri
 
 // ── Mixin / heritage parsing ─────────────────
 
-/**
- * The class a returned expression carries, however it is wrapped.
- *
- * A mixin does not always hand its class back bare. `Crud` returns
- * `asCrudConstructor(class CrudHandler { … })` — one assertion helper standing between
- * `return` and the class — and a parser accepting only a bare `return class` found
- * nothing there, silently: the five inherited CRUD ops stopped being derived, and a warm
- * scan cache kept answering the old parse for weeks (`scan-cache.ts` keys on source, not
- * on parser version).
- *
- * So unwrap rather than match one shape: descend through call arguments, `as` and
- * `satisfies` assertions, and parentheses. What is looked for is a class; where the
- * author put it is their business.
- */
+/** The class a returned expression carries, however it is wrapped. */
 function classInExpression(expr: ts.Node, depth = 0): ts.ClassExpression | undefined {
   const ts = getTS();
   if (depth > 8) return undefined;
@@ -521,14 +482,7 @@ function extractClassMethods(
   return results;
 }
 
-/**
- * The first sentence of a member's doc comment, or nothing.
- *
- * One sentence on purpose: what a caller needs to choose an operation is a claim,
- * not an essay, and the rest of the comment addresses whoever edits the method.
- * Reads the leading trivia rather than `ts.getJSDocTags` — the comment is what the
- * author wrote, tags are a schema they never agreed to.
- */
+/** The first sentence of a member's doc comment, or nothing. */
 function docSentenceOf(member: ts.Node, source: ts.SourceFile): string | undefined {
   const ts = getTS();
   const ranges = ts.getLeadingCommentRanges(source.text, member.pos) ?? [];
@@ -551,11 +505,7 @@ function docSentenceOf(member: ts.Node, source: ts.SourceFile): string | undefin
  * Parse inherited methods from a class's heritage clause.
  * Handles both `extends Crud(Entity)` (mixin) and `extends BaseClass` patterns.
  */
-/**
- * Where a name used here is declared. The checker follows the import, the re-export chain
- * and an installed package's types — the three cases three hand-rolled functions treated
- * separately.
- */
+/** Where a name used here is declared. */
 function declarationFileOf(node: ts.Node, checker: ts.TypeChecker): string | undefined {
   const typescript = getTS();
   let symbol = checker.getSymbolAtLocation(node);
@@ -564,13 +514,7 @@ function declarationFileOf(node: ts.Node, checker: ts.TypeChecker): string | und
   return symbol.declarations?.[0]?.getSourceFile().fileName;
 }
 
-/**
- * The methods a base class contributes, read from the INSTANTIATED type.
- *
- * `extends Crud(Post)` gives `create(input: Partial<Post>)` directly: the checker has
- * already substituted the mixin's type parameter. The three functions this replaces
- * detected the generic names and mapped them to the mixin's arguments by position.
- */
+/** The methods a base class contributes, read from the INSTANTIATED type. */
 function inheritedFromBase(
   base: ts.ExpressionWithTypeArguments,
   checker: ts.TypeChecker,
@@ -616,12 +560,7 @@ function parseInheritedMethods(
   source: ts.SourceFile,
   checker: ts.TypeChecker,
   skip: Set<string>,
-  /**
-   * Base classes this pass could not open — an INSTALLED one, typically, whose
-   * source is not in the workspace. Reported rather than treated as "no inherited
-   * method": the two used to be the same answer, so an op inherited from a
-   * published base class was absent from the façade without a word.
-   */
+  /** Base classes this pass could not open — an INSTALLED one, typically, whose source is not in the w… */
   unresolved: string[],
 ): Signature[] {
   const ts = getTS();
@@ -685,14 +624,7 @@ function findDefaultClass(source: ts.SourceFile): ts.ClassDeclaration | undefine
   return undefined;
 }
 
-/**
- * What a handler file yielded — its methods, AND what the pass could not open.
- *
- * The second half is why this is a pair rather than an array: an unresolvable base
- * class used to give the same answer as a base class with no method, so an op
- * inherited from an installed package was missing from the façade in silence. The
- * pair travels through the scan cache, which is why {@link PARSER_VERSION} moved.
- */
+/** What a handler file yielded — its methods, AND what the pass could not open. */
 export interface HandlerParse {
   methods: Signature[];
   /** Base classes whose source this pass could not open. Empty is a claim. */
@@ -708,11 +640,7 @@ export async function parseAllHandlerMethods(filePath: string, projectRoot?: str
   return parseClassMethods(filePath, CONSTRUCTOR_ONLY, projectRoot);
 }
 
-/**
- * Parse a presenter source file and extract all method signatures.
- *
- * Returns all methods (no CRUD filtering) — each method is a computed field.
- */
+/** Parse a presenter source file and extract all method signatures. */
 export async function parsePresenterMethods(filePath: string, projectRoot?: string): Promise<Signature[]> {
   await loadTS();
   // No `projectRoot`, so no heritage pass and nothing to report: a presenter's

@@ -1,19 +1,4 @@
-/**
- * The scan, written down as a module — what `createApp` is handed where there is no disk.
- *
- * It RE-RESOLVES NOTHING. By the time this runs the scan has already decided what every
- * slot holds, and `resolveSchema` put the entity's own class in `contract.output` — the
- * very object `EntityEntry.entityClass` holds. So the emitter keeps a table from object
- * to import alias and writes the alias. Identity is preserved because it is the same
- * object that becomes the same import, which is what three call sites depend on
- * (`adapter/graphql`'s `view === entity.entityClass` and its WeakMap, and `bootstrap`'s
- * `outputSchema !== entity.entityClass`). An emitter that re-resolved instead would build
- * a second class for `Post` and those three would silently take the other branch.
- *
- * Measured on three real projects: every live reference is either a class the descriptor
- * already names by `filePath`, a named export of the file that declared the signature, or
- * `Partial<X>` — the one derivation `resolveSchema` fabricates.
- */
+/** The scan, written down as a module — what `createApp` is handed where there is no disk. */
 import { dirname, relative } from 'node:path';
 import { ANONYMOUS_SCHEMA_NAME, Card, type SchemaView } from '@fougere/schema';
 import type { FrondDescriptor, EntityEntry, HandlerEntry, PresenterEntry, CollectorEntry, ProviderEntry, SeedEntry } from '../descriptor/frond.js';
@@ -32,14 +17,7 @@ type Live = object;
 /** Is a TypeScript compiler going to read this module? Its name is the only thing that says. */
 const isTypeScript = (outFile: string): boolean => /\.tsx?$/.test(outFile);
 
-/**
- * A source file becomes a specifier its reader can follow — and the two readers differ.
- *
- * A `.ts` destination is compiled by tsc under Node16 resolution, which spells a
- * TypeScript source with `.js`. A `.mjs` destination is read by a bundler, which resolves
- * the path AS IT IS ON DISK — measured, Nitro's rollup refused `Post.seed.js` because no
- * such file exists. One rule, read off the destination, exactly like the type annotation.
- */
+/** A source file becomes a specifier its reader can follow — and the two readers differ. */
 function specifierOf(filePath: string, outFile: string): string {
   const path = relative(dirname(outFile), filePath);
   const rel = isTypeScript(outFile) ? path.replace(/\.tsx?$/, '.js') : path;
@@ -81,15 +59,7 @@ class Imports {
   render(): string { return this.lines.join('\n'); }
 }
 
-/**
- * What a schema slot becomes in the generated module.
- *
- * Three answers, and the third is the only rule: a class already imported is its alias; a
- * named export of the file that declared the signature is imported by its own name — it
- * IS exported there, because that is where `resolveSchema` found it; and an anonymous
- * schema is `Partial<X>`, the one derivation `resolveSchema` builds, so it is written as
- * the derivation rather than as a value.
- */
+/** What a schema slot becomes in the generated module. */
 function schemaRef(schema: SchemaView | undefined, declaredIn: string, imports: Imports): string | undefined {
   if (!schema) return undefined;
   const known = imports.aliasOf(schema as Live);
@@ -178,11 +148,7 @@ function frondOf(f: FrondDescriptor, imports: Imports): string {
   ].filter(Boolean).join('\n');
 }
 
-/**
- * Write a scan down. The result is a TypeScript module whose only imports are the classes
- * the scan found — static, so a bundler traces them — and whose only value is the
- * descriptor `createApp` asks for.
- */
+/** Write a scan down. */
 export function emitScan(result: ScanResult, options: EmitOptions): string {
   const imports = new Imports(options.outFile);
   const core = options.core ?? '@fougere/core';

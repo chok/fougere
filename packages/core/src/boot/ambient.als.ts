@@ -1,9 +1,4 @@
-/**
- * The realization that can tell whose frame is open: an async context.
- *
- * Chosen by `#ambient` wherever `node:async_hooks` exists — Node, Deno, Bun, and workerd
- * with `nodejs_als`. Every refusal here is immediate and names its cause.
- */
+/** The realization that can tell whose frame is open: */
 import { AsyncLocalStorage } from 'node:async_hooks';
 import type { Ambient } from './ambient-port.js';
 

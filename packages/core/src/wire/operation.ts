@@ -2,14 +2,7 @@ import type { SchemaView } from '@fougere/schema';
 import type { BindingPlan } from './binding.js';
 import type { Signature, TypeRef, Param } from './signature.js';
 
-/**
- * The contract of one operation — everything the façade needs to serve a call.
- *
- * Produced two ways, indistinguishable once here: the scan DERIVES it from a
- * method's parsed signature, a prefab handler DECLARES it outright. The façade
- * consumes contracts and nothing else — it knows no operation by name, and a
- * declared contract survives a scan that resolved nothing.
- */
+/** The contract of one operation — everything the façade needs to serve a call. */
 export interface OperationContract {
   /** Judged on the way in. The view carries its own mode (`partial()` → patch). */
   input?: SchemaView;
@@ -17,43 +10,15 @@ export interface OperationContract {
   output?: SchemaView;
   /** Where each argument is read from in the invocation. */
   binding?: BindingPlan;
-  /**
-   * The operation in words, for a caller that meets it over the wire and has to
-   * choose. Same three producers as the rest: the scan derives it from the method's
-   * doc comment, a prefab declares it, config states it and wins.
-   */
+  /** The operation in words, for a caller that meets it over the wire and has to choose. */
   description?: string;
-  /**
-   * How MUCH comes back — the half of the return type that `output` cannot say.
-   *
-   * `output` is the shape of ONE row; it is silent on whether the op hands back one,
-   * several, or a page. The prefab knows (`list` returns a `ListResult`, `findById`
-   * returns `T | undefined`) and the card did not, so anything generating a signature
-   * from the card would have written `list(): Promise<Post[]>` — false, and a false
-   * signature is worse than none.
-   *
-   * `none` says there is no shaped output at all (a boolean, a void), not that the op
-   * returns nothing.
-   */
+  /** How MUCH comes back — the half of the return type that `output` cannot say. */
   cardinality?: 'one' | 'maybe' | 'many' | 'page' | 'none';
-  /**
-   * The argument names and TYPES — the one thing `binding` cannot say.
-   *
-   * `binding` says where an argument is read from, `cardinality` how much comes back;
-   * neither gives a type, and a GraphQL argument needs one. So this is not the scan's
-   * private material: a prefab fills it too, from signatures it wrote itself. `binding`
-   * still wins on where an argument comes from.
-   */
+  /** The argument names and TYPES — the one thing `binding` cannot say. */
   signature?: Signature;
 }
 
-/**
- * Read an op's cardinality off its parsed return type.
- *
- * `Promise` is unwrapped first — it says when, not how much. `ListResult<T>` extends
- * `Array<T>`, so it must be recognised BEFORE the array test or a page would read as
- * a plain list and lose its `total`/`hasMore`.
- */
+/** Read an op's cardinality off its parsed return type. */
 export function cardinalityOf(type: TypeRef | undefined): OperationContract['cardinality'] {
   if (!type) return undefined;
   const inner = type.name === 'Promise' ? type.generics?.[0] : type;
@@ -87,11 +52,7 @@ export interface OperationKindInference {
   commandMatches: string[];
 }
 
-/**
- * Deliberately finite: these are verbs whose leading use carries a stable read meaning.
- * `stats` and `check` preserve conventions already used by the project; the rest are the
- * ordinary query vocabulary shared by the built-in adapters.
- */
+/** Deliberately finite: */
 const QUERY_VERBS = new Set([
   'all', 'check', 'count', 'exists', 'fetch', 'find', 'get', 'has', 'health', 'list',
   'load', 'mine', 'ping', 'quote', 'read', 'search', 'stats', 'status', 'who',
@@ -127,11 +88,7 @@ function wordsOf(name: string): string[] {
     .map((word) => word.toLowerCase());
 }
 
-/**
- * Infer only when the leading word names one convention and a composed clause does not
- * name the opposite one. This is intentionally partial: `ofBook`, `computeReport` and
- * `getOrCreateUser` have no inferred kind instead of falling through to command/query.
- */
+/** Infer only when the leading word names one convention and a composed clause does not name the opp… */
 export function inferOperationKind(name: string): OperationKindInference {
   const words = wordsOf(name);
   const first = words[0];

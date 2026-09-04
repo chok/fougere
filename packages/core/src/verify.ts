@@ -5,24 +5,11 @@ import { storageKeyOf } from './storage.js';
 import { presenterKeyOf } from './prefab/presenter.js';
 import { collectorKeyOf } from './prefab/collector.js';
 
-/**
- * What a rule found in an app.
- *
- * `message` is the sentence the rule replaces — the prose a human used to have
- * to remember. `Known issues` says "Keep collectors in the consuming frond";
- * this is that sentence, told about a specific handler, by something that runs.
- */
+/** What a rule found in an app. */
 export interface Violation {
   /** Rule name, stable — 'cross-frond-dependency'. */
   rule: string;
-  /**
-   * What it costs, decided by the rule that raises it — never by whoever renders it.
-   *
-   * The two rules here are not the same animal: a cross-frond dependency resolves
-   * today and stops resolving the day the other frond answers over the wire, while a
-   * collector declared elsewhere is already wrong in one process. A reader holding a
-   * table of rule names would be a second opinion on a fact the rule already has.
-   */
+  /** What it costs, decided by the rule that raises it — never by whoever renders it. */
   severity: 'blocking' | 'warning';
   /** The frond the subject lives in. */
   frond: string;
@@ -30,15 +17,7 @@ export interface Violation {
   subject: string;
   /** Where to go and look. */
   filePath: string;
-  /**
-   * What the subject reaches for, and where it actually lives.
-   *
-   * `frond` above is the CONSUMER; the target used to exist only inside the
-   * sentence. A reader that has to parse prose to learn which frond a violation
-   * points at is a second opinion on a fact the checker already held — so the
-   * boot can ask "does this violation target a frond named in `remotes:`?" by
-   * reading a field.
-   */
+  /** What the subject reaches for, and where it actually lives. */
   dependsOn: { key: string; frond: string; kind: string };
   /** What breaks, and what the caller gets instead. */
   message: string;
@@ -47,14 +26,7 @@ export interface Violation {
 /** A dependency declared in a frond's scope, and what kind of thing it is. */
 type Registration = { frond: string; kind: string };
 
-/**
- * The container keys a frond registers in its own scope, keyed as a handler's
- * `deps` spell them — DI resolves by type name, so both sides are PascalCase.
- *
- * Every key comes from the function that states it, never from a derivation
- * respelled here: a second reader that spells one differently finds nothing and
- * reports nothing wrong, which is the failure mode a checker must not have.
- */
+/** The container keys a frond registers in its own scope, keyed as a handler's `deps` spell them — D… */
 function registrationsOf(frond: FrondDescriptor): Map<string, Registration> {
   const out = new Map<string, Registration>();
   const put = (key: string, kind: string) => out.set(key, { frond: frond.name, kind });
@@ -69,11 +41,7 @@ function registrationsOf(frond: FrondDescriptor): Map<string, Registration> {
   return out;
 }
 
-/**
- * Everything in a frond that is constructed by DI, so carries `deps`.
- * Handlers, presenters and collectors are all built from a constructor whose
- * argument types the scan read; each one can therefore reach across.
- */
+/** Everything in a frond that is constructed by DI, so carries `deps`. */
 function injectablesOf(frond: FrondDescriptor) {
   return [
     ...frond.handlers.map((h) => ({ name: h.ctor.name, deps: h.deps, filePath: h.filePath })),
@@ -82,22 +50,7 @@ function injectablesOf(frond: FrondDescriptor) {
   ];
 }
 
-/**
- * Does this app survive being split?
- *
- * A frond runs in-process or in its own process behind JSON-RPC with identical
- * user code — that is the whole claim. What the claim does not say is that
- * *every* app survives the move: a dependency that crosses a frond boundary
- * resolves today because both scopes live in one container, and resolves to
- * nothing the day the other frond answers over the wire.
- *
- * The question only exists where a module boundary is meant to become a process
- * boundary later. Where every inter-module call is already remote there is
- * nothing to check, and where no exit is planned there is nothing to check
- * either. Here it means something, and until now it had no answer.
- *
- * Pure over `app.fronds`: no mount, no process, no file. Call it from a test.
- */
+/** Does this app survive being split? A frond runs in-process or in its own process behind JSON-RPC… */
 export function verify(app: { fronds: readonly FrondDescriptor[] }): Violation[] {
   const index = new Map<string, Registration>();
   for (const frond of app.fronds) {

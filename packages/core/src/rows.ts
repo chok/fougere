@@ -1,33 +1,11 @@
-/**
- * The thirteen gestures of {@link Storage}, derived from four.
- *
- * A place rows live varies in ONE thing — how a row is fetched, written, dropped and
- * enumerated. Everything above that is the same everywhere: what a page is, how a criterion
- * matches, which stamps survive an upsert, and the two refusals a `create` owes its caller.
- * Measured on the Map realization: 14 lines of 140 touched the store.
- *
- * So an adapter supplies {@link Rows} and receives a whole `StorageFactory`. It is the frame
- * a third party writing a source needs — without it, `Sources.register` hands over a
- * four-gesture contract and leaves the thirteen to be re-derived, which is how three
- * divergent copies of the same store ended up in this repo's own demos.
- *
- * What is NOT here: `transacted`. A unit of work belongs to the engine that has one, and
- * this frame has none — which is why a `Source` built on it leaves the key absent and a
- * frame compensates.
- */
+/** The thirteen gestures of {@link Storage}, derived from four. */
 import { applyCreate, applyUpdate, Lifecycle, Role, type SchemaView } from '@fougere/schema';
 import type { Storage, StorageFactory } from './storage.js';
 
 /** One row, as every realization hands it over. */
 export type Row = Record<string, unknown>;
 
-/**
- * A keyed collection of rows — what an adapter supplies, and all of it.
- *
- * Async on purpose, even where a realization is not: a Map answers instantly and a directory
- * does not, and the frame above cannot be written twice. `client` is what the port's own
- * escape hatch exposes, `unknown` for the reason it is there.
- */
+/** A keyed collection of rows — what an adapter supplies, and all of it. */
 export interface Rows {
   get(key: string): Promise<Row | undefined>;
   has(key: string): Promise<boolean>;

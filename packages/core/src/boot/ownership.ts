@@ -4,14 +4,7 @@ import { targetOf } from '../prefab/prefab.js';
 import { ownedBy, repositoryKeyOf } from '../prefab/repository.js';
 import { entityOfStorageKey } from '../storage.js';
 
-/**
- * Who owns an entity's storage.
- *
- * `Repository(Commande, Stock)` states it — an aggregate is the only thing that claims
- * entities it is not named after, and the arity is what says so. A repository of ONE owns
- * nothing: a boundary between one thing and nothing is not a boundary, and the judge is
- * already on that entity's rows.
- */
+/** Who owns an entity's storage. */
 export function ownersOf(providers: readonly ProviderEntry[]): Map<string, string> {
   const owners = new Map<string, string>();
   for (const provider of providers) {
@@ -46,21 +39,7 @@ function builtOn(ctor: unknown): string[] {
   return target?.name ? [lowerFirst(target.name)] : [];
 }
 
-/**
- * `Storage<E>` is not a word of the user's vocabulary — `<E>Repository` is the one way in.
- *
- * A door judges and projects; a HOLDER keeps the storage. So the rule is not about which
- * directory a file sits in but about which of the two a class is: a handler, a presenter and
- * a collector may never name the port, and a provider may name only the storage of what its
- * prefab was built on — which is `Repository` and `Mirror`, without either being named here.
- *
- * What it buys beyond one word instead of two: an entity that becomes owned later needs no
- * call site to move, because none of them ever spelled the storage.
- *
- * `known` answers what the key's suffix cannot: `FileStorage` is an ordinary class name.
- *
- * Refused at boot rather than reported by `verify`, which nothing calls at startup.
- */
+/** `Storage<E>` is not a word of the user's vocabulary — `<E>Repository` is the one way in. */
 export function refuseStorageInUserCode(
   frond: FrondDescriptor,
   owners: Map<string, string>,
@@ -103,19 +82,7 @@ export function refuseStorageInUserCode(
   }
 }
 
-/**
- * An owned entity has no automatic CRUD — said at boot, not at the first request.
- *
- * `HandlerFacade.deps()` asks for `<E>Repository` when a handler inherits the five gestures
- * and declares no constructor of its own, and an owned entity has no such key. That alone
- * refuses — but LAZILY, at the first call, on the container's own sentence: measured, the app
- * booted clean and answered every request with `'LedgerRepository' is not registered`. A
- * receiver that starts and then rejects everything is found in production, which is the
- * reason `serve()` checks its address at boot rather than per call.
- *
- * Recognized by FORM, like the façade recognizes it: a prototype carrying `list` and
- * `findById` needs storage of its own, whether `Crud()` put them there or an author did.
- */
+/** An owned entity has no automatic CRUD — said at boot, not at the first request. */
 export function refuseCrudOnOwned(frond: FrondDescriptor, owners: Map<string, string>): void {
   for (const handler of frond.handlers) {
     const owner = owners.get(handler.address);

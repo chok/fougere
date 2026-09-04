@@ -1,10 +1,4 @@
-/**
- * The process environment, as a service — so a handler asks for it rather than reading it.
- *
- * `process` is absent on a Worker, where the environment arrives as a binding. Read through
- * `globalThis` and treated as empty when there is none: a missing variable and a missing
- * `process` are the same answer to a caller, and the fallback already says what to do.
- */
+/** The process environment, as a service — so a handler asks for it rather than reading it. */
 export class Config {
   constructor(private readonly env: Record<string, string | undefined> = envOfProcess()) {}
 

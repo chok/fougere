@@ -1,9 +1,4 @@
-/**
- * What an app says about ITSELF — the `rpc.discover` answer, built from the app.
- *
- * The shape is `wire/`'s: it crosses a process boundary. Building one needs an App,
- * which is why the function lives here and the shape does not.
- */
+/** What an app says about ITSELF — the `rpc.discover` answer, built from the app. */
 import { Card } from '@fougere/schema';
 import type { App } from './types.js';
 import { factsAnnouncedBy } from '../emit.js';
@@ -13,23 +8,7 @@ import type { OperationContract } from '../wire/operation.js';
 
 type AnyFacade = Record<string, (invocation?: InvocationContext) => Promise<unknown>>;
 
-/**
- * Serialize what the app hosts, for one audience. Served on `rpc.discover`,
- * cached by callers.
- *
- * Hosting means answering: an entity with no façade declares no operation, so
- * it is not among the DOORS — publishing its shape would hand an anonymous caller
- * the structure of tables it can never reach (the auth tables, typically), and
- * `fougere sync` would rebuild a schema with nothing to call on it.
- *
- * `facts` is the one thing that shape-without-a-door rule does not cover, and the
- * reason is the opposite of a leak: an entity nobody exposed is silent, whereas a
- * fact was explicitly declared to leave.
- *
- * `surface` makes that sentence audience-aware rather than app-wide: a door
- * answers with what IT serves. Nothing falls back to the full façade — under a
- * named surface, an entity with no façade of its own is simply not there.
- */
+/** Serialize what the app hosts, for one audience. */
 export function identityCardOf(app: App, surface?: string): IdentityCard {
   const declared = app.fronds.schemas();
 
@@ -59,15 +38,7 @@ export function identityCardOf(app: App, surface?: string): IdentityCard {
             ...(entity ? { schema: Card.fromSchema(entity.entityClass, address).descriptor } : {}),
           }];
         }),
-        /**
-         * What leaves on its own — the same list on every surface, deliberately.
-         *
-         * A door has an audience; a fact does not. `Emit<T>` names a subject and *the
-         * number of readers is not the emitter's business* (`emit.ts`), so narrowing this
-         * by `surface` would invent an axis the primitive refuses. The consequence is
-         * stated rather than hidden: a fact's SHAPE is readable by anyone who can read the
-         * card at all. What must not be published must not be announced.
-         */
+        /** What leaves on its own — the same list on every surface, deliberately. */
         facts: factsAnnouncedBy(frond.handlers).map((name) => {
           const entityClass = declared.get(name);
           return { name, ...(entityClass ? { schema: Card.fromSchema(entityClass, name).descriptor } : {}) };

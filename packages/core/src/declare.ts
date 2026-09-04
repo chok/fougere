@@ -1,20 +1,4 @@
-/**
- * A frond stated by its author, for an app that will not scan.
- *
- * The scan reads the type checker because a signature IS a declaration — and that reading
- * has to happen while the types still exist, which is build time. An app that wants
- * neither a build step nor `typescript` at runtime says the same thing here instead, and
- * `createApp` cannot tell the difference: it consumes a `ScanResult`, never a scanner.
- *
- * What it does NOT ask for is the point. Every name the scan derives from a class is
- * derived here the same way — `PostHandler` answers at `post`, `Post` is stored as `post`
- * — so a declaration states classes and nothing else. `filePath` is empty because there is
- * no file to point at, and a diagnostic that would have quoted one says so plainly.
- *
- * Measured on `demos/nuxt-blog`: 23 of its 29 operations need no word here at all, because
- * `Crud.__ops` declares them at runtime. Only the six the author wrote by hand cost
- * anything, and they cost `frond.config.ts` — where what is not derivable is stated.
- */
+/** A frond stated by its author, for an app that will not scan. */
 import { lowerFirst, type SchemaView } from '@fougere/schema';
 import type {
   CollectorEntry, EntityEntry, FrondDescriptor, HandlerEntry,
@@ -26,13 +10,7 @@ import { getPresenterFields } from './prefab/presenter.js';
 /** A class, as a declaration hands it over: the constructor itself. */
 type Ctor = new (...args: never[]) => unknown;
 
-/**
- * What a subject needs beyond its class, when its constructor names a frame or a port.
- *
- * `deps` is the one thing no runtime can recover: TypeScript erases the parameter types,
- * and `registerFrames` reads them to know which frames to build — asking for one IS
- * declaring it. A handler that takes only its own entity's storage needs nothing here.
- */
+/** What a subject needs beyond its class, when its constructor names a frame or a port. */
 export interface DeclaredSubject {
   ctor: Ctor;
   deps?: string[];
@@ -40,11 +18,7 @@ export interface DeclaredSubject {
 
 /** A handler, and the surface it answers on when it is not the default one. */
 export interface DeclaredHandler extends DeclaredSubject {
-  /**
-   * The scan reads this from the directory (`handlers/public/`), so a statement has to
-   * say it: two handlers over one entity collide on their address otherwise, and the
-   * refusal names the same route twice.
-   */
+  /** The scan reads this from the directory (`handlers/public/`), so a statement has to say it: */
   surface?: string;
 }
 
@@ -53,12 +27,7 @@ export type Declared = Ctor | DeclaredSubject;
 
 const ctorOf = (d: Declared): Ctor => (typeof d === 'function' ? d : d.ctor);
 
-/**
- * What a prefab was BUILT ON — `Presenter(Post)` and `Collector(User)` both keep it under
- * `__entity`, which is the only place it survives: nothing in the FORM of `PostPresenter`
- * says `Post`. Absent, the class did not come through the prefab, and the refusal says so
- * rather than yielding a frond whose presenter belongs to no entity.
- */
+/** What a prefab was BUILT ON — `Presenter(Post)` and `Collector(User)` both keep it under `__entity… */
 function subjectOf(ctor: Ctor, kind: string): { name: string } {
   const subject = (ctor as unknown as { __entity?: { name: string } }).__entity;
   if (!subject?.name) {
@@ -93,15 +62,7 @@ export interface FrondDeclaration {
   scope?: string;
 }
 
-/**
- * State a frond without reading a disk.
- *
- * ```ts
- * createApp({
- *   scan: { fronds: Fronds.hosting([frond('blog', { entities: [Post], handlers: [PostHandler] })]), diagnostics: [] },
- * })
- * ```
- */
+/** State a frond without reading a disk. */
 export function frond(name: string, declared: FrondDeclaration = {}): FrondDescriptor {
   const scope = declared.scope ?? DEFAULT_CONVENTIONS.scope;
 

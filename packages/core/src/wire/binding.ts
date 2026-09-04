@@ -1,11 +1,4 @@
-/**
- * Where each parameter of an operation gets its value — decided once at boot from the
- * parsed signature, replayed per call by `resolveArgs`.
- *
- * The branches are ORDERED and each states why it sits where it does; the list used to
- * be repeated here too, and it had already lost `Fact` — the one whose position is
- * load-bearing, since the fall-through would otherwise hand it the caller's body.
- */
+/** Where each parameter of an operation gets its value — decided once at boot from the parsed signat… */
 import type { Param } from './signature.js';
 import { lowerFirst } from '@fougere/schema';
 
@@ -13,14 +6,7 @@ import { lowerFirst } from '@fougere/schema';
 
 type ParamSource =
   | { kind: 'collector'; typeName: string }
-  /**
-   * `Fact<PostPublished>` — something that happened, not something a caller typed.
-   *
-   * It resolves from the body exactly like `body` does, and that is deliberate: an
-   * emission and a direct call ARE the same call, so a subscriber cannot tell them apart
-   * and does not need to. The branch exists so the PLAN says what this parameter is —
-   * that sentence is what makes the subscriber index readable without reparsing types.
-   */
+  /** `Fact<PostPublished>` — something that happened, not something a caller typed. */
   | { kind: 'fact'; factName: string }
   | { kind: 'param'; name: string; coerce?: 'number' | 'boolean' }
   | { kind: 'body' }
@@ -48,12 +34,7 @@ function coercionFor(typeName: string): 'number' | 'boolean' | undefined {
 
 // ── Compute ───────────────────────────────────
 
-/**
- * Build a BindingPlan from parsed method params.
- *
- * @param params - Parsed parameter list from AST
- * @param collectorTypeNames - Registration keys of the types a Collector answers for
- */
+/** Build a BindingPlan from parsed method params. */
 export function computeBindingPlan(
   params: Param[],
   collectorTypeNames: Set<string>,

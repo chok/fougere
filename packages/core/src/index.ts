@@ -1,13 +1,4 @@
-/**
- * What a consumer writes, and nothing else.
- *
- * `exports` publishes this barrel and `./contract`, so an import that is not here
- * cannot be reached from outside the package at all — which is what makes this file
- * the contract rather than a convenience. The machinery the boot uses to keep its own
- * promises stays inside: container keys, the binding plan, the mixin's runtime
- * accessors, the config merge. Measured on 2026-08-16, none of them had a single
- * importer anywhere in the workspace.
- */
+/** What a consumer writes, and nothing else. */
 export { createApp } from './boot/bootstrap.js';
 export { orderSeeds, runSeeds, seeding } from './boot/seed.js';
 export { AppLifecycle, AppLifecycle as Lifecycle, migrating } from './boot/AppLifecycle.js';

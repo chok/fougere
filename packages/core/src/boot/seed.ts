@@ -4,22 +4,7 @@ import type { FrondDescriptor, SeedEntry, SeedFactory } from '../descriptor/fron
 import type { App } from './types.js';
 import type { Extension } from './AppLifecycle.js';
 
-/**
- * Seeds in dependency order — a `ref()` target is planted before its referrer.
- *
- * The order is a fact about the entity graph, not about the surface running the seeds,
- * so it is stated once here. The Nuxt module read it off a pairwise comparator (which
- * `Array.sort` cannot make transitive: `a` before `b` and `b` before `c` never implies
- * `a` before `c`), and `boot()` had no order at all — the same fact, told twice and
- * wrong both times. A list seeded before its owner failed on the foreign key, and the
- * driver's error named neither the entity nor the file.
- *
- * Kahn, like `orderTables` in `@fougere/adapter-sql` — the same shape one level up: there
- * the nodes are tables and the edges FK columns, here they are seeds and the edges the
- * `one` relations of the entities they target. A cycle cannot be satisfied by ordering,
- * so its remaining seeds keep their scan order and land last: the driver refuses what is
- * genuinely impossible, and everything acyclic around it still gets planted.
- */
+/** Seeds in dependency order — a `ref()` target is planted before its referrer. */
 export function orderSeeds(fronds: FrondDescriptor[]): SeedEntry[] {
   const refs = new Map<string, Set<string>>();
   for (const frond of fronds) {
@@ -69,14 +54,7 @@ interface SeedDoor {
   write(item: unknown): Promise<unknown>;
 }
 
-/**
- * Plant a set of seeds, in the order given. Reports what it did, one line per entity.
- *
- * The one seeding loop. `boot()` had one and the Nuxt module generated a second into its
- * Nitro plugin, which had drifted: no storage fallback, so an entity with no façade was
- * skipped there and planted here. Two answers to "how does a row get in at boot" is one
- * too many, and the second was the one running in the browser.
- */
+/** Plant a set of seeds, in the order given. */
 export async function runSeeds(
   app: App,
   seeds: SeedEntry[],
@@ -114,11 +92,7 @@ export async function runSeeds(
   }
 }
 
-/**
- * A seed is not a client: it writes at boot, from inside. The façade is used when the
- * entity declares one (its judge catches a bad seed early), the storage when it does
- * not — an entity that exposes nothing is still an entity whose reference rows must land.
- */
+/** A seed is not a client: */
 function doorFor(app: App, entityName: string): SeedDoor | undefined {
   let handler: Record<string, Function> | undefined;
   try { handler = app.resolve<Record<string, Function>>(facadeKeyOf(entityName)); } catch {}
@@ -138,15 +112,7 @@ function doorFor(app: App, entityName: string): SeedDoor | undefined {
   return { list: () => storage.list(), write: (item) => storage.create(item) };
 }
 
-/**
- * The framework's own ascent for rows, named — so a host can REPLACE it rather than take
- * over the whole post-boot to get its own.
- *
- * That is what Nuxt's Nitro plugin had to do: a bundler needs its seed modules spelled out
- * as static imports, so the plugin claimed everything after the boot and its copy of the
- * loop drifted. It now declares an extension under this same name instead, and the delta
- * is one member of a list.
- */
+/** The framework's own ascent for rows, named — so a host can REPLACE it rather than take over the w… */
 export function seeding(report?: (message: string) => void): Extension {
   return {
     name: 'seeds',

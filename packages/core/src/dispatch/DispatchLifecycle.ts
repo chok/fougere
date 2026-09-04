@@ -11,13 +11,7 @@ export class DispatchLifecycle {
     this.observers = [...observers];
   }
 
-  /**
-   * Subscribe after the dispatcher was built, and get the unsubscription back.
-   *
-   * The list used to be settled at construction, so only the caller of `createApp` could
-   * observe — an extension, which runs in `up(app)`, could not. `app.use` already adds a
-   * middleware this late; this is its dual, and the pair is *participate* / *watch*.
-   */
+  /** Subscribe after the dispatcher was built, and get the unsubscription back. */
   add(observer: DispatchObserver): () => void {
     this.observers.push(observer);
 

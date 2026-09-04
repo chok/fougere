@@ -1,14 +1,4 @@
-/**
- * Making keys and issuing grants — the half of identity that runs at a DEPLOYMENT.
- *
- * It sits on the Node entry because it is the CLI speaking: `fougere keys` generates a
- * pair, `fougere grant` binds a name to one, and both happen once, on a machine with a
- * filesystem. Neither is reachable from a request path, so nothing here is on any hot
- * path and `generateKeyPairSync` — the one gesture WebCrypto could not replace without
- * changing what a key IS — never has to leave `node:crypto`.
- *
- * The verifying half is elsewhere (`identity.ts`) because it runs per call, everywhere.
- */
+/** Making keys and issuing grants — the half of identity that runs at a DEPLOYMENT. */
 import { createPrivateKey, createPublicKey, generateKeyPairSync, sign } from 'node:crypto';
 import { b64url } from './crypto/encoding.js';
 
@@ -21,13 +11,7 @@ export function generateKeyPair(): { privateKey: string; publicKey: string } {
   };
 }
 
-/**
- * Bind a name to a public key, signed by the root — the whole of what a receiver
- * needs to recognize a frond it has never seen.
- *
- * `ttlDays` bounds the damage of a leaked frond key without a revocation list:
- * re-issuing is a deployment, which is the same gesture that leaked it.
- */
+/** Bind a name to a public key, signed by the root — the whole of what a receiver needs to recognize… */
 export function issueGrant(
   rootPrivateKey: string,
   name: string,

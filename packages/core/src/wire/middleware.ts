@@ -1,8 +1,4 @@
-/**
- * App-level middleware — intercepts handler facade operations.
- *
- * Works regardless of entry point (HTTP, Nitro, event bus, CLI, tests).
- */
+/** App-level middleware — intercepts handler facade operations. */
 
 // ── Types ───────────────────────────────────────
 export interface OperationContext {

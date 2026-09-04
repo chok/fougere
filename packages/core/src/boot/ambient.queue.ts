@@ -1,10 +1,4 @@
-/**
- * The realization for a runtime with no async context: it cannot tell whose frame is
- * open, so it never guesses — it waits its turn.
- *
- * Two consequences the boot reports rather than hides: frames run one at a time, and a
- * frame opened inside another is not refused, it waits for itself and times out.
- */
+/** The realization for a runtime with no async context: */
 import type { Ambient } from './ambient-port.js';
 
 /** What a nested frame waits before it is told what it did — the hang, measured, plus a name. */

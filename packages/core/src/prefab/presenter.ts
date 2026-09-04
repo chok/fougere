@@ -1,26 +1,4 @@
-/**
- * Presenter(Entity) — enriches an entity's output with computed fields.
- *
- * Each method on the presenter is a computed field resolver:
- * - Receives the entity record as first argument
- * - Can be sync or async
- * - Injected via DI (constructor params resolved by the container)
- *
- * Usage:
- * ```ts
- * export default class PostPresenter extends Presenter(Post) {
- *   constructor(private commentStorage: CommentStorage) { super(); }
- *
- *   excerpt(post: Post) {
- *     return post.body.slice(0, 200);
- *   }
- *
- *   async commentCount(post: Post) {
- *     return this.commentStorage.countFor(post.id);
- *   }
- * }
- * ```
- */
+/** Presenter(Entity) — enriches an entity's output with computed fields. */
 
 import { upperFirst, type EntityConstructor } from '@fougere/schema';
 
@@ -30,19 +8,7 @@ import { upperFirst, type EntityConstructor } from '@fougere/schema';
  */
 export type PresenterViews = Record<string, EntityConstructor | [EntityConstructor]>;
 
-/**
- * `Presenter(Order, { items: [OrderItemView], user: UserCard })` — the second argument names
- * the view each computed field emits, exactly as `Crud(Post, { list: PostCard })` names an
- * op's. What fabricates a field declares its contract, and it declares it **once**: the
- * façade applies the presenter (see `PresenterExecutor`), and every surface reads the same statement
- * instead of guessing.
- *
- * Guessing was the cost of not stating it. The scan can read a scalar off a return type and
- * nothing more, so a field returning an object had no derivable shape: the GraphQL projection
- * fell back to a serialized `String`, and a client asking `items { quantity }` got a schema
- * error on a field REST served whole. Declaring is optional — a scalar field needs nothing,
- * and an undeclared object keeps the old behaviour.
- */
+/** `Presenter(Order, { items: */
 export function Presenter<E extends EntityConstructor>(entity: E, views?: PresenterViews) {
   class PresenterBase {
     static readonly __entity = entity;

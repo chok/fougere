@@ -1,15 +1,6 @@
 import type { RouteKind } from './RouteAddress.js';
 
-/**
- * What crosses the door: the address, the route it took, and the verdict.
- *
- * It lives here rather than beside its producer for the reason `TopologyReport` does: it
- * crosses a process boundary, so a reader that never installed `@fougere/calls` — the CLI
- * — needs its shape, and putting it there is what produces a hand-copied duplicate.
- *
- * Never the body. Same rule the topology report states — a remote destination is named,
- * not disclosed — and it holds here for the same reason: this answer leaves the process.
- */
+/** What crosses the door: */
 export interface CallRecord {
   /** Monotonic, and the whole cursor protocol: a reader asks for what is above its own. */
   seq: number;
@@ -19,20 +10,9 @@ export interface CallRecord {
   surface?: string;
   /** Known at `resolved`, so absent on a call that never found a route. */
   route?: RouteKind;
-  /**
-   * The traceparent the invocation carried, when one did.
-   *
-   * One panel reads one process, so this is what lets two of them be sewn: the process
-   * that sent and the process that executed share it, and the gap between their two
-   * durations IS the cost of the wire rather than a deduction.
-   */
+  /** The traceparent the invocation carried, when one did. */
   trace?: string;
-  /**
-   * The peer that established this call, when one did.
-   *
-   * A hosted frond serves several consumers, so its own ring mixes them: this is what
-   * separates them. Absent on a call nobody signed — a loopback dev boot has no identity.
-   */
+  /** The peer that established this call, when one did. */
   caller?: string;
   startedAt: number;
   /** Known at `settled`. */
@@ -41,12 +21,7 @@ export interface CallRecord {
   refusal?: { code?: string; message: string };
 }
 
-/**
- * One page of the ring.
- *
- * `dropped` is what the ring could not keep — an absence is named rather than left to
- * look like a quiet period.
- */
+/** One page of the ring. */
 export interface CallPage {
   calls: CallRecord[];
   cursor: number;

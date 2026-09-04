@@ -31,25 +31,14 @@ import {
 
 // FS
 
-/**
- * What this scan run could not do. Reset by {@link scanProject}, which owns a run.
- *
- * Module-scoped like the loader and the cache root above: the scanner already has a
- * notion of "the current run". Three sites record — measured — so a per-run object
- * would carry twenty methods to spare one line of reset.
- */
+/** What this scan run could not do. */
 let diagnostics: ScanDiagnostic[] = [];
 
 function record(d: ScanDiagnostic): void {
   diagnostics.push(d);
 }
 
-/**
- * An absent convention directory is the ordinary case — a frond without
- * `presenters/` is not a defect. Anything else (permissions, an I/O error, a path
- * that is not a directory) means the scan did not look, and answering `[]` says
- * it did. One `catch` used to conflate the two.
- */
+/** An absent convention directory is the ordinary case — a frond without `presenters/` is not a defect. */
 async function readEntries(path: string): Promise<Dirent[]> {
   try {
     return await readdir(path, { withFileTypes: true });
@@ -115,13 +104,7 @@ function findWorkspaceRoot(from: string): string {
   return resolvePath(from); // fallback: use project root itself
 }
 
-/**
- * Strip the 'Handler' suffix → the name the handler answers to. 'PostHandler' → 'post'.
- *
- * Nothing here checks that an entity carries the result, and nothing should: a handler
- * about no stored row is ordinary. The old name of this function — `toEntityName` — is
- * what let "one façade per entity" be repeated until it read as a rule.
- */
+/** Strip the 'Handler' suffix → the name the handler answers to. */
 function toAddress(className: string): string {
   const base = className.endsWith('Handler') ? className.slice(0, -7) : className;
   return lowerFirst(base);
@@ -129,22 +112,7 @@ function toAddress(className: string): string {
 
 // Scan
 
-/**
- * The container key a constructor parameter asks for — derived from its TYPE, not from
- * how the type was spelled.
- *
- * `deps` used to be `p.type.name`, so the key WAS the alias's name: `type ListStorage =
- * Storage<List>` resolved only because someone had spelled it exactly like the
- * registration key (`ListStorage`), while `type ListRepo = Storage<List>` — the same type —
- * typechecked and died at boot on `'ListRepo' is not registered`. And `Storage<List>`
- * written out in full asked for `'Storage'`, which nothing registers.
- *
- * `Storage<X>` names X's storage, so that is the key. The generic argument was already
- * parsed (`TypeRef.generics`) and thrown away. A realization narrowing the port reads the
- * same way — the subject is in the generic, not in the prefix — which is what lets an
- * adapter hand back `Storage<T>` plus the gestures it owns. Anything else keeps its own
- * name: a plain service IS designated by its class name.
- */
+/** The container key a constructor parameter asks for — derived from its TYPE, not from how the type… */
 function depKeyOf(type: TypeRef): string {
   // `Facade<PostHandler>` — the second port, read exactly like the first. The type names
   // what arrives: not the handler (its methods take positional arguments and it is never
@@ -181,23 +149,12 @@ function depKeyOf(type: TypeRef): string {
   return storageKeyOf(target);
 }
 
-/**
- * `'[Account, Ledger]'` → `['Account', 'Ledger']`.
- *
- * The tuple was chosen over the variadic form the parser reads more cleanly, because the
- * variadic one costs arities-with-defaults and a `never` filter on the TypeScript side
- * while the tuple maps to `[Storage<Account>, Storage<Ledger>]` in one line. The
- * parser does not get to decide alone; this split is what that choice costs.
- */
+/** `'[Account, Ledger]'` → `['Account', 'Ledger']`. */
 function tupleMembers(raw: string): string[] {
   return raw.replace(/^\[|\]$/g, '').split(',').map((member) => member.trim()).filter(Boolean);
 }
 
-/**
- * These readings are semantic: an unchanged file can mean something different after an
- * imported alias changes. The parser's TypeScript Program is the cache for one scan; a
- * cache keyed only by this file's bytes would be unsound.
- */
+/** These readings are semantic: */
 const ctorParamsOf = (filePath: string) =>
   parseConstructorParams(filePath);
 
@@ -278,12 +235,7 @@ function resolveSchema(type: TypeRef, moduleExports: Record<string, unknown>): S
   return undefined;
 }
 
-/**
- * Parse ALL method signatures for unified binding.
- *
- * Resolves schemas for all params (not just the first) and stores
- * full signatures for the binding algorithm.
- */
+/** Parse ALL method signatures for unified binding. */
 async function inferOperations(
   filePath: string,
   handlerName: string,
@@ -313,17 +265,7 @@ async function inferOperations(
     return map;
   }
 
-  /**
-   * A base class the parse could not open — an installed package, typically, whose
-   * source is not in the workspace. Its operations are missing from this façade, and
-   * the scan cannot tell whether there were any.
-   *
-   * A warning, not a refusal: an installed base class with no operation is perfectly
-   * ordinary, and the boot has no way to decide between the two. So it names the
-   * clause and stops there. Stating the contract in `frond.config.ts` is the answer
-   * — the third producer, which creates an op neither other producer found — and it
-   * silences this by making the op exist.
-   */
+  /** A base class the parse could not open — an installed package, typically, whose source is not in t… */
   for (const base of parsed.unresolvedHeritage) {
     record({
       severity: 'warning',
@@ -528,13 +470,7 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
     entities: entitiesDir, handlers: handlersDir,
     presenters: presentersDir, collectors: collectorsDir, seeds: seedsDir,
   } = conventions.dirs;
-  /**
-   * A convention directory, read by whoever knows the shape it holds.
-   *
-   * The same three lines were written six times — list, read in parallel, drop what the
-   * reader refused — which is what made `handlers/` quietly special: it grew a second
-   * pass for its surfaces and nothing else could.
-   */
+  /** A convention directory, read by whoever knows the shape it holds. */
   const collect = async <T extends object>(
     dir: string,
     read: (filePath: string) => Promise<T | null>,
@@ -621,15 +557,7 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
   };
 }
 
-/**
- * The frond's name — the directory, unless its `package.json` renames it. One rule for a
- * frond under `fronds/` and for the root frond alike, so the root needs no second spelling.
- *
- * Carrying the convention is what makes a frond; the key never marked anything and
- * nothing read it. It earns its keep as the one thing the directory cannot say: that
- * `fronds/blog-v2/` serves the frond still called `blog` — so a rename on disk does not
- * rename the entity keys, the `@fronds/*` import or a `remotes:` entry.
- */
+/** The frond's name — the directory, unless its `package.json` renames it. */
 async function frondNameOf(frondPath: string, dirName: string): Promise<string> {
   try {
     const pkg = JSON.parse(await readFile(join(frondPath, 'package.json'), 'utf8')) as {
@@ -642,38 +570,14 @@ async function frondNameOf(frondPath: string, dirName: string): Promise<string> 
   }
 }
 
-/**
- * A frond is a directory carrying the convention, and the project root is one such
- * directory — so a single-domain app writes `entities/` next to `app/` and never names
- * anything. `fronds/` is not the definition, it is where the OTHERS live: the root frond
- * stays put when a second domain appears, which is what makes flattening free instead of
- * a deferred move.
- *
- * `entities/` is the test, not "any convention directory". `services/` and `repositories/`
- * are ordinary top-level names in projects that never heard of Fougere, and a domain
- * without a single entity is not a domain.
- */
+/** A frond is a directory carrying the convention, and the project root is one such directory — so a… */
 async function rootFrondOf(root: string, workspaceRoot: string, conventions: Conventions): Promise<FrondDescriptor | null> {
   if ((await files(join(root, conventions.dirs.entities))).length === 0) return null;
   const name = await frondNameOf(root, basename(resolvePath(root)));
   return scanFrond(root, name, { path: root, package: frondPackage(name, conventions) }, conventions, workspaceRoot);
 }
 
-/**
- * `@fronds/<name>` → the directory it names, for every frond of a project.
- *
- * The framework states this convention — `FrondSource.package` has always spelled it, and
- * `fougere sync` writes it into a consumer's tsconfig — and until now its own reader could
- * not resolve it. The Nuxt module registered a Vite alias, so a `.vue` page could import
- * `@fronds/blog/entities/Post`, while the SCAN loaded sources through a bare jiti: a frond
- * naming its neighbour got `Cannot find module '@fronds/user/entities/User.js'`. So the one
- * form that survives a split was the one form that did not run.
- *
- * Hand it to the module loader — `createJiti(url, { alias: await frondAliases(root) })` —
- * and the named form resolves everywhere the framework reads. A directory listing and a
- * `package.json` read, no parsing: it is deliberately callable BEFORE the loader exists,
- * which is what makes the chicken-and-egg go away.
- */
+/** `@fronds/<name>` → the directory it names, for every frond of a project. */
 export async function frondAliases(root: string, conventions: Conventions = DEFAULT_CONVENTIONS): Promise<Record<string, string>> {
   const frondsDir = join(root, conventions.fronds);
   const aliases: Record<string, string> = {};
@@ -687,17 +591,7 @@ export async function frondAliases(root: string, conventions: Conventions = DEFA
     aliases[frondPackage(await frondNameOf(path, dir), conventions)] = resolvePath(path);
   }
 
-  /**
-   * A SYNCED frond answers to the same name.
-   *
-   * `fougere sync` writes `.fougere/remotes/<name>/` and registers it in `remotes.json`,
-   * which the Nuxt module already reads to alias `@fronds/<name>`. Doing it here too is
-   * what makes the convention mean ONE thing: a consumer writes `@fronds/blog/entities/Post`
-   * and never learns whether that frond is on this disk or was fetched from a card.
-   *
-   * A local frond wins a name collision — its source is the truth, a synced copy is a
-   * mirror of somebody else's.
-   */
+  /** A SYNCED frond answers to the same name. */
   try {
     const registry = JSON.parse(
       await readFile(join(root, '.fougere', 'remotes.json'), 'utf8'),
@@ -763,18 +657,7 @@ export async function scanProject(
   return { fronds, diagnostics };
 }
 
-/**
- * What changes when a frond's domain changes — the paths a dev loop watches.
- *
- * It lives beside the scan rather than beside the conventions it reads, because it turns
- * names into DISK paths: `join` is `node:path`, and `conventions.ts` is reached from
- * `index` through `frond()`, which an edge bundle imports. Measured — esbuild refused the
- * Worker with `Could not resolve "node:path"`.
- *
- * The root frond IS the scan root, so watching its path would match every write in the
- * project: `.nuxt/`, `node_modules/`, the build output. Its convention directories are
- * the frond, and they are what a scan re-reads.
- */
+/** What changes when a frond's domain changes — the paths a dev loop watches. */
 export function watchPathsOf(
   frond: { source: { path: string } },
   scanRoot: string,

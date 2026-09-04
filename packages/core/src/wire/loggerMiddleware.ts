@@ -4,13 +4,7 @@
 import type { AppMiddleware } from './middleware.js';
 import type { Logger } from '../builtins/logger.js';
 
-/**
- * Create a logger middleware that logs operation entry, exit, and errors.
- *
- * ```ts
- * app.use(loggerMiddleware(app.resolve('Logger')))
- * ```
- */
+/** Create a logger middleware that logs operation entry, exit, and errors. */
 export function loggerMiddleware(logger: Logger): AppMiddleware {
   return async (ctx, next) => {
     const start = performance.now();

@@ -9,19 +9,7 @@ export interface ConfigApplication {
   pending: string[];
 }
 
-/**
- * What a (re-)read config changes in a process that is already running.
- *
- * The rule it realizes, and the only one worth remembering: **a value that is
- * CONSULTED can change under a running app; a value that was CONSUMED to build
- * something cannot, without rebuilding what it built.** `logLevel` is consulted at
- * every emission, so it moves. `db` opened a connection, `ports:` registered a class,
- * the entities built façades — those are consumed, and this function reports them
- * rather than pretending.
- *
- * The list of consulted keys is not declared anywhere: a key is consulted when this
- * function does something with it, which is the only definition that cannot go stale.
- */
+/** What a (re-)read config changes in a process that is already running. */
 export function applyConfig(next: FougereConfig, inForce?: FougereConfig): ConfigApplication {
   const applied: string[] = [];
   const pending: string[] = [];

@@ -1,12 +1,4 @@
-/**
- * Building a frame — what a handler asking for `Together<[…]>` receives.
- *
- * The declaration names its members and nothing else; where they live, and therefore
- * which of the two realizations they get, is read HERE and stated at boot. A frame whose
- * members share an engine is a transaction; one whose members are split replays its own
- * inverses (`frame.ts`). Same user code, two guarantees, and the boot says which — the
- * one thing a gradient must never leave to assumption.
- */
+/** Building a frame — what a handler asking for `Together<[…]>` receives. */
 import { ambient } from '#ambient';
 import { upperFirst, lowerFirst, type SchemaView } from '@fougere/schema';
 import type { Container } from '@fougere/container';
@@ -35,14 +27,7 @@ interface Members {
   providers: ProviderEntry[];
 }
 
-/**
- * Each declared name, resolved to what it designates.
- *
- * A name that resolves to nothing is refused rather than skipped: `Together<[Account,
- * Ledgre]>` is a typo whose only other symptom is a frame quietly one member short. The
- * two lists are checked against different registries, which is exactly why the declaration
- * separates them — nothing here has to guess what kind a name is.
- */
+/** Each declared name, resolved to what it designates. */
 function resolve(names: { entities: string[]; providers: string[] }, declared: readonly ProviderEntry[], world: FrameWorld): Members {
   const entities = names.entities.map((member) => {
     const name = lowerFirst(member);
@@ -71,12 +56,7 @@ function resolve(names: { entities: string[]; providers: string[] }, declared: r
   return { entities, providers };
 }
 
-/**
- * A member that cannot write here at all — its frond is hosted elsewhere.
- *
- * Refused rather than compensated: a compensated frame still writes through a local storage,
- * and a remote frond registers none. There is nothing to record and nothing to undo.
- */
+/** A member that cannot write here at all — its frond is hosted elsewhere. */
 function refuseRemote(members: Members, world: FrameWorld, key: string): void {
   for (const member of members.entities) {
     const frond = world.frondOf.get(member.name);
@@ -90,12 +70,7 @@ function refuseRemote(members: Members, world: FrameWorld, key: string): void {
   }
 }
 
-/**
- * A provider member writing an entity the frame does not name.
- *
- * The frame does not widen itself to cover it: doing so would pull an entity from another
- * source into the group without anyone writing it down. Named instead, with the one-word fix.
- */
+/** A provider member writing an entity the frame does not name. */
 function refuseUncoveredWrites(members: Members, key: string, world: FrameWorld): void {
   const covered = new Set(members.entities.map((member) => member.name));
   for (const provider of members.providers) {
@@ -111,13 +86,7 @@ function refuseUncoveredWrites(members: Members, key: string, world: FrameWorld)
   }
 }
 
-/**
- * Open the block: build every member over `factory`, in a scope of their own.
- *
- * The scope is what makes a provider member work without a locator — its storage keys are
- * registered here, so the container hands it the framed ones through the ordinary
- * constructor. It is disposed when the block ends, whichever way it ended.
- */
+/** Open the block: */
 async function inScope<R>(
   parent: Container,
   members: Members,
@@ -143,13 +112,7 @@ async function inScope<R>(
   }
 }
 
-/**
- * Register one frame per key a handler or provider of this frond asked for.
- *
- * Called with the frond's scope, because that is where the asking constructor resolves —
- * while the MEMBERS are looked up app-wide, a frame crossing fronds being the ordinary case
- * rather than the exception (the frond is not the storage boundary; `sources:` is).
- */
+/** Register one frame per key a handler or provider of this frond asked for. */
 export function registerFrames(
   scope: Container,
   keys: Iterable<string>,

@@ -1,27 +1,4 @@
-/**
- * A frond reaching into another one by FILE PATH.
- *
- * `verify()` next door answers the same question — does this app survive a split? — from
- * the MODEL: what a constructor asks for, what a parameter is typed. This one can only be
- * answered from the source text, so it reads files and lives apart rather than making
- * `verify` lose the sentence that says it reads none.
- *
- * ```ts
- * import User from '../../user/entities/User.js';   // these two folders are neighbours
- * import User from '@fronds/user/entities/User';    // I depend on the frond named user
- * ```
- *
- * Both resolve today, and that is exactly the trap: a frond declared in `remotes:` is
- * still scanned, its code is still on this disk, so the relative form keeps working right
- * up to the day the folder is not there — an extraction into its own repository, an image
- * that copies one frond. Then it fails at build time, with a message about a file path
- * that says nothing about the model.
- *
- * So a relative path across a boundary is not a bug. It is a **colocation constraint that
- * nothing declares**: real, load-bearing, and invisible to the scan, to the identity card
- * and to `remotes:`. The named form states the same dependency in terms the model can
- * read — and it is the form `fougere sync` writes, so it survives the move.
- */
+/** A frond reaching into another one by FILE PATH. */
 import type ts from '@typescript/typescript6';
 import { readdir, readFile } from 'node:fs/promises';
 import { join, resolve, dirname, relative, isAbsolute } from 'node:path';
@@ -71,13 +48,7 @@ async function sourcesUnder(dir: string): Promise<string[]> {
   return out;
 }
 
-/**
- * Every relative import that resolves outside its own frond.
- *
- * `preProcessFile` rather than a regex or a full parse: it is TypeScript's own scanner for
- * exactly this question, so `// import x from '../../other'` in a comment is not a finding
- * and a specifier split across lines still is.
- */
+/** Every relative import that resolves outside its own frond. */
 export async function crossFrondImports(
   fronds: readonly Pick<FrondDescriptor, 'name' | 'source'>[],
 ): Promise<CrossFrondImport[]> {

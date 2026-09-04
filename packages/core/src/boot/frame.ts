@@ -1,21 +1,4 @@
-/**
- * The compensated realization of a frame — what `Together` becomes when its members do
- * not share an engine.
- *
- * A transaction is the engine's own answer and costs nothing to use: the members are
- * rebuilt over it and the engine gives both the unwind and the isolation. Across engines
- * there is no such thing, so the unwind is built here: every write through the port is
- * recorded with the image that preceded it, and a failure replays the inverses in reverse
- * order.
- *
- * **It gives all-or-nothing, never isolation.** Between two writes a reader sees the half,
- * and nothing here can hide it — that is the whole difference between the two realizations
- * and the reason the boot says which one it built.
- *
- * The port is thirteen known gestures, which is what makes the inverse derivable rather
- * than declared: a saga asks its author for an `undo` per step because its steps are
- * arbitrary code. Here they are not.
- */
+/** The compensated realization of a frame — what `Together` becomes when its members do not share an… */
 import { FieldGroup, FieldSet, Unique, type Fields } from '@fougere/schema';
 import { dequal } from 'dequal';
 import type { Logger } from '../builtins/logger.js';
@@ -27,13 +10,7 @@ export interface Undo {
   run(): Promise<void>;
 }
 
-/**
- * The subset of the port a frame has to watch: every gesture that writes, plus the reads
- * that take one back.
- *
- * Not `StorageGuard`'s `Writer`, which is `create` and `update` — all a judge needs. Undoing
- * needs more: the deletes, and the reads that fetch the image to put back.
- */
+/** The subset of the port a frame has to watch: */
 interface Undoable {
   create(input: Record<string, unknown>, ...rest: unknown[]): Promise<Record<string, unknown>>;
   update(id: string, patch: Record<string, unknown>, ...rest: unknown[]): Promise<Record<string, unknown>>;
@@ -47,20 +24,7 @@ interface Undoable {
 const pick = (row: Record<string, unknown>, keys: readonly string[]): Record<string, unknown> =>
   Object.fromEntries(keys.map((key) => [key, row[key]]));
 
-/**
- * Whether an upsert's conflict can be something other than the primary key.
- *
- * The inverse of an upsert is derivable exactly when the conflict is the primary key: read
- * the rows by key first, then restore the ones that were there and delete the ones that
- * were not. `SqlStorage` spells `onConflict(pk)` on SQLite and Postgres, so that holds —
- * but MySQL's `onDuplicateKeyUpdate` fires on ANY unique constraint, and a row that
- * conflicts on a unique email while carrying a different key would be restored under a key
- * the write never touched.
- *
- * So the question is asked of the DECLARATION, not of the engine: an entity whose only
- * unique constraint is its key upserts unambiguously everywhere. This file knows no dialect
- * and should not learn one.
- */
+/** Whether an upsert's conflict can be something other than the primary key. */
 function mayConflictElsewhere(fields: Fields): boolean {
   const groups = FieldGroup.groupsOf(fields, Unique);
   if (groups.length > 0) return true;
@@ -78,13 +42,7 @@ function refuseAmbiguousUpsert(entity: string, gesture: string): never {
   );
 }
 
-/**
- * The storage a member is handed inside a compensated frame: the same port, writing the same
- * rows, leaving an inverse behind each time.
- *
- * `Object.create` for the same reason `StorageGuard` uses it — the storage keeps every gesture
- * it had, including the ones this knows nothing about.
- */
+/** The storage a member is handed inside a compensated frame: */
 export function recording<T extends object>(storage: T, entity: string, fields: Fields, journal: Undo[]): T {
   const base = storage as unknown as Undoable;
   if (typeof base.create !== 'function' || typeof base.update !== 'function') return storage;
@@ -181,14 +139,7 @@ export function recording<T extends object>(storage: T, entity: string, fields: 
   return recorded;
 }
 
-/**
- * Replay the inverses, most recent first, and report rather than pretend.
- *
- * Every one is attempted even after one fails: stopping at the first would leave writes
- * standing that could have been taken back. What cannot be undone is named — the caller is
- * about to tell a user their transfer failed, and "it failed and here is what is still in
- * the database" is the only honest version of that sentence.
- */
+/** Replay the inverses, most recent first, and report rather than pretend. */
 export async function unwind(journal: readonly Undo[], cause: unknown, log: Logger): Promise<never> {
   const stuck: string[] = [];
   for (const undo of [...journal].reverse()) {

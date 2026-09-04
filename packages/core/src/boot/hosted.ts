@@ -1,21 +1,4 @@
-/**
- * What this app hosts — what it STATED, or what a scan FOUND.
- *
- * The PRESENCE of the key is the decision, the way `remotes:` states a topology: an app
- * that passes `fronds:` is saying "do not scan", and one that passes `scan:` is handing
- * over what a scanner read. There is no mode to configure because there is no third
- * behaviour to name.
- *
- * Both may arrive, and then they MERGE — but only where a scan costs nothing at runtime.
- * Under Nuxt the scan is a build artifact, so an app may state the frond it wants to own
- * and leave the rest to what the build found. Anywhere the scan would run at START, half a
- * statement buys nothing the whole one does: the disk is read either way.
- *
- * Merging is per frond NAME and per member. A stated frond wins outright on the members it
- * names — stating `entities: [Post]` where a scan found `[Post, Author]` yields `[Post]`,
- * because the point of stating is to decide. Empty is what "I named none" looks like, and
- * `frond()` builds every member, so an empty one is filled rather than enforced.
- */
+/** What this app hosts — what it STATED, or what a scan FOUND. */
 import type { FrondDescriptor } from '../descriptor/frond.js';
 import type { ScanResult } from '../scan/result.js';
 import { Fronds } from '../descriptor/Fronds.js';
@@ -53,12 +36,7 @@ function completed(given: FrondDescriptor, found: FrondDescriptor | undefined): 
   };
 }
 
-/**
- * What the app hosts, and what the scan — if it ran — could not do.
- *
- * Neither key is EMPTY rather than refused: whether an app with no frond is legitimate
- * depends on what else it declares, and this function is handed none of that.
- */
+/** What the app hosts, and what the scan — if it ran — could not do. */
 export async function hostedBy(sources: HostedSources): Promise<ScanResult> {
   const scanned = sources.scan
     ? await (typeof sources.scan === 'function' ? sources.scan() : sources.scan)

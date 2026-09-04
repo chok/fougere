@@ -10,12 +10,7 @@ export interface InvocationContext {
 
 export type InvocationInput = Partial<InvocationContext>;
 
-/**
- * Freezes plain data deeply, and leaves a class instance alone — a `Date` is not a record.
- * FR : fige les données nues en profondeur, et laisse une instance de classe — une `Date`
- * n'est pas un enregistrement.
- * `canonicalValue([{ a: 1 }])` → frozen; `canonicalValue(new Date())` → the same `Date`
- */
+/** Freezes plain data deeply, and leaves a class instance alone — a `Date` is not a record. */
 function canonicalValue(value: unknown): unknown {
   if (value === null || value === undefined || typeof value !== 'object') return value;
   if (Array.isArray(value)) return Object.freeze(value.map(canonicalValue));
@@ -25,11 +20,7 @@ function canonicalValue(value: unknown): unknown {
   return canonicalRecord(value);
 }
 
-/**
- * Drops the keys set to `undefined`, so a body and its JSON round-trip agree.
- * FR : retire les clés valant `undefined`, pour qu'un corps et son aller-retour JSON s'accordent.
- * `canonicalRecord({ a: 1, b: undefined })` → `{ a: 1 }`
- */
+/** Drops the keys set to `undefined`, so a body and its JSON round-trip agree. */
 function canonicalRecord(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return Object.freeze({});
 
@@ -50,11 +41,7 @@ export class Invocation implements InvocationContext {
   readonly identity?: string;
   readonly caller?: string;
 
-  /**
-   * Gives every entry and every transport the same seven-member value, frozen.
-   * FR : donne à chaque porte et à chaque transport la même valeur à sept membres, figée.
-   * `params`, `query`, `body`, `state`, `trace`, `identity`, `caller`
-   */
+  /** Gives every entry and every transport the same seven-member value, frozen. */
   private constructor(input: InvocationInput) {
     this.params = canonicalRecord(input.params);
     this.query = canonicalRecord(input.query);
@@ -68,29 +55,17 @@ export class Invocation implements InvocationContext {
     Object.freeze(this);
   }
 
-  /**
-   * Takes a raw object or an invocation, so a caller never has to know which it holds.
-   * FR : accepte un objet nu ou une invocation, l'appelant n'ayant pas à savoir lequel il tient.
-   * `Invocation.from(inv)` → `inv` itself, not a copy
-   */
+  /** Takes a raw object or an invocation, so a caller never has to know which it holds. */
   static from(input?: InvocationInput): Invocation {
     return input instanceof Invocation ? input : new Invocation(input ?? {});
   }
 
-  /**
-   * Replaces the body — how the façade hands on the value it parsed.
-   * FR : remplace le corps — la façade transmet ainsi la valeur qu'elle a analysée.
-   * `invocation.withBody(judged.data)`
-   */
+  /** Replaces the body — how the façade hands on the value it parsed. */
   withBody(body: unknown): Invocation {
     return new Invocation({ ...this, body });
   }
 
-  /**
-   * Replaces the host-owned state, which a middleware enriches before the handler runs.
-   * FR : remplace l'état, propriété de l'hôte, qu'un middleware enrichit avant le handler.
-   * `invocation.withState({ ...invocation.state, user })`
-   */
+  /** Replaces the host-owned state, which a middleware enriches before the handler runs. */
   withState(state: Record<string, unknown>): Invocation {
     return new Invocation({ ...this, state });
   }
@@ -98,11 +73,7 @@ export class Invocation implements InvocationContext {
 
 export const EMPTY_INVOCATION = Invocation.from();
 
-/**
- * Names the same gesture as `Invocation.from` for callers that read better this way.
- * FR : nomme le même geste qu'`Invocation.from` pour les appelants qui se lisent mieux ainsi.
- * `canonicalInvocation({ body })`
- */
+/** Names the same gesture as `Invocation.from` for callers that read better this way. */
 export function canonicalInvocation(input?: InvocationInput): Invocation {
   return Invocation.from(input);
 }

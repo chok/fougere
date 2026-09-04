@@ -1,13 +1,7 @@
 import { Card, type Change, type SchemaDescriptor } from '@fougere/schema';
 import type { IdentityCard } from './call.js';
 
-/**
- * What separates the copy a consumer holds from what the producer actually serves.
- *
- * It lives beside `IdentityCard` and not in `@fougere/testing` for the reason the card
- * itself does: the subject is the card, and a second reader arrived — the dev panel, which
- * must not drag a 426 KB faker in to compare two of them.
- */
+/** What separates the copy a consumer holds from what the producer actually serves. */
 export interface CardDrift {
   frond: string;
   /** A door the consumer calls that the producer no longer serves. */
@@ -41,20 +35,7 @@ function factsOf(card: IdentityCard, frond: string): Map<string, SchemaDescripto
   return found;
 }
 
-/**
- * What a consumer's synced copy no longer matches in what the producer serves.
- *
- * The gap TypeScript cannot see, and the only place the gradient genuinely lies: the code
- * is identical in-process and split, but one side may have aged. `fougere sync` wrote the
- * consumer's copy three weeks ago, the producer moved on, and it still compiles —
- * production is where that is found today. This is what Pact sells; the material was
- * already here, in `rpc.discover` and in `Card.diff`.
- *
- * Read in ONE direction on purpose: what the consumer holds, checked against what is
- * served. A producer serving MORE than the consumer knows is not drift — it is a producer
- * that moved forward without breaking anyone, which is the whole point of the order the
- * repo already states (re-sync the readers, then deploy the sender).
- */
+/** What a consumer's synced copy no longer matches in what the producer serves. */
 export function driftOf(mine: IdentityCard, theirs: IdentityCard, frond: string): CardDrift {
   const mineDoors = doorsOf(mine, frond);
   const served = doorsOf(theirs, frond);
@@ -97,13 +78,7 @@ export function agrees(drift: CardDrift): boolean {
     && drift.facts.length === 0;
 }
 
-/**
- * The drift, in the words a deploy needs.
- *
- * A fact says the order out loud, because the repo already states it as a rule and
- * nothing enforced it: a fact is judged strictly, so a reader that has not been re-synced
- * refuses what the sender now announces.
- */
+/** The drift, in the words a deploy needs. */
 export function explain(drift: CardDrift): string[] {
   const lines: string[] = [];
   for (const door of drift.missingDoors) lines.push(`${drift.frond}.${door} — you call it, it is not served`);

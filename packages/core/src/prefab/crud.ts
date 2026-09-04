@@ -6,43 +6,14 @@ import type { EntityConstructor, SchemaView } from '@fougere/schema';
 const byId = { name: 'id', source: { kind: 'param' as const, name: 'id' }, optional: false };
 const fromBody = { name: 'input', source: { kind: 'body' as const }, optional: false };
 
-/**
- * The same five, written as the scan would have written them.
- *
- * `binding` says WHERE an argument is read from; it never says of what type, and a
- * GraphQL argument needs the type. So a producer that fills only `binding` leaves
- * `adapter/graphql` with nothing to declare — it drops the op (`registerOperations`,
- * `if (!sig) continue`) and four of the five CRUD ops vanish from the schema while
- * the façade and REST still serve them. Measured on an installed app: 16 handlers,
- * 14 with unresolvable heritage, zero `createX` in the schema.
- */
+/** The same five, written as the scan would have written them. */
 const idParam = { name: 'id', type: { raw: 'string', name: 'string' } };
 const inputParam = (entity: string) => ({ name: 'input', type: { raw: `Partial<${entity}>`, name: entity } });
 const returns = (raw: string, name: string, extra?: { array?: boolean; nullable?: boolean }) =>
   ({ raw, name, ...extra });
 
-/**
- * The five ops a Crud handler brings, declared rather than discovered.
- *
- * The mixin built them, so it alone knows their contract in full: what judges
- * their input, where each argument comes from. It says so on the class, at
- * runtime — which is what makes the guarantee independent of the AST scan (an
- * installed app cannot resolve this file, and never needs to).
- */
-/**
- * `output` says the entity, and saying it costs nothing at runtime.
- *
- * The façade already projected onto the entity when nothing else was named, so this
- * changes no result: `outputFieldsFor` reads `contractOutput` and falls back to the
- * entity, and both are the same shape here. What changes is that the sentence now
- * EXISTS — the identity card publishes `output` per op, and a card was measured
- * carrying none at all (2026-08-06, ten ops, zero outputs), which typed every remote
- * return as `unknown` for anyone building on it.
- *
- * It does not close the view: only an explicit `__opOutputs` does (`closed: perOp !==
- * undefined`), so a named view still wins and a presenter's computed fields still ride
- * out. `delete` names none — a boolean is not a shape.
- */
+/** The five ops a Crud handler brings, declared rather than discovered. */
+/** `output` says the entity, and saying it costs nothing at runtime. */
 function crudOps(entity: SchemaView & { partial?: () => SchemaView }): Record<string, OperationContract> {
   const name = (entity as { name?: string }).name ?? 'Entity';
   const input = inputParam(name);
@@ -76,15 +47,7 @@ function crudOps(entity: SchemaView & { partial?: () => SchemaView }): Record<st
   };
 }
 
-/**
- * The mixin's single "trust me" point — the twin of `asSchemaConstructor` in @fougere/schema.
- *
- * The implementation returns whatever the storage hands back; the declaration names the view
- * each op emits at the port. TypeScript cannot connect the two (the view is a runtime
- * argument, the type is a generic), so one assertion states that the mixin honours what it
- * declared — and the façade makes it true, projecting each op's result onto its view
- * (`outputFieldsFor` in `bootstrap.ts`).
- */
+/** The mixin's single "trust me" point — the twin of `asSchemaConstructor` in @fougere/schema. */
 function asCrudConstructor<T, V>(impl: object): CrudConstructor<T, V> {
   return impl as CrudConstructor<T, V>;
 }
@@ -95,12 +58,7 @@ export type CrudOpName = 'list' | 'findById' | 'create' | 'update' | 'delete';
 /** Which view each op speaks — omitted ops speak the entity, the trivial view. */
 export type CrudViews = Partial<Record<CrudOpName, EntityConstructor>>;
 
-/**
- * The view an op emits, fabricated: the one declared for it, the single view when the
- * whole handler declares one, the entity otherwise. `PostCard` is not a hand-written
- * type — `Post.pick(...)` derives it field by field, so an op's return is a projection
- * of the entity exactly like the entity is the projection that keeps everything.
- */
+/** The view an op emits, fabricated: */
 type OutOf<V, K extends CrudOpName, T> =
   // Bracketed on purpose: a naked `V extends …` DISTRIBUTES, and the no-view default
   // is the empty map, whose `keyof` is `never` — distribution would then collapse
@@ -109,17 +67,7 @@ type OutOf<V, K extends CrudOpName, T> =
   : K extends keyof V ? (V[K] extends EntityConstructor ? InstanceType<V[K]> : T)
   : T;
 
-/**
- * The five ops, typed from the entity and its views.
- *
- * Two things the mixin declares but does not own. The **output** is the view the
- * handler names (`Crud(Post, { list: PostCard })`) — fabricated, so a redefinition
- * that returns cards stays assignable. The **trailing parameters** are resolved by
- * type from the container (`delete(id, user?: User)` gets its user from a
- * collector): the mixin cannot know them, they belong to the app, so it declares that
- * a tail exists and that it supplies none — which is what `never` says, and what keeps
- * a judged redefinition assignable.
- */
+/** The five ops, typed from the entity and its views. */
 export interface CrudOps<T, V = {}> {
   storage: Storage<T>;
   list(options?: ListOptions, ...collected: never[]): Promise<ListResult<OutOf<V, 'list', T>>>;
@@ -141,20 +89,7 @@ export interface CrudConstructor<T, V = {}> {
   readonly __ops: Record<string, OperationContract>;
 }
 
-/**
- * Mixin — extends Crud(Entity) to get all 5 typed CRUD methods.
- *
- * The second argument (optional) names the view the ops emit, and comes in two
- * spellings of one idea — a view per op, or one view for all five:
- *
- * Crud(Post)                      → every op emits Post
- * Crud(Post, { list: PostCard })  → list emits cards, the rest emit Post. Declaration
- *                                   only: the handler keeps its full-row storage, so a
- *                                   judge can still read `body`.
- * Crud(Post, PostPublic)          → every op emits PostPublic, and the bootstrap
- *                                   scopes the injected storage via .output(PostPublic) —
- *                                   the whole handler speaks the restricted view.
- */
+/** Mixin — extends Crud(Entity) to get all 5 typed CRUD methods. */
 export function Crud<E extends EntityConstructor, V extends CrudViews | EntityConstructor = {}>(
   entity: E,
   output?: V,

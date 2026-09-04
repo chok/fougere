@@ -1,13 +1,4 @@
-/**
- * Contract surface — what a sender needs to speak to a receiver, and
- * nothing that assumes a runtime: the error vocabulary, the invocation
- * shape, the call value, the naming convention.
- *
- * Browser-safe by design: no node builtin may enter this module's import
- * graph. Published as the `@fougere/core/contract` subpath so client
- * bundles never touch the full index (scanner, config loader). `@fougere/schema`
- * is allowed in — measured, it imports no node builtin either.
- */
+/** Contract surface — what a sender needs to speak to a receiver, and nothing that assumes a runtime: */
 import { lowerFirst } from '@fougere/schema';
 import { canonicalInvocation, type InvocationContext } from './contract/Invocation.js';
 import type { FrondCall } from './wire/call.js';
@@ -35,27 +26,11 @@ export type { CallPage, CallRecord } from './contract/CallLog.js';
 export { driftOf, agrees, explain } from './wire/drift.js';
 export type { CardDrift } from './wire/drift.js';
 
-/**
- * What `rpc.discover` answers. It belongs here and not to the runtime: the
- * reserved op travels on the same wire as every other call, so a consumer that
- * only sends — a browser bundle, a frond written elsewhere — needs its shape and
- * nothing else. Type-only, so `call.js` never enters the runtime graph.
- *
- * Stated once, on purpose: two private copies of this interface have already gone
- * stale (the CLI's, then the Rust demo's) the day an op stopped being a bare name.
- */
+/** What `rpc.discover` answers. */
 export type { IdentityCard, CardOp, TopologyReport, FrondPlacement, Edge } from './wire/call.js';
 export { assertIdentityCard } from './wire/call.js';
 
-/**
- * The key a class name is filed under — 'Post' → 'post'. Re-exported rather than
- * respelled: a card writes it and a foreign key derives from it, so the convention
- * belongs to the schema, and a second copy here is a second opinion. It travels
- * through this subpath because a consumer of the wire (a browser bundle) may hold no
- * schema dependency of its own — that audience only. Inside the package it is read from
- * `@fougere/schema` directly: routing four modules through here bought nothing and put
- * this file inside a cycle.
- */
+/** The key a class name is filed under — 'Post' → 'post'. */
 export { lowerFirst } from '@fougere/schema';
 
 /** A call, fully fabricated: the designation and its completed invocation. */
@@ -64,12 +39,7 @@ export interface CallValue {
   invocation: InvocationContext;
 }
 
-/**
- * Fabricate the call value — one designation, two spellings:
- * `callValueOf(Post, 'list', { query })` (class + verb) or
- * `callValueOf({ entity, op }, input)` (raw, for dynamic bridges).
- * Missing invocation fields complete to the empty invocation.
- */
+/** Fabricate the call value — one designation, two spellings: */
 export function callValueOf(
   target: { name: string } | FrondCall,
   opOrInput?: string | Partial<InvocationContext>,

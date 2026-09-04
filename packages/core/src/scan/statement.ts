@@ -1,41 +1,11 @@
-/**
- * The scan, written as the STATEMENT an author would have written.
- *
- * A scan runs at build and the app runs elsewhere — two runtimes, no shared memory — so
- * something has to cross. What used to cross was the scan RESULT: every operation's
- * TypeScript signature re-serialized as JSON, beside the five CRUD ops `Crud.__ops`
- * declares at runtime anyway. A second writing of what the classes carry, and one that
- * drifts, since nothing compares the two.
- *
- * What crosses here is what `fronds.ts` holds: imports that bring the ORIGINAL classes
- * back, and `frond()` calls. Everything else `frond()` derives — `Post` is stored as
- * `post`, `PostHandler` answers at `post`, a computed field IS a method, and
- * `Presenter(Post)` keeps its subject. Only what TypeScript erases is named: a
- * constructor's parameter types (`deps`), and the surface a handler answers on, which the
- * scan read from its directory.
- *
- * Measured on demos/nuxt-blog: 102 lines of scan against 31 of statement, and the same app
- * — same rows, same computed fields, and no `typescript` loaded at boot.
- */
+/** The scan, written as the STATEMENT an author would have written. */
 import { relative } from 'node:path';
 import type { FrondDescriptor } from '../descriptor/frond.js';
 import type { ScanResult } from './result.js';
 
 type Live = { name?: string };
 
-/**
- * A file becomes the specifier the PROJECT already uses for it: `@fronds/blog/…`, the
- * import scope a handler names its neighbour by, and which the Nuxt module registers as an
- * alias for every frond it found.
- *
- * A relative path would name the same file by a second route, and two routes to one module
- * are two modules — so `Post` would not equal `Post` and every identity check would fail
- * quietly. It also puts the file outside what the alias resolves, which is what made Node,
- * not the bundler, read the frond's `.ts` and answer 500 on `../entities/Post.js`.
- *
- * `.js`, because the source is `.ts` and the project spells a TypeScript source that way
- * everywhere else — the alias resolves through the same rule as a hand-written import.
- */
+/** A file becomes the specifier the PROJECT already uses for it: */
 function specifierOf(filePath: string, frond: FrondDescriptor): string {
   const inside = relative(frond.source.path, filePath).replace(/\.tsx?$/, '.js');
 

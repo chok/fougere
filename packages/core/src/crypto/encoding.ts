@@ -1,11 +1,4 @@
-/**
- * What both realizations spell identically — bytes in, bytes out, no platform.
- *
- * `Buffer` did all of this and does not exist on a Worker; `atob`/`btoa` exist on both.
- * Nothing here is a policy decision, which is why it sits beside the port rather than
- * inside either half: two copies of a base64url would be two chances to disagree on the
- * padding, and the disagreement would show up as a bad signature.
- */
+/** What both realizations spell identically — bytes in, bytes out, no platform. */
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -45,13 +38,7 @@ export const unb64 = (input: string): Uint8Array => {
   return bytes;
 };
 
-/**
- * The DER a PEM wraps. WebCrypto imports DER and knows nothing about the armour.
- *
- * The label is not checked: a caller asking for a private key and handed a public one
- * fails at `importKey` with a message about the key, which is the truer error than one
- * about a header line.
- */
+/** The DER a PEM wraps. */
 export function derOf(pem: string): Uint8Array {
   const body = pem.replace(/-----(BEGIN|END)[^-]+-----/g, '').replace(/\s+/g, '');
   if (body.length === 0) throw new Error('Not a PEM: no base64 body between the armour');

@@ -1,27 +1,10 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-/**
- * Which adapters a PROJECT could load, read off its dependencies.
- *
- * The process cannot answer this: an entity may state a Postgres column type in an app
- * that boots on `adapter/memory`, which never loads `sql`, and nothing at runtime tells
- * that from a typo. A project's dependencies name every adapter it could ever load, so
- * this is the one place a name can be judged — and it is a report, never a refusal.
- *
- * By CONVENTION, not by asking: an adapter answers to the suffix of its package name
- * (`@fougere/adapter-sql` → `sql`), the name an entity writes under `adapters:`. One
- * published under some other name is invisible here, which costs a false report and
- * never a false silence.
- */
+/** Which adapters a PROJECT could load, read off its dependencies. */
 const ADAPTER_PACKAGE = /^@fougere\/adapter-(.+)$/;
 
-/**
- * The adapter names this project depends on — empty when it has no package.json to read.
- * FR : les noms d'adaptateurs dont ce projet dépend — vide s'il n'a pas de package.json.
- * a project depending on `@fougere/adapter-sql` and `@fougere/adapter-rest`
- * → `['sql', 'rest']`
- */
+/** The adapter names this project depends on — empty when it has no package.json to read. */
 export async function adaptersOf(root: string): Promise<string[]> {
   const manifest = await read(join(root, 'package.json'));
   if (!manifest) return [];

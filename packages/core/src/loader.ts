@@ -1,21 +1,7 @@
-/**
- * How a source file becomes a module — one registry, two readers.
- *
- * The scanner loads fronds and `config-loader` loads a config, and both must use the
- * loader the host installed: a TS file needs jiti under Nuxt and plain `import` under
- * tsx. It lived in `scan/scanner.ts`, so reading a config dragged the scanner, its AST
- * parser and the TypeScript compiler behind it.
- */
+/** How a source file becomes a module — one registry, two readers. */
 import { pathToFileURL } from 'node:url';
 
-/**
- * Module loader — can be swapped (e.g. jiti for TS files in Nuxt context).
- *
- * `fresh` asks for a file that may have changed since it was last read. Every loader
- * caches, so without it a second read of an EDITED file hands back the first one —
- * which is what re-reading a config is for. A loader that cannot honour it may ignore
- * the flag; it then answers with what it already had.
- */
+/** Module loader — can be swapped (e.g. */
 export type ModuleLoader = (
   filePath: string,
   options?: { fresh?: boolean },

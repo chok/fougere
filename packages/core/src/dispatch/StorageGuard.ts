@@ -2,23 +2,14 @@ import { ValueJudge, type Fields } from '@fougere/schema';
 import { assertListOptions } from '../storage.js';
 import { ErrorCode, FougereError } from '../wire/errors.js';
 
-/**
- * The three gestures this guard grafts onto. `list` is optional because not every storage
- * answers it, and declared HERE rather than described inline at the graft: a member the
- * intersection does not name cannot be assigned without a cast that hides the graft.
- */
+/** The three gestures this guard grafts onto. */
 interface Writer {
   create(...args: [Record<string, unknown>, ...unknown[]]): Promise<unknown>;
   update(...args: [unknown, Record<string, unknown>, ...unknown[]]): Promise<unknown>;
   list?(...args: unknown[]): unknown;
 }
 
-/**
- * Judges storage writes and list options without narrowing the storage interface.
- *
- * Storage is a way out like the client surface, so what goes to it is judged too — the
- * same rule `OutputProjector` applies on the other exit.
- */
+/** Judges storage writes and list options without narrowing the storage interface. */
 export class StorageGuard {
   constructor(
     private readonly fields: Fields,

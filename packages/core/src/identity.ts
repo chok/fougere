@@ -1,35 +1,4 @@
-/**
- * Who is calling — the proof, not the claim.
- *
- * `InvocationContext.state` is what a caller SAYS about itself, and a split receiver
- * used to believe it: identity read straight off the wire, so a reader could post
- * `{ state: { user: { role: 'admin' } } }` and be one. This module is what turns that
- * sack into something a receiver establishes instead of accepts.
- *
- * Two signatures, one public key to distribute:
- *
- *   GRANT      the root says "this key is `blog`"   — issued once, at deployment
- *   ENVELOPE   `blog` says "here is my whole call"   — signed per call
- *
- * The envelope binds the CALL and not only its state: address, params, query, a digest
- * of the body. Signing the state alone proved WHO without proving WHAT, so anyone on the
- * wire could replay a captured envelope against another operation for as long as it
- * stayed valid — `post.list` re-sent as `post.delete`, same signature, still good.
- *
- * A receiver holds the root's public key and nothing else: it validates any frond it
- * has never seen, which is what a per-caller list could not do. The private root key
- * signs grants and never leaves the machine that issued them.
- *
- * Ed25519 and a JWS-shaped grant rather than X.509: node can PARSE a certificate but
- * not ISSUE one, so a real chain would mean openssl or a library. The grant says the
- * same thing — a name bound to a public key, signed by the root — with no dependency.
- *
- * The Ed25519 itself comes through `#crypto`, which has two realizations: `node:crypto`
- * everywhere, WebCrypto under `workerd`. Everything here is therefore async — WebCrypto
- * has no synchronous form — and a key is parsed ONCE, into a `Signer` or a `Verifier`,
- * never per call. Making the keys and issuing grants happen at a deployment and live in
- * `identity-keys.ts`, on the Node entry.
- */
+/** Who is calling — the proof, not the claim. */
 import { crypto } from '#crypto';
 import type { PublicJwk, Signer, Verifier } from './crypto/port.js';
 import { b64url, unb64url, bytesOf, textOf, unb64 } from './crypto/encoding.js';
@@ -85,11 +54,7 @@ async function signJws(header: object, payload: object, signer: Signer): Promise
   return `${signingInput}.${b64url(await signer.sign(bytesOf(signingInput)))}`;
 }
 
-/**
- * The payload, once the signature holds. Throws rather than returning a falsy value:
- * every caller here is deciding whether to admit a call, and an unverified payload
- * must never be reachable by forgetting a check.
- */
+/** The payload, once the signature holds. */
 async function verifyJws(token: string, verifier: Verifier, what: string): Promise<Record<string, unknown>> {
   const parts = token.split('.');
   if (parts.length !== 3) throw new Error(`Malformed ${what}`);
@@ -111,13 +76,7 @@ function headerOf(token: string): Record<string, unknown> {
   return JSON.parse(textOf(unb64url(encodedHeader))) as Record<string, unknown>;
 }
 
-/**
- * Sign one call, whole: who is asking, what is asked, and on whose behalf.
- *
- * The private key is parsed on every call here, which is the convenience form. A process
- * that signs in a request path builds its signer once — `identityFromEnv` does exactly
- * that, and `sign` on the value it returns holds the parsed key.
- */
+/** Sign one call, whole: */
 export async function signEnvelope(identity: FrondIdentity, call: SignedCall): Promise<string> {
   return sealWith(await crypto.signerOf(identity.privateKey), identity.grant, call);
 }
@@ -133,11 +92,7 @@ async function sealWith(signer: Signer, grant: string, call: SignedCall): Promis
   );
 }
 
-/**
- * Establish the caller, or throw. Order matters: the grant is checked against the ROOT
- * first, and only the key it carries verifies the envelope — reading the envelope's own
- * claim of who it is before that would be believing the thing under examination.
- */
+/** Establish the caller, or throw. */
 export async function verifyEnvelope(token: string, rootPublicKey: string, presented: SignedCall): Promise<VerifiedCall> {
   return openWith(await crypto.verifierOf(rootPublicKey), token, presented);
 }
@@ -173,13 +128,7 @@ async function openWith(root: Verifier, token: string, presented: SignedCall): P
 
 /** The two halves a boot needs, and the environment they come from. */
 export interface CallIdentity {
-  /**
-   * Signs an outgoing call, whole. Absent when this process holds no key — it only answers.
-   *
-   * A promise because WebCrypto has no synchronous form. On Node the work stays
-   * synchronous inside and only the answer is wrapped: measured at 14.28 µs awaited
-   * against 14.30 µs called directly, while WebCrypto on the same curve costs 22.72.
-   */
+  /** Signs an outgoing call, whole. */
   sign?: (call: SignedCall) => Promise<string>;
   /** Establishes an incoming caller, against the call that actually arrived. */
   verify?: (identity: string, presented: SignedCall) => Promise<VerifiedCall>;
@@ -187,29 +136,12 @@ export interface CallIdentity {
   requireIdentity: boolean;
 }
 
-/**
- * A PEM, however the deployment chose to carry it.
- *
- * A PEM is multi-line and an environment variable that spans lines survives poorly —
- * docker-compose, systemd and CI secret stores each mangle it differently — so
- * `fougere keys` prints base64. Both forms are read here rather than one being decreed:
- * a human pasting a real PEM is not making a mistake.
- */
+/** A PEM, however the deployment chose to carry it. */
 function pemOf(value: string): string {
   return value.trimStart().startsWith('-----') ? value : textOf(unb64(value));
 }
 
-/**
- * What the deployment injected, read once at boot.
- *
- * Three variables, no config key: a private key never belongs in a committed file, and
- * `fougere keys` prints exactly these. A process may hold either half or both — a frond
- * that only answers has no key, one that only calls trusts no root, one in the middle
- * does both.
- *
- * Trusting a root IS asking to refuse: there is no separate flag, because a deployment
- * that names an authority and then accepts unsigned calls has said two things at once.
- */
+/** What the deployment injected, read once at boot. */
 export async function identityFromEnv(env: Record<string, string | undefined> = envOfProcess()): Promise<CallIdentity> {
   const root = env.FOUGERE_ROOT_KEY ? pemOf(env.FOUGERE_ROOT_KEY) : undefined;
   const privateKey = env.FOUGERE_KEY ? pemOf(env.FOUGERE_KEY) : undefined;

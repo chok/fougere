@@ -1,15 +1,4 @@
-/**
- * Ed25519 through WebCrypto — what a runtime with no `node:` builtin has.
- *
- * Verified in real workerd with no compatibility flag (2026-08-23): sign, verify, a JWK
- * import, an SPKI import and SHA-256 all answer. `Ed25519` is the algorithm name; the
- * older `NODE-ED25519` spelling is not used, and a runtime that only knows that one will
- * refuse at `importKey` rather than silently signing with something else.
- *
- * The four gestures are declared here rather than pulled from `lib.dom`: this package
- * compiles with `lib: ["ESNext"]` and naming DOM would make every consumer carry a
- * browser's globals to read a server type. What the file needs IS the declaration.
- */
+/** Ed25519 through WebCrypto — what a runtime with no `node:` builtin has. */
 import { derOf } from './encoding.js';
 import type { CryptoPort, PublicJwk, Signer, Verifier } from './port.js';
 

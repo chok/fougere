@@ -1,18 +1,7 @@
-/**
- * HTTP reading of an error — used by HTTP bridges (REST, Next, Inertia).
- *
- * Not imported by GraphQL, CLI, or event bus bridges. The vocabulary it projects
- * is in `errors.ts` and knows nothing of this file.
- */
+/** HTTP reading of an error — used by HTTP bridges (REST, Next, Inertia). */
 import { FougereError, ErrorCode } from './errors.js';
 import { Logger } from '../builtins/logger.js';
-/**
- * An INTERNAL_ERROR is the one class of error whose message never leaves: it was not
- * written for a caller and may quote a path, a query or a row. Masking it is right, and
- * masking it *silently* is how a bug becomes unobservable — the operator loses the same
- * sentence the attacker does. So the mask and the record live in one function: whoever
- * calls `toPublicError` cannot forget the half that keeps the error findable.
- */
+/** An INTERNAL_ERROR is the one class of error whose message never leaves: */
 const log = new Logger('error');
 
 const HTTP_STATUS: Record<ErrorCode, number> = {
@@ -42,13 +31,7 @@ function httpStatusFor(code: ErrorCode): number {
   return HTTP_STATUS[code] ?? 500;
 }
 
-/**
- * Serialize an application error for an untrusted caller.
- *
- * Every code but INTERNAL_ERROR was written for the caller and travels whole. An
- * INTERNAL_ERROR is replaced by a constant — and logged here, with its cause, so the
- * sentence exists exactly once: on the server.
- */
+/** Serialize an application error for an untrusted caller. */
 export function toPublicError(err: FougereError): ReturnType<FougereError['toJSON']> {
   if (err.code !== ErrorCode.INTERNAL_ERROR) return err.toJSON();
   const where = [err.entity, err.operation].filter(Boolean).join('.');

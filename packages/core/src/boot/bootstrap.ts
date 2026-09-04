@@ -39,34 +39,13 @@ import { RouteRegistry } from '../dispatch/RouteRegistry.js';
 import { FacadeEntry } from '../entry/FacadeEntry.js';
 
 
-/**
- * The one wording for "nobody hosts this here", with both ways out. Said twice, and the
- * second copy (`schemaFor`) had lost the two remedies — the same dead end, strictly less
- * useful, for no reason.
- */
+/** The one wording for "nobody hosts this here", with both ways out. */
 const notLoaded = (entity: string) =>
   `Frond for '${entity}' is not loaded.\n` +
   `  - Add '${entity}' to --fronds flag\n` +
   `  - Or declare a remote: remotes: { ${entity}: 'http://...' }`;
 
-/**
- * Two fronds cannot claim one name — said at boot, because nothing else says it.
- *
- * A door lands on the ROOT container under `facadeKeyOf(address)`, and that key carries
- * no frond; a presenter lands there too. `registerValue` is a `Map.set`, so the second
- * frond loaded simply replaced the first and every call meant for one went to the other.
- * Silent in-process, and worse than silent under a split: `createRemoteRouter` guards its
- * index with `if (!byEntity.has(...))`, so THERE the first frond discovered wins. The same
- * application answered differently depending on how it was deployed.
- *
- * Refusing is the honest answer while a key cannot say which frond owns it. It is not the
- * last word: qualify the key and this boot can accept both. ORMs and repositories are not
- * checked because they are registered in the frond's own scope, where two fronds do not meet.
- *
- * A frond declared remote registers nothing locally, so it cannot collide here. Two REMOTE
- * fronds publishing one entity still shadow each other inside the router — a hole this
- * check does not reach.
- */
+/** Two fronds cannot claim one name — said at boot, because nothing else says it. */
 function assertOneOwnerPerKey(
   fronds: { name: string; handlers: HandlerEntry[]; presenters: PresenterEntry[] }[],
   remotes: Record<string, string> | undefined,
@@ -133,22 +112,11 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   log.info(`read ${fronds.length} frond(s) in ${scanMs}ms`
     + (diagnostics.length ? ` — ${diagnostics.length} thing(s) the scan could not do` : ''));
 
-  /**
-   * Say what could not be read, at the one line everyone already watches.
-   *
-   * Not a refusal: an app whose `presenters/` is unreadable still serves its
-   * entities, and stopping the boot would trade a partial app for none. But it is
-   * an ERROR, not a debug line — the app now serves less than its source declares,
-   * and nothing downstream can tell that from a source that declares less.
-   */
+  /** Say what could not be read, at the one line everyone already watches. */
   for (const d of blocking) log.error(`[${d.code}] ${d.message}`, d.cause);
   for (const d of diagnostics) if (d.severity === 'warning') log.warn(`[${d.code}] ${d.message}`);
 
-  /**
-   * An ambiguous convention is not a partial scan. Every relevant declaration was read,
-   * but more than one executable contract can be built from it. Refuse before auth,
-   * storage, migrations or seeds make the boot observable.
-   */
+  /** An ambiguous convention is not a partial scan. */
   const invalidOperations = operationModel.resolutionDiagnostics
     .filter((diagnostic) => diagnostic.severity === 'blocking');
   if (invalidOperations.length > 0) {
@@ -573,17 +541,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   // Once every door exists: what is announced here and what is listened to are both known.
   emissions.register();
 
-  /**
-   * The last resort, held by the container so every resolution path shares it.
-   *
-   * It used to live on `app.resolve` alone, which meant the runner found a remote façade
-   * and dependency injection did not — a handler asking for a neighbour that had moved
-   * got `is not registered` while the very same call over the wire worked. One door now.
-   *
-   * Surface-scoped keys ('admin:productHandler') stay local: a named surface resolves in
-   * this container only, so fabricating one for a remote frond would answer NOT_FOUND on
-   * everything (see Known issues).
-   */
+  /** The last resort, held by the container so every resolution path shares it. */
   container.setFallback?.((name) => {
     if (!remoteRouter) return undefined;
     if (!name.endsWith('Handler') || name.includes(':')) return undefined;
@@ -597,14 +555,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     ).operations;
   });
 
-  /**
-   * Everything this app holds, let go in reverse of how it was taken: what an extension
-   * took on last, then the container's own, then whoever handed a resource in.
-   *
-   * It does NOT wait for running calls — `drain()` is that, and it is a separate gesture
-   * because waiting and releasing do not have the same owner: a test releases at once, a
-   * host turning the ring wants the work finished first.
-   */
+  /** Everything this app holds, let go in reverse of how it was taken: */
   const release = async (): Promise<void> => {
     // Every level is told to close even when one refuses, and the refusals leave together —
     // the rule `Lifecycle.down` applies INSIDE its list, applied ACROSS the three. Stated
@@ -626,13 +577,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     }
   };
 
-  /**
-   * Stop taking calls, and resolve once the ones already running are done.
-   *
-   * Refuses on `timeoutMs` rather than resolving anyway: a drain that gives up quietly
-   * reads exactly like a drain that succeeded, and the caller — who is about to release
-   * a storage connection under whatever is left — is the one who must decide.
-   */
+  /** Stop taking calls, and resolve once the ones already running are done. */
   const drain = async (timeoutMs?: number): Promise<void> => {
     inflight.close();
     if (timeoutMs === undefined) return inflight.whenIdle();
@@ -687,28 +632,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     }
   };
 
-  /**
-   * THE membership rule, stated once — every projection reads this and nothing
-   * else. It used to live twice, verbatim, in the REST and GraphQL adapters,
-   * and two other readers invented their own answer.
-   *
-   * Naming an audience closes it. Two ways to name an entity into a surface,
-   * in precedence order:
-   *   - `surfaces:` in frond.config.ts — when the list exists, it IS the list;
-   *   - a handler under `handlers/<surface>/` — which also restricts the façade.
-   * `@expose` is a THIRD way and this rule does not read it: the scan sets a
-   * boolean, read by the two adapters and by `exposedAdapters` — never here.
-   * What neither of the two names is not served. It used to be the reverse: no
-   * `public:categoryHandler` meant the FULL CategoryHandler rode the public
-   * door, create/update/delete included (measured on demos/nuxt-blog).
-   *
-   * A named entity with no façade of its own falls back to the default one —
-   * that is not the old widening, it is the author saying "this one, as it is".
-   * The leak was exposure with no statement behind it.
-   *
-   * A surface key stays local: a doublure serves whatever the remote's own door
-   * serves, which is the remote's business and not ours to re-audience.
-   */
+  /** THE membership rule, stated once — every projection reads this and nothing else. */
   const facadeFor = (entity: string, surface?: string): Record<string, Function> | undefined => {
     if (!surface) return facadeAt(facadeKeyOf(entity), true);
 
@@ -752,15 +676,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       : undefined;
   };
 
-  /**
-   * The storage an entity is backed by — the dual of `facadeFor`, which serves its
-   * client-facing door. Both are ways in; an entity that opens none of them still has rows.
-   *
-   * It resolves through the owning frond's scope, because that is where entity ORMs live:
-   * `resolve('UserStorage')` reads the ROOT container and never finds one, so callers outside
-   * the frond concluded there was no storage. The seed loop did exactly that, and skipped
-   * every entity with no façade — the one case its own fallback existed for.
-   */
+  /** The storage an entity is backed by — the dual of `facadeFor`, which serves its client-facing door. */
   const storageFor = (entity: string): unknown | undefined => {
     const owner = fronds.owner(entity);
     if (!owner) return undefined;
@@ -773,14 +689,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     }
   };
 
-  /**
-   * The presenter of an entity, resolved through its owning frond's scope.
-   *
-   * Same shape as `storageFor`, and it exists for the same reason: without it an adapter
-   * has to spell the container key itself. `schema-graphql` did — a hand-written
-   * `${Name}Presenter` — and a key respelled elsewhere finds nothing and says nothing
-   * the day the convention moves, which is exactly the failure `verify.ts` refuses.
-   */
+  /** The presenter of an entity, resolved through its owning frond's scope. */
   const presenterFor = (entity: string): unknown | undefined => {
     const owner = fronds.owner(entity);
     if (!owner) return undefined;

@@ -1,18 +1,8 @@
-/**
- * Fougere Logger — structured, colored, multi-runtime.
- *
- * Works on Node, Bun, Deno, Cloudflare Workers (console-based, no native bindings).
- */
+/** Fougere Logger — structured, colored, multi-runtime. */
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'silent';
 
-/**
- * One line, before it was formatted for a terminal.
- *
- * The console form is already cooked — ANSI codes, a badge, a timestamp — so anything
- * that wants to FORWARD a log needs it before that. What travels is the structure, and
- * nothing here knows where it goes.
- */
+/** One line, before it was formatted for a terminal. */
 export interface LogRecord {
   level: Exclude<LogLevel, 'silent'>;
   /** The logger's own name — 'boot:app', 'boot:app:catalog'. */
@@ -25,12 +15,7 @@ export interface LogRecord {
 
 export type LogSink = (record: LogRecord) => void;
 
-/**
- * Who else takes this process's log lines, beside the console. A list, like the span
- * sinks: a line is one fact, and forwarding it twice is the caller's business.
- *
- * Nothing is built when nobody listens — the record is only shaped if a sink exists.
- */
+/** Who else takes this process's log lines, beside the console. */
 const sinks: LogSink[] = [];
 
 /** Take every line this process logs. Returns the way to withdraw. */
@@ -44,34 +29,16 @@ export function onLog(next: LogSink): () => void {
 
 const LEVELS: Record<LogLevel, number> = { debug: 0, info: 1, warn: 2, error: 3, silent: 4 };
 
-/**
- * The level, held ONCE for the process and CONSULTED at every emission.
- *
- * It used to be copied into each Logger by the constructor, and copied again by
- * `child()` — so there was no place where "the level" was, and changing it meant
- * rebuilding every logger AND everything that had been handed one. A value read at
- * the moment it is used costs the same and can move.
- */
+/** The level, held ONCE for the process and CONSULTED at every emission. */
 let threshold: number = LEVELS[envLevel() ?? 'info'];
 
-/**
- * The level the PROCESS was started with. Read here rather than only at `applyConfig`,
- * which runs after the boot has already said where its root is — an operator asking for
- * `warn` got that line anyway. Guarded: this module runs on Workers, where there is no
- * `process`.
- */
+/** The level the PROCESS was started with. */
 export function envLevel(): LogLevel | undefined {
   const raw = typeof process === 'undefined' ? undefined : process.env.FOUGERE_LOG_LEVEL;
   return raw !== undefined && raw in LEVELS ? (raw as LogLevel) : undefined;
 }
 
-/**
- * Set the level for every logger in this process, at once.
- *
- * Refuses a level it does not know rather than storing `undefined` as the threshold:
- * every comparison against it is then `NaN`, so nothing is filtered and `logLevel()`
- * reports its own fallback instead of what is in force.
- */
+/** Set the level for every logger in this process, at once. */
 export function setLogLevel(level: LogLevel): void {
   if (!(level in LEVELS)) {
     throw new Error(`Unknown log level: '${level}'. One of ${Object.keys(LEVELS).join(', ')}.`);

@@ -1,11 +1,4 @@
-/**
- * The error vocabulary — what a refusal IS, independently of who hears it.
- *
- * It travels on the wire (`toJSON`/`fromJSON`) and through the browser-safe
- * `@fougere/core/contract`, so nothing here may know about HTTP, a logger, or a
- * middleware chain. Its HTTP reading is one file over, in `http-error.ts`; it used
- * to live in `middleware.ts`, which named the one concept this is not.
- */
+/** The error vocabulary — what a refusal IS, independently of who hears it. */
 
 import type { ValidationError } from '@fougere/schema';
 
@@ -79,12 +72,7 @@ export class FougereError extends Error {
     };
   }
 
-  /**
-   * Dual of toJSON — rebuild a typed error from its wire form.
-   *
-   * Wire input is untrusted: an unknown code degrades to INTERNAL_ERROR
-   * (original code kept in details) instead of forging a fake semantic code.
-   */
+  /** Dual of toJSON — rebuild a typed error from its wire form. */
   static fromJSON(json: unknown): FougereError {
     const raw = (typeof json === 'object' && json !== null ? json : {}) as Record<string, unknown>;
     const known = Object.values(ErrorCode).includes(raw.code as ErrorCode);
@@ -98,18 +86,7 @@ export class FougereError extends Error {
   }
 }
 
-/**
- * The refusals behind a VALIDATION_FAILED, or nothing — the ONE place that reads
- * `details` under that code.
- *
- * `details` is `unknown` because it is genuinely polymorphic: `StorageGuard.judge` puts a
- * `string[]` there under INTERNAL_ERROR, `fromJSON` puts `{ originalCode, details }`
- * there for a code it does not know. So the shape is not the field's, it is a reading
- * of the PAIR (code, details) — which is why this is a reader and not a narrower type.
- *
- * It judges rather than casts: five call sites asserted `{ path, message }[]` by hand,
- * and a malformed VALIDATION_FAILED would have been accepted as structured refusals.
- */
+/** The refusals behind a VALIDATION_FAILED, or nothing — the ONE place that reads `details` under th… */
 export function validationErrorsOf(error: unknown): ValidationError[] | undefined {
   if (!(error instanceof FougereError) || error.code !== ErrorCode.VALIDATION_FAILED) return undefined;
   const { details } = error;

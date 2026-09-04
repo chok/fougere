@@ -1,10 +1,4 @@
-/**
- * Ed25519 through `node:crypto` — the default realization, and the fast one.
- *
- * `sign`/`verify` are synchronous here and stay synchronous: the promise is put around
- * the answer, never around the work. That is the whole reason this file exists rather
- * than everyone sharing the WebCrypto half.
- */
+/** Ed25519 through `node:crypto` — the default realization, and the fast one. */
 import { createHash, createPrivateKey, createPublicKey, sign, verify } from 'node:crypto';
 import type { CryptoPort, PublicJwk, Signer, Verifier } from './port.js';
 

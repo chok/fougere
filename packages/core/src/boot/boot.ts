@@ -25,11 +25,7 @@ interface BootOptions {
   remotes?: Record<string, string>;
   /** Builds the transport to reach `remotes`. Supplied by a layer-2 package. */
   remoteTransport?: (url: string) => Transport;
-  /**
-   * Carries an announced fact out of this process. Forwarded rather than dropped: a
-   * caller handing one in has no other way to reach the emitter, and this path silently
-   * kept it to itself.
-   */
+  /** Carries an announced fact out of this process. */
   onEmit?: CreateAppOptions['onEmit'];
   /**
    * storage setup — returns the storage handle (db), an storageFactory, and its two halves.
@@ -38,11 +34,7 @@ interface BootOptions {
   db?: (config: FougereConfig) => {
     db?: unknown;
     storageFactory: CreateAppOptions['storageFactory'];
-    /**
-     * Bring the schema up to date — an extension's `up`, because it runs after the
-     * container. It used to be called `afterBoot`, a word that also meant the host's
-     * post-boot and was read in four places under two senses.
-     */
+    /** Bring the schema up to date — an extension's `up`, because it runs after the container. */
     migrate?: (app: App) => Promise<void> | void;
     /** Closes what the factory opened — `boot()` called it, so `boot()` releases it. */
     close?: () => Promise<void>;
@@ -54,12 +46,7 @@ interface BootOptions {
   extensions?: readonly (Extension | undefined)[];
 }
 
-/**
- * Boot a Fougere app from fougere.config.ts.
- *
- * Handles: config loading, container creation, DB setup, seeding.
- * Works for any surface (Nuxt, GraphQL standalone, CLI, tests).
- */
+/** Boot a Fougere app from fougere.config.ts. */
 export async function boot(options: BootOptions): Promise<App> {
   const bootStart = performance.now();
   const log = new Logger('boot');
@@ -102,11 +89,7 @@ export async function boot(options: BootOptions): Promise<App> {
     // boot() called the factory, so boot() owns closing what it opened. Not an extension:
     // it was opened before the container existed, so it closes after the container goes.
     onDispose: dbSetup?.close,
-    /**
-     * The whole ascent, in one ordered list — tables, then rows, then whatever the host
-     * takes on. It was four call sites under the name `afterBoot`, two of which meant
-     * different things and one of which was generated into a Nitro plugin.
-     */
+    /** The whole ascent, in one ordered list — tables, then rows, then whatever the host takes on. */
     extensions: [
       migrating(dbSetup?.migrate),
       seeding((message) => log.debug(message)),

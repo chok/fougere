@@ -5,13 +5,7 @@
 import type { SchemaView } from '@fougere/schema';
 import type { Storage, StorageFactory } from '../storage.js';
 
-/**
- * Lazy auth declaration written in fougere.config.ts.
- *
- * Each @fougere/auth-* package exports a factory (e.g. `betterAuth(opts)`) that
- * returns this shape. The `create()` method is called once at boot with the
- * resolved db + storageFactory, so the provider can wire its engine through Fougere.
- */
+/** Lazy auth declaration written in fougere.config.ts. */
 export interface AuthConfig {
   /** Build the runtime — invoked by createApp at boot with the resolved storage handles. */
   create(ctx: AuthContext): AuthRuntime | Promise<AuthRuntime>;
@@ -40,11 +34,7 @@ export interface AuthContext {
 export interface AuthRuntime {
   /** Entities used by the provider, including any defaults it filled in. */
   entities: Record<string, SchemaView>;
-  /**
-   * Per-entity ORMs the provider built for itself. Exposed so app code can
-   * query auth tables (e.g. list active sessions for a user) without rebuilding
-   * the same Storage.
-   */
+  /** Per-entity ORMs the provider built for itself. */
   storages: Record<string, Storage>;
   /** Web Standard handler that processes /auth/* requests. */
   handler: (request: Request) => Promise<Response>;

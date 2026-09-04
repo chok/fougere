@@ -1,19 +1,6 @@
 import type { ProviderEntry } from '../descriptor/frond.js';
 
-/**
- * A port is a class something already answers under. Nothing declares one — the
- * prototype chain states it, so `class StripePayment extends Payment` IS the whole
- * registration, and so is `class MyLogger extends Logger` over a builtin.
- *
- * This is the fourth reading of the rule the other three already apply: the type
- * names the SUBJECT (`Storage<E>`, `Emit<F>`, `Facade<H>`) and the container
- * holds the realization. Providers were the one case where the type named the
- * realization instead, so `constructor(private payment: Payment)` resolved to the
- * base class and a handler got an object whose method did not exist.
- *
- * Only the DIRECT base binds. A deeper chain binds each link to its own child, and
- * a case that wants otherwise states it in `ports:` — which wins over all of this.
- */
+/** A port is a class something already answers under. */
 export function portBindings(
   providers: ProviderEntry[],
   answers: (name: string) => boolean,

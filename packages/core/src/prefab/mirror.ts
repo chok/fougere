@@ -1,29 +1,7 @@
 import { FieldSet, Lifecycle, type EntityConstructor, type Fields, type ValidationResult } from '@fougere/schema';
 import type { Storage } from '../storage.js';
 
-/**
- * A paginated local copy of a source that cannot be queried directly.
- *
- * The shape must contain an `updated()` field used as a high-water mark. Subclasses
- * implement `pull`; `refresh` validates and upserts each returned page.
- *
- * ```ts
- * export default class PartnerCatalog extends Mirror(BookCard) {
- *   constructor(storage: Storage<BookCard>, private catalog: Facade<CatalogHandler>) {
- *     super(storage);
- *   }
- *
- *   async *pull(since?: Date) {
- *     for (let page = 0; page !== null;) {
- *       const body = await fetch(`${api}?page=${page}&since=${since?.toISOString() ?? ''}`);
- *       const { items, next } = await body.json();
- *       yield items.map(toCard);
- *       page = next;
- *     }
- *   }
- * }
- * ```
- */
+/** A paginated local copy of a source that cannot be queried directly. */
 /** What one refresh did — enough to log it, and to decide whether to run again. */
 export interface Refreshed {
   /** Rows written, counting a replaced row once. */
