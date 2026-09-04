@@ -93,18 +93,29 @@ comportements wire.
 
 ### 1. Corriger le README sur les dépendances
 
-Le README affirme que le paquet ne dépend d'aucun moteur et reste sans dépendance. Ce n'est plus
-vrai :
+Le README porte **deux** affirmations distinctes, et une seule est fausse.
+
+`This package names no adapter and depends on no engine.` — **vraie**, et bien formulée. Elle
+parle d'un adaptateur et d'un moteur, pas d'un paquet npm. Ne pas y toucher.
+
+`the spec types are inlined rather than depended on, so this package stays zero-dependency.` —
+**fausse dans ses deux moitiés** depuis que `projection/standard.ts` a cessé de recopier la spec.
+Le commentaire de ce fichier raconte lui-même pourquoi la copie a été abandonnée : elle avait
+silencieusement pris une version de retard.
+
+Les quatre dépendances sont toutes réellement importées :
 
 - `@cfworker/json-schema` juge les entrées et les valeurs ;
 - `@paralleldrive/cuid2` fournit le générateur par défaut ;
 - `@standard-schema/spec` fournit les types officiels de Standard Schema ;
 - `dequal` compare les déclarations et les cartes.
 
-Modifier le texte du README pour dire que le paquet ne dépend d'aucun adaptateur Fougere, reste
-compatible avec les environnements edge, et utilise directement la spécification Standard Schema.
+Corriger la seconde phrase seulement, et lui laisser dire ce qui est vrai et utile à sa place :
+le paquet importe la spécification chez celui qui la publie, et ce paquet est types-only —
+son `index.js` fait zéro octet, donc il ne coûte rien à un navigateur. C'est déjà ce
+qu'établit le commentaire de `standard.ts`.
 
-Ne retirer aucune dépendance dans ce lot.
+Ne retirer aucune dépendance dans ce lot, et ne réécrire aucune autre phrase du README.
 
 ### 2. Corriger le commentaire de `Schema.compose`
 
@@ -127,12 +138,34 @@ Le test d'intégration TanStack Form doit perdre son `@ts-expect-error` seulemen
 est réellement reconnu par le compilateur. Les tests tRPC doivent rester inchangés dans leur
 intention.
 
-### 4. Conserver mais expliciter `Schema.from`
+### 4. Trancher la couverture de `demo/`, puis expliciter `Schema.from`
 
-`Schema.from` n'a pas d'appelant de production hors du paquet, mais plusieurs démonstrations du
-paquet l'utilisent comme projection et décodeur tolérant.
+`Schema.from` n'a pas d'appelant de production hors du paquet. Cinq usages existent dans
+`packages/schema/demo/`, comme projection et décodeur tolérant.
 
-Dans ce lot, le conserver et corriger son contrat écrit :
+**Cet argument ne tient que si ces fichiers sont vérifiés, et ils ne le sont pas.** Mesuré :
+`tsconfig.json` inclut `src`, `tsconfig.test.json` inclut `src` et `tests`, et `vitest.config.ts`
+ne lit que `tests/**/*.test.ts`. Le dossier `demo/` est en dehors des trois — rien ne le compile,
+rien ne l'exécute. Un appel qui y figure prouve que quelqu'un l'a écrit un jour, pas qu'il tient
+encore.
+
+À trancher dans ce lot, avant de conclure sur `Schema.from` :
+
+- **soit** `demo` rejoint `include` dans `tsconfig.test.json`, et ces cinq usages deviennent une
+  justification vérifiée — c'est l'option recommandée, elle coûte un mot et protège aussi les
+  lots 2 et 3, qui peuvent changer `unique` sous ces fichiers sans que rien ne le dise ;
+- **soit** `demo/` reste hors couverture, et il ne peut pas fonder la conservation d'une API :
+  la conclusion redevient « aucun appelant vérifié », et `Schema.from` rejoint `Schema.compose`
+  et `Schema.named` dans le chantier de réduction ultérieur.
+
+Si la première option est retenue et que les démos ne compilent pas en l'état, c'est un fait à
+rapporter, pas à réparer en silence dans ce lot.
+
+Dans les deux branches, `Schema.from` est conservé au lot 1 : la suppression d'une API et la
+correction d'un contrat écrit ne se mélangent pas. Ce que la branche décide, c'est s'il entre
+ou non dans le chantier de réduction ultérieur.
+
+Corriger son contrat écrit :
 
 - il projette seulement les champs connus ;
 - il ne juge pas une ligne ;
@@ -157,8 +190,18 @@ Ajouter des fixtures dorées pour :
 - le round-trip schéma → carte → schéma ;
 - le round-trip bundle → schémas → bundle.
 
-Comparer les objets sérialisés ou les octets JSON produits, selon le point où le wire est réellement
-émis dans le dépôt.
+Comparer les octets JSON au point où la carte est produite — `Card.describe` et son pendant sur
+`Bundle` — plutôt qu'une structure en mémoire, qui ne dirait rien de ce qu'un lecteur étranger
+reçoit.
+
+Cinq fichiers de test touchent déjà à la carte, et **aucun ne pose la question de ces fixtures**.
+En particulier, `tests/characterization-card-bundle-parity.test.ts` compare `Card` et `Bundle`
+sur `describe`, `reconstruct` et `diff` : il vérifie que **deux chemins s'accordent**, jamais que
+la sortie n'a pas bougé. Les deux tests répondent donc à des questions différentes et ne se
+remplacent pas.
+
+Vérifier ce point avant d'écrire les fixtures, et le dire dans le compte rendu — pour que
+personne ne les prenne plus tard pour un second juge du même fait.
 
 Ne pas ajouter de snapshot exhaustif de la surface publique. Épingler les 102 liaisons actuelles
 rendrait toute réduction volontaire artificiellement coûteuse. Le wire v1 est le contrat qui traverse
@@ -188,7 +231,7 @@ S'arrêter avant le lot 2 et fournir :
 
 - une phrase sur le changement réalisé pour chacun des cinq points ;
 - le résultat exact de la tentative de resserrement de `~standard` ;
-- la confirmation que `Schema.from` reste une projection tolérante ;
+- la branche retenue pour `demo/`, et ce que `Schema.from` devient en conséquence ;
 - la liste des fixtures wire ajoutées ;
 - les commandes exécutées et leur résultat ;
 - la liste des comportements volontairement laissés inchangés.
@@ -305,6 +348,17 @@ Une déclaration d'entité `unique: [...]` est normalisée ainsi :
 
 Après cette normalisation, aucun `FieldGroup` composite n'est stocké dans les champs.
 
+**La sentinelle disparaît avec, et c'est le gain principal du lot.** Aujourd'hui `unique()` écrit
+`new Unique([])` — un groupe *vide*, en attente d'apprendre le nom du champ sous lequel il a été
+déclaré. Toute une machinerie existe pour le lui apprendre après coup : `FieldGroup.isSelf`,
+`FieldGroup.resolvedOn`, `Role.resolvedOn`, et quatre sites qui résolvent cette attente —
+`RoleAxis` à l'écriture de carte, `adapter/sql/src/table.ts`, et un test de `adapter/rest`.
+
+Dès lors que `unique(field)` pose `role.unique = true` immédiatement, plus aucun groupe vide
+n'existe, `resolvedOn` devient un no-op partout, et l'ensemble est supprimable. C'est un critère
+de réussite du lot, pas un effet de bord : si cette machinerie survit au lot 3, le lot a déplacé
+une représentation sans retirer la raison qui l'avait rendue nécessaire.
+
 ### Dérivations
 
 `SchemaDefinition` transforme chaque groupe composite une seule fois :
@@ -382,6 +436,10 @@ Comparer également toutes les fixtures wire v1 ajoutées au lot 1.
 ## Discipline d'exécution
 
 - un lot correspond à un commit ;
+- **un lot qui retire un export publié pose un changeset** — le dépôt est en mode `pre`, tag
+  `alpha`, et `@fougere/schema` est publié en `0.6.0-alpha.0`. Cela concerne le lot 2
+  (`EntityTypeSource`, `FacadeTypeSource` et leurs types) et le lot 3 (`FieldGroup`, `Unique`).
+  `pnpm changeset`, dans le commit du lot, pas après ;
 - terminer et présenter le lot 1 avant de commencer le lot 2 ;
 - terminer et présenter le lot 2 avant de commencer le lot 3 ;
 - ne jamais mélanger une décision de contrat, un déplacement et une nouvelle représentation ;

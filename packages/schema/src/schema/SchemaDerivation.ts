@@ -7,19 +7,19 @@ import type { SchemaView } from './SchemaView.js';
  *
  * The origin is the ROOT — `Post.pick(a, b).omit(b)` answers `Post` and never the
  * intermediate — so a chain is flattened rather than journalled, and the two halves cannot
- * disagree: a derivation always carries both, which `source` and `here` as independent
+ * disagree: a derivation always carries both, which `source` and `nameOf` as independent
  * properties could not promise.
  */
 export class SchemaDerivation {
   private constructor(
     readonly source: SchemaView,
-    readonly here: Readonly<Record<string, string | undefined>>,
+    readonly nameOf: Readonly<Record<string, string | undefined>>,
   ) {}
 
   /**
    * So the first cut records that every field of the origin still answers to its own name.
    * FR : pour que la première coupe note que chaque champ garde son nom.
-   * `SchemaDerivation.first(Post, fields).here` → `{ title: 'title' }`
+   * `SchemaDerivation.first(Post, fields).nameOf` → `{ title: 'title' }`
    */
   static first(source: SchemaView, fields: Fields): SchemaDerivation {
     return new SchemaDerivation(
@@ -37,7 +37,7 @@ export class SchemaDerivation {
     return new SchemaDerivation(
       this.source,
       Object.fromEntries(
-        Object.entries(this.here).map(([origin, here]) => [
+        Object.entries(this.nameOf).map(([origin, here]) => [
           origin,
           here === undefined ? undefined : transform(here),
         ]),

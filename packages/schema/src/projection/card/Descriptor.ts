@@ -40,7 +40,7 @@ export type RoleDescriptor = Pick<RoleRules, 'primary' | 'index'> & {
 export type RelationDescriptor = Pick<Relation, 'kind' | 'onDelete'> & { to: string };
 
 /**
- * What a derivation was cut from, and what the cut left — `here` keyed by the
+ * What a derivation was cut from, and what the cut left — `nameOf` keyed by the
  * ORIGIN's field names. Absent on a declaration that derives from nothing.
  *
  * A dropped field is `null` and never `undefined`: JSON.stringify erases the second,
@@ -48,7 +48,7 @@ export type RelationDescriptor = Pick<Relation, 'kind' | 'onDelete'> & { to: str
  */
 export interface DerivedFrom {
   from: string;
-  here: Record<string, string | null>;
+  nameOf: Record<string, string | null>;
 }
 
 export interface SchemaDescriptor {

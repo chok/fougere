@@ -256,7 +256,7 @@ group('a view says what it is a view of', () => {
     const card = Card.fromSchema(Note.pick('id', 'title'));
     expect(card.origin).toEqual({
       from: 'Note',
-      here: { id: 'id', title: 'title', body: null },
+      nameOf: { id: 'id', title: 'title', body: null },
     });
     expect(card.descriptor['x-fougere-derived']).toEqual(card.origin);
   });
@@ -270,7 +270,7 @@ group('a view says what it is a view of', () => {
 
   it('survives JSON — a dropped field is null, never erased', () => {
     const card = JSON.parse(JSON.stringify(Card.fromSchema(Note.pick('id', 'title')).descriptor));
-    expect(card['x-fougere-derived'].here).toEqual({ id: 'id', title: 'title', body: null });
+    expect(card['x-fougere-derived'].nameOf).toEqual({ id: 'id', title: 'title', body: null });
   });
 
   it('says nothing on a declaration that derives from nothing', () => {

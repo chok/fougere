@@ -1,16 +1,8 @@
-/**
- * A name → value map: Formats, Generators, Boundaries.decoders, Boundaries.encoders,
- * Boundaries.aliases, Sources. The error is thrown here because the known names are here.
- */
+/** A name → value map: Formats, Generators, Boundaries.decoders/encoders/aliases, Sources. */
 export class Registry<T> {
   private readonly entries: Map<string, T>;
 
-  /**
-   * The error message, when a name is not registered:
-   * `Unknown boundary decoder 'celsius' — call Boundaries.decoders.register(name, fn).`
-   *          └─ label ─────┘              └─ hint ──────────────────────────────────┘
-   * `hint` is omitted where nothing calls `resolve` — Formats, Boundaries.aliases.
-   */
+  /** `Unknown boundary decoder 'celsius' — call Boundaries.decoders.register(name, fn).` */
   constructor(
     private readonly label: string,
     private readonly hint?: string,
@@ -19,34 +11,18 @@ export class Registry<T> {
     this.entries = new Map(builtins);
   }
 
-  /**
-   * Use `register` to teach this process a name an entity or a config can then write.
-   * A second call under the same name replaces the first.
-   * `const isSiret = Formats.register('siret', (v) => /^\d{14}$/.test(v))` → `format: 'siret'` uses `isSiret`
-   */
   register(name: string, value: T): T {
     this.entries.set(name, value);
 
     return value;
   }
 
-  /**
-   * Use `find` for optional Formats and Boundaries.aliases lookups; use `resolve` when
-   * an unknown configured name must stop processing.
-   * `Formats.find('email')` → `undefined`, and `ValueJudge` moves on
-   */
+  /** For Formats and Boundaries.aliases, where an unregistered name is normal. */
   find(name: string): T | undefined {
     return this.entries.get(name);
   }
 
-  /**
-   * Use `resolve` with Generators, Boundaries.decoders, Boundaries.encoders, or Sources;
-   * use `find` for optional Formats and Boundaries.aliases lookups.
-   * `Generators.resolve('ulid')`
-   * → `Unknown generator 'ulid' — call Generators.register(name, fn). This process answers cuid2, uuid, nanoid.`
-   * `Sources.resolve('file', 'archive.source')`
-   * → `archive.source: Unknown source 'file' — import the adapter that answers it, … answers sql.`
-   */
+  /** For Generators, Boundaries.decoders/encoders and Sources, where it is a mistake. */
   resolve(name: string, path?: string): T {
     const found = this.find(name);
 
@@ -58,7 +34,6 @@ export class Registry<T> {
     );
   }
 
-  /** What `resolve` lists after `This process answers`. */
   private get names(): string[] {
     return [...this.entries.keys()];
   }
