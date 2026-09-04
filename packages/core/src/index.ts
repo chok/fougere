@@ -78,11 +78,11 @@ export { callValueOf } from './contract.js';
 export type { CallValue } from './contract.js';
 export { toHttpError, toPublicError } from './wire/http-error.js';
 export { loggerMiddleware } from './wire/loggerMiddleware.js';
-export { Logger, setLogLevel, logLevel, envLevel, onLog } from './builtins/logger.js';
-export type { LogLevel, LogRecord, LogSink } from './builtins/logger.js';
+export { Logger, setLogLevel, logLevel, envLevel, onLog } from './builtin/logger.js';
+export type { LogLevel, LogRecord, LogSink } from './builtin/logger.js';
 // What a re-read config changes in a running process — and what it cannot.
 export { applyConfig, type ConfigApplication } from './boot/apply.js';
-export { Config } from './builtins/config.js';
+export { Config } from './builtin/config.js';
 export type { Storage, StorageFactory, ListOptions, ListResult, Together } from './storage.js';
 export { togetherKeyOf, membersOfTogetherKey } from './storage.js';
 export type { Source, SourceConfig, SourceView } from './source.js';

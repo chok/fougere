@@ -138,7 +138,7 @@ describe('loadConfig re-reading a file that changed', () => {
  */
 describe('a process started at a level', () => {
   it('applies it to the very first emission, before any config is read', () => {
-    const probe = `import { Logger } from ${JSON.stringify(new URL('../src/builtins/logger.ts', import.meta.url).href)};`
+    const probe = `import { Logger } from ${JSON.stringify(new URL('../src/builtin/logger.ts', import.meta.url).href)};`
       + ` new Logger('probe').info('should not appear'); console.log('END');`;
     const out = execFileSync(process.execPath, ['--experimental-strip-types', '--input-type=module', '-e', probe], {
       env: { ...process.env, FOUGERE_LOG_LEVEL: 'warn' },

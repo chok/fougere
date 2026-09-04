@@ -4,7 +4,7 @@ import { validationErrorsOf } from '../wire/errors.js';
 import { emitKeyOf, factsAnnouncedBy } from '../emit.js';
 import { ambient } from '#ambient';
 import { EMPTY_INVOCATION } from '../contract/Invocation.js';
-import type { Logger } from '../builtins/logger.js';
+import type { Logger } from '../builtin/logger.js';
 import type { Fronds } from '../descriptor/Fronds.js';
 import type { OperationsMap } from '../wire/operation.js';
 

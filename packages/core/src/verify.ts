@@ -31,9 +31,9 @@ function registrationsOf(frond: FrondDescriptor): Map<string, Registration> {
   const out = new Map<string, Registration>();
   const put = (key: string, kind: string) => out.set(key, { frond: frond.name, kind });
 
-  for (const p of frond.providers) put(p.ctor.name, 'provider');
-  for (const p of frond.presenters) put(presenterKeyOf(p.entityName), 'presenter');
-  for (const c of frond.collectors) put(collectorKeyOf(c.typeName), 'collector');
+  for (const provider of frond.providers) put(provider.ctor.name, 'provider');
+  for (const presenter of frond.presenters) put(presenterKeyOf(presenter.entityName), 'presenter');
+  for (const collector of frond.collectors) put(collectorKeyOf(collector.typeName), 'collector');
   for (const e of frond.entities) {
     put(storageKeyOf(e.name), 'storage');
     put(repositoryKeyOf(e.name), 'repository');
@@ -62,7 +62,7 @@ export function verify(app: { fronds: readonly FrondDescriptor[] }): Violation[]
   // they need their own index and their own rule.
   const collectorFronds = new Map<string, string>();
   for (const frond of app.fronds) {
-    for (const c of frond.collectors) collectorFronds.set(c.typeName, frond.name);
+    for (const collector of frond.collectors) collectorFronds.set(collector.typeName, frond.name);
   }
 
   const violations: Violation[] = [];

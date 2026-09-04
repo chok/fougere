@@ -2,7 +2,7 @@ import { createApp } from './bootstrap.js';
 import { seeding } from './seed.js';
 import { scanProject } from '../scan/scanner.js';
 import { loadConfig, type FougereConfig } from '../config-loader.js';
-import { Logger } from '../builtins/logger.js';
+import { Logger } from '../builtin/logger.js';
 import { applyConfig } from './apply.js';
 import type { App, CreateAppOptions } from './types.js';
 import { migrating, type Extension } from './AppLifecycle.js';

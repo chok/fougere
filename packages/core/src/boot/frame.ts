@@ -1,7 +1,7 @@
 /** The compensated realization of a frame — what `Together` becomes when its members do not share an… */
 import { FieldGroup, FieldSet, Unique, type Fields } from '@fougere/schema';
 import { dequal } from 'dequal';
-import type { Logger } from '../builtins/logger.js';
+import type { Logger } from '../builtin/logger.js';
 
 /** One write that landed, and how to take it back. */
 export interface Undo {

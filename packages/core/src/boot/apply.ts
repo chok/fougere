@@ -1,5 +1,5 @@
 import type { FougereConfig } from '../config-loader.js';
-import { setLogLevel, logLevel, envLevel } from '../builtins/logger.js';
+import { setLogLevel, logLevel, envLevel } from '../builtin/logger.js';
 import { dequal } from 'dequal';
 
 export interface ConfigApplication {

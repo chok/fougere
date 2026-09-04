@@ -74,15 +74,6 @@ export type {
   TypeSet,
 } from './projection/card/diff.js';
 export {
-  EntityTypes,
-  type EntityTypesOptions,
-} from './projection/card/EntityTypes.js';
-export {
-  FacadeTypes,
-  type FacadeTypesOptions,
-  type OpDescriptor,
-} from './projection/card/FacadeTypes.js';
-export {
   type SchemaBundle,
   type SchemaDescriptor,
   type FieldDescriptor,

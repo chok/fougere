@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { runMiddlewares, type AppMiddleware, type OperationContext } from '../src/wire/middleware.js';
 import { FougereError, ErrorCode } from '../src/wire/errors.js';
 import { loggerMiddleware } from '../src/wire/loggerMiddleware.js';
-import { Logger } from '../src/builtins/logger.js';
+import { Logger } from '../src/builtin/logger.js';
 
 function ctx(overrides?: Partial<OperationContext>): OperationContext {
   return {

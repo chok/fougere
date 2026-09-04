@@ -127,16 +127,14 @@ le refus d'une collision. Ne pas modifier le comportement de fusion.
 
 ### 3. Resserrer le type d'entrée Standard Schema
 
-Le contrat générique connaît déjà `TFields` et le type de ligne correspondant. Essayer de déclarer
-l'entrée de `~standard` comme `PartialRow<TFields>` plutôt que `Record<string, unknown>`.
+Le contrat public générique `SchemaConstructor<TFields>` connaît déjà `TFields` et le type de ligne
+correspondant. Déclarer son entrée `~standard` comme `PartialRow<TFields>` plutôt que
+`Record<string, unknown>`.
 
-La modification n'est acceptée que si TypeScript peut l'exprimer honnêtement. Si le getter statique
-de la classe de base ne peut pas atteindre le paramètre générique, ne pas introduire de cast pour
-forcer le résultat. Documenter alors la limite exacte et laisser le type actuel.
-
-Le test d'intégration TanStack Form doit perdre son `@ts-expect-error` seulement si le resserrement
-est réellement reconnu par le compilateur. Les tests tRPC doivent rester inchangés dans leur
-intention.
+Le test d'intégration TanStack Form porte déjà le critère d'acceptation : retirer son
+`@ts-expect-error`, qui doit alors devenir inutile. Ne pas ajouter de cast pour obtenir ce résultat.
+Si le test ne compile toujours pas sans la directive, le point n'est pas terminé et le blocage doit
+être rapporté. Les tests tRPC restent inchangés dans leur intention.
 
 ### 4. Trancher la couverture de `demo/`, puis expliciter `Schema.from`
 
@@ -149,21 +147,21 @@ ne lit que `tests/**/*.test.ts`. Le dossier `demo/` est en dehors des trois — 
 rien ne l'exécute. Un appel qui y figure prouve que quelqu'un l'a écrit un jour, pas qu'il tient
 encore.
 
-À trancher dans ce lot, avant de conclure sur `Schema.from` :
+La vérification a maintenant été faite : compiler `src`, `tests` et tout `demo` échoue uniquement
+sur `demo/06-circular-relations.ts`. Son cycle est résolu au runtime par un thunk, mais TypeScript
+infère encore les deux classes à travers leur expression de base et refuse ce cycle. En excluant ce
+seul fichier, les cinq autres démos compilent, y compris les cinq usages de `Schema.from`.
 
-- **soit** `demo` rejoint `include` dans `tsconfig.test.json`, et ces cinq usages deviennent une
-  justification vérifiée — c'est l'option recommandée, elle coûte un mot et protège aussi les
-  lots 2 et 3, qui peuvent changer `unique` sous ces fichiers sans que rien ne le dise ;
-- **soit** `demo/` reste hors couverture, et il ne peut pas fonder la conservation d'une API :
-  la conclusion redevient « aucun appelant vérifié », et `Schema.from` rejoint `Schema.compose`
-  et `Schema.named` dans le chantier de réduction ultérieur.
+La branche retenue est donc de considérer les démos comme du code vivant :
 
-Si la première option est retenue et que les démos ne compilent pas en l'état, c'est un fait à
-rapporter, pas à réparer en silence dans ce lot.
+- rompre explicitement le cycle de types de `06-circular-relations.ts` en donnant au thunk la
+  frontière `EntityConstructor`, sans modifier son comportement runtime ni son exemple ;
+- ajouter `demo` à `include` dans `tsconfig.test.json` une fois les six fichiers compilables ;
+- conserver `Schema.from`, puisque ses cinq scénarios deviennent alors vérifiés.
 
-Dans les deux branches, `Schema.from` est conservé au lot 1 : la suppression d'une API et la
-correction d'un contrat écrit ne se mélangent pas. Ce que la branche décide, c'est s'il entre
-ou non dans le chantier de réduction ultérieur.
+Cette petite réparation est écrite dans le périmètre avant exécution ; elle ne doit pas être faite
+silencieusement. Si la frontière explicite ne suffit pas, s'arrêter et rapporter les erreurs au lieu
+d'élargir encore le lot.
 
 Corriger son contrat écrit :
 
@@ -231,7 +229,8 @@ S'arrêter avant le lot 2 et fournir :
 
 - une phrase sur le changement réalisé pour chacun des cinq points ;
 - le résultat exact de la tentative de resserrement de `~standard` ;
-- la branche retenue pour `demo/`, et ce que `Schema.from` devient en conséquence ;
+- le résultat de la remise sous typecheck des six démos et la confirmation des cinq usages de
+  `Schema.from` ;
 - la liste des fixtures wire ajoutées ;
 - les commandes exécutées et leur résultat ;
 - la liste des comportements volontairement laissés inchangés.
@@ -351,8 +350,9 @@ Après cette normalisation, aucun `FieldGroup` composite n'est stocké dans les 
 **La sentinelle disparaît avec, et c'est le gain principal du lot.** Aujourd'hui `unique()` écrit
 `new Unique([])` — un groupe *vide*, en attente d'apprendre le nom du champ sous lequel il a été
 déclaré. Toute une machinerie existe pour le lui apprendre après coup : `FieldGroup.isSelf`,
-`FieldGroup.resolvedOn`, `Role.resolvedOn`, et quatre sites qui résolvent cette attente —
-`RoleAxis` à l'écriture de carte, `adapter/sql/src/table.ts`, et un test de `adapter/rest`.
+`FieldGroup.resolvedOn` et `Role.resolvedOn`. `Field` déclenche cette résolution à la construction,
+puis trois lecteurs savent encore résoudre directement un groupe : `RoleAxis` à l'écriture de
+carte, `adapter/sql/src/table.ts`, et un test de `adapter/rest`.
 
 Dès lors que `unique(field)` pose `role.unique = true` immédiatement, plus aucun groupe vide
 n'existe, `resolvedOn` devient un no-op partout, et l'ensemble est supprimable. C'est un critère
