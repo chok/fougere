@@ -360,6 +360,10 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   `fougere freeze`, `fougere migrate --apply` are shipped; serving an old API version is not.
 - **A stored fact is neither judged nor versioned.** `json()` admits any shape forever, and
   `x-fougere-version` versions the DESCRIPTOR FORMAT, never an entity's contract.
+- **`flushMs: 0` is the only legal form on a Worker, and nothing says so.** `Beat.every`
+  (`observability/src/Beat.ts`) defaults to 1000 ms, so an app built at module scope builds
+  its exporter — and its `setInterval` — there. Cloudflare REFUSES that deployment:
+  "Disallowed operation called within global scope", error 10021, measured 2026-08-23.
 - **Nitro's prod trace misses lazily-loaded packages under pnpm**, which is why the hand-copy
   in `site/Dockerfile` exists.
 - **Three free functions in `schema` are candidates nobody has judged** — `clean` decides
