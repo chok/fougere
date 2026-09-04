@@ -1,7 +1,6 @@
 /**
- * A name → value map: formats, generators, codecs, sources.
- *
- * The error is thrown here because this is where the known names are.
+ * A name → value map: Formats, Generators, Boundaries.decoders, Boundaries.encoders,
+ * Boundaries.aliases, Sources. The error is thrown here because the known names are here.
  */
 export class Registry<T> {
   private readonly entries: Map<string, T>;
@@ -10,7 +9,7 @@ export class Registry<T> {
    * The error message, when a name is not registered:
    * `Unknown boundary decoder 'celsius' — call Boundaries.decoders.register(name, fn).`
    *          └─ kind ──────┘              └─ fix ───────────────────────────────────┘
-   * `fix` is omitted where nothing calls `resolve` — `Formats`, `Boundaries.aliases`.
+   * `fix` is omitted where nothing calls `resolve` — Formats, Boundaries.aliases.
    */
   constructor(
     private readonly kind: string,
@@ -21,8 +20,9 @@ export class Registry<T> {
   }
 
   /**
-   * Records a name, and hands the value back so the caller can keep it.
-   * `const isSiret = Formats.register('siret', (v) => /^\d{14}$/.test(v))`
+   * Use `register` to teach this process a name an entity or a config can then write.
+   * A second call under the same name replaces the first.
+   * `const isSiret = Formats.register('siret', (v) => /^\d{14}$/.test(v))` → `format: 'siret'` uses `isSiret`
    */
   register(name: string, value: T): T {
     this.entries.set(name, value);
@@ -31,8 +31,8 @@ export class Registry<T> {
   }
 
   /**
-   * Use it where nothing under that name is normal: a field with no alias, a format the
-   * JSON Schema engine already knows.
+   * Use `find` for optional Formats and Boundaries.aliases lookups; use `resolve` when
+   * an unknown configured name must stop processing.
    * `Formats.find('email')` → `undefined`, and `ValueJudge` moves on
    */
   find(name: string): T | undefined {
@@ -40,8 +40,8 @@ export class Registry<T> {
   }
 
   /**
-   * Use it where nothing under that name means the user mistyped something in an entity
-   * or a config. `path` says where, so the message names the line to fix.
+   * Use `resolve` with Generators, Boundaries.decoders, Boundaries.encoders, or Sources;
+   * use `find` for optional Formats and Boundaries.aliases lookups.
    * `Generators.resolve('ulid')`
    * → `Unknown generator 'ulid' — call Generators.register(name, fn). This process answers cuid2, uuid, nanoid.`
    * `Sources.resolve('file', 'archive.source')`
@@ -59,8 +59,8 @@ export class Registry<T> {
   }
 
   /**
-   * Whether a name is registered, without throwing.
-   * FR : si un nom est enregistré, sans lever.
+   * Use `answers` for feature detection without loading the registered value; use `find`
+   * when the next step needs that value.
    * `Generators.answers('cuid2')` → `true`
    */
   answers(name: string): boolean {
@@ -68,7 +68,7 @@ export class Registry<T> {
   }
 
   /**
-   * Every name registered.
+   * Use `names` to show the choices imported into this process; use `answers` to test one.
    * `Sources.names` → `['sql', 'file']`
    */
   get names(): string[] {
