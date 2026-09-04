@@ -1,0 +1,106 @@
+# Reading order
+
+Every file of `src/`, in an order where nothing is forward-referenced: each step depends
+only on the ones above it. Derived from the import graph by the script at the bottom, not
+from taste — regenerate it when the tree moves.
+
+## 1 — The floor
+
+No dependency at all, about 250 lines together.
+
+`utils.ts` · `Registry.ts` · `judge/RowRefusal.ts` · `judge/options.ts` · `judge/result.ts`
+· `projection/standard.ts` · `schema/axis/Meta.ts` · `schema/axis/lifecycle/Clock.ts`
+· `schema/axis/role/Relation.ts` · `schema/axis/role/Role.ts`
+
+## 2 — What fills itself at import
+
+The registries and the axes that read them. A name arrives here as DATA —
+`generate: 'ulid'`, `boundary: 'isoDate'` — which is what makes a registry worth having.
+
+`axis/shape/Formats.ts` · `axis/lifecycle/Generators.ts` · `axis/boundary/Boundaries.ts`
+· `fields/constraint/FieldGroup.ts` · `fields/constraint/Unique.ts` · `axis/shape/Shape.ts`
+· `axis/lifecycle/Lifecycle.ts` · `axis/boundary/BoundaryAxis.ts`
+
+## 3 — The judges
+
+Each is the previous one applied to a wider subject. `validate` returns a verdict,
+`assert` throws.
+
+`judge/EntryJudge.ts` → `judge/ValueJudge.ts` → `judge/FieldJudge.ts` → `judge/RowJudge.ts`
+
+## 4 — The field
+
+The four axes, then what carries them.
+
+`axis/Axis.ts` · `axis/role/RoleAxis.ts` · `axis/lifecycle/LifecycleAxis.ts`
+· `axis/boundary/Boundary.ts` · `axis/lifecycle/apply.ts` · `fields/Field.ts`
+· `fields/FieldSet.ts`
+
+## 5 — What an entity states about itself
+
+`entity/EntityAdapters.ts` · `entity/EntityAdapterSet.ts` · `entity/EntityDeclarations.ts`
+
+## 6 — The schema
+
+`SchemaDefinition` is where a derivation is built; `Schema` is its public face.
+
+`SchemaDerivation.ts` → `SchemaView.ts` → `SchemaDefinition.ts` → `Schema.ts` → `entity.ts`
+
+## 7 — The vocabulary
+
+24 files of 10 to 30 lines, one mould: a word receives a field and answers a field. Read
+`vocabulary/vocabulary.ts` first — it holds the merge rule the other 23 obey.
+
+## 8 — The projections
+
+What a schema becomes for someone who is not holding it.
+
+`card/Descriptor.ts` · `card/admission.ts` · `card/EntityTypeSource.ts`
+· `card/FacadeTypeSource.ts` · `card/Card.ts` · `card/diff.ts` · `card/Bundle.ts`
+· `projection/Visibility.ts` · `projection/Cases.ts` · `projection/SchemaOrCard.ts`
+
+## 9 — The surface
+
+`index.ts` — 61 imports, the only file that decides what leaves the package.
+
+---
+
+<details><summary>How this order is computed</summary>
+
+Run from the package root. `core` carries the same file, produced by the same script.
+
+```bash
+cd src && python3 - <<'PY'
+import pathlib, re, collections
+files = sorted(str(p) for p in pathlib.Path('.').rglob('*.ts'))
+deps = {}
+for f in files:
+    out = set()
+    for m in re.finditer(r"from '(\.[^']+)\.js'", pathlib.Path(f).read_text()):
+        t = (pathlib.Path(f).parent / (m.group(1) + '.ts')).resolve()
+        try: t = str(t.relative_to(pathlib.Path('.').resolve()))
+        except ValueError: continue
+        if t in files: out.add(t)
+    deps[f] = out
+
+memo = {}
+def depth(f, seen=frozenset()):
+    if f in memo: return memo[f]
+    if f in seen: return 0
+    memo[f] = 1 + max((depth(x, seen | {f}) for x in deps[f]), default=-1)
+    return memo[f]
+
+for f in files: depth(f)
+by = collections.defaultdict(list)
+for f in files: by[memo[f]].append(f)
+for lvl in sorted(by):
+    print(f'--- {lvl} ---')
+    for f in sorted(by[lvl]): print(' ', f)
+PY
+```
+
+`seen` guards the type-only cycles the compiler erases — `judge`↔`schema`,
+`projection`↔`schema`, `entity`↔`schema`, which `pnpm arch:cycles` states with their
+reason. A file inside a cycle lands at the depth of the first path that reaches it.
+
+</details>
