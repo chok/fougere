@@ -10,7 +10,6 @@ export class Registry<T> {
    * The error message, when a name is not registered:
    * `Unknown boundary decoder 'celsius' — call Boundaries.decoders.register(name, fn).`
    *          └─ kind ──────┘              └─ fix ───────────────────────────────────┘
-   * FR : le message d'erreur quand un nom n'est pas enregistré.
    * `fix` is omitted where nothing calls `resolve` — `Formats`, `Boundaries.aliases`.
    */
   constructor(
@@ -23,7 +22,6 @@ export class Registry<T> {
 
   /**
    * Records a name, and hands the value back so the caller can keep it.
-   * FR : enregistre un nom, et rend la valeur pour que l'appelant la garde.
    * `const isSiret = Formats.register('siret', (v) => /^\d{14}$/.test(v))`
    */
   register(name: string, value: T): T {
@@ -34,7 +32,6 @@ export class Registry<T> {
 
   /**
    * The value under a name, or `undefined`.
-   * FR : la valeur sous un nom, ou `undefined`.
    * `Formats.find('email')` → `undefined` — the engine already judges that one
    */
   find(name: string): T | undefined {
@@ -43,18 +40,16 @@ export class Registry<T> {
 
   /**
    * The value under a name. Throws when the name is not registered; `at` prefixes the message.
-   * FR : la valeur sous un nom. Lève si le nom n'est pas enregistré ; `at` préfixe le message.
-   * `Generators.resolve('ulid')`
    * → throws `Unknown generator 'ulid' — call Generators.register(name, fn). This process answers cuid2, uuid, nanoid.`
    */
   resolve(name: string, at?: string): T {
-    const found = this.entries.get(name);
+    const found = this.find(name);
 
     if (found !== undefined) return found;
 
     throw new Error(
-      `${at ? `${at}: ` : ''}Unknown ${this.kind} '${name}'${this.fix ? ` — ${this.fix}` : ''}. `
-      + `This process answers ${this.names.join(', ') || 'nothing yet'}.`,
+      `${at ? `${at}: ` : ''}Unknown ${this.kind} '${name}'${this.fix ? ` — ${this.fix}` : ''}. ` +
+        `This process answers ${this.names.join(', ') || 'nothing yet'}.`,
     );
   }
 
@@ -69,7 +64,6 @@ export class Registry<T> {
 
   /**
    * Every name registered.
-   * FR : tous les noms enregistrés.
    * `Sources.names` → `['sql', 'file']`
    */
   get names(): string[] {
