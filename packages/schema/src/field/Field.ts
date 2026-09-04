@@ -4,8 +4,8 @@ import type { LifecycleRules } from '../axis/lifecycle/Lifecycle.js';
 import type { BoundaryRef } from '../axis/boundary/Boundary.js';
 import type { Meta } from '../axis/Meta.js';
 import type { Axis } from '../axis/Axis.js';
-import { FieldJudge } from '../../judge/FieldJudge.js';
-import { ValueJudge } from '../../judge/ValueJudge.js';
+import { FieldJudge } from '../judge/FieldJudge.js';
+import { ValueJudge } from '../judge/ValueJudge.js';
 
 export type Fields = Record<string, Field>;
 

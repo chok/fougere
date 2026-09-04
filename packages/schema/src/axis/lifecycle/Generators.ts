@@ -1,6 +1,6 @@
 import { createId } from '@paralleldrive/cuid2';
 
-import { Registry } from '../../../Registry.js';
+import { Registry } from '../../lib/Registry.js';
 
 export type GeneratorRef = 'cuid2' | 'uuid' | 'nanoid' | (string & {});
 

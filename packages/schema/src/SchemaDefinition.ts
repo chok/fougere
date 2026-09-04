@@ -1,13 +1,13 @@
-import { type Fields } from './fields/Field.js';
-import { FieldSet } from './fields/FieldSet.js';
+import { type Fields } from './field/Field.js';
+import { FieldSet } from './field/FieldSet.js';
 import {
   type EntityDeclarations,
   type PreviousNames,
-} from '../entity/EntityDeclarations.js';
-import { type EntityAdapters } from '../entity/EntityAdapters.js';
-import { EntityAdapterSet } from '../entity/EntityAdapterSet.js';
+} from './entity/EntityDeclarations.js';
+import { type EntityAdapters } from './entity/EntityAdapters.js';
+import { EntityAdapterSet } from './entity/EntityAdapterSet.js';
 import { SchemaDerivation } from './SchemaDerivation.js';
-import { type ValidateOptions } from '../judge/options.js';
+import { type ValidateOptions } from './judge/options.js';
 import type { SchemaView } from './SchemaView.js';
 
 /**

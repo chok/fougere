@@ -1,4 +1,4 @@
-import type { FieldName, Fields } from '../schema/fields/Field.js';
+import type { FieldName, Fields } from '../field/Field.js';
 import type { EntityAdapters } from './EntityAdapters.js';
 
 // Ex: [['title', 'name'], ['id']]

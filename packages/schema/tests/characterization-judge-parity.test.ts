@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { Fields } from '../src/schema/fields/Field.js';
+import type { Fields } from '../src/field/Field.js';
 import type { ValidationResult } from '../src/judge/result.js';
 import { RowJudge } from '../src/judge/RowJudge.js';
 import type { StandardSchemaV1 } from '../src/projection/standard.js';
-import type { SchemaConstructor } from '../src/schema/Schema.js';
+import type { SchemaConstructor } from '../src/Schema.js';
 import { entity } from '../src/entity.js';
 import { primary } from '../src/vocabulary/primary.js';
 import { readOnly } from '../src/vocabulary/readOnly.js';

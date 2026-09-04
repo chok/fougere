@@ -1,4 +1,4 @@
-import { type Fields } from './fields/Field.js';
+import { type Fields } from './field/Field.js';
 import type { SchemaView } from './SchemaView.js';
 
 /**

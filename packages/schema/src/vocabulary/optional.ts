@@ -1,6 +1,6 @@
 import { vocabulary } from './vocabulary.js';
-import { Anatomy } from '../schema/axis/shape/Shape.js';
-import { type Field } from '../schema/fields/Field.js';
+import { Anatomy } from '../axis/shape/Shape.js';
+import { type Field } from '../field/Field.js';
 
 /**
  * So the two questions are settled at once: `null` is legal, and absence is too.

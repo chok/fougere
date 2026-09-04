@@ -1,5 +1,5 @@
 import { text, type TextOptions } from './text.js';
-import type { Field } from '../schema/fields/Field.js';
+import type { Field } from '../field/Field.js';
 
 /**
  * So the format is stated once, where everyone would otherwise write the same regex.

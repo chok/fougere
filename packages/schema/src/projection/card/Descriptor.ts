@@ -1,8 +1,8 @@
-import type { BoundaryRef } from '../../schema/axis/boundary/Boundary.js';
-import type { LifecycleRules } from '../../schema/axis/lifecycle/Lifecycle.js';
-import type { Relation } from '../../schema/axis/role/Relation.js';
-import type { RoleRules } from '../../schema/axis/role/Role.js';
-import type { Shape } from '../../schema/axis/shape/Shape.js';
+import type { BoundaryRef } from '../../axis/boundary/Boundary.js';
+import type { LifecycleRules } from '../../axis/lifecycle/Lifecycle.js';
+import type { Relation } from '../../axis/role/Relation.js';
+import type { RoleRules } from '../../axis/role/Role.js';
+import type { Shape } from '../../axis/shape/Shape.js';
 
 type JsonSchemaType =
   | 'string'

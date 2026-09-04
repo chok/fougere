@@ -1,6 +1,6 @@
 import type { Axis } from '../Axis.js';
-import { admitWire } from '../../../projection/card/admission.js';
-import { isObject } from '../../../utils.js';
+import { admitWire } from '../../projection/card/admission.js';
+import { isObject } from '../../lib/utils.js';
 import type { BoundaryRef } from './Boundary.js';
 
 export const boundaryAxis: Axis<BoundaryRef, BoundaryRef> = {

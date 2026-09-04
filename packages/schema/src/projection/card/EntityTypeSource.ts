@@ -1,4 +1,4 @@
-import { upperFirst } from '../../utils.js';
+import { upperFirst } from '../../lib/utils.js';
 import type { FieldDescriptor, SchemaDescriptor } from './Descriptor.js';
 
 /**

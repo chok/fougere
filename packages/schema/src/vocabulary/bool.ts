@@ -1,4 +1,4 @@
-import { Field } from '../schema/fields/Field.js';
+import { Field } from '../field/Field.js';
 
 /**
  * So a default is a lifecycle rule, not a value the handler remembers to set.

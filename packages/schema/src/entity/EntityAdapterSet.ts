@@ -1,5 +1,5 @@
-import type { Fields } from '../schema/fields/Field.js';
-import { isObject } from '../utils.js';
+import type { Fields } from '../field/Field.js';
+import { isObject } from '../lib/utils.js';
 import type { EntityAdapters } from './EntityAdapters.js';
 
 type AdapterConfiguration = Record<string, unknown>;

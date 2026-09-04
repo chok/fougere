@@ -1,6 +1,6 @@
 import { vocabulary } from './vocabulary.js';
-import { Boundary } from '../schema/axis/boundary/Boundary.js';
-import { Field } from '../schema/fields/Field.js';
+import { Boundary } from '../axis/boundary/Boundary.js';
+import { Field } from '../field/Field.js';
 
 /**
  * So a secret leaves no response, the dual of `readOnly` on the same axis.

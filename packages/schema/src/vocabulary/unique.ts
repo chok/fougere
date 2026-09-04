@@ -1,6 +1,6 @@
 import { vocabulary } from './vocabulary.js';
-import { Field } from '../schema/fields/Field.js';
-import { Unique } from '../schema/fields/constraint/Unique.js';
+import { Field } from '../field/Field.js';
+import { Unique } from '../field/constraint/Unique.js';
 
 /**
  * So a single-field group needs no name: the key it sits under resolves it.

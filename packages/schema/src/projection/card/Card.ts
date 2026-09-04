@@ -1,10 +1,10 @@
-import { EXTENSION_AXES, EXTENSION_SLOTS, type Resolver } from '../../schema/axis/Axis.js';
+import { EXTENSION_AXES, EXTENSION_SLOTS, type Resolver } from '../../axis/Axis.js';
 import { dequal } from 'dequal';
-import { clean, isObject } from '../../utils.js';
-import { Field, type Fields } from '../../schema/fields/Field.js';
+import { clean, isObject } from '../../lib/utils.js';
+import { Field, type Fields } from '../../field/Field.js';
 import { RowJudge } from '../../judge/RowJudge.js';
-import { Schema, type SchemaConstructor } from '../../schema/Schema.js';
-import type { Row, SchemaView } from '../../schema/SchemaView.js';
+import { Schema, type SchemaConstructor } from '../../Schema.js';
+import type { Row, SchemaView } from '../../SchemaView.js';
 import { refuse } from './admission.js';
 import type {
   DerivedFrom,

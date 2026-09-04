@@ -1,7 +1,7 @@
 import { Role } from '../axis/role/Role.js';
 import { FieldGroup } from './constraint/FieldGroup.js';
 import { Unique } from './constraint/Unique.js';
-import type { CompositeUnique } from '../../entity/EntityDeclarations.js';
+import type { CompositeUnique } from '../entity/EntityDeclarations.js';
 import { Field, type FieldName, type Fields } from './Field.js';
 
 export class FieldSet<TFields extends Fields = Fields> {

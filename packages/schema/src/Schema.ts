@@ -1,19 +1,19 @@
 import { Boundary } from './axis/boundary/Boundary.js';
-import { type Fields } from './fields/Field.js';
+import { type Fields } from './field/Field.js';
 import {
   type CompositeUnique,
   type EntityDeclarations,
   type PreviousNames,
-} from '../entity/EntityDeclarations.js';
-import { type EntityAdapters } from '../entity/EntityAdapters.js';
-import { EntityAdapterSet } from '../entity/EntityAdapterSet.js';
-import { FieldGroup } from './fields/constraint/FieldGroup.js';
-import { Unique } from './fields/constraint/Unique.js';
-import { RowJudge } from '../judge/RowJudge.js';
+} from './entity/EntityDeclarations.js';
+import { type EntityAdapters } from './entity/EntityAdapters.js';
+import { EntityAdapterSet } from './entity/EntityAdapterSet.js';
+import { FieldGroup } from './field/constraint/FieldGroup.js';
+import { Unique } from './field/constraint/Unique.js';
+import { RowJudge } from './judge/RowJudge.js';
 import { SchemaDerivation } from './SchemaDerivation.js';
 import { SchemaDefinition } from './SchemaDefinition.js';
-import { type ValidateOptions } from '../judge/options.js';
-import type { StandardSchemaV1 } from '../projection/standard.js';
+import { type ValidateOptions } from './judge/options.js';
+import type { StandardSchemaV1 } from './projection/standard.js';
 import type { PartialRow, Row, SchemaView } from './SchemaView.js';
 
 export const ANONYMOUS_SCHEMA_NAME = 'Schema';

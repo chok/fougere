@@ -1,4 +1,4 @@
-import { Field } from '../schema/fields/Field.js';
+import { Field } from '../field/Field.js';
 
 interface OneOfOptions<V extends string = string> {
   description?: string;

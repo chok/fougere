@@ -13,9 +13,9 @@ import { email } from '../src/vocabulary/email.js';
 import { readOnly } from '../src/vocabulary/readOnly.js';
 import { Card } from '../src/projection/card/Card.js';
 import { Bundle } from '../src/projection/card/Bundle.js';
-import { type SchemaView } from '../src/schema/SchemaView.js';
-import { type EntityConstructor, type Relation } from '../src/schema/axis/role/Relation.js';
-import { type RoleRules } from '../src/schema/axis/role/Role.js';
+import { type SchemaView } from '../src/SchemaView.js';
+import { type EntityConstructor, type Relation } from '../src/axis/role/Relation.js';
+import { type RoleRules } from '../src/axis/role/Role.js';
 import { type RoleDescriptor, type RelationDescriptor } from '../src/projection/card/Descriptor.js';
 
 class Author extends entity({ id: primary() }) {}

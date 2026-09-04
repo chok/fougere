@@ -1,5 +1,5 @@
 import { vocabulary } from './vocabulary.js';
-import { Field } from '../schema/fields/Field.js';
+import { Field } from '../field/Field.js';
 
 /**
  * So the entity states the index, and the DDL is the one that emits it.

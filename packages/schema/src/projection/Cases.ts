@@ -1,9 +1,9 @@
-import { Anatomy } from '../schema/axis/shape/Shape.js';
-import { Boundary } from '../schema/axis/boundary/Boundary.js';
-import { Lifecycle } from '../schema/axis/lifecycle/Lifecycle.js';
-import { Role } from '../schema/axis/role/Role.js';
-import type { Field } from '../schema/fields/Field.js';
-import type { SchemaView } from '../schema/SchemaView.js';
+import { Anatomy } from '../axis/shape/Shape.js';
+import { Boundary } from '../axis/boundary/Boundary.js';
+import { Lifecycle } from '../axis/lifecycle/Lifecycle.js';
+import { Role } from '../axis/role/Role.js';
+import type { Field } from '../field/Field.js';
+import type { SchemaView } from '../SchemaView.js';
 import { RowJudge } from '../judge/RowJudge.js';
 import { RowRefusal } from '../judge/RowRefusal.js';
 

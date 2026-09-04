@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { entity } from '../src/entity.js';
-import { Schema } from '../src/schema/Schema.js';
+import { Schema } from '../src/Schema.js';
 import { text } from '../src/vocabulary/text.js';
 
 declare module '../src/entity/EntityAdapters.js' {

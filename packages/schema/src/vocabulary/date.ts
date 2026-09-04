@@ -1,4 +1,4 @@
-import { Field } from '../schema/fields/Field.js';
+import { Field } from '../field/Field.js';
 
 /**
  * So a date is a string on the wire and a `Date` in a handler, with no word said.

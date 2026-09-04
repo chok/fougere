@@ -1,4 +1,4 @@
-import { Registry } from '../../../Registry.js';
+import { Registry } from '../../lib/Registry.js';
 
 export type StringFormat =
   | 'date-time'

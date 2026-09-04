@@ -1,6 +1,6 @@
-import { type Fields } from './schema/fields/Field.js';
+import { type Fields } from './field/Field.js';
 import { type EntityDeclarations } from './entity/EntityDeclarations.js';
-import { Schema, type SchemaConstructor } from './schema/Schema.js';
+import { Schema, type SchemaConstructor } from './Schema.js';
 
 /**
  * So the whole framework starts from one call: fields, and what they say about themselves.

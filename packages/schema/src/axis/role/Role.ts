@@ -1,5 +1,5 @@
-import { FieldGroup } from "../../fields/constraint/FieldGroup.js";
-import { Unique } from "../../fields/constraint/Unique.js";
+import { FieldGroup } from "../../field/constraint/FieldGroup.js";
+import { Unique } from "../../field/constraint/Unique.js";
 import type { EntityConstructor, Relation } from "./Relation.js";
 
 export interface RoleRules {

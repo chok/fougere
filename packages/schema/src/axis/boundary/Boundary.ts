@@ -1,6 +1,6 @@
 import type { Decoder, Encoder } from './Boundaries.js';
 import { Boundaries } from './Boundaries.js';
-import type { Field } from '../../fields/Field.js';
+import type { Field } from '../../field/Field.js';
 import { Anatomy, type Shape } from '../shape/Shape.js';
 
 export interface BoundaryRules {

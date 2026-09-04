@@ -1,6 +1,6 @@
 import { Validator } from '@cfworker/json-schema';
-import type { Shape } from '../schema/axis/shape/Shape.js';
-import { isObject } from '../utils.js';
+import type { Shape } from '../axis/shape/Shape.js';
+import { isObject } from '../lib/utils.js';
 
 /**
  * What an adapter accepts under a field name, judged by the engine `schema` already ships.

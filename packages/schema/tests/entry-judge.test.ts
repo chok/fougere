@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { EntryJudge } from '../src/judge/EntryJudge.js';
-import type { Shape } from '../src/schema/axis/shape/Shape.js';
+import type { Shape } from '../src/axis/shape/Shape.js';
 
 /**
  * The mechanism alone: an adapter states the format, `schema` judges against it and learns

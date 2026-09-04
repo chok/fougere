@@ -1,5 +1,5 @@
 import type { BoundaryRules } from './Boundary.js';
-import { Registry } from '../../../Registry.js';
+import { Registry } from '../../lib/Registry.js';
 
 export type Decoder = (value: unknown) => { value: unknown } | { error: string };
 export type Encoder = (value: unknown) => unknown;

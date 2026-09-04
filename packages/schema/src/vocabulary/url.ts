@@ -1,5 +1,5 @@
 import { text, type TextOptions } from './text.js';
-import type { Field } from '../schema/fields/Field.js';
+import type { Field } from '../field/Field.js';
 
 /**
  * So a URL is a text with a stated format, not a type of its own.

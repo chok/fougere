@@ -1,7 +1,7 @@
 import { Lifecycle } from './Lifecycle.js';
 import { Generators } from './Generators.js';
 import { Clock } from './Clock.js';
-import { type Field, type Fields } from '../../fields/Field.js';
+import { type Field, type Fields } from '../../field/Field.js';
 
 type Row = Record<string, unknown>;
 

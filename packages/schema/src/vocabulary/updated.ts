@@ -1,5 +1,5 @@
 import { created } from './created.js';
-import { Field } from '../schema/fields/Field.js';
+import { Field } from '../field/Field.js';
 
 /**
  * So the dual of `created()` is re-stamped at every write, by the same hand.
