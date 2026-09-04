@@ -22,7 +22,7 @@ export class Registry<T> {
   /**
    * Records a name, and hands the value back so the caller can keep it.
    * FR : enregistre un nom, et rend la valeur pour que l'appelant la garde.
-   * `export const sqlEntries = Adapters.register('sql', EntryJudge.of(FORMAT))`
+   * `const isSiret = Formats.register('siret', (v) => /^\d{14}$/.test(v))`
    */
   register(name: string, value: T): T {
     this.entries.set(name, value);
@@ -68,7 +68,7 @@ export class Registry<T> {
   /**
    * Every name registered.
    * FR : tous les noms enregistrés.
-   * `Adapters.names` → `['sql']`
+   * `Sources.names` → `['sql', 'file']`
    */
   get names(): string[] {
     return [...this.entries.keys()];

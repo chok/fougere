@@ -12,7 +12,7 @@
  * TypeScript interface alone is erased before anything could judge what a JS caller, a
  * config or a card from another language wrote.
  */
-import { Adapters, EntryJudge, type Shape } from '@fougere/schema';
+import { EntryJudge, type Shape } from '@fougere/schema';
 import ENTRY_FORMAT from './adapter.schema.json' with { type: 'json' };
 import type { DialectName } from './dialect.js';
 
@@ -28,13 +28,12 @@ export interface SqlField {
 }
 
 /**
- * Registers this adapter under the name an entity addresses it by, and takes back the judge
- * of its own entries — so the name is a datum, not something implicit in whoever reads it.
- * FR : enregistre l'adaptateur sous le nom qui l'adresse, et reprend le juge de ses entrées.
+ * Judges what an entity states under `adapters.sql`, against the format this adapter ships.
+ * FR : juge ce qu'une entité énonce sous `adapters.sql`, contre le format livré ici.
  * `sqlEntries.assert({ body: { columnTpye: {} } }, 'Post.adapters.sql')`
  * → throws `Post.adapters.sql.body: Property "columnTpye" does not match …`
  */
-export const sqlEntries = Adapters.register('sql', EntryJudge.of(ENTRY_FORMAT as Shape));
+export const sqlEntries = EntryJudge.of(ENTRY_FORMAT as Shape);
 
 type Assert<T extends true> = T;
 /** A fifth dialect does not compile until `adapter.schema.json` names it. */
