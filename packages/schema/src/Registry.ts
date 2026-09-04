@@ -39,8 +39,11 @@ export class Registry<T> {
   }
 
   /**
-   * The value under a name. Throws when the name is not registered; `at` prefixes the message.
-   * → throws `Unknown generator 'ulid' — call Generators.register(name, fn). This process answers cuid2, uuid, nanoid.`
+   * The value under a name. Throws when the name is not registered.
+   * `Generators.resolve('ulid')`
+   * → `Unknown generator 'ulid' — call Generators.register(name, fn). This process answers cuid2, uuid, nanoid.`
+   * `Sources.resolve('file', 'archive.source')`
+   * → `archive.source: Unknown source 'file' — import the adapter that answers it, … answers sql.`
    */
   resolve(name: string, at?: string): T {
     const found = this.find(name);
