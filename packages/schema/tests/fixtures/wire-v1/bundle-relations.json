@@ -1,0 +1,175 @@
+{
+  "$defs": {
+    "author": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "x-fougere": {
+            "role": {
+              "primary": true
+            },
+            "lifecycle": {
+              "create": {
+                "generate": "cuid2"
+              },
+              "update": "forbidden"
+            }
+          }
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "x-fougere": {
+            "role": {
+              "unique": [
+                [
+                  "email"
+                ]
+              ]
+            }
+          }
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        }
+      },
+      "x-fougere-version": 1,
+      "x-fougere-vendor": "fougere",
+      "title": "author",
+      "required": [
+        "email",
+        "name"
+      ]
+    },
+    "post": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "x-fougere": {
+            "role": {
+              "primary": true
+            },
+            "lifecycle": {
+              "create": {
+                "generate": "cuid2"
+              },
+              "update": "forbidden"
+            }
+          }
+        },
+        "slug": {
+          "type": "string",
+          "x-fougere": {
+            "role": {
+              "index": true
+            }
+          }
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "views": {
+          "type": "number",
+          "minimum": 0
+        },
+        "draft": {
+          "type": "boolean",
+          "x-fougere": {
+            "lifecycle": {
+              "create": {
+                "value": false
+              }
+            }
+          }
+        },
+        "summary": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-fougere": {
+            "lifecycle": {
+              "create": "optional"
+            }
+          }
+        },
+        "secret": {
+          "type": "string",
+          "x-fougere": {
+            "boundary": {
+              "out": "closed"
+            }
+          }
+        },
+        "computed": {
+          "type": "string",
+          "x-fougere": {
+            "boundary": {
+              "in": "closed"
+            }
+          }
+        },
+        "authorId": {
+          "type": "string",
+          "x-fougere": {
+            "role": {
+              "relation": {
+                "to": "author",
+                "kind": "one"
+              }
+            }
+          }
+        },
+        "posts": {
+          "type": "array",
+          "x-fougere": {
+            "role": {
+              "relation": {
+                "to": "author",
+                "kind": "many"
+              }
+            }
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "x-fougere": {
+            "lifecycle": {
+              "create": "now",
+              "update": "forbidden"
+            }
+          }
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "x-fougere": {
+            "lifecycle": {
+              "create": "now",
+              "update": "now"
+            }
+          }
+        }
+      },
+      "x-fougere-version": 1,
+      "x-fougere-vendor": "fougere",
+      "title": "post",
+      "required": [
+        "slug",
+        "title",
+        "views",
+        "secret",
+        "authorId"
+      ]
+    }
+  },
+  "x-fougere-version": 1,
+  "x-fougere-vendor": "fougere"
+}

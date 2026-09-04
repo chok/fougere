@@ -59,14 +59,18 @@ describe('TanStack Form', () => {
       defaultValues: { title: '', views: 0, draft: false },
       // The entity judges correctly at runtime — every assertion below is real.
       // What the compiler refuses is the INPUT side: `~standard.types.input` is
-      // declared `Record<string, unknown>` (Schema.ts), so a host that infers
-      // its form shape FROM the schema cannot line it up with defaultValues.
-      // tRPC above is unaffected because it only ever reads the output.
+      // declared `Record<string, unknown>` (Schema.ts), so a host that infers its
+      // form shape FROM the schema cannot line it up with defaultValues.
       //
-      // Delete this directive once input is the type the constructor already
-      // accepts (`PartialRow<TFields>`); ts-expect-error will then fail as
-      // unused, which is the point — the fact stops being recorded when it
-      // stops being true.
+      // The two hosts want OPPOSITE inputs, which is why no type here satisfies
+      // both. Measured, all three: `PartialRow<TFields>` fails TanStack, which
+      // needs input assignable TO its complete defaultValues, not from them.
+      // `Row<TFields>` passes TanStack and fails tRPC above, which calls without
+      // `draft` — a field carrying a default. The type that would serve makes a
+      // field optional exactly when it is not required at creation, and it is not
+      // expressible: `Field<T>` carries only the value type, while `default` lives
+      // on `shape` and the rule on `lifecycle` — neither reaches a mapped type.
+      // Closing this means `Field` retaining its axes in its type parameters.
       // @ts-expect-error — see above: input is untyped, output is not
       validators: { onChange: CreatePost },
     });

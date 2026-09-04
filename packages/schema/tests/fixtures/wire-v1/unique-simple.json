@@ -1,0 +1,44 @@
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "x-fougere": {
+        "role": {
+          "primary": true
+        },
+        "lifecycle": {
+          "create": {
+            "generate": "cuid2"
+          },
+          "update": "forbidden"
+        }
+      }
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "x-fougere": {
+        "role": {
+          "unique": [
+            [
+              "email"
+            ]
+          ]
+        }
+      }
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    }
+  },
+  "x-fougere-version": 1,
+  "x-fougere-vendor": "fougere",
+  "title": "author",
+  "required": [
+    "email",
+    "name"
+  ]
+}

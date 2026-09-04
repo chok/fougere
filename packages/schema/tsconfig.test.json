@@ -9,5 +9,5 @@
     "declaration": false,
     "declarationMap": false
   },
-  "include": ["src", "tests"]
+  "include": ["src", "tests", "demo"]
 }

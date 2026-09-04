@@ -1,0 +1,62 @@
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "x-fougere": {
+        "role": {
+          "primary": true
+        },
+        "lifecycle": {
+          "create": {
+            "generate": "cuid2"
+          },
+          "update": "forbidden"
+        }
+      }
+    },
+    "listId": {
+      "type": "string",
+      "x-fougere": {
+        "role": {
+          "unique": [
+            [
+              "listId",
+              "docId"
+            ]
+          ]
+        }
+      }
+    },
+    "docId": {
+      "type": "string",
+      "x-fougere": {
+        "role": {
+          "unique": [
+            [
+              "listId",
+              "docId"
+            ]
+          ]
+        }
+      }
+    },
+    "addedAt": {
+      "type": "string",
+      "format": "date-time",
+      "x-fougere": {
+        "lifecycle": {
+          "create": "now",
+          "update": "forbidden"
+        }
+      }
+    }
+  },
+  "x-fougere-version": 1,
+  "x-fougere-vendor": "fougere",
+  "title": "listEntry",
+  "required": [
+    "listId",
+    "docId"
+  ]
+}

@@ -30,6 +30,11 @@ describe('boundary · date default (derived from shape)', () => {
     expect(out.startsAt).toBeInstanceOf(Date);
   });
 
+  it('from() keeps the raw value when the decoder refuses — it projects, it does not judge', () => {
+    const out = Event.from({ id: 'e1', name: 'Launch', startsAt: 'not a date' });
+    expect(out.startsAt).toBe('not a date');
+  });
+
   it('encode (egress) turns a Date back into an ISO string', () => {
     const field = Event.getFields().startsAt;
     const wire = Boundary.of(field).encode(new Date('2026-05-31T10:00:00.000Z'));

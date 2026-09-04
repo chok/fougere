@@ -35,8 +35,9 @@ PostDraft['~standard'].validate({ title: '' });
 // → { issues: [{ message: 'String is too short (0 < 1).', path: [{ key: 'title' }] }] }
 ```
 
-Validation is synchronous, and the spec types are inlined rather than depended on, so
-this package stays zero-dependency.
+Validation is synchronous, and the spec types come from the package that publishes them.
+That package is types only — its `index.js` is zero bytes — so a browser pays nothing for
+it.
 
 One difference from most vendors, and it is deliberate: **the judge does not fill
 defaults**. A field declared `bool({ default: false })` may be absent — that is legal,
