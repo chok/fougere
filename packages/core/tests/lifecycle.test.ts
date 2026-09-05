@@ -10,7 +10,7 @@ import { scanProject } from '../src/node.js';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
-import { AppLifecycle, createApp, Lifecycle, migrating } from '../src/index.js';
+import { AppLifecycle, createApp, migrating } from '../src/index.js';
 import type { Extension } from '../src/index.js';
 
 const root = join(import.meta.dirname, 'fixtures-ports');
@@ -23,10 +23,6 @@ const recording = (name: string, log: string[]): Extension => ({
 });
 
 describe('Lifecycle', () => {
-  it('keeps Lifecycle as a compatibility alias', () => {
-    expect(Lifecycle).toBe(AppLifecycle);
-  });
-
   it('runs up in declaration order and down in reverse', async () => {
     const log: string[] = [];
     await using app = await createApp({

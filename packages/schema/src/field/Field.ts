@@ -1,5 +1,5 @@
 import type { Shape } from '../axis/shape/Shape.js';
-import { Role, type RoleRules } from '../axis/role/Role.js';
+import type { RoleRules } from '../axis/role/Role.js';
 import type { LifecycleRules } from '../axis/lifecycle/Lifecycle.js';
 import type { BoundaryRef } from '../axis/boundary/Boundary.js';
 import type { Meta } from '../axis/Meta.js';
@@ -12,7 +12,7 @@ export type Fields = Record<string, Field>;
 /** A key of a field set — the name a declaration addresses a field by. */
 export type FieldName<TFields extends Fields> = Extract<keyof TFields, string>;
 
-/** The carrier, the three extension axes, the annotation — the five the judge reads. */
+/** The carrier, the three extension axes, the annotation — the five the validator reads. */
 export type FieldDeclaration = Pick<Field, 'shape' | Axis['slot'] | 'meta'>;
 
 export class Field<T = unknown> {
@@ -58,5 +58,4 @@ export class Field<T = unknown> {
   with<U = T>(overrides: Partial<FieldDeclaration>): Field<U> {
     return new Field<U>({ ...this, ...overrides });
   }
-
 }
