@@ -421,7 +421,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
           routeRegistry.register(new OperationRoute(
             'local',
             address,
-            (call) => facade.ops[operation](call.invocation),
+            (call) => facade.execute(operation, call.invocation),
           ));
         }
       }

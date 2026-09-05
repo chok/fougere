@@ -44,7 +44,7 @@ collection that holds it. The two `entry/` files are the three doors — `facade
 both the facade and its dynamic form.
 
 [`prefab/crud.ts`](src/prefab/crud.ts) · [`define.ts`](src/define.ts) · [`descriptor/frond.ts`](src/descriptor/frond.ts) ↔ [`descriptor/Fronds.ts`](src/descriptor/Fronds.ts) · [`contract.ts`](src/contract.ts)
-· [`boot/apply.ts`](src/boot/apply.ts) · [`dispatch/OperationRoute.ts`](src/dispatch/OperationRoute.ts) · [`dispatch/OperationExecutor.ts`](src/dispatch/OperationExecutor.ts)
+· [`boot/apply.ts`](src/boot/apply.ts) · [`dispatch/OperationRoute.ts`](src/dispatch/OperationRoute.ts)
 · [`dispatch/RouteResolver.ts`](src/dispatch/RouteResolver.ts) · [`dispatch/RoutePolicy.ts`](src/dispatch/RoutePolicy.ts) · [`dispatch/DispatchLifecycle.ts`](src/dispatch/DispatchLifecycle.ts)
 · [`entry/facade.ts`](src/entry/facade.ts) · [`entry/transport.ts`](src/entry/transport.ts)
 

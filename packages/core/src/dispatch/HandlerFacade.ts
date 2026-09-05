@@ -1,6 +1,10 @@
 import type { Fields } from '@fougere/schema';
 import type { Container } from '@fougere/container';
-import type { AppMiddleware } from '../wire/middleware.js';
+import {
+  runMiddlewares,
+  type AppMiddleware,
+  type OperationContext,
+} from '../wire/middleware.js';
 import type { CollectorResolver } from './ArgumentResolver.js';
 import { collectorKeyOf } from '../prefab/collector.js';
 import { inheritsCrud, subjectOf } from '../prefab/crud.js';
@@ -8,13 +12,13 @@ import { presenterKeyOf } from '../prefab/presenter.js';
 import { repositoryKeyOf } from '../prefab/repository.js';
 import type { OperationContract, OperationsMap } from '../wire/operation.js';
 import type { EffectiveOperation, EffectiveOperationsMap } from '../effective-operation.js';
-import type { InvocationContext } from '../wire/Invocation.js';
+import { canonicalInvocation, type InvocationContext } from '../wire/Invocation.js';
 import type { HandlerEntry, PresenterEntry } from '../descriptor/frond.js';
 import { ArgumentResolver } from './ArgumentResolver.js';
-import { OperationExecutor } from './OperationExecutor.js';
 import { OutputView } from './OutputView.js';
 import { PresenterExecutor } from './PresenterExecutor.js';
 import { presenterArguments } from './presenterArguments.js';
+import { validateInput } from './validateInput.js';
 
 /** What boot resolved around one handler, beyond the handler and the scope it resolves in. */
 export interface Door {
@@ -43,14 +47,11 @@ export class HandlerFacade {
   /** Contracts served by this door. */
   readonly contracts: OperationsMap;
 
-  /** The callable surface: op name → the function a caller reaches. */
-  readonly ops: Record<string, Function> = {};
-
   private readonly cachedViews = new Map<string, OutputView>();
   private instance: any;
   private readonly implementationKeys = new Map<string, string>();
   private readonly implementationInstances = new Map<string, any>();
-  private readonly argumentResolver = new ArgumentResolver(
+  private readonly arguments = new ArgumentResolver(
     (typeName) => this.collectorResolver(typeName),
   );
 
@@ -80,9 +81,62 @@ export class HandlerFacade {
         this.implementationKeys.set(operation.implementation.className, key);
       }
     }
+  }
 
-    // Only declared operations become callable façade members.
-    for (const op of this.contracts.keys()) this.ops[op] = this.wrap(op);
+  /** One operation, through the same ordered boundary steps on every route. */
+  async execute(op: string, input?: Partial<InvocationContext>): Promise<unknown> {
+    const entity = this.handler.address;
+    const contract = this.contracts.get(op);
+    if (!contract) {
+      throw new Error(
+        `${entity} serves no operation '${op}'. `
+        + `It serves ${[...this.contracts.keys()].join(', ')}.`,
+      );
+    }
+
+    const invocation = canonicalInvocation(input);
+    const context: OperationContext = {
+      entity,
+      frond: this.door.frond,
+      operation: op,
+      args: [],
+      state: invocation.state,
+      invocation,
+    };
+
+    return runMiddlewares(this.door.middlewares(), context, async () => {
+      const validated = validateInput(contract.input, invocation, entity, op);
+      context.invocation = validated;
+
+      const args = contract.binding
+        ? await this.arguments.resolve(contract.binding, validated)
+        : [];
+      const { instance, method } = this.resolveImplementation(op);
+      const view = this.viewOf(op);
+      const output = view.project(await instance[method](...args));
+
+      const { presenter } = this.door;
+      return view.closed || !presenter ? output : this.present(op, presenter, output, validated);
+    });
+  }
+
+  /** The computed fields a presenter adds, over the page the façade just projected. */
+  private present(
+    op: string,
+    presenter: PresenterEntry,
+    output: unknown,
+    invocation: InvocationContext,
+  ): Promise<unknown> {
+    const entity = this.handler.address;
+    const executor = new PresenterExecutor(
+      this.door.presenterScope.resolve(presenterKeyOf(entity)),
+      presenter.fields,
+      entity,
+      op,
+    );
+
+    return presenterArguments(presenter, invocation, this.arguments, this.door.collectors)
+      .then((args) => executor.present(output, args));
   }
 
   private get handlerKey(): string {
@@ -131,7 +185,7 @@ export class HandlerFacade {
   };
 
   /** The handler itself, resolved on first call — never at boot. */
-  private resolvedHandler(): any {
+  private resolveHandler(): any {
     if (!this.instance) this.instance = this.scope.resolve(this.handlerKey);
     return this.instance;
   }
@@ -158,10 +212,10 @@ export class HandlerFacade {
     return matches[0]!;
   }
 
-  private resolvedImplementation(operationName: string): { instance: any; method: string } {
+  private resolveImplementation(operationName: string): { instance: any; method: string } {
     const operation = this.effectiveOperations.get(operationName)!;
     if (this.isBaseImplementation(operation)) {
-      return { instance: this.resolvedHandler(), method: operation.implementation.method };
+      return { instance: this.resolveHandler(), method: operation.implementation.method };
     }
 
     const className = operation.implementation.className;
@@ -173,35 +227,5 @@ export class HandlerFacade {
       this.implementationInstances.set(key, instance);
     }
     return { instance, method: operation.implementation.method };
-  }
-
-  private wrap(op: string): (invocation?: InvocationContext) => Promise<unknown> {
-    const address = this.handler.address;
-    const { presenter } = this.door;
-    const view = this.viewOf(op);
-    const executor = new OperationExecutor({
-      entity: address,
-      frond: this.door.frond,
-      operation: op,
-      contract: this.contracts.get(op),
-      middlewares: this.door.middlewares,
-      arguments: this.argumentResolver,
-      invoke: async (args) => {
-        const implementation = this.resolvedImplementation(op);
-        return implementation.instance[implementation.method](...args);
-      },
-      view,
-      ...(view.closed || !presenter ? {} : {
-        present: async (result: unknown, effective: InvocationContext) =>
-          new PresenterExecutor(
-            this.door.presenterScope.resolve(presenterKeyOf(address)),
-            presenter.fields,
-            address,
-            op,
-          ).present(result, await presenterArguments(presenter, effective, this.argumentResolver, this.door.collectors)),
-      }),
-    });
-
-    return (invocation) => executor.execute(invocation);
   }
 }
