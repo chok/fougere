@@ -148,7 +148,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     log.info(`auth ready — mounted at ${authRuntime.basePath}`);
   }
 
-  // Remote routing — judged at boot: declaring remotes without a transport is a config error.
+  // Remote routing — validated at boot: declaring remotes without a transport is a config error.
   // A remote declaration wins over local presence: `remotes: { blog: url }` IS
   // the topology statement — the frond's code may sit in fronds/**, it runs elsewhere.
   const declaredRemotes = Object.entries(options.remotes ?? {});
@@ -193,7 +193,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
   assertOneOwnerPerKey(fronds, options.remotes);
 
-  // Every entity of every frond, by name — so a fact can be judged where it LANDS, and
+  // Every entity of every frond, by name — so a fact can be validated where it LANDS, and
   // so a `reads:` clause can name a neighbour's.
   const entityByName = fronds.schemas();
   // Which frond holds an entity — what turns "a member is remote" into a refusal that
@@ -338,6 +338,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         hostedHere: (name) => !(options.remotes && name in options.remotes),
         storageFactory: options.storageFactory,
         sourceOf: options.sourceOf,
+        transacts: options.transacts,
         transacted: options.transacted,
         log: frondLog,
       },
@@ -767,7 +768,23 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
   // The last thing the boot does, and the first thing a release undoes. An extension may
   // await here — which is what a provider needing to OPEN something could never do.
-  await appLifecycle.up(app);
+  //
+  // A refusal here has to release what the boot took, because the caller cannot: it handed
+  // `onDispose` over BEFORE this line and never receives the app that would carry it back.
+  // Whoever opened a connection to give it to us would otherwise leak it on every failed boot.
+  try {
+    await appLifecycle.up(app);
+  } catch (cause) {
+    try {
+      await release();
+    } catch (refused) {
+      throw new AggregateError(
+        [cause, ...(refused instanceof AggregateError ? refused.errors : [refused])],
+        `The boot failed and could not release everything it had taken: ${(cause as Error)?.message ?? String(cause)}`,
+      );
+    }
+    throw cause;
+  }
 
   return app;
 }

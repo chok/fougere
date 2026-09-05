@@ -7,15 +7,18 @@ import type { Extension } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { createMemoryStorage } from '@fougere/adapter-memory';
 import type { App, CreateAppOptions, Storage, FougereConfig, Transport } from '@fougere/core';
+import type { ResolvedStorage } from '@fougere/defaults';
 import { applyCreate, applyUpdate, type SchemaView } from '@fougere/schema';
 
 // ── Public types ─────────────────────────────────
 
 export interface FougereServerConfig {
-  /** Storage handle. Forwarded to the auth provider via AuthContext.db. */
-  db?: unknown;
-  /** Per-entity storage factory. */
-  storageFactory?: (entity: SchemaView, name: string) => Storage;
+  /**
+   * The whole data layer, as `resolveStorage` composed it — where the rows are, which source
+   * transacts, what to close. Handed over as ONE subject: a host that passed the factory alone
+   * lost the transaction and the connection's owner, and nothing said so.
+   */
+  storage?: ResolvedStorage;
   /** What this app takes on beyond its fronds, each stating what it does and what it undoes. */
   extensions?: CreateAppOptions['extensions'];
   /** What the boot line names as the host — 'Nuxt/Nitro', 'Next'. */
@@ -119,32 +122,16 @@ async function boot(): Promise<App> {
   // Auto-resolve the data layer from config.db when the user didn't provide a
   // custom one via configureFougere. The resolution itself lives in @fougere/defaults
   // — this host must not know which storage package backs `db:`.
-  let db = _config.db;
-  let storageFactory = _config.storageFactory;
+  let storage = _config.storage;
+  if (!storage) {
+    const { resolveStorage } = await import('@fougere/defaults');
+    storage = resolveStorage(fileConfig.db as never, (fileConfig as { sources?: unknown }).sources as never);
+    log.debug(storage.storageFactory ? 'auto-resolving storage from config.db' : 'no db declared — falling back to in-memory storage');
+  }
   // The storage's two halves, kept together: its ascent is an extension, its connection
   // is not — it is opened here, before the container, so it closes after the container.
-  let storageMigrate: Extension['up'] | undefined;
-  let closeStorage: (() => Promise<void>) | undefined;
-  // Where the rows are, and how to open a transaction there — read from the same storage
-  // resolution, because a frame's realization is decided by `sources:` and nothing else.
-  let sourceOf: ((entityName: string) => string) | undefined;
-  let transacted: CreateAppOptions['transacted'];
-  if (!storageFactory) {
-    const { resolveStorage } = await import('@fougere/defaults');
-    const storage = resolveStorage(fileConfig.db as never, (fileConfig as { sources?: unknown }).sources as never);
-    if (storage.storageFactory) {
-      log.debug('auto-resolving storage from config.db');
-      db = storage.db;
-      storageFactory = storage.storageFactory;
-      sourceOf = storage.sourceOf;
-      transacted = storage.transacted as never;
-      storageMigrate = storage.migrate;
-      closeStorage = storage.close;
-    } else {
-      log.debug('no db declared — falling back to in-memory storage');
-      storageFactory = createMemoryStorage;
-    }
-  }
+  const storageFactory = storage.storageFactory ?? createMemoryStorage;
+  const storageMigrate: Extension['up'] | undefined = storage.migrate;
 
   // Layer-2 wiring: `remotes: { catalog: 'http://...' }` in fougere.config.ts
   // is all the user writes — the default transport comes from here.
@@ -177,9 +164,10 @@ async function boot(): Promise<App> {
       : {}),
     createContainer,
     storageFactory,
-    sourceOf,
-    transacted,
-    db,
+    sourceOf: storage.sourceOf,
+    transacts: storage.transacts,
+    transacted: storage.transacted as never,
+    db: storage.db,
     auth: fileConfig.auth,
     adapters: fileConfig.adapters,
     remotes: fileConfig.remotes,
@@ -196,7 +184,7 @@ async function boot(): Promise<App> {
     // Opened before the container, so released after it. Never wired here until now:
     // this host boots the storage and no host closed one, which is what made a reload
     // leak the pool of every app it discarded.
-    onDispose: closeStorage,
+    onDispose: storage.close,
   });
 
   log.info(`ascent: ${app.extensions().join(' → ') || 'nothing declared'}`);

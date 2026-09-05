@@ -102,3 +102,27 @@ describe('a filtered list counts what it filtered', () => {
     expect(page.total).toBe(3);
   });
 });
+
+describe('output(schema)', () => {
+  it('restricts every read to the fields of the view, the way SQL selects them', async () => {
+    const storage = createMemoryStorage(Post as never, 'post');
+    await storage.create({ title: 'Fern', status: 'published' });
+    const scoped = storage.output(Post.pick('id', 'title') as never);
+
+    const [listed] = await scoped.list({});
+    expect(Object.keys(listed as object).sort()).toEqual(['id', 'title']);
+    expect(Object.keys(await scoped.findById((listed as any).id) as object).sort())
+      .toEqual(['id', 'title']);
+    // The unscoped one still answers whole: the view is a way of reading, not a deletion.
+    expect(await storage.findById((listed as any).id)).toHaveProperty('status', 'published');
+  });
+
+  it('pages on a key the view does not show', async () => {
+    const storage = createMemoryStorage(Post as never, 'post');
+    await storage.create({ title: 'A' });
+    const page = await storage.output(Post.pick('title') as never).list({ limit: 1 });
+
+    expect(page.endCursor).toBeDefined();
+    expect(Object.keys(page[0] as object)).toEqual(['title']);
+  });
+});

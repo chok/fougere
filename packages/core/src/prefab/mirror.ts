@@ -1,4 +1,4 @@
-import { FieldSet, Lifecycle, type EntityConstructor, type Fields, type ValidationResult } from '@fougere/schema';
+import { Lifecycle, type EntityConstructor, type Fields } from '@fougere/schema';
 import type { Storage } from '../storage.js';
 
 /** A paginated local copy of a source that cannot be queried directly. */
@@ -62,7 +62,7 @@ export function Mirror<E extends EntityConstructor>(shape: E): MirrorConstructor
       // Preserve the source's page boundaries: one page becomes one upsert.
       for await (const page of this.pull(since)) {
         if (page.length === 0) continue;
-        written += await this.storage.upsertAll(judgePage(shape, page) as Partial<T>[]);
+        written += await this.storage.upsertAll(page);
       }
       return { written, since, ms: Date.now() - started };
     }
@@ -79,22 +79,4 @@ export function ageFieldOf(shape: unknown): string | undefined {
     if (Lifecycle.of(field).stampedOnUpdate) return name;
   }
   return undefined;
-}
-
-/** Validate and decode a page, naming a refused row by its declared primary field. */
-function judgePage<T>(shape: unknown, page: Partial<T>[]): Record<string, unknown>[] {
-  const judge = (shape as { validate?: (input: unknown) => ValidationResult<unknown> }).validate;
-  if (typeof judge !== 'function') return page as Record<string, unknown>[];
-
-  const name = (shape as { name?: string }).name ?? 'mirror';
-  const fields = (shape as { getFields?: () => Fields }).getFields?.();
-  const primary = fields ? FieldSet.of(fields).primary : undefined;
-  return page.map((row, index) => {
-    const verdict = judge.call(shape, row);
-    if (verdict.success) return verdict.data as Record<string, unknown>;
-    const key = primary === undefined ? undefined : (row as Record<string, unknown>)[primary];
-    const where = key !== undefined ? `row ${primary} ${JSON.stringify(key)}` : `row ${index} of this page`;
-    const why = verdict.errors.map((e) => `${e.path}: ${e.message}`).join(', ');
-    throw new Error(`${name} mirror refused ${where} — ${why}`);
-  });
 }

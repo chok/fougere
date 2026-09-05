@@ -25,6 +25,7 @@ export interface CreateAppOptions {
    * itself.
    */
   sourceOf?: (entityName: string) => string;
+  transacts?: (source: string) => boolean;
   transacted?: <R>(source: string, fn: (storageFactory: StorageFactory) => Promise<R>) => Promise<R>;
   /** Builds the cross-source reader a frond gets when it declares `reads:`. */
   sourcesFactory?: (reads: unknown[], frond: string) => Promise<unknown> | unknown;

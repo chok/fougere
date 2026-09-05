@@ -17,6 +17,8 @@ export interface FrameWorld {
   hostedHere: (frond: string) => boolean;
   storageFactory?: StorageFactory;
   sourceOf?: (entityName: string) => string;
+  /** Whether that source hands one out — asked before the frame is built, not at the call. */
+  transacts?: (source: string) => boolean;
   transacted?: <R>(source: string, fn: (storageFactory: StorageFactory) => Promise<R>) => Promise<R>;
   log: Logger;
 }
@@ -133,23 +135,25 @@ export function registerFrames(
     refuseUncoveredWrites(members, key, world);
 
     const sources = new Set(members.entities.map((member) => world.sourceOf?.(member.name) ?? 'db'));
-    const judge = (storage: Storage, name: string, schema: SchemaView) =>
+    const validator = (storage: Storage, name: string, schema: SchemaView) =>
       new StorageGuard(schema.getFields(), name).guard(storage);
 
-    // One engine and a way into it: the engine gives the unwind AND the isolation.
-    if (world.transacted && sources.size === 1) {
-      const source = [...sources][0];
+    // One engine and a way into it: the engine gives the unwind AND the isolation. The
+    // question goes to the source these members live in — a composition answering for the
+    // default one would compensate a frame whose own engine holds transactions.
+    const source = sources.size === 1 ? [...sources][0]! : undefined;
+    if (world.transacted && source !== undefined && (world.transacts?.(source) ?? true)) {
       world.log.info(`${key} — transaction, source '${source}'`);
       scope.registerValue(key, {
         run: <R>(fn: (entities: never, providers: never) => Promise<R>) =>
           ambient.enterFrame(key, () =>
-            world.transacted!(source, (factory) => inScope(scope, members, factory, judge, fn as never))),
+            world.transacted!(source, (factory) => inScope(scope, members, factory, validator, fn as never))),
       });
       continue;
     }
 
     // Split, or an engine that hands out no transaction: the frame keeps the before-image
-    // of every write and replays the inverses itself. `judge` stays OUTSIDE `recording`, so
+    // of every write and replays the inverses itself. `validator` stays OUTSIDE `recording`, so
     // a write the entity refuses never enters the journal.
     const why = sources.size > 1
       ? members.entities.map((m) => `${m.name} in '${world.sourceOf?.(m.name) ?? 'db'}'`).join(', ')
@@ -159,7 +163,7 @@ export function registerFrames(
       run: <R>(fn: (entities: never, providers: never) => Promise<R>): Promise<R> => ambient.enterFrame(key, async () => {
         const journal: Undo[] = [];
         const record = (storage: Storage, name: string, schema: SchemaView) =>
-          judge(recording(storage, name, schema, journal), name, schema);
+          validator(recording(storage, name, schema, journal), name, schema);
         try {
           return await inScope(scope, members, world.storageFactory!, record, fn as never);
         } catch (cause) {

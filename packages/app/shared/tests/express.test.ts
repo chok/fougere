@@ -19,7 +19,7 @@ class Post extends entity({ id: primary(), title: text() }) {}
 /** Boot once and wait for it — the middlewares are lazy, and a 5ms settle is not a boot. */
 async function bootWith(rows: { id: string; title: string }[]) {
   configureFougere({
-    storageFactory: () =>
+    storage: { storageFactory: () =>
       ({
         list: async () => rows,
         findById: async (id: string) => rows.find((r) => r.id === id),
@@ -30,7 +30,7 @@ async function bootWith(rows: { id: string; title: string }[]) {
         delete: async () => true,
         client: {},
         output() { return this; },
-      }) as never,
+      }) as never },
   });
   await useFougereApp();
 }

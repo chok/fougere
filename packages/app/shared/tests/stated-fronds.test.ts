@@ -17,7 +17,6 @@ class PostHandler { list(): Post[] { return []; } }
 describe('a host that states what it hosts', () => {
   it('boots without scanning, and serves what it stated', async () => {
     configureFougere({
-      db: false,
       fronds: [frond('blog', { entities: [Post], handlers: [PostHandler] })],
     });
 
@@ -35,7 +34,7 @@ describe('a host that states what it hosts', () => {
       .filter((m) => m.includes('typescript')).length;
 
     const before = modules();
-    configureFougere({ db: false, fronds: [frond('blog', { entities: [Post] })] });
+    configureFougere({ fronds: [frond('blog', { entities: [Post] })] });
     await useFougereApp();
 
     expect(modules()).toBe(before);

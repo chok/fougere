@@ -151,6 +151,27 @@ describe('storageFrom — an engine the caller built', () => {
     expect(await held(storage.db as any, 'books')).toBeUndefined();
   });
 
+  it('answers for the source the work runs in, not for the default one', () => {
+    // A frame whose members all live in `archive` gets `archive`'s transaction. Reading
+    // `db:` instead compensated it — silently, and only in a deployment that had split.
+    const nothing = { storageFactory: (() => ({})) as never, name: 'nothing' };
+    const split = storageFrom({
+      db: nothing,
+      sources: { archive: { source: setupSqlite({ path: ':memory:' }), entities: ['Book'] } },
+    });
+
+    expect(split.transacts!('archive')).toBe(true);
+    expect(split.transacts!('db')).toBe(false);
+
+    const other = storageFrom({
+      db: setupSqlite({ path: ':memory:' }),
+      sources: { cold: { source: nothing, entities: ['Book'] } },
+    });
+
+    expect(other.transacts!('db')).toBe(true);
+    expect(other.transacts!('cold')).toBe(false);
+  });
+
   it('refuses the same double claim, whoever built the engines', () => {
     const twice = () => storageFrom({
       db: setupSqlite({ path: ':memory:' }),

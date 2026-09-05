@@ -5,7 +5,8 @@
  * The old create-if-not-exists pass ignored it silently.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { entity, primary, text, number, optional, bool, ref, type EntityConstructor } from '@fougere/schema';
+import { entity, primary, text, number, optional, bool, ref, unique, type EntityConstructor } from '@fougere/schema';
+import { sql } from 'kysely';
 import { setupSqlite, type SqliteSetup } from '../src/sqlite.js';
 import { actualState, delta, desiredTables, orderChanges, planMigration, migrate, changeSQL } from '../src/diff.js';
 
@@ -124,6 +125,51 @@ describe('migrate', () => {
 
     await ormV2.update(id, { views: 7 });
     expect((await ormV2.findById(id) as any).views).toBe(7);
+  });
+});
+
+describe('what a migrated table promises', () => {
+  /**
+   * Two databases of one entity used to promise different things: `createTable` stated
+   * NOT NULL whatever happened, `addColumn` only when a default filled the column.
+   */
+  it('states a required column on a table that already existed', async () => {
+    class V1 extends entity({ id: primary(), title: text({ min: 1 }) }) {}
+    class V2 extends entity({ id: primary(), title: text({ min: 1 }), slug: text({ min: 1 }) }) {}
+
+    await migrate(appOf(V1), setup.db);
+    await migrate(appOf(V2), setup.db);
+
+    await expect(sql.raw(`insert into posts (id, title) values ('a', 'x')`).execute(setup.db))
+      .rejects.toThrow(/NOT NULL/i);
+  });
+
+  /** `unique()` was declared as a column constraint, which only a fresh table ever read. */
+  it('realizes a unique added to a live column, rather than declaring it alone', async () => {
+    class V1 extends entity({ id: primary(), title: text({ min: 1 }) }) {}
+    class V2 extends entity({ id: primary(), title: unique(text({ min: 1 })) }) {}
+
+    await migrate(appOf(V1), setup.db);
+    const storage = setup.storageFactory(V1, 'post');
+    await storage.create({ title: 'once' });
+
+    await migrate(appOf(V2), setup.db);
+
+    await expect(setup.storageFactory(V2, 'post').create({ title: 'once' }))
+      .rejects.toThrow(/already exist/i);
+  });
+
+  /** The refusal is the answer: the rows already break what the entity now states. */
+  it('fails to add that unique when the rows already break it', async () => {
+    class V1 extends entity({ id: primary(), title: text({ min: 1 }) }) {}
+    class V2 extends entity({ id: primary(), title: unique(text({ min: 1 })) }) {}
+
+    await migrate(appOf(V1), setup.db);
+    const storage = setup.storageFactory(V1, 'post');
+    await storage.create({ title: 'twice' });
+    await storage.create({ title: 'twice' });
+
+    await expect(migrate(appOf(V2), setup.db)).rejects.toThrow(/UNIQUE|duplicate/i);
   });
 });
 

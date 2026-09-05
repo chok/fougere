@@ -32,6 +32,8 @@ export interface ResolvedStorage {
   dbOf?: (source: string) => unknown;
   /** Every source that has an engine, the default one first. */
   sources?: () => string[];
+  /** Whether that source hands out a transaction — the dual of running one in it. */
+  transacts?: (source: string) => boolean;
   /** Run `fn` inside one transaction of that source, with a storage factory bound to it. */
   transacted?: <R>(source: string, fn: (storageFactory: (entity: any, name: string) => any) => Promise<R>) => Promise<R>;
   /**
@@ -150,14 +152,17 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
     sourceOf,
     dbOf: (source) => (engineOf(source) as { db?: unknown } | undefined)?.db,
     sources: () => [DEFAULT, ...engines.keys()],
-    // A source that hands out no transaction leaves the key absent, and a frame reads the
-    // absence: `boot/together.ts` compensates instead, and says which of the two it built.
-    transacted: base.transacted ? async (source, fn) => {
+    // Asked of the source that will run the work, never of the default one: a frame whose
+    // members all live in a transactional source gets its transaction even when `db:` has
+    // none. A source that hands out none leaves the answer `false`, and a frame reads it:
+    // `boot/together.ts` compensates instead, and says which of the two it built.
+    transacts: (source) => engineOf(source)?.transacted !== undefined,
+    transacted: async (source, fn) => {
       const engine = engineOf(source);
       if (!engine) throw new Error(`No source named '${source}' — declared sources are ${[DEFAULT, ...engines.keys()].join(', ')}.`);
       if (!engine.transacted) throw new Error(`Source '${source}' hands out no transaction.`);
       return engine.transacted(fn);
-    } : undefined,
+    },
     // One pass per source, each seeing only its own entities and the NAMES of the others —
     // which is what makes a cross-source `ref()` a miss rather than a constraint against a
     // stranger. What a pass DOES is the source's own: it knows its engine, this does not.

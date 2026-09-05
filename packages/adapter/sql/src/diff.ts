@@ -54,9 +54,13 @@ export function delta(desired: TableDef[], actual: SchemaState): Change[] {
   // cannot see whether an index exists. `CREATE INDEX IF NOT EXISTS` is idempotent, so
   // proposing it every time is cheaper and more honest than introspecting to guess —
   // the alternative would be an index that a `unique()` added later never gets.
+  //
+  // `unique` comes here too, and for that very reason: written as a column constraint it
+  // only ever reached a table being created, so the rule was declared and never realized on
+  // a database that had already lived. A unique index is the one form that can arrive late.
   for (const table of desired) {
     for (const column of table.columns) {
-      if (column.index) changes.push({ kind: 'createIndex', table, column });
+      if (column.index || (column.unique && !column.primary)) changes.push({ kind: 'createIndex', table, column });
     }
   }
   return changes;
@@ -113,10 +117,12 @@ export function changeSQL(change: Change, dialectName: DialectName): string {
     .schema.alterTable(table.name)
     .addColumn(column.name, sql.raw(type) as any, (col) => {
       let built = col;
-      if (column.default !== undefined) {
-        built = built.defaultTo(column.default);
-        if (!column.nullable) built = built.notNull();
-      }
+      if (column.default !== undefined) built = built.defaultTo(column.default);
+      // Stated whether a default fills it or not: the same declaration gave NOT NULL on a
+      // fresh table and nothing on a migrated one, so two databases of one entity promised
+      // different things. Without a default the engine refuses on a table holding rows —
+      // which is the refusal `planStep` already names, arriving here instead of never.
+      if (!column.nullable) built = built.notNull();
       if (column.references) {
         built = built.references(`${column.references.table}.${column.references.column}`);
         if (column.references.onDelete) built = built.onDelete(column.references.onDelete);
