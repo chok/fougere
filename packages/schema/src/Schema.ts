@@ -6,7 +6,6 @@ import {
   type PreviousNames,
 } from './entity/EntityDeclarations.js';
 import { type EntityAdapters } from './entity/EntityAdapters.js';
-import { EntityAdapterSet } from './entity/EntityAdapterSet.js';
 import { InputValidator } from './validator/InputValidator.js';
 import { SchemaDerivation } from './SchemaDerivation.js';
 import { SchemaDefinition, type SchemaConstraints } from './SchemaDefinition.js';
@@ -127,36 +126,18 @@ export class Schema {
   }
 
   static pick(...keys: string[]) {
-    assertKnownKeys('pick', keys, this.fields);
-    const picked: Fields = {};
-    for (const key of keys) if (this.fields[key]) picked[key] = this.fields[key];
-    return this.derive(picked, (key) => (keys.includes(key) ? key : undefined));
+    return Schema.subclass(this.definition.pick(keys, this));
   }
 
   static omit(...keys: string[]) {
-    assertKnownKeys('omit', keys, this.fields);
-    const kept: Fields = {};
-    for (const [key, field] of Object.entries(this.fields))
-      if (!keys.includes(key)) kept[key] = field;
-    return this.derive(kept, (key) => (keys.includes(key) ? undefined : key));
+    return Schema.subclass(this.definition.omit(keys, this));
   }
 
   static rename(mapping: Record<string, string>) {
-    assertKnownKeys('rename', Object.keys(mapping), this.fields);
-    const renamed: Fields = {};
-    for (const [key, field] of Object.entries(this.fields))
-      renamed[mapping[key] ?? key] = field;
-    return this.derive(renamed, (key) => mapping[key] ?? key);
+    return Schema.subclass(this.definition.rename(mapping, this));
   }
 
   static declares(declarations: EntityDeclarations<Fields>) {
-    const addressed = EntityAdapterSet.of(declarations.adapters).fieldNames;
-    assertKnownKeys(
-      'declares',
-      [...addressed, ...Object.keys(declarations.previous ?? {})],
-      this.fields,
-    );
-
     return Schema.subclass(this.definition.declaring(declarations));
   }
 
@@ -214,24 +195,6 @@ export class Schema {
     });
     return Derived as unknown as SchemaConstructor<Fields>;
   }
-
-  private static derive(fields: Fields, transform: (key: string) => string | undefined) {
-    return Schema.subclass(this.definition.derived(fields, transform, this));
-  }
-}
-
-/**
- * So a gesture naming a field that does not exist says so, and lists what there is.
- * FR : pour qu'un geste nommant un champ inexistant le dise, et énumère ce qui existe.
- * `pick('titel')` → `pick(): unknown field \`titel\`. This schema carries id, title, body.`
- */
-function assertKnownKeys(operation: string, keys: string[], fields: Fields): void {
-  const strangers = keys.filter((key) => !(key in fields));
-  if (strangers.length === 0) return;
-  throw new Error(
-    `${operation}(): unknown field ${strangers.map((s) => `\`${s}\``).join(', ')}. ` +
-      `This schema carries ${Object.keys(fields).join(', ')}.`,
-  );
 }
 
 type UnionToIntersection<U> = (U extends unknown ? (k: U) => void : never) extends (
