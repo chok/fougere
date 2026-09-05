@@ -4,8 +4,8 @@ import { upperFirst, Role } from '@fougere/schema';
  */
 import type SchemaBuilder from '@pothos/core';
 import { Shapes, Schema, type Shape } from '@fougere/schema';
-import type { Field, Fields, SchemaView, SchemaOrCard } from '@fougere/schema';
-import { Boundary, Card, Lifecycle, schemaOf, Visibility } from '@fougere/schema';
+import type { Field, Fields, SchemaView } from '@fougere/schema';
+import { Boundary, Card, Lifecycle, Visibility } from '@fougere/schema';
 
 // ─── Types ─────────────────────────────────────────
 
@@ -19,7 +19,7 @@ export interface TypeConfig {
   name: string;
   /** Entity source */
   /** The schema whose fields become the type — a live class, or a card that travelled. */
-  entity: SchemaOrCard;
+  entity: SchemaView;
   /** Champs à exclure du type GraphQL */
   exclude?: string[];
   /** Relations à résoudre */
@@ -442,7 +442,7 @@ export function registerObjectType(
 /** Enregistre un type GraphQL (lecture) depuis une entité fougere. */
 export function registerType(builder: InstanceType<typeof SchemaBuilder>, config: TypeConfig): any {
   // A live class or a card — an adapter needs the fields, never the constructor.
-  const schema = schemaOf(config.entity);
+  const schema = config.entity;
   const fields = schema.getFields();
   const exclude = new Set(config.exclude ?? []);
   // Who owns the enum names: the schema a view came from, so `PostCard.status` and

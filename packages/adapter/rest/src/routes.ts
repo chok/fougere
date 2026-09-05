@@ -1,6 +1,6 @@
 /** @fougere/adapter-rest — generates REST route definitions from fougere handlers. */
-import type { Field, Fields, SchemaOrCard } from '@fougere/schema';
-import { fieldsOf, Visibility } from '@fougere/schema';
+import type { Field, Fields, SchemaView } from '@fougere/schema';
+import { Visibility } from '@fougere/schema';
 import type { HandlerEntry as CoreHandlerEntry } from '@fougere/core';
 
 // ─── Types ──────────────────────────────────────
@@ -31,8 +31,8 @@ export interface RouteDefinition {
 }
 
 interface OperationMeta {
-  input?: SchemaOrCard;
-  output?: SchemaOrCard;
+  input?: SchemaView;
+  output?: SchemaView;
   /** Canonical kind from core's EffectiveOperation. */
   kind: 'query' | 'command';
   /** The operation in words — see `RouteDefinition.description`. */
@@ -42,16 +42,16 @@ interface OperationMeta {
 interface EntityEntry {
   name: string;
   /** A live class in-process, a card from a frond whose class never crossed. */
-  entityClass: SchemaOrCard;
+  entityClass: SchemaView;
   exposed?: boolean;
 }
 
 /** Only what this projection reads of a scanned handler — five fields of nine. */
 type HandlerEntry = Pick<CoreHandlerEntry, 'address' | 'surface'> & {
   /** `Crud(Post, PostPublic)` — the handler-wide output view, scoping every op. */
-  outputOverride?: SchemaOrCard;
+  outputOverride?: SchemaView;
   /** The scanned constructor, which carries the same statement made on the class. */
-  ctor?: (new (...args: never[]) => unknown) & { __output?: SchemaOrCard };
+  ctor?: (new (...args: never[]) => unknown) & { __output?: SchemaView };
 };
 // No `operations` here, and its absence is the point. It was declared, never read — this
 // file takes its table from `app.operationsFor()` — and it carried `OperationMeta`, whose
@@ -185,13 +185,12 @@ export function generateRoutes(app: AppLike, options?: GenerateRoutesOptions): R
       // proxy facades, which intentionally cannot enumerate their keys before discovery.
       const opNames = [...effectiveOperations.keys()];
       const entityOverrides = overrides[entity.name] ?? {};
-      // Use handler's output schema if declared, otherwise entity. A live class or a
-      // card — `fieldsOf` takes both, so a frond whose class never crossed the wire
-      // projects the same routes as a local one.
-      const outputSchema: SchemaOrCard = handler?.outputOverride
+      // Use handler's output schema if declared, otherwise entity. A frond whose class
+      // never crossed the wire arrives as one too: boot rebuilds the card before here.
+      const outputSchema: SchemaView = handler?.outputOverride
         ?? handler?.ctor?.__output
         ?? entity.entityClass;
-      const fields = fieldsOf(outputSchema);
+      const fields = outputSchema.getFields();
 
       for (const opName of opNames) {
         const meta = effectiveOperations.get(opName);
@@ -209,11 +208,11 @@ export function generateRoutes(app: AppLike, options?: GenerateRoutesOptions): R
         let inputFields: Fields | undefined;
         let outputFields: Fields | undefined = Visibility.of(fields).output;
         if (meta?.input) {
-          inputFields = fieldsOf(meta.input);
+          inputFields = meta.input.getFields();
         } else if (opName === 'create' || opName === 'update') {
           inputFields = Visibility.of(fields).input;
         }
-        if (meta?.output) outputFields = Visibility.of(fieldsOf(meta.output)).output;
+        if (meta?.output) outputFields = Visibility.of(meta.output.getFields()).output;
 
         // Handler/method overrides are already executed by the facade from the same
         // EffectiveOperation local and RPC use. The adapter never resolves DI itself.

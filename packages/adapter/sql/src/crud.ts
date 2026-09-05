@@ -1,7 +1,7 @@
 import { Lifecycle, Role } from '@fougere/schema';
 /** SqlStorage — per-entity storage over Kysely, one implementation for every engine. */
 import { sql, type Kysely } from 'kysely';
-import { applyCreate, applyUpdate, schemaOf, type Fields, type SchemaView, type SchemaOrCard } from '@fougere/schema';
+import { applyCreate, applyUpdate, type Fields, type SchemaView } from '@fougere/schema';
 import { toTable, toTableName, type TableDef } from './table.js';
 import { resolveDialect, type Dialect, type DialectName } from './dialect.js';
 // The contract entry and not the main one: `FougereError` crosses a process boundary and
@@ -90,7 +90,7 @@ export class SqlStorage {
 
   constructor(
     private db: Kysely<any>,
-    source: SchemaOrCard,
+    entity: SchemaView,
     tableName: string,
     selectFields?: Set<string>,
     dialect: DialectName = 'sqlite',
@@ -99,10 +99,6 @@ export class SqlStorage {
     this.dialect = resolved;
     this.maxBindings = resolved.maxBindings;
     this.upsertClause = resolved.upsert;
-    // Normalized once: the table projection and the axis analysis below both read the
-    // schema, and a card handed to each separately would be rebuilt twice into two
-    // unrelated field objects. Past this line nothing knows which form arrived.
-    const entity = schemaOf(source);
     this.table = toTable(tableName, entity);
     for (const column of this.table.columns) {
       this.toColumn.set(column.field, column.name);
@@ -493,5 +489,5 @@ export interface StorageFactoryOptions {
 /** Create a StorageFactory backed by Kysely — same call shape on every engine. */
 export function createStorageFactory(db: Kysely<any>, options?: StorageFactoryOptions, dialect: DialectName = 'sqlite') {
   const resolve = options?.tableName ?? toTableName;
-  return (entity: SchemaOrCard, name: string) => new SqlStorage(db, entity, resolve(name), undefined, dialect);
+  return (entity: SchemaView, name: string) => new SqlStorage(db, entity, resolve(name), undefined, dialect);
 }

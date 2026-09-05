@@ -4,7 +4,7 @@
  * Relations are wired by looking the target up in a registry. That registry was keyed by
  * the entity class OBJECT, so a target that was not the very object registered missed and
  * hit `if (!targetEntry) continue` — the relation left the schema without a word. An
- * entity rebuilt from a card is exactly that case: its `to()` leaves a `{ name }` stand-in.
+ * schema rebuilt from a lone card is exactly that case: its `to()` leaves a `{ name }` stand-in.
  *
  * Keyed by name, both sources resolve. These tests hold the pair: same schema from cards
  * as from classes, relations included.
@@ -67,8 +67,8 @@ suite('the GraphQL projection reads a card as readily as a class', () => {
   it('registers the same types and fields', () => {
     const fromClasses = schemaFrom(fakeApp(Author, Post));
     const fromCards = schemaFrom(fakeApp(
-      Card.fromSchema(Author, 'author').descriptor,
-      Card.fromSchema(Post, 'post').descriptor,
+      Card.fromSchema(Author, 'author').toSchema(),
+      Card.fromSchema(Post, 'post').toSchema(),
     ));
 
     expect(fieldNamesOf(fromCards, 'Post')).toEqual(fieldNamesOf(fromClasses, 'Post'));
@@ -77,8 +77,8 @@ suite('the GraphQL projection reads a card as readily as a class', () => {
 
   it('wires the relation both ways, from cards', () => {
     const schema = schemaFrom(fakeApp(
-      Card.fromSchema(Author, 'author').descriptor,
-      Card.fromSchema(Post, 'post').descriptor,
+      Card.fromSchema(Author, 'author').toSchema(),
+      Card.fromSchema(Post, 'post').toSchema(),
     ));
 
     // ref → N:1. `authorId` yields an `author` field typed Author, and its absence is what
@@ -105,8 +105,8 @@ suite('the GraphQL projection reads a card as readily as a class', () => {
       fronds: [{
         name: 'notes',
         entities: [
-          { name: 'authorUser', entityClass: Card.fromSchema(AuthorUser, 'authorUser').descriptor },
-          { name: 'note', entityClass: Card.fromSchema(Note, 'note').descriptor },
+          { name: 'authorUser', entityClass: Card.fromSchema(AuthorUser, 'authorUser').toSchema() },
+          { name: 'note', entityClass: Card.fromSchema(Note, 'note').toSchema() },
         ],
         handlers: [
           { address: 'authorUser', operations: new Map() },

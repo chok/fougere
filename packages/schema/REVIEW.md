@@ -58,7 +58,7 @@ built, `Schema` is its public face.
 
 `entity()` is the only name in the package a user types.
 
-[`entity.ts`](src/entity.ts) · [`projection/card/Card.ts`](src/projection/card/Card.ts) · [`projection/SchemaOrCard.ts`](src/projection/SchemaOrCard.ts) · [`projection/card/Bundle.ts`](src/projection/card/Bundle.ts)
+[`entity.ts`](src/entity.ts) · [`projection/card/Card.ts`](src/projection/card/Card.ts) · [`projection/card/Bundle.ts`](src/projection/card/Bundle.ts)
 
 ## 7 — The surface
 

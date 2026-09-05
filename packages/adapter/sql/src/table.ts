@@ -1,6 +1,6 @@
 import { Lifecycle, Role } from '@fougere/schema';
 /** Entity → table description, with no SQL in sight. */
-import { Shapes, fieldsOf, lowerFirst, schemaOf, type Field, type SchemaView, type SchemaOrCard } from '@fougere/schema';
+import { Shapes, lowerFirst, type Field, type SchemaView } from '@fougere/schema';
 import { boundsOf, type ShapeBounds } from './check.js';
 import { sqlEntries, type SqlField } from './fields.js';
 
@@ -82,7 +82,7 @@ function primaryColumnOf(target: Partial<SchemaView>): string {
 function referenceFor(
   field: Field,
   resolve: (name: string) => string,
-  tableNameOf?: Map<SchemaOrCard, string>,
+  tableNameOf?: Map<SchemaView, string>,
   hosted?: HostedNames,
 ): ColumnReference | undefined {
   const relation = Role.of(field).relation;
@@ -121,7 +121,7 @@ function toColumn(
   fieldName: string,
   field: Field,
   resolve: (name: string) => string,
-  tableNameOf?: Map<SchemaOrCard, string>,
+  tableNameOf?: Map<SchemaView, string>,
   hosted?: HostedNames,
   stated?: SqlField,
 ): ColumnDef {
@@ -158,7 +158,7 @@ export interface RelationResolve {
   /** Same resolver used for every entity's own table (default or a custom `tableName`). */
   resolve: (name: string) => string;
   /** Live entity class → its already-resolved table name, reused instead of re-derived. */
-  tableNameOf?: Map<SchemaOrCard, string>;
+  tableNameOf?: Map<SchemaView, string>;
   /** Which entities this batch holds and which live in another source — decided by NAME. */
   hosted?: HostedNames;
 }
@@ -172,11 +172,10 @@ export interface HostedNames {
 }
 
 /** Describe one entity as a table — the single reader of the axes. */
-export function toTable(tableName: string, entity: SchemaOrCard, relations?: RelationResolve): TableDef {
+export function toTable(tableName: string, schema: SchemaView, relations?: RelationResolve): TableDef {
   const resolve = relations?.resolve ?? toTableName;
-  const fields = fieldsOf(entity);
+  const fields = schema.getFields();
   // Read off the entity, since that is where it is declared and addressed by field key.
-  const schema = schemaOf(entity);
   const configuration = schema.getAdapters().sql;
   // Judged HERE and not at `entity()`: this runs at boot, after every import, so the
   // format is always loaded. A validator registered with `schema` would depend on which
@@ -224,8 +223,8 @@ export function toTableName(name: string): string {
 
 export interface EntityEntry {
   name: string;
-  /** A live class in-process, a card from a frond whose class never crossed. */
-  entityClass: SchemaOrCard;
+  /** A live class in-process, or one rebuilt from the card of a frond that never crossed. */
+  entityClass: SchemaView;
 }
 
 export interface FrondLike {
@@ -236,16 +235,16 @@ export interface FrondLike {
 export interface AppLike {
   fronds: FrondLike[];
   /** Auth runtime entities are migrated alongside scanned fronds when present. */
-  auth?: { entities: Record<string, SchemaOrCard> };
+  auth?: { entities: Record<string, SchemaView> };
   /** Entities this app hosts in ANOTHER source — named so a miss can be read. */
   elsewhere?: string[];
 }
 
 /** A schema says whether it holds rows; this adapter decides what to emit for it. */
 function verdictOn(entry: EntityEntry): 'table' | 'answer' {
-  const schema = schemaOf(entry.entityClass);
+  const { entityClass } = entry;
 
-  return !schema.derivation || schema.anchored ? 'table' : 'answer';
+  return !entityClass.derivation || entityClass.anchored ? 'table' : 'answer';
 }
 
 /** Every entity this app hosts, once each. */
@@ -276,7 +275,7 @@ function collectEntities(app: AppLike): EntityEntry[] {
  */
 export function toTables(app: AppLike, resolve: (name: string) => string): TableDef[] {
   const entries = collectEntities(app);
-  const tableNameOf = new Map<SchemaOrCard, string>(entries.map((entry) => [entry.entityClass, resolve(entry.name)]));
+  const tableNameOf = new Map<SchemaView, string>(entries.map((entry) => [entry.entityClass, resolve(entry.name)]));
   const hosted = app.elsewhere
     ? { here: new Set(entries.map((entry) => lowerFirst(entry.name))), elsewhere: new Set(app.elsewhere.map(lowerFirst)) }
     : undefined;

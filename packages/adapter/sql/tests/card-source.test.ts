@@ -2,7 +2,8 @@
  * The storage projection stands on the fields, not on the class.
  *
  * `toTable` reads the axes — shape for the column type, role for keys and FKs, lifecycle
- * for defaults. None of that needs a live class, so a card must describe the same table.
+ * for defaults. None of that needs the class the fields were declared on, so a card
+ * rebuilt into a schema must describe the same table.
  * What a card CANNOT carry is a live relation target, and the fallback is asserted here
  * rather than left to be discovered: it is the one place the two paths legitimately differ.
  */
@@ -40,7 +41,7 @@ class Post extends entity({
 suite('a table is described from a card as from a class', () => {
   it('produces the same columns, keys and constraints', () => {
     const fromClass = toTable('posts', Post);
-    const fromCard = toTable('posts', Card.fromSchema(Post).descriptor);
+    const fromCard = toTable('posts', Card.fromSchema(Post).toSchema());
 
     // The FK target is the documented exception: a LONE card has no live target, so
     // `referenceFor` falls back to the name convention. Compared separately below.
@@ -55,7 +56,7 @@ suite('a table is described from a card as from a class', () => {
   it('resolves the FK through a bundle, and falls back to the convention alone', () => {
     // A lone card: the target is a name stand-in, so the table name is derived and the
     // key column assumed to be `id` — right whenever the target follows the convention.
-    const lone = toTable('posts', Card.fromSchema(Post).descriptor);
+    const lone = toTable('posts', Card.fromSchema(Post).toSchema());
     expect(lone.columns.find((c) => c.name === 'author_id')?.references)
       .toEqual({ table: 'authors', column: 'id' });
 
@@ -84,8 +85,8 @@ suite('a table is described from a card as from a class', () => {
       { name: 'note', entityClass: Note },
     ] }] });
     const card = fks({ fronds: [{ name: 'n', entities: [
-      { name: 'authorUser', entityClass: Card.fromSchema(AuthorUser, 'authorUser').descriptor },
-      { name: 'note', entityClass: Card.fromSchema(Note, 'note').descriptor },
+      { name: 'authorUser', entityClass: Card.fromSchema(AuthorUser, 'authorUser').toSchema() },
+      { name: 'note', entityClass: Card.fromSchema(Note, 'note').toSchema() },
     ] }] });
 
     expect(live).toEqual(['notes.author_user_id -> author_users']);

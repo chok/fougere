@@ -359,13 +359,18 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   "Disallowed operation called within global scope", error 10021, measured 2026-08-23.
 - **Nitro's prod trace misses lazily-loaded packages under pnpm**, which is why the hand-copy
   in `site/Dockerfile` exists.
-- **Three free functions in `schema` are candidates nobody has validated** — `clean` decides
-  nothing, `fieldsOf` and `schemaOf` are methods of an owner that now exists (`SchemaOrCard`).
+- **`clean` decides nothing** (`schema/src/lib/utils.ts`) — a free function nobody has
+  validated as a word of the package.
 - `graphql` dual ESM/CJS hazard in tests — use `schema.getTypeMap()`, not `printSchema()`
 
 ### Settled
 
 One line each, kept because a past version of this file asserted the opposite.
+
+- **A descriptor is converted at the door, and a schema circulates** — `Card.fromDescriptor(…)
+  .toSchema()`, which `boot/remote.ts` already did. `SchemaOrCard` had the adapters say they
+  took either form, and `toTable` rebuilt the schema twice for the one nobody passed them.
+  The four adapters read `SchemaView`, and `schemaOf`/`fieldsOf` are gone with the union.
 
 - **A fresh table and a migrated one promise the same thing.** `changeSQL` states `notNull()`
   whether or not a default fills the column, and `delta` proposes a UNIQUE index for a

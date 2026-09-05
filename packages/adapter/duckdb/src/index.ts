@@ -1,6 +1,6 @@
 /** Read across an app's sources — one SQL query over what can be attached. */
 import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
-import { lowerFirst, fieldsOf, type SchemaOrCard } from '@fougere/schema';
+import { lowerFirst, type SchemaView } from '@fougere/schema';
 import { toTable, toTableName, toSnakeCase, codecsOf } from '@fougere/adapter-sql';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -115,8 +115,9 @@ export async function connectSources(options: ConnectOptions): Promise<Reads> {
     attached,
     close: async () => { db.closeSync(); },
     read<E extends ShapeClass>(shape: E) {
-      const fields = fieldsOf(shape as unknown as SchemaOrCard);
-      const codecs = codecsOf(toTable('x', shape as unknown as SchemaOrCard).columns);
+      const schema = shape as unknown as SchemaView;
+      const fields = schema.getFields();
+      const codecs = codecsOf(toTable('x', schema).columns);
       const names = Object.keys(fields);
 
       return async (parts: TemplateStringsArray, ...refs: unknown[]) => {

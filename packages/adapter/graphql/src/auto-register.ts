@@ -1,8 +1,8 @@
 import { upperFirst, FieldSet, Role } from '@fougere/schema';
 /** Auto-register GraphQL types and operations from a fougere App. */
 import type SchemaBuilder from '@pothos/core';
-import type { Fields, SchemaView, SchemaOrCard } from '@fougere/schema';
-import { Shapes, fieldsOf, } from '@fougere/schema';
+import type { Fields, SchemaView } from '@fougere/schema';
+import { Shapes } from '@fougere/schema';
 import { registerType, registerOperations, type OperationMeta } from './pothos.js';
 
 type HandlerFacade = Record<string, Function>;
@@ -95,7 +95,7 @@ function loadByKey<R>(
 interface EntityEntry {
   name: string;
   /** A live class in-process, a card from a frond whose class never crossed. */
-  entityClass: SchemaOrCard;
+  entityClass: SchemaView;
   exposed?: boolean;
 }
 
@@ -262,7 +262,7 @@ export function registerAll(
       typeRegistry.set(registryKey(entity.name), {
         name: typeName, type, facade,
         presenterFields: new Set(presenterMeta?.fields ?? []),
-        fields: fieldsOf(entity.entityClass),
+        fields: entity.entityClass.getFields(),
       });
 
       const opOverrides = frond.operationsOverrides;

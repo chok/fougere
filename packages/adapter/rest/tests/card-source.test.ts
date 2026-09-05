@@ -1,10 +1,10 @@
 /**
- * An adapter stands on the fields, not on the class.
+ * An adapter stands on the fields, not on the class they were declared on.
  *
  * REST reads a schema for exactly two things — `Visibility.input` and `Visibility.output`.
  * Everything else (verbs, paths, op names, presenters) comes from the App. So a frond
- * whose class never crossed the wire must project the same routes from its card as a
- * local one does from its class. These tests hold that, and they are also where a new
+ * whose class never crossed the wire must project the same routes from the schema its
+ * card rebuilds as a local one does. These tests hold that, and they are also where a new
  * axis that fails to travel shows up: the round-trip diff would stop being empty.
  */
 import { describe as suite, it, expect, vi } from 'vitest';
@@ -107,7 +107,7 @@ suite('a card is a schema source', () => {
 
   it('projects the same REST routes from a card as from the class', () => {
     const fromClass = generateRoutes(fakeApp(Post));
-    const fromCard = generateRoutes(fakeApp(Card.fromSchema(Post).descriptor));
+    const fromCard = generateRoutes(fakeApp(Card.fromSchema(Post).toSchema()));
 
     expect(fromCard.map((r) => `${r.method} ${r.path}`))
       .toEqual(fromClass.map((r) => `${r.method} ${r.path}`));

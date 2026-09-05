@@ -78,7 +78,6 @@ export {
   type RoleDescriptor,
   type RelationDescriptor,
 } from './projection/card/Descriptor.js';
-export { type SchemaOrCard, schemaOf, fieldsOf } from './projection/SchemaOrCard.js';
 export type { StandardSchemaV1 } from './projection/standard.js';
 
 export { entity } from './entity.js';
