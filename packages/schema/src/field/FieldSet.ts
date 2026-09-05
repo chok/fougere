@@ -69,7 +69,7 @@ export function deduplicated(
   groups: readonly (readonly string[])[],
 ): readonly (readonly string[])[] | undefined {
   const seen = new Map<string, readonly string[]>();
-  for (const group of groups) seen.set(group.join(' '), group);
+  for (const group of groups) seen.set(JSON.stringify(group), group);
 
   return seen.size ? [...seen.values()] : undefined;
 }

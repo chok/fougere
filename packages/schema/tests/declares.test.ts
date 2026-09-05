@@ -108,6 +108,25 @@ describe('`entity(fields, …)` is the short form of the same statement', () => 
     expect(afterwards.getAdapters()).toEqual(AtDeclaration.getAdapters());
   });
 
+  it('carries a composite group it does not mention, and clears one on an empty list', () => {
+    const Article = entity(
+      { tenant: text(), title: text() },
+      { unique: [['tenant', 'title']] },
+    );
+
+    expect(Article.declares({ previous: { title: 'headline' } }).getUnique()).toEqual([['tenant', 'title']]);
+    expect(Article.declares({ unique: [] }).getUnique()).toBeUndefined();
+  });
+
+  it('tells two groups apart when a field name carries a space', () => {
+    const Spaced = entity(
+      { 'a b': text(), c: text(), a: text(), 'b c': text() },
+      { unique: [['a b', 'c'], ['a', 'b c']] },
+    );
+
+    expect(Spaced.getUnique()).toEqual([['a b', 'c'], ['a', 'b c']]);
+  });
+
   it('refuses the same unknown field either way', () => {
     // @ts-expect-error — 'nope' is not a field of this entity
     expect(() => entity({ id: primary() }, { previous: { nope: 'old' } })).toThrow(/unknown field `nope`/);

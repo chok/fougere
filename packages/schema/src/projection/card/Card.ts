@@ -202,54 +202,20 @@ function originOf(schema: SchemaView): DerivedFrom | undefined {
 }
 
 /**
- * So a shape read back keeps its bounds, and an unknown type is refused.
- * FR : pour qu'une forme relue garde ses bornes, un type inconnu étant refusé.
+ * So a shape read back is the shape that was written, and an unknown type is refused.
+ * FR : pour qu'une forme relue soit celle qui a été écrite, un type inconnu étant refusé.
  * `{ type: 'string', maxLength: 200 }` → the same shape a `text({ max: 200 })` states
  */
 function reconstructShape(property: FieldDescriptor): Field['shape'] | undefined {
-  const types = Array.isArray(property.type)
-    ? property.type
-    : property.type
-      ? [property.type]
-      : [];
-  const base = types.find((type) => type !== 'null');
-  if (base === undefined) return undefined;
-  const type = property.type as Field['shape']['type'];
-  if (base === 'array') {
-    const items = property.items ? reconstructShape(property.items) : undefined;
-    return clean({
-      type,
-      items,
-      minItems: property.minItems,
-      maxItems: property.maxItems,
-    }) as Field['shape'];
-  }
-  switch (base) {
-    case 'string':
-      return clean({
-        type,
-        minLength: property.minLength,
-        maxLength: property.maxLength,
-        pattern: property.pattern,
-        enum: property.enum,
-        format: property.format,
-      }) as Field['shape'];
-    case 'number':
-    case 'integer':
-      return clean({
-        type,
-        minimum: property.minimum,
-        maximum: property.maximum,
-      }) as Field['shape'];
-    case 'boolean':
-      return { type } as Field['shape'];
-    default:
-      return clean({
-        type,
-        properties: property.properties,
-        required: property.required,
-      }) as Field['shape'];
-  }
+  const types = Array.isArray(property.type) ? property.type : property.type ? [property.type] : [];
+  if (!types.some((type) => type !== 'null')) return undefined;
+
+  // `describeField` writes the shape whole, so it is read whole: a list of keywords here
+  // would be a second inventory, and the one that forgets a keyword loses it in silence.
+  const { 'x-fougere': _extension, description: _description, ...shape } = property;
+  if (shape.items) shape.items = reconstructShape(shape.items) as FieldDescriptor;
+
+  return clean(shape) as Field['shape'];
 }
 
 /**
@@ -313,7 +279,7 @@ function restated(
  * `{ type: 'string', description: 'x' }` → `{ type: 'string' }`
  */
 function shapeOf(descriptor: FieldDescriptor): Record<string, unknown> {
-  const { 'x-fougere': _extension, ...shape } = descriptor;
+  const { 'x-fougere': _extension, description: _description, ...shape } = descriptor;
   return shape as Record<string, unknown>;
 }
 

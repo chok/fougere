@@ -67,6 +67,13 @@ group('what separates two shapes', () => {
     expect(change).toMatchObject({ kind: 'reshaped', field: 'title' });
   });
 
+  it('says nothing when only the sentence changed — SQL reads `reshaped` as a bound that moved', () => {
+    const before = shapeOf({ id: primary(), title: text({ description: 'Old' }) });
+    const after = shapeOf({ id: primary(), title: text({ description: 'New' }) });
+
+    expect(before.diff(after).changes).toEqual([]);
+  });
+
   it('says nothing about a date beyond its own axis', () => {
     const before = shapeOf({ id: primary(), at: date() });
     const after = shapeOf({ id: primary(), at: date() });

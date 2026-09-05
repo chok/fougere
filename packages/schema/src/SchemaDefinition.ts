@@ -78,7 +78,7 @@ export class SchemaDefinition {
       declarations.previous ?? this.previous,
       this.derivation,
       this.anchored,
-      { unique: declared.unique },
+      declarations.unique === undefined ? this.constraints : { unique: declared.unique },
     );
   }
 

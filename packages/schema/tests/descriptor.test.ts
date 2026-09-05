@@ -12,6 +12,7 @@ import { list } from '../src/vocabulary/list.js';
 import { email } from '../src/vocabulary/email.js';
 import { readOnly } from '../src/vocabulary/readOnly.js';
 import { Card } from '../src/projection/card/Card.js';
+import { Field } from '../src/field/Field.js';
 import { Bundle } from '../src/projection/card/Bundle.js';
 import { type SchemaView } from '../src/SchemaView.js';
 import { type EntityConstructor, type Relation } from '../src/axis/role/Relation.js';
@@ -75,6 +76,28 @@ group('Card.fromSchema — schema to JSON Schema card', () => {
 
   it('is pure data — survives a JSON round-trip unchanged (no function leaked)', () => {
     expect(JSON.parse(JSON.stringify(card))).toEqual(card);
+  });
+});
+
+group('a shape the card wrote whole is read back whole', () => {
+  class Boxed extends entity({
+    id: primary(),
+    at: new Field({
+      shape: {
+        type: 'object',
+        properties: { label: { type: 'string' } },
+        additionalProperties: false,
+      },
+    }) as Field<{ label: string }>,
+  }) {}
+
+  it('keeps a keyword the reader used to drop, so what was refused stays refused', () => {
+    const wire = JSON.parse(JSON.stringify(Card.fromSchema(Boxed, 'boxed').descriptor));
+    const Remote = Card.fromDescriptor(wire).toSchema();
+
+    expect(Remote.getFields().at.shape).toEqual(Boxed.getFields().at.shape);
+    expect(Boxed.validate({ id: 'b1', at: { label: 'x', extra: 1 } }).success).toBe(false);
+    expect(Remote.validate({ id: 'b1', at: { label: 'x', extra: 1 } }).success).toBe(false);
   });
 });
 
