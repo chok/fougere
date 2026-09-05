@@ -38,7 +38,7 @@ app/_fougere/session/route.ts               export { GET } from '@fougere/next/s
 app/api/[...fougere]/route.ts               export { GET, POST, PUT, PATCH, DELETE } from '@fougere/next/rest';
 ```
 
-plus `serverExternalPackages` in `next.config.ts`, because the scan reads frond
+plus `serverExternalPackages` in `next.config.mjs`, because the scan reads frond
 sources off disk at boot and they must not be bundled. Nothing else in an app moves:
 pages, layouts, your own `app/api/*` handlers and an existing auth setup are
 untouched — Next resolves a static route before a catch-all, so adding the REST door

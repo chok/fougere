@@ -53,7 +53,7 @@ a client receives    id, station, celsius, recordedAt
 `primary()` and `created()` state it, and the door reads them.
 
 **The judge** — the same verdict in the browser, at the façade, and across a split
-(proven in `packages/core/tests/judge-local-remote.test.ts`):
+(proven in `packages/core/tests/validator-local-remote.test.ts`):
 
 ```
 { station: "x", celsius: 200 }   →  station: String is too short (1 < 2). · celsius: 200 is greater than 60.
