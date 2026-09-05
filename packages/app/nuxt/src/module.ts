@@ -421,8 +421,10 @@ export function generateBootPlugin(
   lines.push(`    configureFougere({`);
   if (statedPath) lines.push(`      fronds,`);
   lines.push(`      config: ${JSON.stringify(carried(config))},`);
-  lines.push(`      db: storage.db,`);
-  lines.push(`      storageFactory: storage.storageFactory,`);
+  // The whole thing, not a hand-picked few of its members: the three this used to name
+  // left `transacted` and `close` behind, so a `Together` always compensated and the
+  // connection was never released — under Nuxt only, which is where the app really runs.
+  lines.push(`      storage,`);
   // Two members of the ascent, named — not a claim on everything after the boot. The
   // storage's is core's own declaration (`migrating`), so this codegen states no order and
   // cannot mistype the name it would otherwise be silently adding beside.

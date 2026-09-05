@@ -27,7 +27,7 @@ describe('the ascent a host composes', () => {
   it('runs a host-declared migrate before the seeds, even when this host resolved no storage', async () => {
     const ran: string[] = [];
     configureFougere({
-      storageFactory: storage,
+      storage: { storageFactory: storage },
       extensions: [
         { name: 'migrate', up: () => { ran.push('migrate'); } },
         { name: 'seeds', up: () => { ran.push('seeds'); } },
@@ -41,7 +41,7 @@ describe('the ascent a host composes', () => {
   });
 
   it('declares the two framework members even when the host adds none', async () => {
-    configureFougere({ storageFactory: storage });
+    configureFougere({ storage: { storageFactory: storage } });
     const app = await useFougereApp();
     expect(app.extensions()).toEqual(['migrate', 'seeds']);
     await app.dispose();

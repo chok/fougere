@@ -110,6 +110,44 @@ describe('Lifecycle', () => {
   });
 
   /**
+   * The caller hands `onDispose` over BEFORE the ascent runs, and never receives the app that
+   * would carry it back. So a refusal on the way up has to release what the boot took, or
+   * whoever opened the connection leaks it on every failed boot.
+   */
+  it('releases what it took when the ascent refuses', async () => {
+    const released: string[] = [];
+    const container = createContainer();
+    const disposeContainer = container.dispose.bind(container);
+    container.dispose = async () => { released.push('container'); await disposeContainer(); };
+
+    const boot = createApp({
+      scan: await scanProject(root),
+      createContainer: () => container,
+      extensions: [
+        { name: 'opens', down: () => { released.push('opens'); } },
+        { name: 'refuses', up: () => { throw new Error('port 5432 refused'); } },
+      ],
+      onDispose: () => { released.push('handed in'); },
+    });
+
+    await expect(boot).rejects.toThrow('port 5432 refused');
+    expect(released).toEqual(['opens', 'container', 'handed in']);
+  });
+
+  it('keeps the original refusal beside the ones raised while releasing', async () => {
+    const boot = createApp({
+      scan: await scanProject(root),
+      createContainer,
+      extensions: [{ name: 'refuses', up: () => { throw new Error('up refused'); } }],
+      onDispose: () => { throw new Error('close refused'); },
+    });
+
+    await expect(boot).rejects.toMatchObject({
+      errors: [expect.objectContaining({ message: 'up refused' }), expect.objectContaining({ message: 'close refused' })],
+    });
+  });
+
+  /**
    * The order that was broken in production shape: a host declares its own `migrate` AFTER
    * the framework's defaults, and rows must still land after tables.
    */

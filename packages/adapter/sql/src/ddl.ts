@@ -108,6 +108,10 @@ export function indexSQL(table: TableDef, column: ColumnDef, dialectName: Dialec
     .schema.createIndex(`${table.name}_${column.name}_idx`)
     .on(table.name)
     .column(column.name);
+  // A `unique()` on a table that already exists has nowhere else to land: `createTable`
+  // writes it as a column constraint, and no engine here can ALTER one in. As an index it
+  // arrives — or the statement fails on the rows that already break it, which is the answer.
+  if (column.unique) builder = builder.unique();
   if (dialectName !== 'mssql') builder = builder.ifNotExists();
   return builder.compile().sql;
 }

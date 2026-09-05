@@ -71,6 +71,46 @@ describe('a compensated update, replayed', () => {
 
     const { journal } = await updateThenUnwind(stored, wrote);
 
-    await expect(journal[0]!.run()).rejects.toThrow(/was changed by someone else since \(payload\)/);
+    await expect(journal[0]!.run())
+      .rejects.toThrow(/no longer holds what this frame wrote \(payload\)/);
+  });
+
+  /**
+   * The refusal reports an observation, never a detection. A write that lands AFTER the
+   * re-read is overwritten without a word — that is what compensating instead of transacting
+   * costs, and the message must not read as a guarantee against it.
+   */
+  it('says nothing about a write that lands after it looked', async () => {
+    const journal: Undo[] = [];
+    const updates: Record<string, unknown>[] = [];
+    let row: Record<string, unknown> = { id: '1', title: 'x', payload: { a: 0 } };
+    let reads = 0;
+    const storage = {
+      async create(input: Record<string, unknown>) { return input; },
+      async update(_id: string, patch: Record<string, unknown>) {
+        updates.push(patch);
+        row = { ...row, ...patch };
+        return row;
+      },
+      async delete() { return true; },
+      async findById() {
+        reads += 1;
+        const answer = { ...row };
+        // Someone else writes the instant this read returns — the window the check is blind to.
+        if (reads === 2) row = { ...row, payload: { a: 99 } };
+        return answer;
+      },
+      async findByKeys() { return new Map(); },
+    };
+    const recorded = recording(storage, 'Doc', Doc, journal) as unknown as {
+      update(id: string, patch: Record<string, unknown>): Promise<unknown>;
+    };
+
+    await recorded.update('1', { payload: { a: 1 } });
+    await expect(journal[0]!.run()).resolves.toBeUndefined();
+
+    // Restored over a value it never saw, and reported nothing.
+    expect(updates.at(-1)).toEqual({ payload: { a: 0 } });
+    expect(row.payload).toEqual({ a: 0 });
   });
 });

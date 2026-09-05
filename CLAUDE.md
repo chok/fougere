@@ -327,9 +327,6 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   scan sets `e.exposed`/`h.exposed`, never `surfaces`. Three readers, one inside core
   (`effective-operation.ts`, `exposedAdapters`). `packages/decorators` holds the method-level
   `@expose` and is simply not wired yet — that is a state, not a defect.
-- **The Nuxt codegen reads three members of the storage and drops the rest** —
-  `app/nuxt/src/module.ts`, `generateBootPlugin`. So a `Together` always compensates and the
-  connection is never closed. Same shape in `boot.ts`'s `BootOptions.db`.
 - **The cross-source read is raw SQL while `ref()` already declares the join.** `orderBy`
   swallows a path in silence (`adapter/sql/src/crud.ts`). The next step is the two-source demo.
 - **A computed field that reads still issues N queries.** The façade hands the presenter the
@@ -342,21 +339,16 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   writes through a guarded port, `Together<[…]>` included.
 - **A provider class named `<Entity>Storage` takes that entity's key**, silently. The name is
   already wrong by two rules, which is why nothing hits it; left as is.
-- **`Mirror` writes two useful lines and 120 that belong to the port**
-  (`core/src/prefab/mirror.ts`). `validatePage` exists because `StorageGuard` guards `create` and
-  `update` and not `upsert`. Decided, not done: delete the prefab.
+- **`Mirror` writes two useful lines and the rest belongs to the port**
+  (`core/src/prefab/mirror.ts`). What it held of its own is gone — `StorageGuard` guards every
+  write gesture now, so a page is judged where every other row is. Decided, not done: delete
+  the prefab.
 - **An announcement realizes a fact's `lifecycle.create`, and no typed emitter can use it.**
   `Emit<T>` names the ROW type where `created()` is required, so `announce({ id, title })` is a
   compile error. `PartialValues` is the wanted shape.
 - **A nested object reports no path to the field that failed.** `Outer.validate({ addr: {
   street: 'a' } })` answers `path: 'addr'`. The inner path is computed and thrown away; a
   nested path wants segments, which eleven sites interpret as a flat string today.
-- **A required field with no default is `NOT NULL` on a fresh table and NULLABLE on a migrated
-  one** — `changeSQL` (`adapter/sql/src/diff.ts`). The refusal that names it lives on the
-  other road (`planStep`), which only `fougere migrate` reaches.
-- **`unique()` added to a live table never lands** — `delta()` proposes `createIndex` only for
-  a column carrying `index`, and a sole `unique()` carries none. Not patchable as is:
-  `CREATE UNIQUE INDEX` on a table holding duplicates fails.
 - **A schema can say what it WAS, and the missing reader is the API.** `Card.diff`,
   `fougere freeze`, `fougere migrate --apply` are shipped; serving an old API version is not.
 - **A stored fact is neither validated nor versioned.** `json()` admits any shape forever, and
@@ -374,6 +366,27 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 ### Settled
 
 One line each, kept because a past version of this file asserted the opposite.
+
+- **A fresh table and a migrated one promise the same thing.** `changeSQL` states `notNull()`
+  whether or not a default fills the column, and `delta` proposes a UNIQUE index for a
+  `unique()` a live table never read — the statement fails on rows that already break it,
+  which is the answer. Pinned by `adapter/sql/tests/diff.test.ts`.
+- **`StorageGuard` guards every gesture that writes**, `upsert` and `upsertAll` included, judges
+  a page before its first row lands, refuses a key the entity does not declare, and hands the
+  storage the value it PARSED — the rule the client door already held. What it does NOT ask is
+  what a handler is ALLOWED to write: a `readOnly` field is the server's to fill.
+- **A boot that refuses releases what it took** — `bootstrap.ts`, around `appLifecycle.up`.
+  The caller hands `onDispose` over before the ascent and never receives the app that would
+  carry it back. Pinned by `tests/lifecycle.test.ts`.
+- **A composition answers for the source the work runs in** — `transacts(source)`
+  (`defaults/src/storage.ts`), the dual of `transacted`. Reading the default source's capacity
+  compensated a frame whose own engine held transactions. Pinned by `defaults/tests/sources.test.ts`.
+- **The data layer travels as ONE subject** — `FougereServerConfig.storage: ResolvedStorage`
+  (`app/shared/src/boot.ts`), and the Nuxt codegen passes it whole. Naming a few of its members
+  left `transacted` and `close` behind, under Nuxt only.
+- **`output(schema)` restricts what it hands back on both realizations** — `storageOver`
+  (`core/src/store.ts`) applies the scope SQL puts in its SELECT. Pinned by
+  `adapter/memory/tests/storage.test.ts`.
 
 - **A container key and the way to undo it are declared together** — `storageKeyOf` /
   `entityOfStorageKey` (`core/src/storage.ts`), the third pair beside `togetherKeyOf` and
