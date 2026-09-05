@@ -7,22 +7,22 @@ import {
 } from './entity/EntityDeclarations.js';
 import { type EntityAdapters } from './entity/EntityAdapters.js';
 import { EntityAdapterSet } from './entity/EntityAdapterSet.js';
-import { RowJudge } from './judge/RowJudge.js';
+import { InputValidator } from './validator/InputValidator.js';
 import { SchemaDerivation } from './SchemaDerivation.js';
 import { SchemaDefinition, type SchemaConstraints } from './SchemaDefinition.js';
-import { type ValidateOptions } from './judge/options.js';
+import { type ValidateOptions } from './validator/InputValidator.js';
 import type { StandardSchemaV1 } from './projection/standard.js';
-import type { PartialRow, Row, SchemaView } from './SchemaView.js';
+import type { PartialValues, Values, SchemaView } from './SchemaView.js';
 
 export const ANONYMOUS_SCHEMA_NAME = 'Schema';
 
 export interface SchemaConstructor<TFields extends Fields> extends SchemaView<TFields> {
-  new (data: PartialRow<TFields>): Row<TFields>;
-  readonly '~standard': StandardSchemaV1.Props<Record<string, unknown>, Row<TFields>>;
+  new (data: PartialValues<TFields>): Values<TFields>;
+  readonly '~standard': StandardSchemaV1.Props<Record<string, unknown>, Values<TFields>>;
   readonly derivation?: SchemaDerivation;
   readonly previous?: PreviousNames<TFields>;
   readonly anchored?: boolean;
-  from(data: Record<string, unknown>): Row<TFields>;
+  from(data: Record<string, unknown>): Values<TFields>;
   pick<K extends string & keyof TFields>(
     ...keys: K[]
   ): SchemaConstructor<Pick<TFields, K>>;
@@ -90,7 +90,7 @@ export class Schema {
   }
 
   static validate(input: unknown) {
-    return RowJudge.of(this.fields, this.opts).validate(input);
+    return InputValidator.of(this.fields, this.opts).validate(input);
   }
 
   static from(data: Record<string, unknown>) {
@@ -114,7 +114,7 @@ export class Schema {
       version: 1,
       vendor: 'fougere',
       validate(value: unknown) {
-        const verdict = RowJudge.of(fields, opts).validate(value);
+        const verdict = InputValidator.of(fields, opts).validate(value);
         if (verdict.success) return { value: verdict.data };
         return {
           issues: verdict.errors.map((e) => ({

@@ -1,15 +1,15 @@
 import type { Field, Fields } from './field/Field.js';
 import type { CompositeUnique, PreviousNames } from './entity/EntityDeclarations.js';
 import type { EntityAdapters } from './entity/EntityAdapters.js';
-import type { ValidationResult } from './result.js';
-import type { ValidateOptions } from './judge/options.js';
+import type { ValidationResult } from './validation.js';
+import type { ValidateOptions } from './validator/InputValidator.js';
 import type { SchemaDerivation } from './SchemaDerivation.js';
 
-export type Row<TFields extends Fields> = {
+export type Values<TFields extends Fields> = {
   [K in keyof TFields]: TFields[K] extends Field<infer T> ? T : never;
 };
 
-export type PartialRow<TFields extends Fields> = Partial<Row<TFields>>;
+export type PartialValues<TFields extends Fields> = Partial<Values<TFields>>;
 
 export interface SchemaView<TFields extends Fields = Fields> {
   readonly name: string;
@@ -23,5 +23,5 @@ export interface SchemaView<TFields extends Fields = Fields> {
   getAdapters(): EntityAdapters<TFields>;
   getUnique(): CompositeUnique<TFields> | undefined;
   getOpts(): ValidateOptions;
-  validate(input: unknown): ValidationResult<Row<TFields>>;
+  validate(input: unknown): ValidationResult<Values<TFields>>;
 }

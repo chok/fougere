@@ -8,7 +8,7 @@ import {
 import { type EntityAdapters } from './entity/EntityAdapters.js';
 import { EntityAdapterSet } from './entity/EntityAdapterSet.js';
 import { SchemaDerivation } from './SchemaDerivation.js';
-import { type ValidateOptions } from './judge/options.js';
+import { type ValidateOptions } from './validator/InputValidator.js';
 import type { SchemaView } from './SchemaView.js';
 
 /**
@@ -70,7 +70,10 @@ export class SchemaDefinition {
 
     return new SchemaDefinition(
       declared.fields,
-      EntityAdapterSet.merged([this.adapterSet, EntityAdapterSet.of(declarations.adapters)]),
+      EntityAdapterSet.merged([
+        this.adapterSet,
+        EntityAdapterSet.of(declarations.adapters),
+      ]),
       this.opts,
       declarations.previous ?? this.previous,
       this.derivation,
@@ -160,15 +163,9 @@ export class SchemaDefinition {
       views.map((view) => EntityAdapterSet.of(view.getAdapters())),
     );
 
-    return new SchemaDefinition(
-      fields,
-      adapterSet,
-      opts,
-      undefined,
-      undefined,
-      false,
-      { unique: deduplicated(groups) as CompositeUnique<Fields> | undefined },
-    );
+    return new SchemaDefinition(fields, adapterSet, opts, undefined, undefined, false, {
+      unique: deduplicated(groups) as CompositeUnique<Fields> | undefined,
+    });
   }
 
   private origin(root: SchemaView): SchemaDerivation {

@@ -9,7 +9,7 @@ import { optional } from '../src/vocabulary/optional.js';
 import { primary } from '../src/vocabulary/primary.js';
 import { text } from '../src/vocabulary/text.js';
 import { updated } from '../src/vocabulary/updated.js';
-import { FieldJudge } from '../src/judge/FieldJudge.js';
+import { FieldDeclarationValidator } from '../src/validator/FieldDeclarationValidator.js';
 import { Role } from '../src/axis/role/Role.js';
 
 /**
@@ -44,7 +44,7 @@ describe('the field door', () => {
   });
 
   it('reports every fault at once, not the first', () => {
-    const verdict = FieldJudge.of({ shape: 42, lifecycle: { update: 'nawak' }, meta: 7 }).verdict;
+    const verdict = FieldDeclarationValidator.of({ shape: 42, lifecycle: { update: 'nawak' }, meta: 7 }).verdict;
     expect(verdict.success).toBe(false);
     if (!verdict.success) {
       expect(verdict.errors.map((e) => e.path)).toEqual(['shape', 'lifecycle.update', 'meta']);

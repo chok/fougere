@@ -63,9 +63,9 @@ describe('TanStack Form', () => {
       // form shape FROM the schema cannot line it up with defaultValues.
       //
       // The two hosts want OPPOSITE inputs, which is why no type here satisfies
-      // both. Measured, all three: `PartialRow<TFields>` fails TanStack, which
+      // both. Measured, all three: `PartialValues<TFields>` fails TanStack, which
       // needs input assignable TO its complete defaultValues, not from them.
-      // `Row<TFields>` passes TanStack and fails tRPC above, which calls without
+      // `Values<TFields>` passes TanStack and fails tRPC above, which calls without
       // `draft` — a field carrying a default. The type that would serve makes a
       // field optional exactly when it is not required at creation, and it is not
       // expressible: `Field<T>` carries only the value type, while `default` lives

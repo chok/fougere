@@ -2,19 +2,22 @@ import { Boundary } from '../axis/boundary/Boundary.js';
 import { Lifecycle } from '../axis/lifecycle/Lifecycle.js';
 import { Role } from '../axis/role/Role.js';
 import type { Field, Fields } from '../field/Field.js';
-import type { ValidateOptions } from './options.js';
-import type { ValidationError, ValidationResult } from '../result.js';
-import { ValueJudge } from './ValueJudge.js';
-import { RowRefusal } from './RowRefusal.js';
+import type { ValidationError, ValidationResult } from '../validation.js';
+import { FieldValueValidator } from './FieldValueValidator.js';
+import { InputRefusal } from './InputRefusal.js';
 
-export class RowJudge {
+export interface ValidateOptions {
+  patch?: boolean;
+}
+
+export class InputValidator {
   private constructor(
     private readonly fields: Fields,
     private readonly options: ValidateOptions,
   ) {}
 
-  static of(fields: Fields, options: ValidateOptions = {}): RowJudge {
-    return new RowJudge(fields, options);
+  static of(fields: Fields, options: ValidateOptions = {}): InputValidator {
+    return new InputValidator(fields, options);
   }
 
   onAbsent(field: Field): 'skip' | 'empty-list' | null {
@@ -27,7 +30,10 @@ export class RowJudge {
   /** Hands on the value it PARSED, so a handler never re-checks a row. */
   validate(input: unknown): ValidationResult<Record<string, unknown>> {
     if (typeof input !== 'object' || input === null) {
-      return { success: false, errors: [{ path: '.', message: RowRefusal.notAnObject }] };
+      return {
+        success: false,
+        errors: [{ path: '.', message: InputRefusal.notAnObject }],
+      };
     }
 
     const data = input as Record<string, unknown>;
@@ -36,7 +42,7 @@ export class RowJudge {
 
     for (const key of Object.keys(data)) {
       if (!(key in this.fields)) {
-        errors.push({ path: key, message: RowRefusal.unknownField });
+        errors.push({ path: key, message: InputRefusal.unknownField });
       }
     }
 
@@ -48,7 +54,7 @@ export class RowJudge {
         if (this.options.patch) continue;
         const absence = this.onAbsent(field);
         if (absence === null) {
-          errors.push({ path, message: RowRefusal.required });
+          errors.push({ path, message: InputRefusal.required });
           continue;
         }
         if (absence === 'empty-list') row[key] = [];
@@ -57,15 +63,15 @@ export class RowJudge {
 
       const boundary = Boundary.of(field);
       if (boundary.readOnly) {
-        errors.push({ path, message: RowRefusal.readOnly });
+        errors.push({ path, message: InputRefusal.readOnly });
         continue;
       }
       if (this.options.patch && Lifecycle.of(field).immutable) {
-        errors.push({ path, message: RowRefusal.immutable });
+        errors.push({ path, message: InputRefusal.immutable });
         continue;
       }
 
-      const checked = ValueJudge.of(field).validate(value);
+      const checked = FieldValueValidator.of(field).validate(value);
       if ('error' in checked) {
         errors.push({ path, message: checked.error });
         continue;

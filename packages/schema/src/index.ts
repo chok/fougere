@@ -19,16 +19,15 @@ export {
 export { type Decoder, type Encoder, Boundaries } from './axis/boundary/Boundaries.js';
 export { type Meta } from './axis/Meta.js';
 
-export {
-  Schema,
-  ANONYMOUS_SCHEMA_NAME,
-  type SchemaConstructor,
-} from './Schema.js';
+export { Schema, ANONYMOUS_SCHEMA_NAME, type SchemaConstructor } from './Schema.js';
 export { SchemaDerivation } from './SchemaDerivation.js';
 export { Cases, type ValidationCase } from './projection/Cases.js';
-export { RowRefusal } from './judge/RowRefusal.js';
-export { type SchemaView, type Row, type PartialRow } from './SchemaView.js';
-export { type FougereEntityAdapters, type EntityAdapters } from './entity/EntityAdapters.js';
+export { InputRefusal } from './validator/InputRefusal.js';
+export { type SchemaView, type Values, type PartialValues } from './SchemaView.js';
+export {
+  type FougereEntityAdapters,
+  type EntityAdapters,
+} from './entity/EntityAdapters.js';
 export {
   type EntityDeclarations,
   type CompositeUnique,
@@ -84,14 +83,10 @@ export type { StandardSchemaV1 } from './projection/standard.js';
 
 export { entity } from './entity.js';
 
-export { FieldJudge } from './judge/FieldJudge.js';
-export { ValueJudge } from './judge/ValueJudge.js';
-export { RowJudge } from './judge/RowJudge.js';
-export { EntryJudge } from './judge/EntryJudge.js';
+export { FieldDeclarationValidator } from './validator/FieldDeclarationValidator.js';
+export { FieldValueValidator } from './validator/FieldValueValidator.js';
+export { InputValidator } from './validator/InputValidator.js';
+export { AdapterFieldValidator } from './validator/AdapterFieldValidator.js';
 export { Registry } from './lib/Registry.js';
-export { type ValidateOptions } from './judge/options.js';
-export {
-  type ValidationError,
-  type ValidationResult,
-  type Checked,
-} from './result.js';
+export { type ValidateOptions } from './validator/InputValidator.js';
+export { type ValidationError, type ValidationResult, type Checked } from './validation.js';

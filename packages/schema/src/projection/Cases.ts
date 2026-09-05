@@ -4,8 +4,8 @@ import { Lifecycle } from '../axis/lifecycle/Lifecycle.js';
 import { Role } from '../axis/role/Role.js';
 import type { Field } from '../field/Field.js';
 import type { SchemaView } from '../SchemaView.js';
-import { RowJudge } from '../judge/RowJudge.js';
-import { RowRefusal } from '../judge/RowRefusal.js';
+import { InputValidator } from '../validator/InputValidator.js';
+import { InputRefusal } from '../validator/InputRefusal.js';
 
 /**
  * One input, and what the judge must answer.
@@ -94,7 +94,7 @@ export class Cases {
   }
 
   static get refusals(): string[] {
-    return Object.values(RowRefusal);
+    return Object.values(InputRefusal);
   }
 
   [Symbol.iterator](): Iterator<ValidationCase> {
@@ -108,7 +108,7 @@ export class Cases {
  */
 function enumerate(entity: SchemaView, valid: Record<string, unknown>): ValidationCase[] {
   const fields = entity.getFields();
-  const judge = RowJudge.of(fields);
+  const validator = InputValidator.of(fields);
   const cases: ValidationCase[] = [];
   const withField = (name: string, value: unknown) => ({ ...valid, [name]: value });
 
@@ -131,7 +131,7 @@ function enumerate(entity: SchemaView, valid: Record<string, unknown>): Validati
     // get to invent a second one, so the only case we can state about it is the bound one.
     const isRef = Role.of(field).isReference;
 
-    if (judge.onAbsent(field) === null && name in valid) {
+    if (validator.onAbsent(field) === null && name in valid) {
       const body = { ...valid };
       delete body[name];
       cases.push({ why: `${name} absent`, body, patch: false, expect: { reject: name } });

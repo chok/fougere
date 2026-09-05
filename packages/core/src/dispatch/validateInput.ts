@@ -1,4 +1,4 @@
-import { RowJudge, type SchemaView } from '@fougere/schema';
+import { InputValidator, type SchemaView } from '@fougere/schema';
 import type { InvocationContext } from '../wire/Invocation.js';
 import { ErrorCode, FougereError } from '../wire/errors.js';
 
@@ -11,7 +11,7 @@ export function validateInput(
 ): InvocationContext {
   if (!schema || invocation.body === undefined || invocation.body === null) return invocation;
 
-  const result = RowJudge.of(schema.getFields(), { patch: schema.getOpts().patch })
+  const result = InputValidator.of(schema.getFields(), { patch: schema.getOpts().patch })
     .validate(invocation.body);
 
   if (!result.success) {

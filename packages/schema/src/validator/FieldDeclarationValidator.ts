@@ -2,13 +2,13 @@ import { EXTENSION_AXES } from '../axis/Axis.js';
 import { Shapes } from '../axis/shape/Shape.js';
 import type { Field } from '../field/Field.js';
 import { isObject } from '../lib/utils.js';
-import type { ValidationError, ValidationResult } from '../result.js';
+import type { ValidationError, ValidationResult } from '../validation.js';
 
-export class FieldJudge {
+export class FieldDeclarationValidator {
   private constructor(private readonly declaration: unknown) {}
 
-  static of(declaration: unknown): FieldJudge {
-    return new FieldJudge(declaration);
+  static of(declaration: unknown): FieldDeclarationValidator {
+    return new FieldDeclarationValidator(declaration);
   }
 
   get verdict(): ValidationResult<Field> {

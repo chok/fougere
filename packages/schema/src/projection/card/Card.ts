@@ -3,9 +3,9 @@ import { dequal } from 'dequal';
 import { clean, isObject } from '../../lib/utils.js';
 import { Field, type Fields } from '../../field/Field.js';
 import { deduplicated } from '../../field/FieldSet.js';
-import { RowJudge } from '../../judge/RowJudge.js';
+import { InputValidator } from '../../validator/InputValidator.js';
 import { Schema, type SchemaConstructor } from '../../Schema.js';
-import type { Row, SchemaView } from '../../SchemaView.js';
+import type { Values, SchemaView } from '../../SchemaView.js';
 import { refuse } from './admission.js';
 import type {
   DerivedFrom,
@@ -18,20 +18,20 @@ import type { Change, Diff, DiffOptions, RenameCandidate, TypeSet } from './diff
 type FieldsOf<T> = { [K in keyof T]-?: Field<T[K]> };
 
 /** One portable schema description and every decision made about that description. */
-export class Card<T = Row<Fields>> {
+export class Card<T = Values<Fields>> {
   private constructor(readonly descriptor: SchemaDescriptor) {}
 
   static fromSchema<TFields extends Fields>(
     schema: SchemaView<TFields>,
     name?: string,
-  ): Card<Row<TFields>> {
+  ): Card<Values<TFields>> {
     const fields = schema.getFields();
-    const judge = RowJudge.of(fields);
+    const validator = InputValidator.of(fields);
     const properties: Record<string, FieldDescriptor> = {};
     const required: string[] = [];
     for (const [key, field] of Object.entries(fields)) {
       properties[key] = describeField(field, key);
-      if (judge.onAbsent(field) === null) required.push(key);
+      if (validator.onAbsent(field) === null) required.push(key);
     }
     for (const group of schema.getUnique() ?? [])
       for (const member of group) carryGroup(properties[member], group);
@@ -48,10 +48,10 @@ export class Card<T = Row<Fields>> {
 
     const origin = originOf(schema);
     if (origin) descriptor['x-fougere-derived'] = origin;
-    return new Card<Row<TFields>>(descriptor);
+    return new Card<Values<TFields>>(descriptor);
   }
 
-  static fromDescriptor<T = Row<Fields>>(descriptor: SchemaDescriptor): Card<T> {
+  static fromDescriptor<T = Values<Fields>>(descriptor: SchemaDescriptor): Card<T> {
     return new Card<T>(descriptor);
   }
 

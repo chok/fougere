@@ -4,8 +4,8 @@ import type { LifecycleRules } from '../axis/lifecycle/Lifecycle.js';
 import type { BoundaryRef } from '../axis/boundary/Boundary.js';
 import type { Meta } from '../axis/Meta.js';
 import type { Axis } from '../axis/Axis.js';
-import { FieldJudge } from '../judge/FieldJudge.js';
-import { ValueJudge } from '../judge/ValueJudge.js';
+import { FieldDeclarationValidator } from '../validator/FieldDeclarationValidator.js';
+import { FieldValueValidator } from '../validator/FieldValueValidator.js';
 
 export type Fields = Record<string, Field>;
 
@@ -25,7 +25,7 @@ export class Field<T = unknown> {
   declare readonly _type?: T;
 
   constructor(init: FieldDeclaration, key?: string) {
-    const verdict = FieldJudge.of(init).verdict;
+    const verdict = FieldDeclarationValidator.of(init).verdict;
 
     if (!verdict.success) {
       throw new Error(
@@ -42,7 +42,7 @@ export class Field<T = unknown> {
 
     const create = this.lifecycle?.create;
     if (typeof create === 'object' && create !== null && 'value' in create) {
-      const checked = ValueJudge.of(this).validate(create.value);
+      const checked = FieldValueValidator.of(this).validate(create.value);
       if ('error' in checked)
         throw new Error(
           `${key ? `Field '${key}': ` : ''}the declared default ${JSON.stringify(create.value)} ` +
@@ -52,7 +52,7 @@ export class Field<T = unknown> {
   }
 
   static is(value: unknown): value is Field {
-    return FieldJudge.of(value).verdict.success;
+    return FieldDeclarationValidator.of(value).verdict.success;
   }
 
   with<U = T>(overrides: Partial<FieldDeclaration>): Field<U> {

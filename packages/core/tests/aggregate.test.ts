@@ -1,7 +1,7 @@
 /**
  * From two entities on, a repository OWNS them — and owning is the whole mechanism.
  *
- * A rule spanning two tables had nowhere to live: `RowJudge.check` sees one row, and a frame
+ * A rule spanning two tables had nowhere to live: `InputValidator.check` sees one row, and a frame
  * makes two writes atomic without saying which ones may happen. The missing half was not a
  * checker but a DOOR — as long as `Storage<Ledger>` is handed to whoever asks, no file can
  * be the only way in. Close that, and the rule is ordinary TypeScript inside the method that

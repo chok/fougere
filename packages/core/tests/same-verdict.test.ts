@@ -5,7 +5,7 @@
  * is built on it, and nothing demonstrated it. Two judges are genuinely independent:
  *
  *   - the FORM calls `Schema.validate(body)` in the browser (`useFormFor.ts:46`);
- *   - the FAÇADE calls `RowJudge.of(schema.getFields(), …).validate(inv.body)`.
+ *   - the FAÇADE calls `InputValidator.of(schema.getFields(), …).validate(inv.body)`.
  *
  * REST and GraphQL are NOT a third and fourth: both resolve the façade and call it
  * (`routes.ts:214`, `pothos.ts:862`), so they are the same judge by construction.

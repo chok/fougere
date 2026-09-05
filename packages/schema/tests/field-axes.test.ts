@@ -1,5 +1,5 @@
 import { Shapes } from '../src/axis/shape/Shape.js';
-import { RowJudge } from '../src/judge/RowJudge.js';
+import { InputValidator } from '../src/validator/InputValidator.js';
 import { describe, it, expect } from 'vitest';
 import { Role } from '../src/axis/role/Role.js';
 import {
@@ -75,44 +75,44 @@ describe('anatomy — the single customs post for readers', () => {
 describe('quadrant présence × nullité', () => {
   it('nullable(): null legal, field still REQUIRED (the new quadrant)', () => {
     const fields = { note: nullable(text()) };
-    expect(RowJudge.of(fields).validate({}).success).toBe(false); // absent → Required
-    expect(RowJudge.of(fields).validate({ note: null }).success).toBe(true); // explicit null legal
-    expect(RowJudge.of(fields).validate({ note: 'x' }).success).toBe(true);
+    expect(InputValidator.of(fields).validate({}).success).toBe(false); // absent → Required
+    expect(InputValidator.of(fields).validate({ note: null }).success).toBe(true); // explicit null legal
+    expect(InputValidator.of(fields).validate({ note: 'x' }).success).toBe(true);
   });
 
   it('optional(): null legal AND absence permitted', () => {
     const fields = { note: optional(text()) };
-    const absent = RowJudge.of(fields).validate({});
+    const absent = InputValidator.of(fields).validate({});
     expect(absent.success).toBe(true);
     if (absent.success) expect('note' in absent.data).toBe(false); // omitted, not nulled
-    expect(RowJudge.of(fields).validate({ note: null }).success).toBe(true);
+    expect(InputValidator.of(fields).validate({ note: null }).success).toBe(true);
   });
 
   it('bare field: null illegal, absence illegal', () => {
     const fields = { note: text() };
-    expect(RowJudge.of(fields).validate({}).success).toBe(false);
-    expect(RowJudge.of(fields).validate({ note: null }).success).toBe(false);
+    expect(InputValidator.of(fields).validate({}).success).toBe(false);
+    expect(InputValidator.of(fields).validate({ note: null }).success).toBe(false);
   });
 
   it('nullable(oneOf(...)): null joins the enum, other values stay constrained', () => {
     const fields = { status: nullable(oneOf('pending', 'paid')) };
-    expect(RowJudge.of(fields).validate({ status: null }).success).toBe(true);
-    expect(RowJudge.of(fields).validate({ status: 'paid' }).success).toBe(true);
-    expect(RowJudge.of(fields).validate({ status: 'nope' }).success).toBe(false);
+    expect(InputValidator.of(fields).validate({ status: null }).success).toBe(true);
+    expect(InputValidator.of(fields).validate({ status: 'paid' }).success).toBe(true);
+    expect(InputValidator.of(fields).validate({ status: 'nope' }).success).toBe(false);
   });
 
   it('nullable(number(...)): constraints apply to the base type only, null passes', () => {
     const fields = { n: nullable(number({ min: 0, integer: true })) };
-    expect(RowJudge.of(fields).validate({ n: null }).success).toBe(true);
-    expect(RowJudge.of(fields).validate({ n: 3 }).success).toBe(true);
-    expect(RowJudge.of(fields).validate({ n: -1 }).success).toBe(false);
-    expect(RowJudge.of(fields).validate({ n: 1.5 }).success).toBe(false);
+    expect(InputValidator.of(fields).validate({ n: null }).success).toBe(true);
+    expect(InputValidator.of(fields).validate({ n: 3 }).success).toBe(true);
+    expect(InputValidator.of(fields).validate({ n: -1 }).success).toBe(false);
+    expect(InputValidator.of(fields).validate({ n: 1.5 }).success).toBe(false);
   });
 
   it('nullable elements inside a list validate natively', () => {
     const fields = { tags: list(nullable(text({ min: 1 }))) };
-    expect(RowJudge.of(fields).validate({ tags: ['a', null] }).success).toBe(true);
-    expect(RowJudge.of(fields).validate({ tags: [''] }).success).toBe(false);
+    expect(InputValidator.of(fields).validate({ tags: ['a', null] }).success).toBe(true);
+    expect(InputValidator.of(fields).validate({ tags: [''] }).success).toBe(false);
   });
 });
 

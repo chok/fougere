@@ -1,13 +1,13 @@
 /**
  * The decision table, checked against the judge it describes.
  *
- * Every case is posed to `RowJudge.check` — the same function the façade calls. A case whose
+ * Every case is posed to `InputValidator.check` — the same function the façade calls. A case whose
  * verdict the judge does not share is a case this file got wrong, and the assertion says
  * which one by carrying `why`.
  */
 import { describe, it, expect } from 'vitest';
 import {
-  entity, primary, text, number, oneOf, bool, email, created, immutable, readOnly, list, RowJudge,
+  entity, primary, text, number, oneOf, bool, email, created, immutable, readOnly, list, InputValidator,
   Cases,
 } from '../src/index.js';
 
@@ -33,7 +33,7 @@ const baseline = {
 };
 const table = Cases.of(Article, baseline).all;
 const verdict = (body: unknown, patch: boolean) =>
-  RowJudge.of(Article.getFields(), { patch }).validate(body);
+  InputValidator.of(Article.getFields(), { patch }).validate(body);
 
 describe('the table', () => {
   it('is not empty — a table that silently drains proves nothing', () => {

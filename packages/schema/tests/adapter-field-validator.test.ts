@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { EntryJudge } from '../src/judge/EntryJudge.js';
+import { AdapterFieldValidator } from '../src/validator/AdapterFieldValidator.js';
 import type { Shape } from '../src/axis/shape/Shape.js';
 
 /**
@@ -14,10 +14,10 @@ const format: Shape = {
   additionalProperties: false,
 };
 
-const judge = EntryJudge.of(format);
+const judge = AdapterFieldValidator.of(format);
 const check = (entries: unknown) => () => judge.assert(entries, 'Post.adapters.sql');
 
-describe('EntryJudge', () => {
+describe('AdapterFieldValidator', () => {
   it('accepts what the format admits', () => {
     expect(check({ body: { columnType: { pg: 'tsvector' } } })).not.toThrow();
   });

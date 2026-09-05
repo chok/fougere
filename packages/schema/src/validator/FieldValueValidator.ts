@@ -2,7 +2,7 @@ import { Validator, format as engineFormats } from '@cfworker/json-schema';
 import { Formats, type FormatPredicate } from '../axis/shape/Formats.js';
 import { Shapes, type Shape } from '../axis/shape/Shape.js';
 import type { Field } from '../field/Field.js';
-import type { Checked } from '../result.js';
+import type { Checked } from '../validation.js';
 
 interface ShapePlan {
   validator: Validator;
@@ -10,14 +10,14 @@ interface ShapePlan {
   formatName?: string;
 }
 
-export class ValueJudge {
+export class FieldValueValidator {
   private static readonly plans = new WeakMap<object, ShapePlan>();
 
   private constructor(private readonly field: Field) {}
 
   /** The shape is compiled once and reused, not rebuilt per value. */
-  static of(field: Field): ValueJudge {
-    return new ValueJudge(field);
+  static of(field: Field): FieldValueValidator {
+    return new FieldValueValidator(field);
   }
 
   validate(value: unknown): Checked {
@@ -40,7 +40,7 @@ export class ValueJudge {
         return { error: 'Expected a number' };
       }
     }
-    const plan = ValueJudge.planFor(shape);
+    const plan = FieldValueValidator.planFor(shape);
     const result = plan.validator.validate(value);
     if (!result.valid) return { error: result.errors[0]?.error ?? 'Invalid value' };
     if (plan.custom && typeof value === 'string' && !plan.custom(value)) {

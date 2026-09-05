@@ -25,10 +25,10 @@ import path from 'node:path';
 
 /** A cycle this repo has WEIGHED and keeps. Anything else fails the check. */
 const STATED = new Map([
-  ['packages/schema field↔judge',
-    'Two owners addressing each other: the field holds the facts, the judge holds the ' +
-    'verdict, and neither owns the other. Nesting `judge/` under `field/` would say the ' +
-    'field owns the decision, which `FieldJudge.of(value)` denies.'],
+  ['packages/schema field↔validator',
+    'Two owners addressing each other: the field holds the facts, the validator holds the ' +
+    'verdict, and neither owns the other. Nesting `validator/` under `field/` would say the ' +
+    'field owns the decision, which `FieldDeclarationValidator.of(value)` denies.'],
   ['packages/schema axis↔projection',
     'A projection and its inverse: the three axes reach `card/admission.ts` to ADMIT a ' +
     'wire value back into a schema. The return edge is the dual, not a leak.'],

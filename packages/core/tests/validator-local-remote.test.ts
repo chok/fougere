@@ -18,9 +18,9 @@ import { createApp, createLocalRunner, createAppRunner, FougereError } from '../
 import type { Transport, Storage, StorageFactory } from '../src/index.js';
 import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
 import { Cases } from '@fougere/schema';
-import Product from './fixtures-judge/fronds/shop/entities/Product.js';
+import Product from './fixtures-validator/fronds/shop/entities/Product.js';
 
-const root = join(import.meta.dirname, 'fixtures-judge');
+const root = join(import.meta.dirname, 'fixtures-validator');
 
 /**
  * A storage that accepts anything, so a refusal in this file can only come from

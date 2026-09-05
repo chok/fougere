@@ -6,12 +6,12 @@ import { isObject } from '../lib/utils.js';
  * The format is DATA, not a TypeScript interface: an interface is erased before a JS
  * caller, a config or a card from another language could be measured against it.
  */
-export class EntryJudge {
+export class AdapterFieldValidator {
   private constructor(private readonly validator: Validator) {}
 
   /** Compiled once, at the adapter's own module load. */
-  static of(format: Shape): EntryJudge {
-    return new EntryJudge(new Validator(format as object, '2020-12', true));
+  static of(format: Shape): AdapterFieldValidator {
+    return new AdapterFieldValidator(new Validator(format as object, '2020-12', true));
   }
 
   /** `Post.adapters.sql.body.columnType: Property "postgre" does not match …` */

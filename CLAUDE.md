@@ -112,6 +112,7 @@ demos/
   emit-multirepo/      two repositories, one fact, and the ~80-line carrier that is not Fougere's
   rust-frond/          the far side is not TypeScript, and the judge is still ours
   cloudflare-d1/       the edge rung — scan emitted, no tsc shipped
+  sse-live/            live fan-out to readers who are not trusted peers
   admin-panel/ one-declaration/ express-blog/ next-blog/ sveltekit-blog/
   react-router-blog/ tanstack-blog/ multi-transport/ emit-fleet/ emit-split/
   container-basics/ core-scanner/ multi-frond/ crud-auto/ auth-better/
@@ -136,7 +137,7 @@ shapeless entry is refused there.
 **The façade judges, the storage realizes.** Client input goes through the façade (unknown
 keys → `Unknown field`); handlers write freely through the storage, which applies
 `applyCreate`/`applyUpdate` (`schema/src/axis/lifecycle/apply.ts`). Refusing stays the
-judge's: `update: 'forbidden'` lives in `RowJudge`, patch mode.
+judge's: `update: 'forbidden'` lives in `InputValidator`, patch mode.
 
 **An entity states two things about itself** — `unique` and `adapters`, the 2nd argument of
 `entity()`. A derivation that drops a member of a unique group drops the group.
@@ -151,8 +152,8 @@ adapter name, then field name — and always exists, so `getAdapters()` is never
 What the OPERATOR decides is not stated here: it belongs in `fougere.config.ts` beside
 `remotes:`, `sources:` and `ports:`. Pinned by `adapter/sql/tests/adapters.test.ts`.
 
-**The entry has a judge, and the adapter writes it as DATA.** `EntryJudge`
-(`schema/src/judge/EntryJudge.ts`) takes a format and refuses what it does not admit;
+**The entry has a judge, and the adapter writes it as DATA.** `AdapterFieldValidator`
+(`schema/src/validator/AdapterFieldValidator.ts`) takes a format and refuses what it does not admit;
 `adapter/sql/src/adapter.schema.json` is that format, imported with `with { type: 'json' }`,
 and `SqlField` is DERIVED from it. It is judged where the adapter READS
 (`adapter/sql/src/table.ts`, `toTable`), not at `entity()`, because `entity()` runs at its
@@ -233,7 +234,7 @@ an engine that has one. `all()` reading everything is what bounds a file source.
 names the view ONE op emits: the handler keeps its full-row storage, and the façade projects.
 `Crud(Post, PostPublic)` is the handler-wide form and scopes the injected storage.
 
-**A test states what it expects** — `@fougere/testing`. The CASES come from `RowRefusal`'s
+**A test states what it expects** — `@fougere/testing`. The CASES come from `InputRefusal`'s
 closed set read against the four axes (`Cases`, in `@fougere/schema` because deriving them
 reads the axes and nothing else), the DOUBLES from a port's prototype (`stubOf`), and the
 LEVEL from where the file sits. `checkDoors` compares REST against GraphQL; `driftOf`
@@ -262,7 +263,7 @@ judged strictly. Pinned by `tests/emit.test.ts`.
 `pnpm arch`. `arch` asks what a file REACHES, this asks where it LIVES. It reports type-only
 cycles too and marks what the emitted JS does not contain, and it prints the THIN SIDE
 because that is what moves. It reads pairs, which is its ceiling. Four exceptions are stated
-with their reason: `field`↔`judge`, `axis`↔`projection`, `axis`↔`field`, `entity`↔`field`.
+with their reason: `field`↔`validator`, `axis`↔`projection`, `axis`↔`field`, `entity`↔`field`.
 
 **Nuxt primitives** — `useQuery`/`useCommand` (a command on X revalidates mounted queries on
 X), `useFormFor` (contract, not rendering; local judge = remote judge), `useCurrentUser`,
@@ -309,7 +310,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 
 - **An un-augmented `adapters:` accepts anything, silently.** With no adapter in the program
   `EntityAdapters<TFields>` is `Partial<{}>`, which in TypeScript means "anything
-  non-nullish". The RUNTIME half is closed since `EntryJudge`; what remains open is the type.
+  non-nullish". The RUNTIME half is closed since `AdapterFieldValidator`; what remains open is the type.
 - **A seed cycle is not satisfiable by ordering** — `core/src/boot/seed.ts`, `orderSeeds`.
   Its members keep scan order and fail at the driver.
 - **Nothing generates OpenAPI**, so `RouteDefinition.description` is read by nobody. The op's
@@ -346,7 +347,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   `update` and not `upsert`. Decided, not done: delete the prefab.
 - **An announcement realizes a fact's `lifecycle.create`, and no typed emitter can use it.**
   `Emit<T>` names the ROW type where `created()` is required, so `announce({ id, title })` is a
-  compile error. `PartialRow` is the wanted shape.
+  compile error. `PartialValues` is the wanted shape.
 - **A nested object reports no path to the field that failed.** `Outer.validate({ addr: {
   street: 'a' } })` answers `path: 'addr'`. The inner path is computed and thrown away; a
   nested path wants segments, which eleven sites interpret as a flat string today.
@@ -378,7 +379,7 @@ One line each, kept because a past version of this file asserted the opposite.
   `entityOfStorageKey` (`core/src/storage.ts`), the third pair beside `togetherKeyOf` and
   `emitKeyOf`. The dual asks whether the prefix names a SCANNED entity.
 - A decision has ONE owner, instantiated on its subject when the subject can be held:
-  `RowJudge.of(fields, opts).validate(row)`, `Card.fromSchema(Post)`, `FieldSet.of(f).primary`.
+  `InputValidator.of(fields, opts).validate(row)`, `Card.fromSchema(Post)`, `FieldSet.of(f).primary`.
 - **A registry is an instance of `Registry<T>`, not a class of statics.** An `Adapters`
   registry was built and reverted the same day (2026-09-04): a registry earns its place when a
   name arrives as DATA — `generate: 'ulid'`, `source: 'file'` — and `sql` arrives in an import.

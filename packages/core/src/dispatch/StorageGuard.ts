@@ -1,4 +1,4 @@
-import { ValueJudge, type Fields } from '@fougere/schema';
+import { FieldValueValidator, type Fields } from '@fougere/schema';
 import { assertListOptions } from '../storage.js';
 import { ErrorCode, FougereError } from '../wire/errors.js';
 
@@ -51,7 +51,7 @@ export class StorageGuard {
     for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
       const field = this.fields[key];
       if (!field || item === undefined) continue;
-      const checked = ValueJudge.of(field).validate(item);
+      const checked = FieldValueValidator.of(field).validate(item);
       if ('error' in checked) errors.push(`${key}: ${checked.error}`);
     }
 

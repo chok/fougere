@@ -8,7 +8,7 @@ graph by the script at the bottom, not from taste — regenerate it when the tre
 
 No dependency at all, 155 lines together.
 
-[`lib/utils.ts`](src/lib/utils.ts) · [`lib/Registry.ts`](src/lib/Registry.ts) · [`result.ts`](src/result.ts) · [`judge/RowRefusal.ts`](src/judge/RowRefusal.ts) · [`judge/options.ts`](src/judge/options.ts)
+[`lib/utils.ts`](src/lib/utils.ts) · [`lib/Registry.ts`](src/lib/Registry.ts) · [`result.ts`](src/result.ts) · [`validator/InputRefusal.ts`](src/validator/InputRefusal.ts) · [`validator/options.ts`](src/validator/options.ts)
 · [`axis/Meta.ts`](src/axis/Meta.ts) · [`axis/lifecycle/Clock.ts`](src/axis/lifecycle/Clock.ts) · [`axis/role/Relation.ts`](src/axis/role/Relation.ts) · [`projection/standard.ts`](src/projection/standard.ts)
 
 ## 2 — What fills itself at import
@@ -24,7 +24,7 @@ needs, and three axes below import it.
 ## 3 — The knot
 
 Ten files that hold each other: no order exists between them, and no subset can be read
-first. `Field` names the four axes and two judges, `FieldJudge` and `ValueJudge` name
+first. `Field` names the four axes and two judges, `FieldDeclarationValidator` and `FieldValueValidator` name
 `Field` back, each `*Axis.ts` names `Axis.ts` and is named by it, `Boundaries` and
 `Boundary` are a registry and its subject, and `Descriptor` is what those axes look like
 once written down. Enter by [`field/Field.ts`](src/field/Field.ts) — `new Field(init, key)` is the door the other
@@ -32,17 +32,17 @@ nine serve.
 
 [`field/Field.ts`](src/field/Field.ts) · [`axis/Axis.ts`](src/axis/Axis.ts) · [`axis/boundary/Boundary.ts`](src/axis/boundary/Boundary.ts) · [`axis/boundary/Boundaries.ts`](src/axis/boundary/Boundaries.ts)
 · [`axis/boundary/BoundaryAxis.ts`](src/axis/boundary/BoundaryAxis.ts) · [`axis/lifecycle/LifecycleAxis.ts`](src/axis/lifecycle/LifecycleAxis.ts) · [`axis/role/RoleAxis.ts`](src/axis/role/RoleAxis.ts)
-· [`judge/FieldJudge.ts`](src/judge/FieldJudge.ts) · [`judge/ValueJudge.ts`](src/judge/ValueJudge.ts) · [`projection/card/Descriptor.ts`](src/projection/card/Descriptor.ts)
+· [`validator/FieldDeclarationValidator.ts`](src/validator/FieldDeclarationValidator.ts) · [`validator/FieldValueValidator.ts`](src/validator/FieldValueValidator.ts) · [`projection/card/Descriptor.ts`](src/projection/card/Descriptor.ts)
 
-[`judge/EntryJudge.ts`](src/judge/EntryJudge.ts) sits at the same step and touches none of it: it judges a foreign
+[`validator/AdapterFieldValidator.ts`](src/validator/AdapterFieldValidator.ts) sits at the same step and touches none of it: it judges a foreign
 format, which is how an adapter states its own entry shape as JSON.
 
 ## 4 — What reads a field
 
-`RowJudge` is the only judge that calls another. `apply.ts` is the only file here that
+`InputValidator` is the only judge that calls another. `apply.ts` is the only file here that
 writes a value rather than reading one.
 
-[`axis/lifecycle/apply.ts`](src/axis/lifecycle/apply.ts) · [`judge/RowJudge.ts`](src/judge/RowJudge.ts) · [`projection/Visibility.ts`](src/projection/Visibility.ts) · [`projection/card/diff.ts`](src/projection/card/diff.ts)
+[`axis/lifecycle/apply.ts`](src/axis/lifecycle/apply.ts) · [`validator/InputValidator.ts`](src/validator/InputValidator.ts) · [`projection/Visibility.ts`](src/projection/Visibility.ts) · [`projection/card/diff.ts`](src/projection/card/diff.ts)
 · [`entity/EntityAdapters.ts`](src/entity/EntityAdapters.ts) · [`entity/EntityAdapterSet.ts`](src/entity/EntityAdapterSet.ts) · [`entity/EntityDeclarations.ts`](src/entity/EntityDeclarations.ts)
 
 ## 5 — The schema

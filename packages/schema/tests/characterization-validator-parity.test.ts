@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Fields } from '../src/field/Field.js';
-import type { ValidationResult } from '../src/result.js';
-import { RowJudge } from '../src/judge/RowJudge.js';
+import type { ValidationResult } from '../src/validation.js';
+import { InputValidator } from '../src/validator/InputValidator.js';
 import type { StandardSchemaV1 } from '../src/projection/standard.js';
 import type { SchemaConstructor } from '../src/Schema.js';
 import { entity } from '../src/entity.js';
@@ -45,7 +45,7 @@ function expectJudgeParity<TFields extends Fields>(
   expected: Verdict,
 ): void {
   const entityVerdict = rowVerdict(schema.validate(input));
-  const directVerdict = rowVerdict(RowJudge.of(schema.getFields(), schema.getOpts()).validate(input));
+  const directVerdict = rowVerdict(InputValidator.of(schema.getFields(), schema.getOpts()).validate(input));
   const standardSchemaVerdict = standardVerdict(schema['~standard'].validate(input));
 
   expect({ entityVerdict, directVerdict, standardSchemaVerdict }).toEqual({

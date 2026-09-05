@@ -1,4 +1,4 @@
-import type { ValidationError } from '../../result.js';
+import type { ValidationError } from '../../validation.js';
 
 /**
  * So a card that cannot be read says what is wrong and what to write instead.
