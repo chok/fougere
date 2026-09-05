@@ -39,7 +39,7 @@ async function main() {
       const line = buffer.slice(0, cut);
       buffer = buffer.slice(cut + 1);
       const { fact, payload } = JSON.parse(line) as { fact: string; payload: unknown };
-      // The same local dispatch as in-process — judge, binding and middlewares included.
+      // The same local dispatch as in-process — validator, binding and middlewares included.
       // It rejects when a listener refused; this carrier keeps nothing, so it can only
       // report. `main.ts` shows the other half: a broker that replays what was not acked.
       void app.deliver(fact, payload)

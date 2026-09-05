@@ -50,10 +50,10 @@ describe('a stamp is one instant, but never one object', () => {
   });
 });
 
-describe('a declared default is judged once, where it is written', () => {
+describe('a declared default is validated once, where it is written', () => {
   it('refuses a default its own shape refuses', () => {
-    // `applyCreate` writes this into every row without passing the client judge — which
-    // is right, the judge answers for what a CALLER sent. So the value is judged here,
+    // `applyCreate` writes this into every row without passing the client validator — which
+    // is right, the validator answers for what a CALLER sent. So the value is validated here,
     // at the declaration, instead of on every write for the rest of the app's life.
     expect(() => entity({ id: primary(), code: text({ min: 5, default: 'ab' }) }))
       .toThrow(/declared default "ab" is not a legal value/);
@@ -66,7 +66,7 @@ describe('a declared default is judged once, where it is written', () => {
     expect(() => entity({ id: primary(), code: text({ min: 2, default: 'ab' }) })).not.toThrow();
   });
 
-  it('a value the caller supplies is still the caller\'s to be judged elsewhere', () => {
+  it('a value the caller supplies is still the caller\'s to be validated elsewhere', () => {
     // The declaration guard says nothing about inputs: an illegal `title` is the
     // façade's business, and stays so.
     expect(applyCreate(Doc.getFields(), { title: '' }).title).toBe('');

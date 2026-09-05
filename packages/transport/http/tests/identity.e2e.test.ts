@@ -155,7 +155,7 @@ describe('a receiver that establishes nothing', () => {
     // survived a receiver with no verifier and was indistinguishable from a proven one.
     const answer = await ask({ params: {}, query: {}, state: { user: { role: 'reader' } }, caller: 'billing' });
 
-    // The state IS taken — nothing here judges it — but the name is not.
+    // The state IS taken — nothing here validates it — but the name is not.
     expect(answer.result.state).toEqual({ user: { role: 'reader' } });
     expect(answer.result.caller).toBeUndefined();
   });

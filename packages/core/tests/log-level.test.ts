@@ -154,7 +154,7 @@ describe('a process started at a level', () => {
  * A level nobody knows.
  *
  * `applyConfig` read `FOUGERE_LOG_LEVEL` through a cast while `envLevel` — one module
- * away — already judged it. So `verbose` reached `setLogLevel`, the threshold became
+ * away — already validated it. So `verbose` reached `setLogLevel`, the threshold became
  * `undefined`, and every comparison against it was `NaN`: nothing filtered, and
  * `logLevel()` answered its own fallback rather than what was in force.
  */

@@ -48,7 +48,7 @@ function baseType(type: unknown): string {
   return (type as string) ?? 'string';
 }
 
-/** The formats a browser has an input type for — the rest stay `text`, judged later. */
+/** The formats a browser has an input type for — the rest stay `text`, validated later. */
 const CONTROL_BY_FORMAT: Record<string, FormField['control']> = {
   'date-time': 'date',
   email: 'email',
@@ -164,7 +164,7 @@ export function tableColumnsOf(entity: FormEntity, entityKey: string): TableColu
 
 /**
  * The wire body of the form's values — an empty control is an absent value at the create boundary
- * (absence is judged by the lifecycle axis, an empty string would be judged as a present bad
+ * (absence is validated by the lifecycle axis, an empty string would be validated as a present bad
  * value).
  */
 export function payloadOf(values: Record<string, unknown>): Record<string, unknown> {
@@ -173,7 +173,7 @@ export function payloadOf(values: Record<string, unknown>): Record<string, unkno
   );
 }
 
-/** Index judge errors by field — local judge and remote judge share this shape. */
+/** Index validator errors by field — local validator and remote validator share this shape. */
 export function errorsByField(errors: ValidationError[]): Record<string, string> {
   const byField: Record<string, string> = {};
   for (const err of errors) {

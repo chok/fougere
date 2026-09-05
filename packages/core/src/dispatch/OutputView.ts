@@ -1,7 +1,7 @@
 import { Visibility, type Fields } from '@fougere/schema';
 import { preserveArrayProperties } from './ArrayResult.js';
 
-/** What one operation result may show. One of the two exits a judge watches. */
+/** What one operation result may show. One of the two exits a validator watches. */
 export class OutputView {
   constructor(
     readonly fields: Fields,

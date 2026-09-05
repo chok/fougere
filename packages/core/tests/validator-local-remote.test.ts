@@ -1,5 +1,5 @@
 /**
- * The theorem: the local judge and the remote judge return the same verdict.
+ * The theorem: the local validator and the remote validator return the same verdict.
  *
  * The site says it, `useFormFor` depends on it, and until now nothing showed it.
  * The gradient's whole promise — a frond runs in-process or behind JSON-RPC with
@@ -24,7 +24,7 @@ const root = join(import.meta.dirname, 'fixtures-validator');
 
 /**
  * A storage that accepts anything, so a refusal in this file can only come from
- * the judge — never from a driver. `create` echoes what it was handed, which is
+ * the validator — never from a driver. `create` echoes what it was handed, which is
  * what makes the accepted case observable on both sides.
  */
 const storageFactory: StorageFactory = () => {
@@ -62,7 +62,7 @@ function verdictOf(outcome: unknown, error: unknown): Verdict {
   // straight in. An earlier version of this helper looked for `details.errors`,
   // found nothing, and produced an empty list for BOTH façades; they agreed on
   // nothing at all and the test passed. The browser column is what exposed it,
-  // which is the argument for having three judges rather than two.
+  // which is the argument for having three validates rather than two.
   const err = error as FougereError;
   const raw = err.details ?? [];
   const errors = (Array.isArray(raw) ? raw : []) as { path: string; message: string }[];
@@ -75,7 +75,7 @@ function verdictOf(outcome: unknown, error: unknown): Verdict {
 }
 
 /**
- * What a browser sees: the imported class, judged directly, with no façade and
+ * What a browser sees: the imported class, validated directly, with no façade and
  * no network. This is the call `useFormFor` makes.
  */
 function browserVerdict(input: unknown): Verdict {
@@ -91,7 +91,7 @@ function browserVerdict(input: unknown): Verdict {
   };
 }
 
-async function judge(run: ReturnType<typeof createLocalRunner>, op: string, input: unknown): Promise<Verdict> {
+async function validator(run: ReturnType<typeof createLocalRunner>, op: string, input: unknown): Promise<Verdict> {
   try {
     const out = await run({ entity: 'product', op }, { ...EMPTY_INVOCATION, input });
     return verdictOf(out, undefined);
@@ -141,9 +141,9 @@ describe('juge local = juge distant', () => {
     for (const c of CASES) {
       table.push({
         case: c.name,
-        local: await judge(runLocal, c.op, c.input),
-        remote: await judge(runRemote as typeof runLocal, c.op, c.input),
-        // The THIRD judge, and the one the docs actually promise: a browser has
+        local: await validator(runLocal, c.op, c.input),
+        remote: await validator(runRemote as typeof runLocal, c.op, c.input),
+        // The THIRD validator, and the one the docs actually promise: a browser has
         // no façade — `useFormFor` calls the imported class directly. If this
         // column disagreed, a form would accept what the server refuses.
         browser: browserVerdict(c.input),

@@ -1,7 +1,7 @@
 # @fougere/site
 
 The Fougere site — landing page, docs, blog — built with Fougere: the blog is a Frond
-(`fronds/blog`, a judged draft→publish), the docs are Nuxt Content markdown
+(`fronds/blog`, a validated draft→publish), the docs are Nuxt Content markdown
 (`content/{en,fr}/docs`), i18n is en/fr (`prefix_except_default`: `/docs`, `/fr/docs`).
 
 ```bash

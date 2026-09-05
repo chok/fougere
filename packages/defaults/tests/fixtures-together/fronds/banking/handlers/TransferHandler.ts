@@ -58,7 +58,7 @@ export default class TransferHandler {
     await ledger.create({ id: `l-${from}-${to}`, from, to, amount });
   }
 
-  /** The judge refuses the LAST write — balance may not go below 0. */
+  /** The validator refuses the LAST write — balance may not go below 0. */
   async overdraw(from: string, to: string): Promise<{ ok: true }> {
     return this.together.run(async ([accounts, ledger]) => {
       await ledger.create({ id: `l-bad-${from}`, from, to, amount: 1 });

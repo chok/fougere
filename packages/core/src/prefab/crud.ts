@@ -103,7 +103,7 @@ export function Crud<E extends EntityConstructor, V extends CrudViews | EntityCo
 
   return asCrudConstructor<T, V>(class CrudHandler {
     static __entity = entity;
-    /** Handler-wide view only — a per-op map must NOT scope the storage the judges read. */
+    /** Handler-wide view only — a per-op map must NOT scope the storage the validators read. */
     static __output = wholeHandler ?? entity;
     static __opOutputs = perOp;
     /**

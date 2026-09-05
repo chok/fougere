@@ -30,7 +30,7 @@ const config: KnipConfig = {
    * `scanProject()` returns it. A reader that asks the scan is worth building; a
    * config that imitates it is not.
    *
-   * What remains is what knip judges from declarations, which is sound whatever
+   * What remains is what knip validates from declarations, which is sound whatever
    * loads the file — and it is the half that bears on publishing.
    */
   include: ['dependencies', 'devDependencies', 'unlisted', 'exports', 'types', 'duplicates'],

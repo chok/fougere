@@ -6,7 +6,7 @@ import type { BoundaryRef } from './Boundary.js';
 export const boundaryAxis: Axis<BoundaryRef, BoundaryRef> = {
   slot: 'boundary',
 
-  judge(value, errors) {
+  validator(value, errors) {
     if (typeof value === 'string') return; 
     if (!isObject(value)) {
       errors.push({
@@ -26,7 +26,7 @@ export const boundaryAxis: Axis<BoundaryRef, BoundaryRef> = {
 
   describe: (value) => value,
   reconstruct: (wire) => {
-    admitWire(boundaryAxis.judge, wire, 'boundary');
+    admitWire(boundaryAxis.validator, wire, 'boundary');
     return wire;
   },
 };

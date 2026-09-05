@@ -14,7 +14,7 @@
  *      decide who may be TOLD, and it decides from the fact.
  *
  *   2. **The push carries `{ entity }` and nothing else.** Not the row, not the title, not
- *      the id. A reader learns that something moved and must ask the judging door what it
+ *      the id. A reader learns that something moved and must ask the validating door what it
  *      now sees. What a push does not carry, it cannot leak — and that turns the fan-out
  *      into a question of permission rather than of content.
  */
@@ -35,7 +35,7 @@ export interface Change {
  * May this viewer be TOLD that a post moved? Not "may they read it" — that answer
  * belongs to the handler, and it is given again, later, when they ask.
  *
- * Two judges on the same question is not duplication here: they answer different
+ * Two validates on the same question is not duplication here: they answer different
  * questions. This one gates a notification; `PostHandler.list` gates a row. Getting
  * this one wrong wastes a query. Getting that one wrong leaks a draft.
  */

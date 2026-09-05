@@ -8,7 +8,7 @@
  * and what an operation's return becomes on the wire.
  *
  * Dispatch itself is not here on purpose — `shapeRest` is separate from `serveRest`
- * precisely so the shaping can be judged without standing up a runner.
+ * precisely so the shaping can be validated without standing up a runner.
  */
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';

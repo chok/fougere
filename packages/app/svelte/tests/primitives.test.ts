@@ -5,7 +5,7 @@
  * What is pinned here is the CONTRACT the three clients share: a read designates by
  * class and verb, a command on an entity revalidates the reads mounted on that same
  * entity, a form's fields come from the entity's own axes, and a refusal lands per
- * field whoever judged. The Vue and React versions state the same things against
+ * field whoever validated. The Vue and React versions state the same things against
  * their own state primitives; if one of them drifts, this is the shape it drifted from.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -168,14 +168,14 @@ describe('useFormFor', () => {
     expect(form.fieldsByName.title!.attrs).toMatchObject({ minlength: 1, maxlength: 200, required: true });
   });
 
-  it('judges locally with the same rules the handler runs', async () => {
+  it('validates locally with the same rules the handler runs', async () => {
     const calls = wire(() => ({ id: 'new' }));
     const form = useFormFor(Post as never);
 
     form.values.set({ title: '', body: 'b' });
     expect(await form.submit()).toBeNull();
     // 'Required', not 'too short': an empty control is an ABSENT value at the create
-    // boundary (`payloadOf` drops it), so the lifecycle axis judges it, not the shape.
+    // boundary (`payloadOf` drops it), so the lifecycle axis validates it, not the shape.
     expect(get(form.errors).title).toBe('Required');
     // Refused before the wire — the round-trip is saved, not just reported.
     expect(calls).toHaveLength(0);
@@ -191,7 +191,7 @@ describe('useFormFor', () => {
     expect(calls[0]!.params.input).toEqual({ title: 'ok', body: 'b' });
   });
 
-  it('lands a remote refusal per field, so the form never knows who judged', async () => {
+  it('lands a remote refusal per field, so the form never knows who validated', async () => {
     wire(() =>
       Object.assign(new Error('title: too short'), {
         data: { code: ErrorCode.VALIDATION_FAILED, details: [{ path: 'title', message: 'too short' }] },
@@ -199,7 +199,7 @@ describe('useFormFor', () => {
     );
     const form = useFormFor(Post as never);
 
-    // Passes the local judge, so only the server can refuse it.
+    // Passes the local validator, so only the server can refuse it.
     form.values.set({ title: 'fine', body: 'b' });
     expect(await form.submit()).toBeNull();
     expect(get(form.errors).title).toBe('too short');

@@ -1,7 +1,7 @@
 /**
  * Two schema-typed parameters do not make two input candidates when one is collected.
  * Provenance leaves Post as the only input candidate, so parameter order changes neither
- * the inferred judge nor the binding plan.
+ * the inferred validator nor the binding plan.
  */
 import { scanProject } from '../src/node.js';
 import { describe, it, expect } from 'vitest';
@@ -34,7 +34,7 @@ describe('an inferred input beside a collected entity', () => {
     expect(out).toEqual({ title: 'Ferns unfurl in silence', role: 'author' });
   });
 
-  it('judges the same input the same way when the collected parameter is first', async () => {
+  it('validates the same input the same way when the collected parameter is first', async () => {
     await using app = await createApp({ scan: await scanProject(root), createContainer });
 
     const out = await createLocalRunner(app)(

@@ -21,15 +21,15 @@ Two consequences worth stating, because they are what makes it hold:
   a parallel entity that repeats the same fields. A field added to the entity is then accepted
   without touching the view.
 - **A handler writes what the input carries** (`{ ...attributes }`), it does not enumerate its
-  fields — otherwise a new field is judged, then silently not written.
+  fields — otherwise a new field is validated, then silently not written.
 
 If you are about to write the same constraint in two places, you have missed the derivation.
 
 ## A surface is a door, never a logic
 
-Every door goes through the handler **façade**, which is the judge: validation, unknown-key refusal,
+Every door goes through the handler **façade**, which is where validation sits: unknown-key refusal,
 collectors. A resolver or route you wire yourself against the storage — or worse, against the database —
-is a second door with no judge behind it, and the rules declared in the entities stop applying there.
+is a second door with no validator behind it, and the rules declared in the entities stop applying there.
 
 Before adding a surface, reach for its **projection**:
 
@@ -39,7 +39,7 @@ Before adding a surface, reach for its **projection**:
 | GraphQL | `registerAll(builder, app)` then `registerGraphQL(router, builder.toSchema())` — `@fougere/adapter-graphql` |
 
 Hand-writing the types (`buildSchema`, raw SDL, one Pothos resolver per field) rebuilds what the
-projection already derives, and drops the judge on the way. `registerType` / `registerOperations`
+projection already derives, and drops the validator on the way. `registerType` / `registerOperations`
 exist to add what a projection cannot derive — never to replace it.
 
 ## Reading data

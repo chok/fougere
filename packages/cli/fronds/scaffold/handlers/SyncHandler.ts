@@ -37,7 +37,7 @@ export function entityClassName(name: string): string {
 }
 
 /**
- * One entry — a door or a fact — judged the same way, because sync consumes the same two
+ * One entry — a door or a fact — validated the same way, because sync consumes the same two
  * values from both: a name it can turn into a class, and a descriptor it can rebuild.
  *
  * A missing descriptor is legal on either side and means different things: a door that
@@ -54,7 +54,7 @@ function assertEntry(kind: string, frondName: string, entry: { name: string; sch
   // `ops` is not checked because it is not used: sync writes entities, and the name
   // and the descriptor below are the only two values that reach a file. The clause
   // that stood here demanded strings — the shape ops had before they carried their
-  // kind and their views — and so refused every real host. Judge what you consume.
+  // kind and their views — and so refused every real host. Validate what you consume.
   const descriptor = entry.schema as unknown;
   if (
     !descriptor
@@ -72,7 +72,7 @@ function assertEntry(kind: string, frondName: string, entry: { name: string; sch
 }
 
 function identityCardOf(value: unknown): IdentityCard {
-  // The card's own shape is judged by the package that declares it — `fronds`, and each
+  // The card's own shape is validated by the package that declares it — `fronds`, and each
   // frond's `doors`. What stays here is what only a writer of files needs: a name safe to
   // become one, and the descriptor a class is generated from.
   const card = assertIdentityCard(value, 'Remote rpc.discover');
@@ -265,7 +265,7 @@ export default class SyncHandler {
      * The barrel is rewritten every run, so a dropped entity loses its export on its own
      * — but the FILE stayed, and the generated `package.json` exports `'./entities/*'` as
      * a wildcard, so `@fronds/blog/entities/Ticket.js` kept resolving to a class nothing
-     * behind it answers for. The consumer compiles, its local judge accepts, and the call
+     * behind it answers for. The consumer compiles, its local validator accepts, and the call
      * comes back NOT_FOUND at the door — or never leaves, because the page dropped the
      * call and kept the type.
      */

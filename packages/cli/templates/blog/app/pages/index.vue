@@ -7,6 +7,6 @@
       <NuxtLink to="/posts/manage">Drafts &amp; publishing</NuxtLink> ·
       <NuxtLink to="/posts/new">New draft</NuxtLink>
     </p>
-    <p class="muted">The loop: create a draft → it stays private → publish it (a judged operation, not a field write) → it appears in the published list, live.</p>
+    <p class="muted">The loop: create a draft → it stays private → publish it (a validated operation, not a field write) → it appears in the published list, live.</p>
   </main>
 </template>

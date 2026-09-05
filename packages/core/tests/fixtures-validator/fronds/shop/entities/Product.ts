@@ -2,7 +2,7 @@ import { entity, primary, text, number, oneOf, created, immutable, readOnly } fr
 
 /**
  * One instance of each way an input can be refused, so a single payload
- * exercises every branch of the judge's decision table at once.
+ * exercises every branch of the validator's decision table at once.
  */
 export default class Product extends entity({
   id: primary(),

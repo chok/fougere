@@ -13,7 +13,7 @@ import { FieldDeclarationValidator } from '../src/validator/FieldDeclarationVali
 import { Role } from '../src/axis/role/Role.js';
 
 /**
- * The constructor is the only way to obtain a field, so it is where a field is judged —
+ * The constructor is the only way to obtain a field, so it is where a field is validated —
  * and where hostile input stops. Both halves are pinned here because both were reachable:
  * `new Field({})` used to be legal from any caller without a compiler, and assigning the
  * slots wholesale used to be a one-line simplification with a prototype hole under it.
@@ -25,7 +25,7 @@ describe('the field door', () => {
     expect(() => entity({ id: primary(), vide: {} as never })).toThrow(/Field 'vide': shape:/);
   });
 
-  it('judges every axis against its own vocabulary, and names the one that failed', () => {
+  it('validates every axis against its own vocabulary, and names the one that failed', () => {
     const shape = { type: 'string' } as const;
     const refused: readonly (readonly [object, RegExp])[] = [
       [{ shape, lifecycle: 'nawak' }, /lifecycle: Expected an object/],

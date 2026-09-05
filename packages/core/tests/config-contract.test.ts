@@ -42,7 +42,7 @@ const call = (over: Partial<InvocationContext> = {}): InvocationContext =>
   ({ params: {}, query: {}, input: undefined, state: {}, ...over });
 
 describe('config states a contract the scan could not derive', () => {
-  it('names the judge for an input the scan could only see as an object', async () => {
+  it('names the validator for an input the scan could only see as an object', async () => {
     const { app, run } = await boot();
 
     const ok = await run({ entity: 'note', op: 'retitle' }, call({ input: { title: 'Neuf' } }));
@@ -51,7 +51,7 @@ describe('config states a contract the scan could not derive', () => {
     await app.dispose();
   });
 
-  it('and that judge REFUSES — the config input is enforced, not decorative', async () => {
+  it('and that validator REFUSES — the config input is enforced, not decorative', async () => {
     const { app, run } = await boot();
 
     // `title` is `text({ min: 1 })`, and `input` is not in the declared view.

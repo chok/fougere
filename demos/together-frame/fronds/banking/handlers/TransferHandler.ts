@@ -43,9 +43,9 @@ export default class TransferHandler {
   }
 
   /**
-   * The judge refusing the LAST write — `balance` may not go below zero.
+   * The validator refusing the LAST write — `balance` may not go below zero.
    *
-   * The ordinary refusal, not a special case: the judge sits outside the recorder, so a
+   * The ordinary refusal, not a special case: the validator sits outside the recorder, so a
    * write the entity refuses never enters the journal, and what preceded it comes back
    * like anything else.
    */
@@ -53,7 +53,7 @@ export default class TransferHandler {
     return this.together.run(async ([accounts, ledger]) => {
       await ledger.create({ id: `over-${++line}`, from, to, amount: 999 });
       await accounts.update(from, { balance: -5 });
-      throw new Error('unreachable — the judge refuses before this');
+      throw new Error('unreachable — the validator refuses before this');
     });
   }
 

@@ -226,7 +226,7 @@ export function resolveEffectiveOperations(
           resolutionDiagnostics,
         )) continue;
 
-        // A fact is judged by the entity it names. This used to be patched into the
+        // A fact is validated by the entity it names. This used to be patched into the
         // facade after resolution, leaving check/explain with a different input.
         let input = contract.input;
         if (!input) {

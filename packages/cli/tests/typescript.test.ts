@@ -60,14 +60,14 @@ describe('card → TypeScript type', () => {
     expect(source).toContain('  id: string;');
   });
 
-  it('renders ONE class: the judge and the shape under a single name', () => {
+  it('renders ONE class: the validator and the shape under a single name', () => {
     const entitySource = EntityTypes.of(Card.fromSchema(Author, 'author').descriptor).render();
 
     // No interface beside a const: `class` is the language's own answer to
     // "a name that is both a value and a type".
     expect(entitySource).toMatch(/^export class Author extends Card\.fromDescriptor<\{/);
     expect(entitySource).toContain('  name: string;');
-    // The card travels inline — the rebuilt judge is exact, and the shape above it
+    // The card travels inline — the rebuilt validator is exact, and the shape above it
     // is read off that same card.
     expect(entitySource).toContain('"x-fougere-vendor": "fougere"');
     expect(entitySource.trimEnd()).toMatch(/\}\)\.toSchema\(\) \{\}$/);
@@ -179,7 +179,7 @@ describe('a description cannot stop being a comment', () => {
 
     // The card below it, where the same string is DATA: `JSON.stringify` put it in a
     // string literal, so its `*/` is inert and must stay verbatim — escaping it there
-    // would corrupt the description the rebuilt judge hands back.
+    // would corrupt the description the rebuilt validator hands back.
     const card = source.slice(source.indexOf('>('));
     expect(card).toContain(JSON.stringify(payload));
   });

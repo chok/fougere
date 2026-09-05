@@ -24,7 +24,7 @@ needs, and three axes below import it.
 ## 3 — The knot
 
 Ten files that hold each other: no order exists between them, and no subset can be read
-first. `Field` names the four axes and two judges, `FieldDeclarationValidator` and `FieldValueValidator` name
+first. `Field` names the four axes and two validators, `FieldDeclarationValidator` and `FieldValueValidator` name
 `Field` back, each `*Axis.ts` names `Axis.ts` and is named by it, `Boundaries` and
 `Boundary` are a registry and its subject, and `Descriptor` is what those axes look like
 once written down. Enter by [`field/Field.ts`](src/field/Field.ts) — `new Field(init, key)` is the door the other
@@ -34,12 +34,12 @@ nine serve.
 · [`axis/boundary/BoundaryAxis.ts`](src/axis/boundary/BoundaryAxis.ts) · [`axis/lifecycle/LifecycleAxis.ts`](src/axis/lifecycle/LifecycleAxis.ts) · [`axis/role/RoleAxis.ts`](src/axis/role/RoleAxis.ts)
 · [`validator/FieldDeclarationValidator.ts`](src/validator/FieldDeclarationValidator.ts) · [`validator/FieldValueValidator.ts`](src/validator/FieldValueValidator.ts) · [`projection/card/Descriptor.ts`](src/projection/card/Descriptor.ts)
 
-[`validator/AdapterFieldValidator.ts`](src/validator/AdapterFieldValidator.ts) sits at the same step and touches none of it: it judges a foreign
+[`validator/AdapterFieldValidator.ts`](src/validator/AdapterFieldValidator.ts) sits at the same step and touches none of it: it validates a foreign
 format, which is how an adapter states its own entry shape as JSON.
 
 ## 4 — What reads a field
 
-`InputValidator` is the only judge that calls another. `apply.ts` is the only file here that
+`InputValidator` is the only validator that calls another. `apply.ts` is the only file here that
 writes a value rather than reading one.
 
 [`axis/lifecycle/apply.ts`](src/axis/lifecycle/apply.ts) · [`validator/InputValidator.ts`](src/validator/InputValidator.ts) · [`projection/Visibility.ts`](src/projection/Visibility.ts) · [`projection/card/diff.ts`](src/projection/card/diff.ts)
@@ -134,7 +134,7 @@ reproducible: an earlier version walked the raw graph and stopped at a repeat, w
 a file the depth of whichever path reached it first — and set iteration order is not stable
 across processes, so two runs printed two different orders.
 
-`pnpm arch:cycles` names the four family pairs that cross here — `field`↔`judge`,
+`pnpm arch:cycles` names the four family pairs that cross here — `field`↔`validator`,
 `axis`↔`projection`, `axis`↔`field`, `entity`↔`field` — with the reason each is kept.
 
 </details>

@@ -299,7 +299,7 @@ async function inferOperations(
     // caller supplies through the body are candidates: a schema-typed collector, fact or
     // context parameter is not input merely because it names an entity. The old loop
     // ignored provenance and assigned the first schema it met, so swapping two parameters
-    // silently changed the contract the façade used to judge the request body.
+    // silently changed the contract the façade used to validate the request body.
     const binding = computeBindingPlan(method.params, collectorTypeNames);
     const candidates = method.params.flatMap((param, index) => {
       if (binding[index]?.source.kind !== 'input') return [];

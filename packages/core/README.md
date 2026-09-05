@@ -4,7 +4,7 @@ A frond call is a **value**: `(entity, op, invocation)`. `createLocalRunner` exe
 strictly locally; `createAppRunner` follows the topology (local façades, remote
 stand-ins). Transports move the value — they never reshape it.
 
-The façade judges the input, projects the output, and exposes only what a contract
+The façade validates the input, projects the output, and exposes only what a contract
 declares. It also canonicalizes optional input before binding: omission is `undefined`,
 JSON may omit its property, and an explicit `null` is never rewritten.
 

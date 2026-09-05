@@ -52,7 +52,7 @@ a client receives    id, station, celsius, recordedAt
 
 `primary()` and `created()` state it, and the door reads them.
 
-**The judge** — the same verdict in the browser, at the façade, and across a split
+**The validator** — the same verdict in the browser, at the façade, and across a split
 (proven in `packages/core/tests/validator-local-remote.test.ts`):
 
 ```
@@ -62,7 +62,7 @@ a client receives    id, station, celsius, recordedAt
 ## Why this is the whole point
 
 `min: 2` is written once and lands in four places — a `CHECK` in the database, the
-judge at the door, the card that crosses a language boundary, and the browser's own
+validator at the door, the card that crosses a language boundary, and the browser's own
 `minlength` attribute. Write those by hand and you have four places to keep
 consistent, in four languages, one of which you do not control.
 

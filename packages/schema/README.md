@@ -39,10 +39,10 @@ Validation is synchronous, and the spec types come from the package that publish
 That package is types only — its `index.js` is zero bytes — so a browser pays nothing for
 it.
 
-One difference from most vendors, and it is deliberate: **the judge does not fill
+One difference from most vendors, and it is deliberate: **the validator does not fill
 defaults**. A field declared `bool({ default: false })` may be absent — that is legal,
 and the value comes back without the key. Filling belongs to the storage, at the point
-of persistence, so the same input judged twice never gains a field on the way through.
+of persistence, so the same input validated twice never gains a field on the way through.
 
 ## Installation
 ```bash

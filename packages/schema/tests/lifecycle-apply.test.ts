@@ -96,7 +96,7 @@ describe('applyUpdate — what the system writes at every write', () => {
     expect(applyUpdate(fields, { updatedAt: when }).updatedAt).toBe(when);
   });
 
-  it('does not judge — refusing an immutable field is the façade\'s job', () => {
+  it('does not validator — refusing an immutable field is the façade\'s job', () => {
     // `update: 'forbidden'` is enforced by `validateFields` in patch mode. A storage
     // realizes; it never refuses. Both sentences have to stay true for the split to
     // mean anything.

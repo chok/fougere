@@ -35,7 +35,7 @@ the id. Every title on that screen was answered by `PostHandler.list` to a calle
 identified. A push cannot leak what it does not carry, which turns the fan-out into a
 question of permission instead of a question of content.
 
-## The two judges are not a duplication
+## The two validators are not a duplication
 
 `mayBeTold` (in the carrier) and `PostHandler.list` (in the frond) answer different
 questions, and the asymmetry is the design:

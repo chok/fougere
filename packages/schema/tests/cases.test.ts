@@ -1,8 +1,8 @@
 /**
- * The decision table, checked against the judge it describes.
+ * The decision table, checked against the validator it describes.
  *
  * Every case is posed to `InputValidator.check` — the same function the façade calls. A case whose
- * verdict the judge does not share is a case this file got wrong, and the assertion says
+ * verdict the validator does not share is a case this file got wrong, and the assertion says
  * which one by carrying `why`.
  */
 import { describe, it, expect } from 'vitest';
@@ -48,7 +48,7 @@ describe('the table', () => {
     expect(reasons).toContain('not an object at all');
   });
 
-  it('covers every refusal the judge can state', () => {
+  it('covers every refusal the validator can state', () => {
     const messages = new Set<string>();
     for (const one of table) {
       const result = verdict(one.input, one.patch);
@@ -66,7 +66,7 @@ describe('the table', () => {
 });
 
 describe('each case', () => {
-  it('gets from the judge the verdict it states', () => {
+  it('gets from the validator the verdict it states', () => {
     for (const one of table) {
       const result = verdict(one.input, one.patch);
 
@@ -75,9 +75,9 @@ describe('each case', () => {
   });
 });
 
-describe('the guard on the judge itself', () => {
+describe('the guard on the validator itself', () => {
   it('names every refusal branch, so a new one cannot be added in silence', () => {
-    // If the judge grows a branch, this fails naming it, and the table above has to state
+    // If the validator grows a branch, this fails naming it, and the table above has to state
     // the case that reaches it. Two refusals stay out on purpose: a value refused by its
     // own shape carries the engine's message, and a named boundary codec carries user
     // code's — neither is structural, and neither can be enumerated ahead of time.

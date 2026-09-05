@@ -26,7 +26,7 @@ import { updated } from '../src/vocabulary/updated.js';
  * `validate({})` succeeded. Same declaration, two answers, nothing failing to say so.
  *
  * The copy is gone, so this test has no type half to write — there is nothing left to
- * compare the lifecycle AGAINST. It reads the rule and the judge that acts on it, which
+ * compare the lifecycle AGAINST. It reads the rule and the validator that acts on it, which
  * is the whole surface now.
  */
 

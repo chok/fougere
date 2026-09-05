@@ -64,7 +64,7 @@ POST /api/blog/posts {status}   → VALIDATION_FAILED — status: Read-only     
 / · /drafts · /new                                                          200
 ```
 
-The 405 and the refusal come from the same table and the same judge Next and Nuxt
+The 405 and the refusal come from the same table and the same validator Next and Nuxt
 answer from. No projection was re-described to get them here.
 
 ## The one host-specific thing

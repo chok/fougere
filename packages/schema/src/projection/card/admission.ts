@@ -10,17 +10,17 @@ export function refuse(what: string, fix: string): never {
 }
 
 /**
- * So a card's axis passes the same judge as a hand-written one, and no second judge exists.
+ * So a card's axis passes the same validator as a hand-written one, and no second validator exists.
  * FR : pour qu'un axe d'une carte passe le juge des autres, sans second juge.
  * `{ update: 'maybe' }` on a card → `lifecycle is malformed — lifecycle.update: Expected 'now' or 'forbidden'`
  */
 export function admitWire(
-  judge: (value: unknown, errors: ValidationError[]) => void,
+  validator: (value: unknown, errors: ValidationError[]) => void,
   value: unknown,
   slot: string,
 ): void {
   const errors: ValidationError[] = [];
-  judge(value, errors);
+  validator(value, errors);
   if (errors.length) {
     refuse(
       `${slot} is malformed — ${errors.map((e) => `${e.path}: ${e.message}`).join('; ')}`,

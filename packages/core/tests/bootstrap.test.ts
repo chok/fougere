@@ -117,7 +117,7 @@ describe('createApp + storageFactory', () => {
     // Both entities get an storage
     expect(catalogScope.has('ProductStorage')).toBe(true);
     expect(catalogScope.has('BrandStorage')).toBe(true);
-    // What is registered wraps the factory's storage — writes are judged on the way to
+    // What is registered wraps the factory's storage — writes are validated on the way to
     // storage — so the factory's own ops are reached through it, not identical to it.
     const brandStorage = catalogScope.resolve<Storage>('BrandStorage');
     await brandStorage.list();

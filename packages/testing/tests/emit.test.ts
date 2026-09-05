@@ -63,10 +63,10 @@ describe('its dual — a fact that arrives', () => {
     expect([...rows]).toMatchObject([{ postId: 'p1', title: 'Delivered' }]);
   });
 
-  it('is judged on arrival, and a refusal reaches the carrier', async () => {
+  it('is validated on arrival, and a refusal reaches the carrier', async () => {
     await using app = await testApp({ root });
 
-    // A fact is judged strictly — a reader silently ignoring a field it should have
+    // A fact is validated strictly — a reader silently ignoring a field it should have
     // handled is worse than a loud refusal.
     await expect(app.deliver('postPublished', { id: 'p1' })).rejects.toThrow();
   });

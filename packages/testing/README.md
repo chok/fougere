@@ -19,7 +19,7 @@ import Product from '../fronds/catalog/entities/Product.js';
 
 const app = await testApp();
 
-checkContract(app, Product);   // every refusal the judge can state
+checkContract(app, Product);   // every refusal the validator can state
 checkOutput(app, Product);     // no writeOnly field leaves
 checkDoors(app, Product);      // local · REST · GraphQL · RPC answer the same
 ```

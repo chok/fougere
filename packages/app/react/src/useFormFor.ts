@@ -40,16 +40,16 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
     setValues((current) => ({ ...current, [name]: value }));
   }, []);
 
-  /** Local pre-judgment — same rules as the handler, saves a lost round-trip. */
-  const judge = useCallback((): boolean => {
+  /** Local pre-verdict — same rules as the handler, saves a lost round-trip. */
+  const validator = useCallback((): boolean => {
     const result = entity.validate(payloadOf(values));
     setErrors(result.success ? {} : errorsByField(result.errors));
     return result.success;
   }, [entity, values]);
 
-  /** Judge locally, then send through the command. */
+  /** Validate locally, then send through the command. */
   const submit = useCallback(async (): Promise<T | null> => {
-    if (!judge()) return null;
+    if (!validator()) return null;
     try {
       return await command.execute({ params: options.params, input: payloadOf(values) });
     } catch (err) {
@@ -60,7 +60,7 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
       }
       throw err;
     }
-  }, [judge, command, options.params, values]);
+  }, [validator, command, options.params, values]);
 
   const fieldsByName = useMemo(
     () => Object.fromEntries(fields.map((field) => [field.name, field])) as Record<string, FormField>,

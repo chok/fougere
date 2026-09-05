@@ -82,7 +82,7 @@ describe('the Fougere data provider', () => {
     expect(updated.data).toMatchObject({ id: 'hello', slug: 'hello' });
   });
 
-  it('turns judge refusals into field errors react-admin forms understand', async () => {
+  it('turns validator refusals into field errors react-admin forms understand', async () => {
     const fetcher: Fetcher = async <T,>(
       _url: string,
       options: { method: 'POST'; body: unknown },

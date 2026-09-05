@@ -31,8 +31,8 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
     for (const key of Object.keys(errors)) delete errors[key];
   }
 
-  /** Local pre-judgment — same rules as the handler, saves a lost round-trip. */
-  function judge(): boolean {
+  /** Local pre-verdict — same rules as the handler, saves a lost round-trip. */
+  function validator(): boolean {
     clearErrors();
     const result = entity.validate(payloadOf(values));
     if (result.success) return true;
@@ -40,9 +40,9 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
     return false;
   }
 
-  /** Judge locally, then send through the command. */
+  /** Validate locally, then send through the command. */
   async function submit(): Promise<T | null> {
-    if (!judge()) return null;
+    if (!validator()) return null;
     try {
       return await command.execute({ params: options.params, input: payloadOf(values) });
     } catch (err) {

@@ -1,5 +1,5 @@
 /**
- * What a generated body must satisfy: the judge that will receive it.
+ * What a generated body must satisfy: the validator that will receive it.
  *
  * The assertion is deliberately NOT a list of expected values — that would pin this file
  * to `json-schema-faker`'s output rather than to the entity. `validate()` is the reader
@@ -34,7 +34,7 @@ class Post extends entity({
 }) {}
 
 describe('a body built from the declaration', () => {
-  it('is accepted by the judge that will receive it', () => {
+  it('is accepted by the validator that will receive it', () => {
     const result = Article.validate(sampleInput(Article));
 
     expect(result.success, JSON.stringify((result as { errors?: unknown }).errors)).toBe(true);
@@ -100,7 +100,7 @@ describe('a nullable field', () => {
     subtitle: nullable(text({ min: 3 })),
   }) {}
 
-  it('draws null sometimes, and the judge takes it either way', () => {
+  it('draws null sometimes, and the validator takes it either way', () => {
     const drawn = [0, 1, 2, 3, 4, 5, 6, 7].map((seed) => sampleInput(Draft, {}, { seed }));
 
     // Both branches of the declared type appear across seeds, and every draw is valid.

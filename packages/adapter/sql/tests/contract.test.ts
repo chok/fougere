@@ -17,8 +17,8 @@ import { SqlStorage } from '../src/crud.js';
 
 describe('the SQL storage honours the port core declares', () => {
   it('is assignable to Storage — verified by the compiler, not at runtime', () => {
-    // The type-level assertion. `satisfies` would judge a value; the port is a
-    // shape, so what must be judged is the class's instance type.
+    // The type-level assertion. `satisfies` would validate a value; the port is a
+    // shape, so what must be validated is the class's instance type.
     type Honoured = SqlStorage extends Storage<Record<string, unknown>> ? true : never;
     const honoured: Honoured = true;
 

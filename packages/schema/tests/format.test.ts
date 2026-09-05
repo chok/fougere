@@ -12,7 +12,7 @@ import { Formats,
 Formats.register('siret', (v) => /^\d{14}$/.test(v));
 
 describe('registerFormat — a named predicate on the shape axis', () => {
-  it('judges a value the built-in vocabulary cannot express', () => {
+  it('validates a value the built-in vocabulary cannot express', () => {
     class Firm extends entity({ siret: text({ format: 'siret' }) }) {}
 
     expect(Firm.validate({ siret: '73282932000074' }).success).toBe(true);
@@ -26,7 +26,7 @@ describe('registerFormat — a named predicate on the shape axis', () => {
   });
 
   it('composes with the rest of the shape rather than replacing it', () => {
-    // The engine judges minLength; ours judges the digits. Both must pass, and the
+    // The engine validates minLength; ours validates the digits. Both must pass, and the
     // engine speaks first — a value that is too short never reaches the predicate.
     class Firm extends entity({ siret: text({ min: 14, format: 'siret' }) }) {}
 
@@ -43,7 +43,7 @@ describe('registerFormat — a named predicate on the shape axis', () => {
 });
 
 describe('the name is the contract — it survives the card', () => {
-  it('travels through a card and still judges after reconstruction', () => {
+  it('travels through a card and still validates after reconstruction', () => {
     class Firm extends entity({ siret: text({ format: 'siret' }) }) {}
 
     const card = Card.fromSchema(Firm).descriptor;
@@ -59,7 +59,7 @@ describe('the name is the contract — it survives the card', () => {
 });
 
 describe('an unregistered format is refused, never ignored', () => {
-  it('throws at judgment and names the remedy', () => {
+  it('throws at verdict and names the remedy', () => {
     // The engine would let EVERY value through: `format[$format] && …` skips a name
     // it does not know. Silence here is the failure mode this repo refuses.
     class Broken extends entity({ n: text({ format: 'siren' }) }) {}
@@ -69,7 +69,7 @@ describe('an unregistered format is refused, never ignored', () => {
     );
   });
 
-  it('does not throw for a format the engine judges natively', () => {
+  it('does not throw for a format the engine validates natively', () => {
     class U extends entity({ mail: email() }) {}
     expect(U.validate({ mail: 'a@b.co' }).success).toBe(true);
     expect(U.validate({ mail: 'pas-un-email' }).success).toBe(false);

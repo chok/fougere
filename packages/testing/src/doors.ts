@@ -6,7 +6,7 @@ import { Cases } from '@fougere/schema';
 import { derivedCases } from './derive.js';
 import { sampleInput, replaySeed, type SampleOptions } from './sample.js';
 
-/** The one shape both the local judge and a door already speak. */
+/** The one shape both the local validator and a door already speak. */
 export interface Verdict {
   success: boolean;
   errors?: ValidationError[];

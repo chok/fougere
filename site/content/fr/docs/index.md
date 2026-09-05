@@ -14,7 +14,7 @@ découlent, et on les vend d'habitude comme deux fonctionnalités distinctes :
 
 | La déclaration ne nomme pas… | donc cette chose est… | son nom usuel |
 |---|---|---|
-| sa table, son type GraphQL, son formulaire, son juge | **dérivée** d'elle | single-schema |
+| sa table, son type GraphQL, son formulaire, son validateur | **dérivée** d'elle | single-schema |
 | son hôte, son stockage, sa porte, son adresse | **choisie en dehors** d'elle | le gradient |
 
 Une seule règle lue dans deux directions — ce qu'une déclaration produit, et ce dont on peut
@@ -22,8 +22,8 @@ l'entourer. Le reste de cette page, ce sont ces deux lectures.
 
 ## Ce qui en dérive
 
-**Single-schema.** Une classe d'entité déclare vos données une fois — et juge elle-même
-ses entrées : le même `validate()` tourne dans le navigateur et à la façade. Le juge est
+**Single-schema.** Une classe d'entité déclare vos données une fois — et valide elle-même
+ses entrées : le même `validate()` tourne dans le navigateur et à la façade. Le validateur est
 lui-même une projection — dérivée de l'axe shape — mais une projection normative,
 embarquée avec la classe : toutes les autres doivent lui obéir, et elle ne peut pas
 dériver seule. Les tables

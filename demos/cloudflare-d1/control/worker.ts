@@ -19,7 +19,7 @@ const json = (body: unknown, status = 200) =>
 
 const FIELDS = ['id', 'name', 'sku', 'cents', 'listed'];
 
-function judge(body: Record<string, unknown>): string[] {
+function validator(body: Record<string, unknown>): string[] {
   const errors: string[] = [];
   for (const key of Object.keys(body)) if (!FIELDS.includes(key)) errors.push(`${key}: Unknown field`);
   const { id, name, sku, cents, listed } = body;
@@ -53,7 +53,7 @@ export default {
 
     if (request.method === 'POST' && url.pathname === '/api/products') {
       const body = (await request.json()) as Record<string, unknown>;
-      const errors = judge(body);
+      const errors = validator(body);
       if (errors.length > 0) return json({ code: 'VALIDATION_FAILED', message: errors.join(', ') }, 400);
       await db.prepare('insert into products values (?, ?, ?, ?, ?)')
         .bind(body.id, body.name, body.sku, body.cents, body.listed ? 1 : 0).run();

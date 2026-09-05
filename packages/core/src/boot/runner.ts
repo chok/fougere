@@ -9,7 +9,7 @@ export function createLocalRunner(app: App, surface?: string): Transport {
 }
 
 /**
- * Build the app runner — same judgment, but resolution follows the app's topology: local façades
+ * Build the app runner — same verdict, but resolution follows the app's topology: local façades
  * and remote doublures alike.
  */
 export function createAppRunner(app: App, surface?: string): Transport {

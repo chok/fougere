@@ -1,7 +1,7 @@
 /**
  * What leaves a façade is what a client may read.
  *
- * The judge refuses on the way in, the egress omits on the way out. A handler
+ * The validator refuses on the way in, the egress omits on the way out. A handler
  * may legitimately read a write-only field (verifying a password); the result
  * that crosses the façade must not carry it — to a browser or to another frond.
  */

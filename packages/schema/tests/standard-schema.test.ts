@@ -39,7 +39,7 @@ describe('Standard Schema v1', () => {
       expect(typeof std.validate).toBe('function');
     });
 
-    it('validates successfully — absent defaulted field is judged legal, not filled', () => {
+    it('validates successfully — absent defaulted field is validated legal, not filled', () => {
       const value = ok(Post['~standard'].validate({ id: 'abc', title: 'Hello', views: 10 }));
       expect(value).toMatchObject({ id: 'abc', title: 'Hello', views: 10 });
       expect('draft' in value).toBe(false); // storage realises the default
@@ -82,7 +82,7 @@ describe('Standard Schema v1', () => {
       expect(typeof std.validate).toBe('function');
     });
 
-    it('validates successfully — absent defaulted field is judged legal, not filled', () => {
+    it('validates successfully — absent defaulted field is validated legal, not filled', () => {
       const value = ok(CreatePost['~standard'].validate({ title: 'Hello', views: 5 }));
       expect(value).toMatchObject({ title: 'Hello', views: 5 });
       expect('draft' in value).toBe(false); // storage realises the default
@@ -106,7 +106,7 @@ describe('Standard Schema v1', () => {
  * `validateFields` builds `path` as `pathPrefix ? `${prefix}.${key}` : key`, and
  * every caller passes `''` — the recursion `pathPrefix` exists for is not written,
  * so a path is always ONE field name. Splitting it on `.` therefore invents
- * segments the judge never made: a field legally named `a.b` came out as two.
+ * segments the validator never made: a field legally named `a.b` came out as two.
  */
 describe('a field name that contains a dot', () => {
   class Odd extends entity({ id: primary(), 'a.b': text({ min: 3 }) }) {}

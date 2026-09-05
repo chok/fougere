@@ -6,7 +6,7 @@ import type { ValidationError } from '../validation.js';
 export interface Axis<Declared = unknown, Wire = unknown> {
   readonly slot: 'role' | 'lifecycle' | 'boundary';
 
-  judge(value: unknown, errors: ValidationError[]): void;
+  validator(value: unknown, errors: ValidationError[]): void;
 
   describe(value: Declared, key: string): Wire | undefined;
 

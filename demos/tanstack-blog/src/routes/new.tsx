@@ -5,7 +5,7 @@ import Post from '@fronds/blog/entities/Post';
 /**
  * The form contract, not a form widget. `fields` comes from the entity's own axes:
  * `status` and `publishedAt` are absent because they are `readOnly`, `title`
- * carries `minlength`/`maxlength` from its shape, and the local judge is the same
+ * carries `minlength`/`maxlength` from its shape, and the local validator is the same
  * one the handler runs.
  */
 export const Route = createFileRoute('/new')({ component: NewPost });

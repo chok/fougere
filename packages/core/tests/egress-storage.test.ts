@@ -1,5 +1,5 @@
 /**
- * Storage as a way out of the domain — the judge runs there like it runs anywhere else.
+ * Storage as a way out of the domain — the validator runs there like it runs anywhere else.
  *
  * Measured 2026-07-25, before this: `status: 'n-importe-quoi'` on a
  * `oneOf('draft','published')` was stored and read back unchanged. The database catches
@@ -32,7 +32,7 @@ function spyStorage() {
   return storage;
 }
 
-const judged = () => {
+const validated = () => {
   const storage = spyStorage();
   return { storage, guarded: new StorageGuard(Contact.getFields(), 'contact').guard(storage) };
 };
@@ -41,21 +41,21 @@ const ok = { id: 'c1', name: 'Ada', status: 'draft', ownerId: 'u1' };
 
 describe('what the shape refuses never reaches storage', () => {
   it('refuses a value outside a closed set', async () => {
-    const { storage, guarded } = judged();
+    const { storage, guarded } = validated();
 
     await expect(guarded.create({ ...ok, status: 'n-importe-quoi' })).rejects.toThrow(FougereError);
     expect(storage.create).not.toHaveBeenCalled();
   });
 
   it('refuses a malformed email and a non-number', async () => {
-    const { guarded } = judged();
+    const { guarded } = validated();
 
     await expect(guarded.create({ ...ok, reachAt: 'pas-un-email' })).rejects.toThrow(/reachAt/);
     await expect(guarded.create({ ...ok, score: 'texte' })).rejects.toThrow(/score/);
   });
 
   it('is our bug, not the caller’s — so it is an internal error', async () => {
-    const { guarded } = judged();
+    const { guarded } = validated();
 
     await guarded.create({ ...ok, status: 'nope' }).catch((e: FougereError) => {
       expect(e.code).toBe(ErrorCode.INTERNAL_ERROR);
@@ -66,16 +66,16 @@ describe('what the shape refuses never reaches storage', () => {
   });
 
   it('lets a legal write through untouched', async () => {
-    const { storage, guarded } = judged();
+    const { storage, guarded } = validated();
 
     await guarded.create(ok);
     expect(storage.create).toHaveBeenCalledWith(ok);
   });
 });
 
-describe('what this judge must NOT do', () => {
+describe('what this validator must NOT do', () => {
   it('never reads the client-only axes — a read-only field is legal here', async () => {
-    const { storage, guarded } = judged();
+    const { storage, guarded } = validated();
 
     // The façade refuses `ownerId` from a client. The domain writes it freely.
     await guarded.create(ok);
@@ -83,14 +83,14 @@ describe('what this judge must NOT do', () => {
   });
 
   it('says nothing about the fields a patch does not mention', async () => {
-    const { storage, guarded } = judged();
+    const { storage, guarded } = validated();
 
     await guarded.update('c1', { status: 'published' });
     expect(storage.update).toHaveBeenCalledWith('c1', { status: 'published' });
   });
 
   it('still refuses a bad value inside a patch', async () => {
-    const { storage, guarded } = judged();
+    const { storage, guarded } = validated();
 
     await expect(guarded.update('c1', { status: 'nope' })).rejects.toThrow(FougereError);
     expect(storage.update).not.toHaveBeenCalled();
@@ -99,12 +99,12 @@ describe('what this judge must NOT do', () => {
 
 describe('the wrapper leaves the rest of the storage alone', () => {
   it('keeps reads reachable', async () => {
-    const { guarded } = judged();
+    const { guarded } = validated();
     expect(await (guarded as never as { findById(): Promise<unknown> }).findById()).toEqual({ id: 'c1' });
   });
 
-  it('a copy scoped afterwards still judges', async () => {
-    const { guarded } = judged();
+  it('a copy scoped afterwards still validates', async () => {
+    const { guarded } = validated();
     const scoped = (guarded as never as { output(): typeof guarded }).output();
 
     await expect(scoped.create({ ...ok, status: 'nope' })).rejects.toThrow(FougereError);

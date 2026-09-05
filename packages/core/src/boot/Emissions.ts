@@ -54,7 +54,7 @@ export class Emissions {
     }
   }
 
-  /** The shape a fact is judged by, when the fact is a declared entity. */
+  /** The shape a fact is validated by, when the fact is a declared entity. */
   shapeOf(fact: string): SchemaView | undefined {
     return this.shapes.get(fact);
   }

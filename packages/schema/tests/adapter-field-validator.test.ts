@@ -3,7 +3,7 @@ import { AdapterFieldValidator } from '../src/validator/AdapterFieldValidator.js
 import type { Shape } from '../src/axis/shape/Shape.js';
 
 /**
- * The mechanism alone: an adapter states the format, `schema` judges against it and learns
+ * The mechanism alone: an adapter states the format, `schema` validates against it and learns
  * nothing about what is inside. The format below stands in for one an adapter would ship.
  */
 const format: Shape = {
@@ -14,8 +14,8 @@ const format: Shape = {
   additionalProperties: false,
 };
 
-const judge = AdapterFieldValidator.of(format);
-const check = (entries: unknown) => () => judge.assert(entries, 'Post.adapters.sql');
+const validator = AdapterFieldValidator.of(format);
+const check = (entries: unknown) => () => validator.assert(entries, 'Post.adapters.sql');
 
 describe('AdapterFieldValidator', () => {
   it('accepts what the format admits', () => {

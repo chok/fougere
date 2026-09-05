@@ -56,7 +56,7 @@ const card: IdentityCard = {
             name: 'publish',
             kind: 'command',
             cardinality: 'one',
-            description: 'Publish a draft after the domain judge accepts the transition.',
+            description: 'Publish a draft after the domain validator accepts the transition.',
           },
         ],
       },
@@ -78,7 +78,7 @@ const collections: Record<string, Record<string, unknown>[]> = {
     {
       id: 'post_2',
       title: 'A domain operation, not a field write',
-      body: 'Publishing stays a command the domain judges.',
+      body: 'Publishing stays a command the domain validates.',
       status: 'draft',
       createdAt: '2026-08-20T15:45:00.000Z',
     },

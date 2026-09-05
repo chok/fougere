@@ -1,17 +1,17 @@
 /**
- * The law: one declaration, one verdict — whoever judges.
+ * The law: one declaration, one verdict — whoever validates.
  *
- * The site says it (`useFormFor` : « local judge = remote judge »), the form primitive
- * is built on it, and nothing demonstrated it. Two judges are genuinely independent:
+ * The site says it (`useFormFor` : « local validator = remote validator »), the form primitive
+ * is built on it, and nothing demonstrated it. Two validates are genuinely independent:
  *
  *   - the FORM calls `Schema.validate(input)` in the browser (`useFormFor.ts:46`);
  *   - the FAÇADE calls `InputValidator.of(schema.getFields(), …).validate(inv.input)`.
  *
  * REST and GraphQL are NOT a third and fourth: both resolve the façade and call it
- * (`routes.ts:214`, `pothos.ts:862`), so they are the same judge by construction.
+ * (`routes.ts:214`, `pothos.ts:862`), so they are the same validator by construction.
  * Claiming four doors would have inflated the theorem; there are two.
  *
- * The inputs are not chosen, they are ENUMERATED from the declared fields — the judge
+ * The inputs are not chosen, they are ENUMERATED from the declared fields — the validator
  * is a finite decision table (`validation.ts`), so for a given field the verdict and the
  * input that triggers it are both computable. Not fuzzing: a projection of the schema,
  * like the SQL table and the GraphQL type.
@@ -29,7 +29,7 @@ import { NewArticle } from './fixtures-same-verdict/fronds/press/handlers/Articl
 
 const root = join(import.meta.dirname, 'fixtures-same-verdict');
 
-/** A verdict, in the one shape both judges already speak. */
+/** A verdict, in the one shape both validators already speak. */
 type Verdict = { ok: true } | { ok: false; errors: { path: string; message: string }[] };
 
 const sorted = (errors: { path: string; message: string }[]) =>
@@ -97,7 +97,7 @@ describe('un corps, deux juges', () => {
   });
 });
 
-/** Storage is not what is under test — the judge runs before it. */
+/** Storage is not what is under test — the validator runs before it. */
 const fakeStorage: StorageFactory = () => {
   const row = { id: 'a1', ...baseline, status: 'draft', createdAt: new Date().toISOString() };
   return {

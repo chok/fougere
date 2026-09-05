@@ -44,7 +44,7 @@ pages, layouts, your own `app/api/*` handlers and an existing auth setup are
 untouched — Next resolves a static route before a catch-all, so adding the REST door
 takes nothing away.
 
-## The judge, from the browser
+## The validator, from the browser
 
 `/new` renders two inputs, not six — `title` and `body`. `id` and `createdAt` are
 filled by the lifecycle axis; `status` and `publishedAt` are `readOnly`, so they are

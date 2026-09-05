@@ -4,7 +4,7 @@
  * The SHAPE is no longer here. `fougere sync` fetched it from the blog's identity card
  * (`pnpm sync`) and wrote `.fougere/remotes/blog/entities/PostPublished.ts` — generated,
  * gitignored, regenerated whenever the emitter changes. This file re-exports it into
- * `search`'s own `entities/`, which is what makes the judge apply: the boot judges an
+ * `search`'s own `entities/`, which is what makes the validator apply: the boot validates an
  * arriving fact against an entity of a scanned frond, and a package under `.fougere/`
  * is not one.
  *

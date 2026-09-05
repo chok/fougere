@@ -23,7 +23,7 @@ export default class PostHandler {
   /**
    * What this caller may read — published posts, plus their own drafts.
    *
-   * The one judge in the demo. Every terminal that shows a title got it from
+   * The one validator in the demo. Every terminal that shows a title got it from
    * here, whatever pushed it into asking.
    */
   async list(user?: User): Promise<Post[]> {

@@ -54,7 +54,7 @@ export async function handleRpc(runner: Transport, raw: unknown, options: Receiv
     return refused(id, 'this receiver takes signed calls only', entity, op);
   }
 
-  // Built field by field, never spread from `sent`: everything here is either judged
+  // Built field by field, never spread from `sent`: everything here is either validated
   // above or carried deliberately, and `caller` is ours to write alone.
   const invocation: InvocationContext = {
     params: sent.params ?? {},

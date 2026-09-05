@@ -69,7 +69,7 @@ export class FieldValueValidator {
     if (!custom && !(name in engineFormats)) {
       throw new Error(
         `Unknown format: '${name}'. Register it with Formats.register('${name}', …) — ` +
-          `the engine judges ${Object.keys(engineFormats).length} formats natively and this is not one of them.`,
+          `the engine validates ${Object.keys(engineFormats).length} formats natively and this is not one of them.`,
       );
     }
     return custom;

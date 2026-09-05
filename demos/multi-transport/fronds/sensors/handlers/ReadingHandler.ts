@@ -21,7 +21,7 @@ export default class ReadingHandler {
   /** One reading by id. */
   async findById(id: string) { return this.readings.findById(id); }
 
-  /** Record a reading — judged by the façade before it lands here. */
+  /** Record a reading — validated by the façade before it lands here. */
   async create(input: Reading) { return this.readings.create(input); }
 
   /** A deliberate business failure, to show a typed error crossing intact. */

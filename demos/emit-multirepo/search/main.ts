@@ -49,7 +49,7 @@ async function main() {
 
       try {
         // The local dispatch, unchanged: the same value the emitter would have called in
-        // process. The judge, the binding and the middlewares apply exactly as always.
+        // process. The validator, the binding and the middlewares apply exactly as always.
         await app.deliver(topic, payload);
       } catch {
         // Refused. Do NOT ack — the broker replays it on the next connection. Handling a

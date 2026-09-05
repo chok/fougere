@@ -179,7 +179,7 @@ export function toTable(tableName: string, entity: SchemaOrCard, relations?: Rel
   const schema = schemaOf(entity);
   const configuration = schema.getAdapters().sql;
   // Judged HERE and not at `entity()`: this runs at boot, after every import, so the
-  // format is always loaded. A judge registered with `schema` would depend on which
+  // format is always loaded. A validator registered with `schema` would depend on which
   // module was imported first.
   sqlEntries.assert(configuration, `${schema.name}.adapters.sql`);
   const columns: ColumnDef[] = [];

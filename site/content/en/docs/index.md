@@ -14,7 +14,7 @@ and they are ordinarily sold as two separate features:
 
 | The declaration does not name… | so that thing is… | its usual name |
 |---|---|---|
-| its table, its GraphQL type, its form, its judge | **derived** from it | single-schema |
+| its table, its GraphQL type, its form, its validator | **derived** from it | single-schema |
 | its host, its storage, its door, its address | **chosen outside** it | the gradient |
 
 One rule read in two directions — what a declaration produces, and what it may be
@@ -22,8 +22,8 @@ surrounded by. The rest of this page is those two readings.
 
 ## What is derived from it
 
-**Single-schema.** One entity class declares your data once — and judges its own input:
-the same `validate()` runs in the browser and at the façade. That judge is itself a
+**Single-schema.** One entity class declares your data once — and validates its own input:
+the same `validate()` runs in the browser and at the façade. That validator is itself a
 projection, derived from the shape axis, but a normative one shipped with the class:
 every other projection must agree with it, and it cannot drift on its own. SQLite tables,
 GraphQL types, form contracts and API surfaces are *projections* of that declaration —

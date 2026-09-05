@@ -70,7 +70,7 @@ export function createTableSQL(
       if (column.primary && !composite) built = built.primaryKey();
       if (!column.nullable) built = built.notNull();
       if (column.default !== undefined) built = built.defaultTo(column.default);
-      // Uniqueness is the storage's to enforce: no shape can express it, since judging
+      // Uniqueness is the storage's to enforce: no shape can express it, since validating
       // one value never sees the other rows.
       if (column.unique) built = built.unique();
       if (column.references && !skip?.has(column.name)) {

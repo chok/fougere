@@ -221,11 +221,11 @@ describe('remote façade (repli)', () => {
 
     // `schemaFor` promises `SchemaView` — the minimum an adapter needs, and all a
     // hand-rolled `{ getFields() }` entity can honour. This one came off the wire and
-    // through `Card.toSchema()`, which builds a real schema constructor, so it judges.
+    // through `Card.toSchema()`, which builds a real schema constructor, so it validates.
     const Product = await consumer.schemaFor('product') as SchemaView;
 
     // Not just present — actually exploitable: same field set as the host's
-    // real entity, and the reconstructed shape rules (min: 0 on price) still judge.
+    // real entity, and the reconstructed shape rules (min: 0 on price) still validator.
     expect(Object.keys(Product.getFields())).toEqual(['id', 'name', 'price']);
 
     const tooCheap = Product.validate({ name: 'Fern', price: -5 });

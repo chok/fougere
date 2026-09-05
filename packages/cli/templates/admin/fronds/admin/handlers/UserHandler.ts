@@ -7,7 +7,7 @@ export class UserCard extends User.pick('id', 'name', 'status') {}
 // Crud(User) gives list/create/update/delete for free — the accelerator.
 // 'deactivate' is the business contract: a state transition, not a field write.
 export default class UserHandler extends Crud(User) {
-  /** active→inactive — an operation, not a field write. Judge: active only. */
+  /** active→inactive — an operation, not a field write. Validate: active only. */
   async deactivate(id: string): Promise<User> {
     const user = await this.storage.findById(id);
     if (!user) {

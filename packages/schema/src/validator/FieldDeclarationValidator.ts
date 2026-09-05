@@ -37,7 +37,7 @@ export class FieldDeclarationValidator {
 
     for (const axis of EXTENSION_AXES) {
       const declared = declaration[axis.slot];
-      if (declared !== undefined) axis.judge(declared, errors);
+      if (declared !== undefined) axis.validator(declared, errors);
     }
 
     if (declaration.meta !== undefined) {

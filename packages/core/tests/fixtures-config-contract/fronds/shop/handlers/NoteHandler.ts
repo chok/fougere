@@ -8,8 +8,8 @@ declare class NoteRepository {
  * Two ops the scan cannot fully serve — the reason `frond.config.ts` can state a contract.
  *
  * `retitle` IS visible to the scan, which derives its binding (an object param → input),
- * but nothing tells it WHAT judges that input: the param type is a bare record, not an
- * entity. Config names the judge.
+ * but nothing tells it WHAT validates that input: the param type is a bare record, not an
+ * entity. Config names the validator.
  */
 export default class NoteHandler {
   constructor(private notes: NoteRepository) {}

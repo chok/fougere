@@ -79,7 +79,7 @@ class DateRange extends entity({
   start: number(),   // timestamps, to keep it simple
   end: number(),
 }) {
-  // A cross-field rule the field vocabulary CANNOT express (a shape judges one field at
+  // A cross-field rule the field vocabulary CANNOT express (a shape validates one field at
   // a time). The class body is the only place for it.
   static validate(input: unknown) {
     const base = super.validate(input);

@@ -233,7 +233,7 @@ fn read_celsius(object: &Map<String, Value>) -> Result<f64, Rejected> {
     }
 }
 
-fn judge(input: &Value) -> Result<(String, f64), Vec<Rejected>> {
+fn validator(input: &Value) -> Result<(String, f64), Vec<Rejected>> {
     let Some(object) = input.as_object() else {
         return Err(vec![Rejected { path: ".".into(), message: "Expected an object" }]);
     };
@@ -289,7 +289,7 @@ fn dispatch(state: &AppState, method: &str, params: &Value) -> Result<Value, Fai
 
         ("sensor", "record") => {
             let input = params.get("input").cloned().unwrap_or(Value::Null);
-            match judge(&input) {
+            match validator(&input) {
                 Ok((label, celsius)) => {
                     let sensor = Sensor::record(label, celsius);
                     state.sensors.lock().unwrap().push(sensor.clone());

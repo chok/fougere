@@ -3,7 +3,7 @@
  *
  * `Crud(E, Output)` scopes the injected storage, so it restricts the whole handler —
  * an op needing the full row breaks. `Crud(E, { list: Card })` is a declaration
- * instead: the storage keeps handing full rows (judges can read every field), and the
+ * instead: the storage keeps handing full rows (validates can read every field), and the
  * façade projects each op's result onto the view that op declared.
  */
 import { scanProject } from '../src/node.js';
@@ -16,7 +16,7 @@ import type { InvocationContext } from '../src/wire/Invocation.js';
 
 const root = join(import.meta.dirname, 'fixtures-crud-views');
 
-/** A storage that realises and never judges — it always hands back the FULL row. */
+/** A storage that realises and never validates — it always hands back the FULL row. */
 function fullRowStorage() {
   const row = { id: 'note-1', title: 'Titre', body: 'Le corps entier', ownerId: 'u1', createdAt: 'now' };
   const storage = {
@@ -59,7 +59,7 @@ describe('a view named for one op', () => {
     await app.dispose();
   });
 
-  it('does not scope the storage — a judge still reads the fields the view omits', async () => {
+  it('does not scope the storage — a validator still reads the fields the view omits', async () => {
     const { app, storage } = await boot();
 
     // The handler-wide form calls .output(view) ; the per-op form must not.

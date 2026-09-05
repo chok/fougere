@@ -49,7 +49,7 @@ describe('remote frond sync', () => {
 
       // The card carries what it takes to type, and until now nobody read it: a synced
       // entity validated perfectly and taught the compiler nothing. One declaration now
-      // carries the judge and the shape.
+      // carries the validator and the shape.
       expect(generated).not.toContain('export interface Post');
       expect(generated).toContain('export default Post;');
     } finally {

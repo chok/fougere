@@ -3,7 +3,7 @@
  *
  * The partner is a real HTTP server started here (`src/partner.ts`): it answers pages
  * and a `?since=`, and nothing else. `PartnerCatalog extends Mirror(BookCard)` supplies
- * the pull; everything around it — the high-water mark, the judge, the upsert — belongs
+ * the pull; everything around it — the high-water mark, the validator, the upsert — belongs
  * to `Mirror` and is written nowhere in this demo.
  */
 import { bootAppFromConfig } from '@fougere/defaults';

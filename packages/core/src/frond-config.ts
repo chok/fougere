@@ -23,7 +23,7 @@ export interface OperationOverride {
 
   // ── The contract itself — see the note above ──
 
-  /** What judges the input. The view carries its own mode (`partial()` → patch). */
+  /** What validates the input. The view carries its own mode (`partial()` → patch). */
   input?: SchemaView;
   /**
    * Where each argument is read from — states what the scan would otherwise derive

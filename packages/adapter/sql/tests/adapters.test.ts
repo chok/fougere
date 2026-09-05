@@ -32,8 +32,8 @@ describe('what an entity states for sql', () => {
 });
 
 /**
- * The format is stated in `src/adapter.schema.json` and judged where this adapter reads it,
- * which is `toTable` — at boot, after every import. Nothing above judges below a field name.
+ * The format is stated in `src/adapter.schema.json` and validated where this adapter reads it,
+ * which is `toTable` — at boot, after every import. Nothing above validates below a field name.
  */
 describe('what the format refuses', () => {
   const stating = (adapters: unknown) => {

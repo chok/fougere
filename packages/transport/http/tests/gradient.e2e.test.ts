@@ -94,7 +94,7 @@ describe('gradient — the moved Frond behaves identically', () => {
     ['findById (hit)', 'findById', inv({ params: { id: 'p1' } })],
     ['findById (miss)', 'findById', inv({ params: { id: 'ghost' } })],
     ['create (valid)', 'create', inv({ input: { title: 'Ivy', stock: 5 } })],
-    ['create (invalid — judged where the handler lives)', 'create', inv({ input: { stock: -2 } })],
+    ['create (invalid — validated where the handler lives)', 'create', inv({ input: { stock: -2 } })],
     ['reserve (business failure)', 'reserve', inv()],
   ];
 
@@ -108,7 +108,7 @@ describe('gradient — the moved Frond behaves identically', () => {
     expect(await facade.list()).toEqual(PRODUCTS);
   });
 
-  it('the validation judgment happens handler-side and crosses typed', async () => {
+  it('the validation verdict happens handler-side and crosses typed', async () => {
     const failure = facade.create(inv({ input: { stock: -2 } }));
     await expect(failure).rejects.toBeInstanceOf(FougereError);
     await expect(failure).rejects.toMatchObject({ code: ErrorCode.VALIDATION_FAILED, entity: 'product' });

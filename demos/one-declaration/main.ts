@@ -2,7 +2,7 @@
  * Six lines in. Everything else out.
  *
  * This demo writes ONE entity and then asks four different consumers what they
- * make of it — the SQL dialect, the wire, the io projection, the judge. Nobody
+ * make of it — the SQL dialect, the wire, the io projection, the validator. Nobody
  * wrote any of the four. Run it and read the arrows.
  */
 import { Card, entity, primary, text, number, created, Visibility } from '@fougere/schema';
@@ -68,8 +68,8 @@ console.log(D(`
      Nobody wrote "a client cannot supply an id". primary() and created() say it,
      and the door reads them.`));
 
-// ── 4. the judge ─────────────────────────────────────────────────────────────
-section('→', 'The judge', 'the same verdict in the browser, at the façade, and across a split');
+// ── 4. the validator ─────────────────────────────────────────────────────────────
+section('→', 'The validator', 'the same verdict in the browser, at the façade, and across a split');
 for (const [label, input] of [
   ['{ station: "x", celsius: 200 }', { station: 'x', celsius: 200 }],
   ['{ station: "harbour", celsius: 12.1 }', { station: 'harbour', celsius: 12.1 }],

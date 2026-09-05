@@ -47,7 +47,7 @@ describe('tRPC', () => {
     });
   });
 
-  it('lets the entity, not the host, be the one judging', async () => {
+  it('lets the entity, not the host, be the one validating', async () => {
     // `views: -1` is a number and structurally fine; only min(0) rejects it.
     await expect(call.create({ title: 'Hello', views: -1 })).rejects.toThrow();
   });
@@ -57,7 +57,7 @@ describe('TanStack Form', () => {
   const mounted = () => {
     const form = new FormApi({
       defaultValues: { title: '', views: 0, draft: false },
-      // The entity judges correctly at runtime — every assertion below is real.
+      // The entity validates correctly at runtime — every assertion below is real.
       // What the compiler refuses is the INPUT side: `~standard.types.input` is
       // declared `Record<string, unknown>` (Schema.ts), so a host that infers its
       // form shape FROM the schema cannot line it up with defaultValues.

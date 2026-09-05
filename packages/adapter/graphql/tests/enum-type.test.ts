@@ -8,7 +8,7 @@ import { registerType, registerInput } from '../src/pothos.js';
  *
  * `oneOf('draft','published')` fed the form's `select` and the DDL's `CHECK` from the day it
  * was written; GraphQL alone fell through to `String`. So a schema explorer showed nothing of
- * the set, a generated client could not narrow the union, and only the runtime judge refused
+ * the set, a generated client could not narrow the union, and only the runtime validator refused
  * a value outside it.
  */
 class Post extends entity({
@@ -68,7 +68,7 @@ describe('a bounded set becomes a GraphQL enum', () => {
 
   /**
    * `oneOf` is a JSON Schema keyword and accepts any string; a GraphQL enum value is an
-   * identifier. A set that will not fit stays a String — the judge still refuses what is
+   * identifier. A set that will not fit stays a String — the validator still refuses what is
    * not in it, so nothing is lost but the type.
    */
   it('leaves a set GraphQL cannot spell as a String', () => {

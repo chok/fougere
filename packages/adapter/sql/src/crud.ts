@@ -114,7 +114,7 @@ export class SqlStorage {
     this.selectFields = selectFields;
   }
 
-  /** The Kysely instance this storage wraps — no judge sits behind it. See Storage.client. */
+  /** The Kysely instance this storage wraps — no validator sits behind it. See Storage.client. */
   get client(): Kysely<any> {
     return this.db;
   }
@@ -437,7 +437,7 @@ export class SqlStorage {
 
     await this.refusal(() => this.db.insertInto(this.table.name).values(this.toRow(data)).execute());
 
-    // Contract: create returns the COMPLETE row (validation judges absence, it
+    // Contract: create returns the COMPLETE row (validation validates absence, it
     // never fills) — re-read so SQL-realised defaults appear. Same move as update().
     const id = this.pk.isComposite
       ? Object.fromEntries(this.pk.names.map((n) => [n, data[n]]))

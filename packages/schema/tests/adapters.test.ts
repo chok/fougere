@@ -93,7 +93,7 @@ describe('EntityAdapterSet refuses what it addresses, and carries the rest', () 
     ).toThrow(/adapters\.sql: expected an object keyed by field name, got string/);
   });
 
-  it('a field entry is the adapter\'s shape and is carried, never judged', () => {
+  it('a field entry is the adapter\'s shape and is carried, never validated', () => {
     // `schema` knows no sql option, so a bare string reaches the adapter untouched.
     class Loose extends entity(
       { id: primary(), body: text() },

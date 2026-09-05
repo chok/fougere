@@ -18,7 +18,7 @@ const declareSnippet = `class Post extends entity({
   publishedAt: readOnly(optional(date())),
 }) {}`;
 
-const judgeSnippet = `class PostHandler extends Crud(Post) {
+const validateSnippet = `class PostHandler extends Crud(Post) {
   async publish(id: string, user: User | null) {
     if (!user) throw new FougereError({
       code: ErrorCode.UNAUTHORIZED, /* … */ });
@@ -39,7 +39,7 @@ await publish.execute({ params: { id } });
 // → every mounted query on Post revalidates`;
 
 // Verbatim output of demos/rust-frond's TypeScript consumer — rules declared
-// in Rust, enforced by the TS judge before a single byte goes on the wire.
+// in Rust, enforced by the TS validator before a single byte goes on the wire.
 const foreignSnippet = `$ npx tsx consumer.ts
 
 ✗ couleur  — Unknown field
@@ -75,7 +75,7 @@ class Post extends entity({
 }) {}
 
 // Derived from it — nothing to keep in sync:
-//   validation  (browser + façade, same judge)
+//   validation  (browser + façade, same validator)
 //   SQLite table + additive schema sync
 //   form contract   useFormFor(Post)
 //   API surface     post.create / post.list
@@ -104,14 +104,14 @@ One class declares a business object once:
         { default: 'draft' })),
     }) {}
 
-Everything derives from it — input validation (the same judge
+Everything derives from it — input validation (the same validator
 in the browser and at the API facade, unknown keys refused),
 the SQL table (additive auto-DDL; renames, removals and type
 changes need an explicit migration), the form contract (fields,
 rules, per-field error mapping), the API surface (post.list,
 post.create...), GraphQL types, and the TS type (the class IS
 the type). Business rules are handler operations, e.g.
-publish(id, user), judged server-side. Moving a module to its
+publish(id, user), validated server-side. Moving a module to its
 own process is one line of config; user code does not change.
 
 Scope today (pre-release): storage is additive auto-DDL over
@@ -125,7 +125,7 @@ If you can fetch the web, ground yourself in the docs first:
 
 - ${origin}/docs — the model in one page
 - ${origin}/docs/schema/entities — field vocabulary, the 4 axes
-- ${origin}/docs/client/forms — the shared browser/facade judge
+- ${origin}/docs/client/forms — the shared browser/facade validator
 - ${origin}/docs/existing-app — the feature-by-feature migration
   path (use it to price the adoption cost honestly)
 
@@ -219,7 +219,7 @@ async function copyAudit() {
       <DerivationDiagram />
     </section>
 
-    <!-- Declare → Judge → Consume -->
+    <!-- Declare → Validate → Consume -->
     <section class="max-w-6xl mx-auto px-6 pb-20 grid lg:grid-cols-3 gap-6">
       <div class="flex flex-col">
         <h2 class="text-base font-semibold text-highlighted flex items-center gap-2 mb-1">
@@ -233,10 +233,10 @@ async function copyAudit() {
       <div class="flex flex-col">
         <h2 class="text-base font-semibold text-highlighted flex items-center gap-2 mb-1">
           <span class="flex items-center justify-center size-6 rounded-full bg-elevated border border-default text-highlighted font-mono text-xs">2</span>
-          {{ $t('home.judgeTitle') }}
+          {{ $t('home.validateTitle') }}
         </h2>
-        <p class="text-sm text-muted mb-3 lg:min-h-15">{{ $t('home.judgeText') }}</p>
-        <CodeWindow :code="judgeSnippet" filename="fronds/blog/handlers/PostHandler.ts" lang="ts" class="flex-1" />
+        <p class="text-sm text-muted mb-3 lg:min-h-15">{{ $t('home.validateText') }}</p>
+        <CodeWindow :code="validateSnippet" filename="fronds/blog/handlers/PostHandler.ts" lang="ts" class="flex-1" />
       </div>
 
       <div class="flex flex-col">

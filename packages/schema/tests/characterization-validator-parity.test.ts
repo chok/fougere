@@ -55,7 +55,7 @@ function expectJudgeParity<TFields extends Fields>(
   });
 }
 
-describe('parity between the three row judges', () => {
+describe('parity between the three row validates', () => {
   it('returns the same verdict and paths for a valid row', () => {
     expectJudgeParity(Post, { title: 'Hello', body: 'World' }, { success: true, paths: [] });
   });

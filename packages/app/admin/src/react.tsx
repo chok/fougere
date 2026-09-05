@@ -103,7 +103,7 @@ function defaultFieldFor(column: TableColumn, t: Translate): ReactElement {
 
 /**
  * The bounds ride along under the names a browser already enforces — the same
- * `attrs` a Vue form spreads onto its input. The judge reads the same shape either
+ * `attrs` a Vue form spreads onto its input. The validator reads the same shape either
  * way; stating them here only means the refusal arrives while typing.
  */
 function defaultInputFor(field: FormField, t: Translate): ReactElement {
@@ -335,7 +335,7 @@ const showFor = (r: AdminResource, renderers?: ReactAdminRenderers) => function 
  * `useEditController` says it outright (`if (!hasValidationErrors || mutationMode !==
  * 'pessimistic')`), so the per-field refusals `asAdminError` builds from
  * `VALIDATION_FAILED` were computed, sent, and thrown away on every edit. Create was
- * always pessimistic, which is why the same form judged differently depending on whether
+ * always pessimistic, which is why the same form validated differently depending on whether
  * the row existed.
  */
 const editFor = (r: AdminResource, renderers?: ReactAdminRenderers) => function ResourceEdit() {

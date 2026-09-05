@@ -59,7 +59,7 @@ export class PostDraft extends Post.pick('title', 'summary', 'body') {}
 PostDraft['~standard'].validate({ title: '' });  // { issues: [{ message, path: [{ key: 'title' }] }] }
 ```
 
-Be clear about what crosses: **the judge, and only the judge**. The other three axes stay
+Be clear about what crosses: **the validator, and only the validator**. The other three axes stay
 home — no table, no GraphQL type, no form contract. The entity is the piece that fits
 through the hole; the reason to come back for the rest is `getFields()`.
 
@@ -72,7 +72,7 @@ through the hole; the reason to come back for the rest is `getFields()`.
 
 | | |
 | --- | --- |
-| **Validation** | the same judge in the browser and at the façade — unknown keys refused |
+| **Validation** | the same validator in the browser and at the façade — unknown keys refused |
 | **Storage** | the SQL table and additive schema sync |
 | **Forms** | `useFormFor(Post)` — fields, rules, per-field error mapping |
 | **API surface** | `post.list`, `post.create`, `post.publish`… |
@@ -84,14 +84,14 @@ No codegen step, no `dist/generated`, no watcher. The declaration is the artefac
 ## What stays yours
 
 The interesting part is never `update()`. It is the transition, and a transition has a
-judge — the only code on this page Fougere does not derive.
+validator — the only code on this page Fougere does not derive.
 
 ```ts
 // fronds/blog/handlers/PostHandler.ts
 export class PostCard extends Post.pick('id', 'slug', 'title', 'summary', 'authorName', 'publishedAt') {}
 
 export default class PostHandler extends Crud(Post, { list: PostCard }) {
-  /** Judge: the author, a draft, a body worth publishing. Realize: stamp the pair. */
+  /** Validate: the author, a draft, a body worth publishing. Realize: stamp the pair. */
   async publish(id: string, user?: User): Promise<Post> {
     const author = requireUser(user, 'publish');
     const post = await requireOwn(this.storage, id, author, 'publish');
@@ -124,12 +124,12 @@ remotes: { blog: 'http://blog-node:4100' },  // delete this line → same app, i
 In-process, a call is direct memory execution, not a loopback request. Split, a host going
 down is a typed `503` in your pages, and they recover when it returns. The far side does
 not have to be TypeScript: [`demos/rust-frond`](./demos/rust-frond) is a domain written in
-Rust whose rules — not just its types — are enforced by the TypeScript judge.
+Rust whose rules — not just its types — are enforced by the TypeScript validator.
 
 ## Alpha today
 
 `0.5.0-alpha.0`, published under `latest` and `alpha`. The version is the whole promise: the
-surface can still move. Seen running, not planned — a judged draft→publish exercised in a
+surface can still move. Seen running, not planned — a validated draft→publish exercised in a
 browser, the split lived daily, identical user code either side through a production
 build, and [this site](./site) is itself a Fougere app.
 

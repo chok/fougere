@@ -33,15 +33,15 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
   const errors = writable<Record<string, string>>({});
   const command = useCommand<T>(entity as EntityClass, options.op ?? 'create');
 
-  /** Local pre-judgment — same rules as the handler, saves a lost round-trip. */
-  function judge(): boolean {
+  /** Local pre-verdict — same rules as the handler, saves a lost round-trip. */
+  function validator(): boolean {
     const result = entity.validate(payloadOf(get(values)));
     errors.set(result.success ? {} : errorsByField(result.errors));
     return result.success;
   }
 
   async function submit(): Promise<T | null> {
-    if (!judge()) return null;
+    if (!validator()) return null;
     try {
       return await command.execute({ params: options.params, input: payloadOf(get(values)) });
     } catch (err) {
@@ -64,7 +64,7 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
     values,
     errors,
     submit,
-    judge,
+    validator,
     valid,
     /** `{ loading, error }` of the underlying command. */
     command,

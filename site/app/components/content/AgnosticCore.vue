@@ -48,7 +48,7 @@ const rays = [
             v-for="(line, l) in f.lines" :key="l"
             :x="f.x + 22" :y="f.y + 64 + l * 17" class="deriv-node-hint"
           >{{ line }}</text>
-          <text v-if="f.note" :x="f.x + 22" :y="f.y + 102" class="deriv-judge">{{ f.note }}</text>
+          <text v-if="f.note" :x="f.x + 22" :y="f.y + 102" class="deriv-validator">{{ f.note }}</text>
         </template>
       </g>
 
@@ -58,9 +58,9 @@ const rays = [
         <rect x="352" y="150" width="256" height="120" rx="10" class="deriv-core-rect" />
         <text x="480" y="128" text-anchor="middle" class="deriv-core-label">{{ t('diagram.core.coreLabel').toUpperCase() }}</text>
         <text x="376" y="182" class="deriv-code">entities · operations</text>
-        <text x="376" y="205" class="deriv-code">its judge</text>
+        <text x="376" y="205" class="deriv-code">its validator</text>
         <text x="376" y="228" class="deriv-code">its facts</text>
-        <text x="480" y="256" text-anchor="middle" class="deriv-judge">{{ t('diagram.core.coreNote') }}</text>
+        <text x="480" y="256" text-anchor="middle" class="deriv-validator">{{ t('diagram.core.coreNote') }}</text>
       </g>
     </svg>
 
@@ -68,7 +68,7 @@ const rays = [
     <div class="lg:hidden">
       <div class="rounded-xl border border-accented bg-default p-4">
         <p class="text-[10px] uppercase tracking-wider text-muted mb-2">{{ t('diagram.core.coreLabel') }}</p>
-        <p class="font-mono text-xs text-highlighted">entities · operations · its judge · its facts</p>
+        <p class="font-mono text-xs text-highlighted">entities · operations · its validator · its facts</p>
         <p class="mt-2 pt-2 border-t border-default text-[11px] italic text-muted">{{ t('diagram.core.coreNote') }}</p>
       </div>
       <div class="mt-3 grid sm:grid-cols-2 gap-2">

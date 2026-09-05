@@ -64,7 +64,7 @@ describe('payloadOf — an empty control is an absent value', () => {
   });
 });
 
-describe('errorsByField — local judge and wire judge share the shape', () => {
+describe('errorsByField — local validator and wire validator share the shape', () => {
   it('indexes by first path segment, keeps the first message per field', () => {
     const local = (Article as never as { validate(i: unknown): { success: false; errors: { path: string; message: string }[] } })
       .validate({ views: 1, published: true, status: 'draft', secret: 'x', authorId: 'a1' });
@@ -129,9 +129,9 @@ describe('formFieldsOf — what the browser enforces, under the names it knows',
     expect(byName.subtitle.attrs).toEqual({ type: 'text' });
   });
 
-  it('gives a date no type: the browser would accept what the judge refuses', () => {
+  it('gives a date no type: the browser would accept what the validator refuses', () => {
     // Neither `date` nor `datetime-local` produces the RFC 3339 string a `date-time`
-    // shape judges. `control` still says `date` — the page picks the widget.
+    // shape validates. `control` still says `date` — the page picks the widget.
     expect(byName.publishAt.attrs).toEqual({ required: true });
   });
 

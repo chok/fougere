@@ -177,14 +177,14 @@ describe('useFormFor', () => {
     });
   });
 
-  it('judges locally with the same rules the handler runs', async () => {
+  it('validates locally with the same rules the handler runs', async () => {
     const calls = wire(() => ({ id: 'new' }));
     const { result } = renderHook(() => useFormFor(Post as never));
 
     act(() => { result.current.setValue('body', 'b'); });
     await act(async () => { expect(await result.current.submit()).toBeNull(); });
 
-    // 'Required', not a length complaint: an absent value is judged by the lifecycle
+    // 'Required', not a length complaint: an absent value is validated by the lifecycle
     // axis, and `payloadOf` drops an empty control before the shape ever sees it.
     expect(result.current.errors.title).toBe('Required');
     expect(calls).toHaveLength(0);
@@ -204,7 +204,7 @@ describe('useFormFor', () => {
     expect(calls[0]!.params.input).toEqual({ title: 'ok', body: 'b' });
   });
 
-  it('lands a remote refusal per field, so the form never knows who judged', async () => {
+  it('lands a remote refusal per field, so the form never knows who validated', async () => {
     wire(() =>
       Object.assign(new Error('title: too short'), {
         data: { code: ErrorCode.VALIDATION_FAILED, details: [{ path: 'title', message: 'too short' }] },

@@ -161,7 +161,7 @@ function realise(
 
     case 'reshaped':
       // A tightened bound is a CHECK, and altering one on a live table is engine-specific
-      // AND may be refused by rows already stored. The judge still enforces it at the door.
+      // AND may be refused by rows already stored. The validator still enforces it at the door.
       return {
         entity,
         field: change.field,

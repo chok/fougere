@@ -57,7 +57,7 @@ packages/
     src/scan/            the reading itself: scanner, handler-parser, its cache, and what a run could not do
     src/boot/            what createApp does with it: bootstrap, HandlerFacade, Emissions, AppLifecycle, seed,
                          remote, and what is BUILT from an app: its identity card, its runners
-    src/dispatch/        what happens per call: Dispatcher, the route registry, the judges and projectors, argument resolution, InFlight
+    src/dispatch/        what happens per call: Dispatcher, the route registry, the validators and projectors, argument resolution, InFlight
     src/wire/            what travels, and the values a call is made of: Call, Invocation, RouteAddress,
                          CallLog, the operation contract, its signature and binding plan, errors, middleware
     src/prefab/          what a user declares: Crud, Presenter, Collector, Repository, Mirror
@@ -110,7 +110,7 @@ demos/
   test-gradient/       what the declaration writes on its own, and the four rungs it runs at
   anchor-chain/        a path with two stops — which derivations hold rows, and which say nothing
   emit-multirepo/      two repositories, one fact, and the ~80-line carrier that is not Fougere's
-  rust-frond/          the far side is not TypeScript, and the judge is still ours
+  rust-frond/          the far side is not TypeScript, and the validator is still ours
   cloudflare-d1/       the edge rung — scan emitted, no tsc shipped
   sse-live/            live fan-out to readers who are not trusted peers
   admin-panel/ one-declaration/ express-blog/ next-blog/ sveltekit-blog/
@@ -134,10 +134,10 @@ read `Entity.getFields()`. The reasoning behind each line below lives in
 recognized by its FORM: it states a `shape`. `new Field(field, key)` is the door, and a
 shapeless entry is refused there.
 
-**The façade judges, the storage realizes.** Client input goes through the façade (unknown
+**The façade validates, the storage realizes.** Client input goes through the façade (unknown
 keys → `Unknown field`); handlers write freely through the storage, which applies
 `applyCreate`/`applyUpdate` (`schema/src/axis/lifecycle/apply.ts`). Refusing stays the
-judge's: `update: 'forbidden'` lives in `InputValidator`, patch mode.
+validator's: `update: 'forbidden'` lives in `InputValidator`, patch mode.
 
 **An entity states two things about itself** — `unique` and `adapters`, the 2nd argument of
 `entity()`. A derivation that drops a member of a unique group drops the group.
@@ -152,10 +152,10 @@ adapter name, then field name — and always exists, so `getAdapters()` is never
 What the OPERATOR decides is not stated here: it belongs in `fougere.config.ts` beside
 `remotes:`, `sources:` and `ports:`. Pinned by `adapter/sql/tests/adapters.test.ts`.
 
-**The entry has a judge, and the adapter writes it as DATA.** `AdapterFieldValidator`
+**The entry has a validator, and the adapter writes it as DATA.** `AdapterFieldValidator`
 (`schema/src/validator/AdapterFieldValidator.ts`) takes a format and refuses what it does not admit;
 `adapter/sql/src/adapter.schema.json` is that format, imported with `with { type: 'json' }`,
-and `SqlField` is DERIVED from it. It is judged where the adapter READS
+and `SqlField` is DERIVED from it. It is validated where the adapter READS
 (`adapter/sql/src/table.ts`, `toTable`), not at `entity()`, because `entity()` runs at its
 own module's evaluation. A name this process never loaded is SKIPPED: only the project can
 tell it from a typo, which is what `fougere check` reports as `unknown-adapter`.
@@ -254,10 +254,10 @@ move the value, never reshape it. Browser-safe surface: `@fougere/core/contract`
 **`Emit<T>` / `Fact<T>`** (`core/src/emit.ts`, dispatched by `boot/Emissions.ts`) — every
 other call names ONE recipient; an emission names a SUBJECT. Accepting a `Fact<T>` IS the
 subscription — no topic, no register call. It is a resolver, not a channel: nothing is
-durable, and a subscriber keeps its judge, its binding and its middlewares. A ring is
+durable, and a subscriber keeps its validator, its binding and its middlewares. A ring is
 refused, a diamond is legal. Announcing returns once every subscriber has been HANDED the
 fact; `app.deliver` waits for them all and REJECTS with an `AggregateError`. A fact is
-judged strictly. Pinned by `tests/emit.test.ts`.
+validated strictly. Pinned by `tests/emit.test.ts`.
 
 **A family cycle is a check** — `tools/cycle-check.mjs`, `pnpm arch:cycles`, run in CI beside
 `pnpm arch`. `arch` asks what a file REACHES, this asks where it LIVES. It reports type-only
@@ -266,7 +266,7 @@ because that is what moves. It reads pairs, which is its ceiling. Four exception
 with their reason: `field`↔`validator`, `axis`↔`projection`, `axis`↔`field`, `entity`↔`field`.
 
 **Nuxt primitives** — `useQuery`/`useCommand` (a command on X revalidates mounted queries on
-X), `useFormFor` (contract, not rendering; local judge = remote judge), `useCurrentUser`,
+X), `useFormFor` (contract, not rendering; local validator = remote validator), `useCurrentUser`,
 `invoke` (server dual, state via async context). Metadata is the imported entity class.
 
 **Validation** — `@cfworker/json-schema` (edge-safe). `Entity.validate(input)` →
@@ -338,12 +338,12 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 - **`BindingPlan.optional` is written five times by core and ignored by `resolveArgs`.** Not a
   missing reader: making it refuse breaks four tests, two of which state the opposite policy
   on purpose. Closing it means choosing which door is right.
-- **`storage.client` remains the anonymous multi-statement path, judge off** — everything else
+- **`storage.client` remains the anonymous multi-statement path, validator off** — everything else
   writes through a guarded port, `Together<[…]>` included.
 - **A provider class named `<Entity>Storage` takes that entity's key**, silently. The name is
   already wrong by two rules, which is why nothing hits it; left as is.
 - **`Mirror` writes two useful lines and 120 that belong to the port**
-  (`core/src/prefab/mirror.ts`). `judgePage` exists because `StorageGuard` guards `create` and
+  (`core/src/prefab/mirror.ts`). `validatePage` exists because `StorageGuard` guards `create` and
   `update` and not `upsert`. Decided, not done: delete the prefab.
 - **An announcement realizes a fact's `lifecycle.create`, and no typed emitter can use it.**
   `Emit<T>` names the ROW type where `created()` is required, so `announce({ id, title })` is a
@@ -359,7 +359,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   `CREATE UNIQUE INDEX` on a table holding duplicates fails.
 - **A schema can say what it WAS, and the missing reader is the API.** `Card.diff`,
   `fougere freeze`, `fougere migrate --apply` are shipped; serving an old API version is not.
-- **A stored fact is neither judged nor versioned.** `json()` admits any shape forever, and
+- **A stored fact is neither validated nor versioned.** `json()` admits any shape forever, and
   `x-fougere-version` versions the DESCRIPTOR FORMAT, never an entity's contract.
 - **`flushMs: 0` is the only legal form on a Worker, and nothing says so.** `Beat.every`
   (`observability/src/Beat.ts`) defaults to 1000 ms, so an app built at module scope builds
@@ -367,7 +367,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   "Disallowed operation called within global scope", error 10021, measured 2026-08-23.
 - **Nitro's prod trace misses lazily-loaded packages under pnpm**, which is why the hand-copy
   in `site/Dockerfile` exists.
-- **Three free functions in `schema` are candidates nobody has judged** — `clean` decides
+- **Three free functions in `schema` are candidates nobody has validated** — `clean` decides
   nothing, `fieldsOf` and `schemaOf` are methods of an owner that now exists (`SchemaOrCard`).
 - `graphql` dual ESM/CJS hazard in tests — use `schema.getTypeMap()`, not `printSchema()`
 
@@ -391,9 +391,9 @@ One line each, kept because a past version of this file asserted the opposite.
   builtins rather than switching on them.
 - **A copy does not import, so no reader count can see it.** Measured 2026-08-25: nine
   hand-written copies of four declared functions, five of them divergent.
-- The shape is held on three paths: the façade judges input, `StorageGuard` judges every write,
+- The shape is held on three paths: the façade validates input, `StorageGuard` validates every write,
   and the DDL emits `CHECK` for `oneOf`/`min`/`max`. `pattern`/`format` stay at the façade.
-- The façade hands on the value it PARSED (`boot/HandlerFacade.ts`, `judged`).
+- The façade hands on the value it PARSED (`boot/HandlerFacade.ts`, `validated`).
 - The `boundary` axis has ONE door, `Boundary.of` — alias and codecs resolved eagerly.
 - Two remotes serving one entity is REFUSED, naming both (`boot/remote.ts`, `claimedBy`).
 - A split receiver ESTABLISHES its caller (`core/src/identity.ts`): `serve()` refuses to start

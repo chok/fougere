@@ -6,7 +6,7 @@ import Post from './Post.js';
  * out — and not one field a reader would want to display.
  *
  * That is the split the demo is about: `title` is deliberately absent, so nothing
- * downstream can show a post without asking for it through the door that judges.
+ * downstream can show a post without asking for it through the door that validates.
  */
 export default class PostChanged extends Post.pick('id', 'author', 'status').extend({
   at: created(),

@@ -3,7 +3,7 @@
  * The whole demo, on one page.
  *
  * `Product` is imported from the frond next door — the SAME class that builds the D1
- * table in the other Worker and judges a write there. Nothing is serialized to get it
+ * table in the other Worker and validates a write there. Nothing is serialized to get it
  * here; it is the declaration, read twice.
  *
  * `useQuery(Product, 'list')` names an entity and a verb, never an address. Which
@@ -13,20 +13,20 @@ import Product from '../../../fronds/catalog/entities/Product';
 
 const { items: products, loading, error, refresh } = useQuery(Product, 'list');
 
-// The judge is the entity's, so the form refuses here exactly as the Worker would.
+// The validator is the entity's, so the form refuses here exactly as the Worker would.
 const Draft = Product.omit('id');
 const form = reactive({ name: '', sku: '', cents: 0, listed: true });
 const errors = ref<{ path: string; message: string }[]>([]);
 const create = useCommand(Product, 'create');
 
 async function submit() {
-  const judged = Draft.validate(form);
-  if (!judged.success) {
-    errors.value = judged.errors;
+  const validated = Draft.validate(form);
+  if (!validated.success) {
+    errors.value = validated.errors;
     return;
   }
   errors.value = [];
-  await create({ ...judged.data, id: crypto.randomUUID() });
+  await create({ ...validated.data, id: crypto.randomUUID() });
   await refresh();
 }
 </script>

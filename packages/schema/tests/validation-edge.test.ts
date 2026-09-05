@@ -33,9 +33,9 @@ describe('validation — edge cases', () => {
   });
 
   it('rejects a non-integer when integer is required', () => {
-    const judge = InputValidator.of({ n: number({ integer: true }) });
-    expect(judge.validate({ n: 1.5 }).success).toBe(false);
-    expect(judge.validate({ n: 2 }).success).toBe(true);
+    const validator = InputValidator.of({ n: number({ integer: true }) });
+    expect(validator.validate({ n: 1.5 }).success).toBe(false);
+    expect(validator.validate({ n: 2 }).success).toBe(true);
   });
 
   it('treats empty string as present (fails min, passes without min)', () => {
@@ -45,12 +45,12 @@ describe('validation — edge cases', () => {
 
   it('nullable+optional: absent is omitted (not nulled), explicit null and value both pass', () => {
     const fields = { t: optional(text()) };
-    const judge = InputValidator.of(fields);
-    const absent = judge.validate({});
+    const validator = InputValidator.of(fields);
+    const absent = validator.validate({});
     expect(absent.success).toBe(true);
     if (absent.success) expect('t' in absent.data).toBe(false); // absence ≈ null: omitted, DB defaults it
-    expect(judge.validate({ t: null }).success).toBe(true);  // explicit null still allowed
-    expect(judge.validate({ t: 'x' }).success).toBe(true);
+    expect(validator.validate({ t: null }).success).toBe(true);  // explicit null still allowed
+    expect(validator.validate({ t: 'x' }).success).toBe(true);
   });
 
   it("updated(): absence is legal in create and patch — storage stamps, not validation", () => {
@@ -66,17 +66,17 @@ describe('validation — edge cases', () => {
   it("immutable(): re-supplied in a patch → 'Immutable'; create accepts; absent patch untouched", () => {
     const fields = { slug: immutable(text()), title: text() };
     expect(InputValidator.of(fields).validate({ slug: 'a', title: 'x' }).success).toBe(true); // create
-    const judge = InputValidator.of(fields, { patch: true });
-    const patch = judge.validate({ slug: 'b' });
+    const validator = InputValidator.of(fields, { patch: true });
+    const patch = validator.validate({ slug: 'b' });
     expect(patch.success).toBe(false);
     if (!patch.success) expect(patch.errors[0]).toEqual({ path: 'slug', message: 'Immutable' });
-    expect(judge.validate({ title: 'y' }).success).toBe(true);
+    expect(validator.validate({ title: 'y' }).success).toBe(true);
   });
 
   it('nullable field with a default: the default rule survives optional() (order fixed)', () => {
     const fields = { t: optional(text({ default: 'draft' })) };
     // The rule kept is the default, not 'optional' — storage will fill 'draft',
-    // not leave null. Validation itself only judges: absent is legal, omitted.
+    // not leave null. Validation itself only validates: absent is legal, omitted.
     expect(fields.t.lifecycle?.create).toEqual({ value: 'draft' });
     const absent = InputValidator.of(fields).validate({});
     expect(absent.success).toBe(true);
@@ -86,10 +86,10 @@ describe('validation — edge cases', () => {
   it('oneOf with a default — same option as text/number/bool, same lifecycle rule', () => {
     const fields = { status: oneOf('draft', 'published', { default: 'draft' }) };
     expect(fields.status.lifecycle?.create).toEqual({ value: 'draft' });
-    const judge = InputValidator.of(fields);
-    expect(judge.validate({}).success).toBe(true);
-    expect(judge.validate({ status: 'published' }).success).toBe(true);
-    expect(judge.validate({ status: 'archived' }).success).toBe(false);
+    const validator = InputValidator.of(fields);
+    expect(validator.validate({}).success).toBe(true);
+    expect(validator.validate({ status: 'published' }).success).toBe(true);
+    expect(validator.validate({ status: 'archived' }).success).toBe(false);
   });
 
   it('readOnly(oneOf) — a server-owned enum: supplied in create or patch is an error', () => {

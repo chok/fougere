@@ -8,7 +8,7 @@
  * every inherited op would reach the storage unjudged.
  *
  * So both worlds are covered here: inside the workspace the scan discovers the
- * ops, outside it discovers nothing — and the façade must judge either way.
+ * ops, outside it discovers nothing — and the façade must validate either way.
  */
 import { scanProject } from '../src/node.js';
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
@@ -24,7 +24,7 @@ const packagesDir = join(import.meta.dirname, '..', '..');
 const coreDist = join(packagesDir, 'core', 'dist', 'index.js');
 const schemaDist = join(packagesDir, 'schema', 'dist', 'index.js');
 
-/** A storage that realises and never judges — like the real one. */
+/** A storage that realises and never validates — like the real one. */
 function spyStorage() {
   const rows: Record<string, unknown>[] = [];
   const storage = {
@@ -88,7 +88,7 @@ describe('inside the workspace, the scan discovers the inherited ops', () => {
   });
 });
 
-describe('as an installed app — the scan finds nothing, the façade judges anyway', () => {
+describe('as an installed app — the scan finds nothing, the façade validates anyway', () => {
   let root: string;
   beforeAll(() => { root = writeInstalledApp(); });
   afterAll(() => { rmSync(root, { recursive: true, force: true }); });

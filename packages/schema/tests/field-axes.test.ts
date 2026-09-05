@@ -172,9 +172,9 @@ describe('unique / indexed — declared here, enforced by the storage', () => {
   /**
    * The shape is untouched, and that is the point: uniqueness is not a property of a
    * value. Judging one input can never see the other rows, so `validate` must stay
-   * silent about it — a collision is the database's answer, not the judge's.
+   * silent about it — a collision is the database's answer, not the validator's.
    */
-  it('does not make the judge refuse a duplicate — it cannot see the other rows', () => {
+  it('does not make the validator refuse a duplicate — it cannot see the other rows', () => {
     expect(Account.validate({ id: 'a', email: 'x@y.z' }).success).toBe(true);
     expect(Account.validate({ id: 'b', email: 'x@y.z' }).success).toBe(true);
   });

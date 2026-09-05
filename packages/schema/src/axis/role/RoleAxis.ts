@@ -9,7 +9,7 @@ import type { RoleDescriptor } from '../../projection/card/Descriptor.js';
 export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
   slot: 'role',
 
-  judge(value, errors) {
+  validator(value, errors) {
     if (!isObject(value)) {
       errors.push({ path: 'role', message: `Expected an object — got ${JSON.stringify(value)}` });
       return;
@@ -22,7 +22,7 @@ export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
         });
       }
     }
-    if (value.relation !== undefined) judgeRelation(value.relation, errors);
+    if (value.relation !== undefined) validateRelation(value.relation, errors);
   },
 
   /** A card carries the target's NAME: a class cannot cross a process boundary. */
@@ -48,7 +48,7 @@ export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
     if (wire.unique?.some((group) => group.length === 1)) rules.unique = true;
     if (wire.index) rules.index = true;
     if (wire.relation) {
-      // `judge` cannot serve here: it demands `() => Post` where a card carries a name.
+      // `validator` cannot serve here: it demands `() => Post` where a card carries a name.
       if (!oneOfTokens(wire.relation.kind, RELATION_KINDS)) {
         refuse(
           `role.relation.kind is ${JSON.stringify(wire.relation.kind)}`,
@@ -73,11 +73,11 @@ export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
 };
 
 /**
- * So a relation is judged where `() => Post` is required — a card carries a name.
+ * So a relation is validated where `() => Post` is required — a card carries a name.
  * FR : pour qu'une relation soit jugée là où `() => Post` est exigé, contrairement à une carte.
  * `{ to: User, kind: 'one' }` → error `Expected a function returning the target entity, such as () => Post`
  */
-function judgeRelation(relation: unknown, errors: ValidationError[]): void {
+function validateRelation(relation: unknown, errors: ValidationError[]): void {
   if (!isObject(relation)) {
     errors.push({ path: 'role.relation', message: `Expected an object — got ${JSON.stringify(relation)}` });
     return;

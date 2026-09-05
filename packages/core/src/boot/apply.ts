@@ -15,7 +15,7 @@ export function applyConfig(next: FougereConfig, inForce?: FougereConfig): Confi
   const pending: string[] = [];
 
   // The CLI speaks through the environment, so it keeps winning over the file — read
-  // through `envLevel`, which is where the environment is already judged. Casting it
+  // through `envLevel`, which is where the environment is already validated. Casting it
   // here was a second reader that validated nothing: `FOUGERE_LOG_LEVEL=verbose` set
   // the threshold to `undefined` and every log passed.
   const wanted = envLevel() ?? next.logLevel ?? 'debug';

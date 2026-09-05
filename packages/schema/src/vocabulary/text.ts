@@ -11,7 +11,7 @@ export interface TextOptions {
 }
 
 /**
- * So a string field states its bounds where the DDL and the judge both read them.
+ * So a string field states its bounds where the DDL and the validator both read them.
  * FR : pour qu'un champ texte énonce ses bornes là où le DDL et le juge les lisent.
  * `text({ max: 200, format: 'email' })`
  */

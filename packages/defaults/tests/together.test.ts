@@ -145,7 +145,7 @@ describe('two sources — the frame replays its own inverses', () => {
   });
 
   it('unwinds a write the ENTITY refused, not just one the block threw on', async () => {
-    // The judge sits outside the recorder, so the refused write never enters the journal —
+    // The validator sits outside the recorder, so the refused write never enters the journal —
     // and what preceded it still comes back.
     await using app = await boot(true);
     await expect(app.overdraw()).rejects.toThrow(/balance/);

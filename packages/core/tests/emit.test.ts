@@ -85,7 +85,7 @@ describe('a fact reaching several fronds', () => {
   });
 });
 
-describe('a fact is judged where it lands', () => {
+describe('a fact is validated where it lands', () => {
   beforeEach(() => { (globalThis as any).__heard = []; });
 
   it('refuses a payload the fact itself refuses, and the op is never called', async () => {
@@ -94,7 +94,7 @@ describe('a fact is judged where it lands', () => {
 
     // `PostPublished` picks `title: text({ min: 1 })` from Post, so an empty title is not
     // one. The scan fills no `input` from a parameter type, so this used to pass straight
-    // through: a subscriber met no judge at all.
+    // through: a subscriber met no validator at all.
     await expect(door.reindex({ ...EMPTY_INVOCATION, input: { id: 'x', title: '' } }))
       .rejects.toThrow(/title/);
     expect(heard()).toEqual([]);
@@ -176,7 +176,7 @@ describe('a fact on the identity card', () => {
 });
 
 /**
- * A fact meets the same judge as everything else, and that is a DECISION.
+ * A fact meets the same validator as everything else, and that is a DECISION.
  *
  * `deliver` is what a carrier calls, so these are facts off a wire — announced by a `blog`
  * whose copy of `PostPublished` no longer matches the subscriber's. It was tempting to
@@ -185,7 +185,7 @@ describe('a fact on the identity card', () => {
  * deployment breaks every listener that has not re-synced.
  *
  * Refused anyway. Tolerating would mean a reader silently ignoring a field it was meant to
- * handle, which is the failure you find six months later. If the judge refuses, that is the
+ * handle, which is the failure you find six months later. If the validator refuses, that is the
  * end of it — the price is an ORDER: re-sync the readers, then ship the sender.
  *
  * These tests exist to keep that decision from being "fixed" later.
@@ -194,7 +194,7 @@ describe('a fact on the identity card', () => {
  * An announcement is the moment a fact becomes real, so it is where the entity's own
  * `lifecycle.create` rules are realized — exactly what an insert is for a stored row.
  *
- * Nothing did it before: the judge declares an absent `created()` LEGAL and omits it
+ * Nothing did it before: the validator declares an absent `created()` LEGAL and omits it
  * (`validation.ts`: filling the hole belongs to the storage, at the point of
  * persistence), and a fact has no storage. So a subscriber received a value missing a
  * field its own type says is there — a lie no compiler on either side can see.

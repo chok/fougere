@@ -153,7 +153,7 @@ describe('the protocol changes, the call does not', () => {
     ['findById (hit)', 'findById', inv({ params: { id: 'p1' } })],
     ['findById (miss)', 'findById', inv({ params: { id: 'ghost' } })],
     ['create (valid)', 'create', inv({ input: { title: 'Ivy', stock: 5 } })],
-    ['create (invalid — judged where the handler lives)', 'create', inv({ input: { stock: -2 } })],
+    ['create (invalid — validated where the handler lives)', 'create', inv({ input: { stock: -2 } })],
     ['reserve (business failure)', 'reserve', inv()],
     ['unknown op', 'teleport', inv()],
   ];

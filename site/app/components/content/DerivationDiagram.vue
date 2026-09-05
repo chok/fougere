@@ -78,7 +78,7 @@ const anchors = [165, 215, 265];
         </template>
       </g>
 
-      <!-- Nucleus: the declaration, wrapped in its judge (a projection too —
+      <!-- Nucleus: the declaration, wrapped in its validator (a projection too —
            derived from the shape — but normative and shipped with the class) -->
       <g>
         <rect x="330" y="110" width="300" height="212" rx="16" class="deriv-envelope" />
@@ -86,7 +86,7 @@ const anchors = [165, 215, 265];
         <text x="480" y="100" text-anchor="middle" class="deriv-core-label">{{ t('diagram.coreLabel').toUpperCase() }}</text>
         <text v-for="(line, i) in code" :key="i" x="364" :y="150 + i * 21" class="deriv-code" xml:space="preserve">{{ line }}</text>
         <text x="480" y="301" text-anchor="middle" class="deriv-node-hint">Post.validate(input)</text>
-        <text x="480" y="316" text-anchor="middle" class="deriv-judge">{{ t('diagram.judge') }}</text>
+        <text x="480" y="316" text-anchor="middle" class="deriv-validator">{{ t('diagram.validator') }}</text>
       </g>
     </svg>
 
@@ -95,7 +95,7 @@ const anchors = [165, 215, 265];
       <div class="rounded-xl border border-accented bg-default p-4 mx-auto max-w-xs shadow-sm">
         <p class="text-[10px] uppercase tracking-wider text-muted text-center mb-2">{{ t('diagram.coreLabel') }}</p>
         <pre class="font-mono text-xs leading-relaxed text-highlighted overflow-x-auto"><code>{{ code.join('\n') }}</code></pre>
-        <p class="mt-2 pt-2 border-t border-default font-mono text-[11px] text-muted flex justify-between gap-2"><span>Post.validate(input)</span><span class="font-sans italic">{{ t('diagram.judge') }}</span></p>
+        <p class="mt-2 pt-2 border-t border-default font-mono text-[11px] text-muted flex justify-between gap-2"><span>Post.validate(input)</span><span class="font-sans italic">{{ t('diagram.validator') }}</span></p>
       </div>
       <div class="mt-4 grid grid-cols-2 gap-2">
         <div v-for="node in [...left, ...right]" :key="node.label" class="rounded-lg border border-default px-3 py-2">

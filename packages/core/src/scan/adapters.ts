@@ -20,7 +20,7 @@ async function read(path: string): Promise<Manifest | undefined> {
   try {
     return JSON.parse(await readFile(path, 'utf8')) as Manifest;
   } catch {
-    // No manifest, or one that is not JSON. Either way this cannot judge a name, and
+    // No manifest, or one that is not JSON. Either way this cannot validate a name, and
     // reporting every `adapters:` key as unknown would be worse than saying nothing.
     return undefined;
   }

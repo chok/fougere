@@ -64,7 +64,7 @@ const topics = app.listensTo();            // ['postPublished']
 parameter and the subscription disappears with it.
 
 On arrival the payload goes through the **same local dispatch** the emitter would have used
-in-process — so the judge, the binding and the middlewares apply. A fact off a wire is
+in-process — so the validator, the binding and the middlewares apply. A fact off a wire is
 validated against the entity it is.
 
 ## Where the shape comes from
@@ -91,7 +91,7 @@ about someone else's fact is that it accepts it:
 export { default } from '../../../.fougere/remotes/blog/entities/PostPublished.js';
 ```
 
-That re-export is not decoration: the boot judges an arriving fact against an entity of a
+That re-export is not decoration: the boot validates an arriving fact against an entity of a
 **scanned** frond, and a package under `.fougere/` is not one. With it, a payload the
 emitter's own declaration refuses is refused here too:
 

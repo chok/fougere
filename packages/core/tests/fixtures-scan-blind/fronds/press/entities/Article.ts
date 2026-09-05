@@ -1,7 +1,7 @@
 import { entity, primary, text, readOnly, created, oneOf } from '@fougere/schema';
 
 /**
- * Chosen for its axes, not its domain: one field per branch of the judge's
+ * Chosen for its axes, not its domain: one field per branch of the validator's
  * decision table — a required one, a read-only one, a bounded one, a stamped one.
  */
 export default class Article extends entity({

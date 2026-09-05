@@ -30,7 +30,7 @@ describe('boundary · date default (derived from shape)', () => {
     expect(out.startsAt).toBeInstanceOf(Date);
   });
 
-  it('from() keeps the raw value when the decoder refuses — it projects, it does not judge', () => {
+  it('from() keeps the raw value when the decoder refuses — it projects, it does not validator', () => {
     const out = Event.from({ id: 'e1', name: 'Launch', startsAt: 'not a date' });
     expect(out.startsAt).toBe('not a date');
   });
@@ -111,7 +111,7 @@ describe("boundary · 'closed' permissions (readOnly / writeOnly)", () => {
     const fields = { password: writeOnly(text({ min: 8 })), name: text() };
     const v = InputValidator.of(fields).validate({ password: 'hunter22', name: 'Ada' });
     expect(v.success).toBe(true);
-    if (v.success) expect(v.data.password).toBe('hunter22'); // ingress open, shape judged
+    if (v.success) expect(v.data.password).toBe('hunter22'); // ingress open, shape validated
     const wire = Visibility.of(fields).encode({ password: 'hunter22', name: 'Ada' });
     expect('password' in wire).toBe(false);
     expect(wire.name).toBe('Ada');

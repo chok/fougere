@@ -47,7 +47,7 @@ async function main() {
 
   const app = await createApp({ scan: await scanProject(import.meta.dirname), createContainer, storageFactory: createMemoryStorage });
 
-  // Seed through the façade, so the judge sees the same rows a client would send.
+  // Seed through the façade, so the validator sees the same rows a client would send.
   const local = createLocalRunner(app);
   for (const row of [
     { station: 'north-ridge', celsius: -4.5 },

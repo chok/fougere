@@ -7,12 +7,12 @@ import { CREATE_TOKENS, UPDATE_TOKENS, type LifecycleRules } from './Lifecycle.j
 export const lifecycleAxis: Axis<LifecycleRules, LifecycleRules> = {
   slot: 'lifecycle',
 
-  judge(value, errors) {
+  validator(value, errors) {
     if (!isObject(value)) {
       errors.push({ path: 'lifecycle', message: `Expected an object — got ${JSON.stringify(value)}` });
       return;
     }
-    if (value.create !== undefined) judgeCreate(value.create, errors);
+    if (value.create !== undefined) validateCreate(value.create, errors);
     if (value.update !== undefined && !oneOfTokens(value.update, UPDATE_TOKENS)) {
       errors.push({
         path: 'lifecycle.update',
@@ -23,7 +23,7 @@ export const lifecycleAxis: Axis<LifecycleRules, LifecycleRules> = {
 
   describe: (value) => value,
   reconstruct: (wire) => {
-    admitWire(lifecycleAxis.judge, wire, 'lifecycle');
+    admitWire(lifecycleAxis.validator, wire, 'lifecycle');
     return wire;
   },
 };
@@ -33,7 +33,7 @@ export const lifecycleAxis: Axis<LifecycleRules, LifecycleRules> = {
  * FR : pour que les quatre façons de déclarer une création soient dites une fois.
  * `create: 3` → `Expected 'now', 'optional', { value } or { generate } — got 3`
  */
-function judgeCreate(rule: unknown, errors: ValidationError[]): void {
+function validateCreate(rule: unknown, errors: ValidationError[]): void {
   if (oneOfTokens(rule, CREATE_TOKENS)) return;
   if (isObject(rule)) {
     if ('value' in rule) return;

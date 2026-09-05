@@ -207,7 +207,7 @@ group('Bundle — self-contained $defs map', () => {
 });
 
 /**
- * `required` and the judge answer the same question, and used to disagree.
+ * `required` and the validator answer the same question, and used to disagree.
  *
  * `validateFields` lets a read-only field be absent — it is server-owned, so its
  * absence from client input is never "Required" (the OpenAPI readOnly+required
@@ -215,14 +215,14 @@ group('Bundle — self-contained $defs map', () => {
  * listed it anyway. A consumer that reads the card literally — the whole point of
  * a portable document — then supplies the field and is told `Read-only`.
  */
-group('required and the judge answer the same question', () => {
+group('required and the validator answer the same question', () => {
   class Owned extends entity({
     id: primary(),
     title: text({ min: 1 }),
     authorId: readOnly(text()),
   }) {}
 
-  it('leaves a read-only field out of required, like the judge does', () => {
+  it('leaves a read-only field out of required, like the validator does', () => {
     expect(Owned.validate({ title: 'hello' }).success).toBe(true);
     expect(Card.fromSchema(Owned, 'owned').descriptor.required).toEqual(['title']);
   });
@@ -278,7 +278,7 @@ group('a view says what it is a view of', () => {
   });
 });
 
-group('a card is admitted before it becomes a judge', () => {
+group('a card is admitted before it becomes a validator', () => {
   const card = () => ({
     type: 'object' as const,
     properties: { id: { type: 'string' as const } },
@@ -310,8 +310,8 @@ group('a card is admitted before it becomes a judge', () => {
     expect(() => Card.fromDescriptor(bad as never).toSchema()).toThrow(/role\.relation\.onDelete is "boom"/);
   });
 
-  // lifecycle and boundary describe themselves as themselves, so their own judge reads the wire.
-  it('refuses a lifecycle and a boundary through the judge that already reads them', () => {
+  // lifecycle and boundary describe themselves as themselves, so their own validator reads the wire.
+  it('refuses a lifecycle and a boundary through the validator that already reads them', () => {
     const lifecycle = { ...card(), properties: { a: { type: 'string' as const, 'x-fougere': { lifecycle: { update: 'jamais' } } } } };
     expect(() => Card.fromDescriptor(lifecycle as never).toSchema()).toThrow(/lifecycle\.update/);
     const boundary = { ...card(), properties: { a: { type: 'string' as const, 'x-fougere': { boundary: { in: 42 } } } } };

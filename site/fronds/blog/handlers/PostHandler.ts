@@ -80,7 +80,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
     return own.sort((a, b) => (a.status === 'draft' ? 0 : 1) - (b.status === 'draft' ? 0 : 1));
   }
 
-  /** Judge: signed-in author, free slug. Realize: stamp the author pair. */
+  /** Validate: signed-in author, free slug. Realize: stamp the author pair. */
   async create(input: PostDraft, user?: User): Promise<Post> {
     const author = requireUser(user, 'create');
     await requireFreeSlug(this.posts, input.slug, undefined, 'create');
@@ -91,7 +91,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
     });
   }
 
-  /** Judge: the author only, free slug if it changes. */
+  /** Validate: the author only, free slug if it changes. */
   async update(id: string, input: PostDraft, user?: User): Promise<Post> {
     const author = requireUser(user, 'update');
     const post = await requireOwn(this.posts, id, author, 'update');
@@ -101,7 +101,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
 
   /**
    * The draft→published transition — an operation, not a field write.
-   * Judge: the author, a draft, a body worth publishing. Realize: the
+   * Validate: the author, a draft, a body worth publishing. Realize: the
    * server stamps the pair.
    */
   async publish(id: string, user?: User): Promise<Post> {
@@ -116,7 +116,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
     return this.posts.update(id, { status: 'published', publishedAt: new Date() });
   }
 
-  /** Judge: the author only. */
+  /** Validate: the author only. */
   async delete(id: string, user?: User): Promise<boolean> {
     const author = requireUser(user, 'delete');
     await requireOwn(this.posts, id, author, 'delete');
