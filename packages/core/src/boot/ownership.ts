@@ -1,5 +1,6 @@
 import { lowerFirst } from '@fougere/schema';
 import type { FrondDescriptor, ProviderEntry } from '../descriptor/frond.js';
+import { inheritsCrud } from '../prefab/crud.js';
 import { targetOf } from '../prefab/prefab.js';
 import { ownedBy, repositoryKeyOf } from '../prefab/repository.js';
 import { entityOfStorageKey } from '../storage.js';
@@ -86,9 +87,7 @@ export function refuseStorageInUserCode(
 export function refuseCrudOnOwned(frond: FrondDescriptor, owners: Map<string, string>): void {
   for (const handler of frond.handlers) {
     const owner = owners.get(handler.address);
-    if (!owner || handler.deps.length > 0) continue;
-    const proto = (handler.ctor as { prototype?: Record<string, unknown> }).prototype;
-    if (typeof proto?.list !== 'function' || typeof proto?.findById !== 'function') continue;
+    if (!owner || handler.deps.length > 0 || !inheritsCrud(handler.ctor)) continue;
 
     throw new Error(
       `[aggregate] ${handler.ctor.name} takes the five gestures on ${handler.address}, `

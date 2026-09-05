@@ -1,6 +1,29 @@
+import { lowerFirst, type EntityConstructor, type SchemaView } from '@fougere/schema';
 import type { Storage, ListOptions, ListResult } from '../storage.js';
 import type { OperationContract } from '../wire/operation.js';
-import type { EntityConstructor, SchemaView } from '@fougere/schema';
+import { targetOf } from './prefab.js';
+
+/**
+ * So a class is recognized by what it ANSWERS, since the mixin leaves no other trace.
+ * FR : pour qu'une classe se reconnaisse à ce qu'elle répond, le mixin ne laissant rien d'autre.
+ * `inheritsCrud(class PostHandler extends Crud(Post) {})` → `true`
+ */
+export function inheritsCrud(ctor: unknown): boolean {
+  const proto = (ctor as { prototype?: Record<string, unknown> } | undefined)?.prototype;
+
+  return typeof proto?.list === 'function' && typeof proto?.findById === 'function';
+}
+
+/**
+ * So storage follows the shape the handler was built on, which may differ from its address.
+ * FR : pour que le stockage suive la forme sur laquelle le handler est bâti.
+ * `subjectOf(class Draft extends Crud(Post) {}, 'draft')` → `'post'`
+ */
+export function subjectOf(ctor: unknown, address: string): string {
+  const target = targetOf(ctor);
+
+  return target?.name ? lowerFirst(target.name) : address;
+}
 
 /** The id of the row an op acts on — a route segment, or a query fallback. */
 const byId = { name: 'id', source: { kind: 'param' as const, name: 'id' }, optional: false };

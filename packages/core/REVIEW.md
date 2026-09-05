@@ -75,7 +75,7 @@ every projection reads.
 [`boot/AppLifecycle.ts`](src/boot/AppLifecycle.ts) and [`boot/types.ts`](src/boot/types.ts) are one step: the app type names the
 lifecycle, the lifecycle names the app.
 
-[`boot/AppLifecycle.ts`](src/boot/AppLifecycle.ts) ↔ [`boot/types.ts`](src/boot/types.ts) · [`boot/HandlerFacade.ts`](src/boot/HandlerFacade.ts) · [`boot/card.ts`](src/boot/card.ts)
+[`boot/AppLifecycle.ts`](src/boot/AppLifecycle.ts) ↔ [`boot/types.ts`](src/boot/types.ts) · [`dispatch/HandlerFacade.ts`](src/dispatch/HandlerFacade.ts) · [`boot/card.ts`](src/boot/card.ts)
 · [`boot/runner.ts`](src/boot/runner.ts) · [`boot/seed.ts`](src/boot/seed.ts)
 
 ## 9 — The boot

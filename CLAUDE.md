@@ -55,9 +55,9 @@ packages/
   core/                @fougere/core          the phases below, and what sits outside them
     src/descriptor/      what a frond is made of, whoever produced it: FrondDescriptor, the entries, Fronds
     src/scan/            the reading itself: scanner, handler-parser, its cache, and what a run could not do
-    src/boot/            what createApp does with it: bootstrap, HandlerFacade, Emissions, AppLifecycle, seed,
+    src/boot/            what createApp does with it: bootstrap, Emissions, AppLifecycle, seed,
                          remote, and what is BUILT from an app: its identity card, its runners
-    src/dispatch/        what happens per call: Dispatcher, the route registry, the validators and projectors, argument resolution, InFlight
+    src/dispatch/        what happens per call: HandlerFacade, Dispatcher, the route registry, the validators and projectors, argument resolution, InFlight
     src/wire/            what travels, and the values a call is made of: Call, Invocation, RouteAddress,
                          CallLog, the operation contract, its signature and binding plan, errors, middleware
     src/prefab/          what a user declares: Crud, Presenter, Collector, Repository, Mirror
@@ -406,7 +406,7 @@ One line each, kept because a past version of this file asserted the opposite.
   hand-written copies of four declared functions, five of them divergent.
 - The shape is held on three paths: the façade validates input, `StorageGuard` validates every write,
   and the DDL emits `CHECK` for `oneOf`/`min`/`max`. `pattern`/`format` stay at the façade.
-- The façade hands on the value it PARSED (`boot/HandlerFacade.ts`, `validated`).
+- The façade hands on the value it PARSED (`dispatch/HandlerFacade.ts`, `validated`).
 - The `boundary` axis has ONE door, `Boundary.of` — alias and codecs resolved eagerly.
 - Two remotes serving one entity is REFUSED, naming both (`boot/remote.ts`, `claimedBy`).
 - A split receiver ESTABLISHES its caller (`core/src/identity.ts`): `serve()` refuses to start

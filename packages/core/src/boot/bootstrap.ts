@@ -10,7 +10,7 @@ import { Config } from '../builtin/config.js';
 import { createRemoteRouter, createRemoteFacade } from './remote.js';
 import { registerFrames } from './together.js';
 import { Emissions } from './Emissions.js';
-import { HandlerFacade } from './HandlerFacade.js';
+import { HandlerFacade } from '../dispatch/HandlerFacade.js';
 import { targetOf } from '../prefab/prefab.js';
 import { ownersOf, refuseStorageInUserCode, refuseCrudOnOwned } from './ownership.js';
 import type { OperationContract, OperationsMap } from '../wire/operation.js';
@@ -25,6 +25,7 @@ import { InFlight } from '../dispatch/InFlight.js';
 import { facadeKeyOf, contractsKeyOf, type RpcAnswer } from '../wire/call.js';
 import { identityCardOf } from './card.js';
 import { AppLifecycle } from './AppLifecycle.js';
+import { inheritsCrud, subjectOf } from '../prefab/crud.js';
 import { repositoryKeyOf } from '../prefab/repository.js';
 import { storageKeyOf } from '../storage.js';
 import { presenterKeyOf } from '../prefab/presenter.js';
@@ -375,25 +376,25 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       targetScope: Container,
       facadeKey: string,
     ) => {
-      const facade = new HandlerFacade(
-        {
-          handler,
-          handlers: frond.handlers,
-          entity,
-          scope: targetScope,
-          key: facadeKey,
-          operations: operationModel.forHandler(handler),
-        },
-        {
-          frond: frond.name,
-          frondScope: scope,
-          log: frondLog,
-          collectors: collectorTypeNames,
-          presenters: presenterMap,
-          middlewaresFor: getMiddlewares,
-          emissions,
-        },
-      );
+      if (inheritsCrud(handler.ctor) && !entity) {
+        // An installed Crud subject may be absent from the local scan.
+        frondLog.debug(`${handler.ctor.name} extends Crud() and no scanned entity is named `
+          + `'${subjectOf(handler.ctor, handler.address)}' — installed entity, or a missing `
+          + `one: no storage will be injected`);
+      }
+
+      const facade = new HandlerFacade(handler, targetScope, {
+        key: facadeKey,
+        frond: frond.name,
+        handlers: frond.handlers,
+        operations: operationModel.forHandler(handler),
+        collectors: collectorTypeNames,
+        presenter: presenterMap.get(handler.address),
+        presenterScope: scope,
+        middlewares: () => getMiddlewares(handler.address),
+      });
+      // Emissions use the same contracts and execution path as direct calls.
+      emissions.note(facade.contracts, facadeKey);
       // The terms alongside the door, under the same audience — a surface that serves
       // fewer ops describes fewer ops.
       container.registerValue(contractsKeyOf(handler.address, handler.surface), facade.contracts);
