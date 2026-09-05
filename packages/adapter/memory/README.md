@@ -1,6 +1,6 @@
 # @fougere/adapter-memory
 
-> Rows in a Map — the source that ships no driver
+> A Map — the source that ships no driver
 
 What an app with no `db` runs on, and what a test runs on when the shape is the subject
 and the engine is not.
@@ -27,15 +27,15 @@ That is not written here. `storageOver` (`@fougere/core`) derives the thirteen f
 below, so this package is the four:
 
 ```ts
-const store = new Map<string, Row>();
+const map = new Map<string, Values>();
 
 return {
-  client: store,
-  get: async (key) => store.get(key),
-  has: async (key) => store.has(key),
-  set: async (key, row) => { store.set(key, row); },
-  delete: async (key) => store.delete(key),
-  all: async () => [...store.values()],
+  client: map,
+  get: async (key) => map.get(key),
+  has: async (key) => map.has(key),
+  set: async (key, values) => { map.set(key, values); },
+  delete: async (key) => map.delete(key),
+  all: async () => [...map.values()],
 };
 ```
 
@@ -46,5 +46,5 @@ No `transacted`: a Map has no unit of work. A
 transacting, and the boot says which of the two it built. No `migrate` either — a Map has no
 shape to bring up to date.
 
-Rows live for the life of the process and go with it. Nothing is written anywhere; for rows
+Instances live for the life of the process and go with it. Nothing is written anywhere; for rows
 that must survive a restart, see `@fougere/adapter-file`.

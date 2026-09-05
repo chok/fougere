@@ -25,7 +25,7 @@ into `wire/`. The five `dispatch/` files here are stages one call crosses, each 
 alone.
 
 [`wire/call.ts`](src/wire/call.ts) · [`wire/CallLog.ts`](src/wire/CallLog.ts) · [`wire/binding.ts`](src/wire/binding.ts) · [`wire/http-error.ts`](src/wire/http-error.ts)
-· [`wire/loggerMiddleware.ts`](src/wire/loggerMiddleware.ts) · [`rows.ts`](src/rows.ts) · [`source.ts`](src/source.ts) · [`dispatch/InFlight.ts`](src/dispatch/InFlight.ts)
+· [`wire/loggerMiddleware.ts`](src/wire/loggerMiddleware.ts) · [`store.ts`](src/store.ts) · [`source.ts`](src/source.ts) · [`dispatch/InFlight.ts`](src/dispatch/InFlight.ts)
 · [`dispatch/validateInput.ts`](src/dispatch/validateInput.ts) · [`dispatch/OutputView.ts`](src/dispatch/OutputView.ts) · [`dispatch/PresenterExecutor.ts`](src/dispatch/PresenterExecutor.ts)
 · [`dispatch/StorageGuard.ts`](src/dispatch/StorageGuard.ts) · [`prefab/prefab.ts`](src/prefab/prefab.ts) · [`prefab/repository.ts`](src/prefab/repository.ts) · [`prefab/mirror.ts`](src/prefab/mirror.ts)
 · [`scan/handler-parser.ts`](src/scan/handler-parser.ts) · [`crypto/node.ts`](src/crypto/node.ts) · [`crypto/webcrypto.ts`](src/crypto/webcrypto.ts) · [`identity-keys.ts`](src/identity-keys.ts)

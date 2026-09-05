@@ -44,13 +44,13 @@ emits a constraint, so a `ref()` across sources costs nothing.
 
 ## Writing your own source
 
-This package is 105 lines, half of them filesystem guards. `storageOver` (`@fougere/core`)
+This package is 90 lines, half of them filesystem guards. `storageOver` (`@fougere/core`)
 derives the thirteen gestures of the storage port from four, so a new source supplies where
 rows are and nothing else:
 
 ```ts
 Sources.register('redis', (conf): Source => ({
-  storageFactory: storageOver((_entity, name) => redisRows(conf.url, name)),
+  storageFactory: storageOver((_entity, name) => redisStore(conf.url, name)),
   name: conf.url,
 }));
 ```
