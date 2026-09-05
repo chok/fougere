@@ -103,8 +103,8 @@ export function verify(app: { fronds: readonly FrondDescriptor[] }): Violation[]
 
     // Rule 2 — an operation parameter that wanted a collector this frond has not
     // got. The preliminary binding convention can only see this frond's collector
-    // set, so it produces body evidence. EffectiveOperation refuses that evidence
-    // before boot: another frond's collector proves the provenance is not a body.
+    // set, so it produces input evidence. EffectiveOperation refuses that evidence
+    // before boot: another frond's collector proves the provenance is not an input.
     const own = new Set(frond.collectors.map((c) => c.typeName));
     for (const handler of frond.handlers) {
       for (const [opName, op] of handler.operations) {
@@ -115,7 +115,7 @@ export function verify(app: { fronds: readonly FrondDescriptor[] }): Violation[]
           const wanted = lowerFirst(param.type.name);
           if (own.has(wanted)) continue;
           const elsewhere = collectorFronds.get(wanted);
-          // No collector anywhere for that type may be an ordinary body parameter.
+          // No collector anywhere for that type may be an ordinary input parameter.
           // Only a collector that exists in the wrong place makes that interpretation
           // provably false.
           if (!elsewhere) continue;
@@ -129,7 +129,7 @@ export function verify(app: { fronds: readonly FrondDescriptor[] }): Violation[]
             message:
               `'${param.name}' is typed ${param.type.name}, and the collector that produces one ` +
               `is declared in frond '${elsewhere}'. A binding plan only sees its own frond's ` +
-              `collectors, so the preliminary body interpretation is invalid. Fougere refuses ` +
+              `collectors, so the preliminary input interpretation is invalid. Fougere refuses ` +
               `the operation before it can receive what the caller sent. ` +
               `Move the collector into '${frond.name}'.`,
           });

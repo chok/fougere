@@ -6,8 +6,8 @@ const { t } = useI18n();
 const localePath = useLocalePath();
 const id = route.params.id as string;
 
-interface Row { id: string; slug: string; title: string; status: 'draft' | 'published' }
-const { data: post } = await useQuery<Row>(Post, 'findById', { params: { id } });
+interface PostValues { id: string; slug: string; title: string; status: 'draft' | 'published' }
+const { data: post } = await useQuery<PostValues>(Post, 'findById', { params: { id } });
 
 const { values, errors, submit, loading, error } = useFormFor(Post, {
   op: 'update',
@@ -15,7 +15,7 @@ const { values, errors, submit, loading, error } = useFormFor(Post, {
   initial: (post.value as Record<string, unknown> | null) ?? undefined,
 });
 
-const publish = useCommand<Row>(Post, 'publish');
+const publish = useCommand<PostValues>(Post, 'publish');
 const remove = useCommand(Post, 'delete');
 const saved = ref(false);
 

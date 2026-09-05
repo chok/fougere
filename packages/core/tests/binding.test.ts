@@ -10,7 +10,7 @@ function param(name: string, typeName: string, optional = false): Param {
 }
 
 function ctx(overrides: Partial<InvocationContext> = {}): InvocationContext {
-  return { params: {}, query: {}, body: undefined, state: {}, ...overrides };
+  return { params: {}, query: {}, input: undefined, state: {}, ...overrides };
 }
 
 const resolve = (plan: BindingPlan, invocation: InvocationContext, collectors?: CollectorLookup) =>
@@ -26,27 +26,27 @@ describe('computeBindingPlan', () => {
     ]);
   });
 
-  it('create(data: CreatePost) → [body]', () => {
+  it('create(data: CreatePost) → [input]', () => {
     const plan = computeBindingPlan([param('data', 'CreatePost')], noCollectors);
     expect(plan).toEqual([
-      { name: 'data', source: { kind: 'body' }, optional: false },
+      { name: 'data', source: { kind: 'input' }, optional: false },
     ]);
   });
 
-  it('update(id: string, data: UpdatePost) → [param "id", body]', () => {
+  it('update(id: string, data: UpdatePost) → [param "id", input]', () => {
     const plan = computeBindingPlan(
       [param('id', 'string'), param('data', 'UpdatePost')],
       noCollectors,
     );
     expect(plan).toHaveLength(2);
     expect(plan[0].source).toEqual({ kind: 'param', name: 'id', coerce: undefined });
-    expect(plan[1].source).toEqual({ kind: 'body' });
+    expect(plan[1].source).toEqual({ kind: 'input' });
   });
 
-  it('list(options?: ListOptions) → [body] optional', () => {
+  it('list(options?: ListOptions) → [input] optional', () => {
     const plan = computeBindingPlan([param('options', 'ListOptions', true)], noCollectors);
     expect(plan[0].optional).toBe(true);
-    expect(plan[0].source).toEqual({ kind: 'body' });
+    expect(plan[0].source).toEqual({ kind: 'input' });
   });
 
   it('searchByTitle(query: string, limit: number) → [param, param coerce number]', () => {
@@ -58,20 +58,20 @@ describe('computeBindingPlan', () => {
     expect(plan[1].source).toEqual({ kind: 'param', name: 'limit', coerce: 'number' });
   });
 
-  it('create(data: CreatePost, author: User) with UserCollector → [body, collector]', () => {
+  it('create(data: CreatePost, author: User) with UserCollector → [input, collector]', () => {
     const collectors = new Set(['user']);
     const plan = computeBindingPlan(
       [param('data', 'CreatePost'), param('author', 'User')],
       collectors,
     );
-    expect(plan[0].source).toEqual({ kind: 'body' });
+    expect(plan[0].source).toEqual({ kind: 'input' });
     expect(plan[1].source).toEqual({ kind: 'collector', typeName: 'user' });
   });
 
   // The set is keyed by `lowerFirst`, the way the scan spells it. Looking a
   // parameter up with `toLowerCase()` agreed on one word and diverged on two, so
-  // `AuthorUser` fell through to branch 4 and the parameter took the request body.
-  it('draft(author: AuthorUser) with AuthorUserCollector → [collector], not [body]', () => {
+  // `AuthorUser` fell through to branch 4 and the parameter took the request input.
+  it('draft(author: AuthorUser) with AuthorUserCollector → [collector], not [input]', () => {
     const collectors = new Set([lowerFirst('AuthorUser')]);
     const plan = computeBindingPlan([param('author', 'AuthorUser')], collectors);
     expect(plan[0].source).toEqual({ kind: 'collector', typeName: 'authorUser' });
@@ -155,13 +155,13 @@ describe('ArgumentResolver', () => {
     expect(args2).toEqual([false]);
   });
 
-  it('resolves body', async () => {
-    const body = { title: 'Hello', content: 'World' };
+  it('resolves input', async () => {
+    const input = { title: 'Hello', content: 'World' };
     const plan: BindingPlan = [
-      { name: 'data', source: { kind: 'body' }, optional: false },
+      { name: 'data', source: { kind: 'input' }, optional: false },
     ];
-    const args = await resolve(plan, ctx({ body }));
-    expect(args).toEqual([body]);
+    const args = await resolve(plan, ctx({ input }));
+    expect(args).toEqual([input]);
   });
 
   it('resolves context', async () => {
@@ -188,24 +188,24 @@ describe('ArgumentResolver', () => {
   it('resolves full update(id, data) plan', async () => {
     const plan: BindingPlan = [
       { name: 'id', source: { kind: 'param', name: 'id' }, optional: false },
-      { name: 'data', source: { kind: 'body' }, optional: false },
+      { name: 'data', source: { kind: 'input' }, optional: false },
     ];
-    const body = { title: 'Updated' };
-    const args = await resolve(plan, ctx({ params: { id: 'x-1' }, body }));
-    expect(args).toEqual(['x-1', body]);
+    const input = { title: 'Updated' };
+    const args = await resolve(plan, ctx({ params: { id: 'x-1' }, input }));
+    expect(args).toEqual(['x-1', input]);
   });
 
   it('resolves create(data, author) with collector', async () => {
-    const body = { title: 'New Post' };
+    const input = { title: 'New Post' };
     const user = { id: 'u1', role: 'admin' };
     const plan: BindingPlan = [
-      { name: 'data', source: { kind: 'body' }, optional: false },
+      { name: 'data', source: { kind: 'input' }, optional: false },
       { name: 'author', source: { kind: 'collector', typeName: 'user' }, optional: false },
     ];
-    const args = await resolve(plan, ctx({ body, state: { userId: 'u1' } }), (name) => {
+    const args = await resolve(plan, ctx({ input, state: { userId: 'u1' } }), (name) => {
       if (name === 'user') return { collect: async () => user };
       return undefined;
     });
-    expect(args).toEqual([body, user]);
+    expect(args).toEqual([input, user]);
   });
 });

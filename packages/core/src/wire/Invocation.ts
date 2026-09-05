@@ -1,14 +1,14 @@
 export interface InvocationContext {
   params: Record<string, unknown>;
   query: Record<string, unknown>;
-  body: unknown;
+  input: unknown;
   state: Record<string, unknown>;
   trace?: string;
   identity?: string;
   caller?: string;
 }
 
-export type InvocationInput = Partial<InvocationContext>;
+export type PartialInvocation = Partial<InvocationContext>;
 
 /** Freezes plain data deeply, and leaves a class instance alone — a `Date` is not a record. */
 function canonicalValue(value: unknown): unknown {
@@ -20,7 +20,7 @@ function canonicalValue(value: unknown): unknown {
   return canonicalRecord(value);
 }
 
-/** Drops the keys set to `undefined`, so a body and its JSON round-trip agree. */
+/** Drops the keys set to `undefined`, so an input and its JSON round-trip agree. */
 function canonicalRecord(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return Object.freeze({});
 
@@ -35,34 +35,34 @@ function canonicalRecord(value: unknown): Record<string, unknown> {
 export class Invocation implements InvocationContext {
   readonly params: Record<string, unknown>;
   readonly query: Record<string, unknown>;
-  readonly body: unknown;
+  readonly input: unknown;
   readonly state: Record<string, unknown>;
   readonly trace?: string;
   readonly identity?: string;
   readonly caller?: string;
 
   /** Gives every entry and every transport the same seven-member value, frozen. */
-  private constructor(input: InvocationInput) {
-    this.params = canonicalRecord(input.params);
-    this.query = canonicalRecord(input.query);
-    this.body = canonicalValue(input.body);
+  private constructor(context: PartialInvocation) {
+    this.params = canonicalRecord(context.params);
+    this.query = canonicalRecord(context.query);
+    this.input = canonicalValue(context.input);
     // State is host-owned and may still be enriched by existing middlewares. Moving it
     // to immutable lifecycle context is a separate migration.
-    this.state = input.state ?? {};
-    if (input.trace !== undefined) this.trace = input.trace;
-    if (input.identity !== undefined) this.identity = input.identity;
-    if (input.caller !== undefined) this.caller = input.caller;
+    this.state = context.state ?? {};
+    if (context.trace !== undefined) this.trace = context.trace;
+    if (context.identity !== undefined) this.identity = context.identity;
+    if (context.caller !== undefined) this.caller = context.caller;
     Object.freeze(this);
   }
 
   /** Takes a raw object or an invocation, so a caller never has to know which it holds. */
-  static from(input?: InvocationInput): Invocation {
-    return input instanceof Invocation ? input : new Invocation(input ?? {});
+  static from(context?: PartialInvocation): Invocation {
+    return context instanceof Invocation ? context : new Invocation(context ?? {});
   }
 
-  /** Replaces the body — how the façade hands on the value it parsed. */
-  withBody(body: unknown): Invocation {
-    return new Invocation({ ...this, body });
+  /** Replaces the input — how the façade hands on the value it parsed. */
+  withInput(input: unknown): Invocation {
+    return new Invocation({ ...this, input });
   }
 
   /** Replaces the host-owned state, which a middleware enriches before the handler runs. */
@@ -74,6 +74,6 @@ export class Invocation implements InvocationContext {
 export const EMPTY_INVOCATION = Invocation.from();
 
 /** Names the same gesture as `Invocation.from` for callers that read better this way. */
-export function canonicalInvocation(input?: InvocationInput): Invocation {
-  return Invocation.from(input);
+export function canonicalInvocation(context?: PartialInvocation): Invocation {
+  return Invocation.from(context);
 }

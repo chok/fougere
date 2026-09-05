@@ -97,8 +97,8 @@ async function queriesFrom(queries: QueryRing): Promise<() => void> {
 }
 
 function cursorOf(invocation: InvocationContext): number {
-  const body = invocation.body as { since?: unknown } | undefined;
-  const since = Number(body?.since ?? 0);
+  const input = invocation.input as { since?: unknown } | undefined;
+  const since = Number(input?.since ?? 0);
 
   return Number.isFinite(since) && since > 0 ? since : 0;
 }

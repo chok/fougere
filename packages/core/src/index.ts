@@ -16,7 +16,7 @@ export type { PresenterViews } from './prefab/presenter.js';
 export { Collector } from './prefab/collector.js';
 export { Repository, type RepositoryOf, type RepositoryConstructor, type AggregateOf, type AggregateConstructor } from './prefab/repository.js';
 export { Invocation, canonicalInvocation, EMPTY_INVOCATION } from './wire/Invocation.js';
-export type { InvocationContext, InvocationInput } from './wire/Invocation.js';
+export type { InvocationContext, PartialInvocation } from './wire/Invocation.js';
 export { Call } from './wire/call.js';
 export { RouteAddress } from './wire/RouteAddress.js';
 export type { RouteAddressInput } from './wire/RouteAddress.js';
@@ -87,8 +87,8 @@ export type { Storage, StorageFactory, ListOptions, ListResult, Together } from 
 export { togetherKeyOf, membersOfTogetherKey } from './storage.js';
 export type { Source, SourceConfig, SourceView } from './source.js';
 export { Sources } from './source.js';
-export { storageOver } from './rows.js';
-export type { Rows, Row } from './rows.js';
+export { storageOver } from './store.js';
+export type { Store, Values } from './store.js';
 export type { App, CreateAppOptions } from './boot/types.js';
 export type { ScanResult, ScanDiagnostic } from './scan/result.js';
 export type {

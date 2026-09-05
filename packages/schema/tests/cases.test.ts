@@ -40,10 +40,10 @@ describe('the table', () => {
     expect(table.length).toBeGreaterThanOrEqual(10);
   });
 
-  it('states a valid body, a key outside the contract, and a non-object', () => {
+  it('states a valid input, a key outside the contract, and a non-object', () => {
     const reasons = table.map((one) => one.why);
 
-    expect(reasons).toContain('a valid body');
+    expect(reasons).toContain('a valid input');
     expect(reasons).toContain('a key outside the contract');
     expect(reasons).toContain('not an object at all');
   });
@@ -51,7 +51,7 @@ describe('the table', () => {
   it('covers every refusal the judge can state', () => {
     const messages = new Set<string>();
     for (const one of table) {
-      const result = verdict(one.body, one.patch);
+      const result = verdict(one.input, one.patch);
       if (!result.success) for (const error of result.errors) messages.add(error.message.replace(/\(.*\)/, '').trim());
     }
 
@@ -68,7 +68,7 @@ describe('the table', () => {
 describe('each case', () => {
   it('gets from the judge the verdict it states', () => {
     for (const one of table) {
-      const result = verdict(one.body, one.patch);
+      const result = verdict(one.input, one.patch);
 
       expect(Cases.holds(one.expect, result), `${one.why} → ${JSON.stringify(result)}`).toBe(true);
     }

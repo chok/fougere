@@ -38,7 +38,7 @@ async function boot() {
   return { app, storage, run: createLocalRunner(app) };
 }
 
-const call = (): InvocationContext => ({ params: { id: 'note-1' }, query: {}, body: undefined, state: {} });
+const call = (): InvocationContext => ({ params: { id: 'note-1' }, query: {}, input: undefined, state: {} });
 
 describe('a view named for one op', () => {
   it('projects that op onto its view — the index ships cards', async () => {

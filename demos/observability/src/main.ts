@@ -36,7 +36,7 @@ const jiti = createJiti(import.meta.url, {
 setModuleLoader((filePath) => jiti.import(filePath) as Promise<Record<string, unknown>>);
 
 /**
- * Rows in memory — this demo is about what is observed, not about where rows live.
+ * Held in memory — this demo is about what is observed, not about where data lives.
  * A real app hands `resolveStorage()` here and changes nothing else.
  */
 const PRODUCTS = [

@@ -66,7 +66,7 @@ packages/
     src/entry/           the three ways in, in two files: facade.ts holds the facade and its dynamic
                          form, transport.ts the transport
     src/*.ts             what belongs to no phase: the two published entry points, frond(), the storage port
-                         and the frame that derives it (rows.ts),
+                         and the frame that derives it (store.ts),
                          emit, the effective operation model, the checkers
   http/                @fougere/http          the HttpRouter port + its express/fastify/hono adapters
   observability/       @fougere/observability optional: a span per op, the four signals, OTLP. Core holds none of it
@@ -225,9 +225,9 @@ is the source's own gesture; the router partitions and hands each source its `So
 compensates instead of transacting, and the boot says so per frame. Pinned by
 `defaults/tests/sources.test.ts`.
 
-**The thirteen gestures derive from four** — `core/src/rows.ts`, `storageOver(open)` over a
-`Rows` (`get`/`has`/`set`/`delete`/`all`/`client`). `adapter/memory` is 37 lines and
-`adapter/file` 105. `transacted` is deliberately not in the frame: a unit of work belongs to
+**The thirteen gestures derive from four** — `core/src/store.ts`, `storageOver(open)` over a
+`Store` (`get`/`has`/`set`/`delete`/`all`/`client`). `adapter/memory` is 25 lines and
+`adapter/file` 90. `transacted` is deliberately not in the frame: a unit of work belongs to
 an engine that has one. `all()` reading everything is what bounds a file source.
 
 **Prefab ops** — `Crud(Post)` gives the five typed CRUD ops. `Crud(Post, { list: PostCard })`

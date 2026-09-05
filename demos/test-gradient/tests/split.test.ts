@@ -37,7 +37,7 @@ describe('une app derrière sa porte', () => {
   it('accepte une ligne semée par le fil', async () => {
     const created = await call(
       { entity: 'product', op: 'create' },
-      { params: {}, query: {}, body: sampleInput(Product, { sku: 'WIRE-1' }), state: {} },
+      { params: {}, query: {}, input: sampleInput(Product, { sku: 'WIRE-1' }), state: {} },
     ) as { sku: string; id: string };
 
     expect(created.sku).toBe('WIRE-1');
@@ -49,7 +49,7 @@ describe('une app derrière sa porte', () => {
 
     await expect(call(
       { entity: 'product', op: 'create' },
-      { params: {}, query: {}, body: bad, state: {} },
+      { params: {}, query: {}, input: bad, state: {} },
     )).rejects.toThrow(/cents/);
   });
 });

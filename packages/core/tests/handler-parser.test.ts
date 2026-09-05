@@ -54,8 +54,8 @@ export function Prefab() {
 `;
 
 describe('a handler inheriting from a mixin', () => {
-  const opsOf = async (body: string) => {
-    const { dir, handler } = fixture(body);
+  const opsOf = async (input: string) => {
+    const { dir, handler } = fixture(input);
     try {
       // Heritage resolution is gated on a project root — without one the parser
       // reads the class alone and inherits nothing (workspace-only, by design).

@@ -53,13 +53,13 @@ describe('explain', () => {
       );
   });
 
-  it('shows the body and collector bindings from the resolved plan', async () => {
+  it('shows the input and collector bindings from the resolved plan', async () => {
     const result = await explain().execute({ operation: 'Post.publish', root: fixture });
 
     expect(result.parameters).toEqual([
       {
         name: 'input', type: 'Post', optional: false, nullable: false, undefinable: false,
-        binding: { kind: 'body' },
+        binding: { kind: 'input' },
       },
       {
         name: 'user', type: 'User', optional: true, nullable: false, undefinable: true,

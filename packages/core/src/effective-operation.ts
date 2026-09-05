@@ -397,14 +397,14 @@ function validateProvenance(
   const ambiguousInput = diagnostics.some((diagnostic) =>
     diagnostic.code === 'input-contract-ambiguous'
     && diagnostic.subject === `${handler.ctor.name}.${name}`);
-  const body = parameters.filter((parameter) => parameter.binding.source.kind === 'body');
+  const fromInput = parameters.filter((parameter) => parameter.binding.source.kind === 'input');
   const inferredBody = new Set<EffectiveParameter>();
 
   if (!explicitBinding && !ambiguousInput && contract.input) {
-    if (body.length === 1) {
-      inferredBody.add(body[0]!);
-    } else if (body.length > 1) {
-      const matches = body.filter((parameter) =>
+    if (fromInput.length === 1) {
+      inferredBody.add(fromInput[0]!);
+    } else if (fromInput.length > 1) {
+      const matches = fromInput.filter((parameter) =>
         schemaMatches(contract.input!, contract.signature?.params[parameter.position]?.type));
       if (matches.length > 1) {
         diagnostics.push({
@@ -413,7 +413,7 @@ function validateProvenance(
           filePath: handler.filePath,
           frond: frond.name,
           subject: `${handler.ctor.name}.${name}`,
-          message: `Cannot resolve which parameter of ${handler.ctor.name}.${name} receives the body: `
+          message: `Cannot resolve which parameter of ${handler.ctor.name}.${name} receives the input: `
             + `${matches.map((parameter) => `${parameter.name}: ${parameter.type ?? 'unknown'}`).join('; ')} `
             + 'all match the resolved input contract. Declare an explicit binding plan.',
         });
@@ -424,9 +424,9 @@ function validateProvenance(
   }
 
   // A type written with an inline object literal names nothing a collector can register
-  // under, so the parameter IS the body. Only a NAMED type can be the wrong-frond
+  // under, so the parameter IS the input. Only a NAMED type can be the wrong-frond
   // substitution the refusal below exists for.
-  for (const parameter of body) {
+  for (const parameter of fromInput) {
     if (structural(contract.signature?.params[parameter.position]?.type)) inferredBody.add(parameter);
   }
 
@@ -449,7 +449,7 @@ function validateProvenance(
       }
       continue;
     }
-    if (source.kind !== 'body' || explicitBinding || ambiguousInput) continue;
+    if (source.kind !== 'input' || explicitBinding || ambiguousInput) continue;
 
     const typeName = lowerFirst(contract.signature?.params[parameter.position]?.type.name ?? '');
     const elsewhere = fronds.flatMap((candidate) => candidate === frond
@@ -457,12 +457,12 @@ function validateProvenance(
       : candidate.collectors.filter((collector) => collector.typeName === typeName));
     if (elsewhere.length > 0) {
       // verify() supplies the more complete topology diagnostic; do not also call this
-      // an unknown body.
+      // an unknown input.
       continue;
     }
 
-    // An inferred body must be backed by exactly one resolved interpretation. With one
-    // body, the input itself is sufficient evidence; with several, exactly one type may
+    // An inferred input must be backed by exactly one resolved interpretation. With one
+    // input, the value itself is sufficient evidence; with several, exactly one type may
     // match. Explicit plans are authoritative because they state every provenance.
     const recognized = explicitBinding || inferredBody.has(parameter);
     if (recognized) continue;

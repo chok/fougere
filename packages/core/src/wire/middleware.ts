@@ -15,7 +15,7 @@ export interface OperationContext {
   args: unknown[];
   /** Extensible bag — middlewares deposit data here (user, permissions, etc.). */
   state: Record<string, unknown>;
-  /** Transport-agnostic invocation context (params, query, body, state). */
+  /** Transport-agnostic invocation context (params, query, input, state). */
   invocation?: import('../wire/Invocation.js').InvocationContext;
 }
 

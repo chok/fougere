@@ -51,16 +51,16 @@ export function sampleInput(
 
   const seed = options.seed ?? seedOf(entity.name ?? 'anonymous');
   lastSeed = { entity: entity.name ?? 'Entity', seed };
-  const body: Record<string, unknown> = {};
+  const input: Record<string, unknown> = {};
   let nth = 0;
   for (const [name, field] of Object.entries(fields)) {
-    if (name in given) { body[name] = given[name]; continue; }
+    if (name in given) { input[name] = given[name]; continue; }
     // One seed per field, derived from one seed per entity: two fields of the same shape
     // would otherwise carry the same value, and a test asserting on `title` would pass
-    // while reading `body`.
+    // while reading `title`.
     // A `Shape` IS a JSON Schema; the two packages declare the same concept and only
     // disagree on `readonly`, which no value crosses.
-    body[name] = generateSync((field as Field).shape as JsonSchema, { seed: seed + nth++ });
+    input[name] = generateSync((field as Field).shape as JsonSchema, { seed: seed + nth++ });
   }
-  return body;
+  return input;
 }

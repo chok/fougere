@@ -43,7 +43,7 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
   async function submit(): Promise<T | null> {
     if (!judge()) return null;
     try {
-      return await command.execute({ params: options.params, body: payloadOf(get(values)) });
+      return await command.execute({ params: options.params, input: payloadOf(get(values)) });
     } catch (err) {
       const refusals = validationErrorsOf(err);
       if (refusals) {

@@ -4,7 +4,7 @@ import type CurrentUser from '../types/CurrentUser.js';
 
 /**
  * Two signatures that differ only in the ORDER of their parameters. The binding is
- * right in both — `user` comes from the collector, `input` from the body.
+ * right in both — `user` comes from the collector, `input` from the input.
  */
 export default class PostHandler {
   /** Body param first. */

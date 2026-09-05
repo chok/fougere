@@ -42,7 +42,7 @@ export default class DevtoolsHandler {
       try {
         const page = await createHttpTransport(one.url)(
           { entity: 'rpc', op: 'calls' },
-          { params: {}, query: {}, body: { since: since[one.url] ?? 0 }, state: {} },
+          { params: {}, query: {}, input: { since: since[one.url] ?? 0 }, state: {} },
         ) as CallPage;
 
         return { ...one, cursor: page.cursor, inFlight: page.inFlight, dropped: page.dropped, calls: page.calls };

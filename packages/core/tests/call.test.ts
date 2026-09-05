@@ -162,10 +162,10 @@ describe('callValueOf (fabrication of the call value)', () => {
   it('raw call passes through untouched', () => {
     const { call, invocation } = callValueOf(
       { entity: 'product', op: 'search' },
-      { params: { id: '1' }, body: { q: 'fern' } },
+      { params: { id: '1' }, input: { q: 'fern' } },
     );
     expect(call).toEqual({ entity: 'product', op: 'search' });
-    expect(invocation).toEqual({ ...EMPTY_INVOCATION, params: { id: '1' }, body: { q: 'fern' } });
+    expect(invocation).toEqual({ ...EMPTY_INVOCATION, params: { id: '1' }, input: { q: 'fern' } });
   });
 
   it('no input completes to the empty invocation', () => {

@@ -19,7 +19,7 @@ export default class MigrateCommand {
   async run(raw: Record<string, unknown>) {
     const result = (await createAppRunner(this.app)(
       { entity: 'migrate', op: 'execute' },
-      { params: {}, query: {}, body: raw, state: {} },
+      { params: {}, query: {}, input: raw, state: {} },
     )) as MigrationPlan;
 
     if (machineWanted(raw)) return printMachine(result);

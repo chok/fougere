@@ -1,7 +1,7 @@
 export default {
   operations: {
     doublePlain: { kind: 'query' },
-    // An alias is not enough evidence to guess primitive/body/collector provenance.
+    // An alias is not enough evidence to guess primitive/input/collector provenance.
     doubleCents: {
       kind: 'query',
       binding: [{

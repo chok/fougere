@@ -31,7 +31,7 @@ const emptyRoot = '/tmp/fougere-socket-consumer';
 type Facade = Record<string, (invocation?: InvocationContext) => Promise<unknown>>;
 
 const inv = (over: Partial<InvocationContext> = {}): InvocationContext =>
-  ({ params: {}, query: {}, body: undefined, state: {}, ...over });
+  ({ params: {}, query: {}, input: undefined, state: {}, ...over });
 
 /** One JSON value per line — the whole framing a stream protocol needs. */
 function lines(onLine: (raw: string) => void): (chunk: Buffer) => void {
@@ -152,8 +152,8 @@ describe('the protocol changes, the call does not', () => {
     ['list', 'list', inv()],
     ['findById (hit)', 'findById', inv({ params: { id: 'p1' } })],
     ['findById (miss)', 'findById', inv({ params: { id: 'ghost' } })],
-    ['create (valid)', 'create', inv({ body: { title: 'Ivy', stock: 5 } })],
-    ['create (invalid — judged where the handler lives)', 'create', inv({ body: { stock: -2 } })],
+    ['create (valid)', 'create', inv({ input: { title: 'Ivy', stock: 5 } })],
+    ['create (invalid — judged where the handler lives)', 'create', inv({ input: { stock: -2 } })],
     ['reserve (business failure)', 'reserve', inv()],
     ['unknown op', 'teleport', inv()],
   ];
@@ -208,7 +208,7 @@ describe('asynchrony — what the socket makes visible and HTTP hid', () => {
     // as a malformed request instead, so the async regime has no wire form yet.
     const answered = await new Promise<RpcResponse>((resolve) => {
       const probe = connect(socketServer.address() ? (socketServer.address() as { port: number }).port : 0, '127.0.0.1', () => {
-        probe.write(`${JSON.stringify({ jsonrpc: '2.0', method: 'product.create', params: inv({ body: { title: 'Ivy', stock: 1 } }) })}\n`);
+        probe.write(`${JSON.stringify({ jsonrpc: '2.0', method: 'product.create', params: inv({ input: { title: 'Ivy', stock: 1 } }) })}\n`);
       });
       probe.on('data', lines((raw) => {
         probe.destroy();

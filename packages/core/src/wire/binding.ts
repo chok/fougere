@@ -12,7 +12,7 @@ type ParamSource =
   /** `Fact<PostPublished>` — something that happened, not something a caller typed. */
   | { kind: 'fact'; factName: string }
   | { kind: 'param'; name: string; coerce?: 'number' | 'boolean' }
-  | { kind: 'body' }
+  | { kind: 'input' }
   | { kind: 'context' }
   /** The whole query bag, for an op whose argument IS the options (list). */
   | { kind: 'query' };
@@ -46,11 +46,11 @@ export function computeBindingPlan(
     const typeName = param.type.name;
     // `lowerFirst`, never `toLowerCase()`: the collector set is keyed the way the
     // scan spells it, and the two agree on one word only — `AuthorUser` looked up as
-    // `authoruser` missed `authorUser` and fell through to branch 4, the request body.
+    // `authoruser` missed `authorUser` and fell through to branch 4, the request input.
     const typeKey = lowerFirst(typeName);
 
     // 0. Fact — `Fact<X>` names itself, so nothing has to be known in advance. It comes
-    //    FIRST because branch 4 would otherwise hand it the caller's body under the name
+    //    FIRST because branch 4 would otherwise hand it the caller's input under the name
     //    of something that happened.
     const factOf = param.type.name === 'Fact' ? param.type.generics?.[0]?.name : undefined;
     if (factOf) {
@@ -92,10 +92,10 @@ export function computeBindingPlan(
       };
     }
 
-    // 4. Everything else — body
+    // 4. Everything else — input
     return {
       name: param.name,
-      source: { kind: 'body' as const },
+      source: { kind: 'input' as const },
       optional: param.optional ?? false,
     };
   });

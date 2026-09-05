@@ -4,7 +4,7 @@ import type { Storage } from '../storage.js';
 /** A paginated local copy of a source that cannot be queried directly. */
 /** What one refresh did — enough to log it, and to decide whether to run again. */
 export interface Refreshed {
-  /** Rows written, counting a replaced row once. */
+  /** Instances written, counting a replaced one once. */
   written: number;
   /** The age the pull was asked to start from — absent on the first ever run. */
   since?: Date;

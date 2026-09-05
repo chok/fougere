@@ -17,7 +17,7 @@ export function registerRoutes(
       const invocation = {
         params: ctx.params,
         query: ctx.query,
-        body,
+        input: body,
         state: ctx.state,
       };
 

@@ -14,7 +14,7 @@ export type ExplainedBinding =
   | { kind: 'collector'; typeName: string }
   | { kind: 'fact'; factName: string }
   | { kind: 'param'; name: string; coerce?: 'number' | 'boolean' }
-  | { kind: 'body' }
+  | { kind: 'input' }
   | { kind: 'context' }
   | { kind: 'query' };
 
@@ -229,7 +229,7 @@ function addressOf(value: string): string {
 }
 
 function inputTypeOf(operation: EffectiveOperation): string | null {
-  const body = operation.parameters.find((parameter) => parameter.binding.source.kind === 'body');
+  const body = operation.parameters.find((parameter) => parameter.binding.source.kind === 'input');
   return body?.type ?? schemaName(operation.input) ?? null;
 }
 

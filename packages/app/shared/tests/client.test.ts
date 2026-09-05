@@ -108,8 +108,8 @@ describe('reading a result', () => {
 
 describe('invocationOf', () => {
   it('completes a partial input to a whole invocation', () => {
-    expect(invocationOf({ body: { title: 'x' } }))
-      .toEqual({ params: {}, query: {}, body: { title: 'x' }, state: {} });
+    expect(invocationOf({ input: { title: 'x' } }))
+      .toEqual({ params: {}, query: {}, input: { title: 'x' }, state: {} });
   });
 });
 

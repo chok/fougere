@@ -68,7 +68,7 @@ export interface OperationBinding {
   source:
     | { kind: 'collector' | 'context' | 'fact' }
     | { kind: 'param'; name: string }
-    | { kind: 'body' | 'query' };
+    | { kind: 'input' | 'query' };
 }
 
 /** The projection-facing subset of core's EffectiveOperation. */
@@ -649,7 +649,7 @@ function graphqlFieldName(opName: string, entityName: string): string {
 
 interface ArgsResult {
   argsDef: (t: any) => Record<string, any>;
-  buildInvocation: (args: any, gqlCtx: any) => { params: Record<string, any>; query: Record<string, any>; body: unknown; state: Record<string, any> };
+  buildInvocation: (args: any, gqlCtx: any) => { params: Record<string, any>; query: Record<string, any>; input: unknown; state: Record<string, any> };
 }
 
 function buildArgsFromSignature(
@@ -664,7 +664,7 @@ function buildArgsFromSignature(
   // invocation context, and publishing it would let callers impersonate that value.
   const paramPlan: {
     name: string;
-    kind: 'primitive' | 'body' | 'skip' | 'pagination';
+    kind: 'primitive' | 'input' | 'skip' | 'pagination';
     typeName: string;
     optional: boolean;
     nullable: boolean;
@@ -688,8 +688,8 @@ function buildArgsFromSignature(
         case 'param':
           paramPlan.push({ name: param.name, kind: 'primitive', typeName, optional: binding.optional, nullable: param.type.nullable === true });
           continue;
-        case 'body':
-          paramPlan.push({ name: param.name, kind: 'body', typeName, optional: binding.optional, nullable: param.type.nullable === true });
+        case 'input':
+          paramPlan.push({ name: param.name, kind: 'input', typeName, optional: binding.optional, nullable: param.type.nullable === true });
           continue;
       }
     }
@@ -710,14 +710,14 @@ function buildArgsFromSignature(
       continue;
     }
 
-    // Object/entity param → body
-    paramPlan.push({ name: param.name, kind: 'body', typeName, optional: param.optional ?? false, nullable: param.type.nullable === true });
+    // Object/entity param → input
+    paramPlan.push({ name: param.name, kind: 'input', typeName, optional: param.optional ?? false, nullable: param.type.nullable === true });
   }
 
   // Register input type if needed
   let inputRef: any;
-  const bodyParam = paramPlan.find((p) => p.kind === 'body');
-  if (bodyParam && meta.input) {
+  const inputParam = paramPlan.find((p) => p.kind === 'input');
+  if (inputParam && meta.input) {
     // Only strip non-client fields for create/update — other ops may legitimately use them (e.g. publish(id))
     const isMutation = opName === 'create' || opName === 'update';
     const opInputFields = isMutation ? Visibility.of(meta.input.getFields()).input : meta.input.getFields();
@@ -747,8 +747,8 @@ function buildArgsFromSignature(
       }
     }
 
-    if (bodyParam && inputRef) {
-      args.input = t.arg({ type: inputRef, required: !bodyParam.optional && !bodyParam.nullable });
+    if (inputParam && inputRef) {
+      args.input = t.arg({ type: inputRef, required: !inputParam.optional && !inputParam.nullable });
     }
 
     if (hasPagination) {
@@ -765,7 +765,7 @@ function buildArgsFromSignature(
 
   const buildInvocation = (args: any, gqlCtx: any) => {
     const params: Record<string, any> = {};
-    let body: unknown = undefined;
+    let input: unknown = undefined;
 
     for (const p of paramPlan) {
       if (p.kind === 'primitive') {
@@ -773,19 +773,19 @@ function buildArgsFromSignature(
         // null. Test undefined alone: `!= null` erased the second case and made
         // `foo?: T | null` indistinguishable from `foo?: T`.
         if (args[p.name] !== undefined) params[p.name] = args[p.name];
-      } else if (p.kind === 'body') {
-        body = args.input;
+      } else if (p.kind === 'input') {
+        input = args.input;
       } else if (p.kind === 'pagination') {
-        // Collect pagination args into body (ListOptions)
+        // Collect pagination args into input (ListOptions)
         const options: Record<string, any> = {};
         for (const key of ['limit', 'offset', 'page', 'after', 'orderBy', 'order']) {
           if (args[key] !== undefined) options[key] = args[key];
         }
-        body = options;
+        input = options;
       }
     }
 
-    return { params, query: {}, body, state: gqlCtx?.state ?? {} };
+    return { params, query: {}, input, state: gqlCtx?.state ?? {} };
   };
 
   return { argsDef, buildInvocation };
@@ -886,7 +886,7 @@ export function registerOperations(builder: InstanceType<typeof SchemaBuilder>, 
               hasMore: result?.hasMore,
               _count: () => config.facade[opName]({
                 ...invocation,
-                body: { ...(invocation.body as any ?? {}), count: true, limit: 1 },
+                input: { ...(invocation.input as any ?? {}), count: true, limit: 1 },
               }),
             };
           }

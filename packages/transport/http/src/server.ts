@@ -45,7 +45,7 @@ export async function handleRpc(runner: Transport, raw: unknown, options: Receiv
         op,
         params: sent.params ?? {},
         query: sent.query ?? {},
-        body: sent.body,
+        input: sent.input,
       }));
     } catch (err) {
       return refused(id, (err as Error)?.message ?? 'unverifiable identity', entity, op);
@@ -59,7 +59,7 @@ export async function handleRpc(runner: Transport, raw: unknown, options: Receiv
   const invocation: InvocationContext = {
     params: sent.params ?? {},
     query: sent.query ?? {},
-    body: sent.body,
+    input: sent.input,
     state,
     trace: sent.trace,
     ...(caller ? { caller } : {}),

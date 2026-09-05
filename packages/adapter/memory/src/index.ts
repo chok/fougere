@@ -1,22 +1,22 @@
-/** Rows in a Map — the source that ships no driver, in the ten lines the frame leaves. */
-import { Sources, storageOver, type Row, type Rows, type Source, type SourceConfig } from '@fougere/core';
+/** A Map — the source that ships no driver, in the ten lines the frame leaves. */
+import { Sources, storageOver, type Store, type Values, type Source, type SourceConfig } from '@fougere/core';
 
-/** One entity's rows. Held for the life of the process, released with nothing to close. */
-function mapRows(): Rows {
-  const store = new Map<string, Row>();
+/** One entity, held for the life of the process, released with nothing to close. */
+function mapStore(): Store {
+  const map = new Map<string, Values>();
 
   return {
-    client: store,
-    get: async (key) => store.get(key),
-    has: async (key) => store.has(key),
-    set: async (key, row) => { store.set(key, row); },
-    delete: async (key) => store.delete(key),
-    all: async () => [...store.values()],
+    client: map,
+    get: async (key) => map.get(key),
+    has: async (key) => map.has(key),
+    set: async (key, values) => { map.set(key, values); },
+    delete: async (key) => map.delete(key),
+    all: async () => [...map.values()],
   };
 }
 
 /** The whole port over a Map, per entity. */
-export const createMemoryStorage = storageOver(() => mapRows());
+export const createMemoryStorage = storageOver(() => mapStore());
 
 export function setupMemory(): Source {
   return { storageFactory: createMemoryStorage, name: 'memory' };

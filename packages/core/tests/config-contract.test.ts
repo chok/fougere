@@ -39,13 +39,13 @@ async function boot() {
 }
 
 const call = (over: Partial<InvocationContext> = {}): InvocationContext =>
-  ({ params: {}, query: {}, body: undefined, state: {}, ...over });
+  ({ params: {}, query: {}, input: undefined, state: {}, ...over });
 
 describe('config states a contract the scan could not derive', () => {
-  it('names the judge for a body the scan could only see as an object', async () => {
+  it('names the judge for an input the scan could only see as an object', async () => {
     const { app, run } = await boot();
 
-    const ok = await run({ entity: 'note', op: 'retitle' }, call({ body: { title: 'Neuf' } }));
+    const ok = await run({ entity: 'note', op: 'retitle' }, call({ input: { title: 'Neuf' } }));
     expect((ok as Record<string, unknown>).title).toBe('Neuf');
 
     await app.dispose();
@@ -54,11 +54,11 @@ describe('config states a contract the scan could not derive', () => {
   it('and that judge REFUSES — the config input is enforced, not decorative', async () => {
     const { app, run } = await boot();
 
-    // `title` is `text({ min: 1 })`, and `body` is not in the declared view.
-    await expect(run({ entity: 'note', op: 'retitle' }, call({ body: { title: '' } })))
+    // `title` is `text({ min: 1 })`, and `input` is not in the declared view.
+    await expect(run({ entity: 'note', op: 'retitle' }, call({ input: { title: '' } })))
       .rejects.toMatchObject({ code: ErrorCode.VALIDATION_FAILED });
 
-    await expect(run({ entity: 'note', op: 'retitle' }, call({ body: { title: 'Ok', body: 'intrus' } })))
+    await expect(run({ entity: 'note', op: 'retitle' }, call({ input: { title: 'Ok', input: 'intrus' } })))
       .rejects.toThrow(/Unknown field/);
 
     await app.dispose();

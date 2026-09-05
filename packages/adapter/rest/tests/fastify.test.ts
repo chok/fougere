@@ -54,7 +54,7 @@ describe('registerRoutes', () => {
 
   it('builds InvocationContext and forwards to route handler', async () => {
     const { router, getHandler } = fakeRouter();
-    const handlerFn = vi.fn(async (inv: any) => ({ id: inv.params.id, title: inv.body.title }));
+    const handlerFn = vi.fn(async (inv: any) => ({ id: inv.params.id, title: inv.input.title }));
     const routes: RouteDefinition[] = [
       { method: 'PUT', path: '/posts/:id', operationName: 'update', entityName: 'post', handler: handlerFn },
     ];
@@ -67,7 +67,7 @@ describe('registerRoutes', () => {
     expect(handlerFn).toHaveBeenCalledWith({
       params: { id: 'abc' },
       query: {},
-      body: { title: 'Updated' },
+      input: { title: 'Updated' },
       state: {},
     });
     expect(result.status).toBe(200);

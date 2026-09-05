@@ -22,7 +22,7 @@ const emptyRoot = '/tmp/fougere-gradient-consumer';
 type Facade = Record<string, (invocation?: InvocationContext) => Promise<unknown>>;
 
 const inv = (over: Partial<InvocationContext> = {}): InvocationContext =>
-  ({ params: {}, query: {}, body: undefined, state: {}, ...over });
+  ({ params: {}, query: {}, input: undefined, state: {}, ...over });
 
 function startHost(): Promise<{ child: ChildProcess; port: number }> {
   return new Promise((resolve, reject) => {
@@ -93,8 +93,8 @@ describe('gradient — the moved Frond behaves identically', () => {
     ['list', 'list', inv()],
     ['findById (hit)', 'findById', inv({ params: { id: 'p1' } })],
     ['findById (miss)', 'findById', inv({ params: { id: 'ghost' } })],
-    ['create (valid)', 'create', inv({ body: { title: 'Ivy', stock: 5 } })],
-    ['create (invalid — judged where the handler lives)', 'create', inv({ body: { stock: -2 } })],
+    ['create (valid)', 'create', inv({ input: { title: 'Ivy', stock: 5 } })],
+    ['create (invalid — judged where the handler lives)', 'create', inv({ input: { stock: -2 } })],
     ['reserve (business failure)', 'reserve', inv()],
   ];
 
@@ -109,7 +109,7 @@ describe('gradient — the moved Frond behaves identically', () => {
   });
 
   it('the validation judgment happens handler-side and crosses typed', async () => {
-    const failure = facade.create(inv({ body: { stock: -2 } }));
+    const failure = facade.create(inv({ input: { stock: -2 } }));
     await expect(failure).rejects.toBeInstanceOf(FougereError);
     await expect(failure).rejects.toMatchObject({ code: ErrorCode.VALIDATION_FAILED, entity: 'product' });
   });

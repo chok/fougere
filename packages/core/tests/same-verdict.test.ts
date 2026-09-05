@@ -4,8 +4,8 @@
  * The site says it (`useFormFor` : « local judge = remote judge »), the form primitive
  * is built on it, and nothing demonstrated it. Two judges are genuinely independent:
  *
- *   - the FORM calls `Schema.validate(body)` in the browser (`useFormFor.ts:46`);
- *   - the FAÇADE calls `InputValidator.of(schema.getFields(), …).validate(inv.body)`.
+ *   - the FORM calls `Schema.validate(input)` in the browser (`useFormFor.ts:46`);
+ *   - the FAÇADE calls `InputValidator.of(schema.getFields(), …).validate(inv.input)`.
  *
  * REST and GraphQL are NOT a third and fourth: both resolve the façade and call it
  * (`routes.ts:214`, `pothos.ts:862`), so they are the same judge by construction.
@@ -36,16 +36,16 @@ const sorted = (errors: { path: string; message: string }[]) =>
   [...errors].sort((a, b) => (a.path + a.message).localeCompare(b.path + b.message));
 
 /** What the browser does before sending — `useFormFor.ts:46`, verbatim. */
-function verdictOfForm(schema: SchemaView & { validate(i: unknown): unknown }, body: unknown): Verdict {
-  const result = schema.validate(body) as { success: boolean; errors?: { path: string; message: string }[] };
+function verdictOfForm(schema: SchemaView & { validate(i: unknown): unknown }, input: unknown): Verdict {
+  const result = schema.validate(input) as { success: boolean; errors?: { path: string; message: string }[] };
   return result.success ? { ok: true } : { ok: false, errors: sorted(result.errors ?? []) };
 }
 
 /** What the door does on arrival. A refusal is a typed error, not a return value. */
-async function verdictOfFacade(run: ReturnType<typeof createLocalRunner>, op: string, body: unknown): Promise<Verdict> {
+async function verdictOfFacade(run: ReturnType<typeof createLocalRunner>, op: string, input: unknown): Promise<Verdict> {
   const [entity, name] = op.split('.');
   try {
-    await run({ entity, op: name }, { ...EMPTY_INVOCATION, body });
+    await run({ entity, op: name }, { ...EMPTY_INVOCATION, input });
     return { ok: true };
   } catch (error) {
     if (!(error instanceof FougereError) || error.code !== 'VALIDATION_FAILED') throw error;
@@ -64,7 +64,7 @@ async function verdictOfFacade(run: ReturnType<typeof createLocalRunner>, op: st
 const baseline = { title: 'Un titre', body: 'Un corps' };
 // `Cases` (`schema/src/projection/Cases.ts`) IS this table now. It was written here first,
 // against this very theorem, and lived in a test file where no other reader could have it.
-const table = Cases.of(Article, baseline).all.map((one) => ({ why: one.why, body: one.body }));
+const table = Cases.of(Article, baseline).all.map((one) => ({ why: one.why, input: one.input }));
 
 describe('un corps, deux juges', () => {
   it('énumère la table de décision plutôt que des exemples choisis', () => {
@@ -78,9 +78,9 @@ describe('un corps, deux juges', () => {
     await using app = await createApp({ scan: await scanProject(root), createContainer, storageFactory: fakeStorage });
     const run = createLocalRunner(app);
 
-    for (const { why, body } of table) {
-      const form = verdictOfForm(NewArticle, body);
-      const facade = await verdictOfFacade(run, 'article.create', body);
+    for (const { why, input } of table) {
+      const form = verdictOfForm(NewArticle, input);
+      const facade = await verdictOfFacade(run, 'article.create', input);
       expect(facade, why).toEqual(form);
     }
   });
@@ -89,9 +89,9 @@ describe('un corps, deux juges', () => {
     await using app = await createApp({ scan: await scanProject(root), createContainer, storageFactory: fakeStorage });
     const run = createLocalRunner(app);
 
-    for (const { why, body } of table) {
-      const inMemory = await verdictOfFacade(run, 'article.create', body);
-      const onTheWire = await verdictOfFacade(run, 'article.create', JSON.parse(JSON.stringify(body)));
+    for (const { why, input } of table) {
+      const inMemory = await verdictOfFacade(run, 'article.create', input);
+      const onTheWire = await verdictOfFacade(run, 'article.create', JSON.parse(JSON.stringify(input)));
       expect(onTheWire, why).toEqual(inMemory);
     }
   });

@@ -87,7 +87,7 @@ export async function serveRest(app: App, request: DoorRequest): Promise<Outcome
     result = await invokeOn(
       app,
       { entity: route.entityName, op: route.operationName },
-      { params, query: request.query, body: request.body },
+      { params, query: request.query, input: request.body },
       undefined,
       request.state,
     );

@@ -34,7 +34,7 @@ describe('over the wire', () => {
       const read = createHttpTransport(`http://127.0.0.1:${door.port}`);
       const page = await read(
         { entity: 'rpc', op: 'calls' },
-        { params: {}, query: {}, body: { since: 0 }, state: {} },
+        { params: {}, query: {}, input: { since: 0 }, state: {} },
       ) as CallPage;
 
       expect(page.calls).toHaveLength(1);
@@ -44,7 +44,7 @@ describe('over the wire', () => {
       // Reading is itself a call, and it must not appear in what it reads.
       const second = await read(
         { entity: 'rpc', op: 'calls' },
-        { params: {}, query: {}, body: { since: page.cursor }, state: {} },
+        { params: {}, query: {}, input: { since: page.cursor }, state: {} },
       ) as CallPage;
       expect(second.calls).toHaveLength(0);
     } finally {
@@ -88,7 +88,7 @@ describe('two apps against one hosted frond', () => {
 
       const read = (app: (typeof consumers)[number]) => createAppRunner(app)(
         { entity: 'rpc', op: 'calls' },
-        { params: {}, query: {}, body: { since: 0 }, state: {} },
+        { params: {}, query: {}, input: { since: 0 }, state: {} },
       ) as Promise<CallPage>;
 
       // Each consumer's own ring holds ONE call — its own.

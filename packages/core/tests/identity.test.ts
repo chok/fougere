@@ -92,11 +92,11 @@ describe('caller identity', () => {
     await expect(verifyEnvelope(listing, root.publicKey, { entity: 'post', op: 'delete' })).rejects.toThrow(/signed for a different call/);
   });
 
-  it('refuses a captured envelope replayed with another body', async () => {
+  it('refuses a captured envelope replayed with another input', async () => {
     const blog = issue(root, 'blog');
-    const envelope = await signEnvelope(blog, { ...CALL, body: { title: 'hello' } });
+    const envelope = await signEnvelope(blog, { ...CALL, input: { title: 'hello' } });
 
-    await expect(verifyEnvelope(envelope, root.publicKey, { ...CALL, body: { title: 'defaced' } })).rejects.toThrow(/signed for a different call/);
+    await expect(verifyEnvelope(envelope, root.publicKey, { ...CALL, input: { title: 'defaced' } })).rejects.toThrow(/signed for a different call/);
   });
 
   it('refuses it replayed against another row', async () => {

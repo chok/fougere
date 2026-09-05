@@ -7,7 +7,7 @@ interface SentCall {
   params: {
     params: Record<string, unknown>;
     query: Record<string, unknown>;
-    body?: Record<string, unknown>;
+    input?: Record<string, unknown>;
   };
 }
 
@@ -64,7 +64,7 @@ describe('the Fougere data provider', () => {
     const sent: SentCall[] = [];
     const provider = createDataProvider({
       resources: { post: { name: 'post', primary: 'slug' } },
-      fetcher: resultFetcher((call) => ({ ...call.params.body }), sent),
+      fetcher: resultFetcher((call) => ({ ...call.params.input }), sent),
     });
 
     const updated = await provider.update('post', {
@@ -76,7 +76,7 @@ describe('the Fougere data provider', () => {
       method: 'post.update',
       params: {
         params: { id: 'hello' },
-        body: { slug: 'hello', title: 'Hello again' },
+        input: { slug: 'hello', title: 'Hello again' },
       },
     });
     expect(updated.data).toMatchObject({ id: 'hello', slug: 'hello' });
@@ -138,7 +138,7 @@ describe('a business operation', () => {
     expect(answer.data).toEqual({ id: 'p1', status: 'published' });
   });
 
-  it('sends its input as a body, and sends none when the op takes none', async () => {
+  it('sends its input, and sends none when the op takes none', async () => {
     const sent: SentCall[] = [];
     const provider = createDataProvider({
       resources: { post: { name: 'post', primary: 'id' } },
@@ -148,8 +148,8 @@ describe('a business operation', () => {
     await provider.invoke('post', { op: 'schedule', id: 'p1', data: { when: '2026-09-01' } });
     await provider.invoke('post', { op: 'archiveAll' });
 
-    expect(sent[0]!.params.body).toEqual({ when: '2026-09-01' });
-    expect(sent[1]!.params.body).toBeUndefined();
+    expect(sent[0]!.params.input).toEqual({ when: '2026-09-01' });
+    expect(sent[1]!.params.input).toBeUndefined();
     expect(sent[1]!.params.params).toEqual({});
   });
 });

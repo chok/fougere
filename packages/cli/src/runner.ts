@@ -116,7 +116,7 @@ export async function run(app: App): Promise<void> {
               // Ride the call contract — the same envelope every consumer uses.
               await createAppRunner(app)(
                 { entity: lowerFirst(entity.name), op: 'execute' },
-                { params: {}, query: {}, body: input, state: {} },
+                { params: {}, query: {}, input: input, state: {} },
               );
             }
           } catch (err) {

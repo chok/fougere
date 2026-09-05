@@ -4,7 +4,7 @@
 //! Il honore exactement deux choses :
 //!
 //!   1. le contrat d'appel   — POST /_fougere/call, JSON-RPC 2.0, `method = "entity.op"`,
-//!                             `params` = l'InvocationContext ({ params, query, body, state })
+//!                             `params` = l'InvocationContext ({ params, query, input, state })
 //!   2. la carte d'identité  — `rpc.discover` rend ce qu'il héberge, schéma compris
 //!
 //! Tout le reste lui appartient : le stockage, le langage, le juge.
@@ -233,8 +233,8 @@ fn read_celsius(object: &Map<String, Value>) -> Result<f64, Rejected> {
     }
 }
 
-fn judge(body: &Value) -> Result<(String, f64), Vec<Rejected>> {
-    let Some(object) = body.as_object() else {
+fn judge(input: &Value) -> Result<(String, f64), Vec<Rejected>> {
+    let Some(object) = input.as_object() else {
         return Err(vec![Rejected { path: ".".into(), message: "Expected an object" }]);
     };
 
@@ -288,8 +288,8 @@ fn dispatch(state: &AppState, method: &str, params: &Value) -> Result<Value, Fai
         }
 
         ("sensor", "record") => {
-            let body = params.get("body").cloned().unwrap_or(Value::Null);
-            match judge(&body) {
+            let input = params.get("input").cloned().unwrap_or(Value::Null);
+            match judge(&input) {
                 Ok((label, celsius)) => {
                     let sensor = Sensor::record(label, celsius);
                     state.sensors.lock().unwrap().push(sensor.clone());

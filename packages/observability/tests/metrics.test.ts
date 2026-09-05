@@ -38,7 +38,7 @@ describe('rate, errors and duration come from one histogram', () => {
     const door = app.resolve<Facade>('productHandler');
     await door.list();
     await door.list();
-    await door.findById({ params: { id: 'p1' }, query: {}, body: undefined, state: {} });
+    await door.findById({ params: { id: 'p1' }, query: {}, input: undefined, state: {} });
 
     const { series } = measured.snapshot();
     const list = series.find((s) => s.operation === 'list')!;
@@ -107,7 +107,7 @@ describe('saturation and topology', () => {
     const run = createLocalRunner(app);
     await app.resolve<Facade>('productHandler').list();
 
-    const report = await run({ entity: 'rpc', op: 'topology' }, { params: {}, query: {}, body: undefined, state: {} }) as {
+    const report = await run({ entity: 'rpc', op: 'topology' }, { params: {}, query: {}, input: undefined, state: {} }) as {
       fronds: { frond: string; placement: string }[];
       edges: unknown[];
       active: number;

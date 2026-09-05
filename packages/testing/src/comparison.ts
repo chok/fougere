@@ -30,13 +30,13 @@ export interface DoorOptions extends SampleOptions {
 }
 
 interface Doors {
-  local: (op: string, input?: DoorInput) => Promise<unknown>;
-  rpc: (op: string, input?: DoorInput) => Promise<unknown>;
-  rest: (op: string, input?: DoorInput) => Promise<unknown>;
-  graphql: (op: string, input?: DoorInput) => Promise<unknown>;
+  local: (op: string, call?: DoorInput) => Promise<unknown>;
+  rpc: (op: string, call?: DoorInput) => Promise<unknown>;
+  rest: (op: string, call?: DoorInput) => Promise<unknown>;
+  graphql: (op: string, call?: DoorInput) => Promise<unknown>;
 }
 
-export interface DoorInput { id?: string; body?: Record<string, unknown> }
+export interface DoorInput { id?: string; input?: Record<string, unknown> }
 
 export interface DoorContractCase {
   /** What this case proves — becomes the test name. */
@@ -52,13 +52,13 @@ export interface DoorContractCase {
 export function checkDoors(app: App, entity: SchemaView, options: DoorOptions = {}): void {
   const name = lowerFirst(entity.name ?? '');
   const doors = doorsOf(app, entity, name, options.surface);
-  const bodyOf = () => sampleInput(entity, options.given ?? {}, options);
+  const inputOf = () => sampleInput(entity, options.given ?? {}, options);
 
   describe(`${entity.name} — the doors agree`, () => {
     it('on create, over what the caller sent', async () => {
-      const sent = bodyOf();
+      const sent = inputOf();
       const answers = await Promise.all(
-        (['local', 'rpc', 'rest', 'graphql'] as const).map((door) => doors[door]('create', { body: sent })),
+        (['local', 'rpc', 'rest', 'graphql'] as const).map((door) => doors[door]('create', { input: sent })),
       );
 
       const [local, ...others] = answers.map((answer) => written(answer, sent));
@@ -68,7 +68,7 @@ export function checkDoors(app: App, entity: SchemaView, options: DoorOptions = 
     });
 
     it('on list', async () => {
-      await doors.local('create', { body: bodyOf() });
+      await doors.local('create', { input: inputOf() });
 
       const local = wire(rowsOf(await doors.local('list')));
       expect(Array.isArray(local) && local.length > 0, 'nothing to compare').toBe(true);
@@ -79,7 +79,7 @@ export function checkDoors(app: App, entity: SchemaView, options: DoorOptions = 
     });
 
     it('on findById', async () => {
-      const row = await doors.local('create', { body: bodyOf() }) as { id: string };
+      const row = await doors.local('create', { input: inputOf() }) as { id: string };
 
       const local = wire(await doors.local('findById', { id: row.id }));
 
@@ -89,12 +89,12 @@ export function checkDoors(app: App, entity: SchemaView, options: DoorOptions = 
     });
 
     it('on update, over what the caller sent', async () => {
-      const rows = await Promise.all([1, 2, 3, 4].map(() => doors.local('create', { body: bodyOf() }))) as { id: string }[];
-      const patch = bodyOf();
+      const rows = await Promise.all([1, 2, 3, 4].map(() => doors.local('create', { input: inputOf() }))) as { id: string }[];
+      const patch = inputOf();
 
       const answers = await Promise.all(
         (['local', 'rpc', 'rest', 'graphql'] as const)
-          .map((door, index) => doors[door]('update', { id: rows[index].id, body: patch })),
+          .map((door, index) => doors[door]('update', { id: rows[index].id, input: patch })),
       );
 
       const [local, ...others] = answers.map((answer) => written(answer, patch));
@@ -104,7 +104,7 @@ export function checkDoors(app: App, entity: SchemaView, options: DoorOptions = 
     });
 
     it('on delete', async () => {
-      const rows = await Promise.all([1, 2, 3, 4].map(() => doors.local('create', { body: bodyOf() }))) as { id: string }[];
+      const rows = await Promise.all([1, 2, 3, 4].map(() => doors.local('create', { input: inputOf() }))) as { id: string }[];
 
       const answers = await Promise.all(
         (['local', 'rpc', 'rest', 'graphql'] as const).map((door, index) => doors[door]('delete', { id: rows[index].id })),
@@ -118,9 +118,9 @@ export function checkDoors(app: App, entity: SchemaView, options: DoorOptions = 
     it('on a refusal', async () => {
       // A refusal is where the doors diverge most, and where each is most tempted to
       // answer in its own words. What must match is that it WAS refused.
-      const bad = { ...bodyOf(), __unknown__: 'x' };
+      const bad = { ...inputOf(), __unknown__: 'x' };
       const refusals = await Promise.all(
-        (['local', 'rpc', 'rest', 'graphql'] as const).map((door) => refused(() => doors[door]('create', { body: bad }))),
+        (['local', 'rpc', 'rest', 'graphql'] as const).map((door) => refused(() => doors[door]('create', { input: bad }))),
       );
 
       expect(refusals[0], 'local accepted a body outside the contract').toBe(true);
@@ -161,43 +161,43 @@ function doorsOf(app: App, entity: SchemaView, name: string, surface?: string): 
   const run = createLocalRunner(app, surface);
   const state: Record<string, unknown> = {};
 
-  const invocation = (input: DoorInput = {}) => ({
+  const invocation = (call: DoorInput = {}) => ({
     ...EMPTY_INVOCATION,
-    ...(input.id !== undefined ? { params: { id: input.id } } : {}),
-    ...(input.body !== undefined ? { body: input.body } : {}),
+    ...(call.id !== undefined ? { params: { id: call.id } } : {}),
+    ...(call.input !== undefined ? { input: call.input } : {}),
   });
 
   return {
-    local: (op, input) => run({ entity: name, op }, invocation(input)),
+    local: (op, call) => run({ entity: name, op }, invocation(call)),
 
-    rpc: async (op, input) => {
+    rpc: async (op, call) => {
       const answer = await serveRpc(app, {
         path: '',
-        body: { jsonrpc: '2.0', id: 1, method: `${name}.${op}`, params: invocation(input) },
+        body: { jsonrpc: '2.0', id: 1, method: `${name}.${op}`, params: invocation(call) },
         state,
       }) as { result?: unknown; error?: { message: string } };
       if (answer.error) throw new Error(answer.error.message);
       return answer.result;
     },
 
-    rest: async (op, input) => {
+    rest: async (op, call) => {
       // The route the REST door itself would match, read from its own table — rebuilding
       // the path here would be a second opinion on where an entity lives.
       const route = tableOf(app).find((one) => one.entityName === name && one.operationName === op);
       if (!route) throw new Error(`[checkDoors] REST serves no ${name}.${op}`);
-      const path = route.segments.map((segment) => (segment.startsWith(':') ? input?.id ?? '' : segment)).join('/');
+      const path = route.segments.map((segment) => (segment.startsWith(':') ? call?.id ?? '' : segment)).join('/');
 
-      const answer = await serveRest(app, { method: route.method, path, query: {}, body: input?.body, state });
+      const answer = await serveRest(app, { method: route.method, path, query: {}, body: call?.input, state });
       if (answer.kind !== 'ok') throw new Error(`[checkDoors] REST answered ${answer.kind} on ${name}.${op}`);
       return answer.body;
     },
 
-    graphql: async (op, input) => {
+    graphql: async (op, call) => {
       const { executeOn, schemaOf } = await import('@fougere/adapter-graphql');
       const schema = schemaOf(app as never) as never;
       const built = op === 'list' ? listQuery(schema, entity)
-        : op === 'findById' ? findQuery(schema, entity, input?.id ?? '')
-        : mutationFor(schema, entity, op, { id: input?.id, body: input?.body });
+        : op === 'findById' ? findQuery(schema, entity, call?.id ?? '')
+        : mutationFor(schema, entity, op, { id: call?.id, input: call?.input });
       if (!built) throw new Error(`[checkDoors] GraphQL serves no ${entity.name} ${op}`);
 
       const answer = await executeOn(app as never, { query: built.query, state });

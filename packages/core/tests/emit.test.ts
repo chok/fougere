@@ -61,7 +61,7 @@ describe('a fact reaching several fronds', () => {
     expect(heard()).toContain('mail:7');
   });
 
-  it('binds the fact parameter as a fact, never as the request body', async () => {
+  it('binds the fact parameter as a fact, never as the request input', async () => {
     await using app = await createApp({ scan: await scanProject(root), createContainer });
     const contracts = app.container.resolve<Map<string, any>>('indexHandler:contracts');
 
@@ -95,7 +95,7 @@ describe('a fact is judged where it lands', () => {
     // `PostPublished` picks `title: text({ min: 1 })` from Post, so an empty title is not
     // one. The scan fills no `input` from a parameter type, so this used to pass straight
     // through: a subscriber met no judge at all.
-    await expect(door.reindex({ ...EMPTY_INVOCATION, body: { id: 'x', title: '' } }))
+    await expect(door.reindex({ ...EMPTY_INVOCATION, input: { id: 'x', title: '' } }))
       .rejects.toThrow(/title/);
     expect(heard()).toEqual([]);
   });
@@ -104,7 +104,7 @@ describe('a fact is judged where it lands', () => {
     await using app = await createApp({ scan: await scanProject(root), createContainer });
     const door = app.facadeFor('index')!;
 
-    await door.reindex({ ...EMPTY_INVOCATION, body: { id: 'ok', title: 'A fern', at: new Date().toISOString() } });
+    await door.reindex({ ...EMPTY_INVOCATION, input: { id: 'ok', title: 'A fern', at: new Date().toISOString() } });
     expect(heard()).toEqual(['search:ok']);
   });
 });

@@ -2,7 +2,7 @@
  * A computed field receives the PAGE, and asking for a row is caught at the scan.
  *
  * `items(order: Order)` compiles — the executor calls it with the rows array and the
- * body then reads `order.holder` off an array — and dies at the first call with
+ * input then reads `order.holder` off an array — and dies at the first call with
  * `expected 1 value(s) for 1 row(s), got 0`. The shape was readable at the scan, which
  * strips that first parameter without ever looking at it.
  */

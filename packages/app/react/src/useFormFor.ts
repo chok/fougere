@@ -51,7 +51,7 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
   const submit = useCallback(async (): Promise<T | null> => {
     if (!judge()) return null;
     try {
-      return await command.execute({ params: options.params, body: payloadOf(values) });
+      return await command.execute({ params: options.params, input: payloadOf(values) });
     } catch (err) {
       const refusals = validationErrorsOf(err);
       if (refusals) {

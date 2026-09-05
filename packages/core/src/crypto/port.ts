@@ -20,7 +20,7 @@ export interface PublicJwk {
 }
 
 export interface CryptoPort {
-  /** SHA-256. What binds a body to an envelope without carrying the body. */
+  /** SHA-256. What binds an input to an envelope without carrying the input. */
   sha256(data: Uint8Array): Promise<Uint8Array>;
   /** From a PKCS#8 PEM — what `fougere keys` writes. */
   signerOf(privateKeyPem: string): Promise<Signer>;

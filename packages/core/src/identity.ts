@@ -19,13 +19,13 @@ export interface FrondIdentity {
   grant: string;
 }
 
-/** The body's fingerprint. Absence and explicit null are different signed calls. */
-async function digestOf(body: unknown): Promise<string> {
+/** The input's fingerprint. Absence and explicit null are different signed calls. */
+async function digestOf(input: unknown): Promise<string> {
   // The tag is outside the caller value, so no user object can collide with it. JSON's
   // own omission rule still applies inside `value`, matching what crosses the wire.
-  const canonical = body === undefined
+  const canonical = input === undefined
     ? { kind: 'undefined' }
-    : { kind: 'value', value: body };
+    : { kind: 'value', value: input };
   return b64url(await crypto.sha256(bytesOf(JSON.stringify(canonical))));
 }
 
@@ -36,7 +36,7 @@ async function boundTo(call: SignedCall) {
     op: call.op,
     params: call.params ?? {},
     query: call.query ?? {},
-    body: await digestOf(call.body),
+    input: await digestOf(call.input),
   };
 }
 

@@ -9,6 +9,6 @@ afterAll(() => app.dispose());
 checkDoorContract(app, Observed, [{
   name: 'a collector has the same provenance through local, RPC, REST and GraphQL',
   operation: 'publish',
-  input: { body: { title: 'Ferns' } },
+  input: { input: { title: 'Ferns' } },
   expected: { title: 'Ferns', role: 'author' },
 }]);

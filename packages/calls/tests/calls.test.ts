@@ -118,7 +118,7 @@ describe('the extension', () => {
 
     const page = await createAppRunner(app)(
       { entity: 'rpc', op: 'calls' },
-      { params: {}, query: {}, body: { since: 0 }, state: {} },
+      { params: {}, query: {}, input: { since: 0 }, state: {} },
     ) as CallPage;
 
     expect(page.calls.map((one) => `${one.frond}/${one.entity}`)).toEqual(['shop/order', 'warehouse/crate']);
@@ -139,7 +139,7 @@ describe('the extension', () => {
     const newer = await boot();
     const read = (app: Awaited<ReturnType<typeof boot>>) => createAppRunner(app)(
       { entity: 'rpc', op: 'calls' },
-      { params: {}, query: {}, body: { since: 0 }, state: {} },
+      { params: {}, query: {}, input: { since: 0 }, state: {} },
     ) as Promise<CallPage>;
 
     await older.dispatch(callTo('order', 'list'));
@@ -168,7 +168,7 @@ describe('the extension', () => {
 
     const page = await createAppRunner(app)(
       { entity: 'rpc', op: 'calls' },
-      { params: {}, query: {}, body: { since: 0 }, state: {} },
+      { params: {}, query: {}, input: { since: 0 }, state: {} },
     ) as CallPage;
 
     expect(page.calls).toHaveLength(1);

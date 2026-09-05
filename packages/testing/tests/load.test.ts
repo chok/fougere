@@ -25,7 +25,7 @@ describe('the operations a load run reaches', () => {
   it('carry a body only where the contract states an input', async () => {
     await using app = await testApp({ root });
 
-    const ops = new Map(reachableOps(app).map((op) => [op.method, op.body]));
+    const ops = new Map(reachableOps(app).map((op) => [op.method, op.input]));
 
     expect(ops.get('article.create')).toMatchObject({ title: expect.any(String) });
     expect(ops.get('article.delete')).toBeUndefined();

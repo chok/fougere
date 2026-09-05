@@ -80,10 +80,10 @@ describe('the fallback store realizes what the entity declares', () => {
  * total published the other tenant's volume.
  */
 describe('a filtered list counts what it filtered', () => {
-  class Row extends entity({ id: primary(), tenant: text() }) {}
+  class Tenanted extends entity({ id: primary(), tenant: text() }) {}
 
   it('totals the matching rows, not the whole store', async () => {
-    const storage = createMemoryStorage(Row as never, 'row');
+    const storage = createMemoryStorage(Tenanted as never, 'tenanted');
     await storage.create({ tenant: 'A' });
     await storage.create({ tenant: 'A' });
     await storage.create({ tenant: 'B' });
@@ -94,7 +94,7 @@ describe('a filtered list counts what it filtered', () => {
   });
 
   it('counts the matching rows even when the page is smaller', async () => {
-    const storage = createMemoryStorage(Row as never, 'row');
+    const storage = createMemoryStorage(Tenanted as never, 'tenanted');
     for (const tenant of ['A', 'A', 'A', 'B']) await storage.create({ tenant });
 
     const page = await storage.list({ where: { tenant: 'A' }, limit: 2, count: true });

@@ -15,7 +15,7 @@ export default class CheckCommand {
     // Ride the call contract — the same envelope every consumer uses.
     const result = await createAppRunner(this.app)(
       { entity: 'check', op: 'execute' },
-      { params: {}, query: {}, body: raw, state: {} },
+      { params: {}, query: {}, input: raw, state: {} },
     ) as CheckResult;
 
     // A non-zero exit is what makes this usable in CI, so it is decided before the two

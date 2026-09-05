@@ -2,43 +2,43 @@
 import { applyCreate, applyUpdate, Lifecycle, Role, type SchemaView } from '@fougere/schema';
 import type { Storage, StorageFactory } from './storage.js';
 
-/** One row, as every realization hands it over. */
-export type Row = Record<string, unknown>;
+/** One instance, as every realization hands it over. */
+export type Values = Record<string, unknown>;
 
-/** A keyed collection of rows — what an adapter supplies, and all of it. */
-export interface Rows {
-  get(key: string): Promise<Row | undefined>;
+/** Instances addressed by key — what an adapter supplies, and all of it. */
+export interface Store {
+  get(key: string): Promise<Values | undefined>;
   has(key: string): Promise<boolean>;
-  set(key: string, row: Row): Promise<void>;
+  set(key: string, values: Values): Promise<void>;
   delete(key: string): Promise<boolean>;
-  /** Every row it holds. A realization that cannot answer this cheaply says so in its doc. */
-  all(): Promise<Row[]>;
+  /** Everything it holds. A realization that cannot answer this cheaply says so in its doc. */
+  all(): Promise<Values[]>;
   /** Handed on as `Storage.client` — the Map, the directory, whatever it is. */
   readonly client: unknown;
 }
 
-export function storageOver(open: (entity: SchemaView, name: string) => Rows): StorageFactory {
+export function storageOver(open: (entity: SchemaView, name: string) => Store): StorageFactory {
   return (entity: SchemaView, name: string): Storage => {
     const fields = entity.getFields();
-    const rows = open(entity, name);
+    const store = open(entity, name);
     const pk = Object.entries(fields).find(([, field]) => Role.of(field).isPrimary)?.[0] ?? 'id';
     // `Storage.findById(id: string)` — but a key can hold a number, and a Map keyed on
     // `1` does not answer `'1'`. SQL never had the question; here the divergence was
     // silent and only on this storage.
     const keyOf = (value: unknown) => String(value);
     // Same contract as SQL: a criterion may name a SET, and an empty set matches nothing.
-    const matches = (row: Record<string, unknown>, criteria: Record<string, unknown>) =>
+    const matches = (values: Record<string, unknown>, criteria: Record<string, unknown>) =>
       Object.entries(criteria).every(([key, value]) => Array.isArray(value)
-        ? value.some((v) => Object.is(row[key], v))
-        : Object.is(row[key], value));
+        ? value.some((v) => Object.is(values[key], v))
+        : Object.is(values[key], value));
     return {
-      client: rows.client,
+      client: store.client,
       async list(options?: any) {
-        let items = await rows.all();
-        if (options?.where) items = items.filter((row) => matches(row, options.where));
+        let items = await store.all();
+        if (options?.where) items = items.filter((values) => matches(values, options.where));
         // Held before the page is cut, and after the filter: `total` answers "how many
         // match", which is what a paginator divides. Reading `store.size` at the end
-        // answered a different question — every row the store holds, including the ones
+        // answered a different question — everything the store holds, including the ones
         // the filter exists to keep out of this caller's sight.
         const matching = items.length;
         const limit = options?.limit;
@@ -52,56 +52,56 @@ export function storageOver(open: (entity: SchemaView, name: string) => Rows): S
         if (options?.count) result.total = matching;
         return result;
       },
-      async findById(id: string) { return await rows.get(keyOf(id)); },
+      async findById(id: string) { return await store.get(keyOf(id)); },
       async findBy(criteria: Record<string, unknown>) {
-        return (await rows.all()).find((row) => matches(row, criteria));
+        return (await store.all()).find((values) => matches(values, criteria));
       },
       async findAllBy(criteria: Record<string, unknown>) {
-        return (await rows.all()).filter((row) => matches(row, criteria));
+        return (await store.all()).filter((values) => matches(values, criteria));
       },
       // Same contract as SQL: a map keyed by the primary key, a miss being an absent key.
       async findByKeys(ids: readonly string[]) {
         const found = new Map<string, Record<string, unknown>>();
         for (const id of ids) {
-          const row = await rows.get(keyOf(id));
-          if (row) found.set(String(id), row);
+          const values = await store.get(keyOf(id));
+          if (values) found.set(String(id), values);
         }
         return found;
       },
-      // The dual, same contract as SQL: grouped by the value read off the ROW.
+      // The dual, same contract as SQL: grouped by the value read off the instance.
       async findAllByKeys(field: string, keys: readonly string[]) {
         const grouped = new Map<string, Record<string, unknown>[]>();
         if (keys.length === 0) return grouped;
         const wanted = new Set(keys.map(String));
-        for (const row of await rows.all()) {
-          const key = String(row[field]);
+        for (const values of await store.all()) {
+          const key = String(values[field]);
           if (!wanted.has(key)) continue;
           const bucket = grouped.get(key);
-          if (bucket) bucket.push(row); else grouped.set(key, [row]);
+          if (bucket) bucket.push(values); else grouped.set(key, [values]);
         }
         return grouped;
       },
       // Same contract as SQL: the key and the creation stamps survive an overwrite.
       async upsert(input: Partial<Record<string, unknown>>) {
-        const record = applyCreate(fields, applyUpdate(fields, input));
-        const id = record[pk] as string | undefined;
+        const values = applyCreate(fields, applyUpdate(fields, input));
+        const id = values[pk] as string | undefined;
         if (id === undefined) throw new Error(`${name}.upsert(): no \`${pk}\` — an upsert needs the key it writes at.`);
-        const previous = await rows.get(keyOf(id));
+        const previous = await store.get(keyOf(id));
         if (previous) {
           for (const [key, field] of Object.entries(fields)) {
-            if (key === pk || Lifecycle.of(field).stampedOnce) record[key] = previous[key];
+            if (key === pk || Lifecycle.of(field).stampedOnce) values[key] = previous[key];
           }
         }
-        await rows.set(keyOf(id), record);
-        return record;
+        await store.set(keyOf(id), values);
+        return values;
       },
       async upsertAll(inputs: readonly Partial<Record<string, unknown>>[]) {
         for (const input of inputs) await this.upsert(input);
         return inputs.length;
       },
       async create(input: Partial<Record<string, unknown>>) {
-        const record = applyCreate(fields, input);
-        const id = record[pk] as string | undefined;
+        const values = applyCreate(fields, input);
+        const id = values[pk] as string | undefined;
         // `primary(text())` declares no generator, so nothing fills the hole and the
         // caller has to. Keying on `undefined` would let the second create overwrite the
         // first, in silence — the old version hid this by inventing an `id` field the
@@ -110,23 +110,23 @@ export function storageOver(open: (entity: SchemaView, name: string) => Rows): S
           throw new Error(`${name}.create: '${pk}' is the primary key and nothing supplied it — this entity declares no generator for it.`);
         }
         // A create is not an upsert. `Map.set` overwrites, so a second create under the
-        // same key answered "created" while destroying the previous row — SQL answers a
+        // same key answered "created" while destroying the previous instance — SQL answers a
         // constraint violation, and a store that loses data silently is worse than one
         // that fails.
-        if (await rows.has(keyOf(id))) {
+        if (await store.has(keyOf(id))) {
           throw new Error(`${name}.create: '${pk}' ${JSON.stringify(id)} already exists.`);
         }
-        await rows.set(keyOf(id), record);
-        return record;
+        await store.set(keyOf(id), values);
+        return values;
       },
       async update(id: string, input: Partial<Record<string, unknown>>) {
-        const existing = await rows.get(keyOf(id));
+        const existing = await store.get(keyOf(id));
         if (!existing) throw new Error(`Not found: ${id}`);
         const updated = { ...existing, ...applyUpdate(fields, input), [pk]: existing[pk] };
-        await rows.set(keyOf(id), updated);
+        await store.set(keyOf(id), updated);
         return updated;
       },
-      async delete(id: string) { return await rows.delete(keyOf(id)); },
+      async delete(id: string) { return await store.delete(keyOf(id)); },
       output(_schema: SchemaView) { return this; },
     };
   };

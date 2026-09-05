@@ -74,14 +74,14 @@ export function mutationFor(
   schema: Introspectable,
   entity: SchemaView,
   op: string,
-  input: { id?: string; body?: Record<string, unknown> },
+  sent: { id?: string; input?: Record<string, unknown> },
 ): { query: string; at: string[] } | undefined {
   const field = mutationFieldFor(schema, entity, op);
   if (!field) return undefined;
 
   const args: string[] = [];
-  if (input.id !== undefined) args.push(`id: ${JSON.stringify(input.id)}`);
-  if (input.body !== undefined) args.push(`input: ${literalOf(input.body, enumsOf(entity))}`);
+  if (sent.id !== undefined) args.push(`id: ${JSON.stringify(sent.id)}`);
+  if (sent.input !== undefined) args.push(`input: ${literalOf(sent.input, enumsOf(entity))}`);
   const call = args.length ? `${field}(${args.join(', ')})` : field;
 
   // `delete` answers a Boolean, which takes no sub-selection — asking for one is a syntax

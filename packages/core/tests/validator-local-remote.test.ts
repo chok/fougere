@@ -78,8 +78,8 @@ function verdictOf(outcome: unknown, error: unknown): Verdict {
  * What a browser sees: the imported class, judged directly, with no façade and
  * no network. This is the call `useFormFor` makes.
  */
-function browserVerdict(body: unknown): Verdict {
-  const result = Product.validate(body) as
+function browserVerdict(input: unknown): Verdict {
+  const result = Product.validate(input) as
     | { success: true }
     | { success: false; errors: { path: string; message: string }[] };
   if (result.success) return { ok: true, errors: [] };
@@ -91,9 +91,9 @@ function browserVerdict(body: unknown): Verdict {
   };
 }
 
-async function judge(run: ReturnType<typeof createLocalRunner>, op: string, body: unknown): Promise<Verdict> {
+async function judge(run: ReturnType<typeof createLocalRunner>, op: string, input: unknown): Promise<Verdict> {
   try {
-    const out = await run({ entity: 'product', op }, { ...EMPTY_INVOCATION, body });
+    const out = await run({ entity: 'product', op }, { ...EMPTY_INVOCATION, input });
     return verdictOf(out, undefined);
   } catch (e) {
     return verdictOf(undefined, e);
@@ -109,17 +109,17 @@ async function judge(run: ReturnType<typeof createLocalRunner>, op: string, body
  * while proving something about a shape that had moved.
  *
  * The three below are kept by hand because they are not about a FIELD: a key outside the
- * contract, a body that is not an object, and one legal payload the run needs as a floor.
+ * contract, an input that is not an object, and one legal payload the run needs as a floor.
  */
 const baseline = { name: 'lampe', price: 10, status: 'draft' };
 const DERIVED = Cases.of(Product, baseline).all.map((one) => ({
-  name: one.why, op: 'create', body: one.body,
+  name: one.why, op: 'create', input: one.input,
 }));
 
-const CASES: { name: string; op: string; body: unknown }[] = [
+const CASES: { name: string; op: string; input: unknown }[] = [
   ...DERIVED,
   // Every refusal at once — not a branch, a combination, so nothing derives it.
-  { name: 'every refusal at once', op: 'create', body: { name: 'x', price: 5000, status: 'archived', slug: 'forgé', couleur: 'rouge' } },
+  { name: 'every refusal at once', op: 'create', input: { name: 'x', price: 5000, status: 'archived', slug: 'forgé', couleur: 'rouge' } },
 ];
 
 describe('juge local = juge distant', () => {
@@ -141,12 +141,12 @@ describe('juge local = juge distant', () => {
     for (const c of CASES) {
       table.push({
         case: c.name,
-        local: await judge(runLocal, c.op, c.body),
-        remote: await judge(runRemote as typeof runLocal, c.op, c.body),
+        local: await judge(runLocal, c.op, c.input),
+        remote: await judge(runRemote as typeof runLocal, c.op, c.input),
         // The THIRD judge, and the one the docs actually promise: a browser has
         // no façade — `useFormFor` calls the imported class directly. If this
         // column disagreed, a form would accept what the server refuses.
-        browser: browserVerdict(c.body),
+        browser: browserVerdict(c.input),
       });
     }
 

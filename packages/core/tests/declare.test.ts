@@ -18,7 +18,7 @@ import { createApp, frond, Crud, Call, RouteAddress, EMPTY_INVOCATION } from '..
 class Post extends entity({ id: primary(), title: text(), body: optional(text()) }) {}
 class PostHandler extends Crud(Post) {}
 
-const rows = [{ id: '1', title: 'hello', body: 'world' }];
+const rows = [{ id: '1', title: 'hello', input: 'world' }];
 
 const storageFactory = () => ({
   list: async () => ({ items: rows, total: rows.length }),
@@ -49,7 +49,7 @@ describe('a frond the app states', () => {
     // declaration that resolved nothing on purpose is the same case.
     const one = await app.dispatch(new Call(
       new RouteAddress({ entity: 'post', operation: 'findById' }),
-      { params: { id: '1' }, query: {}, body: {}, state: {} }));
+      { params: { id: '1' }, query: {}, input: {}, state: {} }));
 
     expect(one).toMatchObject({ id: '1' });
   });

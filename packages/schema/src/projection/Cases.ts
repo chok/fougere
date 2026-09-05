@@ -18,7 +18,7 @@ import { InputRefusal } from '../validator/InputRefusal.js';
 export interface ValidationCase {
   /** What this input does, in one clause — carried into the assertion so a failure reads. */
   why: string;
-  body: unknown;
+  input: unknown;
   /** Judged as an update rather than a creation. */
   patch: boolean;
   expect: 'accept' | { reject: string };
@@ -112,16 +112,16 @@ function enumerate(entity: SchemaView, valid: Record<string, unknown>): Validati
   const cases: ValidationCase[] = [];
   const withField = (name: string, value: unknown) => ({ ...valid, [name]: value });
 
-  cases.push({ why: 'a valid body', body: valid, patch: false, expect: 'accept' });
+  cases.push({ why: 'a valid input', input: valid, patch: false, expect: 'accept' });
   cases.push({
     why: 'a key outside the contract',
-    body: { ...valid, __unknown__: 'x' },
+    input: { ...valid, __unknown__: 'x' },
     patch: false,
     expect: { reject: '__unknown__' },
   });
   cases.push({
     why: 'not an object at all',
-    body: 'a string',
+    input: 'a string',
     patch: false,
     expect: { reject: '.' },
   });
@@ -132,15 +132,15 @@ function enumerate(entity: SchemaView, valid: Record<string, unknown>): Validati
     const isRef = Role.of(field).isReference;
 
     if (validator.onAbsent(field) === null && name in valid) {
-      const body = { ...valid };
-      delete body[name];
-      cases.push({ why: `${name} absent`, body, patch: false, expect: { reject: name } });
+      const input = { ...valid };
+      delete input[name];
+      cases.push({ why: `${name} absent`, input, patch: false, expect: { reject: name } });
     }
 
     if (Boundary.of(field).readOnly) {
       cases.push({
         why: `${name} supplied although read-only`,
-        body: withField(name, wrongTypeFor(field)),
+        input: withField(name, wrongTypeFor(field)),
         patch: false,
         expect: { reject: name },
       });
@@ -149,7 +149,7 @@ function enumerate(entity: SchemaView, valid: Record<string, unknown>): Validati
     if (Lifecycle.of(field).immutable && !Role.of(field).isPrimary) {
       cases.push({
         why: `${name} supplied on an update`,
-        body: { [name]: valid[name] ?? wrongTypeFor(field) },
+        input: { [name]: valid[name] ?? wrongTypeFor(field) },
         patch: true,
         expect: { reject: name },
       });
@@ -158,14 +158,14 @@ function enumerate(entity: SchemaView, valid: Record<string, unknown>): Validati
     if (name in valid && !isRef) {
       cases.push({
         why: `${name} of the wrong type`,
-        body: withField(name, wrongTypeFor(field)),
+        input: withField(name, wrongTypeFor(field)),
         patch: false,
         expect: { reject: name },
       });
       for (const { why, value } of outOfBoundsFor(field))
         cases.push({
           why: `${name} ${why}`,
-          body: withField(name, value),
+          input: withField(name, value),
           patch: false,
           expect: { reject: name },
         });

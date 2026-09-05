@@ -3,16 +3,16 @@
  *
  * `gardes-par-signature` proposes that a rule live on the operation, spelled as a
  * tighter type in the signature — `charge(amount: Cents)` rather than a guard in the
- * body. This file measures where that proposal starts from, because designing against
+ * input. This file measures where that proposal starts from, because designing against
  * an unmeasured starting point is how you design the wrong thing.
  *
- * The fixture is two methods with the SAME body, `amount * 2`, differing only in how
+ * The fixture is two methods with the SAME input, `amount * 2`, differing only in how
  * the parameter's type is written:
  *
  *   - `amount: number` binds BY NAME, from the route params or the query string.
  *   - `amount: Cents` has no derivable primitive provenance, so the frond states its
  *     `param` binding explicitly. The effective model then treats it exactly like the
- *     plain number instead of silently handing it the whole body.
+ *     plain number instead of silently handing it the whole input.
  */
 import { scanProject } from '../src/node.js';
 import { describe, expect, it } from 'vitest';
@@ -26,7 +26,7 @@ async function billing() {
   const app = await createApp({ scan: await scanProject(root), createContainer });
   const run = createLocalRunner(app);
   const call = (op: string, invocation: Record<string, unknown>) =>
-    run({ entity: 'invoice', op }, { params: {}, query: {}, body: undefined, state: {}, ...invocation } as never);
+    run({ entity: 'invoice', op }, { params: {}, query: {}, input: undefined, state: {}, ...invocation } as never);
   return { app, call };
 }
 
@@ -55,9 +55,9 @@ describe('a narrow type in an operation signature', () => {
     await app.dispose();
   });
 
-  it('never looks in the body for a plain parameter', async () => {
+  it('never looks in the input for a plain parameter', async () => {
     const { app, call } = await billing();
-    expect(await call('doublePlain', { body: { amount: 1500 } })).toBeNaN();
+    expect(await call('doublePlain', { input: { amount: 1500 } })).toBeNaN();
     await app.dispose();
   });
 
@@ -67,8 +67,8 @@ describe('a narrow type in an operation signature', () => {
     expect(await call('doubleCents', { params: { amount: '1500' } })).toBe(3000);
     expect(await call('doubleCents', { query: { amount: '1500' } })).toBe(3000);
 
-    // The declared source is a named parameter, never the body fallback.
-    expect(await call('doubleCents', { body: { amount: 1500 } })).toBeNaN();
+    // The declared source is a named parameter, never the input fallback.
+    expect(await call('doubleCents', { input: { amount: 1500 } })).toBeNaN();
 
     await app.dispose();
   });

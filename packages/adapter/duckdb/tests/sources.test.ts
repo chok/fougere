@@ -70,8 +70,8 @@ describe('a query across two sources', () => {
   });
 
   it('filters and sorts on the other side, and pages there', async () => {
-    class Row extends entity({ id: primary(), title: text() }) {}
-    const rows = await sources.read(Row)`
+    class Item extends entity({ id: primary(), title: text() }) {}
+    const rows = await sources.read(Item)`
       select l.id, b.title
       from ${Loan} l join ${Book} b on b.id = l.book_id
       where b.language = 'fr'
@@ -90,14 +90,14 @@ describe('a query across two sources', () => {
 describe('what the query may name', () => {
   it('refuses an entity outside `reads` — its table is not in this connection', async () => {
     class Elsewhere extends entity({ id: primary() }) {}
-    class Row extends entity({ id: primary() }) {}
-    await expect(sources.read(Row)`select id from ${Elsewhere}`)
+    class Item extends entity({ id: primary() }) {}
+    await expect(sources.read(Item)`select id from ${Elsewhere}`)
       .rejects.toThrow(/Elsewhere is named in a query but not in `reads`/);
   });
 
   it('refuses a plain value — this tag substitutes entities, not parameters', async () => {
-    class Row extends entity({ id: primary() }) {}
-    await expect(sources.read(Row)`select id from ${Loan} where reader = ${'r1'}`)
+    class Item extends entity({ id: primary() }) {}
+    await expect(sources.read(Item)`select id from ${Loan} where reader = ${'r1'}`)
       .rejects.toThrow(/only an entity may be interpolated/);
   });
 });

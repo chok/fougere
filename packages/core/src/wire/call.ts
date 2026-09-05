@@ -1,7 +1,7 @@
 /** Call contract — a frond call is a value. */
 import { Card, type SchemaDescriptor } from '@fougere/schema';
 import { factsAnnouncedBy } from '../emit.js';
-import { Invocation, type InvocationContext, type InvocationInput } from './Invocation.js';
+import { Invocation, type InvocationContext, type PartialInvocation } from './Invocation.js';
 import type { RouteAddress } from './RouteAddress.js';
 import { FougereError, ErrorCode } from './errors.js';
 
@@ -10,7 +10,7 @@ export class Call {
   readonly address: RouteAddress;
   readonly invocation: Invocation;
 
-  constructor(address: RouteAddress, invocation?: InvocationInput) {
+  constructor(address: RouteAddress, invocation?: PartialInvocation) {
     this.address = address;
     this.invocation = Invocation.from(invocation);
     Object.freeze(this);
@@ -31,7 +31,7 @@ export interface FrondCall {
 export type Transport = (call: FrondCall, invocation: InvocationContext) => Promise<unknown>;
 
 /** Reserved namespace — calls the runner answers itself, never a façade. */
-/** What a receiver accepts before it stops reading a body. */
+/** What a receiver accepts before it stops reading an input. */
 export const MAX_BODY_BYTES = 1024 * 1024;
 
 export const RPC_ENTITY = 'rpc';
@@ -45,7 +45,7 @@ export interface SignedCall {
   op: string;
   params?: Record<string, unknown>;
   query?: Record<string, unknown>;
-  body?: unknown;
+  input?: unknown;
   state?: Record<string, unknown>;
 }
 

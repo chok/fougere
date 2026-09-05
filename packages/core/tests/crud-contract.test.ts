@@ -50,7 +50,7 @@ async function boot(root: string) {
   return { app, storage, run: createLocalRunner(app) };
 }
 
-const call = (body: unknown): InvocationContext => ({ params: {}, query: {}, body, state: {} });
+const call = (input: unknown): InvocationContext => ({ params: {}, query: {}, input, state: {} });
 
 /**
  * A project as an installed app really looks: outside any pnpm workspace, with

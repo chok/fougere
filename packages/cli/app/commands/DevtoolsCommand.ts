@@ -60,7 +60,7 @@ export default class DevtoolsCommand {
   private view(raw: Record<string, unknown>, since: Record<string, number>): Promise<CallsView> {
     return createAppRunner(this.app)(
       { entity: 'devtools', op: 'execute' },
-      { params: {}, query: {}, body: { ...raw, since }, state: {} },
+      { params: {}, query: {}, input: { ...raw, since }, state: {} },
     ) as Promise<CallsView>;
   }
 }

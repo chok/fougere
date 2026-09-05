@@ -1,10 +1,10 @@
-/** Rows as files — one JSON per row, a directory per entity. */
+/** Files — one JSON per instance, a directory per entity. */
 import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { lowerFirst } from '@fougere/schema';
 import {
   Sources, storageOver,
-  type Row, type Rows, type Source, type SourceConfig, type SourceView,
+  type Store, type Values, type Source, type SourceConfig, type SourceView,
 } from '@fougere/core';
 
 /** A key becomes a filename, so it may not leave the directory it addresses. */
@@ -16,12 +16,12 @@ function fileOf(dir: string, key: string): string {
   return join(dir, `${encodeURIComponent(key)}.json`);
 }
 
-/** One entity's rows, one file each, under `<root>/<entity>/`. */
-function dirRows(root: string, name: string): Rows {
+/** One entity, one file each, under `<root>/<entity>/`. */
+function dirStore(root: string, name: string): Store {
   const dir = join(root, name);
-  const read = async (file: string): Promise<Row | undefined> => {
+  const read = async (file: string): Promise<Values | undefined> => {
     try {
-      return JSON.parse(await readFile(file, 'utf8')) as Row;
+      return JSON.parse(await readFile(file, 'utf8')) as Values;
     } catch (error) {
       if ((error as { code?: string }).code === 'ENOENT') return undefined;
       throw error;
@@ -32,9 +32,9 @@ function dirRows(root: string, name: string): Rows {
     client: dir,
     get: (key) => read(fileOf(dir, key)),
     has: async (key) => (await read(fileOf(dir, key))) !== undefined,
-    set: async (key, row) => {
+    set: async (key, values) => {
       await mkdir(dir, { recursive: true });
-      await writeFile(fileOf(dir, key), JSON.stringify(row, null, 2), 'utf8');
+      await writeFile(fileOf(dir, key), JSON.stringify(values, null, 2), 'utf8');
     },
     delete: async (key) => {
       const file = fileOf(dir, key);
@@ -50,11 +50,11 @@ function dirRows(root: string, name: string): Rows {
         if ((error as { code?: string }).code === 'ENOENT') return [];
         throw error;
       }
-      const rows = await Promise.all(names
+      const found = await Promise.all(names
         .filter((file) => file.endsWith('.json'))
         .map((file) => read(join(dir, file))));
 
-      return rows.filter((row): row is Row => row !== undefined);
+      return found.filter((values): values is Values => values !== undefined);
     },
   };
 }
@@ -66,7 +66,7 @@ export interface FileSourceOptions {
 
 export function setupFile(opts: FileSourceOptions): Source {
   return {
-    storageFactory: storageOver((_entity, name) => dirRows(opts.path, name)),
+    storageFactory: storageOver((_entity, name) => dirStore(opts.path, name)),
     name: opts.path,
     // A directory IS the shape, so bringing it up to date is making it exist. `elsewhere`
     // is not read: nothing here emits a constraint, so a cross-source `ref()` costs nothing.

@@ -100,7 +100,7 @@ function doorFor(app: App, entityName: string): SeedDoor | undefined {
   if (typeof handler?.list === 'function' && typeof handler.create === 'function') {
     return {
       list: () => handler!.list() as Promise<unknown[]>,
-      write: (item) => handler!.create({ params: {}, query: {}, body: item, state: {} }),
+      write: (item) => handler!.create({ params: {}, query: {}, input: item, state: {} }),
     };
   }
 

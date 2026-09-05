@@ -175,7 +175,7 @@ describe('across a wire — any wire', () => {
   it('starts a fresh trace rather than refusing a malformed one', async () => {
     collect();
     await expect(
-      overHttp.resolve<Facade>('productHandler').list({ params: {}, query: {}, body: undefined, state: {}, trace: 'not-a-traceparent' }),
+      overHttp.resolve<Facade>('productHandler').list({ params: {}, query: {}, input: undefined, state: {}, trace: 'not-a-traceparent' }),
     ).resolves.toBeDefined();
 
     // The bad value is dropped, not inherited: two spans, still one trace, opened here.

@@ -74,7 +74,7 @@ describe('a computed field runs once for the page', () => {
       { ...EMPTY_INVOCATION, state: { user: { id: 'u1', name: 'Moi' } } },
     );
 
-    // Two rows, one call. Row-at-a-time would say 2 — and a field doing a read
+    // Two instances, one call. One-at-a-time would say 2 — and a field doing a read
     // would have issued two queries without anything in the code saying so.
     expect(ListPresenter.calls).toBe(1);
   });

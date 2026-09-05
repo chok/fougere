@@ -23,7 +23,7 @@ describe('a test that states nothing', () => {
 
     const created = await createLocalRunner(app)({ entity: 'article', op: 'create' }, {
       ...EMPTY_INVOCATION,
-      body: { title: 'From position alone', body: 'A body', status: 'draft', views: 0 },
+      input: { title: 'From position alone', body: 'A body', status: 'draft', views: 0 },
     }) as { title: string };
 
     expect(created.title).toBe('From position alone');

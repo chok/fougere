@@ -45,7 +45,7 @@ export function checkContract(app: App, entity: SchemaView, options: CheckOption
       it(one.why, async () => {
         const verdict = await verdictOf(() => run(
           { entity: name, op: one.patch ? update : create },
-          { ...EMPTY_INVOCATION, params: one.patch ? { id: '__absent__' } : {}, body: one.body },
+          { ...EMPTY_INVOCATION, params: one.patch ? { id: '__absent__' } : {}, input: one.input },
         ));
 
         expect(Cases.holds(one.expect, verdict), `${JSON.stringify(verdict)} — replay: ${replaySeed()}`).toBe(true);
@@ -65,7 +65,7 @@ export function checkOutput(app: App, entity: SchemaView, options: CheckOptions 
     it(closed.length > 0 ? `keeps ${closed.join(', ')} in` : 'closes no field, and says so', async () => {
       const row = await run(
         { entity: name, op: create },
-        { ...EMPTY_INVOCATION, body: sampleInput(entity, options.given ?? {}, options) },
+        { ...EMPTY_INVOCATION, input: sampleInput(entity, options.given ?? {}, options) },
       ) as Record<string, unknown>;
 
       expect(Object.keys(row).filter((field) => closed.includes(field))).toEqual([]);
@@ -74,7 +74,7 @@ export function checkOutput(app: App, entity: SchemaView, options: CheckOptions 
     it('answers with fields the entity declares, and no others', async () => {
       const row = await run(
         { entity: name, op: create },
-        { ...EMPTY_INVOCATION, body: sampleInput(entity, options.given ?? {}, options) },
+        { ...EMPTY_INVOCATION, input: sampleInput(entity, options.given ?? {}, options) },
       ) as Record<string, unknown>;
 
       // A computed field from a presenter is declared by the presenter, not the entity,

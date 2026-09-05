@@ -7,7 +7,7 @@ import Note from './entities/Note.js';
  */
 export default defineFrond({
   operations: {
-    // The scan derived the binding (an object param → body) but no judge. Name it.
+    // The scan derived the binding (an object param → input) but no judge. Name it.
     retitle: {
       input: Note.pick('title'),
     },

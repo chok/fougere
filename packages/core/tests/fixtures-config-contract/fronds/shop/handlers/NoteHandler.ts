@@ -7,8 +7,8 @@ declare class NoteRepository {
 /**
  * Two ops the scan cannot fully serve — the reason `frond.config.ts` can state a contract.
  *
- * `retitle` IS visible to the scan, which derives its binding (an object param → body),
- * but nothing tells it WHAT judges that body: the param type is a bare record, not an
+ * `retitle` IS visible to the scan, which derives its binding (an object param → input),
+ * but nothing tells it WHAT judges that input: the param type is a bare record, not an
  * entity. Config names the judge.
  */
 export default class NoteHandler {
@@ -20,7 +20,7 @@ export default class NoteHandler {
 }
 
 /**
- * `archive` is assigned onto the prototype AFTER the class body, so the AST scan — which
+ * `archive` is assigned onto the prototype AFTER the class input, so the AST scan — which
  * reads class members from source — cannot see it. That is the shape of the open Known
  * issue: a method inherited from an *installed* base class is invisible the same way
  * (heritage resolution is workspace-only), and the op silently misses the façade.

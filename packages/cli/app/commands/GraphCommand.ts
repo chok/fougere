@@ -14,7 +14,7 @@ export default class GraphCommand {
     // Ride the call contract — the same envelope every consumer uses.
     const result = await createAppRunner(this.app)(
       { entity: 'graph', op: 'execute' },
-      { params: {}, query: {}, body: raw, state: {} },
+      { params: {}, query: {}, input: raw, state: {} },
     ) as GraphResult;
 
     if (machineWanted(raw)) return printMachine(result);

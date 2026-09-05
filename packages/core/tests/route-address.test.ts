@@ -31,10 +31,10 @@ describe('RouteAddress', () => {
 describe('Call', () => {
   it('normalizes its invocation once', () => {
     const address = new RouteAddress({ entity: 'product', operation: 'create' });
-    const call = new Call(address, { body: { name: 'Fern', omitted: undefined } });
+    const call = new Call(address, { input: { name: 'Fern', omitted: undefined } });
 
     expect(call.address).toBe(address);
-    expect(call.invocation.body).toEqual({ name: 'Fern' });
+    expect(call.invocation.input).toEqual({ name: 'Fern' });
     expect(Object.isFrozen(call)).toBe(true);
   });
 });

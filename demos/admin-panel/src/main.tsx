@@ -134,7 +134,7 @@ type DemoRequest = {
   params: {
     params: Record<string, unknown>;
     query: Record<string, unknown>;
-    body?: Record<string, unknown>;
+    input?: Record<string, unknown>;
   };
 };
 
@@ -182,7 +182,7 @@ const demoFetcher: Fetcher = async <T,>(
       : { status: 'invited', role: 'author' };
     const row = {
       ...defaults,
-      ...request.params.body,
+      ...request.params.input,
       id: `${resource}_${crypto.randomUUID()}`,
       createdAt: new Date().toISOString(),
     };
@@ -191,7 +191,7 @@ const demoFetcher: Fetcher = async <T,>(
   } else if (operation === 'update') {
     const id = request.params.params.id;
     const index = rows.findIndex((row) => row.id === id);
-    rows[index] = { ...rows[index], ...request.params.body, id };
+    rows[index] = { ...rows[index], ...request.params.input, id };
     result = rows[index];
   } else if (operation === 'delete') {
     collections[resource] = rows.filter((row) => row.id !== request.params.params.id);

@@ -20,7 +20,7 @@ export default class BuildCommand {
   async run(raw: Record<string, unknown>) {
     const built = (await createAppRunner(this.app)(
       { entity: 'build', op: 'execute' },
-      { params: {}, query: {}, body: raw, state: {} },
+      { params: {}, query: {}, input: raw, state: {} },
     )) as BuildReport;
 
     if (machineWanted(raw)) return printMachine(built);

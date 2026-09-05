@@ -14,7 +14,7 @@ import { validationErrorsOf } from '@fougere/core/contract';
 export interface ResourceKey {
   /** The registration key its door answers under — `post`, not `Post`. */
   name: string;
-  /** The field that identifies a row. */
+  /** The field that identifies an instance. */
   primary: string;
 }
 
@@ -26,7 +26,7 @@ export interface ProviderOptions {
   fetcher?: Fetcher;
 }
 
-type Row = Record<string, unknown>;
+type Values = Record<string, unknown>;
 
 /** A refusal, in the shape react-admin reads. */
 function asAdminError(err: unknown): unknown {
@@ -47,22 +47,22 @@ export function createDataProvider(options: ProviderOptions) {
     return known;
   };
 
-  const call = async (resource: string, op: string, input: Record<string, unknown>): Promise<unknown> => {
+  const call = async (resource: string, op: string, context: Record<string, unknown>): Promise<unknown> => {
     try {
       return await sendCall(fetcher, { entity: resource, op }, {
-        params: {}, query: {}, body: undefined, state: {}, ...input,
+        params: {}, query: {}, input: undefined, state: {}, ...context,
       }, endpoint);
     } catch (err) {
       throw asAdminError(err);
     }
   };
 
-  /** The row as react-admin needs it: whatever identifies it, under `id`. */
-  const identified = (row: Row | undefined, key: ResourceKey): Row | undefined =>
-    row === undefined || key.primary === 'id' ? row : { ...row, id: row[key.primary] };
+  /** The values as react-admin needs them: whatever identifies them, under `id`. */
+  const identified = (values: Values | undefined, key: ResourceKey): Values | undefined =>
+    values === undefined || key.primary === 'id' ? values : { ...values, id: values[key.primary] };
 
   /** Its dual — what leaves for the server carries the entity's own field name. */
-  const deidentified = (data: Row, key: ResourceKey): Row => {
+  const deidentified = (data: Values, key: ResourceKey): Values => {
     if (key.primary === 'id') return data;
     const { id, ...rest } = data;
     return id === undefined ? rest : { ...rest, [key.primary]: id };
@@ -71,11 +71,11 @@ export function createDataProvider(options: ProviderOptions) {
   const list = async (
     resource: string,
     query: Record<string, unknown>,
-  ): Promise<{ data: Row[]; total?: number }> => {
+  ): Promise<{ data: Values[]; total?: number }> => {
     const key = keyOf(resource);
     const answer = await call(resource, 'list', { query });
     return {
-      data: itemsOf<Row>(answer).map((row) => identified(row, key)!),
+      data: itemsOf<Values>(answer).map((values) => identified(values, key)!),
       total: pageOf(answer).total,
     };
   };
@@ -107,21 +107,21 @@ export function createDataProvider(options: ProviderOptions) {
 
     getOne: async (resource: string, params: { id: string | number }) => {
       const key = keyOf(resource);
-      const row = identified((await call(resource, 'findById', { params: { id: params.id } })) as Row, key);
-      if (!row) throw Object.assign(new Error(`${resource} ${params.id} not found`), { status: 404 });
-      return { data: row };
+      const values = identified((await call(resource, 'findById', { params: { id: params.id } })) as Values, key);
+      if (!values) throw Object.assign(new Error(`${resource} ${params.id} not found`), { status: 404 });
+      return { data: values };
     },
 
     /** N calls, and the reason is upstream. */
     getMany: async (resource: string, params: { ids: (string | number)[] }) => {
       const key = keyOf(resource);
-      const rows = await Promise.all(
+      const found = await Promise.all(
         params.ids.map((id) => call(resource, 'findById', { params: { id } })),
       );
-      return { data: rows.map((row) => identified(row as Row, key)).filter((row): row is Row => !!row) };
+      return { data: found.map((values) => identified(values as Values, key)).filter((values): values is Values => !!values) };
     },
 
-    /** The rows pointing AT one — an equality filter, which `where` already is. */
+    /** What points AT one — an equality filter, which `where` already is. */
     getManyReference: async (resource: string, params: {
       target: string;
       id: string | number;
@@ -141,31 +141,31 @@ export function createDataProvider(options: ProviderOptions) {
       });
     },
 
-    create: async (resource: string, params: { data: Row }) => {
+    create: async (resource: string, params: { data: Values }) => {
       const key = keyOf(resource);
-      const row = await call(resource, 'create', { body: deidentified(params.data, key) });
-      return { data: identified(row as Row, key)! };
+      const values = await call(resource, 'create', { input: deidentified(params.data, key) });
+      return { data: identified(values as Values, key)! };
     },
 
-    update: async (resource: string, params: { id: string | number; data: Row }) => {
+    update: async (resource: string, params: { id: string | number; data: Values }) => {
       const key = keyOf(resource);
-      const row = await call(resource, 'update', {
+      const values = await call(resource, 'update', {
         params: { id: params.id },
-        body: deidentified(params.data, key),
+        input: deidentified(params.data, key),
       });
-      return { data: identified(row as Row, key)! };
+      return { data: identified(values as Values, key)! };
     },
 
-    delete: async (resource: string, params: { id: string | number; previousData?: Row }) => {
+    delete: async (resource: string, params: { id: string | number; previousData?: Values }) => {
       await call(resource, 'delete', { params: { id: params.id } });
-      return { data: (params.previousData ?? { id: params.id }) as Row };
+      return { data: (params.previousData ?? { id: params.id }) as Values };
     },
 
-    /** The bulk pair, one call per row. */
-    updateMany: async (resource: string, params: { ids: (string | number)[]; data: Row }) => {
+    /** The bulk pair, one call per values. */
+    updateMany: async (resource: string, params: { ids: (string | number)[]; data: Values }) => {
       const key = keyOf(resource);
       await Promise.all(params.ids.map((id) => call(resource, 'update', {
-        params: { id }, body: deidentified(params.data, key),
+        params: { id }, input: deidentified(params.data, key),
       })));
       return { data: params.ids };
     },
@@ -178,11 +178,11 @@ export function createDataProvider(options: ProviderOptions) {
     /** A tenth method, because the other nine are CRUD and a Frond is not. */
     invoke: async (
       resource: string,
-      params: { op: string; id?: string | number; data?: Row },
+      params: { op: string; id?: string | number; data?: Values },
     ): Promise<{ data: unknown }> => ({
       data: await call(resource, params.op, {
         ...(params.id !== undefined ? { params: { id: String(params.id) } } : {}),
-        ...(params.data !== undefined ? { body: params.data } : {}),
+        ...(params.data !== undefined ? { input: params.data } : {}),
       }),
     }),
   };

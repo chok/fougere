@@ -15,7 +15,7 @@ import { frameCall, unframeResponse, type RpcResponse } from '@fougere/transport
 export type EntityClass = { name: string };
 
 /** What a page provides of an invocation — the rest is stamped server-side. */
-export type CallInput = Partial<Pick<InvocationContext, 'params' | 'query' | 'body'>>;
+export type CallInput = Partial<Pick<InvocationContext, 'params' | 'query' | 'input'>>;
 
 /** The one door the browser knows. A named surface adds `/{surface}` to it. */
 export const CALL_ENDPOINT = '/_fougere/call';
@@ -34,7 +34,7 @@ export function callOf(entity: EntityClass, op: string): FrondCall {
 }
 
 export function invocationOf(input?: CallInput): InvocationContext {
-  return { params: {}, query: {}, body: undefined, state: {}, ...input };
+  return { params: {}, query: {}, input: undefined, state: {}, ...input };
 }
 
 /** The cache key of a read. */

@@ -99,7 +99,7 @@ async function main(): Promise<void> {
   const listed = (await sensor.list()) as { id: string; label: string }[];
   console.log(`   sensor.list()      → ${listed.length} relevés : ${listed.map((s) => s.label).join(', ')}`);
 
-  const created = (await sensor.record({ body: good })) as { id: string; checksum: string; recordedAt: string };
+  const created = (await sensor.record({ input: good })) as { id: string; checksum: string; recordedAt: string };
   console.log(`   sensor.record()    → ${created.id}`);
   console.log(`                        checksum ${created.checksum} — calculé en Rust, illisible d'ici`);
   console.log(`                        recordedAt ${created.recordedAt} — lifecycle create:'now', réalisé là-bas`);
@@ -112,7 +112,7 @@ async function main(): Promise<void> {
 
   for (const attempt of [
     { what: 'findById sur un id absent', run: () => sensor.findById({ params: { id: 'nexiste-pas' } }) },
-    { what: 'record avec le payload refusé plus haut', run: () => sensor.record({ body: bad }) },
+    { what: 'record avec le payload refusé plus haut', run: () => sensor.record({ input: bad }) },
   ]) {
     try {
       await attempt.run();

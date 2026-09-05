@@ -58,7 +58,7 @@ describe('EffectiveOperation as the shared runtime contract', () => {
       {
         position: 1,
         name: 'input',
-        source: { kind: 'body' },
+        source: { kind: 'input' },
         optional: false,
         undefinable: false,
       },
@@ -88,7 +88,7 @@ describe('EffectiveOperation as the shared runtime contract', () => {
       .find((op) => op.name === 'bodyFirst');
 
     expect(operation?.kind).toBe('command');
-    expect(operation?.binding.map((binding) => binding.source.kind)).toEqual(['body', 'collector']);
+    expect(operation?.binding.map((binding) => binding.source.kind)).toEqual(['input', 'collector']);
     expect(cardOperation?.kind).toBe(operation?.kind);
     expect(Object.keys(app.facadeFor('post')!)).toEqual(['bodyFirst', 'collectorFirst']);
   });
@@ -99,7 +99,7 @@ describe('EffectiveOperation as the shared runtime contract', () => {
     const operation = app.operationsFor('post')!.get('publish')!;
     const invocation = {
       params: {}, query: {}, state: {},
-      body: { id: 'p1', title: 'Canonical', handledBy: 'caller' },
+      input: { id: 'p1', title: 'Canonical', handledBy: 'caller' },
     };
 
     expect(operation.implementation).toMatchObject({
@@ -181,7 +181,7 @@ describe('deterministic operation resolution', () => {
         // Deliberately reversed: array order is not semantic authority.
         binding: [
           { name: 'id', source: { kind: 'param', name: 'id' }, optional: false },
-          { name: 'input', source: { kind: 'body' }, optional: false },
+          { name: 'input', source: { kind: 'input' }, optional: false },
         ],
       },
       execute: { kind: 'command' },
@@ -196,7 +196,7 @@ describe('deterministic operation resolution', () => {
     const operation = model.forHandler(handler).get('publish')!;
 
     expect(operation.binding.map((binding) => binding.name)).toEqual(['input', 'id']);
-    expect(operation.binding.map((binding) => binding.source.kind)).toEqual(['body', 'param']);
+    expect(operation.binding.map((binding) => binding.source.kind)).toEqual(['input', 'param']);
     expect(operation.placement).toEqual({
       frond: 'blog',
       runtime: 'remote',

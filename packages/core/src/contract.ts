@@ -14,7 +14,7 @@ export type { FougereErrorOptions } from './wire/errors.js';
 export { canonicalInvocation, EMPTY_INVOCATION } from './wire/Invocation.js';
 export type { InvocationContext } from './wire/Invocation.js';
 export { Invocation } from './wire/Invocation.js';
-export type { InvocationInput } from './wire/Invocation.js';
+export type { PartialInvocation } from './wire/Invocation.js';
 export { Call } from './wire/call.js';
 export { RouteAddress } from './wire/RouteAddress.js';
 export type { RouteAddressInput } from './wire/RouteAddress.js';

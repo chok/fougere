@@ -48,17 +48,17 @@ export default class CallCommand {
     // `body`. So `--id` is a route param, every other flag is the body.
     const flags = parseFlags(process.argv.slice(2));
     const params: Record<string, string> = {};
-    const body: Record<string, unknown> = {};
+    const input: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(flags)) {
       if (k === 'id') params.id = String(v);
-      else body[k] = v;
+      else input[k] = v;
     }
 
     const app = await bootAppFromConfig(process.cwd(), {});
     try {
       const result = await createAppRunner(app)(
         { entity: lowerFirst(entityName), op },
-        { params, query: {}, body, state: {} },
+        { params, query: {}, input, state: {} },
       );
       this.ui.note(JSON.stringify(result, null, 2), target);
     } finally {

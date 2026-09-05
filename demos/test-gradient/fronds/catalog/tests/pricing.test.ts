@@ -25,7 +25,7 @@ describe('le frond catalog, seul', () => {
 
     const quote = await createLocalRunner(app)({ entity: 'product', op: 'quote' }, {
       ...EMPTY_INVOCATION,
-      body: sampleInput(Product, { sku: 'ABC-01', cents: 1000 }),
+      input: sampleInput(Product, { sku: 'ABC-01', cents: 1000 }),
     });
 
     // `class VatPricing extends Pricing` EST l'enregistrement : personne ne le câble.
@@ -38,7 +38,7 @@ describe('le frond catalog, seul', () => {
 
     const quote = await createLocalRunner(app)({ entity: 'product', op: 'quote' }, {
       ...EMPTY_INVOCATION,
-      body: sampleInput(Product, { sku: 'ABC-01', cents: 1000 }),
+      input: sampleInput(Product, { sku: 'ABC-01', cents: 1000 }),
     });
 
     expect(quote).toEqual({ sku: 'ABC-01', total: 4242 });

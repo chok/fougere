@@ -10,7 +10,7 @@ checkDoorContract(app, Absence, [
   {
     name: '`foo?: T` — absent reaches the handler as undefined',
     operation: 'inspect',
-    input: { body: { requiredNullable: 'value', optionalNullable: 'value' } },
+    input: { input: { requiredNullable: 'value', optionalNullable: 'value' } },
     expected: {
       optionalOnly: 'undefined',
       requiredNullable: 'value',
@@ -21,7 +21,7 @@ checkDoorContract(app, Absence, [
   {
     name: '`foo: T | null` — explicit null remains null',
     operation: 'inspect',
-    input: { body: { optionalOnly: 'value', requiredNullable: null, optionalNullable: 'value' } },
+    input: { input: { optionalOnly: 'value', requiredNullable: null, optionalNullable: 'value' } },
     expected: {
       optionalOnly: 'value',
       requiredNullable: 'null',
@@ -32,7 +32,7 @@ checkDoorContract(app, Absence, [
   {
     name: '`foo?: T | null` — absence remains distinct from null',
     operation: 'inspect',
-    input: { body: { optionalOnly: 'value', requiredNullable: 'value' } },
+    input: { input: { optionalOnly: 'value', requiredNullable: 'value' } },
     expected: {
       optionalOnly: 'value',
       requiredNullable: 'value',
@@ -43,7 +43,7 @@ checkDoorContract(app, Absence, [
   {
     name: '`foo?: T | null` — explicit null is never normalized away',
     operation: 'inspect',
-    input: { body: { optionalOnly: 'value', requiredNullable: 'value', optionalNullable: null } },
+    input: { input: { optionalOnly: 'value', requiredNullable: 'value', optionalNullable: null } },
     expected: {
       optionalOnly: 'value',
       requiredNullable: 'value',

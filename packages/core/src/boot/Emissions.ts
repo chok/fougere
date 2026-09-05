@@ -151,7 +151,7 @@ export class Emissions {
         } catch (cause) {
           throw new Error(`${fact} → ${door} could not be reached`, { cause });
         }
-        return facade[op]({ ...EMPTY_INVOCATION, body: payload });
+        return facade[op]({ ...EMPTY_INVOCATION, input: payload });
       }),
     }));
   }

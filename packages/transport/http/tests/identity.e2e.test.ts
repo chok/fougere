@@ -221,7 +221,7 @@ describe('an envelope proves WHAT, not only WHO', () => {
   });
 
   it('refuses one replayed with a swapped body', async () => {
-    const captured = await signEnvelope(app, { entity: 'post', op: 'list', body: { title: 'hello' } });
+    const captured = await signEnvelope(app, { entity: 'post', op: 'list', input: { title: 'hello' } });
     const res = await fetch(`${base}/_fougere/call`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -229,7 +229,7 @@ describe('an envelope proves WHAT, not only WHO', () => {
         jsonrpc: '2.0',
         id: 1,
         method: 'post.list',
-        params: { params: {}, query: {}, body: { title: 'defaced' }, identity: captured },
+        params: { params: {}, query: {}, input: { title: 'defaced' }, identity: captured },
       }),
     });
     const answer = (await res.json()) as { error?: { data?: { code?: string } } };

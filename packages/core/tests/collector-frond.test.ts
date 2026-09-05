@@ -1,4 +1,4 @@
-/** A collector is local provenance: placing it in another frond is never a body fallback. */
+/** A collector is local provenance: placing it in another frond is never an input fallback. */
 import { scanProject } from '../src/node.js';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
@@ -23,14 +23,14 @@ describe('a collector declared in the wrong frond', () => {
     expect(invalid.every((diagnostic) => diagnostic.severity === 'blocking')).toBe(true);
   });
 
-  it('refuses boot before a caller can supply a forged body', async () => {
+  it('refuses boot before a caller can supply a forged input', async () => {
     const scan = await scanProject(root);
 
     await expect(createApp({ scan, createContainer })).rejects.toThrow(
       /collector-in-another-frond.*PostHandler\.whoExplicit\(user\)/s,
     );
     await expect(createApp({ scan, createContainer })).rejects.toThrow(
-      /preliminary body interpretation is invalid/s,
+      /preliminary input interpretation is invalid/s,
     );
   });
 

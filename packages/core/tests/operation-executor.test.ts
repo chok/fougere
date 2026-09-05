@@ -10,7 +10,7 @@ class Product extends entity({ name: text() }) {}
 describe('OperationExecutor', () => {
   const contract: OperationContract = {
     input: Product,
-    binding: [{ name: 'input', source: { kind: 'body' }, optional: false }],
+    binding: [{ name: 'input', source: { kind: 'input' }, optional: false }],
   };
 
   it('runs the ordered operation boundary', async () => {
@@ -39,7 +39,7 @@ describe('OperationExecutor', () => {
       },
     });
 
-    await expect(executor.execute({ body: { name: 'Fern' } }))
+    await expect(executor.execute({ input: { name: 'Fern' } }))
       .resolves.toEqual({ name: 'Fern' });
     expect(order).toEqual([
       'middleware:before',
@@ -63,7 +63,7 @@ describe('OperationExecutor', () => {
       view: new OutputView(Product.getFields()),
     });
 
-    await expect(executor.execute({ body: { unknown: true } }))
+    await expect(executor.execute({ input: { unknown: true } }))
       .rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
     expect(invoke).not.toHaveBeenCalled();
   });

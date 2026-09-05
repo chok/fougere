@@ -2,17 +2,17 @@ import { InputValidator, type SchemaView } from '@fougere/schema';
 import type { InvocationContext } from '../wire/Invocation.js';
 import { ErrorCode, FougereError } from '../wire/errors.js';
 
-/** Validates and decodes the input body declared by one operation contract. */
+/** Validates and decodes the input declared by one operation contract. */
 export function validateInput(
   schema: SchemaView | undefined,
   invocation: InvocationContext,
   entity: string,
   operation: string,
 ): InvocationContext {
-  if (!schema || invocation.body === undefined || invocation.body === null) return invocation;
+  if (!schema || invocation.input === undefined || invocation.input === null) return invocation;
 
   const result = InputValidator.of(schema.getFields(), { patch: schema.getOpts().patch })
-    .validate(invocation.body);
+    .validate(invocation.input);
 
   if (!result.success) {
     throw new FougereError({
@@ -24,5 +24,5 @@ export function validateInput(
     });
   }
 
-  return { ...invocation, body: result.data };
+  return { ...invocation, input: result.data };
 }

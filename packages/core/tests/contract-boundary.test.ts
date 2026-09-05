@@ -14,7 +14,7 @@ describe('an operation contract is one boundary on every door', () => {
 
     const result = await run(
       { entity: 'event', op: 'schedule' },
-      { params: {}, query: {}, body: { when }, state: {} },
+      { params: {}, query: {}, input: { when }, state: {} },
     );
 
     expect(result).toEqual({ when, decoded: true });

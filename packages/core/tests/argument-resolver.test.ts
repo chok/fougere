@@ -7,11 +7,11 @@ describe('ArgumentResolver', () => {
   it('resolves the plan in declaration order', async () => {
     const plan: BindingPlan = [
       { name: 'id', source: { kind: 'param', name: 'id' }, optional: false },
-      { name: 'input', source: { kind: 'body' }, optional: false },
+      { name: 'input', source: { kind: 'input' }, optional: false },
     ];
     const invocation = Invocation.from({
       params: { id: 'p1' },
-      body: { name: 'Fern' },
+      input: { name: 'Fern' },
     });
 
     await expect(new ArgumentResolver().resolve(plan, invocation))

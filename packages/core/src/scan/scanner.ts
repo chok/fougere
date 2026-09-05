@@ -302,7 +302,7 @@ async function inferOperations(
     // silently changed the contract the façade used to judge the request body.
     const binding = computeBindingPlan(method.params, collectorTypeNames);
     const candidates = method.params.flatMap((param, index) => {
-      if (binding[index]?.source.kind !== 'body') return [];
+      if (binding[index]?.source.kind !== 'input') return [];
       const schema = resolveSchema(param.type, moduleExports);
       return schema ? [{ param, schema }] : [];
     });

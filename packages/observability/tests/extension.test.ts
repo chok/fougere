@@ -13,7 +13,7 @@ import { observability, trace, activeCalls, flushTelemetry, registerFlush } from
 import { createStorageFactory } from './fixtures/data.mjs';
 
 const fixturesDir = join(import.meta.dirname, 'fixtures');
-const EMPTY: InvocationContext = { params: {}, query: {}, body: undefined, state: {} };
+const EMPTY: InvocationContext = { params: {}, query: {}, input: undefined, state: {} };
 type Facade = Record<string, (invocation?: InvocationContext) => Promise<unknown>>;
 
 const scan = await scanProject(fixturesDir);

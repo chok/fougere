@@ -188,7 +188,7 @@ describe('useFormFor', () => {
     form.values.set({ title: 'ok', body: 'b' });
     expect(await form.submit()).toEqual({ id: 'new' });
     expect(calls[0]!.method).toBe('post.create');
-    expect(calls[0]!.params.body).toEqual({ title: 'ok', body: 'b' });
+    expect(calls[0]!.params.input).toEqual({ title: 'ok', body: 'b' });
   });
 
   it('lands a remote refusal per field, so the form never knows who judged', async () => {

@@ -20,7 +20,7 @@ describe('testApp', () => {
 
     const created = await run({ entity: 'article', op: 'create' }, {
       ...EMPTY_INVOCATION,
-      body: { title: 'A title', body: 'A body', status: 'draft', views: 0 },
+      input: { title: 'A title', body: 'A body', status: 'draft', views: 0 },
     }) as { id: string; title: string };
 
     expect(created.id).toBeTruthy();
@@ -33,7 +33,7 @@ describe('testApp', () => {
 
     await run({ entity: 'article', op: 'create' }, {
       ...EMPTY_INVOCATION,
-      body: { title: 'Kept', body: 'A body', status: 'draft', views: 0 },
+      input: { title: 'Kept', body: 'A body', status: 'draft', views: 0 },
     });
     const listed = await run({ entity: 'article', op: 'list' }, EMPTY_INVOCATION) as { items?: unknown[] } | unknown[];
 
@@ -56,6 +56,6 @@ describe('testApp', () => {
 async function run(app: Awaited<ReturnType<typeof testApp>>) {
   await createLocalRunner(app)({ entity: 'article', op: 'create' }, {
     ...EMPTY_INVOCATION,
-    body: { title: 'Leaked?', body: 'A body', status: 'draft', views: 0 },
+    input: { title: 'Leaked?', body: 'A body', status: 'draft', views: 0 },
   });
 }

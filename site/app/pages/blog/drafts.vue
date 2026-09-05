@@ -5,8 +5,8 @@ const { t, locale } = useI18n();
 const localePath = useLocalePath();
 const { user } = useCurrentUser();
 
-interface Row { id: string; slug: string; title: string; status: 'draft' | 'published'; createdAt?: string; publishedAt?: string }
-const { items: posts, loading } = await useQuery<Row>(Post, 'mine');
+interface PostValues { id: string; slug: string; title: string; status: 'draft' | 'published'; createdAt?: string; publishedAt?: string }
+const { items: posts, loading } = await useQuery<PostValues>(Post, 'mine');
 
 useSeoMeta({ title: () => `${t('blog.drafts.title')} — Fougere` });
 

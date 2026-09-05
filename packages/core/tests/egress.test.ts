@@ -71,7 +71,7 @@ async function boot(root: string) {
   return { app, run: createLocalRunner(app) };
 }
 
-const empty = { params: {}, query: {}, body: undefined, state: {} };
+const empty = { params: {}, query: {}, input: undefined, state: {} };
 
 describe('a write-only field never crosses the façade outbound', () => {
   let root: string;
@@ -104,7 +104,7 @@ describe('a write-only field never crosses the façade outbound', () => {
     // write-only is exactly that: a client may SUPPLY it, never read it back.
     const out = await run(
       { entity: 'secret', op: 'create' },
-      { ...empty, body: { label: 'prod key', passwordHash: SECRET } },
+      { ...empty, input: { label: 'prod key', passwordHash: SECRET } },
     );
 
     expect(out).toEqual({ id: 'a1', label: 'prod key' });
@@ -132,19 +132,19 @@ describe('the presenter — computed fields, added last', () => {
   // The page, not the row: a computed field answers as many values as it was given,
   // in the same order — which is what lets a field that reads do it once.
   const presenter = {
-    excerpt: (rows: { body: string }[]) => rows.map((p) => p.body.slice(0, 5)),
+    excerpt: (rows: { input: string }[]) => rows.map((p) => p.input.slice(0, 5)),
     async authorName(rows: { authorId: string }[]) { return rows.map((p) => `author:${p.authorId}`); },
   };
   const names = ['excerpt', 'authorName'];
 
   it('adds one field per presenter method, on a single row', async () => {
-    const out = await new PresenterExecutor(presenter, names).present({ id: '1', body: 'abcdefgh', authorId: 'a' });
-    expect(out).toEqual({ id: '1', body: 'abcdefgh', authorId: 'a', excerpt: 'abcde', authorName: 'author:a' });
+    const out = await new PresenterExecutor(presenter, names).present({ id: '1', input: 'abcdefgh', authorId: 'a' });
+    expect(out).toEqual({ id: '1', input: 'abcdefgh', authorId: 'a', excerpt: 'abcde', authorName: 'author:a' });
   });
 
   it('walks a list — and keeps a ListResult\'s own properties', async () => {
     const rows = Object.assign(
-      [{ id: '1', body: 'abcdefgh', authorId: 'a' }],
+      [{ id: '1', input: 'abcdefgh', authorId: 'a' }],
       { total: 12, hasMore: true },
     );
     const out = await new PresenterExecutor(presenter, names).present(rows) as { total?: number; hasMore?: boolean }[];

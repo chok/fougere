@@ -4,7 +4,7 @@ import type { EntityConstructor, SchemaView } from '@fougere/schema';
 
 /** The id of the row an op acts on — a route segment, or a query fallback. */
 const byId = { name: 'id', source: { kind: 'param' as const, name: 'id' }, optional: false };
-const fromBody = { name: 'input', source: { kind: 'body' as const }, optional: false };
+const fromBody = { name: 'input', source: { kind: 'input' as const }, optional: false };
 
 /** The same five, written as the scan would have written them. */
 const idParam = { name: 'id', type: { raw: 'string', name: 'string' } };

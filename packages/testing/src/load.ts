@@ -12,7 +12,7 @@ export interface LoadOptions {
 
 interface Reachable {
   method: string;
-  body: unknown;
+  input: unknown;
 }
 
 /** Every operation the app answers, with a body for those that take one. */
@@ -27,7 +27,7 @@ export function reachableOps(app: App, given: LoadOptions['given'] = {}): Reacha
         const schema = contract.input as SchemaView | undefined;
         found.push({
           method: `${handler.address}.${op}`,
-          body: schema ? sampleInput(schema, given[handler.address] ?? {}) : undefined,
+          input: schema ? sampleInput(schema, given[handler.address] ?? {}) : undefined,
         });
       }
     }
@@ -40,7 +40,7 @@ export function loadScript(app: App, options: LoadOptions = {}): string {
   const door = options.door ?? 'http://127.0.0.1:3000/_fougere/call';
   const ops = reachableOps(app, options.given);
   // The shape, from the one function that states it. `body` is replaced per iteration.
-  const envelope = frameCall({ entity: 'ENTITY', op: 'OP' }, { params: {}, query: {}, body: undefined, state: {} } as never, 0);
+  const envelope = frameCall({ entity: 'ENTITY', op: 'OP' }, { params: {}, query: {}, input: undefined, state: {} } as never, 0);
   // What the envelope carries that an iteration does not fill in itself. Keeping
   // `params` here too put it in the object AND in the spread that overwrites it.
   const perCall = new Set(['method', 'id', 'params']);
@@ -81,7 +81,7 @@ export default function () {
   const payload = ${JSON.stringify(Object.fromEntries(keys.map((key) => [key, envelope[key as keyof typeof envelope]])))};
   const response = http.post(
     DOOR,
-    JSON.stringify({ ...payload, id: ++id, method: op.method, params: { params: {}, query: {}, body: op.body, state: {} } }),
+    JSON.stringify({ ...payload, id: ++id, method: op.method, params: { params: {}, query: {}, input: op.input, state: {} } }),
     { headers: { 'content-type': 'application/json' }, tags: { op: op.method } },
   );
   validate(response, { 'answered': (r) => r.status === 200 });
