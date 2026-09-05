@@ -87,9 +87,16 @@ export function recording<T extends object>(storage: T, entity: string, schema: 
       run: async () => {
         const current = await base.findById.call(this, id);
         if (!current) throw new Error(`${entity}#${id} is gone`);
+        // Reading and restoring are two statements, and there is no transaction here to make
+        // them one — a write landing between them is overwritten unseen. So this names what it
+        // FOUND, and claims nothing about what it did not: the frame was built because no
+        // engine could isolate it, and a check does not put the isolation back.
         const moved = touched.filter((field) => !dequal(current[field], wrote[field]));
         if (moved.length > 0) {
-          throw new Error(`${entity}#${id} was changed by someone else since (${moved.join(', ')})`);
+          throw new Error(
+            `${entity}#${id} no longer holds what this frame wrote (${moved.join(', ')}), so ` +
+            `restoring the previous values would drop whatever replaced them`,
+          );
         }
         await base.update.call(this, id, pick(before, touched));
       },
