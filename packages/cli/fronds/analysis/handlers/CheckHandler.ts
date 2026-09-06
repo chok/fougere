@@ -1,3 +1,5 @@
+import { Shapes } from '@fougere/schema';
+import safeRegex from 'safe-regex';
 import {
   buildGraph,
   clusterEntities,
@@ -110,6 +112,34 @@ export default class CheckHandler {
               message: `states \`adapters: { ${name} }\`, and this project depends on no adapter `
                 + `that answers to it. It depends on ${known.join(', ')}. Nothing reads the entry, `
                 + 'so it is inert — a typo, or a dependency that was never added.',
+            });
+          }
+        }
+      }
+    }
+
+    /**
+     * A `pattern` that backtracks super-linearly. The pattern is fixed at declaration and
+     * the string tested against it is not: whoever calls the door chooses it, so the cost
+     * of one match is theirs to set. Judged HERE because a regex says the same thing on
+     * every run — checking it per row would pay for a verdict that never changes.
+     *
+     * `safe-regex` reads the star height, which is the common shape and not every one:
+     * `(a|a)*b` backtracks too and passes. Reported as a suspicion, never as a refusal.
+     */
+    for (const frond of fronds) {
+      for (const entity of frond.entities) {
+        for (const [key, field] of Object.entries(entity.entityClass.getFields())) {
+          for (const pattern of Shapes.patterns(field.shape)) {
+            if (safeRegex(pattern)) continue;
+            findings.push({
+              severity: 'warning',
+              code: 'super-linear-pattern',
+              filePath: entity.filePath,
+              subject: `${entity.name}.${key}`,
+              message: `states \`pattern: ${JSON.stringify(pattern)}\`, whose nested repetition `
+                + 'backtracks super-linearly. A value a caller chooses can hold the event loop '
+                + 'for seconds — rewrite the repeated group, or bound the field with `max`.',
             });
           }
         }

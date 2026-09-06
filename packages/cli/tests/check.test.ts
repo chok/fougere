@@ -52,6 +52,16 @@ describe('check', () => {
     expect(found[0]?.subject).toBe('article');
   });
 
+  it('reports a pattern that backtracks, finds it under an object, and leaves a plain one alone', async () => {
+    const root = join(import.meta.dirname, 'fixtures-super-linear');
+    const result = await check().execute({ root });
+
+    const found = result.findings.filter((f) => f.code === 'super-linear-pattern');
+    expect(found.map((f) => f.subject)).toEqual(['firm.code', 'firm.filing']);
+    expect(found[0]?.severity).toBe('warning');
+    expect(found[0]?.message).toContain('pattern: "^(a+)+$"');
+  });
+
   it('ne signale rien sur une app du dépôt', async () => {
     // Le zéro ici ne dit pas « tout va bien » — il dit « aucun faux positif sur du
     // vrai code ». Un vérificateur qui crie au loup cesse d'être lu.
