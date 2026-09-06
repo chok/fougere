@@ -43,6 +43,12 @@ export default defineNuxtConfig({
   nitro: {
     prerender: { ignore: serverOnlyRoutes },
   },
+  // Building them is what took `nuxt build` past Node's default heap: rollup holds the map
+  // of every chunk alive for the whole bundle, and the server bundle is where the app
+  // lands. Nothing read them — `node .output/server/index.mjs` consults a `.map` only
+  // under `--enable-source-maps`, and the Dockerfile passes no flag. Production only:
+  // `sourcemap.server` reaches the dev server's config too.
+  $production: { sourcemap: { server: false } },
   content: {
     build: {
       markdown: {
