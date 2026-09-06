@@ -1,5 +1,41 @@
 # @fougere/cli
 
+## 0.7.0-alpha.0
+
+### Minor Changes
+
+- `fougere check` reports an adapter name no dependency answers to.
+
+  A process only knows the adapters it loaded, so an entity stating a Postgres column type
+  in an app running on `adapter/memory` cannot be told from a typo. The project can: its
+  dependencies name every adapter it could load. `adaptersOf` reads them, the finding is
+  `unknown-adapter`, and four real demos report zero.
+
+### Patch Changes
+
+- 47513d2: `EntityTypes` and `FacadeTypes` move to the CLI, which was their only reader.
+
+  Neither derives from anything the schema owns: `EntityTypes` reads a `SchemaDescriptor`
+  and touches no field, no axis and no validator, while `FacadeTypes` writes the name
+  `Invocation`, which belongs to the call contract. Their two copies of `propertyKey` and
+  `docCommentOf` become one. Removed from the `@fougere/schema` root with no deprecated
+  re-export.
+
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies [7376ae7]
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies [47513d2]
+  - @fougere/schema@0.6.0-alpha.1
+  - @fougere/adapter-sql@0.6.0-alpha.1
+  - @fougere/core@0.6.0-alpha.1
+  - @fougere/defaults@0.6.0-alpha.1
+  - @fougere/transport-http@0.6.0-alpha.1
+
 ## 0.6.0-alpha.0
 
 ### Minor Changes

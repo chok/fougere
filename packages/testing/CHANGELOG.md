@@ -1,6 +1,26 @@
 # @fougere/testing
 
-## 1.0.0
+## 0.7.0-alpha.0
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies [7376ae7]
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies [47513d2]
+  - @fougere/schema@0.6.0-alpha.1
+  - @fougere/adapter-graphql@0.6.0-alpha.1
+  - @fougere/core@0.6.0-alpha.1
+  - @fougere/defaults@0.6.0-alpha.1
+  - @fougere/app@0.6.0-alpha.1
+  - @fougere/transport-http@0.6.0-alpha.1
+
+## 0.6.0-alpha.0
 
 ### Minor Changes
 

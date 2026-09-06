@@ -1,5 +1,63 @@
 # @fougere/core
 
+## 0.7.0-alpha.0
+
+### Minor Changes
+
+- `fougere check` reports an adapter name no dependency answers to.
+
+  A process only knows the adapters it loaded, so an entity stating a Postgres column type
+  in an app running on `adapter/memory` cannot be told from a typo. The project can: its
+  dependencies name every adapter it could load. `adaptersOf` reads them, the finding is
+  `unknown-adapter`, and four real demos report zero.
+
+### Patch Changes
+
+- A realization may narrow the port, and the container key does not move.
+
+  `depKeyOf` compared the type name to `Storage` exactly, so a handler asking for
+  `RankedStorage<Card>` asked the container for `RankedStorage` and the boot refused. The
+  subject is in the GENERIC. A class named `FileStorage` carries none and is untouched.
+
+- 7376ae7: A composite unique constraint belongs to the schema it constrains, not to each of its
+  members.
+
+  `FieldGroup` and `Unique` are gone from the public surface. A field carries
+  `role.unique` as a boolean, read through `Role.of(field).isUnique`; a group spanning
+  several fields lives once in `SchemaConstraints`, answered by `getUnique()` as before.
+  The wire format is unchanged in both directions, pinned byte for byte by the v1 fixtures.
+
+  With the sentinel gone — `unique()` no longer writes an empty group waiting to learn its
+  key — `FieldGroup.isSelf`, `resolvedOn`, `Role.resolvedOn` and `Field.rename` had nothing
+  left to do.
+
+- Six guarantees the code declared and did not hold.
+
+  `output(schema)` filtered nothing on the memory frame — `storageOver` now applies the
+  scope SQL puts in its SELECT, on both realizations. A composition read the DEFAULT
+  source's transaction for every source; `transacts(source)` answers for the one the work
+  runs in, so a frame whose own engine has transactions is no longer compensated. A refused
+  ascent released nothing the boot had taken: `onDispose` is handed over before the ascent,
+  since the caller never receives the app that would carry it back. `StorageGuard` skipped
+  `upsert` and `upsertAll` and handed on the value it had not parsed. A migrated table
+  promised less than a fresh one — `changeSQL` states `notNull()` whether or not a default
+  fills the column, and `delta` proposes the UNIQUE index a live table never read. And the
+  data layer travels as ONE subject, `FougereServerConfig.storage`, which naming a few of
+  its members had left `transacted` and `close` behind, under Nuxt only.
+
+- The unwind's check reported a detection it cannot make.
+
+  It catches a write that landed before the re-read; one that lands after is overwritten
+  unseen, because reading and restoring are two statements and a frame exists precisely
+  where no engine can make them one.
+
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies [7376ae7]
+- Updated dependencies
+- Updated dependencies [47513d2]
+  - @fougere/schema@0.6.0-alpha.1
+
 ## 0.6.0-alpha.0
 
 ### Minor Changes

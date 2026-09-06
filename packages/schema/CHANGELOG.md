@@ -1,5 +1,59 @@
 # @fougere/schema
 
+## 0.7.0-alpha.0
+
+### Minor Changes
+
+- A descriptor is converted at the door, and a schema circulates.
+
+  `SchemaOrCard` had the four adapters announce they took either form, and `toTable`
+  rebuilt the schema twice for the one nobody passed them — `boot/remote.ts` already
+  converted at discovery, through `Card.fromDescriptor(…).toSchema()`. The adapters read
+  `SchemaView`, and the union is gone from `@fougere/schema` with the two functions that
+  only existed to collapse it, `schemaOf` and `fieldsOf`. The `schemaOf` of
+  `@fougere/adapter-graphql`, which builds a `GraphQLSchema` from an app, is a different
+  function and is untouched.
+
+- An adapter states the format of its entry, as data.
+
+  The level below a field name had no judge: `adapter/sql` read it with `?.` and degraded
+  in silence on a typo. `adapter/sql/src/adapter.schema.json` is that format, imported with
+  `with { type: 'json' }`, and `SqlField` is derived from it. `AdapterFieldValidator` takes
+  a format and refuses what it does not admit, where the adapter READS — at `toTable`, not
+  at `entity()`, which runs at its own module's evaluation. `EntityAdapterSet` owns the two
+  levels an entry is addressed by, adapter name then field name, and always exists, so
+  `getAdapters()` is never `undefined`.
+
+- 7376ae7: A composite unique constraint belongs to the schema it constrains, not to each of its
+  members.
+
+  `FieldGroup` and `Unique` are gone from the public surface. A field carries
+  `role.unique` as a boolean, read through `Role.of(field).isUnique`; a group spanning
+  several fields lives once in `SchemaConstraints`, answered by `getUnique()` as before.
+  The wire format is unchanged in both directions, pinned byte for byte by the v1 fixtures.
+
+  With the sentinel gone — `unique()` no longer writes an empty group waiting to learn its
+  key — `FieldGroup.isSelf`, `resolvedOn`, `Role.resolvedOn` and `Field.rename` had nothing
+  left to do.
+
+- 47513d2: `EntityTypes` and `FacadeTypes` move to the CLI, which was their only reader.
+
+  Neither derives from anything the schema owns: `EntityTypes` reads a `SchemaDescriptor`
+  and touches no field, no axis and no validator, while `FacadeTypes` writes the name
+  `Invocation`, which belongs to the call contract. Their two copies of `propertyKey` and
+  `docCommentOf` become one. Removed from the `@fougere/schema` root with no deprecated
+  re-export.
+
+### Patch Changes
+
+- Four things a card or a declaration lost in silence.
+
+  A declaration that mentions no `unique` KEEPS the groups it had; an empty list still
+  clears them. A group is identified by its members, not by `join(' ')`. The card reads a
+  shape back whole, as it wrote it — the keyword list it walked instead was a second
+  inventory of the shape. And `description` is an annotation, so changing it no longer
+  reports a `reshaped` that SQL reads as a bound that moved.
+
 ## 0.6.0-alpha.0
 
 ### Minor Changes

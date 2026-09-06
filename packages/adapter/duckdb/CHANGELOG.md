@@ -1,5 +1,28 @@
 # @fougere/adapter-duckdb
 
+## 0.7.0-alpha.0
+
+### Patch Changes
+
+- A descriptor is converted at the door, and a schema circulates.
+
+  `SchemaOrCard` had the four adapters announce they took either form, and `toTable`
+  rebuilt the schema twice for the one nobody passed them — `boot/remote.ts` already
+  converted at discovery, through `Card.fromDescriptor(…).toSchema()`. The adapters read
+  `SchemaView`, and the union is gone from `@fougere/schema` with the two functions that
+  only existed to collapse it, `schemaOf` and `fieldsOf`. The `schemaOf` of
+  `@fougere/adapter-graphql`, which builds a `GraphQLSchema` from an app, is a different
+  function and is untouched.
+
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies [7376ae7]
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies [47513d2]
+  - @fougere/schema@0.6.0-alpha.1
+  - @fougere/adapter-sql@0.6.0-alpha.1
+
 ## 0.6.0-alpha.0
 
 ### Minor Changes

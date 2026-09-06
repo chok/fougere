@@ -1,5 +1,34 @@
 # @fougere/runtime
 
+## 0.7.0-alpha.0
+
+### Patch Changes
+
+- Six guarantees the code declared and did not hold.
+
+  `output(schema)` filtered nothing on the memory frame — `storageOver` now applies the
+  scope SQL puts in its SELECT, on both realizations. A composition read the DEFAULT
+  source's transaction for every source; `transacts(source)` answers for the one the work
+  runs in, so a frame whose own engine has transactions is no longer compensated. A refused
+  ascent released nothing the boot had taken: `onDispose` is handed over before the ascent,
+  since the caller never receives the app that would carry it back. `StorageGuard` skipped
+  `upsert` and `upsertAll` and handed on the value it had not parsed. A migrated table
+  promised less than a fresh one — `changeSQL` states `notNull()` whether or not a default
+  fills the column, and `delta` proposes the UNIQUE index a live table never read. And the
+  data layer travels as ONE subject, `FougereServerConfig.storage`, which naming a few of
+  its members had left `transacted` and `close` behind, under Nuxt only.
+
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies [7376ae7]
+- Updated dependencies
+- Updated dependencies
+  - @fougere/adapter-sql@0.6.0-alpha.1
+  - @fougere/core@0.6.0-alpha.1
+  - @fougere/transport-http@0.6.0-alpha.1
+
 ## 0.6.0-alpha.0
 
 ### Minor Changes

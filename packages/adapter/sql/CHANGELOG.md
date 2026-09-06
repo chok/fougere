@@ -1,5 +1,69 @@
 # @fougere/schema-sql
 
+## 0.7.0-alpha.0
+
+### Minor Changes
+
+- An adapter states the format of its entry, as data.
+
+  The level below a field name had no judge: `adapter/sql` read it with `?.` and degraded
+  in silence on a typo. `adapter/sql/src/adapter.schema.json` is that format, imported with
+  `with { type: 'json' }`, and `SqlField` is derived from it. `AdapterFieldValidator` takes
+  a format and refuses what it does not admit, where the adapter READS — at `toTable`, not
+  at `entity()`, which runs at its own module's evaluation. `EntityAdapterSet` owns the two
+  levels an entry is addressed by, adapter name then field name, and always exists, so
+  `getAdapters()` is never `undefined`.
+
+### Patch Changes
+
+- A descriptor is converted at the door, and a schema circulates.
+
+  `SchemaOrCard` had the four adapters announce they took either form, and `toTable`
+  rebuilt the schema twice for the one nobody passed them — `boot/remote.ts` already
+  converted at discovery, through `Card.fromDescriptor(…).toSchema()`. The adapters read
+  `SchemaView`, and the union is gone from `@fougere/schema` with the two functions that
+  only existed to collapse it, `schemaOf` and `fieldsOf`. The `schemaOf` of
+  `@fougere/adapter-graphql`, which builds a `GraphQLSchema` from an app, is a different
+  function and is untouched.
+
+- 7376ae7: A composite unique constraint belongs to the schema it constrains, not to each of its
+  members.
+
+  `FieldGroup` and `Unique` are gone from the public surface. A field carries
+  `role.unique` as a boolean, read through `Role.of(field).isUnique`; a group spanning
+  several fields lives once in `SchemaConstraints`, answered by `getUnique()` as before.
+  The wire format is unchanged in both directions, pinned byte for byte by the v1 fixtures.
+
+  With the sentinel gone — `unique()` no longer writes an empty group waiting to learn its
+  key — `FieldGroup.isSelf`, `resolvedOn`, `Role.resolvedOn` and `Field.rename` had nothing
+  left to do.
+
+- Six guarantees the code declared and did not hold.
+
+  `output(schema)` filtered nothing on the memory frame — `storageOver` now applies the
+  scope SQL puts in its SELECT, on both realizations. A composition read the DEFAULT
+  source's transaction for every source; `transacts(source)` answers for the one the work
+  runs in, so a frame whose own engine has transactions is no longer compensated. A refused
+  ascent released nothing the boot had taken: `onDispose` is handed over before the ascent,
+  since the caller never receives the app that would carry it back. `StorageGuard` skipped
+  `upsert` and `upsertAll` and handed on the value it had not parsed. A migrated table
+  promised less than a fresh one — `changeSQL` states `notNull()` whether or not a default
+  fills the column, and `delta` proposes the UNIQUE index a live table never read. And the
+  data layer travels as ONE subject, `FougereServerConfig.storage`, which naming a few of
+  its members had left `transacted` and `close` behind, under Nuxt only.
+
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies [7376ae7]
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies [47513d2]
+  - @fougere/schema@0.6.0-alpha.1
+  - @fougere/core@0.6.0-alpha.1
+
 ## 0.6.0-alpha.0
 
 ### Minor Changes
