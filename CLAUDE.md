@@ -18,8 +18,9 @@ Reference docs: `site/content/` (en/fr).
 
 ```bash
 pnpm install
-pnpm -r build                      # required before demos if dist/ is missing
-pnpm -r test
+pnpm run build                     # packages only — required before demos if dist/ is missing
+pnpm -r test                       # `-r build` is NOT the same: it also runs nuxt/next/vite
+                                   # build across the front-ends, which no test needs
 pnpm -r typecheck                  # covers site/fronds + demos/*/fronds
 
 pnpm -C packages/schema test
