@@ -41,7 +41,7 @@ export class InputValidator {
     const row: Record<string, unknown> = {};
 
     for (const key of Object.keys(data)) {
-      if (!(key in this.fields)) {
+      if (!Object.hasOwn(this.fields, key)) {
         errors.push({ path: key, message: InputRefusal.unknownField });
       }
     }

@@ -6,7 +6,7 @@ import { deduplicated } from '../../field/FieldSet.js';
 import { InputValidator } from '../../validator/InputValidator.js';
 import { Schema, type SchemaConstructor } from '../../Schema.js';
 import type { Values, SchemaView } from '../../SchemaView.js';
-import { refuse } from './admission.js';
+import { admitPatterns, refuse } from './admission.js';
 import type {
   DerivedFrom,
   FieldDescriptor,
@@ -81,6 +81,12 @@ export class Card<T = Values<Fields>> {
     const fields: Fields = {};
     const groups: string[][] = [];
     for (const [key, property] of Object.entries(descriptor.properties)) {
+      if (!isObject(property)) {
+        refuse(
+          `${subject} states \`${key}\` as ${JSON.stringify(property)}`,
+          'A field is one JSON Schema object, and there is nothing to rebuild from that.',
+        );
+      }
       fields[key] = reconstructField(property, key, resolve);
       for (const group of property['x-fougere']?.role?.unique ?? [])
         if (group.length > 1) groups.push([...group]);
@@ -235,6 +241,7 @@ function reconstructField(
         'A field always states one.',
     );
   }
+  admitPatterns(shape, `Field '${key}'`);
   const extension = property['x-fougere'];
   const axes: Record<string, unknown> = {};
   for (const axis of EXTENSION_AXES) {

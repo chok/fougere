@@ -112,4 +112,13 @@ describe('validation — edge cases', () => {
     if (!patch.success) expect(patch.errors[0]).toEqual({ path: 'titel', message: 'Unknown field' });
     expect(createValidator.validate({ title: 'x' }).success).toBe(true);
   });
+
+  it('a key the prototype answers is a stranger like any other', () => {
+    const fields = { title: text() };
+    for (const key of ['constructor', 'toString', '__proto__']) {
+      const result = InputValidator.of(fields).validate({ title: 'x', [key]: 'x' });
+      expect(result.success).toBe(false);
+      if (!result.success) expect(result.errors[0]).toEqual({ path: key, message: 'Unknown field' });
+    }
+  });
 });

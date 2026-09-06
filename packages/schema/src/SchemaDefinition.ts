@@ -240,7 +240,7 @@ export class SchemaDefinition {
    * `pick('titel')` → `pick(): unknown field \`titel\`. This schema carries id, title, body.`
    */
   private assertKnown(operation: string, keys: readonly string[]): void {
-    const strangers = keys.filter((key) => !(key in this.fields));
+    const strangers = keys.filter((key) => !Object.hasOwn(this.fields, key));
     if (strangers.length === 0) return;
 
     throw new Error(

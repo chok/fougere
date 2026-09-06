@@ -333,6 +333,20 @@ group('a card is admitted before it becomes a validator', () => {
     expect(() => Card.fromDescriptor(bad as never).toSchema()).toThrow(/role\.relation\.onDelete is "boom"/);
   });
 
+  it('refuses a property that is not a JSON Schema object', () => {
+    expect(() => Card.fromDescriptor({ ...card(), properties: { a: null } } as never).toSchema())
+      .toThrow(/states `a` as null/);
+  });
+
+  // The engine compiles a `pattern` when a row arrives, so an unusable one would surface
+  // as a SyntaxError naming neither the card nor the field.
+  it('refuses a pattern the engine could not compile, and finds it nested', () => {
+    const flat = { ...card(), properties: { a: { type: 'string' as const, pattern: '(' } } };
+    expect(() => Card.fromDescriptor(flat as never).toSchema()).toThrow(/`pattern: "\("`/);
+    const nested = { ...card(), properties: { a: { type: 'array' as const, items: { type: 'string' as const, pattern: '[' } } } };
+    expect(() => Card.fromDescriptor(nested as never).toSchema()).toThrow(/Field 'a' states `pattern/);
+  });
+
   // lifecycle and boundary describe themselves as themselves, so their own validator reads the wire.
   it('refuses a lifecycle and a boundary through the validator that already reads them', () => {
     const lifecycle = { ...card(), properties: { a: { type: 'string' as const, 'x-fougere': { lifecycle: { update: 'jamais' } } } } };

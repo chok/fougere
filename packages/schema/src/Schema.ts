@@ -95,7 +95,7 @@ export class Schema {
   static from(data: Record<string, unknown>) {
     const row: Record<string, unknown> = {};
     for (const [key, field] of Object.entries(this.fields)) {
-      if (!(key in data)) continue;
+      if (!Object.hasOwn(data, key)) continue;
       const value = data[key];
       if (value === null || value === undefined) {
         row[key] = value;

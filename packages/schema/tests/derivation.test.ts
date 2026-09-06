@@ -36,6 +36,11 @@ describe('derivation', () => {
       const result = view.validate({ id: '1' });
       expect(result.success).toBe(false);
     });
+
+    it('refuses a name the prototype answers and the declaration never stated', () => {
+      expect(() => Order.pick('constructor' as never)).toThrow(/unknown field `constructor`/);
+      expect(() => Order.omit('toString' as never)).toThrow(/unknown field `toString`/);
+    });
   });
 
   describe('omit()', () => {

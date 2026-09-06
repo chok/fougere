@@ -48,9 +48,36 @@ interface ShapeParts {
   nullable: boolean;
 }
 
+function collectPatterns(value: unknown, found: string[]): void {
+  if (Array.isArray(value)) {
+    for (const member of value) collectPatterns(member, found);
+
+    return;
+  }
+  if (typeof value !== 'object' || value === null) return;
+
+  const { pattern } = value as { pattern?: unknown };
+  if (typeof pattern === 'string') found.push(pattern);
+
+  for (const member of Object.values(value)) collectPatterns(member, found);
+}
+
 export class Shapes {
   static is(value: unknown): value is Shape {
     return isShapeImpl(value);
+  }
+
+  /**
+   * Every `pattern` a shape states, the nested ones included — `items`, `properties`.
+   *
+   * Two readers ask two questions of the same list: the card door asks whether each one
+   * compiles, `fougere check` whether each one backtracks. Neither owns the walk.
+   */
+  static patterns(shape: unknown): string[] {
+    const found: string[] = [];
+    collectPatterns(shape, found);
+
+    return found;
   }
 
   static nullable(shape: Shape): Shape {

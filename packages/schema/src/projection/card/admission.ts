@@ -1,4 +1,5 @@
 import type { ValidationError } from '../../validation.js';
+import { Shapes } from '../../axis/shape/Shape.js';
 
 /**
  * So a card that cannot be read says what is wrong and what to write instead.
@@ -38,3 +39,23 @@ export const oneOfTokens = <T extends readonly string[]>(
   value: unknown,
   tokens: T,
 ): value is T[number] => typeof value === 'string' && (tokens as readonly string[]).includes(value);
+
+/**
+ * So a `pattern` the engine cannot compile is refused where the card is read, not at the first row.
+ * FR : pour qu'un `pattern` incompilable soit refusé à la lecture de la carte, pas au premier row.
+ * `{ type: 'string', pattern: '(' }` → Field 'code' states `pattern: "("`, which is not a regular expression
+ */
+export function admitPatterns(shape: unknown, subject: string): void {
+  for (const pattern of Shapes.patterns(shape)) {
+    try {
+      // The engine compiles it with `u` and only when a row arrives, so nothing but this
+      // reads it early enough to name the card it came from.
+      new RegExp(pattern, 'u');
+    } catch (error) {
+      refuse(
+        `${subject} states \`pattern: ${JSON.stringify(pattern)}\`, which is not a regular expression`,
+        (error as Error).message,
+      );
+    }
+  }
+}

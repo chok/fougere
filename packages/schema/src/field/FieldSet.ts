@@ -25,7 +25,7 @@ export class FieldSet<TFields extends Fields = Fields> {
 
     const composite: string[][] = [];
     for (const group of unique ?? []) {
-      const missing = group.filter((key) => !(key in fields));
+      const missing = group.filter((key) => !Object.hasOwn(fields, key));
       if (missing.length)
         throw new Error(
           `unique: [${group.join(', ')}] names ` +
