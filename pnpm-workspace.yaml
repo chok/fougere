@@ -20,6 +20,14 @@ packages:
 # a lockfile that records one.
 overrides:
   graphql: ^16.13.1
+  # `ajv` asks for `^3.0.1` and the lockfile had settled on 3.1.5, which is the range
+  # GHSA-jqff-g426-hqxp covers. The override moves the resolution, not the contract.
+  fast-uri: ^3.1.7
+  # `next` pins these two — `postcss` exactly, `sharp` under the minor its advisory
+  # crosses. Both are what GHSA reports against `demos/next-blog`, and the demo's
+  # build is what says the override holds.
+  postcss: ^8.5.28
+  sharp: ^0.35.4
 
 # pnpm 11 fails an install rather than warning about a build script it was not
 # told to run, and it renamed the allowlist: onlyBuiltDependencies (a list) is
