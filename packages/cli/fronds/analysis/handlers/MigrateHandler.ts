@@ -39,7 +39,9 @@ export default class MigrateHandler {
     if (steps.length === 0) return { chain: [], changes: [], refusals: [], ran: [] };
 
     const config = await loadConfig(scan.root);
-    const storage = resolveStorage(config.db ?? {});
+    // `fougere migrate --root ../app` read that project's config and planned against a
+    // database beside the CLI's own directory — the loudest form of this bug.
+    const storage = resolveStorage(config.db ?? {}, undefined, scan.root);
     if (!storage.db) {
       return {
         chain: versionsOf(steps),

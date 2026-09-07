@@ -86,8 +86,18 @@ async function loadDefault(filePath: string): Promise<unknown> {
 
 async function loadClass(filePath: string): Promise<ProviderEntry['ctor']> {
   const ctor = await loadDefault(filePath);
-  if (typeof ctor !== 'function' || !ctor.prototype)
-    throw new Error(`${filePath}: default export is not a class`);
+  // A convention directory holds classes, because a provider is registered under one and
+  // asked for by its type. What is NOT a class — a shared contract, a pure function, a
+  // table of constants — belongs beside them rather than among them, and saying where
+  // costs one line: measured twice on a real project, both times a file that had to move.
+  if (typeof ctor !== 'function' || !ctor.prototype) {
+    throw new Error(
+      `${filePath}: default export is not a class. This directory is scanned for providers, `
+      + 'which are registered under a class name — a contract or a pure function has no key '
+      + `to answer under. Move it beside the directory, at the frond's root, where the scan `
+      + 'reads nothing and an import still reaches it.',
+    );
+  }
   return ctor as ProviderEntry['ctor'];
 }
 

@@ -2,6 +2,9 @@
 import type { App } from '@fougere/core';
 import { Fronds, type FrondDescriptor } from '@fougere/core';
 import { lowerFirst } from '@fougere/core/contract';
+import { existsSync } from 'node:fs';
+import { isAbsolute, resolve } from 'node:path';
+
 import { Sources, type Constraint, type Source, type SourceView } from '@fougere/core';
 // Imported for its side effect: it is what makes `source: 'sql'` an answered name.
 import '@fougere/adapter-sql/sqlite';
@@ -78,24 +81,61 @@ function viewOf(
 }
 
 /** Resolve the data layer. */
-export function resolveStorage(dbConf: DbConfig, sources?: SourcesConfig): ResolvedStorage {
+export function resolveStorage(
+  dbConf: DbConfig,
+  sources?: SourcesConfig,
+  /**
+   * Where a relative `path:` is counted from — the directory of the config that named it.
+   *
+   * Absent, it is counted from the current directory, which is where an app in a
+   * workspace parts ways with the file that configured it: measured, `apps/nuxt` ran from
+   * its own directory and made a SECOND, empty database beside itself while the workspace
+   * held the real one. Nothing was said; the additive migration created every table, the
+   * seeds ran, and the app served an empty domain with a green boot.
+   */
+  root?: string,
+): ResolvedStorage {
   if (!declaresStorage(dbConf)) return { storageFactory: undefined };
 
   const named: Record<string, Placement> = {};
   for (const [name, conf] of Object.entries(sources ?? {})) {
-    named[name] = { source: built(conf, `sources.${name}`), entities: conf.entities };
+    named[name] = { source: built(conf, `sources.${name}`, root), entities: conf.entities };
   }
   return storageFrom({
-    db: built(typeof dbConf === 'object' ? dbConf : {}, 'db'),
+    db: built(typeof dbConf === 'object' ? dbConf : {}, 'db', root),
     sources: named,
   });
 }
 
 /** One config entry, resolved to the adapter it names. */
-function built(conf: Record<string, unknown>, field: string): Source {
+function built(conf: Record<string, unknown>, field: string, root?: string): Source {
   const name = (conf.source as string | undefined) ?? DEFAULT_ADAPTER;
 
-  return Sources.open(name, conf as never, `${field}.source`);
+  return Sources.open(name, anchored(conf, root) as never, `${field}.source`);
+}
+
+/**
+ * A relative path, counted from the config that named it. `:memory:` names no file and an
+ * absolute path already says where it is — both pass through untouched, which is what
+ * keeps this from being a second reader of what a path means.
+ */
+function anchored(conf: Record<string, unknown>, root?: string): Record<string, unknown> {
+  const path = conf.path;
+  if (!root || typeof path !== 'string' || path === ':memory:' || isAbsolute(path)) return conf;
+
+  const anchoredPath = resolve(root, path);
+  // Anchoring MOVES a database that a deployment has been running against, and the driver
+  // would create the new one without a word: additive migration, seeds, an empty domain
+  // and a green boot. So the one case where the two disagree is named.
+  const beside = resolve(process.cwd(), path);
+  if (beside !== anchoredPath && existsSync(beside) && !existsSync(anchoredPath)) {
+    process.emitWarning(
+      `${path} resolves to ${anchoredPath} beside the config that named it, and a database `
+      + `already sits at ${beside}. Fougere opens the first; move the file, or write the path you mean.`,
+    );
+  }
+
+  return { ...conf, path: anchoredPath };
 }
 
 /** What a config naming no adapter means. */

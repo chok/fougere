@@ -32,6 +32,21 @@ describe('generateBootPlugin — db path convergence', () => {
     expect(out).not.toContain(':memory:');
   });
 
+  it('écrit la racine en littéral — le plugin tourne avec le répertoire de Nitro', () => {
+    // Sans elle, `apps/nuxt` a fabriqué une SECONDE base vide à côté de lui pendant que
+    // le workspace tenait la vraie, et l'app a servi un domaine vide avec un boot vert.
+    const out = generateBootPlugin(
+      { db: { dialect: 'sqlite', path: '.data/site.db' } } as FougereConfig,
+      [],
+      '@fougere/nuxt/fougereApp',
+      [],
+      undefined,
+      '/w',
+    );
+
+    expect(out).toContain('resolveStorage({"dialect":"sqlite","path":".data/site.db"}, undefined, "/w")');
+  });
+
   it('db: { dialect } with no path also defers to resolveStorage — no local default', () => {
     const out = generateBootPlugin(
       { db: { dialect: 'sqlite' } } as FougereConfig,

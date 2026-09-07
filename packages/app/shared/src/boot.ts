@@ -131,7 +131,7 @@ async function boot(): Promise<App> {
   let storage = _config.storage;
   if (!storage) {
     const { resolveStorage } = await import('@fougere/defaults');
-    storage = resolveStorage(fileConfig.db as never, (fileConfig as { sources?: unknown }).sources as never);
+    storage = resolveStorage(fileConfig.db as never, (fileConfig as { sources?: unknown }).sources as never, root);
     log.debug(storage.storageFactory ? 'auto-resolving storage from config.db' : 'no db declared — falling back to in-memory storage');
   }
   // The storage's two halves, kept together: its ascent is an extension, its connection

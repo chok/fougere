@@ -44,7 +44,9 @@ export default class NewCommand {
       }
       pw.createFlat(dir, name);
       pw.addRootFrond(dir, template);
-      if (raw.local) pw.linkLocal(dir);
+      // `--local` points every dependency at this monorepo, so a version would be dead
+      // weight; without it, the version that wrote the files is the one they were written for.
+      if (raw.local) pw.linkLocal(dir); else pw.pinVersions(dir);
       this.ui.info(`${template} at the root`);
       this.ui.note([`cd ${name}`, INSTALL, `pnpm dev`].join('\n'), `${name} — one frond, at the root`);
       this.ui.outro('Ready.');
@@ -54,7 +56,7 @@ export default class NewCommand {
     pw.createWorkspace(dir, name);
 
     if (raw.bare) {
-      if (raw.local) pw.linkLocal(dir);
+      if (raw.local) pw.linkLocal(dir); else pw.pinVersions(dir);
       this.ui.note([`cd ${name}`, `fougere new   # compose it (guided)`].join('\n'), `${name} — empty workspace`);
       this.ui.outro('Ready.');
       return;
@@ -72,7 +74,7 @@ export default class NewCommand {
 
     // Every app depends on every frond — stated here, where both names are known.
     pw.linkFronds(dir);
-    if (raw.local) pw.linkLocal(dir);
+    if (raw.local) pw.linkLocal(dir); else pw.pinVersions(dir);
     this.ui.note([`cd ${name}`, INSTALL, `pnpm dev`].join('\n'), `${name} — ${fronds} frond(s), ${apps} app(s)`);
     this.ui.outro('Ready.');
   }

@@ -39,7 +39,7 @@ export async function bootAppFromConfig(root: string, opts: BootAppOptions = {})
     remotes: useRemotes ? remotes : undefined,
     remoteTransport: useRemotes ? (url) => createHttpTransport(url) : undefined,
     // One resolver, one place that knows a storage package.
-    db: (cfg) => resolveStorage(cfg.db as DbConfig, (cfg as { sources?: unknown }).sources as never),
+    db: (cfg) => resolveStorage(cfg.db as DbConfig, (cfg as { sources?: unknown }).sources as never, root),
     extensions: opts.extensions,
   });
 }

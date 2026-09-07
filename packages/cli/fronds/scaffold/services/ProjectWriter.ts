@@ -30,6 +30,11 @@ function monorepoPackages(): string | undefined {
  */
 const TEMPLATES = fileURLToPath(new URL('../../../templates/', import.meta.url));
 
+/** The version that scaffolds is the version the templates were written for. */
+const scaffoldVersion = (): string =>
+  (JSON.parse(readFileSync(fileURLToPath(new URL('../../../package.json', import.meta.url)), 'utf8')) as
+    { version: string }).version;
+
 // npm strips a literal .gitignore from published packages — it ships as
 // _gitignore and the name is restored on copy.
 function restoreGitignore(dir: string): void {
@@ -143,6 +148,44 @@ export default class ProjectWriter {
       pkg.dependencies ??= {};
       for (const frond of fronds) pkg.dependencies[frondPackage(frond, conventions)] = 'workspace:*';
       writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+    }
+  }
+
+  /**
+   * Every `@fougere/*` dependency, pinned to the version that scaffolded it.
+   *
+   * The templates say `latest`, which reads as "whatever is current" and is not: pnpm
+   * answers from a metadata cache, and a fresh project installed 0.6 while the registry
+   * said 0.7 — measured. A version is also what makes an install reproducible, which
+   * `latest` never was.
+   *
+   * Read off this CLI's own package, because the scaffold and the packages it names ship
+   * together: the version that wrote the file is the one it was written for.
+   */
+  pinVersions(wsDir: string, conventions: Conventions = DEFAULT_CONVENTIONS): void {
+    const version = scaffoldVersion();
+    const manifests = [
+      join(wsDir, 'package.json'),
+      ...['apps', conventions.fronds].flatMap((kind) => {
+        const dir = join(wsDir, kind);
+        if (!existsSync(dir)) return [];
+
+        return readdirSync(dir, { withFileTypes: true })
+          .filter((e) => e.isDirectory())
+          .map((e) => join(dir, e.name, 'package.json'));
+      }),
+    ];
+
+    for (const path of manifests) {
+      if (!existsSync(path)) continue;
+      const pkg = JSON.parse(readFileSync(path, 'utf8')) as { dependencies?: Record<string, string> };
+      let moved = false;
+      for (const [name, range] of Object.entries(pkg.dependencies ?? {})) {
+        if (!name.startsWith('@fougere/') || range !== 'latest') continue;
+        pkg.dependencies![name] = version;
+        moved = true;
+      }
+      if (moved) writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n');
     }
   }
 

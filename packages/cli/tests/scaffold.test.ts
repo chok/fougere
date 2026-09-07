@@ -59,3 +59,31 @@ describe('workspace project scaffold', () => {
     }
   });
 });
+
+/**
+ * `latest` reads as "whatever is current" and is not.
+ *
+ * pnpm answers from a metadata cache: a fresh project installed 0.6 while the registry
+ * said 0.7 — measured. And an install that resolves differently on two machines was never
+ * an install anyone could reproduce.
+ */
+describe('the versions a fresh project depends on', () => {
+  it('pins every @fougere/* to the version that scaffolded it', () => {
+    const parent = mkdtempSync(join(tmpdir(), 'fougere-pin-'));
+    const root = join(parent, 'fern');
+    const pw = new ProjectWriter();
+    pw.createWorkspace(root, 'fern');
+    pw.addApp(root, 'nuxt', 'web');
+    pw.pinVersions(root);
+
+    const cli = JSON.parse(
+      readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
+    ) as { version: string };
+    const app = JSON.parse(readFileSync(join(root, 'apps', 'web', 'package.json'), 'utf8')) as
+      { dependencies: Record<string, string> };
+
+    expect(app.dependencies['@fougere/core']).toBe(cli.version);
+    expect(Object.values(app.dependencies)).not.toContain('latest');
+    rmSync(parent, { recursive: true, force: true });
+  });
+});
