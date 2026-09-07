@@ -94,6 +94,8 @@ export interface FrondDeclaration {
   surfaces?: Record<string, string[]>;
   /** The import scope this frond answers under. Defaults to the conventional one. */
   scope?: string;
+  /** What `frond.config.ts` states — the third producer of an operation contract. */
+  operationsOverrides?: FrondDescriptor['operationsOverrides'];
 }
 
 /** State a frond without reading a disk. */
@@ -175,6 +177,7 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
   return {
     name,
     source: { path: '', package: `${scope}/${name}` },
+    ...(declared.operationsOverrides ? { operationsOverrides: declared.operationsOverrides } : {}),
     providers,
     entities,
     handlers,

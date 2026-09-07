@@ -122,6 +122,13 @@ function frondOf(frond: FrondDescriptor, imports: Imports): string {
     members.push(`seeds: ${JSON.stringify(frond.seeds.map((s) => ({ entityName: s.entityName, data: s.data })))}`);
   }
   if (frond.surfaces) members.push(`surfaces: ${JSON.stringify(frond.surfaces)}`);
+  // What `frond.config.ts` states — read BY the scan, so a host that boots from a written
+  // statement never sees the file. It is the only answer for the kind of an op whose name
+  // leads with no known verb, and the only one for a method inherited from a base class
+  // the workspace scan cannot see.
+  if (frond.operationsOverrides && Object.keys(frond.operationsOverrides).length) {
+    members.push(`operationsOverrides: ${JSON.stringify(frond.operationsOverrides)}`);
+  }
 
   const scope = (frond.source.package as string | undefined)?.split('/')[0];
   if (scope) members.push(`scope: ${JSON.stringify(scope)}`);
