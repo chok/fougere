@@ -98,18 +98,32 @@ try {
   // A PAGE is not the door. An app that boots with zero fronds renders every page and
   // answers NOT_FOUND to every call — the exact failure the scan exists to prevent, and
   // one a 200 cannot see. So the check asks the domain: the scaffold's own entity, listed.
-  const call = await fetch(`http://localhost:${PORT}/_fougere/call`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'post.list', params: {} }),
-  });
-  const answer = await call.json().catch(() => null);
-  if (!answer || !('result' in answer)) {
-    console.error(log);
-    console.error(JSON.stringify(answer)?.slice(0, 2000));
-    throw new Error(`the door opens but answers nothing: post.list returned no result`);
+  //
+  // TWO operations, and the second is the one that measures anything: `post.list` comes
+  // from a prefab, which declares its own contract in a static and survives whatever the
+  // build does. `post.listPublished` is a method someone wrote — its contract is read
+  // from SOURCE at scan time and no class carries it at runtime, so it answers only if
+  // the statement the host boots from carried it across. Measured: it did not, and this
+  // check said the door was fine.
+  const ask = async (method) => {
+    const call = await fetch(`http://localhost:${PORT}/_fougere/call`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params: {} }),
+    });
+
+    return call.json().catch(() => null);
+  };
+
+  for (const method of ['post.list', 'post.listPublished']) {
+    const answer = await ask(method);
+    if (!answer || !('result' in answer)) {
+      console.error(log);
+      console.error(JSON.stringify(answer)?.slice(0, 2000));
+      throw new Error(`the door opens but answers nothing: ${method} returned no result`);
+    }
   }
-  console.log(`the door opens: GET / → 200, and post.list answers`);
+  console.log(`the door opens: GET / → 200, and post.list and post.listPublished answer`);
 } finally {
   server?.kill('SIGTERM');
   rmSync(work, { recursive: true, force: true });
