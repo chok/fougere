@@ -1,7 +1,7 @@
 import { Role } from '@fougere/schema';
 import { Lifecycle } from '@fougere/schema';
 /** Fougere server bootstrap — single entry point for an app's lifecycle, whatever hosts it. */
-import { createApp, identityFromEnv, Logger, migrating, seeding } from '@fougere/core';
+import { applyConfig, createApp, identityFromEnv, Logger, migrating, seeding } from '@fougere/core';
 import { scanProject, loadCascadedConfig, setModuleLoader, frondAliases, resolveConventions } from '@fougere/core/node';
 import type { Extension } from '@fougere/core';
 import { createContainer } from '@fougere/container';
@@ -114,6 +114,12 @@ async function boot(): Promise<App> {
   // and where there is no file a second read finds nothing and says nothing.
   const fileConfig: FougereConfig = (_config.config as FougereConfig | undefined)
     ?? (await loadCascadedConfig(root, configRoot));
+  // What a re-read config changes in a running process — the same call `boot()` makes in
+  // core, and the only place `logLevel:` takes effect. Without it a web host read the key
+  // and did nothing with it: the file said `debug` and the threshold stayed where the
+  // module had left it.
+  applyConfig(fileConfig);
+
   const conventions = resolveConventions(fileConfig.conventions);
   // `frondAliases` reads a directory listing, so it is asked only when the loader it
   // feeds is going to exist at all.

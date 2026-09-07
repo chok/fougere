@@ -90,6 +90,16 @@ const module = defineNuxtModule<FougereModuleOptions>({
       }
       // invoke reads the current request (state) through nitro's async context
       nitroConfig.experimental = { ...nitroConfig.experimental, asyncContext: true };
+      // A provider's container key IS its class name, read off the constructor at boot.
+      // esbuild lowers `static readonly` fields and renames the declaration doing it, so
+      // `class Communes { static readonly SOURCE = … }` registers as `_Communes` and the
+      // handler that asks for `Communes` gets a container miss — measured on Nitro's dev
+      // pass, ten classes, the six with statics renamed and the four without untouched.
+      // Same statement as `mangle.reserved` below, on the pass that builds the server.
+      nitroConfig.esbuild = {
+        ...nitroConfig.esbuild,
+        options: { ...nitroConfig.esbuild?.options, keepNames: true },
+      };
     });
 
     // ── 0. A TS-aware loader, installed twice on purpose ──
@@ -114,6 +124,15 @@ const module = defineNuxtModule<FougereModuleOptions>({
       Object.entries(options).filter(([, v]) => v !== undefined),
     ) as Partial<FougereConfig>;
     const config: FougereConfig = { db: 'sqlite', ...fileConfig, ...optionsOverride };
+    // Nitro replaces `console` with consola, whose own threshold sits at `info` — and a
+    // Logger line at `debug` goes out through `console.debug`, which consola then drops.
+    // Measured: the level was `debug`, the boot logged nothing, and the silence read as
+    // an app doing nothing rather than a host filtering.
+    if ((process.env.FOUGERE_LOG_LEVEL ?? config.logLevel) === 'debug') {
+      useLogger('fougere').warn(
+        'logLevel is debug, and Nitro\'s console drops that level — run with CONSOLA_LEVEL=4 to see it.',
+      );
+    }
     const conventions = resolveConventions(config.conventions);
 
     // Now the names are known, so the loader can resolve them — and the scan below runs
@@ -304,11 +323,14 @@ export default module;
 
 /** What of the config a generated plugin can carry: values, never providers. */
 function carried(config: FougereConfig): Partial<FougereConfig> {
-  const { remotes, adapters, sources } = config as FougereConfig & { sources?: unknown };
+  const { remotes, adapters, sources, logLevel } = config as FougereConfig & { sources?: unknown };
   return {
     ...(remotes ? { remotes } : {}),
     ...(adapters ? { adapters } : {}),
     ...(sources ? { sources } : {}),
+    // The host hands its config over, so nothing re-reads the file at runtime — a key
+    // left out here is a key the app declared and no one applies.
+    ...(logLevel ? { logLevel } : {}),
   } as Partial<FougereConfig>;
 }
 

@@ -64,6 +64,14 @@ describe('applyConfig', () => {
     expect(out.pending).toEqual([]);
   });
 
+  it('leaves the level alone when the config declares none', () => {
+    setLogLevel('warn');
+    const out = applyConfig({ db: 'sqlite' });
+
+    expect(logLevel()).toBe('warn');
+    expect(out.applied).toEqual([]);
+  });
+
   it('reports what changed and did NOT take effect, rather than pretending', () => {
     setLogLevel('warn');
     const out = applyConfig(

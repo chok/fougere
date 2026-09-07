@@ -18,7 +18,12 @@ export function applyConfig(next: FougereConfig, inForce?: FougereConfig): Confi
   // through `envLevel`, which is where the environment is already validated. Casting it
   // here was a second reader that validated nothing: `FOUGERE_LOG_LEVEL=verbose` set
   // the threshold to `undefined` and every log passed.
-  const wanted = envLevel() ?? next.logLevel ?? 'debug';
+  // A process that declares no level keeps the one it started with — `info`, or whatever
+  // the host set for itself before booting. Defaulting to `debug` here meant every caller
+  // of this function silently raised the threshold: the CLI sets `warn` and got `debug`
+  // back, and the day a web host started calling it, `pnpm dev` would have traced every
+  // dispatch of an app that asked for nothing.
+  const wanted = envLevel() ?? next.logLevel ?? logLevel();
   const before = logLevel();
   if (wanted !== before) {
     setLogLevel(wanted);
