@@ -172,6 +172,9 @@ const handlerMethodsOf = (filePath: string, projectRoot?: string) =>
 
 async function toProvider(filePath: string): Promise<ProviderEntry> {
   const ctor = await loadClass(filePath);
+  // Read here, while the class is the one the source declared. What a bundler does to
+  // that name later is why it is carried rather than asked for again.
+  const name = ctor.name;
   const params = await ctorParamsOf(filePath);
   const deps = params.map((p) => depKeyOf(p.type));
 
@@ -191,10 +194,10 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
     deps.push(storageKeyOf(lowerFirst((target as { name: string }).name)));
   }
 
-  // No `name` beside `ctor`: a provider registers under `ctor.name`, which is what
-  // `depKeyOf` returns since it reads the type as written. The camelCase field that
-  // used to sit here called itself the registration key and was one nowhere.
-  return { ctor, deps, filePath };
+  // `name` beside `ctor`, and it IS the registration key — what `depKeyOf` returns, since
+  // it reads the type as written. It used to be asked of `ctor.name` at boot, which held
+  // until a bundler lowered a static field and renamed the declaration doing it.
+  return { name, ctor, deps, filePath };
 }
 
 async function toEntityEntry(filePath: string): Promise<EntityEntry | null> {

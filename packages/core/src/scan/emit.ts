@@ -1,5 +1,6 @@
 /** The scan, written down as a module — what `createApp` is handed where there is no disk. */
 import { dirname, relative } from 'node:path';
+import { nameOf } from '../descriptor/frond.js';
 import type { FrondDescriptor, EntityEntry, HandlerEntry, PresenterEntry, CollectorEntry, ProviderEntry, SeedEntry } from '../descriptor/frond.js';
 import type { ScanResult } from './result.js';
 import { type Aliases, type Live, lit, operationsOf, schemaRef } from './contract.js';
@@ -84,7 +85,8 @@ function collectorOf(c: CollectorEntry, imports: Imports): string {
 }
 
 function providerOf(p: ProviderEntry, imports: Imports): string {
-  return `{ ctor: ${imports.aliasOf(p.ctor as Live)}, deps: ${lit(p.deps)}, filePath: ${lit(p.filePath)} }`;
+  return `{ name: ${lit(nameOf(p))}, ctor: ${imports.aliasOf(p.ctor as Live)}, `
+    + `deps: ${lit(p.deps)}, filePath: ${lit(p.filePath)} }`;
 }
 
 function seedOf(s: SeedEntry, imports: Imports): string {

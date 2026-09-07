@@ -1,5 +1,6 @@
 /** The scan, written as the STATEMENT an author would have written. */
 import { relative } from 'node:path';
+import { nameOf } from '../descriptor/frond.js';
 import type { FrondDescriptor } from '../descriptor/frond.js';
 import type { ScanResult } from './result.js';
 import { type Aliases, type Live, operationsOf } from './contract.js';
@@ -108,7 +109,13 @@ function frondOf(frond: FrondDescriptor, imports: Imports): string {
     members.push(`collectors: ${list(frond.collectors.map((c) => subject(imports.default(c.filePath, frond), c.deps)))}`);
   }
   if (frond.providers.length) {
-    members.push(`providers: ${list(frond.providers.map((p) => subject(imports.default(p.filePath, frond), p.deps)))}`);
+    members.push(`providers: ${list(frond.providers.map((p) => subject(
+      imports.default(p.filePath, frond, p.ctor as Live),
+      p.deps,
+      // The container key, and a bundler is free to rewrite the class's own name — it did,
+      // and a handler asking for `Communes` met a provider registered as `_Communes`.
+      `name: ${JSON.stringify(nameOf(p))}`,
+    )))}`);
   }
   // A seed is DATA, not a class — the one member a statement cannot derive from an import.
   if (frond.seeds.length) {

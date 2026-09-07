@@ -52,6 +52,25 @@ describe('a host that states what it hosts', () => {
     expect(Object.keys(app.facadeFor('post') ?? {})).toContain('publish');
   });
 
+  it('registers a provider under the name stated, not the one a bundler left', async () => {
+    // esbuild lowers a `static readonly` field and renames the declaration doing it, so
+    // the class arrives as `_Weather` and every handler asking for `Weather` misses. What
+    // the scan read is written down; `ctor.name` answers only where nobody wrote it.
+    class _Weather { static readonly SOURCE = 'https://example.org'; }
+
+    configureFougere({
+      fronds: [frond('blog', {
+        entities: [Post],
+        providers: [{ ctor: _Weather, name: 'Weather' }],
+      })],
+    });
+    const app = await useFougereApp();
+
+    expect(app.container.resolve('frond:blog')).toBeDefined();
+    expect(() => (app.container.resolve('frond:blog') as { resolve(n: string): unknown }).resolve('Weather'))
+      .not.toThrow();
+  });
+
   it('pulls in no compiler, which is the whole point', async () => {
     // The DELTA, not the count: a test runner has its own reasons to hold `typescript`,
     // and measuring presence rather than arrival is how this assertion was wrong first.

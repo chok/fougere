@@ -34,7 +34,10 @@ export interface DeclaredHandler extends DeclaredSubject {
 }
 
 /** A class on its own, or a class with what it asks for. */
-export type Declared = Ctor | DeclaredSubject;
+export type Declared = Ctor | (DeclaredSubject & {
+  /** The container key, when the class's own name cannot be trusted to survive a build. */
+  name?: string;
+});
 
 const ctorOf = (d: Declared): Ctor => (typeof d === 'function' ? d : d.ctor);
 
@@ -155,6 +158,9 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
   });
 
   const providers: ProviderEntry[] = (declared.providers ?? []).map((p) => ({
+    // Written down where a statement says it, read off the class otherwise — the class's
+    // own name is what a bundler is free to rewrite.
+    ...(typeof p === 'function' || !p.name ? {} : { name: p.name }),
     ctor: ctorOf(p),
     deps: depsOf(p),
     filePath: '',

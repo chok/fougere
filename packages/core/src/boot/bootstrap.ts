@@ -1,5 +1,6 @@
 import type { Container } from '@fougere/container';
 import { lowerFirst, type SchemaView } from '@fougere/schema';
+import { nameOf } from '../descriptor/frond.js';
 import type { EntityEntry, HandlerEntry, PresenterEntry } from '../descriptor/frond.js';
 import { hostedBy } from './hosted.js';
 import type { AuthRuntime } from './auth.js';
@@ -272,7 +273,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     refuseCrudOnOwned(frond, owners);
 
     for (const provider of frond.providers) {
-      scope.register(provider.ctor.name, provider.ctor, { deps: provider.deps });
+      scope.register(nameOf(provider), provider.ctor, { deps: provider.deps });
     }
     // …and again under the port each one extends, so `private payment: Payment`
     // reaches the realization instead of the base class it is declared against.
@@ -284,7 +285,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       frondLog.debug(`port ${port} → ${impl.ctor.name}`);
     }
     if (frond.providers.length > 0) {
-      frondLog.debug(`${frond.providers.length} provider(s): ${frond.providers.map((p) => p.ctor.name).join(', ')}`);
+      frondLog.debug(`${frond.providers.length} provider(s): ${frond.providers.map(nameOf).join(', ')}`);
     }
 
     // Register Storage for each entity — PascalCase type name (e.g. 'PostStorage')
