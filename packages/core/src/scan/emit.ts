@@ -1,9 +1,8 @@
 /** The scan, written down as a module — what `createApp` is handed where there is no disk. */
 import { dirname, relative } from 'node:path';
-import { ANONYMOUS_SCHEMA_NAME, Card, type SchemaView } from '@fougere/schema';
 import type { FrondDescriptor, EntityEntry, HandlerEntry, PresenterEntry, CollectorEntry, ProviderEntry, SeedEntry } from '../descriptor/frond.js';
 import type { ScanResult } from './result.js';
-import type { OperationContract } from '../wire/operation.js';
+import { type Aliases, type Live, lit, operationsOf, schemaRef } from './contract.js';
 
 export interface EmitOptions {
   /** Where the generated module will sit. Imports are written relative to it. */
@@ -11,8 +10,6 @@ export interface EmitOptions {
   /** How `@fougere/core` is reached from there. Default: the package name. */
   core?: string;
 }
-
-type Live = object;
 
 /** Is a TypeScript compiler going to read this module? Its name is the only thing that says. */
 const isTypeScript = (outFile: string): boolean => /\.tsx?$/.test(outFile);
@@ -24,9 +21,7 @@ function specifierOf(filePath: string, outFile: string): string {
   return rel.startsWith('.') ? rel : `./${rel}`;
 }
 
-const lit = (v: unknown): string => JSON.stringify(v ?? null);
-
-class Imports {
+class Imports implements Aliases {
   private readonly byValue = new Map<Live, string>();
   private readonly lines: string[] = [];
   /** Entity classes by their class name — what a `Partial<X>` names as its source. */
@@ -56,40 +51,8 @@ class Imports {
 
   has(value: Live): boolean { return this.byValue.has(value); }
   aliasOf(value: Live): string | undefined { return this.byValue.get(value); }
+  classNamed(name: string): Live | undefined { return this.byClassName.get(name); }
   render(): string { return this.lines.join('\n'); }
-}
-
-/** What a schema slot becomes in the generated module. */
-function schemaRef(schema: SchemaView | undefined, declaredIn: string, imports: Imports): string | undefined {
-  if (!schema) return undefined;
-  const known = imports.aliasOf(schema as Live);
-  if (known) return known;
-
-  const name = (schema as { name?: string }).name;
-  if (name && name !== ANONYMOUS_SCHEMA_NAME) return imports.named(schema as Live, declaredIn, name);
-
-  const card = Card.fromSchema(schema);
-  const source = card.origin?.from ?? card.descriptor.title;
-  const from = source ? imports.byClassName.get(source) : undefined;
-  if (from) return `${imports.aliasOf(from)}.partial()`;
-
-  throw new Error(
-    `A scan cannot be written down: an anonymous schema in ${declaredIn} names no source. `
-    + 'Only `Partial<X>` is derivable here, and it says which X it came from.',
-  );
-}
-
-function contractOf(op: string, c: OperationContract, declaredIn: string, imports: Imports): string {
-  const parts: string[] = [];
-  const input = schemaRef(c.input, declaredIn, imports);
-  const output = schemaRef(c.output, declaredIn, imports);
-  if (input) parts.push(`input: ${input}`);
-  if (output) parts.push(`output: ${output}`);
-  if (c.binding !== undefined) parts.push(`binding: ${lit(c.binding)}`);
-  if (c.description !== undefined) parts.push(`description: ${lit(c.description)}`);
-  if (c.cardinality !== undefined) parts.push(`cardinality: ${lit(c.cardinality)}`);
-  if (c.signature !== undefined) parts.push(`signature: ${lit(c.signature)}`);
-  return `[${lit(op)}, { ${parts.join(', ')} }]`;
 }
 
 function entityOf(e: EntityEntry, imports: Imports): string {
@@ -98,13 +61,13 @@ function entityOf(e: EntityEntry, imports: Imports): string {
 }
 
 function handlerOf(h: HandlerEntry, imports: Imports): string {
-  const ops = [...h.operations].map(([op, c]) => contractOf(op, c, h.filePath, imports));
+  const ops = operationsOf(h.operations, h.filePath, imports, '    ');
   const override = schemaRef(h.outputOverride, h.filePath, imports);
   return `{ name: ${lit(h.name)}, address: ${lit(h.address)}, ctor: ${imports.aliasOf(h.ctor as Live)}, `
     + `deps: ${lit(h.deps)}, filePath: ${lit(h.filePath)}, exposed: ${lit(h.exposed)}, `
     + (h.surface ? `surface: ${lit(h.surface)}, ` : '')
     + (override ? `outputOverride: ${override}, ` : '')
-    + `operations: new Map([\n      ${ops.join(',\n      ')}\n    ]) }`;
+    + `operations: ${ops} }`;
 }
 
 function presenterOf(p: PresenterEntry, imports: Imports): string {
