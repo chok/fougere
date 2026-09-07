@@ -1,5 +1,13 @@
 # @fougere/adapter-duckdb
 
+## 0.8.0-alpha.0
+
+### Patch Changes
+
+- Updated dependencies [34fbd31]
+- Updated dependencies [ae49d25]
+  - @fougere/adapter-sql@0.8.0-alpha.0
+
 ## 0.7.0-alpha.0
 
 ### Patch Changes

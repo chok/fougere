@@ -1,5 +1,22 @@
 # fougere-demo-mirror-catalog
 
+## 0.0.3-alpha.1
+
+### Patch Changes
+
+- Updated dependencies [6ec8e59]
+- Updated dependencies [2478927]
+- Updated dependencies [525b53e]
+- Updated dependencies [34fbd31]
+- Updated dependencies [089ebb9]
+- Updated dependencies [f9b5837]
+- Updated dependencies [ae49d25]
+- Updated dependencies [6d9034d]
+- Updated dependencies [c5f5791]
+- Updated dependencies [4287ac9]
+  - @fougere/core@0.7.0-alpha.1
+  - @fougere/defaults@0.7.0-alpha.1
+
 ## 0.0.3-alpha.0
 
 ### Patch Changes

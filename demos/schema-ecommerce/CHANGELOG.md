@@ -1,5 +1,13 @@
 # fougere-demo-schema-ecommerce
 
+## 0.0.3-alpha.1
+
+### Patch Changes
+
+- Updated dependencies [34fbd31]
+- Updated dependencies [ae49d25]
+  - @fougere/adapter-sql@0.7.0-alpha.1
+
 ## 0.0.3-alpha.0
 
 ### Patch Changes

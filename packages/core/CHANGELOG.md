@@ -1,5 +1,104 @@
 # @fougere/core
 
+## 0.8.0-alpha.0
+
+### Minor Changes
+
+- 34fbd31: A criterion can compare. `where` knew equality and membership, while nearly everything
+  worth filtering on is a range — land over 1 500, price under 400 000, built after 1900 —
+  and the only way out was `storage.client`, the path with no judge and no codecs.
+
+  `gte`, `lte`, `gt`, `lt`, `ne`, `between`, `contains`, `notIn` and `isNull`. `eq` and `in`
+  are deliberately absent: a bare value already means equality and an array already means
+  membership, and a second spelling would make one criterion sayable two ways.
+
+  A comparison is told from a value that IS an object by the FIELD, never by the criterion:
+  `json()` admits any shape, so reading the criterion would make a stored object
+  unfilterable the day its keys happened to spell an operator. Both realizations compile it
+  — SQL and the store the memory and file adapters derive from — and a misspelled comparison
+  is refused rather than dropped.
+
+- ae49d25: A migration says what it declined to change. The pass is additive by design — it creates
+  what is missing and never touches a column that exists — which is a promise worth keeping
+  and a silence worth breaking: relax a `required` field and the table keeps its NOT NULL,
+  so the write fails on a row, in production, long after the boot that could have named it.
+  Measured twice on a real app, once as `CHECK constraint failed` and once as `NOT NULL
+constraint failed`, both with a green boot.
+
+  `Source.migrate` may now answer with what it found, and the boot voices it — the shape
+  `seeding(report)` already had. `SchemaState` stays a set of names on purpose: `done()`
+  reads it to decide whether a frozen step was applied, and a wider one would make a
+  replayed migration answer wrong.
+
+### Patch Changes
+
+- 6ec8e59: A provider's container key is written down. It was read at boot off `ctor.name`, which
+  held until a bundler lowered a `static readonly` field and renamed the declaration doing
+  it: the provider registered as `_Communes` and every handler asking for `Communes` met a
+  container miss. The scan reads the name from source, both emitters write it, and
+  `ctor.name` answers only where nobody wrote it down.
+
+  Measured on a real app: five operations depending on renamed providers answer with no
+  bundler setting at all.
+
+- 2478927: A statement carries the operations the scan read. `frond()` posted an empty Map, so a
+  host booting from a written statement — which is what `@fougere/nuxt` hands its runtime —
+  served a prefab's five CRUD ops and nothing an author had written. The scan reads a
+  method's contract from source and a class carries none of it at runtime, so the statement
+  is where it has to survive; `emitStatement` now writes it, beside the `deps` it already
+  wrote for the same reason.
+
+  A prefab's own `__ops` still answer, and a method written over one wins.
+
+- 525b53e: An operation contract is written down in one place. `emitScan` held the serializer for
+  contracts and schema references; `emitStatement`, which the Nuxt module writes from, held
+  none and carried no operations at all. The half they can share now lives beside them,
+  asking of each emitter's imports only what it needs: an alias for a value already
+  imported, a named import, and the entity a class name belongs to.
+
+  No output changes — a real scan renders byte for byte what it did before.
+
+- 089ebb9: A statement carries what `frond.config.ts` states. The file is read BY the scan, so a
+  host booting from a written statement never saw it — and it is the only answer for the
+  kind of an operation whose name leads with no known verb, and for a method inherited from
+  an installed base class. Renaming a method to please the scan was the workaround; the
+  right word can stay now.
+- f9b5837: The door check asks for an operation someone wrote. It asked `post.list` — a prefab op,
+  whose contract is a static that survives any build — and called the door fine while every
+  hand-written operation of a fresh project went unserved. `post.listPublished` is read
+  from source at scan time and carried by nothing at runtime, so it answers only when the
+  statement the host boots from carried it across.
+- 6d9034d: Three small ones, each a silence.
+
+  A relative `db.path` is counted from the config that named it, not from whoever is
+  running. `apps/nuxt` runs from its own directory and made a SECOND, empty database beside
+  itself while the workspace held the real one — nothing said, every table created, the
+  seeds run, an empty domain served with a green boot. `resolveStorage` takes a root;
+  `:memory:` and absolute paths pass through untouched, and the one case where the two
+  disagree is named rather than acted on silently.
+
+  A fresh project pins the version that scaffolded it. `latest` reads as "whatever is
+  current" and is not: pnpm answers from a metadata cache, and a fresh project installed
+  0.6 while the registry said 0.7.
+
+  And a convention directory that refuses a file says where it belongs — measured twice on
+  one project, both times a shared contract that had to move and nothing to say where.
+
+- c5f5791: A web host applies the config it read. `applyConfig` had one caller, `boot()`, and the
+  front-end hosts reach `createApp` directly — so `logLevel:` was read and never acted on.
+  Its default now keeps the level the process already has, instead of raising every caller
+  to `debug`; and the Nuxt module says so when Nitro's console would drop that level.
+- 4287ac9: A filter is judged the way a write is. `where` was the one entrance to the read port with
+  no judge at all — a field the entity does not declare passed, and so did a value the field
+  would refuse on the way in — while the admin door copies a browser's filter into it
+  verbatim. A criterion may still name a set, which is the one thing the write door refuses:
+  an array is judged member by member, since that is what `IN` binds.
+
+  And a filter on a field the door does not hand back is SAID, not refused: `output(schema)`
+  narrows what is returned and has never narrowed what is asked, so refusing it today would
+  break a GraphQL relation batch on the way to closing a hole. Measured across the
+  repository: zero warnings, which is what a refusal will need before it can be one.
+
 ## 0.7.0-alpha.0
 
 ### Minor Changes

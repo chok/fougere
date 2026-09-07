@@ -1,5 +1,12 @@
 # fougere
 
+## 0.8.0-alpha.0
+
+### Patch Changes
+
+- Updated dependencies [6d9034d]
+  - @fougere/cli@0.8.0-alpha.0
+
 ## 0.7.0-alpha.0
 
 ### Patch Changes

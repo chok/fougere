@@ -1,7 +1,7 @@
 {
   "name": "@fougere/adapter-memory",
-  "version": "0.7.0-alpha.0",
-  "description": "Rows in a Map — the source a first run meets, and the one that ships no driver.",
+  "version": "0.8.0-alpha.0",
+  "description": "Rows in a Map \u2014 the source a first run meets, and the one that ships no driver.",
   "keywords": [
     "fougere",
     "typescript",

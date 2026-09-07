@@ -1,5 +1,43 @@
 # @fougere/nuxt
 
+## 0.8.0-alpha.0
+
+### Patch Changes
+
+- 6d9034d: Three small ones, each a silence.
+
+  A relative `db.path` is counted from the config that named it, not from whoever is
+  running. `apps/nuxt` runs from its own directory and made a SECOND, empty database beside
+  itself while the workspace held the real one — nothing said, every table created, the
+  seeds run, an empty domain served with a green boot. `resolveStorage` takes a root;
+  `:memory:` and absolute paths pass through untouched, and the one case where the two
+  disagree is named rather than acted on silently.
+
+  A fresh project pins the version that scaffolded it. `latest` reads as "whatever is
+  current" and is not: pnpm answers from a metadata cache, and a fresh project installed
+  0.6 while the registry said 0.7.
+
+  And a convention directory that refuses a file says where it belongs — measured twice on
+  one project, both times a shared contract that had to move and nothing to say where.
+
+- c5f5791: A web host applies the config it read. `applyConfig` had one caller, `boot()`, and the
+  front-end hosts reach `createApp` directly — so `logLevel:` was read and never acted on.
+  Its default now keeps the level the process already has, instead of raising every caller
+  to `debug`; and the Nuxt module says so when Nitro's console would drop that level.
+- Updated dependencies [6ec8e59]
+- Updated dependencies [2478927]
+- Updated dependencies [525b53e]
+- Updated dependencies [34fbd31]
+- Updated dependencies [089ebb9]
+- Updated dependencies [f9b5837]
+- Updated dependencies [ae49d25]
+- Updated dependencies [6d9034d]
+- Updated dependencies [c5f5791]
+- Updated dependencies [4287ac9]
+  - @fougere/core@0.8.0-alpha.0
+  - @fougere/defaults@0.8.0-alpha.0
+  - @fougere/app@0.8.0-alpha.0
+
 ## 0.7.0-alpha.0
 
 ### Patch Changes
