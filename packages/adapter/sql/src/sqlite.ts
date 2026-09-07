@@ -5,8 +5,9 @@ import { Kysely, SqliteDialect } from 'kysely';
 import Database from 'better-sqlite3';
 import { createStorageFactory } from './crud.js';
 import { logQueries } from './query.js';
+import { drift, driftReport } from './drift.js';
 import { sqlSink, sqlEnforces, type SetupOptions, type SqlSource } from './setup.js';
-import { migrate } from './diff.js';
+import { desiredTables, migrate } from './diff.js';
 import { toTableName } from './table.js';
 import { Sources, type Source, type SourceConfig, type SourceView } from '@fougere/core';
 
@@ -35,7 +36,13 @@ export function setupSqlite(opts: SqliteSetupOptions = {}): SqliteSetup {
     storageFactory: createStorageFactory(db, opts.storageFactoryOptions, 'sqlite'),
     sink: sqlSink(db),
     migrate: async (view: SourceView) => {
-      await migrate(view as never, db, { dialect: 'sqlite', tableName: opts.storageFactoryOptions?.tableName ?? toTableName });
+      const options = { dialect: 'sqlite' as const, tableName: opts.storageFactoryOptions?.tableName ?? toTableName };
+      await migrate(view as never, db, options);
+      // What the additive pass left alone and the entity no longer agrees with. Asked
+      // AFTER, so a column it just created is judged against what it just wrote.
+      const found = await drift(db, desiredTables(view as never, options));
+
+      return found.length ? driftReport(found) : undefined;
     },
     close: () => db.destroy(),
     name: opts.name ?? path,

@@ -184,7 +184,7 @@ async function boot(): Promise<App> {
       // The slot is declared even when this host resolved no storage — a host that resolved
       // its own (the Nitro plugin does, for its bundler) then REPLACES this member in place
       // instead of adding one after the seeds, which is rows before tables.
-      migrating(storageMigrate),
+      migrating(storageMigrate, (message) => log.warn(message)),
       seeding((message) => log.info(`[seed]${message}`)),
       ...(_config.extensions ?? []),
     ],

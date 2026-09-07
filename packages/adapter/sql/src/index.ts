@@ -34,6 +34,8 @@ export type { ValueCodec } from './values.js';
 // runtime that has neither. It lives at `@fougere/adapter-sql/sqlite`.
 export { setupKysely, sqlSink } from './setup.js';
 export type { Setup, SqlSource, SetupOptions } from './setup.js';
+export { drift, driftReport } from './drift.js';
+export type { Drift } from './drift.js';
 export { actualState, desiredTables, delta, orderChanges, changeSQL, planMigration, migrate } from './diff.js';
 export type { SchemaState, Change } from './diff.js';
 // The non-additive half — realised only from a step a human wrote down.

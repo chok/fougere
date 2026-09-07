@@ -93,7 +93,7 @@ export async function boot(options: BootOptions): Promise<App> {
      * The whole ascent, in one ordered list — tables, then rows, then whatever the host takes on.
      */
     extensions: [
-      migrating(dbSetup?.migrate),
+      migrating(dbSetup?.migrate, (message) => log.warn(message)),
       seeding((message) => log.debug(message)),
       ...(options.extensions ?? []),
     ],

@@ -15,8 +15,14 @@ export function declares(schema: SchemaView, constraint: Constraint): boolean {
 /** A place rows live, whatever realizes it. */
 export interface Source {
   storageFactory: StorageFactory;
-  /** Bring the shape of what lives here up to date. */
-  migrate?(view: SourceView): Promise<void>;
+  /**
+   * Bring the shape of what lives here up to date, and say what it could not bring.
+   *
+   * A pass is additive by design and leaves what already exists alone — which is a
+   * promise worth keeping and a silence worth breaking: what it declined to change is
+   * still a difference, and a boot is where a reader can act on it.
+   */
+  migrate?(view: SourceView): Promise<void | string>;
   /** Run `fn` as ONE unit of work, with a factory bound to it. */
   transacted?<R>(fn: (factory: StorageFactory) => Promise<R>): Promise<R>;
   /** What it refuses at the rows themselves. Absent leaves the judge alone with it. */

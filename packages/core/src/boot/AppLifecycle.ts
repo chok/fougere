@@ -45,6 +45,19 @@ export class AppLifecycle {
 }
 
 /** The replaceable migration slot of the application lifecycle. */
-export function migrating(migrate?: Extension['up']): Extension {
-  return migrate ? { name: 'migrate', up: migrate } : { name: 'migrate' };
+export function migrating(
+  migrate?: (app: App) => void | string | Promise<void | string>,
+  report?: (message: string) => void,
+): Extension {
+  if (!migrate) return { name: 'migrate' };
+
+  // What a pass DECLINED to change was thrown away at every call site — the same shape
+  // `seeding` already has: the source knows what it found, the boot owns the voice.
+  return {
+    name: 'migrate',
+    up: async (app: App) => {
+      const said = await migrate(app);
+      if (said) report?.(said);
+    },
+  };
 }

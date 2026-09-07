@@ -3,7 +3,8 @@ import { Kysely, sql, type Dialect as KyselyDialect } from 'kysely';
 import type { Source, SourceView } from '@fougere/core';
 import { createStorageFactory, type StorageFactoryOptions } from './crud.js';
 import { logQueries } from './query.js';
-import { migrate } from './diff.js';
+import { desiredTables, migrate } from './diff.js';
+import { drift, driftReport } from './drift.js';
 import { toTableName } from './table.js';
 import type { DialectName } from './dialect.js';
 import type { SqlSink } from './ddl.js';
@@ -38,11 +39,12 @@ export const sqlEnforces = ['unique'] as const;
 
 /** The migration of what lives in ONE sql source, carrying its own dialect. */
 function migrating(db: Kysely<any>, dialect: DialectName, opts: SetupOptions) {
-  return async (view: SourceView): Promise<void> => {
-    await migrate(view as never, db, {
-      dialect,
-      tableName: opts.storageFactoryOptions?.tableName ?? toTableName,
-    });
+  return async (view: SourceView): Promise<void | string> => {
+    const options = { dialect, tableName: opts.storageFactoryOptions?.tableName ?? toTableName };
+    await migrate(view as never, db, options);
+    const found = await drift(db, desiredTables(view as never, options));
+
+    return found.length ? driftReport(found) : undefined;
   };
 }
 
