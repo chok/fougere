@@ -1,5 +1,14 @@
 # @fougere/nuxt
 
+## 0.8.1-alpha.0
+
+### Patch Changes
+
+- Updated dependencies [9d24851]
+  - @fougere/core@0.8.1-alpha.0
+  - @fougere/app@0.8.1-alpha.0
+  - @fougere/defaults@0.8.1-alpha.0
+
 ## 0.8.0-alpha.0
 
 ### Patch Changes

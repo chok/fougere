@@ -1,5 +1,11 @@
 # create-fougere
 
+## 0.8.1-alpha.0
+
+### Patch Changes
+
+- @fougere/cli@0.8.1-alpha.0
+
 ## 0.8.0-alpha.0
 
 ### Patch Changes

@@ -1,5 +1,16 @@
 # fougere-demo-cloudflare-d1
 
+## 0.0.3-alpha.2
+
+### Patch Changes
+
+- Updated dependencies [9d24851]
+  - @fougere/core@0.8.0-alpha.1
+  - @fougere/adapter-rest@0.8.0-alpha.1
+  - @fougere/adapter-sql@0.8.0-alpha.1
+  - @fougere/observability@0.8.0-alpha.0
+  - @fougere/transport-http@0.8.0-alpha.1
+
 ## 0.0.3-alpha.1
 
 ### Patch Changes
