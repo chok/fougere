@@ -1,5 +1,6 @@
 /** The thirteen gestures of {@link Storage}, derived from four. */
 import { applyCreate, applyUpdate, Lifecycle, Role, type SchemaView } from '@fougere/schema';
+import { comparisonOf, comparisonsIn, type Comparison } from './criterion.js';
 import type { Storage, StorageFactory } from './storage.js';
 
 /** One instance, as every realization hands it over. */
@@ -27,10 +28,16 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
     // silent and only on this storage.
     const keyOf = (value: unknown) => String(value);
     // Same contract as SQL: a criterion may name a SET, and an empty set matches nothing.
+    // A comparison is told from a value by the FIELD, never by the criterion's own shape.
     const matches = (values: Record<string, unknown>, criteria: Record<string, unknown>) =>
-      Object.entries(criteria).every(([key, value]) => Array.isArray(value)
-        ? value.some((v) => Object.is(values[key], v))
-        : Object.is(values[key], value));
+      Object.entries(criteria).every(([key, value]) => {
+        const comparison = comparisonOf(fields[key], value);
+        if (comparison) return compares(values[key], comparison);
+
+        return Array.isArray(value)
+          ? value.some((v) => Object.is(values[key], v))
+          : Object.is(values[key], value);
+      });
 
     // A store holds whole instances and reads them whole, so the scope SQL puts in its
     // SELECT is applied here on the way out. Same set of gestures either way: everything
@@ -150,3 +157,35 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
     return scoped();
   };
 }
+
+/**
+ * The same comparisons SQL compiles, answered in memory. Every one a criterion names has
+ * to hold — the rule two criteria already follow.
+ */
+function compares(held: unknown, comparison: Comparison): boolean {
+  return comparisonsIn(comparison).every(([name, asked]) => {
+    switch (name) {
+      case 'gte': return ordered(held, asked, (a, b) => a >= b);
+      case 'lte': return ordered(held, asked, (a, b) => a <= b);
+      case 'gt': return ordered(held, asked, (a, b) => a > b);
+      case 'lt': return ordered(held, asked, (a, b) => a < b);
+      case 'ne': return !Object.is(held, asked);
+      case 'contains': return String(held ?? '').includes(String(asked));
+      case 'notIn': return !(asked as readonly unknown[]).some((one) => Object.is(held, one));
+      case 'isNull': return (held === null || held === undefined) === Boolean(asked);
+      case 'between': {
+        const [low, high] = asked as [unknown, unknown];
+
+        return ordered(held, low, (a, b) => a >= b) && ordered(held, high, (a, b) => a <= b);
+      }
+    }
+  });
+}
+
+/** A row that holds nothing compares to nothing — the answer SQL gives for NULL. */
+const ordered = (held: unknown, asked: unknown, holds: (a: number, b: number) => boolean): boolean =>
+  held === null || held === undefined ? false : holds(order(held), order(asked));
+
+/** What a Date and a number have in common, and a string keeps for itself. */
+const order = (value: unknown): number =>
+  value instanceof Date ? value.getTime() : (value as number);

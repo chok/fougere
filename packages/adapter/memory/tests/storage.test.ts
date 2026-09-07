@@ -13,6 +13,7 @@ class Post extends entity({
   id: primary(),
   title: text({ min: 1 }),
   status: oneOf('draft', 'published', { default: 'draft' }),
+  reads: number({ integer: true, min: 0, default: 0 }),
   createdAt: created(),
 }) {}
 
@@ -125,4 +126,44 @@ describe('output(schema)', () => {
     expect(page.endCursor).toBeDefined();
     expect(Object.keys(page[0] as object)).toEqual(['title']);
   });
+});
+
+/**
+ * The comparisons SQL compiles, answered in memory.
+ *
+ * Two realizations of one contract: what a criterion may say is the port's, and both
+ * doors have to say it the same way — a filter that narrows in SQL and returns the table
+ * in memory is worse than one that works nowhere.
+ */
+describe('a criterion compares, here as it does in SQL', () => {
+  const seeded = async () => {
+    const storage = createMemoryStorage(Post as never, 'post');
+    await storage.create({ title: 'Fern', reads: 1 });
+    await storage.create({ title: 'Moss', reads: 5 });
+    await storage.create({ title: 'Lichen', reads: 9 });
+
+    return storage;
+  };
+
+  it('bounds from below', async () => {
+    expect(await (await seeded()).list({ where: { reads: { gte: 5 } } })).toHaveLength(2);
+  });
+
+  it('holds both bounds at once', async () => {
+    expect(await (await seeded()).list({ where: { reads: { gte: 2, lte: 6 } } })).toHaveLength(1);
+  });
+
+  it('names a range', async () => {
+    expect(await (await seeded()).list({ where: { reads: { between: [1, 5] } } })).toHaveLength(2);
+  });
+
+  it('searches text', async () => {
+    expect(await (await seeded()).list({ where: { title: { contains: 'oss' } } })).toHaveLength(1);
+  });
+
+  it('counts what the comparison keeps, not what the store holds', async () => {
+    const page = await (await seeded()).list({ where: { reads: { gte: 5 } }, count: true });
+    expect(page.total).toBe(2);
+  });
+
 });

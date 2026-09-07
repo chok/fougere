@@ -6,7 +6,7 @@ import { toTable, toTableName, type TableDef } from './table.js';
 import { resolveDialect, type Dialect, type DialectName } from './dialect.js';
 // The contract entry and not the main one: `FougereError` crosses a process boundary and
 // lives there for that reason, and this package must not drag the boot to raise one.
-import { FougereError, ErrorCode } from '@fougere/core/contract';
+import { comparisonOf, comparisonsIn, ErrorCode, FougereError, type Comparison } from '@fougere/core/contract';
 import { codecsOf, type ValueCodec } from './values.js';
 
 /** ListOptions — duplicated from @fougere/core to avoid a runtime dep. */
@@ -172,12 +172,50 @@ export class SqlStorage {
   // dual already went through this same door. An empty set matches nothing, said in
   // SQL rather than by returning the whole table.
   private whereAll<Q extends { where(a: any, b: any, c: any): Q }>(query: Q, criteria: Record<string, unknown>): Q {
-    return Object.entries(criteria).reduce(
-      (q, [key, value]) => Array.isArray(value)
+    return Object.entries(criteria).reduce((q, [key, value]) => {
+      const comparison = comparisonOf(this.fields[key], value);
+      if (comparison) return this.compared(q, key, comparison);
+
+      return Array.isArray(value)
         ? q.where(this.column(key), 'in', [...new Set(value)].map((v) => this.write(key, v)))
-        : q.where(this.column(key), '=', this.write(key, value)),
-      query,
-    );
+        : q.where(this.column(key), '=', this.write(key, value));
+    }, query);
+  }
+
+  /**
+   * What a bare value and a set could not say. Every comparison a criterion names is
+   * AND-ed, which is the rule two criteria already follow — `{ gte: 100, lte: 400 }` is
+   * one range, not two answers.
+   */
+  private compared<Q extends { where(a: any, b: any, c: any): Q }>(
+    query: Q,
+    key: string,
+    comparison: Comparison,
+  ): Q {
+    const column = this.column(key);
+    const bound = (value: unknown) => this.write(key, value);
+
+    return comparisonsIn(comparison).reduce((q, [name, value]) => {
+      switch (name) {
+        case 'gte': return q.where(column, '>=', bound(value));
+        case 'lte': return q.where(column, '<=', bound(value));
+        case 'gt': return q.where(column, '>', bound(value));
+        case 'lt': return q.where(column, '<', bound(value));
+        case 'ne': return q.where(column, '!=', bound(value));
+        case 'contains': return q.where(column, 'like', `%${String(value)}%`);
+        case 'notIn': {
+          const values = [...new Set(value as readonly unknown[])].map(bound);
+
+          return values.length ? q.where(column, 'not in', values) : q;
+        }
+        case 'isNull': return q.where(column, value ? 'is' : 'is not', null);
+        case 'between': {
+          const [low, high] = value as [unknown, unknown];
+
+          return q.where(column, '>=', bound(low)).where(column, '<=', bound(high));
+        }
+      }
+    }, query);
   }
 
   async list(options?: ListOptions & SelectOption & { where?: Record<string, unknown> }): Promise<ListResult<Record<string, unknown>>> {

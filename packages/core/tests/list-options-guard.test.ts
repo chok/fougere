@@ -116,6 +116,18 @@ describe('les critères sont jugés comme une écriture l\'est', () => {
     expect(storage.list).toHaveBeenCalledWith({ where: { label: ['a', 'b'] } });
   });
 
+  it('refuse une comparaison mal orthographiée plutôt que de la jeter', async () => {
+    const { guarded } = guardedStorage();
+    // Sans ce refus, `gtee` ne filtre rien et la liste rendue est celle de toute la table.
+    await expect(guarded.list({ where: { label: { gtee: 'a' } } })).rejects.toThrow(/gtee/);
+  });
+
+  it('laisse passer une comparaison connue', async () => {
+    const { storage, guarded } = guardedStorage();
+    await guarded.list({ where: { label: { contains: 'a' } } });
+    expect(storage.list).toHaveBeenCalledWith({ where: { label: { contains: 'a' } } });
+  });
+
   it('refuse l\'ensemble dont un seul membre est refusé', async () => {
     const { guarded } = guardedStorage();
     await expect(guarded.list({ where: { label: ['a', 'bien trop long'] } })).rejects.toThrow(/label/);

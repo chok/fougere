@@ -1,4 +1,5 @@
 import { Boundary, FieldSet, FieldValueValidator, InputRefusal, type Fields } from '@fougere/schema';
+import { COMPARISONS, comparisonOf, unknownIn } from '../criterion.js';
 import { assertListOptions } from '../storage.js';
 import { ErrorCode, FougereError } from '../wire/errors.js';
 
@@ -108,6 +109,20 @@ export class StorageGuard {
         errors.push(`${key}: ${InputRefusal.unknownField}`);
         continue;
       }
+      // A comparison names its own vocabulary, and a typo in it would otherwise be a
+      // criterion that filters nothing — the silent truncation this door exists to stop.
+      const comparison = comparisonOf(field, asked);
+      if (comparison) {
+        const unknown = unknownIn(comparison);
+        if (unknown.length) {
+          errors.push(`${key}: unknown comparison ${unknown.join(', ')} — one of ${COMPARISONS.join(', ')}`);
+          continue;
+        }
+        parsed[key] = comparison;
+        this.beyondTheView(key);
+        continue;
+      }
+
       const values = Array.isArray(asked) ? asked : [asked];
       const each = values.map((value) => this.value(field, value));
       const refused = each.find((one) => typeof one === 'object' && one !== null && 'error' in one);

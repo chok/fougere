@@ -73,3 +73,43 @@ describe('lecture filtrée', () => {
     expect(rows).toHaveLength(3);
   });
 });
+
+/**
+ * Ce qu'une valeur et un ensemble ne pouvaient pas dire.
+ *
+ * `where` ne connaissait que l'égalité et l'appartenance, alors que presque tout ce qu'on
+ * filtre en vrai est un intervalle. La seule sortie était `storage.client` — le chemin
+ * sans juge et sans codecs.
+ */
+describe('un critère peut comparer', () => {
+  it('borne par le bas', async () => {
+    const { lines } = await seed();
+    expect(await lines.list({ where: { quantity: { gte: 2 } } })).toHaveLength(2);
+  });
+
+  it('borne des deux côtés, et les deux bornes tiennent ensemble', async () => {
+    const { lines } = await seed();
+    expect(await lines.list({ where: { quantity: { gte: 2, lte: 2 } } })).toHaveLength(1);
+  });
+
+  it('nomme un intervalle', async () => {
+    const { lines } = await seed();
+    expect(await lines.list({ where: { quantity: { between: [1, 2] } } })).toHaveLength(2);
+  });
+
+  it('exclut', async () => {
+    const { lines } = await seed();
+    expect(await lines.list({ where: { quantity: { ne: 1 } } })).toHaveLength(2);
+  });
+
+  it('cherche dans le texte', async () => {
+    const { orders } = await seed();
+    expect(await orders.list({ where: { label: { contains: 'A' } } })).toHaveLength(1);
+  });
+
+  it('compte ce que la comparaison retient, pas ce que la table tient', async () => {
+    const { lines } = await seed();
+    const page = await lines.list({ where: { quantity: { gte: 2 } }, count: true });
+    expect(page.total).toBe(2);
+  });
+});

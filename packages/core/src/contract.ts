@@ -7,6 +7,10 @@ import { canonicalInvocation, type InvocationContext } from './wire/Invocation.j
 import type { FrondCall } from './wire/call.js';
 
 export { FougereError, ErrorCode, validationErrorsOf } from './wire/errors.js';
+// What a read may ask about one field. Here rather than on the main entry because an
+// adapter reads it to compile a query, and an adapter carries no boot.
+export { comparisonOf, comparisonsIn, unknownIn, COMPARISONS } from './criterion.js';
+export type { Comparison, ComparisonName } from './criterion.js';
 // A receiver turns a refusal into what may cross a process boundary, and it is not
 // core's boot — reaching it through the main entry dragged the scanner into a bundle.
 export { toPublicError } from './wire/http-error.js';
