@@ -8,10 +8,11 @@
  */
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
-import { frond } from '@fougere/core';
+import { Collector, frond } from '@fougere/core';
 import { configureFougere, useFougereApp } from '../src/boot.js';
 
 class Post extends entity({ id: primary(), title: text() }) {}
+class User extends entity({ id: primary(), name: text() }) {}
 class PostHandler {
   list(): Post[] { return []; }
   publish(id: string): Post { return { id, title: '' } as Post; }
@@ -69,6 +70,41 @@ describe('a host that states what it hosts', () => {
     expect(app.container.resolve('frond:blog')).toBeDefined();
     expect(() => (app.container.resolve('frond:blog') as { resolve(n: string): unknown }).resolve('Weather'))
       .not.toThrow();
+  });
+
+  it('keys a collector the way a binding looks one up', async () => {
+    // The boot asks for the key `computeBindingPlan` derives from a parameter's type,
+    // and that key is lowerFirst. Stated as `User`, the set held `User` while every
+    // lookup asked for `user`: a handler taking one fell through to the request input,
+    // and the boot refused a contract it had everything to resolve.
+    class CurrentUser extends Collector(User) {
+      collect() { return undefined; }
+    }
+    class Reader {
+      mine(user?: User): User[] { return user ? [user] : []; }
+    }
+
+    configureFougere({
+      fronds: [frond('blog', {
+        entities: [Post, User],
+        collectors: [CurrentUser],
+        handlers: [{
+          ctor: Reader,
+          operations: {
+            mine: {
+              cardinality: 'many',
+              signature: {
+                name: 'mine',
+                params: [{ name: 'user', type: { raw: 'User', name: 'User' }, optional: true }],
+              },
+            },
+          },
+        }],
+      })],
+    });
+    const app = await useFougereApp();
+
+    expect(Object.keys(app.facadeFor('reader') ?? {})).toContain('mine');
   });
 
   it('pulls in no compiler, which is the whole point', async () => {

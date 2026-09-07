@@ -152,7 +152,12 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
     const ctor = ctorOf(c);
 
     return {
-      typeName: subjectOf(ctor, 'collector').name,
+      // `lowerFirst`, the way the scan spells it: the boot looks a collector up by the key
+      // `computeBindingPlan` derives from a parameter's type, and that key is lowerFirst.
+      // Written as `User` here, the set held `User` while every lookup asked for `user` —
+      // so a handler taking one fell through to the request input, and the boot refused a
+      // contract it had everything to resolve.
+      typeName: lowerFirst(subjectOf(ctor, 'collector').name),
       ctor,
       deps: depsOf(c),
       filePath: '',
