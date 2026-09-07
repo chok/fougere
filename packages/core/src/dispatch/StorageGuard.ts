@@ -11,11 +11,23 @@ interface Writer {
   list?(...args: unknown[]): unknown;
 }
 
+/** What a guard says about a filter it let through. The boot owns the voice. */
+export interface GuardReport {
+  /** The fields this door hands back, when it hands back fewer than the entity has. */
+  view?: Fields;
+  /** Said once per field — a filter is not a write, and a warning per call is noise. */
+  outOfView?: (message: string) => void;
+}
+
 /** Judges storage writes and list options without narrowing the storage interface. */
 export class StorageGuard {
+  /** What has already been said, so a filter in a loop says it once. */
+  private readonly said = new Set<string>();
+
   constructor(
     private readonly fields: Fields,
     private readonly entity: string,
+    private readonly report: GuardReport = {},
   ) {}
 
   guard<T extends object>(storage: T): T {
@@ -56,7 +68,10 @@ export class StorageGuard {
     const list = writer.list;
     if (typeof list === 'function') {
       guarded.list = async function (...args: unknown[]) {
-        assertListOptions(args[0] as object | undefined, validation.entity);
+        const options = args[0] as { where?: Record<string, unknown> } | undefined;
+        assertListOptions(options, validation.entity);
+        if (options?.where) args[0] = { ...options, where: validation.criteria(options.where) };
+
         return list.apply(this, args);
       };
     }
@@ -73,6 +88,77 @@ export class StorageGuard {
     const primary = FieldSet.of(this.fields).primary;
     const key = primary === undefined ? undefined : (row as Record<string, unknown>)[primary];
     return key === undefined ? `row ${index} of this page` : `row ${primary} ${JSON.stringify(key)}`;
+  }
+
+  /**
+   * What a read may ask for. The write door judges what LANDS in a row; this one judges
+   * what a caller says about one — and it was the single entrance to the port with no
+   * judge at all, while `params.filter` from a browser reaches it verbatim.
+   *
+   * A criterion may name a SET, which is the one thing the write door would refuse: an
+   * array is judged member by member, since that is what `IN` binds.
+   */
+  private criteria(where: Record<string, unknown>): Record<string, unknown> {
+    const errors: string[] = [];
+    const parsed: Record<string, unknown> = {};
+
+    for (const [key, asked] of Object.entries(where)) {
+      const field = this.fields[key];
+      if (!field) {
+        errors.push(`${key}: ${InputRefusal.unknownField}`);
+        continue;
+      }
+      const values = Array.isArray(asked) ? asked : [asked];
+      const each = values.map((value) => this.value(field, value));
+      const refused = each.find((one) => typeof one === 'object' && one !== null && 'error' in one);
+      if (refused) {
+        errors.push(`${key}: ${(refused as { error: string }).error}`);
+        continue;
+      }
+      parsed[key] = Array.isArray(asked) ? each.map(unwrap) : unwrap(each[0]);
+      this.beyondTheView(key);
+    }
+
+    if (errors.length > 0) {
+      throw new FougereError({
+        code: ErrorCode.BAD_REQUEST,
+        message: `Refused as a filter — ${errors.join(', ')}`,
+        entity: this.entity,
+        operation: 'list',
+        details: errors,
+      });
+    }
+
+    return parsed;
+  }
+
+  /**
+   * A filter on a field this door does not hand back.
+   *
+   * `output(schema)` narrows what is RETURNED and has never narrowed what is asked, so a
+   * caller can already sort a hidden column into existence one comparison at a time — and
+   * the admin door copies a browser's filter here verbatim. Said rather than refused: it
+   * is legal today, GraphQL batches a relation on a key a view may not carry, and a
+   * refusal would break that on the way to fixing this.
+   */
+  private beyondTheView(field: string): void {
+    const view = this.report.view;
+    if (!view || view[field] || this.said.has(field)) return;
+    this.said.add(field);
+    this.report.outOfView?.(
+      `${this.entity}.list() filtered on '${field}', which this door does not hand back — `
+      + 'a filter on a hidden field answers questions about it one call at a time.',
+    );
+  }
+
+  /** One value against one field — validated, then decoded the way the wire hands it. */
+  private value(field: Fields[string], asked: unknown): { value: unknown } | { error: string } {
+    if (asked === null || asked === undefined) return { value: asked };
+    const checked = FieldValueValidator.of(field).validate(asked);
+    if ('error' in checked) return checked;
+    if (checked.value === null) return { value: null };
+
+    return Boundary.of(field).decode(checked.value);
   }
 
   private validated<T>(value: T, operation: string, index?: number): T {
@@ -121,3 +207,6 @@ export class StorageGuard {
     return parsed as T;
   }
 }
+
+const unwrap = (one: { value: unknown } | { error: string }): unknown =>
+  'value' in one ? one.value : undefined;

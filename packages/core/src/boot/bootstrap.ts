@@ -1,5 +1,5 @@
 import type { Container } from '@fougere/container';
-import { lowerFirst, type SchemaView } from '@fougere/schema';
+import { lowerFirst, type Fields, type SchemaView } from '@fougere/schema';
 import { nameOf } from '../descriptor/frond.js';
 import type { EntityEntry, HandlerEntry, PresenterEntry } from '../descriptor/frond.js';
 import { hostedBy } from './hosted.js';
@@ -512,7 +512,14 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         const scoped = outputSchema && outputSchema !== entity.entityClass
           ? baseStorage.output(outputSchema)
           : baseStorage;
-        const guarded = new StorageGuard(entity.entityClass.getFields(), entity.name).guard(scoped);
+        // The view is handed over so a filter on a field this door hides is SAID. The
+        // guard holds no logger — a warning is the boot's to voice, as a seed's report is.
+        const guarded = new StorageGuard(entity.entityClass.getFields(), entity.name, {
+          ...(outputSchema && outputSchema !== entity.entityClass
+            ? { view: (outputSchema as { getFields(): Fields }).getFields() }
+            : {}),
+          outOfView: (message) => frondLog.warn(message),
+        }).guard(scoped);
         surfaceScope.registerValue(storageKeyOf(entity.name), guarded);
         surfaceScope.registerValue(repositoryKeyOf(entity.name), guarded);
       }
