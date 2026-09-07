@@ -6,6 +6,7 @@ import type {
 } from './descriptor/frond.js';
 import { DEFAULT_CONVENTIONS } from './scan/conventions.js';
 import { getPresenterFields } from './prefab/presenter.js';
+import type { OperationContract } from './wire/operation.js';
 
 /** A class, as a declaration hands it over: the constructor itself. */
 type Ctor = new (...args: never[]) => unknown;
@@ -24,6 +25,12 @@ export interface DeclaredHandler extends DeclaredSubject {
    * route twice.
    */
   surface?: string;
+  /**
+   * What each method takes and answers — read from SOURCE by the scan, and unreachable
+   * from a class at runtime. A prefab declares its own (`Crud.__ops`) and needs nothing
+   * here; a method someone wrote does, or the route it should serve does not exist.
+   */
+  operations?: ReadonlyMap<string, OperationContract> | Record<string, OperationContract>;
 }
 
 /** A class on its own, or a class with what it asks for. */
@@ -48,6 +55,22 @@ function subjectOf(ctor: Ctor, kind: string): { name: string } {
   return subject;
 }
 const depsOf = (d: Declared): string[] => (typeof d === 'function' ? [] : d.deps ?? []);
+
+/**
+ * A Map either way — a statement is read as code, and an object literal is what code
+ * looks like there. What a prefab declares of itself is merged BELOW: a method the author
+ * wrote over `create` is the one that runs, so its contract is the one that answers.
+ */
+function statedOperations(h: Ctor | DeclaredHandler): Map<string, OperationContract> {
+  const declared = typeof h === 'function' ? undefined : h.operations;
+  const own = (ctorOf(h) as { __ops?: Record<string, OperationContract> }).__ops ?? {};
+  const merged = new Map<string, OperationContract>(Object.entries(own));
+  for (const [op, contract] of declared instanceof Map ? declared : Object.entries(declared ?? {})) {
+    merged.set(op, contract as OperationContract);
+  }
+
+  return merged;
+}
 
 /** `PostHandler` answers at `post` — the same rule the scan applies to a file it found. */
 function addressOf(className: string): string {
@@ -93,7 +116,7 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
       // A handler about no stored row is ordinary — the address is not a promise that an
       // entity carries it, which is why this is not looked up.
       entityName: address,
-      operations: new Map(),
+      operations: statedOperations(h),
       deps: depsOf(h),
       filePath: '',
       exposed: true,

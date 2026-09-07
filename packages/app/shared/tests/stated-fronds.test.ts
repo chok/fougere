@@ -12,7 +12,10 @@ import { frond } from '@fougere/core';
 import { configureFougere, useFougereApp } from '../src/boot.js';
 
 class Post extends entity({ id: primary(), title: text() }) {}
-class PostHandler { list(): Post[] { return []; } }
+class PostHandler {
+  list(): Post[] { return []; }
+  publish(id: string): Post { return { id, title: '' } as Post; }
+}
 
 describe('a host that states what it hosts', () => {
   it('boots without scanning, and serves what it stated', async () => {
@@ -24,6 +27,29 @@ describe('a host that states what it hosts', () => {
 
     expect(app.fronds.entityNames()).toEqual(['post']);
     expect(app.fronds.servedNames()).toEqual(['post']);
+  });
+
+  it('serves a method the scan read, which no class carries at runtime', async () => {
+    // A prefab declares its own ops in a static; a method someone wrote declares nothing.
+    // The scan reads it from SOURCE, so a statement that drops it leaves the route unbuilt
+    // — measured on a real app, which served its five CRUD ops and not one of its own.
+    configureFougere({
+      fronds: [frond('blog', {
+        entities: [Post],
+        handlers: [{
+          ctor: PostHandler,
+          operations: {
+            publish: {
+              cardinality: 'one',
+              binding: [{ name: 'id', source: { kind: 'param', name: 'id' }, optional: false }],
+            },
+          },
+        }],
+      })],
+    });
+    const app = await useFougereApp();
+
+    expect(Object.keys(app.facadeFor('post') ?? {})).toContain('publish');
   });
 
   it('pulls in no compiler, which is the whole point', async () => {

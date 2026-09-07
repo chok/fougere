@@ -2,8 +2,7 @@
 import { relative } from 'node:path';
 import type { FrondDescriptor } from '../descriptor/frond.js';
 import type { ScanResult } from './result.js';
-
-type Live = { name?: string };
+import { type Aliases, type Live, operationsOf } from './contract.js';
 
 /**
  * A file becomes the specifier the PROJECT already uses for it: `@fronds/blog/…`, the import scope
@@ -17,18 +16,54 @@ function specifierOf(filePath: string, frond: FrondDescriptor): string {
 }
 
 /** One alias per file, so a class imported twice is one binding and one identity. */
-class Imports {
+class Imports implements Aliases {
   private readonly byPath = new Map<string, string>();
+  private readonly byValue = new Map<Live, string>();
+  private readonly byClassName = new Map<string, Live>();
   private readonly lines: string[] = [];
+  /** The frond a file belongs to — a named import needs the specifier its default got. */
+  private frondOfFile = new Map<string, FrondDescriptor>();
 
-  default(filePath: string, frond: FrondDescriptor): string {
+  default(filePath: string, frond: FrondDescriptor, value?: Live): string {
+    this.frondOfFile.set(filePath, frond);
     const known = this.byPath.get(filePath);
-    if (known) return known;
+    if (known) {
+      if (value) this.remember(value, known);
+
+      return known;
+    }
     const alias = `_${this.byPath.size}`;
     this.lines.push(`import ${alias} from '${specifierOf(filePath, frond)}';`);
     this.byPath.set(filePath, alias);
+    if (value) this.remember(value, alias);
 
     return alias;
+  }
+
+  /** A view a handler declares beside itself — `PostPublic` is exported by name. */
+  named(value: Live, filePath: string, name: string): string {
+    const known = this.byValue.get(value);
+    if (known) return known;
+    const frond = this.frondOfFile.get(filePath);
+    if (!frond) {
+      throw new Error(
+        `A statement cannot be written: ${name} lives in ${filePath}, which no frond imported first.`,
+      );
+    }
+    const alias = `_${this.byPath.size}_${name}`;
+    this.lines.push(`import { ${name} as ${alias} } from '${specifierOf(filePath, frond)}';`);
+    this.remember(value, alias);
+
+    return alias;
+  }
+
+  aliasOf(value: Live): string | undefined { return this.byValue.get(value); }
+  classNamed(name: string): Live | undefined { return this.byClassName.get(name); }
+
+  private remember(value: Live, alias: string): void {
+    this.byValue.set(value, alias);
+    const name = (value as { name?: string }).name;
+    if (name) this.byClassName.set(name, value);
   }
 
   render(): string {
@@ -37,10 +72,10 @@ class Imports {
 }
 
 /** `{ ctor: X, deps: [...] }` when there is something to say, the bare class otherwise. */
-function subject(alias: string, deps: string[], extra = ''): string {
+function subject(alias: string, deps: string[], ...extra: string[]): string {
   const parts = [
     ...(deps.length ? [`deps: ${JSON.stringify(deps)}`] : []),
-    ...(extra ? [extra] : []),
+    ...extra.filter(Boolean),
   ];
 
   return parts.length ? `{ ctor: ${alias}, ${parts.join(', ')} }` : alias;
@@ -50,12 +85,21 @@ function frondOf(frond: FrondDescriptor, imports: Imports): string {
   const list = (items: string[]): string => `[${items.join(', ')}]`;
   const members: string[] = [];
 
+  // Entities first, and by VALUE: an operation names its input and output as schemas, and
+  // the one a `Partial<X>` derives from is found here rather than imported a second time.
   if (frond.entities.length) {
-    members.push(`entities: ${list(frond.entities.map((e) => imports.default(e.filePath, frond)))}`);
+    members.push(`entities: ${list(frond.entities.map((e) =>
+      imports.default(e.filePath, frond, e.entityClass as Live)))}`);
   }
   if (frond.handlers.length) {
-    members.push(`handlers: ${list(frond.handlers.map((h) =>
-      subject(imports.default(h.filePath, frond), h.deps, h.surface ? `surface: ${JSON.stringify(h.surface)}` : '')))}`);
+    members.push(`handlers: ${list(frond.handlers.map((h) => subject(
+      imports.default(h.filePath, frond, h.ctor as Live),
+      h.deps,
+      h.surface ? `surface: ${JSON.stringify(h.surface)}` : '',
+      // What the scan read from source, and what no class carries at runtime. Without it
+      // a host that boots from this statement serves a prefab's five ops and nothing else.
+      h.operations.size ? `operations: ${operationsOf(h.operations, h.filePath, imports, '      ')}` : '',
+    )))}`);
   }
   if (frond.presenters.length) {
     members.push(`presenters: ${list(frond.presenters.map((p) => subject(imports.default(p.filePath, frond), p.deps)))}`);
