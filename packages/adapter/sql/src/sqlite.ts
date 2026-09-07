@@ -5,7 +5,7 @@ import { Kysely, SqliteDialect } from 'kysely';
 import Database from 'better-sqlite3';
 import { createStorageFactory } from './crud.js';
 import { logQueries } from './query.js';
-import { sqlSink, type SetupOptions, type SqlSource } from './setup.js';
+import { sqlSink, sqlEnforces, type SetupOptions, type SqlSource } from './setup.js';
 import { migrate } from './diff.js';
 import { toTableName } from './table.js';
 import { Sources, type Source, type SourceConfig, type SourceView } from '@fougere/core';
@@ -39,6 +39,7 @@ export function setupSqlite(opts: SqliteSetupOptions = {}): SqliteSetup {
     },
     close: () => db.destroy(),
     name: opts.name ?? path,
+    enforces: sqlEnforces,
     transacted: (fn) => db.transaction().execute((trx) => fn(createStorageFactory(trx, opts.storageFactoryOptions, 'sqlite'))),
   };
 }

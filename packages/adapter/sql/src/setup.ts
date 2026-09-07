@@ -33,6 +33,9 @@ export interface SqlSource extends Source {
 /** The name this shape answered to before it was one realization among several. */
 export type Setup = SqlSource;
 
+/** What every SQL engine keeps at the rows, whatever the dialect: the index IS the constraint. */
+export const sqlEnforces = ['unique'] as const;
+
 /** The migration of what lives in ONE sql source, carrying its own dialect. */
 function migrating(db: Kysely<any>, dialect: DialectName, opts: SetupOptions) {
   return async (view: SourceView): Promise<void> => {
@@ -63,6 +66,7 @@ export function setupKysely(
     migrate: migrating(db, dialect, opts),
     close: () => db.destroy(),
     name: opts.name ?? dialect,
+    enforces: sqlEnforces,
     transacted: (fn) => db.transaction().execute((trx) => fn(createStorageFactory(trx, opts.storageFactoryOptions, dialect))),
   };
 }

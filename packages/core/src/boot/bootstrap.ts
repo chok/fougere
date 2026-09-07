@@ -28,6 +28,7 @@ import { AppLifecycle } from './AppLifecycle.js';
 import { inheritsCrud, subjectOf } from '../prefab/crud.js';
 import { repositoryKeyOf } from '../prefab/repository.js';
 import { storageKeyOf } from '../storage.js';
+import { declares } from '../source.js';
 import { presenterKeyOf } from '../prefab/presenter.js';
 import { collectorKeyOf } from '../prefab/collector.js';
 import { RouteAddress } from '../wire/RouteAddress.js';
@@ -289,8 +290,13 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // Register Storage for each entity — PascalCase type name (e.g. 'PostStorage')
     // When a handler declares Crud(Entity, Output), scope the storage via .output(Output)
     if (options.storageFactory) {
+      const unenforced: string[] = [];
       for (const entity of frond.entities) {
         const key = storageKeyOf(entity.name);
+        const source = options.sourceOf?.(entity.name) ?? 'db';
+        if (declares(entity.entityClass, 'unique') && options.enforces?.(source, 'unique') === false) {
+          unenforced.push(`${entity.name} in '${source}'`);
+        }
         const baseStorage = options.storageFactory(entity.entityClass, entity.name);
 
         // Check if the default handler (no surface) declares an output override
@@ -323,6 +329,14 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       }
       if (frond.entities.length > 0) {
         frondLog.debug(`${frond.entities.length} entity storage(s): ${frond.entities.map((e) => e.name).join(', ')}`);
+      }
+      // The judge refuses a duplicate it can SEE — the row already stored. Two writes arriving
+      // together see the same absence, and only the place they land can refuse the second.
+      if (unenforced.length > 0) {
+        frondLog.warn(
+          `unique declared, and the source does not enforce it: ${unenforced.join(', ')} — `
+          + 'two concurrent writes can both pass',
+        );
       }
     }
 

@@ -2,7 +2,7 @@
 import type { App } from '@fougere/core';
 import { Fronds, type FrondDescriptor } from '@fougere/core';
 import { lowerFirst } from '@fougere/core/contract';
-import { Sources, type Source, type SourceView } from '@fougere/core';
+import { Sources, type Constraint, type Source, type SourceView } from '@fougere/core';
 // Imported for its side effect: it is what makes `source: 'sql'` an answered name.
 import '@fougere/adapter-sql/sqlite';
 
@@ -34,6 +34,8 @@ export interface ResolvedStorage {
   sources?: () => string[];
   /** Whether that source hands out a transaction — the dual of running one in it. */
   transacts?: (source: string) => boolean;
+  /** Whether that source refuses a constraint at the rows — the dual of an entity declaring one. */
+  enforces?: (source: string, constraint: Constraint) => boolean;
   /** Run `fn` inside one transaction of that source, with a storage factory bound to it. */
   transacted?: <R>(source: string, fn: (storageFactory: (entity: any, name: string) => any) => Promise<R>) => Promise<R>;
   /**
@@ -157,6 +159,9 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
     // none. A source that hands out none leaves the answer `false`, and a frame reads it:
     // `boot/together.ts` compensates instead, and says which of the two it built.
     transacts: (source) => engineOf(source)?.transacted !== undefined,
+    // Absent means the judge is alone with it: a source that keeps no constraint of its own
+    // says nothing, the way one that hands out no transaction says nothing.
+    enforces: (source, constraint) => engineOf(source)?.enforces?.includes(constraint) ?? false,
     transacted: async (source, fn) => {
       const engine = engineOf(source);
       if (!engine) throw new Error(`No source named '${source}' — declared sources are ${[DEFAULT, ...engines.keys()].join(', ')}.`);

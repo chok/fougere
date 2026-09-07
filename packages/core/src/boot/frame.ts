@@ -2,8 +2,9 @@
  * The compensated realization of a frame — what `Together` becomes when its members do not share
  * an engine.
  */
-import { FieldSet, Role, type SchemaView } from '@fougere/schema';
+import { FieldSet, type SchemaView } from '@fougere/schema';
 import { dequal } from 'dequal';
+import { declares } from '../source.js';
 import type { Logger } from '../builtin/logger.js';
 
 /** One write that landed, and how to take it back. */
@@ -29,13 +30,6 @@ interface Undoable {
 
 const pick = (row: Record<string, unknown>, keys: readonly string[]): Record<string, unknown> =>
   Object.fromEntries(keys.map((key) => [key, row[key]]));
-
-/** Whether an upsert's conflict can be something other than the primary key. */
-function mayConflictElsewhere(schema: SchemaView): boolean {
-  if ((schema.getUnique() ?? []).length > 0) return true;
-
-  return Object.values(schema.getFields()).some((field) => Role.of(field).isUnique);
-}
 
 /** Refused where it is used, naming the group that makes the inverse ambiguous. */
 function refuseAmbiguousUpsert(entity: string, gesture: string): never {
@@ -133,7 +127,7 @@ export function recording<T extends object>(storage: T, entity: string, schema: 
 
   if (typeof base.upsert === 'function') {
     recorded.upsert = async function (input, ...rest) {
-      if (mayConflictElsewhere(schema)) refuseAmbiguousUpsert(entity, 'upsert');
+      if (declares(schema, 'unique')) refuseAmbiguousUpsert(entity, 'upsert');
       const undo = await undoUpsert.call(this, [input]);
       const row = await base.upsert!.call(this, input, ...rest);
       journal.push(undo);
@@ -143,7 +137,7 @@ export function recording<T extends object>(storage: T, entity: string, schema: 
 
   if (typeof base.upsertAll === 'function') {
     recorded.upsertAll = async function (inputs, ...rest) {
-      if (mayConflictElsewhere(schema)) refuseAmbiguousUpsert(entity, 'upsertAll');
+      if (declares(schema, 'unique')) refuseAmbiguousUpsert(entity, 'upsertAll');
       const undo = await undoUpsert.call(this, inputs);
       const written = await base.upsertAll!.call(this, inputs, ...rest);
       journal.push(undo);

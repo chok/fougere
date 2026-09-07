@@ -5,6 +5,7 @@ import type { FrondDescriptor } from '../descriptor/frond.js';
 import type { ScanResult } from '../scan/result.js';
 import type { SchemaView } from '@fougere/schema';
 import type { StorageFactory } from '../storage.js';
+import type { Constraint } from '../source.js';
 import type { AppMiddleware } from '../wire/middleware.js';
 import type { RpcAnswer, Transport } from '../wire/call.js';
 import type { Extension } from './AppLifecycle.js';
@@ -27,6 +28,8 @@ export interface CreateAppOptions {
   sourceOf?: (entityName: string) => string;
   transacts?: (source: string) => boolean;
   transacted?: <R>(source: string, fn: (storageFactory: StorageFactory) => Promise<R>) => Promise<R>;
+  /** Whether that source refuses a constraint at the rows — the boot says so when it does not. */
+  enforces?: (source: string, constraint: Constraint) => boolean;
   /** Builds the cross-source reader a frond gets when it declares `reads:`. */
   sourcesFactory?: (reads: unknown[], frond: string) => Promise<unknown> | unknown;
   /** What this app is built from — required, because producing it is what reads a disk. */

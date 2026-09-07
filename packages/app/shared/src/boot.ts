@@ -166,6 +166,7 @@ async function boot(): Promise<App> {
     storageFactory,
     sourceOf: storage.sourceOf,
     transacts: storage.transacts,
+    enforces: storage.enforces,
     transacted: storage.transacted as never,
     db: storage.db,
     auth: fileConfig.auth,

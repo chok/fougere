@@ -226,6 +226,12 @@ is the source's own gesture; the router partitions and hands each source its `So
 compensates instead of transacting, and the boot says so per frame. Pinned by
 `defaults/tests/sources.test.ts`.
 
+**`enforces?` is not a gesture but a promise** — the constraints a source refuses AT THE ROWS,
+which the judge at the door cannot: it refuses the duplicate it can SEE, and two writes arriving
+together see the same absence. `declares(schema, 'unique')` is its dual, read by `boot/frame.ts`
+too. SQL states `sqlEnforces`; a Map states nothing, and the boot names the entities that costs
+rather than refusing them. Pinned by `core/tests/enforced.test.ts`.
+
 **The thirteen gestures derive from four** — `core/src/store.ts`, `storageOver(open)` over a
 `Store` (`get`/`has`/`set`/`delete`/`all`/`client`). `adapter/memory` is 25 lines and
 `adapter/file` 90. `transacted` is deliberately not in the frame: a unit of work belongs to

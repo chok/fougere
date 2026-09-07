@@ -85,7 +85,7 @@ export { applyConfig, type ConfigApplication } from './boot/apply.js';
 export { Config } from './builtin/config.js';
 export type { Storage, StorageFactory, ListOptions, ListResult, Together } from './storage.js';
 export { togetherKeyOf, membersOfTogetherKey } from './storage.js';
-export type { Source, SourceConfig, SourceView } from './source.js';
+export type { Constraint, Source, SourceConfig, SourceView } from './source.js';
 export { Sources } from './source.js';
 export { storageOver } from './store.js';
 export type { Store, Values } from './store.js';

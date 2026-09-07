@@ -172,6 +172,20 @@ describe('storageFrom — an engine the caller built', () => {
     expect(other.transacts!('cold')).toBe(false);
   });
 
+  it('answers what it keeps at the rows, which an entity declaring unique cannot know', () => {
+    // The judge travels with the declaration and refuses the duplicate it can SEE. The second
+    // of two writes arriving together is the source's to refuse, and a source that keeps
+    // nothing says nothing — the same silence as one that hands out no transaction.
+    const nothing = { storageFactory: (() => ({})) as never, name: 'nothing' };
+    const split = storageFrom({
+      db: nothing,
+      sources: { archive: { source: setupSqlite({ path: ':memory:' }), entities: ['Book'] } },
+    });
+
+    expect(split.enforces!('archive', 'unique')).toBe(true);
+    expect(split.enforces!('db', 'unique')).toBe(false);
+  });
+
   it('refuses the same double claim, whoever built the engines', () => {
     const twice = () => storageFrom({
       db: setupSqlite({ path: ':memory:' }),
