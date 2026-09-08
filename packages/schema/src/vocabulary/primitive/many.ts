@@ -1,5 +1,5 @@
-import { Relation, type EntityConstructor } from '../axis/role/Relation.js';
-import { Field } from '../field/Field.js';
+import { Relation, type EntityConstructor } from '../../axis/role/Relation.js';
+import { Field } from '../../field/Field.js';
 
 /**
  * So the other side of a reference is declared, and holds no column.

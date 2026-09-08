@@ -1,5 +1,5 @@
-import { vocabulary } from './vocabulary.js';
-import { Field } from '../field/Field.js';
+import { vocabulary } from '../vocabulary.js';
+import { Field } from '../../field/Field.js';
 
 /**
  * So a write-once field is refused on a patch by the validator, not by the table.

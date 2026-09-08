@@ -1,5 +1,5 @@
-import { Field } from '../field/Field.js';
-import { Generators, type GeneratorRef } from '../axis/lifecycle/Generators.js';
+import { Field } from '../../field/Field.js';
+import { Generators, type GeneratorRef } from '../../axis/lifecycle/Generators.js';
 
 interface PrimaryOptions {
   generate?: GeneratorRef | [name: string, fn: () => string];

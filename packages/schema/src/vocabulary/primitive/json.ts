@@ -1,6 +1,6 @@
-import { Field } from '../field/Field.js';
-import type { SchemaView } from '../SchemaView.js';
-import { InputValidator } from '../validator/InputValidator.js';
+import { Field } from '../../field/Field.js';
+import type { SchemaView } from '../../SchemaView.js';
+import { InputValidator } from '../../validator/InputValidator.js';
 
 export function json<T = unknown>(): Field<T>;
 export function json<E extends SchemaView & (new (...args: any[]) => any)>(

@@ -1,5 +1,5 @@
-import { vocabulary } from './vocabulary.js';
-import { Field } from '../field/Field.js';
+import { vocabulary } from '../vocabulary.js';
+import { Field } from '../../field/Field.js';
 
 /**
  * So a field is unique on its own, whatever key it ends up under.

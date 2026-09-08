@@ -1,6 +1,6 @@
-import { vocabulary } from './vocabulary.js';
-import { Shapes } from '../axis/shape/Shape.js';
-import { type Field } from '../field/Field.js';
+import { vocabulary } from '../vocabulary.js';
+import { Shapes } from '../../axis/shape/Shape.js';
+import { type Field } from '../../field/Field.js';
 
 /**
  * So `null` becomes a legal value, without touching whether the field is required.

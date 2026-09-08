@@ -1,5 +1,5 @@
-import { Relation, type EntityConstructor } from '../axis/role/Relation.js';
-import { Field } from '../field/Field.js';
+import { Relation, type EntityConstructor } from '../../axis/role/Relation.js';
+import { Field } from '../../field/Field.js';
 
 export interface RefOptions {
   cascade?: boolean;

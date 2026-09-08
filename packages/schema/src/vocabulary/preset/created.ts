@@ -1,5 +1,5 @@
-import { Field } from '../field/Field.js';
-import { date } from './date.js';
+import { Field } from '../../field/Field.js';
+import { date } from '../primitive/date.js';
 
 /**
  * So a creation stamp is written by the storage and refused from a client.
