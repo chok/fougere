@@ -6,7 +6,7 @@ import {
   resolveEffectiveOperations,
   type ScanDiagnostic,
 } from '@fougere/core';
-import { adaptersOf, crossFrondImports } from '@fougere/core/node';
+import { adaptersOf, crossFrondImports, handlerDeclarations } from '@fougere/core/node';
 import ProjectScan from '../services/ProjectScan.js';
 
 /** One thing that does not hold, in the terms of whoever has to fix it. */
@@ -156,6 +156,21 @@ export default class CheckHandler {
         code: reach.rule,
         filePath: reach.filePath,
         message: reach.message,
+      });
+    }
+
+    /**
+     * The same shape of warning, one file lower: what the handler holds still runs, and
+     * what it costs is the next caller — a test, a second operation, another handler —
+     * that cannot reach it without moving it first.
+     */
+    for (const held of await handlerDeclarations(fronds)) {
+      findings.push({
+        severity: 'warning',
+        code: held.rule,
+        filePath: held.filePath,
+        subject: `${held.handler}.${held.subject}`,
+        message: held.message,
       });
     }
 

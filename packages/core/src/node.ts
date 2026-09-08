@@ -13,6 +13,7 @@ export { setModuleLoader, getModuleLoader } from './loader.js';
 export { loadConfig, loadCascadedConfig } from './config-loader.js';
 export { defineFrond } from './frond-config.js';
 export { crossFrondImports } from './imports.js';
+export { handlerDeclarations } from './declarations.js';
 export { adaptersOf } from './scan/adapters.js';
 
 // Making a key and binding a name to it happen once, at a deployment, on a machine with
