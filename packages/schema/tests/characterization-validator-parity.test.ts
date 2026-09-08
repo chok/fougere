@@ -9,7 +9,7 @@ import {
   text,
   type ValidationResult,
 } from '../src/index.js';
-import type { StandardSchemaV1 } from '../src/projection/standard.js';
+import type { StandardSchemaV1 } from '@standard-schema/spec';
 
 class Post extends entity({
   id: primary(),

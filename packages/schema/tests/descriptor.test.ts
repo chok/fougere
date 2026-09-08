@@ -16,11 +16,11 @@ import {
   ref,
   type RelationDescriptor,
   type RoleDescriptor,
+  type RoleRules,
   type SchemaView,
   text,
 } from '../src/index.js';
 import { type EntityConstructor, type Relation } from '../src/axis/role/Relation.js';
-import { type RoleRules } from '../src/axis/role/Role.js';
 
 class Author extends entity({ id: primary() }) {}
 class Tag extends entity({ id: primary() }) {}

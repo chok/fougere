@@ -7,7 +7,7 @@ export { type SchemaView } from './SchemaView.js';
 export { Field, type Fields } from './field/Field.js';
 export { FieldSet } from './field/FieldSet.js';
 export { type Shape, Shapes } from './axis/shape/Shape.js';
-export { Role } from './axis/role/Role.js';
+export { Role, type RoleRules } from './axis/role/Role.js';
 export { type EntityConstructor } from './axis/role/Relation.js';
 export { Lifecycle, type LifecycleRules } from './axis/lifecycle/Lifecycle.js';
 export { Boundary, type BoundaryRef } from './axis/boundary/Boundary.js';

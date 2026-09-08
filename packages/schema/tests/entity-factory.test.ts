@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { bool, entity, number, oneOf, primary, text } from '../src/index.js';
-import { type StandardSchemaV1 } from '../src/projection/standard.js';
+import type { StandardSchemaV1 } from '@standard-schema/spec';
 
 // The new carrier: `class X extends entity({...})`. Proves the factory replaces
 // the field-bag (no `new` to read metadata, real data instances, honest types).

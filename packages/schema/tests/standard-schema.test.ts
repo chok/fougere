@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { bool, entity, number, primary, text } from '../src/index.js';
-import type { StandardSchemaV1 } from '../src/projection/standard.js';
+import type { StandardSchemaV1 } from '@standard-schema/spec';
 
 class Post extends entity({
   id: primary(),
