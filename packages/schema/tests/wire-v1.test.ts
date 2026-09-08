@@ -1,21 +1,23 @@
 import { describe, it, expect } from 'vitest';
-import { Bundle } from '../src/projection/card/Bundle.js';
-import { Card } from '../src/projection/card/Card.js';
-import { entity } from '../src/entity.js';
-import { bool } from '../src/vocabulary/bool.js';
-import { created } from '../src/vocabulary/created.js';
-import { immutable } from '../src/vocabulary/immutable.js';
-import { indexed } from '../src/vocabulary/indexed.js';
-import { many } from '../src/vocabulary/many.js';
-import { number } from '../src/vocabulary/number.js';
-import { optional } from '../src/vocabulary/optional.js';
-import { primary } from '../src/vocabulary/primary.js';
-import { readOnly } from '../src/vocabulary/readOnly.js';
-import { ref } from '../src/vocabulary/ref.js';
-import { text } from '../src/vocabulary/text.js';
-import { unique } from '../src/vocabulary/unique.js';
-import { updated } from '../src/vocabulary/updated.js';
-import { writeOnly } from '../src/vocabulary/writeOnly.js';
+import {
+  bool,
+  Bundle,
+  Card,
+  created,
+  entity,
+  immutable,
+  indexed,
+  many,
+  number,
+  optional,
+  primary,
+  readOnly,
+  ref,
+  text,
+  unique,
+  updated,
+  writeOnly,
+} from '../src/index.js';
 
 class Author extends entity({
   id: primary(),

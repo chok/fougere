@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { entity } from '../src/entity.js';
-import { text } from '../src/vocabulary/text.js';
+import { entity, text } from '../src/index.js';
 
 class Post extends entity({
   a: text(),

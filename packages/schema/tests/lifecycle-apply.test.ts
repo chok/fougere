@@ -9,17 +9,20 @@
  * These tests are what a storage adapter no longer has to write.
  */
 import { describe, it, expect } from 'vitest';
-import { entity } from '../src/entity.js';
-import { primary } from '../src/vocabulary/primary.js';
-import { text } from '../src/vocabulary/text.js';
-import { oneOf } from '../src/vocabulary/oneOf.js';
-import { created } from '../src/vocabulary/created.js';
-import { updated } from '../src/vocabulary/updated.js';
-import { optional } from '../src/vocabulary/optional.js';
-import { date } from '../src/vocabulary/date.js';
-import { number } from '../src/vocabulary/number.js';
-import { applyCreate, applyUpdate } from '../src/axis/lifecycle/apply.js';
-import { Generators } from '../src/axis/lifecycle/Generators.js';
+import {
+  applyCreate,
+  applyUpdate,
+  created,
+  date,
+  entity,
+  Generators,
+  number,
+  oneOf,
+  optional,
+  primary,
+  text,
+  updated,
+} from '../src/index.js';
 
 class Product extends entity({
   id: primary({ generate: 'uuid' }),

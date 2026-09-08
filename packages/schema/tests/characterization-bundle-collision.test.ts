@@ -1,8 +1,5 @@
 import { describe as group, expect, it } from 'vitest';
-import { Bundle } from '../src/projection/card/Bundle.js';
-import { entity } from '../src/entity.js';
-import { primary } from '../src/vocabulary/primary.js';
-import { text } from '../src/vocabulary/text.js';
+import { Bundle, entity, primary, text } from '../src/index.js';
 
 class Post extends entity({
   id: primary(),

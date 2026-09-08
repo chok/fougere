@@ -1,11 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { initTRPC } from '@trpc/server';
 import { FormApi } from '@tanstack/form-core';
-import { entity } from '../src/entity.js';
-import { primary } from '../src/vocabulary/primary.js';
-import { text } from '../src/vocabulary/text.js';
-import { number } from '../src/vocabulary/number.js';
-import { bool } from '../src/vocabulary/bool.js';
+import { bool, entity, number, primary, text } from '../src/index.js';
 
 /**
  * The README's claim, held by a runner rather than by prose: an entity is

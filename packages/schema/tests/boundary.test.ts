@@ -1,16 +1,18 @@
-import { Boundaries } from '../src/axis/boundary/Boundaries.js';
-import { Boundary } from '../src/axis/boundary/Boundary.js';
-import { InputValidator } from '../src/validator/InputValidator.js';
+import {
+  Boundaries,
+  Boundary,
+  date,
+  entity,
+  Field,
+  InputValidator,
+  optional,
+  primary,
+  readOnly,
+  text,
+  Visibility,
+  writeOnly,
+} from '../src/index.js';
 import { describe, it, expect } from 'vitest';
-import { entity } from '../src/entity.js';
-import { primary } from '../src/vocabulary/primary.js';
-import { text } from '../src/vocabulary/text.js';
-import { date } from '../src/vocabulary/date.js';
-import { optional } from '../src/vocabulary/optional.js';
-import { readOnly } from '../src/vocabulary/readOnly.js';
-import { writeOnly } from '../src/vocabulary/writeOnly.js';
-import { Visibility } from '../src/projection/Visibility.js';
-import { Field } from '../src/field/Field.js';
 
 class Event extends entity({
   id: primary(),

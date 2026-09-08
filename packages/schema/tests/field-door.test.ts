@@ -1,16 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { Field } from '../src/field/Field.js';
-import { Schema } from '../src/Schema.js';
-import { created } from '../src/vocabulary/created.js';
-import { entity } from '../src/entity.js';
-import { list } from '../src/vocabulary/list.js';
-import { oneOf } from '../src/vocabulary/oneOf.js';
-import { optional } from '../src/vocabulary/optional.js';
-import { primary } from '../src/vocabulary/primary.js';
-import { text } from '../src/vocabulary/text.js';
-import { updated } from '../src/vocabulary/updated.js';
+import {
+  created,
+  entity,
+  Field,
+  list,
+  oneOf,
+  optional,
+  primary,
+  Role,
+  Schema,
+  text,
+  updated,
+} from '../src/index.js';
 import { FieldDeclarationValidator } from '../src/validator/FieldDeclarationValidator.js';
-import { Role } from '../src/axis/role/Role.js';
 
 /**
  * The constructor is the only way to obtain a field, so it is where a field is validated —

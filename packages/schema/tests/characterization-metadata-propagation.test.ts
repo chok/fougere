@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { entity } from '../src/entity.js';
-import { Schema } from '../src/Schema.js';
-import { text } from '../src/vocabulary/text.js';
+import { entity, Schema, text } from '../src/index.js';
 
 declare module '../src/entity/EntityAdapters.js' {
   interface FougereEntityAdapters<K extends string> {

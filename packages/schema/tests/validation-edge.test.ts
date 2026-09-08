@@ -1,13 +1,15 @@
-import { InputValidator } from '../src/validator/InputValidator.js';
+import {
+  date,
+  immutable,
+  InputValidator,
+  number,
+  oneOf,
+  optional,
+  readOnly,
+  text,
+  updated,
+} from '../src/index.js';
 import { describe, it, expect } from 'vitest';
-import { text } from '../src/vocabulary/text.js';
-import { number } from '../src/vocabulary/number.js';
-import { date } from '../src/vocabulary/date.js';
-import { optional } from '../src/vocabulary/optional.js';
-import { updated } from '../src/vocabulary/updated.js';
-import { immutable } from '../src/vocabulary/immutable.js';
-import { oneOf } from '../src/vocabulary/oneOf.js';
-import { readOnly } from '../src/vocabulary/readOnly.js';
 
 // Locks the 5 tricky paths of the native validator (no zod underneath anymore).
 describe('validation — edge cases', () => {

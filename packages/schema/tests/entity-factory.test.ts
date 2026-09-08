@@ -1,10 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { entity } from '../src/entity.js';
-import { primary } from '../src/vocabulary/primary.js';
-import { text } from '../src/vocabulary/text.js';
-import { number } from '../src/vocabulary/number.js';
-import { oneOf } from '../src/vocabulary/oneOf.js';
-import { bool } from '../src/vocabulary/bool.js';
+import { bool, entity, number, oneOf, primary, text } from '../src/index.js';
 import { type StandardSchemaV1 } from '../src/projection/standard.js';
 
 // The new carrier: `class X extends entity({...})`. Proves the factory replaces

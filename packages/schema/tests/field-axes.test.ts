@@ -1,11 +1,24 @@
-import { Shapes } from '../src/axis/shape/Shape.js';
-import { InputValidator } from '../src/validator/InputValidator.js';
-import { describe, it, expect } from 'vitest';
-import { Role } from '../src/axis/role/Role.js';
 import {
-  entity, primary, text, number, oneOf, list, optional, nullable,
-  Card, Generators, unique, indexed, immutable, created, updated,
+  Card,
+  created,
+  entity,
+  Generators,
+  immutable,
+  indexed,
+  InputValidator,
+  list,
+  nullable,
+  number,
+  oneOf,
+  optional,
+  primary,
+  Role,
+  Shapes,
+  text,
+  unique,
+  updated,
 } from '../src/index.js';
+import { describe, it, expect } from 'vitest';
 // The read half is the framework's own business, so the barrel no longer carries it.
 
 // ─── nullableShape / anatomy — the two gates of the union, per shape genre ──

@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { AdapterFieldValidator } from '../src/validator/AdapterFieldValidator.js';
-import type { Shape } from '../src/axis/shape/Shape.js';
+import { AdapterFieldValidator, type Shape } from '../src/index.js';
 
 /**
  * The mechanism alone: an adapter states the format, `schema` validates against it and learns

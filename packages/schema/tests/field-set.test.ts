@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FieldSet } from '../src/field/FieldSet.js';
-import { entity } from '../src/entity.js';
-import { primary } from '../src/vocabulary/primary.js';
-import { text } from '../src/vocabulary/text.js';
+import { entity, FieldSet, primary, text } from '../src/index.js';
 
 describe('FieldSet', () => {
   it('answers the primary field and keeps absence explicit', () => {

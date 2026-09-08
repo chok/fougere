@@ -1,13 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import type { Fields } from '../src/field/Field.js';
-import type { ValidationResult } from '../src/validation.js';
-import { InputValidator } from '../src/validator/InputValidator.js';
+import {
+  entity,
+  type Fields,
+  InputValidator,
+  primary,
+  readOnly,
+  type SchemaConstructor,
+  text,
+  type ValidationResult,
+} from '../src/index.js';
 import type { StandardSchemaV1 } from '../src/projection/standard.js';
-import type { SchemaConstructor } from '../src/Schema.js';
-import { entity } from '../src/entity.js';
-import { primary } from '../src/vocabulary/primary.js';
-import { readOnly } from '../src/vocabulary/readOnly.js';
-import { text } from '../src/vocabulary/text.js';
 
 class Post extends entity({
   id: primary(),

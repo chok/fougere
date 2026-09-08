@@ -7,9 +7,7 @@
  * never receive a per-adapter entry nor join a composite group.
  */
 import { describe, it, expect } from 'vitest';
-import { entity } from '../src/entity.js';
-import { primary } from '../src/vocabulary/primary.js';
-import { text } from '../src/vocabulary/text.js';
+import { entity, primary, text } from '../src/index.js';
 
 declare module '../src/entity/EntityAdapters.js' {
   interface FougereEntityAdapters<K extends string> {

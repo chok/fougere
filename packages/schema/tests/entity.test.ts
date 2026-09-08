@@ -1,12 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { entity } from '../src/entity.js';
-import { primary } from '../src/vocabulary/primary.js';
-import { text } from '../src/vocabulary/text.js';
-import { number } from '../src/vocabulary/number.js';
-import { oneOf } from '../src/vocabulary/oneOf.js';
-import { ref } from '../src/vocabulary/ref.js';
-import { many } from '../src/vocabulary/many.js';
-import { created } from '../src/vocabulary/created.js';
+import { created, entity, many, number, oneOf, primary, ref, text } from '../src/index.js';
 
 class Customer extends entity({
   id: primary(),

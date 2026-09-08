@@ -9,12 +9,7 @@
  *      (Card / adapters). That is the trade-off.
  */
 import { describe as group, it, expect } from 'vitest';
-import { entity } from '../src/entity.js';
-import { primary } from '../src/vocabulary/primary.js';
-import { text } from '../src/vocabulary/text.js';
-import { number } from '../src/vocabulary/number.js';
-import { oneOf } from '../src/vocabulary/oneOf.js';
-import { Card } from '../src/projection/card/Card.js';
+import { Card, entity, number, oneOf, primary, text } from '../src/index.js';
 
 // ─── 1 · Le payoff de la classe : un nom = type + valeur ──────────────
 

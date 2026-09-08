@@ -1,23 +1,25 @@
 import { describe, it, expect } from 'vitest';
-import { Shapes } from '../src/axis/shape/Shape.js';
-import { Field } from '../src/field/Field.js';
-import { entity } from '../src/entity.js';
-import { primary } from '../src/vocabulary/primary.js';
-import { text } from '../src/vocabulary/text.js';
-import { number } from '../src/vocabulary/number.js';
-import { bool } from '../src/vocabulary/bool.js';
-import { date } from '../src/vocabulary/date.js';
-import { created } from '../src/vocabulary/created.js';
-import { updated } from '../src/vocabulary/updated.js';
-import { immutable } from '../src/vocabulary/immutable.js';
-import { oneOf } from '../src/vocabulary/oneOf.js';
-import { ref } from '../src/vocabulary/ref.js';
-import { many } from '../src/vocabulary/many.js';
-import { optional } from '../src/vocabulary/optional.js';
-import { json } from '../src/vocabulary/json.js';
-import { list } from '../src/vocabulary/list.js';
-import { email } from '../src/vocabulary/email.js';
-import { url } from '../src/vocabulary/url.js';
+import {
+  bool,
+  created,
+  date,
+  email,
+  entity,
+  Field,
+  immutable,
+  json,
+  list,
+  many,
+  number,
+  oneOf,
+  optional,
+  primary,
+  ref,
+  Shapes,
+  text,
+  updated,
+  url,
+} from '../src/index.js';
 
 describe('helpers', () => {
   it('primary() creates an auto-generated id field (cuid2 default)', () => {
