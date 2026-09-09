@@ -1,6 +1,7 @@
-import { date, number, text } from '@fougere/schema';
+import { Boundaries, date, number, primary, text } from '@fougere/schema';
 import { describe, expect, it, vi } from 'vitest';
 import { StorageGuard } from '../src/dispatch/StorageGuard.js';
+import { storageOver, type Store, type Values } from '../src/store.js';
 
 describe('StorageGuard', () => {
   const fields = { name: text(), stock: number({ min: 0 }) };
@@ -88,5 +89,33 @@ describe('StorageGuard', () => {
       stock: 1,
       at: new Date('2026-09-05T00:00:00.000Z'),
     });
+  });
+
+  it('judges a row once, whatever the gesture it arrived by', async () => {
+    let decoded = 0;
+    Boundaries.decoders.register('guardCents', (value) => {
+      decoded += 1;
+      return { value: Number(value) / 100 };
+    });
+    const rows = new Map<string, Values>();
+    const store: Store = {
+      get: async (key) => rows.get(key),
+      has: async (key) => rows.has(key),
+      set: async (key, values) => { rows.set(key, values); },
+      delete: async (key) => rows.delete(key),
+      all: async () => [...rows.values()],
+      client: rows,
+    };
+    const priced = {
+      id: primary(),
+      amount: number().with({ boundary: { in: { decode: 'guardCents' } } }),
+    };
+    const storage = storageOver(() => store)({ getFields: () => priced } as never, 'money');
+    const guarded = new StorageGuard(priced, 'money').guard(storage);
+
+    await guarded.upsertAll([{ id: 'a', amount: 10000 }]);
+
+    expect(decoded).toBe(1);
+    expect(rows.get('a')?.amount).toBe(100);
   });
 });

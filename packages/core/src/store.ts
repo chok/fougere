@@ -47,6 +47,23 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
         ? Object.fromEntries(Object.entries(values).filter(([key]) => selected.has(key)))
         : values);
 
+      // Same contract as SQL: the key and the creation stamps survive an overwrite.
+      // Named, and not reached through `this`: a caller may have wrapped these gestures,
+      // and a derived one that goes back through the front door is judged twice.
+      const upsert = async (input: Partial<Record<string, unknown>>): Promise<Values> => {
+        const values = applyCreate(fields, applyUpdate(fields, input));
+        const id = values[pk] as string | undefined;
+        if (id === undefined) throw new Error(`${name}.upsert(): no \`${pk}\` — an upsert needs the key it writes at.`);
+        const previous = await store.get(keyOf(id));
+        if (previous) {
+          for (const [key, field] of Object.entries(fields)) {
+            if (key === pk || Lifecycle.of(field).stampedOnce) values[key] = previous[key];
+          }
+        }
+        await store.set(keyOf(id), values);
+        return pick(values);
+      };
+
       return {
         client: store.client,
         async list(options?: any) {
@@ -105,22 +122,9 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
           }
           return grouped;
         },
-        // Same contract as SQL: the key and the creation stamps survive an overwrite.
-        async upsert(input: Partial<Record<string, unknown>>) {
-          const values = applyCreate(fields, applyUpdate(fields, input));
-          const id = values[pk] as string | undefined;
-          if (id === undefined) throw new Error(`${name}.upsert(): no \`${pk}\` — an upsert needs the key it writes at.`);
-          const previous = await store.get(keyOf(id));
-          if (previous) {
-            for (const [key, field] of Object.entries(fields)) {
-              if (key === pk || Lifecycle.of(field).stampedOnce) values[key] = previous[key];
-            }
-          }
-          await store.set(keyOf(id), values);
-          return pick(values);
-        },
+        upsert,
         async upsertAll(inputs: readonly Partial<Record<string, unknown>>[]) {
-          for (const input of inputs) await this.upsert(input);
+          for (const input of inputs) await upsert(input);
           return inputs.length;
         },
         async create(input: Partial<Record<string, unknown>>) {
