@@ -7,7 +7,7 @@ export default class CatalogHandler {
 
   /** Run one pass and say what it wrote. */
   async refresh(): Promise<Refreshed> {
-    return await this.catalog.refresh();
+    return await this.catalog.catchUp();
   }
 
   /** Read the copy — an ordinary local query, which the source could not have served. */

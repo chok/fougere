@@ -1,10 +1,12 @@
 /**
- * Mirror(Shape) — the loop, the age, the validator and the write, so an author writes one
- * generator and nothing else.
+ * Mirror(Shape) — the loop, the validator and the write, so an author writes one
+ * generator and nothing else. The mark it pulls from is the caller's: a mirror that read
+ * it off its own rows advanced past a pass that had thrown, and the rows the source had
+ * changed in between were never asked for again.
  */
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text, updated } from '@fougere/schema';
-import { Mirror, ageFieldOf } from '../src/prefab/mirror.js';
+import { Mirror } from '../src/prefab/mirror.js';
 import { StorageGuard } from '../src/dispatch/StorageGuard.js';
 import { targetOf } from '../src/prefab/prefab.js';
 
@@ -46,17 +48,46 @@ describe('a mirror refreshes', () => {
     expect(done.ms).toBeGreaterThanOrEqual(0);
   });
 
-  it('hands the pull its own high-water mark — which is what makes it incremental', async () => {
-    const pulled = new Date('2026-01-01T00:00:00.000Z');
-    const storage = spyStorage(Card, [{ id: 'a', title: 'A', pulledAt: pulled }]);
+  it('hands the pull the mark it was GIVEN, and reports it back', async () => {
+    const mark = new Date('2026-01-01T00:00:00.000Z');
+    const storage = spyStorage(Card, [{ id: 'a', title: 'A', pulledAt: new Date('2026-06-01T00:00:00.000Z') }]);
     let asked: Date | undefined = new Date(0);
     class M extends Mirror(Card) {
       async *pull(since?: Date) { asked = since; yield []; }
     }
-    await new M(storage).refresh();
+    const done = await new M(storage).refresh(mark);
 
-    // Read off the table and not remembered here: another process may have refreshed it.
-    expect(asked).toEqual(pulled);
+    // Never read off the rows: those carry when WE wrote them, not what the source
+    // has changed since — and a pass that half-wrote would push the mark past its own gap.
+    expect(asked).toEqual(mark);
+    expect(done.since).toEqual(mark);
+  });
+
+  it('leaves the caller free to keep its mark where a failed pass cannot move it', async () => {
+    const storage = spyStorage(Card);
+    const asked: (Date | undefined)[] = [];
+    let fail = true;
+    class M extends Mirror(Card) {
+      async *pull(since?: Date) {
+        asked.push(since);
+        yield [{ id: 'a', title: 'A' }];
+        if (fail) { fail = false; throw new Error('source page failed'); }
+      }
+    }
+    const mirror = new M(storage);
+    let mark: Date | undefined;
+
+    const pass = async () => {
+      const startedAt = new Date();
+      await mirror.refresh(mark);
+      mark = startedAt;
+    };
+    await expect(pass()).rejects.toThrow(/source page failed/);
+    await pass();
+
+    // The second pass asked from the same place as the first — the throw skipped the
+    // assignment, so nothing the source changed before it was stepped over.
+    expect(asked).toEqual([undefined, undefined]);
   });
 
   it('refuses a key the shape does not declare — a mapping that went stale', async () => {
@@ -108,16 +139,11 @@ describe('what a mirror states about itself', () => {
     expect(targetOf(M)).toBe(Card);
   });
 
-  it('finds the field a copy states its age with', () => {
-    expect(ageFieldOf(Card)).toBe('pulledAt');
+  it('copies a shape that dates nothing — the mark was never the rows\' to carry', async () => {
     class Undated extends entity({ id: primary(), title: text() }) {}
-    expect(ageFieldOf(Undated)).toBeUndefined();
-  });
-
-  it('refuses a shape that cannot say its age, at the declaration', () => {
-    // The DDL states this for a stored DERIVATION; an entity used as a mirror — a flat
-    // search index copying rather than referencing — reaches no such rule.
-    class Undated extends entity({ id: primary(), title: text() }) {}
-    expect(() => Mirror(Undated)).toThrow(/carries no `updated\(\)` field/);
+    class M extends Mirror(Undated) {
+      async *pull() { yield [{ id: 'a', title: 'A' }]; }
+    }
+    expect((await new M(spyStorage(Undated)).refresh()).written).toBe(1);
   });
 });

@@ -355,10 +355,12 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   plain `registry.set`, so the entity's storage overwrites the provider. `refuseStorageInUserCode`
   does not cover it: it reads `decl.deps`, never `decl.ctor.name`. Measured 2026-09-09. The name
   is already wrong by two rules, which is why nothing hits it; left as is.
-- **`Mirror` writes two useful lines and the rest belongs to the port**
-  (`core/src/prefab/mirror.ts`). What it held of its own is gone — `StorageGuard` guards every
-  write gesture now, so a page is judged where every other row is. Decided, not done: delete
-  the prefab.
+- **`Mirror` holds a loop and a page contract, and nothing else** (`core/src/prefab/mirror.ts`).
+  What it held of its own is gone — `StorageGuard` guards every write gesture now, so a page is
+  judged where every other row is. The mark is the CALLER's since it read one off its own rows,
+  which carry when WE wrote them: a pass that threw halfway still advanced it, and what the
+  source had changed in the gap was never asked for again. `demos/mirror-catalog` keeps it in
+  `PartnerCatalog` and moves it only after a pass returns.
 - **An announcement realizes a fact's `lifecycle.create`, and no typed emitter can use it.**
   `Emit<T>` names the ROW type where `created()` is required, so `announce({ id, title })` is a
   compile error. `PartialValues` is the wanted shape.
