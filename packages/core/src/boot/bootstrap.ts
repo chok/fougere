@@ -651,12 +651,36 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     }
   };
 
+  /** Said once per pair, so a door that registers in a loop says it once. */
+  const saidAbsent = new Set<string>();
+
+  /**
+   * A surface is declared in the frond that serves it. When that frond runs in another
+   * process, this one never asked for its doors, and answering 'no' is the only thing a
+   * synchronous rule can do — so it says so rather than registering nothing in silence.
+   */
+  const sayNoSurfaceAcross = (entity: string, surface: string): void => {
+    if (!remoteRouter || saidAbsent.has(`${surface}:${entity}`)) return;
+    saidAbsent.add(`${surface}:${entity}`);
+    log.warn(
+      `surface '${surface}' serves nothing for '${entity}' — the frond that declares it runs `
+      + 'elsewhere, and a remote is asked for its doors at the first call, not at boot. '
+      + 'The default door answers.',
+    );
+  };
+
   /** THE membership rule, stated once — every projection reads this and nothing else. */
   const facadeFor = (entity: string, surface?: string): Record<string, Function> | undefined => {
     if (!surface) return facadeAt(facadeKeyOf(entity), true);
 
     const own = facadeAt(facadeKeyOf(entity, surface), false);
-    const declared = fronds.owner(entity)?.surfaces?.[surface];
+    const owner = fronds.owner(entity);
+    if (!owner) {
+      sayNoSurfaceAcross(entity, surface);
+      return own;
+    }
+
+    const declared = owner.surfaces?.[surface];
     if (!declared) return own;
     if (!declared.some((n) => n.toLowerCase() === entity.toLowerCase())) return undefined;
     if (own) return own;

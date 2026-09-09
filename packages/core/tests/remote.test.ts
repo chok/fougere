@@ -2,7 +2,7 @@ import { scanProject } from '@fougere/compiler';
 import { describe, it, expect, vi } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
-import { createApp, createLocalRunner, createAppRunner, FougereError, ErrorCode } from '../src/index.js';
+import { createApp, createLocalRunner, createAppRunner, FougereError, ErrorCode, onLog } from '../src/index.js';
 import type { App, StorageFactory, Transport } from '../src/index.js';
 import type { SchemaView } from '@fougere/schema';
 import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
@@ -47,6 +47,39 @@ async function bootConsumer(host: App, transportSpy?: Transport): Promise<App> {
     remoteTransport: () => transportSpy ?? asWire(createLocalRunner(host)),
   });
 }
+
+describe('a named surface across a process', () => {
+  it('serves nothing, and says so once instead of registering nothing in silence', async () => {
+    const lines: string[] = [];
+    const stop = onLog((record) => { lines.push(`${record.level} ${record.message}`); });
+    const host = await bootHost();
+    const consumer = await bootConsumer(host);
+
+    // A door registers in a loop over entities, so it asks twice as readily as once.
+    expect(consumer.facadeFor('product', 'admin')).toBeUndefined();
+    expect(consumer.facadeFor('product', 'admin')).toBeUndefined();
+
+    stop();
+    const said = lines.filter((line) => line.includes("'admin'"));
+    expect(said).toHaveLength(1);
+    expect(said[0]).toMatch(/serves nothing for 'product'/);
+
+    await consumer.dispose();
+    await host.dispose();
+  });
+
+  it('says nothing when no remote is declared — the surface is simply absent', async () => {
+    const lines: string[] = [];
+    const stop = onLog((record) => { lines.push(record.message); });
+    const host = await bootHost();
+
+    expect(host.facadeFor('nothing', 'admin')).toBeUndefined();
+    stop();
+    expect(lines.filter((line) => line.includes("'admin'"))).toEqual([]);
+
+    await host.dispose();
+  });
+});
 
 describe('remote façade (repli)', () => {
   it('executes remotely with parity against the local runner', async () => {
