@@ -1,5 +1,19 @@
 # @fougere/cli
 
+## 0.8.2-alpha.0
+
+### Patch Changes
+
+- `fougere check` reports two placements it had no words for: `outside-convention`, what
+  sits in a frond and belongs to no convention, and `handler-declaration`, what a handler
+  file holds besides its class. Both are warnings — they resolve today and the app runs.
+
+- Updated dependencies [fb256c1, c1ad40c]
+  - @fougere/core@0.8.2-alpha.0
+  - @fougere/adapter-sql@0.8.2-alpha.0
+  - @fougere/defaults@0.8.2-alpha.0
+  - @fougere/transport-http@0.8.2-alpha.0
+
 ## 0.8.1-alpha.0
 
 ### Patch Changes

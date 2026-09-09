@@ -1,5 +1,12 @@
 # @fougere/schema-graphql
 
+## 0.8.2-alpha.0
+
+### Patch Changes
+
+- Updated dependencies [fb256c1, c1ad40c]
+  - @fougere/schema@0.8.2-alpha.0
+
 ## 0.7.0-alpha.0
 
 ### Patch Changes

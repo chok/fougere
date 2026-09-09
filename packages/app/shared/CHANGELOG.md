@@ -1,5 +1,13 @@
 # @fougere/app
 
+## 0.8.2-alpha.0
+
+### Patch Changes
+
+- Updated dependencies [fb256c1, c1ad40c]
+  - @fougere/core@0.8.2-alpha.0
+  - @fougere/schema@0.8.2-alpha.0
+
 ## 0.8.1-alpha.0
 
 ### Patch Changes

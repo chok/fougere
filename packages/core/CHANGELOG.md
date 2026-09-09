@@ -1,5 +1,29 @@
 # @fougere/core
 
+## 0.8.2-alpha.0
+
+### Minor Changes
+
+- fb256c1: A frond's directories are a closed list, and `rules/` is the ninth.
+
+  The eight names were closed for READING and open for writing: a scan steps over a
+  directory it does not know, in silence, so an invented one was never refused — it was
+  unseen. `rules/` names what the domain computes with nothing injected — a threshold, a
+  formula, a word list. It is read into the type program, because a handler names one of
+  its types in a signature, and it registers nothing: no class there answers a container
+  key. `outsideConventions` reports what still sits outside them, naming the addresses
+  rather than describing them.
+
+  `Conventions.dirs` gains a required key. `ConventionsInput` stays partial, so no
+  `fougere.config.ts` is affected.
+
+- c1ad40c: A handler declares nothing but its handler.
+
+  `handlerDeclarations` reads what a handler file holds besides its class and says where it
+  goes, by the one question that separates the natures: does it arrive INJECTED or
+  IMPORTED? Measured on one application: 15 declarations in three handlers, and zero in
+  the five others — the destination already existed, the code drifted anyway.
+
 ## 0.8.1-alpha.0
 
 ### Patch Changes

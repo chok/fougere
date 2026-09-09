@@ -1,5 +1,16 @@
 # @fougere/schema
 
+## 0.8.2-alpha.0
+
+### Patch Changes
+
+- A word of the vocabulary says which of three things it is: `primitive/` builds a field,
+  `preset/` states one member more on another word, `rule/` takes a field and adds a
+  statement — the seven `vocabulary()` makes. `RoleRules` joins `LifecycleRules` and
+  `BoundaryRef` at the door, and `Meta` leaves `axis/`: it had one reader, `Field`, and
+  says `description`, which no axis reads. Import paths inside the package moved; the
+  package's door did not — it publishes `"."` alone.
+
 ## 0.7.0-alpha.0
 
 ### Minor Changes
