@@ -281,7 +281,7 @@ describe('a number the driver hands back as a BigInt', () => {
   it('comes back a number, because that is what the field declares', () => {
     // Postgres does it for `count(*)` and for `bigint` columns, DuckDB for every count.
     // Untouched, the value does not even leave: `JSON.stringify` refuses a BigInt.
-    const codec = codecFor({ type: 'integer' });
+    const codec = codecFor('integer');
     expect(codec.read(42n)).toBe(42);
     expect(typeof codec.read(42n)).toBe('number');
     expect(JSON.stringify({ n: codec.read(42n) })).toBe('{"n":42}');
@@ -289,12 +289,12 @@ describe('a number the driver hands back as a BigInt', () => {
 
   it('refuses one too large rather than rounding it', () => {
     // Number(9007199254740993n) is 9007199254740992 — a wrong answer, silently.
-    expect(() => codecFor({ type: 'integer' }).read(9007199254740993n))
+    expect(() => codecFor('integer').read(9007199254740993n))
       .toThrow(/does not fit a JavaScript number/);
   });
 
   it('leaves a plain number and a null alone', () => {
-    const codec = codecFor({ type: 'number' });
+    const codec = codecFor('number');
     expect(codec.read(1.5)).toBe(1.5);
     expect(codec.read(null)).toBeNull();
     expect(codec.read(undefined)).toBeUndefined();

@@ -69,15 +69,17 @@ describe('toTable', () => {
   it('unwraps the nullable union so the type survives', () => {
     const note = column(toTable('products', Product), 'note');
     expect(note.nullable).toBe(true);
-    expect(note.shape?.type).toBe('string');
+    expect(note.type).toBe('text');
   });
 
   it('carries a literal default', () => {
     expect(column(toTable('products', Product), 'active').default).toBe(true);
   });
 
-  it('keeps an enum as a string shape', () => {
-    expect(column(toTable('orders', Order), 'status').shape?.type).toBe('string');
+  it('names a bounded set, which every engine still stores as text', () => {
+    const status = column(toTable('orders', Order), 'status');
+    expect(status.type).toBe('choice');
+    expect(dialects.sqlite.columnType(status, false)).toBe('text');
   });
 });
 

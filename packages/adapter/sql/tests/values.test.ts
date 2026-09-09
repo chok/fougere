@@ -88,15 +88,15 @@ describe('the values a driver can bind', () => {
 
 describe('which shapes get a conversion', () => {
   it('leaves text and numbers untouched — the driver already takes them', () => {
-    const plain = codecFor({ type: 'string' });
+    const plain = codecFor('text');
     expect(plain.write('x')).toBe('x');
-    expect(codecFor({ type: 'number' }).write(3.5)).toBe(3.5);
+    expect(codecFor('number').write(3.5)).toBe(3.5);
     expect(codecFor(undefined).write('x')).toBe('x');
   });
 
   it('never invents a value out of null or undefined', () => {
-    for (const shape of [{ type: 'boolean' }, { type: 'string', format: 'date-time' }, { type: 'array' }] as const) {
-      const codec = codecFor(shape);
+    for (const type of ['boolean', 'date', 'array'] as const) {
+      const codec = codecFor(type);
       expect(codec.write(null)).toBeNull();
       expect(codec.write(undefined)).toBeUndefined();
       expect(codec.read(null)).toBeNull();
@@ -105,9 +105,9 @@ describe('which shapes get a conversion', () => {
 
   it('leaves a value a richer driver already converted', () => {
     // Postgres hands back a real boolean and a real Date; nothing to redo.
-    expect(codecFor({ type: 'boolean' }).read(true)).toBe(true);
+    expect(codecFor('boolean').read(true)).toBe(true);
     const now = new Date();
-    expect(codecFor({ type: 'string', format: 'date-time' }).read(now)).toBe(now);
-    expect(codecFor({ type: 'object' }).read({ a: 1 })).toEqual({ a: 1 });
+    expect(codecFor('date').read(now)).toBe(now);
+    expect(codecFor('object').read({ a: 1 })).toEqual({ a: 1 });
   });
 });

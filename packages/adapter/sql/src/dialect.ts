@@ -47,7 +47,7 @@ export const sqliteDialect: Dialect = {
   // SQLite has one integer, one float and one text type — a boolean is an int,
   // JSON is text. Any column may be a key, so `keyed` changes nothing.
   columnType(column) {
-    switch (column.shape?.type) {
+    switch (column.type) {
       case 'integer':
       case 'boolean':
         return 'integer';
@@ -71,7 +71,7 @@ export const pgDialect: Dialect = {
   // Postgres has real types for everything, and `text` is indexable — so a key
   // needs no narrowing.
   columnType(column) {
-    switch (column.shape?.type) {
+    switch (column.type) {
       case 'integer':
         return 'integer';
       case 'number':
@@ -96,7 +96,7 @@ export const mysqlDialect: Dialect = {
   name: 'mysql',
   supportsReturning: false,
   columnType(column, keyed) {
-    switch (column.shape?.type) {
+    switch (column.type) {
       case 'integer':
         return 'int';
       case 'number':
@@ -122,7 +122,7 @@ export const mssqlDialect: Dialect = {
   name: 'mssql',
   supportsReturning: false,
   columnType(column, keyed) {
-    switch (column.shape?.type) {
+    switch (column.type) {
       case 'integer':
         return 'int';
       case 'number':

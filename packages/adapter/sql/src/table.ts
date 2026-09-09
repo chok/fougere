@@ -1,15 +1,8 @@
 import { Lifecycle, Role } from '@fougere/schema';
 /** Entity → table description, with no SQL in sight. */
-import { Shapes, lowerFirst, type Field, type SchemaView } from '@fougere/schema';
+import { Shapes, lowerFirst, type Field, type SchemaView, type ShapeType } from '@fougere/schema';
 import { boundsOf, type ShapeBounds } from './check.js';
 import { sqlEntries, type SqlField } from './fields.js';
-
-/** The shape keywords a dialect needs to choose a column type. */
-export interface ColumnShape {
-  type?: string;
-  format?: string;
-  maxLength?: number;
-}
 
 /** One column, described by the axes — plus, at most, what the entity stated for sql. */
 export interface ColumnDef {
@@ -17,8 +10,8 @@ export interface ColumnDef {
   field: string;
   /** SQL column name (snake_case). */
   name: string;
-  /** The value shape, nullable union already unwrapped. */
-  shape?: ColumnShape;
+  /** What every projection here dispatches on — a `date()` and a bounded set included. */
+  type?: ShapeType;
   nullable: boolean;
   primary: boolean;
   /** A literal default (`lifecycle.create.value`), when the field declares one. */
@@ -133,7 +126,7 @@ function toColumn(
   const column: ColumnDef = {
     field: fieldName,
     name: toSnakeCase(fieldName),
-    shape: base as ColumnShape | undefined,
+    type: Shapes.typeOf(field.shape),
     nullable,
     primary: Role.of(field).isPrimary,
   };

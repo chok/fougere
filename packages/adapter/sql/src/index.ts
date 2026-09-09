@@ -7,7 +7,6 @@ export { orderTables } from './order.js';
 export type {
   TableDef,
   ColumnDef,
-  ColumnShape,
   ColumnReference,
   RelationResolve,
   EntityEntry,

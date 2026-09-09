@@ -1,5 +1,5 @@
 /** The values a driver accepts, and the values an entity declares. */
-import type { ColumnShape } from './table.js';
+import type { ShapeType } from '@fougere/schema';
 
 export interface ValueCodec {
   /** Entity value → what the driver can bind. */
@@ -55,29 +55,31 @@ function nullSafe(codec: ValueCodec): ValueCodec {
   return { write: pass(codec.write), read: pass(codec.read) };
 }
 
-/** The pair a column's shape calls for — identity when the driver already accepts it. */
-export function codecFor(shape?: ColumnShape): ValueCodec {
-  switch (shape?.type) {
-    case 'boolean':
-      return nullSafe(boolean);
-    case 'integer':
-    case 'number':
-      return nullSafe(numeric);
-    case 'string':
-      return shape.format === 'date-time' ? nullSafe(dateTime) : identity;
-    case 'array':
-    case 'object':
-      return nullSafe(json);
-    default:
-      return identity;
-  }
+/**
+ * The pair a column's type calls for — identity where the driver already accepts the value.
+ * FR : la paire que le type de la colonne appelle — identité quand le driver accepte déjà.
+ * `codecFor('date').write(new Date(0))` → `'1970-01-01T00:00:00.000Z'`
+ */
+const CODEC_BY_TYPE: Record<ShapeType, ValueCodec> = {
+  boolean: nullSafe(boolean),
+  integer: nullSafe(numeric),
+  number: nullSafe(numeric),
+  date: nullSafe(dateTime),
+  object: nullSafe(json),
+  array: nullSafe(json),
+  text: identity,
+  choice: identity,
+};
+
+export function codecFor(type?: ShapeType): ValueCodec {
+  return type ? CODEC_BY_TYPE[type] : identity;
 }
 
 /** Field name → codec, for every column that needs one. Identity columns are omitted. */
-export function codecsOf(columns: { field: string; shape?: ColumnShape }[]): Map<string, ValueCodec> {
+export function codecsOf(columns: { field: string; type?: ShapeType }[]): Map<string, ValueCodec> {
   const codecs = new Map<string, ValueCodec>();
   for (const column of columns) {
-    const codec = codecFor(column.shape);
+    const codec = codecFor(column.type);
     if (codec !== identity) codecs.set(column.field, codec);
   }
   return codecs;
