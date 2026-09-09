@@ -1,6 +1,11 @@
 import type { BoundaryRules } from './Boundary.js';
 import { Registry } from '../../lib/Registry.js';
 
+/**
+ * Wire to domain, and it must ANSWER a value it already produced: two doors decode — the
+ * client one on what arrives, `StorageGuard` on what a handler writes — so a decoder that
+ * halves cents halves them twice and stores a hundredth.
+ */
 export type Decoder = (value: unknown) => { value: unknown } | { error: string };
 export type Encoder = (value: unknown) => unknown;
 

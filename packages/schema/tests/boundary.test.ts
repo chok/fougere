@@ -146,4 +146,15 @@ describe('boundary · survives every field transform', () => {
     class M extends entity({ price: money() }) {}
     expect(Boundary.of(M.partial().getFields().price).decode(1099)).toEqual({ value: 10.99 });
   });
+
+  /**
+   * Two doors decode: the client one on what arrives, `StorageGuard` on what a handler
+   * writes. The value the second sees has been through the first, so a decoder that does
+   * not answer its own output stores something nobody asked for.
+   */
+  it('answers a value it already produced — the shipped decoder is idempotent', () => {
+    const once = Boundaries.decoders.resolve('isoDate')('2026-09-05T00:00:00.000Z');
+    expect(once).toEqual({ value: new Date('2026-09-05T00:00:00.000Z') });
+    expect(Boundaries.decoders.resolve('isoDate')((once as { value: unknown }).value)).toEqual(once);
+  });
 });

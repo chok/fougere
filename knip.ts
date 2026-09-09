@@ -1,5 +1,5 @@
 import type { KnipConfig } from 'knip';
-import { DEFAULT_CONVENTIONS, frondDirsOf } from './packages/core/src/scan/conventions.js';
+import { DEFAULT_CONVENTIONS, frondDirsOf } from './packages/core/src/conventions.js';
 
 /**
  * Frond files are loaded by convention rather than imports. Derive their entry globs
