@@ -55,7 +55,7 @@ export class FougereError extends Error {
 
   constructor(options: FougereErrorOptions) {
     super(options.message, { cause: options.cause });
-    this.name = 'FougereError';
+    this.name = new.target.name;
     this.code = options.code;
     this.entity = options.entity;
     this.operation = options.operation;
