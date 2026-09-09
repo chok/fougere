@@ -1,7 +1,7 @@
 import { Lifecycle, Role } from '@fougere/schema';
 /** Entity → citty bridge. */
 import type { Fields } from '@fougere/schema';
-import { Shapes, Visibility } from '@fougere/schema';
+import { Shapes, Visibility, type ShapeType } from '@fougere/schema';
 import type { ArgsDef, ArgDef } from 'citty';
 
 function toKebab(name: string): string {
@@ -21,6 +21,7 @@ export function entityToArgs(fields: Fields): ArgsDef {
     // A `default(v)` travels as the create rule `{ value }` — citty shows it.
     const defaultValue = Lifecycle.of(field).literal?.value;
     const { base: shape, nullable } = Shapes.of(field.shape);
+    const type = Shapes.typeOf(field.shape);
     const common = {
       description: field.meta?.description,
       required: !nullable && Lifecycle.of(field).requiredAtCreate,
@@ -38,12 +39,12 @@ export function entityToArgs(fields: Fields): ArgsDef {
       && common.required
       && key !== 'force'
       && options === undefined
-      && shape?.type !== 'boolean'
-      && !(shape?.type === 'string' && shape.format === 'date-time');
+      && type !== 'boolean'
+      && type !== 'date';
     if (positional) positionalIndex++;
 
     args[toKebab(key) === key ? key : toKebab(key)] = argFor(
-      shape?.type,
+      type,
       common,
       defaultValue,
       options,
@@ -54,9 +55,24 @@ export function entityToArgs(fields: Fields): ArgsDef {
   return args;
 }
 
+/**
+ * Which types carry a declared default onto the CLI. A `boolean` is answered above, with
+ * its own default; an `object` and an `array` are named and bare.
+ */
+const CARRIES_DEFAULT: Record<ShapeType, boolean> = {
+  number: true,
+  integer: true,
+  text: true,
+  date: true,
+  choice: true,
+  boolean: false,
+  object: false,
+  array: false,
+};
+
 /** One arg, built WITH its `type`. */
 function argFor(
-  type: string | undefined,
+  type: ShapeType | undefined,
   common: { description?: string; required: boolean },
   defaultValue: unknown,
   options: string[] | undefined,
@@ -68,9 +84,7 @@ function argFor(
       : { ...common, type: 'boolean', default: defaultValue as boolean };
   }
 
-  // Only these three shapes carry a default onto the CLI; anything else is named and bare.
-  const carriesDefault = type === 'number' || type === 'integer' || type === 'string';
-  const withDefault = carriesDefault && defaultValue !== undefined
+  const withDefault = type && CARRIES_DEFAULT[type] && defaultValue !== undefined
     ? { default: String(defaultValue) }
     : {};
 
