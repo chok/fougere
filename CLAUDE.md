@@ -334,8 +334,9 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   scan sets `e.exposed`/`h.exposed`, never `surfaces`. Three readers, one inside core
   (`effective-operation.ts`, `exposedAdapters`). `packages/decorators` holds the method-level
   `@expose` and is simply not wired yet — that is a state, not a defect.
-- **The cross-source read is raw SQL while `ref()` already declares the join.** `orderBy`
-  swallows a path in silence (`adapter/sql/src/crud.ts`). The next step is the two-source demo.
+- **The cross-source read is raw SQL while `ref()` already declares the join.** A path in
+  `orderBy` is REFUSED at the door now rather than swallowed, so the join it would need is
+  named as missing instead of answered unordered. The next step is the two-source demo.
 - **A computed field that reads still issues N queries.** The façade hands the presenter the
   PAGE (`dispatch/PresenterExecutor.ts`), so one query per page is possible, but
   `Promise.all(rows.map(...))` inside the field body is not refused.
@@ -344,8 +345,11 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   on purpose. Closing it means choosing which door is right.
 - **`storage.client` remains the anonymous multi-statement path, validator off** — everything else
   writes through a guarded port, `Together<[…]>` included.
-- **A provider class named `<Entity>Storage` takes that entity's key**, silently. The name is
-  already wrong by two rules, which is why nothing hits it; left as is.
+- **A provider class named `<Entity>Storage` is DISCARDED, not honoured** — the entry used to
+  say the opposite. `bootstrap.ts` registers providers before storages and `registerValue` is a
+  plain `registry.set`, so the entity's storage overwrites the provider. `refuseStorageInUserCode`
+  does not cover it: it reads `decl.deps`, never `decl.ctor.name`. Measured 2026-09-09. The name
+  is already wrong by two rules, which is why nothing hits it; left as is.
 - **`Mirror` writes two useful lines and the rest belongs to the port**
   (`core/src/prefab/mirror.ts`). What it held of its own is gone — `StorageGuard` guards every
   write gesture now, so a page is judged where every other row is. Decided, not done: delete
