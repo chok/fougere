@@ -12,10 +12,9 @@ import {
 } from '@nuxt/kit';
 import type { Nuxt } from '@nuxt/schema';
 import { orderSeeds } from '@fougere/core';
-import {
-  scanProject, emitStatement, frondAliases, frondPackage, watchPathsOf, resolveConventions, type Conventions,
-  setModuleLoader, loadCascadedConfig,
-} from '@fougere/core/node';
+import { scanProject, emitStatement, frondAliases, watchPathsOf } from '@fougere/compiler';
+import { frondPackage, resolveConventions, type Conventions } from '@fougere/core';
+import { setModuleLoader, loadCascadedConfig } from '@fougere/core/node';
 import { declaresStorage } from '@fougere/defaults';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
 import { createJiti } from 'jiti';
@@ -304,7 +303,8 @@ const module = defineNuxtModule<FougereModuleOptions>({
     }).dst;
 
     // ── 6b. Boot plugin (virtual — lives in .nuxt/) ───
-    const allSeeds = orderSeeds(fronds);
+    const { ordered, cycle } = orderSeeds(fronds);
+    const allSeeds = [...ordered, ...cycle];
     const bootTpl = addTemplate({
       filename: 'fougere-boot.ts',
       write: true,

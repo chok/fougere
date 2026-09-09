@@ -1,5 +1,5 @@
 import { lowerFirst } from '@fougere/schema';
-import type { FrondDescriptor, ProviderEntry } from '../descriptor/frond.js';
+import { nameOf, type FrondDescriptor, type ProviderEntry } from '../descriptor/frond.js';
 import { inheritsCrud } from '../prefab/crud.js';
 import { targetOf } from '../prefab/prefab.js';
 import { ownedBy, repositoryKeyOf } from '../prefab/repository.js';
@@ -52,6 +52,21 @@ export function refuseStorageInUserCode(
     ...frond.collectors.map((c) => ({ ...c, kind: 'collector' })),
   ];
   const holders = frond.providers.map((p) => ({ ...p, kind: 'provider' as const }));
+
+  for (const provider of holders) {
+    // The key the boot registers it under, which a bundler may have renamed — the same
+    // reading `ProviderEntry.name` exists for.
+    const registered = nameOf(provider);
+    const held = entityOfStorageKey(registered, known);
+    if (!held) continue;
+
+    throw new Error(
+      `[storage] ${registered} is a provider, and it is the container key of ${held}'s `
+      + `own storage — the storage is registered second, so the provider is never resolved.\n`
+      + `  Name it for what it holds; \`<Entity>Storage\` belongs to the entity.\n`
+      + `  ${provider.filePath}`,
+    );
+  }
 
   for (const decl of [...doors, ...holders]) {
     const allowed = decl.kind === 'provider' ? builtOn(decl.ctor) : [];

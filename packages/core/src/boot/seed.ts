@@ -4,8 +4,15 @@ import type { FrondDescriptor, SeedEntry, SeedFactory } from '../descriptor/fron
 import type { App } from './types.js';
 import type { Extension } from './AppLifecycle.js';
 
+/** What the ordering satisfied, and what no order can. */
+export interface SeedOrder {
+  ordered: SeedEntry[];
+  /** Seeds whose `ref()` targets wait on each other — no order plants them all. */
+  cycle: SeedEntry[];
+}
+
 /** Seeds in dependency order — a `ref()` target is planted before its referrer. */
-export function orderSeeds(fronds: FrondDescriptor[]): SeedEntry[] {
+export function orderSeeds(fronds: FrondDescriptor[]): SeedOrder {
   const refs = new Map<string, Set<string>>();
   for (const frond of fronds) {
     for (const entity of frond.entities) {
@@ -45,7 +52,7 @@ export function orderSeeds(fronds: FrondDescriptor[]): SeedEntry[] {
     waiting.delete(ready);
   }
 
-  return [...ordered, ...waiting.keys()];
+  return { ordered, cycle: [...waiting.keys()] };
 }
 
 /** Where a seed writes, and what it may skip — resolved per entity. */
@@ -120,7 +127,15 @@ export function seeding(report?: (message: string) => void): Extension {
   return {
     name: 'seeds',
     up: async (app: App) => {
-      const seeds = orderSeeds(app.fronds);
+      const { ordered, cycle } = orderSeeds(app.fronds);
+      if (cycle.length > 0) {
+        report?.(
+          `  ${cycle.map((seed) => seed.entityName).join(', ')}: a ref() cycle, and no order `
+          + 'plants them all — planted in scan order, and the source answers for the rest',
+        );
+      }
+
+      const seeds = [...ordered, ...cycle];
       if (seeds.length > 0) await runSeeds(app, seeds, report);
     },
   };
