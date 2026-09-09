@@ -6,7 +6,9 @@ import {
   resolveEffectiveOperations,
   type ScanDiagnostic,
 } from '@fougere/core';
-import { adaptersOf, crossFrondImports, handlerDeclarations } from '@fougere/core/node';
+import {
+  adaptersOf, crossFrondImports, handlerDeclarations, outsideConventions, resolveConventions,
+} from '@fougere/core/node';
 import ProjectScan from '../services/ProjectScan.js';
 
 /** One thing that does not hold, in the terms of whoever has to fix it. */
@@ -156,6 +158,20 @@ export default class CheckHandler {
         code: reach.rule,
         filePath: reach.filePath,
         message: reach.message,
+      });
+    }
+
+    /**
+     * What no convention names. Reported before the declarations below, because a frond
+     * with nowhere to put a word is why the word ends up in a handler.
+     */
+    for (const unplaced of await outsideConventions(fronds, resolveConventions(config.conventions))) {
+      findings.push({
+        severity: 'warning',
+        code: unplaced.rule,
+        filePath: unplaced.filePath,
+        subject: unplaced.frond,
+        message: unplaced.message,
       });
     }
 

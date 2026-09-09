@@ -14,6 +14,12 @@ export interface Conventions {
     presenters: string;
     collectors: string;
     seeds: string;
+    /**
+     * What the domain computes with nothing injected. Read into the type program, because
+     * a handler names one of its types in a signature, and registered nowhere: no class
+     * here answers a container key.
+     */
+    rules: string;
     /** What its shapes used to be — written by `fougere freeze`, replayed by `migrate`. */
     versions: string;
   };
@@ -31,6 +37,7 @@ export const DEFAULT_CONVENTIONS: Conventions = {
     presenters: 'presenters',
     collectors: 'collectors',
     seeds: 'seeds',
+    rules: 'rules',
     versions: 'versions',
   },
 };
@@ -63,8 +70,9 @@ export function providerDirsOf(conventions: Conventions): string[] {
 
 /** The frond vocabulary — every directory the scan reads. */
 export function frondDirsOf(conventions: Conventions): string[] {
-  const { entities, handlers, presenters, collectors, seeds, versions } = conventions.dirs;
+  const { entities, handlers, presenters, collectors, seeds, rules, versions } = conventions.dirs;
   return [...new Set([
-    entities, handlers, presenters, collectors, seeds, versions, ...providerDirsOf(conventions),
+    entities, handlers, presenters, collectors, seeds, rules, versions,
+    ...providerDirsOf(conventions),
   ])];
 }

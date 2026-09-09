@@ -109,6 +109,7 @@ export { verify, assertSplittable, type Violation } from './verify.js';
 // Same question as verify(), answered from the source text instead of the model.
 export type { CrossFrondImport } from './imports.js';
 export type { HandlerDeclaration } from './declarations.js';
+export type { OutsideConvention } from './placement.js';
 // Who is calling, established rather than accepted — the proof beside `state`'s claim.
 // `generateKeyPair` and `issueGrant` are NOT here: they make keys at a deployment and
 // need `node:crypto` for a gesture WebCrypto has no equal of. They sit on `/node`.

@@ -24,7 +24,7 @@ describe('resolveConventions', () => {
     expect(resolveConventions({})).toEqual(DEFAULT_CONVENTIONS);
   });
 
-  it('keeps the six other directories when one is renamed', () => {
+  it('keeps the seven other directories when one is renamed', () => {
     const resolved = resolveConventions({ dirs: { entities: 'models' } });
     expect(resolved.dirs.entities).toBe('models');
     expect(resolved.dirs.handlers).toBe('handlers');
@@ -39,7 +39,7 @@ describe('resolveConventions', () => {
    */
   it('derives the frond vocabulary from the names in force', () => {
     expect(frondDirsOf(resolveConventions(conventions)))
-      .toEqual(['models', 'usecases', 'presenters', 'collectors', 'seeds', 'versions', 'helpers', 'repositories']);
+      .toEqual(['models', 'usecases', 'presenters', 'collectors', 'seeds', 'rules', 'versions', 'helpers', 'repositories']);
   });
 
   it('reads one directory once when two roles name the same one', () => {
