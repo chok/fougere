@@ -1,6 +1,8 @@
 import type { BoundaryRef } from '../../axis/boundary/Boundary.js';
 import type { LifecycleRules } from '../../axis/lifecycle/Lifecycle.js';
-import type { FieldDescriptor, RoleDescriptor } from './Descriptor.js';
+import { dequal } from 'dequal';
+import { EXTENSION_SLOTS } from '../../axis/Axis.js';
+import type { FieldDescriptor, FieldExtension, RoleDescriptor, SchemaDescriptor } from './Descriptor.js';
 
 /** One named difference, at one place. Each kind exists because a reader asks for it. */
 export type Change =
@@ -53,4 +55,148 @@ export interface SetDiff {
 export interface SetDiffOptions {
   /** Declared renames, per entity: `{ post: { body: 'content' } }`. */
   renamed?: Record<string, Record<string, string>>;
+}
+
+/**
+ * What changed between two descriptions of the same entity, read from the wire form alone.
+ * FR : ce qui a changé entre deux descriptions d'une même entité, lu du seul format du fil.
+ * `compare(v1, v2, { renamed: { body: 'content' } })` → one `renamed`, no `ambiguous`
+ */
+export function compare(
+  was: SchemaDescriptor,
+  is: SchemaDescriptor,
+  options: DiffOptions = {},
+): Diff {
+  const changes: Change[] = [];
+  const renamed = options.renamed ?? {};
+  const before = was.properties ?? {};
+  const after = is.properties ?? {};
+  const requiredBefore = new Set(was.required ?? []);
+  const requiredAfter = new Set(is.required ?? []);
+
+  // Apply a declared rename first so subsequent differences use the new field name.
+  const nameAfter = (field: string): string => renamed[field] ?? field;
+  const removed: string[] = [];
+  for (const [field, descriptor] of Object.entries(before)) {
+    const now = nameAfter(field);
+    const target = after[now];
+    if (target === undefined) {
+      removed.push(field);
+      continue;
+    }
+
+    if (now !== field)
+      changes.push({ kind: 'renamed', from: field, to: now, field: target });
+
+    const wasType = typesOf(descriptor);
+    const isType = typesOf(target);
+    if (!dequal(wasType, isType))
+      changes.push({ kind: 'retyped', field: now, from: wasType, to: isType });
+    else if (!dequal(boundsOf(descriptor), boundsOf(target))) {
+      changes.push({ kind: 'reshaped', field: now, from: descriptor, to: target });
+    }
+
+    const wasRequired = requiredBefore.has(field);
+    const isRequired = requiredAfter.has(now);
+    if (wasRequired !== isRequired) {
+      changes.push({ kind: 'required', field: now, from: wasRequired, to: isRequired });
+    }
+    changes.push(...restated(now, descriptor['x-fougere'], target['x-fougere']));
+  }
+
+  const claimed = new Set(Object.values(renamed));
+  const added = Object.keys(after).filter(
+    (field) => !(field in before) && !claimed.has(field),
+  );
+  for (const field of removed) {
+    changes.push({
+      kind: 'removed',
+      field,
+      from: before[field],
+      required: requiredBefore.has(field),
+    });
+  }
+  for (const field of added) {
+    changes.push({
+      kind: 'added',
+      field,
+      to: after[field],
+      required: requiredAfter.has(field),
+    });
+  }
+
+  return { changes, ambiguous: candidates(removed, added, before, after) };
+}
+
+function restated(
+  field: string,
+  before: FieldExtension | undefined,
+  after: FieldExtension | undefined,
+): Change[] {
+  return EXTENSION_SLOTS.filter((axis) => !dequal(before?.[axis], after?.[axis])).map(
+    (axis) =>
+      ({
+        kind: 'restated',
+        field,
+        axis,
+        from: before?.[axis],
+        to: after?.[axis],
+      }) as Change,
+  );
+}
+
+/**
+ * So two shapes are compared without what is not shape getting in the way.
+ * FR : pour que deux formes se comparent sans que le reste s'en mêle.
+ * `{ type: 'string', description: 'x' }` → `{ type: 'string' }`
+ */
+function shapeOf(descriptor: FieldDescriptor): Record<string, unknown> {
+  const { 'x-fougere': _extension, description: _description, ...shape } = descriptor;
+  return shape as Record<string, unknown>;
+}
+
+/**
+ * So `['string','null']` and `['null','string']` are the same type, not a change.
+ * FR : pour que `['string','null']` et `['null','string']` soient un même type.
+ * `typesOf({ type: ['null', 'string'] })` → `['null', 'string']`
+ */
+function typesOf(descriptor: FieldDescriptor): TypeSet {
+  const type = descriptor.type;
+  if (type === undefined) return [];
+  return (Array.isArray(type) ? [...type] : [type]).sort();
+}
+
+/**
+ * So a bound that moved is a `reshaped`, told apart from a type that changed.
+ * FR : pour qu'une borne déplacée soit un `reshaped`, distinct d'un type changé.
+ * `maxLength: 200` → `maxLength: 100` → one `reshaped`, never a `retyped`
+ */
+function boundsOf(descriptor: FieldDescriptor): Record<string, unknown> {
+  const { type: _type, ...rest } = shapeOf(descriptor);
+  return rest;
+}
+
+/**
+ * So a removal plus an addition of the same shape is a question, never a guess.
+ * FR : pour qu'une suppression plus un ajout de même forme soit une question, pas un pari.
+ * `body` gone, `content` appeared → `ambiguous: [{ removed: 'body', added: 'content' }]`
+ */
+function candidates(
+  removed: string[],
+  added: string[],
+  before: Record<string, FieldDescriptor>,
+  after: Record<string, FieldDescriptor>,
+): RenameCandidate[] {
+  const found: RenameCandidate[] = [];
+  for (const gone of removed) {
+    for (const appeared of added) {
+      if (dequal(shapeOf(before[gone]), shapeOf(after[appeared])))
+        found.push({ removed: gone, added: appeared });
+    }
+  }
+  const was = Object.keys(before);
+  const now = Object.keys(after);
+  const apart = ({ removed: gone, added: appeared }: RenameCandidate): number =>
+    Math.abs(now.indexOf(appeared) - was.indexOf(gone));
+  return found.sort((a, b) => apart(a) - apart(b));
 }

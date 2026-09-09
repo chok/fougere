@@ -1,5 +1,4 @@
-import { EXTENSION_AXES, EXTENSION_SLOTS, type Resolver } from '../../axis/Axis.js';
-import { dequal } from 'dequal';
+import { EXTENSION_AXES, type Resolver } from '../../axis/Axis.js';
 import { clean, isObject } from '../../lib/utils.js';
 import { Field, type Fields } from '../../field/Field.js';
 import { SchemaConstraints } from '../../SchemaDefinition.js';
@@ -13,7 +12,7 @@ import type {
   FieldExtension,
   SchemaDescriptor,
 } from './Descriptor.js';
-import type { Change, Diff, DiffOptions, RenameCandidate, TypeSet } from './diff.js';
+import { compare, type Diff, type DiffOptions } from './diff.js';
 
 type FieldsOf<T> = { [K in keyof T]-?: Field<T[K]> };
 
@@ -106,66 +105,9 @@ export class Card<T = Values<Fields>> {
     return schema as unknown as SchemaConstructor<FieldsOf<T>>;
   }
 
+  /** What changed between two descriptions of the same entity — see {@link compare}. */
   diff(other: Card, options: DiffOptions = {}): Diff {
-    const changes: Change[] = [];
-    const renamed = options.renamed ?? {};
-    const before = this.descriptor.properties ?? {};
-    const after = other.descriptor.properties ?? {};
-    const requiredBefore = new Set(this.descriptor.required ?? []);
-    const requiredAfter = new Set(other.descriptor.required ?? []);
-
-    // Apply a declared rename first so subsequent differences use the new field name.
-    const nameAfter = (field: string): string => renamed[field] ?? field;
-    const removed: string[] = [];
-    for (const [field, descriptor] of Object.entries(before)) {
-      const now = nameAfter(field);
-      const target = after[now];
-      if (target === undefined) {
-        removed.push(field);
-        continue;
-      }
-
-      if (now !== field)
-        changes.push({ kind: 'renamed', from: field, to: now, field: target });
-
-      const wasType = typesOf(descriptor);
-      const isType = typesOf(target);
-      if (!dequal(wasType, isType))
-        changes.push({ kind: 'retyped', field: now, from: wasType, to: isType });
-      else if (!dequal(boundsOf(descriptor), boundsOf(target))) {
-        changes.push({ kind: 'reshaped', field: now, from: descriptor, to: target });
-      }
-
-      const wasRequired = requiredBefore.has(field);
-      const isRequired = requiredAfter.has(now);
-      if (wasRequired !== isRequired) {
-        changes.push({ kind: 'required', field: now, from: wasRequired, to: isRequired });
-      }
-      changes.push(...restated(now, descriptor['x-fougere'], target['x-fougere']));
-    }
-
-    const claimed = new Set(Object.values(renamed));
-    const added = Object.keys(after).filter(
-      (field) => !(field in before) && !claimed.has(field),
-    );
-    for (const field of removed) {
-      changes.push({
-        kind: 'removed',
-        field,
-        from: before[field],
-        required: requiredBefore.has(field),
-      });
-    }
-    for (const field of added) {
-      changes.push({
-        kind: 'added',
-        field,
-        to: after[field],
-        required: requiredAfter.has(field),
-      });
-    }
-
-    return { changes, ambiguous: candidates(removed, added, before, after) };
+    return compare(this.descriptor, other.descriptor, options);
   }
 }
 
@@ -271,79 +213,6 @@ function reconstructField(
  * FR : pour qu'un axe modifié soit une différence nommée, pas un champ entier marqué.
  * `{ kind: 'restated', field: 'body', axis: 'boundary', … }`
  */
-function restated(
-  field: string,
-  before: FieldExtension | undefined,
-  after: FieldExtension | undefined,
-): Change[] {
-  return EXTENSION_SLOTS.filter((axis) => !dequal(before?.[axis], after?.[axis])).map(
-    (axis) =>
-      ({
-        kind: 'restated',
-        field,
-        axis,
-        from: before?.[axis],
-        to: after?.[axis],
-      }) as Change,
-  );
-}
-
-/**
- * So two shapes are compared without what is not shape getting in the way.
- * FR : pour que deux formes se comparent sans que le reste s'en mêle.
- * `{ type: 'string', description: 'x' }` → `{ type: 'string' }`
- */
-function shapeOf(descriptor: FieldDescriptor): Record<string, unknown> {
-  const { 'x-fougere': _extension, description: _description, ...shape } = descriptor;
-  return shape as Record<string, unknown>;
-}
-
-/**
- * So `['string','null']` and `['null','string']` are the same type, not a change.
- * FR : pour que `['string','null']` et `['null','string']` soient un même type.
- * `typesOf({ type: ['null', 'string'] })` → `['null', 'string']`
- */
-function typesOf(descriptor: FieldDescriptor): TypeSet {
-  const type = descriptor.type;
-  if (type === undefined) return [];
-  return (Array.isArray(type) ? [...type] : [type]).sort();
-}
-
-/**
- * So a bound that moved is a `reshaped`, told apart from a type that changed.
- * FR : pour qu'une borne déplacée soit un `reshaped`, distinct d'un type changé.
- * `maxLength: 200` → `maxLength: 100` → one `reshaped`, never a `retyped`
- */
-function boundsOf(descriptor: FieldDescriptor): Record<string, unknown> {
-  const { type: _type, ...rest } = shapeOf(descriptor);
-  return rest;
-}
-
-/**
- * So a removal plus an addition of the same shape is a question, never a guess.
- * FR : pour qu'une suppression plus un ajout de même forme soit une question, pas un pari.
- * `body` gone, `content` appeared → `ambiguous: [{ removed: 'body', added: 'content' }]`
- */
-function candidates(
-  removed: string[],
-  added: string[],
-  before: Record<string, FieldDescriptor>,
-  after: Record<string, FieldDescriptor>,
-): RenameCandidate[] {
-  const found: RenameCandidate[] = [];
-  for (const gone of removed) {
-    for (const appeared of added) {
-      if (dequal(shapeOf(before[gone]), shapeOf(after[appeared])))
-        found.push({ removed: gone, added: appeared });
-    }
-  }
-  const was = Object.keys(before);
-  const now = Object.keys(after);
-  const apart = ({ removed: gone, added: appeared }: RenameCandidate): number =>
-    Math.abs(now.indexOf(appeared) - was.indexOf(gone));
-  return found.sort((a, b) => apart(a) - apart(b));
-}
-
 /**
  * So a group spanning several fields reaches a reader that only ever sees one field.
  * FR : pour qu'un groupe couvrant plusieurs champs atteigne un lecteur qui n'en voit qu'un.
