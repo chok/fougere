@@ -1,7 +1,7 @@
 import { roleAxis } from './role/RoleAxis.js';
 import { lifecycleAxis } from './lifecycle/LifecycleAxis.js';
 import { boundaryAxis } from './boundary/BoundaryAxis.js';
-import type { ValidationError } from '../validation.js';
+import type { ValidationError } from '../lib/validation.js';
 
 export interface Axis<Declared = unknown, Wire = unknown> {
   readonly slot: 'role' | 'lifecycle' | 'boundary';

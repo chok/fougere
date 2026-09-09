@@ -2,7 +2,7 @@ import { Boundary } from '../axis/boundary/Boundary.js';
 import { Lifecycle } from '../axis/lifecycle/Lifecycle.js';
 import { Role } from '../axis/role/Role.js';
 import type { Field, Fields } from '../field/Field.js';
-import type { ValidationError, ValidationResult } from '../validation.js';
+import type { ValidationError, ValidationResult } from '../lib/validation.js';
 import { FieldValueValidator } from './FieldValueValidator.js';
 import { InputRefusal } from './InputRefusal.js';
 

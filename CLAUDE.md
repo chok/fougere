@@ -273,7 +273,10 @@ validated strictly. Pinned by `tests/emit.test.ts`.
 **A family cycle is a check** — `tools/cycle-check.mjs`, `pnpm arch:cycles`, run in CI beside
 `pnpm arch`. `arch` asks what a file REACHES, this asks where it LIVES. It reports type-only
 cycles too and marks what the emitted JS does not contain, and it prints the THIN SIDE
-because that is what moves. It reads pairs, which is its ceiling. Four exceptions are stated
+because that is what moves. It reads pairs, and it does not read a package's ROOT as a family — which is where the
+  passes of 2026-09-10 found what it could not see: a family reaching down for a leaf that
+  depends on nothing (`schema/src/lib/validation.ts`, `core/src/storage/`) while the root
+  reached back up into it. Four exceptions are stated
 with their reason: `field`↔`validator`, `axis`↔`projection`, `axis`↔`field`, `entity`↔`field`.
 
 **Nuxt primitives** — `useQuery`/`useCommand` (a command on X revalidates mounted queries on

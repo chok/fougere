@@ -3,7 +3,7 @@ import { Boundary } from '../axis/boundary/Boundary.js';
 import { Formats, type FormatPredicate } from '../axis/shape/Formats.js';
 import { Shapes, type Shape } from '../axis/shape/Shape.js';
 import type { Field } from '../field/Field.js';
-import type { Checked } from '../validation.js';
+import type { Checked } from '../lib/validation.js';
 import type { OutputUnit } from '@cfworker/json-schema';
 
 interface ShapePlan {

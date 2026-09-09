@@ -6,7 +6,7 @@ import type { Meta } from './Meta.js';
 import type { Axis } from '../axis/Axis.js';
 import { FieldDeclarationValidator } from '../validator/FieldDeclarationValidator.js';
 import { FieldValueValidator } from '../validator/FieldValueValidator.js';
-import { dotted } from '../validation.js';
+import { dotted } from '../lib/validation.js';
 
 export type Fields = Record<string, Field>;
 
