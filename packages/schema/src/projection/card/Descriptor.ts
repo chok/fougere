@@ -2,16 +2,8 @@ import type { BoundaryRef } from '../../axis/boundary/Boundary.js';
 import type { LifecycleRules } from '../../axis/lifecycle/Lifecycle.js';
 import type { Relation } from '../../axis/role/Relation.js';
 import type { RoleRules } from '../../axis/role/Role.js';
+import type { JSONSchema7TypeName } from 'json-schema';
 import type { Shape } from '../../axis/shape/Shape.js';
-
-type JsonSchemaType =
-  | 'string'
-  | 'number'
-  | 'integer'
-  | 'boolean'
-  | 'object'
-  | 'array'
-  | 'null';
 
 type ShapeKeywords = UnionToIntersection<KeywordsOf<Shape>>;
 
@@ -19,7 +11,7 @@ type KeywordsOf<S> = S extends unknown ? Partial<Omit<S, 'type' | 'items' | 'pro
 type UnionToIntersection<U> = (U extends unknown ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
 
 export type FieldDescriptor = ShapeKeywords & {
-  type?: JsonSchemaType | JsonSchemaType[];
+  type?: JSONSchema7TypeName | JSONSchema7TypeName[];
   items?: FieldDescriptor;
   properties?: Record<string, FieldDescriptor>;
   description?: string;
