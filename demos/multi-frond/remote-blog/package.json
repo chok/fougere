@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx server.ts"
+    "dev": "tsx server.ts",
+    "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
     "@fougere/core": "workspace:*",

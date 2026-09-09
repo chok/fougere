@@ -6,7 +6,8 @@
     "remote": "cd remote-blog && tsx server.ts",
     "sync": "cd consumer && REMOTE_URL=http://localhost:4001 tsx sync-remote.ts",
     "dev": "cd consumer && npx nuxt dev --port 3002",
-    "test": "tsx test.ts"
+    "test": "tsx test.ts",
+    "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
     "@fougere/core": "workspace:*",

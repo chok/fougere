@@ -4,5 +4,6 @@
     "noEmit": true,
     "rootDir": "."
   },
-  "include": ["src", "fougere.config.ts"]
+  "include": ["."],
+  "exclude": ["**/dist", "node_modules"]
 }

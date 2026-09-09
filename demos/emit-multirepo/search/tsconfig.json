@@ -1,0 +1,18 @@
+{
+  // No `typecheck` script stands on this: `search` accepts a fact whose SHAPE it does
+  // not hold. `pnpm sync` fetches it from the blog's identity card into
+  // `.fougere/remotes/`, generated and gitignored, so a fresh clone has nothing to
+  // compile against and only a running peer can produce it. This config is what an
+  // editor — and a run after `pnpm sync` — reads.
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".",
+    "paths": {
+      "@fronds/search/*": ["./fronds/search/*"],
+      "@fronds/blog/*": ["./.fougere/remotes/blog/*"]
+    }
+  },
+  "include": ["."],
+  "exclude": ["**/dist", "node_modules"]
+}

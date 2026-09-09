@@ -37,7 +37,10 @@ const noteStorage = app.storageFor('note') as Storage<Note>;
 
 // ─── HTTP layer (Hono) ─────────────────────────────
 
-const hono = new Hono();
+/** What the session middleware puts on the request, and every route below reads back. */
+type Session = { user: Record<string, unknown>; session: Record<string, unknown> };
+
+const hono = new Hono<{ Variables: Session }>();
 
 // Auth catch-all — better-auth handler wrapped via the AuthRuntime
 hono.all('/auth/*', async (c) => {
@@ -59,7 +62,7 @@ hono.use('/api/*', async (c, next) => {
 });
 
 hono.get('/api/me', async (c) => {
-  const user = c.get('user' as never) as Record<string, unknown> | undefined;
+  const user = c.get('user');
   if (!user) return c.json({ error: 'Not logged in' }, 401);
   const sessions = await (app.auth!.storages.session as any).findAllBy({ userId: user.id });
   const accounts = await (app.auth!.storages.account as any).findAllBy({ userId: user.id });
@@ -71,14 +74,14 @@ hono.get('/api/me', async (c) => {
 });
 
 hono.get('/api/notes', async (c) => {
-  const user = c.get('user' as never) as Record<string, unknown> | undefined;
+  const user = c.get('user');
   if (!user) return c.json({ error: 'Not logged in' }, 401);
   const notes = await noteStorage.findAllBy({ userId: user.id });
   return c.json(notes);
 });
 
 hono.post('/api/notes', async (c) => {
-  const user = c.get('user' as never) as Record<string, unknown> | undefined;
+  const user = c.get('user');
   if (!user) return c.json({ error: 'Not logged in' }, 401);
   const body = await c.req.json();
   const validation = CreateNote.validate(body);
@@ -88,7 +91,7 @@ hono.post('/api/notes', async (c) => {
 });
 
 hono.delete('/api/notes/:id', async (c) => {
-  const user = c.get('user' as never) as Record<string, unknown> | undefined;
+  const user = c.get('user');
   if (!user) return c.json({ error: 'Not logged in' }, 401);
   const id = c.req.param('id');
   const note = await noteStorage.findById(id);

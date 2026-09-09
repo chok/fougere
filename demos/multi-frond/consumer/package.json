@@ -5,7 +5,8 @@
   "scripts": {
     "sync": "tsx sync-remote.ts",
     "dev": "nuxt dev --port 3002",
-    "build:synced": "nuxt build"
+    "build:synced": "nuxt build",
+    "typecheck": "tsc -p fronds"
   },
   "dependencies": {
     "@fougere/core": "workspace:*",

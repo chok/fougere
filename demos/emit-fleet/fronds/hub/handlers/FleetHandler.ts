@@ -13,7 +13,7 @@ export default class FleetHandler {
 
   /** Tell the fleet — or one of it — to sendCalibration. */
   async sendCalibration(offset: number, node?: string): Promise<{ sent: true }> {
-    await this.recalibration({ offset, node, at: new Date() });
+    await this.recalibration({ offset, node: node ?? null, at: new Date() });
     return { sent: true };
   }
 

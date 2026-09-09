@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "dev:search": "tsx search.ts",
-    "dev": "tsx main.ts"
+    "dev": "tsx main.ts",
+    "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
     "@fougere/core": "workspace:*",

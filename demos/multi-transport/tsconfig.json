@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".",
+    // A frond names its neighbours, it does not walk to them. The alias is what
+    // the loader registers at runtime; this is the same statement for the compiler.
+    "paths": {
+      "@fronds/sensors/*": ["./fronds/sensors/*"]
+    }
+  },
+  "include": ["."],
+  "exclude": ["**/dist", "node_modules"]
+}

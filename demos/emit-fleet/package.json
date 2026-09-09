@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "hub": "tsx hub.ts",
-    "node": "tsx node.ts"
+    "node": "tsx node.ts",
+    "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
     "@fougere/core": "workspace:*",

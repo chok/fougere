@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx src/server.ts",
-    "seed": "tsx src/seed.ts"
+    "seed": "tsx src/seed.ts",
+    "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
     "@fougere/schema": "workspace:*",
