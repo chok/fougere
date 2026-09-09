@@ -1,5 +1,5 @@
 import type { EntityConstructor } from '@fougere/schema';
-import type { Storage } from '../storage.js';
+import type { Storage } from '../storage/port.js';
 
 /** What one refresh did — enough to log it, and to decide whether to run again. */
 export interface Refreshed {

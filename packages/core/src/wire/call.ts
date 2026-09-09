@@ -1,6 +1,6 @@
 /** Call contract — a frond call is a value. */
 import { Card, type SchemaDescriptor } from '@fougere/schema';
-import { factsAnnouncedBy } from '../emit.js';
+import { factsAnnouncedBy } from './emit.js';
 import { Invocation, type InvocationContext, type PartialInvocation } from './Invocation.js';
 import type { RouteAddress } from './RouteAddress.js';
 import { FougereError, ErrorCode } from './errors.js';

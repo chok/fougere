@@ -1,5 +1,5 @@
 import { upperFirst, type EntityConstructor } from '@fougere/schema';
-import type { Storage, ListOptions, ListResult, SelectOption } from '../storage.js';
+import type { Storage, ListOptions, ListResult, SelectOption } from '../storage/port.js';
 import type { SchemaView } from '@fougere/schema';
 
 /** Repository(…entities) — who owns an entity's storage, and where its questions are named. */

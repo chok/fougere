@@ -1,5 +1,5 @@
 import { lowerFirst, type EntityConstructor, type SchemaView } from '@fougere/schema';
-import type { Storage, ListOptions, ListResult } from '../storage.js';
+import type { Storage, ListOptions, ListResult } from '../storage/port.js';
 import type { OperationContract } from '../wire/operation.js';
 import { targetOf } from './prefab.js';
 

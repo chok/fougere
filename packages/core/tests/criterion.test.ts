@@ -10,7 +10,7 @@
 import { describe, expect, it } from 'vitest';
 import { json, number, optional, text } from '@fougere/schema';
 
-import { comparisonOf, comparisonsIn, unknownIn } from '../src/criterion.js';
+import { comparisonOf, comparisonsIn, unknownIn } from '../src/storage/criterion.js';
 
 describe('a criterion names a comparison, or a value', () => {
   it('reads an object as comparisons on an ordinary field', () => {

@@ -1,4 +1,4 @@
-import type { Storage } from '../../../../src/storage.js';
+import type { Storage } from '../../../../src/storage/port.js';
 
 /**
  * What an adapter hands back: the port, plus the gesture that engine owns. Ships with the

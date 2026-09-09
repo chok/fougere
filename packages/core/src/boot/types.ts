@@ -4,7 +4,7 @@ import type { Fronds } from '../descriptor/Fronds.js';
 import type { FrondDescriptor } from '../descriptor/frond.js';
 import type { ScanResult } from '../scan.js';
 import type { SchemaView } from '@fougere/schema';
-import type { StorageFactory } from '../storage.js';
+import type { StorageFactory } from '../storage/port.js';
 import type { Constraint } from '../source.js';
 import type { AppMiddleware } from '../wire/middleware.js';
 import type { RpcAnswer, Transport } from '../wire/call.js';

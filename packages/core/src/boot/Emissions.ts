@@ -1,7 +1,7 @@
 import { applyCreate, dotted, type SchemaView } from '@fougere/schema';
 import type { Container } from '@fougere/container';
 import { validationErrorsOf } from '../wire/errors.js';
-import { emitKeyOf, factsAnnouncedBy } from '../emit.js';
+import { emitKeyOf, factsAnnouncedBy } from '../wire/emit.js';
 import { ambient } from '#ambient';
 import { EMPTY_INVOCATION } from '../wire/Invocation.js';
 import type { Logger } from '../builtin/logger.js';

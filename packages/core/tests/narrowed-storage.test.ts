@@ -15,7 +15,7 @@ import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { scanProject } from '@fougere/compiler';
 import { createApp, createLocalRunner } from '../src/index.js';
-import { storageKeyOf, type StorageFactory } from '../src/storage.js';
+import { storageKeyOf, type StorageFactory } from '../src/storage/port.js';
 import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
 
 function makeStorage() {

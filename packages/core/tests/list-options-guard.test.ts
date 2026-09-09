@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
 import { StorageGuard } from '../src/dispatch/StorageGuard.js';
-import type { ListOptions } from '../src/storage.js';
+import type { ListOptions } from '../src/storage/port.js';
 
 /**
  * The rule "an unknown key is refused" holds for the framework's own arguments too.

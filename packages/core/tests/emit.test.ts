@@ -11,7 +11,7 @@ import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner } from '../src/index.js';
 import { scanProject } from '@fougere/compiler';
-import { emitKeyOf, factOfEmitKey } from '../src/emit.js';
+import { emitKeyOf, factOfEmitKey } from '../src/wire/emit.js';
 import { identityCardOf } from '../src/boot/card.js';
 import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
 

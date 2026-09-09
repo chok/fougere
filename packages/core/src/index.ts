@@ -73,7 +73,7 @@ export type {
   FrondCall, Transport, IdentityCard, CardOp, Facade, RpcAnswer,
   TopologyReport, FrondPlacement, Edge,
 } from './wire/call.js';
-export { type Emit, type Fact } from './emit.js';
+export { type Emit, type Fact } from './wire/emit.js';
 export { callValueOf } from './contract.js';
 export type { CallValue } from './contract.js';
 export { toHttpError, toPublicError } from './wire/http-error.js';
@@ -83,12 +83,12 @@ export type { LogLevel, LogRecord, LogSink } from './builtin/logger.js';
 // What a re-read config changes in a running process — and what it cannot.
 export { applyConfig, type ConfigApplication } from './boot/apply.js';
 export { Config } from './builtin/config.js';
-export type { Storage, StorageFactory, ListOptions, ListResult, Together } from './storage.js';
-export { togetherKeyOf, membersOfTogetherKey } from './storage.js';
+export type { Storage, StorageFactory, ListOptions, ListResult, Together } from './storage/port.js';
+export { togetherKeyOf, membersOfTogetherKey } from './storage/port.js';
 export type { Constraint, Source, SourceConfig, SourceView } from './source.js';
 export { Sources } from './source.js';
-export { storageOver } from './store.js';
-export type { Store, Values } from './store.js';
+export { storageOver } from './storage/store.js';
+export type { Store, Values } from './storage/store.js';
 export type { App, CreateAppOptions } from './boot/types.js';
 export type { ScanResult, ScanDiagnostic } from './scan.js';
 export {

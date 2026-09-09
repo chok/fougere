@@ -60,7 +60,7 @@ packages/
     src/boot/            what createApp does with it: bootstrap, install, Emissions, AppLifecycle, seed,
                          remote, and what is BUILT from an app: its identity card, its runners
     src/dispatch/        what happens per call: HandlerFacade, Dispatcher, the route registry, the validators and projectors, argument resolution, InFlight
-    src/wire/            what travels, and the values a call is made of: Call, Invocation, RouteAddress,
+    src/wire/            what travels, and the values a call is made of: Call, Invocation, RouteAddress, Emit,
                          CallLog, the operation contract, its signature and binding plan, errors, middleware
     src/prefab/          what a user declares: Crud, Presenter, Collector, Repository, Mirror
     src/builtin/         what every app has without asking: the logger, the config service
@@ -69,9 +69,10 @@ packages/
                          form, transport.ts the transport
     src/descriptor/index.ts  what it takes to PRODUCE a descriptor — the fourth entry, `@fougere/core/descriptor`,
                          read by the scan. The main entry serves what an app RUNS
-    src/*.ts             what belongs to no phase: the two published entry points, frond(), the storage port
-                         and the frame that derives it (store.ts),
-                         emit, the effective operation model, the checkers
+    src/storage/         where rows live from core's side: the port, the frame that derives its
+                         thirteen gestures from four (store.ts), and what a criterion compares
+    src/*.ts             what belongs to no phase: the two published entry points, frond(),
+                         the effective operation model, the checkers
   http/                @fougere/http          the HttpRouter port + its express/fastify/hono adapters
   observability/       @fougere/observability optional: a span per op, the four signals, OTLP. Core holds none of it
   defaults/            @fougere/defaults      the conventional boot — the ONE place naming container+storage+transport
@@ -235,7 +236,7 @@ together see the same absence. `declares(schema, 'unique')` is its dual, read by
 too. SQL states `sqlEnforces`; a Map states nothing, and the boot names the entities that costs
 rather than refusing them. Pinned by `core/tests/enforced.test.ts`.
 
-**The thirteen gestures derive from four** — `core/src/store.ts`, `storageOver(open)` over a
+**The thirteen gestures derive from four** — `core/src/storage/store.ts`, `storageOver(open)` over a
 `Store` (`get`/`has`/`set`/`delete`/`all`/`client`). `adapter/memory` is 25 lines and
 `adapter/file` 90. `transacted` is deliberately not in the frame: a unit of work belongs to
 an engine that has one. `all()` reading everything is what bounds a file source.
@@ -261,7 +262,7 @@ invocation)`. `createLocalRunner` (`boot/runner.ts`) executes locally, `createAp
 follows the topology, `identityCardOf` (`boot/card.ts`) answers `rpc.discover`. Transports
 move the value, never reshape it. Browser-safe surface: `@fougere/core/contract`.
 
-**`Emit<T>` / `Fact<T>`** (`core/src/emit.ts`, dispatched by `boot/Emissions.ts`) — every
+**`Emit<T>` / `Fact<T>`** (`core/src/wire/emit.ts`, dispatched by `boot/Emissions.ts`) — every
 other call names ONE recipient; an emission names a SUBJECT. Accepting a `Fact<T>` IS the
 subscription — no topic, no register call. It is a resolver, not a channel: nothing is
 durable, and a subscriber keeps its validator, its binding and its middlewares. A ring is
@@ -415,11 +416,11 @@ One line each, kept because a past version of this file asserted the opposite.
   (`app/shared/src/boot.ts`), and the Nuxt codegen passes it whole. Naming a few of its members
   left `transacted` and `close` behind, under Nuxt only.
 - **`output(schema)` restricts what it hands back on both realizations** — `storageOver`
-  (`core/src/store.ts`) applies the scope SQL puts in its SELECT. Pinned by
+  (`core/src/storage/store.ts`) applies the scope SQL puts in its SELECT. Pinned by
   `adapter/memory/tests/storage.test.ts`.
 
 - **A container key and the way to undo it are declared together** — `storageKeyOf` /
-  `entityOfStorageKey` (`core/src/storage.ts`), the third pair beside `togetherKeyOf` and
+  `entityOfStorageKey` (`core/src/storage/port.ts`), the third pair beside `togetherKeyOf` and
   `emitKeyOf`. The dual asks whether the prefix names a SCANNED entity.
 - A decision has ONE owner, instantiated on its subject when the subject can be held:
   `InputValidator.of(fields, opts).validate(row)`, `Card.fromSchema(Post)`, `FieldSet.of(f).primary`.

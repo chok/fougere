@@ -1,6 +1,6 @@
 import { FieldSet, FieldValueValidator, InputRefusal, type Fields } from '@fougere/schema';
-import { COMPARISONS, comparisonOf, unknownIn } from '../criterion.js';
-import { assertListOptions } from '../storage.js';
+import { COMPARISONS, comparisonOf, unknownIn } from '../storage/criterion.js';
+import { assertListOptions } from '../storage/port.js';
 import { ErrorCode, FougereError } from '../wire/errors.js';
 
 /** The gestures this guard grafts onto. */

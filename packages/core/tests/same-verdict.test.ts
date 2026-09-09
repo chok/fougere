@@ -23,7 +23,7 @@ import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, FougereError } from '../src/index.js';
 import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
 import { Cases, type SchemaView } from '@fougere/schema';
-import type { Storage, StorageFactory } from '../src/storage.js';
+import type { Storage, StorageFactory } from '../src/storage/port.js';
 import Article from './fixtures-same-verdict/fronds/press/entities/Article.js';
 import { NewArticle } from './fixtures-same-verdict/fronds/press/handlers/ArticleHandler.js';
 

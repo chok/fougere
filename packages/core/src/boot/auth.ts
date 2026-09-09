@@ -3,7 +3,7 @@
  * the contract between core and an `@fougere/auth-*` package.
  */
 import type { SchemaView } from '@fougere/schema';
-import type { Storage, StorageFactory } from '../storage.js';
+import type { Storage, StorageFactory } from '../storage/port.js';
 
 /** Lazy auth declaration written in fougere.config.ts. */
 export interface AuthConfig {

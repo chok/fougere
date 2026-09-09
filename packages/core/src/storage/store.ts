@@ -1,7 +1,7 @@
 /** The thirteen gestures of {@link Storage}, derived from four. */
 import { applyCreate, applyUpdate, Lifecycle, Role, type SchemaView } from '@fougere/schema';
 import { comparisonOf, comparisonsIn, type Comparison } from './criterion.js';
-import type { Storage, StorageFactory } from './storage.js';
+import type { Storage, StorageFactory } from './port.js';
 
 /** One instance, as every realization hands it over. */
 export type Values = Record<string, unknown>;

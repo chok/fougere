@@ -24,13 +24,6 @@ export function unb64url(input: string): Uint8Array {
 }
 
 /** Plain base64, padded — what an environment variable carries a PEM as. */
-export function b64(input: Uint8Array | string): string {
-  const bytes = typeof input === 'string' ? bytesOf(input) : input;
-  let binary = '';
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary);
-}
-
 export const unb64 = (input: string): Uint8Array => {
   const binary = atob(input);
   const bytes = new Uint8Array(binary.length);

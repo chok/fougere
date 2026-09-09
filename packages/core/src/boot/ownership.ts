@@ -3,7 +3,7 @@ import { nameOf, type FrondDescriptor, type ProviderEntry } from '../descriptor/
 import { inheritsCrud } from '../prefab/crud.js';
 import { targetOf } from '../prefab/prefab.js';
 import { ownedBy, repositoryKeyOf } from '../prefab/repository.js';
-import { entityOfStorageKey } from '../storage.js';
+import { entityOfStorageKey } from '../storage/port.js';
 
 /** Who owns an entity's storage. */
 export function ownersOf(providers: readonly ProviderEntry[]): Map<string, string> {

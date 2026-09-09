@@ -29,7 +29,7 @@ import { identityCardOf } from './card.js';
 import { AppLifecycle } from './AppLifecycle.js';
 import { inheritsCrud, subjectOf } from '../prefab/crud.js';
 import { repositoryKeyOf } from '../prefab/repository.js';
-import { storageKeyOf } from '../storage.js';
+import { storageKeyOf } from '../storage/port.js';
 import { declares } from '../source.js';
 import { presenterKeyOf } from '../prefab/presenter.js';
 import { collectorKeyOf } from '../prefab/collector.js';
