@@ -1,4 +1,5 @@
 import { Validator, format as engineFormats } from '@cfworker/json-schema';
+import { Boundary } from '../axis/boundary/Boundary.js';
 import { Formats, type FormatPredicate } from '../axis/shape/Formats.js';
 import { Shapes, type Shape } from '../axis/shape/Shape.js';
 import type { Field } from '../field/Field.js';
@@ -40,6 +41,18 @@ export class FieldValueValidator {
       return { error: `String does not match format "${plan.formatName}".` };
     }
     return { value };
+  }
+
+  /**
+   * The value admitted, then handed back in the form the domain writes — an ISO string
+   * arrives as a `Date`. `null` passes untouched, and a refusal stops before the codec.
+   */
+  parse(value: unknown): Checked {
+    const checked = this.validate(value);
+    if ('error' in checked) return checked;
+    if (checked.value === null) return { value: null };
+
+    return Boundary.of(this.field).decode(checked.value);
   }
 
   private static planFor(shape: Shape): ShapePlan {

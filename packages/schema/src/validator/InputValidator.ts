@@ -61,8 +61,7 @@ export class InputValidator {
         continue;
       }
 
-      const boundary = Boundary.of(field);
-      if (boundary.readOnly) {
+      if (Boundary.of(field).readOnly) {
         errors.push({ path, message: InputRefusal.readOnly });
         continue;
       }
@@ -71,18 +70,9 @@ export class InputValidator {
         continue;
       }
 
-      const checked = FieldValueValidator.of(field).validate(value);
-      if ('error' in checked) {
-        errors.push({ path, message: checked.error });
-        continue;
-      }
-      if (checked.value === null) {
-        row[key] = null;
-        continue;
-      }
-      const decoded = boundary.decode(checked.value);
-      if ('error' in decoded) errors.push({ path, message: decoded.error });
-      else row[key] = decoded.value;
+      const parsed = FieldValueValidator.of(field).parse(value);
+      if ('error' in parsed) errors.push({ path, message: parsed.error });
+      else row[key] = parsed.value;
     }
 
     if (errors.length > 0) return { success: false, errors };
