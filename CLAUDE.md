@@ -322,7 +322,9 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   `EntityAdapters<TFields>` is `Partial<{}>`, which in TypeScript means "anything
   non-nullish". The RUNTIME half is closed since `AdapterFieldValidator`; what remains open is the type.
 - **A seed cycle is not satisfiable by ordering** — `core/src/boot/seed.ts`, `orderSeeds`.
-  Its members keep scan order and fail at the driver.
+  It returns them as `cycle` beside `ordered` and the boot NAMES them; they are still planted
+  in declaration order and the source answers. Not "scan order": `createApp` takes `fronds:`
+  as readily as `scan:`.
 - **Nothing generates OpenAPI**, so `RouteDefinition.description` is read by nobody. The op's
   sentence has two readers, neither of them REST: `adapter/graphql/src/pothos.ts` and the
   CLI's `--help`.

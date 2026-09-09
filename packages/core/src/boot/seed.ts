@@ -131,7 +131,7 @@ export function seeding(report?: (message: string) => void): Extension {
       if (cycle.length > 0) {
         report?.(
           `  ${cycle.map((seed) => seed.entityName).join(', ')}: a ref() cycle, and no order `
-          + 'plants them all — planted in scan order, and the source answers for the rest',
+          + 'plants them all — planted in the order they are declared, and the source answers for the rest',
         );
       }
 

@@ -2,8 +2,8 @@
  * The ordering states what no order satisfies.
  *
  * A `ref()` cycle has no order that plants every seed. `orderSeeds` used to append its members
- * in scan order and say nothing, so the caller read a foreign-key error from the driver about a
- * cycle the boot had already found. A nullable back-reference makes a cycle that IS seedable —
+ * in declaration order and say nothing, so the caller read a foreign-key error from the driver
+ * about a cycle the boot had already found. A nullable back-reference makes a cycle that IS seedable —
  * so this is named, not refused.
  */
 import { describe, it, expect } from 'vitest';
