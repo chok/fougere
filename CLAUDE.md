@@ -348,11 +348,6 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 - **`BindingPlan.optional` is written five times by core and ignored by `resolveArgs`.** Not a
   missing reader: making it refuse breaks four tests, two of which state the opposite policy
   on purpose. Closing it means choosing which door is right.
-- **A value is decoded at the façade and again by `StorageGuard`** — the client door turns wire
-  into domain, then the guard turns what a handler wrote into domain a second time. Nothing
-  bites today: `isoDate` answers `{ value }` to a `Date` on its first line, and no other codec
-  exists in the repo. The first non-idempotent one loses data silently. What has to be decided
-  is which door owns the conversion, not where to add a flag.
 - **`storage.client` remains the anonymous multi-statement path, validator off** — everything else
   writes through a guarded port, `Together<[…]>` included.
 - **A provider class named `<Entity>Storage` is DISCARDED, not honoured** — the entry used to
@@ -441,6 +436,10 @@ One line each, kept because a past version of this file asserted the opposite.
   hand-written copies of four declared functions, five of them divergent.
 - The shape is held on three paths: the façade validates input, `StorageGuard` validates every write,
   and the DDL emits `CHECK` for `oneOf`/`min`/`max`. `pattern`/`format` stay at the façade.
+- **A decoder must answer a value it already produced.** Two doors decode — the client one on
+  what arrives, `StorageGuard` on what a handler writes — because both hand the storage a PARSED
+  value, which is the policy and not an oversight. Stated on `Decoder`
+  (`schema/src/axis/boundary/Boundaries.ts`), pinned by `tests/boundary.test.ts`.
 - The façade hands on the value it PARSED (`dispatch/HandlerFacade.ts`, `validated`).
 - The `boundary` axis has ONE door, `Boundary.of` — alias and codecs resolved eagerly.
 - Two remotes serving one entity is REFUSED, naming both (`boot/remote.ts`, `claimedBy`).
