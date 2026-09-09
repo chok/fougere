@@ -134,6 +134,27 @@ describe('Lifecycle', () => {
     expect(released).toEqual(['opens', 'container', 'handed in']);
   });
 
+  /**
+   * And before the ascent too: the boot opens sources and builds storages long before an
+   * extension is asked to rise, and a refusal in there used to walk out holding all of it.
+   * No app exists yet, so `down` has no list to run — the other two levels still do.
+   */
+  it('releases what it took when the refusal comes before the ascent', async () => {
+    const released: string[] = [];
+    const container = createContainer();
+    const disposeContainer = container.dispose.bind(container);
+    container.dispose = async () => { released.push('container'); await disposeContainer(); };
+
+    const boot = createApp({
+      createContainer: () => container,
+      scan: () => { throw new Error('the disk went away'); },
+      onDispose: () => { released.push('handed in'); },
+    });
+
+    await expect(boot).rejects.toThrow('the disk went away');
+    expect(released).toEqual(['container', 'handed in']);
+  });
+
   it('keeps the original refusal beside the ones raised while releasing', async () => {
     const boot = createApp({
       scan: await scanProject(root),

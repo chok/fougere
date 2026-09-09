@@ -57,7 +57,7 @@ packages/
                                                 needs a filesystem and a TypeScript program
   core/                @fougere/core          the phases below, and what sits outside them
     src/descriptor/      what a frond is made of, whoever produced it: FrondDescriptor, the entries, Fronds
-    src/boot/            what createApp does with it: bootstrap, Emissions, AppLifecycle, seed,
+    src/boot/            what createApp does with it: bootstrap, install, Emissions, AppLifecycle, seed,
                          remote, and what is BUILT from an app: its identity card, its runners
     src/dispatch/        what happens per call: HandlerFacade, Dispatcher, the route registry, the validators and projectors, argument resolution, InFlight
     src/wire/            what travels, and the values a call is made of: Call, Invocation, RouteAddress,
@@ -348,11 +348,6 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 - **`BindingPlan.optional` is written five times by core and ignored by `resolveArgs`.** Not a
   missing reader: making it refuse breaks four tests, two of which state the opposite policy
   on purpose. Closing it means choosing which door is right.
-- **A boot that refuses BEFORE `appLifecycle.up` releases nothing** — `bootstrap.ts`. The
-  `try` opens at `up` because `release` is a `const` 236 lines above it, and the body between
-  them opens sources and builds storages. Measured 2026-09-09: a scan that throws leaves
-  `container.dispose()` and `onDispose` uncalled. Covering it means the boot reads its own
-  order, which is a restructuring, not a patch.
 - **A value is decoded at the façade and again by `StorageGuard`** — the client door turns wire
   into domain, then the guard turns what a handler wrote into domain a second time. Nothing
   bites today: `isoDate` answers `{ value }` to a `Date` on its first line, and no other codec
@@ -413,9 +408,11 @@ One line each, kept because a past version of this file asserted the opposite.
   a page before its first row lands, refuses a key the entity does not declare, and hands the
   storage the value it PARSED — the rule the client door already held. What it does NOT ask is
   what a handler is ALLOWED to write: a `readOnly` field is the server's to fill.
-- **A boot that refuses releases what it took** — `bootstrap.ts`, around `appLifecycle.up`.
-  The caller hands `onDispose` over before the ascent and never receives the app that would
-  carry it back. Pinned by `tests/lifecycle.test.ts`.
+- **A boot that refuses releases what it took, from its FIRST line** — `bootstrap.ts`. The
+  caller hands `onDispose` over before the ascent and never receives the app that would carry
+  it back, and the sources and storages are opened long before an extension is asked to rise.
+  `release` reads `built`, so before the app exists it runs the two levels that do. Pinned by
+  `tests/lifecycle.test.ts`.
 - **A composition answers for the source the work runs in** — `transacts(source)`
   (`defaults/src/storage.ts`), the dual of `transacted`. Reading the default source's capacity
   compensated a frame whose own engine held transactions. Pinned by `defaults/tests/sources.test.ts`.
