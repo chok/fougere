@@ -15,6 +15,7 @@ import {
   optional,
   primary,
   ref,
+  Role,
   Shapes,
   text,
   updated,
@@ -110,6 +111,8 @@ describe('helpers', () => {
     expect(f.shape?.type).toBe('string');
     expect(f.role?.relation?.kind).toBe('one');
     expect(f.role?.relation?.to()).toBe(Customer);
+    expect(Role.of(f).isReference).toBe(true);
+    expect(Role.of(f).target).toBe(Customer);
   });
 
   it('many() is an array whose elements live on the other side', () => {
@@ -120,6 +123,9 @@ describe('helpers', () => {
     expect(f.shape).toEqual({ type: 'array' });
     expect(f.role?.relation?.kind).toBe('many');
     expect(f.role?.relation?.to()).toBe(OrderLine);
+    expect(Role.of(f).isCollection).toBe(true);
+    expect(Role.of(f).target).toBe(OrderLine);
+    expect(Role.of(text()).target).toBeUndefined();
   });
 
   it('optional() puts null in the grammar and permits absence', () => {

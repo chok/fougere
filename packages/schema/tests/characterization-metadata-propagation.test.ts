@@ -48,6 +48,11 @@ describe('metadata propagation across every schema operation', () => {
     it('does not propagate previous', () => {
       expect(Post.pick('title').previous).toBeUndefined();
     });
+
+    it('drops a group missing a member, keeps one whose members are all picked', () => {
+      expect(Post.pick('id', 'title').getUnique()).toBeUndefined();
+      expect(Post.pick('title', 'body').getUnique()).toEqual([['title', 'body']]);
+    });
   });
 
   describe('omit', () => {
@@ -63,6 +68,11 @@ describe('metadata propagation across every schema operation', () => {
 
     it('does not propagate previous', () => {
       expect(Post.omit('body').previous).toBeUndefined();
+    });
+
+    it('drops a group missing a member, keeps one whose members are all retained', () => {
+      expect(Post.omit('body').getUnique()).toBeUndefined();
+      expect(Post.omit('id').getUnique()).toEqual([['title', 'body']]);
     });
   });
 
@@ -83,6 +93,10 @@ describe('metadata propagation across every schema operation', () => {
     it('does not propagate previous', () => {
       expect(Post.rename({ title: 'headline' }).previous).toBeUndefined();
     });
+
+    it('carries the group under the names the fields take now', () => {
+      expect(Post.rename({ title: 'headline' }).getUnique()).toEqual([['headline', 'body']]);
+    });
   });
 
   describe('partial', () => {
@@ -101,6 +115,10 @@ describe('metadata propagation across every schema operation', () => {
 
     it('does not propagate previous', () => {
       expect(Post.partial().previous).toBeUndefined();
+    });
+
+    it('keeps the group unchanged', () => {
+      expect(Post.partial().getUnique()).toEqual([['title', 'body']]);
     });
   });
 
@@ -121,6 +139,10 @@ describe('metadata propagation across every schema operation', () => {
     it('does not propagate previous', () => {
       expect(Post.extend({ summary: text() }).previous).toBeUndefined();
     });
+
+    it('keeps the group unchanged, and states none for the added field', () => {
+      expect(Post.extend({ summary: text() }).getUnique()).toEqual([['title', 'body']]);
+    });
   });
 
   describe('compose', () => {
@@ -139,6 +161,14 @@ describe('metadata propagation across every schema operation', () => {
 
     it('does not propagate previous', () => {
       expect(Schema.compose(Post, Supplement).previous).toBeUndefined();
+    });
+
+    it('merges the groups of every source, and one group twice stays one', () => {
+      expect(Schema.compose(Post, Supplement).getUnique()).toEqual([
+        ['title', 'body'],
+        ['summary', 'locale'],
+      ]);
+      expect(Schema.compose(Post, Post).getUnique()).toEqual([['title', 'body']]);
     });
   });
 });

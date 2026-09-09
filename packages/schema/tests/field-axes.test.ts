@@ -177,6 +177,8 @@ describe('unique / indexed — declared here, enforced by the storage', () => {
     // schema and a reconstructed one now answer the same thing.
     expect(Role.of(fields.email!).isUnique).toBe(true);
     expect(fields.city.role?.index).toBe(true);
+    expect(Role.of(fields.city).isIndexed).toBe(true);
+    expect(Role.of(fields.bio).isIndexed).toBe(false);
     // The wrapper composes: `indexed(optional(...))` keeps the optionality.
     expect(fields.city.lifecycle?.create).toBe('optional');
     expect(Role.of(fields.bio).isUnique).toBe(false);
