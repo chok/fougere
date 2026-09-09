@@ -207,7 +207,7 @@ describe('useFormFor', () => {
   it('lands a remote refusal per field, so the form never knows who validated', async () => {
     wire(() =>
       Object.assign(new Error('title: too short'), {
-        data: { code: ErrorCode.VALIDATION_FAILED, details: [{ path: 'title', message: 'too short' }] },
+        data: { code: ErrorCode.VALIDATION_FAILED, details: [{ path: ['title'], message: 'too short' }] },
       }),
     );
     const { result } = renderHook(() => useFormFor(Post as never));

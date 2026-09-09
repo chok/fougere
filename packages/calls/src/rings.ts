@@ -1,3 +1,4 @@
+import { dotted } from '@fougere/schema';
 import { validationErrorsOf, type DispatchEvent, type LogRecord } from '@fougere/core';
 
 /** How many each ring keeps. Bounded by a NUMBER, never by a duration. */
@@ -97,7 +98,7 @@ export class ErrorRing extends Ring<ErrorGroup> {
       entity,
       operation,
       message: error?.message ?? String(event.error),
-      fields: (validationErrorsOf(error) ?? []).map((one) => ({ path: one.path, message: one.message })),
+      fields: (validationErrorsOf(error) ?? []).map((one) => ({ path: dotted(one.path), message: one.message })),
       from: 'dispatch',
     });
   }

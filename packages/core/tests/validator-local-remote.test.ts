@@ -14,6 +14,7 @@ import { scanProject } from '@fougere/compiler';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
+import { dotted } from '@fougere/schema';
 import { createApp, createLocalRunner, createAppRunner, FougereError } from '../src/index.js';
 import type { Transport, Storage, StorageFactory } from '../src/index.js';
 import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
@@ -54,7 +55,7 @@ async function shopOnAnotherProcess(): Promise<Transport> {
 }
 
 /** The verdict, reduced to what a caller can act on: refused or not, and why. */
-type Verdict = { ok: boolean; errors: { path: string; message: string }[] };
+type Verdict = { ok: boolean; errors: { path: string[]; message: string }[] };
 
 function verdictOf(outcome: unknown, error: unknown): Verdict {
   if (!error) return { ok: true, errors: [] };
@@ -65,12 +66,12 @@ function verdictOf(outcome: unknown, error: unknown): Verdict {
   // which is the argument for having three validates rather than two.
   const err = error as FougereError;
   const raw = err.details ?? [];
-  const errors = (Array.isArray(raw) ? raw : []) as { path: string; message: string }[];
+  const errors = (Array.isArray(raw) ? raw : []) as { path: string[]; message: string }[];
   return {
     ok: false,
     errors: errors
-      .map((e) => ({ path: e.path, message: e.message }))
-      .sort((a, b) => a.path.localeCompare(b.path)),
+      .map((e) => ({ path: [...e.path], message: e.message }))
+      .sort((a, b) => dotted(a.path).localeCompare(dotted(b.path))),
   };
 }
 
@@ -81,13 +82,13 @@ function verdictOf(outcome: unknown, error: unknown): Verdict {
 function browserVerdict(input: unknown): Verdict {
   const result = Product.validate(input) as
     | { success: true }
-    | { success: false; errors: { path: string; message: string }[] };
+    | { success: false; errors: { path: string[]; message: string }[] };
   if (result.success) return { ok: true, errors: [] };
   return {
     ok: false,
     errors: result.errors
-      .map((e) => ({ path: e.path, message: e.message }))
-      .sort((a, b) => a.path.localeCompare(b.path)),
+      .map((e) => ({ path: [...e.path], message: e.message }))
+      .sort((a, b) => dotted(a.path).localeCompare(dotted(b.path))),
   };
 }
 

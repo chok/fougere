@@ -102,7 +102,7 @@ describe("boundary · 'closed' permissions (readOnly / writeOnly)", () => {
     const fields = { views: readOnly(text()), title: text() };
     const present = InputValidator.of(fields).validate({ views: '9', title: 'x' });
     expect(present.success).toBe(false);
-    if (!present.success) expect(present.errors[0]).toEqual({ path: 'views', message: 'Read-only' });
+    if (!present.success) expect(present.errors[0]).toEqual({ path: ['views'], message: 'Read-only' });
     // absent: the server owns it — no Required error despite no create rule
     expect(InputValidator.of(fields).validate({ title: 'x' }).success).toBe(true);
     // rejected in patch mode too

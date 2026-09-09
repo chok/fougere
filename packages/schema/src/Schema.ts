@@ -112,7 +112,7 @@ export class Schema {
         return {
           issues: verdict.errors.map((e) => ({
             message: e.message,
-            path: e.path && e.path !== '.' ? [{ key: e.path }] : undefined,
+            path: e.path.length > 0 ? e.path.map((key) => ({ key })) : undefined,
           })),
         };
       },

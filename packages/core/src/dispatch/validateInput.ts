@@ -1,4 +1,4 @@
-import { InputValidator, type SchemaView } from '@fougere/schema';
+import { InputValidator, dotted, type SchemaView } from '@fougere/schema';
 import type { InvocationContext } from '../wire/Invocation.js';
 import { ErrorCode, FougereError } from '../wire/errors.js';
 
@@ -17,7 +17,7 @@ export function validateInput(
   if (!result.success) {
     throw new FougereError({
       code: ErrorCode.VALIDATION_FAILED,
-      message: result.errors.map((error) => `${error.path}: ${error.message}`).join(', '),
+      message: result.errors.map((error) => `${dotted(error.path)}: ${error.message}`).join(', '),
       details: result.errors,
       entity,
       operation,

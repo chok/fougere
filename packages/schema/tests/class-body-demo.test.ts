@@ -79,7 +79,7 @@ class DateRange extends entity({
   static validate(input: unknown) {
     const base = super.validate(input);
     if (base.success && base.data.start > base.data.end) {
-      return { success: false as const, errors: [{ path: 'end', message: 'end < start' }] };
+      return { success: false as const, errors: [{ path: ['end'], message: 'end < start' }] };
     }
     return base;
   }

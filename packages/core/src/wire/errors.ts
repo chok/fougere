@@ -97,7 +97,7 @@ export function validationErrorsOf(error: unknown): ValidationError[] | undefine
   const refusals = details.filter(
     (entry): entry is ValidationError =>
       typeof entry === 'object' && entry !== null
-      && typeof (entry as ValidationError).path === 'string'
+      && Array.isArray((entry as ValidationError).path)
       && typeof (entry as ValidationError).message === 'string',
   );
   return refusals.length === details.length ? refusals : undefined;

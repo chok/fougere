@@ -11,13 +11,13 @@ export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
 
   validator(value, errors) {
     if (!isObject(value)) {
-      errors.push({ path: 'role', message: `Expected an object — got ${shown(value)}` });
+      errors.push({ path: ['role'], message: `Expected an object — got ${shown(value)}` });
       return;
     }
     for (const flag of ['primary', 'index', 'unique'] as const) {
       if (value[flag] !== undefined && typeof value[flag] !== 'boolean') {
         errors.push({
-          path: `role.${flag}`,
+          path: ['role', flag],
           message: `Expected a boolean — got ${shown(value[flag])}`,
         });
       }
@@ -79,21 +79,21 @@ export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
  */
 function validateRelation(relation: unknown, errors: ValidationError[]): void {
   if (!isObject(relation)) {
-    errors.push({ path: 'role.relation', message: `Expected an object — got ${shown(relation)}` });
+    errors.push({ path: ['role', 'relation'], message: `Expected an object — got ${shown(relation)}` });
     return;
   }
   if (!oneOfTokens(relation.kind, RELATION_KINDS)) {
     errors.push({
-      path: 'role.relation.kind',
+      path: ['role', 'relation', 'kind'],
       message: `Expected 'one' or 'many' — got ${shown(relation.kind)}`,
     });
   }
   if (typeof relation.to !== 'function') {
-    errors.push({ path: 'role.relation.to', message: 'Expected a function returning the target entity, such as () => Post' });
+    errors.push({ path: ['role', 'relation', 'to'], message: 'Expected a function returning the target entity, such as () => Post' });
   }
   if (relation.onDelete !== undefined && !oneOfTokens(relation.onDelete, ON_DELETE)) {
     errors.push({
-      path: 'role.relation.onDelete',
+      path: ['role', 'relation', 'onDelete'],
       message: `Expected 'cascade', 'restrict' or 'set null' — got ${shown(relation.onDelete)}`,
     });
   }

@@ -19,7 +19,7 @@ export class FieldDeclarationValidator {
         success: false,
         errors: [
           {
-            path: '.',
+            path: [],
             message: `Expected an object — got ${shown(declaration)}`,
           },
         ],
@@ -30,7 +30,7 @@ export class FieldDeclarationValidator {
 
     if (!Shapes.is(declaration.shape)) {
       errors.push({
-        path: 'shape',
+        path: ['shape'],
         message: `Every field states a shape — got ${shown(declaration.shape)}`,
       });
     }
@@ -43,14 +43,14 @@ export class FieldDeclarationValidator {
     if (declaration.meta !== undefined) {
       if (!isObject(declaration.meta)) {
         errors.push({
-          path: 'meta',
+          path: ['meta'],
           message: `Expected an object — got ${shown(declaration.meta)}`,
         });
       } else if (
         declaration.meta.description !== undefined &&
         typeof declaration.meta.description !== 'string'
       ) {
-        errors.push({ path: 'meta.description', message: 'Expected a string' });
+        errors.push({ path: ['meta', 'description'], message: 'Expected a string' });
       }
     }
 

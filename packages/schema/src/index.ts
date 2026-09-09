@@ -13,7 +13,7 @@ export { Lifecycle, type LifecycleRules } from './axis/lifecycle/Lifecycle.js';
 export { Boundary, type BoundaryRef } from './axis/boundary/Boundary.js';
 export { applyCreate, applyUpdate } from './axis/lifecycle/apply.js';
 export { InputRefusal } from './validator/InputRefusal.js';
-export { type ValidationError, type ValidationResult } from './validation.js';
+export { dotted, type ValidationError, type ValidationResult } from './validation.js';
 
 export { Card } from './projection/card/Card.js';
 export { Bundle } from './projection/card/Bundle.js';

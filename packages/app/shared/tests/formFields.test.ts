@@ -66,7 +66,7 @@ describe('payloadOf — an empty control is an absent value', () => {
 
 describe('errorsByField — local validator and wire validator share the shape', () => {
   it('indexes by first path segment, keeps the first message per field', () => {
-    const local = (Article as never as { validate(i: unknown): { success: false; errors: { path: string; message: string }[] } })
+    const local = (Article as never as { validate(i: unknown): { success: false; errors: { path: string[]; message: string }[] } })
       .validate({ views: 1, published: true, status: 'draft', secret: 'x', authorId: 'a1' });
     expect(local.success).toBe(false);
     const byField = errorsByField(local.errors);

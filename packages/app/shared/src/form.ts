@@ -194,7 +194,8 @@ export function payloadOf(values: Record<string, unknown>): Record<string, unkno
 export function errorsByField(errors: ValidationError[]): Record<string, string> {
   const byField: Record<string, string> = {};
   for (const err of errors) {
-    const field = err.path.split('.')[0] || err.path;
+    const field = err.path[0];
+    if (field === undefined) continue;
     byField[field] ??= err.message;
   }
   return byField;

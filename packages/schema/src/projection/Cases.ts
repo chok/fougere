@@ -86,11 +86,11 @@ export class Cases {
 
   static holds(
     expected: ValidationCase['expect'],
-    result: { success: boolean; errors?: { path: string }[] },
+    result: { success: boolean; errors?: { path: readonly string[] }[] },
   ): boolean {
     if (expected === 'accept') return result.success;
     if (result.success) return false;
-    return (result.errors ?? []).some((error) => error.path === expected.reject);
+    return (result.errors ?? []).some((error) => rejected(error.path) === expected.reject);
   }
 
   static get refusals(): string[] {
@@ -176,3 +176,6 @@ function enumerate(entity: SchemaView, valid: Record<string, unknown>): Validati
 
   return cases;
 }
+
+/** What a case names: the input itself, or the field the refusal lands on. */
+const rejected = (path: readonly string[]): string => (path.length === 0 ? '.' : path[0]!);

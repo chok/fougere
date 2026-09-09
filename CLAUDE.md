@@ -362,13 +362,12 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 - **An announcement realizes a fact's `lifecycle.create`, and no typed emitter can use it.**
   `Emit<T>` names the ROW type where `created()` is required, so `announce({ id, title })` is a
   compile error. `PartialValues` is the wanted shape.
-- **A nested object reports no path to the field that failed.** `Outer.validate({ addr: {
-  street: 'a' } })` answers `path: 'addr'`. The inner path is computed and thrown away; a
-  nested path wants segments, which eleven sites interpret as a flat string today.
 - **A schema can say what it WAS, and the missing reader is the API.** `Card.diff`,
   `fougere freeze`, `fougere migrate --apply` are shipped; serving an old API version is not.
-- **A stored fact is neither validated nor versioned.** `json()` admits any shape forever, and
-  `x-fougere-version` versions the DESCRIPTOR FORMAT, never an entity's contract.
+- **A stored fact is not VERSIONED.** It IS validated: `json(Address)` builds `properties` and
+  `required` off the entity and the judge reads them — only bare `json()` admits any shape, which
+  its own doc states as its object. `x-fougere-version` versions the DESCRIPTOR FORMAT, never an
+  entity's contract. Remeasured 2026-09-09.
 - **`flushMs: 0` is the only legal form on a Worker, and nothing says so.** `Beat.every`
   (`observability/src/Beat.ts`) defaults to 1000 ms, so an app built at module scope builds
   its exporter — and its `setInterval` — there. Cloudflare REFUSES that deployment:
@@ -382,6 +381,12 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 ### Settled
 
 One line each, kept because a past version of this file asserted the opposite.
+
+- **A refusal says WHERE, all the way down** — `ValidationError.path` is SEGMENTS
+  (`['addr', 'street']`), and `FieldValueValidator` keeps the engine's `instanceLocation` and its
+  DEEPEST refusal: `errors[0]` on a nested shape is the parent's `Property "…" does not match
+  schema.`, true and never the reason. `dotted()` writes a path for a message and nothing reads one
+  back — the price a field legally named `a.b` sets. Pinned by `schema/tests/nested-path.test.ts`.
 
 - **A descriptor is converted at the door, and a schema circulates** — `Card.fromDescriptor(…)
   .toSchema()`, which `boot/remote.ts` already did. `SchemaOrCard` had the adapters say they

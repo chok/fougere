@@ -71,7 +71,7 @@ describe('validation — edge cases', () => {
     const validator = InputValidator.of(fields, { patch: true });
     const patch = validator.validate({ slug: 'b' });
     expect(patch.success).toBe(false);
-    if (!patch.success) expect(patch.errors[0]).toEqual({ path: 'slug', message: 'Immutable' });
+    if (!patch.success) expect(patch.errors[0]).toEqual({ path: ['slug'], message: 'Immutable' });
     expect(validator.validate({ title: 'y' }).success).toBe(true);
   });
 
@@ -108,10 +108,10 @@ describe('validation — edge cases', () => {
     const createValidator = InputValidator.of(fields);
     const create = createValidator.validate({ title: 'x', status: 'published' });
     expect(create.success).toBe(false);
-    if (!create.success) expect(create.errors[0]).toEqual({ path: 'status', message: 'Unknown field' });
+    if (!create.success) expect(create.errors[0]).toEqual({ path: ['status'], message: 'Unknown field' });
     const patch = InputValidator.of(fields, { patch: true }).validate({ titel: 'typo' });
     expect(patch.success).toBe(false);
-    if (!patch.success) expect(patch.errors[0]).toEqual({ path: 'titel', message: 'Unknown field' });
+    if (!patch.success) expect(patch.errors[0]).toEqual({ path: ['titel'], message: 'Unknown field' });
     expect(createValidator.validate({ title: 'x' }).success).toBe(true);
   });
 
@@ -120,7 +120,7 @@ describe('validation — edge cases', () => {
     for (const key of ['constructor', 'toString', '__proto__']) {
       const result = InputValidator.of(fields).validate({ title: 'x', [key]: 'x' });
       expect(result.success).toBe(false);
-      if (!result.success) expect(result.errors[0]).toEqual({ path: key, message: 'Unknown field' });
+      if (!result.success) expect(result.errors[0]).toEqual({ path: [key], message: 'Unknown field' });
     }
   });
 });

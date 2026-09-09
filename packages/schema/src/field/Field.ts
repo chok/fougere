@@ -6,6 +6,7 @@ import type { Meta } from './Meta.js';
 import type { Axis } from '../axis/Axis.js';
 import { FieldDeclarationValidator } from '../validator/FieldDeclarationValidator.js';
 import { FieldValueValidator } from '../validator/FieldValueValidator.js';
+import { dotted } from '../validation.js';
 
 export type Fields = Record<string, Field>;
 
@@ -28,7 +29,7 @@ export class Field<T = unknown> {
     if (!verdict.success) {
       throw new Error(
         `${key ? `Field '${key}': ` : ''}` +
-          verdict.errors.map((e) => `${e.path}: ${e.message}`).join('; '),
+          verdict.errors.map((e) => `${dotted(e.path)}: ${e.message}`).join('; '),
       );
     }
 

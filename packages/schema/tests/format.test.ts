@@ -20,7 +20,7 @@ describe('registerFormat — a named predicate on the shape axis', () => {
     const bad = Firm.validate({ siret: 'pas-un-siret' });
     expect(bad.success).toBe(false);
     expect(bad.success === false && bad.errors[0]).toEqual({
-      path: 'siret',
+      path: ['siret'],
       message: 'String does not match format "siret".',
     });
   });

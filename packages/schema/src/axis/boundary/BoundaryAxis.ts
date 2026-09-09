@@ -10,7 +10,7 @@ export const boundaryAxis: Axis<BoundaryRef, BoundaryRef> = {
     if (typeof value === 'string') return; 
     if (!isObject(value)) {
       errors.push({
-        path: 'boundary',
+        path: ['boundary'],
         message: `Expected an alias name or { in, out } — got ${shown(value)}`,
       });
       return;
@@ -19,7 +19,7 @@ export const boundaryAxis: Axis<BoundaryRef, BoundaryRef> = {
       const rule = value[side];
       if (rule === undefined || rule === 'closed') continue;
       if (!isObject(rule) || typeof rule[verb] !== 'string') {
-        errors.push({ path: `boundary.${side}`, message: `Expected 'closed' or { ${verb}: <name> }` });
+        errors.push({ path: ['boundary', side], message: `Expected 'closed' or { ${verb}: <name> }` });
       }
     }
   },

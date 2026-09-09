@@ -1,5 +1,6 @@
 import type { ValidationError } from '../../validation.js';
 import { Shapes } from '../../axis/shape/Shape.js';
+import { dotted } from '../../validation.js';
 
 /**
  * Throws with what is wrong AND what to write: a card's author is in another process.
@@ -25,7 +26,7 @@ export function admitWire(
   validator(value, errors);
   if (errors.length) {
     refuse(
-      `${slot} is malformed — ${errors.map((e) => `${e.path}: ${e.message}`).join('; ')}`,
+      `${slot} is malformed — ${errors.map((e) => `${dotted(e.path)}: ${e.message}`).join('; ')}`,
       'A card states an axis the way a declaration does.',
     );
   }

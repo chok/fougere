@@ -78,7 +78,7 @@ describe('auto-at-creation', () => {
 
     const missing = Post.validate({});
     expect(missing.success).toBe(false);
-    if (!missing.success) expect(missing.errors).toEqual([{ path: 'body', message: 'Required' }]);
+    if (!missing.success) expect(missing.errors).toEqual([{ path: ['body'], message: 'Required' }]);
   });
 
   it('a promoted primary keeps its own rule — `primary(field)` generates nothing', () => {

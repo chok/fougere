@@ -99,7 +99,7 @@ describe('the Fougere data provider', () => {
             message: 'title: Too short',
             entity: 'post',
             operation: 'create',
-            details: [{ path: 'title', message: 'Too short' }],
+            details: [{ path: ['title'], message: 'Too short' }],
           },
         },
       } as T;

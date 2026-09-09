@@ -71,7 +71,7 @@ describe('derivation', () => {
       const result = Order.partial().validate({ note: null });
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.errors[0]).toMatchObject({ path: 'note' });
+        expect(result.errors[0]).toMatchObject({ path: ['note'] });
       }
     });
 

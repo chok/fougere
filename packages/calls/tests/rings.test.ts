@@ -36,7 +36,7 @@ describe('the error ring', () => {
     ring.fromDispatch(failed('post', 'create', new FougereError({
       code: ErrorCode.VALIDATION_FAILED,
       message: 'title: is required',
-      details: [{ path: 'title', message: 'is required' }],
+      details: [{ path: ['title'], message: 'is required' }],
     })));
 
     // What a span cannot carry: it keeps the code and drops the reason.

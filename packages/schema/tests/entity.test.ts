@@ -69,7 +69,7 @@ describe('Entity', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.errors.length).toBeGreaterThan(0);
-        expect(result.errors.some(e => e.path === 'name')).toBe(true);
+        expect(result.errors.some(e => e.path[0] === 'name')).toBe(true);
       }
     });
 
@@ -81,7 +81,7 @@ describe('Entity', () => {
       });
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.errors.some(e => e.path === 'name')).toBe(true);
+        expect(result.errors.some(e => e.path[0] === 'name')).toBe(true);
       }
     });
 
@@ -112,7 +112,7 @@ describe('Entity', () => {
       });
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.errors.some(e => e.path === 'total')).toBe(true);
+        expect(result.errors.some(e => e.path[0] === 'total')).toBe(true);
       }
     });
 

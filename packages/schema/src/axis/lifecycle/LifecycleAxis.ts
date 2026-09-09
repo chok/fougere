@@ -9,13 +9,13 @@ export const lifecycleAxis: Axis<LifecycleRules, LifecycleRules> = {
 
   validator(value, errors) {
     if (!isObject(value)) {
-      errors.push({ path: 'lifecycle', message: `Expected an object — got ${shown(value)}` });
+      errors.push({ path: ['lifecycle'], message: `Expected an object — got ${shown(value)}` });
       return;
     }
     if (value.create !== undefined) validateCreate(value.create, errors);
     if (value.update !== undefined && !oneOfTokens(value.update, UPDATE_TOKENS)) {
       errors.push({
-        path: 'lifecycle.update',
+        path: ['lifecycle', 'update'],
         message: `Expected 'now' or 'forbidden' — got ${shown(value.update)}`,
       });
     }
@@ -40,7 +40,7 @@ function validateCreate(rule: unknown, errors: ValidationError[]): void {
     if ('generate' in rule) {
       if (typeof rule.generate !== 'string') {
         errors.push({
-          path: 'lifecycle.create.generate',
+          path: ['lifecycle', 'create', 'generate'],
           message: `Expected a generator name — got ${shown(rule.generate)}`,
         });
       }
@@ -48,7 +48,7 @@ function validateCreate(rule: unknown, errors: ValidationError[]): void {
     }
   }
   errors.push({
-    path: 'lifecycle.create',
+    path: ['lifecycle', 'create'],
     message: `Expected 'now', 'optional', { value } or { generate } — got ${shown(rule)}`,
   });
 }

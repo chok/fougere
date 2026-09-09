@@ -230,7 +230,7 @@ describe('remote façade (repli)', () => {
 
     const tooCheap = Product.validate({ name: 'Fern', price: -5 });
     expect(tooCheap.success).toBe(false);
-    if (!tooCheap.success) expect(tooCheap.errors[0]).toMatchObject({ path: 'price' });
+    if (!tooCheap.success) expect(tooCheap.errors[0]).toMatchObject({ path: ['price'] });
 
     const strayField = Product.validate({ name: 'Fern', price: 5, color: 'green' });
     expect(strayField.success).toBe(false);

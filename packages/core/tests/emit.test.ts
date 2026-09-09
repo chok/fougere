@@ -244,7 +244,7 @@ describe('a sender whose copy has moved ahead', () => {
     expect(heard()).not.toContain('search:77');
     const shape = (refused as AggregateError).errors
       .find((e: { entity?: string }) => e.entity === 'index') as { details?: unknown[] };
-    expect(shape.details).toEqual([{ path: 'author', message: 'Unknown field' }]);
+    expect(shape.details).toEqual([{ path: ['author'], message: 'Unknown field' }]);
   });
 
   /**

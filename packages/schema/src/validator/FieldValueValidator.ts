@@ -4,6 +4,7 @@ import { Formats, type FormatPredicate } from '../axis/shape/Formats.js';
 import { Shapes, type Shape } from '../axis/shape/Shape.js';
 import type { Field } from '../field/Field.js';
 import type { Checked } from '../validation.js';
+import type { OutputUnit } from '@cfworker/json-schema';
 
 interface ShapePlan {
   validator: Validator;
@@ -36,7 +37,7 @@ export class FieldValueValidator {
     }
     const plan = FieldValueValidator.planFor(shape);
     const result = plan.validator.validate(value);
-    if (!result.valid) return { error: result.errors[0]?.error ?? 'Invalid value' };
+    if (!result.valid) return refusalOf(result.errors);
     if (plan.custom && typeof value === 'string' && !plan.custom(value)) {
       return { error: `String does not match format "${plan.formatName}".` };
     }
@@ -81,3 +82,29 @@ export class FieldValueValidator {
     return custom;
   }
 }
+
+/**
+ * The engine states its refusals outermost first, so `errors[0]` on a nested shape is the
+ * parent's `Property "street" does not match schema.` — true, and never the reason. The
+ * DEEPEST one is the reason, and it is the one that says where.
+ */
+function refusalOf(errors: readonly OutputUnit[]): Checked {
+  const deepest = errors.reduce<OutputUnit | undefined>(
+    (held, one) => (held && depthOf(held) >= depthOf(one) ? held : one),
+    undefined,
+  );
+  if (!deepest) return { error: 'Invalid value' };
+  const path = locationOf(deepest.instanceLocation);
+
+  return path.length > 0 ? { error: deepest.error, path } : { error: deepest.error };
+}
+
+const depthOf = (unit: OutputUnit): number => locationOf(unit.instanceLocation).length;
+
+/** `#/city/zip` — a JSON Pointer fragment, and `~1`/`~0` are how it spells `/` and `~`. */
+const locationOf = (instanceLocation: string): string[] =>
+  instanceLocation
+    .replace(/^#/, '')
+    .split('/')
+    .filter(Boolean)
+    .map((segment) => segment.replace(/~1/g, '/').replace(/~0/g, '~'));

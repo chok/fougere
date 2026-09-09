@@ -18,11 +18,11 @@ class Post extends entity({
   publishedAt: readOnly(text()),
 }) {}
 
-type Verdict = { success: boolean; paths: string[] };
+type Verdict = { success: boolean; paths: string[][] };
 
 function rowVerdict<T>(result: ValidationResult<T>): Verdict {
   if (result.success) return { success: true, paths: [] };
-  return { success: false, paths: result.errors.map((error) => error.path) };
+  return { success: false, paths: result.errors.map((error) => [...error.path]) };
 }
 
 function standardVerdict<T>(
@@ -32,12 +32,8 @@ function standardVerdict<T>(
   if (!result.issues) return { success: true, paths: [] };
   return {
     success: false,
-    paths: result.issues.map((issue) => {
-      if (!issue.path) return '.';
-      return issue.path
-        .map((segment) => String(typeof segment === 'object' ? segment.key : segment))
-        .join('.');
-    }),
+    paths: result.issues.map((issue) => (issue.path ?? [])
+      .map((segment) => String(typeof segment === 'object' ? segment.key : segment))),
   };
 }
 
@@ -66,12 +62,12 @@ describe('parity between the three row validates', () => {
     expectJudgeParity(
       Post,
       { title: 'Hello', body: 'World', extra: true },
-      { success: false, paths: ['extra'] },
+      { success: false, paths: [['extra']] },
     );
   });
 
   it('returns the same verdict and paths for an absent required field', () => {
-    expectJudgeParity(Post, { body: 'World' }, { success: false, paths: ['title'] });
+    expectJudgeParity(Post, { body: 'World' }, { success: false, paths: [['title']] });
   });
 
   it('returns the same verdict and paths for a supplied read-only field', () => {
@@ -79,7 +75,7 @@ describe('parity between the three row validates', () => {
       title: 'Hello',
       body: 'World',
       publishedAt: '2026-08-24T00:00:00.000Z',
-    }, { success: false, paths: ['publishedAt'] });
+    }, { success: false, paths: [['publishedAt']] });
   });
 
   it('returns the same verdict and paths in patch mode', () => {

@@ -67,7 +67,7 @@ describe('the field door', () => {
     const verdict = FieldDeclarationValidator.of({ shape: 42, lifecycle: { update: 'nawak' }, meta: 7 }).verdict;
     expect(verdict.success).toBe(false);
     if (!verdict.success) {
-      expect(verdict.errors.map((e) => e.path)).toEqual(['shape', 'lifecycle.update', 'meta']);
+      expect(verdict.errors.map((e) => e.path)).toEqual([['shape'], ['lifecycle', 'update'], ['meta']]);
     }
   });
 

@@ -32,7 +32,7 @@ export class InputValidator {
     if (typeof input !== 'object' || input === null) {
       return {
         success: false,
-        errors: [{ path: '.', message: InputRefusal.notAnObject }],
+        errors: [{ path: [], message: InputRefusal.notAnObject }],
       };
     }
 
@@ -42,12 +42,12 @@ export class InputValidator {
 
     for (const key of Object.keys(data)) {
       if (!Object.hasOwn(this.fields, key)) {
-        errors.push({ path: key, message: InputRefusal.unknownField });
+        errors.push({ path: [key], message: InputRefusal.unknownField });
       }
     }
 
     for (const [key, field] of Object.entries(this.fields)) {
-      const path = key;
+      const path = [key];
       const value = data[key];
 
       if (value === undefined) {
@@ -71,7 +71,7 @@ export class InputValidator {
       }
 
       const parsed = FieldValueValidator.of(field).parse(value);
-      if ('error' in parsed) errors.push({ path, message: parsed.error });
+      if ('error' in parsed) errors.push({ path: [...path, ...parsed.path ?? []], message: parsed.error });
       else row[key] = parsed.value;
     }
 
