@@ -10,7 +10,8 @@
  * Fougere. The queue itself is in `broker.ts`, deliberately: a resolver holds nothing.
  */
 import { createApp } from '@fougere/core';
-import { scanProject, setModuleLoader, frondAliases } from '@fougere/core/node';
+import { scanProject, frondAliases } from '@fougere/compiler';
+import { setModuleLoader } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 
 const BROKER = `http://127.0.0.1:${process.env.BROKER_PORT ?? 4300}`;

@@ -1,19 +1,19 @@
 {
-  "name": "@fougere/calls",
+  "name": "@fougere/compiler",
   "version": "0.8.3-alpha.0",
-  "description": "Optional call log for Fougere: a bounded ring of every dispatch, served as an rpc operation. Read it with `fougere devtools`.",
+  "description": "The scan: Fougere reading a project's source to produce the descriptors core boots from. Needs a filesystem and a TypeScript program.",
   "keywords": [
     "fougere",
     "typescript",
-    "devtools",
-    "observability",
-    "dispatch"
+    "scan",
+    "ast",
+    "codegen"
   ],
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/chok/fougere.git",
-    "directory": "packages/calls"
+    "directory": "packages/compiler"
   },
   "type": "module",
   "main": "dist/index.js",
@@ -33,28 +33,23 @@
     "build": "rm -rf dist && tsc",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit -p tsconfig.test.json",
+    "typecheck": "tsc --noEmit -p .",
     "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "@typescript/typescript6": "^6.0.2"
   },
   "peerDependencies": {
     "@fougere/core": "workspace:^",
-    "@fougere/adapter-sql": "workspace:^"
+    "@fougere/container": "workspace:^"
   },
   "devDependencies": {
-    "@fougere/adapter-sql": "workspace:*",
-    "@fougere/container": "workspace:*",
     "@fougere/core": "workspace:*",
     "@fougere/schema": "workspace:*",
-    "@fougere/transport-http": "workspace:*",
     "vitest": "^4.1.0",
-    "@fougere/compiler": "workspace:*"
+    "@fougere/container": "workspace:*"
   },
   "publishConfig": {
     "access": "public"
-  },
-  "peerDependenciesMeta": {
-    "@fougere/adapter-sql": {
-      "optional": true
-    }
   }
 }

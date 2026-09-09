@@ -1,5 +1,5 @@
 import { type App } from '@fougere/core';
-import { boot } from '@fougere/core/node';
+import { boot } from '@fougere/compiler';
 import { createContainer } from '@fougere/container';
 import { resolveStorage, type DbConfig } from '@fougere/defaults';
 import { installStubs, type Port, type Stub } from './stub.js';

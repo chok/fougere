@@ -16,7 +16,8 @@
     "@fougere/observability": "workspace:*",
     "@fougere/schema": "workspace:*",
     "@fougere/transport-http": "workspace:*",
-    "jiti": "^2.0.0"
+    "jiti": "^2.0.0",
+    "@fougere/compiler": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.21.0"

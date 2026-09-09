@@ -6,7 +6,7 @@
  * no stored row — a health check, a pure computation, a search across several shapes —
  * is an ordinary case, not a gap to accommodate.
  */
-import { scanProject } from '../src/node.js';
+import { scanProject } from '@fougere/compiler';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';

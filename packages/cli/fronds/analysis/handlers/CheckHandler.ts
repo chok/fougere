@@ -6,9 +6,8 @@ import {
   resolveEffectiveOperations,
   type ScanDiagnostic,
 } from '@fougere/core';
-import {
-  adaptersOf, crossFrondImports, handlerDeclarations, outsideConventions, resolveConventions,
-} from '@fougere/core/node';
+import { adaptersOf, crossFrondImports, handlerDeclarations, outsideConventions } from '@fougere/compiler';
+import { resolveConventions } from '@fougere/core';
 import ProjectScan from '../services/ProjectScan.js';
 
 /** One thing that does not hold, in the terms of whoever has to fix it. */

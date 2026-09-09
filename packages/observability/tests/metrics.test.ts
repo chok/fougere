@@ -2,7 +2,7 @@
  * The four signals, and the one property that decides whether a metrics layer survives
  * production: series count must depend on the CODE, never on the traffic.
  */
-import { scanProject } from '@fougere/core/node';
+import { scanProject } from '@fougere/compiler';
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import { join } from 'node:path';
 import { createApp, createLocalRunner } from '@fougere/core';

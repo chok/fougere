@@ -10,7 +10,7 @@ import {
   type DispatchEvent,
   type StorageFactory,
 } from '../src/index.js';
-import { scanProject } from '../src/node.js';
+import { scanProject } from '@fougere/compiler';
 import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
 
 const fixtures = join(import.meta.dirname, 'fixtures');

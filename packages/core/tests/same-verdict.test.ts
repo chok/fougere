@@ -16,7 +16,7 @@
  * input that triggers it are both computable. Not fuzzing: a projection of the schema,
  * like the SQL table and the GraphQL type.
  */
-import { scanProject } from '../src/node.js';
+import { scanProject } from '@fougere/compiler';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';

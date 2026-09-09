@@ -2,7 +2,7 @@
  * The package as one member of an app's ascent — and the defect that made the pair worth
  * declaring: `onSpan` already RETURNED its withdrawal, and nothing ever called it.
  */
-import { scanProject } from '@fougere/core/node';
+import { scanProject } from '@fougere/compiler';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createApp, createLocalRunner } from '@fougere/core';

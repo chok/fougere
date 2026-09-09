@@ -9,8 +9,8 @@ import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { outsideConventions } from '../src/node.js';
-import { DEFAULT_CONVENTIONS } from '../src/scan/conventions.js';
+import { outsideConventions } from '@fougere/compiler';
+import { DEFAULT_CONVENTIONS } from '@fougere/core';
 
 const frondAt = (path: string) => ({ name: 'catalog', source: { path, package: '@fronds/catalog' } });
 

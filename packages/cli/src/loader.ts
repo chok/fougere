@@ -1,7 +1,7 @@
-import {
-  setModuleLoader, loadConfig, resolveConventions, frondAliases,
-} from '@fougere/core/node';
-import type { Conventions } from '@fougere/core/node';
+import { frondAliases } from '@fougere/compiler';
+import { resolveConventions } from '@fougere/core';
+import { setModuleLoader, loadConfig } from '@fougere/core/node';
+import type { Conventions } from '@fougere/core';
 
 /** The loader every command needs. */
 export async function installLoader(root: string, reread = false): Promise<Conventions> {

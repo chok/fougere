@@ -5,7 +5,7 @@
  * frames are transactions. Uncomment the block in fougere.config.ts and run again — the
  * same handlers, the same results, and one line of boot output that is not the same.
  */
-import { scanProject } from '@fougere/core/node';
+import { scanProject } from '@fougere/compiler';
 import { createApp, createLocalRunner, migrating, EMPTY_INVOCATION, type App, type Storage } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { storageFrom } from '@fougere/defaults';

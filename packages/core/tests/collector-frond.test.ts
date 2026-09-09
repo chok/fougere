@@ -1,5 +1,5 @@
 /** A collector is local provenance: placing it in another frond is never an input fallback. */
-import { scanProject } from '../src/node.js';
+import { scanProject } from '@fougere/compiler';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';

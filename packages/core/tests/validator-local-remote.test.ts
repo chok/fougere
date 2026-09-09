@@ -10,7 +10,7 @@
  * façade in this process, once to a façade reached through a transport. The two
  * verdicts are compared as VALUES, not eyeballed.
  */
-import { scanProject } from '../src/node.js';
+import { scanProject } from '@fougere/compiler';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';

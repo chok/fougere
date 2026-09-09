@@ -45,7 +45,8 @@
     "@fougere/schema": "workspace:*",
     "@fougere/core": "workspace:*",
     "@fougere/transport-http": "workspace:*",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.0",
+    "@fougere/compiler": "workspace:*"
   },
   "publishConfig": {
     "access": "public"

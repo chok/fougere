@@ -1,12 +1,12 @@
+import { DEFAULT_CONVENTIONS, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, togetherKeyOf, type Conventions, type ConventionsInput, type ScanDiagnostic, type ScanResult } from '@fougere/core';
+import { Fronds, cardinalityOf, computeBindingPlan, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf } from '@fougere/core/descriptor';
+import { getModuleLoader, loadFrondConfig } from '@fougere/core/node';
 import { readdir, readFile } from 'node:fs/promises';
 import { existsSync, type Dirent } from 'node:fs';
 import { join, dirname, basename, resolve as resolvePath } from 'node:path';
-import type { FrondDescriptor, ProviderEntry, EntityEntry, HandlerEntry, PresenterEntry, CollectorEntry, SeedEntry } from '../descriptor/frond.js';
-import type { ScanResult, ScanDiagnostic } from './result.js';
+
 import { ANONYMOUS_SCHEMA_NAME, type SchemaView } from '@fougere/schema';
-import type { OperationContract, OperationsMap } from '../wire/operation.js';
-import { cardinalityOf } from '../wire/operation.js';
-import { computeBindingPlan } from '../wire/binding.js';
+
 import {
   parseAllHandlerMethods,
   parsePresenterMethods,
@@ -14,20 +14,8 @@ import {
   resetTypePrograms,
   seedTypeProgram,
 } from './handler-parser.js';
-import type { TypeRef } from '../wire/signature.js';
-import { loadFrondConfig } from '../frond-config.js';
-import { emitKeyOf } from '../emit.js';
-import { getPresenterFields } from '../prefab/presenter.js';
-import { storageKeyOf, togetherKeyOf } from '../storage.js';
-import { targetOf, viewsOf, outputOf } from '../prefab/prefab.js';
-import { ownedBy, repositoryKeyOf } from '../prefab/repository.js';
+
 import { lowerFirst } from '@fougere/schema';
-import { Fronds } from '../descriptor/Fronds.js';
-import { getModuleLoader } from '../loader.js';
-import {
-  type Conventions, type ConventionsInput,
-  DEFAULT_CONVENTIONS, resolveConventions, frondPackage, providerDirsOf, frondDirsOf,
-} from './conventions.js';
 
 // FS
 

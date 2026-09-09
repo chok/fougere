@@ -7,9 +7,8 @@ import { FacadeTypes } from '../../../src/typescript/FacadeTypes.js';
 // lived in this file and went stale the day an op stopped being a bare name: nothing
 // compared the copy to the original, so the drift cost nothing until someone read it.
 import { assertIdentityCard, type IdentityCard } from '@fougere/core';
-import {
-  type Conventions, loadConfig, resolveConventions, frondPackage,
-} from '@fougere/core/node';
+import { type Conventions, resolveConventions, frondPackage } from '@fougere/core';
+import { loadConfig } from '@fougere/core/node';
 
 function assertSafeName(kind: string, name: string): void {
   if (typeof name !== 'string' || !/^[A-Za-z_$][A-Za-z0-9_$-]*$/.test(name)) {

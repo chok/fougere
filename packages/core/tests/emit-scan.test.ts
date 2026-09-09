@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { scanProject, emitScan } from '../src/node.js';
+import { scanProject, emitScan } from '@fougere/compiler';
 
 const root = join(import.meta.dirname, 'fixtures');
 

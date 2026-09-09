@@ -5,7 +5,7 @@
  * may legitimately read a write-only field (verifying a password); the result
  * that crosses the façade must not carry it — to a browser or to another frond.
  */
-import { scanProject } from '../src/node.js';
+import { scanProject } from '@fougere/compiler';
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { join } from 'node:path';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';

@@ -9,7 +9,7 @@ import { join } from 'node:path';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner } from '../src/index.js';
-import { scanProject } from '../src/node.js';
+import { scanProject } from '@fougere/compiler';
 import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
 import type { AppMiddleware } from '../src/wire/middleware.js';
 import { trace } from './fixtures-operation-boundary/trace.js';

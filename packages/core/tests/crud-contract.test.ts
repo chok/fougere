@@ -10,7 +10,7 @@
  * So both worlds are covered here: inside the workspace the scan discovers the
  * ops, outside it discovers nothing — and the façade must validate either way.
  */
-import { scanProject } from '../src/node.js';
+import { scanProject } from '@fougere/compiler';
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { join } from 'node:path';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';

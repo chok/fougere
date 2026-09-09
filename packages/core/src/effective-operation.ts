@@ -5,7 +5,7 @@ import { computeBindingPlan, type BindingPlan } from './wire/binding.js';
 import { targetOf } from './prefab/prefab.js';
 import type { CollectorEntry, FrondDescriptor, HandlerEntry } from './descriptor/frond.js';
 import { servedSurfaces } from './descriptor/surface.js';
-import type { ScanDiagnostic } from './scan/result.js';
+import type { ScanDiagnostic } from './scan.js';
 import { verify } from './verify.js';
 import {
   inferOperationKind,

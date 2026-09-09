@@ -1,4 +1,4 @@
-import { scanProject } from '@fougere/core/node';
+import { scanProject } from '@fougere/compiler';
 import { createApp } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { join } from 'node:path';

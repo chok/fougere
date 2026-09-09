@@ -9,7 +9,7 @@
  * The fix is that a presenter binds like a handler: what its signature declares
  * after the rows is resolved from the same invocation, by the same collectors.
  */
-import { scanProject } from '../src/node.js';
+import { scanProject } from '@fougere/compiler';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';

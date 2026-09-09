@@ -10,7 +10,7 @@
  * These two tests are the same call, twice. If the second fails, the promise does not
  * hold for frond→frond — only for consumer→frond.
  */
-import { scanProject } from '../src/node.js';
+import { scanProject } from '@fougere/compiler';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';

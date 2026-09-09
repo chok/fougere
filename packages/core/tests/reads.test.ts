@@ -4,7 +4,7 @@
  * Nothing about the reader itself is here: core must not name a storage package, so it
  * takes a factory exactly as it takes `storageFactory`, and never learns what backs it.
  */
-import { scanProject } from '../src/node.js';
+import { scanProject } from '@fougere/compiler';
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { join } from 'node:path';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';

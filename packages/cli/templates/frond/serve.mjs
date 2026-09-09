@@ -9,7 +9,8 @@
  */
 import { createJiti } from 'jiti';
 import { createLocalRunner, Logger } from '@fougere/core';
-import { setModuleLoader, frondAliases } from '@fougere/core/node';
+import { frondAliases } from '@fougere/compiler';
+import { setModuleLoader } from '@fougere/core/node';
 import { bootAppFromConfig } from '@fougere/defaults';
 import { serve } from '@fougere/transport-http';
 

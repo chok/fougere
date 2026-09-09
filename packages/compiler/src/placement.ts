@@ -1,8 +1,8 @@
 /** A file inside a frond that no convention names. */
+import { frondDirsOf, type Conventions } from '@fougere/core';
+import { type FrondDescriptor } from '@fougere/core/descriptor';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { type Conventions, frondDirsOf } from './scan/conventions.js';
-import type { FrondDescriptor } from './descriptor/frond.js';
 
 export interface OutsideConvention {
   /** Stable rule name — the same vocabulary `verify()` uses. */

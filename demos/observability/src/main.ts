@@ -13,7 +13,8 @@
  *   pnpm signoz           # a collector, if you want to see it
  */
 import { createApp, createLocalRunner, type Storage } from '@fougere/core';
-import { scanProject, setModuleLoader, frondAliases } from '@fougere/core/node';
+import { scanProject, frondAliases } from '@fougere/compiler';
+import { setModuleLoader } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { serve, createHttpTransport } from '@fougere/transport-http';
 import { createJiti } from 'jiti';

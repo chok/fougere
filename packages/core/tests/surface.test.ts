@@ -6,7 +6,7 @@
  * path. The REST and GraphQL adapters had their own tests; the runner and the identity
  * card, which the envelope stands on, had none.
  */
-import { scanProject } from '../src/node.js';
+import { scanProject } from '@fougere/compiler';
 import { describe, it, expect, vi } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';

@@ -2,7 +2,7 @@
  * The third signal, and the property that makes it one: a line written inside a call
  * leaves with that call's trace id. Without it, exporting logs only moves them.
  */
-import { scanProject } from '@fougere/core/node';
+import { scanProject } from '@fougere/compiler';
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import { join } from 'node:path';
 import { createApp, Logger, onLog, setLogLevel } from '@fougere/core';

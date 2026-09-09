@@ -117,7 +117,7 @@ describe('verify — cross-frond dependency', () => {
 
 describe('verify — collector in another frond', () => {
   it('names the parameter whose preliminary input interpretation must be refused', async () => {
-    const { scanProject } = await import('../src/scan/scanner.js');
+    const { scanProject } = await import('@fougere/compiler');
     const scan = await scanProject(new URL('./fixtures-collector-split', import.meta.url).pathname);
 
     const violations = verify({ fronds: scan.fronds }).filter((v) => v.rule === 'collector-in-another-frond');

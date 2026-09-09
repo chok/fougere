@@ -9,7 +9,7 @@ import {
   createAppRunner,
   type StorageFactory,
 } from '@fougere/core';
-import { scanProject } from '@fougere/core/node';
+import { scanProject } from '@fougere/compiler';
 import { CallRing } from '../src/CallRing.js';
 import { calls } from '../src/index.js';
 import type { CallPage } from '@fougere/core';

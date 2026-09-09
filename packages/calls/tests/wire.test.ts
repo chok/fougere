@@ -2,7 +2,7 @@ import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { describe, expect, it, vi } from 'vitest';
 import { Call, RouteAddress, createApp, createAppRunner, createLocalRunner, type CallPage, type StorageFactory } from '@fougere/core';
-import { scanProject } from '@fougere/core/node';
+import { scanProject } from '@fougere/compiler';
 import { serve } from '@fougere/transport-http';
 import { createHttpTransport } from '@fougere/transport-http/client';
 import { calls } from '../src/index.js';

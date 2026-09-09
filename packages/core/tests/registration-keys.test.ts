@@ -11,7 +11,7 @@
  * container contient répond à la clé que la fonction rend**. Une épellation qui
  * repart ailleurs le casse.
  */
-import { scanProject } from '../src/node.js';
+import { scanProject } from '@fougere/compiler';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';

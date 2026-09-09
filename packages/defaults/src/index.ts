@@ -1,6 +1,7 @@
 /** @fougere/defaults — the conventional boot, declared once. */
 import { type App, type CreateAppOptions } from '@fougere/core';
-import { boot, loadConfig } from '@fougere/core/node';
+import { boot } from '@fougere/compiler';
+import { loadConfig } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { createHttpTransport } from '@fougere/transport-http';
 import { resolveStorage, type DbConfig } from './storage.js';

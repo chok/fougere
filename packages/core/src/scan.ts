@@ -1,4 +1,4 @@
-import type { Fronds } from '../descriptor/Fronds.js';
+import type { Fronds } from './descriptor/Fronds.js';
 
 /** Result of scanning a project directory. */
 /** Something the scan could NOT do — recorded instead of swallowed. */

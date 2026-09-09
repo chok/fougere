@@ -1,6 +1,6 @@
 /** What this app hosts — what it STATED, or what a scan FOUND. */
 import type { FrondDescriptor } from '../descriptor/frond.js';
-import type { ScanResult } from '../scan/result.js';
+import type { ScanResult } from '../scan.js';
 import { Fronds } from '../descriptor/Fronds.js';
 
 /** Where an app's fronds come from — either, or both. */

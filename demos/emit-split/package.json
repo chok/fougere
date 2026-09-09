@@ -12,7 +12,8 @@
     "@fougere/schema": "workspace:*",
     "@fougere/transport-http": "workspace:*",
     "jiti": "^2.0.0",
-    "@fougere/container": "workspace:*"
+    "@fougere/container": "workspace:*",
+    "@fougere/compiler": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.0.0"

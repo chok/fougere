@@ -13,7 +13,7 @@
  * framing from the HTTP client unchanged; what they replace is the ~40 lines
  * that move bytes.
  */
-import { scanProject } from '@fougere/core/node';
+import { scanProject } from '@fougere/compiler';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createServer, connect, type Server, type Socket } from 'node:net';
 import { join } from 'node:path';

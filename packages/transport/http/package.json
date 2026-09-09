@@ -50,7 +50,8 @@
   "devDependencies": {
     "@fougere/schema": "workspace:*",
     "jiti": "^2.6.1",
-    "@fougere/container": "workspace:*"
+    "@fougere/container": "workspace:*",
+    "@fougere/compiler": "workspace:*"
   },
   "publishConfig": {
     "access": "public"

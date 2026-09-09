@@ -35,6 +35,11 @@
       "types": "./dist/contract.d.ts",
       "import": "./dist/contract.js",
       "default": "./dist/contract.js"
+    },
+    "./descriptor": {
+      "types": "./dist/descriptor/index.d.ts",
+      "import": "./dist/descriptor/index.js",
+      "default": "./dist/descriptor/index.js"
     }
   },
   "imports": {
@@ -67,7 +72,8 @@
     "dequal": "^2.0.3"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0"
+    "@types/node": "^22.0.0",
+    "@fougere/compiler": "workspace:*"
   },
   "publishConfig": {
     "access": "public"

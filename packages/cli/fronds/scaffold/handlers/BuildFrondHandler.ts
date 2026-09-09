@@ -1,7 +1,8 @@
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync, unlinkSync } from 'node:fs';
 import { join, basename } from 'node:path';
-import { loadConfig, resolveConventions, frondPackage } from '@fougere/core/node';
+import { resolveConventions, frondPackage } from '@fougere/core';
+import { loadConfig } from '@fougere/core/node';
 
 export default class BuildFrondHandler {
   // cwd is ambient in a CLI — not a DI service (the container resolves by type).

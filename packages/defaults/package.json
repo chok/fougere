@@ -39,7 +39,8 @@
     "@fougere/core": "workspace:*",
     "@fougere/adapter-sql": "workspace:*",
     "@fougere/transport-http": "workspace:*",
-    "@fougere/container": "workspace:*"
+    "@fougere/container": "workspace:*",
+    "@fougere/compiler": "workspace:*"
   },
   "publishConfig": {
     "access": "public"

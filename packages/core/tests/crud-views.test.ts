@@ -6,7 +6,7 @@
  * instead: the storage keeps handing full rows (validates can read every field), and the
  * façade projects each op's result onto the view that op declared.
  */
-import { scanProject } from '../src/node.js';
+import { scanProject } from '@fougere/compiler';
 import { describe, it, expect, vi } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';

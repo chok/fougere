@@ -6,7 +6,7 @@
  * seeding had to claim EVERYTHING after the boot to get it, which is how the Nitro plugin's
  * copy of the seeding loop drifted out of sight.
  */
-import { scanProject } from '../src/node.js';
+import { scanProject } from '@fougere/compiler';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';

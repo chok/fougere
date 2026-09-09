@@ -55,7 +55,8 @@
     "jiti": "^2.6.1",
     "@fougere/http": "workspace:*",
     "@fougere/container": "workspace:*",
-    "@fougere/adapter-memory": "workspace:*"
+    "@fougere/adapter-memory": "workspace:*",
+    "@fougere/compiler": "workspace:*"
   },
   "devDependencies": {
     "vitest": "^4.1.0",

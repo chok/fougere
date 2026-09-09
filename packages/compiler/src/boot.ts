@@ -1,12 +1,7 @@
-import { createApp } from './bootstrap.js';
-import { seeding } from './seed.js';
-import { scanProject } from '../scan/scanner.js';
-import { loadConfig, type FougereConfig } from '../config-loader.js';
-import { Logger } from '../builtin/logger.js';
-import { applyConfig } from './apply.js';
-import type { App, CreateAppOptions } from './types.js';
-import { migrating, type Extension } from './AppLifecycle.js';
-import type { Transport } from '../wire/call.js';
+import { Logger, applyConfig, createApp, migrating, seeding, type App, type CreateAppOptions, type Extension, type FougereConfig, type Transport } from '@fougere/core';
+import { loadConfig } from '@fougere/core/node';
+import { scanProject } from './scan/scanner.js';
+
 import type { Container } from '@fougere/container';
 
 interface BootOptions {

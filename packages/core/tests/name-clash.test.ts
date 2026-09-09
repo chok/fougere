@@ -14,7 +14,7 @@
  * Refusing is the honest answer while a door's name cannot say which frond it belongs
  * to. It is not the final one: the day a key is qualified, this boot can accept both.
  */
-import { scanProject } from '../src/node.js';
+import { scanProject } from '@fougere/compiler';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';

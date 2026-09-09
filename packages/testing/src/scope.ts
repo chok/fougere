@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { dirname, join, sep } from 'node:path';
-import { DEFAULT_CONVENTIONS, loadConfig, resolveConventions } from '@fougere/core/node';
+import { DEFAULT_CONVENTIONS, resolveConventions } from '@fougere/core';
+import { loadConfig } from '@fougere/core/node';
 
 /** What a test file's position states about its subject. */
 export interface Scope {

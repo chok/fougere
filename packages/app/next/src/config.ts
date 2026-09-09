@@ -2,7 +2,7 @@
 import TerserPlugin from 'terser-webpack-plugin';
 import type { NextConfig } from 'next';
 
-import { RUNTIME_PACKAGES } from '@fougere/core/node';
+import { RUNTIME_PACKAGES } from '@fougere/compiler';
 
 export function withFougere(config: NextConfig = {}): NextConfig {
   const userWebpack = config.webpack;

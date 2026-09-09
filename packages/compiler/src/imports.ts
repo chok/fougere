@@ -1,8 +1,8 @@
 /** A frond reaching into another one by FILE PATH. */
+import { type FrondDescriptor } from '@fougere/core/descriptor';
 import type ts from '@typescript/typescript6';
 import { readdir, readFile } from 'node:fs/promises';
 import { join, resolve, dirname, relative, isAbsolute } from 'node:path';
-import type { FrondDescriptor } from './descriptor/frond.js';
 
 let _ts: typeof ts | undefined;
 async function loadTs(): Promise<typeof ts> {

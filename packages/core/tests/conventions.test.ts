@@ -1,9 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
-import {
-  scanProject, frondAliases, resolveConventions, frondDirsOf, providerDirsOf,
-  DEFAULT_CONVENTIONS, loadConfig,
-} from '../src/node.js';
+import { scanProject, frondAliases } from '@fougere/compiler';
+import { resolveConventions, frondDirsOf, providerDirsOf, DEFAULT_CONVENTIONS } from '../src/index.js';
+import { loadConfig } from '../src/node.js';
 
 /**
  * A project that renamed every name the scan reads.

@@ -6,7 +6,7 @@
  * third run drops entirely to show what the boot does when nothing states the choice.
  */
 import { createLocalRunner, EMPTY_INVOCATION } from '@fougere/core';
-import { boot } from '@fougere/core/node';
+import { boot } from '@fougere/compiler';
 import { createContainer } from '@fougere/container';
 import { join } from 'node:path';
 

@@ -8,7 +8,8 @@
  */
 import { createJiti } from 'jiti';
 import { createApp, createLocalRunner, Logger } from '@fougere/core';
-import { scanProject, setModuleLoader, frondAliases, loadConfig } from '@fougere/core/node';
+import { scanProject, frondAliases } from '@fougere/compiler';
+import { setModuleLoader, loadConfig } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { migrate } from '@fougere/adapter-sql';
 import { setupSqlite } from '@fougere/adapter-sql/sqlite';

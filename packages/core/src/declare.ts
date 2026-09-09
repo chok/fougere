@@ -4,7 +4,7 @@ import type {
   CollectorEntry, EntityEntry, FrondDescriptor, HandlerEntry,
   PresenterEntry, ProviderEntry, SeedEntry,
 } from './descriptor/frond.js';
-import { DEFAULT_CONVENTIONS } from './scan/conventions.js';
+import { DEFAULT_CONVENTIONS } from './conventions.js';
 import { getPresenterFields } from './prefab/presenter.js';
 import type { OperationContract } from './wire/operation.js';
 

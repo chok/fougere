@@ -1,7 +1,7 @@
 import { cpSync, existsSync, renameSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { type Conventions, DEFAULT_CONVENTIONS, frondPackage } from '@fougere/core/node';
+import { type Conventions, DEFAULT_CONVENTIONS, frondPackage } from '@fougere/core';
 
 /**
  * The monorepo's `packages/`, found by its workspace marker rather than counted

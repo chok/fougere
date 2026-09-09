@@ -1,8 +1,8 @@
 /** The scan, written as the STATEMENT an author would have written. */
+import { type ScanResult } from '@fougere/core';
+import { nameOf, type FrondDescriptor } from '@fougere/core/descriptor';
 import { relative } from 'node:path';
-import { nameOf } from '../descriptor/frond.js';
-import type { FrondDescriptor } from '../descriptor/frond.js';
-import type { ScanResult } from './result.js';
+
 import { type Aliases, type Live, operationsOf } from './contract.js';
 
 /**

@@ -19,7 +19,6 @@ import { join } from 'node:path';
 import { scanProject } from '../src/scan/scanner.js';
 
 const blind = join(import.meta.dirname, 'fixtures-scan-blind');
-const seeing = join(import.meta.dirname, 'fixtures-same-verdict');
 const blindHeritage = join(import.meta.dirname, 'fixtures-heritage-blind');
 
 describe('le scan dit ce qu\'il n\'a pas pu faire', () => {
@@ -40,10 +39,10 @@ describe('le scan dit ce qu\'il n\'a pas pu faire', () => {
   });
 
   it("un dossier absent reste le cas ordinaire, et ne dit rien", async () => {
-    // `fixtures-same-verdict` n'a ni presenters/, ni collectors/, ni seeds/ —
+    // `fixtures-heritage-blind` n'a ni presenters/, ni collectors/, ni seeds/ —
     // la convention, pas un défaut. Un diagnostic ici serait du bruit, et le bruit
     // est ce qui fait qu'on cesse de lire le boot.
-    const { fronds, diagnostics } = await scanProject(seeing);
+    const { fronds, diagnostics } = await scanProject(blindHeritage);
 
     expect(fronds[0].presenters).toEqual([]);
     expect(diagnostics).toEqual([]);
@@ -65,7 +64,7 @@ describe('le scan dit ce qu\'il n\'a pas pu faire', () => {
 
   it('une exécution ne conserve pas les constats de la précédente', async () => {
     await scanProject(blind);
-    const { diagnostics } = await scanProject(seeing);
+    const { diagnostics } = await scanProject(blindHeritage);
 
     expect(diagnostics).toEqual([]);
   });

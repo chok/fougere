@@ -13,7 +13,8 @@
  */
 import { writeFile, mkdir } from 'node:fs/promises';
 import { createApp } from '@fougere/core';
-import { scanProject, setModuleLoader, frondAliases } from '@fougere/core/node';
+import { scanProject, frondAliases } from '@fougere/compiler';
+import { setModuleLoader } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { generateSQL } from '@fougere/adapter-sql';
 import { createJiti } from 'jiti';

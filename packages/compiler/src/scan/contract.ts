@@ -1,7 +1,6 @@
 /** An operation contract, written down — the half two emitters say the same way. */
+import { type OperationContract } from '@fougere/core/descriptor';
 import { ANONYMOUS_SCHEMA_NAME, Card, type SchemaView } from '@fougere/schema';
-
-import type { OperationContract } from '../wire/operation.js';
 
 /** A value that ends up as an import in the module being written. */
 export type Live = object;

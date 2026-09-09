@@ -54,7 +54,8 @@
     "consola": "^3.4.2",
     "jiti": "^2.4.2",
     "picocolors": "^1.1.1",
-    "safe-regex": "^2.1.1"
+    "safe-regex": "^2.1.1",
+    "@fougere/compiler": "workspace:*"
   },
   "devDependencies": {
     "vitest": "^4.1.0"

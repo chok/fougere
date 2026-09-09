@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp } from '../src/index.js';
-import { scanProject } from '../src/node.js';
+import { scanProject } from '@fougere/compiler';
 import { contractsKeyOf } from '../src/wire/call.js';
 
 const root = join(import.meta.dirname, 'fixtures-input-contract');

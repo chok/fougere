@@ -12,7 +12,7 @@ import {
   type OperationContract,
 } from '../src/index.js';
 import { identityCardOf } from '../src/boot/card.js';
-import { scanProject } from '../src/node.js';
+import { scanProject } from '@fougere/compiler';
 
 const fixture = join(import.meta.dirname, 'fixtures-collector-input');
 const overrideFixture = join(import.meta.dirname, 'fixtures-operation-override');

@@ -11,7 +11,8 @@
     "@fougere/core": "workspace:*",
     "@fougere/schema": "workspace:*",
     "jiti": "^2.0.0",
-    "@fougere/container": "workspace:*"
+    "@fougere/container": "workspace:*",
+    "@fougere/compiler": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.0.0"

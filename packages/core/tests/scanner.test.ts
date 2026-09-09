@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
-import { scanProject } from '../src/node.js';
+import { scanProject } from '@fougere/compiler';
 import { lowerFirst } from '../src/contract.js';
 
 const fixturesRoot = join(import.meta.dirname, 'fixtures');

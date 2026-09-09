@@ -2,7 +2,9 @@ import { Role } from '@fougere/schema';
 import { Lifecycle } from '@fougere/schema';
 /** Fougere server bootstrap — single entry point for an app's lifecycle, whatever hosts it. */
 import { applyConfig, createApp, identityFromEnv, Logger, migrating, seeding } from '@fougere/core';
-import { scanProject, loadCascadedConfig, setModuleLoader, frondAliases, resolveConventions } from '@fougere/core/node';
+import { scanProject, frondAliases } from '@fougere/compiler';
+import { resolveConventions } from '@fougere/core';
+import { loadCascadedConfig, setModuleLoader } from '@fougere/core/node';
 import type { Extension } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { createMemoryStorage } from '@fougere/adapter-memory';

@@ -2,7 +2,8 @@
 import { readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Plugin } from 'vite';
-import { type Conventions, DEFAULT_CONVENTIONS, RUNTIME_PACKAGES } from '@fougere/core/node';
+import { RUNTIME_PACKAGES } from '@fougere/compiler';
+import { type Conventions, DEFAULT_CONVENTIONS } from '@fougere/core';
 
 /** The entity names a build must not rename, read off the filesystem. */
 export function entityNamesIn(root: string, conventions: Conventions = DEFAULT_CONVENTIONS): string[] {
@@ -22,7 +23,7 @@ export function entityNamesIn(root: string, conventions: Conventions = DEFAULT_C
   return [...names];
 }
 
-export { RUNTIME_PACKAGES } from '@fougere/core/node';
+export { RUNTIME_PACKAGES } from '@fougere/compiler';
 
 export interface FougereViteOptions {
   /** Extra packages the boot loads at runtime, added to the defaults. */

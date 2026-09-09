@@ -6,7 +6,7 @@
  * while an app was booted once per process; it is the whole question once the ring
  * turns, because then apps are discarded on purpose.
  */
-import { scanProject } from '../src/node.js';
+import { scanProject } from '@fougere/compiler';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';

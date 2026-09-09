@@ -1,5 +1,6 @@
 /** Handler signature parser — extracts method signatures from handler source files. */
-import type { TypeRef, Param, Signature } from '../wire/signature.js';
+import { type Param, type Signature, type TypeRef } from '@fougere/core/descriptor';
+
 import type ts from '@typescript/typescript6';
 import { readFileSync, existsSync, statSync } from 'node:fs';
 import { join, dirname, resolve as resolvePath } from 'node:path';
@@ -181,7 +182,6 @@ function parsedParam(param: ts.ParameterDeclaration, source: ts.SourceFile, chec
     optional: param.questionToken !== undefined || param.initializer !== undefined || type.undefined === true,
   };
 }
-
 
 /** Parse a TypeScript type node into a TypeRef. */
 function parseTypeNode(node: ts.TypeNode, source: ts.SourceFile, checker?: ts.TypeChecker): TypeRef {
@@ -373,7 +373,6 @@ const TS_KEYWORDS = new Set([
   'never', 'object', 'symbol', 'bigint',
 ]);
 
-
 /** Resolve an import specifier to an absolute file path. */
 function resolveSpecifier(specifier: string, fromFile: string, projectRoot: string): string | undefined {
   // Relative import
@@ -397,8 +396,6 @@ function resolveSpecifier(specifier: string, fromFile: string, projectRoot: stri
 
   return undefined;
 }
-
-
 
 // ── Mixin / heritage parsing ─────────────────
 
@@ -441,9 +438,6 @@ function findClassInFunction(source: ts.SourceFile, functionName: string): ts.Cl
   }
   return undefined;
 }
-
-
-
 
 /**
  * Extract methods from a class node (no file reading — works on already-parsed AST).

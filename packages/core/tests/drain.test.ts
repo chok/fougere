@@ -6,7 +6,7 @@
  * later anything could name, and turning the ring under load truncated whatever was
  * mid-flight without a word.
  */
-import { scanProject } from '../src/node.js';
+import { scanProject } from '@fougere/compiler';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';

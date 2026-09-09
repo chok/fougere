@@ -13,7 +13,8 @@
     "@fougere/core": "workspace:*",
     "@fougere/defaults": "workspace:*",
     "@fougere/schema": "workspace:*",
-    "@fougere/adapter-file": "workspace:*"
+    "@fougere/adapter-file": "workspace:*",
+    "@fougere/compiler": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.21.0"

@@ -46,7 +46,8 @@
     "@fougere/schema": "workspace:*",
     "json-schema-faker": "^0.6.3",
     "@fougere/app": "workspace:*",
-    "@fougere/transport-http": "workspace:*"
+    "@fougere/transport-http": "workspace:*",
+    "@fougere/compiler": "workspace:*"
   },
   "publishConfig": {
     "access": "public"

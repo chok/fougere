@@ -3,7 +3,7 @@
  * Provenance leaves Post as the only input candidate, so parameter order changes neither
  * the inferred validator nor the binding plan.
  */
-import { scanProject } from '../src/node.js';
+import { scanProject } from '@fougere/compiler';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';

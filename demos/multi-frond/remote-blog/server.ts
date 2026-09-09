@@ -10,7 +10,8 @@
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { createApp, createLocalRunner } from '@fougere/core';
-import { scanProject, setModuleLoader, frondAliases } from '@fougere/core/node';
+import { scanProject, frondAliases } from '@fougere/compiler';
+import { setModuleLoader } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { createHonoRouter } from '@fougere/http';
 import { handleRpc } from '@fougere/transport-http';

@@ -1,8 +1,8 @@
 /** What a handler file declares besides its handler. */
+import { type Conventions } from '@fougere/core';
+import { type HandlerEntry } from '@fougere/core/descriptor';
 import type ts from '@typescript/typescript6';
 import { readFile } from 'node:fs/promises';
-import type { Conventions } from './scan/conventions.js';
-import type { HandlerEntry } from './descriptor/frond.js';
 
 let _ts: typeof ts | undefined;
 async function loadTs(): Promise<typeof ts> {

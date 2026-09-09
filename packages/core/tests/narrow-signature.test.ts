@@ -14,7 +14,7 @@
  *     `param` binding explicitly. The effective model then treats it exactly like the
  *     plain number instead of silently handing it the whole input.
  */
-import { scanProject } from '../src/node.js';
+import { scanProject } from '@fougere/compiler';
 import { describe, expect, it } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';

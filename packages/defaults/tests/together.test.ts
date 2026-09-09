@@ -6,7 +6,7 @@
  * either way, that only the isolation differs, and that the difference is announced
  * rather than discovered.
  */
-import { scanProject } from '@fougere/core/node';
+import { scanProject } from '@fougere/compiler';
 import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';

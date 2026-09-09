@@ -1,8 +1,8 @@
 /** The scan, written down as a module — what `createApp` is handed where there is no disk. */
+import { type ScanResult } from '@fougere/core';
+import { nameOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type PresenterEntry, type ProviderEntry, type SeedEntry } from '@fougere/core/descriptor';
 import { dirname, relative } from 'node:path';
-import { nameOf } from '../descriptor/frond.js';
-import type { FrondDescriptor, EntityEntry, HandlerEntry, PresenterEntry, CollectorEntry, ProviderEntry, SeedEntry } from '../descriptor/frond.js';
-import type { ScanResult } from './result.js';
+
 import { type Aliases, type Live, lit, operationsOf, schemaRef } from './contract.js';
 
 export interface EmitOptions {

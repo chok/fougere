@@ -41,7 +41,8 @@
     "@fougere/core": "workspace:*",
     "@fougere/defaults": "workspace:*",
     "@nuxt/kit": "^4.5.1",
-    "jiti": "^2.6.1"
+    "jiti": "^2.6.1",
+    "@fougere/compiler": "workspace:*"
   },
   "devDependencies": {
     "@nuxt/schema": "^4.5.1",

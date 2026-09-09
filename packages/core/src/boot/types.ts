@@ -2,7 +2,7 @@
 import type { Container } from '@fougere/container';
 import type { Fronds } from '../descriptor/Fronds.js';
 import type { FrondDescriptor } from '../descriptor/frond.js';
-import type { ScanResult } from '../scan/result.js';
+import type { ScanResult } from '../scan.js';
 import type { SchemaView } from '@fougere/schema';
 import type { StorageFactory } from '../storage.js';
 import type { Constraint } from '../source.js';

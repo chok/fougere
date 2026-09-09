@@ -1,4 +1,4 @@
-import { scanProject } from '../src/node.js';
+import { scanProject } from '@fougere/compiler';
 import { describe, expect, it } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';

@@ -6,7 +6,7 @@
  * runtime TypeError, from a signature TypeScript had blessed. Nothing was missing;
  * the wrong thing answered.
  */
-import { scanProject } from '../src/node.js';
+import { scanProject } from '@fougere/compiler';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer, type Container } from '@fougere/container';

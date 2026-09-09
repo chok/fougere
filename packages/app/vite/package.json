@@ -37,7 +37,8 @@
   },
   "dependencies": {
     "@fougere/core": "workspace:*",
-    "terser": "^5.44.0"
+    "terser": "^5.44.0",
+    "@fougere/compiler": "workspace:*"
   },
   "devDependencies": {
     "vite": "^8.0.0",

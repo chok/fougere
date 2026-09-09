@@ -5,7 +5,7 @@
  * behind /_fougere/call. The same user code — resolve('productHandler').op() —
  * must give the same results, errors included. Criteria 4 and 5 of the path.
  */
-import { scanProject } from '@fougere/core/node';
+import { scanProject } from '@fougere/compiler';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { join } from 'node:path';

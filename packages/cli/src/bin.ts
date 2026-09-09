@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /** fougere CLI — a Fougere app powered by citty. */
 import { createApp, setLogLevel, envLevel, type ScanResult } from '@fougere/core';
-import { scanProject, getModuleLoader, frondDirsOf, DEFAULT_CONVENTIONS } from '@fougere/core/node';
+import { scanProject } from '@fougere/compiler';
+import { frondDirsOf, DEFAULT_CONVENTIONS } from '@fougere/core';
+import { getModuleLoader } from '@fougere/core/node';
 import { readdir, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';

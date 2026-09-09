@@ -13,7 +13,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
-import { scanProject } from '../src/node.js';
+import { scanProject } from '@fougere/compiler';
 import { createApp, createLocalRunner } from '../src/index.js';
 import { storageKeyOf, type StorageFactory } from '../src/storage.js';
 import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';

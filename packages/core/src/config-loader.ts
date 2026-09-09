@@ -2,7 +2,7 @@ import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
 import type { AuthConfig } from './boot/auth.js';
 import type { LogLevel } from './builtin/logger.js';
-import type { ConventionsInput } from './scan/conventions.js';
+import type { ConventionsInput } from './conventions.js';
 import { getModuleLoader } from './loader.js';
 
 // ── Types ────────────────────────────────────────
