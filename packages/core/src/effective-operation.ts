@@ -4,6 +4,7 @@ import { statementDrift } from './boot/statement-drift.js';
 import { computeBindingPlan, type BindingPlan } from './wire/binding.js';
 import { targetOf } from './prefab/prefab.js';
 import type { CollectorEntry, FrondDescriptor, HandlerEntry } from './descriptor/frond.js';
+import { servedSurfaces } from './descriptor/surface.js';
 import type { ScanDiagnostic } from './scan/result.js';
 import { verify } from './verify.js';
 import {
@@ -279,7 +280,7 @@ export function resolveEffectiveOperations(
             ...(remote ? { remote } : {}),
           },
           exposure: {
-            surfaces: surfacesOf(frond, handler),
+            surfaces: servedSurfaces(frond, handler).map((surface) => surface ?? 'default'),
             adapters: exposedAdapters(handler, options.adapters),
           },
           outputClosed: output.closed,
@@ -555,18 +556,6 @@ function effectiveOutput(
   const address = target?.name ? lowerFirst(target.name) : handler.address;
   const entity = frond.entities.find((candidate) => candidate.name === address);
   return { ...(entity ? { schema: entity.entityClass } : {}), closed: false };
-}
-
-function surfacesOf(frond: FrondDescriptor, handler: HandlerEntry): string[] {
-  if (handler.surface) return [handler.surface];
-  const surfaces = ['default'];
-  for (const [surface, addresses] of Object.entries(frond.surfaces ?? {})) {
-    const dedicated = frond.handlers.some((candidate) =>
-      candidate.address === handler.address && candidate.surface === surface);
-    if (!dedicated && addresses.some((address) =>
-      address.toLowerCase() === handler.address.toLowerCase())) surfaces.push(surface);
-  }
-  return [surfaces[0]!, ...surfaces.slice(1).sort()];
 }
 
 function exposedAdapters(

@@ -36,6 +36,7 @@ import { RouteAddress } from '../wire/RouteAddress.js';
 import { DispatchLifecycle } from '../dispatch/DispatchLifecycle.js';
 import { Dispatcher } from '../dispatch/Dispatcher.js';
 import { LocalRoutePolicy } from '../dispatch/LocalRoutePolicy.js';
+import { servedSurfaces } from '../descriptor/surface.js';
 import { OperationRoute } from '../dispatch/OperationRoute.js';
 import { remoteRoutes } from '../dispatch/remoteRoutes.js';
 import { RouteRegistry } from '../dispatch/RouteRegistry.js';
@@ -415,16 +416,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       container.registerValue(contractsKeyOf(handler.address, handler.surface), facade.contracts);
       effectiveByKey.set(facadeKey, facade.effectiveOperations);
 
-      const surfaces = new Set<string | undefined>([handler.surface]);
-      if (!handler.surface) {
-        for (const [surface, names] of Object.entries(frond.surfaces ?? {})) {
-          const isDeclared = names.some((name) =>
-            name.toLowerCase() === handler.address.toLowerCase());
-          const hasOwnDoor = surfaceHandlers.some((candidate) =>
-            candidate.surface === surface && candidate.address === handler.address);
-          if (isDeclared && !hasOwnDoor) surfaces.add(surface);
-        }
-      }
+      const surfaces = servedSurfaces(frond, handler);
 
       for (const operation of facade.contracts.keys()) {
         for (const surface of surfaces) {
