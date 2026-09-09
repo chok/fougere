@@ -45,6 +45,18 @@ describe('les options de lecture sont jugées', () => {
     await guarded.list();
     expect(storage.list).toHaveBeenCalled();
   });
+
+  it('refuse un orderBy que l\'entité ne déclare pas', async () => {
+    const { guarded } = guardedStorage();
+    // Sans ce refus, SQL jetait le tri et rendait la page dans l'ordre que le moteur
+    // avait choisi : un tableau paginé faux, et rien pour le dire.
+    await expect(guarded.list({ orderBy: 'labl' })).rejects.toThrow(/unknown orderBy .*labl/);
+  });
+
+  it('nomme les champs déclarés dans le message', async () => {
+    const { guarded } = guardedStorage();
+    await expect(guarded.list({ orderBy: 'labl' })).rejects.toThrow(/declares id, label/);
+  });
 });
 
 describe('un filtre sur un champ que la porte ne rend pas', () => {

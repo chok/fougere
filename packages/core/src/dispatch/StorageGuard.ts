@@ -1,4 +1,4 @@
-import { Boundary, FieldSet, FieldValueValidator, InputRefusal, type Fields } from '@fougere/schema';
+import { FieldSet, FieldValueValidator, InputRefusal, type Fields } from '@fougere/schema';
 import { COMPARISONS, comparisonOf, unknownIn } from '../criterion.js';
 import { assertListOptions } from '../storage.js';
 import { ErrorCode, FougereError } from '../wire/errors.js';
@@ -70,7 +70,7 @@ export class StorageGuard {
     if (typeof list === 'function') {
       guarded.list = async function (...args: unknown[]) {
         const options = args[0] as { where?: Record<string, unknown> } | undefined;
-        assertListOptions(options, validation.entity);
+        assertListOptions(options, validation.entity, Object.keys(validation.fields));
         if (options?.where) args[0] = { ...options, where: validation.criteria(options.where) };
 
         return list.apply(this, args);
@@ -169,11 +169,7 @@ export class StorageGuard {
   /** One value against one field — validated, then decoded the way the wire hands it. */
   private value(field: Fields[string], asked: unknown): { value: unknown } | { error: string } {
     if (asked === null || asked === undefined) return { value: asked };
-    const checked = FieldValueValidator.of(field).validate(asked);
-    if ('error' in checked) return checked;
-    if (checked.value === null) return { value: null };
-
-    return Boundary.of(field).decode(checked.value);
+    return FieldValueValidator.of(field).parse(asked);
   }
 
   private validated<T>(value: T, operation: string, index?: number): T {
@@ -195,18 +191,9 @@ export class StorageGuard {
         parsed[key] = item;
         continue;
       }
-      const checked = FieldValueValidator.of(field).validate(item);
-      if ('error' in checked) {
-        errors.push(`${where}${key}: ${checked.error}`);
-        continue;
-      }
-      if (checked.value === null) {
-        parsed[key] = null;
-        continue;
-      }
-      const decoded = Boundary.of(field).decode(checked.value);
-      if ('error' in decoded) errors.push(`${where}${key}: ${decoded.error}`);
-      else parsed[key] = decoded.value;
+      const value = FieldValueValidator.of(field).parse(item);
+      if ('error' in value) errors.push(`${where}${key}: ${value.error}`);
+      else parsed[key] = value.value;
     }
 
     if (errors.length > 0) {

@@ -167,3 +167,41 @@ describe('a criterion compares, here as it does in SQL', () => {
   });
 
 });
+
+/**
+ * `ListOptions` declares `orderBy`, and this store used to ignore it — every page came
+ * back in insertion order, whatever the caller asked for. The port promised a gesture
+ * two of its four realizations never performed.
+ */
+describe('the order the port promises is the order it hands back', () => {
+  const unsorted = async () => {
+    const storage = createMemoryStorage(Post as never, 'post');
+    await storage.create({ title: 'Moss', reads: 5 });
+    await storage.create({ title: 'Lichen', reads: 9 });
+    await storage.create({ title: 'Fern', reads: 1 });
+
+    return storage;
+  };
+
+  it('sorts on the named field', async () => {
+    const page = await (await unsorted()).list({ orderBy: 'reads' });
+    expect(page.map((row) => row.reads)).toEqual([1, 5, 9]);
+  });
+
+  it('reverses on desc', async () => {
+    const page = await (await unsorted()).list({ orderBy: 'reads', order: 'desc' });
+    expect(page.map((row) => row.reads)).toEqual([9, 5, 1]);
+  });
+
+  it('sorts text the way it sorts numbers', async () => {
+    const page = await (await unsorted()).list({ orderBy: 'title' });
+    expect(page.map((row) => row.title)).toEqual(['Fern', 'Lichen', 'Moss']);
+  });
+
+  it('orders before it cuts the page', async () => {
+    // The cut used to happen over insertion order, so `limit` answered rows the sort
+    // never saw — the first page of a sorted table was the wrong two rows.
+    const page = await (await unsorted()).list({ orderBy: 'reads', limit: 2 });
+    expect(page.map((row) => row.reads)).toEqual([1, 5]);
+  });
+});

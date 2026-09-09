@@ -52,6 +52,7 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
         async list(options?: any) {
           let items = await store.all();
           if (options?.where) items = items.filter((values) => matches(values, options.where));
+          if (options?.orderBy) items = sorted(items, options.orderBy, options.order);
           // Held before the page is cut, and after the filter: `total` answers "how many
           // match", which is what a paginator divides. Reading `store.size` at the end
           // answered a different question — everything the store holds, including the ones
@@ -189,3 +190,17 @@ const ordered = (held: unknown, asked: unknown, holds: (a: number, b: number) =>
 /** What a Date and a number have in common, and a string keeps for itself. */
 const order = (value: unknown): number =>
   value instanceof Date ? value.getTime() : (value as number);
+
+/** The ORDER BY the engine would have compiled, answered over the rows the store held. */
+const sorted = (rows: Values[], field: string, direction: 'asc' | 'desc' | undefined): Values[] =>
+  [...rows].sort((left, right) =>
+    (direction === 'desc' ? -1 : 1) * rank(left[field], right[field]));
+
+/** A row that holds nothing sorts first, and two of them tie. */
+const rank = (left: unknown, right: unknown): number => {
+  if (left === null || left === undefined) return right === null || right === undefined ? 0 : -1;
+  if (right === null || right === undefined) return 1;
+  const [held, against] = [order(left), order(right)];
+
+  return held === against ? 0 : held < against ? -1 : 1;
+};

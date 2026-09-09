@@ -236,7 +236,7 @@ export class SqlStorage {
     if (options?.after) {
       query = query.where(this.column(this.pk.names[0]), '>', options.after);
     }
-    if (options?.orderBy && this.toColumn.has(options.orderBy)) {
+    if (options?.orderBy) {
       query = query.orderBy(this.column(options.orderBy), options.order === 'desc' ? 'desc' : 'asc');
     }
 

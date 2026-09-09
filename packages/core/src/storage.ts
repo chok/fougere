@@ -45,15 +45,30 @@ const LIST_OPTION_KEYS = [
   'limit', 'offset', 'page', 'after', 'orderBy', 'order', 'count', 'where', 'select',
 ] as const;
 
-/** Refuse an option the port does not answer to, naming it and what was expected. */
-export function assertListOptions(options: object | undefined, entity: string): void {
+/**
+ * Refuse an option the port does not answer to, and an order by a field the entity does not
+ * declare — an unhonoured `orderBy` returns the page in whatever order the engine chose.
+ */
+export function assertListOptions(
+  options: object | undefined,
+  entity: string,
+  declared: readonly string[],
+): void {
   if (!options) return;
   const legal = new Set<string>(LIST_OPTION_KEYS);
   const strangers = Object.keys(options).filter((key) => !legal.has(key));
-  if (strangers.length === 0) return;
+  if (strangers.length > 0) {
+    throw new Error(
+      `${entity}.list(): unknown option ${strangers.map((s) => `\`${s}\``).join(', ')}. ` +
+      `Known options are ${LIST_OPTION_KEYS.join(', ')} — to filter, pass \`where: { ${strangers[0]}: … }\`.`,
+    );
+  }
+
+  const { orderBy } = options as ListOptions;
+  if (orderBy === undefined || declared.includes(orderBy)) return;
+
   throw new Error(
-    `${entity}.list(): unknown option ${strangers.map((s) => `\`${s}\``).join(', ')}. ` +
-    `Known options are ${LIST_OPTION_KEYS.join(', ')} — to filter, pass \`where: { ${strangers[0]}: … }\`.`,
+    `${entity}.list(): unknown orderBy \`${orderBy}\`. ${entity} declares ${declared.join(', ')}.`,
   );
 }
 
