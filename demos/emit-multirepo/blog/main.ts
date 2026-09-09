@@ -12,7 +12,7 @@ import { createContainer } from '@fougere/container';
 const BROKER = `http://127.0.0.1:${process.env.BROKER_PORT ?? 4300}`;
 
 const inv = (params: Record<string, string>): InvocationContext =>
-  ({ params, query: {}, body: undefined, state: {} });
+  ({ params, query: {}, input: undefined, state: {} });
 
 const settle = () => new Promise((r) => setTimeout(r, 400));
 

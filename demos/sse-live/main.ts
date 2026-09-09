@@ -15,7 +15,7 @@ import { serveLive, watch, type Change } from './live.js';
 const as = (name: string, over: Partial<InvocationContext> = {}): InvocationContext => ({
   params: {},
   query: {},
-  body: undefined,
+  input: undefined,
   state: { user: { id: `u-${name}`, name } },
   ...over,
 });
@@ -96,7 +96,7 @@ async function main() {
   };
 
   console.log(bold('1. alice drafts "Ferns unfurl in silence"'));
-  await run({ entity: 'post', op: 'createDraft' }, as('alice', { body: { id: 'p1', title: 'Ferns unfurl in silence' } }));
+  await run({ entity: 'post', op: 'createDraft' }, as('alice', { input: { id: 'p1', title: 'Ferns unfurl in silence' } }));
   await settle();
   show();
 

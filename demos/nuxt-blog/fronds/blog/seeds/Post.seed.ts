@@ -23,9 +23,9 @@ export default async (resolve: <T>(name: string) => T) => {
   ];
 
   for (const { publish, ...item } of items) {
-    const created = await posts.create({ params: {}, query: {}, body: item, state: {} });
+    const created = await posts.create({ params: {}, query: {}, input: item, state: {} });
     if (publish) {
-      await posts.publish({ params: { id: created.id }, query: {}, body: undefined, state: { user: { id: item.authorId } } });
+      await posts.publish({ params: { id: created.id }, query: {}, input: undefined, state: { user: { id: item.authorId } } });
     }
   }
 

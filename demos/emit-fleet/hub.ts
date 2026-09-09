@@ -82,10 +82,10 @@ async function main() {
   });
 
   const run = createLocalRunner(app);
-  // `offset` and `node` are primitives, so the binding reads them from params — not body.
+  // `offset` and `node` are primitives, so the binding reads them from params, not input.
   const order = (offset: number, node?: string) =>
     run({ entity: 'fleet', op: 'sendCalibration' },
-      { params: { offset: String(offset), ...(node ? { node } : {}) }, query: {}, body: undefined, state: {} });
+      { params: { offset: String(offset), ...(node ? { node } : {}) }, query: {}, input: undefined, state: {} });
 
   let turn = 0;
   setInterval(() => {

@@ -50,7 +50,7 @@ async function main() {
 
   // Seed some data
   const postHandler = app.resolve<Record<string, Function>>('postHandler');
-  const ctx = (body: Record<string, unknown>) => ({ params: {}, query: {}, body, state: {} });
+  const ctx = (input: Record<string, unknown>) => ({ params: {}, query: {}, input, state: {} });
   await postHandler.create(ctx({ title: 'Hello from remote blog', body: 'This post lives on a separate server.', views: 0 }));
   await postHandler.create(ctx({ title: 'Second post', body: 'Another one.', views: 42 }));
 

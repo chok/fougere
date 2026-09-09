@@ -51,7 +51,7 @@ test('le serveur refuse ce que le navigateur a laissé passer', async ({ page })
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'product.create',
-        params: { params: {}, query: {}, body: { sku: 'LAMP-02', name: 'x', cents: 1, status: 'draft', couleur: 'rouge' }, state: {} } }),
+        params: { params: {}, query: {}, input: { sku: 'LAMP-02', name: 'x', cents: 1, status: 'draft', couleur: 'rouge' }, state: {} } }),
     });
     return response.json();
   }) as { error?: { message: string } };

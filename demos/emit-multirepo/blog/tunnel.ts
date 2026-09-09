@@ -19,7 +19,7 @@ const PORT = Number(process.env.TUNNEL_PORT ?? 4400);
 const listeners = new Map<Socket, Set<string>>();
 
 const inv = (params: Record<string, string>): InvocationContext =>
-  ({ params, query: {}, body: undefined, state: {} });
+  ({ params, query: {}, input: undefined, state: {} });
 
 async function main() {
   const { createJiti } = await import('jiti');

@@ -16,7 +16,7 @@ import { createHttpTransport } from '@fougere/transport-http';
 const SEARCH = `http://127.0.0.1:${process.env.PORT ?? 4210}`;
 
 const inv = (params: Record<string, string>): InvocationContext =>
-  ({ params, query: {}, body: undefined, state: {} });
+  ({ params, query: {}, input: undefined, state: {} });
 
 /** Dispatch is not delivery — the emitter returns before its listeners are done. */
 const settle = () => new Promise((r) => setTimeout(r, 300));

@@ -62,7 +62,7 @@ form.addEventListener('submit', async (event) => {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'product.create',
-      params: { params: {}, query: {}, body: values, state: {} } }),
+      params: { params: {}, query: {}, input: values, state: {} } }),
   });
   const answer = await response.json();
   if (answer.error) { error.textContent = answer.error.message; error.hidden = false; return; }

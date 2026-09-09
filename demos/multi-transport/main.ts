@@ -15,7 +15,7 @@ import { createMemoryStorage } from '@fougere/adapter-memory';
 import { createSocketTransport, serveSocket } from './socket-transport.js';
 
 const inv = (over: Partial<InvocationContext> = {}): InvocationContext =>
-  ({ params: {}, query: {}, body: undefined, state: {}, ...over });
+  ({ params: {}, query: {}, input: undefined, state: {}, ...over });
 
 /** Run a call and keep whatever came out — a value or a typed failure. */
 async function outcomeOf(run: () => Promise<unknown>): Promise<string> {
@@ -53,7 +53,7 @@ async function main() {
     { station: 'north-ridge', celsius: -4.5 },
     { station: 'harbour', celsius: 12.1 },
   ]) {
-    await local({ entity: 'reading', op: 'create' }, inv({ body: row }));
+    await local({ entity: 'reading', op: 'create' }, inv({ input: row }));
   }
 
   // Three receivers over the SAME runner. One frond, three doors on the wire.
@@ -68,8 +68,8 @@ async function main() {
 
   const calls: [string, string, InvocationContext][] = [
     ['list()', 'list', inv()],
-    ['create({ station: "" })', 'create', inv({ body: { station: '', celsius: 3 } })],
-    ['create({ celsius: 200 })', 'create', inv({ body: { station: 'dune', celsius: 200 } })],
+    ['create({ station: "" })', 'create', inv({ input: { station: '', celsius: 3 } })],
+    ['create({ celsius: 200 })', 'create', inv({ input: { station: 'dune', celsius: 200 } })],
     ['sendCalibration()', 'sendCalibration', inv()],
   ];
 
