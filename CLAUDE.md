@@ -53,9 +53,10 @@ alone could be a driver, `nuxt` could only ever be the Nuxt module.
 packages/
   schema/              @fougere/schema        entity(), field vocabulary, 4 axes, validation
   container/           @fougere/container     type-based DI, zero deps
+  compiler/            @fougere/compiler      the scan: source → descriptors. The one package that
+                                                needs a filesystem and a TypeScript program
   core/                @fougere/core          the phases below, and what sits outside them
     src/descriptor/      what a frond is made of, whoever produced it: FrondDescriptor, the entries, Fronds
-    src/scan/            the reading itself: scanner, handler-parser, its cache, and what a run could not do
     src/boot/            what createApp does with it: bootstrap, Emissions, AppLifecycle, seed,
                          remote, and what is BUILT from an app: its identity card, its runners
     src/dispatch/        what happens per call: HandlerFacade, Dispatcher, the route registry, the validators and projectors, argument resolution, InFlight
@@ -66,6 +67,8 @@ packages/
     src/crypto/          one port, two realizations — node and webcrypto
     src/entry/           the three ways in, in two files: facade.ts holds the facade and its dynamic
                          form, transport.ts the transport
+    src/descriptor/index.ts  what it takes to PRODUCE a descriptor — the fourth entry, `@fougere/core/descriptor`,
+                         read by the scan. The main entry serves what an app RUNS
     src/*.ts             what belongs to no phase: the two published entry points, frond(), the storage port
                          and the frame that derives it (store.ts),
                          emit, the effective operation model, the checkers
@@ -197,7 +200,7 @@ never installed `@fougere/observability` answers `Unknown rpc operation 'topolog
 serves discover.` The report shapes live in core (`TopologyReport`, `FrondPlacement`, `Edge`)
 because they cross a process boundary.
 
-**The names the scan reads** — `scan/conventions.ts`. Everything else a frond states, it
+**The names the scan reads** — `core/src/conventions.ts`, read by `@fougere/compiler`. Everything else a frond states, it
 states by its SHAPE; the eight convention directories and the import scope are the one place
 a NAME is the declaration, and the only ones a project may restate (`conventions:` in
 `fougere.config.ts`). The config is read BEFORE the aliases, because it names the scope they
@@ -251,7 +254,7 @@ compares two `rpc.discover` cards through `Card.diff`.
 nothing else. A prefab DECLARES (`Crud.__ops`, runtime), the scan DERIVES from source,
 `frond.config.ts` STATES and wins over both. Config also creates an op neither producer
 found — the answer for a method inherited from an installed base class. `description` is the
-method's own doc sentence, read from the AST (`scan/handler-parser.ts`, `docSentenceOf`).
+method's own doc sentence, read from the AST (`compiler/src/scan/handler-parser.ts`, `docSentenceOf`).
 
 **Call contract** (`core/src/wire/call.ts`) — a Frond call is a value `(entity, op,
 invocation)`. `createLocalRunner` (`boot/runner.ts`) executes locally, `createAppRunner`
