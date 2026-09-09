@@ -10,6 +10,6 @@ import { Field } from '../../field/Field.js';
 export const readOnly: <T>(field: Field<T>) => Field<T> = vocabulary(
   'readOnly',
   (field) => ({
-    boundary: Boundary.declared(field).with({ in: 'closed' }),
+    boundary: Boundary.declared(field).declaring({ in: 'closed' }),
   }),
 );

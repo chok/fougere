@@ -8,9 +8,9 @@ export interface LifecycleRules {
   update?: (typeof UPDATE_TOKENS)[number];
 }
 
-export class Lifecycle implements LifecycleRules {
-  readonly create?: LifecycleRules['create'];
-  readonly update?: LifecycleRules['update'];
+export class Lifecycle {
+  private readonly create?: LifecycleRules['create'];
+  private readonly update?: LifecycleRules['update'];
 
   private constructor(rules: LifecycleRules = {}) {
     this.create = rules.create;
@@ -25,8 +25,13 @@ export class Lifecycle implements LifecycleRules {
     return this.create === undefined;
   }
 
+  /** The server fills it at create, so a client form never carries it. */
+  get stampedAtCreate(): boolean {
+    return this.create === 'now';
+  }
+
   get stampedOnce(): boolean {
-    return this.create === 'now' && this.update !== 'now';
+    return this.stampedAtCreate && !this.stampedOnUpdate;
   }
 
   get immutable(): boolean {

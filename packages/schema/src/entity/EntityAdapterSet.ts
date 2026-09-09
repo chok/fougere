@@ -36,7 +36,7 @@ export class EntityAdapterSet {
     return new EntityAdapterSet(adapters);
   }
 
-  /** Folds several into one, a later field entry replacing the earlier. Takes sets only, so */
+  /** Folds several into one, a later field entry replacing the earlier. */
   static merged(adapterSets: readonly EntityAdapterSet[]): EntityAdapterSet {
     const configurations: AdapterConfigurations = {};
 
@@ -58,7 +58,7 @@ export class EntityAdapterSet {
     ];
   }
 
-  /** Follows a derivation — `pick`, `omit` and `rename` are one gesture: what remains, and */
+  /** Follows a derivation — `pick`, `omit` and `rename` are one gesture. */
   rename(transform: (key: string) => string | undefined): EntityAdapterSet {
     const renamed: AdapterConfigurations = {};
 

@@ -21,9 +21,9 @@ import {
 import { describe, it, expect } from 'vitest';
 // The read half is the framework's own business, so the barrel no longer carries it.
 
-// ─── nullableShape / anatomy — the two gates of the union, per shape genre ──
+// ─── `Shapes.nullable` / `Shapes.of` — the two gates of the union, per shape genre ──
 
-describe('nullableShape — null enters the grammar', () => {
+describe('Shapes.nullable — null enters the grammar', () => {
   it('scalar: the type becomes the [T, null] union', () => {
     expect(Shapes.nullable({ type: 'string' }).type).toEqual(['string', 'null']);
     expect(Shapes.nullable({ type: 'integer' }).type).toEqual(['integer', 'null']);
@@ -53,7 +53,7 @@ describe('nullableShape — null enters the grammar', () => {
   });
 });
 
-describe('anatomy — the single customs post for readers', () => {
+describe('Shapes.of — the single customs post for readers', () => {
   it('splits the union back into base + nullable', () => {
     const { base, nullable } = Shapes.of({ type: ['integer', 'null'], minimum: 0 } as never);
     expect(nullable).toBe(true);

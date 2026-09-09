@@ -141,7 +141,7 @@ function fieldToGraphQL(
   fieldName: string,
   enumFor?: (values: string[]) => any | undefined,
 ): any {
-  // Dispatch on the BASE type via anatomy — `shape.type` may be the nullable
+  // Dispatch on the BASE type via `Shapes.of` — `shape.type` may be the nullable
   // `[T,'null']` union, a direct comparison would fail silently on it.
   const { base: shape, nullable } = Shapes.of(field.shape);
 

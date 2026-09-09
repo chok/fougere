@@ -16,10 +16,7 @@ export class Bundle {
     const definitions: Record<string, SchemaDescriptor> = {};
     const claimedBy = new Map<string, string>();
     const entries = Array.isArray(schemas)
-      ? schemas.map((schema) => {
-          const card = Card.fromSchema(schema);
-          return { name: card.descriptor.title ?? '', schema };
-        })
+      ? schemas.map((schema) => ({ name: Card.titleOf(schema), schema }))
       : Object.entries(schemas).map(([name, schema]) => ({ name, schema }));
 
     for (const entry of entries) {

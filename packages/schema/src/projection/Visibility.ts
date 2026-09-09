@@ -16,7 +16,7 @@ export class Visibility {
     for (const [name, field] of Object.entries(this.fields)) {
       const role = Role.of(field);
       if (role.isPrimary) continue;
-      if (Lifecycle.of(field).create === 'now') continue;
+      if (Lifecycle.of(field).stampedAtCreate) continue;
       if (role.isCollection) continue;
       if (Boundary.of(field).readOnly) continue;
       result[name] = field;

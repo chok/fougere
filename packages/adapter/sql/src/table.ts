@@ -85,9 +85,9 @@ function referenceFor(
   tableNameOf?: Map<SchemaView, string>,
   hosted?: HostedNames,
 ): ColumnReference | undefined {
-  const relation = Role.of(field).relation;
-  if (!relation || relation.kind !== 'one') return undefined;
-  const target = relation.to() as Partial<SchemaView> & { name?: string };
+  const role = Role.of(field);
+  if (!role.isReference) return undefined;
+  const target = role.target as Partial<SchemaView> & { name?: string };
   const mapped = tableNameOf?.get(target as SchemaView);
   if (mapped === undefined && hosted !== undefined) {
     // Three answers, and only the first two are ordinary. Two databases share no
@@ -114,7 +114,7 @@ function referenceFor(
   }
   const table = mapped ?? resolve(lowerFirst(target.name ?? ''));
   const column = primaryColumnOf(target);
-  return relation.onDelete ? { table, column, onDelete: relation.onDelete } : { table, column };
+  return role.onDelete ? { table, column, onDelete: role.onDelete } : { table, column };
 }
 
 function toColumn(
@@ -125,7 +125,7 @@ function toColumn(
   hosted?: HostedNames,
   stated?: SqlField,
 ): ColumnDef {
-  // The column type comes from the `shape` axis alone. `anatomy` strips the
+  // The column type comes from the `shape` axis alone. `Shapes.of` strips the
   // nullable union so a nullable integer stays an integer instead of falling
   // through to text.
   const { base, nullable } = Shapes.of(field.shape);

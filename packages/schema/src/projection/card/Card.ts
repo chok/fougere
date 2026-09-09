@@ -42,7 +42,7 @@ export class Card<T = Values<Fields>> {
       'x-fougere-version': 1,
       'x-fougere-vendor': 'fougere',
     };
-    const title = name ?? schema.derivation?.sourceName ?? schema.name;
+    const title = name ?? Card.titleOf(schema);
     if (title) descriptor.title = title;
     if (required.length) descriptor.required = required;
 
@@ -53,6 +53,14 @@ export class Card<T = Values<Fields>> {
 
   static fromDescriptor<T = Values<Fields>>(descriptor: SchemaDescriptor): Card<T> {
     return new Card<T>(descriptor);
+  }
+
+  /**
+   * A derivation answers the name it was cut from — `Post.pick('title')` is `Post`, since
+   * a derived class carries `Schema`.
+   */
+  static titleOf(schema: SchemaView): string {
+    return schema.derivation?.sourceName ?? schema.name;
   }
 
   get origin(): DerivedFrom | undefined {

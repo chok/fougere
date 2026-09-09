@@ -42,16 +42,6 @@ export class Schema {
   /** The one place a schema holds what it is. The readings below are its projections. */
   static definition: SchemaDefinition = SchemaDefinition.of({ fields: {} });
 
-  static get fields(): Fields {
-    return this.definition.fields;
-  }
-  /** An entry survives every derivation that kept its field: `Post.pick('body').adapters`. */
-  static get adapters(): EntityAdapters<Fields> {
-    return this.definition.adapterSet.adapters;
-  }
-  static get opts(): ValidateOptions {
-    return this.definition.opts;
-  }
   static get derivation(): SchemaDerivation | undefined {
     return this.definition.derivation;
   }
@@ -75,26 +65,29 @@ export class Schema {
     }
   }
 
-  static getFields() {
-    return this.fields;
+  static getFields(): Fields {
+    return this.definition.fields;
   }
-  static getAdapters() {
-    return this.adapters;
+  /** An entry survives every derivation that kept its field: `Post.pick('body').getAdapters()`. */
+  static getAdapters(): EntityAdapters<Fields> {
+    return this.definition.adapterSet.adapters;
   }
   static getUnique(): CompositeUnique<Fields> | undefined {
     return this.definition.constraints.unique;
   }
-  static getOpts() {
-    return this.opts;
+  static getOpts(): ValidateOptions {
+    return this.definition.opts;
   }
 
   static validate(input: unknown) {
-    return InputValidator.of(this.fields, this.opts).validate(input);
+    const { fields, opts } = this.definition;
+
+    return InputValidator.of(fields, opts).validate(input);
   }
 
   static from(data: Record<string, unknown>) {
     const row: Record<string, unknown> = {};
-    for (const [key, field] of Object.entries(this.fields)) {
+    for (const [key, field] of Object.entries(this.definition.fields)) {
       if (!Object.hasOwn(data, key)) continue;
       const value = data[key];
       if (value === null || value === undefined) {
@@ -108,7 +101,8 @@ export class Schema {
   }
 
   static get ['~standard'](): StandardSchemaV1.Props<Record<string, unknown>> {
-    const { fields, opts } = this;
+    const { fields, opts } = this.definition;
+
     return {
       version: 1,
       vendor: 'fougere',

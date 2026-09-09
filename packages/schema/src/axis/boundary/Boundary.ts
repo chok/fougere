@@ -13,9 +13,9 @@ export type BoundaryRef = 'isoDate' | (string & {}) | BoundaryRules;
 const identityDecoder: Decoder = (value) => ({ value });
 const identityEncoder: Encoder = (value) => value;
 
-export class Boundary implements BoundaryRules {
-  readonly in?: BoundaryRules['in'];
-  readonly out?: BoundaryRules['out'];
+export class Boundary {
+  private readonly in?: BoundaryRules['in'];
+  private readonly out?: BoundaryRules['out'];
   readonly decode: Decoder;
   readonly encode: Encoder;
 
@@ -68,8 +68,9 @@ export class Boundary implements BoundaryRules {
     return new Boundary();
   }
 
-  with(overrides: BoundaryRules): Boundary {
-    return new Boundary({ in: overrides.in ?? this.in, out: overrides.out ?? this.out });
+  /** The dual of `declared`: what `readOnly()` writes back on the field, not a judge. */
+  declaring(overrides: BoundaryRules): BoundaryRules {
+    return { in: overrides.in ?? this.in, out: overrides.out ?? this.out };
   }
 
   get readOnly(): boolean {

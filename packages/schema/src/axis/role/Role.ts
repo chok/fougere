@@ -7,11 +7,11 @@ export interface RoleRules {
   relation?: Relation;
 }
 
-export class Role implements RoleRules {
-  readonly primary?: boolean;
-  readonly index?: boolean;
-  readonly unique?: boolean;
-  readonly relation?: Relation;
+export class Role {
+  private readonly primary?: boolean;
+  private readonly index?: boolean;
+  private readonly unique?: boolean;
+  private readonly relation?: Relation;
 
   private constructor(rules: RoleRules = {}) {
     this.primary = rules.primary;
@@ -45,8 +45,17 @@ export class Role implements RoleRules {
     return this.relation?.kind === 'one';
   }
 
+  /** Either kind — what a CLI flag and a GraphQL selection both leave out. */
+  get isRelation(): boolean {
+    return this.relation !== undefined;
+  }
+
   /** Calls `() => Post` so no caller has to. */
   get target(): EntityConstructor | undefined {
     return this.relation?.to();
+  }
+
+  get onDelete(): Relation['onDelete'] {
+    return this.relation?.onDelete;
   }
 }

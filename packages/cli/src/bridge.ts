@@ -16,7 +16,7 @@ export function entityToArgs(fields: Fields): ArgsDef {
   // Axes-derived ingress membership; the CLI additionally skips ALL relations
   // (a ref is not a flag — supplying related rows is not a CLI gesture).
   for (const [key, field] of Object.entries(Visibility.of(fields).input)) {
-    if (Role.of(field).relation) continue;
+    if (Role.of(field).isRelation) continue;
 
     // A `default(v)` travels as the create rule `{ value }` — citty shows it.
     const defaultValue = Lifecycle.of(field).literal?.value;

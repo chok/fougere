@@ -17,16 +17,6 @@ export type Shape =
 
 const SHAPE_TYPES = ['string', 'number', 'integer', 'boolean', 'array', 'object'] as const;
 
-function isShapeImpl(value: unknown): value is Shape {
-  if (typeof value !== 'object' || value === null) return false;
-  const type = (value as Shape).type;
-  const names = Array.isArray(type) ? type : [type];
-  return (
-    names.some((name) => (SHAPE_TYPES as readonly unknown[]).includes(name)) &&
-    names.every((name) => name === 'null' || (SHAPE_TYPES as readonly unknown[]).includes(name))
-  );
-}
-
 type BaseShape =
   | ({ type: 'string' } & StringConstraints)
   | ({ type: 'number' | 'integer' } & NumericConstraints)
@@ -34,37 +24,21 @@ type BaseShape =
   | ({ type: 'array' } & ArrayConstraints)
   | ({ type: 'object' } & ObjectConstraints);
 
-function nullableShapeImpl(shape: Shape): Shape {
-  if (Array.isArray(shape.type)) return shape;
-  const nullable = { ...shape, type: [shape.type, 'null'] } as unknown as Shape;
-  if ('enum' in nullable && nullable.enum && !nullable.enum.includes(null)) {
-    (nullable as { enum: readonly (string | null)[] }).enum = [...nullable.enum, null];
-  }
-  return nullable;
-}
-
 interface ShapeParts {
   base?: BaseShape;
   nullable: boolean;
 }
 
-function collectPatterns(value: unknown, found: string[]): void {
-  if (Array.isArray(value)) {
-    for (const member of value) collectPatterns(member, found);
-
-    return;
-  }
-  if (typeof value !== 'object' || value === null) return;
-
-  const { pattern } = value as { pattern?: unknown };
-  if (typeof pattern === 'string') found.push(pattern);
-
-  for (const member of Object.values(value)) collectPatterns(member, found);
-}
-
 export class Shapes {
   static is(value: unknown): value is Shape {
-    return isShapeImpl(value);
+    if (typeof value !== 'object' || value === null) return false;
+    const type = (value as Shape).type;
+    const names = Array.isArray(type) ? type : [type];
+
+    return (
+      names.some((name) => (SHAPE_TYPES as readonly unknown[]).includes(name)) &&
+      names.every((name) => name === 'null' || (SHAPE_TYPES as readonly unknown[]).includes(name))
+    );
   }
 
   /**
@@ -75,13 +49,33 @@ export class Shapes {
    */
   static patterns(shape: unknown): string[] {
     const found: string[] = [];
-    collectPatterns(shape, found);
+    Shapes.collectPatterns(shape, found);
 
     return found;
   }
 
+  private static collectPatterns(value: unknown, found: string[]): void {
+    if (Array.isArray(value)) {
+      for (const member of value) Shapes.collectPatterns(member, found);
+
+      return;
+    }
+    if (typeof value !== 'object' || value === null) return;
+
+    const { pattern } = value as { pattern?: unknown };
+    if (typeof pattern === 'string') found.push(pattern);
+
+    for (const member of Object.values(value)) Shapes.collectPatterns(member, found);
+  }
+
   static nullable(shape: Shape): Shape {
-    return nullableShapeImpl(shape);
+    if (Array.isArray(shape.type)) return shape;
+    const nullable = { ...shape, type: [shape.type, 'null'] } as unknown as Shape;
+    if ('enum' in nullable && nullable.enum && !nullable.enum.includes(null)) {
+      (nullable as { enum: readonly (string | null)[] }).enum = [...nullable.enum, null];
+    }
+
+    return nullable;
   }
 
   private static readonly cache = new WeakMap<object, ShapeParts>();

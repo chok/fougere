@@ -121,7 +121,7 @@ describe("boundary · 'closed' permissions (readOnly / writeOnly)", () => {
 
   it('closing one direction keeps the derived conversion of the other (writeOnly date)', () => {
     const f = writeOnly(date());
-    expect(Boundary.of(f).out).toBe('closed');
+    expect(Boundary.of(f).writeOnly).toBe(true);
     expect(Boundary.of(f).decode('2026-05-31T10:00:00.000Z')).toEqual({ value: new Date('2026-05-31T10:00:00.000Z') });
   });
 });

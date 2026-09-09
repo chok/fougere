@@ -56,7 +56,7 @@ const CONTROL_BY_FORMAT: Record<string, FormField['control']> = {
 };
 
 function controlOf(field: Field): FormField['control'] {
-  // Through `anatomy`, never `shape.type` directly: the nullable form is the `[T,'null']`
+  // Through `Shapes.of`, never `shape.type` directly: the nullable form is the `[T,'null']`
   // union, which a direct comparison misses in silence. It is also what narrows the shape
   // union, so `enum` and `format` are only reachable on the branches that carry them.
   const base = Shapes.of(field.shape).base;

@@ -16,7 +16,7 @@ interface Introspectable {
 /** The scalar fields of an entity, as a GraphQL selection. */
 export function selectionOf(entity: SchemaView): string {
   return Object.entries(Visibility.of(entity.getFields()).output)
-    .filter(([, field]) => !Role.of(field as Field).relation)
+    .filter(([, field]) => !Role.of(field as Field).isRelation)
     .map(([name]) => name)
     .join(' ');
 }

@@ -17,7 +17,7 @@ export function applyCreate(fields: Fields, input: Record<string, unknown>): Rec
     if (name in values) continue;
     const rule = Lifecycle.of(field);
 
-    if (rule.create === 'now') values[name] = new Date(instant);
+    if (rule.stampedAtCreate) values[name] = new Date(instant);
     else if (rule.literal) values[name] = freshValue(rule.literal.value);
     else if (rule.generator) values[name] = Generators.resolve(rule.generator)();
   }
