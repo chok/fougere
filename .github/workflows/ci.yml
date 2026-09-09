@@ -50,6 +50,16 @@ jobs:
           find . -path '*/.fougere/scan-cache.json' -not -path '*/node_modules/*' -delete
           pnpm -r test
 
+      # A demo is the only place the whole thing is composed, and no unit test reads
+      # one. `sse-live` wrote its payload under `body`, a key `InvocationContext` does
+      # not declare — 1790 green tests and a clean typecheck said nothing, because the
+      # seed and the helpers that carried it were typed `Record<string, unknown>` by
+      # hand. This starts every demo and fails on the first that does not come up.
+      #
+      # It is a GATE, unlike the readings below: a demo that stopped starting is not a
+      # baseline to move deliberately, it is a demo nobody can run.
+      - run: pnpm smoke
+
       # Mechanical readings, NOT gates — same posture as `audit` below, for the same
       # reason: a job that turns red on a finding forces the finding to be cleared in
       # bulk, and clearing in bulk is how this repo grew code nobody had read. They
