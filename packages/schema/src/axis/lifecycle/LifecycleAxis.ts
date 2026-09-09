@@ -29,8 +29,8 @@ export const lifecycleAxis: Axis<LifecycleRules, LifecycleRules> = {
 };
 
 /**
- * So the four legal ways to declare a creation are stated once, and anything else names them.
- * FR : pour que les quatre façons de déclarer une création soient dites une fois.
+ * Judges the create rule, whose four legal forms are stated here and nowhere else.
+ * FR : juge la règle de création, dont les quatre formes légales sont énoncées ici seulement.
  * `create: 3` → `Expected 'now', 'optional', { value } or { generate } — got 3`
  */
 function validateCreate(rule: unknown, errors: ValidationError[]): void {

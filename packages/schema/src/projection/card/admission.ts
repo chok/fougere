@@ -2,8 +2,8 @@ import type { ValidationError } from '../../validation.js';
 import { Shapes } from '../../axis/shape/Shape.js';
 
 /**
- * So a card that cannot be read says what is wrong and what to write instead.
- * FR : pour qu'une carte illisible dise ce qui cloche et quoi écrire.
+ * Throws with what is wrong AND what to write: a card's author is in another process.
+ * FR : lève avec ce qui cloche ET quoi écrire : l'auteur d'une carte est ailleurs.
  * `refuse('role.relation.kind is "maybe"', 'Expected one of one, many.')`
  */
 export function refuse(what: string, fix: string): never {
@@ -11,9 +11,10 @@ export function refuse(what: string, fix: string): never {
 }
 
 /**
- * So a card's axis passes the same validator as a hand-written one, and no second validator exists.
- * FR : pour qu'un axe d'une carte passe le juge des autres, sans second juge.
- * `{ update: 'maybe' }` on a card → `lifecycle is malformed — lifecycle.update: Expected 'now' or 'forbidden'`
+ * Runs a card's axis through the validator a hand-written field goes through, so there is
+ * one judge and not two.
+ * FR : passe l'axe d'une carte par le juge d'un champ écrit à la main : un juge, pas deux.
+ * `{ update: 'maybe' }` → `lifecycle is malformed — lifecycle.update: Expected 'now' or 'forbidden'`
  */
 export function admitWire(
   validator: (value: unknown, errors: ValidationError[]) => void,
@@ -31,8 +32,8 @@ export function admitWire(
 }
 
 /**
- * So a closed set is checked against the list that declares it, never against a copy.
- * FR : pour qu'un ensemble fermé soit vérifié contre la liste qui le déclare.
+ * Checks a token against the list that declares it, never against a copy written here.
+ * FR : vérifie un mot contre la liste qui le déclare, jamais contre une copie locale.
  * `oneOfTokens('many', RELATION_KINDS)` → `true`
  */
 export const oneOfTokens = <T extends readonly string[]>(
@@ -41,9 +42,9 @@ export const oneOfTokens = <T extends readonly string[]>(
 ): value is T[number] => typeof value === 'string' && (tokens as readonly string[]).includes(value);
 
 /**
- * So a `pattern` the engine cannot compile is refused where the card is read, not at the first row.
- * FR : pour qu'un `pattern` incompilable soit refusé à la lecture de la carte, pas au premier row.
- * `{ type: 'string', pattern: '(' }` → Field 'code' states `pattern: "("`, which is not a regular expression
+ * Compiles every `pattern` at the door, so a bad one is refused here and not at the first row.
+ * FR : compile chaque `pattern` à la porte : un mauvais est refusé ici, pas au premier row.
+ * `{ type: 'string', pattern: '(' }` → `Field 'code' states pattern: "(", which is not a regular expression`
  */
 export function admitPatterns(shape: unknown, subject: string): void {
   for (const pattern of Shapes.patterns(shape)) {

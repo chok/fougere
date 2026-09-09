@@ -112,8 +112,8 @@ export class Card<T = Values<Fields>> {
 }
 
 /**
- * So the three axes write themselves under `x-fougere`, each by its own hand.
- * FR : pour que les trois axes s'écrivent sous `x-fougere`, chacun de sa main.
+ * Each axis writes its own wire form under `x-fougere`; `shape` stays outside, plain.
+ * FR : chaque axe écrit sa forme de fil sous `x-fougere` ; `shape` reste dehors, nu.
  * `ref(User)` → `{ role: { relation: { to: 'user', kind: 'one' } } }`
  */
 function describeExtension(field: Field, key: string): FieldExtension | undefined {
@@ -128,11 +128,6 @@ function describeExtension(field: Field, key: string): FieldExtension | undefine
   return Object.keys(extension).length ? (extension as FieldExtension) : undefined;
 }
 
-/**
- * So the shape stays plain JSON Schema, and what is ours sits under one key.
- * FR : pour que la forme reste du JSON Schema, ce qui est à nous tenant sous une clé.
- * `text({ max: 200 })` → `{ type: 'string', maxLength: 200 }`
- */
 function describeField(field: Field, key: string): FieldDescriptor {
   // The shape IS JSON Schema, so it lands whole rather than key by key — which is what let
   // it be copied under a computed key into a type that names its own.
@@ -144,8 +139,8 @@ function describeField(field: Field, key: string): FieldDescriptor {
 }
 
 /**
- * So a derived card names its root and what became of each field.
- * FR : pour qu'une carte dérivée nomme sa racine et le sort de chaque champ.
+ * What a derived card says of its root, and of every field the cut kept or dropped.
+ * FR : ce qu'une carte dérivée dit de sa racine, et de chaque champ gardé ou perdu.
  * `Post.pick('title')` → `{ from: 'Post', nameOf: { title: 'title' } }`
  */
 function originOf(schema: SchemaView): DerivedFrom | undefined {
@@ -158,9 +153,9 @@ function originOf(schema: SchemaView): DerivedFrom | undefined {
 }
 
 /**
- * So a shape read back is the shape that was written, and an unknown type is refused.
- * FR : pour qu'une forme relue soit celle qui a été écrite, un type inconnu étant refusé.
- * `{ type: 'string', maxLength: 200 }` → the same shape a `text({ max: 200 })` states
+ * Rebuilds the shape a card carries, refusing a type the standard does not name.
+ * FR : reconstruit la forme que porte une carte, refusant un type hors du standard.
+ * `{ type: 'string', maxLength: 200 }` → the same shape `text({ max: 200 })` states
  */
 function reconstructShape(property: FieldDescriptor): Field['shape'] | undefined {
   const types = Array.isArray(property.type) ? property.type : property.type ? [property.type] : [];
@@ -175,8 +170,8 @@ function reconstructShape(property: FieldDescriptor): Field['shape'] | undefined
 }
 
 /**
- * So a field read back carries its axes, rebuilt by the axes themselves.
- * FR : pour qu'un champ relu porte ses axes, reconstruits par les axes eux-mêmes.
+ * Rebuilds a field, each axis reading back what it wrote — the dual of `describeField`.
+ * FR : reconstruit un champ, chaque axe relisant ce qu'il a écrit — le dual de `describeField`.
  * `{ 'x-fougere': { lifecycle: { create: 'now' } } }` → a field stamped at create
  */
 function reconstructField(
@@ -209,13 +204,8 @@ function reconstructField(
 }
 
 /**
- * So an axis that changed is one named difference, not a whole field marked dirty.
- * FR : pour qu'un axe modifié soit une différence nommée, pas un champ entier marqué.
- * `{ kind: 'restated', field: 'body', axis: 'boundary', … }`
- */
-/**
- * So a group spanning several fields reaches a reader that only ever sees one field.
- * FR : pour qu'un groupe couvrant plusieurs champs atteigne un lecteur qui n'en voit qu'un.
+ * Writes a group onto EVERY member — a wire reader sees one field at a time.
+ * FR : écrit un groupe sur CHAQUE membre — un lecteur du fil ne voit qu'un champ.
  * `carryGroup(properties.listId, ['listId', 'docId'])` → the pair lands under its `role`
  */
 function carryGroup(property: FieldDescriptor | undefined, group: readonly string[]): void {

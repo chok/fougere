@@ -3,8 +3,8 @@ import { type EntityDeclarations } from './entity/EntityDeclarations.js';
 import { Schema, type SchemaConstructor } from './Schema.js';
 
 /**
- * So the whole framework starts from one call: fields, and what they say about themselves.
- * FR : pour que tout parte d'un appel : les champs, et ce qu'ils disent d'eux-mêmes.
+ * The one call everything derives from: the fields, and what the entity states about them.
+ * FR : l'appel dont tout dérive : les champs, et ce que l'entité en dit.
  * `class Post extends entity({ id: primary(), title: text() }, { unique: [['title']] }) {}`
  */
 export function entity<TFields extends Fields>(

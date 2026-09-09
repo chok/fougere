@@ -4,10 +4,9 @@ import { Clock } from './Clock.js';
 import { type Field, type Fields } from '../../field/Field.js';
 
 /**
- * So every storage realizes a create the same way.
- * FR : pour que chaque storage réalise une création de la même façon.
- * `applyCreate({ id: primary(), createdAt: created() }, { title: 'a' })`
- * → `id` generated, `createdAt` stamped, `title` untouched
+ * Fills what the declaration leaves to the storage, so no handler stamps a date itself.
+ * FR : remplit ce que la déclaration laisse au storage : aucun handler n'estampe lui-même.
+ * `applyCreate({ id: primary(), createdAt: created() }, { title: 'a' })` → `id`, `createdAt`
  */
 export function applyCreate(fields: Fields, input: Record<string, unknown>): Record<string, unknown> {
   const values: Record<string, unknown> = { ...input };
@@ -26,8 +25,9 @@ export function applyCreate(fields: Fields, input: Record<string, unknown>): Rec
 }
 
 /**
- * So two rows created from one declared default never end up sharing the same object.
- * FR : pour que deux lignes nées d'un même défaut ne partagent pas l'objet.
+ * Clones a declared default, so two rows born of `create: { value: [] }` hold two arrays.
+ * FR : clone un défaut déclaré, pour que deux lignes nées de `create: { value: [] }`
+ * tiennent deux tableaux.
  * `create: { value: [] }` → each instance gets its own array
  */
 function freshValue(value: unknown): unknown {
@@ -36,8 +36,9 @@ function freshValue(value: unknown): unknown {
 }
 
 /**
- * So `updated()` is stamped by the storage, and no handler has to remember it.
- * FR : pour qu'`updated()` soit estampé par le storage, pas par le handler.
+ * The dual of `applyCreate` on a patch: only `update: 'now'` fields are touched.
+ * FR : le dual d'`applyCreate` sur une modification : seuls les champs `update: 'now'`
+ * sont touchés.
  * `applyUpdate(fields, { title: 'b' })` → `updatedAt` added, nothing else
  */
 export function applyUpdate(fields: Fields, patch: Record<string, unknown>): Record<string, unknown> {

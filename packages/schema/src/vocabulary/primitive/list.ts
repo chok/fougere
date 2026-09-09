@@ -6,9 +6,9 @@ export interface ListOptions {
 }
 
 /**
- * So a list of values is told apart from a relation, which `many()` declares.
- * FR : pour qu'une liste de valeurs se distingue d'une relation, que `many()` déclare.
- * `list(text(), { max: 5 })`; `list(ref(User))` → throws
+ * A list of VALUES. The other side of a relation is `many()`, and passing one here throws.
+ * FR : une liste de VALEURS. L'autre côté d'une relation est `many()`, et en passer une ici lève.
+ * `list(text(), { max: 5 })` → `{ type: 'array', items: { type: 'string' }, maxItems: 5 }`
  */
 export function list<T>(item: Field<T>, opts?: ListOptions): Field<T[]> {
   if (item.role?.relation)

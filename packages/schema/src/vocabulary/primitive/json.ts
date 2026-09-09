@@ -7,9 +7,9 @@ export function json<E extends SchemaView & (new (...args: any[]) => any)>(
   of: E,
 ): Field<InstanceType<E>>;
 /**
- * So a stored object can carry a schema, instead of admitting any shape forever.
- * FR : pour qu'un objet stocké porte un schéma, au lieu d'admettre toute forme à jamais.
- * `json(Address)` → the object's properties and its required keys
+ * `json(Address)` where the object has a shape; `json()` alone admits any shape forever.
+ * FR : `json(Address)` quand l'objet a une forme ; `json()` seul admet tout, à jamais.
+ * `json(Address)` → the entity's properties, and its required keys
  */
 export function json(of?: SchemaView): Field<unknown> {
   if (!of) return new Field({ shape: { type: 'object' } });

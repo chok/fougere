@@ -145,19 +145,14 @@ function restated(
   );
 }
 
-/**
- * So two shapes are compared without what is not shape getting in the way.
- * FR : pour que deux formes se comparent sans que le reste s'en mêle.
- * `{ type: 'string', description: 'x' }` → `{ type: 'string' }`
- */
 function shapeOf(descriptor: FieldDescriptor): Record<string, unknown> {
   const { 'x-fougere': _extension, description: _description, ...shape } = descriptor;
   return shape as Record<string, unknown>;
 }
 
 /**
- * So `['string','null']` and `['null','string']` are the same type, not a change.
- * FR : pour que `['string','null']` et `['null','string']` soient un même type.
+ * Sorted, so `['string','null']` and `['null','string']` compare equal, not as a change.
+ * FR : trié, pour que `['string','null']` et `['null','string']` soient égaux.
  * `typesOf({ type: ['null', 'string'] })` → `['null', 'string']`
  */
 function typesOf(descriptor: FieldDescriptor): TypeSet {
@@ -167,8 +162,8 @@ function typesOf(descriptor: FieldDescriptor): TypeSet {
 }
 
 /**
- * So a bound that moved is a `reshaped`, told apart from a type that changed.
- * FR : pour qu'une borne déplacée soit un `reshaped`, distinct d'un type changé.
+ * The shape without its type, which is what tells a `reshaped` from a `retyped`.
+ * FR : la forme sans son type, ce qui distingue un `reshaped` d'un `retyped`.
  * `maxLength: 200` → `maxLength: 100` → one `reshaped`, never a `retyped`
  */
 function boundsOf(descriptor: FieldDescriptor): Record<string, unknown> {
@@ -177,8 +172,8 @@ function boundsOf(descriptor: FieldDescriptor): Record<string, unknown> {
 }
 
 /**
- * So a removal plus an addition of the same shape is a question, never a guess.
- * FR : pour qu'une suppression plus un ajout de même forme soit une question, pas un pari.
+ * A removal plus an addition of one shape is REPORTED, never resolved — only `renamed` decides.
+ * FR : une suppression plus un ajout de même forme est RAPPORTÉE, jamais résolue.
  * `body` gone, `content` appeared → `ambiguous: [{ removed: 'body', added: 'content' }]`
  */
 function candidates(

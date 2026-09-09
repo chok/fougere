@@ -116,11 +116,8 @@ export class Shapes {
   }
 
   /**
-   * The type a projection dispatches on, which is `shape.type` except that a `string`
-   * answers `date` or `choice` where it states one. Read off the base, so the nullable
-   * union answers like the bare type.
-   * FR : le type sur lequel une projection branche — `shape.type`, mais une chaîne répond
-   * `date` ou `choice` quand elle l'énonce.
+   * `shape.type` read off the base, except that a `string` answers `date` or `choice`.
+   * FR : `shape.type` lu sur la base, sauf qu'une chaîne répond `date` ou `choice`.
    * `typeOf({ type: ['string', 'null'], format: 'date-time' })` → `'date'`
    */
   static typeOf(shape?: Shape): ShapeType | undefined {

@@ -261,8 +261,8 @@ export class SchemaDefinition {
   }
 
   /**
-   * So a gesture naming a field that does not exist says so, and lists what there is.
-   * FR : pour qu'un geste nommant un champ inexistant le dise, et énumère ce qui existe.
+   * Refuses a gesture naming a field the schema does not carry, and lists what it does.
+   * FR : refuse un geste nommant un champ absent, et énumère ceux qui existent.
    * `pick('titel')` → `pick(): unknown field \`titel\`. This schema carries id, title, body.`
    */
   private assertKnown(operation: string, keys: readonly string[]): void {

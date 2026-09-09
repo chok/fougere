@@ -3,9 +3,9 @@ import { Boundary } from '../../axis/boundary/Boundary.js';
 import { Field } from '../../field/Field.js';
 
 /**
- * So a field a client may read but never write says so once, on the field.
- * FR : pour qu'un champ lisible mais non écrivable le dise une fois, sur le champ.
- * `readOnly(text())` → `boundary.in` is `'closed'`, absent from every form
+ * Closes the way in, so the field leaves `Visibility.input` and every form derived from it.
+ * FR : ferme l'entrée : le champ quitte `Visibility.input` et tout formulaire qui en dérive.
+ * `readOnly(text())` → `boundary.in` is `'closed'`
  */
 export const readOnly: <T>(field: Field<T>) => Field<T> = vocabulary(
   'readOnly',

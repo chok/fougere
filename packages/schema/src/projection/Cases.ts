@@ -25,8 +25,8 @@ export interface ValidationCase {
 }
 
 /**
- * So every field has at least one case, whatever else it declares.
- * FR : pour que chaque champ ait un cas, quoi qu'il déclare par ailleurs.
+ * A value of the wrong type, so every field yields at least one case whatever it declares.
+ * FR : une valeur du mauvais type, pour que chaque champ rende au moins un cas.
  * `text()` → `42`; `number()` → `'not-a-value-of-this-shape'`
  */
 function wrongTypeFor(field: Field): unknown {
@@ -36,8 +36,8 @@ function wrongTypeFor(field: Field): unknown {
 }
 
 /**
- * So a bound stated in a shape produces the case that breaks it, and none is invented.
- * FR : pour qu'une borne énoncée produise le cas qui la casse, et aucun autre.
+ * One case per bound the shape states, and none for a bound it does not.
+ * FR : un cas par borne que la forme énonce, aucun pour une borne absente.
  * `text({ maxLength: 3 })` → one case with `'xxxx'`; `text()` → no case
  */
 function outOfBoundsFor(field: Field): { why: string; value: unknown }[] {
@@ -103,8 +103,10 @@ export class Cases {
 }
 
 /**
- * So the four axes decide which cases exist, and no list of them is maintained by hand.
- * FR : pour que les axes décident des cas, sans liste tenue à la main.
+ * Reads the four axes rather than a list kept by hand: a case exists because a field
+ * declares the rule it breaks.
+ * FR : lit les quatre axes plutôt qu'une liste tenue à la main : un cas existe parce qu'un
+ * champ déclare la règle qu'il casse.
  */
 function enumerate(entity: SchemaView, valid: Record<string, unknown>): ValidationCase[] {
   const fields = entity.getFields();

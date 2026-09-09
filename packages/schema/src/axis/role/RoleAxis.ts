@@ -73,9 +73,9 @@ export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
 };
 
 /**
- * So a relation is validated where `() => Post` is required — a card carries a name.
- * FR : pour qu'une relation soit jugée là où `() => Post` est exigé, contrairement à une carte.
- * `{ to: User, kind: 'one' }` → error `Expected a function returning the target entity, such as () => Post`
+ * Judges a relation where `to` is a thunk; a card states a NAME, resolved by `toSchema` first.
+ * FR : juge une relation dont `to` est une fonction ; une carte y met un NOM, résolu avant.
+ * `{ to: User, kind: 'one' }` → `Expected a function returning the target entity, … () => Post`
  */
 function validateRelation(relation: unknown, errors: ValidationError[]): void {
   if (!isObject(relation)) {

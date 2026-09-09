@@ -3,8 +3,8 @@ import { Boundary } from '../../axis/boundary/Boundary.js';
 import { Field } from '../../field/Field.js';
 
 /**
- * So a secret leaves no response, the dual of `readOnly` on the same axis.
- * FR : pour qu'un secret ne reparte dans aucune réponse, dual de `readOnly`.
+ * Closes the way out, the dual of `readOnly`: the value is written and never sent back.
+ * FR : ferme la sortie, dual de `readOnly` : la valeur s'écrit et ne repart jamais.
  * `writeOnly(text())` → `boundary.out` is `'closed'`
  */
 export const writeOnly: <T>(field: Field<T>) => Field<T> = vocabulary(

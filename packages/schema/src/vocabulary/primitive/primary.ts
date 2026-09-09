@@ -8,9 +8,9 @@ interface PrimaryOptions {
 export function primary(opts?: PrimaryOptions): Field<string>;
 export function primary<T>(field: Field<T>): Field<T>;
 /**
- * So an id is generated and write-once by declaring nothing else.
- * FR : pour qu'un identifiant soit généré et écrit une fois sans rien déclarer d'autre.
- * `primary()` → cuid2, `update: 'forbidden'`; `primary(number())` → the same on a number
+ * `primary()` for a generated id; `primary(number())` to make a declared field the key.
+ * FR : `primary()` pour un identifiant généré ; `primary(number())` pour promouvoir un champ.
+ * `primary()` → `create: { generate: 'cuid2' }`, `update: 'forbidden'`
  */
 export function primary(fieldOrOptions?: Field | PrimaryOptions): Field {
   if (Field.is(fieldOrOptions)) {

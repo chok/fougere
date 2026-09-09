@@ -2,9 +2,9 @@ import { Relation, type EntityConstructor } from '../../axis/role/Relation.js';
 import { Field } from '../../field/Field.js';
 
 /**
- * So the other side of a reference is declared, and holds no column.
- * FR : pour que l'autre côté d'une référence soit déclaré, sans porter de colonne.
- * `many(() => Post)` → a collection, absent from the row a client sends
+ * The far side of a `ref()`: no column of its own, and absent from what a client sends.
+ * FR : l'autre côté d'un `ref()` : aucune colonne à lui, et absent de ce qu'un client envoie.
+ * `many(() => Post)` → `{ type: 'array' }` with `role.relation.kind` `'many'`
  */
 export function many<E extends EntityConstructor>(
   target: E | (() => E),

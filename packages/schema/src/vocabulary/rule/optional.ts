@@ -3,9 +3,9 @@ import { Shapes } from '../../axis/shape/Shape.js';
 import { type Field } from '../../field/Field.js';
 
 /**
- * So the two questions are settled at once: `null` is legal, and absence is too.
- * FR : pour que les deux questions soient réglées d'un coup : `null` légal, absence permise.
- * `optional(text())` → nullable shape and `create: 'optional'`
+ * Adds `null` AND permits absence. A field that already states a `create` rule keeps it.
+ * FR : ajoute `null` ET permet l'absence. Un champ qui énonce déjà un `create` le garde.
+ * `optional(text())` → `{ type: ['string', 'null'] }` and `create: 'optional'`
  */
 export const optional: <T>(field: Field<T>) => Field<T | null> = vocabulary(
   'optional',

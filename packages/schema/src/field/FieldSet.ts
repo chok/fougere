@@ -10,10 +10,9 @@ export class FieldSet<TFields extends Fields = Fields> {
   }
 
   /**
-   * So a declared unique lands where it belongs: on the field, or on the schema.
-   * FR : pour qu'une unicité déclarée atterrisse sur le champ ou sur le schéma.
-   * `declaring(fields, [['email'], ['listId', 'docId']])`
-   * → `email` carries `role.unique`, the pair becomes a schema constraint
+   * Splits a declared `unique`: a group of one lands on the field, several stay on the schema.
+   * FR : partage un `unique` déclaré : un groupe d'un va au champ, plusieurs restent au schéma.
+   * `declaring(fields, [['email'], ['listId', 'docId']])` → `email` carries it, the pair is a group
    */
   static declaring<TFields extends Fields>(
     declared: TFields,

@@ -3,9 +3,9 @@ import { Shapes } from '../../axis/shape/Shape.js';
 import { type Field } from '../../field/Field.js';
 
 /**
- * So `null` becomes a legal value, without touching whether the field is required.
- * FR : pour que `null` devienne légal, sans toucher au caractère obligatoire du champ.
- * `nullable(text())` → `{ type: ['string', 'null'] }`, still required at create
+ * Adds `null` and leaves the field REQUIRED — `optional()` is the one permitting absence.
+ * FR : ajoute `null` en laissant le champ OBLIGATOIRE — `optional()` permet l'absence.
+ * `nullable(text())` → `{ type: ['string', 'null'] }`, and `validate({})` still refuses
  */
 export const nullable: <T>(field: Field<T>) => Field<T | null> = vocabulary(
   'nullable',
