@@ -99,7 +99,9 @@ function createScope(parent?: ScopeContainer): ScopeContainer {
       // transaction, and it grows for the life of the process.
       parent?._forget(container);
       const failures: unknown[] = [];
-      for (const child of children.reverse()) {
+      // A copy: closing a child splices it out of `children`, so walking the array
+      // itself stepped over every second sibling.
+      for (const child of [...children].reverse()) {
         try {
           await child.dispose();
         } catch (error) {

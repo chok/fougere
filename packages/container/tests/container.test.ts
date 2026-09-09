@@ -220,6 +220,22 @@ describe('a scope closes what it opened', () => {
     expect(order).toEqual(['grandchild', 'child', 'root']);
   });
 
+  it('closes every sibling, and them in reverse', async () => {
+    const order: string[] = [];
+    const root = createContainer();
+    for (const name of ['first', 'second', 'third']) {
+      const child = root.createScope();
+      child.register('R', class { dispose() { order.push(name); } }, { lifetime: 'singleton' });
+      child.resolve('R');
+    }
+
+    await root.dispose();
+
+    // Closing one removes it from the list its parent is walking — which stepped over
+    // every second sibling, and left what they held open for the life of the process.
+    expect(order).toEqual(['third', 'second', 'first']);
+  });
+
   it('tells every scope even when one refuses, and carries the failures together', async () => {
     const root = createContainer();
     const child = root.createScope();

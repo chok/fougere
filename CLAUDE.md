@@ -348,6 +348,16 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 - **`BindingPlan.optional` is written five times by core and ignored by `resolveArgs`.** Not a
   missing reader: making it refuse breaks four tests, two of which state the opposite policy
   on purpose. Closing it means choosing which door is right.
+- **A boot that refuses BEFORE `appLifecycle.up` releases nothing** — `bootstrap.ts`. The
+  `try` opens at `up` because `release` is a `const` 236 lines above it, and the body between
+  them opens sources and builds storages. Measured 2026-09-09: a scan that throws leaves
+  `container.dispose()` and `onDispose` uncalled. Covering it means the boot reads its own
+  order, which is a restructuring, not a patch.
+- **A value is decoded at the façade and again by `StorageGuard`** — the client door turns wire
+  into domain, then the guard turns what a handler wrote into domain a second time. Nothing
+  bites today: `isoDate` answers `{ value }` to a `Date` on its first line, and no other codec
+  exists in the repo. The first non-idempotent one loses data silently. What has to be decided
+  is which door owns the conversion, not where to add a flag.
 - **`storage.client` remains the anonymous multi-statement path, validator off** — everything else
   writes through a guarded port, `Together<[…]>` included.
 - **A provider class named `<Entity>Storage` is DISCARDED, not honoured** — the entry used to
