@@ -18,12 +18,12 @@ export class FieldSet<TFields extends Fields = Fields> {
   static declaring<TFields extends Fields>(
     declared: TFields,
     unique?: CompositeUnique<TFields>,
-  ): { fields: TFields; unique: CompositeUnique<TFields> | undefined } {
+  ): { fields: TFields; groups: CompositeUnique<TFields> } {
     const fields: Fields = {};
     for (const [key, field] of Object.entries(declared))
       fields[key] = new Field(field, key);
 
-    const composite: string[][] = [];
+    const composite: FieldName<TFields>[][] = [];
     for (const group of unique ?? []) {
       const missing = group.filter((key) => !Object.hasOwn(fields, key));
       if (missing.length)
@@ -40,10 +40,7 @@ export class FieldSet<TFields extends Fields = Fields> {
       composite.push([...group]);
     }
 
-    return {
-      fields: fields as TFields,
-      unique: deduplicated(composite) as CompositeUnique<TFields> | undefined,
-    };
+    return { fields: fields as TFields, groups: composite };
   }
 
   /** A second `primary` is refused, naming both, rather than the first winning silently. */
@@ -62,14 +59,4 @@ export class FieldSet<TFields extends Fields = Fields> {
     return primaries[0] as FieldName<TFields> | undefined;
   }
 
-}
-
-/** The order is part of a group: `['a','b']` and `['b','a']` are two constraints. */
-export function deduplicated(
-  groups: readonly (readonly string[])[],
-): readonly (readonly string[])[] | undefined {
-  const seen = new Map<string, readonly string[]>();
-  for (const group of groups) seen.set(JSON.stringify(group), group);
-
-  return seen.size ? [...seen.values()] : undefined;
 }

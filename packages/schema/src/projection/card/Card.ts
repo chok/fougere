@@ -2,7 +2,7 @@ import { EXTENSION_AXES, EXTENSION_SLOTS, type Resolver } from '../../axis/Axis.
 import { dequal } from 'dequal';
 import { clean, isObject } from '../../lib/utils.js';
 import { Field, type Fields } from '../../field/Field.js';
-import { deduplicated } from '../../field/FieldSet.js';
+import { SchemaConstraints } from '../../SchemaDefinition.js';
 import { InputValidator } from '../../validator/InputValidator.js';
 import { Schema, type SchemaConstructor } from '../../Schema.js';
 import type { Values, SchemaView } from '../../SchemaView.js';
@@ -99,7 +99,7 @@ export class Card<T = Values<Fields>> {
       for (const group of property['x-fougere']?.role?.unique ?? [])
         if (group.length > 1) groups.push([...group]);
     }
-    const schema = Schema.of({ fields, constraints: { unique: deduplicated(groups) } });
+    const schema = Schema.of({ fields, constraints: SchemaConstraints.of(groups) });
     const title = name ?? descriptor.title;
     if (title)
       Object.defineProperty(schema, 'name', { value: title, configurable: true });

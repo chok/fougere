@@ -1,5 +1,5 @@
-import { type Fields } from './field/Field.js';
-import { FieldSet, deduplicated } from './field/FieldSet.js';
+import { type FieldName, type Fields } from './field/Field.js';
+import { FieldSet } from './field/FieldSet.js';
 import {
   type CompositeUnique,
   type EntityDeclarations,
@@ -18,8 +18,40 @@ import type { SchemaView } from './SchemaView.js';
  * and `opts` because the next rule spanning two fields — a check, an exclusion — is a
  * member here, not an eighth positional argument in a list that has already lost one.
  */
-export interface SchemaConstraints<TFields extends Fields = Fields> {
+export class SchemaConstraints<TFields extends Fields = Fields> {
   readonly unique?: CompositeUnique<TFields>;
+
+  private constructor(unique?: CompositeUnique<TFields>) {
+    if (unique) this.unique = unique;
+  }
+
+  static readonly none = new SchemaConstraints();
+
+  /**
+   * The order is part of a group, so `['a','b']` and `['b','a']` are two constraints.
+   * FR : l'ordre fait partie du groupe : `['a','b']` et `['b','a']` sont deux contraintes.
+   * `SchemaConstraints.of([['a','b'], ['a','b']])` → `unique` holds one group
+   */
+  static of<TFields extends Fields>(
+    groups: readonly (readonly FieldName<TFields>[])[],
+  ): SchemaConstraints<TFields> {
+    const seen = new Map<string, readonly FieldName<TFields>[]>();
+    for (const group of groups) seen.set(JSON.stringify(group), group);
+
+    return new SchemaConstraints(seen.size ? [...seen.values()] : undefined);
+  }
+
+  /** One member gone and the group is gone: it constrained a pair that no longer exists. */
+  renamed(transform: (key: string) => string | undefined): SchemaConstraints {
+    if (!this.unique) return SchemaConstraints.none;
+    const kept: string[][] = [];
+    for (const group of this.unique) {
+      const renamed = group.map(transform);
+      if (renamed.every((key): key is string => key !== undefined)) kept.push(renamed);
+    }
+
+    return SchemaConstraints.of(kept);
+  }
 }
 
 /**
@@ -72,6 +104,31 @@ export class SchemaDefinition {
     this.constraints = state.constraints;
   }
 
+  /**
+   * A schema cut from another one: it carries no previous names and holds no rows of its
+   * own, whatever else it keeps. `pick`, `partial`, `extend` and `compose` all land here.
+   */
+  private static derived(state: Omit<SchemaState, 'previous' | 'anchored'>): SchemaDefinition {
+    return new SchemaDefinition({ ...state, previous: undefined, anchored: false });
+  }
+
+  /**
+   * The same schema, one member restated — `declares` and `anchor`, which cut nothing.
+   * What they do not name is kept, and that is the whole difference with `derived`.
+   */
+  private restated(state: Partial<SchemaState>): SchemaDefinition {
+    return new SchemaDefinition({
+      fields: this.fields,
+      adapterSet: this.adapterSet,
+      opts: this.opts,
+      previous: this.previous,
+      derivation: this.derivation,
+      anchored: this.anchored,
+      constraints: this.constraints,
+      ...state,
+    });
+  }
+
   /** Built complete or not at all — no static assigned on the side. */
   static of(declaration: {
     fields: Fields;
@@ -89,7 +146,7 @@ export class SchemaDefinition {
       previous: declaration.previous,
       derivation: declaration.derivation,
       anchored: declaration.anchored ?? false,
-      constraints: declaration.constraints ?? {},
+      constraints: declaration.constraints ?? SchemaConstraints.none,
     });
   }
 
@@ -101,31 +158,22 @@ export class SchemaDefinition {
     ]);
     const declared = FieldSet.declaring(this.fields, declarations.unique);
 
-    return new SchemaDefinition({
+    return this.restated({
       fields: declared.fields,
       adapterSet: EntityAdapterSet.merged([
         this.adapterSet,
         EntityAdapterSet.of(declarations.adapters),
       ]),
-      opts: this.opts,
       previous: declarations.previous ?? this.previous,
-      derivation: this.derivation,
-      anchored: this.anchored,
       constraints:
-        declarations.unique === undefined ? this.constraints : { unique: declared.unique },
+        declarations.unique === undefined
+          ? this.constraints
+          : SchemaConstraints.of(declared.groups),
     });
   }
 
   anchoring(): SchemaDefinition {
-    return new SchemaDefinition({
-      fields: this.fields,
-      adapterSet: this.adapterSet,
-      opts: this.opts,
-      previous: this.previous,
-      derivation: this.derivation,
-      anchored: true,
-      constraints: this.constraints,
-    });
+    return this.restated({ anchored: true });
   }
 
   pick(keys: readonly string[], root: SchemaView): SchemaDefinition {
@@ -160,52 +208,32 @@ export class SchemaDefinition {
     }
     const nameOf = (key: string) => kept.get(key);
 
-    return new SchemaDefinition({
+    return SchemaDefinition.derived({
       fields,
       adapterSet: this.adapterSet.rename(nameOf),
       opts: this.opts,
-      previous: undefined,
       derivation: this.origin(root).rename(nameOf),
-      anchored: false,
-      constraints: this.constraintsRenamed(nameOf),
+      constraints: this.constraints.renamed(nameOf),
     });
   }
 
-  /** One member gone and the group is gone: it constrained a pair that no longer exists. */
-  private constraintsRenamed(
-    transform: (key: string) => string | undefined,
-  ): SchemaConstraints {
-    if (!this.constraints.unique) return this.constraints;
-    const kept: string[][] = [];
-    for (const group of this.constraints.unique) {
-      const renamed = group.map(transform);
-      if (renamed.every((key): key is string => key !== undefined)) kept.push(renamed);
-    }
-
-    return { unique: deduplicated(kept) as CompositeUnique<Fields> | undefined };
-  }
-
   patched(root: SchemaView): SchemaDefinition {
-    return new SchemaDefinition({
+    return SchemaDefinition.derived({
       fields: { ...this.fields },
       adapterSet: this.adapterSet,
       opts: { ...this.opts, patch: true },
-      previous: undefined,
       derivation: this.origin(root),
-      anchored: false,
       constraints: this.constraints,
     });
   }
 
   /** An added field does not pretend to come from the root, which never declared it. */
   extended(extra: Fields, root: SchemaView): SchemaDefinition {
-    return new SchemaDefinition({
+    return SchemaDefinition.derived({
       fields: { ...this.fields, ...extra },
       adapterSet: this.adapterSet,
       opts: this.opts,
-      previous: undefined,
       derivation: this.origin(root),
-      anchored: false,
       constraints: this.constraints,
     });
   }
@@ -221,16 +249,14 @@ export class SchemaDefinition {
       groups.push(...(view.getUnique() ?? []));
     }
 
-    return new SchemaDefinition({
+    return SchemaDefinition.derived({
       fields,
       adapterSet: EntityAdapterSet.merged(
         views.map((view) => EntityAdapterSet.of(view.getAdapters())),
       ),
       opts,
-      previous: undefined,
       derivation: undefined,
-      anchored: false,
-      constraints: { unique: deduplicated(groups) as CompositeUnique<Fields> | undefined },
+      constraints: SchemaConstraints.of(groups),
     });
   }
 
