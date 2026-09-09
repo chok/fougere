@@ -21,12 +21,16 @@ class Post extends entity(
       },
     },
     previous: { title: 'headline' },
+    unique: [['title', 'body']],
   },
 ) {}
 
 class Supplement extends entity(
-  { summary: text() },
-  { adapters: { characterization: { summary: { marker: 'summary' } } } },
+  { summary: text(), locale: text() },
+  {
+    adapters: { characterization: { summary: { marker: 'summary' } } },
+    unique: [['summary', 'locale']],
+  },
 ) {}
 
 describe('metadata propagation across every schema operation', () => {

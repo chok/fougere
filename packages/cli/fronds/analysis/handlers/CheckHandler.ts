@@ -161,11 +161,13 @@ export default class CheckHandler {
       });
     }
 
+    const conventions = resolveConventions(config.conventions);
+
     /**
      * What no convention names. Reported before the declarations below, because a frond
      * with nowhere to put a word is why the word ends up in a handler.
      */
-    for (const unplaced of await outsideConventions(fronds, resolveConventions(config.conventions))) {
+    for (const unplaced of await outsideConventions(fronds, conventions)) {
       findings.push({
         severity: 'warning',
         code: unplaced.rule,
@@ -180,7 +182,7 @@ export default class CheckHandler {
      * what it costs is the next caller — a test, a second operation, another handler —
      * that cannot reach it without moving it first.
      */
-    for (const held of await handlerDeclarations(fronds)) {
+    for (const held of await handlerDeclarations(fronds, conventions)) {
       findings.push({
         severity: 'warning',
         code: held.rule,

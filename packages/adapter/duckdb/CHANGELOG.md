@@ -1,5 +1,12 @@
 # @fougere/adapter-duckdb
 
+## 0.8.3-alpha.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @fougere/schema@0.8.3-alpha.0
+
 ## 0.8.2-alpha.0
 
 ### Patch Changes

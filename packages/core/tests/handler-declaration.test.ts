@@ -12,6 +12,7 @@ import { join } from 'node:path';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { handlerDeclarations } from '../src/node.js';
+import { DEFAULT_CONVENTIONS } from '../src/scan/conventions.js';
 
 function frondOf(root: string, ...files: string[]) {
   mkdirSync(join(root, 'handlers'), { recursive: true });
@@ -40,14 +41,37 @@ describe('what a handler declares besides itself', () => {
         ``,
       ].join('\n'));
 
-      const found = await handlerDeclarations([frond]);
+      const found = await handlerDeclarations([frond], DEFAULT_CONVENTIONS);
 
       expect(found.map((one) => one.subject)).toEqual(['AGREED_WITHIN', 'Assessment', 'round']);
       expect(found.map((one) => one.kind)).toEqual(['value', 'shape', 'value']);
       expect(found[0].handler).toBe('QuietHandler');
       expect(found[0].frond).toBe('catalog');
-      expect(found[0].message).toContain('a word of');
-      expect(found[1].message).toContain('belongs');
+      // The addresses, not a description of them — the same two `outsideConventions`
+      // names on this question one file higher.
+      expect(found[0].message).toContain('`rules/`');
+      expect(found[0].message).toContain('`services/`');
+      expect(found[1].message).toContain('`entities/`');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('reads the names a project restated, not the default ones', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'fougere-declares-'));
+    try {
+      const frond = frondOf(root, 'QuietHandler');
+      writeFileSync(frond.handlers[0].filePath, [
+        `const AGREED_WITHIN = 3;`,
+        `export default class QuietHandler { agreed() { return AGREED_WITHIN; } }`,
+        ``,
+      ].join('\n'));
+
+      const conventions = { ...DEFAULT_CONVENTIONS, dirs: { ...DEFAULT_CONVENTIONS.dirs, rules: 'lois' } };
+      const found = await handlerDeclarations([frond], conventions);
+
+      expect(found[0].message).toContain('`lois/`');
+      expect(found[0].message).not.toContain('`rules/`');
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
@@ -65,7 +89,7 @@ describe('what a handler declares besides itself', () => {
         ``,
       ].join('\n'));
 
-      expect(await handlerDeclarations([frond])).toEqual([]);
+      expect(await handlerDeclarations([frond], DEFAULT_CONVENTIONS)).toEqual([]);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
@@ -87,7 +111,7 @@ describe('what a handler declares besides itself', () => {
         ``,
       ].join('\n'));
 
-      expect(await handlerDeclarations([frond])).toEqual([]);
+      expect(await handlerDeclarations([frond], DEFAULT_CONVENTIONS)).toEqual([]);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
@@ -96,7 +120,7 @@ describe('what a handler declares besides itself', () => {
   it('reports a file it cannot read as nothing, the way an absent handler is nothing', async () => {
     const root = mkdtempSync(join(tmpdir(), 'fougere-declares-'));
     try {
-      expect(await handlerDeclarations([frondOf(root, 'GoneHandler')])).toEqual([]);
+      expect(await handlerDeclarations([frondOf(root, 'GoneHandler')], DEFAULT_CONVENTIONS)).toEqual([]);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

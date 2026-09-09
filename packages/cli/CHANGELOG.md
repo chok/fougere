@@ -1,5 +1,18 @@
 # @fougere/cli
 
+## 0.8.3-alpha.0
+
+### Patch Changes
+
+- `fougere check` resolves the conventions once and hands them to both placement rules, so
+  `handler-declaration` prints the same addresses `outside-convention` does.
+
+- Updated dependencies
+  - @fougere/core@0.8.3-alpha.0
+  - @fougere/adapter-sql@0.8.3-alpha.0
+  - @fougere/defaults@0.8.3-alpha.0
+  - @fougere/transport-http@0.8.3-alpha.0
+
 ## 0.8.2-alpha.0
 
 ### Patch Changes

@@ -88,14 +88,18 @@ async function loadClass(filePath: string): Promise<ProviderEntry['ctor']> {
   const ctor = await loadDefault(filePath);
   // A convention directory holds classes, because a provider is registered under one and
   // asked for by its type. What is NOT a class — a shared contract, a pure function, a
-  // table of constants — belongs beside them rather than among them, and saying where
-  // costs one line: measured twice on a real project, both times a file that had to move.
+  // table of constants — belongs in `rules/`, and saying where costs one line: measured
+  // twice on a real project, both times a file that had to move.
+  //
+  // It named the frond's ROOT until the directories became a closed list, which is where
+  // `outside-convention` now reports a module — so the two messages sent a reader back
+  // and forth. `rules/` is read into the type program and registers nothing.
   if (typeof ctor !== 'function' || !ctor.prototype) {
     throw new Error(
       `${filePath}: default export is not a class. This directory is scanned for providers, `
       + 'which are registered under a class name — a contract or a pure function has no key '
-      + `to answer under. Move it beside the directory, at the frond's root, where the scan `
-      + 'reads nothing and an import still reaches it.',
+      + `to answer under. Move it to the frond's \`${DEFAULT_CONVENTIONS.dirs.rules}/\`, which `
+      + 'the scan reads without interpreting and an import still reaches.',
     );
   }
   return ctor as ProviderEntry['ctor'];

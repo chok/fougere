@@ -1,6 +1,7 @@
 /** What a handler file declares besides its handler. */
 import type ts from '@typescript/typescript6';
 import { readFile } from 'node:fs/promises';
+import type { Conventions } from './scan/conventions.js';
 import type { HandlerEntry } from './descriptor/frond.js';
 
 let _ts: typeof ts | undefined;
@@ -49,16 +50,21 @@ function subjectsOf(typescript: typeof ts, source: ts.SourceFile): [string, 'val
  *
  * A handler names gestures; what a gesture uses is declared where its nature says, and one
  * question settles which: does it arrive INJECTED or IMPORTED? A threshold, a formula, a word
- * list arrive imported and belong to the frond's own module, beside its entities. Anything
- * holding a client, a connection or a cursor arrives injected and belongs under `services/`.
- * Neither ever belongs in the file that calls it — nothing there can be reached by a second
- * caller, and the handler grows into the domain it was supposed to address.
+ * list arrive imported and belong under `rules/`. Anything holding a client, a connection or
+ * a cursor arrives injected and belongs under `services/`. Neither ever belongs in the file
+ * that calls it — nothing there can be reached by a second caller, and the handler grows into
+ * the domain it was supposed to address.
+ *
+ * It names the two addresses, which `outsideConventions` does on the same question one file
+ * higher. Saying "a module beside its entities" instead left the reader to invent a place,
+ * and inventing one is the drift both rules report.
  */
 export async function handlerDeclarations(
   fronds: readonly {
     name: string;
     handlers: readonly Pick<HandlerEntry, 'name' | 'filePath'>[];
   }[],
+  conventions: Conventions,
 ): Promise<HandlerDeclaration[]> {
   const typescript = await loadTs();
   const found: HandlerDeclaration[] = [];
@@ -87,11 +93,13 @@ export async function handlerDeclarations(
             kind === 'value'
               ? `'${subject}' is declared in ${handler.name}, so only ${handler.name} can reach it. `
                 + `If it needs nothing but its arguments, it is a word of '${frond.name}' and belongs `
-                + `in a module beside its entities; if it holds a dependency, it is a service. Either `
-                + `way it is stated once and imported, and the handler keeps only the gesture.`
+                + `in \`${conventions.dirs.rules}/\`; if it holds a dependency, it belongs in `
+                + `\`${conventions.dirs.services}/\`. Either way it is stated once and imported, and `
+                + `the handler keeps only the gesture.`
               : `'${subject}' is declared in ${handler.name}, which makes the shape of what an `
                 + `operation answers readable only from the file that answers it. A shape belongs `
-                + `with the entity it describes, or in the frond's own module — where the caller, `
+                + `with the entity it describes in \`${conventions.dirs.entities}/\`, or in `
+                + `\`${conventions.dirs.rules}/\` beside the words that compute it — where the caller, `
                 + `the test and the other operations can all name it.`,
         });
       }

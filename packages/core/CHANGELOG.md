@@ -1,5 +1,21 @@
 # @fougere/core
 
+## 0.8.3-alpha.0
+
+### Patch Changes
+
+- `handler-declaration` names the two addresses instead of describing one of them.
+
+  It said "a module beside its entities" while `outside-convention` — the same question one
+  file higher — said `rules/`. Two messages, one rule, and the reader was left to invent a
+  place: inventing one is the drift both report. Both now read the names in force, so a
+  project that restated `rules/` sees its own word.
+
+- The provider scan's refusal names `rules/` too. It said "move it beside the directory, at
+  the frond's root" — which is where `outside-convention` now reports a module, so the two
+  messages sent a reader back and forth. Found by an agent given the check's output and
+  nothing else: it followed one message into a blocking error, and the error sent it back.
+
 ## 0.8.2-alpha.0
 
 ### Minor Changes

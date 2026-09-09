@@ -1,6 +1,6 @@
 {
   "name": "@fougere/testing",
-  "version": "0.8.2-alpha.0",
+  "version": "0.8.3-alpha.0",
   "description": "Tests derived from the declaration \u2014 cases, stubs and a gradient of realities.",
   "keywords": [
     "fougere",
