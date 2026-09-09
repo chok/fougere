@@ -4,63 +4,62 @@ import { StorageGuard } from '../src/dispatch/StorageGuard.js';
 import type { ListOptions } from '../src/storage.js';
 
 /**
- * La règle « une clé inconnue est refusée » vaut aussi pour les arguments du framework.
+ * The rule "an unknown key is refused" holds for the framework's own arguments too.
  *
- * La façade refuse une clé inconnue dans l'entrée d'un client (`Unknown field`). Le port de
- * lecture, lui, ignorait la sienne : `list({ orderId })` était accepté, le critère jeté, et une
- * relation un-à-plusieurs répondait toute la table — la forme exacte du piège qu'on reproche
- * ailleurs, un cran au-dessus.
+ * The façade refuses an unknown key in a client's input (`Unknown field`). The read port
+ * ignored its own: `list({ orderId })` was accepted, the criterion dropped, and a one-to-many
+ * relation answered the whole table — the exact trap this repo names elsewhere, one level up.
  */
 class Line extends entity({ id: primary(), label: text({ max: 5 }) }) {}
 
 function guardedStorage() {
-  // `list` déclare son paramètre : inspecter les options EST le travail du garde, et
-  // `StorageGuard.guard` rend le type qu'on lui donne — un faux sans paramètre rendrait donc
-  // les appels ci-dessous incompilables. `Record` ouvre la porte aux clés inconnues,
-  // qui sont précisément ce que ces tests envoient.
+  // `list` declares its parameter: inspecting the options IS the guard's work, and
+  // `StorageGuard.guard` hands back the type it was given — a double without a parameter
+  // would make the calls below uncompilable. `Record` opens the door to the unknown keys,
+  // which are precisely what these tests send.
   const list = vi.fn(async (_options?: ListOptions & Record<string, unknown>) => []);
   const storage = { list, create: vi.fn(async () => ({})), update: vi.fn(async () => ({})) };
   return { storage, guarded: new StorageGuard(Line.getFields(), 'line').guard(storage) };
 }
 
-describe('les options de lecture sont jugées', () => {
-  it('refuse une option que le port ne lit pas', async () => {
+describe('the read options are judged', () => {
+  it('refuses an option the port does not read', async () => {
     const { guarded } = guardedStorage();
     await expect(guarded.list({ order_id: 'x' })).rejects.toThrow(/unknown option .*order_id/);
   });
 
-  it('nomme le remède dans le message', async () => {
+  it('names the remedy in the message', async () => {
     const { guarded } = guardedStorage();
     await expect(guarded.list({ order_id: 'x' })).rejects.toThrow(/where: \{ order_id/);
   });
 
-  it('laisse passer les options connues', async () => {
+  it('lets the known options through', async () => {
     const { storage, guarded } = guardedStorage();
     await guarded.list({ limit: 10, orderBy: 'id', where: { label: 'a' } });
     expect(storage.list).toHaveBeenCalled();
   });
 
-  it('laisse passer un appel sans options', async () => {
+  it('lets a call with no options through', async () => {
     const { storage, guarded } = guardedStorage();
     await guarded.list();
     expect(storage.list).toHaveBeenCalled();
   });
 
-  it('refuse un orderBy que l\'entité ne déclare pas', async () => {
+  it('refuses an orderBy the entity does not declare', async () => {
     const { guarded } = guardedStorage();
-    // Sans ce refus, SQL jetait le tri et rendait la page dans l'ordre que le moteur
-    // avait choisi : un tableau paginé faux, et rien pour le dire.
+    // Without this refusal SQL dropped the sort and answered the page in whatever order
+    // the engine chose: a paginated table that is wrong, and nothing to say so.
     await expect(guarded.list({ orderBy: 'labl' })).rejects.toThrow(/unknown orderBy .*labl/);
   });
 
-  it('nomme les champs déclarés dans le message', async () => {
+  it('names the declared fields in the message', async () => {
     const { guarded } = guardedStorage();
     await expect(guarded.list({ orderBy: 'labl' })).rejects.toThrow(/declares id, label/);
   });
 });
 
-describe('un filtre sur un champ que la porte ne rend pas', () => {
-  it('le dit, sans refuser — c\'est légal aujourd\'hui', async () => {
+describe('a filter on a field the door does not hand back', () => {
+  it('says so without refusing — that is legal today', async () => {
     const said: string[] = [];
     const list = vi.fn(async (_o?: ListOptions & Record<string, unknown>) => []);
     const storage = { list, create: vi.fn(async () => ({})), update: vi.fn(async () => ({})) };
@@ -76,7 +75,7 @@ describe('un filtre sur un champ que la porte ne rend pas', () => {
     expect(storage.list).toHaveBeenCalled();
   });
 
-  it('le dit une fois, pas à chaque appel', async () => {
+  it('says it once, not on every call', async () => {
     const said: string[] = [];
     const list = vi.fn(async (_o?: ListOptions & Record<string, unknown>) => []);
     const guarded = new StorageGuard(Line.getFields(), 'line', {
@@ -90,7 +89,7 @@ describe('un filtre sur un champ que la porte ne rend pas', () => {
     expect(said).toHaveLength(1);
   });
 
-  it('se tait sur un champ que la vue rend', async () => {
+  it('stays quiet on a field the view hands back', async () => {
     const said: string[] = [];
     const list = vi.fn(async (_o?: ListOptions & Record<string, unknown>) => []);
     const guarded = new StorageGuard(Line.getFields(), 'line', {
@@ -105,43 +104,43 @@ describe('un filtre sur un champ que la porte ne rend pas', () => {
 });
 
 /**
- * Le contenu de `where` ne passait devant personne.
+ * The content of `where` passed in front of nobody.
  *
- * Une écriture est jugée champ par champ ; une lecture ne l'était pas — et `params.filter`,
- * saisi dans un navigateur, arrive ici tel quel par la porte d'administration.
+ * A write is judged field by field; a read was not — and `params.filter`, typed into a
+ * browser, arrives here as it is through the admin door.
  */
-describe('les critères sont jugés comme une écriture l\'est', () => {
-  it('refuse un champ que l\'entité ne déclare pas', async () => {
+describe('the criteria are judged the way a write is', () => {
+  it('refuses a field the entity does not declare', async () => {
     const { guarded } = guardedStorage();
     await expect(guarded.list({ where: { jardin: 1 } })).rejects.toThrow(/jardin/);
   });
 
-  it('refuse une valeur que le champ refuserait à l\'écriture', async () => {
+  it('refuses a value the field would refuse on a write', async () => {
     const { guarded } = guardedStorage();
-    await expect(guarded.list({ where: { label: 'bien trop long' } })).rejects.toThrow(/label/);
+    await expect(guarded.list({ where: { label: 'far too long' } })).rejects.toThrow(/label/);
   });
 
-  it('juge un ensemble membre par membre — c\'est ce que `IN` lie', async () => {
+  it('judges a set member by member — that is what `IN` binds', async () => {
     const { storage, guarded } = guardedStorage();
     await guarded.list({ where: { label: ['a', 'b'] } });
 
     expect(storage.list).toHaveBeenCalledWith({ where: { label: ['a', 'b'] } });
   });
 
-  it('refuse une comparaison mal orthographiée plutôt que de la jeter', async () => {
+  it('refuses a misspelled comparison rather than dropping it', async () => {
     const { guarded } = guardedStorage();
-    // Sans ce refus, `gtee` ne filtre rien et la liste rendue est celle de toute la table.
+    // Without this refusal, `gtee` filters nothing and the list answered is the whole table.
     await expect(guarded.list({ where: { label: { gtee: 'a' } } })).rejects.toThrow(/gtee/);
   });
 
-  it('laisse passer une comparaison connue', async () => {
+  it('lets a known comparison through', async () => {
     const { storage, guarded } = guardedStorage();
     await guarded.list({ where: { label: { contains: 'a' } } });
     expect(storage.list).toHaveBeenCalledWith({ where: { label: { contains: 'a' } } });
   });
 
-  it('refuse l\'ensemble dont un seul membre est refusé', async () => {
+  it('refuses the set one member of which is refused', async () => {
     const { guarded } = guardedStorage();
-    await expect(guarded.list({ where: { label: ['a', 'bien trop long'] } })).rejects.toThrow(/label/);
+    await expect(guarded.list({ where: { label: ['a', 'far too long'] } })).rejects.toThrow(/label/);
   });
 });
