@@ -60,6 +60,14 @@ jobs:
       # baseline to move deliberately, it is a demo nobody can run.
       - run: pnpm smoke
 
+      # `pnpm -r test` runs `test`, never `e2e`, and nothing else did either — so the
+      # browser rung sat with two of its four tests red and no light on. Playwright
+      # starts and stops the server itself; only the browser has to be fetched.
+      - name: e2e, the browser rung
+        run: |
+          pnpm -C demos/test-gradient exec playwright install --with-deps chromium
+          pnpm -C demos/test-gradient e2e
+
       # Mechanical readings, NOT gates — same posture as `audit` below, for the same
       # reason: a job that turns red on a finding forces the finding to be cleared in
       # bulk, and clearing in bulk is how this repo grew code nobody had read. They
