@@ -61,10 +61,7 @@ export class Boundary {
 
   /** `date-time` means a `Date` on both sides, without a word in the entity. */
   static forShape(shape: Shape | undefined): Boundary {
-    const base = Shapes.of(shape).base;
-    if (base?.type === 'string' && base.format === 'date-time') {
-      return new Boundary(Boundaries.aliases.find('isoDate')!);
-    }
+    if (Shapes.typeOf(shape) === 'date') return new Boundary(Boundaries.aliases.find('isoDate')!);
     return new Boundary();
   }
 

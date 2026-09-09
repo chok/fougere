@@ -93,7 +93,7 @@ export function mutationFor(
 /** The fields the entity declares as a bounded set — GraphQL turns each into an enum. */
 function enumsOf(entity: SchemaView): Set<string> {
   return new Set(Object.entries(entity.getFields())
-    .filter(([, field]) => { const base = Shapes.of(field.shape).base; return base?.type === 'string' && Array.isArray(base.enum); })
+    .filter(([, field]) => Shapes.typeOf(field.shape) === 'choice')
     .map(([name]) => name));
 }
 

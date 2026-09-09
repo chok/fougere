@@ -35,8 +35,8 @@ export type ComparisonName = (typeof COMPARISONS)[number];
  */
 export function comparisonOf(field: Field | undefined, asked: unknown): Comparison | undefined {
   if (asked === null || typeof asked !== 'object' || Array.isArray(asked)) return undefined;
-  // `Shapes.of` answers with `null` already taken out — `optional(json())` is an object.
-  if (!field || Shapes.of(field.shape).base?.type === 'object') return undefined;
+  // The type is read off the base, so `optional(json())` still answers `object`.
+  if (!field || Shapes.typeOf(field.shape) === 'object') return undefined;
 
   return asked as Comparison;
 }

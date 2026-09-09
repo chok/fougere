@@ -6,7 +6,7 @@ export { Schema, ANONYMOUS_SCHEMA_NAME, type SchemaConstructor } from './Schema.
 export { type SchemaView } from './SchemaView.js';
 export { Field, type Fields } from './field/Field.js';
 export { FieldSet } from './field/FieldSet.js';
-export { type Shape, Shapes } from './axis/shape/Shape.js';
+export { type Shape, type ShapeType, Shapes } from './axis/shape/Shape.js';
 export { Role, type RoleRules } from './axis/role/Role.js';
 export { type EntityConstructor } from './axis/role/Relation.js';
 export { Lifecycle, type LifecycleRules } from './axis/lifecycle/Lifecycle.js';

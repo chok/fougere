@@ -1,5 +1,16 @@
-import type { JSONSchema7 } from 'json-schema';
+import type { JSONSchema7, JSONSchema7TypeName } from 'json-schema';
 import type { StringFormat } from './Formats.js';
+
+/**
+ * The standard's own list, less `null` — a shape states that as the `[T,'null']` union —
+ * and with `string` in the three forms every projection here tells apart: a `date()`, a
+ * bounded set, and everything else. Those three are the whole of what this package adds.
+ */
+export type ShapeType =
+  | Exclude<JSONSchema7TypeName, 'null' | 'string'>
+  | 'text'
+  | 'date'
+  | 'choice';
 
 type Nullably<T extends string> = T | readonly [T, 'null'];
 
@@ -103,10 +114,32 @@ export class Shapes {
   static isNullable(shape?: Shape): boolean {
     return this.of(shape).nullable;
   }
+
+  /**
+   * The type a projection dispatches on, which is `shape.type` except that a `string`
+   * answers `date` or `choice` where it states one. Read off the base, so the nullable
+   * union answers like the bare type.
+   * FR : le type sur lequel une projection branche — `shape.type`, mais une chaîne répond
+   * `date` ou `choice` quand elle l'énonce.
+   * `typeOf({ type: ['string', 'null'], format: 'date-time' })` → `'date'`
+   */
+  static typeOf(shape?: Shape): ShapeType | undefined {
+    const base = this.of(shape).base;
+    if (!base) return undefined;
+    if (base.type !== 'string') return base.type;
+    if (base.format === 'date-time') return 'date';
+
+    return base.enum?.length ? 'choice' : 'text';
+  }
 }
 
 type Assert<T extends true> = T;
 type ShapeKeys<T> = T extends unknown ? keyof T : never;
 type _ShapeConformsToJsonSchema = Assert<
   [Exclude<ShapeKeys<Shape>, keyof JSONSchema7>] extends [never] ? true : false
+>;
+type _ShapeTypesAreTheStandardsLessNull = Assert<
+  [Exclude<Exclude<JSONSchema7TypeName, 'null'>, (typeof SHAPE_TYPES)[number]>] extends [never]
+    ? true
+    : false
 >;

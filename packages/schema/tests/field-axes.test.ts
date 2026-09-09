@@ -81,6 +81,32 @@ describe('Shapes.of — the single customs post for readers', () => {
     expect(Shapes.isNullable({ type: 'string' })).toBe(false);
     expect(Shapes.isNullable(undefined)).toBe(false);
   });
+
+  // Read off the BASE, so the `[T,'null']` union answers like the bare type — which is
+  // exactly what a caller comparing `shape.type` by hand gets wrong in silence.
+  it('answers the type a projection dispatches on, through the nullable form too', () => {
+    expect(Shapes.typeOf({ type: 'integer' })).toBe('integer');
+    expect(Shapes.typeOf({ type: 'number' })).toBe('number');
+    expect(Shapes.typeOf(Shapes.nullable({ type: 'number' }))).toBe('number');
+    expect(Shapes.typeOf({ type: 'boolean' })).toBe('boolean');
+    expect(Shapes.typeOf({ type: 'object' })).toBe('object');
+    expect(Shapes.typeOf({ type: 'array' })).toBe('array');
+  });
+
+  it('tells a string apart three ways, which is all this package adds to the standard', () => {
+    expect(Shapes.typeOf({ type: 'string' })).toBe('text');
+    expect(Shapes.typeOf({ type: 'string', format: 'email' })).toBe('text');
+    expect(Shapes.typeOf({ type: 'string', format: 'date-time' })).toBe('date');
+    expect(Shapes.typeOf(Shapes.nullable({ type: 'string', format: 'date-time' }))).toBe('date');
+    expect(Shapes.typeOf({ type: 'string', enum: ['draft', 'live'] })).toBe('choice');
+    expect(Shapes.typeOf(Shapes.nullable({ type: 'string', enum: ['draft'] }))).toBe('choice');
+    // An empty set closes nothing, so it is a string like any other.
+    expect(Shapes.typeOf({ type: 'string', enum: [] })).toBe('text');
+  });
+
+  it('answers nothing for a field that states no shape', () => {
+    expect(Shapes.typeOf(undefined)).toBeUndefined();
+  });
 });
 
 // ─── The quadrant — presence × nullity, independently composable ──

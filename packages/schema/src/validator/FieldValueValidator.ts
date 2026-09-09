@@ -22,21 +22,14 @@ export class FieldValueValidator {
 
   validate(value: unknown): Checked {
     const shape = this.field.shape;
+    const type = Shapes.typeOf(shape);
     const base = Shapes.of(shape).base;
     if (value !== null) {
       if (base?.type === 'object' && !base.properties) return { value };
-      if (
-        base?.type === 'string' &&
-        base.format === 'date-time' &&
-        value instanceof Date
-      ) {
+      if (type === 'date' && value instanceof Date) {
         return Number.isNaN(value.getTime()) ? { error: 'Invalid date' } : { value };
       }
-      if (
-        (base?.type === 'number' || base?.type === 'integer') &&
-        typeof value === 'number' &&
-        Number.isNaN(value)
-      ) {
+      if ((type === 'number' || type === 'integer') && typeof value === 'number' && Number.isNaN(value)) {
         return { error: 'Expected a number' };
       }
     }
