@@ -12,12 +12,13 @@ import { presenterKeyOf } from '../prefab/presenter.js';
 import { repositoryKeyOf } from '../prefab/repository.js';
 import type { OperationContract, OperationsMap } from '../wire/operation.js';
 import type { EffectiveOperation, EffectiveOperationsMap } from '../effective-operation.js';
+import type { BindingPlan } from '../wire/binding.js';
 import { canonicalInvocation, type InvocationContext } from '../wire/Invocation.js';
 import type { HandlerEntry, PresenterEntry } from '../descriptor/frond.js';
 import { ArgumentResolver } from './ArgumentResolver.js';
 import { OutputView } from './OutputView.js';
 import { PresenterExecutor } from './PresenterExecutor.js';
-import { presenterArguments } from './presenterArguments.js';
+import { presenterArguments, presenterPlans } from './presenterArguments.js';
 import { validateInput } from './validateInput.js';
 
 /** What boot resolved around one handler, beyond the handler and the scope it resolves in. */
@@ -54,6 +55,8 @@ export class HandlerFacade {
   private readonly arguments = new ArgumentResolver(
     (typeName) => this.collectorResolver(typeName),
   );
+  /** A computed field's parameters and the collectors in scope are both boot-time facts. */
+  private readonly presenterPlans: Map<string, BindingPlan>;
 
   constructor(
     private readonly handler: HandlerEntry,
@@ -61,6 +64,10 @@ export class HandlerFacade {
     private readonly door: Door,
   ) {
     this.refuseCrudWithoutRepository(handler);
+
+    this.presenterPlans = door.presenter
+      ? presenterPlans(door.presenter, door.collectors)
+      : new Map();
 
     scope.register(this.handlerKey, handler.ctor, { deps: this.depsOf(handler) });
 
@@ -135,7 +142,7 @@ export class HandlerFacade {
       op,
     );
 
-    return presenterArguments(presenter, invocation, this.arguments, this.door.collectors)
+    return presenterArguments(this.presenterPlans, invocation, this.arguments)
       .then((args) => executor.present(output, args));
   }
 
