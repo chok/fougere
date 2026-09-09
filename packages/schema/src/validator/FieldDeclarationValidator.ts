@@ -1,7 +1,7 @@
 import { EXTENSION_AXES } from '../axis/Axis.js';
 import { Shapes } from '../axis/shape/Shape.js';
 import type { Field } from '../field/Field.js';
-import { isObject } from '../lib/utils.js';
+import { isObject, shown } from '../lib/utils.js';
 import type { ValidationError, ValidationResult } from '../validation.js';
 
 export class FieldDeclarationValidator {
@@ -20,7 +20,7 @@ export class FieldDeclarationValidator {
         errors: [
           {
             path: '.',
-            message: `Expected an object — got ${JSON.stringify(declaration)}`,
+            message: `Expected an object — got ${shown(declaration)}`,
           },
         ],
       };
@@ -31,7 +31,7 @@ export class FieldDeclarationValidator {
     if (!Shapes.is(declaration.shape)) {
       errors.push({
         path: 'shape',
-        message: `Every field states a shape — got ${JSON.stringify(declaration.shape)}`,
+        message: `Every field states a shape — got ${shown(declaration.shape)}`,
       });
     }
 
@@ -44,7 +44,7 @@ export class FieldDeclarationValidator {
       if (!isObject(declaration.meta)) {
         errors.push({
           path: 'meta',
-          message: `Expected an object — got ${JSON.stringify(declaration.meta)}`,
+          message: `Expected an object — got ${shown(declaration.meta)}`,
         });
       } else if (
         declaration.meta.description !== undefined &&

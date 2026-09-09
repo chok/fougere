@@ -33,6 +33,7 @@ describe('the field door', () => {
       [{ shape, lifecycle: 'nawak' }, /lifecycle: Expected an object/],
       [{ shape, lifecycle: { create: 'nawak' } }, /lifecycle\.create: Expected 'now', 'optional'/],
       [{ shape, lifecycle: { update: 'nawak' } }, /lifecycle\.update: Expected 'now' or 'forbidden'/],
+      [{ shape, lifecycle: { create: { nawak: 1 } } }, /lifecycle\.create: Expected 'now', 'optional'/],
       [{ shape, role: 'nawak' }, /role: Expected an object/],
       [{ shape, role: { relation: { kind: 'nawak', to: () => ({}) } } }, /role\.relation\.kind/],
       [{ shape, role: { relation: { kind: 'one' } } }, /role\.relation\.to: Expected a function returning the target entity/],
@@ -43,6 +44,23 @@ describe('the field door', () => {
     for (const [init, message] of refused) {
       expect(() => new Field(init as never)).toThrow(message);
     }
+  });
+
+  // The door judges the FORM of a generator, never the name: `Generators.register` may
+  // still be called after `entity()`, and the registry refuses an unknown name at apply.
+  it('refuses a generator that is not a name, and takes a name it does not answer yet', () => {
+    const shape = { type: 'string' } as const;
+    const refused: readonly (readonly [unknown, string])[] = [
+      [3, 'got 3'],
+      [undefined, 'got undefined'],
+      [() => 'x', 'got function'],
+    ];
+    for (const [generate, said] of refused) {
+      expect(() => new Field({ shape, lifecycle: { create: { generate } } } as never))
+        .toThrow(`lifecycle.create.generate: Expected a generator name — ${said}`);
+    }
+
+    expect(() => new Field({ shape, lifecycle: { create: { generate: 'ulid' } } } as never)).not.toThrow();
   });
 
   it('reports every fault at once, not the first', () => {

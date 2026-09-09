@@ -1,6 +1,6 @@
 import type { Axis, Resolver } from '../Axis.js';
 import { refuse, oneOfTokens } from '../../projection/card/admission.js';
-import { isObject, lowerFirst } from '../../lib/utils.js';
+import { isObject, lowerFirst, shown } from '../../lib/utils.js';
 import type { ValidationError } from '../../validation.js';
 import { ON_DELETE, RELATION_KINDS, type EntityConstructor, type Relation } from './Relation.js';
 import { type RoleRules } from './Role.js';
@@ -11,14 +11,14 @@ export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
 
   validator(value, errors) {
     if (!isObject(value)) {
-      errors.push({ path: 'role', message: `Expected an object — got ${JSON.stringify(value)}` });
+      errors.push({ path: 'role', message: `Expected an object — got ${shown(value)}` });
       return;
     }
     for (const flag of ['primary', 'index', 'unique'] as const) {
       if (value[flag] !== undefined && typeof value[flag] !== 'boolean') {
         errors.push({
           path: `role.${flag}`,
-          message: `Expected a boolean — got ${JSON.stringify(value[flag])}`,
+          message: `Expected a boolean — got ${shown(value[flag])}`,
         });
       }
     }
@@ -79,13 +79,13 @@ export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
  */
 function validateRelation(relation: unknown, errors: ValidationError[]): void {
   if (!isObject(relation)) {
-    errors.push({ path: 'role.relation', message: `Expected an object — got ${JSON.stringify(relation)}` });
+    errors.push({ path: 'role.relation', message: `Expected an object — got ${shown(relation)}` });
     return;
   }
   if (!oneOfTokens(relation.kind, RELATION_KINDS)) {
     errors.push({
       path: 'role.relation.kind',
-      message: `Expected 'one' or 'many' — got ${JSON.stringify(relation.kind)}`,
+      message: `Expected 'one' or 'many' — got ${shown(relation.kind)}`,
     });
   }
   if (typeof relation.to !== 'function') {
@@ -94,7 +94,7 @@ function validateRelation(relation: unknown, errors: ValidationError[]): void {
   if (relation.onDelete !== undefined && !oneOfTokens(relation.onDelete, ON_DELETE)) {
     errors.push({
       path: 'role.relation.onDelete',
-      message: `Expected 'cascade', 'restrict' or 'set null' — got ${JSON.stringify(relation.onDelete)}`,
+      message: `Expected 'cascade', 'restrict' or 'set null' — got ${shown(relation.onDelete)}`,
     });
   }
 }

@@ -1,6 +1,6 @@
 import type { Axis } from '../Axis.js';
 import { admitWire } from '../../projection/card/admission.js';
-import { isObject } from '../../lib/utils.js';
+import { isObject, shown } from '../../lib/utils.js';
 import type { BoundaryRef } from './Boundary.js';
 
 export const boundaryAxis: Axis<BoundaryRef, BoundaryRef> = {
@@ -11,7 +11,7 @@ export const boundaryAxis: Axis<BoundaryRef, BoundaryRef> = {
     if (!isObject(value)) {
       errors.push({
         path: 'boundary',
-        message: `Expected an alias name or { in, out } — got ${JSON.stringify(value)}`,
+        message: `Expected an alias name or { in, out } — got ${shown(value)}`,
       });
       return;
     }

@@ -1,7 +1,7 @@
 import type { Axis } from '../Axis.js';
 import type { ValidationError } from '../../validation.js';
 import { admitWire, oneOfTokens } from '../../projection/card/admission.js';
-import { isObject } from '../../lib/utils.js';
+import { isObject, shown } from '../../lib/utils.js';
 import { CREATE_TOKENS, UPDATE_TOKENS, type LifecycleRules } from './Lifecycle.js';
 
 export const lifecycleAxis: Axis<LifecycleRules, LifecycleRules> = {
@@ -9,14 +9,14 @@ export const lifecycleAxis: Axis<LifecycleRules, LifecycleRules> = {
 
   validator(value, errors) {
     if (!isObject(value)) {
-      errors.push({ path: 'lifecycle', message: `Expected an object — got ${JSON.stringify(value)}` });
+      errors.push({ path: 'lifecycle', message: `Expected an object — got ${shown(value)}` });
       return;
     }
     if (value.create !== undefined) validateCreate(value.create, errors);
     if (value.update !== undefined && !oneOfTokens(value.update, UPDATE_TOKENS)) {
       errors.push({
         path: 'lifecycle.update',
-        message: `Expected 'now' or 'forbidden' — got ${JSON.stringify(value.update)}`,
+        message: `Expected 'now' or 'forbidden' — got ${shown(value.update)}`,
       });
     }
   },
@@ -41,7 +41,7 @@ function validateCreate(rule: unknown, errors: ValidationError[]): void {
       if (typeof rule.generate !== 'string') {
         errors.push({
           path: 'lifecycle.create.generate',
-          message: `Expected a generator name — got ${JSON.stringify(rule.generate)}`,
+          message: `Expected a generator name — got ${shown(rule.generate)}`,
         });
       }
       return;
@@ -49,6 +49,6 @@ function validateCreate(rule: unknown, errors: ValidationError[]): void {
   }
   errors.push({
     path: 'lifecycle.create',
-    message: `Expected 'now', 'optional', { value } or { generate } — got ${JSON.stringify(rule)}`,
+    message: `Expected 'now', 'optional', { value } or { generate } — got ${shown(rule)}`,
   });
 }

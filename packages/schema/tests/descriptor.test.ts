@@ -354,6 +354,8 @@ group('a card is admitted before it becomes a validator', () => {
   it('refuses a lifecycle and a boundary through the validator that already reads them', () => {
     const lifecycle = { ...card(), properties: { a: { type: 'string' as const, 'x-fougere': { lifecycle: { update: 'jamais' } } } } };
     expect(() => Card.fromDescriptor(lifecycle as never).toSchema()).toThrow(/lifecycle\.update/);
+    const generate = { ...card(), properties: { a: { type: 'string' as const, 'x-fougere': { lifecycle: { create: { generate: 3 } } } } } };
+    expect(() => Card.fromDescriptor(generate as never).toSchema()).toThrow(/lifecycle\.create\.generate/);
     const boundary = { ...card(), properties: { a: { type: 'string' as const, 'x-fougere': { boundary: { in: 42 } } } } };
     expect(() => Card.fromDescriptor(boundary as never).toSchema()).toThrow(/boundary\.in/);
   });
