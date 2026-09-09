@@ -30,7 +30,8 @@
     "src"
   ],
   "scripts": {
-    "build": "pnpm --filter @fougere/core build && rm -rf dist && tsc",
+    "prebuild": "pnpm --filter @fougere/core build",
+    "build": "rm -rf dist && tsc",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit -p .",
