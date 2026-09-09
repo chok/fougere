@@ -35,12 +35,6 @@ export function resetTypePrograms(): void {
   compilerProjects.clear();
 }
 
-/** Drop what runs share. For a test that must prove a cold read. */
-export function forgetParsedSources(): void {
-  sourceFiles.clear();
-  retained.clear();
-}
-
 function keptHost(key: string, options: ts.CompilerOptions): ts.CompilerHost {
   const cached = retained.get(key);
   if (cached) return cached.host;
