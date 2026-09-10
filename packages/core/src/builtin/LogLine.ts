@@ -20,3 +20,12 @@ export default class LogLine extends entity({
   args: optional(list(json())),
   at: created(),
 }) {}
+
+/**
+ * The addresses whose operations CARRY a line — a destination, and nothing else.
+ *
+ * Whatever carries a fact must not produce one, or the emission refuses it by name. Stated
+ * here rather than in each package, because every reader of the rule is downstream: the
+ * logging middleware, and any observer that logs what it observed.
+ */
+export const CARRIES_LINE = new Set(['line', 'consoleHandler', 'console']);

@@ -161,6 +161,13 @@ export interface FrondDescriptor {
   seeds: SeedEntry[];
   middlewares: MiddlewareEntry[];
   /**
+   * Brought by an EXTENSION rather than by the app — `@fougere/calls` keeping its lines,
+   * `@fougere/observability` sending them on. It is installed like any other, and it is not
+   * what the app SERVES: a report that lists it describes the instrumentation, not the
+   * domain. Set by the boot, never by a declaration.
+   */
+  brought?: true;
+  /**
    * Per-surface entity lists from frond.config.ts (e.g. { graphql: ['Post'], rest: ['Post',
    * 'Author'] }).
    */

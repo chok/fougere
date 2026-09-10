@@ -194,6 +194,21 @@ running calls finish (counted in `dispatch/InFlight.ts`); it REJECTS on its dead
 what is left. A call arriving after the door closed gets `SERVICE_UNAVAILABLE`. Pinned by
 `tests/dispose.test.ts` and `tests/drain.test.ts`.
 
+**An extension brings fronds** — `Extension.fronds`, read by `createApp` BEFORE the ascent
+and folded in beside `fronds:` and `scan:`. It is the only way an optional package can
+accept a fact: a subscription is a signature, and `up` receives an app that already exists.
+The boot marks what it took as `FrondDescriptor.brought`, which is how a report says what
+the app SERVES rather than what instruments it — read by `calls`' panel and by
+`rpc.topology`. `@fougere/calls` and `@fougere/observability` each bring one `LineHandler`.
+
+**What carries a line writes none** — `CARRIES_LINE` (`core/src/builtin/LogLine.ts`), read
+by `loggerMiddleware` and by `observability`'s `trace()`. Keeping a line is a DISPATCH, so
+logging it announces a line inside the announcement of one: `Emission cycle: logLine →
+logLine`. Measured three ways on 2026-09-10 — the process hung, then the call ring filled
+with its own writes, then `activeCalls()` counted log deliveries. A reentrancy flag cannot
+see it: the carry is asynchronous. `Emissions` has its own writer for the same reason
+(`LoggerOptions.carries`).
+
 **The ascent** — `boot/AppLifecycle.ts`. An `Extension` states `up` and `down`, handed in
 through `CreateAppOptions.extensions`. A name already declared is REPLACED, not refused.
 `migrating(storage.migrate)` and `seeding(report)` are ordinary members. The two halves
@@ -368,12 +383,14 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   `<LogLine>`, so `depKeyOf` never sees the port. Recovering it means reading the alias's
   own declaration in `handler-parser.ts` (`parseCheckedType`). Measured 2026-09-10; the
   alias was removed rather than shipped broken.
-- **The four `on*` are still four** — `onLog` (`core/src/builtin/logger.ts`), `onQuery`
-  (`adapter/sql/src/query.ts`), `onSpan` and `registerFlush` (`observability/src/index.ts`):
-  the same `sinks.push` and `splice`, written four times. `@fougere/log` gives the shape
-  that replaces them, and `calls`/`observability` cannot use it yet — they are EXTENSIONS,
-  and an extension has no signature to accept a `Fact<T>` in. Converting them means
-  deciding what happens to the boot's own lines, which precede every app.
+- **`onQuery` and `onSpan` are still sinks** — `adapter/sql/src/query.ts`,
+  `observability/src/index.ts`: the same `sinks.push` and `splice` `onLog` had. They carry
+  OTHER facts — a statement, a span — and converting each means declaring its entity and
+  deciding who announces: a Kysely `log` callback has no app, and a span is produced by the
+  middleware that would announce it. `onLog` has no production caller left; it stays as a
+  test instrument, which is its only reader.
+- **`registerFlush` is not a subscription at all** — it collects what to send NOW, which is
+  a lifecycle gesture. It belongs beside `Extension.down`, not beside a fact.
 - **An un-augmented `adapters:` accepts anything, silently.** With no adapter in the program
   `EntityAdapters<TFields>` is `Partial<{}>`, which in TypeScript means "anything
   non-nullish". The RUNTIME half is closed since `AdapterFieldValidator`; what remains open is the type.

@@ -1,4 +1,5 @@
-import { onLog, type App, type Extension, type InvocationContext } from '@fougere/core';
+import { frond, LogLine, type App, type Extension, type InvocationContext } from '@fougere/core';
+import LineHandler from './LineHandler.js';
 import { CallRing } from './CallRing.js';
 import { ErrorRing, LogRing, QueryRing } from './rings.js';
 import { servePanel, type PanelOptions } from './panel.js';
@@ -18,7 +19,7 @@ export interface CallsOptions {
 /** What this process serves, read from the app itself. */
 function servedModel(app: App): unknown {
   return {
-    fronds: app.fronds.map((frond) => ({
+    fronds: app.fronds.filter((frond) => !frond.brought).map((frond) => ({
       name: frond.name,
       // What the config SAYS. What the runtime saw is in the ring, under `route` — and the
       // two disagree exactly when something is misconfigured, which is the whole point of
@@ -99,6 +100,9 @@ function cursorOf(invocation: InvocationContext): number {
   return Number.isFinite(since) && since > 0 ? since : 0;
 }
 
+/** The address its own frond answers at — what the ring must not record. */
+const LINE = 'line';
+
 /** What this process dispatched, kept in a bounded ring and served as an rpc operation. */
 export function calls(options: CallsOptions = {}): Extension {
   /** Per APP, not per extension. */
@@ -107,20 +111,39 @@ export function calls(options: CallsOptions = {}): Extension {
   return {
     name: 'calls',
 
+    // What it needs a SIGNATURE for: every line this process logs. Stated rather than
+    // scanned, because a published package is read by no scanner.
+    fronds: [frond('calls', {
+      handlers: [{
+        ctor: LineHandler,
+        deps: ['LogRing', 'ErrorRing'],
+        operations: {
+          record: {
+            input: LogLine,
+            binding: [{ name: 'line', optional: false, source: { kind: 'fact', factName: 'logLine' } }],
+          },
+        },
+      }],
+    })],
+
     async up(app: App) {
       const ring = new CallRing(options.max ?? 500, frondIndex(app));
       const logs = new LogRing();
       const errors = new ErrorRing();
       const queries = new QueryRing();
 
+      // The rings the frond's handler asks for. Registered here and resolved at its first
+      // call, which is after this ascent — so a signature replaces the `onLog` sink.
+      app.container.registerValue('LogRing', logs);
+      app.container.registerValue('ErrorRing', errors);
+
       const undo = [
         app.observe((event) => {
+          // Not its own: keeping a line is a DISPATCH, so the ring would fill with the
+          // writes that fill it — the same shape as a logger that logs its own carrying.
+          if (event.call.address.entity === LINE) return;
           ring.record(event);
           if (event.stage === 'failed') errors.fromDispatch(event);
-        }),
-        onLog((line) => {
-          logs.record(line);
-          errors.fromLog(line);
         }),
         // `@fougere/adapter-sql` is optional — an app on another storage, or none, simply
         // never resolves it, and the Queries tab says there is none rather than staying
@@ -142,7 +165,8 @@ export function calls(options: CallsOptions = {}): Extension {
         ...asked,
         ...(port !== undefined ? { port } : {}),
         title: asked.title ?? app.fronds[0]?.name ?? 'fougere',
-        fronds: app.fronds.map((frond) => frond.name),
+        // What this app SERVES: a frond an extension brought is instrumentation.
+        fronds: app.fronds.filter((frond) => !frond.brought).map((frond) => frond.name),
         model: servedModel(app),
         logs: (cursor) => logs.since(cursor),
         errors: (cursor) => errors.since(cursor),

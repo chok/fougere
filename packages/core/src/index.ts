@@ -64,9 +64,9 @@ export { toHttpError } from './wire/http-error.js';
 export { toPublicError } from './contract.js';
 export { loggerMiddleware } from './wire/loggerMiddleware.js';
 export { Logger, setLogLevel, logLevel, envLevel, onLog, formatted } from './builtin/logger.js';
-export type { LogRecord, Rendered } from './builtin/logger.js';
+export type { LogRecord, Rendered, LogSink } from './builtin/logger.js';
 // The fact a boot announces. Its destinations are `@fougere/log`'s; the line is core's.
-export { default as LogLine } from './builtin/LogLine.js';
+export { default as LogLine, CARRIES_LINE } from './builtin/LogLine.js';
 // What a re-read config changes in a running process — and what it cannot.
 export { applyConfig } from './boot/apply.js';
 export { Config } from './builtin/config.js';

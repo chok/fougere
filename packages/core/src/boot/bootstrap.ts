@@ -144,12 +144,20 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // it may read a disk; consuming it never does, which is the whole reason this file names
     // no builtin and a Worker can run what it builds.
     const scanStart = performance.now();
-    const { fronds, diagnostics } = await hostedBy(options);
+    // An extension's fronds sit beside the app's own: it is installed like any other, and
+    // its handlers resolve at call time — by which point the extension's `up` has put what
+    // they ask for in the container.
+    const brought = (options.extensions ?? [])
+      .flatMap((extension) => extension?.fronds ?? [])
+      .map((frond) => ({ ...frond, brought: true as const }));
+    const { fronds, diagnostics } = await hostedBy(
+      brought.length > 0 ? { ...options, fronds: [...(options.fronds ?? []), ...brought] } : options,
+    );
     // An app that states nothing AND scans nothing is a mistake — unless something else it
     // declares brings its own entities, which an auth provider does. Refused here and not in
     // `hostedBy`, which is handed the frond sources and cannot see the rest of the app. The
     // condition is the KEYS, not the count: a scan that found nothing is an ordinary answer.
-    if (!options.fronds && !options.scan && !options.auth) {
+    if (!options.fronds && !options.scan && !options.auth && brought.length === 0) {
       throw new Error(
         'createApp needs `fronds:` (what this app states) or `scan:` (what a scanner found). '
         + 'Neither was given, and nothing else declares entities of its own.',

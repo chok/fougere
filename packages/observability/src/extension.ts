@@ -1,5 +1,6 @@
 /** This package's own ascent and descent, in one value. */
-import { loggerMiddleware, Logger, onLog, type App, type Extension } from '@fougere/core';
+import { frond, loggerMiddleware, Logger, LogLine, type App, type Extension, type LogSink } from '@fougere/core';
+import LineHandler from './LineHandler.js';
 import { traceContext } from '#trace-context';
 import { registerFlush } from './index.js';
 import { trace, onSpan } from './index.js';
@@ -23,9 +24,31 @@ export function observability(options: ObservabilityOptions = {}): Extension {
   /** Per APP, not per extension. */
   const undoing = new WeakMap<App, (() => void | Promise<void>)[]>();
 
+  /** One box the handler resolves, whose content the ascent decides. */
+  const exporting: { take: LogSink } = { take: () => {} };
+
   return {
     name: 'observability',
+
+    // What it needs a SIGNATURE for: every line this process logs. Stated rather than
+    // scanned, because a published package is read by no scanner.
+    fronds: [frond('observability', {
+      handlers: [{
+        ctor: LineHandler,
+        deps: ['LogExport'],
+        operations: {
+          record: {
+            input: LogLine,
+            binding: [{ name: 'line', optional: false, source: { kind: 'fact', factName: 'logLine' } }],
+          },
+        },
+      }],
+    })],
+
     up(app: App) {
+      // Held across the ascent: the exporter exists only when `otlp` is declared, and the
+      // handler resolves this either way.
+      app.container.registerValue('LogExport', exporting);
       const undo: (() => void | Promise<void>)[] = [];
       undoing.set(app, undo);
       // Order matters: `trace()` opens the span that every log line written inside the
@@ -68,10 +91,14 @@ export function observability(options: ObservabilityOptions = {}): Extension {
       });
       // The timer is not the only way out: an isolate is frozen when it answers, so a
       // host with no time between requests calls `flushTelemetry()` inside `ctx.waitUntil`.
+      // What `LineHandler` asks for — replaced rather than added to, so a reload does not
+      // hand the old exporter a new app's lines.
+      exporting.take = written.sink;
       undo.push(
-        onSpan(telemetry.sink), onLog(written.sink),
+        onSpan(telemetry.sink),
         registerFlush(() => telemetry.flush()), registerFlush(() => written.flush()),
         () => telemetry.stop(), () => written.stop(),
+        () => { exporting.take = () => {}; },
       );
     },
     async down(app: App) {
