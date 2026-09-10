@@ -239,8 +239,14 @@ subscription, so two destinations both receive and none is not declaring the fro
 console one writes with `console[method]` and announces NOTHING: a destination that logs is
 a ring, which the emission refuses by name where `onLog`'s try/catch swallowed it. The
 package STATES its frond (`logFrond()`), because scanning a directory under `packages/`
-fails — see Known issues. `Logger` stays in core for the boot, which writes before any app
-exists. Pinned by `log/tests/log.test.ts` and `demos/log-destinations`.
+fails — see Known issues.
+
+`Logger` is a SHORTCUT over that emission, not a second mechanism: `log.info(msg)` builds
+the line `Emit<LogLine>` takes whole, and both travel the one path. Its lines are HELD
+until an emission exists, because a boot writes most of what a process logs and writes it
+before any door does; a handed-over line is the destination's to write, and whatever
+CARRIES a fact logs without announcing (`LoggerOptions.carries`) — dispatch logs, and that
+ring hung the process. Pinned by `log/tests/log.test.ts` and `demos/log-destinations`.
 
 **Ports** — a class something already answers under, that a provider extends. Nothing
 declares one: `boot/ports.ts`, `portBindings` reads the prototype chain at boot, so
