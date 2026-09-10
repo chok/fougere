@@ -11,8 +11,7 @@ import { createApp, createLocalRunner, Logger } from '@fougere/core';
 import { scanProject, frondAliases } from '@fougere/compiler';
 import { setModuleLoader, loadConfig } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
-import { migrate } from '@fougere/adapter-sql';
-import { setupSqlite } from '@fougere/adapter-sql/sqlite';
+import { resolveStorage, layerOf } from '@fougere/defaults';
 import { serve } from '@fougere/transport-http';
 import { calls } from '@fougere/calls';
 import { observability } from '@fougere/observability';
@@ -29,8 +28,8 @@ setModuleLoader((filePath) => jiti.import(filePath));
 
 // Commenting `remotes:` is how you take the frond back in-process, so its absence
 // means this process has no caller — say that rather than binding a port nobody dials.
-const { remotes } = await loadConfig(process.cwd());
-const address = remotes?.blog;
+const config = await loadConfig(process.cwd());
+const address = config.remotes?.blog;
 if (!address) {
   throw new Error(
     'No `remotes.blog` in fougere.config.ts — that line is what sends calls here.\n'
@@ -40,7 +39,13 @@ if (!address) {
 const { hostname, port: declaredPort } = new URL(address);
 
 const log = new Logger('blog-host');
-const { storageFactory, db } = setupSqlite({ path: './nuxt-blog.db' });
+
+// The store comes from the same `fougere.config.ts` the address does, for the same reason:
+// naming a path here made this process serve a database the in-process form never wrote,
+// while the demo's whole claim is that commenting `remotes:` changes nothing. `layerOf`
+// hands the layer over WHOLE — naming a few of its members is how `transacted` and `close`
+// were left behind once.
+const storage = resolveStorage(config.db, config.sources, process.cwd());
 
 // The panel, on its own loopback port: every call this frond executes, as it happens.
 // Click through the Nuxt app on :3000 and they land here — including the ones that
@@ -48,10 +53,9 @@ const { storageFactory, db } = setupSqlite({ path: './nuxt-blog.db' });
 const app = await createApp({
   scan: await scanProject(process.cwd(), ['blog']),
   createContainer,
-  storageFactory,
+  ...layerOf(storage),
   extensions: [observability({ service: 'blog-host' }), calls({ panel: 4400 })],
 });
-await migrate({ fronds: app.fronds }, db);
 
 const { port } = await serve(createLocalRunner(app), { port: Number(declaredPort), host: hostname });
 log.info(`frond blog served — POST ${new URL('/_fougere/call', address).href} (bound :${port})`);

@@ -715,6 +715,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../../packages/defaults
       '@fougere/http':
         specifier: workspace:*
         version: link:../../packages/http
