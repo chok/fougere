@@ -202,8 +202,12 @@ what is left. A call arriving after the door closed gets `SERVICE_UNAVAILABLE`. 
 and folded in beside `fronds:` and `scan:`. It is the only way an optional package can
 accept a fact: a subscription is a signature, and `up` receives an app that already exists.
 The boot marks what it took as `FrondDescriptor.brought`, which is how a report says what
-the app SERVES rather than what instruments it — read by `calls`' panel and by
-`rpc.topology`. `@fougere/calls` and `@fougere/observability` each bring one `LineHandler`.
+the app SERVES rather than what instruments it — read by `calls`' panel, by `rpc.topology`,
+and by the identity card (`boot/card.ts`). The card because such a frond stands in EVERY
+process that installed the extension: two of them answered `export` on `rpc.discover` and
+the remote router refused, `Two remotes serve 'export'`, which left a third process able to
+reach neither. `@fougere/calls` brings `KeepHandler`, `@fougere/observability`
+`ExportHandler`. Pinned by `tests/brought.test.ts`.
 
 **What carries a line writes none** — `CARRIES_LINE` (`core/src/builtin/LogLine.ts`), a
 set the BOOT fills from `Emissions.doorsFor('logLine')`, read by `loggerMiddleware`, by
@@ -293,7 +297,10 @@ announced nothing, which is why `observability` resolves the app's and names a c
 
 The lines are HELD until an emission exists, in a `Carry` held PER BOOT — a process-wide
 slot sent a second app's lines to the first app's door, and only the first of three
-printed. Whatever CARRIES a line writes none: `Emissions` has a logger with no carry, and
+printed. They are handed over AFTER the ascent, because handing them over RESOLVES the
+destination and what a brought one depends on is registered by its own extension's `up`:
+`calls` registers its two rings there, and every held line died on `'LogRing' is not
+registered`. Whatever CARRIES a line writes none: `Emissions` has a logger with no carry, and
 `CARRIES_LINE` — filled by the boot from who subscribed, never written down — is read by
 `loggerMiddleware`, by `trace()` and by `calls`' ring. Pinned by `log/tests/log.test.ts`
 and `demos/log-destinations`.

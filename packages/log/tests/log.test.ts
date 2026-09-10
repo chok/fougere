@@ -206,4 +206,44 @@ describe('a line the frond announces', () => {
     setLogLevel('info');
     vi.restoreAllMocks();
   });
+  it('hands the held lines over AFTER the ascent, so a destination has what it depends on', async () => {
+    vi.spyOn(console, 'info').mockImplementation(() => {});
+    const kept: { message: string }[] = [];
+
+    class Ring { record(line: { message: string }): void { kept.push(line); } }
+
+    class KeepHandler {
+      constructor(private ring: Ring) {}
+      async record(line: { message: string }): Promise<void> { this.ring.record(line); }
+    }
+
+    // An extension registers what its own destination asks for, and `up` runs after every
+    // door is built. Handing the boot's lines over before that resolved `KeepHandler`
+    // first, and every held line died on `'Ring' is not registered` — measured on
+    // `demos/observability`, where `@fougere/calls` registers its two rings in `up`.
+    await using built = await createApp({
+      fronds: [frond('shop', {})],
+      createContainer,
+      extensions: [{
+        name: 'keeping',
+        fronds: [frond('keeping', {
+          handlers: [{
+            ctor: KeepHandler,
+            deps: ['Ring'],
+            operations: {
+              record: {
+                binding: [{ name: 'line', optional: false, source: { kind: 'fact', factName: 'logLine' } }],
+              },
+            },
+          }],
+        })],
+        up(app) { app.container.registerValue('Ring', new Ring()); },
+      }],
+    });
+    void built;
+    await settle();
+
+    expect(kept.some((line) => /^read \d+ frond/.test(line.message))).toBe(true);
+    vi.restoreAllMocks();
+  });
 });

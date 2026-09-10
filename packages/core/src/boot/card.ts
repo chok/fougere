@@ -13,7 +13,12 @@ export function identityCardOf(app: App, surface?: string): IdentityCard {
   const declared = app.fronds.schemas();
 
   return {
-    fronds: app.fronds.map((frond) => {
+    // What this app SERVES, never what instruments it. A frond an extension BROUGHT is a
+    // subscriber — `@fougere/calls` and `@fougere/observability` each bring one — and it is
+    // in every process that installed the extension, so two remotes then claimed the same
+    // door and routing refused: `Two remotes serve 'export'`. `FrondDescriptor.brought` is
+    // the mark `calls`' panel and `rpc.topology` already read.
+    fronds: app.fronds.filter((frond) => !frond.brought).map((frond) => {
       // What the frond answers to, not what it stores. This walked `frond.entities`, so a
       // handler carrying no entity — a health check, a search across shapes — was built,
       // served, and absent from the card: `sync` could not generate its door and a remote

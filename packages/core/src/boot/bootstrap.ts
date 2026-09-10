@@ -332,26 +332,11 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // Once every door exists: what is announced here and what is listened to are both known.
     emissions.register();
 
-    // The boot's own lines, and every line after them. Held until here because a boot
-    // writes most of what a process logs and writes it before any door exists — so the
-    // lines that say what this app is made of are the ones a destination would miss.
-    // `LogLine` is core's for this reason: naming it costs no optional package.
     // Which doors carry a line, read from who SUBSCRIBED — so a third party's destination
     // is left alone by the two middlewares that observe every operation.
     for (const door of emissions.doorsFor(LOG_LINE)) {
       CARRIES_LINE.add(door.replace(/Handler$/, '').replace(/^./, (c) => c.toLowerCase()));
       CARRIES_LINE.add(door);
-    }
-
-    if (emissions.listensTo().includes(LOG_LINE)) {
-      const emit = container.resolve<Emit<LogLine>>(emitKeyOf(LogLine.name));
-      // `at` is the record's own epoch, and the entity says `created()` — so the line
-      // keeps WHEN IT WAS WRITTEN rather than when it was handed over, which for a held
-      // boot line is a different moment.
-      stopAnnouncing = carry.to(({ at, ...line }: LogRecord) => void emit({ ...line, at: new Date(at) }));
-    } else {
-      // No destination in this app: the console had them, and holding more would grow.
-      carry.forget();
     }
 
     /** The last resort, held by the container so every resolution path shares it. */
@@ -577,6 +562,27 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // await here — which is what a provider needing to OPEN something could never do.
     built = app;
     await appLifecycle.up(app);
+
+    // The boot's own lines, and every line after them. Held until here because a boot
+    // writes most of what a process logs and writes it before any door exists — so the
+    // lines that say what this app is made of are the ones a destination would miss.
+    // `LogLine` is core's for this reason: naming it costs no optional package.
+    //
+    // AFTER the ascent, because handing them over RESOLVES the destination, and what a
+    // destination an extension brought depends on is registered by that same extension's
+    // `up`: `calls()` registers `LogRing` and `ErrorRing` there, and `KeepHandler` asks for
+    // both. Resolved before the ascent, every held line died on `'LogRing' is not
+    // registered` — measured on `demos/observability`.
+    if (emissions.listensTo().includes(LOG_LINE)) {
+      const emit = container.resolve<Emit<LogLine>>(emitKeyOf(LogLine.name));
+      // `at` is the record's own epoch, and the entity says `created()` — so the line
+      // keeps WHEN IT WAS WRITTEN rather than when it was handed over, which for a held
+      // boot line is a different moment.
+      stopAnnouncing = carry.to(({ at, ...line }: LogRecord) => void emit({ ...line, at: new Date(at) }));
+    } else {
+      // No destination in this app: the console had them, and holding more would grow.
+      carry.forget();
+    }
 
     return app;
   } catch (cause) {
