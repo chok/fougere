@@ -1,5 +1,4 @@
-import { formatted, type Fact } from '@fougere/core';
-import type LogLine from '../entities/LogLine.js';
+import { formatted, type Fact, type LogLine } from '@fougere/core';
 
 /**
  * The destination every process has until it says otherwise. It is a handler, so it is

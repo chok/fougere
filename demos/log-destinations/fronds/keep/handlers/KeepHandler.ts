@@ -1,5 +1,4 @@
-import type { Fact } from '@fougere/core';
-import type { LogLine } from '@fougere/log';
+import type { Fact, LogLine } from '@fougere/core';
 import Kept from '../services/Kept.js';
 
 /**

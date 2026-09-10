@@ -18,6 +18,42 @@ export type LogSink = (record: LogRecord) => void;
 /** Who else takes this process's log lines, beside the console. */
 const sinks: LogSink[] = [];
 
+/**
+ * The boot's own lines, until an app exists to announce them.
+ *
+ * A boot writes most of what a process ever logs, and it writes it before any emission is
+ * registered — so the lines that say what an app is made of would be the only ones a
+ * destination never sees. Held here, handed over by `announcing()`.
+ *
+ * Bounded, because a boot that never finishes must not grow: what is dropped is the
+ * OLDEST, since the lines that explain a refusal are the last ones.
+ */
+const held: LogRecord[] = [];
+const HELD_MAX = 500;
+let announce: ((line: LogRecord) => void) | undefined;
+
+/**
+ * Hand the boot's held lines over, and every line after them. Called once the emission
+ * exists; before that the console is the only reader.
+ */
+export function announcing(take: (line: LogRecord) => void): () => void {
+  announce = take;
+  for (const line of held.splice(0)) take(line);
+
+  return () => {
+    announce = undefined;
+  };
+}
+
+/**
+ * Forget what is still held — a boot that refused, or one whose app declares no
+ * destination. Nothing is printed: the console already had every one of these lines when
+ * it was written, and the hold exists only to hand them to a destination later.
+ */
+export function forgetHeld(): void {
+  held.length = 0;
+}
+
 /** Take every line this process logs. Returns the way to withdraw. */
 export function onLog(next: LogSink): () => void {
   sinks.push(next);
@@ -91,6 +127,13 @@ function stamp(at: number | Date): string {
 export interface LoggerOptions {
   /** Logger name / prefix. */
   name?: string;
+  /**
+   * Whether its lines travel as facts. FALSE for whatever CARRIES a fact — dispatch logs,
+   * so a line about carrying a line would announce, and that ring has no bottom. Measured
+   * 2026-09-10: it hung the process, and a reentrancy flag could not see it because the
+   * carry is asynchronous. Those lines still reach the console.
+   */
+  carries?: boolean;
   /** Force color on/off. Auto-detected by default. */
   color?: boolean;
 }
@@ -98,15 +141,17 @@ export interface LoggerOptions {
 export class Logger {
   private name: string;
   private color: boolean;
+  private carries: boolean;
 
   constructor(prefix?: string, options?: Omit<LoggerOptions, 'name'>) {
     this.name = prefix ?? 'app';
     this.color = options?.color ?? supportsColor();
+    this.carries = options?.carries ?? true;
   }
 
   /** Create a child logger with a sub-name. It carries no level of its own either. */
   child(name: string): Logger {
-    return new Logger(`${this.name}:${name}`, { color: this.color });
+    return new Logger(`${this.name}:${name}`, { color: this.color, carries: this.carries });
   }
 
   debug(msg: string, ...args: unknown[]) { this.log('debug', msg, args); }
@@ -126,6 +171,19 @@ export class Logger {
       try {
         take(record);
       } catch { /* forwarding never breaks logging */ }
+    }
+
+    if (this.carries && announce) {
+      try {
+        announce(record);
+        // Handed over, so the console is a DESTINATION's to write — `@fougere/log` ships
+        // one. Writing here too said every line twice, which is what "the console is a
+        // handler" costs if this return is missing.
+        return;
+      } catch { /* announcing never breaks logging, for the same reason a sink does not */ }
+    } else if (this.carries) {
+      held.push(record);
+      if (held.length > HELD_MAX) held.shift();
     }
 
     const { method, text } = formatted(record, this.color);

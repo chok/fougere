@@ -1,5 +1,4 @@
-import type { Emit } from '@fougere/core';
-import type LogLine from '../../../../../fronds/log/entities/LogLine.js';
+import type { Emit, LogLine } from '@fougere/core';
 
 /** What a frond writes when it wants a line kept: it names a subject, never a destination. */
 export default class OrderHandler {

@@ -1,15 +1,13 @@
 /**
- * Logging as an announcement: a line is a fact, a destination is a handler that accepts it.
+ * Where a log line GOES. The line itself is core's — the boot announces one before any
+ * frond exists, so naming it there would cost core an optional package's vocabulary.
  *
- * STATED and not scanned — `frond()` is what a published package hands over, so a consumer
+ * STATED and not scanned: `frond()` is what a published package hands over, so a consumer
  * needs no TypeScript loader and no scan of its `node_modules`. The contract is written
- * here for the same reason: nobody reads this handler's source at boot.
+ * here for the same reason — nobody reads this handler's source at boot.
  */
-import { frond } from '@fougere/core';
-import LogLine from '../fronds/log/entities/LogLine.js';
+import { frond, LogLine } from '@fougere/core';
 import ConsoleHandler from '../fronds/log/handlers/ConsoleHandler.js';
-
-export { default as LogLine } from '../fronds/log/entities/LogLine.js';
 
 export { default as ConsoleHandler } from '../fronds/log/handlers/ConsoleHandler.js';
 

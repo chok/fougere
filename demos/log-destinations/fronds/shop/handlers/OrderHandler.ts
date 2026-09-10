@@ -1,5 +1,4 @@
-import { Crud, type Emit, type RepositoryOf } from '@fougere/core';
-import type { LogLine } from '@fougere/log';
+import { Crud, type Emit, type LogLine, type RepositoryOf } from '@fougere/core';
 import Order from '../entities/Order.js';
 
 /**

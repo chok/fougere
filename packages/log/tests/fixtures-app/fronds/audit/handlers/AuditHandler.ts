@@ -1,5 +1,4 @@
-import type { Fact } from '@fougere/core';
-import type LogLine from '../../../../../fronds/log/entities/LogLine.js';
+import type { Fact, LogLine } from '@fougere/core';
 
 /** A second destination. It is a handler, and that is the whole registration. */
 export default class AuditHandler {

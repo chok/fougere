@@ -7,7 +7,12 @@ import { installFrond, type Assembly } from './install.js';
 import type { AuthRuntime } from './auth.js';
 import type { CreateAppOptions, App } from './types.js';
 import type { AppMiddleware } from '../wire/middleware.js';
-import { Logger } from '../builtin/logger.js';
+import { Logger, announcing, forgetHeld } from '../builtin/logger.js';
+import LogLine from '../builtin/LogLine.js';
+import { emitKeyOf, type Emit } from '../wire/emit.js';
+
+/** The fact the boot announces, spelled once. */
+const LOG_LINE = lowerFirst(LogLine.name);
 import { Config } from '../builtin/config.js';
 import { createRemoteRouter, createRemoteFacade } from './remote.js';
 import { registerFrames } from './together.js';
@@ -86,6 +91,8 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   const appLifecycle = new AppLifecycle().add(...(options.extensions ?? []));
   /** The app once it exists — a refusal before that releases the two levels that do. */
   let built: App | undefined;
+  /** Given back by `announcing`, so a released app stops writing into a dead container. */
+  let stopAnnouncing: (() => void) | undefined;
 
   /**
    * Everything this app holds, let go in reverse of how it was taken: what an extension took on
@@ -97,6 +104,9 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // there and broken here, a refusing extension took the container and the connection
     // down with it, which is the leak this gesture exists to prevent.
     const refused: unknown[] = [];
+    // Whatever is still held will never reach a destination — the console had it.
+    stopAnnouncing?.();
+    forgetHeld();
     const levels = [
       ...(built ? [() => appLifecycle.down(built!)] : []),
       () => container.dispose(),
@@ -255,7 +265,13 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // Which frond holds an entity — what turns "a member is remote" into a refusal that
     // names the frond rather than the entity, since `remotes:` is declared per frond.
     const frondOf = new Map(fronds.flatMap((f) => f.entities.map((e) => [e.name, f.name] as const)));
-    const emissions = new Emissions(fronds, entityByName, container, log, options.onEmit);
+    // Its own writer, which does NOT announce: this is what carries a fact, and a line
+    // about carrying one would come back here. See `LoggerOptions.carries`.
+    const emissions = new Emissions(
+      fronds, entityByName, container,
+      new Logger('boot:app', { carries: false }),
+      options.onEmit,
+    );
     /** Canonical operation tables, indexed by the same audience key as their facades. */
     const effectiveByKey = new Map<string, EffectiveOperationsMap>();
 
@@ -290,6 +306,21 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
     // Once every door exists: what is announced here and what is listened to are both known.
     emissions.register();
+
+    // The boot's own lines, and every line after them. Held until here because a boot
+    // writes most of what a process logs and writes it before any door exists — so the
+    // lines that say what this app is made of are the ones a destination would miss.
+    // `LogLine` is core's for this reason: naming it costs no optional package.
+    if (emissions.listensTo().includes(LOG_LINE)) {
+      const emit = container.resolve<Emit<LogLine>>(emitKeyOf(LogLine.name));
+      // `at` is the record's own epoch, and the entity says `created()` — so the line
+      // keeps WHEN IT WAS WRITTEN rather than when it was handed over, which for a held
+      // boot line is a different moment.
+      stopAnnouncing = announcing(({ at, ...line }) => void emit({ ...line, at: new Date(at) }));
+    } else {
+      // No destination in this app: the console had them, and holding more would grow.
+      forgetHeld();
+    }
 
     /** The last resort, held by the container so every resolution path shares it. */
     container.setFallback?.((name) => {
