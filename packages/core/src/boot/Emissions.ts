@@ -22,6 +22,9 @@ export class Emissions {
   /** Who listens to what. Filled as each door's contracts are resolved. */
   private readonly subscribers = new Map<string, Listener[]>();
 
+  /** Who FINISHES a fact — at most one per fact, see `claimPipe`. */
+  private readonly pipes = new Map<string, Listener>();
+
   /**
    * What is announced here, read from the DEPS and not from the subscribers: a handler declaring
    * `Emit<PostPublished>` must resolve it whether or not anybody listens, and announcing to nobody
@@ -46,12 +49,33 @@ export class Emissions {
   note(contracts: OperationsMap, door: string): void {
     for (const [op, contract] of contracts) {
       for (const bound of contract.binding ?? []) {
+        if (bound.source.kind === 'pipe') {
+          this.claimPipe(bound.source.factName, { door, op });
+          continue;
+        }
         if (bound.source.kind !== 'fact') continue;
         const listeners = this.subscribers.get(bound.source.factName) ?? [];
         listeners.push({ door, op });
         this.subscribers.set(bound.source.factName, listeners);
       }
     }
+  }
+
+  /**
+   * One link per fact, refused rather than ordered: between two of them nothing says which
+   * finishes the fact, and scan order is not an answer — the same reason two
+   * implementations of a port refuse and two remotes over one entity refuse.
+   */
+  private claimPipe(fact: string, taking: Listener): void {
+    const held = this.pipes.get(fact);
+    if (held && `${held.door}.${held.op}` !== `${taking.door}.${taking.op}`) {
+      throw new Error(
+        `Two ops finish the fact '${fact}': ${held.door}.${held.op} and ${taking.door}.${taking.op}.\n`
+        + '  A fact is the same for every subscriber, so exactly one op may answer it. '
+        + 'Merge the two, or make one of them accept `Fact<…>` and change nothing.',
+      );
+    }
+    this.pipes.set(fact, taking);
   }
 
   /** The shape a fact is validated by, when the fact is a declared entity. */
@@ -88,7 +112,7 @@ export class Emissions {
      */
     await ambient.beforeAnnounce(fact);
 
-    const payload = this.stamped(fact, raw);
+    const payload = await this.finished(fact, this.stamped(fact, raw));
 
     /** Whoever is not in this process — and it is the ONLY way to reach them. */
     const delivery = this.carry?.(fact, payload);
@@ -117,6 +141,21 @@ export class Emissions {
         + ` Nothing here holds it: the carrier decides whether it comes back.`,
       );
     }
+  }
+
+  /**
+   * What the declared link answers, or the value as it stands when nothing declared one.
+   *
+   * Before anyone is handed anything, and once: every subscriber reads the same fact, which
+   * is the whole reason a fact can be said to be what happened. A link that refuses stops
+   * the announcement — it was finishing the fact, and half a fact is not one.
+   */
+  private async finished(fact: string, payload: unknown): Promise<unknown> {
+    const link = this.pipes.get(fact);
+    if (!link) return payload;
+
+    const facade = this.container.resolve<Record<string, Function>>(link.door);
+    return await facade[link.op]({ ...Invocation.empty, input: payload });
   }
 
   /**

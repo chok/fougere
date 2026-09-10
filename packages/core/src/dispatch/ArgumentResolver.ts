@@ -38,8 +38,12 @@ export class ArgumentResolver {
           args.push(val);
           break;
         }
-        case 'fact': {
-          // A fact IS the payload — the whole of what happened, never a piece of it.
+        case 'fact':
+        case 'pipe': {
+          // A fact IS the payload — the whole of what happened, never a piece of it. The
+          // same holds before it is final: an op that finishes one is handed all of it,
+          // and answers all of it.
+          //
           // Identical to `input` today, and deliberately not sharing its branch: the two
           // agree by coincidence, not by rule, and the day `input` learns to look up a
           // value by parameter name a subscriber would receive ONE FIELD of the fact it

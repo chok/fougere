@@ -38,6 +38,7 @@ pnpm -C demos/config-reload dev     # one boot, a real SIGHUP, a drain — and w
 pnpm -C demos/mirror-catalog dev    # two passes over a source that only answers ?page=&since=
 pnpm -C demos/sse-live dev         # live fan-out to readers who are not trusted peers
 pnpm -C demos/log-destinations dev # two destinations for one line, and the frond that names neither
+pnpm -C demos/pipe-split dev       # the op that FINISHES a fact — here, then behind `remotes:`
 pnpm -C demos/observability dev    # three processes; `pnpm load` (k6) and `pnpm signoz` beside it
 pnpm -C demos/together-frame dev   # two writes that stand or fall as one — then uncomment `sources:`
 pnpm -C demos/test-gradient test   # 53 tests, 44 of them from a one-line file
@@ -121,6 +122,7 @@ demos/
   cloudflare-d1/       the edge rung — scan emitted, no tsc shipped
   sse-live/            live fan-out to readers who are not trusted peers
   log-destinations/    where a line goes is the operator's line, not the domain's
+  pipe-split/          `Pipe<T>` — one op answers the fact everyone else reads, and what a split costs
   admin-panel/ one-declaration/ express-blog/ next-blog/ sveltekit-blog/
   react-router-blog/ tanstack-blog/ multi-transport/ emit-fleet/ emit-split/
   container-basics/ core-scanner/ multi-frond/ crud-auto/ auth-better/
@@ -321,6 +323,18 @@ method's own doc sentence, read from the AST (`compiler/src/scan/handler-parser.
 invocation)`. `createLocalRunner` (`boot/runner.ts`) executes locally, `createAppRunner`
 follows the topology, `identityCardOf` (`boot/card.ts`) answers `rpc.discover`. Transports
 move the value, never reshape it. Browser-safe surface: `@fougere/core/contract`.
+
+**`Pipe<T>` finishes a fact** — the third word of the family, and the declared form of a
+position the core already held: `Emissions.stamped` realizes `created()` before anyone is
+handed anything. An op taking `Pipe<T>` ANSWERS the fact every subscriber then reads, so its
+output is DERIVED from the fact rather than projected (`effective-operation.ts`) and it is
+handed the whole of it (`ArgumentResolver`, the `fact` branch). At most ONE per fact: two
+refuse at boot naming both, since nothing would say which finished it and scan order is not
+an answer. It is a HARD dependency where a subscriber is not — a subscriber that throws is
+logged and the announcer goes on, a link that throws stops the announcement, and behind
+`remotes:` that makes announcing depend on another process. Pinned by `tests/pipe.test.ts`
+and `demos/pipe-split`. `Fact` and `Pipe` are both transparent (`= T`), so the scan keeps
+them by NAME (`handler-parser.ts`, `ANNOUNCED`) — the checker keeps nothing of an alias.
 
 **`Emit<T>` / `Fact<T>`** (`core/src/wire/emit.ts`, dispatched by `boot/Emissions.ts`) — every
 other call names ONE recipient; an emission names a SUBJECT. Accepting a `Fact<T>` IS the

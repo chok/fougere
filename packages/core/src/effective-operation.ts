@@ -229,13 +229,19 @@ export function resolveEffectiveOperations(
 
         // A fact is validated by the entity it names. This used to be patched into the
         // facade after resolution, leaving check/explain with a different input.
-        let input = contract.input;
-        if (!input) {
-          const fact = contract.binding.find((binding) => binding.source.kind === 'fact');
-          if (fact?.source.kind === 'fact') input = schemas.get(fact.source.factName);
-        }
+        const announced = contract.binding.find((binding) =>
+          binding.source.kind === 'fact' || binding.source.kind === 'pipe');
+        const fact = announced?.source.kind === 'fact' || announced?.source.kind === 'pipe'
+          ? schemas.get(announced.source.factName)
+          : undefined;
+        const input = contract.input ?? fact;
 
-        const output = effectiveOutput(frond, handler, name, contract);
+        // An op that FINISHES a fact answers the fact, so its answer is the fact's shape:
+        // derived here, where its input already is. Left to the ordinary projection it
+        // came back stripped — measured, the subscriber got a value with no `id`.
+        const output = announced?.source.kind === 'pipe' && fact
+          ? { schema: fact, closed: false }
+          : effectiveOutput(frond, handler, name, contract);
         const className = handler.ctor.name.endsWith('Handler')
           ? handler.ctor.name.slice(0, -'Handler'.length)
           : handler.ctor.name;

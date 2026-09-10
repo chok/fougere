@@ -12,6 +12,16 @@ export type Emit<T> = (fact: Partial<T>) => Promise<void>;
 /** What a subscriber accepts — and what it PROMISES about itself. */
 export type Fact<T> = T;
 
+/**
+ * The same fact, BEFORE it is final: an op taking one ANSWERS the value every subscriber
+ * then receives, so it is the declared form of what `Emissions.stamped` already does for
+ * `created()`.
+ *
+ * Not a second announcement and not a chain a subscriber joins: the links run once, before
+ * anyone is handed anything, which is what keeps a fact the same for every reader.
+ */
+export type Pipe<T> = T;
+
 /** The container key of an emission — THE one place that spells the format. */
 export function emitKeyOf(fact: string): string {
   return `${lowerFirst(fact)}Emit`;

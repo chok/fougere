@@ -177,19 +177,23 @@ function parsedParam(param: ts.ParameterDeclaration, source: ts.SourceFile, chec
   };
 }
 
+/** The transparent markers, kept by NAME because the checker keeps nothing of them. */
+const ANNOUNCED = new Set(['Fact', 'Pipe']);
+
 /** Parse a TypeScript type node into a TypeRef. */
 function parseTypeNode(node: ts.TypeNode, source: ts.SourceFile, checker?: ts.TypeChecker): TypeRef {
   const ts = getTS();
   const raw = node.getText(source);
 
   if (checker) {
-    // `Fact<T>` is deliberately transparent in TypeScript (`type Fact<T> = T`), because
-    // a subscriber receives the payload itself. The checker erases that marker, while
-    // the binding plan still needs it to distinguish a fact from an ordinary body.
-    if (ts.isTypeReferenceNode(node) && ts.isIdentifier(node.typeName) && node.typeName.text === 'Fact') {
+    // `Fact<T>` and `Pipe<T>` are deliberately transparent in TypeScript (`= T`), because
+    // both receive the payload itself — one reads it, the other answers the value every
+    // reader then gets. The checker erases the marker, while the binding plan still needs
+    // it to tell either from an ordinary body.
+    if (ts.isTypeReferenceNode(node) && ts.isIdentifier(node.typeName) && ANNOUNCED.has(node.typeName.text)) {
       return {
         raw,
-        name: 'Fact',
+        name: node.typeName.text,
         generics: node.typeArguments?.map((arg) => parseTypeNode(arg, source, checker)) ?? [],
       };
     }
