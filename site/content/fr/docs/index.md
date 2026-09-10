@@ -20,6 +20,12 @@ découlent, et on les vend d'habitude comme deux fonctionnalités distinctes :
 Une seule règle lue dans deux directions — ce qu'une déclaration produit, et ce dont on peut
 l'entourer. Le reste de cette page, ce sont ces deux lectures.
 
+Lue une troisième fois, elle parle de toi : un champ change, et il n'y a qu'un endroit à
+relire. Les projections ne peuvent pas s'en écarter, et ce que le framework peut prouver
+faux est refusé au boot plutôt que répondu. C'est cette propriété qui décide si un diff peut
+être relu — la question qui arrive le jour où l'essentiel du code n'a pas été tapé par un
+humain.
+
 ## Ce qui en dérive
 
 **Single-schema.** Une classe d'entité déclare vos données une fois — et valide elle-même

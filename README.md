@@ -35,6 +35,11 @@ export default class Post extends entity({
 `readOnly` is not a note about intent: it removes the field from what a client may ever
 send, so publishing cannot be a field write — it has to be an operation.
 
+One field changes, and there is one place to read. The table, the validator, the GraphQL
+type and the form contract are derived from it, so they cannot disagree with it — and a
+declaration the framework can prove wrong is refused at boot, naming it. A diff stays
+reviewable whoever wrote it: you, a colleague, or an agent.
+
 ## Quick start
 
 ```bash

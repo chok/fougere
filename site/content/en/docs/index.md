@@ -20,6 +20,11 @@ and they are ordinarily sold as two separate features:
 One rule read in two directions — what a declaration produces, and what it may be
 surrounded by. The rest of this page is those two readings.
 
+Read a third way, it is about you: one field changes, and there is one place to read. The
+projections cannot drift from it, and what the framework can prove wrong is refused at boot
+rather than answered. This is the property that decides whether a diff can be reviewed at
+all — the question that arrives the day most of the code was not typed by a human.
+
 ## What is derived from it
 
 **Single-schema.** One entity class declares your data once — and validates its own input:
