@@ -7,7 +7,8 @@ export default class PostHandler {
 
   /** Publish a draft, and say so. */
   async publish(id: string): Promise<{ id: string }> {
-    await this.published({ id, title: `post ${id}`, at: new Date() });
+    // No `at`: the entity says the system writes it, and announcing is what does.
+    await this.published({ id, title: `post ${id}` });
     return { id };
   }
 }

@@ -1,8 +1,13 @@
 /** Announcing a fact — the half of the topology `remotes:` never covered. */
 import { lowerFirst } from '@fougere/schema';
 
-/** What an emitter injects. */
-export type Emit<T> = (fact: T) => Promise<void>;
+/**
+ * What an emitter injects. PARTIAL, because announcing is what REALIZES the fact's
+ * `lifecycle.create` — an `at: created()` is stamped by `Emissions`, so requiring it from
+ * the announcer made every emitter cast its way past its own type. A missing field is
+ * still refused, by the judge that reads the fact at announce time.
+ */
+export type Emit<T> = (fact: Partial<T>) => Promise<void>;
 
 /** What a subscriber accepts — and what it PROMISES about itself. */
 export type Fact<T> = T;
