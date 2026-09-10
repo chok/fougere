@@ -4,8 +4,9 @@
   "type": "module",
   "scripts": {
     "dev": "tsx src/main.ts",
-    "dev:redact": "tsx src/redact.ts",
-    "typecheck": "tsc --noEmit -p ."
+    "dev:redact": "tsx src/redact.ts redact 4600",
+    "typecheck": "tsc --noEmit -p .",
+    "dev:stamp": "tsx src/redact.ts stamp 4601"
   },
   "dependencies": {
     "@fougere/compiler": "workspace:*",

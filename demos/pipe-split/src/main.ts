@@ -1,14 +1,18 @@
 /**
  * One fact, and the op that finishes it — here, or in another process.
  *
- *   PostHandler ── Emit<PostPublished> ──▶ [ RedactHandler: Pipe<…> ] ──▶ IndexHandler: Fact<…>
+ *   PostHandler ── Emit<…> ──▶ [ RedactHandler ] ──▶ [ StampHandler ] ──▶ IndexHandler: Fact<…>
+ *
+ * TWO links, in the order `fronds/blog/frond.config.ts` states — and the second reads what
+ * the first answered. Behind `remotes:` they run in three processes and nothing changes.
  *
  * `Pipe<T>` is the third word of the family: `Emit` announces, `Fact` receives, `Pipe`
  * ANSWERS the fact every subscriber then reads. A subscriber's answer is discarded — that
  * is what keeps a fact the same for everyone — so amending happens once, before anyone.
  *
- *   pnpm dev                      # all three fronds here
- *   pnpm dev:redact & pnpm dev    # the link in its own process — uncomment `remotes:`
+ *   pnpm dev                                # every frond here
+ *   pnpm dev:redact & pnpm dev:stamp        # each link in its own process
+ *   REDACT_ELSEWHERE=1 pnpm dev             # then ask for them by address
  */
 import { createApp, createLocalRunner, Invocation } from '@fougere/core';
 import { scanProject, frondAliases } from '@fougere/compiler';
@@ -24,7 +28,9 @@ const jiti = createJiti(import.meta.url, { interopDefault: true, alias: await fr
 setModuleLoader((filePath) => jiti.import(filePath) as Promise<Record<string, unknown>>);
 
 /** The whole topology statement. Comment it out and the link runs in this process. */
-const remotes = process.env.REDACT_ELSEWHERE ? { redact: 'http://127.0.0.1:4600' } : undefined;
+const remotes = process.env.REDACT_ELSEWHERE
+  ? { redact: 'http://127.0.0.1:4600', stamp: 'http://127.0.0.1:4601' }
+  : undefined;
 
 const app = await createApp({
   scan: await scanProject(root),
@@ -48,8 +54,9 @@ try {
 await new Promise((resolve) => setTimeout(resolve, 60));
 
 console.log(`
-  The address never reached the subscriber: RedactHandler answered the fact, and what it
-  answered is the only version anyone else read.
+  Two links ran, in the order fronds/blog/frond.config.ts states. The second read what the
+  first answered — redacted=true is StampHandler seeing RedactHandler's work — and the
+  subscriber read only the end of the chain.
 
   REDACT_ELSEWHERE=1 pnpm dev   with :4600 up   — the same, one wire crossing later
   REDACT_ELSEWHERE=1 pnpm dev   with :4600 down — publishing itself fails

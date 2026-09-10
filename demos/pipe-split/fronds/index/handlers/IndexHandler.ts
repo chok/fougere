@@ -5,6 +5,6 @@ import type PostPublished from '../../blog/entities/PostPublished.js';
 export default class IndexHandler {
   /** Re-index what was published. */
   async reindex(fact: Fact<PostPublished>): Promise<void> {
-    console.log(`    index  → ${fact.id}  email=${JSON.stringify(fact.email)}`);
+    console.log(`    index reads  email=${JSON.stringify(fact.email)}  title=${JSON.stringify(fact.title)}`);
   }
 }

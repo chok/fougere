@@ -342,9 +342,14 @@ would be partial and say nothing about it. Pinned by `tests/ask.test.ts`.
 position the core already held: `Emissions.stamped` realizes `created()` before anyone is
 handed anything. An op taking `Pipe<T>` ANSWERS the fact every subscriber then reads, so its
 output is DERIVED from the fact rather than projected (`effective-operation.ts`) and it is
-handed the whole of it (`ArgumentResolver`, the `fact` branch). At most ONE per fact: two
-refuse at boot naming both, since nothing would say which finished it and scan order is not
-an answer. It is a HARD dependency where a subscriber is not — a subscriber that throws is
+handed the whole of it (`ArgumentResolver`, the `fact` branch). Several may finish one fact, and they run in
+the ORDER their fact's owner declared — `pipes: { postPublished: ['RedactHandler',
+'StampHandler'] }` in `frond.config.ts`, where the second reads what the first answered.
+Two links with no order refuse at boot naming both, a link the order does not list refuses
+too, and a frond ordering a fact it does not own refuses: ordering is a decision about the
+fact, and a decision has one owner. A link is CALLED, so it needs an address — local, or named in `remotes:`. A carrier has no
+address, so a link can never live behind one, the same line `Ask` draws. It is a HARD
+dependency where a subscriber is not — a subscriber that throws is
 logged and the announcer goes on, a link that throws stops the announcement, and behind
 `remotes:` that makes announcing depend on another process. Pinned by `tests/pipe.test.ts`
 and `demos/pipe-split`. `Fact` and `Pipe` are both transparent (`= T`), so the scan keeps

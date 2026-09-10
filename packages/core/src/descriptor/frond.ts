@@ -167,6 +167,8 @@ export interface FrondDescriptor {
    * domain. Set by the boot, never by a declaration.
    */
   brought?: true;
+  /** The ops that finish a fact, in order — see `FrondConfig.pipes`. */
+  pipes?: Record<string, string[]>;
   /**
    * Per-surface entity lists from frond.config.ts (e.g. { graphql: ['Post'], rest: ['Post',
    * 'Author'] }).

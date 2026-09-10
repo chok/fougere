@@ -1,4 +1,4 @@
-import { applyCreate, dotted, type SchemaView } from '@fougere/schema';
+import { applyCreate, dotted, lowerFirst, type SchemaView } from '@fougere/schema';
 import type { Container } from '@fougere/container';
 import { validationErrorsOf } from '../wire/errors.js';
 import { askKeyOf, emitKeyOf, factsAnnouncedBy, subjectsAskedBy } from '../wire/emit.js';
@@ -22,8 +22,11 @@ export class Emissions {
   /** Who listens to what. Filled as each door's contracts are resolved. */
   private readonly subscribers = new Map<string, Listener[]>();
 
-  /** Who FINISHES a fact — at most one per fact, see `claimPipe`. */
-  private readonly pipes = new Map<string, Listener>();
+  /** Who FINISHES a fact, in the order they run — see `orderPipes`. */
+  private readonly pipes = new Map<string, Listener[]>();
+
+  /** The order its OWNER declared, by fact — `pipes:` in `frond.config.ts`. */
+  private readonly ordered: Map<string, string[]>;
 
   /** Who ANSWERS a question. Every one of them is asked, and every answer comes back. */
   private readonly responders = new Map<string, Listener[]>();
@@ -47,6 +50,22 @@ export class Emissions {
   ) {
     this.announced = new Set(fronds.flatMap((frond) => factsAnnouncedBy(frond.handlers)));
     this.asked = new Set(fronds.flatMap((frond) => subjectsAskedBy(frond.handlers)));
+    // Read from the frond that OWNS the fact: ordering is a decision about the fact, and
+    // a decision has one owner. A frond ordering a neighbour's fact is refused below.
+    this.ordered = new Map(fronds.flatMap((frond) => {
+      const owned = new Set(frond.entities.map((entity) => entity.name));
+
+      return Object.entries(frond.pipes ?? {}).map(([fact, order]) => {
+        if (!owned.has(lowerFirst(fact))) {
+          throw new Error(
+            `Frond '${frond.name}' orders the links of '${fact}', which it does not own.\n`
+            + '  The order belongs to the frond that declares the entity — state `pipes:` there.',
+          );
+        }
+
+        return [lowerFirst(fact), order] as const;
+      });
+    }));
   }
 
   /**
@@ -74,21 +93,49 @@ export class Emissions {
     }
   }
 
-  /**
-   * One link per fact, refused rather than ordered: between two of them nothing says which
-   * finishes the fact, and scan order is not an answer — the same reason two
-   * implementations of a port refuse and two remotes over one entity refuse.
-   */
+  /** One more op that finishes this fact. What ORDER they run in is settled at `register`. */
   private claimPipe(fact: string, taking: Listener): void {
-    const held = this.pipes.get(fact);
-    if (held && `${held.door}.${held.op}` !== `${taking.door}.${taking.op}`) {
-      throw new Error(
-        `Two ops finish the fact '${fact}': ${held.door}.${held.op} and ${taking.door}.${taking.op}.\n`
-        + '  A fact is the same for every subscriber, so exactly one op may answer it. '
-        + 'Merge the two, or make one of them accept `Fact<…>` and change nothing.',
-      );
+    const held = this.pipes.get(fact) ?? [];
+    if (held.some((one) => `${one.door}.${one.op}` === `${taking.door}.${taking.op}`)) return;
+    held.push(taking);
+    this.pipes.set(fact, held);
+  }
+
+  /**
+   * Put the links in the order their fact's owner declared, and refuse what it did not.
+   *
+   * Two links with no order refuse: nothing would say which finished the fact, and scan
+   * order is not an answer — the same reason two implementations of a port refuse. One
+   * link needs no declaration, because there is nothing to order.
+   */
+  private orderPipes(): void {
+    for (const [fact, links] of this.pipes) {
+      const declared = this.ordered.get(fact);
+      const named = (one: Listener) => `${one.door}.${one.op}`;
+
+      if (!declared) {
+        if (links.length < 2) continue;
+        throw new Error(
+          `${links.length} ops finish the fact '${fact}': ${links.map(named).join(', ')}.\n`
+          + '  They run one after another and nothing says in which order. State it on the '
+          + `frond that owns '${fact}':\n`
+          + `    export default { pipes: { ${fact}: ['FirstHandler', 'SecondHandler'] } };\n`
+          + '  Or make all but one accept `Fact<…>`, which changes nothing and reads it.',
+        );
+      }
+
+      const at = (one: Listener) => declared.findIndex((name) => doorOf(name) === one.door);
+      const unlisted = links.filter((one) => at(one) < 0);
+      if (unlisted.length > 0) {
+        throw new Error(
+          `${unlisted.map(named).join(', ')} finish${unlisted.length > 1 ? '' : 'es'} the fact `
+          + `'${fact}', and '${fact}' orders ${declared.join(', ')} — so where it runs is not said.\n`
+          + '  Add it to `pipes:`, or make it accept `Fact<…>`.',
+        );
+      }
+
+      this.pipes.set(fact, [...links].sort((one, other) => at(one) - at(other)));
     }
-    this.pipes.set(fact, taking);
   }
 
   /** The shape a fact is validated by, when the fact is a declared entity. */
@@ -108,6 +155,7 @@ export class Emissions {
 
   /** Register one emission value per fact — announced here, or merely listened to. */
   register(): void {
+    this.orderPipes();
     for (const fact of new Set([...this.announced, ...this.subscribers.keys()])) {
       this.container.registerValue(emitKeyOf(fact), (raw: unknown) => this.announce(fact, raw));
     }
@@ -210,11 +258,13 @@ export class Emissions {
    * the announcement — it was finishing the fact, and half a fact is not one.
    */
   private async finished(fact: string, payload: unknown): Promise<unknown> {
-    const link = this.pipes.get(fact);
-    if (!link) return payload;
+    let carried = payload;
+    for (const link of this.pipes.get(fact) ?? []) {
+      const facade = this.container.resolve<Record<string, Function>>(link.door);
+      carried = await facade[link.op]({ ...Invocation.empty, input: carried });
+    }
 
-    const facade = this.container.resolve<Record<string, Function>>(link.door);
-    return await facade[link.op]({ ...Invocation.empty, input: payload });
+    return carried;
   }
 
   /**
@@ -270,4 +320,14 @@ export class Emissions {
     return `refused the shape — ${refusals.map((d) => `${dotted(d.path)}: ${d.message}`).join(', ')}.`
       + ` If '${fact}' gained a field, this copy is older than the sender's: re-run \`fougere sync\`.`;
   }
+}
+
+/**
+ * The container key a declared CLASS NAME answers under — `RedactHandler` → `redactHandler`,
+ * the same key `facadeKeyOf` builds from an address.
+ */
+function doorOf(declared: string): string {
+  const key = lowerFirst(declared);
+
+  return key.endsWith('Handler') ? key : `${key}Handler`;
 }

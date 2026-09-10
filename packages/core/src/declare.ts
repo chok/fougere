@@ -96,6 +96,8 @@ export interface FrondDeclaration {
    * put it in.
    */
   middlewares?: (Ctor | (DeclaredSubject & { scope?: MiddlewareEntry['scope'] }))[];
+  /** The ops that finish a fact, in order — the same key `frond.config.ts` states. */
+  pipes?: Record<string, string[]>;
   /** Per-surface entity lists — the same key `frond.config.ts` states. */
   surfaces?: Record<string, string[]>;
   /** The import scope this frond answers under. Defaults to the conventional one. */
@@ -204,6 +206,7 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
     collectors,
     seeds,
     middlewares,
+    ...(declared.pipes ? { pipes: declared.pipes } : {}),
     ...(declared.surfaces ? { surfaces: declared.surfaces } : {}),
   };
 }

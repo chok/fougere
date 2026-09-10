@@ -1,7 +1,8 @@
 /**
- * The link, in its own process. `pnpm dev:redact` — then `pnpm dev` finds it by address.
+ * One link, in its own process — `pnpm dev:redact`, `pnpm dev:stamp`.
  *
- * `RedactHandler` is the same file either way. What decides is one line in `src/main.ts`.
+ * The handler file is the same one that runs in-process when `pnpm dev` scans everything.
+ * A link does not know it is second: the order is applied where the fact is announced.
  */
 import { createApp, createLocalRunner } from '@fougere/core';
 import { scanProject, frondAliases } from '@fougere/compiler';
@@ -16,8 +17,12 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const jiti = createJiti(import.meta.url, { interopDefault: true, alias: await frondAliases(root) });
 setModuleLoader((filePath) => jiti.import(filePath) as Promise<Record<string, unknown>>);
 
-const app = await createApp({ scan: await scanProject(root, ['redact', 'blog']), createContainer });
-const receiver = await serve(createLocalRunner(app), { port: 4600 });
+const [name, port] = process.argv.slice(2);
+// Its own frond and nothing else. The ORDER is read where the fact is ANNOUNCED, so a
+// link needs neither it nor the entity — and hosting `blog` here would make two processes
+// claim to serve it.
+const app = await createApp({ scan: await scanProject(root, [name!]), createContainer });
+const receiver = await serve(createLocalRunner(app), { port: Number(port) });
 
-console.log('\n  redact on :4600 — the link alone in its process\n');
+console.log(`\n  ${name} on :${port} — one link, alone in its process\n`);
 process.on('SIGINT', async () => { await receiver.close(); await app.dispose(); process.exit(0); });

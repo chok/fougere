@@ -596,6 +596,7 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
     collectors,
     seeds,
     middlewares,
+    ...(frondConfig?.pipes ? { pipes: frondConfig.pipes } : {}),
     surfaces: frondConfig?.surfaces,
     reads: frondConfig?.reads,
     operationsOverrides,
