@@ -300,7 +300,16 @@ and `demos/log-destinations`.
 declares one: `boot/ports.ts`, `portBindings` reads the prototype chain at boot, so
 `class StripePayment extends Payment` IS the registration. Two implementations REFUSE at
 boot naming both; `ports: { Payment: 'StripePayment' }` settles it. Only the direct base
-binds. A builtin is a port too: `class AuditLogger extends Logger` takes the `Logger` key
+binds.
+
+A port may be answered by a CHAIN, and a WRAPPER is recognized by its form: it extends the
+port AND asks for it (`constructor(private inner: Payment)`). Wrapping used to be
+impossible — a wrapper was a second implementation, so the boot refused it, and
+`StorageGuard` was the only one in the tree, hard-coded for one port. The container needs
+nothing new: a dep resolves by NAME, so wrapping is a substituted key. One wrapper needs no
+declaration; two REFUSE, because which stands in front is an order and scan order is not
+one — `ports: { Payment: ['Retrying', 'Stripe'] }` states the chain from the OUTSIDE IN,
+and the last name is what actually charges. Pinned by `tests/ports.test.ts`. A builtin is a port too: `class AuditLogger extends Logger` takes the `Logger` key
 for that frond. Pinned by `tests/ports.test.ts`.
 
 **Sources** — a place rows live, and the four gestures it owns: `storageFactory` (required),

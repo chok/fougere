@@ -57,7 +57,12 @@ export interface CreateAppOptions {
    * Which realization answers which port — see `FougereConfig.ports`. Needed only
    * when two classes extend the same port; one is resolved by convention.
    */
-  ports?: Record<string, string>;
+  /**
+   * What answers a port. A string names the realization; a LIST is the chain, from the
+   * outside in — `['Retrying', 'Stripe']` puts `Retrying` in front of `Stripe`, and the
+   * last name is what actually charges.
+   */
+  ports?: Record<string, string | readonly string[]>;
   /** What this app takes on beyond its fronds, each stating what it does and what it undoes. */
   extensions?: readonly (Extension | undefined)[];
   /**

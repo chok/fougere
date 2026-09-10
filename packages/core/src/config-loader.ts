@@ -22,7 +22,8 @@ export interface FougereConfig {
   /** Remote fronds — frondName → base URL. */
   remotes?: Record<string, string>;
   /** Which realization answers which port — port class name → implementation class name. */
-  ports?: Record<string, string>;
+  /** What answers a port — a name, or the chain from the outside in. */
+  ports?: Record<string, string | readonly string[]>;
   /** Auth declaration — picks a provider package and forwards options to it. */
   auth?: AuthConfig;
   /** Which protocol adapters this app serves. */

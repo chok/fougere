@@ -128,10 +128,22 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   // reaches the realization instead of the base class it is declared against.
   // Registered AFTER the loop above so a port key always wins over the base's
   // own registration — same precedence as a declared repository over its default.
-  for (const [port, impl] of portBindings(frond.providers, (n) => scope.has(n), options.ports)) {
-    scope.register(port, impl.ctor, { deps: impl.deps });
+  for (const [port, chain] of portBindings(frond.providers, (n) => scope.has(n), options.ports)) {
+    // Registered from the INSIDE OUT, each wrapper asking for the one it stands in front
+    // of: the container resolves a dep by NAME, so wrapping is a substituted key and
+    // needs nothing of the container itself. The outermost answers under the port.
+    let inner = nameOf(chain.at(-1)!);
+    for (const wrapper of [...chain.slice(0, -1)].reverse()) {
+      const deps = wrapper.deps.map((dep) => (dep === port ? inner : dep));
+      inner = nameOf(wrapper);
+      scope.register(inner, wrapper.ctor, { deps });
+    }
+    const outermost = chain[0]!;
+    scope.register(port, outermost.ctor, {
+      deps: outermost.deps.map((dep) => (dep === port ? nameOf(chain[1]!) : dep)),
+    });
     boundPorts.add(port);
-    frondLog.debug(`port ${port} → ${impl.ctor.name}`);
+    frondLog.debug(`port ${port} → ${chain.map((one) => one.ctor.name).join(' → ')}`);
   }
   if (frond.providers.length > 0) {
     frondLog.debug(`${frond.providers.length} provider(s): ${frond.providers.map(nameOf).join(', ')}`);
