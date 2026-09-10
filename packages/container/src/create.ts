@@ -18,14 +18,11 @@ const isDisposable = (value: unknown): value is Disposable =>
 
 function createScope(parent?: ScopeContainer): ScopeContainer {
   const registry = new Map<string, Entry>();
-  // Construction order, so disposal can run in reverse: a thing built later may
-  // hold something built earlier.
+  // In construction order: a thing built later may hold one built earlier, so disposal
+  // walks this backwards.
   const built: unknown[] = [];
-  // The scopes opened from this one. A child is built BY this container, so it is this
-  // container's to close — and it is closed first, because it may hold what the parent
-  // built while the parent holds nothing of its. Without this a frond's scope, which is
-  // where every provider lives, was never disposed at all: it is registered as a VALUE
-  // under `frond:<name>`, and a value is not the container's to dispose.
+  // Closed by this container, and before `built` — a child may hold what this scope built,
+  // never the other way round.
   const children: ScopeContainer[] = [];
   let fallback: ((name: string) => unknown) | undefined;
 
@@ -57,8 +54,8 @@ function createScope(parent?: ScopeContainer): ScopeContainer {
         return parent.resolve<T>(name);
       }
 
-      // Nobody holds it. Before failing, ask whoever set a last resort — a frond declared
-      // in `remotes` registers nothing here, so its façade is fabricated rather than found.
+      // Nobody holds it. A frond declared in `remotes` registers nothing here, so its
+      // façade is fabricated by the fallback rather than found.
       if (!entry) {
         const made = container._getFallback()?.(name);
         if (made !== undefined) {
@@ -70,9 +67,8 @@ function createScope(parent?: ScopeContainer): ScopeContainer {
 
       if (entry.instance !== undefined) return entry.instance as T;
       const value = entry.factory(container) as T;
-      // The container disposes what it KEEPS. A transient is handed over and
-      // forgotten in the same breath — remembering it would be a leak that grows
-      // once per call, and its caller is the one who knows when it is done.
+      // The container disposes what it KEEPS: a transient is handed over and forgotten,
+      // and its caller is the one who knows when it is done.
       if (entry.lifetime === 'singleton') {
         entry.instance = value;
         remember(value);
@@ -91,12 +87,9 @@ function createScope(parent?: ScopeContainer): ScopeContainer {
     },
 
     async dispose(): Promise<void> {
-      // Reverse order, and one failure must not silence the rest: everything gets
-      // told, then the errors travel together.
-      // Its parent kept a reference so it could close this scope; the scope closing itself
-      // makes that reference garbage. Nothing created a scope at RUN time until frames did,
-      // so the list only ever grew at boot and stayed bounded — one per request, or one per
-      // transaction, and it grows for the life of the process.
+      // Everything is told before anything throws, then the failures travel together.
+      // Dropped from the parent first: a scope that closes itself leaves a reference the
+      // parent would hold for the life of the process.
       parent?._forget(container);
       const failures: unknown[] = [];
       // A copy: closing a child splices it out of `children`, so walking the array

@@ -1,16 +1,18 @@
-/**
- * A class constructor with any arguments.
- */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Constructor<T = unknown> = new (...args: any[]) => T;
 
-/**
- * Registration options.
- */
 export interface RegisterOptions {
-  /** Lifetime of the resolved value. */
+  /**
+   * `'singleton'` builds once per scope and the container disposes it; `'transient'`
+   * builds per `resolve` and the caller closes it. Absent means `'transient'`.
+   */
   lifetime?: 'singleton' | 'transient';
-  /** Dependency type names for type-based resolution (from AST scan). */
+
+  /**
+   * The TYPE names of the constructor's parameters, resolved in this scope in order —
+   * `constructor(private users: UserRepository, private log: Logger)` is
+   * `deps: ['UserRepository', 'Logger']`.
+   */
   deps?: string[];
 }
 
@@ -21,24 +23,24 @@ export interface Disposable {
 
 /** DI container interface — the only thing application code sees. */
 export interface Container {
-  /** Register a class by name. Its `deps` are resolved from this container. */
+  /** The container builds it: `register('UserService', UserService, { deps: ['UserRepository'] })`. */
   register<T>(name: string, ctor: Constructor<T>, options?: RegisterOptions): void;
 
-  /** Register a pre-built value by name. */
+  /** Already built, so never disposed here — `registerValue('Logger', new Logger('app'))`, a scope, a config. */
   registerValue<T>(name: string, value: T): void;
 
-  /** Resolve a dependency by name. */
+  /** Throws when nothing answers the name; `has` asks without throwing. */
   resolve<T>(name: string): T;
 
-  /** Check if a name is registered (including parent scopes). */
+  /** Answers for this scope and its parents, and builds nothing. */
   has(name: string): boolean;
 
   /** A resolver of last resort, consulted when no scope holds the name. */
   setFallback?(resolve: (name: string) => unknown): void;
 
-  /** Create a child scope. Inherits parent registrations. */
+  /** The child reads every registration above it; the parent closes it. */
   createScope(): Container;
 
-  /** Dispose the container. */
+  /** Children first, then what this scope built, in reverse — refusals travel as one `AggregateError`. */
   dispose(): Promise<void>;
 }

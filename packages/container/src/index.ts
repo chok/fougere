@@ -4,4 +4,5 @@ export {
   type Constructor,
   type Disposable,
 } from './container.js';
+
 export { createContainer } from './create.js';
