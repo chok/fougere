@@ -1,7 +1,7 @@
 import { applyCreate, dotted, lowerFirst, type SchemaView } from '@fougere/schema';
 import type { Container } from '@fougere/container';
 import { validationErrorsOf } from '../wire/errors.js';
-import { askKeyOf, emitKeyOf, factsAnnouncedBy, subjectsAskedBy } from '../wire/emit.js';
+import { emitKeyOf, factsAnnouncedBy } from '../wire/emit.js';
 import { ambient } from '#ambient';
 import { Invocation } from '../wire/Invocation.js';
 import type { Logger } from '../builtin/logger.js';
@@ -28,18 +28,12 @@ export class Emissions {
   /** The order its OWNER declared, by fact — `pipes:` in `frond.config.ts`. */
   private readonly ordered: Map<string, string[]>;
 
-  /** Who ANSWERS a question. Every one of them is asked, and every answer comes back. */
-  private readonly responders = new Map<string, Listener[]>();
-
   /**
    * What is announced here, read from the DEPS and not from the subscribers: a handler declaring
    * `Emit<PostPublished>` must resolve it whether or not anybody listens, and announcing to nobody
    * is legal.
    */
   private readonly announced: Set<string>;
-
-  /** What is asked here, read the same way and for the same reason. */
-  private readonly asked: Set<string>;
 
   constructor(
     fronds: Fronds,
@@ -49,7 +43,6 @@ export class Emissions {
     private readonly carry?: Carrier,
   ) {
     this.announced = new Set(fronds.flatMap((frond) => factsAnnouncedBy(frond.handlers)));
-    this.asked = new Set(fronds.flatMap((frond) => subjectsAskedBy(frond.handlers)));
     // Read from the frond that OWNS the fact: ordering is a decision about the fact, and
     // a decision has one owner. A frond ordering a neighbour's fact is refused below.
     this.ordered = new Map(fronds.flatMap((frond) => {
@@ -77,12 +70,6 @@ export class Emissions {
       for (const bound of contract.binding ?? []) {
         if (bound.source.kind === 'pipe') {
           this.claimPipe(bound.source.factName, { door, op });
-          continue;
-        }
-        if (bound.source.kind === 'answer') {
-          const answering = this.responders.get(bound.source.subjectName) ?? [];
-          answering.push({ door, op });
-          this.responders.set(bound.source.subjectName, answering);
           continue;
         }
         if (bound.source.kind !== 'fact') continue;
@@ -159,21 +146,6 @@ export class Emissions {
     for (const fact of new Set([...this.announced, ...this.subscribers.keys()])) {
       this.container.registerValue(emitKeyOf(fact), (raw: unknown) => this.announce(fact, raw));
     }
-    for (const subject of new Set([...this.asked, ...this.responders.keys()])) {
-      // A carrier publishes to whoever subscribed elsewhere, and nothing comes back — so a
-      // subject that has one would answer with only the responders this process knows,
-      // silently. Refused here rather than half-answered at the first call.
-      if (this.carry) {
-        throw new Error(
-          `'${subject}' is asked, and this app has a carrier (\`onEmit\`).\n`
-          + '  Asking waits for every responder, which means knowing them — a carrier '
-          + 'publishes to whoever subscribed elsewhere and brings nothing back, so the '
-          + 'answer would be partial and say nothing about it.\n'
-          + '  Name the responders in `remotes:`, or announce the subject instead of asking it.',
-        );
-      }
-      this.container.registerValue(askKeyOf(subject), (raw: unknown) => this.ask(subject, raw));
-    }
     if (ambient.degraded && this.subscribers.size > 0) {
       this.log.warn('no async context on this runtime — an emission ring is not detected');
     }
@@ -197,37 +169,6 @@ export class Emissions {
     for (const { door, op, done } of this.handToListeners(fact, payload)) {
       void done.catch((cause) => this.log.error(`${fact} → ${door}.${op}`, this.describeRefusal(fact, cause) ?? cause));
     }
-  }
-
-  /**
-   * Asking — the dual of announcing, and the difference is that this one waits.
-   *
-   * Every responder answers and every answer comes back, so nothing combines them: the
-   * asker has them all and decides. A carrier is NOT reached: it publishes to whoever
-   * subscribed elsewhere, and you cannot wait for someone whose existence you do not know
-   * — refused at boot rather than answered partially in silence.
-   */
-  private async ask(subject: string, raw: unknown): Promise<unknown[]> {
-    const question = this.stamped(subject, raw);
-    const asked = this.handToListeners(subject, question, this.responders);
-    const settled = await Promise.allSettled(asked.map((one) => one.done));
-
-    // A responder that did not answer REFUSES the question, it does not shrink it: an
-    // asker handed the survivors cannot tell three answers from two, and its own law then
-    // reads silence as consent. Measured on `demos/ask-quorum` — with billing down, the
-    // room billing would have refused was booked.
-    const missing = settled.flatMap((result, at) =>
-      (result.status === 'rejected' ? [{ ...asked[at]!, reason: result.reason as unknown }] : []));
-    if (missing.length > 0) {
-      throw new AggregateError(
-        missing.map((one) => one.reason),
-        `${subject} — ${missing.length} of ${asked.length} responder(s) did not answer`
-        + ` (${missing.map((one) => `${one.door}.${one.op}`).join(', ')}).`
-        + ' Asking waits for everyone: a partial answer would look like a complete one.',
-      );
-    }
-
-    return settled.flatMap((result) => (result.status === 'fulfilled' ? [result.value] : []));
   }
 
   /** Receiving. */
@@ -294,11 +235,7 @@ export class Emissions {
   }
 
   /** Hand the fact to every listener in THIS process, and give back one promise each. */
-  private handToListeners(
-    fact: string,
-    payload: unknown,
-    from: Map<string, Listener[]> = this.subscribers,
-  ): (Listener & { done: Promise<unknown> })[] {
+  private handToListeners(fact: string, payload: unknown): (Listener & { done: Promise<unknown> })[] {
     const walked = ambient.currentChain();
     if (walked.includes(fact)) {
       throw new Error(
@@ -307,7 +244,7 @@ export class Emissions {
       );
     }
 
-    const listeners = from.get(fact) ?? [];
+    const listeners = this.subscribers.get(fact) ?? [];
     if (listeners.length === 0) {
       this.log.debug(`${fact} — nobody listens in this process`);
       return [];

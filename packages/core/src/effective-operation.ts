@@ -229,22 +229,18 @@ export function resolveEffectiveOperations(
 
         // A fact is validated by the entity it names. This used to be patched into the
         // facade after resolution, leaving check/explain with a different input.
-        const announced = contract.binding.find((binding) => binding.source.kind === 'fact'
-          || binding.source.kind === 'pipe' || binding.source.kind === 'answer');
-        const about = announced?.source.kind === 'answer'
-          ? schemas.get(announced.source.subjectName)
-          : announced?.source.kind === 'fact' || announced?.source.kind === 'pipe'
-            ? schemas.get(announced.source.factName)
-            : undefined;
-        const input = contract.input ?? about;
+        const announced = contract.binding.find((binding) =>
+          binding.source.kind === 'fact' || binding.source.kind === 'pipe');
+        const fact = announced?.source.kind === 'fact' || announced?.source.kind === 'pipe'
+          ? schemas.get(announced.source.factName)
+          : undefined;
+        const input = contract.input ?? fact;
 
-        // An op that FINISHES a fact answers the fact, and one that ANSWERS a question
-        // answers its subject — so the shape is derived here, where its input already is.
-        // Left to the ordinary projection it came back stripped: measured, the subscriber
-        // got a value with no `id`.
-        const answering = announced?.source.kind === 'pipe' || announced?.source.kind === 'answer';
-        const output = answering && about
-          ? { schema: about, closed: false }
+        // An op that FINISHES a fact answers the fact, so its answer is the fact's shape:
+        // derived here, where its input already is. Left to the ordinary projection it
+        // came back stripped — measured, the subscriber got a value with no `id`.
+        const output = announced?.source.kind === 'pipe' && fact
+          ? { schema: fact, closed: false }
           : effectiveOutput(frond, handler, name, contract);
         const className = handler.ctor.name.endsWith('Handler')
           ? handler.ctor.name.slice(0, -'Handler'.length)

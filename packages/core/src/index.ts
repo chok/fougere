@@ -58,7 +58,7 @@ export type {
   FrondPlacement,
   Edge,
 } from './contract.js';
-export { type Emit, type Fact, type Pipe, type Ask, type Answer } from './wire/emit.js';
+export { type Emit, type Fact, type Pipe } from './wire/emit.js';
 export { callValueOf } from './contract.js';
 export { toHttpError } from './wire/http-error.js';
 export { toPublicError } from './contract.js';

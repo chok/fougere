@@ -178,7 +178,7 @@ function parsedParam(param: ts.ParameterDeclaration, source: ts.SourceFile, chec
 }
 
 /** The transparent markers, kept by NAME because the checker keeps nothing of them. */
-const ANNOUNCED = new Set(['Fact', 'Pipe', 'Answer']);
+const ANNOUNCED = new Set(['Fact', 'Pipe']);
 
 /** Parse a TypeScript type node into a TypeRef. */
 function parseTypeNode(node: ts.TypeNode, source: ts.SourceFile, checker?: ts.TypeChecker): TypeRef {
@@ -186,10 +186,10 @@ function parseTypeNode(node: ts.TypeNode, source: ts.SourceFile, checker?: ts.Ty
   const raw = node.getText(source);
 
   if (checker) {
-    // `Fact<T>`, `Pipe<T>` and `Answer<T>` are deliberately transparent in TypeScript
-    // (`= T`): all three receive the payload itself — one reads it, one answers what every
-    // reader then gets, one answers whoever asked. The checker erases the marker, while the
-    // binding plan still needs it to tell any of them from an ordinary body.
+    // `Fact<T>` and `Pipe<T>` are deliberately transparent in TypeScript (`= T`), because
+    // both receive the payload itself — one reads it, the other answers the value every
+    // reader then gets. The checker erases the marker, while the binding plan still needs
+    // it to tell either from an ordinary body.
     if (ts.isTypeReferenceNode(node) && ts.isIdentifier(node.typeName) && ANNOUNCED.has(node.typeName.text)) {
       return {
         raw,

@@ -1,5 +1,5 @@
 import { DEFAULT_CONVENTIONS, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, togetherKeyOf, type Conventions, type ConventionsInput, type ScanDiagnostic, type ScanResult } from '@fougere/core';
-import { Fronds, askKeyOf, cardinalityOf, computeBindingPlan, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf } from '@fougere/core/descriptor';
+import { Fronds, cardinalityOf, computeBindingPlan, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf } from '@fougere/core/descriptor';
 import { getModuleLoader, loadFrondConfig } from '@fougere/core/node';
 import type { FrondConfig } from '@fougere/core';
 import { readdir, readFile } from 'node:fs/promises';
@@ -135,11 +135,6 @@ function depKeyOf(type: TypeRef): string {
   // function that announces. Who receives it is not in the signature and never will be.
   const factOf = type.name === 'Emit' ? type.generics?.[0]?.name : undefined;
   if (factOf) return emitKeyOf(factOf);
-
-  // `Ask<CanBook>` — its dual, and the difference is that this one WAITS. Same reading,
-  // same silence about who answers.
-  const askedOf = type.name === 'Ask' ? type.generics?.[0]?.name : undefined;
-  if (askedOf) return askKeyOf(askedOf);
 
   // `Together<[Account, Ledger], [RateMirror]>` — the fifth reading, and the only one whose
   // argument is a SET rather than one subject. The AST hands each tuple back as a single
