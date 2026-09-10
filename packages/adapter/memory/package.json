@@ -1,6 +1,6 @@
 {
   "name": "@fougere/adapter-memory",
-  "version": "0.9.0-alpha.0",
+  "version": "0.9.0-alpha.1",
   "description": "Rows in a Map — the source a first run meets, and the one that ships no driver.",
   "keywords": [
     "fougere",
