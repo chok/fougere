@@ -6,7 +6,7 @@ import { createContainer } from '@fougere/container';
 import { createHttpTransport } from '@fougere/transport-http';
 import { resolveStorage, type DbConfig } from './storage.js';
 
-export { resolveStorage, declaresStorage, storageFrom } from './storage.js';
+export { resolveStorage, declaresStorage, storageFrom, layerOf } from './storage.js';
 export type { DbConfig, ResolvedStorage } from './storage.js';
 
 export interface BootAppOptions {

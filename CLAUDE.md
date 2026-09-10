@@ -219,7 +219,9 @@ hosts assembled those two members themselves (`compiler/src/boot.ts`,
 `app/shared/src/boot.ts`, the Nuxt codegen as a STRING, and a demo), and eight demos wrote
 nothing — so they had no migration and nothing said it. Rows before tables is a boot that
 finds none, which is not a host's preference to hold. `Source.migrate` is declared once and
-travels whole, through `ResolvedStorage.migrate` to `CreateAppOptions.migrate`. Pinned by
+travels whole: `layerOf(storage)` (`defaults/src/storage.ts`) is the ONE place that spreads
+the data layer into what `createApp` takes, so a host names no member of it — naming a few
+is how `transacted` and `close` were left behind once, under Nuxt only. Pinned by
 `tests/lifecycle.test.ts`.
 
 **The ascent** — `boot/AppLifecycle.ts`. An `Extension` states `up` and `down`, handed in

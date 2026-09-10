@@ -225,3 +225,22 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
     },
   };
 }
+
+/**
+ * The data layer as `createApp` takes it — one gesture, not eight named by hand.
+ *
+ * Naming a few of its members is how `transacted` and `close` were left behind once, under
+ * Nuxt only: a member added here reached no host, and nothing said so. This is the same
+ * lesson one level down — a host spreads the layer instead of listing what it knows of it.
+ */
+export function layerOf(storage: ResolvedStorage, fallback?: ResolvedStorage['storageFactory']) {
+  return {
+    storageFactory: storage.storageFactory ?? fallback,
+    sourceOf: storage.sourceOf,
+    transacts: storage.transacts,
+    enforces: storage.enforces,
+    transacted: storage.transacted as never,
+    migrate: storage.migrate,
+    db: storage.db,
+  };
+}
