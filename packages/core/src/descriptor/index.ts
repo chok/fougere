@@ -8,7 +8,7 @@ export { Fronds } from './Fronds.js';
 export { cardinalityOf, type OperationContract, type OperationsMap, type Param, type TypeRef } from '../wire/operation.js';
 export { computeBindingPlan, type BindingPlan } from '../wire/binding.js';
 export type { Signature } from '../wire/signature.js';
-export { emitKeyOf } from '../wire/emit.js';
+export { emitKeyOf, askKeyOf } from '../wire/emit.js';
 export { storageKeyOf } from '../storage/port.js';
 export { getPresenterFields } from '../prefab/presenter.js';
 export { targetOf, viewsOf, outputOf } from '../prefab/prefab.js';

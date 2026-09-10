@@ -17,6 +17,12 @@ type ParamSource =
    * (`Emissions.stamped`, which realizes `created()`); this is the declared form of it.
    */
   | { kind: 'pipe'; factName: string }
+  /**
+   * `Answer<CanPublish>` — a question, and what this op answers goes back to whoever asked.
+   * As many responders as there are, no law to combine them: the asker gets every answer
+   * and decides, which is what `Pipe` had to avoid by admitting one.
+   */
+  | { kind: 'answer'; subjectName: string }
   | { kind: 'param'; name: string; coerce?: 'number' | 'boolean' }
   | { kind: 'input' }
   | { kind: 'context' }
@@ -30,6 +36,9 @@ interface ParamBinding {
 }
 
 export type BindingPlan = ParamBinding[];
+
+/** The three that name their own subject — `Fact`, `Pipe`, `Answer`. */
+const ANNOUNCED = new Set(['Fact', 'Pipe', 'Answer']);
 
 // ── Primitives ────────────────────────────────
 
@@ -55,19 +64,18 @@ export function computeBindingPlan(
     // `authoruser` missed `authorUser` and fell through to branch 4, the request input.
     const typeKey = lowerFirst(typeName);
 
-    // 0. Fact, or the same fact before it is final. Both name themselves, so nothing has
-    //    to be known in advance, and they come FIRST because branch 4 would otherwise hand
-    //    either the caller's input under the name of something that happened.
-    const announced = param.type.name === 'Fact' || param.type.name === 'Pipe'
-      ? param.type.generics?.[0]?.name
-      : undefined;
-    if (announced) {
+    // 0. What was announced or asked. All three name themselves, so nothing has to be
+    //    known in advance, and they come FIRST because branch 4 would otherwise hand any
+    //    of them the caller's input under the name of something that happened.
+    const subject = ANNOUNCED.has(param.type.name) ? param.type.generics?.[0]?.name : undefined;
+    if (subject) {
+      const named = lowerFirst(subject);
+
       return {
         name: param.name,
-        source: {
-          kind: (param.type.name === 'Pipe' ? 'pipe' : 'fact') as 'pipe' | 'fact',
-          factName: lowerFirst(announced),
-        },
+        source: param.type.name === 'Answer'
+          ? { kind: 'answer' as const, subjectName: named }
+          : { kind: (param.type.name === 'Pipe' ? 'pipe' : 'fact') as 'pipe' | 'fact', factName: named },
         optional: param.optional ?? false,
       };
     }

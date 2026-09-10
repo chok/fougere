@@ -39,6 +39,7 @@ pnpm -C demos/mirror-catalog dev    # two passes over a source that only answers
 pnpm -C demos/sse-live dev         # live fan-out to readers who are not trusted peers
 pnpm -C demos/log-destinations dev # two destinations for one line, and the frond that names neither
 pnpm -C demos/pipe-split dev       # the op that FINISHES a fact — here, then behind `remotes:`
+pnpm -C demos/ask-quorum dev       # one question, three responders, and what a missing one costs
 pnpm -C demos/observability dev    # three processes; `pnpm load` (k6) and `pnpm signoz` beside it
 pnpm -C demos/together-frame dev   # two writes that stand or fall as one — then uncomment `sources:`
 pnpm -C demos/test-gradient test   # 53 tests, 44 of them from a one-line file
@@ -123,6 +124,7 @@ demos/
   sse-live/            live fan-out to readers who are not trusted peers
   log-destinations/    where a line goes is the operator's line, not the domain's
   pipe-split/          `Pipe<T>` — one op answers the fact everyone else reads, and what a split costs
+  ask-quorum/          `Ask<T>` — a subject that answers back, across three processes
   admin-panel/ one-declaration/ express-blog/ next-blog/ sveltekit-blog/
   react-router-blog/ tanstack-blog/ multi-transport/ emit-fleet/ emit-split/
   container-basics/ core-scanner/ multi-frond/ crud-auto/ auth-better/
@@ -323,6 +325,18 @@ method's own doc sentence, read from the AST (`compiler/src/scan/handler-parser.
 invocation)`. `createLocalRunner` (`boot/runner.ts`) executes locally, `createAppRunner`
 follows the topology, `identityCardOf` (`boot/card.ts`) answers `rpc.discover`. Transports
 move the value, never reshape it. Browser-safe surface: `@fougere/core/contract`.
+
+**`Ask<T>` / `Answer<T>` — the dual of announcing, and it WAITS.** Both name a SUBJECT
+rather than a recipient; `Emit` returns nothing, `Ask` returns every answer. No law
+combines them — the asker has them all and decides, which is what `Pipe` had to avoid by
+admitting one responder. Waiting is possible because the responders are KNOWN, read from
+their signatures at boot, wherever they run: a responder behind `remotes:` is reached by
+the transport, which already returns a value. A responder that does not answer REFUSES the
+question rather than shrinking it — measured on `demos/ask-quorum`, an asker handed the
+survivors booked the room the missing one would have refused, because its own law read
+silence as consent. A subject with a carrier is refused at boot for the same reason: a
+carrier publishes to whoever subscribed elsewhere and brings nothing back, so the answer
+would be partial and say nothing about it. Pinned by `tests/ask.test.ts`.
 
 **`Pipe<T>` finishes a fact** — the third word of the family, and the declared form of a
 position the core already held: `Emissions.stamped` realizes `created()` before anyone is
