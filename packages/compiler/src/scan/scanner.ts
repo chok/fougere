@@ -1,5 +1,5 @@
 import { DEFAULT_CONVENTIONS, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, togetherKeyOf, type Conventions, type ConventionsInput, type ScanDiagnostic, type ScanResult } from '@fougere/core';
-import { Fronds, cardinalityOf, computeBindingPlan, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf } from '@fougere/core/descriptor';
+import { Fronds, awaitKeyOf, cardinalityOf, computeBindingPlan, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf } from '@fougere/core/descriptor';
 import { getModuleLoader, loadFrondConfig } from '@fougere/core/node';
 import type { FrondConfig } from '@fougere/core';
 import { readdir, readFile } from 'node:fs/promises';
@@ -134,7 +134,10 @@ function depKeyOf(type: TypeRef): string {
   // than an interlocutor. Read like the other two: the type names what arrives, here a
   // function that announces. Who receives it is not in the signature and never will be.
   const factOf = type.name === 'Emit' ? type.generics?.[0]?.name : undefined;
-  if (factOf) return emitKeyOf(factOf);
+  // A SECOND type is what says the announcer waits: `Emit<CanBook, Verdict>` gives back
+  // what every subscriber answered, `Emit<CanBook>` gives back nothing. Two functions,
+  // two keys — the presence of the type is the whole declaration, and there is no option.
+  if (factOf) return (type.generics?.length ?? 0) > 1 ? awaitKeyOf(factOf) : emitKeyOf(factOf);
 
   // `Together<[Account, Ledger], [RateMirror]>` — the fifth reading, and the only one whose
   // argument is a SET rather than one subject. The AST hands each tuple back as a single

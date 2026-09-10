@@ -116,6 +116,31 @@ importers:
         specifier: ^4.21.0
         version: 4.21.0
 
+  demos/ask-quorum:
+    dependencies:
+      '@fougere/compiler':
+        specifier: workspace:*
+        version: link:../../packages/compiler
+      '@fougere/container':
+        specifier: workspace:*
+        version: link:../../packages/container
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
+      '@fougere/transport-http':
+        specifier: workspace:*
+        version: link:../../packages/transport/http
+      jiti:
+        specifier: ^2.0.0
+        version: 2.7.0
+    devDependencies:
+      tsx:
+        specifier: ^4.0.0
+        version: 4.21.0
+
   demos/auth-better:
     dependencies:
       '@fougere/adapter-sql':

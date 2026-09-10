@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".",
+    "paths": {
+      "@fronds/booking/*": ["./fronds/booking/*"]
+    }
+  },
+  "include": ["."],
+  "exclude": ["**/dist", "node_modules"]
+}

@@ -277,12 +277,14 @@ describe('a sender whose copy has moved ahead', () => {
 
   it('leaves the ANNOUNCEMENT untouched — a refusal reaches a log, never back up', async () => {
     await using app = await createApp({ scan: await scanProject(root), createContainer });
-    const announce = app.container.resolve<(fact: unknown) => Promise<void>>(emitKeyOf('PostPublished'));
+    const announce = app.container.resolve<(fact: unknown) => Promise<unknown[]>>(emitKeyOf('PostPublished'));
 
     // The emission path, not `deliver`: this is the rule that protects the EMITTER, and
     // an earlier version of this test asserted it through the carrier's door, which is
     // exactly the party that must NOT be shielded.
-    await expect(announce({ id: '78', title: 'x', author: 'y' })).resolves.toBeUndefined();
+    // Empty and not `undefined`: an announcement with no answer type waits for nobody, so
+    // there is nothing to give back — `Emit<T, A>` is where a return means something.
+    await expect(announce({ id: '78', title: 'x', author: 'y' })).resolves.toEqual([]);
   });
 
   /** The other direction was never in question: a field that left is missing data. */

@@ -1,7 +1,7 @@
 import { applyCreate, dotted, lowerFirst, type SchemaView } from '@fougere/schema';
 import type { Container } from '@fougere/container';
 import { validationErrorsOf } from '../wire/errors.js';
-import { emitKeyOf, factsAnnouncedBy } from '../wire/emit.js';
+import { awaitKeyOf, emitKeyOf, factsAnnouncedBy, factsAwaitedBy } from '../wire/emit.js';
 import { ambient } from '#ambient';
 import { Invocation } from '../wire/Invocation.js';
 import type { Logger } from '../builtin/logger.js';
@@ -35,6 +35,9 @@ export class Emissions {
    */
   private readonly announced: Set<string>;
 
+  /** What is announced AND waited for — `Emit<T, A>`, where the second type says so. */
+  private readonly awaited: Set<string>;
+
   constructor(
     fronds: Fronds,
     private readonly shapes: Map<string, SchemaView>,
@@ -43,6 +46,7 @@ export class Emissions {
     private readonly carry?: Carrier,
   ) {
     this.announced = new Set(fronds.flatMap((frond) => factsAnnouncedBy(frond.handlers)));
+    this.awaited = new Set(fronds.flatMap((frond) => factsAwaitedBy(frond.handlers)));
     // Read from the frond that OWNS the fact: ordering is a decision about the fact, and
     // a decision has one owner. A frond ordering a neighbour's fact is refused below.
     this.ordered = new Map(fronds.flatMap((frond) => {
@@ -146,13 +150,28 @@ export class Emissions {
     for (const fact of new Set([...this.announced, ...this.subscribers.keys()])) {
       this.container.registerValue(emitKeyOf(fact), (raw: unknown) => this.announce(fact, raw));
     }
+    for (const fact of this.awaited) {
+      // Waiting means knowing WHO, and a carrier publishes to whoever subscribed elsewhere
+      // without bringing anything back — so the answers would hold this process's
+      // subscribers only, and say nothing about it. Refused here rather than half-answered
+      // at the first call: the second type is in a signature, so a boot can read it.
+      if (this.carry) {
+        throw new Error(
+          `'${fact}' is announced with an answer type, and this app has a carrier (\`onEmit\`).\n`
+          + '  Waiting means knowing who answers; a carrier reaches whoever subscribed '
+          + 'elsewhere and brings nothing back.\n'
+          + `  Name the subscribers in \`remotes:\`, or drop the second type of \`Emit<${fact}, …>\`.`,
+        );
+      }
+      this.container.registerValue(awaitKeyOf(fact), (raw: unknown) => this.announce(fact, raw, true));
+    }
     if (ambient.degraded && this.subscribers.size > 0) {
       this.log.warn('no async context on this runtime — an emission ring is not detected');
     }
   }
 
   /** Announcing. */
-  private async announce(fact: string, raw: unknown): Promise<void> {
+  private async announce(fact: string, raw: unknown, waiting = false): Promise<unknown[]> {
     /**
      * A fact announced inside a frame that then rolls back is a lie, and nothing can take it back:
      * announcing is DISPATCH — every subscriber has been handed the fact and the carrier has
@@ -166,9 +185,39 @@ export class Emissions {
     const delivery = this.carry?.(fact, payload);
     if (delivery) void Promise.resolve(delivery).catch((cause) => this.log.error(`${fact} — carrier refused it`, cause));
 
-    for (const { door, op, done } of this.handToListeners(fact, payload)) {
-      void done.catch((cause) => this.log.error(`${fact} → ${door}.${op}`, this.describeRefusal(fact, cause) ?? cause));
+    const handed = this.handToListeners(fact, payload);
+    if (!waiting) {
+      for (const { door, op, done } of handed) {
+        void done.catch((cause) => this.log.error(`${fact} → ${door}.${op}`, this.describeRefusal(fact, cause) ?? cause));
+      }
+
+      return [];
     }
+
+    const settled = await Promise.allSettled(handed.map((one) => one.done));
+
+    // A subscriber that did not answer REFUSES the announcement, it does not shrink it: an
+    // announcer handed the survivors cannot tell three answers from two, and its own law
+    // then reads silence as consent — the room one would have refused gets booked.
+    const missing = settled.flatMap((result, at) =>
+      (result.status === 'rejected' ? [{ ...handed[at]!, reason: result.reason as unknown }] : []));
+    if (missing.length > 0) {
+      for (const { door, op, reason } of missing) {
+        this.log.error(`${fact} → ${door}.${op}`, this.describeRefusal(fact, reason) ?? reason);
+      }
+      throw new AggregateError(
+        missing.map((one) => one.reason),
+        `${fact} — ${missing.length} of ${handed.length} subscriber(s) did not answer`
+        + ` (${missing.map((one) => `${one.door}.${one.op}`).join(', ')}).`
+        + ' An announcement with an answer type waits for everyone: a partial answer would'
+        + ' look like a complete one.',
+      );
+    }
+
+    // What answers NOTHING contributes nothing — a subscriber is free to have no opinion,
+    // and `Promise<void>` is how it says so.
+    return settled.flatMap((result) =>
+      (result.status === 'fulfilled' && result.value != null ? [result.value] : []));
   }
 
   /** Receiving. */

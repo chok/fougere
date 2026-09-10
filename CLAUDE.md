@@ -39,6 +39,7 @@ pnpm -C demos/mirror-catalog dev    # two passes over a source that only answers
 pnpm -C demos/sse-live dev         # live fan-out to readers who are not trusted peers
 pnpm -C demos/log-destinations dev # two destinations for one line, and the frond that names neither
 pnpm -C demos/pipe-split dev       # the op that FINISHES a fact — here, then behind `remotes:`
+pnpm -C demos/ask-quorum dev       # `Emit<T, A>` — the announcement that waits, across three processes
 pnpm -C demos/observability dev    # three processes; `pnpm load` (k6) and `pnpm signoz` beside it
 pnpm -C demos/together-frame dev   # two writes that stand or fall as one — then uncomment `sources:`
 pnpm -C demos/test-gradient test   # 53 tests, 44 of them from a one-line file
@@ -123,6 +124,7 @@ demos/
   sse-live/            live fan-out to readers who are not trusted peers
   log-destinations/    where a line goes is the operator's line, not the domain's
   pipe-split/          `Pipe<T>` — what a link is for, and what `pick` already does without one
+  ask-quorum/          `Emit<T, A>` — an announcement that waits, and what a missing answer costs
   admin-panel/ one-declaration/ express-blog/ next-blog/ sveltekit-blog/
   react-router-blog/ tanstack-blog/ multi-transport/ emit-fleet/ emit-split/
   container-basics/ core-scanner/ multi-frond/ crud-auto/ auth-better/
@@ -331,6 +333,20 @@ method's own doc sentence, read from the AST (`compiler/src/scan/handler-parser.
 invocation)`. `createLocalRunner` (`boot/runner.ts`) executes locally, `createAppRunner`
 follows the topology, `identityCardOf` (`boot/card.ts`) answers `rpc.discover`. Transports
 move the value, never reshape it. Browser-safe surface: `@fougere/core/contract`.
+
+**`Emit<T, A>` — the SECOND type is what makes an announcement wait.** `Emit<T>` hands the
+fact over and returns nothing; `Emit<T, Verdict>` waits for every subscriber and gives back
+what each answered. Two container keys, `…Emit` and `…Await`, because they are two
+relationships to one subject — no option and no mode, which is why the one case that cannot
+be honoured is refused AT BOOT: a carrier reaches whoever subscribed elsewhere and brings
+nothing back, so the answers would hold this process's subscribers only.
+
+A subscriber declares nothing new: `Fact<T>` answering `Promise<void>` has no opinion, any
+other return is one. The ANSWER is its own entity — shaped like the fact it would read as a
+transformation, which is a link's signature (`Pipe<T>` in, `T` out). A subscriber that does
+not answer REFUSES the announcement rather than shrinking it: an announcer handed the
+survivors cannot tell them from a complete answer, and its own law then reads silence as
+consent. Pinned by `tests/emit-await.test.ts` and `demos/ask-quorum`.
 
 **`Pipe<T>` finishes a fact** — the third word of the family, and the declared form of a
 position the core already held: `Emissions.stamped` realizes `created()` before anyone is
