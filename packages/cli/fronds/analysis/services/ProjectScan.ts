@@ -11,7 +11,7 @@ import { resolve } from 'node:path';
  * CLI's cwd, install a jiti loader so the scan can import TypeScript sources, scan.
  * Two copies of one gesture, and the second was written by copying the first.
  *
- * Not a boot: `bootAppFromConfig` runs migrations and seeds, so an analysis command
+ * Not a boot: `bootApp` runs migrations and seeds, so an analysis command
  * that booted would write to the target's database. The cost is stated rather than
  * hidden, though — the scan IMPORTS the modules it reads, so a frond's top-level
  * code runs. "No application cycle, no database", not "no side effect".

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { entity, number, primary, ref, text } from '@fougere/schema';
 import { migrate } from '../src/index.js';
-import { setupSqlite } from '../src/sqlite.js';
+import { createSqliteSource } from '../src/sqlite.js';
 
 /**
  * La lecture filtrée : ce que le storage sait faire, ce qu'il déclare, et ce qu'un appelant obtient.
@@ -18,7 +18,7 @@ class Line extends entity({
 }) {}
 
 async function seed() {
-  const { db, storageFactory } = setupSqlite({ path: ':memory:' });
+  const { db, storageFactory } = createSqliteSource({ path: ':memory:' });
   const app = { fronds: [{ name: 'test', entities: [
     { name: 'order', entityClass: Order },
     { name: 'line', entityClass: Line },

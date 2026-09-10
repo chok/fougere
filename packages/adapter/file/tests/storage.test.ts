@@ -11,7 +11,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { entity, primary, text, number, created } from '@fougere/schema';
 import { describe, expect, it } from 'vitest';
-import { setupFile } from '../src/index.js';
+import { createFileSource } from '../src/index.js';
 
 class Snapshot extends entity({
   id: primary(),
@@ -22,7 +22,7 @@ class Snapshot extends entity({
 
 const open = () => {
   const path = mkdtempSync(join(tmpdir(), 'fougere-file-'));
-  return { path, source: setupFile({ path }) };
+  return { path, source: createFileSource({ path }) };
 };
 
 describe('rows as files', () => {
@@ -41,11 +41,11 @@ describe('rows as files', () => {
 
   it('survives a second source over the same directory — what memory cannot do', async () => {
     const { path } = open();
-    await setupFile({ path }).storageFactory(Snapshot as never, 'snapshot')
+    await createFileSource({ path }).storageFactory(Snapshot as never, 'snapshot')
       .create({ id: 's1', label: 'durable', size: 1 });
 
     // A different source, a different factory, a different Storage. The rows are still there.
-    const reopened = setupFile({ path }).storageFactory(Snapshot as never, 'snapshot');
+    const reopened = createFileSource({ path }).storageFactory(Snapshot as never, 'snapshot');
     expect(await reopened.findById('s1')).toMatchObject({ label: 'durable' });
   });
 

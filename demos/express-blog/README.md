@@ -8,9 +8,9 @@ The only demo where Fougere is **not** the framework. `express()` is the server,
 renders its own HTML, it has its own routes, and Fougere is a guest:
 
 ```ts
-app.use(fougereCall());       // your pages
-app.use(fougereSession());    // your session
-app.use(fougereRest());       // a public API — only because this demo wants one
+app.use(call());       // your pages
+app.use(session());    // your session
+app.use(rest());       // a public API — only because this demo wants one
 ```
 
 Middlewares, like `express.json()` and `cors()` above them. `fougere()` mounts all

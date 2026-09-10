@@ -7,16 +7,17 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
-import { autoMigrate, sqliteDialect, pgDialect, mysqlDialect, mssqlDialect } from '../src/index.js';
+import { autoMigrate } from '../src/index.js';
+import { sqliteDialect, pgDialect, mysqlDialect, mssqlDialect } from '../src/dialect.js';
 import { ErrorCode } from '@fougere/core/contract';
-import { setupSqlite, type SqliteSetup } from '../src/sqlite.js';
+import { createSqliteSource, type SqliteSource } from '../src/sqlite.js';
 
 class Member extends entity({ id: primary(), email: text({ min: 3 }) }, { unique: [['email']] }) {}
 
-let setup: SqliteSetup;
+let setup: SqliteSource;
 
 beforeEach(async () => {
-  setup = setupSqlite({ path: ':memory:' });
+  setup = createSqliteSource({ path: ':memory:' });
   await autoMigrate({ fronds: [{ name: 't', entities: [{ name: 'Member', entityClass: Member }] }] } as never, setup.sink);
 });
 

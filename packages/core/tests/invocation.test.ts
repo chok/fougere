@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { Invocation, canonicalInvocation } from '../src/wire/Invocation.js';
+import { Invocation } from '../src/wire/Invocation.js';
 
-describe('canonicalInvocation', () => {
+describe('Invocation.from', () => {
   it('uses undefined as the canonical absence for optional parameters and fields', () => {
-    const invocation = canonicalInvocation({
+    const invocation = Invocation.from({
       params: { omitted: undefined },
       input: { omitted: undefined, nested: { omitted: undefined } },
     });
@@ -16,7 +16,7 @@ describe('canonicalInvocation', () => {
   });
 
   it('never rewrites explicit null as undefined', () => {
-    const invocation = canonicalInvocation({
+    const invocation = Invocation.from({
       params: { nullable: null },
       query: { nullable: null },
       input: { nullable: null, nested: { nullable: null } },
@@ -28,8 +28,8 @@ describe('canonicalInvocation', () => {
   });
 
   it('distinguishes an absent optional nullable field from explicit null', () => {
-    const absent = canonicalInvocation({ input: {} });
-    const explicit = canonicalInvocation({ input: { value: null } });
+    const absent = Invocation.from({ input: {} });
+    const explicit = Invocation.from({ input: { value: null } });
 
     expect((absent.input as Record<string, unknown>).value).toBeUndefined();
     expect(Object.hasOwn(absent.input as object, 'value')).toBe(false);

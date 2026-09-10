@@ -8,7 +8,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { entity, primary, text, number, oneOf, optional, created } from '@fougere/schema';
 import { autoMigrate, createTableSQL, toTable } from '../src/index.js';
-import { setupSqlite, type SqliteSetup } from '../src/sqlite.js';
+import { createSqliteSource, type SqliteSource } from '../src/sqlite.js';
 
 class Post extends entity({
   id: primary(),
@@ -19,11 +19,11 @@ class Post extends entity({
   createdAt: created(),
 }) {}
 
-let setup: SqliteSetup;
+let setup: SqliteSource;
 let storage: any;
 
 beforeEach(async () => {
-  setup = setupSqlite({ path: ':memory:' });
+  setup = createSqliteSource({ path: ':memory:' });
   await autoMigrate({ fronds: [{ name: 'test', entities: [{ name: 'post', entityClass: Post }] }] }, setup.sqlite);
   storage = setup.storageFactory(Post, 'post');
 });

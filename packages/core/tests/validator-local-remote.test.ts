@@ -17,7 +17,7 @@ import { createContainer } from '@fougere/container';
 import { dotted } from '@fougere/schema';
 import { createApp, createLocalRunner, createAppRunner, FougereError } from '../src/index.js';
 import type { Transport, Storage, StorageFactory } from '../src/index.js';
-import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
+import { Invocation } from '../src/wire/Invocation.js';
 import { Cases } from '@fougere/schema';
 import Product from './fixtures-validator/fronds/shop/entities/Product.js';
 
@@ -94,7 +94,7 @@ function browserVerdict(input: unknown): Verdict {
 
 async function validator(run: ReturnType<typeof createLocalRunner>, op: string, input: unknown): Promise<Verdict> {
   try {
-    const out = await run({ entity: 'product', op }, { ...EMPTY_INVOCATION, input });
+    const out = await run({ entity: 'product', op }, { ...Invocation.empty, input });
     return verdictOf(out, undefined);
   } catch (e) {
     return verdictOf(undefined, e);
@@ -174,7 +174,7 @@ describe('what a refusal names', () => {
     await using app = await createApp({ scan: await scanProject(root), createContainer, storageFactory });
 
     await expect(
-      createLocalRunner(app)({ entity: 'nowhere', op: 'list' }, EMPTY_INVOCATION),
+      createLocalRunner(app)({ entity: 'nowhere', op: 'list' }, Invocation.empty),
     ).rejects.toThrow(/is not hosted here\. Hosted here: (?!.*\bnowhere\b)/);
   });
 });

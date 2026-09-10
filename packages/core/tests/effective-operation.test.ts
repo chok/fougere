@@ -3,7 +3,6 @@ import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { entity, primary, text } from '@fougere/schema';
 import {
-  EFFECTIVE_OPERATION_SEMANTICS,
   createApp,
   createAppRunner,
   resolveEffectiveOperations,
@@ -11,6 +10,7 @@ import {
   type HandlerEntry,
   type OperationContract,
 } from '../src/index.js';
+import { EFFECTIVE_OPERATION_SEMANTICS } from '../src/effective-operation.js';
 import { identityCardOf } from '../src/boot/card.js';
 import { scanProject } from '@fougere/compiler';
 
@@ -174,6 +174,7 @@ describe('deterministic operation resolution', () => {
     presenters: [],
     collectors: [],
     seeds: [],
+    middlewares: [],
     surfaces: { public: ['post'] },
     operationsOverrides: {
       publish: {

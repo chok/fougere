@@ -14,20 +14,20 @@ which knows what a host is.
 ```ts
 // src/routes/api.$.ts — the whole REST integration
 import { createFileRoute } from '@tanstack/react-router';
-import { fougereRest } from '@fougere/app/web';
+import { rest } from '@fougere/app/web';
 
 export const Route = createFileRoute('/api/$')({
   server: {
     handlers: {
-      GET: ({ request }) => fougereRest(request),
-      POST: ({ request }) => fougereRest(request),
+      GET: ({ request }) => rest(request),
+      POST: ({ request }) => rest(request),
       // …
     },
   },
 });
 ```
 
-`request` is a standard Web `Request` and `fougereRest` returns a `Response`, so
+`request` is a standard Web `Request` and `rest` returns a `Response`, so
 there is nothing between them. That is what `@fougere/next` turned out to be too,
 once the Web-standard half was pulled out of it: 124 lines, of which one import is
 actually Next.

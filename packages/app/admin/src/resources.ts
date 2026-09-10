@@ -10,7 +10,7 @@ import {
   type FormField,
   type TableColumn,
 } from '@fougere/app/client';
-import { EMPTY_INVOCATION, type CardOp, type IdentityCard } from '@fougere/core/contract';
+import { type CardOp, type IdentityCard, Invocation } from '@fougere/core/contract';
 import type { ResourceKey } from './provider.js';
 import type { AdminFacets } from './facets.js';
 
@@ -118,7 +118,7 @@ export async function fetchCard(
   return await sendCall(
     fetcher,
     { entity: 'rpc', op: 'discover' },
-    EMPTY_INVOCATION,
+    Invocation.empty,
     endpoint,
   ) as IdentityCard;
 }

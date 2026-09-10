@@ -16,7 +16,7 @@ import { createContainer } from '@fougere/container';
 import { scanProject } from '@fougere/compiler';
 import { createApp, createLocalRunner } from '../src/index.js';
 import { storageKeyOf, type StorageFactory } from '../src/storage/port.js';
-import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
+import { Invocation } from '../src/wire/Invocation.js';
 
 function makeStorage() {
   const storage = {
@@ -55,7 +55,7 @@ describe('a realization narrowing the port', () => {
   it('reaches the gesture the port does not have, through the door that owns it', async () => {
     await using app = await boot();
 
-    const ranked = await createLocalRunner(app)({ entity: 'card', op: 'search' }, EMPTY_INVOCATION);
+    const ranked = await createLocalRunner(app)({ entity: 'card', op: 'search' }, Invocation.empty);
 
     expect(ranked).toEqual(['c1', 'c2']);
   });

@@ -11,7 +11,7 @@ import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer, type Container } from '@fougere/container';
 import { createApp, createLocalRunner } from '../src/index.js';
-import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
+import { Invocation } from '../src/wire/Invocation.js';
 
 const one = join(import.meta.dirname, 'fixtures-ports');
 const two = join(import.meta.dirname, 'fixtures-ports-two');
@@ -20,7 +20,7 @@ describe('a port declared by extension', () => {
   it('hands the handler the implementation, not the base it declared', async () => {
     await using app = await createApp({ scan: await scanProject(one), createContainer });
 
-    const out = await createLocalRunner(app)({ entity: 'checkout', op: 'pay' }, EMPTY_INVOCATION);
+    const out = await createLocalRunner(app)({ entity: 'checkout', op: 'pay' }, Invocation.empty);
 
     expect(out).toEqual({ provider: 'stripe', amountCents: 4990 });
   });
@@ -61,7 +61,7 @@ describe('two implementations of one port', () => {
       ports: { Payment: 'OgonePayment' },
     });
 
-    const out = await createLocalRunner(app)({ entity: 'checkout', op: 'pay' }, EMPTY_INVOCATION);
+    const out = await createLocalRunner(app)({ entity: 'checkout', op: 'pay' }, Invocation.empty);
 
     expect(out).toEqual({ provider: 'ogone', amountCents: 4990 });
   });
@@ -79,7 +79,7 @@ describe('a framework builtin is a port too', () => {
   it('hands the handler the declared subclass, not the default Logger', async () => {
     await using app = await createApp({ scan: await scanProject(overridden), createContainer });
 
-    const out = await createLocalRunner(app)({ entity: 'report', op: 'run' }, EMPTY_INVOCATION);
+    const out = await createLocalRunner(app)({ entity: 'report', op: 'run' }, Invocation.empty);
 
     expect(out).toEqual({ logger: 'AuditLogger', seen: 1 });
   });

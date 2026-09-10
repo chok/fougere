@@ -47,7 +47,6 @@ export function extensionsOf(options: FougereModuleOptions): { key: string; opti
     .map((key) => ({ key, options: options[key] }));
 }
 
-
 /**
  * A frond directory as the pattern Nuxt tests for a restart: it matches the changed
  * file against the path relative to the layer's app dir, so that is the base here.
@@ -438,7 +437,7 @@ export function generateBootPlugin(
   lines.push(`  configureFougere({ ${states}config: ${JSON.stringify(carried(config))} });`);
   lines.push(``);
   lines.push(`  try {`);
-  // Pass `db` through unchanged — resolveStorage (@fougere/defaults → setupSqlite)
+  // Pass `db` through unchanged — resolveStorage (@fougere/defaults → createSqliteSource)
   // is the one place that defaults an absent path, so both call sites (this
   // codegen'd plugin and fougereApp.ts's own fallback) land on the same file.
   // The second argument only appears when there is something to say: an app with one

@@ -5,7 +5,7 @@
  * port, and never names a PSP. What changes is `ports:` in fougere.config.ts, which the
  * third run drops entirely to show what the boot does when nothing states the choice.
  */
-import { createLocalRunner, EMPTY_INVOCATION } from '@fougere/core';
+import { createLocalRunner, Invocation } from '@fougere/core';
 import { boot } from '@fougere/compiler';
 import { createContainer } from '@fougere/container';
 import { join } from 'node:path';
@@ -13,7 +13,7 @@ import { join } from 'node:path';
 const root = join(import.meta.dirname, '..');
 const pay = async (ports?: Record<string, string>) => {
   const app = await boot({ root, createContainer, ...(ports ? { config: { ports } } : {}) });
-  const out = await createLocalRunner(app)({ entity: 'checkout', op: 'pay' }, EMPTY_INVOCATION);
+  const out = await createLocalRunner(app)({ entity: 'checkout', op: 'pay' }, Invocation.empty);
   await app.dispose();
   return out;
 };

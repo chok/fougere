@@ -9,22 +9,14 @@ export {
 
 export { useFougereAuth } from './auth.js';
 
-export {
-  tableOf,
-  matchRoute,
-  type Matchable,
-  type RouteMatch,
-} from './rest.js';
+export { tableOf } from './rest.js';
 
 export {
   serveRest,
-  shapeRest,
   serveRpc,
   surfaceOf,
   rpcParseError,
   invokeOn,
-  type DoorRequest,
-  type Outcome,
 } from './serve.js';
 
 export {

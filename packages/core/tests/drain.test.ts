@@ -10,7 +10,7 @@ import { scanProject } from '@fougere/compiler';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
-import { createApp, createLocalRunner, EMPTY_INVOCATION } from '../src/index.js';
+import { createApp, createLocalRunner, Invocation } from '../src/index.js';
 
 const root = join(import.meta.dirname, 'fixtures-drain');
 const scan = await scanProject(root);
@@ -19,7 +19,7 @@ const app = () => createApp({ scan, createContainer });
 describe('drain', () => {
   it('waits for a call that is already running', async () => {
     const a = await app();
-    const call = createLocalRunner(a)({ entity: 'slow', op: 'work' }, EMPTY_INVOCATION);
+    const call = createLocalRunner(a)({ entity: 'slow', op: 'work' }, Invocation.empty);
 
     expect(a.inFlight()).toBe(1);
     await a.drain();
@@ -40,14 +40,14 @@ describe('drain', () => {
     const a = await app();
     await a.drain();
 
-    await expect(createLocalRunner(a)({ entity: 'slow', op: 'work' }, EMPTY_INVOCATION))
+    await expect(createLocalRunner(a)({ entity: 'slow', op: 'work' }, Invocation.empty))
       .rejects.toThrow(/takes no new call/);
     await a.dispose();
   });
 
   it('rejects on its deadline naming what is left, rather than looking successful', async () => {
     const a = await app();
-    void createLocalRunner(a)({ entity: 'slow', op: 'hang' }, EMPTY_INVOCATION).catch(() => {});
+    void createLocalRunner(a)({ entity: 'slow', op: 'hang' }, Invocation.empty).catch(() => {});
 
     await expect(a.drain(30)).rejects.toThrow(/1 call\(s\) still running after 30ms/);
     await a.dispose();

@@ -11,7 +11,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
-import { fougere, fougereCall, fougereRest, fougereSession } from '../src/express.js';
+import { fougere, call, rest, session } from '../src/express.js';
 import { configureFougere, useFougereApp } from '../src/boot.js';
 
 class Post extends entity({ id: primary(), title: text() }) {}
@@ -46,7 +46,7 @@ function fakeRes() {
 }
 
 /** Run a middleware to completion — they answer asynchronously. */
-async function run(mw: ReturnType<typeof fougereCall>, req: any) {
+async function run(mw: ReturnType<typeof call>, req: any) {
   const { res, sent } = fakeRes();
   const next = vi.fn();
   mw(req, res, next);
@@ -56,42 +56,42 @@ async function run(mw: ReturnType<typeof fougereCall>, req: any) {
 
 describe('what a middleware declines', () => {
   it('passes a path that is not its own', async () => {
-    const { next, sent } = await run(fougereCall(), { method: 'POST', path: '/other' });
+    const { next, sent } = await run(call(), { method: 'POST', path: '/other' });
     expect(next).toHaveBeenCalledOnce();
     expect(sent.status).toBeUndefined();
   });
 
   it('passes the right path on the wrong verb', async () => {
-    const { next } = await run(fougereCall(), { method: 'GET', path: '/_fougere/call' });
+    const { next } = await run(call(), { method: 'GET', path: '/_fougere/call' });
     expect(next).toHaveBeenCalledOnce();
   });
 
   it('passes anything outside the REST mount point', async () => {
-    const { next } = await run(fougereRest(), { method: 'GET', path: '/healthz' });
+    const { next } = await run(rest(), { method: 'GET', path: '/healthz' });
     expect(next).toHaveBeenCalledOnce();
   });
 
   it('passes /api itself — a mount point is not a resource', async () => {
-    const { next } = await run(fougereRest(), { method: 'GET', path: '/api' });
+    const { next } = await run(rest(), { method: 'GET', path: '/api' });
     expect(next).toHaveBeenCalledOnce();
   });
 
   it('passes a path under /api that no frond serves, so the app keeps its own routes', async () => {
     await bootWith([]);
-    const { next, sent } = await run(fougereRest(), { method: 'GET', path: '/api/nope/at/all' });
+    const { next, sent } = await run(rest(), { method: 'GET', path: '/api/nope/at/all' });
     expect(next).toHaveBeenCalledOnce();
     expect(sent.status).toBeUndefined();
   });
 
   it('honours a mount point the app chose', async () => {
-    const onAdmin = fougereRest('/admin');
+    const onAdmin = rest('/admin');
     expect((await run(onAdmin, { method: 'GET', path: '/api/blog/posts' })).next).toHaveBeenCalledOnce();
   });
 });
 
 describe('the session door', () => {
   it('answers the view for the state the app resolved', async () => {
-    const { sent } = await run(fougereSession(), {
+    const { sent } = await run(session(), {
       method: 'GET',
       path: '/_fougere/session',
       user: { id: 'u1', name: 'Ada', passwordHash: 'secret' },
@@ -102,7 +102,7 @@ describe('the session door', () => {
   });
 
   it('reads `req.fougereState` when the app fills it', async () => {
-    const { sent } = await run(fougereSession(), {
+    const { sent } = await run(session(), {
       method: 'GET',
       path: '/_fougere/session',
       fougereState: { user: { id: 'u2' } },
@@ -111,12 +111,12 @@ describe('the session door', () => {
   });
 
   it('answers nobody when nothing ran before it', async () => {
-    const { sent } = await run(fougereSession(), { method: 'GET', path: '/_fougere/session' });
+    const { sent } = await run(session(), { method: 'GET', path: '/_fougere/session' });
     expect(sent.body).toEqual({ user: null });
   });
 
   it('never takes identity from the payload', async () => {
-    const { sent } = await run(fougereSession(), {
+    const { sent } = await run(session(), {
       method: 'GET',
       path: '/_fougere/session',
       body: { user: { id: 'forged', role: 'admin' } },

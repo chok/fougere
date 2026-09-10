@@ -12,7 +12,7 @@ import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner } from '../src/index.js';
 import { identityCardOf } from '../src/boot/card.js';
-import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
+import { Invocation } from '../src/wire/Invocation.js';
 
 const root = join(import.meta.dirname, 'fixtures-no-entity');
 
@@ -20,7 +20,7 @@ describe('a handler with no entity', () => {
   it('is served, and answers', async () => {
     await using app = await createApp({ scan: await scanProject(root), createContainer });
 
-    const out = await createLocalRunner(app)({ entity: 'health', op: 'check' }, EMPTY_INVOCATION);
+    const out = await createLocalRunner(app)({ entity: 'health', op: 'check' }, Invocation.empty);
 
     expect(out).toEqual({ status: 'up' });
   });
@@ -31,7 +31,7 @@ describe('a handler with no entity', () => {
 
     // Not `{}`: an absent field set means nothing to encode, not everything to drop.
     expect(Object.keys(facade)).toEqual(['check']);
-    expect(await facade.check(EMPTY_INVOCATION)).toEqual({ status: 'up' });
+    expect(await facade.check(Invocation.empty)).toEqual({ status: 'up' });
   });
 
   it('is served under a NAMED surface too, not only the default one', async () => {
@@ -43,13 +43,13 @@ describe('a handler with no entity', () => {
     const door = app.facadeFor('health', 'public');
 
     expect(door).toBeDefined();
-    expect(await door!.check(EMPTY_INVOCATION)).toEqual({ status: 'up', audience: 'public' });
+    expect(await door!.check(Invocation.empty)).toEqual({ status: 'up', audience: 'public' });
   });
 
   it('keeps the two audiences apart — a surface is closed, it does not shadow', async () => {
     await using app = await createApp({ scan: await scanProject(root), createContainer });
 
-    expect(await app.facadeFor('health')!.check(EMPTY_INVOCATION)).toEqual({ status: 'up' });
+    expect(await app.facadeFor('health')!.check(Invocation.empty)).toEqual({ status: 'up' });
   });
 
   it('appears in the identity card, so a consumer can discover it', async () => {

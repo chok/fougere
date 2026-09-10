@@ -6,11 +6,11 @@ import {
   type Fetcher,
 } from '@fougere/app/client';
 import {
-  EMPTY_INVOCATION,
   ErrorCode,
   type Edge,
   type FrondPlacement,
   type TopologyReport,
+  Invocation,
 } from '@fougere/core/contract';
 
 export type { TopologyReport, FrondPlacement, Edge };
@@ -24,7 +24,7 @@ export async function fetchTopology(
     return await sendCall(
       fetcher,
       { entity: 'rpc', op: 'topology' },
-      EMPTY_INVOCATION,
+      Invocation.empty,
       endpoint,
     ) as TopologyReport;
   } catch (error) {

@@ -1,6 +1,6 @@
 import { createAppRunner } from '@fougere/core';
 import { lowerFirst } from '@fougere/core/contract';
-import { bootAppFromConfig } from '@fougere/defaults';
+import { bootApp } from '@fougere/defaults';
 import type { App } from '@fougere/core';
 import type { ui as createUi } from '../../src/ui.js';
 
@@ -54,7 +54,7 @@ export default class CallCommand {
       else input[k] = v;
     }
 
-    const app = await bootAppFromConfig(process.cwd(), {});
+    const app = await bootApp(process.cwd(), {});
     try {
       const result = await createAppRunner(app)(
         { entity: lowerFirst(entityName), op },

@@ -14,12 +14,12 @@
 import { createHttpTransport } from '@fougere/transport-http/client';
 import { Card, Visibility } from '@fougere/schema';
 import {
-  EMPTY_INVOCATION,
   FougereError,
   type FrondCall,
   type IdentityCard,
   type InvocationContext,
   type Transport,
+  Invocation,
 } from '@fougere/core/contract';
 
 const RUST_FROND = process.env.RUST_FROND_URL ?? 'http://localhost:4200';
@@ -35,7 +35,7 @@ function doublure(entity: string, transport: Transport): Record<string, (input?:
       if (typeof prop !== 'string' || prop === 'then') return undefined;
       return async (input: Partial<InvocationContext> = {}) => {
         const call: FrondCall = { entity, op: prop };
-        return transport(call, { ...EMPTY_INVOCATION, ...input });
+        return transport(call, { ...Invocation.empty, ...input });
       };
     },
   });
@@ -50,7 +50,7 @@ async function main(): Promise<void> {
   // ─── 1. Découverte ───────────────────────────────────────────────
   title('1.', 'Découverte — le TS ne sait rien, il demande');
 
-  const card = (await transport({ entity: 'rpc', op: 'discover' }, EMPTY_INVOCATION)) as IdentityCard;
+  const card = (await transport({ entity: 'rpc', op: 'discover' }, Invocation.empty)) as IdentityCard;
   for (const frond of card.fronds) {
     for (const door of frond.doors) {
       console.log(`   ${frond.name} › ${door.name} — ops: ${door.ops.map((o) => o.name).join(', ')}`);

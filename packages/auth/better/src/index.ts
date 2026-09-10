@@ -11,8 +11,7 @@ import {
   type FougereProviders,
 } from './translate.js';
 
-export { AuthUser, AuthVerification, authEntities } from './entities.js';
-export type { FougereProviders, OIDCProviderConfig } from './translate.js';
+export { AuthUser } from './entities.js';
 
 /** Options accepted by the betterAuth() factory in fougere.config.ts. */
 export interface BetterAuthOptions {

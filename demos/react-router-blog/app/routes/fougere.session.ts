@@ -1,3 +1,3 @@
-import { fougereSession } from '@fougere/app/web';
+import { session } from '@fougere/app/web';
 
-export const loader = ({ request }: { request: Request }) => fougereSession(request);
+export const loader = ({ request }: { request: Request }) => session(request);

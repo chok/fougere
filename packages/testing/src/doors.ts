@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createLocalRunner, validationErrorsOf, type App } from '@fougere/core';
-import { EMPTY_INVOCATION } from '@fougere/core/contract';
+import { Invocation } from '@fougere/core/contract';
 import { lowerFirst, Visibility, type SchemaView, type ValidationError } from '@fougere/schema';
 import { Cases } from '@fougere/schema';
 import { derivedCases } from './derive.js';
@@ -45,7 +45,7 @@ export function checkContract(app: App, entity: SchemaView, options: CheckOption
       it(one.why, async () => {
         const verdict = await verdictOf(() => run(
           { entity: name, op: one.patch ? update : create },
-          { ...EMPTY_INVOCATION, params: one.patch ? { id: '__absent__' } : {}, input: one.input },
+          { ...Invocation.empty, params: one.patch ? { id: '__absent__' } : {}, input: one.input },
         ));
 
         expect(Cases.holds(one.expect, verdict), `${JSON.stringify(verdict)} — replay: ${replaySeed()}`).toBe(true);
@@ -65,7 +65,7 @@ export function checkOutput(app: App, entity: SchemaView, options: CheckOptions 
     it(closed.length > 0 ? `keeps ${closed.join(', ')} in` : 'closes no field, and says so', async () => {
       const row = await run(
         { entity: name, op: create },
-        { ...EMPTY_INVOCATION, input: sampleInput(entity, options.given ?? {}, options) },
+        { ...Invocation.empty, input: sampleInput(entity, options.given ?? {}, options) },
       ) as Record<string, unknown>;
 
       expect(Object.keys(row).filter((field) => closed.includes(field))).toEqual([]);
@@ -74,7 +74,7 @@ export function checkOutput(app: App, entity: SchemaView, options: CheckOptions 
     it('answers with fields the entity declares, and no others', async () => {
       const row = await run(
         { entity: name, op: create },
-        { ...EMPTY_INVOCATION, input: sampleInput(entity, options.given ?? {}, options) },
+        { ...Invocation.empty, input: sampleInput(entity, options.given ?? {}, options) },
       ) as Record<string, unknown>;
 
       // A computed field from a presenter is declared by the presenter, not the entity,

@@ -3,7 +3,7 @@ import type { Container } from '@fougere/container';
 import { validationErrorsOf } from '../wire/errors.js';
 import { emitKeyOf, factsAnnouncedBy } from '../wire/emit.js';
 import { ambient } from '#ambient';
-import { EMPTY_INVOCATION } from '../wire/Invocation.js';
+import { Invocation } from '../wire/Invocation.js';
 import type { Logger } from '../builtin/logger.js';
 import type { Fronds } from '../descriptor/Fronds.js';
 import type { OperationsMap } from '../wire/operation.js';
@@ -151,7 +151,7 @@ export class Emissions {
         } catch (cause) {
           throw new Error(`${fact} → ${door} could not be reached`, { cause });
         }
-        return facade[op]({ ...EMPTY_INVOCATION, input: payload });
+        return facade[op]({ ...Invocation.empty, input: payload });
       }),
     }));
   }

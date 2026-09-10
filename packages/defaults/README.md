@@ -1,6 +1,6 @@
 # @fougere/defaults
 > The conventional boot
-`bootAppFromConfig()` and `resolveStorage()` — **the single** place that names a storage
+`bootApp()` and `resolveStorage()` — **the single** place that names a storage
 package. Changing engine is a change here, and nowhere else.
 
 ## Installation

@@ -117,7 +117,7 @@ own process is one line of config; user code does not change.
 Scope today (pre-release): storage is additive auto-DDL over
 Kysely. SQLite resolves from its name; Postgres, MySQL and SQL
 Server work by handing Fougere the Kysely dialect you built
-(setupKysely) — only you have the driver. No search-index
+(createKyselySource) — only you have the driver. No search-index
 projection; auth via better-auth (credentials + OAuth). Price
 the adoption costs against THIS scope, not an imagined one.
 

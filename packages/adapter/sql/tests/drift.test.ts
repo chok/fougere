@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest';
 import { entity, number, optional, primary, text } from '@fougere/schema';
 
 import { desiredTables, drift, migrate } from '../src/index.js';
-import { setupSqlite } from '../src/sqlite.js';
+import { createSqliteSource } from '../src/sqlite.js';
 
 const viewOf = (entityClass: unknown, name: string) => ({
   fronds: [{ name: 'test', entities: [{ name, entityClass }] }],
@@ -18,7 +18,7 @@ const viewOf = (entityClass: unknown, name: string) => ({
 
 /** Une base née d'une déclaration, puis relue contre une autre. */
 async function moved(before: unknown, after: unknown) {
-  const { db } = setupSqlite({ path: ':memory:' });
+  const { db } = createSqliteSource({ path: ':memory:' });
   await migrate(viewOf(before, 'row') as never, db);
 
   return drift(db, desiredTables(viewOf(after, 'row') as never));

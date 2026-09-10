@@ -5,7 +5,7 @@
  * fake app: the adapter's contract is with Express's SHAPE, not with its code.
  */
 import { describe, expect, it, vi } from 'vitest';
-import { createExpressRouter } from '../src/index.js';
+import { createExpressRouter } from '../src/express.js';
 import type { RequestContext } from '../src/router.js';
 
 /** A fake Express app that hands back whatever handler was registered. */

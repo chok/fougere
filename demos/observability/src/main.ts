@@ -20,6 +20,7 @@ import { serve, createHttpTransport } from '@fougere/transport-http';
 import { createJiti } from 'jiti';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { activeCalls, onSpan } from '@fougere/observability';
 import { observed } from './observe.js';
 import { calls } from '@fougere/calls';
 
@@ -95,7 +96,22 @@ console.log(`
   pnpm load    # k6, in stages — a flat rate draws flat lines
 `);
 
+// The depth a finished span cannot carry: by the time one is exported, the pile-up it
+// belonged to is over. Measured where a span CLOSES — a poll landing between two peaks
+// reports neither — and reported once a second, which is what a gauge is.
+let peak = 0;
+const stopWatching = onSpan(() => {
+  peak = Math.max(peak, activeCalls());
+});
+const reporting = setInterval(() => {
+  if (peak === 0) return;
+  console.log(`  deepest pile-up this second: ${peak} call(s) in flight`);
+  peak = 0;
+}, 1_000);
+
 const shutdown = async () => {
+  stopWatching();
+  clearInterval(reporting);
   // Reverse of construction. Telemetry flushes inside `dispose()` now — a span held in a
   // buffer at exit is a span nobody will ever see, and that is the extension's `down`.
   for (const stop of stopping.reverse()) await stop();

@@ -16,7 +16,7 @@ import { createApp, createLocalRunner, Repository } from '../src/index.js';
 import { repositoryKeyOf } from '../src/prefab/repository.js';
 import { targetOf } from '../src/prefab/prefab.js';
 import type { StorageFactory } from '../src/index.js';
-import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
+import { Invocation } from '../src/wire/Invocation.js';
 
 const root = join(import.meta.dirname, 'fixtures-repository');
 
@@ -68,7 +68,7 @@ describe('Repository(Entity)', () => {
 describe('the declared one wins, the default is always there', () => {
   it('resolves a repository nobody wrote — it is the port itself', async () => {
     await using app = await createApp({ scan: await scanProject(root), createContainer, storageFactory });
-    const out = await createLocalRunner(app)({ entity: 'node', op: 'all' }, EMPTY_INVOCATION);
+    const out = await createLocalRunner(app)({ entity: 'node', op: 'all' }, Invocation.empty);
 
     // NodeHandler asked for `NodeRepository`, no such file exists, and the call answered.
     expect(out).toEqual(rows);
@@ -76,7 +76,7 @@ describe('the declared one wins, the default is always there', () => {
 
   it('uses the written one when there is one', async () => {
     await using app = await createApp({ scan: await scanProject(root), createContainer, storageFactory });
-    const out = await createLocalRunner(app)({ entity: 'reading', op: 'loud' }, EMPTY_INVOCATION);
+    const out = await createLocalRunner(app)({ entity: 'reading', op: 'loud' }, Invocation.empty);
 
     // `loud()` exists on no storage — answering it proves the declared class was injected.
     expect(out).toEqual(rows);
@@ -86,7 +86,7 @@ describe('the declared one wins, the default is always there', () => {
     await using app = await createApp({ scan: await scanProject(root), createContainer, storageFactory });
 
     await expect(
-      createLocalRunner(app)({ entity: 'reading', op: 'storage' }, EMPTY_INVOCATION),
+      createLocalRunner(app)({ entity: 'reading', op: 'storage' }, Invocation.empty),
     ).rejects.toThrow();
   });
 });

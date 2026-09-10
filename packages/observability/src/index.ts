@@ -3,9 +3,6 @@ import { traceContext } from '#trace-context';
 import type { AppMiddleware } from '@fougere/core';
 import { parseTraceparent, traceparentOf, randomHex, type SpanContext } from './traceparent.js';
 
-export { traceparentOf, parseTraceparent } from './traceparent.js';
-export type { SpanContext } from './traceparent.js';
-
 /** A step while it runs. */
 interface Running extends SpanContext {
   frond: string | undefined;
@@ -150,10 +147,7 @@ function codeOf(err: unknown): string {
 }
 
 export { otlp } from './otlp.js';
-export type { OtlpOptions, OtlpExporter } from './otlp.js';
-export { metrics, metricsPayload, serveTopology } from './metrics.js';
-export type { Metrics, MetricsSnapshot, TopologyReport, FrondPlacement, Edge } from './metrics.js';
+export { metrics } from './metrics.js';
+export type { Metrics, TopologyReport, FrondPlacement, Edge } from './metrics.js';
 export { logs } from './logs.js';
-export type { LogsOptions, LogExporter, CapturedLog } from './logs.js';
 export { observability } from './extension.js';
-export type { ObservabilityOptions } from './extension.js';

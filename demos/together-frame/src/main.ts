@@ -6,11 +6,11 @@
  * same handlers, the same results, and one line of boot output that is not the same.
  */
 import { scanProject } from '@fougere/compiler';
-import { createApp, createLocalRunner, migrating, EMPTY_INVOCATION, type App, type Storage } from '@fougere/core';
+import { createApp, createLocalRunner, migrating, type App, type Storage, Invocation } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { storageFrom } from '@fougere/defaults';
-import { setupSqlite } from '@fougere/adapter-sql/sqlite';
-import { setupFile } from '@fougere/adapter-file';
+import { createSqliteSource } from '@fougere/adapter-sql/sqlite';
+import { createFileSource } from '@fougere/adapter-file';
 import { observeWith } from '../fronds/banking/observe.js';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
@@ -26,15 +26,15 @@ const { default: config } = await import(join(root, 'fougere.config.ts')) as {
 const split = config.sources !== undefined;
 
 const storage = storageFrom({
-  db: setupSqlite({ path: join(data, 'app.db') }),
+  db: createSqliteSource({ path: join(data, 'app.db') }),
   // `source:` names the adapter; what sits below it belongs to that adapter. Two of them
   // here, and the routing above reads neither — it asks each for the same four gestures.
   sources: Object.fromEntries(Object.entries(config.sources ?? {}).map(([name, declared]) => [
     name,
     {
       source: declared.source === 'file'
-        ? setupFile({ path: join(root, declared.path) })
-        : setupSqlite({ path: join(root, declared.path) }),
+        ? createFileSource({ path: join(root, declared.path) })
+        : createSqliteSource({ path: join(root, declared.path) }),
       entities: declared.entities,
     },
   ])),
@@ -62,7 +62,7 @@ const app: App = await createApp({
  * The app's storage cannot answer this: under a transaction it IS the writing connection, and a
  * connection always sees its own uncommitted writes.
  */
-const outside = setupSqlite({ path: join(data, 'app.db') });
+const outside = createSqliteSource({ path: join(data, 'app.db') });
 observeWith(async () => {
   const ada = outside.sqlite.prepare('select balance from accounts where id = ?').get('ada') as { balance: number };
   return `ada ${ada.balance}`;
@@ -71,7 +71,7 @@ observeWith(async () => {
 const storageOf = (entity: string) => app.storageFor(entity) as Storage;
 const call = createLocalRunner(app);
 const run = (entity: string, op: string, params: Record<string, unknown> = {}) =>
-  call({ entity, op }, { ...EMPTY_INVOCATION, params: params as never });
+  call({ entity, op }, { ...Invocation.empty, params: params as never });
 
 await storageOf('account').create({ id: 'ada', owner: 'Ada', balance: 1000 });
 await storageOf('account').create({ id: 'bob', owner: 'Bob', balance: 0 });

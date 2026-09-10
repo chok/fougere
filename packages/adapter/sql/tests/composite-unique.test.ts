@@ -8,7 +8,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { entity, primary, text, created } from '@fougere/schema';
 import { autoMigrate, toTable } from '../src/index.js';
-import { setupSqlite, type SqliteSetup } from '../src/sqlite.js';
+import { createSqliteSource, type SqliteSource } from '../src/sqlite.js';
 
 class ListBook extends entity(
   {
@@ -20,11 +20,11 @@ class ListBook extends entity(
   { unique: [['listId', 'docId']] },
 ) {}
 
-let setup: SqliteSetup;
+let setup: SqliteSource;
 let storage: any;
 
 beforeEach(async () => {
-  setup = setupSqlite({ path: ':memory:' });
+  setup = createSqliteSource({ path: ':memory:' });
   await autoMigrate({ fronds: [{ name: 'test', entities: [{ name: 'listBook', entityClass: ListBook }] }] }, setup.sqlite);
   storage = setup.storageFactory(ListBook, 'listBook');
 });

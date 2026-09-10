@@ -4,10 +4,6 @@ import { ErrorRing, LogRing, QueryRing } from './rings.js';
 import { servePanel, type PanelOptions } from './panel.js';
 
 export type { CallPage, CallRecord } from '@fougere/core';
-export { CallRing } from './CallRing.js';
-export { LogRing, QueryRing, ErrorRing } from './rings.js';
-export type { LogLine, QueryLine, ErrorGroup } from './rings.js';
-export { servePanel, type PanelOptions } from './panel.js';
 
 /** The rpc operation this extension answers under. */
 export const CALLS_OP = 'calls';

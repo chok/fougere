@@ -20,6 +20,7 @@ const frond = (name: string, parts: Partial<FrondDescriptor>): FrondDescriptor =
   presenters: [],
   collectors: [],
   seeds: [],
+  middlewares: [],
   ...parts,
 });
 

@@ -10,7 +10,7 @@
  */
 import { createServer } from 'node:http';
 import { createLocalRunner } from '@fougere/core';
-import { EMPTY_INVOCATION } from '@fougere/core/contract';
+import { Invocation } from '@fougere/core/contract';
 import { formFieldsOf, serveRpc } from '@fougere/app';
 import { testApp } from '@fougere/testing';
 import Product from './fronds/catalog/entities/Product.js';
@@ -40,7 +40,7 @@ function inputFor(field: ReturnType<typeof formFieldsOf>[number]): string {
 }
 
 async function page(): Promise<string> {
-  const rows = await run({ entity: 'product', op: 'list' }, EMPTY_INVOCATION) as { sku: string; name: string }[];
+  const rows = await run({ entity: 'product', op: 'list' }, Invocation.empty) as { sku: string; name: string }[];
   const fields = formFieldsOf(Product, 'product');
 
   return `<!doctype html><meta charset="utf-8"><title>test-gradient</title>

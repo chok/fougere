@@ -5,7 +5,7 @@ import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, createAppRunner, FougereError, ErrorCode, onLog } from '../src/index.js';
 import type { App, StorageFactory, Transport } from '../src/index.js';
 import type { SchemaView } from '@fougere/schema';
-import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
+import { Invocation } from '../src/wire/Invocation.js';
 
 const fixturesRoot = join(import.meta.dirname, 'fixtures');
 const emptyRoot = '/tmp/fougere-remote-test-empty';
@@ -88,7 +88,7 @@ describe('remote façade (repli)', () => {
 
     const facade = consumer.resolve<Record<string, (inv?: unknown) => Promise<unknown>>>('productHandler');
     const remote = await facade.list();
-    const local = await createLocalRunner(host)({ entity: 'product', op: 'list' }, EMPTY_INVOCATION);
+    const local = await createLocalRunner(host)({ entity: 'product', op: 'list' }, Invocation.empty);
 
     // Parity is the claim: the same enrichment on both sides, computed where the
     // frond is hosted and carried across untouched.
@@ -115,11 +115,11 @@ describe('remote façade (repli)', () => {
     const consumer = await bootConsumer(host);
 
     const run = createAppRunner(consumer);
-    expect(await run({ entity: 'product', op: 'list' }, EMPTY_INVOCATION))
+    expect(await run({ entity: 'product', op: 'list' }, Invocation.empty))
       .toMatchObject([{ id: '1', displayPrice: '$12.50' }, { id: '2', displayPrice: '$320.00' }]);
 
     // What the proxy must NOT claim: Object.prototype's own names are not operations.
-    await expect(run({ entity: 'product', op: 'constructor' }, EMPTY_INVOCATION))
+    await expect(run({ entity: 'product', op: 'constructor' }, Invocation.empty))
       .rejects.toMatchObject({ code: ErrorCode.NOT_FOUND });
 
     await consumer.dispose();
@@ -131,11 +131,11 @@ describe('remote façade (repli)', () => {
     const consumer = await bootConsumer(host);
 
     const facade = consumer.resolve<Record<string, (inv?: unknown) => Promise<unknown>>>('productHandler');
-    const found = await facade.findById({ ...EMPTY_INVOCATION, params: { id: '2' } });
+    const found = await facade.findById({ ...Invocation.empty, params: { id: '2' } });
     expect(found).toEqual({ id: '2', name: 'Moss', price: 320, displayPrice: '$320.00', isExpensive: true });
 
     // A miss is null on every transport — undefined has no wire form.
-    const miss = await facade.findById({ ...EMPTY_INVOCATION, params: { id: 'nope' } });
+    const miss = await facade.findById({ ...Invocation.empty, params: { id: 'nope' } });
     expect(miss).toBeNull();
 
     await consumer.dispose();
@@ -197,7 +197,7 @@ describe('remote façade (repli)', () => {
     const facade = consumer.resolve<Record<string, (inv?: unknown) => Promise<unknown>>>('productHandler');
     await facade.list();
     await facade.list();
-    await facade.findById({ ...EMPTY_INVOCATION, params: { id: '1' } });
+    await facade.findById({ ...Invocation.empty, params: { id: '1' } });
 
     const discoverCalls = spy.mock.calls.filter(([call]) => call.entity === 'rpc' && call.op === 'discover');
     expect(discoverCalls).toHaveLength(1);
@@ -236,7 +236,7 @@ describe('remote façade (repli)', () => {
     });
     // `card.fronds is not iterable` was what this produced: a TypeError naming neither
     // the remote nor its address, on the one path where the value came from another process.
-    await expect(createAppRunner(app)({ entity: 'post', op: 'list' }, EMPTY_INVOCATION))
+    await expect(createAppRunner(app)({ entity: 'post', op: 'list' }, Invocation.empty))
       .rejects.toThrow(/Remote 'catalog' \(http:\/\/catalog.test\).*frond 'blog' has no valid doors array/s);
   });
 
@@ -352,7 +352,7 @@ describe('two remotes serving one entity', () => {
     // only order a reader can predict from their own config.
     const slowEast: Transport = async (call) => {
       await new Promise((r) => setTimeout(r, 20));
-      return serving('catalog', 'product')(call, EMPTY_INVOCATION);
+      return serving('catalog', 'product')(call, Invocation.empty);
     };
 
     await using consumer = await createApp({

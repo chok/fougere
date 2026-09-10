@@ -7,7 +7,7 @@ import type { FougereConfig } from '@fougere/core';
  * Regression for the split-brain bug: `db: 'sqlite'` used to embed a hardcoded
  * `path: ':memory:'` in the generated plugin, while the runtime fallback
  * (fougereApp.ts) and every other consumer of resolveStorage() default to a
- * file (`fougere.db`, via schema-sql's setupSqlite). The fix is to stop
+ * file (`fougere.db`, via schema-sql's createSqliteSource). The fix is to stop
  * re-deriving a path here at all: pass `db` straight through to
  * resolveStorage(), the single place that owns the default.
  */

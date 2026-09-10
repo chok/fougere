@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { fougereRest } from '@fougere/app/web';
+import { rest } from '@fougere/app/web';
 
 /**
  * The REST projection, on a splat so it catches every entity path under `/api`.
@@ -11,11 +11,11 @@ import { fougereRest } from '@fougere/app/web';
 export const Route = createFileRoute('/api/$')({
   server: {
     handlers: {
-      GET: ({ request }) => fougereRest(request),
-      POST: ({ request }) => fougereRest(request),
-      PUT: ({ request }) => fougereRest(request),
-      PATCH: ({ request }) => fougereRest(request),
-      DELETE: ({ request }) => fougereRest(request),
+      GET: ({ request }) => rest(request),
+      POST: ({ request }) => rest(request),
+      PUT: ({ request }) => rest(request),
+      PATCH: ({ request }) => rest(request),
+      DELETE: ({ request }) => rest(request),
     },
   },
 });

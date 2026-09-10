@@ -2,7 +2,7 @@
 import type { FrondCall, Transport } from '../wire/call.js';
 import { assertIdentityCard, RPC_ENTITY } from '../wire/call.js';
 import { runMiddlewares, type AppMiddleware, type OperationContext } from '../wire/middleware.js';
-import { EMPTY_INVOCATION, type InvocationContext } from '../wire/Invocation.js';
+import { type InvocationContext, Invocation } from '../wire/Invocation.js';
 import { FougereError, ErrorCode } from '../wire/errors.js';
 import { Card, type SchemaView, type SchemaDescriptor } from '@fougere/schema';
 import { dynamicOperations } from '../entry/facade.js';
@@ -43,7 +43,7 @@ export function createRemoteRouter(
         const transport = transports.get(url) ?? makeTransport(url);
         transports.set(url, transport);
         try {
-          const answer = await transport({ entity: RPC_ENTITY, op: 'discover' }, EMPTY_INVOCATION);
+          const answer = await transport({ entity: RPC_ENTITY, op: 'discover' }, Invocation.empty);
           // Judged below and not here: this catch means "unreachable, retry", and a
           // refusal thrown inside it would be swallowed into another silent retry.
           return { label, url, transport, answer };
@@ -118,7 +118,7 @@ export function createRemoteFacade(
   router: RemoteRouter,
   middlewaresFor: (address: string) => AppMiddleware[],
 ): Facade {
-  const opFn = (op: string) => async (invocation: InvocationContext = EMPTY_INVOCATION) => {
+  const opFn = (op: string) => async (invocation: InvocationContext = Invocation.empty) => {
     const { frond, transport } = await router.route(entity);
     const call: FrondCall = { frond, entity, op };
     const ctx: OperationContext = {
