@@ -79,8 +79,8 @@ function supportsColor(): boolean {
   return false;
 }
 
-function formatTime(): string {
-  const d = new Date();
+function stamp(at: number | Date): string {
+  const d = new Date(at);
   const h = String(d.getHours()).padStart(2, '0');
   const m = String(d.getMinutes()).padStart(2, '0');
   const s = String(d.getSeconds()).padStart(2, '0');
@@ -116,27 +116,57 @@ export class Logger {
 
   private log(level: string, msg: string, args: unknown[]) {
     if (LEVELS[level as LogLevel] < threshold) return;
+    const record: LogRecord = {
+      level: level as LogRecord['level'], name: this.name, message: msg, args, at: Date.now(),
+    };
 
     // Beside the console, never instead of it: a forwarded line is an addition, and a
     // sink that throws must not cost the operator the line they were reading.
     for (const take of sinks) {
       try {
-        take({ level: level as LogRecord['level'], name: this.name, message: msg, args, at: Date.now() });
+        take(record);
       } catch { /* forwarding never breaks logging */ }
     }
 
-    const style = LEVEL_STYLE[level];
-    const time = formatTime();
-    // One console method per level. `debug` and `info` both went to `console.log`, so
-    // nothing downstream — a terminal filter, a collector — could tell them apart.
-    const method = level as 'debug' | 'info' | 'warn' | 'error';
-
-    if (this.color) {
-      const c = COLORS[style.color];
-      const prefix = `${COLORS.dim}${time}${COLORS.reset} ${c}${COLORS.bold}${style.badge}${COLORS.reset} ${COLORS.magenta}${this.name}${COLORS.reset}`;
-      console[method](prefix, msg, ...args);
-    } else {
-      console[method](`${time} ${style.badge} [${this.name}]`, msg, ...args);
-    }
+    const { method, text } = formatted(record, this.color);
+    console[method](...text);
   }
+}
+
+/**
+ * One line, ready for a terminal — the console arguments and which method takes them.
+ *
+ * Here rather than inside the class because the boot is not the only writer: a destination
+ * that prints (`@fougere/log`) hands its own record to the same formatting, so the two
+ * outputs cannot drift.
+ *
+ * One console method per level: `debug` and `info` both went to `console.log`, so nothing
+ * downstream — a terminal filter, a collector — could tell them apart.
+ */
+export interface Rendered {
+  level: Exclude<LogLevel, 'silent'>;
+  name: string;
+  message: string;
+  /** Absent on most lines: a message usually carries its own detail. */
+  args?: unknown[] | null;
+  /** Epoch milliseconds from a logger, a `Date` from an entity that stamped it. */
+  at: number | Date;
+}
+
+export function formatted(
+  record: Rendered,
+  color = supportsColor(),
+): { method: Rendered['level']; text: unknown[] } {
+  const style = LEVEL_STYLE[record.level];
+  const time = stamp(record.at);
+  const method = record.level;
+
+  if (color) {
+    const c = COLORS[style.color];
+    const prefix = `${COLORS.dim}${time}${COLORS.reset} ${c}${COLORS.bold}${style.badge}${COLORS.reset} ${COLORS.magenta}${record.name}${COLORS.reset}`;
+
+    return { method, text: [prefix, record.message, ...(record.args ?? [])] };
+  }
+
+  return { method, text: [`${time} ${style.badge} [${record.name}]`, record.message, ...(record.args ?? [])] };
 }

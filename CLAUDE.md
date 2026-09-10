@@ -37,6 +37,7 @@ pnpm -C demos/ports-swap dev        # stripe, then ogone, then the refusal — o
 pnpm -C demos/config-reload dev     # one boot, a real SIGHUP, a drain — and what a re-read cannot change
 pnpm -C demos/mirror-catalog dev    # two passes over a source that only answers ?page=&since=
 pnpm -C demos/sse-live dev         # live fan-out to readers who are not trusted peers
+pnpm -C demos/log-destinations dev # two destinations for one line, and the frond that names neither
 pnpm -C demos/observability dev    # three processes; `pnpm load` (k6) and `pnpm signoz` beside it
 pnpm -C demos/together-frame dev   # two writes that stand or fall as one — then uncomment `sources:`
 pnpm -C demos/test-gradient test   # 53 tests, 44 of them from a one-line file
@@ -79,6 +80,7 @@ packages/
   cli/                 @fougere/cli           commands, scaffolding, and the terminal UI (src/ui.ts)
   testing/             @fougere/testing       cases derived from an entity, doubles derived from a port
   calls/               @fougere/calls         optional: a bounded ring of what this process dispatched, served as rpc.calls
+  log/                 @fougere/log           optional: a line is an announced fact, a destination is a handler. Ships the console one
   decorators/          @fougere/decorators    `@expose` — publishable, and imported by nobody in this repo
 
   adapter/                                    project the schema onto a target
@@ -118,6 +120,7 @@ demos/
   rust-frond/          the far side is not TypeScript, and the validator is still ours
   cloudflare-d1/       the edge rung — scan emitted, no tsc shipped
   sse-live/            live fan-out to readers who are not trusted peers
+  log-destinations/    where a line goes is the operator's line, not the domain's
   admin-panel/ one-declaration/ express-blog/ next-blog/ sveltekit-blog/
   react-router-blog/ tanstack-blog/ multi-transport/ emit-fleet/ emit-split/
   container-basics/ core-scanner/ multi-frond/ crud-auto/ auth-better/
@@ -174,9 +177,13 @@ a caller that has its own words for the absence. `Clock` is not one: it register
 entity's storage and forwards all thirteen gestures. From TWO on it is an aggregate: no
 default repository for any member, no forwarded gesture, and `ownersOf` refuses two
 aggregates over one entity. `Crud` on an owned entity is refused at boot
-(`refuseCrudOnOwned`). `Storage<E>` is not a word of user code
-(`core/src/boot/ownership.ts`): a handler, a presenter and a collector are pointed at
-`<E>Repository`. Pinned by `core/tests/aggregate.test.ts`.
+(`refuseCrudOnOwned`). `Storage<E>` is reached only by a class BUILT ON E (`builtOn`,
+`core/src/boot/ownership.ts`) — a repository, or a prefab over that entity: naming
+`Storage<BookCard>` is what `Mirror(BookCard)` earns. A handler, a presenter, a collector
+and a plain service are pointed at `<E>Repository`, and the aggregate check runs BEFORE the
+allowance, so an entity an aggregate owns refuses even the built-on case, naming the owner.
+The host is outside the rule: `app.storageFor()` and the `storageFactory` it hands in name
+`Storage`. Pinned by `core/tests/aggregate.test.ts`.
 
 **Turning the ring** — `reloadFougere()` (`app/shared/src/boot.ts`) builds the app again and
 releases the previous one; it works because every door reaches the app through
@@ -202,7 +209,7 @@ serves discover.` The report shapes live in core (`TopologyReport`, `FrondPlacem
 because they cross a process boundary.
 
 **The names the scan reads** — `core/src/conventions.ts`, read by `@fougere/compiler`. Everything else a frond states, it
-states by its SHAPE; the eight convention directories and the import scope are the one place
+states by its SHAPE; the ten convention directories and the import scope are the one place
 a NAME is the declaration, and the only ones a project may restate (`conventions:` in
 `fougere.config.ts`). The config is read BEFORE the aliases, because it names the scope they
 are built from. `.fougere/` is the framework's working directory, not user vocabulary.
@@ -214,6 +221,26 @@ today, and every other difference is reported as `pending`. `Logger` holds NO le
 `setLogLevel` sets one threshold for the process. `FOUGERE_LOG_LEVEL` wins over the file. A
 re-read needs `loadConfig(root, { fresh: true })` — a module is cached by its specifier.
 Core catches no signal: a process belongs to its host. Pinned by `tests/log-level.test.ts`.
+
+**A middleware is a frond's to declare** — `middlewares/`, the tenth convention directory
+and the only one whose members apply to code they do not name. Recognized by its FORM: the
+class states `around(context, next)`, so a file in the directory that does not is not one.
+It answers for its own frond — every ADDRESS its handlers answer to, wider than its
+entities since a handler without one runs behind it too — and `middlewares: { Audit: 'app' }`
+in `frond.config.ts` is the exception, stated by the frond that decides for the others.
+Resolved per CALL and never at boot, the same reason `getMiddlewares` is: a middleware
+asking for something request-scoped would otherwise be handed the one instance the boot
+built. `App.use` and a frond's directory are two doors onto ONE writer (`use` in
+`boot/bootstrap.ts`). Pinned by `core/tests/middleware.test.ts`.
+
+**A log line is an announced fact** — `@fougere/log`. `Emit<LogLine>` is what a frond asks
+for, and a destination is a handler accepting `Fact<LogLine>` — that signature IS the
+subscription, so two destinations both receive and none is not declaring the frond. The
+console one writes with `console[method]` and announces NOTHING: a destination that logs is
+a ring, which the emission refuses by name where `onLog`'s try/catch swallowed it. The
+package STATES its frond (`logFrond()`), because scanning a directory under `packages/`
+fails — see Known issues. `Logger` stays in core for the boot, which writes before any app
+exists. Pinned by `log/tests/log.test.ts` and `demos/log-destinations`.
 
 **Ports** — a class something already answers under, that a provider extends. Nothing
 declares one: `boot/ports.ts`, `portBindings` reads the prototype chain at boot, so
@@ -322,6 +349,25 @@ X), `useFormFor` (contract, not rendering; local validator = remote validator), 
 
 Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 
+- **Scanning a directory that sits under `packages/` fails** — `LogLine_base is not defined`,
+  measured 2026-09-10 on `packages/log/fronds/`. The same file scanned from outside the
+  workspace loads. `findWorkspaceRoot` (`compiler/src/scan/scanner.ts`) seeds a type program
+  from the monorepo root, and the entity is then evaluated from an emit whose hoisted
+  `const <Class>_base` is lost. `@fougere/log` states its frond rather than being scanned,
+  which is the right form for a published package anyway — so this is a trap for a frond
+  inside a workspace package, not a blocker.
+- **A type alias of a port does not bind** — `type Log = Emit<LogLine>` then
+  `constructor(private log: Log)` resolves to the key `Log`, and the boot refuses
+  `'Log' is not registered`. The checker keeps the OUTER alias symbol and drops
+  `<LogLine>`, so `depKeyOf` never sees the port. Recovering it means reading the alias's
+  own declaration in `handler-parser.ts` (`parseCheckedType`). Measured 2026-09-10; the
+  alias was removed rather than shipped broken.
+- **The four `on*` are still four** — `onLog` (`core/src/builtin/logger.ts`), `onQuery`
+  (`adapter/sql/src/query.ts`), `onSpan` and `registerFlush` (`observability/src/index.ts`):
+  the same `sinks.push` and `splice`, written four times. `@fougere/log` gives the shape
+  that replaces them, and `calls`/`observability` cannot use it yet — they are EXTENSIONS,
+  and an extension has no signature to accept a `Fact<T>` in. Converting them means
+  deciding what happens to the boot's own lines, which precede every app.
 - **An un-augmented `adapters:` accepts anything, silently.** With no adapter in the program
   `EntityAdapters<TFields>` is `Partial<{}>`, which in TypeScript means "anything
   non-nullish". The RUNTIME half is closed since `AdapterFieldValidator`; what remains open is the type.
@@ -365,9 +411,6 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   which carry when WE wrote them: a pass that threw halfway still advanced it, and what the
   source had changed in the gap was never asked for again. `demos/mirror-catalog` keeps it in
   `PartnerCatalog` and moves it only after a pass returns.
-- **An announcement realizes a fact's `lifecycle.create`, and no typed emitter can use it.**
-  `Emit<T>` names the ROW type where `created()` is required, so `announce({ id, title })` is a
-  compile error. `PartialValues` is the wanted shape.
 - **A schema can say what it WAS, and the missing reader is the API.** `Card.diff`,
   `fougere freeze`, `fougere migrate --apply` are shipped; serving an old API version is not.
 - **A stored fact is not VERSIONED.** It IS validated: `json(Address)` builds `properties` and
@@ -387,6 +430,11 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 ### Settled
 
 One line each, kept because a past version of this file asserted the opposite.
+
+- **`Emit<T>` is PARTIAL, because announcing realizes the fact's `lifecycle.create`** — a
+  `created()` stamped by `Emissions`, which asking the announcer for made every emitter cast
+  past its own type. A missing field is still refused, by the judge that reads the fact.
+  Pinned by `core/tests/emit.test.ts`, through the typed emitter.
 
 - **A refusal says WHERE, all the way down** — `ValidationError.path` is SEGMENTS
   (`['addr', 'street']`), and `FieldValueValidator` keeps the engine's `instanceLocation` and its
