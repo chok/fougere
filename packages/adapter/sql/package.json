@@ -1,7 +1,7 @@
 {
   "name": "@fougere/adapter-sql",
-  "version": "0.8.4-alpha.0",
-  "description": "Entity \u2192 SQL tables through Kysely (SQLite, PostgreSQL, MySQL, SQL Server).",
+  "version": "0.9.0-alpha.0",
+  "description": "Entity → SQL tables through Kysely (SQLite, PostgreSQL, MySQL, SQL Server).",
   "keywords": [
     "fougere",
     "typescript",

@@ -1,6 +1,6 @@
 {
   "name": "@fougere/log",
-  "version": "0.8.4-alpha.0",
+  "version": "0.9.0-alpha.0",
   "description": "Logging for Fougere: a line is an announced fact, and a destination is a handler that accepts it. Ships the console one.",
   "keywords": [
     "fougere",
@@ -15,18 +15,17 @@
     "directory": "packages/log"
   },
   "type": "module",
-  "main": "dist/src/index.js",
-  "types": "dist/src/index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/src/index.d.ts",
-      "import": "./dist/src/index.js",
-      "default": "./dist/src/index.js"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
   "files": [
     "dist",
-    "fronds",
     "src"
   ],
   "scripts": {

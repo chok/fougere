@@ -6,5 +6,8 @@
     "declaration": false,
     "declarationMap": false
   },
-  "include": ["src", "fronds", "tests"]
+  "include": [
+    "src",
+    "tests"
+  ]
 }
