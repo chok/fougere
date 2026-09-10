@@ -213,6 +213,15 @@ Measured four ways on 2026-09-10 — the process hung, the call ring filled with
 writes, `activeCalls()` counted log deliveries, and a hard-coded list missed a third
 party's destination. A reentrancy flag cannot see it: the carry is asynchronous.
 
+**The ascent is ORDERED BY CORE, and a host hands over a gesture** — `createApp` puts
+`migrating(options.migrate)` and `seeding()` before whatever `extensions:` carries. Four
+hosts assembled those two members themselves (`compiler/src/boot.ts`,
+`app/shared/src/boot.ts`, the Nuxt codegen as a STRING, and a demo), and eight demos wrote
+nothing — so they had no migration and nothing said it. Rows before tables is a boot that
+finds none, which is not a host's preference to hold. `Source.migrate` is declared once and
+travels whole, through `ResolvedStorage.migrate` to `CreateAppOptions.migrate`. Pinned by
+`tests/lifecycle.test.ts`.
+
 **The ascent** — `boot/AppLifecycle.ts`. An `Extension` states `up` and `down`, handed in
 through `CreateAppOptions.extensions`. A name already declared is REPLACED, not refused.
 `migrating(storage.migrate)` and `seeding(report)` are ordinary members. The two halves

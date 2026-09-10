@@ -181,15 +181,11 @@ async function boot(): Promise<App> {
     adapters: fileConfig.adapters,
     remotes: fileConfig.remotes,
     remoteTransport,
-    /** The whole ascent, one ordered list. */
-    extensions: [
-      // The slot is declared even when this host resolved no storage — a host that resolved
-      // its own (the Nitro plugin does, for its bundler) then REPLACES this member in place
-      // instead of adding one after the seeds, which is rows before tables.
-      migrating(storageMigrate, (message) => log.warn(message)),
-      seeding((message) => log.info(`[seed]${message}`)),
-      ...(_config.extensions ?? []),
-    ],
+    // Its own gesture, handed over whole — the ascent is ordered by `createApp`, which is
+    // why a host that resolves no storage still gets the slot and the seeds still run
+    // after the tables.
+    migrate: storageMigrate,
+    extensions: _config.extensions ?? [],
     // Opened before the container, so released after it. Never wired here until now:
     // this host boots the storage and no host closed one, which is what made a reload
     // leak the pool of every app it discarded.

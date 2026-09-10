@@ -32,7 +32,8 @@ import { InFlight } from '../dispatch/InFlight.js';
 // The keys, each read from where its concept is declared — never respelled here.
 import { facadeKeyOf, contractsKeyOf, type RpcAnswer } from '../wire/call.js';
 import { identityCardOf } from './card.js';
-import { AppLifecycle } from './AppLifecycle.js';
+import { AppLifecycle, migrating } from './AppLifecycle.js';
+import { seeding } from './seed.js';
 import { inheritsCrud, subjectOf } from '../prefab/crud.js';
 import { repositoryKeyOf } from '../prefab/repository.js';
 import { storageKeyOf } from '../storage/port.js';
@@ -89,7 +90,14 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
   // Held out here, and not where the ascent reads it, because releasing needs it and
   // releasing has to work from the first line the boot takes something.
-  const appLifecycle = new AppLifecycle().add(...(options.extensions ?? []));
+  // The conventional ascent, ordered here: tables, then rows, then whatever the host took
+  // on. Four hosts assembled these two members themselves — the order is not theirs to
+  // choose, and a host that forgot lost its migration in silence.
+  const appLifecycle = new AppLifecycle().add(
+    migrating(options.migrate),
+    seeding(),
+    ...(options.extensions ?? []),
+  );
   /** The app once it exists — a refusal before that releases the two levels that do. */
   let built: App | undefined;
   /** Where THIS boot's lines wait — never a process-wide slot, see `Carry`. */

@@ -411,7 +411,7 @@ export function generateBootPlugin(
   // @fougere/defaults, the one place that knows which engine backs `db:`.
   lines.push(`import { resolveStorage } from '@fougere/defaults';`);
   // After the early return above: an app that declares no storage generates no imports.
-  lines.push(`import { migrating${seeds.length ? ', runSeeds' : ''} } from '@fougere/core';`);
+  if (seeds.length) lines.push(`import { runSeeds } from '@fougere/core';`);
   // One import per key the project named. The key IS the export and the package suffix, so
   // a missing package is a build error naming the package — not a boot that silently lacks
   // the panel someone asked for.
@@ -453,11 +453,10 @@ export function generateBootPlugin(
   // left `transacted` and `close` behind, so a `Together` always compensated and the
   // connection was never released — under Nuxt only, which is where the app really runs.
   lines.push(`      storage,`);
-  // Two members of the ascent, named — not a claim on everything after the boot. The
-  // storage's is core's own declaration (`migrating`), so this codegen states no order and
-  // cannot mistype the name it would otherwise be silently adding beside.
+  // Its own gesture, handed over whole — `createApp` orders the ascent, so this codegen
+  // states no order and cannot mistype the name it would otherwise be adding beside.
+  lines.push(`      migrate: storage.migrate,`);
   lines.push(`      extensions: [`);
-  lines.push(`        migrating(storage.migrate),`);
 
   if (seeds.length) {
     // The seeding LOOP is core's (`runSeeds`), not written out here: a second copy
