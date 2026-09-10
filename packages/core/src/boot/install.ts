@@ -52,6 +52,8 @@ export interface Assembly {
   contractsOf: (operations: EffectiveOperationsMap) => OperationsMap;
   /** Read at call time and never at boot, so a late registration still applies. */
   getMiddlewares: (entity: string) => AppMiddleware[];
+  /** Take a middleware on — every entity when no entity is named. */
+  use: (middleware: AppMiddleware, entity?: string) => void;
   log: Logger;
   options: CreateAppOptions;
 }
@@ -59,7 +61,7 @@ export interface Assembly {
 export async function installFrond(frond: FrondDescriptor, assembly: Assembly): Promise<void> {
   const {
     container, routeRegistry, emissions, dispatcher, localDispatcher, effectiveByKey,
-    boundPorts, operationModel, entityByName, frondOf, contractsOf, getMiddlewares,
+    boundPorts, operationModel, entityByName, frondOf, contractsOf, getMiddlewares, use,
     log, options,
   } = assembly;
 
@@ -224,6 +226,23 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   }
   if (frond.collectors.length > 0) {
     frondLog.debug(`${frond.collectors.length} collector(s): ${frond.collectors.map((c) => c.typeName).join(', ')}`);
+  }
+
+  // Register middlewares in scope, then take them on. Resolved per call and never here:
+  // a middleware asking for something request-scoped would otherwise be handed the one
+  // instance the boot built — the same reason `getMiddlewares` is read at call time.
+  for (const middleware of frond.middlewares) {
+    scope.register(middleware.name, middleware.ctor, { deps: middleware.deps });
+    const around: AppMiddleware = (context, next) =>
+      scope.resolve<{ around: AppMiddleware }>(middleware.name).around(context, next);
+
+    if (middleware.scope === 'app') use(around);
+    // Its own frond means every address its handlers answer to — wider than its entities,
+    // since a handler without one runs behind it too.
+    else for (const address of new Set(frond.handlers.map((h) => h.address))) use(around, address);
+  }
+  if (frond.middlewares.length > 0) {
+    frondLog.debug(`${frond.middlewares.length} middleware(s): ${frond.middlewares.map((m) => `${m.name} (${m.scope})`).join(', ')}`);
   }
 
   // Build handler facades → registered in ROOT container (public contract)

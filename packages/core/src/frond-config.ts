@@ -44,6 +44,12 @@ export interface FrondConfig {
   surfaces?: Record<string, string[]>;
   /** Interface → implementation bindings for DI (e.g. { Database: 'SqliteDatabase' }). */
   bindings?: Record<string, string>;
+  /**
+   * How far a middleware reaches, by class name. A middleware answers for its own frond
+   * without being named here; `'app'` is the exception, and it is stated by the frond
+   * that decides for the others.
+   */
+  middlewares?: Record<string, 'frond' | 'app'>;
   /** Per-operation overrides. Key = operation name (method name on a handler). */
   operations?: Record<string, OperationOverride>;
 }

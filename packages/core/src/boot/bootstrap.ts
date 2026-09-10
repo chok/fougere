@@ -233,6 +233,20 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       return [...globalMiddlewares, ...scoped];
     }
 
+    /**
+     * The one place a middleware is taken on. `App.use` is its late form, and a frond's
+     * `middlewares/` its early one — the app does not exist yet while fronds install.
+     */
+    function use(middleware: AppMiddleware, entity?: string): void {
+      if (entity === undefined) {
+        globalMiddlewares.push(middleware);
+        return;
+      }
+      const scoped = scopedMiddlewares.get(entity) ?? [];
+      scoped.push(middleware);
+      scopedMiddlewares.set(entity, scoped);
+    }
+
     assertOneOwnerPerKey(fronds, options.remotes);
 
     // Every entity of every frond, by name — so a fact can be validated where it LANDS, and
@@ -258,7 +272,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // table, one emission list — so what a frond serves is there for the next one to find.
     const assembly: Assembly = {
       container, routeRegistry, emissions, dispatcher, localDispatcher, effectiveByKey,
-      boundPorts, operationModel, entityByName, frondOf, contractsOf, getMiddlewares,
+      boundPorts, operationModel, entityByName, frondOf, contractsOf, getMiddlewares, use,
       log, options,
     };
     for (const frond of fronds) await installFrond(frond, assembly);
@@ -485,14 +499,9 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         return dispatchLifecycle.add(observer);
       },
       use(...args: [AppMiddleware] | [string, AppMiddleware]): void {
-        if (typeof args[0] === 'string') {
-          const [entity, mw] = args as [string, AppMiddleware];
-          const list = scopedMiddlewares.get(entity) ?? [];
-          list.push(mw);
-          scopedMiddlewares.set(entity, list);
-        } else {
-          globalMiddlewares.push(args[0] as AppMiddleware);
-        }
+        return typeof args[0] === 'string'
+          ? use(args[1] as AppMiddleware, args[0])
+          : use(args[0] as AppMiddleware);
       },
       auth: authRuntime,
     };

@@ -1,6 +1,7 @@
 import { DEFAULT_CONVENTIONS, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, togetherKeyOf, type Conventions, type ConventionsInput, type ScanDiagnostic, type ScanResult } from '@fougere/core';
-import { Fronds, cardinalityOf, computeBindingPlan, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf } from '@fougere/core/descriptor';
+import { Fronds, cardinalityOf, computeBindingPlan, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf } from '@fougere/core/descriptor';
 import { getModuleLoader, loadFrondConfig } from '@fougere/core/node';
+import type { FrondConfig } from '@fougere/core';
 import { readdir, readFile } from 'node:fs/promises';
 import { existsSync, type Dirent } from 'node:fs';
 import { join, dirname, basename, resolve as resolvePath } from 'node:path';
@@ -479,10 +480,33 @@ async function toCollectorEntry(filePath: string): Promise<CollectorEntry | null
   return { typeName, ctor, deps, filePath };
 }
 
+/**
+ * Recognized by its FORM: a class in `middlewares/` that declares `around`. The scope is
+ * the frond's own unless `frond.config.ts` widened it, which is why the config comes first.
+ */
+async function toMiddlewareEntry(
+  filePath: string,
+  scopes: FrondConfig['middlewares'],
+): Promise<MiddlewareEntry | null> {
+  const ctor = await loadClass(filePath);
+  const prototype = (ctor as { prototype?: { around?: unknown } }).prototype;
+  if (typeof prototype?.around !== 'function') return null;
+  const params = await ctorParamsOf(filePath);
+
+  return {
+    name: ctor.name,
+    ctor,
+    scope: scopes?.[ctor.name] ?? 'frond',
+    deps: params.map((p) => depKeyOf(p.type)),
+    filePath,
+  };
+}
+
 async function scanFrond(frondPath: string, name: string, source: FrondDescriptor['source'], conventions: Conventions, projectRoot?: string): Promise<FrondDescriptor> {
   const {
     entities: entitiesDir, handlers: handlersDir,
     presenters: presentersDir, collectors: collectorsDir, seeds: seedsDir,
+    middlewares: middlewaresDir,
   } = conventions.dirs;
   /** A convention directory, read by whoever knows the shape it holds. */
   const collect = async <T extends object>(
@@ -521,6 +545,7 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
 
   const presenters = await collect(presentersDir, toPresenterEntry);
   const seeds = await collect(seedsDir, toSeedEntry);
+  const middlewares = await collect(middlewaresDir, (f) => toMiddlewareEntry(f, frondConfig?.middlewares));
 
   // Mark exposed entries: frond.config.ts takes precedence, then @expose decorator
   if (frondConfig?.expose) {
@@ -565,6 +590,7 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
     presenters,
     collectors,
     seeds,
+    middlewares,
     surfaces: frondConfig?.surfaces,
     reads: frondConfig?.reads,
     operationsOverrides,
