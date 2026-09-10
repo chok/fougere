@@ -1,5 +1,13 @@
 # create-fougere
 
+## 0.8.4-alpha.0
+
+### Patch Changes
+
+- Updated dependencies [32923e6]
+- Updated dependencies [42a31db]
+  - @fougere/cli@0.8.3-alpha.1
+
 ## 0.8.1-alpha.0
 
 ### Patch Changes

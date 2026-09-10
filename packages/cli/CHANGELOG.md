@@ -1,5 +1,56 @@
 # @fougere/cli
 
+## 0.8.4-alpha.0
+
+### Patch Changes
+
+- 32923e6: An axis answers questions, and keeps no member to answer for it.
+
+  `Role`, `Lifecycle` and `Boundary` no longer declare `implements RoleRules` /
+  `LifecycleRules` / `BoundaryRules`, which was what forced their members public. Nothing
+  was annotating a `Role` as a `RoleRules`, but `readOnly()` and `writeOnly()` were writing
+  a JUDGE into `field.boundary` through the structural match: `Boundary.with` becomes
+  `Boundary.declaring` and returns the declaration, the dual of `Boundary.declared`.
+
+  Two questions a caller was asking by hand now exist. `Role.isRelation` answers either
+  kind — `@fougere/cli` and `@fougere/testing` were reading `.relation` for it — and
+  `Role.onDelete` completes `target`. `Lifecycle.stampedAtCreate` is what `Visibility.input`
+  and `applyCreate` were spelling as `create === 'now'`; `stampedOnce` now derives from it.
+
+  `Schema.fields`, `.adapters` and `.opts` are gone. They were a second spelling of
+  `getFields()` / `getAdapters()` / `getOpts()` that `SchemaConstructor` never declared, so
+  no consumer could reach them in TypeScript. `SchemaView` is the contract, unchanged.
+
+  `Bundle.fromSchemas` was building a whole card per entry to read one title; `Card.titleOf`
+  answers it, and a derivation still reports the name it was cut from.
+
+- 42a31db: `fougere <op>` reads the type instead of re-testing the shape.
+
+  `entityToArgs` was spelling `shape?.type === 'string' && shape.format === 'date-time'` to
+  keep a date out of the positional slot — the test `Shapes.typeOf` owns. And `argFor`
+  decided which arguments carry a declared default with `type === 'string'`, one word that
+  covers three: a `text()`, a `date()` and a `oneOf()`. That is now a `Record<ShapeType,
+boolean>`, so a type added to the vocabulary cannot slip through undeclared.
+
+  Same flags, same defaults, same `--help`.
+
+- Updated dependencies [df73bcb]
+- Updated dependencies [26f7987]
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies [32923e6]
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies [771e703]
+  - @fougere/adapter-sql@0.9.0-alpha.1
+  - @fougere/schema@0.9.0-alpha.1
+  - @fougere/core@0.9.0-alpha.1
+  - @fougere/container@0.8.3-alpha.1
+  - @fougere/compiler@1.0.0-alpha.1
+  - @fougere/defaults@0.8.3-alpha.1
+  - @fougere/transport-http@0.8.3-alpha.1
+
 ## 0.8.3-alpha.0
 
 ### Patch Changes

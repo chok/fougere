@@ -1,5 +1,25 @@
 # fougere-demo-observability
 
+## 0.0.3-alpha.3
+
+### Patch Changes
+
+- Updated dependencies [26f7987]
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies [32923e6]
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies [771e703]
+  - @fougere/schema@0.9.0-alpha.1
+  - @fougere/core@0.9.0-alpha.1
+  - @fougere/container@0.8.3-alpha.1
+  - @fougere/compiler@1.0.0-alpha.1
+  - @fougere/calls@1.0.0-alpha.1
+  - @fougere/observability@1.0.0-alpha.1
+  - @fougere/transport-http@0.8.3-alpha.1
+
 ## 0.0.3-alpha.2
 
 ### Patch Changes

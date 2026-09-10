@@ -1,5 +1,66 @@
 # @fougere/app
 
+## 0.8.4-alpha.0
+
+### Patch Changes
+
+- 32923e6: An axis answers questions, and keeps no member to answer for it.
+
+  `Role`, `Lifecycle` and `Boundary` no longer declare `implements RoleRules` /
+  `LifecycleRules` / `BoundaryRules`, which was what forced their members public. Nothing
+  was annotating a `Role` as a `RoleRules`, but `readOnly()` and `writeOnly()` were writing
+  a JUDGE into `field.boundary` through the structural match: `Boundary.with` becomes
+  `Boundary.declaring` and returns the declaration, the dual of `Boundary.declared`.
+
+  Two questions a caller was asking by hand now exist. `Role.isRelation` answers either
+  kind — `@fougere/cli` and `@fougere/testing` were reading `.relation` for it — and
+  `Role.onDelete` completes `target`. `Lifecycle.stampedAtCreate` is what `Visibility.input`
+  and `applyCreate` were spelling as `create === 'now'`; `stampedOnce` now derives from it.
+
+  `Schema.fields`, `.adapters` and `.opts` are gone. They were a second spelling of
+  `getFields()` / `getAdapters()` / `getOpts()` that `SchemaConstructor` never declared, so
+  no consumer could reach them in TypeScript. `SchemaView` is the contract, unchanged.
+
+  `Bundle.fromSchemas` was building a whole card per entry to read one title; `Card.titleOf`
+  answers it, and a derivation still reports the name it was cut from.
+
+- 771e703: The type a projection dispatches on, named once and imported from the standard.
+
+  Nine places re-derived the same partition of shapes — two in `@fougere/app`'s form, one in
+  `@fougere/core`'s criterion, five in `@fougere/adapter-sql`, one in `@fougere/cli` — and it
+  had already diverged twice: `controlOf` had no `object|array` branch that its twin
+  `renderOf` carries, and `pothos.ts` documents its own bug, a bounded set falling through to
+  `String`.
+
+  `Shapes.typeOf(shape)` answers `ShapeType`, which is `JSONSchema7TypeName` from
+  `@types/json-schema` less `null` — a shape states that as the `[T,'null']` union — with
+  `string` in the three forms this package actually tells apart: `date`, `choice`, `text`.
+  Those three are the whole of what is ours; the rest is the standard's, and a type assertion
+  fails the build if `SHAPE_TYPES` and the standard ever part ways.
+
+  `Shapes.isNullable` stays: nullability is not a type, it is the other half of `Shapes.of`.
+
+  `@fougere/app`'s two cascades are now `Record<ShapeType, …>` tables, which no longer compile
+  if a type is left out. `@fougere/adapter-sql` and `@fougere/cli` still hold theirs.
+
+- Updated dependencies [26f7987]
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies [32923e6]
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies [771e703]
+  - @fougere/schema@0.9.0-alpha.1
+  - @fougere/core@0.9.0-alpha.1
+  - @fougere/container@0.8.3-alpha.1
+  - @fougere/adapter-graphql@0.8.3-alpha.1
+  - @fougere/compiler@1.0.0-alpha.1
+  - @fougere/defaults@0.8.3-alpha.1
+  - @fougere/adapter-memory@0.8.3-alpha.1
+  - @fougere/adapter-rest@0.8.3-alpha.1
+  - @fougere/transport-http@0.8.3-alpha.1
+
 ## 0.8.3-alpha.0
 
 ### Patch Changes

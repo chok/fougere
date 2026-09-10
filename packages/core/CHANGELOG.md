@@ -1,5 +1,114 @@
 # @fougere/core
 
+## 0.8.4-alpha.0
+
+### Minor Changes
+
+- A mirror resumes from the mark its caller kept, not from its own rows.
+
+  `freshness()` read the newest `updated()` stamp, which says when WE wrote a row — a source
+  compares `?since=` against its own clock and often never puts it on one. A pass that threw
+  halfway still pushed the mark past its own gap, and the rows changed in between were never
+  asked for again.
+
+  `refresh(since?)` takes it. `freshness()`, `ageFieldOf()` and the refusal of a shape without
+  an `updated()` field are gone with the reading that needed them, so a shape that dates
+  nothing can be copied. `demos/mirror-catalog` keeps the mark in `PartnerCatalog` and moves
+  it only after a pass returns.
+
+- The scan is a package, and core states what it takes to fill a descriptor.
+
+  Reading a project's source is the one thing core did that needs a filesystem and a
+  TypeScript program, and it was the only reason `@typescript/typescript6` — 24 MB — was a
+  dependency of every install. The bundles never carried it: the loaders were already lazy,
+  so what moves is what an install downloads, not what a Worker runs.
+
+  `scanProject`, `emitScan`, `emitStatement`, `frondAliases`, `boot` and the two AST readers
+  now come from `@fougere/compiler`. `@fougere/core/node` keeps what needs a disk without a
+  compiler: the config loader, the module loader, the deployment keys.
+
+  The extraction forced a contract out of hiding. Fifteen symbols the scan reached for inside
+  core leave by `@fougere/core/descriptor`, a fourth entry that says what it takes to PRODUCE
+  a descriptor where the main one says what an app RUNS. `conventions` came back to core — it
+  names directories and reads nothing.
+
+### Patch Changes
+
+- A boot that refuses releases what it took, from its first line — and a scope closes every
+  sibling.
+
+  `createApp` held the whole installation inline, 324 lines between reading the model and
+  assembling the app, so its `try` could only open where `release` was already in scope: at
+  the ascent. Everything before it opened sources and built storages and walked out holding
+  them. `installFrond(frond, assembly)` names what a frond is put into — one container, one
+  route table, one emission list — and `release` moved up beside the container, so before the
+  app exists it runs the two levels that do.
+
+  In the container, closing a child splices it out of `children` and the loop walked that same
+  array: `[first, second]` released `second`, and `first` stayed open with whatever it held for
+  the life of the process.
+
+- A value is admitted and handed back in the domain's form, once.
+
+  `validate`, then `null`, then `Boundary.decode` was written three times — the client door
+  and both of the storage guard's. `FieldValueValidator.parse` is the door for the sequence,
+  and the only judgement it carries is that `null` never reaches a codec.
+
+  Two doors decode, which is the policy and not an oversight: the client one on what arrives,
+  the guard on what a handler writes, because both hand the storage a parsed value. That asks
+  the decoder for idempotence, which the shipped one happens to give on its first line and
+  nothing required — `Decoder` says so now, and a test holds it.
+
+  And a derived gesture writes through the store rather than the front door: `upsertAll`
+  reached `upsert` on `this`, so a caller that wrapped the port was traversed twice and a
+  non-idempotent codec halved the row it stored.
+
+- Four rules that were written twice, and the families that had no home.
+
+  The surfaces a handler answers on — its own, or the default and every surface naming it
+  without a door of its own — was written in the effective model and again inline in the boot
+  that registers the routes. They agreed on the rule and not on the name of the absence.
+  `servedSurfaces` is where it lives, and `undefined` is the default surface as every key
+  already spelled it.
+
+  A presenter reads its binding plan when its façade is built, the way a handler already did:
+  `computeBindingPlan` says of itself that it is decided once at boot and replayed per call,
+  and the presenter rebuilt one per presentation from facts that were already settled.
+
+  Two families were reaching down into a package root for a leaf that depends on nothing while
+  the root reached back up into them — `storage` and the verdict's vocabulary. `core` keeps its
+  storage port, its store frame and its criteria under `storage/`, an emission is a call and
+  lives in `wire/`, and `schema` keeps `ValidationError` where `Registry` already was.
+  Intra-package family cycles: core 5 → 2, schema 9 → 6, and what is left is stated.
+
+- 771e703: The type a projection dispatches on, named once and imported from the standard.
+
+  Nine places re-derived the same partition of shapes — two in `@fougere/app`'s form, one in
+  `@fougere/core`'s criterion, five in `@fougere/adapter-sql`, one in `@fougere/cli` — and it
+  had already diverged twice: `controlOf` had no `object|array` branch that its twin
+  `renderOf` carries, and `pothos.ts` documents its own bug, a bounded set falling through to
+  `String`.
+
+  `Shapes.typeOf(shape)` answers `ShapeType`, which is `JSONSchema7TypeName` from
+  `@types/json-schema` less `null` — a shape states that as the `[T,'null']` union — with
+  `string` in the three forms this package actually tells apart: `date`, `choice`, `text`.
+  Those three are the whole of what is ours; the rest is the standard's, and a type assertion
+  fails the build if `SHAPE_TYPES` and the standard ever part ways.
+
+  `Shapes.isNullable` stays: nullability is not a type, it is the other half of `Shapes.of`.
+
+  `@fougere/app`'s two cascades are now `Record<ShapeType, …>` tables, which no longer compile
+  if a type is left out. `@fougere/adapter-sql` and `@fougere/cli` still hold theirs.
+
+- Updated dependencies [26f7987]
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies [32923e6]
+- Updated dependencies
+- Updated dependencies [771e703]
+  - @fougere/schema@0.9.0-alpha.1
+  - @fougere/container@0.8.3-alpha.1
+
 ## 0.8.3-alpha.0
 
 ### Patch Changes

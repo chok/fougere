@@ -1,5 +1,102 @@
 # @fougere/schema
 
+## 0.8.4-alpha.0
+
+### Minor Changes
+
+- 26f7987: A derivation states what it clears once, and the group of two has the owner its own
+  commit named.
+
+  Four of the seven ways to build a `SchemaDefinition` were writing `previous: undefined,
+anchored: false` by hand — the same re-threading that once dropped a member from the list
+  without anyone noticing. `derived` states it for all four, and `restated` is its dual:
+  `declares` and `anchor` cut nothing, so what they do not name is kept by construction.
+
+  `SchemaConstraints` becomes a class. `deduplicated` — a free function in `FieldSet` with
+  four callers — and `constraintsRenamed` — private on `SchemaDefinition` — were both
+  deciding about a composite `unique` from outside it; they are now `SchemaConstraints.of`
+  and `.renamed`, and the three `as CompositeUnique<Fields> | undefined` casts are gone with
+  them. `FieldSet.declaring` answers `groups`, the composites it leaves to the schema, and
+  no longer deduplicates on the way out.
+
+  `Schema.of({ constraints })` now takes a `SchemaConstraints`, built with
+  `SchemaConstraints.of([['tenant', 'email']])` rather than an object literal. Nothing
+  outside the package was importing the type.
+
+- A value is admitted and handed back in the domain's form, once.
+
+  `validate`, then `null`, then `Boundary.decode` was written three times — the client door
+  and both of the storage guard's. `FieldValueValidator.parse` is the door for the sequence,
+  and the only judgement it carries is that `null` never reaches a codec.
+
+  Two doors decode, which is the policy and not an oversight: the client one on what arrives,
+  the guard on what a handler writes, because both hand the storage a parsed value. That asks
+  the decoder for idempotence, which the shipped one happens to give on its first line and
+  nothing required — `Decoder` says so now, and a test holds it.
+
+  And a derived gesture writes through the store rather than the front door: `upsertAll`
+  reached `upsert` on `this`, so a caller that wrapped the port was traversed twice and a
+  non-idempotent codec halved the row it stored.
+
+- 32923e6: An axis answers questions, and keeps no member to answer for it.
+
+  `Role`, `Lifecycle` and `Boundary` no longer declare `implements RoleRules` /
+  `LifecycleRules` / `BoundaryRules`, which was what forced their members public. Nothing
+  was annotating a `Role` as a `RoleRules`, but `readOnly()` and `writeOnly()` were writing
+  a JUDGE into `field.boundary` through the structural match: `Boundary.with` becomes
+  `Boundary.declaring` and returns the declaration, the dual of `Boundary.declared`.
+
+  Two questions a caller was asking by hand now exist. `Role.isRelation` answers either
+  kind — `@fougere/cli` and `@fougere/testing` were reading `.relation` for it — and
+  `Role.onDelete` completes `target`. `Lifecycle.stampedAtCreate` is what `Visibility.input`
+  and `applyCreate` were spelling as `create === 'now'`; `stampedOnce` now derives from it.
+
+  `Schema.fields`, `.adapters` and `.opts` are gone. They were a second spelling of
+  `getFields()` / `getAdapters()` / `getOpts()` that `SchemaConstructor` never declared, so
+  no consumer could reach them in TypeScript. `SchemaView` is the contract, unchanged.
+
+  `Bundle.fromSchemas` was building a whole card per entry to read one title; `Card.titleOf`
+  answers it, and a derivation still reports the name it was cut from.
+
+- 771e703: The type a projection dispatches on, named once and imported from the standard.
+
+  Nine places re-derived the same partition of shapes — two in `@fougere/app`'s form, one in
+  `@fougere/core`'s criterion, five in `@fougere/adapter-sql`, one in `@fougere/cli` — and it
+  had already diverged twice: `controlOf` had no `object|array` branch that its twin
+  `renderOf` carries, and `pothos.ts` documents its own bug, a bounded set falling through to
+  `String`.
+
+  `Shapes.typeOf(shape)` answers `ShapeType`, which is `JSONSchema7TypeName` from
+  `@types/json-schema` less `null` — a shape states that as the `[T,'null']` union — with
+  `string` in the three forms this package actually tells apart: `date`, `choice`, `text`.
+  Those three are the whole of what is ours; the rest is the standard's, and a type assertion
+  fails the build if `SHAPE_TYPES` and the standard ever part ways.
+
+  `Shapes.isNullable` stays: nullability is not a type, it is the other half of `Shapes.of`.
+
+  `@fougere/app`'s two cascades are now `Record<ShapeType, …>` tables, which no longer compile
+  if a type is left out. `@fougere/adapter-sql` and `@fougere/cli` still hold theirs.
+
+### Patch Changes
+
+- Four rules that were written twice, and the families that had no home.
+
+  The surfaces a handler answers on — its own, or the default and every surface naming it
+  without a door of its own — was written in the effective model and again inline in the boot
+  that registers the routes. They agreed on the rule and not on the name of the absence.
+  `servedSurfaces` is where it lives, and `undefined` is the default surface as every key
+  already spelled it.
+
+  A presenter reads its binding plan when its façade is built, the way a handler already did:
+  `computeBindingPlan` says of itself that it is decided once at boot and replayed per call,
+  and the presenter rebuilt one per presentation from facts that were already settled.
+
+  Two families were reaching down into a package root for a leaf that depends on nothing while
+  the root reached back up into them — `storage` and the verdict's vocabulary. `core` keeps its
+  storage port, its store frame and its criteria under `storage/`, an emission is a call and
+  lives in `wire/`, and `schema` keeps `ValidationError` where `Registry` already was.
+  Intra-package family cycles: core 5 → 2, schema 9 → 6, and what is left is stated.
+
 ## 0.8.2-alpha.0
 
 ### Patch Changes

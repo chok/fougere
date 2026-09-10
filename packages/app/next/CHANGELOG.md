@@ -1,5 +1,20 @@
 # @fougere/next
 
+## 0.8.4-alpha.0
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies [32923e6]
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies [771e703]
+  - @fougere/core@0.9.0-alpha.1
+  - @fougere/app@0.8.3-alpha.1
+  - @fougere/compiler@1.0.0-alpha.1
+
 ## 0.8.3-alpha.0
 
 ### Patch Changes

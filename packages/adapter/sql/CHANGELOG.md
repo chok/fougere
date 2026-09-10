@@ -1,5 +1,56 @@
 # @fougere/schema-sql
 
+## 0.8.4-alpha.0
+
+### Minor Changes
+
+- df73bcb: A column carries the type its projections read, and `ColumnShape` is gone.
+
+  `ColumnShape` was `Shape` restated weaker — `type?: string`, `format?: string` — and its
+  only readers were the four `columnType` switches, each re-deriving what `Shapes.typeOf`
+  answers. `ColumnDef.type` is a `ShapeType` now, posed once by `toTable`.
+
+  `codecFor` takes that type rather than a shape, and its table is exhaustive: a type left
+  out no longer compiles, where the old `switch` re-tested `format === 'date-time'` on its
+  own. The four dialects keep their `switch` — a `default:` there decides ("everything else
+  is text") rather than forgetting, and no engine tells a date apart from a string.
+
+  The SQL emitted is unchanged: `date` and `choice` land in the same `default` branch that
+  `string` landed in.
+
+### Patch Changes
+
+- 32923e6: An axis answers questions, and keeps no member to answer for it.
+
+  `Role`, `Lifecycle` and `Boundary` no longer declare `implements RoleRules` /
+  `LifecycleRules` / `BoundaryRules`, which was what forced their members public. Nothing
+  was annotating a `Role` as a `RoleRules`, but `readOnly()` and `writeOnly()` were writing
+  a JUDGE into `field.boundary` through the structural match: `Boundary.with` becomes
+  `Boundary.declaring` and returns the declaration, the dual of `Boundary.declared`.
+
+  Two questions a caller was asking by hand now exist. `Role.isRelation` answers either
+  kind — `@fougere/cli` and `@fougere/testing` were reading `.relation` for it — and
+  `Role.onDelete` completes `target`. `Lifecycle.stampedAtCreate` is what `Visibility.input`
+  and `applyCreate` were spelling as `create === 'now'`; `stampedOnce` now derives from it.
+
+  `Schema.fields`, `.adapters` and `.opts` are gone. They were a second spelling of
+  `getFields()` / `getAdapters()` / `getOpts()` that `SchemaConstructor` never declared, so
+  no consumer could reach them in TypeScript. `SchemaView` is the contract, unchanged.
+
+  `Bundle.fromSchemas` was building a whole card per entry to read one title; `Card.titleOf`
+  answers it, and a derivation still reports the name it was cut from.
+
+- Updated dependencies [26f7987]
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies [32923e6]
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies [771e703]
+  - @fougere/schema@0.9.0-alpha.1
+  - @fougere/core@0.9.0-alpha.1
+
 ## 0.8.3-alpha.0
 
 ### Patch Changes

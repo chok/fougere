@@ -1,5 +1,12 @@
 # fougere-demo-container-basics
 
+## 0.0.3-alpha.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @fougere/container@0.8.3-alpha.1
+
 ## 0.0.2
 
 ### Patch Changes

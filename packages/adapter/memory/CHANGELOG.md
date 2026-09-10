@@ -1,5 +1,17 @@
 # @fougere/adapter-memory
 
+## 0.8.4-alpha.0
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies [771e703]
+  - @fougere/core@0.9.0-alpha.1
+
 ## 0.8.3-alpha.0
 
 ### Patch Changes
