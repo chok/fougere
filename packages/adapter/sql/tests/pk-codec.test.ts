@@ -9,7 +9,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { entity, primary, created, text } from '@fougere/schema';
 import { autoMigrate } from '../src/index.js';
-import { setupSqlite } from '../src/sqlite.js';
+import { createSqliteSource } from '../src/sqlite.js';
 
 class Reading extends entity({
   // A timestamp AS the key: legal, and the value the entity declares is a Date.
@@ -23,7 +23,7 @@ describe('a Date primary key survives the round trip', () => {
   let storage: any;
 
   beforeEach(async () => {
-    const setup = setupSqlite({ path: ':memory:' });
+    const setup = createSqliteSource({ path: ':memory:' });
     autoMigrate(appOf() as never, setup.sqlite);
     storage = setup.storageFactory(Reading as never, 'reading');
   });

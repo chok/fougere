@@ -13,7 +13,7 @@ import { repositoryKeyOf } from '../prefab/repository.js';
 import type { OperationContract, OperationsMap } from '../wire/operation.js';
 import type { EffectiveOperation, EffectiveOperationsMap } from '../effective-operation.js';
 import type { BindingPlan } from '../wire/binding.js';
-import { canonicalInvocation, type InvocationContext } from '../wire/Invocation.js';
+import { Invocation, type InvocationContext } from '../wire/Invocation.js';
 import type { HandlerEntry, PresenterEntry } from '../descriptor/frond.js';
 import { ArgumentResolver } from './ArgumentResolver.js';
 import { OutputView } from './OutputView.js';
@@ -101,7 +101,7 @@ export class HandlerFacade {
       );
     }
 
-    const invocation = canonicalInvocation(input);
+    const invocation = Invocation.from(input);
     const context: OperationContext = {
       entity,
       frond: this.door.frond,

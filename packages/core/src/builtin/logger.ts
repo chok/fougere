@@ -18,6 +18,54 @@ export type LogSink = (record: LogRecord) => void;
 /** Who else takes this process's log lines, beside the console. */
 const sinks: LogSink[] = [];
 
+/**
+ * Where one boot's lines wait, and where they go once they can.
+ *
+ * PER BOOT and never per process: two apps in one process each have their own
+ * destinations, and a slot shared between them sent the second app's lines to the first
+ * app's door — measured on `demos/observability`, where only the first of three printed.
+ *
+ * A boot writes most of what a process ever logs, and it writes it before any emission is
+ * registered, so the lines that say what an app is made of are the ones a destination
+ * would miss. Bounded: a boot that never finishes must not grow, and what is dropped is
+ * the OLDEST since the lines explaining a refusal are the last.
+ */
+export class Carry {
+  private held: LogRecord[] = [];
+  private take?: (line: LogRecord) => void;
+
+  static readonly MAX = 500;
+
+  /** Take it now, or keep it for whoever arrives. */
+  push(record: LogRecord): void {
+    if (this.take) {
+      try {
+        this.take(record);
+      } catch { /* announcing never breaks logging, for the same reason a sink does not */ }
+      return;
+    }
+    this.held.push(record);
+    if (this.held.length > Carry.MAX) this.held.shift();
+  }
+
+  /** Hand what is held over, and everything after it. */
+  to(take: (line: LogRecord) => void): () => void {
+    this.take = take;
+    for (const line of this.held.splice(0)) take(line);
+
+    return () => { this.take = undefined; };
+  }
+
+  /**
+   * Forget what is still held — a boot that refused, or an app that declares no
+   * destination. Nothing is printed: the console had every one of these lines when it was
+   * written, and the hold exists only to hand them on later.
+   */
+  forget(): void {
+    this.held.length = 0;
+  }
+}
+
 /** Take every line this process logs. Returns the way to withdraw. */
 export function onLog(next: LogSink): () => void {
   sinks.push(next);
@@ -79,8 +127,8 @@ function supportsColor(): boolean {
   return false;
 }
 
-function formatTime(): string {
-  const d = new Date();
+function stamp(at: number | Date): string {
+  const d = new Date(at);
   const h = String(d.getHours()).padStart(2, '0');
   const m = String(d.getMinutes()).padStart(2, '0');
   const s = String(d.getSeconds()).padStart(2, '0');
@@ -91,6 +139,12 @@ function formatTime(): string {
 export interface LoggerOptions {
   /** Logger name / prefix. */
   name?: string;
+  /**
+   * Where its lines go — one boot's, so two apps in a process do not share a door. A
+   * logger without one writes to the console and nowhere else, which is what the boot's
+   * first lines do and what an app declaring no destination does forever.
+   */
+  carry?: Carry;
   /** Force color on/off. Auto-detected by default. */
   color?: boolean;
 }
@@ -98,15 +152,17 @@ export interface LoggerOptions {
 export class Logger {
   private name: string;
   private color: boolean;
+  private carry?: Carry;
 
   constructor(prefix?: string, options?: Omit<LoggerOptions, 'name'>) {
     this.name = prefix ?? 'app';
     this.color = options?.color ?? supportsColor();
+    this.carry = options?.carry;
   }
 
   /** Create a child logger with a sub-name. It carries no level of its own either. */
   child(name: string): Logger {
-    return new Logger(`${this.name}:${name}`, { color: this.color });
+    return new Logger(`${this.name}:${name}`, { color: this.color, ...(this.carry ? { carry: this.carry } : {}) });
   }
 
   debug(msg: string, ...args: unknown[]) { this.log('debug', msg, args); }
@@ -116,27 +172,63 @@ export class Logger {
 
   private log(level: string, msg: string, args: unknown[]) {
     if (LEVELS[level as LogLevel] < threshold) return;
+    const record: LogRecord = {
+      level: level as LogRecord['level'], name: this.name, message: msg, args, at: Date.now(),
+    };
 
     // Beside the console, never instead of it: a forwarded line is an addition, and a
     // sink that throws must not cost the operator the line they were reading.
     for (const take of sinks) {
       try {
-        take({ level: level as LogRecord['level'], name: this.name, message: msg, args, at: Date.now() });
+        take(record);
       } catch { /* forwarding never breaks logging */ }
     }
 
-    const style = LEVEL_STYLE[level];
-    const time = formatTime();
-    // One console method per level. `debug` and `info` both went to `console.log`, so
-    // nothing downstream — a terminal filter, a collector — could tell them apart.
-    const method = level as 'debug' | 'info' | 'warn' | 'error';
+    this.carry?.push(record);
 
-    if (this.color) {
-      const c = COLORS[style.color];
-      const prefix = `${COLORS.dim}${time}${COLORS.reset} ${c}${COLORS.bold}${style.badge}${COLORS.reset} ${COLORS.magenta}${this.name}${COLORS.reset}`;
-      console[method](prefix, msg, ...args);
-    } else {
-      console[method](`${time} ${style.badge} [${this.name}]`, msg, ...args);
-    }
+    // The console ALWAYS, whoever else took the line. Skipping it once a destination
+    // existed made `calls()` — a devtools ring that prints nothing — silence the
+    // operator's terminal: 306 per-operation lines in `demos/observability` became 2.
+    // A destination sends a line ELSEWHERE; it does not take over stderr.
+    const { method, text } = formatted(record, this.color);
+    console[method](...text);
   }
+}
+
+/**
+ * One line, ready for a terminal — the console arguments and which method takes them.
+ *
+ * Here rather than inside the class because the boot is not the only writer: a destination
+ * that prints (`@fougere/log`) hands its own record to the same formatting, so the two
+ * outputs cannot drift.
+ *
+ * One console method per level: `debug` and `info` both went to `console.log`, so nothing
+ * downstream — a terminal filter, a collector — could tell them apart.
+ */
+export interface Rendered {
+  level: Exclude<LogLevel, 'silent'>;
+  name: string;
+  message: string;
+  /** Absent on most lines: a message usually carries its own detail. */
+  args?: unknown[] | null;
+  /** Epoch milliseconds from a logger, a `Date` from an entity that stamped it. */
+  at: number | Date;
+}
+
+export function formatted(
+  record: Rendered,
+  color = supportsColor(),
+): { method: Rendered['level']; text: unknown[] } {
+  const style = LEVEL_STYLE[record.level];
+  const time = stamp(record.at);
+  const method = record.level;
+
+  if (color) {
+    const c = COLORS[style.color];
+    const prefix = `${COLORS.dim}${time}${COLORS.reset} ${c}${COLORS.bold}${style.badge}${COLORS.reset} ${COLORS.magenta}${record.name}${COLORS.reset}`;
+
+    return { method, text: [prefix, record.message, ...(record.args ?? [])] };
+  }
+
+  return { method, text: [`${time} ${style.badge} [${record.name}]`, record.message, ...(record.args ?? [])] };
 }

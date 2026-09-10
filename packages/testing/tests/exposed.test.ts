@@ -13,7 +13,7 @@
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createLocalRunner } from '@fougere/core';
-import { EMPTY_INVOCATION } from '@fougere/core/contract';
+import { Invocation } from '@fougere/core/contract';
 import { serveRest, serveRpc, tableOf } from '@fougere/app';
 import { testApp } from '../src/index.js';
 
@@ -39,10 +39,10 @@ describe('an entity withdrawn from the public contract', () => {
   it('answers over RPC all the same — the two readers are not three', async () => {
     await using app = await testApp({ root });
 
-    const local = await createLocalRunner(app)({ entity: 'secret', op: 'list' }, EMPTY_INVOCATION);
+    const local = await createLocalRunner(app)({ entity: 'secret', op: 'list' }, Invocation.empty);
     const overRpc = await serveRpc(app, {
       path: '',
-      body: { jsonrpc: '2.0', id: 1, method: 'secret.list', params: EMPTY_INVOCATION },
+      body: { jsonrpc: '2.0', id: 1, method: 'secret.list', params: Invocation.empty },
       state: {},
     }) as { result?: unknown; error?: unknown };
 

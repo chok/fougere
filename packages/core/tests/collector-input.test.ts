@@ -8,7 +8,7 @@ import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner } from '../src/index.js';
-import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
+import { Invocation } from '../src/wire/Invocation.js';
 
 const root = join(import.meta.dirname, 'fixtures-collector-input');
 
@@ -28,7 +28,7 @@ describe('an inferred input beside a collected entity', () => {
 
     const out = await createLocalRunner(app)(
       { entity: 'post', op: 'bodyFirst' },
-      { ...EMPTY_INVOCATION, input, state },
+      { ...Invocation.empty, input, state },
     );
 
     expect(out).toEqual({ title: 'Ferns unfurl in silence', role: 'author' });
@@ -39,7 +39,7 @@ describe('an inferred input beside a collected entity', () => {
 
     const out = await createLocalRunner(app)(
       { entity: 'post', op: 'collectorFirst' },
-      { ...EMPTY_INVOCATION, input, state },
+      { ...Invocation.empty, input, state },
     );
 
     expect(out).toEqual({ title: 'Ferns unfurl in silence', role: 'author' });

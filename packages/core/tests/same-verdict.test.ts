@@ -21,7 +21,7 @@ import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, FougereError } from '../src/index.js';
-import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
+import { Invocation } from '../src/wire/Invocation.js';
 import { Cases, type SchemaView } from '@fougere/schema';
 import type { Storage, StorageFactory } from '../src/storage/port.js';
 import Article from './fixtures-same-verdict/fronds/press/entities/Article.js';
@@ -45,7 +45,7 @@ function verdictOfForm(schema: SchemaView & { validate(i: unknown): unknown }, i
 async function verdictOfFacade(run: ReturnType<typeof createLocalRunner>, op: string, input: unknown): Promise<Verdict> {
   const [entity, name] = op.split('.');
   try {
-    await run({ entity, op: name }, { ...EMPTY_INVOCATION, input });
+    await run({ entity, op: name }, { ...Invocation.empty, input });
     return { ok: true };
   } catch (error) {
     if (!(error instanceof FougereError) || error.code !== 'VALIDATION_FAILED') throw error;

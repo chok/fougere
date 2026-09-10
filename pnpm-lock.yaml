@@ -116,6 +116,31 @@ importers:
         specifier: ^4.21.0
         version: 4.21.0
 
+  demos/ask-quorum:
+    dependencies:
+      '@fougere/compiler':
+        specifier: workspace:*
+        version: link:../../packages/compiler
+      '@fougere/container':
+        specifier: workspace:*
+        version: link:../../packages/container
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
+      '@fougere/transport-http':
+        specifier: workspace:*
+        version: link:../../packages/transport/http
+      jiti:
+        specifier: ^2.0.0
+        version: 2.7.0
+    devDependencies:
+      tsx:
+        specifier: ^4.0.0
+        version: 4.21.0
+
   demos/auth-better:
     dependencies:
       '@fougere/adapter-sql':
@@ -461,6 +486,31 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  demos/log-destinations:
+    dependencies:
+      '@fougere/compiler':
+        specifier: workspace:*
+        version: link:../../packages/compiler
+      '@fougere/container':
+        specifier: workspace:*
+        version: link:../../packages/container
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@fougere/log':
+        specifier: workspace:*
+        version: link:../../packages/log
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
+      jiti:
+        specifier: ^2.0.0
+        version: 2.7.0
+    devDependencies:
+      tsx:
+        specifier: ^4.0.0
+        version: 4.21.0
+
   demos/mirror-catalog:
     dependencies:
       '@fougere/container':
@@ -763,6 +813,31 @@ importers:
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
+    devDependencies:
+      tsx:
+        specifier: ^4.0.0
+        version: 4.21.0
+
+  demos/pipe-split:
+    dependencies:
+      '@fougere/compiler':
+        specifier: workspace:*
+        version: link:../../packages/compiler
+      '@fougere/container':
+        specifier: workspace:*
+        version: link:../../packages/container
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
+      '@fougere/transport-http':
+        specifier: workspace:*
+        version: link:../../packages/transport/http
+      jiti:
+        specifier: ^2.0.0
+        version: 2.7.0
     devDependencies:
       tsx:
         specifier: ^4.0.0
@@ -1588,6 +1663,30 @@ importers:
       vitest:
         specifier: ^4.1.0
         version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(vite@8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))
+
+  packages/log:
+    devDependencies:
+      '@fougere/compiler':
+        specifier: workspace:*
+        version: link:../compiler
+      '@fougere/container':
+        specifier: workspace:*
+        version: link:../container
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../core
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../schema
+      '@fougere/testing':
+        specifier: workspace:*
+        version: link:../testing
+      jiti:
+        specifier: ^2.6.1
+        version: 2.7.0
+      vitest:
+        specifier: ^4.1.0
+        version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(vite@8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))
 
   packages/observability:
     devDependencies:
@@ -10447,10 +10546,6 @@ packages:
 
   tinyexec@1.0.4:
     resolution: {integrity: sha512-u9r3uZC0bdpGOXtlxUIdwf9pkmvhqJdrVCH9fapQtgy/OeTTMZ1nqH7agtvEfmGui6e1XxjcdrlxvxJvc3sMqw==}
-    engines: {node: '>=18'}
-
-  tinyexec@1.2.4:
-    resolution: {integrity: sha512-SHf/r48b7vOrjve9PxJo3MN5v5yuyjHvdUcrQffT3WXMUfnGmHDVbC4k3sHJaJTgZCwpUplIaAo5ANtMyp3YHg==}
     engines: {node: '>=18'}
 
   tinyexec@1.3.0:
@@ -23548,8 +23643,6 @@ snapshots:
 
   tinyexec@1.0.4: {}
 
-  tinyexec@1.2.4: {}
-
   tinyexec@1.3.0: {}
 
   tinyglobby@0.2.15:
@@ -24441,7 +24534,7 @@ snapshots:
       picomatch: 4.0.5
       std-env: 4.2.0
       tinybench: 2.9.0
-      tinyexec: 1.2.4
+      tinyexec: 1.3.0
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.0
       vite: 8.2.0(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0)
@@ -24470,7 +24563,7 @@ snapshots:
       picomatch: 4.0.5
       std-env: 4.2.0
       tinybench: 2.9.0
-      tinyexec: 1.2.4
+      tinyexec: 1.3.0
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.0
       vite: 8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0)
@@ -24499,7 +24592,7 @@ snapshots:
       picomatch: 4.0.5
       std-env: 4.2.0
       tinybench: 2.9.0
-      tinyexec: 1.2.4
+      tinyexec: 1.3.0
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.0
       vite: 8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0)

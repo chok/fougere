@@ -37,6 +37,9 @@ pnpm -C demos/ports-swap dev        # stripe, then ogone, then the refusal — o
 pnpm -C demos/config-reload dev     # one boot, a real SIGHUP, a drain — and what a re-read cannot change
 pnpm -C demos/mirror-catalog dev    # two passes over a source that only answers ?page=&since=
 pnpm -C demos/sse-live dev         # live fan-out to readers who are not trusted peers
+pnpm -C demos/log-destinations dev # two destinations for one line, and the frond that names neither
+pnpm -C demos/pipe-split dev       # the op that FINISHES a fact — here, then behind `remotes:`
+pnpm -C demos/ask-quorum dev       # `Emit<T, A>` — the announcement that waits, across three processes
 pnpm -C demos/observability dev    # three processes; `pnpm load` (k6) and `pnpm signoz` beside it
 pnpm -C demos/together-frame dev   # two writes that stand or fall as one — then uncomment `sources:`
 pnpm -C demos/test-gradient test   # 53 tests, 44 of them from a one-line file
@@ -79,6 +82,7 @@ packages/
   cli/                 @fougere/cli           commands, scaffolding, and the terminal UI (src/ui.ts)
   testing/             @fougere/testing       cases derived from an entity, doubles derived from a port
   calls/               @fougere/calls         optional: a bounded ring of what this process dispatched, served as rpc.calls
+  log/                 @fougere/log           optional: lines to a FILE, one JSON object each — the console is Logger's
   decorators/          @fougere/decorators    `@expose` — publishable, and imported by nobody in this repo
 
   adapter/                                    project the schema onto a target
@@ -118,6 +122,9 @@ demos/
   rust-frond/          the far side is not TypeScript, and the validator is still ours
   cloudflare-d1/       the edge rung — scan emitted, no tsc shipped
   sse-live/            live fan-out to readers who are not trusted peers
+  log-destinations/    where a line goes is the operator's line, not the domain's
+  pipe-split/          `Pipe<T>` — what a link is for, and what `pick` already does without one
+  ask-quorum/          `Emit<T, A>` — an announcement that waits, and what a missing answer costs
   admin-panel/ one-declaration/ express-blog/ next-blog/ sveltekit-blog/
   react-router-blog/ tanstack-blog/ multi-transport/ emit-fleet/ emit-split/
   container-basics/ core-scanner/ multi-frond/ crud-auto/ auth-better/
@@ -174,9 +181,13 @@ a caller that has its own words for the absence. `Clock` is not one: it register
 entity's storage and forwards all thirteen gestures. From TWO on it is an aggregate: no
 default repository for any member, no forwarded gesture, and `ownersOf` refuses two
 aggregates over one entity. `Crud` on an owned entity is refused at boot
-(`refuseCrudOnOwned`). `Storage<E>` is not a word of user code
-(`core/src/boot/ownership.ts`): a handler, a presenter and a collector are pointed at
-`<E>Repository`. Pinned by `core/tests/aggregate.test.ts`.
+(`refuseCrudOnOwned`). `Storage<E>` is reached only by a class BUILT ON E (`builtOn`,
+`core/src/boot/ownership.ts`) — a repository, or a prefab over that entity: naming
+`Storage<BookCard>` is what `Mirror(BookCard)` earns. A handler, a presenter, a collector
+and a plain service are pointed at `<E>Repository`, and the aggregate check runs BEFORE the
+allowance, so an entity an aggregate owns refuses even the built-on case, naming the owner.
+The host is outside the rule: `app.storageFor()` and the `storageFactory` it hands in name
+`Storage`. Pinned by `core/tests/aggregate.test.ts`.
 
 **Turning the ring** — `reloadFougere()` (`app/shared/src/boot.ts`) builds the app again and
 releases the previous one; it works because every door reaches the app through
@@ -186,6 +197,32 @@ of construction: each extension's `down`, then `container.dispose()`, then
 running calls finish (counted in `dispatch/InFlight.ts`); it REJECTS on its deadline naming
 what is left. A call arriving after the door closed gets `SERVICE_UNAVAILABLE`. Pinned by
 `tests/dispose.test.ts` and `tests/drain.test.ts`.
+
+**An extension brings fronds** — `Extension.fronds`, read by `createApp` BEFORE the ascent
+and folded in beside `fronds:` and `scan:`. It is the only way an optional package can
+accept a fact: a subscription is a signature, and `up` receives an app that already exists.
+The boot marks what it took as `FrondDescriptor.brought`, which is how a report says what
+the app SERVES rather than what instruments it — read by `calls`' panel and by
+`rpc.topology`. `@fougere/calls` and `@fougere/observability` each bring one `LineHandler`.
+
+**What carries a line writes none** — `CARRIES_LINE` (`core/src/builtin/LogLine.ts`), a
+set the BOOT fills from `Emissions.doorsFor('logLine')`, read by `loggerMiddleware`, by
+`observability`'s `trace()` and by `calls`' ring. Keeping a line is a DISPATCH, so logging
+it announces a line inside the announcement of one: `Emission cycle: logLine → logLine`.
+Measured four ways on 2026-09-10 — the process hung, the call ring filled with its own
+writes, `activeCalls()` counted log deliveries, and a hard-coded list missed a third
+party's destination. A reentrancy flag cannot see it: the carry is asynchronous.
+
+**The ascent is ORDERED BY CORE, and a host hands over a gesture** — `createApp` puts
+`migrating(options.migrate)` and `seeding()` before whatever `extensions:` carries. Four
+hosts assembled those two members themselves (`compiler/src/boot.ts`,
+`app/shared/src/boot.ts`, the Nuxt codegen as a STRING, and a demo), and eight demos wrote
+nothing — so they had no migration and nothing said it. Rows before tables is a boot that
+finds none, which is not a host's preference to hold. `Source.migrate` is declared once and
+travels whole: `layerOf(storage)` (`defaults/src/storage.ts`) is the ONE place that spreads
+the data layer into what `createApp` takes, so a host names no member of it — naming a few
+is how `transacted` and `close` were left behind once, under Nuxt only. Pinned by
+`tests/lifecycle.test.ts`.
 
 **The ascent** — `boot/AppLifecycle.ts`. An `Extension` states `up` and `down`, handed in
 through `CreateAppOptions.extensions`. A name already declared is REPLACED, not refused.
@@ -202,7 +239,7 @@ serves discover.` The report shapes live in core (`TopologyReport`, `FrondPlacem
 because they cross a process boundary.
 
 **The names the scan reads** — `core/src/conventions.ts`, read by `@fougere/compiler`. Everything else a frond states, it
-states by its SHAPE; the eight convention directories and the import scope are the one place
+states by its SHAPE; the ten convention directories and the import scope are the one place
 a NAME is the declaration, and the only ones a project may restate (`conventions:` in
 `fougere.config.ts`). The config is read BEFORE the aliases, because it names the scope they
 are built from. `.fougere/` is the framework's working directory, not user vocabulary.
@@ -215,11 +252,66 @@ today, and every other difference is reported as `pending`. `Logger` holds NO le
 re-read needs `loadConfig(root, { fresh: true })` — a module is cached by its specifier.
 Core catches no signal: a process belongs to its host. Pinned by `tests/log-level.test.ts`.
 
+**What has an AFTER can be a middleware; what has none cannot.** A middleware is `(ctx,
+next)` — it holds what comes next, so it may not run it, and it may act on what came back.
+An operation has both halves: refusing IS an answer, and the answer is worth seeing. A
+fact has neither — the announcer left with `void`, and a subscriber's answer is discarded
+— so handing a link `next` would grant only the power to suppress and leave the other half
+dead. That is why `Pipe<T>` returns a value instead of taking `next`, and it is the line
+between the two, not a convention.
+
+**A middleware is a frond's to declare** — `middlewares/`, the tenth convention directory
+and the only one whose members apply to code they do not name. Recognized by its FORM: the
+class states `around(context, next)`, so a file in the directory that does not is not one.
+It answers for its own frond — every ADDRESS its handlers answer to, wider than its
+entities since a handler without one runs behind it too — and `middlewares: { Audit: 'app' }`
+in `frond.config.ts` is the exception, stated by the frond that decides for the others.
+Resolved per CALL and never at boot, the same reason `getMiddlewares` is: a middleware
+asking for something request-scoped would otherwise be handed the one instance the boot
+built. `App.use` and a frond's directory are two doors onto ONE writer (`use` in
+`boot/bootstrap.ts`). Pinned by `core/tests/middleware.test.ts`.
+
+**A log line is an announced fact** — `@fougere/log`. `Emit<LogLine>` is what a frond asks
+for, and a destination is a handler accepting `Fact<LogLine>` — that signature IS the
+subscription, so two destinations both receive and none is not declaring the frond. The
+console one writes with `console[method]` and announces NOTHING: a destination that logs is
+a ring, which the emission refuses by name where `onLog`'s try/catch swallowed it. The
+package STATES its frond (`logFrond()`), because scanning a directory under `packages/`
+fails — see Known issues.
+
+`Logger` is a SHORTCUT over that emission: `log.info(msg)` builds the line
+`Emit<LogLine>` takes whole, and printing is part of what the shortcut IS — the console is
+written whoever else took the line, because skipping it once a destination existed made a
+devtools ring silence the terminal (306 lines in `demos/observability` became 2). So a
+destination sends a line ELSEWHERE, which is why `@fougere/log` ships a FILE and not a
+console. Announcing through `Emit<LogLine>` reaches destinations only.
+
+The SHAPE is core's too — `entityByName` gets `LogLine` when no frond declared it, or a
+destination brought by an extension is handed a line whose `at: created()` was never
+stamped. A logger a package CONSTRUCTS carries nothing: `new Logger(service)` printed and
+announced nothing, which is why `observability` resolves the app's and names a child.
+
+The lines are HELD until an emission exists, in a `Carry` held PER BOOT — a process-wide
+slot sent a second app's lines to the first app's door, and only the first of three
+printed. Whatever CARRIES a line writes none: `Emissions` has a logger with no carry, and
+`CARRIES_LINE` — filled by the boot from who subscribed, never written down — is read by
+`loggerMiddleware`, by `trace()` and by `calls`' ring. Pinned by `log/tests/log.test.ts`
+and `demos/log-destinations`.
+
 **Ports** — a class something already answers under, that a provider extends. Nothing
 declares one: `boot/ports.ts`, `portBindings` reads the prototype chain at boot, so
 `class StripePayment extends Payment` IS the registration. Two implementations REFUSE at
 boot naming both; `ports: { Payment: 'StripePayment' }` settles it. Only the direct base
-binds. A builtin is a port too: `class AuditLogger extends Logger` takes the `Logger` key
+binds.
+
+A port may be answered by a CHAIN, and a WRAPPER is recognized by its form: it extends the
+port AND asks for it (`constructor(private inner: Payment)`). Wrapping used to be
+impossible — a wrapper was a second implementation, so the boot refused it, and
+`StorageGuard` was the only one in the tree, hard-coded for one port. The container needs
+nothing new: a dep resolves by NAME, so wrapping is a substituted key. One wrapper needs no
+declaration; two REFUSE, because which stands in front is an order and scan order is not
+one — `ports: { Payment: ['Retrying', 'Stripe'] }` states the chain from the OUTSIDE IN,
+and the last name is what actually charges. Pinned by `tests/ports.test.ts`. A builtin is a port too: `class AuditLogger extends Logger` takes the `Logger` key
 for that frond. Pinned by `tests/ports.test.ts`.
 
 **Sources** — a place rows live, and the four gestures it owns: `storageFactory` (required),
@@ -261,6 +353,45 @@ method's own doc sentence, read from the AST (`compiler/src/scan/handler-parser.
 invocation)`. `createLocalRunner` (`boot/runner.ts`) executes locally, `createAppRunner`
 follows the topology, `identityCardOf` (`boot/card.ts`) answers `rpc.discover`. Transports
 move the value, never reshape it. Browser-safe surface: `@fougere/core/contract`.
+
+**`Emit<T, A>` — the SECOND type is what makes an announcement wait.** `Emit<T>` hands the
+fact over and returns nothing; `Emit<T, Verdict>` waits for every subscriber and gives back
+what each answered. Two container keys, `…Emit` and `…Await`, because they are two
+relationships to one subject — no option and no mode, which is why the one case that cannot
+be honoured is refused AT BOOT: a carrier reaches whoever subscribed elsewhere and brings
+nothing back, so the answers would hold this process's subscribers only.
+
+A subscriber declares nothing new: `Fact<T>` answering `Promise<void>` has no opinion, any
+other return is one. The ANSWER is its own entity — shaped like the fact it would read as a
+transformation, which is a link's signature (`Pipe<T>` in, `T` out). A subscriber that does
+not answer REFUSES the announcement rather than shrinking it: an announcer handed the
+survivors cannot tell them from a complete answer, and its own law then reads silence as
+consent. Pinned by `tests/emit-await.test.ts` and `demos/ask-quorum`.
+
+**`Pipe<T>` finishes a fact** — the third word of the family, and the declared form of a
+position the core already held: `Emissions.stamped` realizes `created()` before anyone is
+handed anything. What it is NOT for is dropping a field: a fact is a PROJECTION
+(`Post.pick('id', 'title')` — five of them in the tree), so what should not travel is
+simply not declared. A link earns its place on what remains and must be TRANSFORMED — a
+hash `pick` cannot produce, a lookup needing a dependency the announcer should not hold. An op taking `Pipe<T>` ANSWERS the fact every subscriber then reads, so its
+output is DERIVED from the fact rather than projected (`effective-operation.ts`) and it is
+handed the whole of it (`ArgumentResolver`, the `fact` branch). Several may finish one fact, and they run in
+the ORDER their fact's owner declared — `pipes: { postPublished: ['RedactHandler',
+'StampHandler'] }` in `frond.config.ts`, where the second reads what the first answered.
+Two links with no order refuse at boot naming both, a link the order does not list refuses
+too, and a frond ordering a fact it does not own refuses: ordering is a decision about the
+fact, and a decision has one owner. A link that answers NOTHING is refused, and the announcer is told: it used to reach nobody
+by crash, every subscriber handed `null`. A fact is what HAPPENED — the announcer already
+said so and `Emit` returns void, so nothing could tell it otherwise. Filtering belongs to
+whoever announces, or to each reader.
+
+A link is CALLED, so it needs an address — local, or named in `remotes:`. A carrier has no
+address, so a link can never live behind one, the same line `Ask` draws. It is a HARD
+dependency where a subscriber is not — a subscriber that throws is
+logged and the announcer goes on, a link that throws stops the announcement, and behind
+`remotes:` that makes announcing depend on another process. Pinned by `tests/pipe.test.ts`
+and `demos/pipe-split`. `Fact` and `Pipe` are both transparent (`= T`), so the scan keeps
+them by NAME (`handler-parser.ts`, `ANNOUNCED`) — the checker keeps nothing of an alias.
 
 **`Emit<T>` / `Fact<T>`** (`core/src/wire/emit.ts`, dispatched by `boot/Emissions.ts`) — every
 other call names ONE recipient; an emission names a SUBJECT. Accepting a `Fact<T>` IS the
@@ -322,6 +453,27 @@ X), `useFormFor` (contract, not rendering; local validator = remote validator), 
 
 Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 
+- **Scanning a directory that sits under `packages/` fails** — `LogLine_base is not defined`,
+  measured 2026-09-10 on `packages/log/fronds/`. The same file scanned from outside the
+  workspace loads. `findWorkspaceRoot` (`compiler/src/scan/scanner.ts`) seeds a type program
+  from the monorepo root, and the entity is then evaluated from an emit whose hoisted
+  `const <Class>_base` is lost. `@fougere/log` states its frond rather than being scanned,
+  which is the right form for a published package anyway — so this is a trap for a frond
+  inside a workspace package, not a blocker.
+- **A type alias of a port does not bind** — `type Log = Emit<LogLine>` then
+  `constructor(private log: Log)` resolves to the key `Log`, and the boot refuses
+  `'Log' is not registered`. The checker keeps the OUTER alias symbol and drops
+  `<LogLine>`, so `depKeyOf` never sees the port. Recovering it means reading the alias's
+  own declaration in `handler-parser.ts` (`parseCheckedType`). Measured 2026-09-10; the
+  alias was removed rather than shipped broken.
+- **`onQuery` and `onSpan` are still sinks** — `adapter/sql/src/query.ts`,
+  `observability/src/index.ts`: the same `sinks.push` and `splice` `onLog` had. They carry
+  OTHER facts — a statement, a span — and converting each means declaring its entity and
+  deciding who announces: a Kysely `log` callback has no app, and a span is produced by the
+  middleware that would announce it. `onLog` has no production caller left; it stays as a
+  test instrument, which is its only reader.
+- **`registerFlush` is not a subscription at all** — it collects what to send NOW, which is
+  a lifecycle gesture. It belongs beside `Extension.down`, not beside a fact.
 - **An un-augmented `adapters:` accepts anything, silently.** With no adapter in the program
   `EntityAdapters<TFields>` is `Partial<{}>`, which in TypeScript means "anything
   non-nullish". The RUNTIME half is closed since `AdapterFieldValidator`; what remains open is the type.
@@ -365,9 +517,6 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   which carry when WE wrote them: a pass that threw halfway still advanced it, and what the
   source had changed in the gap was never asked for again. `demos/mirror-catalog` keeps it in
   `PartnerCatalog` and moves it only after a pass returns.
-- **An announcement realizes a fact's `lifecycle.create`, and no typed emitter can use it.**
-  `Emit<T>` names the ROW type where `created()` is required, so `announce({ id, title })` is a
-  compile error. `PartialValues` is the wanted shape.
 - **A schema can say what it WAS, and the missing reader is the API.** `Card.diff`,
   `fougere freeze`, `fougere migrate --apply` are shipped; serving an old API version is not.
 - **A stored fact is not VERSIONED.** It IS validated: `json(Address)` builds `properties` and
@@ -387,6 +536,11 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 ### Settled
 
 One line each, kept because a past version of this file asserted the opposite.
+
+- **`Emit<T>` is PARTIAL, because announcing realizes the fact's `lifecycle.create`** — a
+  `created()` stamped by `Emissions`, which asking the announcer for made every emitter cast
+  past its own type. A missing field is still refused, by the judge that reads the fact.
+  Pinned by `core/tests/emit.test.ts`, through the typed emitter.
 
 - **A refusal says WHERE, all the way down** — `ValidationError.path` is SEGMENTS
   (`['addr', 'street']`), and `FieldValueValidator` keeps the engine's `instanceLocation` and its

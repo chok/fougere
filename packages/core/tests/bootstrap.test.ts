@@ -5,7 +5,7 @@ import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner } from '../src/index.js';
 import type { Container } from '@fougere/container';
 import type { StorageFactory, Storage } from '../src/index.js';
-import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
+import { Invocation } from '../src/wire/Invocation.js';
 
 const fixturesRoot = join(import.meta.dirname, 'fixtures');
 
@@ -101,7 +101,7 @@ describe('createApp on a flat project', () => {
     expect(scope.has('ProductStorage')).toBe(true);
 
     const run = createLocalRunner(app);
-    const rows = await run({ entity: 'product', op: 'list' }, EMPTY_INVOCATION);
+    const rows = await run({ entity: 'product', op: 'list' }, Invocation.empty);
     expect(rows).toEqual([{ id: '1', name: 'Fern', price: 12.5 }]);
   });
 });

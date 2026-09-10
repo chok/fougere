@@ -1,7 +1,7 @@
 /** Sending half — frame the call, POST it, unframe the result. */
 import { FougereError, ErrorCode, type Transport, type FrondCall, type InvocationContext, type SignedCall } from '@fougere/core/contract';
 import type { RpcRequest, RpcResponse, RpcErrorShape } from './jsonrpc.js';
-export type { RpcRequest, RpcResponse } from './jsonrpc.js';
+export type { RpcResponse } from './jsonrpc.js';
 
 /** Frame a call as a JSON-RPC request. */
 export function frameCall(call: FrondCall, invocation: InvocationContext, id: number): RpcRequest {

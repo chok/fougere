@@ -8,7 +8,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { createLocalRunner } from '@fougere/core';
-import { EMPTY_INVOCATION } from '@fougere/core/contract';
+import { Invocation } from '@fougere/core/contract';
 import { testApp } from '../../../../../src/index.js';
 
 describe('a test that states nothing', () => {
@@ -22,7 +22,7 @@ describe('a test that states nothing', () => {
     await using app = await testApp();
 
     const created = await createLocalRunner(app)({ entity: 'article', op: 'create' }, {
-      ...EMPTY_INVOCATION,
+      ...Invocation.empty,
       input: { title: 'From position alone', body: 'A body', status: 'draft', views: 0 },
     }) as { title: string };
 

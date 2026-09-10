@@ -9,7 +9,7 @@ import { scanProject } from '@fougere/compiler';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { join } from 'node:path';
-import { createApp, createLocalRunner, FougereError, EMPTY_INVOCATION, ErrorCode } from '@fougere/core';
+import { createApp, createLocalRunner, FougereError, ErrorCode, Invocation } from '@fougere/core';
 import type { App, InvocationContext, Transport } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { createHttpTransport } from '../src/index.js';

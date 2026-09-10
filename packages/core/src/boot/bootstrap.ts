@@ -7,7 +7,13 @@ import { installFrond, type Assembly } from './install.js';
 import type { AuthRuntime } from './auth.js';
 import type { CreateAppOptions, App } from './types.js';
 import type { AppMiddleware } from '../wire/middleware.js';
-import { Logger } from '../builtin/logger.js';
+import { Carry, Logger } from '../builtin/logger.js';
+import type { LogRecord } from '../builtin/logger.js';
+import LogLine, { CARRIES_LINE } from '../builtin/LogLine.js';
+import { emitKeyOf, type Emit } from '../wire/emit.js';
+
+/** The fact the boot announces, spelled once. */
+const LOG_LINE = lowerFirst(LogLine.name);
 import { Config } from '../builtin/config.js';
 import { createRemoteRouter, createRemoteFacade } from './remote.js';
 import { registerFrames } from './together.js';
@@ -26,7 +32,8 @@ import { InFlight } from '../dispatch/InFlight.js';
 // The keys, each read from where its concept is declared — never respelled here.
 import { facadeKeyOf, contractsKeyOf, type RpcAnswer } from '../wire/call.js';
 import { identityCardOf } from './card.js';
-import { AppLifecycle } from './AppLifecycle.js';
+import { AppLifecycle, migrating } from './AppLifecycle.js';
+import { seeding } from './seed.js';
 import { inheritsCrud, subjectOf } from '../prefab/crud.js';
 import { repositoryKeyOf } from '../prefab/repository.js';
 import { storageKeyOf } from '../storage/port.js';
@@ -83,9 +90,20 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
   // Held out here, and not where the ascent reads it, because releasing needs it and
   // releasing has to work from the first line the boot takes something.
-  const appLifecycle = new AppLifecycle().add(...(options.extensions ?? []));
+  // The conventional ascent, ordered here: tables, then rows, then whatever the host took
+  // on. Four hosts assembled these two members themselves — the order is not theirs to
+  // choose, and a host that forgot lost its migration in silence.
+  const appLifecycle = new AppLifecycle().add(
+    migrating(options.migrate),
+    seeding(),
+    ...(options.extensions ?? []),
+  );
   /** The app once it exists — a refusal before that releases the two levels that do. */
   let built: App | undefined;
+  /** Where THIS boot's lines wait — never a process-wide slot, see `Carry`. */
+  const carry = new Carry();
+  /** Given back by `carry.to`, so a released app stops writing into a dead container. */
+  let stopAnnouncing: (() => void) | undefined;
 
   /**
    * Everything this app holds, let go in reverse of how it was taken: what an extension took on
@@ -97,6 +115,9 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // there and broken here, a refusing extension took the container and the connection
     // down with it, which is the leak this gesture exists to prevent.
     const refused: unknown[] = [];
+    // Whatever is still held will never reach a destination — the console had it.
+    stopAnnouncing?.();
+    carry.forget();
     const levels = [
       ...(built ? [() => appLifecycle.down(built!)] : []),
       () => container.dispose(),
@@ -119,14 +140,14 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
   try {
     // Boot chatter is debug by default; a host (e.g. the CLI) can quiet it.
-    const log = new Logger('boot:app');
+    const log = new Logger('boot:app', { carry });
 
     // Builtins — registered under class name (PascalCase) for type-based DI.
     // No level here and none anywhere: a logger consults `setLogLevel`'s value at each
     // emission, so this instance survives a level change and so does every handler that
     // was handed it. A frond declaring `class X extends Logger` takes this key over,
     // like any other port.
-    container.registerValue('Logger', new Logger('app'));
+    container.registerValue('Logger', new Logger('app', { carry }));
     container.register('Config', Config, { lifetime: 'singleton' });
     log.debug('builtins registered (Logger, Config)');
 
@@ -134,12 +155,20 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // it may read a disk; consuming it never does, which is the whole reason this file names
     // no builtin and a Worker can run what it builds.
     const scanStart = performance.now();
-    const { fronds, diagnostics } = await hostedBy(options);
+    // An extension's fronds sit beside the app's own: it is installed like any other, and
+    // its handlers resolve at call time — by which point the extension's `up` has put what
+    // they ask for in the container.
+    const brought = (options.extensions ?? [])
+      .flatMap((extension) => extension?.fronds ?? [])
+      .map((frond) => ({ ...frond, brought: true as const }));
+    const { fronds, diagnostics } = await hostedBy(
+      brought.length > 0 ? { ...options, fronds: [...(options.fronds ?? []), ...brought] } : options,
+    );
     // An app that states nothing AND scans nothing is a mistake — unless something else it
     // declares brings its own entities, which an auth provider does. Refused here and not in
     // `hostedBy`, which is handed the frond sources and cannot see the rest of the app. The
     // condition is the KEYS, not the count: a scan that found nothing is an ordinary answer.
-    if (!options.fronds && !options.scan && !options.auth) {
+    if (!options.fronds && !options.scan && !options.auth && brought.length === 0) {
       throw new Error(
         'createApp needs `fronds:` (what this app states) or `scan:` (what a scanner found). '
         + 'Neither was given, and nothing else declares entities of its own.',
@@ -233,15 +262,41 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       return [...globalMiddlewares, ...scoped];
     }
 
+    /**
+     * The one place a middleware is taken on. `App.use` is its late form, and a frond's
+     * `middlewares/` its early one — the app does not exist yet while fronds install.
+     */
+    function use(middleware: AppMiddleware, entity?: string): void {
+      if (entity === undefined) {
+        globalMiddlewares.push(middleware);
+        return;
+      }
+      const scoped = scopedMiddlewares.get(entity) ?? [];
+      scoped.push(middleware);
+      scopedMiddlewares.set(entity, scoped);
+    }
+
     assertOneOwnerPerKey(fronds, options.remotes);
 
     // Every entity of every frond, by name — so a fact can be validated where it LANDS, and
     // so a `reads:` clause can name a neighbour's.
     const entityByName = fronds.schemas();
+    // The line is core's, so its SHAPE is too: a destination that declares only a handler
+    // would otherwise be handed a line with no `at` — the announcement stamps `created()`
+    // off the shape, and the strict judge refuses what it did not stamp. Measured on
+    // `demos/observability`, where the ring held 11 calls and 0 lines.
+    if (!entityByName.has(LOG_LINE)) entityByName.set(LOG_LINE, LogLine);
     // Which frond holds an entity — what turns "a member is remote" into a refusal that
     // names the frond rather than the entity, since `remotes:` is declared per frond.
     const frondOf = new Map(fronds.flatMap((f) => f.entities.map((e) => [e.name, f.name] as const)));
-    const emissions = new Emissions(fronds, entityByName, container, log, options.onEmit);
+    // Its own writer, which does NOT announce: this is what carries a fact, and a line
+    // about carrying one would come back here. See `LoggerOptions.carries`.
+    const emissions = new Emissions(
+      fronds, entityByName, container,
+      // No carry: this is what CARRIES a fact, and a line about carrying one comes back.
+      new Logger('boot:app'),
+      options.onEmit,
+    );
     /** Canonical operation tables, indexed by the same audience key as their facades. */
     const effectiveByKey = new Map<string, EffectiveOperationsMap>();
 
@@ -258,7 +313,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // table, one emission list — so what a frond serves is there for the next one to find.
     const assembly: Assembly = {
       container, routeRegistry, emissions, dispatcher, localDispatcher, effectiveByKey,
-      boundPorts, operationModel, entityByName, frondOf, contractsOf, getMiddlewares,
+      boundPorts, operationModel, entityByName, frondOf, contractsOf, getMiddlewares, use,
       log, options,
     };
     for (const frond of fronds) await installFrond(frond, assembly);
@@ -276,6 +331,28 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
     // Once every door exists: what is announced here and what is listened to are both known.
     emissions.register();
+
+    // The boot's own lines, and every line after them. Held until here because a boot
+    // writes most of what a process logs and writes it before any door exists — so the
+    // lines that say what this app is made of are the ones a destination would miss.
+    // `LogLine` is core's for this reason: naming it costs no optional package.
+    // Which doors carry a line, read from who SUBSCRIBED — so a third party's destination
+    // is left alone by the two middlewares that observe every operation.
+    for (const door of emissions.doorsFor(LOG_LINE)) {
+      CARRIES_LINE.add(door.replace(/Handler$/, '').replace(/^./, (c) => c.toLowerCase()));
+      CARRIES_LINE.add(door);
+    }
+
+    if (emissions.listensTo().includes(LOG_LINE)) {
+      const emit = container.resolve<Emit<LogLine>>(emitKeyOf(LogLine.name));
+      // `at` is the record's own epoch, and the entity says `created()` — so the line
+      // keeps WHEN IT WAS WRITTEN rather than when it was handed over, which for a held
+      // boot line is a different moment.
+      stopAnnouncing = carry.to(({ at, ...line }: LogRecord) => void emit({ ...line, at: new Date(at) }));
+    } else {
+      // No destination in this app: the console had them, and holding more would grow.
+      carry.forget();
+    }
 
     /** The last resort, held by the container so every resolution path shares it. */
     container.setFallback?.((name) => {
@@ -485,14 +562,9 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         return dispatchLifecycle.add(observer);
       },
       use(...args: [AppMiddleware] | [string, AppMiddleware]): void {
-        if (typeof args[0] === 'string') {
-          const [entity, mw] = args as [string, AppMiddleware];
-          const list = scopedMiddlewares.get(entity) ?? [];
-          list.push(mw);
-          scopedMiddlewares.set(entity, list);
-        } else {
-          globalMiddlewares.push(args[0] as AppMiddleware);
-        }
+        return typeof args[0] === 'string'
+          ? use(args[1] as AppMiddleware, args[0])
+          : use(args[0] as AppMiddleware);
       },
       auth: authRuntime,
     };

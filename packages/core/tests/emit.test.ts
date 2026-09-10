@@ -13,7 +13,7 @@ import { createApp, createLocalRunner } from '../src/index.js';
 import { scanProject } from '@fougere/compiler';
 import { emitKeyOf, factOfEmitKey } from '../src/wire/emit.js';
 import { identityCardOf } from '../src/boot/card.js';
-import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
+import { Invocation } from '../src/wire/Invocation.js';
 
 const root = join(import.meta.dirname, 'fixtures-emit');
 
@@ -38,7 +38,7 @@ describe('a fact reaching several fronds', () => {
   it('reaches every handler that accepts it, in fronds that declared nothing', async () => {
     await using app = await createApp({ scan: await scanProject(root), createContainer });
 
-    await createLocalRunner(app)({ entity: 'post', op: 'publish' }, { ...EMPTY_INVOCATION, params: { id: '42' } });
+    await createLocalRunner(app)({ entity: 'post', op: 'publish' }, { ...Invocation.empty, params: { id: '42' } });
     await settle();
 
     // Two subscribers, two fronds, no registration on either side. Order is scan order
@@ -53,7 +53,7 @@ describe('a fact reaching several fronds', () => {
     // the EventBus this replaces did `await Promise.all(handlers)` and took the rejection.
     const out = await createLocalRunner(app)(
       { entity: 'post', op: 'publish' },
-      { ...EMPTY_INVOCATION, params: { id: '7' } },
+      { ...Invocation.empty, params: { id: '7' } },
     );
     await settle();
 
@@ -78,7 +78,7 @@ describe('a fact reaching several fronds', () => {
     await using app = await createApp({ scan: await scanProject(root, ['blog']), createContainer });
 
     await expect(
-      createLocalRunner(app)({ entity: 'post', op: 'publish' }, { ...EMPTY_INVOCATION, params: { id: '1' } }),
+      createLocalRunner(app)({ entity: 'post', op: 'publish' }, { ...Invocation.empty, params: { id: '1' } }),
     ).resolves.toEqual({ id: '1' });
     await settle();
     expect(heard()).toEqual([]);
@@ -95,7 +95,7 @@ describe('a fact is validated where it lands', () => {
     // `PostPublished` picks `title: text({ min: 1 })` from Post, so an empty title is not
     // one. The scan fills no `input` from a parameter type, so this used to pass straight
     // through: a subscriber met no validator at all.
-    await expect(door.reindex({ ...EMPTY_INVOCATION, input: { id: 'x', title: '' } }))
+    await expect(door.reindex({ ...Invocation.empty, input: { id: 'x', title: '' } }))
       .rejects.toThrow(/title/);
     expect(heard()).toEqual([]);
   });
@@ -104,7 +104,7 @@ describe('a fact is validated where it lands', () => {
     await using app = await createApp({ scan: await scanProject(root), createContainer });
     const door = app.facadeFor('index')!;
 
-    await door.reindex({ ...EMPTY_INVOCATION, input: { id: 'ok', title: 'A fern', at: new Date().toISOString() } });
+    await door.reindex({ ...Invocation.empty, input: { id: 'ok', title: 'A fern', at: new Date().toISOString() } });
     expect(heard()).toEqual(['search:ok']);
   });
 });
@@ -131,7 +131,7 @@ describe('a listener that lives in another process', () => {
       },
     });
 
-    await createLocalRunner(app)({ entity: 'post', op: 'publish' }, { ...EMPTY_INVOCATION, params: { id: '9' } });
+    await createLocalRunner(app)({ entity: 'post', op: 'publish' }, { ...Invocation.empty, params: { id: '9' } });
     await settle();
 
     expect(wire).toEqual(['search:index.reindex']);
@@ -204,10 +204,11 @@ describe('a fact stamped at the announcement', () => {
 
   it('fills what the entity says the system writes', async () => {
     await using app = await createApp({ scan: await scanProject(root), createContainer });
-    const announce = app.container.resolve<(fact: unknown) => Promise<void>>(emitKeyOf('PostPublished'));
 
-    // `at: created()` — the emitter does not write it, the entity says who does.
-    await announce({ id: 'z', title: 'A fern' });
+    // Through the TYPED emitter, which is what `Emit<T>` being partial buys: `at: created()`
+    // is not the announcer's to write, and asking for it made every emitter cast past its
+    // own type — so nothing checked the two fields it does write.
+    await createLocalRunner(app)({ entity: 'post', op: 'publish' }, { ...Invocation.empty, params: { id: 'z' } });
     await settle();
 
     const arrived = (globalThis as any).__lastFact as { id: string; at: Date };
@@ -276,12 +277,14 @@ describe('a sender whose copy has moved ahead', () => {
 
   it('leaves the ANNOUNCEMENT untouched — a refusal reaches a log, never back up', async () => {
     await using app = await createApp({ scan: await scanProject(root), createContainer });
-    const announce = app.container.resolve<(fact: unknown) => Promise<void>>(emitKeyOf('PostPublished'));
+    const announce = app.container.resolve<(fact: unknown) => Promise<unknown[]>>(emitKeyOf('PostPublished'));
 
     // The emission path, not `deliver`: this is the rule that protects the EMITTER, and
     // an earlier version of this test asserted it through the carrier's door, which is
     // exactly the party that must NOT be shielded.
-    await expect(announce({ id: '78', title: 'x', author: 'y' })).resolves.toBeUndefined();
+    // Empty and not `undefined`: an announcement with no answer type waits for nobody, so
+    // there is nothing to give back — `Emit<T, A>` is where a return means something.
+    await expect(announce({ id: '78', title: 'x', author: 'y' })).resolves.toEqual([]);
   });
 
   /** The other direction was never in question: a field that left is missing data. */

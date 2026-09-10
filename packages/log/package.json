@@ -1,0 +1,55 @@
+{
+  "name": "@fougere/log",
+  "version": "0.8.4-alpha.0",
+  "description": "Logging for Fougere: a line is an announced fact, and a destination is a handler that accepts it. Ships the console one.",
+  "keywords": [
+    "fougere",
+    "typescript",
+    "logging",
+    "observability"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chok/fougere.git",
+    "directory": "packages/log"
+  },
+  "type": "module",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js",
+      "default": "./dist/src/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "fronds",
+    "src"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit -p tsconfig.test.json",
+    "prepublishOnly": "pnpm run build"
+  },
+  "peerDependencies": {
+    "@fougere/core": "workspace:^",
+    "@fougere/schema": "workspace:^"
+  },
+  "devDependencies": {
+    "@fougere/compiler": "workspace:*",
+    "@fougere/container": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/schema": "workspace:*",
+    "vitest": "^4.1.0",
+    "jiti": "^2.6.1",
+    "@fougere/testing": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -7,10 +7,10 @@ export { type SchemaView } from './SchemaView.js';
 export { Field, type Fields } from './field/Field.js';
 export { FieldSet } from './field/FieldSet.js';
 export { type Shape, type ShapeType, Shapes } from './axis/shape/Shape.js';
-export { Role, type RoleRules } from './axis/role/Role.js';
+export { Role } from './axis/role/Role.js';
 export { type EntityConstructor } from './axis/role/Relation.js';
-export { Lifecycle, type LifecycleRules } from './axis/lifecycle/Lifecycle.js';
-export { Boundary, type BoundaryRef } from './axis/boundary/Boundary.js';
+export { Lifecycle } from './axis/lifecycle/Lifecycle.js';
+export { Boundary } from './axis/boundary/Boundary.js';
 export { applyCreate, applyUpdate } from './axis/lifecycle/apply.js';
 export { InputRefusal } from './validator/InputRefusal.js';
 export { dotted, type ValidationError, type ValidationResult } from './lib/validation.js';
@@ -22,20 +22,13 @@ export { Cases, type ValidationCase } from './projection/Cases.js';
 export type {
   SchemaBundle,
   SchemaDescriptor,
-  DerivedFrom,
   FieldDescriptor,
-  FieldExtension,
-  RoleDescriptor,
-  RelationDescriptor,
 } from './projection/card/Descriptor.js';
 export type {
   Change,
   Diff,
-  DiffOptions,
   SetDiff,
   SetDiffOptions,
-  RenameCandidate,
-  TypeSet,
 } from './projection/card/diff.js';
 
 export * from './lib/index.js';

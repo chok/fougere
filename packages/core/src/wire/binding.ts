@@ -11,6 +11,12 @@ type ParamSource =
   | { kind: 'collector'; typeName: string }
   /** `Fact<PostPublished>` — something that happened, not something a caller typed. */
   | { kind: 'fact'; factName: string }
+  /**
+   * `Pipe<PostPublished>` — the same thing, BEFORE it is final: what this op answers is
+   * the fact every subscriber then receives. The core has one such link already
+   * (`Emissions.stamped`, which realizes `created()`); this is the declared form of it.
+   */
+  | { kind: 'pipe'; factName: string }
   | { kind: 'param'; name: string; coerce?: 'number' | 'boolean' }
   | { kind: 'input' }
   | { kind: 'context' }
@@ -49,14 +55,19 @@ export function computeBindingPlan(
     // `authoruser` missed `authorUser` and fell through to branch 4, the request input.
     const typeKey = lowerFirst(typeName);
 
-    // 0. Fact — `Fact<X>` names itself, so nothing has to be known in advance. It comes
-    //    FIRST because branch 4 would otherwise hand it the caller's input under the name
-    //    of something that happened.
-    const factOf = param.type.name === 'Fact' ? param.type.generics?.[0]?.name : undefined;
-    if (factOf) {
+    // 0. Fact, or the same fact before it is final. Both name themselves, so nothing has
+    //    to be known in advance, and they come FIRST because branch 4 would otherwise hand
+    //    either the caller's input under the name of something that happened.
+    const announced = param.type.name === 'Fact' || param.type.name === 'Pipe'
+      ? param.type.generics?.[0]?.name
+      : undefined;
+    if (announced) {
       return {
         name: param.name,
-        source: { kind: 'fact' as const, factName: lowerFirst(factOf) },
+        source: {
+          kind: (param.type.name === 'Pipe' ? 'pipe' : 'fact') as 'pipe' | 'fact',
+          factName: lowerFirst(announced),
+        },
         optional: param.optional ?? false,
       };
     }

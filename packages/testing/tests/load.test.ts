@@ -6,7 +6,8 @@ import { execFileSync } from 'node:child_process';
 import { writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { testApp, loadScript, reachableOps } from '../src/index.js';
+import { testApp, loadScript } from '../src/index.js';
+import { reachableOps } from '../src/load.js';
 
 const root = join(import.meta.dirname, 'fixtures');
 

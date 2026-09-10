@@ -8,11 +8,11 @@
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import {
-  EMPTY_INVOCATION,
   signEnvelope,
   verifyEnvelope,
   type Transport,
   type FrondIdentity,
+  Invocation,
 } from '@fougere/core';
 import { generateKeyPair, issueGrant } from '@fougere/core/node';
 import { createHttpTransport, serve } from '../src/index.js';
@@ -78,7 +78,7 @@ describe('a receiver that establishes its caller', () => {
     const transport = createHttpTransport(base, { sign: (call) => signEnvelope(app, call) });
     const state = await transport(
       { entity: 'post', op: 'list' },
-      { ...EMPTY_INVOCATION, state: { user: { id: 'alice', role: 'reader' } } },
+      { ...Invocation.empty, state: { user: { id: 'alice', role: 'reader' } } },
     );
 
     expect(state).toEqual({ state: { user: { id: 'alice', role: 'reader' } }, caller: 'app' });
@@ -89,7 +89,7 @@ describe('a receiver that establishes its caller', () => {
     // must go through anyway. It is the PEER that is always present, not the user.
     const transport = createHttpTransport(base, { sign: (call) => signEnvelope(app, call) });
 
-    expect(await transport({ entity: 'post', op: 'list' }, EMPTY_INVOCATION)).toEqual({ state: {}, caller: 'app' });
+    expect(await transport({ entity: 'post', op: 'list' }, Invocation.empty)).toEqual({ state: {}, caller: 'app' });
   });
 
   it('refuses a frond signed by another root — a parallel system, valid throughout', async () => {
@@ -97,7 +97,7 @@ describe('a receiver that establishes its caller', () => {
     const impostor = issue(outsider.privateKey, 'app');
     const transport = createHttpTransport(base, { sign: (call) => signEnvelope(impostor, call) });
 
-    await expect(transport({ entity: 'post', op: 'list' }, EMPTY_INVOCATION)).rejects.toThrow(/grant signature/);
+    await expect(transport({ entity: 'post', op: 'list' }, Invocation.empty)).rejects.toThrow(/grant signature/);
   });
 
   it('drops a claimed state when a signed one travels beside it', async () => {
@@ -119,7 +119,7 @@ describe('a receiver that establishes its caller', () => {
     const transport = createHttpTransport(base, { sign: (call) => signEnvelope(app, call) });
     const relayed = await transport(
       { entity: 'post', op: 'list' },
-      { ...EMPTY_INVOCATION, caller: 'shop' },
+      { ...Invocation.empty, caller: 'shop' },
     );
 
     expect(relayed).toEqual({ state: {}, caller: 'app' });

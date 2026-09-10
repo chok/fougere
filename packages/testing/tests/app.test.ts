@@ -8,7 +8,7 @@
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createLocalRunner } from '@fougere/core';
-import { EMPTY_INVOCATION } from '@fougere/core/contract';
+import { Invocation } from '@fougere/core/contract';
 import { testApp } from '../src/index.js';
 
 const root = join(import.meta.dirname, 'fixtures');
@@ -19,7 +19,7 @@ describe('testApp', () => {
     const run = createLocalRunner(app);
 
     const created = await run({ entity: 'article', op: 'create' }, {
-      ...EMPTY_INVOCATION,
+      ...Invocation.empty,
       input: { title: 'A title', body: 'A body', status: 'draft', views: 0 },
     }) as { id: string; title: string };
 
@@ -32,10 +32,10 @@ describe('testApp', () => {
     const run = createLocalRunner(app);
 
     await run({ entity: 'article', op: 'create' }, {
-      ...EMPTY_INVOCATION,
+      ...Invocation.empty,
       input: { title: 'Kept', body: 'A body', status: 'draft', views: 0 },
     });
-    const listed = await run({ entity: 'article', op: 'list' }, EMPTY_INVOCATION) as { items?: unknown[] } | unknown[];
+    const listed = await run({ entity: 'article', op: 'list' }, Invocation.empty) as { items?: unknown[] } | unknown[];
 
     const rows = Array.isArray(listed) ? listed : listed.items ?? [];
     expect(rows).toHaveLength(1);
@@ -46,7 +46,7 @@ describe('testApp', () => {
     await run(first);
     await using second = await testApp({ root });
 
-    const listed = await createLocalRunner(second)({ entity: 'article', op: 'list' }, EMPTY_INVOCATION) as { items?: unknown[] } | unknown[];
+    const listed = await createLocalRunner(second)({ entity: 'article', op: 'list' }, Invocation.empty) as { items?: unknown[] } | unknown[];
 
     const rows = Array.isArray(listed) ? listed : listed.items ?? [];
     expect(rows).toHaveLength(0);
@@ -55,7 +55,7 @@ describe('testApp', () => {
 
 async function run(app: Awaited<ReturnType<typeof testApp>>) {
   await createLocalRunner(app)({ entity: 'article', op: 'create' }, {
-    ...EMPTY_INVOCATION,
+    ...Invocation.empty,
     input: { title: 'Leaked?', body: 'A body', status: 'draft', views: 0 },
   });
 }

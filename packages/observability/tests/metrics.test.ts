@@ -8,7 +8,8 @@ import { join } from 'node:path';
 import { createApp, createLocalRunner } from '@fougere/core';
 import type { App, InvocationContext } from '@fougere/core';
 import { createContainer } from '@fougere/container';
-import { trace, onSpan, metrics, metricsPayload, activeCalls, serveTopology, type Metrics } from '../src/index.js';
+import { trace, onSpan, metrics, activeCalls, type Metrics } from '../src/index.js';
+import { metricsPayload, serveTopology } from '../src/metrics.js';
 // @ts-expect-error plain-JS fixture
 import { createStorageFactory } from './fixtures/data.mjs';
 

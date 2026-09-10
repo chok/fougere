@@ -60,6 +60,8 @@ export class Invocation implements InvocationContext {
     return context instanceof Invocation ? context : new Invocation(context ?? {});
   }
 
+  static readonly empty = Invocation.from();
+
   /** Replaces the input — how the façade hands on the value it parsed. */
   withInput(input: unknown): Invocation {
     return new Invocation({ ...this, input });
@@ -69,11 +71,4 @@ export class Invocation implements InvocationContext {
   withState(state: Record<string, unknown>): Invocation {
     return new Invocation({ ...this, state });
   }
-}
-
-export const EMPTY_INVOCATION = Invocation.from();
-
-/** Names the same gesture as `Invocation.from` for callers that read better this way. */
-export function canonicalInvocation(context?: PartialInvocation): Invocation {
-  return Invocation.from(context);
 }

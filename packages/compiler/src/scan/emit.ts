@@ -1,6 +1,6 @@
 /** The scan, written down as a module — what `createApp` is handed where there is no disk. */
 import { type ScanResult } from '@fougere/core';
-import { nameOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type PresenterEntry, type ProviderEntry, type SeedEntry } from '@fougere/core/descriptor';
+import { nameOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type PresenterEntry, type ProviderEntry, type SeedEntry } from '@fougere/core/descriptor';
 import { dirname, relative } from 'node:path';
 
 import { type Aliases, type Live, lit, operationsOf, schemaRef } from './contract.js';
@@ -89,6 +89,11 @@ function providerOf(p: ProviderEntry, imports: Imports): string {
     + `deps: ${lit(p.deps)}, filePath: ${lit(p.filePath)} }`;
 }
 
+function middlewareOf(m: MiddlewareEntry, imports: Imports): string {
+  return `{ name: ${lit(m.name)}, ctor: ${imports.aliasOf(m.ctor as Live)}, `
+    + `scope: ${lit(m.scope)}, deps: ${lit(m.deps)}, filePath: ${lit(m.filePath)} }`;
+}
+
 function seedOf(s: SeedEntry, imports: Imports): string {
   const data = typeof s.data === 'function' ? imports.aliasOf(s.data as Live) : lit(s.data);
   return `{ entityName: ${lit(s.entityName)}, data: ${data}, filePath: ${lit(s.filePath)} }`;
@@ -107,6 +112,7 @@ function frondOf(f: FrondDescriptor, imports: Imports): string {
     list('presenters', f.presenters.map((p) => presenterOf(p, imports))),
     list('collectors', f.collectors.map((c) => collectorOf(c, imports))),
     list('seeds', f.seeds.map((s) => seedOf(s, imports))),
+    list('middlewares', f.middlewares.map((m) => middlewareOf(m, imports))),
     f.surfaces ? `    surfaces: ${lit(f.surfaces)},` : '',
     f.reads ? `    reads: ${lit(f.reads)},` : '',
     '  }',
@@ -130,6 +136,7 @@ export function emitScan(result: ScanResult, options: EmitOptions): string {
     for (const h of f.handlers) imports.default(h.ctor as Live, h.filePath);
     for (const p of f.presenters) imports.default(p.ctor as Live, p.filePath);
     for (const c of f.collectors) imports.default(c.ctor as Live, c.filePath);
+    for (const m of f.middlewares) imports.default(m.ctor as Live, m.filePath);
     for (const s of f.seeds) if (typeof s.data === 'function') imports.default(s.data as Live, s.filePath);
   }
 

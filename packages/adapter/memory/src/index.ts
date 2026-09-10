@@ -18,8 +18,8 @@ function mapStore(): Store {
 /** The whole port over a Map, per entity. */
 export const createMemoryStorage = storageOver(() => mapStore());
 
-export function setupMemory(): Source {
+export function createMemorySource(): Source {
   return { storageFactory: createMemoryStorage, name: 'memory' };
 }
 
-Sources.register('memory', (_conf: SourceConfig): Source => setupMemory());
+Sources.register('memory', (_conf: SourceConfig): Source => createMemorySource());

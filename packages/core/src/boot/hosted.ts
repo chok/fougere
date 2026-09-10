@@ -12,7 +12,8 @@ export interface HostedSources {
 }
 
 /** The members a frond takes from a scan when it named none of its own. */
-type Fillable = 'providers' | 'entities' | 'handlers' | 'presenters' | 'collectors' | 'seeds';
+type Fillable = 'providers' | 'entities' | 'handlers' | 'presenters' | 'collectors' | 'seeds'
+  | 'middlewares';
 
 /** A frond the host passed, completed by what a scan found under the same name. */
 function completed(given: FrondDescriptor, found: FrondDescriptor | undefined): FrondDescriptor {
@@ -33,6 +34,7 @@ function completed(given: FrondDescriptor, found: FrondDescriptor | undefined): 
     presenters: fill('presenters'),
     collectors: fill('collectors'),
     seeds: fill('seeds'),
+    middlewares: fill('middlewares'),
   };
 }
 

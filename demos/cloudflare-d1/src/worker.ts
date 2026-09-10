@@ -25,7 +25,7 @@ import { createContainer } from '@fougere/container';
 import { receive } from '@fougere/transport-http/receive';
 import { createHonoRouter } from '@fougere/http';
 import { generateRoutes, registerRoutes } from '@fougere/adapter-rest';
-import { setupKysely } from '@fougere/adapter-sql';
+import { createKyselySource } from '@fougere/adapter-sql';
 import { D1Dialect } from 'kysely-d1';
 import { scan } from '../.fougere/scan.generated.js';
 
@@ -36,8 +36,8 @@ interface Env {
 async function open(env: Env) {
   // D1 IS SQLite, so the dialect Fougere reasons with is `'sqlite'` — the DDL, the
   // codecs and the binding limit are the ones it already knows. What is different is
-  // the driver, and `setupKysely` exists exactly so this package chooses none.
-  const storage = setupKysely(new D1Dialect({ database: env.DB }), 'sqlite');
+  // the driver, and `createKyselySource` exists exactly so this package chooses none.
+  const storage = createKyselySource(new D1Dialect({ database: env.DB }), 'sqlite');
   // No `otlp:` — an exporter buffers and flushes on a timer, and an isolate is frozen
   // the moment it answers. Without one the extension still measures and still serves
   // `rpc.topology`; what it cannot do is push, and that wants `ctx.waitUntil`.

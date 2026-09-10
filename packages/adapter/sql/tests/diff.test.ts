@@ -7,7 +7,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { entity, primary, text, number, optional, bool, ref, unique, type EntityConstructor } from '@fougere/schema';
 import { sql } from 'kysely';
-import { setupSqlite, type SqliteSetup } from '../src/sqlite.js';
+import { createSqliteSource, type SqliteSource } from '../src/sqlite.js';
 import { actualState, delta, desiredTables, orderChanges, planMigration, migrate, changeSQL } from '../src/diff.js';
 
 class PostV1 extends entity({
@@ -27,10 +27,10 @@ const appOf = (entityClass: any) => ({
   fronds: [{ name: 'test', entities: [{ name: 'post', entityClass }] }],
 });
 
-let setup: SqliteSetup;
+let setup: SqliteSource;
 
 beforeEach(() => {
-  setup = setupSqlite({ path: ':memory:' });
+  setup = createSqliteSource({ path: ':memory:' });
 });
 
 describe('actualState', () => {

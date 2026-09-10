@@ -13,7 +13,7 @@
 import { describe, it, expect } from 'vitest';
 import { createContainer } from '@fougere/container';
 import { entity, primary, text, optional } from '@fougere/schema';
-import { createApp, frond, Crud, Call, RouteAddress, EMPTY_INVOCATION } from '../src/index.js';
+import { createApp, frond, Crud, Call, RouteAddress, Invocation } from '../src/index.js';
 
 class Post extends entity({ id: primary(), title: text(), body: optional(text()) }) {}
 class PostHandler extends Crud(Post) {}
@@ -37,7 +37,7 @@ describe('a frond the app states', () => {
     await using app = await appOf();
 
     const page = await app.dispatch(new Call(
-      new RouteAddress({ entity: 'post', operation: 'list' }), EMPTY_INVOCATION));
+      new RouteAddress({ entity: 'post', operation: 'list' }), Invocation.empty));
 
     expect(page).toMatchObject({ items: [{ id: '1', title: 'hello' }] });
   });

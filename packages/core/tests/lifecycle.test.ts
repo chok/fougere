@@ -10,7 +10,7 @@ import { scanProject } from '@fougere/compiler';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
-import { AppLifecycle, createApp, migrating } from '../src/index.js';
+import { AppLifecycle, createApp, frond, migrating } from '../src/index.js';
 import type { Extension } from '../src/index.js';
 
 const root = join(import.meta.dirname, 'fixtures-ports');
@@ -200,5 +200,39 @@ describe('Lifecycle', () => {
     await expect(lifecycle.down({} as never)).rejects.toThrow(AggregateError);
     // 'first' is what the abandoned release used to leak.
     expect(log).toEqual(['last down', 'first down']);
+  });
+});
+
+describe('the conventional ascent', () => {
+  it('runs tables, then rows, then whatever the host took on', async () => {
+    const ran: string[] = [];
+
+    await using app = await createApp({
+      fronds: [frond('empty', {})],
+      createContainer,
+      migrate: () => { ran.push('migrate'); },
+      extensions: [{ name: 'host', up: () => { ran.push('host'); } }],
+    });
+    void app;
+
+    // Four hosts wrote `migrating(…)` and `seeding(…)` into their own lists, one of them
+    // as a string inside generated code. The ORDER is not a host's preference — rows
+    // before tables is a boot that finds none — so `createApp` states it.
+    expect(ran).toEqual(['migrate', 'host']);
+  });
+
+  it('holds the slot when the host hands over no gesture', async () => {
+    const ran: string[] = [];
+
+    // Eight demos passed nothing, and a host that resolves no storage still must not have
+    // its own members land before the seeds.
+    await using app = await createApp({
+      fronds: [frond('empty', {})],
+      createContainer,
+      extensions: [{ name: 'host', up: () => { ran.push('host'); } }],
+    });
+
+    expect(app.extensions()).toEqual(['migrate', 'seeds', 'host']);
+    expect(ran).toEqual(['host']);
   });
 });

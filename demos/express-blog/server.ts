@@ -12,8 +12,8 @@
  * would answer even if registered after.
  */
 import express from 'express';
-import { fougereCall, fougereSession, fougereRest, fougereGraphQL } from '@fougere/app/express';
-import { useFougereApp, invokeOn } from '@fougere/app';
+import { call, session, rest, graphql } from '@fougere/app/express';
+import { useFougereApp, invokeOn, reloadFougere } from '@fougere/app';
 import Post from './fronds/blog/entities/Post.ts';
 
 const app = express();
@@ -50,16 +50,27 @@ that has never heard of Express.</p>
 // the session serve YOUR pages, while REST is a public API for anyone with the URL.
 // Taking them together would hand out a surface nobody asked for — which is the very
 // thing this shape exists to avoid.
-app.use(fougereCall());
-app.use(fougereSession());
+app.use(call());
+app.use(session());
 
 // Wanted here, so it is stated here. Comment it out and `/api/blog/posts` simply
 // stops existing, while the pages above keep working.
-app.use(fougereRest());
+app.use(rest());
 
 // Mounted, and it serves nothing until `adapters: { graphql: true }` says so.
-app.use(fougereGraphQL());
+app.use(graphql());
+
+// ── turning the ring, without stopping the server ──
+//
+// `kill -HUP <pid>`: the app is built again and the previous one is drained and
+// released. The middlewares above are handed nothing new — each reaches the app
+// through `useFougereApp()` inside the request it serves, so the swap is invisible
+// to Express, which never stopped listening.
+process.on('SIGHUP', async () => {
+  await reloadFougere(5_000);
+  console.log('reloaded — Express never stopped listening');
+});
 
 app.listen(3300, () => {
-  console.log('express-blog on http://localhost:3300');
+  console.log(`express-blog on http://localhost:3300  ·  kill -HUP ${process.pid} to turn the ring`);
 });

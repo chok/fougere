@@ -15,7 +15,7 @@ import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner } from '../src/index.js';
 import type { StorageFactory } from '../src/index.js';
-import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
+import { Invocation } from '../src/wire/Invocation.js';
 import ListPresenter from './fixtures-presenter-reader/fronds/listes/presenters/ListPresenter.js';
 
 const root = join(import.meta.dirname, 'fixtures-presenter-reader');
@@ -44,12 +44,12 @@ describe('a computed field sees the reader', () => {
 
     const asOwner = await run(
       { entity: 'list', op: 'list' },
-      { ...EMPTY_INVOCATION, state: { user: { id: 'u1', name: 'Moi' } } },
+      { ...Invocation.empty, state: { user: { id: 'u1', name: 'Moi' } } },
     ) as { id: string; canEdit: boolean }[];
 
     const asStranger = await run(
       { entity: 'list', op: 'list' },
-      { ...EMPTY_INVOCATION, state: { user: { id: 'u9', name: 'Quelqu\'un' } } },
+      { ...Invocation.empty, state: { user: { id: 'u9', name: 'Quelqu\'un' } } },
     ) as { id: string; canEdit: boolean }[];
 
     expect(asOwner.map((l) => l.canEdit)).toEqual([true, false]);
@@ -59,7 +59,7 @@ describe('a computed field sees the reader', () => {
   it('answers for nobody when nobody is asking', async () => {
     await using mounted = await app();
     const run = createLocalRunner(mounted);
-    const out = await run({ entity: 'list', op: 'list' }, EMPTY_INVOCATION) as { canEdit: boolean }[];
+    const out = await run({ entity: 'list', op: 'list' }, Invocation.empty) as { canEdit: boolean }[];
 
     expect(out.map((l) => l.canEdit)).toEqual([false, false]);
   });
@@ -71,7 +71,7 @@ describe('a computed field runs once for the page', () => {
     const run = createLocalRunner(mounted);
     await run(
       { entity: 'list', op: 'list' },
-      { ...EMPTY_INVOCATION, state: { user: { id: 'u1', name: 'Moi' } } },
+      { ...Invocation.empty, state: { user: { id: 'u1', name: 'Moi' } } },
     );
 
     // Two instances, one call. One-at-a-time would say 2 — and a field doing a read

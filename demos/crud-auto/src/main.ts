@@ -10,7 +10,7 @@
  */
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
-import { fougereRest, fougereGraphQL } from '@fougere/app/web';
+import { rest, graphql } from '@fougere/app/web';
 import { useFougereApp } from '@fougere/app';
 import { generateRoutes } from '@fougere/adapter-rest';
 
@@ -19,8 +19,8 @@ const app = await useFougereApp();
 // --- One server, both doors ---------------------------
 
 const hono = new Hono();
-hono.all('/api/*', (c) => fougereRest(c.req.raw));
-hono.post('/graphql', (c) => fougereGraphQL(c.req.raw));
+hono.all('/api/*', (c) => rest(c.req.raw));
+hono.post('/graphql', (c) => graphql(c.req.raw));
 
 // The printed table below is the only reason this is called directly. `as never` is
 // the same cast `@fougere/app/rest.ts:47` already carries: core's `App` and

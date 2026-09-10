@@ -9,7 +9,7 @@ import type { Extension } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { createMemoryStorage } from '@fougere/adapter-memory';
 import type { App, CreateAppOptions, Storage, FougereConfig, Transport } from '@fougere/core';
-import type { ResolvedStorage } from '@fougere/defaults';
+import { layerOf, type ResolvedStorage } from '@fougere/defaults';
 import { applyCreate, applyUpdate, type SchemaView } from '@fougere/schema';
 
 // ── Public types ─────────────────────────────────
@@ -138,8 +138,6 @@ async function boot(): Promise<App> {
   }
   // The storage's two halves, kept together: its ascent is an extension, its connection
   // is not — it is opened here, before the container, so it closes after the container.
-  const storageFactory = storage.storageFactory ?? createMemoryStorage;
-  const storageMigrate: Extension['up'] | undefined = storage.migrate;
 
   // Layer-2 wiring: `remotes: { catalog: 'http://...' }` in fougere.config.ts
   // is all the user writes — the default transport comes from here.
@@ -171,25 +169,14 @@ async function boot(): Promise<App> {
       ? { scan: await scanProject(root, undefined, conventions) }
       : {}),
     createContainer,
-    storageFactory,
-    sourceOf: storage.sourceOf,
-    transacts: storage.transacts,
-    enforces: storage.enforces,
-    transacted: storage.transacted as never,
-    db: storage.db,
+    // The layer, spread whole. Naming a few of its members is how `transacted` and `close`
+    // were left behind once, under Nuxt only.
+    ...layerOf(storage, createMemoryStorage),
     auth: fileConfig.auth,
     adapters: fileConfig.adapters,
     remotes: fileConfig.remotes,
     remoteTransport,
-    /** The whole ascent, one ordered list. */
-    extensions: [
-      // The slot is declared even when this host resolved no storage — a host that resolved
-      // its own (the Nitro plugin does, for its bundler) then REPLACES this member in place
-      // instead of adding one after the seeds, which is rows before tables.
-      migrating(storageMigrate, (message) => log.warn(message)),
-      seeding((message) => log.info(`[seed]${message}`)),
-      ...(_config.extensions ?? []),
-    ],
+    extensions: _config.extensions ?? [],
     // Opened before the container, so released after it. Never wired here until now:
     // this host boots the storage and no host closed one, which is what made a reload
     // leak the pool of every app it discarded.

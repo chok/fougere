@@ -38,7 +38,7 @@ describe('resolveConventions', () => {
    */
   it('derives the frond vocabulary from the names in force', () => {
     expect(frondDirsOf(resolveConventions(conventions)))
-      .toEqual(['models', 'usecases', 'presenters', 'collectors', 'seeds', 'rules', 'versions', 'helpers', 'repositories']);
+      .toEqual(['models', 'usecases', 'presenters', 'collectors', 'seeds', 'middlewares', 'rules', 'versions', 'helpers', 'repositories']);
   });
 
   it('reads one directory once when two roles name the same one', () => {

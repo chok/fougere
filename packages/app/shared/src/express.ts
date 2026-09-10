@@ -58,7 +58,7 @@ function fail(res: ExpressResponse, next: Next, err: unknown): void {
 }
 
 /** The call envelope, at `/_fougere/call` — the door the browser primitives use. */
-export function fougereCall(mountPath = '/_fougere/call'): ExpressMiddleware {
+export function call(mountPath = '/_fougere/call'): ExpressMiddleware {
   return (req, res, next) => {
     const path = pathOf(req);
     if (req.method !== 'POST' || !path.startsWith(mountPath)) return next();
@@ -82,7 +82,7 @@ export function fougereCall(mountPath = '/_fougere/call'): ExpressMiddleware {
 }
 
 /** The session view, at `/_fougere/session`. */
-export function fougereSession(mountPath = '/_fougere/session'): ExpressMiddleware {
+export function session(mountPath = '/_fougere/session'): ExpressMiddleware {
   return (req, res, next) => {
     if (req.method !== 'GET' || pathOf(req) !== mountPath) return next();
     res.status(200).json(sessionViewOf(stateOf(req)));
@@ -90,7 +90,7 @@ export function fougereSession(mountPath = '/_fougere/session'): ExpressMiddlewa
 }
 
 /** The REST projection, under `/api` by default. */
-export function fougereRest(mountPath = '/api'): ExpressMiddleware {
+export function rest(mountPath = '/api'): ExpressMiddleware {
   return (req, res, next) => {
     const path = pathOf(req);
     if (!path.startsWith(`${mountPath}/`)) return next();
@@ -121,7 +121,7 @@ export function fougereRest(mountPath = '/api'): ExpressMiddleware {
 }
 
 /** GraphQL, at `/graphql` by default. Declines when the app declares no such adapter. */
-export function fougereGraphQL(mountPath = '/graphql'): ExpressMiddleware {
+export function graphql(mountPath = '/graphql'): ExpressMiddleware {
   return (req, res, next) => {
     if (req.method !== 'POST' || pathOf(req) !== mountPath) return next();
 
@@ -146,7 +146,7 @@ export function fougereGraphQL(mountPath = '/graphql'): ExpressMiddleware {
 /** Every door, for an app that wants all of them. What each one SERVES is still the
  *  app's declaration — mounting is not publishing. */
 export function fougere(): ExpressMiddleware {
-  const doors = [fougereCall(), fougereSession(), fougereRest(), fougereGraphQL()];
+  const doors = [call(), session(), rest(), graphql()];
   return (req, res, next) => {
     let index = 0;
     const step = (err?: unknown) => {

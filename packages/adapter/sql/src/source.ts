@@ -9,7 +9,7 @@ import { toTableName } from './table.js';
 import type { DialectName } from './dialect.js';
 import type { SqlSink } from './ddl.js';
 
-export interface SetupOptions {
+export interface SqlSourceOptions {
   /** Override naming for specific entities (e.g. better-auth wants singular table names). */
   storageFactoryOptions?: StorageFactoryOptions;
   /** What to call this storage when a query is reported. */
@@ -38,7 +38,7 @@ export type Setup = SqlSource;
 export const sqlEnforces = ['unique'] as const;
 
 /** The migration of what lives in ONE sql source, carrying its own dialect. */
-function migrating(db: Kysely<any>, dialect: DialectName, opts: SetupOptions) {
+function migrating(db: Kysely<any>, dialect: DialectName, opts: SqlSourceOptions) {
   return async (view: SourceView): Promise<void | string> => {
     const options = { dialect, tableName: opts.storageFactoryOptions?.tableName ?? toTableName };
     await migrate(view as never, db, options);
@@ -54,10 +54,10 @@ export function sqlSink(db: Kysely<any>): SqlSink {
 }
 
 /** Wrap any Kysely dialect — Postgres, MySQL, SQL Server. */
-export function setupKysely(
+export function createKyselySource(
   kyselyDialect: KyselyDialect,
   dialect: DialectName,
-  opts: SetupOptions = {},
+  opts: SqlSourceOptions = {},
 ): SqlSource {
   const db = new Kysely<any>({ dialect: kyselyDialect, log: logQueries(opts.name ?? dialect) });
   return {

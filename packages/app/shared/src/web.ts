@@ -7,7 +7,7 @@ import { stateFor } from './state.js';
 const WITH_BODY = new Set(['POST', 'PUT', 'PATCH']);
 
 /** The call envelope. */
-export async function fougereCall(request: Request): Promise<Response> {
+export async function call(request: Request): Promise<Response> {
   const declared = Number(request.headers.get('content-length'));
   if (Number.isFinite(declared) && declared > MAX_BODY_BYTES) {
     return Response.json({ message: 'Payload too large' }, { status: 413 });
@@ -31,7 +31,7 @@ export async function fougereCall(request: Request): Promise<Response> {
 }
 
 /** The REST projection, mounted under `/api`. */
-export async function fougereRest(request: Request): Promise<Response> {
+export async function rest(request: Request): Promise<Response> {
   const app = await useFougereApp();
   const url = new URL(request.url);
   const method = request.method.toUpperCase();
@@ -54,12 +54,12 @@ export async function fougereRest(request: Request): Promise<Response> {
 }
 
 /** The session view over the wire, for a client refreshing after login or logout. */
-export async function fougereSession(request: Request): Promise<Response> {
+export async function session(request: Request): Promise<Response> {
   return Response.json(sessionViewOf(await stateFor(request.headers)));
 }
 
 /** GraphQL, at whatever path the host mounted it — `/graphql` by convention. */
-export async function fougereGraphQL(request: Request): Promise<Response> {
+export async function graphql(request: Request): Promise<Response> {
   const app = await useFougereApp();
   const body = (await request.json().catch(() => ({}))) as {
     query?: string;

@@ -9,8 +9,9 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { join } from 'node:path';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { createLocalRunner, type IdentityCard } from '@fougere/core';
-import { EMPTY_INVOCATION } from '@fougere/core/contract';
-import { testApp, syncedRemotes, heldShapes, syncDriftOf, inSync } from '../src/index.js';
+import { Invocation } from '@fougere/core/contract';
+import { testApp } from '../src/index.js';
+import { syncedRemotes, heldShapes, syncDriftOf, inSync } from '../src/sync.js';
 
 const consumer = join(import.meta.dirname, 'fixtures-synced');
 
@@ -45,7 +46,7 @@ beforeAll(async () => {
 /** The producer's card, asked the way a consumer asks it. */
 const cardOf = async (fixture: string): Promise<IdentityCard> => {
   await using app = await testApp({ root: join(import.meta.dirname, fixture) });
-  return await createLocalRunner(app)({ entity: 'rpc', op: 'discover' }, EMPTY_INVOCATION) as IdentityCard;
+  return await createLocalRunner(app)({ entity: 'rpc', op: 'discover' }, Invocation.empty) as IdentityCard;
 };
 
 describe('what a consumer synced', () => {

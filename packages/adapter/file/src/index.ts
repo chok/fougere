@@ -64,7 +64,7 @@ export interface FileSourceOptions {
   path: string;
 }
 
-export function setupFile(opts: FileSourceOptions): Source {
+export function createFileSource(opts: FileSourceOptions): Source {
   return {
     storageFactory: storageOver((_entity, name) => dirStore(opts.path, name)),
     name: opts.path,
@@ -86,5 +86,5 @@ Sources.register('file', (conf: SourceConfig): Source => {
     throw new Error("source 'file': no `path` — a directory is what it is told to open.");
   }
 
-  return setupFile({ path });
+  return createFileSource({ path });
 });

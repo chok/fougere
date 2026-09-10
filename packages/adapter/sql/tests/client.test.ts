@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { entity, number, primary, text } from '@fougere/schema';
 import { migrate } from '../src/index.js';
-import { setupSqlite } from '../src/sqlite.js';
+import { createSqliteSource } from '../src/sqlite.js';
 
 /**
  * `storage.client` — ce que le storage enveloppe, nommé sur le storage plutôt que posé à côté.
@@ -14,7 +14,7 @@ import { setupSqlite } from '../src/sqlite.js';
 class Product extends entity({ id: primary(), name: text(), price_cents: number({ integer: true, min: 0 }) }) {}
 
 async function app() {
-  const setup = setupSqlite({ path: ':memory:' });
+  const setup = createSqliteSource({ path: ':memory:' });
   const fake = { fronds: [{ name: 'shop', entities: [{ name: 'product', entityClass: Product }] }] };
   // `migrate` prend le setup : le cas normal n'a plus besoin d'atteindre l'instance brute.
   await migrate(fake as never, setup);

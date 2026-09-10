@@ -7,7 +7,7 @@ import type { FougereConfig } from '@fougere/core';
  * Regression for the split-brain bug: `db: 'sqlite'` used to embed a hardcoded
  * `path: ':memory:'` in the generated plugin, while the runtime fallback
  * (fougereApp.ts) and every other consumer of resolveStorage() default to a
- * file (`fougere.db`, via schema-sql's setupSqlite). The fix is to stop
+ * file (`fougere.db`, via schema-sql's createSqliteSource). The fix is to stop
  * re-deriving a path here at all: pass `db` straight through to
  * resolveStorage(), the single place that owns the default.
  */
@@ -78,7 +78,7 @@ describe('generateBootPlugin — db path convergence', () => {
    * seeding, and its copy of the loop drifted — losing the storage fallback, in the one
    * copy that runs when you open the app. It now names the member it replaces.
    */
-  it('declares two members of the ascent, and names the one it replaces', () => {
+  it('hands the storage its gesture, and names the member it replaces', () => {
     const out = generateBootPlugin(
       { db: 'sqlite' } as FougereConfig,
       [{ entityName: 'post', data: [], filePath: '/app/fronds/blog/seeds/post.ts' }] as never,
@@ -86,8 +86,10 @@ describe('generateBootPlugin — db path convergence', () => {
     );
 
     expect(out).toContain('extensions: [');
-    // The storage's ascent is core's own declaration, so this codegen states no name.
-    expect(out).toContain('migrating(storage.migrate)');
+    // The gesture, handed over whole: `createApp` orders the ascent, so this codegen names
+    // no member of it and cannot put the tables after the rows.
+    expect(out).toContain('migrate: storage.migrate,');
+    expect(out).not.toContain('migrating(');
     // And the seeding says which member it is, instead of taking over everything.
     expect(out).toContain("{ name: 'seeds', up: (app) => runSeeds(app, [");
     expect(out).not.toContain('afterBoot');
@@ -165,14 +167,16 @@ describe('generateBootPlugin — extensions named in the fougere: section', () =
     expect(out).toContain('calls({"panel":4400}),');
   });
 
-  it('mounts them after the framework members, never before', () => {
+  it('states no order of its own — tables before rows belongs to core', () => {
     const out = generateBootPlugin(
       { db: 'sqlite' } as FougereConfig, [], '@fougere/nuxt/fougereApp',
       [{ key: 'calls', options: {} }],
     );
 
-    // Tables, then rows, then what the host adds — the order `boot.ts` already states.
-    expect(out.indexOf('migrating(')).toBeLessThan(out.indexOf('calls({}'));
+    // It hands the gesture over and lists what the host adds. Where those two sit relative
+    // to each other is `createApp`'s, and pinned by `core/tests/lifecycle.test.ts`.
+    expect(out.indexOf('migrate: storage.migrate,')).toBeLessThan(out.indexOf('extensions: ['));
+    expect(out).toContain('calls({}),');
   });
 });
 

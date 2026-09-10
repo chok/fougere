@@ -12,7 +12,7 @@ import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createAppRunner, ErrorCode } from '../src/index.js';
 import type { StorageFactory, IdentityCard } from '../src/index.js';
-import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
+import { Invocation } from '../src/wire/Invocation.js';
 
 const root = join(import.meta.dirname, 'fixtures-surface');
 
@@ -56,14 +56,14 @@ const boot = () => createApp({
 describe('the envelope, per audience', () => {
   it('the default door serves the whole row', async () => {
     const app = await boot();
-    const row = await createAppRunner(app)({ entity: 'note', op: 'list' }, EMPTY_INVOCATION) as any[];
+    const row = await createAppRunner(app)({ entity: 'note', op: 'list' }, Invocation.empty) as any[];
     expect(row[0]).toHaveProperty('secret', 'planqué');
     await app.dispose();
   });
 
   it('a named door serves its own façade — the secret does not leave', async () => {
     const app = await boot();
-    const row = await createAppRunner(app, 'public')({ entity: 'note', op: 'list' }, EMPTY_INVOCATION) as any[];
+    const row = await createAppRunner(app, 'public')({ entity: 'note', op: 'list' }, Invocation.empty) as any[];
     expect(Object.keys(row[0]).sort()).toEqual(['id', 'title']);
     await app.dispose();
   });
@@ -72,15 +72,15 @@ describe('the envelope, per audience', () => {
   it('a named door refuses an entity nothing named into it', async () => {
     const app = await boot();
     await expect(
-      createAppRunner(app, 'public')({ entity: 'ledger', op: 'list' }, EMPTY_INVOCATION),
+      createAppRunner(app, 'public')({ entity: 'ledger', op: 'list' }, Invocation.empty),
     ).rejects.toMatchObject({ code: ErrorCode.NOT_FOUND });
     await app.dispose();
   });
 
   it('the identity card answers per audience too', async () => {
     const app = await boot();
-    const all = await createAppRunner(app)({ entity: 'rpc', op: 'discover' }, EMPTY_INVOCATION) as IdentityCard;
-    const pub = await createAppRunner(app, 'public')({ entity: 'rpc', op: 'discover' }, EMPTY_INVOCATION) as IdentityCard;
+    const all = await createAppRunner(app)({ entity: 'rpc', op: 'discover' }, Invocation.empty) as IdentityCard;
+    const pub = await createAppRunner(app, 'public')({ entity: 'rpc', op: 'discover' }, Invocation.empty) as IdentityCard;
 
     expect(all.fronds[0].doors.map((d) => d.name).sort()).toEqual(['ledger', 'note']);
     expect(pub.fronds[0].doors.map((d) => d.name)).toEqual(['note']);

@@ -11,13 +11,13 @@
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createLocalRunner, type IdentityCard } from '@fougere/core';
-import { EMPTY_INVOCATION } from '@fougere/core/contract';
+import { Invocation } from '@fougere/core/contract';
 import { testApp, driftOf, agrees, explain } from '../src/index.js';
 
 /** Asked the way a consumer asks: `rpc.discover`, through the door, not through an import. */
 const cardOf = async (fixture: string): Promise<IdentityCard> => {
   await using app = await testApp({ root: join(import.meta.dirname, fixture) });
-  return await createLocalRunner(app)({ entity: 'rpc', op: 'discover' }, EMPTY_INVOCATION) as IdentityCard;
+  return await createLocalRunner(app)({ entity: 'rpc', op: 'discover' }, Invocation.empty) as IdentityCard;
 };
 
 describe('a card against the one it was copied from', () => {

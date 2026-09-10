@@ -8,7 +8,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { createLocalRunner } from '@fougere/core';
-import { EMPTY_INVOCATION } from '@fougere/core/contract';
+import { Invocation } from '@fougere/core/contract';
 import { testApp, sampleInput } from '@fougere/testing';
 import Product from '../entities/Product.js';
 import Pricing from '../services/Pricing.js';
@@ -24,7 +24,7 @@ describe('le frond catalog, seul', () => {
     await using app = await testApp();
 
     const quote = await createLocalRunner(app)({ entity: 'product', op: 'quote' }, {
-      ...EMPTY_INVOCATION,
+      ...Invocation.empty,
       input: sampleInput(Product, { sku: 'ABC-01', cents: 1000 }),
     });
 
@@ -37,7 +37,7 @@ describe('le frond catalog, seul', () => {
     app.stub(Pricing).total.mockReturnValue(4242);
 
     const quote = await createLocalRunner(app)({ entity: 'product', op: 'quote' }, {
-      ...EMPTY_INVOCATION,
+      ...Invocation.empty,
       input: sampleInput(Product, { sku: 'ABC-01', cents: 1000 }),
     });
 

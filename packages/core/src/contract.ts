@@ -3,25 +3,21 @@
  * runtime: the error vocabulary, the invocation shape, the call value, the naming convention.
  */
 import { lowerFirst } from '@fougere/schema';
-import { canonicalInvocation, type InvocationContext } from './wire/Invocation.js';
+import { Invocation, type InvocationContext } from './wire/Invocation.js';
 import type { FrondCall } from './wire/call.js';
 
 export { FougereError, ErrorCode, validationErrorsOf } from './wire/errors.js';
 // What a read may ask about one field. Here rather than on the main entry because an
 // adapter reads it to compile a query, and an adapter carries no boot.
-export { comparisonOf, comparisonsIn, unknownIn, COMPARISONS } from './storage/criterion.js';
-export type { Comparison, ComparisonName } from './storage/criterion.js';
+export { comparisonOf, comparisonsIn } from './storage/criterion.js';
+export type { Comparison } from './storage/criterion.js';
 // A receiver turns a refusal into what may cross a process boundary, and it is not
 // core's boot — reaching it through the main entry dragged the scanner into a bundle.
 export { toPublicError } from './wire/http-error.js';
-export type { FougereErrorOptions } from './wire/errors.js';
-export { canonicalInvocation, EMPTY_INVOCATION } from './wire/Invocation.js';
-export type { InvocationContext } from './wire/Invocation.js';
 export { Invocation } from './wire/Invocation.js';
-export type { PartialInvocation } from './wire/Invocation.js';
+export type { InvocationContext } from './wire/Invocation.js';
 export { Call } from './wire/call.js';
 export { RouteAddress } from './wire/RouteAddress.js';
-export type { RouteAddressInput } from './wire/RouteAddress.js';
 export type { FrondCall, Transport, SignedCall } from './wire/call.js';
 export { MAX_BODY_BYTES } from './wire/call.js';
 // The reserved entity, VALUE and not type: a consumer that wants to leave it alone — a
@@ -59,5 +55,5 @@ export function callValueOf(
     typeof opOrInput === 'string'
       ? [{ entity: lowerFirst((target as { name: string }).name), op: opOrInput }, input]
       : [target as FrondCall, opOrInput];
-  return { call, invocation: canonicalInvocation(given) };
+  return { call, invocation: Invocation.from(given) };
 }

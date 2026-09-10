@@ -12,9 +12,9 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createApp, createLocalRunner, togetherKeyOf } from '@fougere/core';
-import { EMPTY_INVOCATION } from '@fougere/core/contract';
+import { Invocation } from '@fougere/core/contract';
 import { createContainer } from '@fougere/container';
-import { setupSqlite } from '@fougere/adapter-sql/sqlite';
+import { createSqliteSource } from '@fougere/adapter-sql/sqlite';
 import { storageFrom } from '../src/storage.js';
 
 const root = join(import.meta.dirname, 'fixtures-together');
@@ -31,10 +31,10 @@ async function boot(split: boolean) {
   const dir = mkdtempSync(join(tmpdir(), 'together-'));
   const storage = storageFrom(split
     ? {
-      db: setupSqlite({ path: join(dir, 'app.db') }),
-      sources: { accounting: { source: setupSqlite({ path: join(dir, 'accounting.db') }), entities: ['Ledger'] } },
+      db: createSqliteSource({ path: join(dir, 'app.db') }),
+      sources: { accounting: { source: createSqliteSource({ path: join(dir, 'accounting.db') }), entities: ['Ledger'] } },
     }
-    : { db: setupSqlite({ path: join(dir, 'app.db') }) });
+    : { db: createSqliteSource({ path: join(dir, 'app.db') }) });
 
   // What the boot SAYS is half of what is under test, so it is captured rather than read.
   // Every level, not `log` alone: a logger sends each one to its own console method, so a
@@ -62,21 +62,21 @@ async function boot(split: boolean) {
     said,
     storage: storageOf,
     announceInside: () => call({ entity: 'transfer', op: 'moveAndAnnounceInside' },
-      { ...EMPTY_INVOCATION, params: { from: 'a', to: 'b', amount: 100 } as never }),
+      { ...Invocation.empty, params: { from: 'a', to: 'b', amount: 100 } as never }),
     announceAfter: () => call({ entity: 'transfer', op: 'moveAndAnnounceAfter' },
-      { ...EMPTY_INVOCATION, params: { from: 'a', to: 'b', amount: 100 } as never }),
-    nest: () => call({ entity: 'nested', op: 'nest' }, EMPTY_INVOCATION),
-    sync: () => call({ entity: 'refresh', op: 'sync' }, EMPTY_INVOCATION),
-    syncAndFail: () => call({ entity: 'refresh', op: 'syncAndFail' }, EMPTY_INVOCATION),
+      { ...Invocation.empty, params: { from: 'a', to: 'b', amount: 100 } as never }),
+    nest: () => call({ entity: 'nested', op: 'nest' }, Invocation.empty),
+    sync: () => call({ entity: 'refresh', op: 'sync' }, Invocation.empty),
+    syncAndFail: () => call({ entity: 'refresh', op: 'syncAndFail' }, Invocation.empty),
     move: (amount: number) =>
       call({ entity: 'transfer', op: 'move' },
-        { ...EMPTY_INVOCATION, params: { from: 'a', to: 'b', amount } as never }),
+        { ...Invocation.empty, params: { from: 'a', to: 'b', amount } as never }),
     moveAndFail: (amount: number) =>
       call({ entity: 'transfer', op: 'moveAndFail' },
-        { ...EMPTY_INVOCATION, params: { from: 'a', to: 'b', amount } as never }),
+        { ...Invocation.empty, params: { from: 'a', to: 'b', amount } as never }),
     overdraw: () =>
       call({ entity: 'transfer', op: 'overdraw' },
-        { ...EMPTY_INVOCATION, params: { from: 'a', to: 'b' } as never }),
+        { ...Invocation.empty, params: { from: 'a', to: 'b' } as never }),
     async [Symbol.asyncDispose]() {
       await app.dispose();
       await storage.close!();
@@ -226,7 +226,7 @@ describe('what a frame refuses at boot', () => {
   /** Boot a fixture and hand back whatever it refused with. */
   const bootOf = async (fixture: string, remotes?: Record<string, string>) => {
     const dir = mkdtempSync(join(tmpdir(), 'together-'));
-    const storage = storageFrom({ db: setupSqlite({ path: join(dir, 'app.db') }) });
+    const storage = storageFrom({ db: createSqliteSource({ path: join(dir, 'app.db') }) });
     try {
       await createApp({
         scan: await scanProject(join(import.meta.dirname, fixture)),

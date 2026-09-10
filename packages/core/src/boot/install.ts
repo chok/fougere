@@ -52,6 +52,8 @@ export interface Assembly {
   contractsOf: (operations: EffectiveOperationsMap) => OperationsMap;
   /** Read at call time and never at boot, so a late registration still applies. */
   getMiddlewares: (entity: string) => AppMiddleware[];
+  /** Take a middleware on — every entity when no entity is named. */
+  use: (middleware: AppMiddleware, entity?: string) => void;
   log: Logger;
   options: CreateAppOptions;
 }
@@ -59,7 +61,7 @@ export interface Assembly {
 export async function installFrond(frond: FrondDescriptor, assembly: Assembly): Promise<void> {
   const {
     container, routeRegistry, emissions, dispatcher, localDispatcher, effectiveByKey,
-    boundPorts, operationModel, entityByName, frondOf, contractsOf, getMiddlewares,
+    boundPorts, operationModel, entityByName, frondOf, contractsOf, getMiddlewares, use,
     log, options,
   } = assembly;
 
@@ -126,10 +128,22 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   // reaches the realization instead of the base class it is declared against.
   // Registered AFTER the loop above so a port key always wins over the base's
   // own registration — same precedence as a declared repository over its default.
-  for (const [port, impl] of portBindings(frond.providers, (n) => scope.has(n), options.ports)) {
-    scope.register(port, impl.ctor, { deps: impl.deps });
+  for (const [port, chain] of portBindings(frond.providers, (n) => scope.has(n), options.ports)) {
+    // Registered from the INSIDE OUT, each wrapper asking for the one it stands in front
+    // of: the container resolves a dep by NAME, so wrapping is a substituted key and
+    // needs nothing of the container itself. The outermost answers under the port.
+    let inner = nameOf(chain.at(-1)!);
+    for (const wrapper of [...chain.slice(0, -1)].reverse()) {
+      const deps = wrapper.deps.map((dep) => (dep === port ? inner : dep));
+      inner = nameOf(wrapper);
+      scope.register(inner, wrapper.ctor, { deps });
+    }
+    const outermost = chain[0]!;
+    scope.register(port, outermost.ctor, {
+      deps: outermost.deps.map((dep) => (dep === port ? nameOf(chain[1]!) : dep)),
+    });
     boundPorts.add(port);
-    frondLog.debug(`port ${port} → ${impl.ctor.name}`);
+    frondLog.debug(`port ${port} → ${chain.map((one) => one.ctor.name).join(' → ')}`);
   }
   if (frond.providers.length > 0) {
     frondLog.debug(`${frond.providers.length} provider(s): ${frond.providers.map(nameOf).join(', ')}`);
@@ -224,6 +238,23 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   }
   if (frond.collectors.length > 0) {
     frondLog.debug(`${frond.collectors.length} collector(s): ${frond.collectors.map((c) => c.typeName).join(', ')}`);
+  }
+
+  // Register middlewares in scope, then take them on. Resolved per call and never here:
+  // a middleware asking for something request-scoped would otherwise be handed the one
+  // instance the boot built — the same reason `getMiddlewares` is read at call time.
+  for (const middleware of frond.middlewares) {
+    scope.register(middleware.name, middleware.ctor, { deps: middleware.deps });
+    const around: AppMiddleware = (context, next) =>
+      scope.resolve<{ around: AppMiddleware }>(middleware.name).around(context, next);
+
+    if (middleware.scope === 'app') use(around);
+    // Its own frond means every address its handlers answer to — wider than its entities,
+    // since a handler without one runs behind it too.
+    else for (const address of new Set(frond.handlers.map((h) => h.address))) use(around, address);
+  }
+  if (frond.middlewares.length > 0) {
+    frondLog.debug(`${frond.middlewares.length} middleware(s): ${frond.middlewares.map((m) => `${m.name} (${m.scope})`).join(', ')}`);
   }
 
   // Build handler facades → registered in ROOT container (public contract)

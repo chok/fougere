@@ -10,14 +10,14 @@ hooks.
 
 ```ts
 // app/routes/fougere.rest.ts — the whole REST integration
-import { fougereRest } from '@fougere/app/web';
+import { rest } from '@fougere/app/web';
 
-export const loader = ({ request }: { request: Request }) => fougereRest(request);
-export const action = ({ request }: { request: Request }) => fougereRest(request);
+export const loader = ({ request }: { request: Request }) => rest(request);
+export const action = ({ request }: { request: Request }) => rest(request);
 ```
 
 `loader` takes GET, `action` takes the rest — that split is React Router's, not
-ours. `fougereRest` reads the verb off the request and matches it against the table
+ours. `rest` reads the verb off the request and matches it against the table
 `schema-rest` generates, which is why the 405 below names the right verbs.
 
 ## What it did NOT need

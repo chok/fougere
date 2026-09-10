@@ -28,6 +28,16 @@ export interface CreateAppOptions {
   sourceOf?: (entityName: string) => string;
   transacts?: (source: string) => boolean;
   transacted?: <R>(source: string, fn: (storageFactory: StorageFactory) => Promise<R>) => Promise<R>;
+  /**
+   * Bring the shape of what lives here up to date — a source's own gesture, declared on
+   * `Source.migrate` and handed over whole.
+   *
+   * Handed here rather than assembled by the host: four of them wrote
+   * `migrating(storage.migrate)` themselves, one of them as a string inside generated
+   * code, and eight demos wrote nothing — so they had no migration and nothing said it.
+   * The ASCENT is core's to order, since rows after tables is not a host's preference.
+   */
+  migrate?: (app: App) => Promise<void> | void;
   /** Whether that source refuses a constraint at the rows — the boot says so when it does not. */
   enforces?: (source: string, constraint: Constraint) => boolean;
   /** Builds the cross-source reader a frond gets when it declares `reads:`. */
@@ -47,7 +57,12 @@ export interface CreateAppOptions {
    * Which realization answers which port — see `FougereConfig.ports`. Needed only
    * when two classes extend the same port; one is resolved by convention.
    */
-  ports?: Record<string, string>;
+  /**
+   * What answers a port. A string names the realization; a LIST is the chain, from the
+   * outside in — `['Retrying', 'Stripe']` puts `Retrying` in front of `Stripe`, and the
+   * last name is what actually charges.
+   */
+  ports?: Record<string, string | readonly string[]>;
   /** What this app takes on beyond its fronds, each stating what it does and what it undoes. */
   extensions?: readonly (Extension | undefined)[];
   /**

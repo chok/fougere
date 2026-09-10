@@ -10,7 +10,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner } from '../src/index.js';
 import { scanProject } from '@fougere/compiler';
-import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
+import { Invocation } from '../src/wire/Invocation.js';
 import type { AppMiddleware } from '../src/wire/middleware.js';
 import { trace } from './fixtures-operation-boundary/trace.js';
 
@@ -35,7 +35,7 @@ describe('an operation crosses its boundary in one order', () => {
 
     const created = await run(
       { entity: 'product', op: 'create' },
-      { ...EMPTY_INVOCATION, input: { id: 'p1', name: 'Fern' } },
+      { ...Invocation.empty, input: { id: 'p1', name: 'Fern' } },
     );
 
     // `internal` survives: the op declares no closed view, and an open one adds without cutting.
@@ -55,7 +55,7 @@ describe('an operation crosses its boundary in one order', () => {
 
     await expect(run(
       { entity: 'product', op: 'create' },
-      { ...EMPTY_INVOCATION, input: { id: 'p1', name: 'Fern', unknown: true } },
+      { ...Invocation.empty, input: { id: 'p1', name: 'Fern', unknown: true } },
     )).rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
 
     // No `middleware:after`: the refusal travels back out through `next()`.

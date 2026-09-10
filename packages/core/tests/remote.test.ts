@@ -2,10 +2,10 @@ import { scanProject } from '@fougere/compiler';
 import { describe, it, expect, vi } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
-import { createApp, createLocalRunner, createAppRunner, FougereError, ErrorCode, onLog } from '../src/index.js';
+import { createApp, createLocalRunner, createAppRunner, FougereError, ErrorCode } from '../src/index.js';
 import type { App, StorageFactory, Transport } from '../src/index.js';
 import type { SchemaView } from '@fougere/schema';
-import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
+import { Invocation } from '../src/wire/Invocation.js';
 
 const fixturesRoot = join(import.meta.dirname, 'fixtures');
 const emptyRoot = '/tmp/fougere-remote-test-empty';
@@ -48,10 +48,22 @@ async function bootConsumer(host: App, transportSpy?: Transport): Promise<App> {
   });
 }
 
+/**
+ * What this process said, read where it lands. `onLog` used to hand a sink here; a line is
+ * a fact now, and the console is what a process with no destination declared still writes.
+ */
+function saying(): { lines: string[]; stop: () => void } {
+  const lines: string[] = [];
+  const spies = (['debug', 'info', 'warn', 'error'] as const)
+    .map((method) => vi.spyOn(console, method)
+      .mockImplementation((...said: unknown[]) => { lines.push(said.join(' ')); }));
+
+  return { lines, stop: () => { for (const spy of spies) spy.mockRestore(); } };
+}
+
 describe('a named surface across a process', () => {
   it('serves nothing, and says so once instead of registering nothing in silence', async () => {
-    const lines: string[] = [];
-    const stop = onLog((record) => { lines.push(`${record.level} ${record.message}`); });
+    const { lines, stop } = saying();
     const host = await bootHost();
     const consumer = await bootConsumer(host);
 
@@ -69,8 +81,7 @@ describe('a named surface across a process', () => {
   });
 
   it('says nothing when no remote is declared — the surface is simply absent', async () => {
-    const lines: string[] = [];
-    const stop = onLog((record) => { lines.push(record.message); });
+    const { lines, stop } = saying();
     const host = await bootHost();
 
     expect(host.facadeFor('nothing', 'admin')).toBeUndefined();
@@ -88,7 +99,7 @@ describe('remote façade (repli)', () => {
 
     const facade = consumer.resolve<Record<string, (inv?: unknown) => Promise<unknown>>>('productHandler');
     const remote = await facade.list();
-    const local = await createLocalRunner(host)({ entity: 'product', op: 'list' }, EMPTY_INVOCATION);
+    const local = await createLocalRunner(host)({ entity: 'product', op: 'list' }, Invocation.empty);
 
     // Parity is the claim: the same enrichment on both sides, computed where the
     // frond is hosted and carried across untouched.
@@ -115,11 +126,11 @@ describe('remote façade (repli)', () => {
     const consumer = await bootConsumer(host);
 
     const run = createAppRunner(consumer);
-    expect(await run({ entity: 'product', op: 'list' }, EMPTY_INVOCATION))
+    expect(await run({ entity: 'product', op: 'list' }, Invocation.empty))
       .toMatchObject([{ id: '1', displayPrice: '$12.50' }, { id: '2', displayPrice: '$320.00' }]);
 
     // What the proxy must NOT claim: Object.prototype's own names are not operations.
-    await expect(run({ entity: 'product', op: 'constructor' }, EMPTY_INVOCATION))
+    await expect(run({ entity: 'product', op: 'constructor' }, Invocation.empty))
       .rejects.toMatchObject({ code: ErrorCode.NOT_FOUND });
 
     await consumer.dispose();
@@ -131,11 +142,11 @@ describe('remote façade (repli)', () => {
     const consumer = await bootConsumer(host);
 
     const facade = consumer.resolve<Record<string, (inv?: unknown) => Promise<unknown>>>('productHandler');
-    const found = await facade.findById({ ...EMPTY_INVOCATION, params: { id: '2' } });
+    const found = await facade.findById({ ...Invocation.empty, params: { id: '2' } });
     expect(found).toEqual({ id: '2', name: 'Moss', price: 320, displayPrice: '$320.00', isExpensive: true });
 
     // A miss is null on every transport — undefined has no wire form.
-    const miss = await facade.findById({ ...EMPTY_INVOCATION, params: { id: 'nope' } });
+    const miss = await facade.findById({ ...Invocation.empty, params: { id: 'nope' } });
     expect(miss).toBeNull();
 
     await consumer.dispose();
@@ -197,7 +208,7 @@ describe('remote façade (repli)', () => {
     const facade = consumer.resolve<Record<string, (inv?: unknown) => Promise<unknown>>>('productHandler');
     await facade.list();
     await facade.list();
-    await facade.findById({ ...EMPTY_INVOCATION, params: { id: '1' } });
+    await facade.findById({ ...Invocation.empty, params: { id: '1' } });
 
     const discoverCalls = spy.mock.calls.filter(([call]) => call.entity === 'rpc' && call.op === 'discover');
     expect(discoverCalls).toHaveLength(1);
@@ -236,7 +247,7 @@ describe('remote façade (repli)', () => {
     });
     // `card.fronds is not iterable` was what this produced: a TypeError naming neither
     // the remote nor its address, on the one path where the value came from another process.
-    await expect(createAppRunner(app)({ entity: 'post', op: 'list' }, EMPTY_INVOCATION))
+    await expect(createAppRunner(app)({ entity: 'post', op: 'list' }, Invocation.empty))
       .rejects.toThrow(/Remote 'catalog' \(http:\/\/catalog.test\).*frond 'blog' has no valid doors array/s);
   });
 
@@ -352,7 +363,7 @@ describe('two remotes serving one entity', () => {
     // only order a reader can predict from their own config.
     const slowEast: Transport = async (call) => {
       await new Promise((r) => setTimeout(r, 20));
-      return serving('catalog', 'product')(call, EMPTY_INVOCATION);
+      return serving('catalog', 'product')(call, Invocation.empty);
     };
 
     await using consumer = await createApp({

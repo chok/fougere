@@ -1,10 +1,7 @@
 /** @fougere/observability — one span per operation, and the trace that survives a wire. */
 import { traceContext } from '#trace-context';
-import type { AppMiddleware } from '@fougere/core';
+import { CARRIES_LINE, type AppMiddleware } from '@fougere/core';
 import { parseTraceparent, traceparentOf, randomHex, type SpanContext } from './traceparent.js';
-
-export { traceparentOf, parseTraceparent } from './traceparent.js';
-export type { SpanContext } from './traceparent.js';
 
 /** A step while it runs. */
 interface Running extends SpanContext {
@@ -85,6 +82,10 @@ export function onSpan(next: SpanSink): () => void {
 export function trace(): AppMiddleware {
   return (ctx, next) => {
     if (sinks.length === 0) return next();
+    // An op that CARRIES a line is not a call this process made: counting it puts the
+    // delivery of a log line in the saturation figure, and spanning it puts a line about
+    // the span back on the wire. Same rule as `loggerMiddleware`, one declaration.
+    if (CARRIES_LINE.has(ctx.entity)) return next();
 
     // The wire first, the ambient context second: an arriving call names its parent on
     // the invocation, an outgoing one inherits from the call it is made inside.
@@ -150,10 +151,7 @@ function codeOf(err: unknown): string {
 }
 
 export { otlp } from './otlp.js';
-export type { OtlpOptions, OtlpExporter } from './otlp.js';
-export { metrics, metricsPayload, serveTopology } from './metrics.js';
-export type { Metrics, MetricsSnapshot, TopologyReport, FrondPlacement, Edge } from './metrics.js';
+export { metrics } from './metrics.js';
+export type { Metrics, TopologyReport, FrondPlacement, Edge } from './metrics.js';
 export { logs } from './logs.js';
-export type { LogsOptions, LogExporter, CapturedLog } from './logs.js';
 export { observability } from './extension.js';
-export type { ObservabilityOptions } from './extension.js';

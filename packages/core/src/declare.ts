@@ -1,7 +1,7 @@
 /** A frond stated by its author, for an app that will not scan. */
 import { lowerFirst, type SchemaView } from '@fougere/schema';
 import type {
-  CollectorEntry, EntityEntry, FrondDescriptor, HandlerEntry,
+  CollectorEntry, EntityEntry, FrondDescriptor, HandlerEntry, MiddlewareEntry,
   PresenterEntry, ProviderEntry, SeedEntry,
 } from './descriptor/frond.js';
 import { DEFAULT_CONVENTIONS } from './conventions.js';
@@ -90,6 +90,14 @@ export interface FrondDeclaration {
   collectors?: (Ctor | DeclaredSubject)[];
   providers?: Declared[];
   seeds?: { entityName: string; data: SeedEntry['data'] }[];
+  /**
+   * What runs around this frond's operations. The scope is stated beside the class here,
+   * where `frond.config.ts` states it by class name — a statement has no config file to
+   * put it in.
+   */
+  middlewares?: (Ctor | (DeclaredSubject & { scope?: MiddlewareEntry['scope'] }))[];
+  /** The ops that finish a fact, in order — the same key `frond.config.ts` states. */
+  pipes?: Record<string, string[]>;
   /** Per-surface entity lists — the same key `frond.config.ts` states. */
   surfaces?: Record<string, string[]>;
   /** The import scope this frond answers under. Defaults to the conventional one. */
@@ -179,6 +187,14 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
     filePath: '',
   }));
 
+  const middlewares: MiddlewareEntry[] = (declared.middlewares ?? []).map((m) => ({
+    name: ctorOf(m).name,
+    ctor: ctorOf(m),
+    scope: (typeof m === 'function' ? undefined : m.scope) ?? 'frond',
+    deps: depsOf(m),
+    filePath: '',
+  }));
+
   return {
     name,
     source: { path: '', package: `${scope}/${name}` },
@@ -189,6 +205,8 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
     presenters,
     collectors,
     seeds,
+    middlewares,
+    ...(declared.pipes ? { pipes: declared.pipes } : {}),
     ...(declared.surfaces ? { surfaces: declared.surfaces } : {}),
   };
 }

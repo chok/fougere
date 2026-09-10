@@ -11,16 +11,17 @@ import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer, type Container } from '@fougere/container';
 import { createApp, createLocalRunner } from '../src/index.js';
-import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
+import { Invocation } from '../src/wire/Invocation.js';
 
 const one = join(import.meta.dirname, 'fixtures-ports');
 const two = join(import.meta.dirname, 'fixtures-ports-two');
+const wrapped = join(import.meta.dirname, 'fixtures-ports-wrapped');
 
 describe('a port declared by extension', () => {
   it('hands the handler the implementation, not the base it declared', async () => {
     await using app = await createApp({ scan: await scanProject(one), createContainer });
 
-    const out = await createLocalRunner(app)({ entity: 'checkout', op: 'pay' }, EMPTY_INVOCATION);
+    const out = await createLocalRunner(app)({ entity: 'checkout', op: 'pay' }, Invocation.empty);
 
     expect(out).toEqual({ provider: 'stripe', amountCents: 4990 });
   });
@@ -61,7 +62,7 @@ describe('two implementations of one port', () => {
       ports: { Payment: 'OgonePayment' },
     });
 
-    const out = await createLocalRunner(app)({ entity: 'checkout', op: 'pay' }, EMPTY_INVOCATION);
+    const out = await createLocalRunner(app)({ entity: 'checkout', op: 'pay' }, Invocation.empty);
 
     expect(out).toEqual({ provider: 'ogone', amountCents: 4990 });
   });
@@ -79,7 +80,7 @@ describe('a framework builtin is a port too', () => {
   it('hands the handler the declared subclass, not the default Logger', async () => {
     await using app = await createApp({ scan: await scanProject(overridden), createContainer });
 
-    const out = await createLocalRunner(app)({ entity: 'report', op: 'run' }, EMPTY_INVOCATION);
+    const out = await createLocalRunner(app)({ entity: 'report', op: 'run' }, Invocation.empty);
 
     expect(out).toEqual({ logger: 'AuditLogger', seen: 1 });
   });
@@ -96,5 +97,54 @@ describe('a framework builtin is a port too', () => {
     const scope = app.resolve<Container>('frond:mesures');
 
     expect(scope.has('RepositoryBase')).toBe(false);
+  });
+});
+
+/**
+ * A port may be answered by a CHAIN — the realization, wrapped by whoever stands in front.
+ *
+ * Wrapping was impossible: a wrapper extends the port, so it was a second implementation
+ * and the boot refused it. `StorageGuard` was the only wrapper in the tree, hard-coded for
+ * one port. A wrapper is recognized by its form — it extends the port AND asks for it —
+ * and the container needs nothing new: a dep is resolved by NAME, so wrapping is a
+ * substituted key.
+ */
+describe('a port answered by a chain', () => {
+  const charge = async (root: string, ports?: Record<string, string | readonly string[]>) => {
+    const app = await createApp({
+      scan: await scanProject(root),
+      createContainer,
+      ...(ports ? { ports } : {}),
+    });
+    const said = await createLocalRunner(app)(
+      { entity: 'checkout', op: 'pay' },
+      { ...Invocation.empty, params: { amountCents: '100' } },
+    ) as { provider: string };
+    await app.dispose();
+
+    return said.provider;
+  };
+
+  it('wraps the realization when one class stands in front, declared nowhere', async () => {
+    // Nothing in `ports:`, nothing in a config — the wrapper's own signature says it.
+    expect(await charge(wrapped, { Payment: ['RetryingPayment', 'StripePayment'] }))
+      .toBe('retrying(stripe)');
+  });
+
+  it('runs the chain from the OUTSIDE in, in the order stated', async () => {
+    expect(await charge(wrapped, { Payment: ['TimingPayment', 'RetryingPayment', 'StripePayment'] }))
+      .toBe('timing(retrying(stripe))');
+
+    // The same three classes, the other way round — the order is the statement, not the scan.
+    expect(await charge(wrapped, { Payment: ['RetryingPayment', 'TimingPayment', 'StripePayment'] }))
+      .toBe('retrying(timing(stripe))');
+  });
+
+  it('refuses two wrappers with no order, and shows the chain to state', async () => {
+    // Same refusal two realizations get, one layer out: which stands in front is not a
+    // fact about the code.
+    await expect(charge(wrapped)).rejects.toThrow(
+      /both wrap Payment.*ports: \{ Payment: \['.*'\] \}/s,
+    );
   });
 });

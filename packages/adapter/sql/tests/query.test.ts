@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { setupSqlite } from '../src/sqlite.js';
+import { createSqliteSource } from '../src/sqlite.js';
 import { onQuery, type QueryEvent } from '../src/query.js';
 
 /**
@@ -12,7 +12,7 @@ describe('onQuery', () => {
   it('reports a real statement with its cost, and names the storage', async () => {
     const seen: QueryEvent[] = [];
     const stop = onQuery((event) => seen.push(event));
-    const { db, sqlite } = setupSqlite({ path: ':memory:', name: 'probe' });
+    const { db, sqlite } = createSqliteSource({ path: ':memory:', name: 'probe' });
 
     try {
       await db.schema.createTable('crate').addColumn('id', 'text').execute();
@@ -38,7 +38,7 @@ describe('onQuery', () => {
   it('carries how many parameters there were, never their values', async () => {
     const seen: QueryEvent[] = [];
     const stop = onQuery((event) => seen.push(event));
-    const { db, sqlite } = setupSqlite({ path: ':memory:' });
+    const { db, sqlite } = createSqliteSource({ path: ':memory:' });
 
     try {
       await db.schema.createTable('crate').addColumn('code', 'text').execute();
@@ -58,7 +58,7 @@ describe('onQuery', () => {
   it('stops reporting once the subscription is released', async () => {
     const seen: QueryEvent[] = [];
     onQuery((event) => seen.push(event))();
-    const { db, sqlite } = setupSqlite({ path: ':memory:' });
+    const { db, sqlite } = createSqliteSource({ path: ':memory:' });
 
     try {
       await db.schema.createTable('crate').addColumn('id', 'text').execute();

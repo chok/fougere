@@ -4,7 +4,8 @@
  */
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
-import { frondOf, rootOf, scopeOf } from '../src/index.js';
+import { frondOf } from '../src/index.js';
+import { rootOf, scopeOf } from '../src/scope.js';
 
 const fixtures = join(import.meta.dirname, 'fixtures');
 

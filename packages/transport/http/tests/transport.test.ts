@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { FougereError, ErrorCode, EMPTY_INVOCATION } from '@fougere/core';
+import { FougereError, ErrorCode, Invocation } from '@fougere/core';
 import type { Transport } from '@fougere/core';
-import { createHttpTransport, handleRpc, serve, unframeResponse, INVALID_REQUEST, PARSE_ERROR } from '../src/index.js';
+import { createHttpTransport, handleRpc, serve, unframeResponse, PARSE_ERROR } from '../src/index.js';
+import { INVALID_REQUEST } from '../src/jsonrpc.js';
 import type { RunningReceiver } from '../src/index.js';
 
 const products = [{ id: '1', name: 'Fern' }];
@@ -45,7 +46,7 @@ afterAll(async () => {
 describe('sender ↔ receiver over real HTTP', () => {
   it('round-trips a result', async () => {
     const transport = createHttpTransport(base);
-    const result = await transport({ entity: 'product', op: 'list' }, EMPTY_INVOCATION);
+    const result = await transport({ entity: 'product', op: 'list' }, Invocation.empty);
     expect(result).toEqual(products);
   });
 
@@ -81,18 +82,18 @@ describe('sender ↔ receiver over real HTTP', () => {
 
   it('serves rpc.discover like any call', async () => {
     const transport = createHttpTransport(base);
-    const card = await transport({ entity: 'rpc', op: 'discover' }, EMPTY_INVOCATION);
+    const card = await transport({ entity: 'rpc', op: 'discover' }, Invocation.empty);
     expect(card).toMatchObject({ fronds: [{ name: 'catalog' }] });
   });
 
   it('a null result stays null', async () => {
     const transport = createHttpTransport(base);
-    expect(await transport({ entity: 'product', op: 'empty' }, EMPTY_INVOCATION)).toBeNull();
+    expect(await transport({ entity: 'product', op: 'empty' }, Invocation.empty)).toBeNull();
   });
 
   it('a FougereError crosses typed — code, details, entity, operation intact', async () => {
     const transport = createHttpTransport(base);
-    const failure = transport({ entity: 'product', op: 'boom' }, EMPTY_INVOCATION);
+    const failure = transport({ entity: 'product', op: 'boom' }, Invocation.empty);
     await expect(failure).rejects.toBeInstanceOf(FougereError);
     await expect(failure).rejects.toMatchObject({
       code: ErrorCode.CONFLICT,
@@ -105,13 +106,13 @@ describe('sender ↔ receiver over real HTTP', () => {
 
   it('a timed-out call fails GATEWAY_TIMEOUT and is not retried', async () => {
     const transport = createHttpTransport(base, { timeoutMs: 80 });
-    const failure = transport({ entity: 'product', op: 'slow' }, EMPTY_INVOCATION);
+    const failure = transport({ entity: 'product', op: 'slow' }, Invocation.empty);
     await expect(failure).rejects.toMatchObject({ code: ErrorCode.GATEWAY_TIMEOUT });
   });
 
   it('an unreachable receiver fails SERVICE_UNAVAILABLE after retrying', async () => {
     const transport = createHttpTransport('http://127.0.0.1:9', { retries: 1, timeoutMs: 500 });
-    const failure = transport({ entity: 'product', op: 'list' }, EMPTY_INVOCATION);
+    const failure = transport({ entity: 'product', op: 'list' }, Invocation.empty);
     await expect(failure).rejects.toBeInstanceOf(FougereError);
     await expect(failure).rejects.toMatchObject({ code: ErrorCode.SERVICE_UNAVAILABLE });
   });

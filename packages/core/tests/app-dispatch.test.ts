@@ -11,7 +11,7 @@ import {
   type StorageFactory,
 } from '../src/index.js';
 import { scanProject } from '@fougere/compiler';
-import { EMPTY_INVOCATION } from '../src/wire/Invocation.js';
+import { Invocation } from '../src/wire/Invocation.js';
 
 const fixtures = join(import.meta.dirname, 'fixtures');
 const rows = [{ id: '1', name: 'Fern', price: 12.5 }];
@@ -67,7 +67,7 @@ describe('App.dispatch', () => {
       dispatchObservers: [(event) => events.push(event)],
     });
 
-    await createAppRunner(app)({ entity: 'product', op: 'list' }, EMPTY_INVOCATION);
+    await createAppRunner(app)({ entity: 'product', op: 'list' }, Invocation.empty);
 
     expect(events.map(({ stage }) => stage))
       .toEqual(['received', 'resolved', 'completed', 'settled']);
@@ -84,7 +84,7 @@ describe('App.dispatch', () => {
 
     await createAppRunner(app, 'admin')(
       { entity: 'rpc', op: 'discover' },
-      EMPTY_INVOCATION,
+      Invocation.empty,
     );
 
     expect(events.find(({ stage }) => stage === 'resolved')).toMatchObject({ routeKind: 'system' });
@@ -101,7 +101,7 @@ describe('App.dispatch', () => {
 
     await expect(createLocalRunner(app)(
       { entity: 'product', op: 'list' },
-      EMPTY_INVOCATION,
+      Invocation.empty,
     )).rejects.toMatchObject({ code: 'NOT_FOUND' });
     expect(transport).not.toHaveBeenCalled();
   });

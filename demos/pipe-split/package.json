@@ -1,0 +1,22 @@
+{
+  "name": "pipe-split",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/main.ts",
+    "typecheck": "tsc --noEmit -p .",
+    "link:tenant": "tsx src/link.ts tenant 4600",
+    "link:privacy": "tsx src/link.ts privacy 4601"
+  },
+  "dependencies": {
+    "@fougere/compiler": "workspace:*",
+    "@fougere/container": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/schema": "workspace:*",
+    "@fougere/transport-http": "workspace:*",
+    "jiti": "^2.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0"
+  }
+}

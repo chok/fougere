@@ -177,4 +177,3 @@ function project(
   return out;
 }
 
-export type { DuckDBConnection };

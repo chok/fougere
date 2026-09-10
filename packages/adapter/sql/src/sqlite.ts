@@ -6,22 +6,22 @@ import Database from 'better-sqlite3';
 import { createStorageFactory } from './crud.js';
 import { logQueries } from './query.js';
 import { drift, driftReport } from './drift.js';
-import { sqlSink, sqlEnforces, type SetupOptions, type SqlSource } from './setup.js';
+import { sqlSink, sqlEnforces, type SqlSourceOptions, type SqlSource } from './source.js';
 import { desiredTables, migrate } from './diff.js';
 import { toTableName } from './table.js';
 import { Sources, type Source, type SourceConfig, type SourceView } from '@fougere/core';
 
-export interface SqliteSetupOptions extends SetupOptions {
+export interface SqliteSourceOptions extends SqlSourceOptions {
   /** Filesystem path to the database. Defaults to a project-local file. */
   path?: string;
 }
 
-export interface SqliteSetup extends SqlSource {
+export interface SqliteSource extends SqlSource {
   /** The raw handle, for pragmas and synchronous exec. */
   sqlite: Database.Database;
 }
 
-export function setupSqlite(opts: SqliteSetupOptions = {}): SqliteSetup {
+export function createSqliteSource(opts: SqliteSourceOptions = {}): SqliteSource {
   const path = opts.path ?? 'fougere.db';
   // A file-backed DB needs its directory — SQLite won't create it.
   if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
@@ -58,9 +58,9 @@ Sources.register('sql', (conf: SourceConfig): Source => {
     throw new Error(
       `source 'sql', dialect '${dialect}': cannot be built from a name — only 'sqlite' can, `
       + 'because it is the one driver this package owns. Build the Kysely dialect yourself and '
-      + `call setupKysely(dialect, '${dialect}'), then hand it in as a source.`,
+      + `call createKyselySource(dialect, '${dialect}'), then hand it in as a source.`,
     );
   }
 
-  return setupSqlite({ path: conf.path as string | undefined, name: conf.name as string | undefined });
+  return createSqliteSource({ path: conf.path as string | undefined, name: conf.name as string | undefined });
 });

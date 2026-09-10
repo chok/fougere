@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createLocalRunner, type App } from '@fougere/core';
-import { EMPTY_INVOCATION } from '@fougere/core/contract';
+import { Invocation } from '@fougere/core/contract';
 import { serveRest, serveRpc, tableOf } from '@fougere/app';
 import { lowerFirst, type SchemaView } from '@fougere/schema';
 import { listQuery, findQuery, mutationFor, at } from './gql.js';
@@ -162,7 +162,7 @@ function doorsOf(app: App, entity: SchemaView, name: string, surface?: string): 
   const state: Record<string, unknown> = {};
 
   const invocation = (call: DoorInput = {}) => ({
-    ...EMPTY_INVOCATION,
+    ...Invocation.empty,
     ...(call.id !== undefined ? { params: { id: call.id } } : {}),
     ...(call.input !== undefined ? { input: call.input } : {}),
   });

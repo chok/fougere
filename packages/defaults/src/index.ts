@@ -6,8 +6,8 @@ import { createContainer } from '@fougere/container';
 import { createHttpTransport } from '@fougere/transport-http';
 import { resolveStorage, type DbConfig } from './storage.js';
 
-export { resolveStorage, declaresStorage, storageFrom } from './storage.js';
-export type { DbConfig, SourcesConfig, DeclaredStorage, Placement, ResolvedStorage } from './storage.js';
+export { resolveStorage, declaresStorage, storageFrom, layerOf } from './storage.js';
+export type { DbConfig, ResolvedStorage } from './storage.js';
 
 export interface BootAppOptions {
   /** Boot only these fronds (by name). Absent = every discovered frond. */
@@ -28,7 +28,7 @@ export interface BootAppOptions {
  * Boot a Fougere app from the `fougere.config.ts` at `root`, wired the
  * conventional way (container + sqlite + http remotes).
  */
-export async function bootAppFromConfig(root: string, opts: BootAppOptions = {}): Promise<App> {
+export async function bootApp(root: string, opts: BootAppOptions = {}): Promise<App> {
   const config = await loadConfig(root);
   const remotes = config.remotes ?? {};
   const useRemotes = (opts.topology ?? true) && Object.keys(remotes).length > 0;

@@ -11,8 +11,8 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { entity, primary, ref, text, updated } from '@fougere/schema';
-import { toTables, setupKysely } from '@fougere/adapter-sql';
-import { setupSqlite } from '@fougere/adapter-sql/sqlite';
+import { toTables, createKyselySource } from '@fougere/adapter-sql';
+import { createSqliteSource } from '@fougere/adapter-sql/sqlite';
 import { SqliteDialect } from 'kysely';
 import Database from 'better-sqlite3';
 import { resolveStorage, storageFrom } from '../src/storage.js';
@@ -129,12 +129,12 @@ describe('storageFrom — an engine the caller built', () => {
     // dialect, so a name resolves to sqlite and nothing else. Here the caller brings
     // the engine — this one happens to be sqlite so the test can read it back, but
     // nothing in the routing knows or asks.
-    const archive = setupKysely(
+    const archive = createKyselySource(
       new SqliteDialect({ database: new Database(':memory:') }),
       'sqlite',
     );
     const storage = storageFrom({
-      db: setupSqlite({ path: ':memory:' }),
+      db: createSqliteSource({ path: ':memory:' }),
       sources: { archive: { source: archive, entities: ['Book'] } },
     });
 
@@ -157,14 +157,14 @@ describe('storageFrom — an engine the caller built', () => {
     const nothing = { storageFactory: (() => ({})) as never, name: 'nothing' };
     const split = storageFrom({
       db: nothing,
-      sources: { archive: { source: setupSqlite({ path: ':memory:' }), entities: ['Book'] } },
+      sources: { archive: { source: createSqliteSource({ path: ':memory:' }), entities: ['Book'] } },
     });
 
     expect(split.transacts!('archive')).toBe(true);
     expect(split.transacts!('db')).toBe(false);
 
     const other = storageFrom({
-      db: setupSqlite({ path: ':memory:' }),
+      db: createSqliteSource({ path: ':memory:' }),
       sources: { cold: { source: nothing, entities: ['Book'] } },
     });
 
@@ -179,7 +179,7 @@ describe('storageFrom — an engine the caller built', () => {
     const nothing = { storageFactory: (() => ({})) as never, name: 'nothing' };
     const split = storageFrom({
       db: nothing,
-      sources: { archive: { source: setupSqlite({ path: ':memory:' }), entities: ['Book'] } },
+      sources: { archive: { source: createSqliteSource({ path: ':memory:' }), entities: ['Book'] } },
     });
 
     expect(split.enforces!('archive', 'unique')).toBe(true);
@@ -188,10 +188,10 @@ describe('storageFrom — an engine the caller built', () => {
 
   it('refuses the same double claim, whoever built the engines', () => {
     const twice = () => storageFrom({
-      db: setupSqlite({ path: ':memory:' }),
+      db: createSqliteSource({ path: ':memory:' }),
       sources: {
-        archive: { source: setupSqlite({ path: ':memory:' }), entities: ['Book'] },
-        cold: { source: setupSqlite({ path: ':memory:' }), entities: ['Book'] },
+        archive: { source: createSqliteSource({ path: ':memory:' }), entities: ['Book'] },
+        cold: { source: createSqliteSource({ path: ':memory:' }), entities: ['Book'] },
       },
     });
     expect(twice).toThrow(/claimed by both 'archive' and 'cold'/);

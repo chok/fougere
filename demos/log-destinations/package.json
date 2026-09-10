@@ -1,0 +1,20 @@
+{
+  "name": "log-destinations",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/main.ts",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "@fougere/compiler": "workspace:*",
+    "@fougere/container": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/log": "workspace:*",
+    "@fougere/schema": "workspace:*",
+    "jiti": "^2.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0"
+  }
+}

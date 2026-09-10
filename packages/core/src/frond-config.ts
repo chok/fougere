@@ -44,6 +44,20 @@ export interface FrondConfig {
   surfaces?: Record<string, string[]>;
   /** Interface → implementation bindings for DI (e.g. { Database: 'SqliteDatabase' }). */
   bindings?: Record<string, string>;
+  /**
+   * The ops that FINISH a fact, in the order they run — by class name, keyed by fact.
+   *
+   * Declared by the frond that OWNS the fact, because ordering is a decision about the
+   * fact itself and it has one owner. Without it two links refuse: nothing would say which
+   * ran first, and scan order is not an answer.
+   */
+  pipes?: Record<string, string[]>;
+  /**
+   * How far a middleware reaches, by class name. A middleware answers for its own frond
+   * without being named here; `'app'` is the exception, and it is stated by the frond
+   * that decides for the others.
+   */
+  middlewares?: Record<string, 'frond' | 'app'>;
   /** Per-operation overrides. Key = operation name (method name on a handler). */
   operations?: Record<string, OperationOverride>;
 }
