@@ -117,6 +117,22 @@ describe('an op that finishes a fact', () => {
     })).rejects.toThrow(/secondHandler\.set finishes the fact 'postPublished'.*not said/s);
   });
 
+  it('refuses a link that answers nothing, rather than letting it suppress the fact', async () => {
+    class Silent { async set(): Promise<void> {} }
+
+    await using app = await createApp({
+      fronds: [subject(), frond('links', { handlers: [finishing(Silent)] })],
+      createContainer,
+    });
+    const announce = app.container.resolve<(raw: unknown) => Promise<void>>('postPublishedEmit');
+
+    // It used to reach nobody, by crash: every subscriber was handed `null` and died
+    // reading it. A fact is what HAPPENED — the announcer already said so, and `Emit`
+    // returning void means nothing could tell it otherwise.
+    await expect(announce({ id: 'x', title: 'a' }))
+      .rejects.toThrow(/silentHandler\.set finishes the fact 'postPublished' and answered nothing/);
+  });
+
   it('refuses a frond that orders a fact it does not own', async () => {
     // Ordering is a decision about the fact, and a decision has one owner.
     await expect(createApp({

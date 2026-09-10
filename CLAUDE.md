@@ -350,7 +350,12 @@ the ORDER their fact's owner declared — `pipes: { postPublished: ['RedactHandl
 'StampHandler'] }` in `frond.config.ts`, where the second reads what the first answered.
 Two links with no order refuse at boot naming both, a link the order does not list refuses
 too, and a frond ordering a fact it does not own refuses: ordering is a decision about the
-fact, and a decision has one owner. A link is CALLED, so it needs an address — local, or named in `remotes:`. A carrier has no
+fact, and a decision has one owner. A link that answers NOTHING is refused, and the announcer is told: it used to reach nobody
+by crash, every subscriber handed `null`. A fact is what HAPPENED — the announcer already
+said so and `Emit` returns void, so nothing could tell it otherwise. Filtering belongs to
+whoever announces, or to each reader.
+
+A link is CALLED, so it needs an address — local, or named in `remotes:`. A carrier has no
 address, so a link can never live behind one, the same line `Ask` draws. It is a HARD
 dependency where a subscriber is not — a subscriber that throws is
 logged and the announcer goes on, a link that throws stops the announcement, and behind

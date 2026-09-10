@@ -261,7 +261,22 @@ export class Emissions {
     let carried = payload;
     for (const link of this.pipes.get(fact) ?? []) {
       const facade = this.container.resolve<Record<string, Function>>(link.door);
-      carried = await facade[link.op]({ ...Invocation.empty, input: carried });
+      const answered = await facade[link.op]({ ...Invocation.empty, input: carried });
+
+      // A link that answers nothing SUPPRESSES the fact — every subscriber was then handed
+      // `null` and crashed reading it, one message each. It is refused rather than named,
+      // because a fact is what HAPPENED: the announcer already said so and cannot be told
+      // otherwise, `Emit` returning void. Filtering belongs to whoever announces, or to
+      // each reader; it is not a link's to decide for everyone.
+      if (answered === null || answered === undefined) {
+        throw new Error(
+          `${link.door}.${link.op} finishes the fact '${fact}' and answered nothing.\n`
+          + '  A link says what the fact IS, it does not take it back — the announcer has '
+          + 'already said it happened, and nothing can tell it otherwise.\n'
+          + '  Return the fact, amended or as it stands.',
+        );
+      }
+      carried = answered;
     }
 
     return carried;
