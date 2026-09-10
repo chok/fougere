@@ -12,6 +12,12 @@ export interface OperationOverride {
   /** The GraphQL root field this op answers to. */
   graphql?: string;
   /**
+   * Where this op answers over REST — the dual of `graphql:`, and the frond's to say for
+   * the same reason: how an operation is CALLED belongs beside it, not in whatever host
+   * mounts the router. The prefix stays the host's: naming is the frond's, mounting is not.
+   */
+  rest?: { method?: string; path?: string; status?: number };
+  /**
    * Handler class to delegate to (overrides the default `{Entity}Handler` lookup).
    * Class name is used to resolve from DI. E.g. `ArchiveHandler` → `app.resolve('ArchiveHandler')`.
    */

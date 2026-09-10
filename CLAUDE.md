@@ -343,6 +343,14 @@ reads the axes and nothing else), the DOUBLES from a port's prototype (`stubOf`)
 LEVEL from where the file sits. `checkDoors` compares REST against GraphQL; `driftOf`
 compares two `rpc.discover` cards through `Card.diff`.
 
+**A frond names where its op answers, on every surface** — `graphql: 'posts'` and
+`rest: { path: '/articles' }` in `frond.config.ts`, read by `adapter/graphql`
+(`pothos.ts`) and `adapter/rest` (`routes.ts`). REST had no such key: the path lived in
+whatever host called `generateRoutes`, so one surface was named beside the operation and
+the other three files away. The PREFIX stays the host's — naming is the frond's, mounting
+is not — and a host's `overrides:` still wins, since it is deciding for someone else's
+frond. Pinned by `adapter/rest/tests/stated.test.ts`.
+
 **Operation contract, three producers** — the façade consumes `OperationContract` and
 nothing else. A prefab DECLARES (`Crud.__ops`, runtime), the scan DERIVES from source,
 `frond.config.ts` STATES and wins over both. Config also creates an op neither producer

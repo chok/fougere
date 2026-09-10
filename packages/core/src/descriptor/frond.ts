@@ -183,5 +183,9 @@ export interface FrondDescriptor {
     handlerName?: string;
     /** Method name on the resolved handler (defaults to op name). */
     method?: string;
+    /** The GraphQL root field this op answers to — read by `adapter/graphql`. */
+    graphql?: string;
+    /** Where it answers over REST — read by `adapter/rest`, the dual of `graphql`. */
+    rest?: { method?: string; path?: string; status?: number };
   }>;
 }

@@ -72,6 +72,8 @@ interface FrondLike {
   handlers: HandlerEntry[];
   presenters: PresenterEntry[];
   surfaces?: Record<string, string[]>;
+  /** What `frond.config.ts` said per op — `rest:` is read here, `graphql:` next door. */
+  operationsOverrides?: Record<string, { rest?: { method?: string; path?: string; status?: number } }>;
 }
 
 interface AppLike {
@@ -199,9 +201,15 @@ export function generateRoutes(app: AppLike, options?: GenerateRoutesOptions): R
             `REST facade '${entity.name}' exposes '${opName}' but its EffectiveOperation table does not.`,
           );
         }
-        const override = entityOverrides[opName];
-        const method = override?.method ?? deriveMethod(opName, meta?.kind);
-        const path = prefix + (override?.path ?? derivePath(entity.name, opName));
+        // What the FROND said, then what this call said, then the convention. The frond
+        // comes first because it names the operation; a host that overrides is deciding
+        // for someone else's, which is what `overrides:` is for and why it wins.
+        const stated = frond.operationsOverrides?.[opName]?.rest as
+          { method?: HttpMethod; path?: string; status?: number } | undefined;
+        const override = { ...stated, ...entityOverrides[opName] } as
+          { method?: HttpMethod; path?: string; status?: number };
+        const method = override.method ?? deriveMethod(opName, meta?.kind);
+        const path = prefix + (override.path ?? derivePath(entity.name, opName));
 
         // Input/output fields: use meta if available, fallback to entity fields for CRUD.
         // Both pass through the client-surface projections (write-only out, read-only in).
@@ -231,7 +239,7 @@ export function generateRoutes(app: AppLike, options?: GenerateRoutesOptions): R
           handler: (invocation) => op(invocation),
           inputFields,
           outputFields,
-          successStatus: override?.status,
+          successStatus: override.status,
           ...(meta?.description && { description: meta.description }),
         });
       }
