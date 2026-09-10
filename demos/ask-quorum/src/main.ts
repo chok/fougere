@@ -19,6 +19,7 @@ import { setModuleLoader } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { createHttpTransport } from '@fougere/transport-http';
 import { createJiti } from 'jiti';
+import { asking } from './asking-storage.js';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -31,9 +32,14 @@ const remotes = process.env.SPLIT
   ? { rooms: 'http://127.0.0.1:4701', billing: 'http://127.0.0.1:4702', calendar: 'http://127.0.0.1:4703' }
   : undefined;
 
+/** The adapter, and the extension that hands it a door onto the app — see the file. */
+const storage = asking();
+
 const app = await createApp({
   scan: await scanProject(root),
   createContainer,
+  storageFactory: storage.storageFactory,
+  extensions: [storage.extension],
   ...(remotes ? { remotes, remoteTransport: (url: string) => createHttpTransport(url) } : {}),
 });
 
@@ -57,6 +63,9 @@ for (const room of ['library', 'atrium']) {
 console.log(`
   BookingHandler holds no list of responders and names none. Three answered, one refused,
   and the law — unanimity — is written in the asker, never in the framework.
+
+  The STORAGE asked the same subject again, on its own account. It is not user code and has
+  no app, so an extension handed it one — the only moment an adapter can be given a door.
 
   SPLIT=1 pnpm dev   with the three up   — the same answers, three wires later
   SPLIT=1 pnpm dev   with one down       — the question is unanswered, not answered by two
