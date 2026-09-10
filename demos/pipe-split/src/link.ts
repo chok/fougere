@@ -1,5 +1,5 @@
 /**
- * One link, in its own process — `pnpm dev:redact`, `pnpm dev:stamp`.
+ * One link, in its own process — `pnpm link:tenant`, `pnpm link:privacy`.
  *
  * The handler file is the same one that runs in-process when `pnpm dev` scans everything.
  * A link does not know it is second: the order is applied where the fact is announced.

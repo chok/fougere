@@ -123,7 +123,7 @@ demos/
   cloudflare-d1/       the edge rung — scan emitted, no tsc shipped
   sse-live/            live fan-out to readers who are not trusted peers
   log-destinations/    where a line goes is the operator's line, not the domain's
-  pipe-split/          `Pipe<T>` — one op answers the fact everyone else reads, and what a split costs
+  pipe-split/          `Pipe<T>` — what a link is for, and what `pick` already does without one
   ask-quorum/          `Ask<T>` — a subject that answers back, across three processes
   admin-panel/ one-declaration/ express-blog/ next-blog/ sveltekit-blog/
   react-router-blog/ tanstack-blog/ multi-transport/ emit-fleet/ emit-split/
@@ -340,7 +340,10 @@ would be partial and say nothing about it. Pinned by `tests/ask.test.ts`.
 
 **`Pipe<T>` finishes a fact** — the third word of the family, and the declared form of a
 position the core already held: `Emissions.stamped` realizes `created()` before anyone is
-handed anything. An op taking `Pipe<T>` ANSWERS the fact every subscriber then reads, so its
+handed anything. What it is NOT for is dropping a field: a fact is a PROJECTION
+(`Post.pick('id', 'title')` — five of them in the tree), so what should not travel is
+simply not declared. A link earns its place on what remains and must be TRANSFORMED — a
+hash `pick` cannot produce, a lookup needing a dependency the announcer should not hold. An op taking `Pipe<T>` ANSWERS the fact every subscriber then reads, so its
 output is DERIVED from the fact rather than projected (`effective-operation.ts`) and it is
 handed the whole of it (`ArgumentResolver`, the `fact` branch). Several may finish one fact, and they run in
 the ORDER their fact's owner declared — `pipes: { postPublished: ['RedactHandler',

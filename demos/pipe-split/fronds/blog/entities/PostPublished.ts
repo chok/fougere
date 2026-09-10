@@ -1,15 +1,16 @@
-import { entity, text, optional, created } from '@fougere/schema';
+import { optional, text, created } from '@fougere/schema';
+import Post from './Post.js';
 
 /**
- * A fact, and one field a reader has no business seeing.
+ * A fact, and it is a PROJECTION of the entity it is about.
  *
- * Nothing marks it as a fact: it becomes one because somebody writes `Emit<PostPublished>`
- * about it — or `Pipe<PostPublished>`, which is the same subject before it is final.
+ * `email` is absent because a fact that should not carry it does not declare it — omission
+ * is the schema's work, and it needs no link. What a link is for is what remains and must
+ * be TRANSFORMED: `author` must reach a reader as a hash, not as an id, and a hash is not
+ * something `pick` can produce.
  */
-export default class PostPublished extends entity({
-  id: text({ min: 1 }),
-  title: text({ min: 1 }),
-  /** The author's address. It leaves the frond that owns it, and it should not. */
-  email: optional(text()),
+export default class PostPublished extends Post.pick('id', 'title', 'author').extend({
+  /** Filled by a link — the blog does not hold accounts. */
+  account: optional(text()),
   at: created(),
 }) {}

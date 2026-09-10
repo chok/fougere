@@ -5,9 +5,9 @@ import type PostPublished from '../entities/PostPublished.js';
 export default class PostHandler {
   constructor(private published: Emit<PostPublished>) {}
 
-  /** Publish a draft, and say so — address included, because that is what it knows. */
+  /** Publish a draft, and say so — with the author it knows. */
   async publish(id: string): Promise<{ id: string }> {
-    await this.published({ id, title: `post ${id}`, email: `author-${id}@example.com` });
+    await this.published({ id, title: `post ${id}`, author: `u-${id}` });
 
     return { id };
   }

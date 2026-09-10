@@ -1,18 +1,23 @@
 /**
  * One fact, and the op that finishes it — here, or in another process.
  *
- *   PostHandler ── Emit<…> ──▶ [ RedactHandler ] ──▶ [ StampHandler ] ──▶ IndexHandler: Fact<…>
+ *   PostHandler ── Emit<…> ──▶ [ TenantHandler ] ──▶ [ HashHandler ] ──▶ IndexHandler: Fact<…>
  *
- * TWO links, in the order `fronds/blog/frond.config.ts` states — and the second reads what
- * the first answered. Behind `remotes:` they run in three processes and nothing changes.
+ * What a link is NOT for: dropping a field. `PostPublished` is `Post.pick(…)`, so the
+ * author's address is absent because it was never declared — omission is the schema's work.
+ *
+ * What a link IS for: what remains and must be TRANSFORMED. The account has to be looked
+ * up, which needs a dependency the blog should not hold; the author has to reach a reader
+ * as a hash, which `pick` cannot produce. And the order is forced, not chosen: the lookup
+ * reads the id the hash replaces.
  *
  * `Pipe<T>` is the third word of the family: `Emit` announces, `Fact` receives, `Pipe`
  * ANSWERS the fact every subscriber then reads. A subscriber's answer is discarded — that
  * is what keeps a fact the same for everyone — so amending happens once, before anyone.
  *
- *   pnpm dev                                # every frond here
- *   pnpm dev:redact & pnpm dev:stamp        # each link in its own process
- *   REDACT_ELSEWHERE=1 pnpm dev             # then ask for them by address
+ *   pnpm dev                              # every frond here
+ *   pnpm link:tenant & pnpm link:privacy  # each link in its own process
+ *   SPLIT=1 pnpm dev                      # then reach them by address
  */
 import { createApp, createLocalRunner, Invocation } from '@fougere/core';
 import { scanProject, frondAliases } from '@fougere/compiler';
@@ -28,8 +33,8 @@ const jiti = createJiti(import.meta.url, { interopDefault: true, alias: await fr
 setModuleLoader((filePath) => jiti.import(filePath) as Promise<Record<string, unknown>>);
 
 /** The whole topology statement. Comment it out and the link runs in this process. */
-const remotes = process.env.REDACT_ELSEWHERE
-  ? { redact: 'http://127.0.0.1:4600', stamp: 'http://127.0.0.1:4601' }
+const remotes = process.env.SPLIT
+  ? { tenant: 'http://127.0.0.1:4600', privacy: 'http://127.0.0.1:4601' }
   : undefined;
 
 const app = await createApp({
@@ -38,7 +43,7 @@ const app = await createApp({
   ...(remotes ? { remotes, remoteTransport: (url: string) => createHttpTransport(url) } : {}),
 });
 
-console.log(`\n  the link is ${remotes ? 'BEHIND remotes: — another process' : 'here, in this process'}\n`);
+console.log(`\n  the two links are ${remotes ? 'in TWO other processes' : 'here, in this process'}\n`);
 
 const run = createLocalRunner(app);
 try {
@@ -54,12 +59,12 @@ try {
 await new Promise((resolve) => setTimeout(resolve, 60));
 
 console.log(`
-  Two links ran, in the order fronds/blog/frond.config.ts states. The second read what the
-  first answered — redacted=true is StampHandler seeing RedactHandler's work — and the
-  subscriber read only the end of the chain.
+  The account was resolved from the author, and the author is now a hash — in that order,
+  because the second link would otherwise be handed what the first had already replaced.
+  The subscriber reads the end of the chain and cannot tell there was one.
 
-  REDACT_ELSEWHERE=1 pnpm dev   with :4600 up   — the same, one wire crossing later
-  REDACT_ELSEWHERE=1 pnpm dev   with :4600 down — publishing itself fails
+  SPLIT=1 pnpm dev   with :4600 and :4601 up   — the same, two wires later
+  SPLIT=1 pnpm dev   with one down             — publishing itself fails: a link is called
 `);
 
 await app.dispose();

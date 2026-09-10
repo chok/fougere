@@ -4,9 +4,9 @@
   "type": "module",
   "scripts": {
     "dev": "tsx src/main.ts",
-    "dev:redact": "tsx src/redact.ts redact 4600",
     "typecheck": "tsc --noEmit -p .",
-    "dev:stamp": "tsx src/redact.ts stamp 4601"
+    "link:tenant": "tsx src/link.ts tenant 4600",
+    "link:privacy": "tsx src/link.ts privacy 4601"
   },
   "dependencies": {
     "@fougere/compiler": "workspace:*",
