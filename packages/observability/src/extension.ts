@@ -1,6 +1,6 @@
 /** This package's own ascent and descent, in one value. */
 import { frond, loggerMiddleware, Logger, LogLine, type App, type Extension, type LogSink } from '@fougere/core';
-import LineHandler from './LineHandler.js';
+import ExportHandler from './ExportHandler.js';
 import { traceContext } from '#trace-context';
 import { registerFlush } from './index.js';
 import { trace, onSpan } from './index.js';
@@ -34,7 +34,7 @@ export function observability(options: ObservabilityOptions = {}): Extension {
     // scanned, because a published package is read by no scanner.
     fronds: [frond('observability', {
       handlers: [{
-        ctor: LineHandler,
+        ctor: ExportHandler,
         deps: ['LogExport'],
         operations: {
           record: {
@@ -91,7 +91,7 @@ export function observability(options: ObservabilityOptions = {}): Extension {
       });
       // The timer is not the only way out: an isolate is frozen when it answers, so a
       // host with no time between requests calls `flushTelemetry()` inside `ctx.waitUntil`.
-      // What `LineHandler` asks for — replaced rather than added to, so a reload does not
+      // What `ExportHandler` asks for — replaced rather than added to, so a reload does not
       // hand the old exporter a new app's lines.
       exporting.take = written.sink;
       undo.push(

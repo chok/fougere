@@ -10,7 +10,7 @@ import type { LogSink } from '@fougere/core';
  * In `src/` and not under `fronds/`: that directory is what a SCAN reads, and this frond
  * is stated, because a published package is read by no scanner.
  */
-export default class LineHandler {
+export default class ExportHandler {
   constructor(private exporting: { take: LogSink }) {}
 
   /** Send one line on. */

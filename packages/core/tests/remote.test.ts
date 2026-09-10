@@ -2,7 +2,7 @@ import { scanProject } from '@fougere/compiler';
 import { describe, it, expect, vi } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
-import { createApp, createLocalRunner, createAppRunner, FougereError, ErrorCode, onLog } from '../src/index.js';
+import { createApp, createLocalRunner, createAppRunner, FougereError, ErrorCode } from '../src/index.js';
 import type { App, StorageFactory, Transport } from '../src/index.js';
 import type { SchemaView } from '@fougere/schema';
 import { Invocation } from '../src/wire/Invocation.js';
@@ -48,10 +48,22 @@ async function bootConsumer(host: App, transportSpy?: Transport): Promise<App> {
   });
 }
 
+/**
+ * What this process said, read where it lands. `onLog` used to hand a sink here; a line is
+ * a fact now, and the console is what a process with no destination declared still writes.
+ */
+function saying(): { lines: string[]; stop: () => void } {
+  const lines: string[] = [];
+  const spies = (['debug', 'info', 'warn', 'error'] as const)
+    .map((method) => vi.spyOn(console, method)
+      .mockImplementation((...said: unknown[]) => { lines.push(said.join(' ')); }));
+
+  return { lines, stop: () => { for (const spy of spies) spy.mockRestore(); } };
+}
+
 describe('a named surface across a process', () => {
   it('serves nothing, and says so once instead of registering nothing in silence', async () => {
-    const lines: string[] = [];
-    const stop = onLog((record) => { lines.push(`${record.level} ${record.message}`); });
+    const { lines, stop } = saying();
     const host = await bootHost();
     const consumer = await bootConsumer(host);
 
@@ -69,8 +81,7 @@ describe('a named surface across a process', () => {
   });
 
   it('says nothing when no remote is declared — the surface is simply absent', async () => {
-    const lines: string[] = [];
-    const stop = onLog((record) => { lines.push(record.message); });
+    const { lines, stop } = saying();
     const host = await bootHost();
 
     expect(host.facadeFor('nothing', 'admin')).toBeUndefined();

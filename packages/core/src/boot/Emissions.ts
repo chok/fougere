@@ -64,6 +64,11 @@ export class Emissions {
     return [...this.subscribers.keys()];
   }
 
+  /** The doors that accept one fact — the addresses a middleware must leave alone. */
+  doorsFor(fact: string): string[] {
+    return (this.subscribers.get(fact) ?? []).map(({ door }) => door);
+  }
+
   /** Register one emission value per fact — announced here, or merely listened to. */
   register(): void {
     for (const fact of new Set([...this.announced, ...this.subscribers.keys()])) {

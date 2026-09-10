@@ -14,7 +14,7 @@ import { LogRing, ErrorRing } from './rings.js';
  * In `src/` and not under `fronds/`: that directory is what a SCAN reads, and this frond
  * is stated (`frond('calls', …)`) because a published package is read by no scanner.
  */
-export default class LineHandler {
+export default class KeepHandler {
   constructor(private lines: LogRing, private errors: ErrorRing) {}
 
   /** Keep one line, and group it as a refusal when that is what it says. */

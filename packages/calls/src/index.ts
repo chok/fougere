@@ -1,5 +1,5 @@
-import { frond, LogLine, type App, type Extension, type InvocationContext } from '@fougere/core';
-import LineHandler from './LineHandler.js';
+import { CARRIES_LINE, frond, LogLine, type App, type Extension, type InvocationContext } from '@fougere/core';
+import KeepHandler from './KeepHandler.js';
 import { CallRing } from './CallRing.js';
 import { ErrorRing, LogRing, QueryRing } from './rings.js';
 import { servePanel, type PanelOptions } from './panel.js';
@@ -100,9 +100,6 @@ function cursorOf(invocation: InvocationContext): number {
   return Number.isFinite(since) && since > 0 ? since : 0;
 }
 
-/** The address its own frond answers at — what the ring must not record. */
-const LINE = 'line';
-
 /** What this process dispatched, kept in a bounded ring and served as an rpc operation. */
 export function calls(options: CallsOptions = {}): Extension {
   /** Per APP, not per extension. */
@@ -115,7 +112,7 @@ export function calls(options: CallsOptions = {}): Extension {
     // scanned, because a published package is read by no scanner.
     fronds: [frond('calls', {
       handlers: [{
-        ctor: LineHandler,
+        ctor: KeepHandler,
         deps: ['LogRing', 'ErrorRing'],
         operations: {
           record: {
@@ -141,7 +138,7 @@ export function calls(options: CallsOptions = {}): Extension {
         app.observe((event) => {
           // Not its own: keeping a line is a DISPATCH, so the ring would fill with the
           // writes that fill it — the same shape as a logger that logs its own carrying.
-          if (event.call.address.entity === LINE) return;
+          if (CARRIES_LINE.has(event.call.address.entity)) return;
           ring.record(event);
           if (event.stage === 'failed') errors.fromDispatch(event);
         }),

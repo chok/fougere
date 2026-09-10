@@ -14,6 +14,8 @@ import { scanProject, frondAliases } from '@fougere/compiler';
 import { setModuleLoader } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { logFrond } from '@fougere/log';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { createJiti } from 'jiti';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -38,8 +40,11 @@ const storageFactory = () => ({
 }) as never;
 
 // The whole statement about logging: the frond is taken on, or it is not.
+/** Where the file destination writes. A real app names a path it keeps. */
+const lines = join(mkdtempSync(join(tmpdir(), 'fougere-log-')), 'lines.jsonl');
+
 const app = await createApp({
-  fronds: [logFrond()],
+  fronds: [logFrond(lines)],
   scan: await scanProject(root),
   createContainer,
   storageFactory,
@@ -55,12 +60,16 @@ await new Promise((resolve) => setTimeout(resolve, 50));
 
 const kept = await run({ entity: 'keep', op: 'list' }, Invocation.empty) as string[];
 console.log(`
-  the console printed the three lines above — it is a handler in @fougere/log
-  the same three reached a second destination, declared by its signature alone:
+  Logger printed the three lines above, and it always does — a destination is an addition.
+  The same lines reached TWO of them, each declared by its signature alone: a file
+  (@fougere/log) and KeepHandler, in this project.
 
 ${kept.map((line) => `    ${line}`).join('\n')}
 
-  comment out \`logFrond()\` in src/main.ts: nothing prints, and KeepHandler still keeps.
+  ${lines}
+
+  Take logFrond(lines) out of the list in src/main.ts: the file stops, KeepHandler keeps,
+  and the console is unchanged.
 `);
 
 await app.dispose();

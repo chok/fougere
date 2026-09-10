@@ -7,8 +7,9 @@ import { installFrond, type Assembly } from './install.js';
 import type { AuthRuntime } from './auth.js';
 import type { CreateAppOptions, App } from './types.js';
 import type { AppMiddleware } from '../wire/middleware.js';
-import { Logger, announcing, forgetHeld } from '../builtin/logger.js';
-import LogLine from '../builtin/LogLine.js';
+import { Carry, Logger } from '../builtin/logger.js';
+import type { LogRecord } from '../builtin/logger.js';
+import LogLine, { CARRIES_LINE } from '../builtin/LogLine.js';
 import { emitKeyOf, type Emit } from '../wire/emit.js';
 
 /** The fact the boot announces, spelled once. */
@@ -91,7 +92,9 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   const appLifecycle = new AppLifecycle().add(...(options.extensions ?? []));
   /** The app once it exists — a refusal before that releases the two levels that do. */
   let built: App | undefined;
-  /** Given back by `announcing`, so a released app stops writing into a dead container. */
+  /** Where THIS boot's lines wait — never a process-wide slot, see `Carry`. */
+  const carry = new Carry();
+  /** Given back by `carry.to`, so a released app stops writing into a dead container. */
   let stopAnnouncing: (() => void) | undefined;
 
   /**
@@ -106,7 +109,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     const refused: unknown[] = [];
     // Whatever is still held will never reach a destination — the console had it.
     stopAnnouncing?.();
-    forgetHeld();
+    carry.forget();
     const levels = [
       ...(built ? [() => appLifecycle.down(built!)] : []),
       () => container.dispose(),
@@ -129,14 +132,14 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
   try {
     // Boot chatter is debug by default; a host (e.g. the CLI) can quiet it.
-    const log = new Logger('boot:app');
+    const log = new Logger('boot:app', { carry });
 
     // Builtins — registered under class name (PascalCase) for type-based DI.
     // No level here and none anywhere: a logger consults `setLogLevel`'s value at each
     // emission, so this instance survives a level change and so does every handler that
     // was handed it. A frond declaring `class X extends Logger` takes this key over,
     // like any other port.
-    container.registerValue('Logger', new Logger('app'));
+    container.registerValue('Logger', new Logger('app', { carry }));
     container.register('Config', Config, { lifetime: 'singleton' });
     log.debug('builtins registered (Logger, Config)');
 
@@ -277,7 +280,8 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // about carrying one would come back here. See `LoggerOptions.carries`.
     const emissions = new Emissions(
       fronds, entityByName, container,
-      new Logger('boot:app', { carries: false }),
+      // No carry: this is what CARRIES a fact, and a line about carrying one comes back.
+      new Logger('boot:app'),
       options.onEmit,
     );
     /** Canonical operation tables, indexed by the same audience key as their facades. */
@@ -319,15 +323,22 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // writes most of what a process logs and writes it before any door exists — so the
     // lines that say what this app is made of are the ones a destination would miss.
     // `LogLine` is core's for this reason: naming it costs no optional package.
+    // Which doors carry a line, read from who SUBSCRIBED — so a third party's destination
+    // is left alone by the two middlewares that observe every operation.
+    for (const door of emissions.doorsFor(LOG_LINE)) {
+      CARRIES_LINE.add(door.replace(/Handler$/, '').replace(/^./, (c) => c.toLowerCase()));
+      CARRIES_LINE.add(door);
+    }
+
     if (emissions.listensTo().includes(LOG_LINE)) {
       const emit = container.resolve<Emit<LogLine>>(emitKeyOf(LogLine.name));
       // `at` is the record's own epoch, and the entity says `created()` — so the line
       // keeps WHEN IT WAS WRITTEN rather than when it was handed over, which for a held
       // boot line is a different moment.
-      stopAnnouncing = announcing(({ at, ...line }) => void emit({ ...line, at: new Date(at) }));
+      stopAnnouncing = carry.to(({ at, ...line }: LogRecord) => void emit({ ...line, at: new Date(at) }));
     } else {
       // No destination in this app: the console had them, and holding more would grow.
-      forgetHeld();
+      carry.forget();
     }
 
     /** The last resort, held by the container so every resolution path shares it. */

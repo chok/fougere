@@ -19,39 +19,51 @@ export type LogSink = (record: LogRecord) => void;
 const sinks: LogSink[] = [];
 
 /**
- * The boot's own lines, until an app exists to announce them.
+ * Where one boot's lines wait, and where they go once they can.
+ *
+ * PER BOOT and never per process: two apps in one process each have their own
+ * destinations, and a slot shared between them sent the second app's lines to the first
+ * app's door — measured on `demos/observability`, where only the first of three printed.
  *
  * A boot writes most of what a process ever logs, and it writes it before any emission is
- * registered — so the lines that say what an app is made of would be the only ones a
- * destination never sees. Held here, handed over by `announcing()`.
- *
- * Bounded, because a boot that never finishes must not grow: what is dropped is the
- * OLDEST, since the lines that explain a refusal are the last ones.
+ * registered, so the lines that say what an app is made of are the ones a destination
+ * would miss. Bounded: a boot that never finishes must not grow, and what is dropped is
+ * the OLDEST since the lines explaining a refusal are the last.
  */
-const held: LogRecord[] = [];
-const HELD_MAX = 500;
-let announce: ((line: LogRecord) => void) | undefined;
+export class Carry {
+  private held: LogRecord[] = [];
+  private take?: (line: LogRecord) => void;
 
-/**
- * Hand the boot's held lines over, and every line after them. Called once the emission
- * exists; before that the console is the only reader.
- */
-export function announcing(take: (line: LogRecord) => void): () => void {
-  announce = take;
-  for (const line of held.splice(0)) take(line);
+  static readonly MAX = 500;
 
-  return () => {
-    announce = undefined;
-  };
-}
+  /** Take it now, or keep it for whoever arrives. */
+  push(record: LogRecord): void {
+    if (this.take) {
+      try {
+        this.take(record);
+      } catch { /* announcing never breaks logging, for the same reason a sink does not */ }
+      return;
+    }
+    this.held.push(record);
+    if (this.held.length > Carry.MAX) this.held.shift();
+  }
 
-/**
- * Forget what is still held — a boot that refused, or one whose app declares no
- * destination. Nothing is printed: the console already had every one of these lines when
- * it was written, and the hold exists only to hand them to a destination later.
- */
-export function forgetHeld(): void {
-  held.length = 0;
+  /** Hand what is held over, and everything after it. */
+  to(take: (line: LogRecord) => void): () => void {
+    this.take = take;
+    for (const line of this.held.splice(0)) take(line);
+
+    return () => { this.take = undefined; };
+  }
+
+  /**
+   * Forget what is still held — a boot that refused, or an app that declares no
+   * destination. Nothing is printed: the console had every one of these lines when it was
+   * written, and the hold exists only to hand them on later.
+   */
+  forget(): void {
+    this.held.length = 0;
+  }
 }
 
 /** Take every line this process logs. Returns the way to withdraw. */
@@ -128,12 +140,11 @@ export interface LoggerOptions {
   /** Logger name / prefix. */
   name?: string;
   /**
-   * Whether its lines travel as facts. FALSE for whatever CARRIES a fact — dispatch logs,
-   * so a line about carrying a line would announce, and that ring has no bottom. Measured
-   * 2026-09-10: it hung the process, and a reentrancy flag could not see it because the
-   * carry is asynchronous. Those lines still reach the console.
+   * Where its lines go — one boot's, so two apps in a process do not share a door. A
+   * logger without one writes to the console and nowhere else, which is what the boot's
+   * first lines do and what an app declaring no destination does forever.
    */
-  carries?: boolean;
+  carry?: Carry;
   /** Force color on/off. Auto-detected by default. */
   color?: boolean;
 }
@@ -141,17 +152,17 @@ export interface LoggerOptions {
 export class Logger {
   private name: string;
   private color: boolean;
-  private carries: boolean;
+  private carry?: Carry;
 
   constructor(prefix?: string, options?: Omit<LoggerOptions, 'name'>) {
     this.name = prefix ?? 'app';
     this.color = options?.color ?? supportsColor();
-    this.carries = options?.carries ?? true;
+    this.carry = options?.carry;
   }
 
   /** Create a child logger with a sub-name. It carries no level of its own either. */
   child(name: string): Logger {
-    return new Logger(`${this.name}:${name}`, { color: this.color, carries: this.carries });
+    return new Logger(`${this.name}:${name}`, { color: this.color, ...(this.carry ? { carry: this.carry } : {}) });
   }
 
   debug(msg: string, ...args: unknown[]) { this.log('debug', msg, args); }
@@ -173,19 +184,12 @@ export class Logger {
       } catch { /* forwarding never breaks logging */ }
     }
 
-    if (this.carries && announce) {
-      try {
-        announce(record);
-        // Handed over, so the console is a DESTINATION's to write — `@fougere/log` ships
-        // one. Writing here too said every line twice, which is what "the console is a
-        // handler" costs if this return is missing.
-        return;
-      } catch { /* announcing never breaks logging, for the same reason a sink does not */ }
-    } else if (this.carries) {
-      held.push(record);
-      if (held.length > HELD_MAX) held.shift();
-    }
+    this.carry?.push(record);
 
+    // The console ALWAYS, whoever else took the line. Skipping it once a destination
+    // existed made `calls()` — a devtools ring that prints nothing — silence the
+    // operator's terminal: 306 per-operation lines in `demos/observability` became 2.
+    // A destination sends a line ELSEWHERE; it does not take over stderr.
     const { method, text } = formatted(record, this.color);
     console[method](...text);
   }

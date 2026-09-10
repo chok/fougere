@@ -80,7 +80,7 @@ packages/
   cli/                 @fougere/cli           commands, scaffolding, and the terminal UI (src/ui.ts)
   testing/             @fougere/testing       cases derived from an entity, doubles derived from a port
   calls/               @fougere/calls         optional: a bounded ring of what this process dispatched, served as rpc.calls
-  log/                 @fougere/log           optional: a line is an announced fact, a destination is a handler. Ships the console one
+  log/                 @fougere/log           optional: lines to a FILE, one JSON object each — the console is Logger's
   decorators/          @fougere/decorators    `@expose` — publishable, and imported by nobody in this repo
 
   adapter/                                    project the schema onto a target
@@ -201,13 +201,13 @@ The boot marks what it took as `FrondDescriptor.brought`, which is how a report 
 the app SERVES rather than what instruments it — read by `calls`' panel and by
 `rpc.topology`. `@fougere/calls` and `@fougere/observability` each bring one `LineHandler`.
 
-**What carries a line writes none** — `CARRIES_LINE` (`core/src/builtin/LogLine.ts`), read
-by `loggerMiddleware` and by `observability`'s `trace()`. Keeping a line is a DISPATCH, so
-logging it announces a line inside the announcement of one: `Emission cycle: logLine →
-logLine`. Measured three ways on 2026-09-10 — the process hung, then the call ring filled
-with its own writes, then `activeCalls()` counted log deliveries. A reentrancy flag cannot
-see it: the carry is asynchronous. `Emissions` has its own writer for the same reason
-(`LoggerOptions.carries`).
+**What carries a line writes none** — `CARRIES_LINE` (`core/src/builtin/LogLine.ts`), a
+set the BOOT fills from `Emissions.doorsFor('logLine')`, read by `loggerMiddleware`, by
+`observability`'s `trace()` and by `calls`' ring. Keeping a line is a DISPATCH, so logging
+it announces a line inside the announcement of one: `Emission cycle: logLine → logLine`.
+Measured four ways on 2026-09-10 — the process hung, the call ring filled with its own
+writes, `activeCalls()` counted log deliveries, and a hard-coded list missed a third
+party's destination. A reentrancy flag cannot see it: the carry is asynchronous.
 
 **The ascent** — `boot/AppLifecycle.ts`. An `Extension` states `up` and `down`, handed in
 through `CreateAppOptions.extensions`. A name already declared is REPLACED, not refused.
@@ -256,12 +256,19 @@ a ring, which the emission refuses by name where `onLog`'s try/catch swallowed i
 package STATES its frond (`logFrond()`), because scanning a directory under `packages/`
 fails — see Known issues.
 
-`Logger` is a SHORTCUT over that emission, not a second mechanism: `log.info(msg)` builds
-the line `Emit<LogLine>` takes whole, and both travel the one path. Its lines are HELD
-until an emission exists, because a boot writes most of what a process logs and writes it
-before any door does; a handed-over line is the destination's to write, and whatever
-CARRIES a fact logs without announcing (`LoggerOptions.carries`) — dispatch logs, and that
-ring hung the process. Pinned by `log/tests/log.test.ts` and `demos/log-destinations`.
+`Logger` is a SHORTCUT over that emission: `log.info(msg)` builds the line
+`Emit<LogLine>` takes whole, and printing is part of what the shortcut IS — the console is
+written whoever else took the line, because skipping it once a destination existed made a
+devtools ring silence the terminal (306 lines in `demos/observability` became 2). So a
+destination sends a line ELSEWHERE, which is why `@fougere/log` ships a FILE and not a
+console. Announcing through `Emit<LogLine>` reaches destinations only.
+
+The lines are HELD until an emission exists, in a `Carry` held PER BOOT — a process-wide
+slot sent a second app's lines to the first app's door, and only the first of three
+printed. Whatever CARRIES a line writes none: `Emissions` has a logger with no carry, and
+`CARRIES_LINE` — filled by the boot from who subscribed, never written down — is read by
+`loggerMiddleware`, by `trace()` and by `calls`' ring. Pinned by `log/tests/log.test.ts`
+and `demos/log-destinations`.
 
 **Ports** — a class something already answers under, that a provider extends. Nothing
 declares one: `boot/ports.ts`, `portBindings` reads the prototype chain at boot, so

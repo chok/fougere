@@ -21,11 +21,18 @@ export default class LogLine extends entity({
   at: created(),
 }) {}
 
+/** The fact a boot announces, spelled once. */
+export const LOG_LINE = 'logLine';
+
 /**
- * The addresses whose operations CARRY a line — a destination, and nothing else.
+ * The addresses whose operations CARRY a line — every destination this app installed.
  *
- * Whatever carries a fact must not produce one, or the emission refuses it by name. Stated
- * here rather than in each package, because every reader of the rule is downstream: the
- * logging middleware, and any observer that logs what it observed.
+ * Whatever carries a fact must not produce one, or the emission refuses it by name:
+ * keeping a line is a DISPATCH, so logging it announces a line inside the announcement of
+ * one. FILLED BY THE BOOT from what binds `logLine`, not written down — a hard-coded list
+ * cannot know a third party's destination, and the app already knows who subscribed.
+ *
+ * Read by `loggerMiddleware` and by `observability`'s `trace()`, both of which observe
+ * every operation and would otherwise observe the observation.
  */
-export const CARRIES_LINE = new Set(['line', 'consoleHandler', 'console']);
+export const CARRIES_LINE = new Set<string>();
