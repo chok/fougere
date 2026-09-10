@@ -273,6 +273,11 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // Every entity of every frond, by name — so a fact can be validated where it LANDS, and
     // so a `reads:` clause can name a neighbour's.
     const entityByName = fronds.schemas();
+    // The line is core's, so its SHAPE is too: a destination that declares only a handler
+    // would otherwise be handed a line with no `at` — the announcement stamps `created()`
+    // off the shape, and the strict judge refuses what it did not stamp. Measured on
+    // `demos/observability`, where the ring held 11 calls and 0 lines.
+    if (!entityByName.has(LOG_LINE)) entityByName.set(LOG_LINE, LogLine);
     // Which frond holds an entity — what turns "a member is remote" into a refusal that
     // names the frond rather than the entity, since `remotes:` is declared per frond.
     const frondOf = new Map(fronds.flatMap((f) => f.entities.map((e) => [e.name, f.name] as const)));

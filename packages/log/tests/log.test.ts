@@ -15,7 +15,7 @@ import { join } from 'node:path';
 import { mkdtempSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { createContainer } from '@fougere/container';
-import { createApp, createLocalRunner, Invocation, setLogLevel, type Logger } from '@fougere/core';
+import { createApp, createLocalRunner, frond, Invocation, setLogLevel, type Logger } from '@fougere/core';
 import { logFrond } from '../src/index.js';
 
 const here = import.meta.dirname;
@@ -152,6 +152,44 @@ describe('a line the frond announces', () => {
 
     expect(said(file)).not.toContain('x');
     expect(refused.mock.calls.flat().join(' ')).toMatch(/level/);
+    vi.restoreAllMocks();
+  });
+
+  it('stamps a line for a destination that declares no entity', async () => {
+    vi.spyOn(console, 'info').mockImplementation(() => {});
+    const collected: { at?: Date }[] = [];
+
+    class Only {
+      async record(line: { at?: Date }): Promise<void> { collected.push(line); }
+    }
+
+    // The line is core's, so its SHAPE is core's: a destination brought by an extension
+    // declares a handler and nothing else, and without the shape `at: created()` was never
+    // stamped — the handler was handed `undefined` and threw.
+    await using built = await createApp({
+      fronds: [frond('shop', {})],
+      createContainer,
+      extensions: [{
+        name: 'only',
+        fronds: [frond('only', {
+          handlers: [{
+            ctor: Only,
+            deps: [],
+            operations: {
+              record: {
+                binding: [{ name: 'line', optional: false, source: { kind: 'fact', factName: 'logLine' } }],
+              },
+            },
+          }],
+        })],
+      }],
+    });
+
+    built.container.resolve<Logger>('Logger').info('stamped by the announcement');
+    await settle();
+
+    expect(collected.every((line) => line.at instanceof Date)).toBe(true);
+    expect(collected.length).toBeGreaterThan(0);
     vi.restoreAllMocks();
   });
 

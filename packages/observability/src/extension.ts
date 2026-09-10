@@ -54,14 +54,17 @@ export function observability(options: ObservabilityOptions = {}): Extension {
       // Order matters: `trace()` opens the span that every log line written inside the
       // call will carry. Installed the other way round, the lines leave uncorrelated.
       app.use(trace());
-      app.use(loggerMiddleware(new Logger(service)));
+      // The app's own logger, named — NOT `new Logger(service)`: a logger built here has
+      // no `Carry`, so its lines printed and announced nothing. 20 on the console, 0 in
+      // the ring, measured on `demos/observability`.
+      app.use(loggerMiddleware(app.container.resolve<Logger>('Logger').child(service)));
 
       // Said once, here, because the alternative is finding it in a trace viewer three
       // weeks later: without an ambient context a call that crossed NO wire cannot name
       // its parent, so it starts its own trace. What still works is stated too — a
       // warning that only names the loss reads as "tracing is broken", and it is not.
       if (!traceContext.ambient) {
-        new Logger(service).warn(
+        app.container.resolve<Logger>('Logger').child(service).warn(
           'no async context: a call that crosses no wire starts its own trace '
           + '(an emission subscriber, a handler reaching another frond in this process). '
           + 'An arriving call and a call to a frond behind `remotes:` are unaffected — both carry '

@@ -263,6 +263,11 @@ devtools ring silence the terminal (306 lines in `demos/observability` became 2)
 destination sends a line ELSEWHERE, which is why `@fougere/log` ships a FILE and not a
 console. Announcing through `Emit<LogLine>` reaches destinations only.
 
+The SHAPE is core's too — `entityByName` gets `LogLine` when no frond declared it, or a
+destination brought by an extension is handed a line whose `at: created()` was never
+stamped. A logger a package CONSTRUCTS carries nothing: `new Logger(service)` printed and
+announced nothing, which is why `observability` resolves the app's and names a child.
+
 The lines are HELD until an emission exists, in a `Carry` held PER BOOT — a process-wide
 slot sent a second app's lines to the first app's door, and only the first of three
 printed. Whatever CARRIES a line writes none: `Emissions` has a logger with no carry, and
