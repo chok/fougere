@@ -241,6 +241,14 @@ today, and every other difference is reported as `pending`. `Logger` holds NO le
 re-read needs `loadConfig(root, { fresh: true })` — a module is cached by its specifier.
 Core catches no signal: a process belongs to its host. Pinned by `tests/log-level.test.ts`.
 
+**What has an AFTER can be a middleware; what has none cannot.** A middleware is `(ctx,
+next)` — it holds what comes next, so it may not run it, and it may act on what came back.
+An operation has both halves: refusing IS an answer, and the answer is worth seeing. A
+fact has neither — the announcer left with `void`, and a subscriber's answer is discarded
+— so handing a link `next` would grant only the power to suppress and leave the other half
+dead. That is why `Pipe<T>` returns a value instead of taking `next`, and it is the line
+between the two, not a convention.
+
 **A middleware is a frond's to declare** — `middlewares/`, the tenth convention directory
 and the only one whose members apply to code they do not name. Recognized by its FORM: the
 class states `around(context, next)`, so a file in the directory that does not is not one.
