@@ -348,7 +348,10 @@ mechanism: an outgoing remote call runs `runMiddlewares` before the transport
 since a frond's middleware covers the addresses its handlers SERVE and not the ones they
 CALL, which is a different subject with no name yet. And `HttpRouter` is never held by the
 boot at all: the host builds it, hands it to `registerRoutes`, and already holds both
-`router.use(middleware)` and the routes array — a seam would be a fourth way to say it.
+`router.use(middleware)` and the routes array — a seam would be a fourth way to say it. Both
+ways in are written down, with `Storage`'s, in `site/content/*/docs/4.business/10.ports.md`
+and `7.storage.md`: `remoteTransport:` swaps a transport whole, `app.use` wraps the outgoing
+call, `router.use` and the routes array reach the HTTP side.
 
 `Storage` is an interface AND an abstract class merged, so the class carries the thirteen
 gestures as a TYPE while its prototype carries them as a FORWARD — a link writes what it
