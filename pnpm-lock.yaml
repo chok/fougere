@@ -857,6 +857,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
     devDependencies:
       tsx:
         specifier: ^4.21.0

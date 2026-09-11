@@ -33,7 +33,7 @@ pnpm -C demos/nuxt-blog dev        # Nuxt app (:3000), consumes it via remotes
 pnpm -C demos/schema-ecommerce dev # Apollo Server on :4000
 pnpm -C demos/container-basics dev
 pnpm -C demos/core-scanner dev
-pnpm -C demos/ports-swap dev        # stripe, then ogone, then the refusal — one handler
+pnpm -C demos/ports-swap dev        # one handler: two PSPs, the refusal, a chain, and a seam
 pnpm -C demos/config-reload dev     # one boot, a real SIGHUP, a drain — and what a re-read cannot change
 pnpm -C demos/mirror-catalog dev    # two passes over a source that only answers ?page=&since=
 pnpm -C demos/sse-live dev         # live fan-out to readers who are not trusted peers
@@ -111,7 +111,7 @@ site/                  The Fougere site, built with Fougere — see site/README.
 demos/
   nuxt-blog/           FLAGSHIP — primitives, auth, draft→publish, lived split
   schema-ecommerce/    SQLite + Apollo Server
-  ports-swap/          one handler, two PSPs, and the `ports:` line that decides
+  ports-swap/          one handler, two PSPs, a chain in front of one, and `Storage` wrapped for every frond
   config-reload/       the config re-read under a running app, the drain, and what it refuses to change
   mirror-catalog/      a copy of rows the app cannot query, and what the second pass costs
   together-frame/      one frame, two realizations, and the config line that picks one

@@ -5,12 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "tsx src/main.ts",
-    "typecheck": "tsc -p fronds"
+    "typecheck": "tsc -p . --noEmit && tsc -p fronds"
   },
   "dependencies": {
     "@fougere/container": "workspace:*",
     "@fougere/core": "workspace:*",
-    "@fougere/compiler": "workspace:*"
+    "@fougere/compiler": "workspace:*",
+    "@fougere/schema": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.21.0"

@@ -1,18 +1,47 @@
 /**
- * One handler, two providers, and the single line that decides.
+ * One handler, several providers, and the single line that decides.
  *
- * `CheckoutHandler` is loaded unchanged for all three runs — it declares `Payment`, the
- * port, and never names a PSP. What changes is `ports:` in fougere.config.ts, which the
- * third run drops entirely to show what the boot does when nothing states the choice.
+ * `CheckoutHandler` is loaded unchanged for every run — it declares `Payment`, the port,
+ * and never names a PSP. What changes is `ports:` in fougere.config.ts: which realization
+ * answers (1-3), what stands IN FRONT of it (4), and the same statement one level up, on a
+ * port the framework declares rather than you (5).
  */
-import { createLocalRunner, Invocation } from '@fougere/core';
+import { createLocalRunner, Invocation, type Storage } from '@fougere/core';
 import { boot } from '@fougere/compiler';
 import { createContainer } from '@fougere/container';
 import { join } from 'node:path';
 
 const root = join(import.meta.dirname, '..');
-const pay = async (ports?: Record<string, string>) => {
-  const app = await boot({ root, createContainer, ...(ports ? { config: { ports } } : {}) });
+
+/** Rows in a Map — this demo is about who stands in front of a storage, not where rows live. */
+const storageFactory = (() => {
+  const rows: Record<string, unknown>[] = [];
+  const storage = {
+    async list() { return { items: [...rows], total: rows.length }; },
+    async findById() { return undefined; },
+    async findBy() { return undefined; },
+    async findAllBy() { return []; },
+    async findByKeys() { return new Map(); },
+    async findAllByKeys() { return new Map(); },
+    async create(input: Record<string, unknown>) { rows.push(input); return input; },
+    async upsert(input: Record<string, unknown>) { return input; },
+    async upsertAll() { return 0; },
+    async update(_id: string, input: Record<string, unknown>) { return input; },
+    async delete() { return true; },
+    output() { return storage; },
+    client: {},
+  };
+
+  return storage;
+}) as unknown as () => Storage;
+
+// `boot()` asks for the SETUP, not the factory: a host that opens a connection has to be
+// able to close it, and `db:` is where both halves are stated.
+const booted = (ports?: Record<string, string | readonly string[]>) =>
+  boot({ root, createContainer, db: () => ({ storageFactory }), ...(ports ? { config: { ports } } : {}) });
+
+const pay = async (ports?: Record<string, string | readonly string[]>) => {
+  const app = await booted(ports);
   const out = await createLocalRunner(app)({ entity: 'checkout', op: 'pay' }, Invocation.empty);
   await app.dispose();
   return out;
@@ -32,4 +61,19 @@ try {
   console.log('   →', (err as Error).message);
 }
 
-console.log('\nCheckoutHandler was not touched between the three.\n');
+console.log('\n4. the same key says what stands IN FRONT — ports: { Payment: [\'RetryingPayment\', \'StripePayment\'] }');
+console.log('   →', JSON.stringify(await pay({ Payment: ['RetryingPayment', 'StripePayment'] })));
+
+console.log('\n5. the same statement on a port the FRAMEWORK declares — billing/services/Recording.ts');
+console.log('   it extends Storage and asks for one, and nothing else declares it:');
+{
+  const app = await booted({ Payment: 'StripePayment' });
+  // A write to `catalog`'s entity. `billing` has never heard of `catalog`, and
+  // `ProductHandler` has never heard of `Recording`.
+  await createLocalRunner(app)({ entity: 'product', op: 'add' }, { ...Invocation.empty, params: { title: 'fern' } });
+  await app.dispose();
+}
+
+console.log('\nCheckoutHandler and ProductHandler were not touched between the five.');
+console.log('A link is a CLASS this process loads, so it cannot live behind `remotes:` —');
+console.log('the same line `Pipe<T>` draws. What crosses a wire is a fact, not a link.\n');
