@@ -138,10 +138,12 @@ const behind = <T>(link: object): Storage<T> =>
  * }
  * ```
  *
- * `ports: { Storage: ['Audit'] }` puts it in front of EVERY entity's storage, which is
- * what makes it transverse — the same key, the same order, the same refusals a port gets.
- * A realization does not extend this: it is handed in by `storageFactory` and is the last
- * link, so what a wrapper does not override reaches it through these forwards.
+ * `ports: { Storage: ['Audit'] }` orders the chain when a frond declares two, which is the
+ * same key, the same order and the same refusals a port gets. A realization does not extend
+ * this: it is handed in by `storageFactory` and is the last link, so what a wrapper does not
+ * override reaches it through these forwards.
+ *
+ * Documented: /docs/business/storage and /docs/business/ports.
  */
 export abstract class Storage<T = Record<string, unknown>> {
   constructor(inner: Storage<T>) {

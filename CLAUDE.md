@@ -511,6 +511,10 @@ X), `useFormFor` (contract, not rendering; local validator = remote validator), 
   change the code instead. Measured: he writes 4-5 % comments across fifteen years, this
   repo was at 31-37 %. `fougere-notes/docs/notes/style-chok.md` holds the rest — how a tree
   is cut, how a thing is named, and the words to avoid.
+- **A comment names its doc page when one exists** — `Documented: /docs/business/ports.` on
+  the last line of the block, the site ROUTE and never a file path, because the route is what
+  a reader opens and it survives the file moving. Only where the page explains the concept,
+  never as a second description of what the code already shows.
 - **Never cite a line number in this file.** A path plus a SYMBOL survives a refactor;
   `bootstrap.ts:295` survives neither an edit nor a move. Measured 2026-08-17: five of eleven
   line references already pointed at a blank line or an unrelated comment.
