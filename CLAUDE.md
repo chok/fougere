@@ -334,8 +334,9 @@ seam, since nothing else it could be. It is applied where the realization is BUI
 (`install.ts`) rather than under a container key — nothing resolves `Storage`, and
 `<Entity>Storage` is what a handler asks for.
 
-The scope is the FROND, like every other provider, and NO key widens it. A key would break
-the gradient: a frond moved behind `remotes:` would silently leave the reach of a link its
+The scope is the FROND, like every other provider, and NO key widens it: the scope IS the
+location — a link sits beside the code it changes and goes where that code goes. A key would
+break the gradient: a frond moved behind `remotes:` would silently leave the reach of a link its
 own code never mentions, and the gradient promises the USER CODE is identical, not that the
 deployment statement is. A link that must be everywhere is a FROND that is everywhere, which
 `Extension.fronds` already answers — `@fougere/calls` brings one into every app that installs
