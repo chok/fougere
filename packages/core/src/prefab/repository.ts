@@ -2,7 +2,11 @@ import { upperFirst, type EntityConstructor } from '@fougere/schema';
 import type { Storage, ListOptions, ListResult, SelectOption } from '../storage/port.js';
 import type { SchemaView } from '@fougere/schema';
 
-/** Repository(…entities) — who owns an entity's storage, and where its questions are named. */
+/**
+ * Repository(…entities) — who owns an entity's storage, and where its questions are named.
+ *
+ * Documented: [repositories](https://fougere.dev/docs/business/repositories).
+ */
 
 /**
  * The shape a repository of ONE entity has — the port itself, plus whatever the subclass names on

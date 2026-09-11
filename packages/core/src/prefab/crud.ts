@@ -4,8 +4,8 @@ import type { OperationContract } from '../wire/operation.js';
 import { targetOf } from './prefab.js';
 
 /**
- * So a class is recognized by what it ANSWERS, since the mixin leaves no other trace.
- * FR : pour qu'une classe se reconnaisse à ce qu'elle répond, le mixin ne laissant rien d'autre.
+ * A class is recognized by what it ANSWERS — the mixin leaves no other trace.
+ * FR : une classe se reconnaît à ce qu'elle répond, le mixin ne laissant rien d'autre.
  * `inheritsCrud(class PostHandler extends Crud(Post) {})` → `true`
  */
 export function inheritsCrud(ctor: unknown): boolean {
@@ -15,8 +15,8 @@ export function inheritsCrud(ctor: unknown): boolean {
 }
 
 /**
- * So storage follows the shape the handler was built on, which may differ from its address.
- * FR : pour que le stockage suive la forme sur laquelle le handler est bâti.
+ * Storage follows the shape the handler was built on, which may differ from its address.
+ * FR : le stockage suit la forme sur laquelle le handler est bâti, pas son adresse.
  * `subjectOf(class Draft extends Crud(Post) {}, 'draft')` → `'post'`
  */
 export function subjectOf(ctor: unknown, address: string): string {
@@ -112,7 +112,11 @@ export interface CrudConstructor<T, V = {}> {
   readonly __ops: Record<string, OperationContract>;
 }
 
-/** Mixin — extends Crud(Entity) to get all 5 typed CRUD methods. */
+/**
+ * Mixin — extends Crud(Entity) to get all 5 typed CRUD methods.
+ *
+ * Documented: [handlers](https://fougere.dev/docs/business/handlers).
+ */
 export function Crud<E extends EntityConstructor, V extends CrudViews | EntityConstructor = {}>(
   entity: E,
   output?: V,

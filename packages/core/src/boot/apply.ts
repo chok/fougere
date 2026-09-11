@@ -9,7 +9,11 @@ export interface ConfigApplication {
   pending: string[];
 }
 
-/** What a (re-)read config changes in a process that is already running. */
+/**
+ * What a (re-)read config changes in a process that is already running.
+ *
+ * Documented: [lifecycle](https://fougere.dev/docs/infra/lifecycle).
+ */
 export function applyConfig(next: FougereConfig, inForce?: FougereConfig): ConfigApplication {
   const applied: string[] = [];
   const pending: string[] = [];

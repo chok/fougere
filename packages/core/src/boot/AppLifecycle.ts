@@ -1,7 +1,11 @@
 import type { App } from './types.js';
 import type { FrondDescriptor } from '../descriptor/frond.js';
 
-/** One process-level extension and its reversible lifecycle. */
+/**
+ * One process-level extension and its reversible lifecycle.
+ *
+ * Documented: [lifecycle](https://fougere.dev/docs/infra/lifecycle).
+ */
 export interface Extension {
   name: string;
   /**

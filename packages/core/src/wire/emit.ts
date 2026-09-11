@@ -1,4 +1,8 @@
-/** Announcing a fact — the half of the topology `remotes:` never covered. */
+/**
+ * Announcing a fact — the half of the topology `remotes:` never covered.
+ *
+ * Documented: [facts](https://fougere.dev/docs/business/facts).
+ */
 import { lowerFirst } from '@fougere/schema';
 
 /**

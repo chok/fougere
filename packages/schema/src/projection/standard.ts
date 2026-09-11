@@ -7,5 +7,7 @@
  * ignore an optional argument, which is exactly why nobody noticed. A standard is owned by
  * whoever publishes it; the package is types only (`index.js` is zero bytes), so importing
  * it costs a browser nothing.
+ *
+ * Documented: [Standard Schema](https://fougere.dev/docs/schema/standard-schema).
  */
 export type { StandardSchemaV1 } from '@standard-schema/spec';

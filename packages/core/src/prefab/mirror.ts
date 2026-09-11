@@ -11,7 +11,11 @@ export interface Refreshed {
   ms: number;
 }
 
-/** A paginated local copy of a source that cannot be queried directly. */
+/**
+ * A paginated local copy of a source that cannot be queried directly.
+ *
+ * Documented: [the base](https://fougere.dev/docs/concepts/the-base).
+ */
 export interface MirrorOf<T> {
   /** The copy's own storage — where a page lands. */
   storage: Storage<T>;

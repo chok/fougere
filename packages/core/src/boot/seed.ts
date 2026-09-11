@@ -61,7 +61,11 @@ interface SeedDoor {
   write(item: unknown): Promise<unknown>;
 }
 
-/** Plant a set of seeds, in the order given. */
+/**
+ * Plant a set of seeds, in the order given.
+ *
+ * Documented: [seeds](https://fougere.dev/docs/business/seeds).
+ */
 export async function runSeeds(
   app: App,
   seeds: SeedEntry[],

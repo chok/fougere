@@ -1,4 +1,8 @@
-/** Who is calling — the proof, not the claim. */
+/**
+ * Who is calling — the proof, not the claim.
+ *
+ * Documented: [identity](https://fougere.dev/docs/infra/identity).
+ */
 import { crypto } from '#crypto';
 import type { PublicJwk, Signer, Verifier } from './crypto/port.js';
 import { b64url, unb64url, bytesOf, textOf, unb64 } from './crypto/encoding.js';

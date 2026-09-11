@@ -1,4 +1,8 @@
-/** The error vocabulary — what a refusal IS, independently of who hears it. */
+/**
+ * The error vocabulary — what a refusal IS, independently of who hears it.
+ *
+ * Documented: [errors](https://fougere.dev/docs/business/errors).
+ */
 
 import type { ValidationError } from '@fougere/schema';
 

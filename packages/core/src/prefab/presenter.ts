@@ -1,4 +1,8 @@
-/** Presenter(Entity) — enriches an entity's output with computed fields. */
+/**
+ * Presenter(Entity) — enriches an entity's output with computed fields.
+ *
+ * Documented: [presenters](https://fougere.dev/docs/business/presenters).
+ */
 
 import { upperFirst, type EntityConstructor } from '@fougere/schema';
 
@@ -8,7 +12,7 @@ import { upperFirst, type EntityConstructor } from '@fougere/schema';
  */
 export type PresenterViews = Record<string, EntityConstructor | [EntityConstructor]>;
 
-/** `Presenter(Order, { items. */
+/** `Presenter(Order, { items: [OrderItemView] })` — the views its computed fields emit. */
 export function Presenter<E extends EntityConstructor>(entity: E, views?: PresenterViews) {
   class PresenterBase {
     static readonly __entity = entity;

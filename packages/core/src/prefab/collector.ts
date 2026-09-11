@@ -1,4 +1,8 @@
-/** Collector(Type) — resolves one handler input parameter from the invocation context. */
+/**
+ * Collector(Type) — resolves one handler input parameter from the invocation context.
+ *
+ * Documented: [collectors](https://fougere.dev/docs/business/collectors).
+ */
 
 import { upperFirst } from '@fougere/schema';
 

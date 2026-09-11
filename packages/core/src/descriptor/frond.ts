@@ -1,4 +1,8 @@
-/** What a frond is made of — one interface per convention directory. */
+/**
+ * What a frond is made of — one interface per convention directory.
+ *
+ * Documented: [the Frond](https://fougere.dev/docs/concepts/frond).
+ */
 import type { SchemaView } from '@fougere/schema';
 import type { Param, OperationContract, OperationsMap } from '../wire/operation.js';
 import type { PresenterViews } from '../prefab/presenter.js';

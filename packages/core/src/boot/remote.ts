@@ -1,4 +1,8 @@
-/** Remote façade — what resolve() falls back to. */
+/**
+ * Remote façade — what resolve() falls back to.
+ *
+ * Documented: [the gradient](https://fougere.dev/docs/infra/gradient).
+ */
 import type { FrondCall, Transport } from '../wire/call.js';
 import { assertIdentityCard, RPC_ENTITY } from '../wire/call.js';
 import { runMiddlewares, type AppMiddleware, type OperationContext } from '../wire/middleware.js';

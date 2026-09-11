@@ -3,6 +3,8 @@ import type { SchemaView } from './SchemaView.js';
 
 /**
  * The origin is the ROOT: `Post.pick(a, b).omit(b)` answers `Post`, never the intermediate.
+ *
+ * Documented: [views](https://fougere.dev/docs/schema/views).
  */
 export class SchemaDerivation {
   private constructor(

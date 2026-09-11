@@ -61,6 +61,8 @@ export interface SetDiffOptions {
  * What changed between two descriptions of the same entity, read from the wire form alone.
  * FR : ce qui a changé entre deux descriptions d'une même entité, lu du seul format du fil.
  * `compare(v1, v2, { renamed: { body: 'content' } })` → one `renamed`, no `ambiguous`
+ *
+ * Documented: [how a schema moves](https://fougere.dev/docs/schema/evolution).
  */
 export function compare(
   was: SchemaDescriptor,

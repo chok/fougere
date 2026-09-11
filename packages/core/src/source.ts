@@ -12,7 +12,11 @@ export function declares(schema: SchemaView, constraint: Constraint): boolean {
   return Object.values(schema.getFields()).some((field) => Role.of(field).isUnique);
 }
 
-/** A place rows live, whatever realizes it. */
+/**
+ * A place rows live, whatever realizes it.
+ *
+ * Documented: [sources](https://fougere.dev/docs/infra/sources).
+ */
 export interface Source {
   storageFactory: StorageFactory;
   /**

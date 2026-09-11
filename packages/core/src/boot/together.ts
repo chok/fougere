@@ -1,4 +1,8 @@
-/** Building a frame — what a handler asking for `Together<[…]>` receives. */
+/**
+ * Building a frame — what a handler asking for `Together<[…]>` receives.
+ *
+ * Documented: [together](https://fougere.dev/docs/business/together).
+ */
 import { ambient } from '#ambient';
 import { upperFirst, lowerFirst, type SchemaView } from '@fougere/schema';
 import type { Container } from '@fougere/container';
