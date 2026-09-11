@@ -327,6 +327,26 @@ one — `ports: { Payment: ['Retrying', 'Stripe'] }` states the chain from the O
 and the last name is what actually charges. Pinned by `tests/ports.test.ts`. A builtin is a port too: `class AuditLogger extends Logger` takes the `Logger` key
 for that frond. Pinned by `tests/ports.test.ts`.
 
+**A SEAM is a port whose realization is handed in** — `SEAMS` (`boot/ports.ts`), `Storage`
+today. `storageFactory` builds one per entity and no class declares it, so a class extending
+one can only stand IN FRONT of it: `seamChains` refuses a subclass that does not ask for the
+seam, since nothing else it could be. The chain is read across EVERY frond and applied where
+the realization is BUILT (`install.ts`) rather than under a container key — nothing resolves
+`Storage`, and `<Entity>Storage` is what a handler asks for. That is what makes it
+transverse: one class stands in front of every entity's storage.
+
+`Storage` is an interface AND an abstract class merged, so the class carries the thirteen
+gestures as a TYPE while its prototype carries them as a FORWARD — a link writes what it
+changes and nothing else. What it stands in front of is a SYMBOL on the instance, set
+through a cast: a declared member would join the interface and `storageOver`'s object
+literal would stop being a storage, a `#private` field would make the class nominal and
+refuse every realization at once, and a `WeakMap` beside the instance is not found through
+`StorageGuard.guard`'s `Object.create(storage)`. The guard stays OUTSIDE the chain, so a
+link reads the value the door already parsed. A bare `Storage` in a signature binds because
+`depKeyOf` (`compiler/src/scan/scanner.ts`) stops reading `Record` as a subject — it is the
+default of `Storage<T = Record<string, unknown>>`, which the checker fills in, and the key
+was `RecordStorage`. Pinned by `tests/seam.test.ts`.
+
 **Sources** — a place rows live, and the four gestures it owns: `storageFactory` (required),
 `migrate?`, `transacted?`, `close?` (`core/src/source.ts`). What a source is MADE OF is not
 there: `adapter/sql` states `dialect`, `db` and `sink` on its own `SqlSource`. The migration

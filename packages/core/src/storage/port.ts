@@ -102,8 +102,78 @@ export interface Storage<T = Record<string, unknown>> {
   delete(id: string): Promise<boolean>;
   /** Returns a scoped storage that restricts all read results to the fields of the given schema. */
   output(schema: SchemaView): Storage<T>;
+}
+
+/**
+ * What each link of a chain stands in front of.
+ *
+ * A SYMBOL on the instance, set through a cast so it joins no declaration: `Storage` is an
+ * interface as well as a class, and the realizations satisfy it structurally —
+ * `storageOver` returns an object literal, and one more member would stop it being a
+ * storage. A `#private` field says the same thing and makes the class NOMINAL, which
+ * refuses every realization at once.
+ *
+ * On the instance and not in a `WeakMap` beside it, because `StorageGuard.guard` hands out
+ * `Object.create(storage)` — a new object whose prototype is the link. A symbol is found
+ * through that chain; a map keyed on the link is not, and the guarded object read
+ * `undefined`.
+ */
+const BEHIND = Symbol('fougere.storage.behind');
+
+const behind = <T>(link: object): Storage<T> =>
+  (link as Record<symbol, unknown>)[BEHIND] as Storage<T>;
+
+/**
+ * A storage that stands in front of another — the base a wrapper extends, and the only
+ * thing that makes `Storage` a seam rather than a shape.
+ *
+ * Merged with the interface above, so the class carries the thirteen gestures as a TYPE
+ * while its prototype carries them as a FORWARD. A wrapper writes what it changes and
+ * nothing else:
+ *
+ * ```ts
+ * class Audit extends Storage {
+ *   constructor(private inner: Storage) { super(inner); }
+ *   async create(row) { await say(row); return this.inner.create(row); }
+ * }
+ * ```
+ *
+ * `ports: { Storage: ['Audit'] }` puts it in front of EVERY entity's storage, which is
+ * what makes it transverse — the same key, the same order, the same refusals a port gets.
+ * A realization does not extend this: it is handed in by `storageFactory` and is the last
+ * link, so what a wrapper does not override reaches it through these forwards.
+ */
+export abstract class Storage<T = Record<string, unknown>> {
+  constructor(inner: Storage<T>) {
+    (this as Record<symbol, unknown>)[BEHIND] = inner;
+  }
+
+  list(options?: ListOptions & SelectOption): Promise<ListResult<T>> { return behind<T>(this).list(options); }
+  findById(id: string, options?: SelectOption): Promise<T | undefined> { return behind<T>(this).findById(id, options); }
+  findBy(criteria: Partial<T> | Record<string, unknown>, options?: SelectOption): Promise<T | undefined> {
+    return behind<T>(this).findBy(criteria, options);
+  }
+  findAllBy(criteria: Partial<T> | Record<string, unknown>, options?: SelectOption): Promise<T[]> {
+    return behind<T>(this).findAllBy(criteria, options);
+  }
+  findByKeys(ids: readonly string[], options?: SelectOption): Promise<Map<string, T>> {
+    return behind<T>(this).findByKeys(ids, options);
+  }
+  findAllByKeys(field: string, keys: readonly string[], options?: SelectOption): Promise<Map<string, T[]>> {
+    return behind<T>(this).findAllByKeys(field, keys, options);
+  }
+  create(input: Partial<T>, options?: SelectOption): Promise<T> { return behind<T>(this).create(input, options); }
+  upsert(input: Partial<T>, options?: SelectOption): Promise<T> { return behind<T>(this).upsert(input, options); }
+  upsertAll(inputs: readonly Partial<T>[], options?: SelectOption): Promise<number> {
+    return behind<T>(this).upsertAll(inputs, options);
+  }
+  update(id: string, input: Partial<T>, options?: SelectOption): Promise<T> {
+    return behind<T>(this).update(id, input, options);
+  }
+  delete(id: string): Promise<boolean> { return behind<T>(this).delete(id); }
+  output(schema: SchemaView): Storage<T> { return behind<T>(this).output(schema); }
   /** What this storage wraps — the Kysely instance for the SQL one, something else elsewhere. */
-  readonly client: unknown;
+  get client(): unknown { return behind<T>(this).client; }
 }
 
 /**

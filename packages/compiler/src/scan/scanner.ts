@@ -156,7 +156,12 @@ function depKeyOf(type: TypeRef): string {
   const target = type.name.endsWith('Storage') && type.generics?.length === 1
     ? type.generics[0]?.name
     : undefined;
-  if (!target) return type.name;
+  // `Record` is `Storage<T = Record<string, unknown>>`'s DEFAULT, which the checker fills in
+  // — so a bare `Storage` arrives here indistinguishable from one that named an entity, and
+  // asked for the key `RecordStorage`, which nothing registers. A shapeless row names no
+  // subject: the key is the seam itself, which is what a class standing in front of every
+  // entity's storage asks for.
+  if (!target || target === 'Record') return type.name;
 
   return storageKeyOf(target);
 }

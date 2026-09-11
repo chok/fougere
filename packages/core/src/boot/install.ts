@@ -6,7 +6,7 @@ import type { Dispatcher } from '../dispatch/Dispatcher.js';
 import type { RouteRegistry } from '../dispatch/RouteRegistry.js';
 import type { Emissions } from './Emissions.js';
 import type { EffectiveOperationsMap, EffectiveOperationModel } from '../effective-operation.js';
-import { nameOf } from '../descriptor/frond.js';
+import { nameOf, type ProviderEntry } from '../descriptor/frond.js';
 import type { EntityEntry, FrondDescriptor, HandlerEntry } from '../descriptor/frond.js';
 import type { OperationsMap } from '../wire/operation.js';
 import type { AppMiddleware } from '../wire/middleware.js';
@@ -16,7 +16,7 @@ import { HandlerFacade } from '../dispatch/HandlerFacade.js';
 import { targetOf } from '../prefab/prefab.js';
 import { ownersOf, refuseStorageInUserCode, refuseCrudOnOwned } from './ownership.js';
 import { StorageGuard } from '../dispatch/StorageGuard.js';
-import { portBindings } from './ports.js';
+import { portBindings, wrapping, SEAMS } from './ports.js';
 import { facadeKeyOf, contractsKeyOf } from '../wire/call.js';
 import { inheritsCrud, subjectOf } from '../prefab/crud.js';
 import { repositoryKeyOf } from '../prefab/repository.js';
@@ -45,6 +45,8 @@ export interface Assembly {
   effectiveByKey: Map<string, EffectiveOperationsMap>;
   /** Every `ports:` key some frond actually settled — what is left is a typo. */
   boundPorts: Set<string>;
+  /** What stands in front of each of the framework's own ports, read across every frond. */
+  seams: Map<string, ProviderEntry[]>;
   /** What the model resolved before the boot performed any side effect. */
   operationModel: EffectiveOperationModel;
   entityByName: Map<string, SchemaView>;
@@ -62,7 +64,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   const {
     container, routeRegistry, emissions, dispatcher, localDispatcher, effectiveByKey,
     boundPorts, operationModel, entityByName, frondOf, contractsOf, getMiddlewares, use,
-    log, options,
+    seams, log, options,
   } = assembly;
 
   // Declared remote: keep the scanned metadata (bridges route with it),
@@ -129,6 +131,9 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   // Registered AFTER the loop above so a port key always wins over the base's
   // own registration — same precedence as a declared repository over its default.
   for (const [port, chain] of portBindings(frond.providers, (n) => scope.has(n), options.ports)) {
+    // A seam is bound where its realization is BUILT, not under a container key — nothing
+    // resolves `Storage`, and `<Entity>Storage` is what a handler asks for.
+    if (SEAMS.has(port)) continue;
     // Registered from the INSIDE OUT, each wrapper asking for the one it stands in front
     // of: the container resolves a dep by NAME, so wrapping is a substituted key and
     // needs nothing of the container itself. The outermost answers under the port.
@@ -168,8 +173,12 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
         ? baseStorage.output(outputSchema)
         : baseStorage;
 
+      // The declared chain first, then the guard OUTSIDE it: the guard hands on the value
+      // it parsed, so a wrapper reads what the entity says a row is rather than what
+      // arrived. Same order the client door has held since `StorageGuard` existed.
+      const linked = wrapping('Storage', seams.get('Storage') ?? [], scoped, (dep) => scope.resolve(dep));
       // Storage is a way out like the client surface — see `StorageGuard`.
-      const guarded = new StorageGuard(entity.entityClass.getFields(), entity.name).guard(scoped);
+      const guarded = new StorageGuard(entity.entityClass.getFields(), entity.name).guard(linked);
       scope.registerValue(key, guarded);
 
       // The default repository IS the guarded port — it already answers every gesture a

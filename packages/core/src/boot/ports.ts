@@ -1,6 +1,62 @@
 import { nameOf, type ProviderEntry } from '../descriptor/frond.js';
 
 /**
+ * The framework's own ports — a class core exports that a user class may stand in front of.
+ *
+ * They differ from a port in one way, and it decides everything else: their realization is
+ * HANDED IN rather than scanned (`storageFactory` builds one per entity), so a class that
+ * extends one can only be a wrapper. The chain is read across every frond instead of per
+ * frond, because what stands in front of a storage is a decision about the process.
+ */
+export const SEAMS = new Set(['Storage']);
+
+/**
+ * What stands in front of each seam, outermost first — the same reading `portBindings`
+ * does, with no realization to find.
+ */
+export function seamChains(
+  providers: ProviderEntry[],
+  chosen: Record<string, string | readonly string[]> | undefined,
+): Map<string, ProviderEntry[]> {
+  const wrappers = new Map<string, ProviderEntry[]>();
+  for (const provider of providers) {
+    const seam = (Object.getPrototypeOf(provider.ctor) as { name?: string } | null)?.name;
+    if (!seam || !SEAMS.has(seam)) continue;
+    if (!provider.deps.includes(seam)) {
+      throw new Error(
+        `[ports] ${nameOf(provider)} extends ${seam}, and a seam's realization is handed in `
+        + `rather than declared — so a class extending one can only stand IN FRONT of it, `
+        + `which it says by asking for it: constructor(private inner: ${seam}).`,
+      );
+    }
+    wrappers.set(seam, [...(wrappers.get(seam) ?? []), provider]);
+  }
+
+  const bound = new Map<string, ProviderEntry[]>();
+  for (const [seam, all] of wrappers) bound.set(seam, chain(seam, [], all, chosen?.[seam]));
+
+  return bound;
+}
+
+/** Put the declared chain in front of an instance the framework holds, and hand back the outermost. */
+export function wrapping<T extends object>(
+  seam: string,
+  links: readonly ProviderEntry[],
+  inner: T,
+  resolve: (name: string) => unknown,
+): T {
+  let current = inner;
+  // From the INSIDE out, so each link is handed the one it stands in front of — the same
+  // order `install.ts` registers a port's chain in, for the same reason.
+  for (const link of [...links].reverse()) {
+    const made = link.ctor as unknown as new (...args: unknown[]) => T;
+    current = new made(...link.deps.map((dep) => (dep === seam ? current : resolve(dep))));
+  }
+
+  return current;
+}
+
+/**
  * A port is a class something already answers under, and what answers it may be a CHAIN:
  * the realization, wrapped by whoever stands in front of it.
  *
