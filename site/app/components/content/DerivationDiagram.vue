@@ -1,7 +1,11 @@
 <script setup lang="ts">
 /**
  * The philosophy as a real diagram: the entity declaration is the nucleus,
- * six projections derive from it. Hand-drawn SVG, themed by CSS variables.
+ * six projections derive from it. SVG, themed by CSS variables.
+ *
+ * A link is ONE path: it left the envelope's edge and ended short of its card, under a
+ * second animated path drawn over it — a dashed line running along a solid one, which is
+ * what a reader sees as a badly finished arrow rather than as motion.
  */
 const { t } = useI18n();
 
@@ -33,7 +37,7 @@ const anchors = [165, 215, 265];
   <div class="not-prose my-2">
     <svg viewBox="0 0 960 430" class="deriv-svg hidden lg:block w-full h-auto" role="img" :aria-label="t('diagram.caption')">
       <defs>
-        <marker id="deriv-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <marker id="deriv-arrow" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
           <path d="M 0 0 L 8 4 L 0 8 z" class="deriv-arrowhead" />
         </marker>
       </defs>
@@ -42,25 +46,21 @@ const anchors = [165, 215, 265];
       <g>
         <template v-for="(node, i) in left" :key="'lc' + i">
           <path
-            :d="`M 330 ${anchors[i]} C 305 ${anchors[i]}, 315 ${node.cy}, 288 ${node.cy}`"
+            :d="`M 318 ${anchors[i]} C 300 ${anchors[i]}, 306 ${node.cy}, 288 ${node.cy}`"
             class="deriv-link" marker-end="url(#deriv-arrow)"
           />
           <path
-            :d="`M 330 ${anchors[i]} C 305 ${anchors[i]}, 315 ${node.cy}, 288 ${node.cy}`"
-            class="deriv-flow"
-          />
-          <circle cx="330" :cy="anchors[i]" r="3" class="deriv-dot" />
+            />
+          <circle cx="318" :cy="anchors[i]" r="2.5" class="deriv-dot" />
         </template>
         <template v-for="(node, i) in right" :key="'rc' + i">
           <path
-            :d="`M 630 ${anchors[i]} C 655 ${anchors[i]}, 645 ${node.cy}, 672 ${node.cy}`"
+            :d="`M 642 ${anchors[i]} C 660 ${anchors[i]}, 654 ${node.cy}, 672 ${node.cy}`"
             class="deriv-link" marker-end="url(#deriv-arrow)"
           />
           <path
-            :d="`M 630 ${anchors[i]} C 655 ${anchors[i]}, 645 ${node.cy}, 672 ${node.cy}`"
-            class="deriv-flow"
-          />
-          <circle cx="630" :cy="anchors[i]" r="3" class="deriv-dot" />
+            />
+          <circle cx="642" :cy="anchors[i]" r="2.5" class="deriv-dot" />
         </template>
       </g>
 

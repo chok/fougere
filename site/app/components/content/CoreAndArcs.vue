@@ -32,13 +32,13 @@ const PORTS = 372;     // inner ring — two thirds, its gap on the left
 /** Degrees, y-down: 180 is due left, 0 due right. */
 const DOORS = [
   { deg: 210, label: 'call envelope' },
-  { deg: 180, label: 'REST' },
+  { deg: 186, label: 'REST' },
   { deg: 150, label: 'GraphQL' },
 ] as const;
 
 const DRIVEN = [
   { deg: -45, label: 'SQL' },
-  { deg: 0, label: 'remotes:' },
+  { deg: 6, label: 'remotes:' },
   { deg: 45, label: 'Mirror' },
 ] as const;
 
@@ -46,12 +46,18 @@ const rad = (d: number) => (d * Math.PI) / 180;
 const at = (deg: number, r: number) => ({ x: CX + r * Math.cos(rad(deg)), y: CY + r * Math.sin(rad(deg)) });
 
 const shapes = {
-  core: circle(CX, CY, CORE, 3),
+  core: circle(CX, CY, CORE, 1),
   surface: arc(CX, CY, SURFACE, 60, 300, 11),
   ports: arc(CX, CY, PORTS, -120, 120, 17),
 };
 
-/** Out to the consumer, or in from the supply — and it stops at its ring either way. */
+/**
+ * Out to the consumer, or in from the supply — and it stops ON its ring either way.
+ *
+ * `arc` takes a DIAMETER and `at` a radius, so the ring sits at `ring / 2`: the end that
+ * belongs to it is exactly there, not six pixels inside it. It was, and every arrow ended
+ * in open space beside the line it was supposed to touch.
+ */
 const stream = (
   list: readonly { deg: number; label: string }[],
   ring: number,
@@ -59,10 +65,10 @@ const stream = (
   seed0: number,
 ) =>
   list.map((ray, i) => {
-    const inner = at(ray.deg, ring / 2 + 6);
-    const outer = at(ray.deg, ring / 2 + 66);
-    const [from, to] = outward ? [inner, outer] : [outer, inner];
-    return { ...ray, paths: arrow(from.x, from.y, to.x, to.y, seed0 + i * 3), tip: at(ray.deg, ring / 2 + 78) };
+    const onRing = at(ray.deg, ring / 2);
+    const word = at(ray.deg, ring / 2 + 58);
+    const [from, to] = outward ? [onRing, word] : [word, onRing];
+    return { ...ray, paths: arrow(from.x, from.y, to.x, to.y, seed0 + i * 3), tip: at(ray.deg, ring / 2 + 70) };
   });
 
 const doors = stream(DOORS, SURFACE, true, 40);
@@ -71,7 +77,7 @@ const driven = stream(DRIVEN, PORTS, false, 70);
 
 <template>
   <div class="not-prose my-2">
-    <svg data-diagram="core-and-arcs" viewBox="0 0 1000 680" class="hand-svg w-full h-auto" role="img" :aria-label="t('diagram.arcs.core')">
+    <svg data-diagram="core-and-arcs" viewBox="30 40 940 590" class="hand-svg w-full h-auto" role="img" :aria-label="t('diagram.arcs.core')">
       <path v-for="(d, i) in shapes.surface" :key="'s' + i" :d="d" class="hand-faint" />
       <path v-for="(d, i) in shapes.ports" :key="'p' + i" :d="d" class="hand-faint" />
 

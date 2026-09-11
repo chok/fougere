@@ -165,25 +165,11 @@
 .deriv-svg .grad-panel { fill: transparent; }
 .deriv-svg .deriv-link {
   fill: none;
-  stroke: var(--ui-border-accented);
+  stroke: var(--ui-text-dimmed);
   stroke-width: 1.5;
 }
-.deriv-svg .deriv-flow {
-  fill: none;
-  stroke: var(--ui-primary);
-  stroke-width: 1.5;
-  stroke-dasharray: 3 9;
-  opacity: 0.55;
-  animation: deriv-flow 2.6s linear infinite;
-}
-@keyframes deriv-flow {
-  to { stroke-dashoffset: -12; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .deriv-svg .deriv-flow { animation: none; opacity: 0; }
-}
-.deriv-svg .deriv-arrowhead { fill: var(--ui-border-accented); }
-.deriv-svg .deriv-dot { fill: var(--ui-border-accented); }
+.deriv-svg .deriv-arrowhead { fill: var(--ui-text-dimmed); }
+.deriv-svg .deriv-dot { fill: var(--ui-text-dimmed); }
 .deriv-svg .deriv-node-label {
   fill: var(--ui-text-highlighted);
   font-size: 14px;

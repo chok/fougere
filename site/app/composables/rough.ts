@@ -26,19 +26,27 @@ export function roughHand() {
     line: (x1: number, y1: number, x2: number, y2: number, seed: number) =>
       d(gen.line(x1, y1, x2, y2, { ...HAND, seed })),
 
-    /** A line plus its two head strokes, pointing at (x2, y2). */
+    /**
+     * A line plus its two head strokes, pointing at (x2, y2).
+     *
+     * The head is drawn with a STEADIER hand than the shaft: at the house roughness a
+     * 15px stroke wobbles by a third of its own length, and the two strokes of a
+     * horizontal arrow then close onto the shaft — `remotes:` read as a flat double line
+     * rather than as an arrow.
+     */
     arrow: (x1: number, y1: number, x2: number, y2: number, seed: number) => {
       const angle = Math.atan2(y2 - y1, x2 - x1);
       const head = (spread: number) => [
-        x2 - 15 * Math.cos(angle - spread),
-        y2 - 15 * Math.sin(angle - spread),
+        x2 - 17 * Math.cos(angle - spread),
+        y2 - 17 * Math.sin(angle - spread),
       ] as const;
-      const [ax, ay] = head(0.42);
-      const [bx, by] = head(-0.42);
+      const [ax, ay] = head(0.5);
+      const [bx, by] = head(-0.5);
+      const TIP = { roughness: 0.6, bowing: 0.8 } as const;
       return [
         ...d(gen.line(x1, y1, x2, y2, { ...HAND, seed })),
-        ...d(gen.line(ax, ay, x2, y2, { ...HAND, seed: seed + 1 })),
-        ...d(gen.line(bx, by, x2, y2, { ...HAND, seed: seed + 2 })),
+        ...d(gen.line(ax, ay, x2, y2, { ...TIP, seed: seed + 1 })),
+        ...d(gen.line(bx, by, x2, y2, { ...TIP, seed: seed + 2 })),
       ];
     },
   };
