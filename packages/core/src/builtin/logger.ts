@@ -13,10 +13,8 @@ export interface LogRecord {
   at: number;
 }
 
+/** Where a line goes once it is written — `@fougere/log` ships one, `observability` another. */
 export type LogSink = (record: LogRecord) => void;
-
-/** Who else takes this process's log lines, beside the console. */
-const sinks: LogSink[] = [];
 
 /**
  * Where one boot's lines wait, and where they go once they can.
@@ -64,15 +62,6 @@ export class Carry {
   forget(): void {
     this.held.length = 0;
   }
-}
-
-/** Take every line this process logs. Returns the way to withdraw. */
-export function onLog(next: LogSink): () => void {
-  sinks.push(next);
-  return () => {
-    const at = sinks.indexOf(next);
-    if (at >= 0) sinks.splice(at, 1);
-  };
 }
 
 const LEVELS: Record<LogLevel, number> = { debug: 0, info: 1, warn: 2, error: 3, silent: 4 };
@@ -175,14 +164,6 @@ export class Logger {
     const record: LogRecord = {
       level: level as LogRecord['level'], name: this.name, message: msg, args, at: Date.now(),
     };
-
-    // Beside the console, never instead of it: a forwarded line is an addition, and a
-    // sink that throws must not cost the operator the line they were reading.
-    for (const take of sinks) {
-      try {
-        take(record);
-      } catch { /* forwarding never breaks logging */ }
-    }
 
     this.carry?.push(record);
 

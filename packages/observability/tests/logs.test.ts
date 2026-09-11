@@ -5,7 +5,7 @@
 import { scanProject } from '@fougere/compiler';
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import { join } from 'node:path';
-import { createApp, Logger, onLog, setLogLevel } from '@fougere/core';
+import { Carry, createApp, Logger, setLogLevel } from '@fougere/core';
 import type { App, InvocationContext, LogRecord } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { trace, onSpan, logs, currentSpan, type FinishedSpan } from '../src/index.js';
@@ -25,19 +25,25 @@ beforeAll(async () => {
 afterEach(() => { while (undo.length) undo.pop()!(); vi.restoreAllMocks(); setLogLevel('info'); });
 afterAll(async () => { await app?.dispose(); });
 
-/** Every record the logger emits, in order. */
-function captured(): LogRecord[] {
+/**
+ * A logger and everything it writes, in order — through `Carry`, which is the same thing
+ * the boot holds its own lines in. A logger built with none announces nothing and keeps
+ * nothing, which is why each test names its own.
+ */
+function watched(name: string): { log: Logger; seen: LogRecord[] } {
   const seen: LogRecord[] = [];
-  undo.push(onLog((r) => seen.push(r)));
-  return seen;
+  const carry = new Carry();
+  undo.push(carry.to((line) => seen.push(line)));
+
+  return { log: new Logger(name, { carry }), seen };
 }
 
 describe('the logger has a door', () => {
   it('hands out a structured record, not a formatted line', () => {
-    const seen = captured();
+    const { log, seen } = watched('boot:app');
     vi.spyOn(console, 'info').mockImplementation(() => {});
 
-    new Logger('boot:app').info('scanned %s fronds', 3);
+    log.info('scanned %s fronds', 3);
 
     expect(seen).toHaveLength(1);
     expect(seen[0]).toMatchObject({ level: 'info', name: 'boot:app', message: 'scanned %s fronds', args: [3] });
@@ -45,12 +51,11 @@ describe('the logger has a door', () => {
   });
 
   it('respects the level — a filtered line is never forwarded either', () => {
-    const seen = captured();
+    const { log, seen } = watched('app');
     setLogLevel('warn');
     vi.spyOn(console, 'info').mockImplementation(() => {});
     vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    const log = new Logger('app');
     log.info('quiet');
     log.warn('loud');
 
@@ -58,10 +63,10 @@ describe('the logger has a door', () => {
   });
 
   it('keeps writing to the console — forwarding is an addition', () => {
-    captured();
+    const { log } = watched('app');
     const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    new Logger('app').warn('still printed');
+    log.warn('still printed');
 
     expect(spy).toHaveBeenCalledOnce();
   });
@@ -77,11 +82,12 @@ describe('the logger has a door', () => {
     for (const [name, spy] of methods) expect(spy, name).toHaveBeenCalledOnce();
   });
 
-  it('survives a sink that throws', () => {
-    undo.push(onLog(() => { throw new Error('broken exporter'); }));
+  it('survives a destination that throws', () => {
+    const carry = new Carry();
+    undo.push(carry.to(() => { throw new Error('broken exporter'); }));
     const spy = vi.spyOn(console, 'info').mockImplementation(() => {});
 
-    expect(() => new Logger('app').info('fine')).not.toThrow();
+    expect(() => new Logger('app', { carry }).info('fine')).not.toThrow();
     expect(spy).toHaveBeenCalledOnce();
   });
 });
@@ -93,12 +99,13 @@ describe('a line carries the call it was written inside', () => {
 
     const exporter = logs({ service: 'catalog' });
     const sent: { traceId?: string }[] = [];
-    undo.push(onLog((r) => { exporter.sink(r); }));
+    const carry = new Carry();
+    undo.push(carry.to((line) => { exporter.sink(line); }));
     vi.spyOn(console, 'info').mockImplementation(() => {});
 
     // A handler logging in the middle of its own operation. `app.use` cannot be undone,
     // so the middleware is installed once and gated — it must not leak into other tests.
-    const log = new Logger('handler');
+    const log = new Logger('handler', { carry });
     let watching = true;
     undo.push(() => { watching = false; });
     app.use('product', async (_ctx, next) => {
@@ -118,13 +125,14 @@ describe('a line carries the call it was written inside', () => {
   it('leaves a boot line with no trace rather than a forged one', () => {
     const exporter = logs({ service: 'catalog' });
     const kept: { traceId: string | undefined }[] = [];
-    undo.push(onLog((r) => {
-      exporter.sink(r);
+    const carry = new Carry();
+    undo.push(carry.to((line) => {
+      exporter.sink(line);
       kept.push({ traceId: currentSpan()?.traceId });
     }));
     vi.spyOn(console, 'info').mockImplementation(() => {});
 
-    new Logger('boot').info('booting');
+    new Logger('boot', { carry }).info('booting');
 
     expect(kept[0].traceId).toBeUndefined();
   });

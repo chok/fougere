@@ -279,9 +279,11 @@ built. `App.use` and a frond's directory are two doors onto ONE writer (`use` in
 for, and a destination is a handler accepting `Fact<LogLine>` — that signature IS the
 subscription, so two destinations both receive and none is not declaring the frond. The
 console one writes with `console[method]` and announces NOTHING: a destination that logs is
-a ring, which the emission refuses by name where `onLog`'s try/catch swallowed it. The
-package STATES its frond (`logFrond()`), because scanning a directory under `packages/`
-fails — see Known issues.
+a ring, which the emission refuses by name where the old `onLog` sink's try/catch swallowed
+it. That sink is GONE — the emission replaced its last caller, and it went with the
+module-level array it read; `LogSink` remains, as the shape of what a destination hands a
+line to. The package STATES its frond (`logFrond()`), because scanning a directory under
+`packages/` fails — see Known issues.
 
 `Logger` is a SHORTCUT over that emission: `log.info(msg)` builds the line
 `Emit<LogLine>` takes whole, and printing is part of what the shortcut IS — the console is
@@ -294,6 +296,10 @@ The SHAPE is core's too — `entityByName` gets `LogLine` when no frond declared
 destination brought by an extension is handed a line whose `at: created()` was never
 stamped. A logger a package CONSTRUCTS carries nothing: `new Logger(service)` printed and
 announced nothing, which is why `observability` resolves the app's and names a child.
+
+A `Carry` is also what a TEST watches a logger through — `observability/tests/logs.test.ts`
+held the last `onLog` call sites and now names its own carry, which is the same door the
+boot uses.
 
 The lines are HELD until an emission exists, in a `Carry` held PER BOOT — a process-wide
 slot sent a second app's lines to the first app's door, and only the first of three
@@ -490,14 +496,17 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   `<LogLine>`, so `depKeyOf` never sees the port. Recovering it means reading the alias's
   own declaration in `handler-parser.ts` (`parseCheckedType`). Measured 2026-09-10; the
   alias was removed rather than shipped broken.
-- **`onQuery` and `onSpan` are still sinks** — `adapter/sql/src/query.ts`,
-  `observability/src/index.ts`: the same `sinks.push` and `splice` `onLog` had. They carry
-  OTHER facts — a statement, a span — and converting each means declaring its entity and
-  deciding who announces: a Kysely `log` callback has no app, and a span is produced by the
-  middleware that would announce it. `onLog` has no production caller left; it stays as a
-  test instrument, which is its only reader.
-- **`registerFlush` is not a subscription at all** — it collects what to send NOW, which is
-  a lifecycle gesture. It belongs beside `Extension.down`, not beside a fact.
+- **`onQuery` and `onSpan` stay sinks, and the price is why** — `adapter/sql/src/query.ts`,
+  `observability/src/index.ts`. Measured 2026-09-11, one span over one subscriber: an
+  ordinary operation costs **813 ns**, the same span through the sink list **53 ns**, and
+  announced **2408 ns**. A span is produced per OPERATION and a statement per QUERY, so
+  announcing them would make observing cost three times the thing observed. The emission is
+  a dispatch — validated, bound, run through the middlewares — and that is what a fact is
+  worth when it crosses a boundary, not when it stays in one process. `registerFlush` is the
+  same list read once instead of per line, and it is already taken and withdrawn by
+  `observability`'s `up`/`down`; it lives at module level because the host that calls
+  `flushTelemetry()` holds a request handler, not an app (`demos/cloudflare-d1`,
+  `ctx.waitUntil`).
 - **An un-augmented `adapters:` accepts anything, silently.** With no adapter in the program
   `EntityAdapters<TFields>` is `Partial<{}>`, which in TypeScript means "anything
   non-nullish". The RUNTIME half is closed since `AdapterFieldValidator`; what remains open is the type.

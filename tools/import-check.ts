@@ -49,7 +49,7 @@ function entryOf(specifier: string): string | undefined {
   return file ? path.resolve(directory, file) : undefined;
 }
 
-/** `import { a, b } from '@fougere/x'` — never `import type`, never a `type a` specifier. */
+/** A named import of a package of ours — never `import type`, never a `type a` specifier. */
 const NAMED = /import\s+(type\s+)?\{([^}]*)\}\s*from\s*['"](@fougere\/[^'"]+|fougere)['"]/g;
 
 const wanted = new Map<string, Map<string, string>>();
