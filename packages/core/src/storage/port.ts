@@ -143,7 +143,8 @@ const behind = <T>(link: object): Storage<T> =>
  * this: it is handed in by `storageFactory` and is the last link, so what a wrapper does not
  * override reaches it through these forwards.
  *
- * Documented: /docs/business/storage and /docs/business/ports.
+ * Documented: [storage](https://fougere.dev/docs/business/storage) and
+ * [ports](https://fougere.dev/docs/business/ports).
  */
 export abstract class Storage<T = Record<string, unknown>> {
   constructor(inner: Storage<T>) {

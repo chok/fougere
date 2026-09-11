@@ -13,7 +13,7 @@ import { nameOf, type ProviderEntry } from '../descriptor/frond.js';
  * process-wide key would break the gradient, since a frond moved behind `remotes:` would
  * silently leave the reach of a link its own code never mentioned.
  *
- * Documented: /docs/business/ports.
+ * Documented: [ports](https://fougere.dev/docs/business/ports).
  */
 export const SEAMS = new Set(['Storage']);
 
