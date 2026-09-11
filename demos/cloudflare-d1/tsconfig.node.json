@@ -1,0 +1,12 @@
+{
+  // What BUILDS the worker is not the worker: `build.ts` and `scripts/schema.ts` run on
+  // Node, read the disk and spawn esbuild. They cannot share the config above, which
+  // names `@cloudflare/workers-types` precisely to refuse `process` and `node:`.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": ["build.ts", "scripts"]
+}

@@ -21,8 +21,14 @@ const ROOT = process.cwd();
  * map. `entry/` holds no code — `fougere` is a `bin` and resolves nothing — and a
  * scaffold template ships inside the CLI's own tarball rather than as a package.
  */
-const publishable = (dir) => {
-  const found = [];
+/** A package this repo publishes, and where it sits. */
+interface Publishable {
+  name: string;
+  dir: string;
+}
+
+const publishable = (dir: string): Publishable[] => {
+  const found: Publishable[] = [];
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     if (e.name === 'node_modules' || e.name.startsWith('.') || e.name === 'templates' || e.name === 'tests') continue;
     const child = path.join(dir, e.name);
@@ -45,7 +51,14 @@ const ESM_BY_DESIGN = 'CJSResolvesToESM';
 const PRE_EXPORTS = 'node10';
 const TEMPLATE = /^\.\/templates\//;
 
-const attwOf = (dir) => {
+/** One finding of `attw`, as its JSON report writes it. */
+interface Problem {
+  kind: string;
+  entrypoint: string;
+  resolutionKind: string;
+}
+
+const attwOf = (dir: string): string[] => {
   // Through a file, not a pipe: a package with many entry points writes a resolution
   // table past what `execFileSync` hands back on a non-zero exit, and it exits non-zero
   // for every finding — including the ones filtered out just below.
@@ -55,14 +68,14 @@ const attwOf = (dir) => {
       cwd: path.join(ROOT, dir), stdio: 'ignore',
     });
   } catch { /* a finding is an exit code; the report is on disk either way */ }
-  const problems = JSON.parse(readFileSync(report, 'utf8')).problems ?? {};
+  const problems: Record<string, Problem[]> = JSON.parse(readFileSync(report, 'utf8')).problems ?? {};
   return Object.entries(problems)
     .filter(([kind]) => kind !== ESM_BY_DESIGN)
-    .flatMap(([, hits]) => hits.filter((h) => h.resolutionKind !== PRE_EXPORTS))
-    .map((h) => `${h.kind} — ${h.entrypoint} (${h.resolutionKind})`);
+    .flatMap(([, hits]) => hits.filter((hit) => hit.resolutionKind !== PRE_EXPORTS))
+    .map((hit) => `${hit.kind} — ${hit.entrypoint} (${hit.resolutionKind})`);
 };
 
-const packages = publishable('packages').sort((a, b) => a.name.localeCompare(b.name));
+const packages = publishable('packages').sort((one, other) => one.name.localeCompare(other.name));
 let failed = 0;
 
 for (const { name, dir } of packages) {

@@ -19,7 +19,7 @@
  * the collision as a defect of whichever lost.
  */
 import { existsSync, readFileSync } from 'node:fs';
-import { spawn, execFileSync } from 'node:child_process';
+import { spawn, execFileSync, type ChildProcess } from 'node:child_process';
 import path from 'node:path';
 
 /** A demo this runner cannot start, and why the absence is the demo's shape, not a gap. */
@@ -38,49 +38,57 @@ const STATED = new Map([
 const BUDGET_MS = 20_000;
 const demosDirectory = path.resolve('demos');
 
+/** What a run said: a service still up when the budget ran out, or a process that left. */
+interface Verdict {
+  shape: 'service' | 'one shot';
+  ok: boolean;
+  output: string;
+  code?: number | null;
+}
+
 /**
  * A demo is what the repository SHIPS, so git names them rather than the filesystem: a
  * spike left in `demos/` is not a demo, and `emit-multirepo` — two repositories and no
  * manifest of its own — is one.
  */
-function demosOf(directory) {
+function demosOf(directory: string): string[] {
   const tracked = execFileSync('git', ['ls-files', directory], { encoding: 'utf8' });
 
-  const inADemo = (file) => file.split('/').length > 2;
+  const inADemo = (file: string) => file.split('/').length > 2;
 
-  return [...new Set(tracked.split('\n').filter(inADemo).map((file) => file.split('/')[1]))].sort();
+  return [...new Set(tracked.split('\n').filter(inADemo).map((file) => file.split('/')[1]!))].sort();
 }
 
-function devCommandOf(demo) {
+function devCommandOf(demo: string): string | undefined {
   const manifest = path.join(demosDirectory, demo, 'package.json');
   if (!existsSync(manifest)) return undefined;
 
   return JSON.parse(readFileSync(manifest, 'utf8')).scripts?.dev;
 }
 
-function start(demo) {
+function start(demo: string): ChildProcess {
   return spawn('pnpm', ['-C', path.join('demos', demo), 'dev'], {
     detached: true,
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 }
 
-function release(child) {
+function release(child: ChildProcess): void {
   try {
-    process.kill(-child.pid, 'SIGTERM');
+    process.kill(-child.pid!, 'SIGTERM');
   } catch {
     // the group is already gone
   }
 }
 
-function run(demo) {
+function run(demo: string): Promise<Verdict> {
   const child = start(demo);
   let output = '';
 
-  child.stdout.on('data', (chunk) => { output += chunk; });
-  child.stderr.on('data', (chunk) => { output += chunk; });
+  child.stdout!.on('data', (chunk) => { output += chunk; });
+  child.stderr!.on('data', (chunk) => { output += chunk; });
 
-  return new Promise((resolve) => {
+  return new Promise<Verdict>((resolve) => {
     const budget = setTimeout(() => {
       release(child);
       resolve({ shape: 'service', ok: true, output });
@@ -94,12 +102,12 @@ function run(demo) {
   });
 }
 
-const tail = (output) =>
+const tail = (output: string) =>
   output.replace(/\x1b\[[0-9;]*m/g, '').trim().split('\n').filter(Boolean).slice(-4);
 
 const demos = demosOf(demosDirectory);
-const failures = [];
-const stated = [];
+const failures: [string, string][] = [];
+const stated: [string, string][] = [];
 
 for (const demo of demos) {
   if (!devCommandOf(demo)) {

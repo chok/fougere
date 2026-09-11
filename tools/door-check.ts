@@ -12,7 +12,7 @@
  * The scaffold is built OUTSIDE the repo on purpose: inside, pnpm resolves a workspace
  * link and the question cannot be asked at all.
  */
-import { execFileSync, spawn } from 'node:child_process';
+import { execFileSync, spawn, type ChildProcess, type ExecFileSyncOptions } from 'node:child_process';
 import { mkdtempSync, readdirSync, readFileSync, appendFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -21,11 +21,17 @@ const ROOT = process.cwd();
 const PORT = process.env.DOOR_PORT ?? '3210';
 const BOOT_MS = 180_000;
 
-const run = (cmd, args, opts = {}) =>
-  execFileSync(cmd, args, { encoding: 'utf8', stdio: 'pipe', ...opts });
+const run = (cmd: string, args: string[], opts: ExecFileSyncOptions = {}): string =>
+  execFileSync(cmd, args, { ...opts, encoding: 'utf8', stdio: opts.stdio ?? 'pipe' });
+
+/** A package this repo publishes, and where it sits. */
+interface Publishable {
+  name: string;
+  dir: string;
+}
 
 /** A package is packed when it publishes — the derivation `publish-check` also makes. */
-const publishable = (dir, found = []) => {
+const publishable = (dir: string, found: Publishable[] = []): Publishable[] => {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     if (e.name === 'node_modules' || e.name.startsWith('.') || e.name === 'templates' || e.name === 'tests') continue;
     if (e.isDirectory()) publishable(path.join(dir, e.name), found);
@@ -41,13 +47,13 @@ const work = mkdtempSync(path.join(tmpdir(), 'fougere-door-'));
 const store = path.join(work, 'tarballs');
 const app = path.join(work, 'app');
 
-let server;
+let server: ChildProcess | undefined;
 try {
   const pkgs = publishable(path.join(ROOT, 'packages'));
   console.log(`packing ${pkgs.length} packages`);
-  const tarball = {};
+  const tarball: Record<string, string> = {};
   for (const { name, dir } of pkgs) {
-    tarball[name] = run('pnpm', ['pack', '--pack-destination', store], { cwd: dir }).trim().split('\n').at(-1);
+    tarball[name] = run('pnpm', ['pack', '--pack-destination', store], { cwd: dir }).trim().split('\n').at(-1)!;
   }
 
   console.log('scaffolding outside the workspace');
@@ -69,14 +75,14 @@ try {
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   let log = '';
-  server.stdout.on('data', (d) => { log += d; });
-  server.stderr.on('data', (d) => { log += d; });
+  server.stdout!.on('data', (chunk) => { log += chunk; });
+  server.stderr!.on('data', (chunk) => { log += chunk; });
 
   const deadline = Date.now() + BOOT_MS;
   let status = 0;
   let body = '';
   while (Date.now() < deadline && server.exitCode === null) {
-    await new Promise((r) => setTimeout(r, 2000));
+    await new Promise((wake) => setTimeout(wake, 2000));
     try {
       const res = await fetch(`http://localhost:${PORT}/`);
       status = res.status;
@@ -105,14 +111,14 @@ try {
   // from SOURCE at scan time and no class carries it at runtime, so it answers only if
   // the statement the host boots from carried it across. Measured: it did not, and this
   // check said the door was fine.
-  const ask = async (method) => {
+  const ask = async (method: string): Promise<Record<string, unknown> | null> => {
     const call = await fetch(`http://localhost:${PORT}/_fougere/call`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params: {} }),
     });
 
-    return call.json().catch(() => null);
+    return call.json().then((answer) => answer as Record<string, unknown>).catch(() => null);
   };
 
   for (const method of ['post.list', 'post.listPublished']) {

@@ -9,5 +9,5 @@
     // dropped the automatic pull, so naming node here would be naming a lie.
     "types": ["@cloudflare/workers-types"]
   },
-  "include": ["src", "fronds", "build.mjs", "scripts"]
+  "include": ["src", "fronds"]
 }

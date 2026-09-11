@@ -16,8 +16,7 @@ import { createContainer } from '@fougere/container';
 import { serve, createHttpTransport, handleRpc, frameCall, unframeResponse } from '@fougere/transport-http';
 import type { RunningReceiver, RpcResponse } from '@fougere/transport-http';
 import { trace, onSpan, type FinishedSpan } from '../src/index.js';
-// @ts-expect-error plain-JS fixture
-import { createStorageFactory } from './fixtures/data.mjs';
+import { createStorageFactory } from './fixtures/data.js';
 
 const fixturesDir = join(import.meta.dirname, 'fixtures');
 type Facade = Record<string, (invocation?: InvocationContext) => Promise<unknown>>;

@@ -37,6 +37,11 @@ jobs:
 
       - run: pnpm -r typecheck
 
+      # `-r` reaches packages, site and demos — never `tools/`, which belongs to no
+      # workspace member. They run under Node's own type stripping, so nothing else
+      # would ever read their types.
+      - run: pnpm typecheck:tools
+
       - run: pnpm -r test
 
       # The scan cache is keyed on source hashes, not on the parser's version —
@@ -99,6 +104,12 @@ jobs:
       # and boots the result. Four published versions shipped a Nuxt module pointing at
       # uncompiled `.ts`, which every workspace-reading check saw as fine.
       - run: pnpm door:check
+
+      # `publish:check` and `door:check` ask about the PACKAGE. This asks about the
+      # CALLERS: every name imported from a @fougere/* entry, loaded and looked up. A
+      # `.mjs` host, a scaffold template and a fenced block in a README all name a door
+      # and none is type-checked — which is how an export pass counting callers cut two.
+      - run: pnpm import:check
 
       - run: pnpm arch
 

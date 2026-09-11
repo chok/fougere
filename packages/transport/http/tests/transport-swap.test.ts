@@ -22,8 +22,7 @@ import type { App, InvocationContext, Transport } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { frameCall, unframeResponse, handleRpc, serve, createHttpTransport } from '../src/index.js';
 import type { RpcResponse, RunningReceiver } from '../src/index.js';
-// @ts-expect-error plain-JS shared fixture
-import { createStorageFactory, PRODUCTS } from './fixtures/data.mjs';
+import { createStorageFactory, PRODUCTS } from './fixtures/data.js';
 
 const fixturesDir = join(import.meta.dirname, 'fixtures');
 const emptyRoot = '/tmp/fougere-socket-consumer';

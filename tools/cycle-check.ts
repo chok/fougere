@@ -41,9 +41,9 @@ const STATED = new Map([
     'because the field vocabulary is what they address.'],
 ]);
 
-const familyOf = (rel) => (rel.includes(path.sep) ? rel.split(path.sep)[0] : '(root)');
+const familyOf = (rel: string): string => (rel.includes(path.sep) ? rel.split(path.sep)[0] : '(root)');
 
-function tsFiles(dir, out = []) {
+function tsFiles(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     const p = path.join(dir, entry);
     if (statSync(p).isDirectory()) {
@@ -54,16 +54,23 @@ function tsFiles(dir, out = []) {
 }
 
 /** Erased by tsc: `import type {…}`, or every specifier prefixed with `type`. */
-function typeOnly(line) {
+function typeOnly(line: string): boolean {
   if (/^\s*(import|export)\s+type\b/.test(line)) return true;
   const braces = line.match(/\{([^}]*)\}/);
   const members = braces ? braces[1].split(',').map((s) => s.trim()).filter(Boolean) : [];
   return members.length > 0 && members.every((m) => m.startsWith('type '));
 }
 
-function edgesOf(pkg) {
+/** One directory reaching another, and whether the emitted JS carries it. */
+interface Edge {
+  from: string;
+  to: string;
+  value: boolean;
+}
+
+function edgesOf(pkg: string): Map<string, Edge[]> {
   const root = path.join(pkg, 'src');
-  const edges = new Map();
+  const edges = new Map<string, Edge[]>();
   for (const file of tsFiles(root)) {
     const rel = path.relative(root, file);
     const text = readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*/g, '');
@@ -74,8 +81,9 @@ function edgesOf(pkg) {
       const [a, b] = [familyOf(rel), familyOf(target)];
       if (a === b) continue;
       const key = `${a} ${b}`;
-      if (!edges.has(key)) edges.set(key, []);
-      edges.get(key).push({ from: rel, to: target, value: !typeOnly(line) });
+      const found = edges.get(key) ?? [];
+      edges.set(key, found);
+      found.push({ from: rel, to: target, value: !typeOnly(line) });
     }
   }
   return edges;
@@ -97,14 +105,15 @@ let stated = 0;
 
 for (const pkg of packages) {
   const edges = edgesOf(pkg);
-  const seen = new Set();
+  const seen = new Set<string>();
 
   for (const key of edges.keys()) {
     const [a, b] = key.split(' ');
     if (a === '(root)' || b === '(root)') continue; // the root is outside the layering
 
     const back = edges.get(`${b} ${a}`);
-    if (!back) continue;
+    const forth = edges.get(key);
+    if (!back || !forth) continue;
 
     const pair = [a, b].sort();
     const id = `${pkg} ${pair[0]}↔${pair[1]}`;
@@ -117,18 +126,18 @@ for (const pkg of packages) {
     }
 
     unstated++;
-    const erased = !edges.get(key).some((e) => e.value) || !back.some((e) => e.value);
-    const thin = edges.get(key).length <= back.length ? edges.get(key) : back;
-    console.error(`\n✗ ${id} — ${edges.get(key).length}/${back.length} edges${erased ? ' (type-only)' : ''}`);
+    const erased = !forth.some((edge) => edge.value) || !back.some((edge) => edge.value);
+    const thin = forth.length <= back.length ? forth : back;
+    console.error(`\n✗ ${id} — ${forth.length}/${back.length} edges${erased ? ' (type-only)' : ''}`);
     console.error('  the thin side is what moves:');
-    for (const e of thin) console.error(`    ${e.from} → ${e.to}${e.value ? '' : '  (type-only)'}`);
+    for (const edge of thin) console.error(`    ${edge.from} → ${edge.to}${edge.value ? '' : '  (type-only)'}`);
   }
 }
 
 if (unstated > 0) {
   console.error(
     `\n${unstated} unstated cycle(s). Move the thin side — a function, a type — to where it belongs,\n`
-    + 'or state the cycle in tools/cycle-check.mjs with the reason it is not a defect.',
+    + 'or state the cycle in tools/cycle-check.ts with the reason it is not a defect.',
   );
   process.exit(1);
 }

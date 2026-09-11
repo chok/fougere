@@ -4,11 +4,11 @@
   "type": "module",
   "scripts": {
     "dev": "nuxt dev",
-    "typecheck": "tsc -p fronds",
+    "typecheck": "tsc -p fronds && tsc -p tsconfig.node.json",
     "graphql": "tsx graphql.ts",
     "build": "nuxt build",
     "preview": "nuxt preview",
-    "dev:blog": "node serve-blog.mjs"
+    "dev:blog": "node serve-blog.ts"
   },
   "dependencies": {
     "@fougere/adapter-graphql": "workspace:*",

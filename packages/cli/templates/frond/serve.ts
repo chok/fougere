@@ -22,7 +22,7 @@ const jiti = createJiti(import.meta.url, {
   interopDefault: true,
   alias: await frondAliases(process.cwd()),
 });
-setModuleLoader((filePath) => jiti.import(filePath));
+setModuleLoader((filePath: string) => jiti.import(filePath) as Promise<Record<string, unknown>>);
 
 const log = new Logger('frond-host');
 

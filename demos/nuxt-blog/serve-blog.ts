@@ -24,7 +24,7 @@ const jiti = createJiti(import.meta.url, {
   interopDefault: true,
   alias: await frondAliases(process.cwd()),
 });
-setModuleLoader((filePath) => jiti.import(filePath));
+setModuleLoader((filePath: string) => jiti.import(filePath) as Promise<Record<string, unknown>>);
 
 // Commenting `remotes:` is how you take the frond back in-process, so its absence
 // means this process has no caller — say that rather than binding a port nobody dials.

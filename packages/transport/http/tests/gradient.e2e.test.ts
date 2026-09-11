@@ -13,8 +13,7 @@ import { createApp, createLocalRunner, FougereError, ErrorCode, Invocation } fro
 import type { App, InvocationContext, Transport } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { createHttpTransport } from '../src/index.js';
-// @ts-expect-error plain-JS shared fixture
-import { createStorageFactory, PRODUCTS } from './fixtures/data.mjs';
+import { createStorageFactory, PRODUCTS } from './fixtures/data.js';
 
 const fixturesDir = join(import.meta.dirname, 'fixtures');
 const emptyRoot = '/tmp/fougere-gradient-consumer';
@@ -26,7 +25,7 @@ const inv = (over: Partial<InvocationContext> = {}): InvocationContext =>
 
 function startHost(): Promise<{ child: ChildProcess; port: number }> {
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [join(fixturesDir, 'host.mjs')], { stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn(process.execPath, [join(fixturesDir, 'host.ts')], { stdio: ['ignore', 'pipe', 'pipe'] });
     let out = '';
     let err = '';
     const timer = setTimeout(() => {

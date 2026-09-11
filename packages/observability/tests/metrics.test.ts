@@ -10,8 +10,7 @@ import type { App, InvocationContext } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { trace, onSpan, metrics, activeCalls, type Metrics } from '../src/index.js';
 import { metricsPayload, serveTopology } from '../src/metrics.js';
-// @ts-expect-error plain-JS fixture
-import { createStorageFactory } from './fixtures/data.mjs';
+import { createStorageFactory } from './fixtures/data.js';
 
 const fixturesDir = join(import.meta.dirname, 'fixtures');
 type Facade = Record<string, (invocation?: InvocationContext) => Promise<unknown>>;

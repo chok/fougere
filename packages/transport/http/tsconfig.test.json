@@ -6,6 +6,8 @@
   "compilerOptions": {
     "noEmit": true,
     "rootDir": ".",
+    // `fixtures/host.ts` is spawned with `node`, which resolves the file that exists.
+    "allowImportingTsExtensions": true,
     "declaration": false,
     "declarationMap": false
   },

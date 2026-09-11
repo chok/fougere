@@ -416,7 +416,7 @@ refused, a diamond is legal. Announcing returns once every subscriber has been H
 fact; `app.deliver` waits for them all and REJECTS with an `AggregateError`. A fact is
 validated strictly. Pinned by `tests/emit.test.ts`.
 
-**A family cycle is a check** — `tools/cycle-check.mjs`, `pnpm arch:cycles`, run in CI beside
+**A family cycle is a check** — `tools/cycle-check.ts`, `pnpm arch:cycles`, run in CI beside
 `pnpm arch`. `arch` asks what a file REACHES, this asks where it LIVES. It reports type-only
 cycles too and marks what the emitted JS does not contain, and it prints the THIN SIDE
 because that is what moves. It reads pairs, and it does not read a package's ROOT as a family — which is where the
@@ -424,6 +424,15 @@ because that is what moves. It reads pairs, and it does not read a package's ROO
   depends on nothing (`schema/src/lib/validation.ts`, `core/src/storage/`) while the root
   reached back up into it. Four exceptions are stated
 with their reason: `field`↔`validator`, `axis`↔`projection`, `axis`↔`field`, `entity`↔`field`.
+
+**An imported name is a check** — `tools/import-check.ts`, `pnpm import:check`, run in CI
+beside `publish:check` and `door:check`. Those two ask about the PACKAGE — what a tarball
+promises, what it resolves once installed. This asks about the CALLERS: every VALUE import
+of a `@fougere/*` entry anywhere in the repo, looked up in the entry it actually loads. A
+`.mjs` host script, a scaffold template under `packages/cli/templates/` and a fenced block
+in a README each name a door, and no tsconfig reads any of them — so the export pass of
+2026-09-10, which counted callers, cut `generateSQL` and renamed `bootAppFromConfig` out
+from under two of them. Both failed at their first run, the day after a green suite.
 
 **Nuxt primitives** — `useQuery`/`useCommand` (a command on X revalidates mounted queries on
 X), `useFormFor` (contract, not rendering; local validator = remote validator), `useCurrentUser`,

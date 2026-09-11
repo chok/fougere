@@ -4,11 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node build.mjs",
-    "schema": "node scripts/schema.mjs",
+    "build": "node build.ts",
+    "schema": "node scripts/schema.ts",
     "dev": "pnpm build && wrangler dev",
     "deploy": "pnpm build && wrangler deploy",
-    "typecheck": "pnpm build && tsc --noEmit"
+    "typecheck": "pnpm build && tsc --noEmit && tsc --noEmit -p tsconfig.node.json"
   },
   "dependencies": {
     "@fougere/adapter-sql": "workspace:*",

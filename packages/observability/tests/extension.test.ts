@@ -9,8 +9,7 @@ import { createApp, createLocalRunner } from '@fougere/core';
 import type { InvocationContext } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { observability, trace, activeCalls, flushTelemetry, registerFlush } from '../src/index.js';
-// @ts-expect-error plain-JS fixture
-import { createStorageFactory } from './fixtures/data.mjs';
+import { createStorageFactory } from './fixtures/data.js';
 
 const fixturesDir = join(import.meta.dirname, 'fixtures');
 const EMPTY: InvocationContext = { params: {}, query: {}, input: undefined, state: {} };

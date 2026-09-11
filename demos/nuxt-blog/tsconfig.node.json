@@ -1,0 +1,15 @@
+{
+  // The host side, which `tsconfig.json` cannot cover: that one extends `.nuxt/`, a
+  // directory `nuxt prepare` writes. `serve-blog.ts` and `graphql.ts` run on Node and
+  // name the same packages a frond does, so a rename in one of them reaches here.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
+    "types": ["node"]
+  },
+  "include": ["serve-blog.ts", "graphql.ts"]
+}

@@ -12,7 +12,7 @@
  * the log and the DDL is a schema that fails at the driver on line one.
  */
 import { writeFile, mkdir } from 'node:fs/promises';
-import { createApp } from '@fougere/core';
+import { createApp, type Storage } from '@fougere/core';
 import { scanProject, frondAliases } from '@fougere/compiler';
 import { setModuleLoader } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
@@ -28,7 +28,7 @@ setModuleLoader((filePath) => jiti.import(filePath));
 const app = await createApp({
   scan: await scanProject(root),
   createContainer,
-  storageFactory: () => ({}),
+  storageFactory: () => ({}) as unknown as Storage,
 });
 
 const sql = generateSQL(app, { dialect: 'sqlite' }).map((statement) => `${statement};`).join('\n');
