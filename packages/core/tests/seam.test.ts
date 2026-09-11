@@ -89,6 +89,17 @@ describe('a class that stands in front of a seam', () => {
     expect(wrote()).toEqual(['counting(ivy)']);
   });
 
+  it('leaves the neighbour\'s rows alone — the scope is the frond', async () => {
+    await using built = await app();
+
+    // A link goes where its FROND goes, which is what preserves the gradient: `warehouse`
+    // moved behind `remotes:` would not silently lose one its own code never mentioned. A
+    // link that must be everywhere is a frond that is everywhere (`Extension.fronds`).
+    await createLocalRunner(built)({ entity: 'crate', op: 'add' }, { ...Invocation.empty, params: { label: 'oak' } });
+
+    expect(wrote()).toEqual([]);
+  });
+
   it('refuses a `ports:` entry naming a class that stands in front of nothing', async () => {
     await expect(app({ Storage: ['Absent'] }))
       .rejects.toThrow(/\[ports\] Storage: 'Absent' does not extend it/);

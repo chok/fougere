@@ -330,10 +330,16 @@ for that frond. Pinned by `tests/ports.test.ts`.
 **A SEAM is a port whose realization is handed in** — `SEAMS` (`boot/ports.ts`), `Storage`
 today. `storageFactory` builds one per entity and no class declares it, so a class extending
 one can only stand IN FRONT of it: `seamChains` refuses a subclass that does not ask for the
-seam, since nothing else it could be. The chain is read across EVERY frond and applied where
-the realization is BUILT (`install.ts`) rather than under a container key — nothing resolves
-`Storage`, and `<Entity>Storage` is what a handler asks for. That is what makes it
-transverse: one class stands in front of every entity's storage.
+seam, since nothing else it could be. It is applied where the realization is BUILT
+(`install.ts`) rather than under a container key — nothing resolves `Storage`, and
+`<Entity>Storage` is what a handler asks for.
+
+The scope is the FROND, like every other provider, and NO key widens it. A key would break
+the gradient: a frond moved behind `remotes:` would silently leave the reach of a link its
+own code never mentions, and the gradient promises the USER CODE is identical, not that the
+deployment statement is. A link that must be everywhere is a FROND that is everywhere, which
+`Extension.fronds` already answers — `@fougere/calls` brings one into every app that installs
+it. `middlewares: { Audit: 'app' }` has the same hole and is left as is.
 
 `Storage` is an interface AND an abstract class merged, so the class carries the thirteen
 gestures as a TYPE while its prototype carries them as a FORWARD — a link writes what it

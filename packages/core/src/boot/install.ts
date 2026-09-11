@@ -16,7 +16,7 @@ import { HandlerFacade } from '../dispatch/HandlerFacade.js';
 import { targetOf } from '../prefab/prefab.js';
 import { ownersOf, refuseStorageInUserCode, refuseCrudOnOwned } from './ownership.js';
 import { StorageGuard } from '../dispatch/StorageGuard.js';
-import { portBindings, wrapping, SEAMS } from './ports.js';
+import { portBindings, seamChains, wrapping, SEAMS } from './ports.js';
 import { facadeKeyOf, contractsKeyOf } from '../wire/call.js';
 import { inheritsCrud, subjectOf } from '../prefab/crud.js';
 import { repositoryKeyOf } from '../prefab/repository.js';
@@ -45,8 +45,6 @@ export interface Assembly {
   effectiveByKey: Map<string, EffectiveOperationsMap>;
   /** Every `ports:` key some frond actually settled — what is left is a typo. */
   boundPorts: Set<string>;
-  /** What stands in front of each of the framework's own ports, read across every frond. */
-  seams: Map<string, ProviderEntry[]>;
   /** What the model resolved before the boot performed any side effect. */
   operationModel: EffectiveOperationModel;
   entityByName: Map<string, SchemaView>;
@@ -64,7 +62,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   const {
     container, routeRegistry, emissions, dispatcher, localDispatcher, effectiveByKey,
     boundPorts, operationModel, entityByName, frondOf, contractsOf, getMiddlewares, use,
-    seams, log, options,
+    log, options,
   } = assembly;
 
   // Declared remote: keep the scanned metadata (bridges route with it),
@@ -125,6 +123,14 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
 
   for (const provider of frond.providers) {
     scope.register(nameOf(provider), provider.ctor, { deps: provider.deps });
+  }
+  // What this frond puts in front of one of the framework's own ports. Its own, like every
+  // provider — a link goes where its frond goes, which is what a frond behind `remotes:`
+  // takes with it.
+  const seams = seamChains(frond.providers, options.ports);
+  for (const [seam, links] of seams) {
+    boundPorts.add(seam);
+    frondLog.debug(`seam ${seam} → ${links.map((one) => one.ctor.name).join(' → ')} → the realization`);
   }
   // …and again under the port each one extends, so `private payment: Payment`
   // reaches the realization instead of the base class it is declared against.

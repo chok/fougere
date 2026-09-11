@@ -27,7 +27,7 @@ import {
   type EffectiveOperationsMap,
 } from '../effective-operation.js';
 import { StorageGuard } from '../dispatch/StorageGuard.js';
-import { portBindings, seamChains } from './ports.js';
+import { portBindings } from './ports.js';
 import { InFlight } from '../dispatch/InFlight.js';
 // The keys, each read from where its concept is declared — never respelled here.
 import { facadeKeyOf, contractsKeyOf, type RpcAnswer } from '../wire/call.js';
@@ -311,19 +311,10 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // Register frond scopes
     // What every frond is installed into, and reads while it is: one container, one route
     // table, one emission list — so what a frond serves is there for the next one to find.
-    // Read across EVERY frond, unlike a port: a seam's realization is the process's — one
-    // storage factory for all of them — so what stands in front of it is too. Read before
-    // the first install, because the first frond's storages already go through it.
-    const seams = seamChains(fronds.flatMap((frond) => frond.providers), options.ports);
-    for (const [seam, links] of seams) {
-      boundPorts.add(seam);
-      log.debug(`seam ${seam} → ${links.map((one) => one.ctor.name).join(' → ')} → the realization`);
-    }
-
     const assembly: Assembly = {
       container, routeRegistry, emissions, dispatcher, localDispatcher, effectiveByKey,
       boundPorts, operationModel, entityByName, frondOf, contractsOf, getMiddlewares, use,
-      seams, log, options,
+      log, options,
     };
     for (const frond of fronds) await installFrond(frond, assembly);
 

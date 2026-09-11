@@ -5,8 +5,13 @@ import { nameOf, type ProviderEntry } from '../descriptor/frond.js';
  *
  * They differ from a port in one way, and it decides everything else: their realization is
  * HANDED IN rather than scanned (`storageFactory` builds one per entity), so a class that
- * extends one can only be a wrapper. The chain is read across every frond instead of per
- * frond, because what stands in front of a storage is a decision about the process.
+ * extends one can only be a wrapper.
+ *
+ * The scope is the FROND, like every other provider, and there is no key that widens it: a
+ * link that must be everywhere is a frond that is everywhere, which `Extension.fronds`
+ * already answers — `@fougere/calls` brings one into every app that installs it. A
+ * process-wide key would break the gradient, since a frond moved behind `remotes:` would
+ * silently leave the reach of a link its own code never mentioned.
  */
 export const SEAMS = new Set(['Storage']);
 

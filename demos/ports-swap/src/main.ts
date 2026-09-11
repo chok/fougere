@@ -64,13 +64,18 @@ try {
 console.log('\n4. the same key says what stands IN FRONT — ports: { Payment: [\'RetryingPayment\', \'StripePayment\'] }');
 console.log('   →', JSON.stringify(await pay({ Payment: ['RetryingPayment', 'StripePayment'] })));
 
-console.log('\n5. the same statement on a port the FRAMEWORK declares — billing/services/Recording.ts');
+console.log('\n5. the same statement on a port the FRAMEWORK declares — catalog/services/Recording.ts');
 console.log('   it extends Storage and asks for one, and nothing else declares it:');
 {
   const app = await booted({ Payment: 'StripePayment' });
-  // A write to `catalog`'s entity. `billing` has never heard of `catalog`, and
-  // `ProductHandler` has never heard of `Recording`.
-  await createLocalRunner(app)({ entity: 'product', op: 'add' }, { ...Invocation.empty, params: { title: 'fern' } });
+  const call = createLocalRunner(app);
+  // `ProductHandler` has never heard of `Recording`, and `Recording` names no entity.
+  await call({ entity: 'product', op: 'add' }, { ...Invocation.empty, params: { title: 'fern' } });
+  // The neighbour's rows, written the same way — and the link does not see them. The scope
+  // is the FROND, so a link goes where its frond goes; `billing` behind `remotes:` would
+  // lose nothing its own code mentions.
+  await call({ entity: 'invoice', op: 'record' }, { ...Invocation.empty, params: { reference: 'INV-1' } });
+  console.log('   billing wrote one too, and nothing stood in front of it.');
   await app.dispose();
 }
 
