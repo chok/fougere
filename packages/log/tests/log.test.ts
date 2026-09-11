@@ -27,8 +27,20 @@ const app = (path: string) => createApp({
   createContainer,
 });
 
-/** Dispatch is not delivery: the writer returns before a destination finishes. */
-const settle = () => new Promise((resolve) => setTimeout(resolve, 60));
+/**
+ * Dispatch is not delivery: the writer returns before a destination finishes.
+ *
+ * With a condition it WAITS for it, because a fixed pause measures the machine and not the
+ * code — the first dispatch of a run opens the file and resolves the handler, and 60 ms was
+ * enough here and not on CI. Without one it is the fixed pause still, which is what a test
+ * asserting that nothing arrived actually needs.
+ */
+const settle = async (arrived?: () => boolean, ms = 5_000): Promise<void> => {
+  const deadline = Date.now() + ms;
+  do {
+    await new Promise((wake) => setTimeout(wake, 10));
+  } while (arrived && !arrived() && Date.now() < deadline);
+};
 const audited = () =>
   ((globalThis as Record<string, unknown>).__audited ?? []) as { message: string; at: Date }[];
 
@@ -52,7 +64,7 @@ describe('a line the frond announces', () => {
     await using built = await app(file);
 
     await createLocalRunner(built)({ entity: 'order', op: 'create' }, { ...Invocation.empty, params: { id: '7' } });
-    await settle();
+    await settle(() => said(file).includes('order 7 created'));
 
     expect(said(file)).toContain('order 7 created');
     vi.restoreAllMocks();
@@ -69,7 +81,7 @@ describe('a line the frond announces', () => {
     // once a destination existed made a devtools ring silence the operator's terminal:
     // 306 per-operation lines in `demos/observability` became 2.
     built.container.resolve<Logger>('Logger').info('through the shortcut');
-    await settle();
+    await settle(() => said(file).includes('through the shortcut'));
 
     expect(said(file)).toContain('order 1 created');
     expect(printed.mock.calls.flat().join(' ')).not.toContain('order 1 created');
@@ -84,7 +96,7 @@ describe('a line the frond announces', () => {
     await using built = await app(file);
 
     await createLocalRunner(built)({ entity: 'order', op: 'create' }, { ...Invocation.empty, params: { id: '9' } });
-    await settle();
+    await settle(() => said(file).includes('order 9 created') && audited().length > 0);
 
     // Declared nowhere: `AuditHandler.record` accepts `Fact<LogLine>`, and that IS the
     // subscription. `addTransport` is the call this shape does not need.
@@ -97,7 +109,7 @@ describe('a line the frond announces', () => {
     vi.spyOn(console, 'info').mockImplementation(() => {});
     await using built = await app(file);
     void built;
-    await settle();
+    await settle(() => lines(file).some((line) => /^read \d+ frond/.test(line.message)));
 
     // The boot writes most of what a process ever logs, and it writes it before an
     // emission exists. Held, then handed over — without this they were the only lines a
@@ -113,7 +125,7 @@ describe('a line the frond announces', () => {
     // `OrderHandler` writes `level`, `name`, `message` and nothing else — `at: created()`
     // is realized by the announcement, which is what makes `Emit<T>` partial.
     await createLocalRunner(built)({ entity: 'order', op: 'create' }, { ...Invocation.empty, params: { id: '3' } });
-    await settle();
+    await settle(() => audited().length > 0);
 
     expect(audited()[0]?.at).toBeInstanceOf(Date);
     vi.restoreAllMocks();
@@ -127,7 +139,7 @@ describe('a line the frond announces', () => {
 
     await createLocalRunner(first)({ entity: 'order', op: 'create' }, { ...Invocation.empty, params: { id: 'a' } });
     await createLocalRunner(other)({ entity: 'order', op: 'create' }, { ...Invocation.empty, params: { id: 'b' } });
-    await settle();
+    await settle(() => said(file).includes('order a created') && said(second).includes('order b created'));
 
     // A hold kept per PROCESS sent the second app's lines to the first app's door, and
     // only the first of three printed — measured on `demos/observability`.
@@ -143,12 +155,12 @@ describe('a line the frond announces', () => {
     await using built = await app(file);
 
     // A fact is validated strictly, and announcing is DISPATCH: the refusal is reported,
-    // never handed back to the writer. `onLog` handed a sink whatever the writer passed,
-    // so a collector downstream discovered the shape in another process.
+    // never handed back to the writer. The sink this replaced handed a destination whatever
+    // the writer passed, so a collector downstream discovered the shape in another process.
     await built.container.resolve<(line: unknown) => Promise<void>>('logLineEmit')(
       { level: 'chatty', name: 'shop', message: 'x', args: [] },
     );
-    await settle();
+    await settle(() => refused.mock.calls.length > 0);
 
     expect(said(file)).not.toContain('x');
     expect(refused.mock.calls.flat().join(' ')).toMatch(/level/);
@@ -186,7 +198,7 @@ describe('a line the frond announces', () => {
     });
 
     built.container.resolve<Logger>('Logger').info('stamped by the announcement');
-    await settle();
+    await settle(() => collected.length > 0);
 
     expect(collected.every((line) => line.at instanceof Date)).toBe(true);
     expect(collected.length).toBeGreaterThan(0);
@@ -241,7 +253,7 @@ describe('a line the frond announces', () => {
       }],
     });
     void built;
-    await settle();
+    await settle(() => kept.some((line) => /^read \d+ frond/.test(line.message)));
 
     expect(kept.some((line) => /^read \d+ frond/.test(line.message))).toBe(true);
     vi.restoreAllMocks();

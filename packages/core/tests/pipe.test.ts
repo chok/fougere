@@ -19,8 +19,17 @@ const root = join(import.meta.dirname, 'fixtures-pipe');
 /** The fixture pushes here — the scanner loads it through its own loader. */
 const seen = () => ((globalThis as Record<string, unknown>).__seen ?? []) as { email?: unknown }[];
 
-/** Dispatch is not delivery: the emitter returns before subscribers finish. */
-const settle = () => new Promise((resolve) => setTimeout(resolve, 60));
+/**
+ * Dispatch is not delivery: the emitter returns before subscribers finish. With a condition
+ * it WAITS for it — a fixed pause measures the machine, and the sibling suite's 60 ms was
+ * enough here and not on CI.
+ */
+const settle = async (arrived: () => boolean, ms = 5_000): Promise<void> => {
+  const deadline = Date.now() + ms;
+  do {
+    await new Promise((wake) => setTimeout(wake, 10));
+  } while (!arrived() && Date.now() < deadline);
+};
 
 class Post extends entity({ id: primary(), title: text() }) {}
 class PostPublished extends Post.pick('id', 'title').extend({ at: created() }) {}
@@ -69,7 +78,7 @@ describe('an op that finishes a fact', () => {
     await using app = await createApp({ scan: await scanProject(root), createContainer });
 
     await createLocalRunner(app)({ entity: 'post', op: 'publish' }, { ...Invocation.empty, params: { id: '42' } });
-    await settle();
+    await settle(() => seen().length > 0);
 
     // `PostHandler` announced an address. `RedactHandler` set it aside, and the subscriber
     // never saw it — one link, before anyone, so there is no reader who saw both.
@@ -81,7 +90,7 @@ describe('an op that finishes a fact', () => {
     await using app = await createApp({ scan: await scanProject(root), createContainer });
 
     await createLocalRunner(app)({ entity: 'post', op: 'publish' }, { ...Invocation.empty, params: { id: '7' } });
-    await settle();
+    await settle(() => seen().length > 0);
 
     // The core's own link runs first: `at: created()` is the entity speaking, and a
     // declared link amends what the entity already finished.
@@ -104,7 +113,7 @@ describe('an op that finishes a fact', () => {
 
     const announce = app.container.resolve<(raw: unknown) => Promise<void>>('postPublishedEmit');
     await announce({ id: 'x', title: 'a' });
-    await settle();
+    await settle(() => ((globalThis as Record<string, unknown>).__ran as string[]).length === 2);
 
     // Declared backwards on purpose: the order is read, not the order they were scanned in.
     expect((globalThis as Record<string, unknown>).__ran).toEqual(['second', 'first']);
