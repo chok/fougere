@@ -342,6 +342,14 @@ deployment statement is. A link that must be everywhere is a FROND that is every
 `Extension.fronds` already answers — `@fougere/calls` brings one into every app that installs
 it. `middlewares: { Audit: 'app' }` has the same hole and is left as is.
 
+The other two candidates were MEASURED and refused, 2026-09-11, because each already has its
+mechanism: an outgoing remote call runs `runMiddlewares` before the transport
+(`boot/remote.ts`, `createRemoteFacade`) — what is missing there is not a seam but a scope,
+since a frond's middleware covers the addresses its handlers SERVE and not the ones they
+CALL, which is a different subject with no name yet. And `HttpRouter` is never held by the
+boot at all: the host builds it, hands it to `registerRoutes`, and already holds both
+`router.use(middleware)` and the routes array — a seam would be a fourth way to say it.
+
 `Storage` is an interface AND an abstract class merged, so the class carries the thirteen
 gestures as a TYPE while its prototype carries them as a FORWARD — a link writes what it
 changes and nothing else. What it stands in front of is a SYMBOL on the instance, set
