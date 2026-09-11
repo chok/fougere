@@ -39,8 +39,9 @@ export default class FreezeHandler {
    * One op and not two: it is idempotent while it refuses, so a caller settles the
    * ambiguities and calls again with `renamed`. Splitting it would let a caller write
    * a version it never inspected.
+   *
+   * `json` is the presentation's, so it is not part of what this operation receives.
    */
-  /** `json` is the presentation's, so it is not part of what this operation receives. */
   async execute(input: Omit<Freeze, 'json'> & { renamed?: Record<string, Record<string, string>> }): Promise<FreezeInspection> {
     const fronds = await this.read(input);
     const version = input.version;

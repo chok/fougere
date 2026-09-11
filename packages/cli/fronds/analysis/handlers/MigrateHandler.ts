@@ -30,8 +30,11 @@ export interface MigrationPlan {
 export default class MigrateHandler {
   constructor(private projectScan: ProjectScan) {}
 
-  /** Realise the frozen steps this database has not caught up with. */
-  /** `json` is the presentation's, so it is not part of what this operation receives. */
+  /**
+   * Realise the frozen steps this database has not caught up with.
+   *
+   * `json` is the presentation's, so it is not part of what this operation receives.
+   */
   async execute(input: Omit<Migrate, 'json'>): Promise<MigrationPlan> {
     const scan = await this.projectScan.at(input.root ?? undefined);
     const perFrond = await Promise.all(scan.fronds.map((frond) => stepsOf(frond.source.path)));
