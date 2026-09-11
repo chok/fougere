@@ -83,10 +83,9 @@ class Post extends entity({
 
 // One canonical prompt, English on both locales — agents read English,
 // and a translated prompt would be a second truth to keep in sync.
-// The doc links are built from this site's own origin — one source,
-// valid wherever the site is deployed; the embedded model covers
-// agents running without web access.
-const origin = useRequestURL().origin;
+// The doc links are built from SITE_URL, which survives `nuxt generate`;
+// the embedded model covers agents running without web access.
+const origin = useRuntimeConfig().public.siteUrl;
 const auditPrompt = `# Audit: how much schema glue does this repo maintain by hand?
 
 You are auditing THIS repository. Be honest: report the costs
@@ -159,9 +158,10 @@ Per object: a table declaration-site → file → lines.
 Then two totals, honestly:
 - lines deletable under a derive-everything model;
 - what adopting Fougere would cost HERE: storage handover
-  (SQLite auto-DDL today), pre-release status (not on npm
-  yet), the feature-by-feature migration path, what the
-  team would have to learn.`;
+  (SQLite auto-DDL today), pre-release status (published
+  on npm under the alpha tag, APIs still settling), the
+  feature-by-feature migration path, what the team would
+  have to learn.`;
 
 const copied = ref(false);
 async function copyAudit() {

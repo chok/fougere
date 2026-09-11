@@ -26,6 +26,14 @@ export default defineNuxtConfig({
   modules: ['@nuxt/ui', '@nuxt/content', '@nuxtjs/i18n', '@fougere/nuxt'],
   css: ['~/assets/css/main.css'],
   compatibilityDate: '2026-07-18',
+  // The audit prompt links to the docs, and `nuxt generate` renders it with no client
+  // request to read an origin from — `useRequestURL()` returns http://localhost there.
+  // SITE_URL is what the Pages workflow already hands the build.
+  runtimeConfig: {
+    public: {
+      siteUrl: (process.env.SITE_URL ?? 'http://localhost:3000').replace(/\/$/, ''),
+    },
+  },
   // `lucide` and `noto` are devDependencies so the icons ship with the build instead of
   // being fetched from api.iconify.design at render time. Both halves are named: `scan`
   // inlines every name the source spells into the client bundle, and the collections are
