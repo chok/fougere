@@ -64,7 +64,7 @@ useSeoMeta({ title: `${page.value.title} — Fougere docs`, description: page.va
           </NuxtLink>
         </div>
         <div v-for="(group, i) in sidebar" :key="i">
-          <p v-if="group.label" class="pb-1.5 text-xs font-semibold uppercase tracking-wider text-dimmed">
+          <p v-if="group.label" class="pb-1.5 text-xs font-semibold uppercase tracking-wider text-muted">
             {{ group.label }}
           </p>
           <div :class="group.label ? 'border-l border-default' : ''">

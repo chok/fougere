@@ -89,8 +89,9 @@ const origin = useRuntimeConfig().public.siteUrl;
 const auditPrompt = `# Audit: what does the NEXT business object cost here?
 
 You are auditing THIS repository. Be honest: report the costs of
-adopting as carefully as the gains. Nothing below asks you to price
-a rewrite — Fougere is added beside what exists, one object at a
+adopting as carefully as the gains, and what would get WORSE as
+carefully as what improves. Nothing below asks you to price a
+rewrite — Fougere is added beside what exists, one object at a
 time, and the question is what the next one costs.
 
 ## Reference model — Fougere, a single-schema TS framework
@@ -113,7 +114,8 @@ rules, per-field error mapping), the API surface (post.list,
 post.create...), GraphQL types, and the TS type (the class IS
 the type). Business rules are handler operations, e.g.
 publish(id, user), validated server-side. Moving a module to its
-own process is one line of config; user code does not change.
+own process is one line of config; user code does not change, and
+one optional package puts a span on every operation.
 
 Scope today (pre-release): storage is additive auto-DDL over
 Kysely. SQLite resolves from its name; Postgres, MySQL and SQL
@@ -128,6 +130,7 @@ If you can fetch the web, ground yourself in the docs first:
 - ${origin}/docs/schema/entities — field vocabulary, the 4 axes
 - ${origin}/docs/client/forms — the shared browser/facade validator
 - ${origin}/docs/infra/gradient — the process boundary as config
+- ${origin}/docs/infra/observability — the span nobody writes
 - ${origin}/docs/existing-app — the feature-by-feature path
   (use it to price the adoption cost honestly)
 - ${origin}/docs/demos — whole projects, if you want the shape
@@ -135,39 +138,67 @@ If you can fetch the web, ground yourself in the docs first:
 
 ## Measure, in this repo
 
-Sections 1 to 3 are one rule read three times: a declaration
-should name nothing outside itself — not a table, not a protocol,
-not a host, not an address. Most repos leak on the first. Some
-leak on all three. Report what you find, including "nothing".
+Every section asks the same question about a different subject:
+for one thing Fougere DERIVES, how many lines does this repo
+write by hand? A declaration should name nothing outside itself —
+not a table, not a protocol, not a host, not an address — and
+nothing should have to be written twice per operation.
+
+Measure. Quote real paths and numbers you counted. Where a
+section finds nothing, say "nothing" — that is a result.
 
 ### 1. What the next object costs
 
 Do NOT start from the most-touched objects. Churn selects the
-most MATURE ones — the ones with the most business logic, the
-highest migration cost, and the least reason to move. That is
-the unfavourable case, and it is not the case anyone buys.
+most MATURE ones — most business logic, highest migration cost,
+least reason to move. That is the unfavourable case and nobody
+buys it. Start from what was added recently.
 
-Start from the most recent instead:
+A business object is something a person creates or edits: it has
+a form, or a public API route. A join table, a job queue, a
+session or an idempotency key is not one. Say which you excluded.
 
-a. Find the last business object ADDED (git log --diff-filter=A
-   over schema, model or migration files). List every file its
-   introduction touched, and count them.
-b. Find a commit that added ONE field to an existing object.
-   Count the files it touched, and name them.
+a. Find the business objects added in the last ~12 months.
+   \`git log --diff-filter=A\` over migration files works only if
+   this repo HAS per-change migration files. If it does not (a
+   \`db push\` workflow, one schema file per domain, a single
+   models.py), search the diffs instead:
+   \`git log -p --since=1.year -- <schema paths> | grep '^+model\\|^+class\\|^+CREATE TABLE'\`
+   For each, count the files its introduction touched.
+b. Do the same for commits that add ONE field.
+c. Report the MEDIAN of each, over at least five commits, not a
+   single example — one commit is noise. Say how many you used.
+d. Say how OFTEN this happens: new objects per year, new fields
+   per year. A high per-object cost paid twice a year is a
+   different argument from one paid every week, and the honest
+   report says which this is.
 
-Those two numbers — files per new object, files per new field —
-are the cost of the next one, and they are already in your
-history. They are what a single declaration changes.
+### 2. What a rename costs
 
-### 2. Where the shape is re-declared
+Find a commit that renamed a business object or one of its
+fields, and count the files it touched. If there is none, take
+the object from 1a and count the files that would have to change
+to rename one field.
 
-Take the object from 1a and the one or two most central objects
-in the app. List every file where their SHAPE is re-declared:
+This is the number a single declaration changes most, and it is
+usually the largest one in the repo.
+
+### 3. Where the shape is re-declared
+
+Take the object from 1a and the one or two the app is most built
+around. List every file where their SHAPE is re-declared:
 validation schema (Zod/Yup/joi), DB table or migration, API
 input/output types, form state and rules, TS interfaces,
-API-client types. Quote the paths. If an object's shape belongs
-to an external system (legacy API, search index), audit it anyway
-and flag it: Fougere does not own that mapping and it would stay.
+API-client types. Quote the paths.
+
+Two traps worth naming:
+- an object's shape may belong to an external system (legacy
+  API, search index). Audit it, then flag it: Fougere does not
+  own that mapping and those lines would stay.
+- a constraint can disagree with a default nobody typed — a
+  \`.max(255)\` against a column that is \`VARCHAR(191)\` because
+  the ORM defaults there. Check the defaults, not just what is
+  written.
 
 Count the lines that exist ONLY to keep those in sync:
 parse/serialize, DTO mapping, hand-rolled error formatting,
@@ -175,46 +206,75 @@ manual refetch after mutations. Counting rule: committed codegen
 output and pass-through wrappers count; business logic in
 resolvers or computed fields does not.
 
-### 3. Where the code names a place
+### 4. Where the code names a place
 
-A shape is not the only thing a declaration should not name.
-Look for the address and the host:
+Count the files of BUSINESS code — not config, not the HTTP
+layer itself — that name where they run:
 
-- base URLs and per-service env vars read outside one config file
+- base URLs or per-service env vars read outside one config file
 - hand-written fetch/axios wrappers, one per service called
-- business code importing request/response types, or any
-  framework-specific context, from the HTTP layer
-- anything that would have to change to run this on a different
-  runtime (Node, edge, a worker)
+- imports of request/response types, or of any host-specific
+  context object, inside domain code
+- anything that would have to change to run on another runtime
+  (Node, edge, a worker)
 
-Then answer one question with a number: to move one module into
-its own process today, how many files change? Fougere's answer
-is one config line, with user code untouched. If this repo is a
-single process and intends to stay one, say so plainly — the
-honest answer is then that this section costs it nothing.
+Report that file count. It is the answer whether or not this
+repo is one process or intends to stay one — a single process
+that names its host in domain code has the same coupling, it
+just has not paid for it yet.
 
-### 4. The drift
+Then, if the repo is or wants to be more than one process: pick
+the module you would most plausibly split, say where you drew
+its boundary, and count the files that would change. Fougere's
+answer is one config line with user code untouched.
 
-Look for one place where two declarations of the same thing
-already disagree (a max length, an optional, a nullable). There
-usually is one — that drift is the argument. If there is none
-here, say so plainly rather than reaching.
+### 5. What you write around every operation
+
+Fougere derives a span per operation, the four signals, and test
+cases from the entity. Count what this repo writes by hand for
+the same result:
+
+- lines that start or annotate a span, time a block, or log
+  entry/exit around business calls
+- how a request ID or trace context is carried between two
+  services, and how many files carry it
+- test fixtures that restate an object's shape — a factory, a
+  builder, a JSON sample per test
+
+If this repo has no tracing and does not want any, say so.
+
+### 6. The drift
+
+Find where two declarations of the same thing already disagree —
+a max length, an optional, a nullable, an enum with an extra
+value. Sweep rather than hunt: a short script comparing declared
+lengths on both sides usually finds a family at once. Report
+every family you find, quote the two declarations, and say what
+breaks in the gap between them. If there is none, say so plainly
+rather than reaching.
 
 ## Report
 
-Lead with the two numbers from 1: files per new object, files
-per new field. Then the drift from 4, quoted.
+Lead with four numbers: files per new object, files per new
+field, files per rename, files of business code that name a
+host. Then the drift from 6, quoted, with what breaks.
 
 Then, honestly:
-- what those two numbers become under a derive-everything model,
-  and how many of the lines from 2 stop existing;
-- what adopting Fougere would cost HERE: storage handover
-  (SQLite auto-DDL today), pre-release status (published on npm
-  under the alpha tag, APIs still settling), the feature-by-feature
-  path, what the team would have to learn;
+- what those numbers become under a derive-everything model, and
+  how many of the lines from 3 and 5 stop existing;
+- what this repo ALREADY derives — generated clients, inferred
+  types, a shared validator. Those lines are not a gain, and a
+  report that counts them is lying;
+- what would get WORSE. Name the database features in use that
+  Fougere's scope does not cover today, and anything it would
+  make harder. An audit that finds no downside has not looked;
+- what adopting would cost HERE: storage handover (SQLite
+  auto-DDL today), pre-release status (npm alpha tag, APIs still
+  settling), the feature-by-feature path, what the team must learn;
 - where the FIRST entity would go. Name the next object this team
-  is about to write, not the biggest one they already have. If
-  nothing is coming, say that — it is the real answer.`;
+  is about to write — a branch in progress, a table nobody reads
+  yet — not the biggest one they already have. If nothing is
+  coming, say that: it is the real answer.`;
 
 const copied = ref(false);
 async function copyAudit() {

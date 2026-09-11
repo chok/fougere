@@ -91,6 +91,16 @@ const run = async () => {
 </template>
 
 <style scoped>
+/* `.prose-body ul` in main.css reaches in here and marks every file with a disc.
+   `not-prose` does not cover it: that rule is ours, not Tailwind Typography's. */
+.demo-tree :deep(ul) {
+  list-style: none;
+  margin: 0;
+  padding-left: 0;
+}
+.demo-tree :deep(li) {
+  margin: 0;
+}
 .demo-tree :deep(pre) {
   margin: 0;
   border: 0;

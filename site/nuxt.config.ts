@@ -85,7 +85,10 @@ export default defineNuxtConfig({
     build: {
       markdown: {
         highlight: {
-          theme: { default: 'github-light', dark: 'github-dark' },
+          // Shiki's `github-dark` is GitHub's OLD dark theme: its comments are #6a737d,
+          // 3.09:1 on an elevated block where AA asks 4.5 — and this doc explains itself
+          // in comments. `github-dark-default` is the current one, #8b949e, 4.84:1.
+          theme: { default: 'github-light', dark: 'github-dark-default' },
           langs: [
             ...new Set(['ts', 'vue', 'bash', 'json', 'jsonc', 'dockerfile', 'yaml', 'html', ...DEMO_LANGUAGES]),
           ],
