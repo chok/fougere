@@ -47,7 +47,7 @@
     "compareBeforeLabel": "4 déclarations de la même forme, synchronisées à la main",
     "compareAfterLabel": "1 déclaration — le reste est dérivé",
     "auditTitle": "Ne nous croyez pas — faites compter votre agent",
-    "auditText": "La glue dupliquée est la trace mesurable d'un modèle absent. Collez ce prompt dans l'agent IA qui connaît déjà votre codebase (Claude Code, Cursor…) : il compte les formes redéclarées et le câblage de synchro de votre app — et rapporte les coûts d'adoption avec le même soin.",
+    "auditText": "Ce que coûte votre prochain objet métier est déjà dans votre historique git. Collez ce prompt dans l'agent IA qui connaît déjà votre codebase (Claude Code, Cursor…) : il compte les fichiers qu'un nouvel objet et un nouveau champ touchent vraiment, trouve où deux déclarations se contredisent déjà — et rapporte les coûts d'adoption avec le même soin.",
     "auditCopy": "Copier le prompt",
     "auditCopied": "Copié",
     "statTopology": "1 ligne",

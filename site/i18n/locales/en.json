@@ -47,7 +47,7 @@
     "compareBeforeLabel": "4 declarations of the same shape, kept in sync by hand",
     "compareAfterLabel": "1 declaration — everything else is derived",
     "auditTitle": "Don't take our word — make your agent count",
-    "auditText": "The duplicated glue is the measurable trace of a missing model. Paste this prompt into the AI agent that already knows your codebase (Claude Code, Cursor…): it counts the re-declared shapes and the sync wiring in your app — and reports the adoption costs just as carefully.",
+    "auditText": "What your next business object costs is already in your git history. Paste this prompt into the AI agent that already knows your codebase (Claude Code, Cursor…): it counts the files one new object and one new field really touch, finds where two declarations already disagree — and reports the adoption costs just as carefully.",
     "auditCopy": "Copy the prompt",
     "auditCopied": "Copied",
     "statTopology": "1 line",

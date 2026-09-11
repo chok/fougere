@@ -86,10 +86,12 @@ class Post extends entity({
 // The doc links are built from SITE_URL, which survives `nuxt generate`;
 // the embedded model covers agents running without web access.
 const origin = useRuntimeConfig().public.siteUrl;
-const auditPrompt = `# Audit: how much schema glue does this repo maintain by hand?
+const auditPrompt = `# Audit: what does the NEXT business object cost here?
 
-You are auditing THIS repository. Be honest: report the costs
-of switching as carefully as the gains.
+You are auditing THIS repository. Be honest: report the costs of
+adopting as carefully as the gains. Nothing below asks you to price
+a rewrite — Fougere is added beside what exists, one object at a
+time, and the question is what the next one costs.
 
 ## Reference model — Fougere, a single-schema TS framework
 
@@ -125,43 +127,94 @@ If you can fetch the web, ground yourself in the docs first:
 - ${origin}/docs — the model in one page
 - ${origin}/docs/schema/entities — field vocabulary, the 4 axes
 - ${origin}/docs/client/forms — the shared browser/facade validator
-- ${origin}/docs/existing-app — the feature-by-feature migration
-  path (use it to price the adoption cost honestly)
+- ${origin}/docs/infra/gradient — the process boundary as config
+- ${origin}/docs/existing-app — the feature-by-feature path
+  (use it to price the adoption cost honestly)
+- ${origin}/docs/demos — whole projects, if you want the shape
+  of a finished one
 
 ## Measure, in this repo
 
-1. Identify the 3 most-touched business objects. A repo has
-   no traffic stats — use git churn as the proxy (most-modified
-   schema/form/handler files over the last ~500 commits),
-   crossed with the app's main forms and API routes.
-2. For each, list every file where its SHAPE is re-declared:
-   validation schema (Zod/Yup/joi), DB table or migration,
-   API input/output types, form state and rules, TS
-   interfaces, API-client types. Quote the paths. If one
-   object's shape belongs to an external system (legacy API,
-   search index), audit it anyway and flag it: that is the
-   unfavorable case, and it belongs in an honest report.
-3. Count the lines that exist ONLY to keep those in sync:
-   parse/serialize, DTO mapping, hand-rolled error
-   formatting, manual refetch after mutations. Counting
-   rule: committed codegen output and pass-through wrappers
-   count; business logic in resolvers or computed fields
-   does not.
-4. Look for one place where two of those declarations
-   already disagree (a max length, an optional, a nullable).
-   There usually is one — that drift is the argument. If there
-   is none here, say so plainly rather than reaching.
+Sections 1 to 3 are one rule read three times: a declaration
+should name nothing outside itself — not a table, not a protocol,
+not a host, not an address. Most repos leak on the first. Some
+leak on all three. Report what you find, including "nothing".
+
+### 1. What the next object costs
+
+Do NOT start from the most-touched objects. Churn selects the
+most MATURE ones — the ones with the most business logic, the
+highest migration cost, and the least reason to move. That is
+the unfavourable case, and it is not the case anyone buys.
+
+Start from the most recent instead:
+
+a. Find the last business object ADDED (git log --diff-filter=A
+   over schema, model or migration files). List every file its
+   introduction touched, and count them.
+b. Find a commit that added ONE field to an existing object.
+   Count the files it touched, and name them.
+
+Those two numbers — files per new object, files per new field —
+are the cost of the next one, and they are already in your
+history. They are what a single declaration changes.
+
+### 2. Where the shape is re-declared
+
+Take the object from 1a and the one or two most central objects
+in the app. List every file where their SHAPE is re-declared:
+validation schema (Zod/Yup/joi), DB table or migration, API
+input/output types, form state and rules, TS interfaces,
+API-client types. Quote the paths. If an object's shape belongs
+to an external system (legacy API, search index), audit it anyway
+and flag it: Fougere does not own that mapping and it would stay.
+
+Count the lines that exist ONLY to keep those in sync:
+parse/serialize, DTO mapping, hand-rolled error formatting,
+manual refetch after mutations. Counting rule: committed codegen
+output and pass-through wrappers count; business logic in
+resolvers or computed fields does not.
+
+### 3. Where the code names a place
+
+A shape is not the only thing a declaration should not name.
+Look for the address and the host:
+
+- base URLs and per-service env vars read outside one config file
+- hand-written fetch/axios wrappers, one per service called
+- business code importing request/response types, or any
+  framework-specific context, from the HTTP layer
+- anything that would have to change to run this on a different
+  runtime (Node, edge, a worker)
+
+Then answer one question with a number: to move one module into
+its own process today, how many files change? Fougere's answer
+is one config line, with user code untouched. If this repo is a
+single process and intends to stay one, say so plainly — the
+honest answer is then that this section costs it nothing.
+
+### 4. The drift
+
+Look for one place where two declarations of the same thing
+already disagree (a max length, an optional, a nullable). There
+usually is one — that drift is the argument. If there is none
+here, say so plainly rather than reaching.
 
 ## Report
 
-Per object: a table declaration-site → file → lines.
-Then two totals, honestly:
-- lines deletable under a derive-everything model;
+Lead with the two numbers from 1: files per new object, files
+per new field. Then the drift from 4, quoted.
+
+Then, honestly:
+- what those two numbers become under a derive-everything model,
+  and how many of the lines from 2 stop existing;
 - what adopting Fougere would cost HERE: storage handover
-  (SQLite auto-DDL today), pre-release status (published
-  on npm under the alpha tag, APIs still settling), the
-  feature-by-feature migration path, what the team would
-  have to learn.`;
+  (SQLite auto-DDL today), pre-release status (published on npm
+  under the alpha tag, APIs still settling), the feature-by-feature
+  path, what the team would have to learn;
+- where the FIRST entity would go. Name the next object this team
+  is about to write, not the biggest one they already have. If
+  nothing is coming, say that — it is the real answer.`;
 
 const copied = ref(false);
 async function copyAudit() {
