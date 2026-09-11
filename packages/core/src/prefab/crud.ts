@@ -35,8 +35,11 @@ const inputParam = (entity: string) => ({ name: 'input', type: { raw: `Partial<$
 const returns = (raw: string, name: string, extra?: { array?: boolean; nullable?: boolean }) =>
   ({ raw, name, ...extra });
 
-/** The five ops a Crud handler brings, declared rather than discovered. */
-/** `output` says the entity, and saying it costs nothing at runtime. */
+/**
+ * The five ops a Crud handler brings, declared rather than discovered.
+ *
+ * `output` says the entity, and saying it costs nothing at runtime.
+ */
 function crudOps(entity: SchemaView & { partial?: () => SchemaView }): Record<string, OperationContract> {
   const name = (entity as { name?: string }).name ?? 'Entity';
   const input = inputParam(name);

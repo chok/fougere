@@ -1,4 +1,3 @@
-/** A method's signature, as a contract is built from it — the shape, never the reading. */
 /** A type reference — primitives, entities, arrays, generics. */
 export interface TypeRef {
   /** Raw type text as written in source (e.g. 'Pagination<Post>'). */
@@ -26,7 +25,7 @@ export interface Param {
   optional?: boolean;
 }
 
-/** A method signature. */
+/** A method's signature, as a contract is built from it — the shape, never the reading. */
 export interface Signature {
   name: string;
   params: Param[];

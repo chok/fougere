@@ -21,7 +21,6 @@ export interface FougereConfig {
   logLevel?: LogLevel;
   /** Remote fronds — frondName → base URL. */
   remotes?: Record<string, string>;
-  /** Which realization answers which port — port class name → implementation class name. */
   /** What answers a port — a name, or the chain from the outside in. */
   ports?: Record<string, string | readonly string[]>;
   /** Auth declaration — picks a provider package and forwards options to it. */

@@ -137,9 +137,9 @@ export interface App extends DispatchPort {
   extensions(): string[];
   /** Declare one `rpc` op — what the app says about ITSELF, beside the card. */
   serveRpc(operationName: string, answer: RpcAnswer): void;
-  /** Register a global app middleware (runs on every operation). */
   /** Watch every dispatch transition; the returned function unsubscribes. */
   observe(observer: DispatchObserver): () => void;
+  /** Register a global app middleware (runs on every operation). */
   use(middleware: AppMiddleware): void;
   /** Register an app middleware scoped to a specific entity. */
   use(entity: string, middleware: AppMiddleware): void;

@@ -149,7 +149,6 @@ export async function planMigration(
 }
 
 /** Bring the database up to what the entities describe — additively. */
-/** Bring the schema up to date. */
 export async function migrate(
   app: AppLike,
   target: Kysely<any> | { db: Kysely<any> },

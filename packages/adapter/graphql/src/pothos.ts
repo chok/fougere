@@ -17,7 +17,6 @@ type PresenterInstance = Record<string, (parent: any) => any>;
 export interface TypeConfig {
   /** Nom du type GraphQL */
   name: string;
-  /** Entity source */
   /** The schema whose fields become the type — a live class, or a card that travelled. */
   entity: SchemaView;
   /** Champs à exclure du type GraphQL */

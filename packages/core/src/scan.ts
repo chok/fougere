@@ -1,6 +1,5 @@
 import type { Fronds } from './descriptor/Fronds.js';
 
-/** Result of scanning a project directory. */
 /** Something the scan could NOT do — recorded instead of swallowed. */
 export interface ScanDiagnostic {
   /**
@@ -22,6 +21,7 @@ export interface ScanDiagnostic {
   cause?: unknown;
 }
 
+/** Result of scanning a project directory. */
 export interface ScanResult {
   fronds: Fronds;
   /** What the scan could not do. Empty is a claim, not a default — see {@link ScanDiagnostic}. */

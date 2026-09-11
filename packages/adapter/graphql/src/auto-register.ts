@@ -174,7 +174,6 @@ export interface RegisterAllOptions {
   surface?: string;
 }
 
-/** Auto-register GraphQL types and operations from a fougere App. */
 /** The GraphQL type of a declared presenter view, built once per view class. */
 const viewTypes = new WeakMap<object, any>();
 function viewTypeOf(
@@ -189,6 +188,7 @@ function viewTypeOf(
   return type;
 }
 
+/** Auto-register GraphQL types and operations from a fougere App. */
 export function registerAll(
   builder: InstanceType<typeof SchemaBuilder>,
   app: AppLike,

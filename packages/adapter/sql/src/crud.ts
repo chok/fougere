@@ -81,9 +81,9 @@ export class SqlStorage {
   /** field → the value pair a driver needs; only for the shapes a driver can't bind. */
   private codecs: Map<string, ValueCodec>;
 
-  /** How many keys one statement may carry here — see `Dialect.maxBindings`. */
   /** Kept whole: the engine answers more than one question, and refusals are one of them. */
   private dialect: Dialect;
+  /** How many keys one statement may carry here — see `Dialect.maxBindings`. */
   private maxBindings: number;
   /** How this engine spells an upsert, or `false` when it cannot — see `Dialect.upsert`. */
   private upsertClause: 'on conflict' | 'on duplicate key' | false;

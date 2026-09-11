@@ -30,10 +30,10 @@ export interface FrondCall {
 /** A transport executes a call somewhere else. Failures surface as thrown FougereError. */
 export type Transport = (call: FrondCall, invocation: InvocationContext) => Promise<unknown>;
 
-/** Reserved namespace — calls the runner answers itself, never a façade. */
 /** What a receiver accepts before it stops reading an input. */
 export const MAX_BODY_BYTES = 1024 * 1024;
 
+/** Reserved namespace — calls the runner answers itself, never a façade. */
 export const RPC_ENTITY = 'rpc';
 
 /** What an `rpc` op answers — the door for what the app says about ITSELF, never about a row. */
