@@ -33,3 +33,6 @@ benchmarks/
 
 # `scripts/*.py` bytecode
 **/__pycache__/
+# demos/ projected into the site at build — site/modules/demo.ts
+site/content/demo/
+site/public/demo/

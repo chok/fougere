@@ -39,6 +39,7 @@
   "devDependencies": {
     "@iconify-json/lucide": "^1.2.121",
     "@iconify-json/noto": "^1.2.7",
+    "@iconify-json/vscode-icons": "^1.2.77",
     "@types/markdown-it": "^14.1.2"
   }
 }

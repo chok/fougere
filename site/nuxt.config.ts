@@ -1,3 +1,5 @@
+import { DEMO_LANGUAGES } from './modules/demo';
+
 const locales: {
   code: 'en' | 'fr';
   name: string;
@@ -23,7 +25,9 @@ const serverOnlyRoutes = locales.flatMap((l) =>
 );
 
 export default defineNuxtConfig({
-  modules: ['@nuxt/ui', '@nuxt/content', '@nuxtjs/i18n', '@fougere/nuxt'],
+  // `./modules/demo` is named rather than left to the modules/ scan: it writes into
+  // content/ and must run before @nuxt/content reads it.
+  modules: ['./modules/demo', '@nuxt/ui', '@nuxt/content', '@nuxtjs/i18n', '@fougere/nuxt'],
   css: ['~/assets/css/main.css'],
   compatibilityDate: '2026-07-18',
   // The audit prompt links to the docs, and `nuxt generate` renders it with no client
@@ -40,8 +44,28 @@ export default defineNuxtConfig({
   // listed for the server bundle because Nitro does not trace them into .output/server
   // under pnpm — the same trap as drizzle-storage.
   icon: {
-    serverBundle: { collections: ['lucide', 'noto'] },
-    clientBundle: { scan: true },
+    serverBundle: { collections: ['lucide', 'noto', 'vscode-icons'] },
+    // `scan` inlines every name the source spells, which reaches no icon a library picks by
+    // itself: `::code-tree` reads a file's extension against a table inside @nuxt/ui, so the
+    // nine below are spelled nowhere and were fetched from /api/_nuxt_icon at render time —
+    // a route `nuxt generate` does not emit. The twelve below are what `demos/` asks of that
+    // table, and a build that names one more says so: `failed to load icon`.
+    clientBundle: {
+      scan: true,
+      icons: [
+        'vscode-icons:file-type-typescript',
+        'vscode-icons:file-type-vue',
+        'vscode-icons:file-type-js',
+        'vscode-icons:file-type-rust',
+        'vscode-icons:file-type-node',
+        'vscode-icons:file-type-nuxt',
+        'vscode-icons:file-type-tsconfig',
+        'vscode-icons:file-type-markdown',
+        'vscode-icons:file-type-git',
+        'vscode-icons:file-type-json',
+        'vscode-icons:file-type-toml',
+      ],
+    },
   },
   components: [
     // content/ components are global (usable from markdown) and unprefixed.
@@ -62,7 +86,9 @@ export default defineNuxtConfig({
       markdown: {
         highlight: {
           theme: { default: 'github-light', dark: 'github-dark' },
-          langs: ['ts', 'vue', 'bash', 'json', 'jsonc', 'dockerfile', 'yaml', 'html'],
+          langs: [
+            ...new Set(['ts', 'vue', 'bash', 'json', 'jsonc', 'dockerfile', 'yaml', 'html', ...DEMO_LANGUAGES]),
+          ],
         },
       },
     },
