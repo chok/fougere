@@ -199,6 +199,50 @@ describe('Container', () => {
       const container = createContainer();
       expect(() => container.resolve('nope')).toThrow();
     });
+
+    it('names the descent that led to a missing name', () => {
+      const container = createContainer();
+      container.register('A', class { constructor(b: unknown) {} }, { deps: ['B'] });
+      container.register('B', class { constructor(z: unknown) {} }, { deps: ['Zzz'] });
+
+      expect(() => container.resolve('A'))
+        .toThrow("[container] 'Zzz' is not registered (resolving: A → B → Zzz)");
+    });
+
+    it('refuses a cycle, naming the turn', () => {
+      const container = createContainer();
+      container.register('A', class { constructor(b: unknown) {} }, { deps: ['B'] });
+      container.register('B', class { constructor(a: unknown) {} }, { deps: ['A'] });
+
+      expect(() => container.resolve('A')).toThrow('[container] dependency cycle: A → B → A');
+    });
+
+    it('names the turn, not the path that led to it', () => {
+      const container = createContainer();
+      container.register('A', class { constructor(b: unknown) {} }, { deps: ['B'] });
+      container.register('B', class { constructor(c: unknown) {} }, { deps: ['C'] });
+      container.register('C', class { constructor(b: unknown) {} }, { deps: ['B'] });
+
+      expect(() => container.resolve('A')).toThrow('[container] dependency cycle: A → B → C → B');
+    });
+
+    it('carries the path across scopes, since the descent continues in the parent', () => {
+      const root = createContainer();
+      const child = root.createScope();
+      child.register('A', class { constructor(b: unknown) {} }, { deps: ['B'] });
+      root.register('B', class { constructor(a: unknown) {} }, { deps: ['A'] });
+
+      expect(() => child.resolve('A'))
+        .toThrow("[container] 'A' is not registered (resolving: A → B → A)");
+    });
+
+    it('forgets a name whose constructor threw — the next resolution is not a cycle', () => {
+      const container = createContainer();
+      container.register('Boom', class { constructor() { throw new Error('db down'); } });
+
+      expect(() => container.resolve('Boom')).toThrow('db down');
+      expect(() => container.resolve('Boom')).toThrow('db down');
+    });
   });
 });
 

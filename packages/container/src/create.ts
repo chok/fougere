@@ -10,6 +10,7 @@ interface ScopeContainer extends Container {
   _getEntry(name: string): Entry | undefined;
   _getFallback(): ((name: string) => unknown) | undefined;
   _forget(child: ScopeContainer): void;
+  _resolving(): string[];
 }
 
 const isDisposable = (value: unknown): value is Disposable =>
@@ -25,6 +26,13 @@ function createScope(parent?: ScopeContainer): ScopeContainer {
   // never the other way round.
   const children: ScopeContainer[] = [];
   let fallback: ((name: string) => unknown) | undefined;
+  // The names being built right now, shared by the whole tree: a miss here is answered by the
+  // parent and the descent continues there, so only one stack can name the path whole —
+  // `child.resolve('A')` reaching a parent's `B` that asks for `A` back reports `A → B → A`.
+  const resolving: string[] = parent?._resolving() ?? [];
+
+  const through = (name: string) =>
+    resolving.length > 0 ? ` (resolving: ${[...resolving, name].join(' → ')})` : '';
 
   const remember = <T>(value: T): T => {
     if (isDisposable(value)) built.push(value);
@@ -62,18 +70,31 @@ function createScope(parent?: ScopeContainer): ScopeContainer {
           registry.set(name, { factory: () => made, lifetime: 'singleton', instance: made });
           return made as T;
         }
-        throw new Error(`[container] '${name}' is not registered`);
+        throw new Error(`[container] '${name}' is not registered${through(name)}`);
       }
 
       if (entry.instance !== undefined) return entry.instance as T;
-      const value = entry.factory(container) as T;
-      // The container disposes what it KEEPS: a transient is handed over and forgotten,
-      // and its caller is the one who knows when it is done.
-      if (entry.lifetime === 'singleton') {
-        entry.instance = value;
-        remember(value);
+
+      if (resolving.includes(name)) {
+        throw new Error(`[container] dependency cycle: ${[...resolving, name].join(' → ')}`);
       }
-      return value;
+
+      // Popped in a finally, because a constructor that throws leaves the name on the stack
+      // otherwise and the next resolution of it reports a cycle that is not there.
+      resolving.push(name);
+      try {
+        const value = entry.factory(container) as T;
+        // The container disposes what it KEEPS: a transient is handed over and forgotten,
+        // and its caller is the one who knows when it is done.
+        if (entry.lifetime === 'singleton') {
+          entry.instance = value;
+          remember(value);
+        }
+
+        return value;
+      } finally {
+        resolving.pop();
+      }
     },
 
     has(name: string): boolean {
@@ -122,6 +143,10 @@ function createScope(parent?: ScopeContainer): ScopeContainer {
 
     _getEntry(name: string): Entry | undefined {
       return registry.get(name) ?? parent?._getEntry(name);
+    },
+
+    _resolving() {
+      return resolving;
     },
 
     _forget(child: ScopeContainer) {
