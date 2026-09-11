@@ -15,7 +15,7 @@ import type { App, InvocationContext, Transport } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { serve, createHttpTransport, handleRpc, frameCall, unframeResponse } from '@fougere/transport-http';
 import type { RunningReceiver, RpcResponse } from '@fougere/transport-http';
-import { trace, onSpan, type FinishedSpan } from '../src/index.js';
+import { trace, type FinishedSpan, type SpanSink } from '../src/index.js';
 import { createStorageFactory } from './fixtures/data.js';
 
 const fixturesDir = join(import.meta.dirname, 'fixtures');
@@ -61,12 +61,17 @@ let receiver: RunningReceiver;
 let socket: { port: number; server: Server };
 let overHttp: App;
 let overSocket: App;
-let restore: (() => void) | undefined;
 let spans: FinishedSpan[] = [];
+/**
+ * What the three apps' middlewares hand their spans to — one list, read at every end, so a
+ * taker added after the boot still counts. Empty until a test asks, which is what makes
+ * "opens none when nobody listens" a real state rather than a timing.
+ */
+const takers: SpanSink[] = [];
 
 function collect(): void {
   spans = [];
-  restore = onSpan((span) => spans.push(span));
+  takers.push((span) => spans.push(span));
 }
 
 /** The caller's span and the receiver's, told apart by which one has no parent. */
@@ -76,7 +81,7 @@ function halves(): [FinishedSpan, FinishedSpan] {
 
 beforeAll(async () => {
   host = await createApp({ scan: await scanProject(fixturesDir), createContainer, storageFactory: createStorageFactory() });
-  host.use(trace());
+  host.use(trace(takers));
   const runner = createLocalRunner(host);
 
   receiver = await serve(runner, { port: 0 });
@@ -88,7 +93,7 @@ beforeAll(async () => {
     remotes: { catalog: `http://127.0.0.1:${receiver.port}` },
     remoteTransport: (url) => createHttpTransport(url),
   });
-  overHttp.use(trace());
+  overHttp.use(trace(takers));
 
   overSocket = await createApp({
     scan: await scanProject('/tmp/fougere-trace-socket'),
@@ -96,10 +101,9 @@ beforeAll(async () => {
     remotes: { catalog: `tcp://127.0.0.1:${socket.port}` },
     remoteTransport: () => socketTransport(socket.port),
   });
-  overSocket.use(trace());
+  overSocket.use(trace(takers));
 }, 30_000);
 
-afterEach(() => { restore?.(); restore = undefined; });
 
 afterAll(async () => {
   socket?.server.close();
@@ -108,6 +112,8 @@ afterAll(async () => {
   await overSocket?.dispose();
   await host?.dispose();
 });
+
+afterEach(() => { takers.length = 0; });
 
 describe('a span per operation', () => {
   it('opens none when nobody listens', async () => {

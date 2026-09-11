@@ -20,7 +20,7 @@ import { serve, createHttpTransport } from '@fougere/transport-http';
 import { createJiti } from 'jiti';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { activeCalls, onSpan } from '@fougere/observability';
+import { activeCalls } from '@fougere/observability';
 import { observed } from './observe.js';
 import { calls } from '@fougere/calls';
 
@@ -57,15 +57,22 @@ const memoryStorage = () => ({
 
 const stopping: (() => Promise<void>)[] = [];
 
+// The depth a finished span cannot carry: by the time one is exported, the pile-up it
+// belonged to is over. Measured where a span CLOSES — a poll landing between two peaks
+// reports neither — and reported once a second, which is what a gauge is. Declared WITH
+// each app, so it is released with it rather than left registered on a dead one.
+let peak = 0;
+const deepest = () => { peak = Math.max(peak, activeCalls()); };
+
 // ── catalog — holds Product, answers about it ───
 // Observing is declared with the app, not wired onto it after the fact — so `dispose()`
 // flushes the telemetry and this file no longer owes a `stop()` it could forget.
-const catalog = await createApp({ scan: await scanProject(join(root, 'catalog')), createContainer, storageFactory: memoryStorage, extensions: [observed('catalog'), calls()] });
+const catalog = await createApp({ scan: await scanProject(join(root, 'catalog')), createContainer, storageFactory: memoryStorage, extensions: [observed('catalog', deepest), calls()] });
 const catalogReceiver = await serve(createLocalRunner(catalog), { port: CATALOG });
 stopping.push(async () => { await catalogReceiver.close(); await catalog.dispose(); });
 
 // ── shipping — a Frond with no entity at all ────
-const shipping = await createApp({ scan: await scanProject(join(root, 'shipping')), createContainer, extensions: [observed('shipping'), calls()] });
+const shipping = await createApp({ scan: await scanProject(join(root, 'shipping')), createContainer, extensions: [observed('shipping', deepest), calls()] });
 const shippingReceiver = await serve(createLocalRunner(shipping), { port: SHIPPING });
 stopping.push(async () => { await shippingReceiver.close(); await shipping.dispose(); });
 
@@ -80,7 +87,7 @@ const shop = await createApp({
     shipping: `http://127.0.0.1:${SHIPPING}`,
   },
   remoteTransport: (url) => createHttpTransport(url),
-  extensions: [observed('shop'), calls({ panel: 4401 })],
+  extensions: [observed('shop', deepest), calls({ panel: 4401 })],
 });
 const shopReceiver = await serve(createLocalRunner(shop), { port: SHOP });
 stopping.push(async () => { await shopReceiver.close(); await shop.dispose(); });
@@ -96,13 +103,6 @@ console.log(`
   pnpm load    # k6, in stages — a flat rate draws flat lines
 `);
 
-// The depth a finished span cannot carry: by the time one is exported, the pile-up it
-// belonged to is over. Measured where a span CLOSES — a poll landing between two peaks
-// reports neither — and reported once a second, which is what a gauge is.
-let peak = 0;
-const stopWatching = onSpan(() => {
-  peak = Math.max(peak, activeCalls());
-});
 const reporting = setInterval(() => {
   if (peak === 0) return;
   console.log(`  deepest pile-up this second: ${peak} call(s) in flight`);
@@ -110,7 +110,6 @@ const reporting = setInterval(() => {
 }, 1_000);
 
 const shutdown = async () => {
-  stopWatching();
   clearInterval(reporting);
   // Reverse of construction. Telemetry flushes inside `dispose()` now — a span held in a
   // buffer at exit is a span nobody will ever see, and that is the extension's `down`.

@@ -3,7 +3,7 @@ import { frond, loggerMiddleware, Logger, LogLine, type App, type Extension, typ
 import ExportHandler from './ExportHandler.js';
 import { traceContext } from '#trace-context';
 import { registerFlush } from './index.js';
-import { trace, onSpan } from './index.js';
+import { trace, type SpanSink } from './index.js';
 import { metrics, serveTopology } from './metrics.js';
 import { otlp } from './otlp.js';
 import { logs } from './logs.js';
@@ -16,6 +16,13 @@ export interface ObservabilityOptions {
   flushMs?: number;
   /** A collector that cannot be reached is the app's business, not its failure. */
   onError?: (error: unknown) => void;
+  /**
+   * One more taker for this app's spans, beside the metrics and the exporter — a gauge, a
+   * console line, anything reading what an operation cost. It is declared here rather than
+   * registered afterwards so it is released with the app, like everything else the
+   * extension took.
+   */
+  onSpan?: SpanSink;
 }
 
 /** Observe this process — one member of the ascent. */
@@ -26,6 +33,9 @@ export function observability(options: ObservabilityOptions = {}): Extension {
 
   /** One box the handler resolves, whose content the ascent decides. */
   const exporting: { take: LogSink } = { take: () => {} };
+
+  /** Who takes this app's spans. Per APP for the reason `undoing` is. */
+  const takers = new WeakMap<App, SpanSink[]>();
 
   return {
     name: 'observability',
@@ -53,7 +63,9 @@ export function observability(options: ObservabilityOptions = {}): Extension {
       undoing.set(app, undo);
       // Order matters: `trace()` opens the span that every log line written inside the
       // call will carry. Installed the other way round, the lines leave uncorrelated.
-      app.use(trace());
+      const spans: SpanSink[] = options.onSpan ? [options.onSpan] : [];
+      takers.set(app, spans);
+      app.use(trace(spans));
       // The app's own logger, named — NOT `new Logger(service)`: a logger built here has
       // no `Carry`, so its lines printed and announced nothing. 20 on the console, 0 in
       // the ring, measured on `demos/observability`.
@@ -73,7 +85,7 @@ export function observability(options: ObservabilityOptions = {}): Extension {
       }
 
       const measured = metrics(app);
-      undo.push(onSpan(measured.sink));
+      spans.push(measured.sink);
       serveTopology(app, measured);
 
       if (!options.otlp) return;
@@ -97,8 +109,8 @@ export function observability(options: ObservabilityOptions = {}): Extension {
       // What `ExportHandler` asks for — replaced rather than added to, so a reload does not
       // hand the old exporter a new app's lines.
       exporting.take = written.sink;
+      spans.push(telemetry.sink);
       undo.push(
-        onSpan(telemetry.sink),
         registerFlush(() => telemetry.flush()), registerFlush(() => written.flush()),
         () => telemetry.stop(), () => written.stop(),
         () => { exporting.take = () => {}; },
@@ -110,6 +122,8 @@ export function observability(options: ObservabilityOptions = {}): Extension {
       const undo = undoing.get(app);
       if (!undo) return;
       undoing.delete(app);
+      // Nothing to unsubscribe from: the list was this app's, and it goes with it.
+      takers.delete(app);
       for (const step of undo.reverse()) await step();
     },
   };

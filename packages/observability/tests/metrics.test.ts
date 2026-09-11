@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { createApp, createLocalRunner } from '@fougere/core';
 import type { App, InvocationContext } from '@fougere/core';
 import { createContainer } from '@fougere/container';
-import { trace, onSpan, metrics, activeCalls, type Metrics } from '../src/index.js';
+import { trace, metrics, activeCalls, type Metrics, type SpanSink } from '../src/index.js';
 import { metricsPayload, serveTopology } from '../src/metrics.js';
 import { createStorageFactory } from './fixtures/data.js';
 
@@ -17,19 +17,20 @@ type Facade = Record<string, (invocation?: InvocationContext) => Promise<unknown
 
 let app: App;
 let measured: Metrics;
-let restore: (() => void) | undefined;
+/** What the middleware hands its spans to — emptied between tests, like `measured`. */
+const takers: SpanSink[] = [];
 
 beforeAll(async () => {
   app = await createApp({ scan: await scanProject(fixturesDir), createContainer, storageFactory: createStorageFactory() });
-  app.use(trace());
+  app.use(trace(takers));
 }, 30_000);
 
-afterEach(() => { restore?.(); restore = undefined; });
+afterEach(() => { takers.length = 0; });
 afterAll(async () => { await app?.dispose(); });
 
 function collect(): void {
   measured = metrics(app);
-  restore = onSpan(measured.sink);
+  takers.push(measured.sink);
 }
 
 describe('rate, errors and duration come from one histogram', () => {

@@ -417,7 +417,11 @@ them by NAME (`handler-parser.ts`, `ANNOUNCED`) — the checker keeps nothing of
 **`Emit<T>` / `Fact<T>`** (`core/src/wire/emit.ts`, dispatched by `boot/Emissions.ts`) — every
 other call names ONE recipient; an emission names a SUBJECT. Accepting a `Fact<T>` IS the
 subscription — no topic, no register call. It is a resolver, not a channel: nothing is
-durable, and a subscriber keeps its validator, its binding and its middlewares. A ring is
+durable, and a subscriber keeps its validator, its binding and its middlewares. That is
+also its PRICE, and it is what keeps a span from being one: measured 2026-09-11, an
+operation costs **813 ns**, its span through a plain list of takers **53 ns**, and announced
+**2408 ns** — three times the thing observed, once per operation. A fact is worth a dispatch
+when it crosses a boundary, not when it stays in one process. A ring is
 refused, a diamond is legal. Announcing returns once every subscriber has been HANDED the
 fact; `app.deliver` waits for them all and REJECTS with an `AggregateError`. A fact is
 validated strictly. Pinned by `tests/emit.test.ts`.
@@ -496,17 +500,14 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   `<LogLine>`, so `depKeyOf` never sees the port. Recovering it means reading the alias's
   own declaration in `handler-parser.ts` (`parseCheckedType`). Measured 2026-09-10; the
   alias was removed rather than shipped broken.
-- **`onQuery` and `onSpan` stay sinks, and the price is why** — `adapter/sql/src/query.ts`,
-  `observability/src/index.ts`. Measured 2026-09-11, one span over one subscriber: an
-  ordinary operation costs **813 ns**, the same span through the sink list **53 ns**, and
-  announced **2408 ns**. A span is produced per OPERATION and a statement per QUERY, so
-  announcing them would make observing cost three times the thing observed. The emission is
-  a dispatch — validated, bound, run through the middlewares — and that is what a fact is
-  worth when it crosses a boundary, not when it stays in one process. `registerFlush` is the
-  same list read once instead of per line, and it is already taken and withdrawn by
-  `observability`'s `up`/`down`; it lives at module level because the host that calls
-  `flushTelemetry()` holds a request handler, not an app (`demos/cloudflare-d1`,
-  `ctx.waitUntil`).
+- **`onQuery` is the last registry, and its two ends cannot see each other** —
+  `adapter/sql/src/query.ts`. The producer is a Kysely built by `createSqliteSource()`
+  BEFORE any app exists, and the consumer is `@fougere/calls` subscribing in its `up`. No
+  path runs between them: an app holds `db`, never the source, and a Kysely's `log` is fixed
+  at construction. A module-level list is what bridges that, and closing it means giving an
+  app its sources. `registerFlush` is the same list read once instead of per line; it lives
+  at module level because the host that calls `flushTelemetry()` holds a request handler,
+  not an app (`demos/cloudflare-d1`, `ctx.waitUntil`).
 - **An un-augmented `adapters:` accepts anything, silently.** With no adapter in the program
   `EntityAdapters<TFields>` is `Partial<{}>`, which in TypeScript means "anything
   non-nullish". The RUNTIME half is closed since `AdapterFieldValidator`; what remains open is the type.

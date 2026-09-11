@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { Carry, createApp, Logger, setLogLevel } from '@fougere/core';
 import type { App, InvocationContext, LogRecord } from '@fougere/core';
 import { createContainer } from '@fougere/container';
-import { trace, onSpan, logs, currentSpan, type FinishedSpan } from '../src/index.js';
+import { trace, logs, currentSpan, type FinishedSpan, type SpanSink } from '../src/index.js';
 import { createStorageFactory } from './fixtures/data.js';
 
 const fixturesDir = join(import.meta.dirname, 'fixtures');
@@ -16,13 +16,15 @@ type Facade = Record<string, (invocation?: InvocationContext) => Promise<unknown
 
 let app: App;
 const undo: (() => void)[] = [];
+/** What the middleware hands its spans to — emptied between tests. */
+const takers: SpanSink[] = [];
 
 beforeAll(async () => {
   app = await createApp({ scan: await scanProject(fixturesDir), createContainer, storageFactory: createStorageFactory() });
-  app.use(trace());
+  app.use(trace(takers));
 }, 30_000);
 
-afterEach(() => { while (undo.length) undo.pop()!(); vi.restoreAllMocks(); setLogLevel('info'); });
+afterEach(() => { while (undo.length) undo.pop()!(); takers.length = 0; vi.restoreAllMocks(); setLogLevel('info'); });
 afterAll(async () => { await app?.dispose(); });
 
 /**
@@ -95,7 +97,7 @@ describe('the logger has a door', () => {
 describe('a line carries the call it was written inside', () => {
   it('stamps the trace of the operation running around it', async () => {
     const spans: FinishedSpan[] = [];
-    undo.push(onSpan((s) => spans.push(s)));
+    takers.push((span) => spans.push(span));
 
     const exporter = logs({ service: 'catalog' });
     const sent: { traceId?: string }[] = [];

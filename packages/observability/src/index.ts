@@ -36,9 +36,6 @@ export function currentSpan(): SpanContext | undefined {
   return traceContext.current<Running>();
 }
 
-/** Who takes the spans this process finishes, consulted at every end like the log level. */
-const sinks: SpanSink[] = [];
-
 /**
  * Calls running right now — the saturation signal, and the only one a FINISHED span
  * cannot carry. Counted at the same two moments the span is opened and closed.
@@ -70,18 +67,17 @@ export function registerFlush(send: () => Promise<void>): () => void {
   };
 }
 
-export function onSpan(next: SpanSink): () => void {
-  sinks.push(next);
-  return () => {
-    const at = sinks.indexOf(next);
-    if (at >= 0) sinks.splice(at, 1);
-  };
-}
-
-/** The middleware. */
-export function trace(): AppMiddleware {
+/**
+ * The middleware, and it is HANDED who takes the spans it finishes.
+ *
+ * The list belongs to the app the middleware was installed on, never to the process: a
+ * discarded app went on feeding the takers of the app that replaced it, so every metric
+ * counted twice. A module-level array made that a leak you had to remember to undo; a list
+ * held beside the app cannot outlive it. Read at every end, so a taker added later counts.
+ */
+export function trace(takers: readonly SpanSink[]): AppMiddleware {
   return (ctx, next) => {
-    if (sinks.length === 0) return next();
+    if (takers.length === 0) return next();
     // An op that CARRIES a line is not a call this process made: counting it puts the
     // delivery of a log line in the saturation figure, and spanning it puts a line about
     // the span back on the wire. Same rule as `loggerMiddleware`, one declaration.
@@ -128,8 +124,8 @@ export function trace(): AppMiddleware {
         ms: performance.now() - start,
         error,
       };
-      // A sink that throws is a broken exporter, never a broken call.
-      for (const take of sinks) { try { take(done); } catch { /* observing never refuses */ } }
+      // A taker that throws is a broken exporter, never a broken call.
+      for (const take of takers) { try { take(done); } catch { /* observing never refuses */ } }
     };
 
     return traceContext.within(span, async () => {

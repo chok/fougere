@@ -7,7 +7,7 @@
     "dev": "tsx src/main.ts",
     "load": "k6 run load.js",
     "signoz": "cd signoz && foundryctl cast -f casting.yaml",
-    "typecheck": "tsc -p catalog/fronds && tsc -p shipping/fronds && tsc -p shop/fronds"
+    "typecheck": "tsc -p . && tsc -p catalog/fronds && tsc -p shipping/fronds && tsc -p shop/fronds"
   },
   "dependencies": {
     "@fougere/calls": "workspace:*",

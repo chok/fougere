@@ -6,7 +6,7 @@
  * the same pair declared once, in the package that owns it, so a Frond still knows nothing
  * about being observed and a host knows nothing about how.
  */
-import { observability } from '@fougere/observability';
+import { observability, type SpanSink } from '@fougere/observability';
 import type { Extension } from '@fougere/core';
 
 /** Where an OTLP collector listens by convention. SigNoz, Jaeger, Tempo — all the same. */
@@ -35,6 +35,6 @@ function complain(err: unknown): void {
  * Handed to `createApp({ extensions })`: the release comes with it, so the process no
  * longer owes a `stop()` call it could forget.
  */
-export function observed(service: string): Extension {
-  return observability({ service, otlp: COLLECTOR, flushMs: 2_000, onError: complain });
+export function observed(service: string, onSpan?: SpanSink): Extension {
+  return observability({ service, otlp: COLLECTOR, flushMs: 2_000, onError: complain, ...(onSpan ? { onSpan } : {}) });
 }

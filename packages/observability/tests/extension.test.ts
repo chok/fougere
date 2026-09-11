@@ -66,10 +66,11 @@ describe('observability as an extension', () => {
 
     await first.dispose();
 
-    // Same middleware, no extension: it opens nothing because nothing is listening. With
-    // the sink left behind, this would count — which is exactly the double-counting.
+    // Same middleware, its own empty list: it opens nothing because nothing is listening.
+    // The list is the APP's — a released app cannot leave a taker behind for the next one,
+    // which is the double-counting this test was written for.
     await using second = await boot(undefined);
-    second.use(trace());
+    second.use(trace([]));
     const secondRunning = second.resolve<Facade>('productHandler').list();
     expect(activeCalls()).toBe(0);
     await secondRunning;
