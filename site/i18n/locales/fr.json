@@ -14,8 +14,6 @@
     "badge": "Pré-version — les API se stabilisent",
     "title": "Le seul framework que vous pouvez choisir n'importe quand.",
     "subtitle": "Jour 1 ou jour 400 : vos routes, vos pages, votre rendu et vos données ne bougent pas. Ce que vous réécrivez, c'est le modèle — une entité à la fois.",
-    "ctaDocs": "Lire la doc",
-    "ctaBlog": "Lire le blog",
     "gradientTitle": "Le gradient",
     "gradientText": "Une Frond tourne in-process ou dans son propre process derrière JSON-RPC 2.0 — avec un code utilisateur identique. Pas de RPC sans voyage : en local, l'appel est une exécution mémoire directe.",
     "statAxes": "4 axes",
@@ -23,12 +21,12 @@
     "statPrimitives": "5 primitives",
     "statPrimitivesText": "toute la surface d'appel : useQuery, useCommand, useFormFor et useCurrentUser dans la page, et invoke, leur dual serveur",
     "dogfoodTitle": "Ce site est une app Fougere",
-    "dogfoodText": "Les docs que vous allez lire sont du markdown dans git. Le blog derrière /blog est une Frond : les posts sont des entités avec une transition draft→publish jugée, écrits via le contrat de formulaire, lus via la primitive de query — et la Frond entière peut partir dans un autre process en décommentant une ligne de config.",
+    "dogfoodText": "Les docs que vous allez lire sont du markdown dans git. Le blog derrière /blog est une Frond : les posts sont des entités avec une transition draft→publish validée, écrits via le contrat de formulaire, lus via la primitive de query — et la Frond entière peut partir dans un autre process en décommentant une ligne de config.",
     "realCode": "Le code ci-dessous est la Frond blog de ce site — pas du pseudocode.",
     "declareTitle": "Déclarer",
     "declareText": "Une classe d'entité. Validation, table SQLite, type GraphQL, contrat de formulaire — toutes ses projections.",
-    "judgeTitle": "Juger",
-    "judgeText": "Des opérations, pas des écritures de champ. readOnly ferme la porte entrante ; le serveur tamponne la paire.",
+    "validateTitle": "Valider",
+    "validateText": "Des opérations, pas des écritures de champ. readOnly ferme la porte entrante ; le serveur tamponne la paire.",
     "consumeTitle": "Consommer",
     "consumeText": "La classe importée désigne l'appel. Une command sur Post revalide toutes les queries sur Post.",
     "gradientPoint1": "Les erreurs voyagent intactes : même code, message et détails par champ des deux côtés",
@@ -38,7 +36,7 @@
     "foreignTitle": "Une Frond n'a pas à être en TypeScript",
     "foreignText": "Une Frond n'honore que deux contrats, et les deux sont du JSON : le fil (JSON-RPC 2.0) et la carte (rpc.discover, qui rend ce qu'elle héberge, schémas compris). Aucun des deux ne mentionne TypeScript. demos/rust-frond est un domaine telemetry écrit en Rust — aucune classe d'entité nulle part, la déclaration vit dans src/main.rs.",
     "foreignAxes": "Le consommateur demande la carte, en rebâtit un schéma vivant, et refuse un payload avant tout réseau. Ces refus sont les quatre axes traversant une frontière de langage : shape EST le JSON Schema, role, lifecycle et boundary voyagent sous x-fougere. Les règles voyagent, pas seulement les types.",
-    "foreignCaption": "Règles déclarées en Rust, tenues par le juge TypeScript — aucune ligne de TS ne les déclare",
+    "foreignCaption": "Règles déclarées en Rust, tenues par le validateur TypeScript — aucune ligne de TS ne les déclare",
     "derivationTitle": "Le modèle : une déclaration, tout se projette",
     "derivationText": "Une entité n'est pas une table. La table, la validation, le formulaire, l'API sont des projections d'une seule déclaration — changez-la, chaque projection suit.",
     "ctaStart": "L'ajouter à mon app",
@@ -57,7 +55,7 @@
     "statusTitle": "Où en est Fougere",
     "statusText": "Pré-version — mais pas une promesse. Chacun de ces points a été vu tourner :",
     "status1": "Les 5 primitives sont le seul chemin — l'ancien monde a été supprimé, pas remplacé à moitié",
-    "status2": "Une feature métier jugée (draft→publish) validée en navigateur, bascule de badge comprise",
+    "status2": "Une feature métier validée (draft→publish) vérifiée en navigateur, bascule de badge comprise",
     "status3": "Le split est vécu au quotidien : host tué → 503 typé dans les pages ; relancé → récupération",
     "status4": "Code utilisateur identique in-process et split — vérifié jusqu'au build de prod",
     "status5": "Ce site — docs, blog, auth — tourne dessus",
@@ -67,8 +65,7 @@
     "readingTwo": "Seconde lecture — ce qui est choisi en dehors"
   },
   "docs": {
-    "overview": "Vue d'ensemble",
-    "notFound": "Page introuvable"
+    "overview": "Vue d'ensemble"
   },
   "blog": {
     "title": "Blog",
@@ -138,7 +135,7 @@
     "wireCall": "la même valeur d'appel, mise sur le fil",
     "pivot": "la seule ligne qui change",
     "api": "Surface d'API",
-    "judge": "dérivée du shape · embarquée avec la classe",
+    "validator": "dérivée du shape · embarquée avec la classe",
     "core": {
       "coreLabel": "La Frond — ce que vous avez écrit",
       "coreNote": "elle n'en nomme aucune des quatre",

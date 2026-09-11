@@ -14,8 +14,6 @@
     "badge": "Pre-release — APIs are settling",
     "title": "The only framework you can pick at any point.",
     "subtitle": "Day 1 or day 400: your routes, your pages, your rendering and your data stay put. What you rewrite is the model — one entity at a time.",
-    "ctaDocs": "Read the docs",
-    "ctaBlog": "Read the blog",
     "gradientTitle": "The gradient",
     "gradientText": "A Frond runs in-process or in its own process behind JSON-RPC 2.0 — with identical user code. No RPC without travel: local calls are direct memory execution.",
     "statAxes": "4 axes",
@@ -23,12 +21,12 @@
     "statPrimitives": "5 primitives",
     "statPrimitivesText": "the whole call surface: useQuery, useCommand, useFormFor and useCurrentUser in the page, and invoke, their server dual",
     "dogfoodTitle": "This site is a Fougere app",
-    "dogfoodText": "The docs you are about to read are markdown in git. The blog behind /blog is a Frond: posts are entities with a judged draft→publish transition, written through the form contract, read through the query primitive — and the whole Frond can move to another process by uncommenting one line of config.",
+    "dogfoodText": "The docs you are about to read are markdown in git. The blog behind /blog is a Frond: posts are entities with a validated draft→publish transition, written through the form contract, read through the query primitive — and the whole Frond can move to another process by uncommenting one line of config.",
     "realCode": "The code below is this site's own blog Frond — not pseudocode.",
     "declareTitle": "Declare",
     "declareText": "One entity class. Validation, SQLite table, GraphQL type, form contract — all projections of it.",
-    "judgeTitle": "Judge",
-    "judgeText": "Operations, not field writes. readOnly closes the inbound door; the server stamps the pair.",
+    "validateTitle": "Validate",
+    "validateText": "Operations, not field writes. readOnly closes the inbound door; the server stamps the pair.",
     "consumeTitle": "Consume",
     "consumeText": "The imported class designates the call. A command on Post revalidates every query on Post.",
     "gradientPoint1": "Errors travel intact: same code, message and per-field details either side",
@@ -38,7 +36,7 @@
     "foreignTitle": "A Frond does not have to be TypeScript",
     "foreignText": "A Frond honours two contracts and both are JSON: the wire (JSON-RPC 2.0) and the map (rpc.discover, which returns what it hosts, schemas included). Neither mentions TypeScript. demos/rust-frond is a telemetry domain written in Rust — there is no entity class anywhere in it, the declaration lives in src/main.rs.",
     "foreignAxes": "The consumer asks for the map, rebuilds a live schema from it, and refuses a bad payload before any network happens. Those refusals are the four axes crossing a language boundary: shape is the JSON Schema, role, lifecycle and boundary ride under x-fougere. The rules travel, not just the types.",
-    "foreignCaption": "Rules declared in Rust, enforced by the TypeScript judge — no line of TS declared them",
+    "foreignCaption": "Rules declared in Rust, enforced by the TypeScript validator — no line of TS declared them",
     "derivationTitle": "The model: one declaration, everything projects",
     "derivationText": "An entity is not a table. The table, the validation, the form, the API are projections of one declaration — change it, every projection follows.",
     "ctaStart": "Add it to your app",
@@ -57,7 +55,7 @@
     "statusTitle": "Where Fougere stands",
     "statusText": "Pre-release — but not a promise. Each of these has been seen running:",
     "status1": "The 5 primitives are the only path — the old world was deleted, not half-replaced",
-    "status2": "A judged business feature (draft→publish) verified in the browser, badge flip included",
+    "status2": "A validated business feature (draft→publish) verified in the browser, badge flip included",
     "status3": "The split is lived daily: kill the host → typed 503 in the pages; restart → recovery",
     "status4": "Identical user code in-process and split — verified down to the production build",
     "status5": "This site — docs, blog, auth — runs on it",
@@ -67,8 +65,7 @@
     "readingTwo": "Second reading — what is chosen outside it"
   },
   "docs": {
-    "overview": "Overview",
-    "notFound": "Page not found"
+    "overview": "Overview"
   },
   "blog": {
     "title": "Blog",
@@ -138,7 +135,7 @@
     "wireCall": "the same call value, framed on the wire",
     "pivot": "the only line that changes",
     "api": "API surface",
-    "judge": "derived from the shape · ships with the class",
+    "validator": "derived from the shape · ships with the class",
     "core": {
       "coreLabel": "The Frond — what you wrote",
       "coreNote": "it names none of the four",

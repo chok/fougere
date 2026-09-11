@@ -207,7 +207,7 @@
 }
 .deriv-svg .grad-leaf { fill: var(--ui-primary); }
 .deriv-svg .deriv-sep { stroke: var(--ui-border); stroke-width: 1; }
-.deriv-svg .deriv-judge { fill: var(--ui-text-muted); font-size: 10.5px; font-style: italic; }
+.deriv-svg .deriv-validator { fill: var(--ui-text-muted); font-size: 10.5px; font-style: italic; }
 .deriv-svg .deriv-envelope {
   fill: color-mix(in oklab, var(--ui-primary) 4%, transparent);
   stroke: var(--ui-border-accented);
