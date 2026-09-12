@@ -14,7 +14,7 @@ import type { CreateAppOptions } from './types.js';
 import { registerFrames } from './together.js';
 import { HandlerFacade } from '../dispatch/HandlerFacade.js';
 import { targetOf } from '../prefab/prefab.js';
-import { ownersOf, refuseStorageInUserCode, refuseCrudOnOwned } from './ownership.js';
+import { ownersOf, refuseSharedName, refuseStorageInUserCode, refuseCrudOnOwned } from './ownership.js';
 import { StorageGuard } from '../dispatch/StorageGuard.js';
 import { portBindings, seamChains, wrapping, SEAMS } from './ports.js';
 import { facadeKeyOf, contractsKeyOf } from '../wire/call.js';
@@ -117,6 +117,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
 
   // Who owns what, and the rule that makes owning mean something. Before anything is
   // registered, so a bad line is named by this refusal rather than by the container's.
+  refuseSharedName(frond);
   const owners = ownersOf(frond.providers);
   refuseStorageInUserCode(frond, owners, (entity) => entityByName.has(entity));
   refuseCrudOnOwned(frond, owners);

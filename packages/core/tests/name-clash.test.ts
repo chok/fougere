@@ -21,6 +21,7 @@ import { createContainer } from '@fougere/container';
 import { createApp } from '../src/index.js';
 
 const root = join(import.meta.dirname, 'fixtures-name-clash');
+const oneFrond = join(import.meta.dirname, 'fixtures-name-clash-provider');
 
 describe('two fronds claiming one name', () => {
   it('refuses to boot instead of letting one shadow the other', async () => {
@@ -38,6 +39,27 @@ describe('two fronds claiming one name', () => {
     // A boot that refuses without saying who collided leaves the reader to grep.
     expect(message).toMatch(/catalog/);
     expect(message).toMatch(/inventory/);
+    expect(message).toMatch(/rename/i);
+  });
+});
+
+/**
+ * The same silence one level down. `services/` and `repositories/` are two spellings of one
+ * provider list, so two files may declare `Rates` and the frond registers both under that
+ * key — `register` is a `Map.set`, and whoever asks is handed whichever was scanned last.
+ */
+describe('two files of one frond claiming one name', () => {
+  it('refuses to boot, and names both files', async () => {
+    let message = '';
+    try {
+      await createApp({ scan: await scanProject(oneFrond), createContainer });
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    expect(message).toMatch(/Rates/);
+    expect(message).toMatch(/services\/Rates\.ts/);
+    expect(message).toMatch(/repositories\/Rates\.ts/);
     expect(message).toMatch(/rename/i);
   });
 });

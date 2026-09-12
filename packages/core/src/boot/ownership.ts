@@ -5,6 +5,27 @@ import { targetOf } from '../prefab/prefab.js';
 import { ownedBy, repositoryKeyOf } from '../prefab/repository.js';
 import { entityOfStorageKey } from '../storage/port.js';
 
+/** One name, one file: two providers under one key and the second silently replaces the first. */
+export function refuseSharedName(frond: FrondDescriptor): void {
+  const declared = new Map<string, string>();
+
+  for (const provider of frond.providers) {
+    const name = nameOf(provider);
+    const first = declared.get(name);
+    if (first !== undefined) {
+      throw new Error(
+        `[provider] two files declare ${name}:\n`
+        + `    ${first}\n`
+        + `    ${provider.filePath}\n`
+        + `  A frond registers both under one key, so the second replaces the first and whoever `
+        + `asks for ${name} is handed whichever was scanned last.\n`
+        + '  Rename one of the two.',
+      );
+    }
+    declared.set(name, provider.filePath);
+  }
+}
+
 /** Who owns an entity's storage. */
 export function ownersOf(providers: readonly ProviderEntry[]): Map<string, string> {
   const owners = new Map<string, string>();
