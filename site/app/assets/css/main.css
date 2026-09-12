@@ -53,9 +53,11 @@
 }
 .code-window-body {
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 .code-window-body pre {
-  height: 100%;
+  min-height: 100%;
   margin: 0;
   padding: 1rem;
   font-size: 0.74rem;
