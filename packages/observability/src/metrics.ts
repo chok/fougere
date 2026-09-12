@@ -1,5 +1,5 @@
 /** The four signals every service is judged on, derived from the span that already exists. */
-import type { App, Edge, FrondPlacement, TopologyReport } from '@fougere/core';
+import { declaredTopologyOf, type App, type Edge, type FrondPlacement, type TopologyReport } from '@fougere/core';
 
 export type { Edge, FrondPlacement, TopologyReport } from '@fougere/core';
 import { activeCalls, type FinishedSpan, type SpanSink } from './index.js';
@@ -100,8 +100,14 @@ export function metrics(app?: App): Metrics {
 function topologyOf(app: App | undefined, seen: Set<string>): FrondPlacement[] {
   // What the app SERVES: a frond an extension brought is instrumentation, and reporting it
   // would describe this package to itself.
+  //
+  // A frond named in `remotes:` is scanned when its code sits in the same project, and stays
+  // in `app.fronds` — the boot says `declared remote — not hosted locally` and keeps it. This
+  // half reports what RUNS here, so it is not one of them: it used to answer `local` for a
+  // frond every call reached over HTTP. Not a config-derived node either — it is named below
+  // only once it has answered, like any other remote.
   const local = new Map((app?.fronds ?? [])
-    .filter((frond) => !frond.brought)
+    .filter((frond) => !frond.brought && !app?.remotes[frond.name])
     .map((frond) => [frond.name, frond] as const));
 
   const here: FrondPlacement[] = [...local.values()].map((frond) => ({
@@ -126,11 +132,17 @@ function bucketOf(seconds: number): number {
   return BOUNDS.length;
 }
 
-/** Serve the topology on `rpc.topology` — read from inside the process it describes. */
+/**
+ * Serve the topology on `rpc.topology` — read from inside the process it describes.
+ *
+ * The declared half is read at every call rather than once here: `reloadFougere()` builds the app
+ * again, and a config read at boot would keep answering for the app that was released.
+ */
 export function serveTopology(app: App, measured: Metrics): void {
   app.serveRpc('topology', (): TopologyReport => {
     const { since, active, topology, edges } = measured.snapshot();
-    return { since, active, fronds: topology, edges };
+
+    return { since, active, fronds: topology, edges, declared: declaredTopologyOf(app) };
   });
 }
 

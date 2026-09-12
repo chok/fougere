@@ -40,6 +40,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
+    "@dagrejs/dagre": "^3.1.1",
     "@fougere/app": "workspace:*",
     "@fougere/core": "workspace:*",
     "@fougere/schema": "workspace:*"

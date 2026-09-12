@@ -108,18 +108,54 @@ const collections: Record<string, Record<string, unknown>[]> = {
 const observed = true;
 
 /**
- * One frond here, one that only ANSWERED — which is the whole point of the reading:
- * `billing` is remote because a call reached it, not because a config line said so, and its
- * shape is published by the process that owns it.
+ * Six fronds and four ways of being known, because the reading only earns its place once
+ * there is a shape to read.
+ *
+ * `cms` and `media` run HERE. `identity`, `billing` and `audit` are elsewhere because a call
+ * REACHED them — never because a config line said so. `search` is the one the counted half
+ * cannot hold: the config names an address, nothing has ever answered from it, so it exists
+ * in `declared` alone and the link to it is drawn broken.
+ *
+ * Every observed edge leaves a local frond, and that is not a simplification: an edge is only
+ * knowable on the side that made the call, so this process cannot see `billing → audit`.
  */
 const topology: TopologyReport = {
   since: Date.parse('2026-08-22T08:00:00.000Z'),
+  // Nothing is running: this report is frozen. A live one moves, and the chip only appears then.
   active: 0,
   fronds: [
-    { frond: 'cms', placement: 'local', entities: 2, doors: 2 },
+    { frond: 'cms', placement: 'local', entities: 3, doors: 4 },
+    { frond: 'media', placement: 'local', entities: 1, doors: 2 },
+    { frond: 'identity', placement: 'remote', entities: 0, doors: 0 },
     { frond: 'billing', placement: 'remote', entities: 0, doors: 0 },
+    { frond: 'audit', placement: 'remote', entities: 0, doors: 0 },
   ],
-  edges: [{ from: 'cms', to: 'billing', count: 128, errors: 3 }],
+  edges: [
+    { from: 'cms', to: 'media', count: 640, errors: 0 },
+    { from: 'cms', to: 'identity', count: 2140, errors: 0 },
+    { from: 'cms', to: 'billing', count: 128, errors: 3 },
+    { from: 'cms', to: 'audit', count: 40, errors: 1 },
+    { from: 'media', to: 'audit', count: 96, errors: 0 },
+  ],
+  declared: {
+    fronds: [
+      { frond: 'cms', placement: 'local' },
+      { frond: 'media', placement: 'local' },
+      { frond: 'identity', placement: 'remote', at: 'https://identity.internal:4410' },
+      { frond: 'billing', placement: 'remote', at: 'https://billing.internal:4400' },
+      { frond: 'audit', placement: 'remote', at: 'https://audit.internal:4600' },
+      { frond: 'search', placement: 'remote', at: 'https://search.internal:4500' },
+    ],
+    edges: [
+      { from: 'cms', to: 'media' },
+      { from: 'cms', to: 'identity' },
+      { from: 'cms', to: 'billing' },
+      { from: 'cms', to: 'audit' },
+      { from: 'cms', to: 'search' },
+      { from: 'media', to: 'identity' },
+      { from: 'media', to: 'audit' },
+    ],
+  },
 };
 
 /** The refusal a real app answers when the package was never wired — carried on `data`. */
@@ -316,7 +352,13 @@ const messages = {
         entities: '%{smart_count} entité |||| %{smart_count} entités',
         doors: '%{smart_count} porte |||| %{smart_count} portes',
         refused: '%{smart_count} refus |||| %{smart_count} refus',
-        inFlight: '%{smart_count} appel en vol |||| %{smart_count} appels en vol',
+        inFlight: '%{smart_count} appel en cours |||| %{smart_count} appels en cours',
+        unheard: 'muet',
+        noTraffic: 'sans trafic',
+        quiet_count: '%{smart_count} lien sans trafic |||| %{smart_count} liens sans trafic',
+        unheard_count: '%{smart_count} sans réponse |||| %{smart_count} sans réponse',
+        silent: "Déclaré sur %{at} — rien n'en a jamais répondu.",
+        legend: "Un trait pointillé est déclaré et n'a jamais servi. Cliquez sur un frond pour voir ce qu'il contient.",
         noEdges: "Aucun appel entre fronds observé — une arête apparaît au premier appel de l'un vers l'autre.",
         unobservedTitle: "Cette application ne s'observe pas",
         unobservedBody: "La forme d'un système se lit depuis l'intérieur du processus qu'elle décrit, et celui-ci n'en publie aucune. Installez @fougere/observability et déclarez-le comme extension du boot.",

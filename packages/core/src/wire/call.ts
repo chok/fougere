@@ -98,6 +98,33 @@ export interface Edge {
   errors: number;
 }
 
+/** A frond the config knows of, and where it says to reach it. */
+export interface DeclaredFrond {
+  frond: string;
+  placement: 'local' | 'remote';
+  /**
+   * Host and port of the address `remotes:` names, absent when the frond runs here. Never the
+   * whole address: a declared one may carry credentials, and this answer leaves the process.
+   */
+  at?: string;
+}
+
+/** One frond reaching another, read from a handler's dependencies rather than from a call. */
+export interface DeclaredEdge {
+  from: string;
+  to: string;
+}
+
+/**
+ * What the config SAYS, beside what the runtime SAW. The two disagree exactly when something
+ * is misconfigured, and a frond that never answered is absent from the observed half — so
+ * without this one, nothing tells a silent dependency from an absent one.
+ */
+export interface DeclaredTopology {
+  fronds: DeclaredFrond[];
+  edges: DeclaredEdge[];
+}
+
 /** The shape of the system as ONE process discovered it — the answer to `rpc.topology`. */
 export interface TopologyReport {
   /** When this process started counting — an edge count is read against it. */
@@ -106,6 +133,7 @@ export interface TopologyReport {
   active: number;
   fronds: FrondPlacement[];
   edges: Edge[];
+  declared: DeclaredTopology;
 }
 
 /** The shape a card must have to be walked — `fronds`, and each frond's `doors`. */

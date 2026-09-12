@@ -235,6 +235,49 @@ refuse in opposite ways: `up` stops at the first refusal, `down` releases every 
 sends the refusals together in an `AggregateError`. An extension belongs to the PROCESS, not
 to a frond. Pinned by `tests/lifecycle.test.ts`.
 
+**A topology has two halves, and neither may be read as the other** — `boot/declared.ts`,
+`declaredTopologyOf`, the dual of `identityCardOf`: the card says what this app SERVES, this
+says where the rest is supposed to be. It reads `app.remotes` and `handler.deps` and calls
+nobody, so `TopologyReport.declared` sits beside `fronds` and `edges` — which stay COUNTED —
+and is never merged into them. The counted half cannot report a frond that never answered:
+it is absent from it, so a system with a node down reads as a smaller healthy one, and
+`demos/observability` at rest reported three processes as a monolith. A crossing is a dep
+equal to `facadeKeyOf(address)` of an address ANOTHER frond serves, indexed FORWARD like
+`registrationsOf` (`verify.ts`) — never by reparsing a suffix — so an address nothing scanned
+resolves to nothing and is left out rather than guessed. Three readers that each held a
+piece: `rpc.topology`, `@fougere/calls`' `servedModel` (which had its own `declared:` and its
+own `hostOf`), and `fougere graph`, which now prints the frond altitude above the entity one.
+Putting the two side by side found its first disagreement the same day: a frond whose code
+sits in the project is SCANNED, so `remotes:` leaves it in `app.fronds`, and `topologyOf`
+answered `local` for a frond every call reached over HTTP. Pinned by
+`core/tests/declared.test.ts` and `observability/tests/edges.test.ts` — which is also the
+first test in that package to pin a non-empty edge at all.
+
+**A step says what it did ITSELF, and a duration cannot** — `FinishedSpan.selfMs`
+(`observability/src/index.ts`), its duration minus what its OBSERVED children account for.
+`shop:cart.checkout` in `demos/observability` reports milliseconds and almost no self: it is
+not slow, it is waiting, and a column of durations reads the two the same way. Which is why
+the subtraction and what runs UNDER an op are ONE subject and not two — a handler spending
+30 ms in SQL had no observed child, so its self time was its whole duration and the report
+named the wrong step. `tracing()` holds both doors for that reason: a statement is not
+dispatched, nothing wraps a middleware around a query, and both need the same table. The
+join is the STACK, not a path — a Kysely sink runs synchronously inside the async context
+the tracer opened, so it reaches the operation in flight while the app holds no source.
+`kind` is what that costs: a statement is a step and not a call this process answered, so
+`metrics.ts` says so in a line, and it is the only reader that has to. Never negative —
+children under one `Promise.all` outlast their parent, and what is measured is the time
+nothing else accounts for.
+
+**The count DETECTS and the detail EXPLAINS, which is why `spanPerStatement` is OFF** — the
+charge to the parent happens either way, so `selfMs` and `statements` are the same in both
+modes and a dashboard reads one span instead of forty. What the option adds is WHICH queries
+ran, which is a diagnosis: turned on over the operation the count named. The CPU does not
+decide it — a statement span is **658 ns** against a SQLite in-memory select at **14 µs**,
+4,7 % on the fastest storage there is and 6 ns with the package absent. The VOLUME does: a
+backend charges per span, and a page of forty rows exports forty. `@fougere/testing`'s
+`spansOf` turns it on, because a test IS the diagnosis. Measured 2026-09-12, pinned by
+`observability/tests/statements.test.ts` and `testing/tests/statements.test.ts`.
+
 **`rpc` is a registry, not an `if`** — `wire/call.ts`, `RPC_ENTITY`, served out of
 `dispatch/RouteRegistry.ts`. `app.serveRpc(op, answer)` is how an optional package declares
 a reading core does not hold, and a second declaration of one name is REFUSED. An app that
@@ -545,13 +588,15 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   `<LogLine>`, so `depKeyOf` never sees the port. Recovering it means reading the alias's
   own declaration in `handler-parser.ts` (`parseCheckedType`). Measured 2026-09-10; the
   alias was removed rather than shipped broken.
-- **`onQuery` is the last registry, and its two ends cannot see each other** —
-  `adapter/sql/src/query.ts`. The producer is a Kysely built by `createSqliteSource()`
-  BEFORE any app exists, and the consumer is `@fougere/calls` subscribing in its `up`. No
-  path runs between them: an app holds `db`, never the source, and a Kysely's `log` is fixed
-  at construction. A module-level list is what bridges that, and closing it means giving an
-  app its sources. `registerFlush` is the same list read once instead of per line; it lives
-  at module level because the host that calls `flushTelemetry()` holds a request handler,
+- **`onQuery` is still a module-level list, and the path between its ends is the CONTEXT** —
+  `adapter/sql/src/query.ts`. The producer is a Kysely built by `createSqliteSource()` BEFORE
+  any app exists, and no object path runs to the consumer: an app holds `db`, never the
+  source, and a Kysely's `log` is fixed at construction. What closes it is not a path but the
+  stack — a sink runs SYNCHRONOUSLY inside the async context the tracer opened, so
+  `statementsUnder` (`observability/src/index.ts`) reaches the operation in flight without
+  anyone holding anything. The list stays module-level and that stays the open half: two apps
+  in one process feed one list. `registerFlush` is the same shape read once instead of per
+  line; it lives there because the host that calls `flushTelemetry()` holds a request handler,
   not an app (`demos/cloudflare-d1`, `ctx.waitUntil`).
 - **An un-augmented `adapters:` accepts anything, silently.** With no adapter in the program
   `EntityAdapters<TFields>` is `Partial<{}>`, which in TypeScript means "anything
@@ -577,9 +622,12 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 - **The cross-source read is raw SQL while `ref()` already declares the join.** A path in
   `orderBy` is REFUSED at the door now rather than swallowed, so the join it would need is
   named as missing instead of answered unordered. The next step is the two-source demo.
-- **A computed field that reads still issues N queries.** The façade hands the presenter the
-  PAGE (`dispatch/PresenterExecutor.ts`), so one query per page is possible, but
-  `Promise.all(rows.map(...))` inside the field body is not refused.
+- **A computed field that reads still issues N queries — and it is now COUNTED.** The façade
+  hands the presenter the PAGE (`dispatch/PresenterExecutor.ts`), so one query per page is
+  possible, and `Promise.all(rows.map(...))` inside the field body is still not refused. What
+  changed is that nothing has to notice by reading: `statementsOf` (`@fougere/testing`) is the
+  number in a test, `FinishedSpan.statements` is the same number in production. Refusing it
+  remains open — a page size is not a constant, so there is no threshold to hard-code.
 - **`BindingPlan.optional` is written five times by core and ignored by `resolveArgs`.** Not a
   missing reader: making it refuse breaks four tests, two of which state the opposite policy
   on purpose. Closing it means choosing which door is right.

@@ -1,11 +1,13 @@
 import {
-  buildGraph, suggestSplit,
-  type EntityNode, type DomainCluster, type FrondDescriptor,
+  buildGraph, declaredTopologyOf, suggestSplit,
+  type DeclaredTopology, type EntityNode, type DomainCluster, type FrondDescriptor,
 } from '@fougere/core';
 import ProjectScan from '../services/ProjectScan.js';
 
 export interface GraphResult {
   fronds: FrondDescriptor[];
+  /** Where the fronds run and which reaches which — the same picture, one altitude up. */
+  declared: DeclaredTopology;
   nodes: Map<string, EntityNode>;
   clusters: DomainCluster[];
   totalEntities: number;
@@ -17,12 +19,13 @@ export default class GraphHandler {
 
   /** Report how a workspace's fronds and entities reference each other. */
   async execute(input: { root?: string; minEntities?: number }): Promise<GraphResult> {
-    const { fronds } = await this.projectScan.at(input.root);
+    const { fronds, config } = await this.projectScan.at(input.root);
     const nodes = buildGraph(fronds);
     const clusters = suggestSplit(nodes);
 
     return {
       fronds,
+      declared: declaredTopologyOf({ fronds, remotes: config.remotes ?? {} }),
       nodes,
       clusters,
       totalEntities: nodes.size,

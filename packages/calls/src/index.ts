@@ -1,4 +1,4 @@
-import { CARRIES_LINE, frond, LogLine, type App, type Extension, type InvocationContext } from '@fougere/core';
+import { CARRIES_LINE, declaredTopologyOf, frond, LogLine, type App, type Extension, type InvocationContext } from '@fougere/core';
 import KeepHandler from './KeepHandler.js';
 import { CallRing } from './CallRing.js';
 import { ErrorRing, LogRing, QueryRing } from './rings.js';
@@ -18,14 +18,17 @@ export interface CallsOptions {
 
 /** What this process serves, read from the app itself. */
 function servedModel(app: App): unknown {
+  // What the config SAYS. What the runtime saw is in the ring, under `route` — and the two
+  // disagree exactly when something is misconfigured, which is the whole point of showing
+  // them side by side. `rpc.topology` calls a frond remote because it ANSWERED.
+  const declared = declaredTopologyOf(app);
+  const stated = new Map(declared.fronds.map((one) => [one.frond, one]));
+
   return {
     fronds: app.fronds.filter((frond) => !frond.brought).map((frond) => ({
       name: frond.name,
-      // What the config SAYS. What the runtime saw is in the ring, under `route` — and the
-      // two disagree exactly when something is misconfigured, which is the whole point of
-      // showing them side by side. `rpc.topology` calls a frond remote because it ANSWERED.
-      declared: app.remotes[frond.name] ? 'remote' as const : 'local' as const,
-      at: app.remotes[frond.name] ? hostOf(app.remotes[frond.name]!) : null,
+      declared: stated.get(frond.name)?.placement ?? 'local',
+      at: stated.get(frond.name)?.at ?? null,
       entities: frond.entities.map((entity) => entity.name),
       operations: frond.handlers.flatMap((handler) => {
         const ops = app.operationsFor(handler.address);
@@ -53,16 +56,6 @@ function servedModel(app: App): unknown {
       }),
     })),
   };
-}
-
-/** Host and port only — a declared address may carry credentials, and this answer leaves. */
-function hostOf(address: string): string {
-  try {
-    const url = new URL(address);
-    return `${url.protocol}//${url.host}`;
-  } catch {
-    return address;
-  }
 }
 
 function nameOf(schema: unknown): string | null {

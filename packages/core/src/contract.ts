@@ -30,7 +30,10 @@ export { driftOf, agrees, explain } from './wire/drift.js';
 export type { CardDrift } from './wire/drift.js';
 
 /** What `rpc.discover` answers. */
-export type { IdentityCard, CardOp, TopologyReport, FrondPlacement, Edge } from './wire/call.js';
+export type {
+  IdentityCard, CardOp, TopologyReport, FrondPlacement, Edge,
+  DeclaredTopology, DeclaredFrond, DeclaredEdge,
+} from './wire/call.js';
 export { assertIdentityCard } from './wire/call.js';
 
 /** The key a class name is filed under — 'Post' → 'post'. */

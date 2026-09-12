@@ -48,6 +48,9 @@ export type { Declared, FrondDeclaration, DeclaredSubject } from './declare.js';
 // only by tests through a deep path — a consumer comparing its own card to a producer's
 // had to dispatch a call to ask a question about itself.
 export { identityCardOf } from './boot/card.js';
+// Its dual: what the app declares about its NEIGHBOURS. Read by `rpc.topology`, by
+// `@fougere/calls` and by `fougere graph`, which each held their own half of it.
+export { declaredTopologyOf } from './boot/declared.js';
 export type { Facade } from './wire/call.js';
 export type {
   FrondCall,
@@ -57,6 +60,9 @@ export type {
   TopologyReport,
   FrondPlacement,
   Edge,
+  DeclaredTopology,
+  DeclaredFrond,
+  DeclaredEdge,
 } from './contract.js';
 export { type Emit, type Fact, type Pipe } from './wire/emit.js';
 export { callValueOf } from './contract.js';
