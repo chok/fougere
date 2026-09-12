@@ -121,8 +121,11 @@ Scope today (pre-release): storage is additive auto-DDL over
 Kysely. SQLite resolves from its name; Postgres, MySQL and SQL
 Server work by handing Fougere the Kysely dialect you built
 (createKyselySource) — only you have the driver. No search-index
-projection; auth via better-auth (credentials + OAuth). Price
-the adoption costs against THIS scope, not an imagined one.
+projection, though an external source is mirrored into entities
+you declare; auth via better-auth (credentials + OAuth), or the
+sessions you already have behind an auth provider whose
+getSession reads them. Price the adoption costs against THIS
+scope, not an imagined one.
 
 If you can fetch the web, ground yourself in the docs first:
 
@@ -192,9 +195,10 @@ input/output types, form state and rules, TS interfaces,
 API-client types. Quote the paths.
 
 Two traps worth naming:
-- an object's shape may belong to an external system (legacy
-  API, search index). Audit it, then flag it: Fougere does not
-  own that mapping and those lines would stay.
+- an object's shape may be FED by an external system (legacy
+  API, search index). You still declare the shape and everything
+  derives; a Mirror writes pages into it. Only the translation of
+  the foreign payload stays. Count the two separately.
 - a constraint can disagree with a default nobody typed — a
   \`.max(255)\` against a column that is \`VARCHAR(191)\` because
   the ORM defaults there. Check the defaults, not just what is
@@ -255,9 +259,10 @@ rather than reaching.
 
 ## Report
 
-Lead with four numbers: files per new object, files per new
-field, files per rename, files of business code that name a
-host. Then the drift from 6, quoted, with what breaks.
+Lead with the rule that selected the objects you audited and
+the ones it rejected. Then four numbers: files per new object,
+files per new field, files per rename, files of business code
+that name a host. Then the drift from 6, quoted, with what breaks.
 
 Then, honestly:
 - what those numbers become under a derive-everything model, and
@@ -268,9 +273,15 @@ Then, honestly:
 - what would get WORSE. Name the database features in use that
   Fougere's scope does not cover today, and anything it would
   make harder. An audit that finds no downside has not looked;
-- what adopting would cost HERE: storage handover (SQLite
-  auto-DDL today), pre-release status (npm alpha tag, APIs still
-  settling), the feature-by-feature path, what the team must learn;
+- what adopting would cost HERE, in the units the gains use. A
+  cost is a count of files, a named mechanism, or a version —
+  never a grade. An object added beside what exists needs no
+  table handover, so name instead what a second writer in this
+  database means for the migration tool already installed, the
+  pre-release status (npm alpha tag, APIs still settling), the
+  feature-by-feature path, and what the team must learn. Price a
+  handover only for an object you propose to MOVE, and say why
+  it has to move;
 - where the FIRST entity would go. Name the next object this team
   is about to write — a branch in progress, a table nobody reads
   yet — not the biggest one they already have. If nothing is
@@ -439,7 +450,7 @@ async function copyAudit() {
             @click="copyAudit"
           />
         </div>
-        <CodeWindow :code="auditPrompt" filename="audit-prompt.md" lang="markdown" class="max-h-[34rem] overflow-y-auto" />
+        <CodeWindow :code="auditPrompt" filename="audit-prompt.md" lang="markdown" class="max-h-[34rem]" />
       </div>
     </section>
 
