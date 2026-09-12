@@ -1,4 +1,5 @@
-import type { Container, RegisterOptions, Constructor, Disposable } from './container.js';
+import type { Container, Constructor, RegisterOptions } from './Container.js';
+import { Disposables, type Disposable } from './Disposable.js';
 
 interface Entry {
   factory: (container: Container) => unknown;
@@ -6,26 +7,22 @@ interface Entry {
   instance?: unknown;
 }
 
-const isDisposable = (value: unknown): value is Disposable =>
-  typeof value === 'object' && value !== null &&
-  typeof (value as Disposable).dispose === 'function';
-
 /** A scope reaches its parent and its children through members only a scope can read. */
-class Scope implements Container {
+class ScopeContainer implements Container {
   private readonly registry = new Map<string, Entry>();
   // In construction order: a thing built later may hold one built earlier, so disposal
   // walks this backwards.
   private readonly built: unknown[] = [];
   // Closed by this container, and before `built` — a child may hold what this scope built,
   // never the other way round.
-  private readonly children: Scope[] = [];
+  private readonly children: ScopeContainer[] = [];
   private fallback: ((name: string) => unknown) | undefined;
   // The names being built right now, shared by the whole tree: a miss here is answered by the
   // parent and the descent continues there, so only one stack can name the path whole —
   // `child.resolve('A')` reaching a parent's `B` that asks for `A` back reports `A → B → A`.
   private readonly resolving: string[];
 
-  constructor(private readonly parent?: Scope) {
+  constructor(private readonly parent?: ScopeContainer) {
     this.resolving = parent?.resolving ?? [];
   }
 
@@ -40,7 +37,11 @@ class Scope implements Container {
 
   registerValue<T>(name: string, value: T): void {
     // A value the container did not build is not the container's to dispose.
-    this.registry.set(name, { factory: () => value, lifetime: 'singleton', instance: value });
+    this.registry.set(name, {
+      factory: () => value,
+      lifetime: 'singleton',
+      instance: value,
+    });
   }
 
   resolve<T>(name: string): T {
@@ -56,7 +57,11 @@ class Scope implements Container {
     if (!entry) {
       const made = this.fallbackOf()?.(name);
       if (made !== undefined) {
-        this.registry.set(name, { factory: () => made, lifetime: 'singleton', instance: made });
+        this.registry.set(name, {
+          factory: () => made,
+          lifetime: 'singleton',
+          instance: made,
+        });
 
         return made as T;
       }
@@ -66,7 +71,9 @@ class Scope implements Container {
     if (entry.instance !== undefined) return entry.instance as T;
 
     if (this.resolving.includes(name)) {
-      throw new Error(`[container] dependency cycle: ${[...this.resolving, name].join(' → ')}`);
+      throw new Error(
+        `[container] dependency cycle: ${[...this.resolving, name].join(' → ')}`,
+      );
     }
 
     // Popped in a finally, because a constructor that throws leaves the name on the stack
@@ -92,7 +99,7 @@ class Scope implements Container {
   }
 
   createScope(): Container {
-    const child = new Scope(this);
+    const child = new ScopeContainer(this);
     this.children.push(child);
 
     return child;
@@ -141,22 +148,24 @@ class Scope implements Container {
     return this.fallback ?? this.parent?.fallbackOf();
   }
 
-  private forget(child: Scope): void {
+  private forget(child: ScopeContainer): void {
     const at = this.children.indexOf(child);
     if (at !== -1) this.children.splice(at, 1);
   }
 
   private through(name: string): string {
-    return this.resolving.length > 0 ? ` (resolving: ${[...this.resolving, name].join(' → ')})` : '';
+    return this.resolving.length > 0
+      ? ` (resolving: ${[...this.resolving, name].join(' → ')})`
+      : '';
   }
 
   private remember<T>(value: T): T {
-    if (isDisposable(value)) this.built.push(value);
+    if (Disposables.is(value)) this.built.push(value);
 
     return value;
   }
 }
 
 export function createContainer(): Container {
-  return new Scope();
+  return new ScopeContainer();
 }
