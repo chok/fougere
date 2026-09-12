@@ -79,7 +79,6 @@ const module = defineNuxtModule<FougereModuleOptions>({
     // Prevent Nitro from bundling the TypeScript compiler (~9 MB).
     // @fougere/core lazy-imports it, but Rollup still code-splits dynamic imports
     // into the bundle — only external truly excludes it.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (nuxt as any).hook('nitro:config', (nitroConfig: any) => {
       nitroConfig.rollupConfig ??= {};
       nitroConfig.rollupConfig.external ??= [];

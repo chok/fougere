@@ -3,7 +3,6 @@ import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
 import { lowerFirst, type SchemaView } from '@fougere/schema';
 import { toTable, toTableName, toSnakeCase, codecsOf } from '@fougere/adapter-sql';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ShapeClass = abstract new (...args: any[]) => any;
 
 /** The engines DuckDB can attach — and the reason the list is short. */
