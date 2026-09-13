@@ -1,5 +1,6 @@
 /** What every receiver of the envelope decides the same way, and what it does not. */
-import { PARSE_ERROR, type RpcResponse } from './jsonrpc.js';
+import { PARSE_ERROR } from './jsonrpc/RpcErrorShape.js';
+import { type RpcResponse } from './jsonrpc/RpcResponse.js';
 
 /** What a receiver accepts before it stops reading — declared by core, re-exported here. */
 export { MAX_BODY_BYTES } from '@fougere/core';

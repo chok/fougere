@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { FougereError, ErrorCode, Invocation } from '@fougere/core';
 import type { Transport } from '@fougere/core';
 import { createHttpTransport, handleRpc, serve, unframeResponse, PARSE_ERROR } from '../src/index.js';
-import { INVALID_REQUEST } from '../src/jsonrpc.js';
+import { INVALID_REQUEST } from '../src/jsonrpc/RpcErrorShape.js';
 import type { RunningReceiver } from '../src/index.js';
 
 const products = [{ id: '1', name: 'Fern' }];

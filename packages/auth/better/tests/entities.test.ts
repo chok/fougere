@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { Shapes, entity, primary, text, bool, optional, } from '@fougere/schema';
 import { toTable, createTableSQL } from '@fougere/adapter-sql';
-import { AuthUser, AuthVerification, authEntities } from '../src/entities.js';
+import { AuthUser } from '../src/entity/AuthUser.js';
+import { AuthVerification } from '../src/entity/AuthVerification.js';
+import { authEntities } from '../src/entity/authEntities.js';
 
 const { AuthSession, AuthAccount } = authEntities(AuthUser);
 

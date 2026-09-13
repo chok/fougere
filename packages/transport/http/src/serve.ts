@@ -1,7 +1,7 @@
 /** Standalone receiver — enough to host a Frond in its own process. */
 import { createServer } from 'node:http';
 import type { Transport } from '@fougere/core';
-import type { RpcResponse } from './jsonrpc.js';
+import type { RpcResponse } from './jsonrpc/RpcResponse.js';
 import { handleRpc, type ReceiveOptions } from './server.js';
 import { MAX_BODY_BYTES, CALL_PATH, parseError, tooLarge } from './policy.js';
 

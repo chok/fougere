@@ -2,7 +2,9 @@ import { betterAuth as betterAuthLib } from 'better-auth';
 import { createId } from '@paralleldrive/cuid2';
 import type { AuthConfig, AuthContext, AuthRuntime } from '@fougere/core';
 import type { SchemaView } from '@fougere/schema';
-import { AuthVerification, AuthUser, authEntities } from './entities.js';
+import { AuthUser } from './entity/AuthUser.js';
+import { AuthVerification } from './entity/AuthVerification.js';
+import { authEntities } from './entity/authEntities.js';
 import { fougereAdapter, type StorageMap } from './adapter.js';
 import {
   translateCredential,
@@ -11,7 +13,7 @@ import {
   type FougereProviders,
 } from './translate.js';
 
-export { AuthUser } from './entities.js';
+export { AuthUser } from './entity/AuthUser.js';
 
 /** Options accepted by the betterAuth() factory in fougere.config.ts. */
 export interface BetterAuthOptions {

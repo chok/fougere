@@ -1,15 +1,4 @@
-import { entity, primary, text, bool, date, created, ref, optional, type SchemaView } from '@fougere/schema';
-
-/** Default User entity — shipped as a fallback. */
-export class AuthUser extends entity({
-  id: primary(),
-  name: text(),
-  email: text(),
-  emailVerified: bool(),
-  image: optional(text()),
-  createdAt: created(),
-  updatedAt: created(),
-}) {}
+import { entity, primary, text, date, created, ref, optional, type SchemaView } from '@fougere/schema';
 
 /** A `ref()` target is fixed at field-declaration time. */
 type LiveEntity = abstract new (...args: any[]) => unknown;
@@ -57,16 +46,3 @@ export function authEntities(User: SchemaView): {
 
   return { AuthSession, AuthAccount };
 }
-
-/**
- * Default Verification entity — better-auth shape.
- * Used for email verification, password reset, magic links, etc.
- */
-export class AuthVerification extends entity({
-  id: primary(),
-  identifier: text(),
-  value: text(),
-  expiresAt: date(),
-  createdAt: created(),
-  updatedAt: created(),
-}) {}

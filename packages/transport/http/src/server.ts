@@ -1,6 +1,8 @@
 /** Receiving half — unframe the call, run it, frame what comes out. */
 import { FougereError, ErrorCode, toPublicError, type InvocationContext, type SignedCall, type Transport } from '@fougere/core/contract';
-import { APP_ERROR, INVALID_REQUEST, type RpcRequest, type RpcResponse } from './jsonrpc.js';
+import { APP_ERROR, INVALID_REQUEST } from './jsonrpc/RpcErrorShape.js';
+import { type RpcRequest } from './jsonrpc/RpcRequest.js';
+import { type RpcResponse } from './jsonrpc/RpcResponse.js';
 
 /** What a receiver does with the caller's envelope. */
 export interface ReceiveOptions {
