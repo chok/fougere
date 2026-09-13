@@ -3,8 +3,10 @@
  *
  * Documented: [the gradient](https://fougere.dev/docs/infra/gradient).
  */
-import type { FrondCall, Transport } from '../wire/call.js';
-import { assertIdentityCard, RPC_ENTITY } from '../wire/call.js';
+import type { FrondCall } from '../wire/FrondCall.js';
+import type { Transport } from '../wire/Transport.js';
+import { RPC_ENTITY } from '../wire/RpcAnswer.js';
+import { assertIdentityCard } from '../wire/card/IdentityCard.js';
 import { runMiddlewares, type AppMiddleware, type OperationContext } from '../wire/middleware.js';
 import { type InvocationContext, Invocation } from '../wire/Invocation.js';
 import { FougereError, ErrorCode } from '../wire/errors.js';

@@ -29,7 +29,8 @@ import {
 import { StorageGuard } from '../dispatch/StorageGuard.js';
 import { InFlight } from '../dispatch/InFlight.js';
 // The keys, each read from where its concept is declared — never respelled here.
-import { facadeKeyOf, contractsKeyOf, type RpcAnswer } from '../wire/call.js';
+import { type RpcAnswer } from '../wire/RpcAnswer.js';
+import { contractsKeyOf, facadeKeyOf } from '../wire/facade.js';
 import { identityCardOf } from './card.js';
 import { AppLifecycle, migrating } from './AppLifecycle.js';
 import { seeding } from './seed.js';

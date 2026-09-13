@@ -6,9 +6,9 @@
 import { crypto } from '#crypto';
 import type { PublicJwk, Signer, Verifier } from './crypto/port.js';
 import { b64url, unb64url, bytesOf, textOf, unb64 } from './crypto/encoding.js';
-import type { SignedCall } from './wire/call.js';
+import type { SignedCall } from './wire/SignedCall.js';
 
-export type { SignedCall } from './wire/call.js';
+export type { SignedCall } from './wire/SignedCall.js';
 
 /** How long a call envelope stays valid. A signed call is not a session. */
 const ENVELOPE_TTL_MS = 60_000;

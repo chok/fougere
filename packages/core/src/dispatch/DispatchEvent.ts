@@ -1,4 +1,4 @@
-import type { Call } from '../wire/call.js';
+import type { Call } from '../wire/Call.js';
 import type { RouteKind } from '../wire/RouteAddress.js';
 
 export type DispatchStage = 'received' | 'resolved' | 'completed' | 'failed' | 'settled';

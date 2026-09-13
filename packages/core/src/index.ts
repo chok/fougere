@@ -57,7 +57,7 @@ export { declaredTopologyOf } from './boot/declared.js';
 export { refusalsOf, type Refusable } from './wire/refusals.js';
 // The facades as TYPES — empty here, filled by the `.d.ts` the scan writes beside the app.
 export type { FougereOperations, FacadeName, Addresses, AnyHandler, HandlerOf, Refused, FougereHandlers, Answer, Rows } from './wire/facade.js';
-export type { Facade } from './wire/call.js';
+export type { Facade } from './wire/facade.js';
 export type {
   FrondCall,
   Transport,

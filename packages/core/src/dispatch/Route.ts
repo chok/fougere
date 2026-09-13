@@ -1,4 +1,4 @@
-import type { Call } from '../wire/call.js';
+import type { Call } from '../wire/Call.js';
 import type { RouteAddress, RouteKind } from '../wire/RouteAddress.js';
 
 /** Executable destination known by the dispatcher. */

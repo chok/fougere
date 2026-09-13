@@ -1,5 +1,5 @@
 import { Card, type Change, type SchemaDescriptor } from '@fougere/schema';
-import type { IdentityCard } from './call.js';
+import type { IdentityCard } from './card/IdentityCard.js';
 
 /** What separates the copy a consumer holds from what the producer actually serves. */
 export interface CardDrift {

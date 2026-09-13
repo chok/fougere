@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Call } from '../src/wire/call.js';
+import { Call } from '../src/wire/Call.js';
 import { RouteAddress } from '../src/wire/RouteAddress.js';
 
 describe('RouteAddress', () => {

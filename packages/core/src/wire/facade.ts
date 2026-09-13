@@ -13,6 +13,7 @@
  * Documented: [observability](https://fougere.dev/docs/infra/observability).
  */
 import type { ErrorCode } from './errors.js';
+import type { InvocationContext } from './Invocation.js';
 
 /** What one facade answers for, keyed `address.op` — `surface:address.op` for a named surface. */
 export interface FougereOperations {}
@@ -89,3 +90,20 @@ export type Answer<Handler, Op extends keyof Handler> =
 export type Rows<Answered> = Answered extends readonly (infer Row)[] ? Row
   : Answered extends { items: readonly (infer Row)[] } ? Row
   : Answered;
+
+/** The facade built in front of a handler — the framework's second port, after `Storage`. */
+export type Facade<T> = {
+  [K in keyof T]: T[K] extends (...args: never[]) => infer R
+    ? (invocation?: InvocationContext) => R
+    : never;
+};
+
+/** The container key of a façade — THE one place that spells the format. */
+export function facadeKeyOf(entityName: string, surface?: string): string {
+  return surface ? `${surface}:${entityName}Handler` : `${entityName}Handler`;
+}
+
+/** Where the contracts behind a façade live — the dual of `facadeKeyOf`. */
+export function contractsKeyOf(entityName: string, surface?: string): string {
+  return `${facadeKeyOf(entityName, surface)}:contracts`;
+}

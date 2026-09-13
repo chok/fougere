@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { Call } from '../src/wire/call.js';
+import { Call } from '../src/wire/Call.js';
 import { RouteAddress, type RouteKind } from '../src/wire/RouteAddress.js';
 import type { Route } from '../src/dispatch/Route.js';
 import { RouteRegistry } from '../src/dispatch/RouteRegistry.js';

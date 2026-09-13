@@ -1,6 +1,6 @@
 /** A Transport built from an app — the two ways a call enters this process. */
 import type { App } from './types.js';
-import type { Transport } from '../wire/call.js';
+import type { Transport } from '../wire/Transport.js';
 import { createTransportEntry } from '../entry/transport.js';
 
 /** Build the local runner — the reference realization of Transport. */

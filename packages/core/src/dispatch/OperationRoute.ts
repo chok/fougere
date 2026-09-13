@@ -1,4 +1,4 @@
-import type { Call } from '../wire/call.js';
+import type { Call } from '../wire/Call.js';
 import type { RouteAddress } from '../wire/RouteAddress.js';
 import type { Route } from './Route.js';
 

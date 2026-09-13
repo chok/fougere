@@ -18,7 +18,7 @@ import { createContainer } from '@fougere/container';
 import { lowerFirst } from '@fougere/schema';
 import { createApp } from '../src/index.js';
 import { storageKeyOf, entityOfStorageKey } from '../src/storage/port.js';
-import { facadeKeyOf } from '../src/wire/call.js';
+import { facadeKeyOf } from '../src/wire/facade.js';
 import type { Storage } from '../src/storage/port.js';
 
 const root = join(import.meta.dirname, 'fixtures');

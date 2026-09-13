@@ -4,7 +4,7 @@
  */
 import { lowerFirst } from '@fougere/schema';
 import { Invocation, type InvocationContext } from './wire/Invocation.js';
-import type { FrondCall } from './wire/call.js';
+import type { FrondCall } from './wire/FrondCall.js';
 
 export { FougereError, ErrorCode, validationErrorsOf } from './wire/errors.js';
 // What a read may ask about one field. Here rather than on the main entry because an
@@ -16,13 +16,15 @@ export type { Comparison } from './storage/criterion.js';
 export { toPublicError } from './wire/http-error.js';
 export { Invocation } from './wire/Invocation.js';
 export type { InvocationContext } from './wire/Invocation.js';
-export { Call } from './wire/call.js';
+export { Call } from './wire/Call.js';
 export { RouteAddress } from './wire/RouteAddress.js';
-export type { FrondCall, Transport, SignedCall } from './wire/call.js';
-export { MAX_BODY_BYTES } from './wire/call.js';
+export type { FrondCall } from './wire/FrondCall.js';
+export type { SignedCall } from './wire/SignedCall.js';
+export type { Transport } from './wire/Transport.js';
+export { MAX_BODY_BYTES } from './wire/SignedCall.js';
 // The reserved entity, VALUE and not type: a consumer that wants to leave it alone — a
 // call log ignoring its own reader — has to be able to name it.
-export { RPC_ENTITY } from './wire/call.js';
+export { RPC_ENTITY } from './wire/RpcAnswer.js';
 export type { CallPage, CallRecord } from './wire/CallLog.js';
 // The comparison of two cards, which a consumer runs about a producer — browser-safe on
 // purpose: a panel showing the drift holds only the two cards, never the app.
@@ -32,11 +34,15 @@ export type { CardDrift } from './wire/drift.js';
 /** What `rpc.discover` answers. */
 export { refusalsOf, type Refusable } from './wire/refusals.js';
 export type { FougereOperations, FacadeName, Addresses, AnyHandler, HandlerOf, Refused, FougereHandlers, Answer, Rows } from './wire/facade.js';
-export type {
-  IdentityCard, CardOp, TopologyReport, FrondPlacement, Edge,
-  DeclaredTopology, DeclaredFrond, DeclaredEdge,
-} from './wire/call.js';
-export { assertIdentityCard } from './wire/call.js';
+export type { CardOp } from './wire/card/CardOp.js';
+export type { IdentityCard } from './wire/card/IdentityCard.js';
+export type { DeclaredEdge } from './wire/topology/DeclaredEdge.js';
+export type { DeclaredFrond } from './wire/topology/DeclaredFrond.js';
+export type { DeclaredTopology } from './wire/topology/DeclaredTopology.js';
+export type { Edge } from './wire/topology/Edge.js';
+export type { FrondPlacement } from './wire/topology/FrondPlacement.js';
+export type { TopologyReport } from './wire/topology/TopologyReport.js';
+export { assertIdentityCard } from './wire/card/IdentityCard.js';
 
 /** The key a class name is filed under — 'Post' → 'post'. */
 export { lowerFirst } from '@fougere/schema';
