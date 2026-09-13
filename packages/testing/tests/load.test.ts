@@ -59,12 +59,34 @@ describe('the generated script', () => {
     expect(script).toContain('"jsonrpc":"2.0"');
   });
 
-  it('leaves the weights, stages and thresholds to be written', async () => {
+  it('leaves the weights, the stages and the budget to be written', async () => {
     await using app = await testApp({ root });
 
     const script = loadScript(app);
 
     expect(script).toMatch(/Yours: a flat rate/);
-    expect(script).toMatch(/Yours: what counts as too slow/);
+    expect(script).toMatch(/Yours: how long an op may take here/);
+    expect(script).toContain('const BUDGET = { base: 300, perHop: 200 };');
+  });
+
+  /**
+   * One threshold for every operation held an op that never leaves the process to the same
+   * figure as one that crosses two. The budget is two numbers now — what an op costs here, and
+   * what a process boundary adds — and which applies is read from the code.
+   */
+  it('holds each op to a budget its own hops decide', async () => {
+    await using app = await testApp({ root });
+
+    const script = loadScript(app);
+
+    expect(script).toContain('http_req_duration{op:${op.method}}');
+    expect(script).toContain('BUDGET.base + op.hops * BUDGET.perHop');
+    expect(script).not.toContain("http_req_duration: ['p(95)<500']");
+  });
+
+  it('carries the hop count of every op it lists', async () => {
+    await using app = await testApp({ root });
+
+    for (const op of reachableOps(app)) expect(op.hops).toBe(0);
   });
 });

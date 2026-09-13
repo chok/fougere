@@ -5,8 +5,17 @@ export type { Edge, FrondPlacement, TopologyReport } from '@fougere/core';
 import { activeCalls, type FinishedSpan, type SpanSink } from './index.js';
 
 /**
- * Bucket bounds in SECONDS, the OpenTelemetry recommendation for request durations.
- * Dense under 100 ms because that is where a healthy op lives, and open above 10 s.
+ * Bucket bounds in SECONDS, and the operator's to choose — this is the default, not the rule.
+ *
+ * The OpenTelemetry recommendation for request durations: dense under 100 ms because that is
+ * where a healthy op lives, and open above 10 s. A system whose ops all cross two processes has
+ * its floor elsewhere and wastes half these buckets.
+ *
+ * Deliberately NOT derived per operation, though `reach` could: an explicit-bucket histogram only
+ * aggregates across series that share its bounds, so a panel asking for the p95 of the whole
+ * service — which sums over every op — would stop meaning anything, silently. One list per
+ * process is what keeps that reading honest. The number that IS per-op is the load threshold,
+ * where nothing aggregates.
  */
 const BOUNDS = [0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10];
 
@@ -50,7 +59,7 @@ export interface MetricsSnapshot {
  * `app` is optional and only feeds the topology: what fronds this process found, and which of them
  * run elsewhere.
  */
-export function metrics(app?: App): Metrics {
+export function metrics(app?: App, bounds: readonly number[] = BOUNDS): Metrics {
   const since = Date.now();
   const series = new Map<string, Bucketed>();
   /** Every frond this process has actually CALLED — the other half of the topology. */
@@ -75,9 +84,9 @@ export function metrics(app?: App): Metrics {
           error: span.error,
           count: 0,
           sum: 0,
-          buckets: new Array(BOUNDS.length + 1).fill(0),
+          buckets: new Array(bounds.length + 1).fill(0),
           selfSum: 0,
-          selfBuckets: new Array(BOUNDS.length + 1).fill(0),
+          selfBuckets: new Array(bounds.length + 1).fill(0),
           statements: 0,
         };
         series.set(key, row);
@@ -93,18 +102,18 @@ export function metrics(app?: App): Metrics {
       const seconds = span.ms / 1000;
       row.count += 1;
       row.sum += seconds;
-      row.buckets[bucketOf(seconds)] += 1;
+      row.buckets[bucketOf(seconds, bounds)] += 1;
 
       const self = span.selfMs / 1000;
       row.selfSum += self;
-      row.selfBuckets[bucketOf(self)] += 1;
+      row.selfBuckets[bucketOf(self, bounds)] += 1;
       row.statements += span.statements;
     },
     snapshot: () => ({
       since,
       series: [...series.values()],
       active: activeCalls(),
-      bounds: BOUNDS,
+      bounds: [...bounds],
       topology: topologyOf(app, seen),
       edges: [...edges.values()],
     }),
@@ -145,9 +154,10 @@ function topologyOf(app: App | undefined, seen: Set<string>): FrondPlacement[] {
 }
 
 /** The first bound this duration does not exceed, or the overflow bucket. */
-function bucketOf(seconds: number): number {
-  for (let i = 0; i < BOUNDS.length; i++) if (seconds <= BOUNDS[i]) return i;
-  return BOUNDS.length;
+function bucketOf(seconds: number, bounds: readonly number[]): number {
+  for (let i = 0; i < bounds.length; i++) if (seconds <= bounds[i]!) return i;
+
+  return bounds.length;
 }
 
 /**

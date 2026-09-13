@@ -1,4 +1,5 @@
 import { frameCall } from '@fougere/transport-http';
+import { resolveEffectiveOperations } from '@fougere/core';
 import type { FrondDescriptor } from '@fougere/core/descriptor';
 
 /**
@@ -17,6 +18,8 @@ import { sampleInput } from './sample.js';
 export interface LoadOptions {
   /** Where the calls go. The RPC door of a running app. */
   door?: string;
+  /** The topology statement, so an op that crosses a process is given the time to. */
+  remotes?: Record<string, string>;
   /** Values the generator cannot invent, by entity name — the id a `ref()` points at. */
   given?: Record<string, Record<string, unknown>>;
 }
@@ -24,10 +27,18 @@ export interface LoadOptions {
 interface Reachable {
   method: string;
   input: unknown;
+  /** How many times this op's work crosses a process — what its budget is a function of. */
+  hops: number;
 }
 
 /** Every operation the app answers, with a body for those that take one. */
-export function reachableOps(app: Serving, given: LoadOptions['given'] = {}): Reachable[] {
+export function reachableOps(
+  app: Serving,
+  given: LoadOptions['given'] = {},
+  remotes: Record<string, string> = {},
+): Reachable[] {
+  const { operations } = resolveEffectiveOperations(app.fronds, { remotes });
+  const hops = new Map(operations.map((op) => [`${op.handler.address}.${op.name}`, op.reach.hops]));
   const found: Reachable[] = [];
   for (const frond of app.fronds) {
     for (const handler of frond.handlers) {
@@ -36,9 +47,11 @@ export function reachableOps(app: Serving, given: LoadOptions['given'] = {}): Re
       if (handler.surface) continue;
       for (const [op, contract] of handler.operations ?? []) {
         const schema = contract.input as SchemaView | undefined;
+        const method = `${handler.address}.${op}`;
         found.push({
-          method: `${handler.address}.${op}`,
+          method,
           input: schema ? sampleInput(schema, given[handler.address] ?? {}) : undefined,
+          hops: hops.get(method) ?? 0,
         });
       }
     }
@@ -49,7 +62,7 @@ export function reachableOps(app: Serving, given: LoadOptions['given'] = {}): Re
 /** A k6 scenario, written from what the app answers. */
 export function loadScript(app: Serving, options: LoadOptions = {}): string {
   const door = options.door ?? 'http://127.0.0.1:3000/_fougere/call';
-  const ops = reachableOps(app, options.given);
+  const ops = reachableOps(app, options.given, options.remotes ?? {});
   // The shape, from the one function that states it. `body` is replaced per iteration.
   const envelope = frameCall({ entity: 'ENTITY', op: 'OP' }, { params: {}, query: {}, input: undefined, state: {} } as never, 0);
   // What the envelope carries that an iteration does not fill in itself. Keeping
@@ -67,6 +80,12 @@ const DOOR = ${JSON.stringify(door)};
 // Every operation the app serves. A weight of 0 takes one out, visibly.
 const OPS = ${JSON.stringify(ops.map((op) => ({ ...op, weight: 1 })), null, 2)};
 
+// Yours: how long an op may take here, and what one process boundary is allowed to add. Two
+// numbers instead of one, because an op that crosses nothing and an op that crosses twice were
+// never the same subject — hops above is read from the code, these two are facts about your
+// network.
+const BUDGET = { base: 300, perHop: 200 };
+
 export const options = {
   // Yours: a flat rate draws flat lines and there is nothing to read in them.
   stages: [
@@ -74,8 +93,17 @@ export const options = {
     { duration: '45s', target: 5 },
     { duration: '30s', target: 0 },
   ],
-  // Yours: what counts as too slow is a fact about your users.
-  thresholds: { http_req_failed: ['rate<0.01'], http_req_duration: ['p(95)<500'] },
+  // Yours: the shape of the run.
+  // Derived from BUDGET and each op's hops — an op that crosses two processes is not held to
+  // the same figure as one that never leaves. k6 reads a threshold per tag, and every call
+  // below is tagged with the op it made.
+  thresholds: {
+    http_req_failed: ['rate<0.01'],
+    ...Object.fromEntries(OPS.map((op) => [
+      \`http_req_duration{op:\${op.method}}\`,
+      [\`p(95)<\${BUDGET.base + op.hops * BUDGET.perHop}\`],
+    ])),
+  },
 };
 
 const TOTAL = OPS.reduce((sum, op) => sum + op.weight, 0);

@@ -23,9 +23,12 @@ export default class LoadHandler {
 
   /** Generate a k6 scenario covering every operation the default door answers. */
   async execute(input: { root?: string; door?: string; out?: string }): Promise<LoadScenario> {
-    const { root, fronds } = await this.projectScan.at(input.root);
+    const { root, fronds, config } = await this.projectScan.at(input.root);
     const door = input.door?.trim() || undefined;
-    const script = loadScript({ fronds }, { ...(door ? { door } : {}) });
+    // The topology statement travels with it: an op that crosses a process is not held to the
+    // same figure as one that never leaves, and `remotes:` is what says which is which.
+    const remotes = config.remotes ?? {};
+    const script = loadScript({ fronds }, { ...(door ? { door } : {}), remotes });
 
     const file = input.out === undefined ? join(root, 'load.js') : input.out || null;
     if (file) await writeFile(file, script, 'utf8');
@@ -33,7 +36,7 @@ export default class LoadHandler {
     return {
       file,
       door: door ?? 'http://127.0.0.1:3000/_fougere/call',
-      operations: reachableOps({ fronds }).map((one) => one.method),
+      operations: reachableOps({ fronds }, {}, remotes).map((one) => one.method),
       script,
     };
   }

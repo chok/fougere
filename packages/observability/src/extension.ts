@@ -27,6 +27,40 @@ export interface ObservabilityOptions {
    * Off by default — see `TracingOptions.spanPerStatement`.
    */
   spanPerStatement?: boolean;
+  /**
+   * What share of the operations that stay in this process are traced, `0` to `1`. Default `1`.
+   *
+   * A rate is a budget, which no reading of the code answers. What the code does answer is
+   * which spans a budget may not touch — see `TracingOptions.sample`.
+   */
+  sample?: number;
+  /**
+   * Bucket bounds in SECONDS for the duration histograms. Default: the OpenTelemetry
+   * recommendation for request durations, which assumes a healthy op lives under 100 ms.
+   *
+   * One list for the whole process, deliberately — see `metrics.ts`.
+   */
+  bounds?: readonly number[];
+}
+
+/**
+ * How far each operation's work goes, read off the model ONCE at boot.
+ *
+ * `EffectiveOperation.reach` is resolved when the app is built, so the middleware does not
+ * recompute it per call — it looks one name up. An address the model does not hold answers zero,
+ * which is what `rpc` and a brought frond's own ops are.
+ */
+function hopsIn(app: App): (entity: string, operation: string) => number {
+  const hops = new Map<string, number>();
+  for (const frond of app.fronds) {
+    for (const handler of frond.handlers) {
+      for (const [name, op] of app.operationsFor(handler.address) ?? []) {
+        hops.set(`${handler.address}.${name}`, op.reach.hops);
+      }
+    }
+  }
+
+  return (entity, operation) => hops.get(`${entity}.${operation}`) ?? 0;
 }
 
 /** Observe this process — one member of the ascent. */
@@ -69,7 +103,11 @@ export function observability(options: ObservabilityOptions = {}): Extension {
       // call will carry. Installed the other way round, the lines leave uncorrelated.
       const spans: SpanSink[] = options.onSpan ? [options.onSpan] : [];
       takers.set(app, spans);
-      const tracer = tracing(spans, { spanPerStatement: options.spanPerStatement ?? false });
+      const tracer = tracing(spans, {
+        spanPerStatement: options.spanPerStatement ?? false,
+        ...(options.sample === undefined ? {} : { sample: options.sample }),
+        hopsOf: hopsIn(app),
+      });
       app.use(tracer.middleware);
       undo.push(await statementsUnder(tracer));
       // The app's own logger, named — NOT `new Logger(service)`: a logger built here has
@@ -90,7 +128,7 @@ export function observability(options: ObservabilityOptions = {}): Extension {
         );
       }
 
-      const measured = metrics(app);
+      const measured = metrics(app, options.bounds);
       spans.push(measured.sink);
       serveTopology(app, measured);
 

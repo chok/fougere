@@ -90,6 +90,22 @@ export interface TracingOptions {
    * always; the detail EXPLAINS, and it is turned on over the operation the count named.
    */
   spanPerStatement?: boolean;
+  /**
+   * What share of the operations that stay in this process are traced, `0` to `1`.
+   *
+   * A rate is a BUDGET — how much a backend is worth per day — and no reading of the code
+   * answers it, so it is the operator's to set. What the code does answer is which spans the
+   * budget may not touch: an operation that crosses a process produces the one signal nothing
+   * else carries, since the difference between the caller's span and the callee's IS the wire
+   * cost, and neither process can measure it alone. So a rate below one thins what is already
+   * described by its own histogram, and never what only a trace can show.
+   *
+   * Default `1`, which is what a process did before this existed. The gain is not the default:
+   * it is that turning the rate down no longer drops the traces that matter most.
+   */
+  sample?: number;
+  /** How far an operation's work goes, by `entity.op` — the boot reads it off the model. */
+  hopsOf?: (entity: string, operation: string) => number;
 }
 
 /** The step running here and now. */
@@ -147,6 +163,15 @@ export function registerFlush(send: () => Promise<void>): () => void {
 export function tracing(takers: readonly SpanSink[], options: TracingOptions = {}): Tracing {
   /** What a step's children have accounted for, by the step they ran under. */
   const charged = new Map<string, { ms: number; statements: number }>();
+  const rate = options.sample ?? 1;
+  const hopsOf = options.hopsOf ?? (() => 0);
+
+  /**
+   * Whether a root span is kept. An operation that leaves the process always is — the budget is
+   * for the ones a histogram already describes.
+   */
+  const keeps = (entity: string, operation: string) =>
+    rate >= 1 || hopsOf(entity, operation) > 0 || Math.random() < rate;
 
   const middleware: AppMiddleware = (ctx, next) => {
     if (takers.length === 0) return next();
@@ -168,7 +193,9 @@ export function tracing(takers: readonly SpanSink[], options: TracingOptions = {
     const span: Running = {
       traceId: parent?.traceId ?? randomHex(16),
       spanId: randomHex(8),
-      sampled: parent?.sampled ?? true,
+      // A trace is whole or it is nothing: a call under a sampled parent is sampled, whatever
+      // this process would have decided on its own. Only a root is decided here.
+      sampled: parent?.sampled ?? keeps(ctx.entity, ctx.operation),
       frond: ctx.frond,
       startedAt,
       start,
