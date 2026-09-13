@@ -22,7 +22,9 @@ function frondWith(provider: Partial<ProviderEntry>): FrondDescriptor {
   };
 }
 
-const declared = (entity: string) => entity === 'post';
+// Annotated, so TS 5.5 does not infer `entity is 'post'` and close the parameter to the
+// test below, which hands in a predicate that declares nothing.
+const declared = (entity: string): boolean => entity === 'post';
 
 function refusalsOf(frond: FrondDescriptor, known = declared): Diagnostic[] {
   const refused: Diagnostic[] = [];
