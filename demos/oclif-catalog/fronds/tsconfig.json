@@ -1,0 +1,13 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".."
+  },
+  "include": [
+    ".",
+    "../src",
+    "../tests",
+    "../fougere.config.ts"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "fougere-demo-oclif-catalog",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/main.ts",
+    "test": "vitest run",
+    "typecheck": "tsc -p fronds"
+  },
+  "dependencies": {
+    "@fougere/core": "workspace:*",
+    "@fougere/compiler": "workspace:*",
+    "@fougere/defaults": "workspace:*",
+    "@fougere/oclif": "workspace:*",
+    "@fougere/schema": "workspace:*",
+    "@oclif/core": "^5.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0",
+    "vitest": "^4.1.0"
+  }
+}

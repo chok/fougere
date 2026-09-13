@@ -43,6 +43,7 @@ pnpm -C demos/ask-quorum dev       # `Emit<T, A>` — the announcement that wait
 pnpm -C demos/observability dev    # three processes; `pnpm load` (k6) and `pnpm signoz` beside it
 pnpm -C demos/together-frame dev   # two writes that stand or fall as one — then uncomment `sources:`
 pnpm -C demos/crossing-cost dev    # a chain of three, and the config line that decides what it costs
+pnpm -C demos/oclif-catalog dev --help  # a frond as a terminal — topics, flags and help derived
 pnpm -C demos/test-gradient test   # 53 tests, 44 of them from a one-line file
 pnpm -C demos/test-gradient e2e    # the browser rung — a form that states no rule of its own
 ```
@@ -96,6 +97,7 @@ packages/
 
   app/                                        the front-end
     shared/            @fougere/app           useQuery/useCommand/useFormFor, framework-free
+    oclif/             @fougere/oclif         a frond's operations as a terminal — one command per op
     nuxt/ next/ react/ svelte/ vite/          @fougere/nuxt, /next, /react, /svelte, /vite
     admin/             @fougere/admin         React Admin derived at runtime from the identity card
 
@@ -117,6 +119,7 @@ demos/
   mirror-catalog/      a copy of rows the app cannot query, and what the second pass costs
   together-frame/      one frame, two realizations, and the config line that picks one
   crossing-cost/       cart → pricing → catalog: 0 hops or 2, decided by `remotes:` alone
+  oclif-catalog/       a frond as a terminal — every flag read off the entity, nothing declared
   observability/       three Fronds in three processes, one trace — and what the wire cost
   test-gradient/       what the declaration writes on its own, and the four rungs it runs at
   anchor-chain/        a path with two stops — which derivations hold rows, and which say nothing
@@ -302,6 +305,20 @@ compiling when an op learns to refuse something else. `contract.ts` writes `erro
 emitted scan like every other member: a contract that loses a field on disk answers differently
 depending on how it was booted. Pinned by `compiler/tests/refusals.test.ts` (two hops through
 helpers) and `core/tests/refusals.test.ts`.
+
+**A page IMPORTS its facade, and the module is written by the scan** — `@fronds/facade`, one
+`const` per address carrying the handler that answers there as a TYPE. Compiled, the whole of
+`post` is `{ address: 'post' }`: the handler is named, never imported, so no server code reaches
+a bundle — 1.8 MB of core is reachable from `PostHandler`, and `extends Crud(Post)` is a call
+that would run in the browser. What the type buys is the page's whole contract: which operations
+exist, what each answers, and what each can refuse. Thirteen row shapes were written by hand
+across this tree before it, five of them incompatible versions of one Post. The address had to
+travel as a LITERAL for `address.op` to be looked up, and that is why it is a generated value
+rather than `facade<PostHandler>('post')`: TypeScript infers nothing once a type argument is
+written by hand, and every call site writes its row type. `useFormFor(Post)` keeps the entity,
+which is the line — a form IS a set of fields, a call is a facade. An absent module fails to
+resolve, loudly; a STALE one is the silent case, which `fougere check` reports as
+`facade-stale`. Pinned by `compiler/tests/facade.test.ts` and `app/react/tests/facade.test.ts`.
 
 **A scan has a THIRD projection, and it is types** — `compiler/src/scan/doors.ts`, `emitDoors`,
 beside `emitScan` and `emitStatement`. The runtime scan cannot serve as one: its operations
