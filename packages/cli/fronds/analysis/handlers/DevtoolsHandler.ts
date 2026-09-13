@@ -2,8 +2,17 @@ import { createHttpTransport } from '@fougere/transport-http/client';
 import type { CallPage, CallRecord } from '@fougere/core';
 import ProjectScan from '../services/ProjectScan.js';
 
-/** The default address of an app in development — Nuxt, Next and the site all sit there. */
+/**
+ * Where an app answers in development — Nuxt, Next and the site all sit there, so it is a
+ * convention and not a setting. A port belongs to the HOST, though, and this project states
+ * none: an app served anywhere else is named the way `FOUGERE_LOG_LEVEL` names a level the
+ * file did not, and `--url` still wins over both.
+ */
 const LOCAL = 'http://127.0.0.1:3000';
+
+function local(): string {
+  return trimmed(process.env.FOUGERE_URL || LOCAL);
+}
 
 /** One address that was asked, and what came back from it. */
 export interface CallSource {
@@ -70,10 +79,11 @@ export default class DevtoolsHandler {
    */
   private async addresses(root?: string): Promise<{ url: string; frond?: string }[]> {
     const { config } = await this.projectScan.at(root);
+    const here = local();
     const remotes = Object.entries(config.remotes ?? {})
       .map(([frond, url]) => ({ url: trimmed(url), frond }));
 
-    return [{ url: LOCAL }, ...remotes.filter((one) => one.url !== LOCAL)];
+    return [{ url: here }, ...remotes.filter((one) => one.url !== here)];
   }
 }
 

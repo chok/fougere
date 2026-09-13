@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { createApp, createLocalRunner } from '@fougere/core';
 import type { App, InvocationContext } from '@fougere/core';
 import { createContainer } from '@fougere/container';
-import { trace, metrics, activeCalls, type Metrics, type SpanSink } from '../src/index.js';
+import { tracing, metrics, activeCalls, type Metrics, type SpanSink } from '../src/index.js';
 import { metricsPayload, serveTopology } from '../src/metrics.js';
 import { createStorageFactory } from './fixtures/data.js';
 
@@ -22,7 +22,7 @@ const takers: SpanSink[] = [];
 
 beforeAll(async () => {
   app = await createApp({ scan: await scanProject(fixturesDir), createContainer, storageFactory: createStorageFactory() });
-  app.use(trace(takers));
+  app.use(tracing(takers).middleware);
 }, 30_000);
 
 afterEach(() => { takers.length = 0; });
@@ -139,8 +139,11 @@ describe('what leaves as OTLP', () => {
     const published = body.resourceMetrics[0].scopeMetrics[0].metrics;
     // No edges here — one process, one frond — and the edge metrics are therefore absent
     // rather than empty. See the emptiness test below for why that matters.
+    // `fougere.operation.statements` is absent for the same reason the edges are: this app
+    // ran none, and a series with no point reads as "gone" rather than "zero".
     expect(published.map((m) => m.name)).toEqual([
       'fougere.operation.duration',
+      'fougere.operation.self',
       'fougere.operations.active',
       'fougere.fronds',
       'fougere.frond.doors',

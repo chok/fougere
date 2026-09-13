@@ -32,6 +32,10 @@ export interface OtlpExporter {
 const OK = 1;
 const ERROR = 2;
 
+/** OTLP span kinds, of the six only these two are ours. */
+const INTERNAL = 1;
+const CLIENT = 3;
+
 export function otlp(options: OtlpOptions): OtlpExporter {
   const url = options.url ?? 'http://localhost:4318/v1/traces';
   const traces = Endpoint.at(url, options.onError);
@@ -75,7 +79,10 @@ function payload(service: string, spans: FinishedSpan[]) {
               spanId: span.spanId,
               ...(span.parentId ? { parentSpanId: span.parentId } : {}),
               name: `${span.entity}.${span.operation}`,
-              kind: 1,
+              // 1 INTERNAL, 3 CLIENT: a statement left this process for an engine, and a
+              // viewer draws the two differently. `selfMs` is NOT sent — a collector
+              // derives it from the tree it already holds.
+              kind: span.kind === 'statement' ? CLIENT : INTERNAL,
               startTimeUnixNano: nanos(span.startedAt),
               endTimeUnixNano: nanos(span.startedAt + span.ms),
               status: span.error ? { code: ERROR, message: span.error } : { code: OK },

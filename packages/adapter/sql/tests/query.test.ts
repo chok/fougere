@@ -35,6 +35,34 @@ describe('onQuery', () => {
     }
   });
 
+  it('names what it did and what it did it to, so a reader labels it without re-reading sql', async () => {
+    const seen: QueryEvent[] = [];
+    const stop = onQuery((event) => seen.push(event));
+    const { db, sqlite } = createSqliteSource({ path: ':memory:', name: 'probe' });
+
+    try {
+      await db.schema.createTable('crate').addColumn('id', 'text').execute();
+      seen.length = 0;
+      await db.insertInto('crate').values({ id: 'a' }).execute();
+      await db.updateTable('crate').set({ id: 'b' }).execute();
+      await db.selectFrom('crate').selectAll().execute();
+      await db.deleteFrom('crate').execute();
+
+      expect(seen.map((one) => `${one.verb} ${one.subject}`)).toEqual([
+        'insert crate', 'update crate', 'select crate', 'delete crate',
+      ]);
+      // A statement naming no table answers for the storage that ran it, never nothing.
+      seen.length = 0;
+      await db.executeQuery({ sql: 'pragma user_version', parameters: [], query: { kind: 'RawNode' } } as never);
+      expect(seen[0]!.subject).toBe('probe');
+      expect(seen[0]!.verb).toBe('pragma');
+    } finally {
+      stop();
+      await db.destroy();
+      sqlite.close();
+    }
+  });
+
   it('carries how many parameters there were, never their values', async () => {
     const seen: QueryEvent[] = [];
     const stop = onQuery((event) => seen.push(event));

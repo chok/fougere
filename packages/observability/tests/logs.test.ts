@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { Carry, createApp, Logger, setLogLevel } from '@fougere/core';
 import type { App, InvocationContext, LogRecord } from '@fougere/core';
 import { createContainer } from '@fougere/container';
-import { trace, logs, currentSpan, type FinishedSpan, type SpanSink } from '../src/index.js';
+import { tracing, logs, currentSpan, type FinishedSpan, type SpanSink } from '../src/index.js';
 import { createStorageFactory } from './fixtures/data.js';
 
 const fixturesDir = join(import.meta.dirname, 'fixtures');
@@ -21,7 +21,7 @@ const takers: SpanSink[] = [];
 
 beforeAll(async () => {
   app = await createApp({ scan: await scanProject(fixturesDir), createContainer, storageFactory: createStorageFactory() });
-  app.use(trace(takers));
+  app.use(tracing(takers).middleware);
 }, 30_000);
 
 afterEach(() => { while (undo.length) undo.pop()!(); takers.length = 0; vi.restoreAllMocks(); setLogLevel('info'); });

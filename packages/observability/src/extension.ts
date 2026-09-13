@@ -2,8 +2,7 @@
 import { frond, loggerMiddleware, Logger, LogLine, type App, type Extension, type LogSink } from '@fougere/core';
 import ExportHandler from './ExportHandler.js';
 import { traceContext } from '#trace-context';
-import { registerFlush } from './index.js';
-import { trace, type SpanSink } from './index.js';
+import { registerFlush, statementsUnder, tracing, type SpanSink } from './index.js';
 import { metrics, serveTopology } from './metrics.js';
 import { otlp } from './otlp.js';
 import { logs } from './logs.js';
@@ -23,6 +22,11 @@ export interface ObservabilityOptions {
    * extension took.
    */
   onSpan?: SpanSink;
+  /**
+   * A span of its own for every statement, beside the count every operation already carries.
+   * Off by default — see `TracingOptions.spanPerStatement`.
+   */
+  spanPerStatement?: boolean;
 }
 
 /** Observe this process — one member of the ascent. */
@@ -55,17 +59,19 @@ export function observability(options: ObservabilityOptions = {}): Extension {
       }],
     })],
 
-    up(app: App) {
+    async up(app: App) {
       // Held across the ascent: the exporter exists only when `otlp` is declared, and the
       // handler resolves this either way.
       app.container.registerValue('LogExport', exporting);
       const undo: (() => void | Promise<void>)[] = [];
       undoing.set(app, undo);
-      // Order matters: `trace()` opens the span that every log line written inside the
+      // Order matters: `tracing()` opens the span that every log line written inside the
       // call will carry. Installed the other way round, the lines leave uncorrelated.
       const spans: SpanSink[] = options.onSpan ? [options.onSpan] : [];
       takers.set(app, spans);
-      app.use(trace(spans));
+      const tracer = tracing(spans, { spanPerStatement: options.spanPerStatement ?? false });
+      app.use(tracer.middleware);
+      undo.push(await statementsUnder(tracer));
       // The app's own logger, named — NOT `new Logger(service)`: a logger built here has
       // no `Carry`, so its lines printed and announced nothing. 20 on the console, 0 in
       // the ring, measured on `demos/observability`.

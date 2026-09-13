@@ -1,7 +1,7 @@
 {
   "name": "@fougere/testing",
   "version": "0.9.2-alpha.0",
-  "description": "Tests derived from the declaration — cases, stubs and a gradient of realities.",
+  "description": "Tests derived from the declaration \u2014 cases, stubs and a gradient of realities.",
   "keywords": [
     "fougere",
     "typescript",
@@ -54,7 +54,9 @@
   },
   "peerDependencies": {
     "vitest": ">=2",
-    "@fougere/adapter-graphql": "workspace:*"
+    "@fougere/adapter-graphql": "workspace:*",
+    "@fougere/adapter-sql": "workspace:*",
+    "@fougere/observability": "workspace:*"
   },
   "peerDependenciesMeta": {
     "vitest": {
@@ -62,10 +64,18 @@
     },
     "@fougere/adapter-graphql": {
       "optional": true
+    },
+    "@fougere/adapter-sql": {
+      "optional": true
+    },
+    "@fougere/observability": {
+      "optional": true
     }
   },
   "devDependencies": {
-    "vitest": "^4.1.0",
-    "@fougere/adapter-graphql": "workspace:*"
+    "@fougere/adapter-graphql": "workspace:*",
+    "@fougere/adapter-sql": "workspace:*",
+    "@fougere/observability": "workspace:*",
+    "vitest": "^4.1.0"
   }
 }

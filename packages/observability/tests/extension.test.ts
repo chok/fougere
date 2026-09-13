@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { createApp, createLocalRunner } from '@fougere/core';
 import type { InvocationContext } from '@fougere/core';
 import { createContainer } from '@fougere/container';
-import { observability, trace, activeCalls, flushTelemetry, registerFlush } from '../src/index.js';
+import { observability, tracing, activeCalls, flushTelemetry, registerFlush } from '../src/index.js';
 import { createStorageFactory } from './fixtures/data.js';
 
 const fixturesDir = join(import.meta.dirname, 'fixtures');
@@ -60,7 +60,7 @@ describe('observability as an extension', () => {
     const first = await boot([observability()]);
     const door = first.resolve<Facade>('productHandler');
     const running = door.list();
-    // A sink is registered, so `trace()` opens a span and the call is counted.
+    // A sink is registered, so `tracing()` opens a span and the call is counted.
     expect(activeCalls()).toBe(1);
     await running;
 
@@ -70,7 +70,7 @@ describe('observability as an extension', () => {
     // The list is the APP's — a released app cannot leave a taker behind for the next one,
     // which is the double-counting this test was written for.
     await using second = await boot(undefined);
-    second.use(trace([]));
+    second.use(tracing([]).middleware);
     const secondRunning = second.resolve<Facade>('productHandler').list();
     expect(activeCalls()).toBe(0);
     await secondRunning;

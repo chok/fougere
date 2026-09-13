@@ -36,5 +36,15 @@ function complain(err: unknown): void {
  * longer owes a `stop()` call it could forget.
  */
 export function observed(service: string, onSpan?: SpanSink): Extension {
-  return observability({ service, otlp: COLLECTOR, flushMs: 2_000, onError: complain, ...(onSpan ? { onSpan } : {}) });
+  return observability({
+    service,
+    otlp: COLLECTOR,
+    flushMs: 2_000,
+    onError: complain,
+    // Off by default HERE TOO, and the env var is the real gesture: every operation already
+    // reports what it waited for and how many statements it took, so this is turned on over
+    // the one the count named. A page of forty rows is forty more spans to store.
+    spanPerStatement: process.env.SPAN_PER_STATEMENT === '1',
+    ...(onSpan ? { onSpan } : {}),
+  });
 }

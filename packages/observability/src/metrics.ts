@@ -19,6 +19,11 @@ interface Bucketed {
   sum: number;
   /** One more than the bounds: the last holds everything above the highest bound. */
   buckets: number[];
+  /** The same measurement over `selfMs` — what the op did rather than what it waited for. */
+  selfSum: number;
+  selfBuckets: number[];
+  /** Every statement these calls ran. Against `count`, it is statements per call. */
+  statements: number;
 }
 
 export interface Metrics {
@@ -55,6 +60,11 @@ export function metrics(app?: App): Metrics {
 
   return {
     sink: (span: FinishedSpan) => {
+      // The one reader that has to choose: a statement is a step, not a call this process
+      // answered. Counted here it would publish `select.post` as an operation nothing
+      // serves, and every topology and saturation figure would count it too.
+      if (span.kind !== 'operation') return;
+
       const key = `${span.entity}\0${span.operation}\0${span.error ?? ''}`;
       let row = series.get(key);
       if (!row) {
@@ -66,6 +76,9 @@ export function metrics(app?: App): Metrics {
           count: 0,
           sum: 0,
           buckets: new Array(BOUNDS.length + 1).fill(0),
+          selfSum: 0,
+          selfBuckets: new Array(BOUNDS.length + 1).fill(0),
+          statements: 0,
         };
         series.set(key, row);
       }
@@ -81,6 +94,11 @@ export function metrics(app?: App): Metrics {
       row.count += 1;
       row.sum += seconds;
       row.buckets[bucketOf(seconds)] += 1;
+
+      const self = span.selfMs / 1000;
+      row.selfSum += self;
+      row.selfBuckets[bucketOf(self)] += 1;
+      row.statements += span.statements;
     },
     snapshot: () => ({
       since,
@@ -151,6 +169,14 @@ export function metricsPayload(service: string, snapshot: MetricsSnapshot) {
   const since = `${snapshot.since * 1e6}`;
   const now = `${Date.now() * 1e6}`;
   const attr = (key: string, value: string) => ({ key, value: { stringValue: value } });
+  /** What an operation's three series are all sliced by — said once, so they stay comparable. */
+  const dimensions = (row: Bucketed) => [
+    ...(row.frond ? [attr('fougere.frond', row.frond)] : []),
+    attr('fougere.entity', row.entity),
+    attr('fougere.operation', row.operation),
+    attr('fougere.outcome', row.error ? 'error' : 'ok'),
+    ...(row.error ? [attr('fougere.error.code', row.error)] : []),
+  ];
 
   return {
     resourceMetrics: [
@@ -170,13 +196,7 @@ export function metricsPayload(service: string, snapshot: MetricsSnapshot) {
                   // only temporality Prometheus reads without a collector in between.
                   aggregationTemporality: 2,
                   dataPoints: snapshot.series.map((row) => ({
-                    attributes: [
-                      ...(row.frond ? [attr('fougere.frond', row.frond)] : []),
-                      attr('fougere.entity', row.entity),
-                      attr('fougere.operation', row.operation),
-                      attr('fougere.outcome', row.error ? 'error' : 'ok'),
-                      ...(row.error ? [attr('fougere.error.code', row.error)] : []),
-                    ],
+                    attributes: dimensions(row),
                     startTimeUnixNano: since,
                     timeUnixNano: now,
                     count: `${row.count}`,
@@ -184,6 +204,40 @@ export function metricsPayload(service: string, snapshot: MetricsSnapshot) {
                     bucketCounts: row.buckets.map((n) => `${n}`),
                     explicitBounds: snapshot.bounds,
                   })),
+                },
+              },
+              {
+                name: 'fougere.operation.self',
+                description: 'How long an operation took on its own, with what it waited for taken out.',
+                unit: 's',
+                histogram: {
+                  aggregationTemporality: 2,
+                  dataPoints: snapshot.series.map((row) => ({
+                    attributes: dimensions(row),
+                    startTimeUnixNano: since,
+                    timeUnixNano: now,
+                    count: `${row.count}`,
+                    sum: row.selfSum,
+                    bucketCounts: row.selfBuckets.map((n) => `${n}`),
+                    explicitBounds: snapshot.bounds,
+                  })),
+                },
+              },
+              {
+                name: 'fougere.operation.statements',
+                description: 'Statements run under an operation. Against its count, statements per call.',
+                unit: '{statement}',
+                sum: {
+                  aggregationTemporality: 2,
+                  isMonotonic: true,
+                  dataPoints: snapshot.series
+                    .filter((row) => row.statements > 0)
+                    .map((row) => ({
+                      attributes: dimensions(row),
+                      startTimeUnixNano: since,
+                      timeUnixNano: now,
+                      asInt: `${row.statements}`,
+                    })),
                 },
               },
               {

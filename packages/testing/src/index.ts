@@ -6,6 +6,8 @@ export { checkContract, checkOutput, verdictOf, type Verdict } from './doors.js'
 export { stubOf, type Port, type Stub } from './stub.js';
 export { frondOf, type Scope } from './scope.js';
 export { loadScript } from './load.js';
+export { statementsOf } from './statements.js';
+export { spansOf } from './spans.js';
 export {
   checkDoorContract,
   checkDoors,

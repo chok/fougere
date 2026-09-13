@@ -15,7 +15,7 @@ import type { App, InvocationContext, Transport } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { serve, createHttpTransport, handleRpc, frameCall, unframeResponse } from '@fougere/transport-http';
 import type { RunningReceiver, RpcResponse } from '@fougere/transport-http';
-import { trace, type FinishedSpan, type SpanSink } from '../src/index.js';
+import { tracing, type FinishedSpan, type SpanSink } from '../src/index.js';
 import { createStorageFactory } from './fixtures/data.js';
 
 const fixturesDir = join(import.meta.dirname, 'fixtures');
@@ -81,7 +81,7 @@ function halves(): [FinishedSpan, FinishedSpan] {
 
 beforeAll(async () => {
   host = await createApp({ scan: await scanProject(fixturesDir), createContainer, storageFactory: createStorageFactory() });
-  host.use(trace(takers));
+  host.use(tracing(takers).middleware);
   const runner = createLocalRunner(host);
 
   receiver = await serve(runner, { port: 0 });
@@ -93,7 +93,7 @@ beforeAll(async () => {
     remotes: { catalog: `http://127.0.0.1:${receiver.port}` },
     remoteTransport: (url) => createHttpTransport(url),
   });
-  overHttp.use(trace(takers));
+  overHttp.use(tracing(takers).middleware);
 
   overSocket = await createApp({
     scan: await scanProject('/tmp/fougere-trace-socket'),
@@ -101,7 +101,7 @@ beforeAll(async () => {
     remotes: { catalog: `tcp://127.0.0.1:${socket.port}` },
     remoteTransport: () => socketTransport(socket.port),
   });
-  overSocket.use(trace(takers));
+  overSocket.use(tracing(takers).middleware);
 }, 30_000);
 
 

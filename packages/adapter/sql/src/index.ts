@@ -1,5 +1,6 @@
 export { createTableSQL, generateSQL, autoMigrate, compiler } from './ddl.js';
 export { onQuery } from './query.js';
+export type { QueryEvent, QuerySink } from './query.js';
 export { toTable, toTables, toTableName, toSnakeCase } from './table.js';
 export { orderTables } from './order.js';
 export type {
