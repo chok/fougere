@@ -1,7 +1,7 @@
 {
   "name": "@fougere/cli",
   "version": "0.9.2-alpha.0",
-  "description": "The Fougere CLI — compose a workspace, serve a frond, call an operation.",
+  "description": "The Fougere CLI \u2014 compose a workspace, serve a frond, call an operation.",
   "keywords": [
     "fougere",
     "cli",
@@ -45,17 +45,18 @@
   "dependencies": {
     "@clack/prompts": "^0.10.0",
     "@fougere/adapter-sql": "workspace:*",
+    "@fougere/compiler": "workspace:*",
     "@fougere/container": "workspace:*",
     "@fougere/core": "workspace:*",
     "@fougere/defaults": "workspace:*",
     "@fougere/schema": "workspace:*",
+    "@fougere/testing": "workspace:*",
     "@fougere/transport-http": "workspace:*",
     "citty": "^0.2.1",
     "consola": "^3.4.2",
     "jiti": "^2.4.2",
     "picocolors": "^1.1.1",
-    "safe-regex": "^2.1.1",
-    "@fougere/compiler": "workspace:*"
+    "safe-regex": "^2.1.1"
   },
   "devDependencies": {
     "vitest": "^4.1.0"

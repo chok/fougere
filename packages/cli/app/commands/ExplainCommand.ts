@@ -88,10 +88,24 @@ export function renderExplain(result: ExplainResult): string {
     `${pc.dim('Surfaces:')}  ${result.exposure.surfaces.join(', ') || '—'}`,
     `${pc.dim('Adapters:')}  ${result.exposure.adapters.join(', ') || '—'}`,
     `${pc.dim('Placement:')} ${result.placement.frond} / ${result.placement.runtime}${result.placement.remote ? ` (${result.placement.remote})` : ''}`,
+    // Where the work GOES, under where it answers. The hop count is what a sampling rate, a
+    // histogram's bounds and a load threshold are all a function of — each hard-coded today.
+    `${pc.dim('Reach:')}     ${renderReach(result.reach)}`,
   );
 
   if (result.handler.file) lines.push(`${pc.dim('Source:')}    ${result.handler.file}`);
   return lines.join('\n');
+}
+
+/** What this op reaches, and the part of it that costs a round trip. */
+function renderReach(reach: ExplainResult['reach']): string {
+  if (reach.fronds.length === 0) return pc.dim('nothing outside its own frond');
+
+  const named = reach.fronds
+    .map((one) => (one.runtime === 'remote' ? pc.yellow(one.frond) : pc.cyan(one.frond)))
+    .join(', ');
+
+  return `${named} ${pc.dim(`— ${reach.hops} hop(s)`)}`;
 }
 
 export function renderListing(listing: ExplainListing): string {

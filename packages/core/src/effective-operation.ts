@@ -1,6 +1,7 @@
 /** The operation model after every declaration and convention has been resolved. */
 import { lowerFirst, type SchemaView } from '@fougere/schema';
 import { statementDrift } from './boot/statement-drift.js';
+import { reachedBy, servedBy } from './boot/declared.js';
 import { computeBindingPlan, type BindingPlan } from './wire/binding.js';
 import { targetOf } from './prefab/prefab.js';
 import type { CollectorEntry, FrondDescriptor, HandlerEntry } from './descriptor/frond.js';
@@ -69,6 +70,23 @@ export interface EffectiveOperation extends OperationContract {
     runtime: 'local' | 'remote';
     remote?: string;
   };
+  /**
+   * What running this op reaches, and how much of that crosses a process.
+   *
+   * `placement` says where the op ANSWERS; this says where it GOES. The pair is what every
+   * number a process hard-codes is really a function of — how often a trace is sampled, where
+   * a latency histogram's bounds should sit, what a load threshold may assume. An op that
+   * answers here and hops twice is not the same subject as one that answers here and hops none.
+   *
+   * Read from the handler, never from the op: a dependency is declared on the constructor, so
+   * the crossing belongs to the CLASS. Every op of one handler reaches the same fronds, and
+   * saying otherwise would dress a structural fact as a precise effect.
+   */
+  reach: {
+    fronds: { frond: string; runtime: 'local' | 'remote' }[];
+    /** How many of them are a process away — zero when everything it reaches runs here. */
+    hops: number;
+  };
   exposure: {
     surfaces: string[];
     adapters: string[];
@@ -79,6 +97,26 @@ export interface EffectiveOperation extends OperationContract {
 }
 
 export type EffectiveOperationsMap = Map<string, EffectiveOperation>;
+
+/**
+ * Where an op's work goes: the fronds its handler reaches, and how many are a process away.
+ *
+ * A frond this app never scanned is not among them. The report can say a call LEFT — that is
+ * `placement` — but naming what is on the far side of an address means reading its card, and a
+ * card is a discovery rather than a declaration.
+ */
+function reachOf(
+  deps: readonly string[],
+  from: string,
+  index: Map<string, string>,
+  remotes: Record<string, string>,
+): EffectiveOperation['reach'] {
+  const fronds = reachedBy(deps, from, index)
+    .sort()
+    .map((frond) => ({ frond, runtime: (remotes[frond] ? 'remote' : 'local') as 'local' | 'remote' }));
+
+  return { fronds, hops: fronds.filter((one) => one.runtime === 'remote').length };
+}
 
 /** The absence rules every door normalises to before the handler is invoked. */
 export const EFFECTIVE_OPERATION_SEMANTICS = Object.freeze({
@@ -131,6 +169,8 @@ export function resolveEffectiveOperations(
   const schemas = new Map(
     fronds.flatMap((frond) => frond.entities.map((entity) => [entity.name, entity.entityClass] as const)),
   );
+  /** Every address a frond answers, so a dependency naming one is read as the crossing it is. */
+  const served = servedBy(fronds);
 
   // Input ambiguity is produced where schemas are available (the scanner), but it is a
   // resolution failure. Lift it into the same refusal table as kind/binding/topology.
@@ -285,6 +325,7 @@ export function resolveEffectiveOperations(
             runtime: remote ? 'remote' : 'local',
             ...(remote ? { remote } : {}),
           },
+          reach: reachOf(handler.deps, frond.name, served, options.remotes ?? {}),
           exposure: {
             surfaces: servedSurfaces(frond, handler).map((surface) => surface ?? 'default'),
             adapters: exposedAdapters(handler, options.adapters),

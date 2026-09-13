@@ -1549,6 +1549,9 @@ importers:
       '@fougere/schema':
         specifier: workspace:*
         version: link:../schema
+      '@fougere/testing':
+        specifier: workspace:*
+        version: link:../testing
       '@fougere/transport-http':
         specifier: workspace:*
         version: link:../transport/http

@@ -1,5 +1,16 @@
 import { frameCall } from '@fougere/transport-http';
-import type { App } from '@fougere/core';
+import type { FrondDescriptor } from '@fougere/core/descriptor';
+
+/**
+ * What a load script is read from: the fronds, and nothing else.
+ *
+ * An `App` satisfies it, and so does a scan — which is what lets `fougere load` answer without
+ * booting the project it describes. A boot runs migrations and seeds, so a command that wrote a
+ * scenario would also write to the target's database.
+ */
+interface Serving {
+  fronds: readonly FrondDescriptor[];
+}
 import type { SchemaView } from '@fougere/schema';
 import { sampleInput } from './sample.js';
 
@@ -16,7 +27,7 @@ interface Reachable {
 }
 
 /** Every operation the app answers, with a body for those that take one. */
-export function reachableOps(app: App, given: LoadOptions['given'] = {}): Reachable[] {
+export function reachableOps(app: Serving, given: LoadOptions['given'] = {}): Reachable[] {
   const found: Reachable[] = [];
   for (const frond of app.fronds) {
     for (const handler of frond.handlers) {
@@ -36,7 +47,7 @@ export function reachableOps(app: App, given: LoadOptions['given'] = {}): Reacha
 }
 
 /** A k6 scenario, written from what the app answers. */
-export function loadScript(app: App, options: LoadOptions = {}): string {
+export function loadScript(app: Serving, options: LoadOptions = {}): string {
   const door = options.door ?? 'http://127.0.0.1:3000/_fougere/call';
   const ops = reachableOps(app, options.given);
   // The shape, from the one function that states it. `body` is replaced per iteration.

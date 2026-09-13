@@ -59,6 +59,11 @@ export interface ExplainResult {
     runtime: 'local' | 'remote';
     remote: string | null;
   };
+  /** Where the work GOES, next to where it answers — and how much of it leaves the process. */
+  reach: {
+    fronds: { frond: string; runtime: 'local' | 'remote' }[];
+    hops: number;
+  };
 }
 
 /** What this project serves, when no single operation was named. */
@@ -193,6 +198,7 @@ function project(operation: EffectiveOperation, root: string): ExplainResult {
       runtime: operation.placement.runtime,
       remote: operation.placement.remote ?? null,
     },
+    reach: operation.reach,
   };
 }
 

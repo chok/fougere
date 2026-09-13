@@ -33,10 +33,13 @@ describe('explain', () => {
       handler: { class: 'PostHandler', method: 'publish' },
       exposure: { surfaces: ['default', 'public'] },
       placement: { frond: 'blog' },
+      // Where the work GOES, beside where it answers. This handler reaches nothing outside its
+      // own frond, and that is a fact worth stating: zero hops is a number, not an absence.
+      reach: { fronds: [], hops: 0 },
     });
     expect(Object.keys(parsed)).toEqual([
       'operation', 'handler', 'kind', 'description', 'input', 'output',
-      'parameters', 'collectors', 'contexts', 'semantics', 'exposure', 'placement',
+      'parameters', 'collectors', 'contexts', 'semantics', 'exposure', 'placement', 'reach',
     ]);
     expect(parsed.semantics).toEqual({
       optional: 'undefined',

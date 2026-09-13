@@ -8,7 +8,7 @@
 import { scanProject } from '@fougere/compiler';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
-import { declaredTopologyOf } from '../src/index.js';
+import { declaredTopologyOf, resolveEffectiveOperations } from '../src/index.js';
 import type { FrondDescriptor } from '../src/descriptor/frond.js';
 
 const root = join(import.meta.dirname, 'fixtures-cross-frond');
@@ -104,5 +104,36 @@ describe('the edges', () => {
 
     expect(declared.edges).toEqual([]);
     expect(declared.fronds.map((one) => one.frond)).toEqual(['commande', 'stock']);
+  });
+});
+
+describe('what an op reaches', () => {
+  /**
+   * The number every hard-coded constant is a function of. A sampling rate, a histogram's
+   * bounds and a load threshold all assume how far an operation's work goes, and each is a
+   * single value written down today for operations that are not the same subject at all.
+   */
+  it('counts a hop when the frond it reaches answers from another process', async () => {
+    const fronds = await scanned();
+    const { operations } = resolveEffectiveOperations(fronds, { remotes: { stock: 'http://127.0.0.1:4100' } });
+    const servable = operations.find((op) => op.name === 'servable')!;
+
+    expect(servable.reach).toEqual({ fronds: [{ frond: 'stock', runtime: 'remote' }], hops: 1 });
+  });
+
+  it('counts none when everything it reaches runs here', async () => {
+    const { operations } = resolveEffectiveOperations(await scanned(), {});
+    const servable = operations.find((op) => op.name === 'servable')!;
+
+    expect(servable.reach).toEqual({ fronds: [{ frond: 'stock', runtime: 'local' }], hops: 0 });
+  });
+
+  /** Answering from elsewhere is not reaching elsewhere — `placement` already says the first. */
+  it('says nothing of the op that is itself remote but reaches nobody', async () => {
+    const { operations } = resolveEffectiveOperations(await scanned(), { remotes: { stock: 'http://127.0.0.1:4100' } });
+    const onHand = operations.find((op) => op.name === 'onHand')!;
+
+    expect(onHand.placement.runtime).toBe('remote');
+    expect(onHand.reach).toEqual({ fronds: [], hops: 0 });
   });
 });
