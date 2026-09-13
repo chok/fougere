@@ -1,7 +1,7 @@
 import { createLocalRunner, identityFromEnv } from '@fougere/core';
 import { watchPathsOf } from '@fougere/compiler';
 import { installLoader } from '../../src/loader.js';
-import type { Conventions } from '@fougere/core';
+
 import { bootApp } from '@fougere/defaults';
 import { serve } from '@fougere/transport-http';
 import { watch } from 'node:fs';

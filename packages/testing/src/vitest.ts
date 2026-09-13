@@ -17,6 +17,10 @@ export function fougereTest(overrides: Record<string, unknown> = {}): Record<str
       // the fronds when it is about several of them.
       include: ['tests/**/*.test.ts', 'fronds/*/tests/**/*.test.ts'],
       server: { deps: { inline: [/@fougere\//, '@pothos/core'] } },
+      // A Fougere test boots an app, and a boot runs the scan — a tsc program over the
+      // project. Vitest's 5s default times that out on a cold machine, which three
+      // packages had each discovered and patched on their own.
+      testTimeout: 20_000,
     },
   };
 

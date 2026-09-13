@@ -1,7 +1,7 @@
 import type { Container } from '@fougere/container';
-import { lowerFirst, type Fields, type SchemaView } from '@fougere/schema';
-import { nameOf } from '../descriptor/frond.js';
-import type { EntityEntry, HandlerEntry, PresenterEntry } from '../descriptor/frond.js';
+import { lowerFirst, type SchemaView } from '@fougere/schema';
+
+import type { HandlerEntry, PresenterEntry } from '../descriptor/frond.js';
 import { hostedBy } from './hosted.js';
 import { installFrond, type Assembly } from './install.js';
 import { refusalOf, type Diagnostic } from '../diagnostic.js';
@@ -17,39 +17,36 @@ import { emitKeyOf, type Emit } from '../wire/emit.js';
 const LOG_LINE = lowerFirst(LogLine.name);
 import { Config } from '../builtin/config.js';
 import { createRemoteRouter, createRemoteFacade } from './remote.js';
-import { registerFrames } from './together.js';
+
 import { Emissions } from './Emissions.js';
-import { HandlerFacade } from '../dispatch/HandlerFacade.js';
-import { targetOf } from '../prefab/prefab.js';
+
 import type { OperationContract, OperationsMap } from '../wire/operation.js';
 import {
   resolveEffectiveOperations,
   type EffectiveOperationsMap,
 } from '../effective-operation.js';
-import { StorageGuard } from '../dispatch/StorageGuard.js';
+
 import { InFlight } from '../dispatch/InFlight.js';
 // The keys, each read from where its concept is declared — never respelled here.
 import { type RpcAnswer } from '../wire/RpcAnswer.js';
-import { contractsKeyOf, facadeKeyOf } from '../wire/facade.js';
+import { facadeKeyOf } from '../wire/facade.js';
 import { identityCardOf } from './card.js';
 import { AppLifecycle, migrating } from './AppLifecycle.js';
 import { seeding } from './seed.js';
-import { inheritsCrud, subjectOf } from '../prefab/crud.js';
-import { repositoryKeyOf } from '../prefab/repository.js';
+
 import { storageKeyOf } from '../storage/port.js';
-import { declares } from '../source.js';
+
 import { presenterKeyOf } from '../prefab/presenter.js';
-import { collectorKeyOf } from '../prefab/collector.js';
+
 import { RouteAddress } from '../wire/RouteAddress.js';
 import { DispatchLifecycle } from '../dispatch/DispatchLifecycle.js';
 import { Dispatcher } from '../dispatch/Dispatcher.js';
 import { LocalRoutePolicy } from '../dispatch/LocalRoutePolicy.js';
-import { servedSurfaces } from '../descriptor/surface.js';
+
 import { OperationRoute } from '../dispatch/OperationRoute.js';
 import { remoteRoutes } from '../dispatch/remoteRoutes.js';
 import { RouteRegistry } from '../dispatch/RouteRegistry.js';
 import { facadeOperations } from '../entry/facade.js';
-
 
 /** The one wording for "nobody hosts this here", with both ways out. */
 const notLoaded = (entity: string) =>
@@ -372,7 +369,6 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         lowerFirst(name.replace(/Handler$/, '')),
       );
     });
-
 
     /** Stop taking calls, and resolve once the ones already running are done. */
     const drain = async (timeoutMs?: number): Promise<void> => {

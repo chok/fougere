@@ -4,10 +4,13 @@ import { boot } from '@fougere/compiler';
 import { loadConfig } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { createHttpTransport } from '@fougere/transport-http';
-import { resolveStorage, type DbConfig } from './storage.js';
+import { type DbConfig } from './storage/DbConfig.js';
+import { resolveStorage } from './storage/ResolvedStorage.js';
 
-export { resolveStorage, declaresStorage, storageFrom, layerOf } from './storage.js';
-export type { DbConfig, ResolvedStorage } from './storage.js';
+export { declaresStorage } from './storage/DeclaredStorage.js';
+export { layerOf, resolveStorage, storageFrom } from './storage/ResolvedStorage.js';
+export type { DbConfig } from './storage/DbConfig.js';
+export type { ResolvedStorage } from './storage/ResolvedStorage.js';
 
 export interface BootAppOptions {
   /** Boot only these fronds (by name). Absent = every discovered frond. */

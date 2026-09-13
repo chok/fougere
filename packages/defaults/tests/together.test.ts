@@ -15,7 +15,7 @@ import { createApp, createLocalRunner, togetherKeyOf } from '@fougere/core';
 import { Invocation } from '@fougere/core/contract';
 import { createContainer } from '@fougere/container';
 import { createSqliteSource } from '@fougere/adapter-sql/sqlite';
-import { storageFrom } from '../src/storage.js';
+import { storageFrom } from '../src/storage/ResolvedStorage.js';
 
 const root = join(import.meta.dirname, 'fixtures-together');
 

@@ -3,7 +3,7 @@
  */
 import type { HttpRouter } from '@fougere/http';
 import { toHttpError } from '@fougere/core';
-import type { RouteDefinition } from './routes.js';
+import type { RouteDefinition } from './routes/RouteDefinition.js';
 
 /** Register all route definitions on an HttpRouter. */
 export function registerRoutes(

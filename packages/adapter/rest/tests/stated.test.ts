@@ -5,7 +5,7 @@
  * The PREFIX stays the host's: naming is the frond's, mounting is not.
  */
 import { describe, it, expect } from 'vitest';
-import { generateRoutes } from '../src/routes.js';
+import { generateRoutes } from '../src/routes/RouteDefinition.js';
 import { entity, primary, text } from '@fougere/schema';
 
 class Post extends entity({ id: primary(), title: text() }) {}

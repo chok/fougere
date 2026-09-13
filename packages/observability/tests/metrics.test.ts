@@ -9,7 +9,7 @@ import { createApp, createLocalRunner } from '@fougere/core';
 import type { App, InvocationContext } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { tracing, metrics, activeCalls, type Metrics, type SpanSink } from '../src/index.js';
-import { metricsPayload, serveTopology } from '../src/metrics.js';
+import { metricsPayload, serveTopology } from '../src/metrics/Metrics.js';
 import { createStorageFactory } from './fixtures/data.js';
 
 const fixturesDir = join(import.meta.dirname, 'fixtures');

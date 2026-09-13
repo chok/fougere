@@ -1,9 +1,7 @@
 import { vi, type Mock } from 'vitest';
 import type { Container } from '@fougere/container';
 import type { App } from '@fougere/core';
-
-/** Anything a provider can be declared as: a class the container knows how to build. */
-export type Port = abstract new (...args: never[]) => unknown;
+import type { Port } from './Port.js';
 
 /** The double handed in place of a port — one spy per method the port declares. */
 export type Stub<T> = { [K in keyof T]: T[K] extends (...args: never[]) => unknown ? Mock : T[K] };

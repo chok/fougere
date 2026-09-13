@@ -4,9 +4,7 @@
  * Deux domaines (catalog, orders) avec exports et agrégation.
  * Simule ce que fougere fera en vrai avec les Fronds.
  */
-import {
-  entity, primary, text, number, oneOf, ref, many, created, optional,
-} from '../src/index.js';
+import { entity, primary, text, number, oneOf, ref, many, created } from '../src/index.js';
 
 // ─── Frond: catalog ─────────────────────────────
 

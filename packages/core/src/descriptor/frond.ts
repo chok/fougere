@@ -6,7 +6,6 @@
 import type { SchemaView } from '@fougere/schema';
 import type { Param, OperationContract, OperationsMap } from '../wire/operation.js';
 import type { PresenterViews } from '../prefab/presenter.js';
-import type { Fronds } from './Fronds.js';
 
 /** A discovered provider — a class under `services/` or `repositories/`, injected by type. */
 export interface ProviderEntry {

@@ -2,7 +2,7 @@
 import { Beat } from './Beat.js';
 import { Endpoint } from './Endpoint.js';
 import type { FinishedSpan, SpanSink } from './index.js';
-import { metricsPayload, type Metrics } from './metrics.js';
+import { metricsPayload, type Metrics } from './metrics/Metrics.js';
 
 export interface OtlpOptions {
   /** Which service these spans belong to — what a dashboard groups by. */

@@ -1,8 +1,7 @@
-/** The four signals every service is judged on, derived from the span that already exists. */
+import type { Bucketed } from './Bucketed.js';
 import { declaredTopologyOf, type App, type Edge, type FrondPlacement, type TopologyReport } from '@fougere/core';
-
-export type { Edge, FrondPlacement, TopologyReport } from '@fougere/core';
-import { activeCalls, type FinishedSpan, type SpanSink } from './index.js';
+import { activeCalls, type FinishedSpan, type SpanSink } from '../index.js';
+import type { MetricsSnapshot } from './MetricsSnapshot.js';
 
 /**
  * Bucket bounds in SECONDS, and the operator's to choose — this is the default, not the rule.
@@ -19,40 +18,12 @@ import { activeCalls, type FinishedSpan, type SpanSink } from './index.js';
  */
 const BOUNDS = [0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10];
 
-interface Bucketed {
-  frond: string | undefined;
-  entity: string;
-  operation: string;
-  error: string | undefined;
-  count: number;
-  sum: number;
-  /** One more than the bounds: the last holds everything above the highest bound. */
-  buckets: number[];
-  /** The same measurement over `selfMs` — what the op did rather than what it waited for. */
-  selfSum: number;
-  selfBuckets: number[];
-  /** Every statement these calls ran. Against `count`, it is statements per call. */
-  statements: number;
-}
 
 export interface Metrics {
   /** Hand to `onSpan` — it reads the same span the tracer reads. */
   sink: SpanSink;
   /** What to publish now. */
   snapshot(): MetricsSnapshot;
-}
-
-
-export interface MetricsSnapshot {
-  /** When this process started counting — cumulative metrics are read against it. */
-  since: number;
-  series: Bucketed[];
-  active: number;
-  bounds: number[];
-  /** The shape of the system as this process discovered it — declared nowhere. */
-  topology: FrondPlacement[];
-  /** Who calls whom, as observed here. Bounded by fronds², so it is a safe dimension. */
-  edges: Edge[];
 }
 
 /**

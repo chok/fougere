@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import type { App } from '@fougere/core';
 import type { SchemaView } from '@fougere/schema';
-import { checkContract, checkOutput, type CheckOptions } from './facades.js';
+import { type CheckOptions } from './facades/CheckOptions.js';
+import { checkContract, checkOutput } from './facades/Verdict.js';
 import { checkDoors, type DoorOptions } from './comparison.js';
 
 export interface CheckAllOptions extends DoorOptions, CheckOptions {

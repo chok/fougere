@@ -1,14 +1,10 @@
-/** @fougere/adapter-rest — generates REST route definitions from fougere handlers. */
-import type { Field, Fields, SchemaView } from '@fougere/schema';
+import type { Fields, SchemaView } from '@fougere/schema';
 import { Visibility } from '@fougere/schema';
-import type { HandlerEntry as CoreHandlerEntry } from '@fougere/core';
-
-// ─── Types ──────────────────────────────────────
-
-// Le vocabulaire des verbes appartient au routeur, pas à la projection : le redéclarer ici
-// avait produit deux listes à tenir d'accord à la main, qui ont divergé au premier verbe ajouté.
-export type { HttpMethod } from '@fougere/http';
 import type { HttpMethod } from '@fougere/http';
+import type { HandlerEntry as CoreHandlerEntry } from '@fougere/core';
+import type { EntityEntry } from './EntityEntry.js';
+import type { OperationMeta } from './OperationMeta.js';
+import type { GenerateRoutesOptions } from './GenerateRoutesOptions.js';
 
 export interface RouteDefinition {
   method: HttpMethod;
@@ -28,22 +24,6 @@ export interface RouteDefinition {
   // No presenter here. A route used to carry the instance and its field names so the
   // registration could enrich each row; the façade does that for every facade now
   // (`PresenterExecutor`), so the rows arrive computed and a second pass was duplicated work.
-}
-
-interface OperationMeta {
-  input?: SchemaView;
-  output?: SchemaView;
-  /** Canonical kind from core's EffectiveOperation. */
-  kind: 'query' | 'command';
-  /** The operation in words — see `RouteDefinition.description`. */
-  description?: string;
-}
-
-interface EntityEntry {
-  name: string;
-  /** A live class in-process, a card from a frond whose class never crossed. */
-  entityClass: SchemaView;
-  exposed?: boolean;
 }
 
 /** Only what this projection reads of a scanned handler — five fields of nine. */
@@ -87,7 +67,6 @@ interface AppLike {
 type HandlerFacade = Record<string, Function>;
 
 // ─── Naming conventions ─────────────────────────
-
 
 function hasById(name: string): boolean {
   return name.includes('ById') || name === 'findById' || name === 'update' || name === 'delete';
@@ -143,17 +122,6 @@ function derivePath(entityName: string, opName: string): string {
 // Membership is the axes-derived `Visibility.input` projection from @fougere/schema.
 
 // ─── Public API ─────────────────────────────────
-
-export interface GenerateRoutesOptions {
-  /** Base path prefix (e.g. '/api'). Default: ''. */
-  prefix?: string;
-  /** Override route config per entity. */
-  overrides?: Record<string, Record<string, { method?: HttpMethod; path?: string; status?: number }>>;
-  /** Filter entities. */
-  filter?: (entity: EntityEntry, frondName: string) => boolean;
-  /** Surface name for filtering (e.g. 'rest', 'graphql'). Uses frond.config.ts surfaces if set. */
-  surface?: string;
-}
 
 /** Generate REST route definitions from a fougere App. */
 export function generateRoutes(app: AppLike, options?: GenerateRoutesOptions): RouteDefinition[] {

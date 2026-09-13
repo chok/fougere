@@ -1,4 +1,4 @@
-import { entity, primary, text, bool, date, created, optional } from '@fougere/schema';
+import { entity, primary, text, date, created } from '@fougere/schema';
 
 /**
  * Default Verification entity — better-auth shape.

@@ -11,7 +11,8 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { createLocalRunner, type IdentityCard } from '@fougere/core';
 import { Invocation } from '@fougere/core/contract';
 import { testApp } from '../src/index.js';
-import { syncedRemotes, heldShapes, syncDriftOf, inSync } from '../src/sync.js';
+import { syncedRemotes } from '../src/sync/SyncedRemote.js';
+import { heldShapes, syncDriftOf, inSync } from '../src/sync/SyncDrift.js';
 
 const consumer = join(import.meta.dirname, 'fixtures-synced');
 

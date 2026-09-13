@@ -10,7 +10,7 @@ import { join } from 'node:path';
 import { createLocalRunner } from '@fougere/core';
 import { Invocation } from '@fougere/core/contract';
 import { testApp, stubOf } from '../src/index.js';
-import { methodsOf } from '../src/stub.js';
+import { methodsOf } from '../src/stub/Stub.js';
 import Payment from './fixtures/fronds/billing/services/Payment.js';
 
 const root = join(import.meta.dirname, 'fixtures');

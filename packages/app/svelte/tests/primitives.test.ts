@@ -13,7 +13,8 @@ import { get } from 'svelte/store';
 import { entity, primary, text, oneOf, readOnly, created } from '@fougere/schema';
 import { ErrorCode } from '@fougere/core/contract';
 import { facade } from '@fougere/app/client';
-import { useQuery, useCommand } from '../src/useFougereData.js';
+import { useCommand } from '../src/useFougereData/CommandStore.js';
+import { useQuery } from '../src/useFougereData/QueryStore.js';
 import { useFormFor } from '../src/useFormFor.js';
 
 class Post extends entity({

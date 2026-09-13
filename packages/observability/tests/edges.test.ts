@@ -14,7 +14,7 @@ import { createApp, createLocalRunner } from '@fougere/core';
 import type { App, InvocationContext, TopologyReport } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { tracing, metrics, type Metrics, type SpanSink } from '../src/index.js';
-import { serveTopology } from '../src/metrics.js';
+import { serveTopology } from '../src/metrics/Metrics.js';
 
 const fixturesDir = join(import.meta.dirname, 'fixtures-edge');
 const empty: InvocationContext = { params: {}, query: {}, input: undefined, state: {} };

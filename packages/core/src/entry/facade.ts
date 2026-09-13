@@ -1,5 +1,5 @@
 import { Call } from '../wire/Call.js';
-import type { PartialInvocation } from '../wire/Invocation.js';
+
 import { RouteAddress } from '../wire/RouteAddress.js';
 import type { DispatchPort } from '../dispatch/DispatchPort.js';
 

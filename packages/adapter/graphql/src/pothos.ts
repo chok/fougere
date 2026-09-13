@@ -4,7 +4,7 @@ import { upperFirst, Role } from '@fougere/schema';
  */
 import type SchemaBuilder from '@pothos/core';
 import { Shapes, Schema, type Shape } from '@fougere/schema';
-import type { Field, Fields, SchemaView } from '@fougere/schema';
+import type { Field, SchemaView } from '@fougere/schema';
 import { Boundary, Card, Lifecycle, Visibility } from '@fougere/schema';
 
 // ─── Types ─────────────────────────────────────────

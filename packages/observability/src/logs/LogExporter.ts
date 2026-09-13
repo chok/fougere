@@ -1,8 +1,9 @@
-/** Log export — the third signal, and the only one whose value is entirely in its links. */
-import { Beat } from './Beat.js';
-import { Endpoint } from './Endpoint.js';
-import { currentSpan } from './index.js';
+import { Beat } from '../Beat.js';
+import { Endpoint } from '../Endpoint.js';
+import { currentSpan } from '../index.js';
 import type { LogRecord } from '@fougere/core';
+import type { CapturedLog } from './CapturedLog.js';
+import type { LogsOptions } from './LogsOptions.js';
 
 /** OTLP severity numbers — the scale is 1–24, these are the canonical rungs. */
 const SEVERITY: Record<string, { number: number; text: string }> = {
@@ -12,12 +13,6 @@ const SEVERITY: Record<string, { number: number; text: string }> = {
   error: { number: 17, text: 'ERROR' },
 };
 
-/** A record, plus what it could only be told at the moment it was written. */
-export interface CapturedLog extends LogRecord {
-  traceId: string | undefined;
-  spanId: string | undefined;
-}
-
 export interface LogExporter {
   /** Hand to `onLog`. */
   sink: (record: LogRecord) => void;
@@ -25,19 +20,6 @@ export interface LogExporter {
   flush(): Promise<void>;
   /** Stop the timer and send what is left. */
   stop(): Promise<void>;
-}
-
-export interface LogsOptions {
-  /** Which service these lines belong to. */
-  service: string;
-  /** Collector endpoint. Default: the OTLP/HTTP convention on localhost. */
-  url?: string;
-  /** How often a batch leaves. Default: every second. */
-  flushMs?: number;
-  /** Told when a batch could not be sent. Default: silence. */
-  onError?: (err: unknown) => void;
-  /** Drop anything below this level before it leaves the process. */
-  minimum?: 'debug' | 'info' | 'warn' | 'error';
 }
 
 export function logs(options: LogsOptions): LogExporter {

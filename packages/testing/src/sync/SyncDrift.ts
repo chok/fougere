@@ -1,16 +1,8 @@
-import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { Card, type Change, type SchemaDescriptor, type SchemaView } from '@fougere/schema';
 import type { IdentityCard } from '@fougere/core';
-
-/** One entry of `.fougere/remotes.json`, written by `fougere sync`. */
-export interface SyncedRemote {
-  name: string;
-  url: string;
-  /** Where the synced classes were written. */
-  path: string;
-}
+import type { SyncedRemote } from './SyncedRemote.js';
 
 /** What separates a consumer's synced copy from what the producer serves today. */
 export interface SyncDrift {
@@ -19,18 +11,6 @@ export interface SyncDrift {
   gone: string[];
   /** A shape that moved under a name the consumer still holds. */
   moved: { entity: string; changes: Change[] }[];
-}
-
-/** The remotes a project synced, read from the file `fougere sync` writes. */
-export async function syncedRemotes(root: string): Promise<SyncedRemote[]> {
-  try {
-    const raw = await readFile(join(root, '.fougere', 'remotes.json'), 'utf8');
-    const parsed = JSON.parse(raw) as Record<string, { url: string; path: string }>;
-    return Object.entries(parsed).map(([name, one]) => ({ name, ...one }));
-  } catch {
-    // No file is the ordinary case: an app with no remote synced nothing.
-    return [];
-  }
 }
 
 /** The shapes a consumer holds for one remote frond. */

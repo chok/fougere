@@ -1,24 +1,9 @@
-/** Standalone receiver — enough to host a Frond in its own process. */
 import { createServer } from 'node:http';
 import type { Transport } from '@fougere/core';
-import type { RpcResponse } from './jsonrpc/RpcResponse.js';
-import { handleRpc, type ReceiveOptions } from './server.js';
-import { MAX_BODY_BYTES, CALL_PATH, parseError, tooLarge } from './policy.js';
-
-export interface ServeOptions extends ReceiveOptions {
-  /** Port to listen on. 0 (default) picks a free one. */
-  port?: number;
-  /** The addresses this receiver may bind. */
-  hosts?: string[];
-  /** Which address to bind. Must be one of `hosts`. Defaults to its first. */
-  host?: string;
-  /** Serve unsigned calls beyond loopback, deliberately. */
-  allowUnsigned?: boolean;
-  /** Maximum JSON-RPC body size. Default: 1 MiB. */
-  maxBodyBytes?: number;
-  /** Time allowed to receive a request. Default: 15 seconds. */
-  requestTimeoutMs?: number;
-}
+import type { RpcResponse } from '../jsonrpc/RpcResponse.js';
+import { handleRpc } from '../server.js';
+import { MAX_BODY_BYTES, CALL_PATH, parseError, tooLarge } from '../policy.js';
+import type { ServeOptions } from './ServeOptions.js';
 
 export interface RunningReceiver {
   port: number;

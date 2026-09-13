@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process';
-import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync, unlinkSync } from 'node:fs';
+import { existsSync, writeFileSync, readFileSync, readdirSync, unlinkSync } from 'node:fs';
 import { join, basename } from 'node:path';
 import { resolveConventions, frondPackage } from '@fougere/core';
 import { loadConfig } from '@fougere/core/node';

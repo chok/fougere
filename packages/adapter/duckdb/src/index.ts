@@ -1,5 +1,5 @@
 /** Read across an app's sources — one SQL query over what can be attached. */
-import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
+import { DuckDBInstance } from '@duckdb/node-api';
 import { lowerFirst, type SchemaView } from '@fougere/schema';
 import { toTable, toTableName, toSnakeCase, codecsOf } from '@fougere/adapter-sql';
 

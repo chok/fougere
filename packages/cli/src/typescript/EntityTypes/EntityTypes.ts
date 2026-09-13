@@ -1,5 +1,6 @@
 import { upperFirst, type FieldDescriptor, type SchemaDescriptor } from '@fougere/schema';
-import { docCommentOf, propertyKey } from './syntax.js';
+import { docCommentOf, propertyKey } from '../syntax.js';
+import type { EntityTypesOptions } from './EntityTypesOptions.js';
 
 /** So a nullable field lands as a union. */
 function typeOf(field: FieldDescriptor): string {
@@ -39,11 +40,6 @@ function objectTypeOf(properties: Record<string, FieldDescriptor>, required: rea
     return `${propertyKey(name)}${optional}: ${typeOf(field)}`;
   });
   return `{ ${members.join('; ')} }`;
-}
-
-export interface EntityTypesOptions {
-  name?: string;
-  exported?: boolean;
 }
 
 /** So the generated class carries its row type. */

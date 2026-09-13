@@ -3,8 +3,9 @@ import { createLocalRunner, validationErrorsOf, type App } from '@fougere/core';
 import { Invocation } from '@fougere/core/contract';
 import { lowerFirst, Visibility, type SchemaView, type ValidationError } from '@fougere/schema';
 import { Cases } from '@fougere/schema';
-import { derivedCases } from './derive.js';
-import { sampleInput, replaySeed, type SampleOptions } from './sample.js';
+import { derivedCases } from '../derive.js';
+import { sampleInput, replaySeed } from '../sample.js';
+import type { CheckOptions } from './CheckOptions.js';
 
 /** The one shape both the local validator and a facade already speak. */
 export interface Verdict {
@@ -27,11 +28,6 @@ export async function verdictOf(call: () => Promise<unknown>): Promise<Verdict> 
 function opsFor(entity: SchemaView): { create: string; update: string; name: string } {
   const name = lowerFirst(entity.name ?? '');
   return { name, create: 'create', update: 'update' };
-}
-
-export interface CheckOptions extends SampleOptions {
-  /** Values the generator cannot invent — the id of a row a `ref()` points at. */
-  given?: Record<string, unknown>;
 }
 
 /** The declared contract, posed to the façade that will receive it. */

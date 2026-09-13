@@ -3,9 +3,9 @@ import { frond, loggerMiddleware, Logger, LogLine, type App, type Extension, typ
 import ExportHandler from './ExportHandler.js';
 import { traceContext } from '#trace-context';
 import { registerFlush, statementsUnder, tracing, type SpanSink } from './index.js';
-import { metrics, serveTopology } from './metrics.js';
-import { otlp } from './otlp.js';
-import { logs } from './logs.js';
+import { metrics, serveTopology } from './metrics/Metrics.js';
+import { otlp } from './otlp/OtlpExporter.js';
+import { logs } from './logs/LogExporter.js';
 
 export interface ObservabilityOptions {
   /** What a dashboard groups this process by, and the name a log line carries. */

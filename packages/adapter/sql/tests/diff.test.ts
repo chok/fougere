@@ -5,7 +5,7 @@
  * The old create-if-not-exists pass ignored it silently.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { entity, primary, text, number, optional, bool, ref, unique, type EntityConstructor } from '@fougere/schema';
+import { entity, primary, text, number, optional, ref, unique, type EntityConstructor } from '@fougere/schema';
 import { sql } from 'kysely';
 import { createSqliteSource, type SqliteSource } from '../src/sqlite.js';
 import { actualState, delta, desiredTables, orderChanges, planMigration, migrate, changeSQL } from '../src/diff.js';

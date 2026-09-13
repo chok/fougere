@@ -319,8 +319,10 @@ function codeOf(err: unknown): string {
   return typeof code === 'string' ? code : ((err as Error)?.name ?? 'error');
 }
 
-export { otlp } from './otlp.js';
-export { metrics } from './metrics.js';
-export type { Metrics, TopologyReport, FrondPlacement, Edge } from './metrics.js';
-export { logs } from './logs.js';
+export { otlp } from './otlp/OtlpExporter.js';
+export { metrics } from './metrics/Metrics.js';
+export type { Metrics } from './metrics/Metrics.js';
+export type { TopologyReport } from '@fougere/core';
+export type { FrondPlacement, Edge } from '@fougere/core';
+export { logs } from './logs/LogExporter.js';
 export { observability } from './extension.js';

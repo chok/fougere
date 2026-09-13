@@ -10,7 +10,7 @@ import {
   type FormEntity,
   type FormField,
 } from '@fougere/app/client';
-import { useCommand } from './useFougereData.js';
+import { useCommand } from './useFougereData/CommandStore.js';
 
 export interface FormOptions {
   /** Command the submit rides. Default: 'create'. */

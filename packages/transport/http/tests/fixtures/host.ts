@@ -3,7 +3,7 @@
  * app and serves them behind /_fougere/call. Announces its port on stdout.
  */
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { dirname } from 'node:path';
 import { createJiti } from 'jiti';
 import { createApp, createLocalRunner } from '@fougere/core';
 import { scanProject } from '@fougere/compiler';

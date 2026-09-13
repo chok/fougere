@@ -10,12 +10,12 @@ import { describe, it, expect } from 'vitest';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { entity, primary, ref, text, updated } from '@fougere/schema';
+import { entity, primary, ref, text } from '@fougere/schema';
 import { toTables, createKyselySource } from '@fougere/adapter-sql';
 import { createSqliteSource } from '@fougere/adapter-sql/sqlite';
 import { SqliteDialect } from 'kysely';
 import Database from 'better-sqlite3';
-import { resolveStorage, storageFrom } from '../src/storage.js';
+import { resolveStorage, storageFrom } from '../src/storage/ResolvedStorage.js';
 
 class Reader extends entity({ id: primary(), name: text() }) {}
 class Book extends entity({ id: primary(), title: text() }) {}

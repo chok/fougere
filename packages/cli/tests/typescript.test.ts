@@ -9,8 +9,8 @@ import { describe, it, expect } from 'vitest';
 import {
   Card, bool, date, entity, list, many, nullable, number, oneOf, optional, primary, ref, text,
 } from '@fougere/schema';
-import { EntityTypes } from '../src/typescript/EntityTypes.js';
-import { FacadeTypes } from '../src/typescript/FacadeTypes.js';
+import { EntityTypes } from '../src/typescript/EntityTypes/EntityTypes.js';
+import { FacadeTypes } from '../src/typescript/FacadeTypes/FacadeTypes.js';
 
 class Author extends entity({ id: primary(), name: text() }) {}
 

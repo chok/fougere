@@ -1,4 +1,4 @@
-import { Logger, applyConfig, createApp, migrating, seeding, type App, type CreateAppOptions, type Extension, type FougereConfig, type Transport } from '@fougere/core';
+import { Logger, applyConfig, createApp, type App, type CreateAppOptions, type Extension, type FougereConfig, type Transport } from '@fougere/core';
 import { loadConfig } from '@fougere/core/node';
 import { scanProject } from './scan/scanner.js';
 

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { entity, number, primary, ref, text } from '@fougere/schema';
 import { migrate } from '../src/index.js';
 import { createSqliteSource } from '../src/sqlite.js';

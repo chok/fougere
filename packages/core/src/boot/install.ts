@@ -6,7 +6,7 @@ import type { Dispatcher } from '../dispatch/Dispatcher.js';
 import type { RouteRegistry } from '../dispatch/RouteRegistry.js';
 import type { Emissions } from './Emissions.js';
 import type { EffectiveOperationsMap, EffectiveOperationModel } from '../effective-operation.js';
-import { nameOf, type ProviderEntry } from '../descriptor/frond.js';
+import { nameOf } from '../descriptor/frond.js';
 import type { EntityEntry, FrondDescriptor, HandlerEntry } from '../descriptor/frond.js';
 import type { OperationsMap } from '../wire/operation.js';
 import type { AppMiddleware } from '../wire/middleware.js';

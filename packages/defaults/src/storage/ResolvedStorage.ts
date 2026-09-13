@@ -1,23 +1,14 @@
-/** Storage resolution — `config.db` → a working data layer. */
 import type { App } from '@fougere/core';
 import { Fronds, type FrondDescriptor } from '@fougere/core';
 import { lowerFirst } from '@fougere/core/contract';
 import { existsSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
-
 import { Sources, type Constraint, type Source, type SourceView } from '@fougere/core';
-// Imported for its side effect: it is what makes `source: 'sql'` an answered name.
-import '@fougere/adapter-sql/sqlite';
-
-/** The `db` field of fougere.config.ts, read structurally. */
-export type DbConfig =
-  | false
-  | 'sqlite'
-  | { source?: string; dialect?: string; path?: string }
-  | undefined;
-
-/** A named source and the entities it holds — the `sources` field, read structurally. */
-export type SourcesConfig = Record<string, { source?: string; dialect?: string; path?: string; entities: string[] }> | undefined;
+import { declaresStorage } from './DeclaredStorage.js';
+import type { DbConfig } from './DbConfig.js';
+import type { SourcesConfig } from './SourcesConfig.js';
+import type { Placement } from './Placement.js';
+import type { DeclaredStorage } from './DeclaredStorage.js';
 
 export interface ResolvedStorage {
   /** Opaque handle handed to auth providers. */
@@ -50,13 +41,6 @@ export interface ResolvedStorage {
   close?: () => Promise<void>;
   /** Raw synchronous handle, when the engine exposes one. */
 }
-
-/** Does this config ask for persistence at all? */
-export function declaresStorage(dbConf: DbConfig): boolean {
-  if (dbConf === false || dbConf === undefined) return false;
-  return true;
-}
-
 
 /** The app as ONE source sees it. */
 function viewOf(
@@ -140,19 +124,6 @@ function anchored(conf: Record<string, unknown>, root?: string): Record<string, 
 
 /** What a config naming no adapter means. */
 const DEFAULT_ADAPTER = 'sql';
-
-/** One source: what realizes it, and the entities that live there. */
-export interface Placement {
-  source: Source;
-  entities: string[];
-}
-
-export interface DeclaredStorage {
-  /** The default source — where an entity no placement names lands. */
-  db: Source;
-  /** The other places. Absent means one source, the way it always was. */
-  sources?: Record<string, Placement>;
-}
 
 /** The same routing `resolveStorage` performs, over engines the CALLER built. */
 export function storageFrom(declared: DeclaredStorage): ResolvedStorage {

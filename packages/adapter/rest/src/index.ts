@@ -1,4 +1,5 @@
-export { generateRoutes, type RouteDefinition, type HttpMethod } from './routes.js';
+export { generateRoutes, type RouteDefinition } from './routes/RouteDefinition.js';
+export type { HttpMethod } from '@fougere/http';
 export { registerRoutes } from './register.js';
 
 // No schema endpoint here. Discovery is `rpc.discover` on the envelope — one

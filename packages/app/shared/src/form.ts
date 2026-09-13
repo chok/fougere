@@ -4,7 +4,7 @@ import { Lifecycle } from '@fougere/schema';
  * axes.
  */
 import { Shapes, lowerFirst, Role, Visibility } from '@fougere/schema';
-import type { Field, SchemaView, ShapeType, ValidationError, ValidationResult } from '@fougere/schema';
+import type { Field, SchemaView, ShapeType, ValidationError } from '@fougere/schema';
 
 /** What an entity class exposes to a form — the schema statics it already has. */
 export type FormEntity = SchemaView;
