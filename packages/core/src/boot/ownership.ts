@@ -36,6 +36,8 @@ export function ownersOf(
   refused: Diagnostic[],
 ): Map<string, string> {
   const owners = new Map<string, string>();
+  /** Claimed twice, so it has no owner — and no owner is nobody to judge a reader against. */
+  const contested = new Set<string>();
   for (const provider of providers) {
     const owned = ownedBy(provider.ctor);
     if (owned.length < 2) continue;
@@ -55,11 +57,17 @@ export function ownersOf(
           message: `${first} and ${provider.ctor.name} both own ${name}. An entity has one owner: `
             + 'merge the two, or take it out of one of them.',
         });
+        contested.add(name);
         continue;
       }
       owners.set(name, provider.ctor.name);
     }
   }
+  // The second claimant is BUILT ON what it claims, so `storageInUserCode` would read it as
+  // reaching around the first — two more refusals naming the same declaration, in the one
+  // case where the answer to "who owns this" is already the diagnostic above.
+  for (const name of contested) owners.delete(name);
+
   return owners;
 }
 

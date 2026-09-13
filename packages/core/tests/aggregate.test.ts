@@ -130,6 +130,11 @@ describe('what the shape refuses, and what a sentence has to refuse instead', ()
 
     await expect(rejected).rejects.toThrow(/\[entity-owned-twice\]/);
     await expect(rejected).rejects.toThrow(/AccountRepository and LedgerRepository|LedgerRepository and AccountRepository/);
+    // A contested entity has no owner, so nothing else is judged against one: the second
+    // claimant is built on what it claims and would otherwise read as reaching around the
+    // first, twice over. Two entities, two refusals — not four.
+    await expect(rejected).rejects.toThrow(/refused: 2 declaration/);
+    await expect(rejected).rejects.not.toThrow(/aggregate-storage-reached/);
   });
 
   it('leaves an owned entity no automatic CRUD, and says so at boot', async () => {
