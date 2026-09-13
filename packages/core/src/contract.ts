@@ -30,6 +30,7 @@ export { driftOf, agrees, explain } from './wire/drift.js';
 export type { CardDrift } from './wire/drift.js';
 
 /** What `rpc.discover` answers. */
+export { refusalsOf, type Refusable } from './wire/refusals.js';
 export type {
   IdentityCard, CardOp, TopologyReport, FrondPlacement, Edge,
   DeclaredTopology, DeclaredFrond, DeclaredEdge,

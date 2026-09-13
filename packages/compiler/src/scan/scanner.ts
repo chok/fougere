@@ -10,6 +10,7 @@ import { ANONYMOUS_SCHEMA_NAME, type SchemaView } from '@fougere/schema';
 
 import {
   parseAllHandlerMethods,
+  parseRefusals,
   parsePresenterMethods,
   parseConstructorParams,
   resetTypePrograms,
@@ -285,6 +286,16 @@ async function inferOperations(
     return map;
   }
 
+  // What every op of this handler can refuse, walked from each `throw` up to whoever reaches
+  // it. Read from the SAME program the signatures came from, so a dependency resolves through
+  // the checker rather than by name — and a guard living in a helper beside the handler is
+  // found, where reading the method's own body would have missed it.
+  const refusals = await parseRefusals(
+    filePath,
+    (name) => name.startsWith(`${handlerName}.`),
+    projectRoot,
+  ).catch(() => new Map<string, string[]>());
+
   /**
    * A base class the parse could not open — an installed package, typically, whose source is not
    * in the workspace.
@@ -304,9 +315,11 @@ async function inferOperations(
     // The contract is what carries the description; `signature` is the raw material it
     // was read from. Leaving it only on the signature meant every consumer had to know
     // to look one level down, and only the façade did.
+    const refused = refusals.get(`${handlerName}.${method.name}`);
     const meta: OperationContract = {
       signature: method,
       ...(method.description && { description: method.description }),
+      ...(refused?.length ? { errors: refused } : {}),
     };
 
     // A convention may omit a declaration only when it has one answer. Only values the

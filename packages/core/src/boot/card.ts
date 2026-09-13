@@ -83,6 +83,7 @@ function facadeOps(app: App, entityName: string, surface?: string): CardOp[] {
       ...(contract?.input && { input: Card.fromSchema(contract.input, name).descriptor }),
       ...(contract?.output && { output: Card.fromSchema(contract.output, name).descriptor }),
       ...(contract?.cardinality && { cardinality: contract.cardinality }),
+      ...(contract.errors?.length ? { errors: contract.errors } : {}),
       kind: contract.kind,
     };
   });

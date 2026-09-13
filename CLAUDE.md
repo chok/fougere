@@ -280,6 +280,29 @@ backend charges per span, and a page of forty rows exports forty. `@fougere/test
 `spansOf` turns it on, because a test IS the diagnosis. Measured 2026-09-12, pinned by
 `observability/tests/statements.test.ts` and `testing/tests/statements.test.ts`.
 
+**What an op REFUSES is walked from the refusals upward, not read from its body** —
+`compiler/src/scan/refusals.ts`, carried as `OperationContract.errors` and published on `CardOp`.
+Reading a handler's own body answers "at least these", which is not a contract: a guard moved
+into a helper — a refactor with no change of behaviour — would silently shrink what an app
+promises. Measured on `site/fronds/blog`: the body of `publish` holds ONE throw and the walk
+finds four, because the three that matter live in module functions beside it. It walks UP because
+there are a handful of refusal sites and many ops, and an address resolved through a port lands
+on the union of what its realizations refuse — OVER-approximating, the honest direction for a
+contract, where a code that cannot happen costs a dead branch and a code that can costs a
+surprise. It stops at the frond: what another frond refuses is published by ITS card.
+
+The FRAMEWORK's half does not travel (`wire/refusals.ts`, `refusalsOf`). `VALIDATION_FAILED`
+follows from `input`, `SERVICE_UNAVAILABLE` from being dispatched at all, `BAD_REQUEST` from
+being a command, the gateway pair from a remote placement — every one already on the card, so
+writing them per op would be one fact in two places. The two halves are put together where they
+are READ. `INTERNAL_ERROR` is in neither: `toPublicError` replaces its message, so it is a bug
+rather than a refusal. `FougereError<Code>` carries the narrowing, defaulting to every code so a
+thrower writes what it always wrote — the gain is a `switch` with a `never` default that stops
+compiling when an op learns to refuse something else. `contract.ts` writes `errors` into the
+emitted scan like every other member: a contract that loses a field on disk answers differently
+depending on how it was booted. Pinned by `compiler/tests/refusals.test.ts` (two hops through
+helpers) and `core/tests/refusals.test.ts`.
+
 **An op's REACH is the dual of its placement** — `EffectiveOperation.reach`, filled where
 `placement` already is. `placement` says where an op ANSWERS, `reach` where its work GOES: the
 fronds its handler crosses to, and how many of those are a process away. Both halves read the

@@ -16,6 +16,15 @@ export interface OperationContract {
   cardinality?: 'one' | 'maybe' | 'many' | 'page' | 'none';
   /** The argument names and TYPES — the one thing `binding` cannot say. */
   signature?: Signature;
+  /**
+   * The refusals a path from this operation can reach, walked from every `throw` upward.
+   *
+   * What the FRAMEWORK refuses is not here: `VALIDATION_FAILED` follows from `input`,
+   * `SERVICE_UNAVAILABLE` from being dispatched at all, the gateway pair from a remote
+   * placement — all already on the card, so listing them per op would write one fact twice.
+   * `refusalsOf` puts the two halves together for whoever reads.
+   */
+  errors?: string[];
 }
 
 /** Read an op's cardinality off its parsed return type. */

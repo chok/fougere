@@ -42,8 +42,8 @@ export enum ErrorCode {
 
 // ── FougereError ────────────────────────────────
 
-export interface FougereErrorOptions {
-  code: ErrorCode;
+export interface FougereErrorOptions<Code extends ErrorCode = ErrorCode> {
+  code: Code;
   message: string;
   entity?: string;
   operation?: string;
@@ -51,13 +51,23 @@ export interface FougereErrorOptions {
   cause?: unknown;
 }
 
-export class FougereError extends Error {
-  readonly code: ErrorCode;
+/**
+ * A refusal, and which one — narrowed by the operation that answered it where the caller knows.
+ *
+ * `Code` defaults to every code there is, so a thrower writes what it always wrote. What it buys
+ * is on the READING side: a client generated from a card gets `FougereError<'NOT_FOUND' |
+ * 'CONFLICT'>`, and a `switch` over `code` with a `never` in its default stops compiling the day
+ * the op learns to refuse something else.
+ *
+ * Documented: [observability](https://fougere.dev/docs/infra/observability).
+ */
+export class FougereError<Code extends ErrorCode = ErrorCode> extends Error {
+  readonly code: Code;
   readonly entity?: string;
   readonly operation?: string;
   readonly details?: unknown;
 
-  constructor(options: FougereErrorOptions) {
+  constructor(options: FougereErrorOptions<Code>) {
     super(options.message, { cause: options.cause });
     this.name = new.target.name;
     this.code = options.code;

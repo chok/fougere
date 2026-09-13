@@ -62,6 +62,9 @@ export function contractOf(
   if (contract.description !== undefined) parts.push(`description: ${lit(contract.description)}`);
   if (contract.cardinality !== undefined) parts.push(`cardinality: ${lit(contract.cardinality)}`);
   if (contract.signature !== undefined) parts.push(`signature: ${lit(contract.signature)}`);
+  // Written down like every other member: a scan on disk is what an edge deployment reads, and
+  // a contract that loses a field there answers differently depending on how it was booted.
+  if (contract.errors !== undefined) parts.push(`errors: ${lit(contract.errors)}`);
 
   return `[${lit(op)}, { ${parts.join(', ')} }]`;
 }

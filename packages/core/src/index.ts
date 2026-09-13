@@ -51,6 +51,9 @@ export { identityCardOf } from './boot/card.js';
 // Its dual: what the app declares about its NEIGHBOURS. Read by `rpc.topology`, by
 // `@fougere/calls` and by `fougere graph`, which each held their own half of it.
 export { declaredTopologyOf } from './boot/declared.js';
+// Both halves of what a call can refuse, put together where they are READ — the framework's
+// follows from `kind` and `input`, so only the frond's travels.
+export { refusalsOf, type Refusable } from './wire/refusals.js';
 export type { Facade } from './wire/call.js';
 export type {
   FrondCall,

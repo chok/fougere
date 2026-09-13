@@ -2,6 +2,7 @@
 import { type Param, type Signature, type TypeRef } from '@fougere/core/descriptor';
 
 import type ts from '@typescript/typescript6';
+import { refusalsIn } from './refusals.js';
 import { readFileSync, existsSync, statSync } from 'node:fs';
 import { join, dirname, resolve as resolvePath } from 'node:path';
 
@@ -120,7 +121,8 @@ export async function seedTypeProgram(filePaths: readonly string[], projectRoot?
 
   for (const filePath of filePaths) {
     const absolute = resolvePath(filePath);
-    const configured = compilerProjectOf(absolute, projectRoot);
+    const typescript = getTS();
+  const configured = compilerProjectOf(absolute, projectRoot);
     const group = grouped.get(configured.key) ?? { options: configured.options, paths: [] };
     group.paths.push(absolute);
     grouped.set(configured.key, group);
@@ -133,8 +135,8 @@ export async function seedTypeProgram(filePaths: readonly string[], projectRoot?
   }
 }
 
-function checkedSourceOf(filePath: string, projectRoot?: string): { source: ts.SourceFile; checker: ts.TypeChecker } {
-  const typescript = getTS();
+/** The program a file belongs to, built once and widened as more files are asked for. */
+function projectOf(filePath: string, projectRoot?: string): { program: ts.Program; absolute: string } {
   const absolute = resolvePath(filePath);
   const configured = compilerProjectOf(absolute, projectRoot);
   let project = typeProjects.get(configured.key);
@@ -153,9 +155,15 @@ function checkedSourceOf(filePath: string, projectRoot?: string): { source: ts.S
     project.program = builtProgram(configured.key, [...project.roots], project.options);
   }
 
-  const source = project.program.getSourceFile(absolute);
+  return { program: project.program, absolute };
+}
+
+function checkedSourceOf(filePath: string, projectRoot?: string): { source: ts.SourceFile; checker: ts.TypeChecker } {
+  const { program, absolute } = projectOf(filePath, projectRoot);
+  const source = program.getSourceFile(absolute);
   if (!source) throw new Error(`TypeScript did not include '${absolute}' in its program.`);
-  return { source, checker: project.program.getTypeChecker() };
+
+  return { source, checker: program.getTypeChecker() };
 }
 
 /** A file, opened. Five places read and parsed one, each spelling the same two calls. */
@@ -633,6 +641,24 @@ export interface HandlerParse {
 export async function parseAllHandlerMethods(filePath: string, projectRoot?: string): Promise<HandlerParse> {
   await loadTS();
   return parseClassMethods(filePath, CONSTRUCTOR_ONLY, projectRoot);
+}
+
+/**
+ * What every operation of a file's program can refuse, walked from the refusals upward.
+ *
+ * It reads the SAME program the signatures came from, so nothing is opened twice and a
+ * dependency resolves through the checker rather than by name.
+ */
+export async function parseRefusals(
+  filePath: string,
+  isOperation: (name: string) => boolean,
+  projectRoot?: string,
+): Promise<Map<string, string[]>> {
+  const typescript = await loadTS();
+  const { program } = projectOf(filePath, projectRoot);
+  const { byMethod } = refusalsIn(typescript, program, isOperation);
+
+  return new Map([...byMethod].map(([method, codes]) => [method, [...codes].sort()]));
 }
 
 /** Parse a presenter source file and extract all method signatures. */
