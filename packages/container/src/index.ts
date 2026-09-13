@@ -1,3 +1,8 @@
-export { type Container, type Constructor } from './container/Container.js';
+import { ScopeContainer } from './ScopeContainer.js';
+import type { Container } from './Container.js';
 
-export { createContainer } from './container/ScopeContainer.js';
+export type { Container };
+
+export function createContainer(): Container {
+  return new ScopeContainer();
+}

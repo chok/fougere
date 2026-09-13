@@ -1,19 +1,5 @@
-export type Constructor<T = unknown> = new (...args: any[]) => T;
-
-export interface RegisterOptions {
-  /**
-   * `'singleton'` builds once per scope and the container disposes it; `'transient'`
-   * builds per `resolve` and the caller closes it. Absent means `'transient'`.
-   */
-  lifetime?: 'singleton' | 'transient';
-
-  /**
-   * The TYPE names of the constructor's parameters, resolved in this scope in order —
-   * `constructor(private users: UserRepository, private log: Logger)` is
-   * `deps: ['UserRepository', 'Logger']`.
-   */
-  deps?: string[];
-}
+import type { Constructor } from './registration/Constructor.js';
+import type { RegisterOptions } from './registration/RegisterOptions.js';
 
 /** DI container interface — the only thing application code sees. */
 export interface Container {

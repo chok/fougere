@@ -1,17 +1,19 @@
-import type { Container, Constructor, RegisterOptions } from './Container.js';
+import type { Container } from './Container.js';
 import { Disposables, type Disposable } from './Disposable.js';
+import type { Constructor } from './registration/Constructor.js';
+import type { Lifetime } from './registration/Lifetime.js';
+import type { RegisterOptions } from './registration/RegisterOptions.js';
 
 interface Entry {
   factory: (container: Container) => unknown;
-  lifetime: 'singleton' | 'transient';
+  lifetime: Lifetime;
   instance?: unknown;
 }
 
 /** A scope reaches its parent and its children through members only a scope can read. */
-class ScopeContainer implements Container {
+export class ScopeContainer implements Container {
   private readonly registry = new Map<string, Entry>();
-  // In construction order: a thing built later may hold one built earlier, so disposal
-  // walks this backwards.
+
   private readonly built: unknown[] = [];
   // Closed by this container, and before `built` — a child may hold what this scope built,
   // never the other way round.
@@ -164,8 +166,4 @@ class ScopeContainer implements Container {
 
     return value;
   }
-}
-
-export function createContainer(): Container {
-  return new ScopeContainer();
 }
