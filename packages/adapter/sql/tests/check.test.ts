@@ -8,7 +8,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { entity, primary, text, number, oneOf, optional, created } from '@fougere/schema';
 import { autoMigrate, createTableSQL, toTable } from '../src/index.js';
-import { createSqliteSource, type SqliteSource } from '../src/sqlite.js';
+import { createSqliteSource, type SqliteSource } from '../src/sqlite/SqliteSource.js';
 
 class Post extends entity({
   id: primary(),

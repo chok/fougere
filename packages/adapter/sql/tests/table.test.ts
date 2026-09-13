@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { Card, entity, primary, text, number, bool, created, oneOf, ref, optional, many, json, type EntityConstructor } from '@fougere/schema';
 import { toTable, dialects } from '../src/index.js';
-import { isKeyed, type ColumnDef } from '../src/table.js';
+import { type ColumnDef } from '../src/table/ColumnDef.js';
+import { isKeyed } from '../src/table/TableDef.js';
 
 // ─── Fixtures ──────────────────────────────────────
 

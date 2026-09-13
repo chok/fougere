@@ -1,6 +1,6 @@
 /** Shape → CHECK constraints. */
 import { sql, type Expression, type SqlBool } from 'kysely';
-import type { ColumnDef } from './table.js';
+import type { ColumnDef } from './table/ColumnDef.js';
 
 /** What a column's shape can be checked for, beyond its type. */
 export interface ShapeBounds {

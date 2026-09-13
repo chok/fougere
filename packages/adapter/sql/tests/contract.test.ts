@@ -13,7 +13,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import type { Storage } from '@fougere/core';
-import { SqlStorage } from '../src/crud.js';
+import { SqlStorage } from '../src/crud/SqlStorage.js';
 
 describe('the SQL storage honours the port core declares', () => {
   it('is assignable to Storage — verified by the compiler, not at runtime', () => {

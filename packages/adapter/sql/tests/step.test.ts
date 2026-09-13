@@ -11,7 +11,7 @@ import { Kysely, SqliteDialect, sql } from 'kysely';
 import { Bundle, entity, primary, text, number, optional, type Fields, type SetDiffOptions } from '@fougere/schema';
 import { planStep, collapseChain, stepSQL, applyStep } from '../src/step.js';
 import { desiredTables, actualState, type SchemaState } from '../src/diff.js';
-import { createTableSQL } from '../src/ddl.js';
+import { createTableSQL } from '../src/ddl/SqlSink.js';
 
 const bundle = (fields: Fields) => Bundle.fromSchemas({ post: class extends entity(fields) {} });
 const between = (before: Fields, after: Fields, options: SetDiffOptions = {}) =>

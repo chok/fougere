@@ -1,4 +1,3 @@
-/** DDL — the table description, rendered as SQL. */
 import {
   Kysely,
   DummyDriver,
@@ -8,19 +7,14 @@ import {
   MysqlAdapter, MysqlQueryCompiler, MysqlIntrospector,
   MssqlAdapter, MssqlQueryCompiler, MssqlIntrospector,
 } from 'kysely';
-import {
-  isKeyed,
-  toTableName,
-  toTables,
-  type AppLike,
-  type ColumnDef,
-  type TableDef,
-} from './table.js';
-import { orderTables } from './order.js';
-import { columnTypeFor, resolveDialect, type DialectName } from './dialect.js';
-import { checkFor } from './check.js';
-
-// ─── Compile-only engines ──────────────────────────
+import { type AppLike } from '../table/AppLike.js';
+import { type ColumnDef } from '../table/ColumnDef.js';
+import { isKeyed, toTableName, toTables, type TableDef } from '../table/TableDef.js';
+import { orderTables } from '../order/TableOrder.js';
+import { columnTypeFor, resolveDialect } from '../dialect/Dialect.js';
+import { type DialectName } from '../dialect/DialectName.js';
+import { checkFor } from '../check.js';
+import type { GenerateOptions } from './GenerateOptions.js';
 
 const parts = {
   sqlite: [SqliteAdapter, SqliteQueryCompiler, SqliteIntrospector],
@@ -138,13 +132,6 @@ export function addForeignKeyConstraintSQL(table: TableDef, column: ColumnDef, d
 }
 
 // ─── App-wide generation ───────────────────────────
-
-export interface GenerateOptions {
-  /** Override table name resolution. Default: camelCase → snake_case + 's'. */
-  tableName?: (entityName: string) => string;
-  /** Target engine. Default: sqlite. */
-  dialect?: DialectName;
-}
 
 /**
  * `CREATE TABLE` for every entity the app hosts — scanned frond entities plus auth runtime

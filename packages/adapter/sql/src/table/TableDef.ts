@@ -1,44 +1,14 @@
 import { Lifecycle, Role } from '@fougere/schema';
-/** Entity → table description, with no SQL in sight. */
-import { Shapes, lowerFirst, type Field, type SchemaView, type ShapeType } from '@fougere/schema';
-import { boundsOf, type ShapeBounds } from './check.js';
-import { sqlEntries, type SqlField } from './fields.js';
-
-/** One column, described by the axes — plus, at most, what the entity stated for sql. */
-export interface ColumnDef {
-  /** Field key on the entity. */
-  field: string;
-  /** SQL column name (snake_case). */
-  name: string;
-  /** What every projection here dispatches on — a `date()` and a bounded set included. */
-  type?: ShapeType;
-  nullable: boolean;
-  primary: boolean;
-  /** A literal default (`lifecycle.create.value`), when the field declares one. */
-  default?: unknown;
-  /** A {@link Unique} of one — realized as a column constraint the database enforces. */
-  unique?: boolean;
-  /** `role.index` — realized as a separate `CREATE INDEX`, never a constraint. */
-  index?: boolean;
-  /**
-   * What the shape bounds beyond its type — `oneOf`, `min`, `max`. Realized as a
-   * `CHECK`, so the rule holds on every write and not only at the façade.
-   */
-  bounds?: ShapeBounds;
-  /** The FK target, from `role.relation` when it's a `ref()` (kind `'one'`). */
-  references?: ColumnReference;
-  /**
-   * What the entity stated for THIS adapter — never an axis. It says how the column is
-   * realized here; drop it and the column is still describable.
-   */
-  stated?: SqlField;
-}
-
-export interface ColumnReference {
-  table: string;
-  column: string;
-  onDelete?: 'cascade' | 'restrict' | 'set null';
-}
+import { Shapes, lowerFirst, type Field, type SchemaView } from '@fougere/schema';
+import { boundsOf } from '../check.js';
+import { type SqlField } from '../fields/SqlField.js';
+import { sqlEntries } from '../fields/SqlFields.js';
+import type { ColumnDef } from './ColumnDef.js';
+import type { ColumnReference } from './ColumnReference.js';
+import type { RelationResolve } from './RelationResolve.js';
+import type { HostedNames } from './HostedNames.js';
+import type { EntityEntry } from './EntityEntry.js';
+import type { AppLike } from './AppLike.js';
 
 export interface TableDef {
   name: string;
@@ -146,24 +116,6 @@ function toColumn(
   return column;
 }
 
-/** How a `ref()` field's target table+column is resolved — see {@link referenceFor}. */
-export interface RelationResolve {
-  /** Same resolver used for every entity's own table (default or a custom `tableName`). */
-  resolve: (name: string) => string;
-  /** Live entity class → its already-resolved table name, reused instead of re-derived. */
-  tableNameOf?: Map<SchemaView, string>;
-  /** Which entities this batch holds and which live in another source — decided by NAME. */
-  hosted?: HostedNames;
-}
-
-/** The two name sets a cross-source batch is read against — see {@link referenceFor}. */
-export interface HostedNames {
-  /** Registration names in THIS batch. */
-  here: ReadonlySet<string>;
-  /** Registration names the app hosts in another source — see {@link AppLike.elsewhere}. */
-  elsewhere: ReadonlySet<string>;
-}
-
 /** Describe one entity as a table — the single reader of the axes. */
 export function toTable(tableName: string, schema: SchemaView, relations?: RelationResolve): TableDef {
   const resolve = relations?.resolve ?? toTableName;
@@ -212,25 +164,6 @@ export function isKeyed(table: TableDef, column: ColumnDef): boolean {
 /** camelCase → snake_case + plural */
 export function toTableName(name: string): string {
   return name.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`) + 's';
-}
-
-export interface EntityEntry {
-  name: string;
-  /** A live class in-process, or one rebuilt from the card of a frond that never crossed. */
-  entityClass: SchemaView;
-}
-
-export interface FrondLike {
-  name: string;
-  entities: EntityEntry[];
-}
-
-export interface AppLike {
-  fronds: FrondLike[];
-  /** Auth runtime entities are migrated alongside scanned fronds when present. */
-  auth?: { entities: Record<string, SchemaView> };
-  /** Entities this app hosts in ANOTHER source — named so a miss can be read. */
-  elsewhere?: string[];
 }
 
 /** A schema says whether it holds rows; this adapter decides what to emit for it. */

@@ -1,13 +1,5 @@
-/**
- * In what order a batch of tables is created — the one question that reads a `TableDef` and
- * knows nothing above it: no entity, no axis, no schema.
- */
-import type { ColumnDef, TableDef } from './table.js';
-
-export interface FkEdge {
-  table: TableDef;
-  column: ColumnDef;
-}
+import type { TableDef } from '../table/TableDef.js';
+import type { FkEdge } from './FkEdge.js';
 
 export interface TableOrder {
   /** Tables in dependency order — a `ref()` target always precedes its referrer. */

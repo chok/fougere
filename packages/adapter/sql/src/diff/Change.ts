@@ -1,17 +1,14 @@
-/** Diff — what the database is missing, compared to what the entities describe. */
 import { sql, type Kysely } from 'kysely';
-import { type GenerateOptions } from './ddl/GenerateOptions.js';
-import { addForeignKeyConstraintSQL, compiler, createTableSQL, indexSQL } from './ddl/SqlSink.js';
-import { checkFor } from './check.js';
-import { columnTypeFor, resolveDialect } from './dialect/Dialect.js';
-import { type DialectName } from './dialect/DialectName.js';
-import { type AppLike } from './table/AppLike.js';
-import { type ColumnDef } from './table/ColumnDef.js';
-import { isKeyed, toTableName, toTables, type TableDef } from './table/TableDef.js';
-import { orderTables } from './order/TableOrder.js';
-
-/** What the database actually holds: column names per table. */
-export type SchemaState = Map<string, Set<string>>;
+import { type GenerateOptions } from '../ddl/GenerateOptions.js';
+import { addForeignKeyConstraintSQL, compiler, createTableSQL, indexSQL } from '../ddl/SqlSink.js';
+import { checkFor } from '../check.js';
+import { columnTypeFor, resolveDialect } from '../dialect/Dialect.js';
+import { type DialectName } from '../dialect/DialectName.js';
+import { type AppLike } from '../table/AppLike.js';
+import { type ColumnDef } from '../table/ColumnDef.js';
+import { isKeyed, toTableName, toTables, type TableDef } from '../table/TableDef.js';
+import { orderTables } from '../order/TableOrder.js';
+import type { SchemaState } from './SchemaState.js';
 
 /** Read the live schema. Only names are needed — an additive pass never inspects types. */
 export async function actualState(db: Kysely<any>): Promise<SchemaState> {

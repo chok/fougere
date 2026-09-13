@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { entity, number, primary, ref, text } from '@fougere/schema';
 import { migrate } from '../src/index.js';
-import { createSqliteSource } from '../src/sqlite.js';
+import { createSqliteSource } from '../src/sqlite/SqliteSource.js';
 
 /**
  * La lecture filtrée : ce que le storage sait faire, ce qu'il déclare, et ce qu'un appelant obtient.

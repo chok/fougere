@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { createSqliteSource } from '../src/sqlite.js';
-import { onQuery, type QueryEvent } from '../src/query.js';
+import { createSqliteSource } from '../src/sqlite/SqliteSource.js';
+import { type QueryEvent } from '../src/query/QueryEvent.js';
+import { onQuery } from '../src/query/QuerySink.js';
 
 /**
  * The subscription every storage routes to.

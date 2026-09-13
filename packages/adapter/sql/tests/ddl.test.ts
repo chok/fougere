@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Card, entity, primary, text, number, bool, created, optional, many, ref, unique, indexed, type EntityConstructor } from '@fougere/schema';
 import { createTableSQL, toTable } from '../src/index.js';
-import { createIndexSQL, generateSQL, addForeignKeyConstraintSQL } from '../src/ddl.js';
+import { addForeignKeyConstraintSQL, createIndexSQL, generateSQL } from '../src/ddl/SqlSink.js';
 
 // ─── Fixtures ──────────────────────────────────────
 

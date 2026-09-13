@@ -1,7 +1,5 @@
-/** Dialect — the only place that speaks SQL. */
-import type { ColumnDef } from './table.js';
-
-export type DialectName = 'sqlite' | 'pg' | 'mysql' | 'mssql';
+import type { ColumnDef } from '../table/ColumnDef.js';
+import type { DialectName } from './DialectName.js';
 
 export interface Dialect {
   name: DialectName;

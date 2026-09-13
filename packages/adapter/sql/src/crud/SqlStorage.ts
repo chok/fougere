@@ -1,13 +1,12 @@
 import { Lifecycle, Role } from '@fougere/schema';
-/** SqlStorage — per-entity storage over Kysely, one implementation for every engine. */
 import { sql, type Kysely } from 'kysely';
 import { applyCreate, applyUpdate, type Fields, type SchemaView } from '@fougere/schema';
-import { toTable, toTableName, type TableDef } from './table.js';
-import { resolveDialect, type Dialect, type DialectName } from './dialect.js';
-// The contract entry and not the main one: `FougereError` crosses a process boundary and
-// lives there for that reason, and this package must not drag the boot to raise one.
+import { toTable, toTableName, type TableDef } from '../table/TableDef.js';
+import { resolveDialect, type Dialect } from '../dialect/Dialect.js';
+import { type DialectName } from '../dialect/DialectName.js';
 import { comparisonOf, comparisonsIn, ErrorCode, FougereError, type Comparison } from '@fougere/core/contract';
-import { codecsOf, type ValueCodec } from './values.js';
+import { codecsOf, type ValueCodec } from '../values.js';
+import type { StorageFactoryOptions } from './StorageFactoryOptions.js';
 
 /** ListOptions — duplicated from @fougere/core to avoid a runtime dep. */
 interface ListOptions {
@@ -516,12 +515,6 @@ export class SqlStorage {
     await this.wherePk(this.db.deleteFrom(this.table.name) as any, id).execute();
     return true;
   }
-}
-
-
-export interface StorageFactoryOptions {
-  /** Override table name resolution. Default: camelCase → snake_case + 's'. */
-  tableName?: (entityName: string) => string;
 }
 
 /** Create a StorageFactory backed by Kysely — same call shape on every engine. */

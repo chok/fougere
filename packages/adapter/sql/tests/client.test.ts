@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { entity, number, primary, text } from '@fougere/schema';
 import { migrate } from '../src/index.js';
-import { createSqliteSource } from '../src/sqlite.js';
+import { createSqliteSource } from '../src/sqlite/SqliteSource.js';
 
 /**
  * `storage.client` — ce que le storage enveloppe, nommé sur le storage plutôt que posé à côté.

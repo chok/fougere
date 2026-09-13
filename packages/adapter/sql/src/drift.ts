@@ -1,7 +1,7 @@
 /** What a table PROMISES and what it now holds, when the two stopped agreeing. */
 import type { Kysely } from 'kysely';
 
-import type { TableDef } from './table.js';
+import type { TableDef } from './table/TableDef.js';
 
 /** One column whose declaration moved and whose table did not follow. */
 export interface Drift {

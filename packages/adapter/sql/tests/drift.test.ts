@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest';
 import { entity, number, optional, primary, text } from '@fougere/schema';
 
 import { desiredTables, drift, migrate } from '../src/index.js';
-import { createSqliteSource } from '../src/sqlite.js';
+import { createSqliteSource } from '../src/sqlite/SqliteSource.js';
 
 const viewOf = (entityClass: unknown, name: string) => ({
   fronds: [{ name: 'test', entities: [{ name, entityClass }] }],

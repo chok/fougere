@@ -13,7 +13,7 @@ import {
   created, updated, immutable, optional, nullable, unique, indexed,
   Bundle, Card,
 } from '@fougere/schema';
-import { toTable, toTables, toTableName } from '../src/table.js';
+import { toTable, toTableName, toTables } from '../src/table/TableDef.js';
 
 class Author extends entity({
   id: primary(),

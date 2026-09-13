@@ -1,21 +1,13 @@
-/** Storage setup — the shape every engine answers, and no driver at all. */
 import { Kysely, sql, type Dialect as KyselyDialect } from 'kysely';
 import type { Source, SourceView } from '@fougere/core';
-import { createStorageFactory } from './crud/SqlStorage.js';
-import { type StorageFactoryOptions } from './crud/StorageFactoryOptions.js';
-import { logQueries } from './query/QuerySink.js';
-import { desiredTables, migrate } from './diff.js';
-import { drift, driftReport } from './drift.js';
-import { toTableName } from './table/TableDef.js';
-import type { DialectName } from './dialect/DialectName.js';
-import type { SqlSink } from './ddl/SqlSink.js';
-
-export interface SqlSourceOptions {
-  /** Override naming for specific entities (e.g. better-auth wants singular table names). */
-  storageFactoryOptions?: StorageFactoryOptions;
-  /** What to call this storage when a query is reported. */
-  name?: string;
-}
+import { createStorageFactory } from '../crud/SqlStorage.js';
+import { logQueries } from '../query/QuerySink.js';
+import { desiredTables, migrate } from '../diff.js';
+import { drift, driftReport } from '../drift.js';
+import { toTableName } from '../table/TableDef.js';
+import type { DialectName } from '../dialect/DialectName.js';
+import type { SqlSink } from '../ddl/SqlSink.js';
+import type { SqlSourceOptions } from './SqlSourceOptions.js';
 
 /** A `Source` realized by SQL — and the three members that are SQL's, not the routing's. */
 export interface SqlSource extends Source {
@@ -31,9 +23,6 @@ export interface SqlSource extends Source {
   /** Run `fn` inside one transaction of this engine, with a storage factory bound to it. */
   transacted<R>(fn: (storageFactory: ReturnType<typeof createStorageFactory>) => Promise<R>): Promise<R>;
 }
-
-/** The name this shape answered to before it was one realization among several. */
-export type Setup = SqlSource;
 
 /** What every SQL engine keeps at the rows, whatever the dialect: the index IS the constraint. */
 export const sqlEnforces = ['unique'] as const;

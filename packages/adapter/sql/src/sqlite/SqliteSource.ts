@@ -1,21 +1,15 @@
-/** SQLite on a file — the convention a first run meets, and the only driver this package owns. */
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { Kysely, SqliteDialect } from 'kysely';
 import Database from 'better-sqlite3';
-import { createStorageFactory } from './crud/SqlStorage.js';
-import { logQueries } from './query/QuerySink.js';
-import { drift, driftReport } from './drift.js';
-import { sqlEnforces, sqlSink, type SqlSource } from './source/SqlSource.js';
-import { type SqlSourceOptions } from './source/SqlSourceOptions.js';
-import { desiredTables, migrate } from './diff.js';
-import { toTableName } from './table/TableDef.js';
+import { createStorageFactory } from '../crud/SqlStorage.js';
+import { logQueries } from '../query/QuerySink.js';
+import { drift, driftReport } from '../drift.js';
+import { sqlEnforces, sqlSink, type SqlSource } from '../source/SqlSource.js';
+import { desiredTables, migrate } from '../diff.js';
+import { toTableName } from '../table/TableDef.js';
 import { Sources, type Source, type SourceConfig, type SourceView } from '@fougere/core';
-
-export interface SqliteSourceOptions extends SqlSourceOptions {
-  /** Filesystem path to the database. Defaults to a project-local file. */
-  path?: string;
-}
+import type { SqliteSourceOptions } from './SqliteSourceOptions.js';
 
 export interface SqliteSource extends SqlSource {
   /** The raw handle, for pragmas and synchronous exec. */

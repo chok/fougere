@@ -1,23 +1,12 @@
-/** The half `delta()` refuses — realised from an intention that was written down. */
 import { sql, type Kysely } from 'kysely';
 import type { Change as ShapeChange, SetDiff } from '@fougere/schema';
 import { dequal } from 'dequal';
-import { compiler } from './ddl/SqlSink.js';
-import { type DialectName } from './dialect/DialectName.js';
-import { toSnakeCase, toTableName, type TableDef } from './table/TableDef.js';
-import type { SchemaState } from './diff/SchemaState.js';
-
-/** What a step asks of the tables — beyond what an additive pass already covers. */
-export type StepChange =
-  | { kind: 'renameColumn'; table: string; from: string; to: string }
-  | { kind: 'dropColumn'; table: string; column: string };
-
-/** Something the step asks and the DDL will not do, naming why and what fixes it. */
-export interface Refusal {
-  entity: string;
-  field: string;
-  reason: string;
-}
+import { compiler } from '../ddl/SqlSink.js';
+import { type DialectName } from '../dialect/DialectName.js';
+import { toSnakeCase, toTableName, type TableDef } from '../table/TableDef.js';
+import type { StepChange } from './StepChange.js';
+import type { Refusal } from './Refusal.js';
+import type { PlanOptions } from './PlanOptions.js';
 
 export interface Plan {
   changes: StepChange[];
@@ -26,13 +15,6 @@ export interface Plan {
    * not take alone — reported together so one run names every one of them.
    */
   refusals: Refusal[];
-}
-
-export interface PlanOptions {
-  /** Entity key → table name. Same resolver `desiredTables` takes. */
-  tableName?: (name: string) => string;
-  /** What the database actually holds, from `actualState`. */
-  actual?: SchemaState;
 }
 
 /** Collapse a chain of steps into one, following each field through its renames. */
@@ -200,7 +182,6 @@ function restated(entity: string, change: Extract<ShapeChange, { kind: 'restated
   if (from.index && !to.index) return refuse(`index gone — nothing drops an index today, so the table keeps it`);
   return {};
 }
-
 
 /** The value a lifecycle declares at create, when it declares one — what reaches DEFAULT. */
 function literalOf(rules: { create?: unknown } | undefined): unknown {

@@ -8,9 +8,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
 import { autoMigrate } from '../src/index.js';
-import { sqliteDialect, pgDialect, mysqlDialect, mssqlDialect } from '../src/dialect.js';
+import { mssqlDialect, mysqlDialect, pgDialect, sqliteDialect } from '../src/dialect/Dialect.js';
 import { ErrorCode } from '@fougere/core/contract';
-import { createSqliteSource, type SqliteSource } from '../src/sqlite.js';
+import { createSqliteSource, type SqliteSource } from '../src/sqlite/SqliteSource.js';
 
 class Member extends entity({ id: primary(), email: text({ min: 3 }) }, { unique: [['email']] }) {}
 
