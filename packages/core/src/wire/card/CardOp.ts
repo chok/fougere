@@ -1,5 +1,5 @@
 import type { SchemaDescriptor } from '@fougere/schema';
-import type { ErrorCode } from '../errors.js';
+import type { ErrorCode } from '../ErrorCode.js';
 
 /**
  * One operation, as a stranger meets it — its name, what it is for, what it takes and whether it

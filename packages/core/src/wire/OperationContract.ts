@@ -1,7 +1,9 @@
 import type { SchemaView } from '@fougere/schema';
 import type { BindingPlan } from './binding.js';
-import type { Signature, TypeRef, Param } from './signature.js';
-import type { ErrorCode } from './errors.js';
+import type { Signature, TypeRef } from './signature.js';
+import type { ErrorCode } from './ErrorCode.js';
+import type { OperationKind } from './OperationKind.js';
+import type { OperationKindInference } from './OperationKindInference.js';
 
 /** The contract of one operation — everything the façade needs to serve a call. */
 export interface OperationContract {
@@ -41,26 +43,6 @@ export function cardinalityOf(type: TypeRef | undefined): OperationContract['car
 
 /** A return that carries no schema — the card has nothing to project onto it. */
 const PRIMITIVE_RETURNS = new Set(['boolean', 'string', 'number', 'void', 'undefined', 'unknown', 'any']);
-
-/** Map of operation name → its contract. */
-export type OperationsMap = Map<string, OperationContract>;
-
-export type { TypeRef, Param };
-
-// ─── Operation intent (read vs write) ──────────
-// Naming convention for inferred handlers — scheduled to die with the
-// handler-kind plan (docs/notes/handler-kind.md). Lives here, NOT in
-// @fougere/schema: it is a runtime convention about operations, not a
-// schema concept.
-
-export type OperationKind = 'query' | 'command';
-
-/** The convention's evidence, including both sides when a composed name contradicts itself. */
-export interface OperationKindInference {
-  kind?: OperationKind;
-  queryMatches: string[];
-  commandMatches: string[];
-}
 
 /** Deliberately finite. */
 const QUERY_VERBS = new Set([
@@ -167,5 +149,3 @@ function requireOperationKind(
     + `Declare operations.${name}.kind as 'query' or 'command' in frond.config.ts.`,
   );
 }
-
-

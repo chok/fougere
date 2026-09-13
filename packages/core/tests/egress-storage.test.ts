@@ -11,7 +11,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { entity, primary, text, oneOf, email, number, optional, readOnly } from '@fougere/schema';
 import { StorageGuard } from '../src/dispatch/StorageGuard.js';
-import { FougereError, ErrorCode } from '../src/wire/errors.js';
+import { ErrorCode } from '../src/wire/ErrorCode.js';
+import { FougereError } from '../src/wire/FougereError.js';
 
 class Contact extends entity({
   id: primary(),

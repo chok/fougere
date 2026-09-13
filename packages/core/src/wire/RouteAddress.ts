@@ -1,11 +1,4 @@
-/** Which kind of destination served a call — it travels in a `CallRecord`. */
-export type RouteKind = 'local' | 'remote' | 'system';
-
-export interface RouteAddressInput {
-  entity: string;
-  operation: string;
-  surface?: string;
-}
+import type { RouteAddressInput } from './RouteAddressInput.js';
 
 /** Refuses an empty segment, so no address can be built that nothing can serve. */
 function required(value: string, name: string): string {

@@ -1,5 +1,6 @@
 import type { SchemaDescriptor } from '@fougere/schema';
-import { FougereError, ErrorCode } from '../errors.js';
+import { ErrorCode } from '../ErrorCode.js';
+import { FougereError } from '../FougereError.js';
 import type { CardOp } from './CardOp.js';
 
 /** What an app hosts — the wire projection of its scanned fronds. */

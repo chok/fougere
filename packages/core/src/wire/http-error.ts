@@ -1,5 +1,6 @@
 /** HTTP reading of an error — used by HTTP bridges (REST, Next, Inertia). */
-import { FougereError, ErrorCode } from './errors.js';
+import { ErrorCode } from './ErrorCode.js';
+import { FougereError } from './FougereError.js';
 import { Logger } from '../builtin/logger.js';
 /**
  * An INTERNAL_ERROR is the one class of error whose message never leaves: it was not written for a

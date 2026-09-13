@@ -1,7 +1,8 @@
 import { FieldSet, FieldValueValidator, InputRefusal, type Fields } from '@fougere/schema';
 import { COMPARISONS, comparisonOf, unknownIn } from '../storage/Comparison.js';
 import { assertListOptions } from '../storage/port.js';
-import { ErrorCode, FougereError } from '../wire/errors.js';
+import { ErrorCode } from '../wire/ErrorCode.js';
+import { FougereError } from '../wire/FougereError.js';
 import type { GuardReport } from './GuardReport.js';
 
 /** The gestures this guard grafts onto. */

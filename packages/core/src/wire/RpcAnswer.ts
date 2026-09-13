@@ -1,4 +1,4 @@
-import type { InvocationContext } from './Invocation.js';
+import type { InvocationContext } from './InvocationContext.js';
 
 /** Reserved namespace — calls the runner answers itself, never a façade. */
 export const RPC_ENTITY = 'rpc';

@@ -1,4 +1,4 @@
-import type { RouteKind } from './RouteAddress.js';
+import type { RouteKind } from './RouteKind.js';
 
 /** What crosses the facade. */
 export interface CallRecord {
@@ -19,12 +19,4 @@ export interface CallRecord {
   ms?: number;
   verdict: 'running' | 'ok' | 'failed';
   refusal?: { code?: string; message: string };
-}
-
-/** One page of the ring. */
-export interface CallPage {
-  calls: CallRecord[];
-  cursor: number;
-  inFlight: number;
-  dropped: number;
 }

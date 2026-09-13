@@ -5,7 +5,9 @@
 export * from './frond.js';
 export { Fronds } from './Fronds.js';
 
-export { cardinalityOf, type OperationContract, type OperationsMap, type Param, type TypeRef } from '../wire/operation.js';
+export { cardinalityOf, type OperationContract } from '../wire/OperationContract.js';
+export { type OperationsMap } from '../wire/OperationsMap.js';
+export { type Param, type TypeRef } from '../wire/signature.js';
 export { computeBindingPlan, type BindingPlan } from '../wire/binding.js';
 export type { Signature } from '../wire/signature.js';
 export { emitKeyOf, awaitKeyOf } from '../wire/emit.js';

@@ -12,8 +12,8 @@
  *
  * Documented: [observability](https://fougere.dev/docs/infra/observability).
  */
-import type { ErrorCode } from './errors.js';
-import type { InvocationContext } from './Invocation.js';
+import type { ErrorCode } from './ErrorCode.js';
+import type { InvocationContext } from './InvocationContext.js';
 
 /** What one facade answers for, keyed `address.op` — `surface:address.op` for a named surface. */
 export interface FougereOperations {}

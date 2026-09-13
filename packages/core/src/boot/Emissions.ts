@@ -1,13 +1,13 @@
 import { applyCreate, dotted, lowerFirst, type SchemaView } from '@fougere/schema';
 import type { Container } from '@fougere/container';
-import { validationErrorsOf } from '../wire/errors.js';
+import { validationErrorsOf } from '../wire/FougereError.js';
 import { awaitKeyOf, emitKeyOf, factsAnnouncedBy, factsAwaitedBy } from '../wire/emit.js';
 import { ambient } from '#ambient';
 import type { Diagnostic } from '../diagnostic.js';
 import { Invocation } from '../wire/Invocation.js';
 import type { Logger } from '../builtin/logger.js';
 import type { Fronds } from '../descriptor/Fronds.js';
-import type { OperationsMap } from '../wire/operation.js';
+import type { OperationsMap } from '../wire/OperationsMap.js';
 
 /** A facade and the op on it that accepts a fact. */
 interface Listener {

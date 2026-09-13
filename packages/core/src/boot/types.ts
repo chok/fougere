@@ -6,7 +6,7 @@ import type { ScanResult } from '../scan.js';
 import type { SchemaView } from '@fougere/schema';
 import type { StorageFactory } from '../storage/port.js';
 import type { Constraint } from '../source.js';
-import type { AppMiddleware } from '../wire/middleware.js';
+import type { AppMiddleware } from '../wire/AppMiddleware.js';
 import type { RpcAnswer } from '../wire/RpcAnswer.js';
 import type { Transport } from '../wire/Transport.js';
 import type { Extension } from './AppLifecycle.js';

@@ -1,14 +1,5 @@
-export interface InvocationContext {
-  params: Record<string, unknown>;
-  query: Record<string, unknown>;
-  input: unknown;
-  state: Record<string, unknown>;
-  trace?: string;
-  identity?: string;
-  caller?: string;
-}
-
-export type PartialInvocation = Partial<InvocationContext>;
+import type { InvocationContext } from './InvocationContext.js';
+import type { PartialInvocation } from './PartialInvocation.js';
 
 /** Freezes plain data deeply, and leaves a class instance alone — a `Date` is not a record. */
 function canonicalValue(value: unknown): unknown {

@@ -13,7 +13,7 @@
  *
  * Documented: [observability](https://fougere.dev/docs/infra/observability).
  */
-import { ErrorCode } from './errors.js';
+import { ErrorCode } from './ErrorCode.js';
 
 /** The little of an operation this reads — so a card op and an effective one both fit. */
 export interface Refusable {

@@ -6,7 +6,7 @@ import type {
 } from './descriptor/frond.js';
 import { DEFAULT_CONVENTIONS } from './conventions.js';
 import { getPresenterFields } from './prefab/presenter.js';
-import type { OperationContract } from './wire/operation.js';
+import type { OperationContract } from './wire/OperationContract.js';
 
 /** A class, as a declaration hands it over: the constructor itself. */
 type Ctor = new (...args: never[]) => unknown;

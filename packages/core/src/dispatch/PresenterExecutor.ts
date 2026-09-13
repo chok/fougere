@@ -1,4 +1,5 @@
-import { ErrorCode, FougereError } from '../wire/errors.js';
+import { ErrorCode } from '../wire/ErrorCode.js';
+import { FougereError } from '../wire/FougereError.js';
 import { preserveArrayProperties } from './ArrayResult.js';
 import type { PresenterArgs } from './PresenterArgs.js';
 

@@ -1,4 +1,5 @@
-import { Invocation, type PartialInvocation } from './Invocation.js';
+import { Invocation } from './Invocation.js';
+import { type PartialInvocation } from './PartialInvocation.js';
 import type { RouteAddress } from './RouteAddress.js';
 
 /** One normalized request, frozen: where it goes and what the caller supplied. */

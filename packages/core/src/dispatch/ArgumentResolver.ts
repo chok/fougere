@@ -1,4 +1,4 @@
-import type { InvocationContext } from '../wire/Invocation.js';
+import type { InvocationContext } from '../wire/InvocationContext.js';
 import type { BindingPlan } from '../wire/binding.js';
 import type { CollectorLookup } from './CollectorLookup.js';
 

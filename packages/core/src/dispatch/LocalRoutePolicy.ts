@@ -1,5 +1,6 @@
 import type { Call } from '../wire/Call.js';
-import { ErrorCode, FougereError } from '../wire/errors.js';
+import { ErrorCode } from '../wire/ErrorCode.js';
+import { FougereError } from '../wire/FougereError.js';
 import type { Route } from './Route.js';
 import type { RoutePolicy } from './RoutePolicy.js';
 import { routeNotFound, servedOperations } from './routeNotFound.js';

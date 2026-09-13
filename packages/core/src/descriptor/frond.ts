@@ -4,7 +4,9 @@
  * Documented: [the Frond](https://fougere.dev/docs/concepts/frond).
  */
 import type { SchemaView } from '@fougere/schema';
-import type { Param, OperationContract, OperationsMap } from '../wire/operation.js';
+import type { OperationContract } from '../wire/OperationContract.js';
+import type { OperationsMap } from '../wire/OperationsMap.js';
+import type { Param } from '../wire/signature.js';
 import type { PresenterViews } from '../prefab/presenter.js';
 
 /** A discovered provider — a class under `services/` or `repositories/`, injected by type. */

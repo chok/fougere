@@ -35,17 +35,16 @@ export { Dispatcher } from './dispatch/Dispatcher.js';
 export { DispatchEvent } from './dispatch/DispatchEvent.js';
 export type { CallPage, CallRecord } from './contract.js';
 export { driftOf, agrees, explain, type CardDrift } from './contract.js';
-export type {
-  OperationContract,
-  OperationsMap,
-  Param,
-  TypeRef,
-} from './wire/operation.js';
+export type { OperationContract } from './wire/OperationContract.js';
+export type { OperationsMap } from './wire/OperationsMap.js';
+export type { Param, TypeRef } from './wire/signature.js';
 export { resolveEffectiveOperations } from './effective-operation.js';
 export type { EffectiveOperation } from './effective-operation.js';
 export type { ModuleLoader } from './loader.js';
 export { FougereError, ErrorCode, validationErrorsOf } from './contract.js';
-export type { AppMiddleware, OperationContext, AppNext } from './wire/middleware.js';
+export type { AppMiddleware } from './wire/AppMiddleware.js';
+export type { AppNext } from './wire/AppNext.js';
+export type { OperationContext } from './wire/OperationContext.js';
 export { assertIdentityCard, RPC_ENTITY, MAX_BODY_BYTES } from './contract.js';
 export { createLocalRunner, createAppRunner } from './boot/runner.js';
 

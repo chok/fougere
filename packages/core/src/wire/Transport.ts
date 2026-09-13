@@ -1,4 +1,4 @@
-import type { InvocationContext } from './Invocation.js';
+import type { InvocationContext } from './InvocationContext.js';
 import type { FrondCall } from './FrondCall.js';
 
 /** A transport executes a call somewhere else. Failures surface as thrown FougereError. */

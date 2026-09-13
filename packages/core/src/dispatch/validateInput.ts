@@ -1,6 +1,7 @@
 import { InputValidator, dotted, type SchemaView } from '@fougere/schema';
-import type { InvocationContext } from '../wire/Invocation.js';
-import { ErrorCode, FougereError } from '../wire/errors.js';
+import type { InvocationContext } from '../wire/InvocationContext.js';
+import { ErrorCode } from '../wire/ErrorCode.js';
+import { FougereError } from '../wire/FougereError.js';
 
 /** Validates and decodes the input declared by one operation contract. */
 export function validateInput(

@@ -7,7 +7,7 @@ import { installFrond, type Assembly } from './install.js';
 import { refusalOf, type Diagnostic } from '../diagnostic.js';
 import type { AuthRuntime } from './auth.js';
 import type { CreateAppOptions, App } from './types.js';
-import type { AppMiddleware } from '../wire/middleware.js';
+import type { AppMiddleware } from '../wire/AppMiddleware.js';
 import { Carry, Logger } from '../builtin/logger.js';
 import type { LogRecord } from '../builtin/logger.js';
 import LogLine, { CARRIES_LINE } from '../builtin/LogLine.js';
@@ -20,7 +20,8 @@ import { createRemoteRouter, createRemoteFacade } from './remote.js';
 
 import { Emissions } from './Emissions.js';
 
-import type { OperationContract, OperationsMap } from '../wire/operation.js';
+import type { OperationContract } from '../wire/OperationContract.js';
+import type { OperationsMap } from '../wire/OperationsMap.js';
 import {
   resolveEffectiveOperations,
   type EffectiveOperationsMap,

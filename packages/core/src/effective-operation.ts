@@ -8,14 +8,10 @@ import type { CollectorEntry, FrondDescriptor, HandlerEntry } from './descriptor
 import { servedSurfaces } from './descriptor/surface.js';
 import type { Diagnostic } from './diagnostic.js';
 import { verify } from './verify.js';
-import {
-  inferOperationKind,
-  type OperationContract,
-  type OperationKind,
-  type OperationsMap,
-  type TypeRef,
-  knownVerbs,
-} from './wire/operation.js';
+import { inferOperationKind, knownVerbs, type OperationContract } from './wire/OperationContract.js';
+import { type OperationKind } from './wire/OperationKind.js';
+import { type OperationsMap } from './wire/OperationsMap.js';
+import { type TypeRef } from './wire/signature.js';
 
 type Binding = BindingPlan[number];
 

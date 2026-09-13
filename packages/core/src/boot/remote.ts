@@ -7,9 +7,12 @@ import type { FrondCall } from '../wire/FrondCall.js';
 import type { Transport } from '../wire/Transport.js';
 import { RPC_ENTITY } from '../wire/RpcAnswer.js';
 import { assertIdentityCard } from '../wire/card/IdentityCard.js';
-import { runMiddlewares, type AppMiddleware, type OperationContext } from '../wire/middleware.js';
-import { type InvocationContext, Invocation } from '../wire/Invocation.js';
-import { FougereError, ErrorCode } from '../wire/errors.js';
+import { runMiddlewares, type AppMiddleware } from '../wire/AppMiddleware.js';
+import { type OperationContext } from '../wire/OperationContext.js';
+import { Invocation } from '../wire/Invocation.js';
+import { type InvocationContext } from '../wire/InvocationContext.js';
+import { ErrorCode } from '../wire/ErrorCode.js';
+import { FougereError } from '../wire/FougereError.js';
 import { Card, type SchemaView, type SchemaDescriptor } from '@fougere/schema';
 import { dynamicOperations } from '../entry/facade.js';
 

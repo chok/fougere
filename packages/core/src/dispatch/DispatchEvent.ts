@@ -1,5 +1,5 @@
 import type { Call } from '../wire/Call.js';
-import type { RouteKind } from '../wire/RouteAddress.js';
+import type { RouteKind } from '../wire/RouteKind.js';
 import type { DispatchStage } from './DispatchStage.js';
 
 /** Immutable transition observed across one dispatch lifecycle. */

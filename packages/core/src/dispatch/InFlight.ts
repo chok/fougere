@@ -1,4 +1,5 @@
-import { FougereError, ErrorCode } from '../wire/errors.js';
+import { ErrorCode } from '../wire/ErrorCode.js';
+import { FougereError } from '../wire/FougereError.js';
 
 /** Controls dispatch admission and signals when every accepted call has settled. */
 export class InFlight {

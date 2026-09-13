@@ -1,5 +1,5 @@
 import type { Container } from '@fougere/container';
-import { type AppMiddleware } from '../wire/middleware.js';
+import { type AppMiddleware } from '../wire/AppMiddleware.js';
 import type { EffectiveOperationsMap } from '../effective-operation.js';
 import type { HandlerEntry, PresenterEntry } from '../descriptor/frond.js';
 

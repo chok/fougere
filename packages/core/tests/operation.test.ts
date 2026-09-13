@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  inferOperationKind,
-  isReadOp,
-  resolveIsReadOp,
-} from '../src/wire/operation.js';
+import { inferOperationKind, isReadOp, resolveIsReadOp } from '../src/wire/OperationContract.js';
 
 describe('isReadOp (convention)', () => {
   it('recognizes default read prefixes', () => {

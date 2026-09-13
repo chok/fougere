@@ -7,7 +7,7 @@ import { Dispatcher } from '../src/dispatch/Dispatcher.js';
 import type { Route } from '../src/dispatch/Route.js';
 import { RouteRegistry } from '../src/dispatch/RouteRegistry.js';
 import { InFlight } from '../src/dispatch/InFlight.js';
-import { ErrorCode } from '../src/wire/errors.js';
+import { ErrorCode } from '../src/wire/ErrorCode.js';
 
 function setup(execute: Route['execute']) {
   const address = new RouteAddress({ entity: 'product', operation: 'list' });
