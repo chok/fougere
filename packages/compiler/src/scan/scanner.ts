@@ -1,5 +1,5 @@
 import { DEFAULT_CONVENTIONS, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, togetherKeyOf, type Conventions, type ConventionsInput, type Diagnostic, type ScanResult } from '@fougere/core';
-import { Fronds, awaitKeyOf, cardinalityOf, computeBindingPlan, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf } from '@fougere/core/descriptor';
+import { Fronds, awaitKeyOf, cardinalityOf, computeBindingPlan, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf, type ExtensionEntry } from '@fougere/core/descriptor';
 import { getModuleLoader, loadFrondConfig } from '@fougere/core/node';
 import type { FrondConfig, ErrorCode } from '@fougere/core';
 import { readdir, readFile } from 'node:fs/promises';
@@ -210,6 +210,28 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
   // it reads the type as written. It used to be asked of `ctor.name` at boot, which held
   // until a bundler lowered a static field and renamed the declaration doing it.
   return { name, ctor, deps, filePath };
+}
+
+/**
+ * An extension is recognized by its FORM: a module stating `up` or `down`.
+ *
+ * Not a class, unlike every other convention directory — nothing resolves it from a container
+ * and nothing asks for it by type. It is handed to the ascent as a value, which is what
+ * `CreateAppOptions.extensions` already takes, so a file here and a line there declare the
+ * same thing.
+ */
+async function toExtensionEntry(filePath: string): Promise<ExtensionEntry | null> {
+  const exported = await loadDefault(filePath);
+  if (typeof exported !== 'object' || exported === null) return null;
+
+  const stated = exported as { name?: unknown; up?: unknown; down?: unknown };
+  if (typeof stated.up !== 'function' && typeof stated.down !== 'function') return null;
+
+  return {
+    name: typeof stated.name === 'string' ? stated.name : basename(filePath).replace(/\.[^.]+$/, ''),
+    extension: exported as ExtensionEntry['extension'],
+    filePath,
+  };
 }
 
 async function toEntityEntry(filePath: string): Promise<EntityEntry | null> {
@@ -538,9 +560,15 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
     return entries.filter((entry): entry is T => entry !== null);
   };
 
+  // vocabulary/ FIRST, and for its effect: a file here calls `Generators.register` or its
+  // neighbours at module level, and an entity below may write the name it just added. Nothing
+  // is kept — the registry holds what the module put in it.
+  for (const filePath of await files(join(frondPath, conventions.dirs.vocabulary))) await loadModule(filePath);
+
   // services/ and repositories/ — two spellings, one provider list.
   const providers = (await Promise.all(providerDirsOf(conventions).map((dir) => collect(dir, toProvider)))).flat();
   const entities = await collect(entitiesDir, toEntityEntry);
+  const extensions = await collect(conventions.dirs.extensions, toExtensionEntry);
   const collectors = await collect(collectorsDir, toCollectorEntry);
   const collectorTypeNames = new Set(collectors.map((collector) => collector.typeName));
   const frondConfig = await loadFrondConfig(frondPath);
@@ -612,6 +640,7 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
     collectors,
     seeds,
     middlewares,
+    ...(extensions.length > 0 ? { extensions } : {}),
     ...(frondConfig?.pipes ? { pipes: frondConfig.pipes } : {}),
     surfaces: frondConfig?.surfaces,
     reads: frondConfig?.reads,

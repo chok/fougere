@@ -1,9 +1,7 @@
 import type { Together } from '@fougere/core';
-import { observe } from '../observe.js';
+import { observe } from '../extensions/observe.js';
 import type Account from '../entities/Account.js';
 import type Ledger from '@fronds/accounting/entities/Ledger.js';
-
-/** Ledger ids, so two runs in the same millisecond do not collide. */
 
 /**
  * Two fronds, one frame — and this file says nothing about either.

@@ -11,7 +11,7 @@ import { createContainer } from '@fougere/container';
 import { storageFrom } from '@fougere/defaults';
 import { createSqliteSource } from '@fougere/adapter-sql/sqlite';
 import { createFileSource } from '@fougere/adapter-file';
-import { observeWith } from '../fronds/banking/observe.js';
+import { observeWith } from '../fronds/banking/extensions/observe.js';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
 

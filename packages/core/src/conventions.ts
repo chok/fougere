@@ -28,6 +28,18 @@ export interface Conventions {
     rules: string;
     /** What its shapes used to be — written by `fougere freeze`, replayed by `migrate`. */
     versions: string;
+    /**
+     * The words this frond adds to the declaration — a generator, a format, a boundary codec.
+     * Read BEFORE `entities`, alone among the directories: an entity may write
+     * `generate: 'ulid'`, and a name a registry does not hold yet is a name it refuses.
+     */
+    vocabulary: string;
+    /**
+     * What rises and falls with the process, written beside the code it instruments.
+     * Recognized by its FORM — a module stating `up` or `down` — and it travels with its
+     * frond: moved behind `remotes:`, it mounts on the process that serves it there.
+     */
+    extensions: string;
   };
 }
 
@@ -46,6 +58,8 @@ export const DEFAULT_CONVENTIONS: Conventions = {
     middlewares: 'middlewares',
     rules: 'rules',
     versions: 'versions',
+    vocabulary: 'vocabulary',
+    extensions: 'extensions',
   },
 };
 
@@ -78,8 +92,12 @@ export function providerDirsOf(conventions: Conventions): string[] {
 /** The frond vocabulary — every directory the scan reads. */
 export function frondDirsOf(conventions: Conventions): string[] {
   const { entities, handlers, presenters, collectors, seeds, middlewares, rules, versions } = conventions.dirs;
+  const { vocabulary, extensions } = conventions.dirs;
+
+  // `vocabulary` first, and the order is the point: an entity may name what it registers.
   return [...new Set([
-    entities, handlers, presenters, collectors, seeds, middlewares, rules, versions,
+    vocabulary,
+    entities, handlers, presenters, collectors, seeds, middlewares, rules, versions, extensions,
     ...providerDirsOf(conventions),
   ])];
 }

@@ -44,7 +44,7 @@ pnpm -C demos/observability dev    # three processes; `pnpm load` (k6) and `pnpm
 pnpm -C demos/together-frame dev   # two writes that stand or fall as one — then uncomment `sources:`
 pnpm -C demos/crossing-cost dev    # a chain of three, and the config line that decides what it costs
 pnpm -C demos/oclif-catalog dev --help  # a frond as a terminal — topics, flags and help derived
-pnpm -C demos/boot-refusals dev    # every refusal the boot can answer, one case each
+pnpm -C demos/boot-refusals dev    # fourteen projects that do not hold — a code, a subject, a file
 pnpm -C demos/test-gradient test   # 53 tests, 44 of them from a one-line file
 pnpm -C demos/test-gradient e2e    # the browser rung — a form that states no rule of its own
 ```
@@ -123,7 +123,7 @@ demos/
   oclif-catalog/       a frond as a terminal — every flag read off the entity, nothing declared
   observability/       three Fronds in three processes, one trace — and what the wire cost
   test-gradient/       what the declaration writes on its own, and the four rungs it runs at
-  boot-refusals/       twelve projects that do not hold, and what each refusal names
+  boot-refusals/       fourteen projects that do not hold, and what each refusal names
   anchor-chain/        a path with two stops — which derivations hold rows, and which say nothing
   emit-multirepo/      two repositories, one fact, and the ~80-line carrier that is not Fougere's
   rust-frond/          the far side is not TypeScript, and the validator is still ours
@@ -391,9 +391,16 @@ serves discover.` The report shapes live in core (`TopologyReport`, `FrondPlacem
 because they cross a process boundary.
 
 **The names the scan reads** — `core/src/conventions.ts`, read by `@fougere/compiler`. Everything else a frond states, it
-states by its SHAPE; the ten convention directories and the import scope are the one place
+states by its SHAPE; the twelve convention directories and the import scope are the one place
 a NAME is the declaration, and the only ones a project may restate (`conventions:` in
-`fougere.config.ts`). The config is read BEFORE the aliases, because it names the scope they
+`fougere.config.ts`). Two of them extend the FRAMEWORK rather than declare a domain, and one
+of those two is the only directory with an ORDER: `vocabulary/` is read before `entities/`,
+because a file there registers a word at module level (`Generators.register('ulid', …)`) and
+an entity beside it may write that name — a registry refuses one it does not hold. The other,
+`extensions/`, is recognized by its FORM, a module stating `up` or `down`, and it travels with
+its frond: behind `remotes:` it mounts on the process serving it there, which is why no key
+widens it — what must be everywhere is a frond that is everywhere, which `Extension.fronds`
+already answers. The config is read BEFORE the aliases, because it names the scope they
 are built from. `.fougere/` is the framework's working directory, not user vocabulary.
 Pinned by `tests/conventions.test.ts`.
 

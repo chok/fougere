@@ -36,9 +36,10 @@ describe('resolveConventions', () => {
    * new name. `FROND_DIRS` was a constant claiming to be "every directory the scan reads"
    * while the scan re-spelled its own literals — one declaration, no reader.
    */
+  /** `vocabulary` leads, and the order is load order: an entity may name what it registers. */
   it('derives the frond vocabulary from the names in force', () => {
     expect(frondDirsOf(resolveConventions(conventions)))
-      .toEqual(['models', 'usecases', 'presenters', 'collectors', 'seeds', 'middlewares', 'rules', 'versions', 'helpers', 'repositories']);
+      .toEqual(['vocabulary', 'models', 'usecases', 'presenters', 'collectors', 'seeds', 'middlewares', 'rules', 'versions', 'extensions', 'helpers', 'repositories']);
   });
 
   it('reads one directory once when two roles name the same one', () => {
