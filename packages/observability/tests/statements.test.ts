@@ -103,7 +103,11 @@ describe('what a statement took is taken out of the step that waited for it', ()
 
     const [op] = operations();
     expect(op.statements).toBe(2);
-    expect(op.ms).toBeGreaterThanOrEqual(SLOW);
+    // The op really waited — and NOT `>= SLOW`, which is a guarantee no platform gives: the
+    // timer is armed on one clock and the span measured on `performance.now()`, so a sleep of
+    // 30 ms is reported as 29.94 often enough to fail a run. CI, 2026-09-13.
+    expect(op.ms).toBeGreaterThan(SLOW * 0.9);
+    // The subject: what the two statements took comes OUT of the step that waited for them.
     expect(op.ms - op.selfMs).toBeCloseTo(10, 5);
   });
 
