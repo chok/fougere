@@ -4,7 +4,7 @@ import { type OperationContext } from '../src/wire/OperationContext.js';
 import { ErrorCode } from '../src/wire/ErrorCode.js';
 import { FougereError } from '../src/wire/FougereError.js';
 import { loggerMiddleware } from '../src/wire/loggerMiddleware.js';
-import { Logger } from '../src/builtin/logger.js';
+import { Logger } from '../src/builtin/Logger.js';
 
 function ctx(overrides?: Partial<OperationContext>): OperationContext {
   return {

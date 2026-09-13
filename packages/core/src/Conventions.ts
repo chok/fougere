@@ -1,4 +1,4 @@
-/** The names the scan READS instead of deriving them. */
+import type { ConventionsInput } from './ConventionsInput.js';
 
 export interface Conventions {
   /** The scope a frond's package name carries — `@fronds/blog`. */
@@ -61,13 +61,6 @@ export const DEFAULT_CONVENTIONS: Conventions = {
     vocabulary: 'vocabulary',
     extensions: 'extensions',
   },
-};
-
-/** What a `fougere.config.ts` may state: only the names that differ. */
-export type ConventionsInput = {
-  scope?: string;
-  fronds?: string;
-  dirs?: Partial<Conventions['dirs']>;
 };
 
 /** The convention, with a project's exceptions folded in. */

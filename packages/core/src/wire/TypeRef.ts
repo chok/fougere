@@ -17,21 +17,3 @@ export interface TypeRef {
   /** Whether this is a Promise wrapper (unwrapped in output). */
   promise?: boolean;
 }
-
-/** One parameter of a signature. */
-export interface Param {
-  name: string;
-  type: TypeRef;
-  optional?: boolean;
-}
-
-/** A method's signature, as a contract is built from it — the shape, never the reading. */
-export interface Signature {
-  name: string;
-  params: Param[];
-  returnType?: TypeRef;
-  /** Came from a base class, not from the file being scanned. */
-  inherited?: boolean;
-  /** The operation in words — the first sentence of the method's doc comment. */
-  description?: string;
-}

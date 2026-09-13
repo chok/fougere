@@ -11,7 +11,7 @@ import { verify } from './verify.js';
 import { inferOperationKind, knownVerbs, type OperationContract } from './wire/OperationContract.js';
 import { type OperationKind } from './wire/OperationKind.js';
 import { type OperationsMap } from './wire/OperationsMap.js';
-import { type TypeRef } from './wire/signature.js';
+import { type TypeRef } from './wire/TypeRef.js';
 
 type Binding = BindingPlan[number];
 

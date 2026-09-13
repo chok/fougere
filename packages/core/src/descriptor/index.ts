@@ -7,10 +7,11 @@ export { Fronds } from './Fronds.js';
 
 export { cardinalityOf, type OperationContract } from '../wire/OperationContract.js';
 export { type OperationsMap } from '../wire/OperationsMap.js';
-export { type Param, type TypeRef } from '../wire/signature.js';
+export { type Param } from '../wire/Param.js';
+export { type TypeRef } from '../wire/TypeRef.js';
 export { computeBindingPlan, type BindingPlan } from '../wire/binding.js';
-export type { Signature } from '../wire/signature.js';
-export { emitKeyOf, awaitKeyOf } from '../wire/emit.js';
+export type { Signature } from '../wire/Signature.js';
+export { awaitKeyOf, emitKeyOf } from '../wire/Emit.js';
 export { storageKeyOf } from '../storage/port.js';
 export { getPresenterFields } from '../prefab/presenter.js';
 export { targetOf, viewsOf, outputOf } from '../prefab/prefab.js';

@@ -1,10 +1,7 @@
-/** The thirteen gestures of {@link Storage}, derived from four. */
 import { applyCreate, applyUpdate, Lifecycle, Role, type SchemaView } from '@fougere/schema';
 import { comparisonOf, comparisonsIn, type Comparison } from './Comparison.js';
 import type { Storage, StorageFactory } from './port.js';
-
-/** One instance, as every realization hands it over. */
-export type Values = Record<string, unknown>;
+import type { Values } from './Values.js';
 
 /** Instances addressed by key — what an adapter supplies, and all of it. */
 export interface Store {

@@ -1,6 +1,7 @@
 import type { SchemaView } from '@fougere/schema';
 import type { BindingPlan } from './binding.js';
-import type { Signature, TypeRef } from './signature.js';
+import type { Signature } from './Signature.js';
+import type { TypeRef } from './TypeRef.js';
 import type { ErrorCode } from './ErrorCode.js';
 import type { OperationKind } from './OperationKind.js';
 import type { OperationKindInference } from './OperationKindInference.js';

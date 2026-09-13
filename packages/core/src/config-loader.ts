@@ -1,8 +1,8 @@
 import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
 import type { AuthConfig } from './boot/auth.js';
-import type { LogLevel } from './builtin/logger.js';
-import type { ConventionsInput } from './conventions.js';
+import type { LogLevel } from './builtin/LogLevel.js';
+import type { ConventionsInput } from './ConventionsInput.js';
 import type { NameOf, PortChoice } from './names.js';
 import { getModuleLoader } from './loader.js';
 

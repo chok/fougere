@@ -1,8 +1,3 @@
-/**
- * Announcing a fact — the half of the topology `remotes:` never covered.
- *
- * Documented: [facts](https://fougere.dev/docs/business/facts).
- */
 import { lowerFirst } from '@fougere/schema';
 
 /**
@@ -12,25 +7,6 @@ import { lowerFirst } from '@fougere/schema';
  * still refused, by the judge that reads the fact at announce time.
  */
 export type Emit<T, A = never> = (fact: Partial<T>) => Promise<A[]>;
-
-/**
- * What a subscriber accepts — and what it PROMISES about itself.
- *
- * What it ANSWERS is its own to choose: `Promise<void>` says nothing, any other type is an
- * opinion. It reaches an announcer that asked for one — `Emit<CanBook, Verdict>` — and
- * nobody otherwise, since a plain announcement does not wait.
- */
-export type Fact<T> = T;
-
-/**
- * The same fact, BEFORE it is final: an op taking one ANSWERS the value every subscriber
- * then receives, so it is the declared form of what `Emissions.stamped` already does for
- * `created()`.
- *
- * Not a second announcement and not a chain a subscriber joins: the links run once, before
- * anyone is handed anything, which is what keeps a fact the same for every reader.
- */
-export type Pipe<T> = T;
 
 /** The container key of an emission — THE one place that spells the format. */
 export function emitKeyOf(fact: string): string {
@@ -47,6 +23,7 @@ export function awaitKeyOf(fact: string): string {
 }
 
 const SUFFIX = 'Emit';
+
 const AWAIT_SUFFIX = 'Await';
 
 /** The fact behind an emission key, or `undefined` when the key is not one. */

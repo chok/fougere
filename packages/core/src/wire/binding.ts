@@ -2,7 +2,7 @@
  * Where each parameter of an operation gets its value — decided once at boot from the parsed
  * signature, replayed per call by `resolveArgs`.
  */
-import type { Param } from './signature.js';
+import type { Param } from './Param.js';
 import { lowerFirst } from '@fougere/schema';
 
 // ── Types ─────────────────────────────────────

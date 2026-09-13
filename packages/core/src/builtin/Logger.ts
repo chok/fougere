@@ -1,68 +1,8 @@
-/** Fougere Logger — structured, colored, multi-runtime. */
-
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'silent';
-
-/** One line, before it was formatted for a terminal. */
-export interface LogRecord {
-  level: Exclude<LogLevel, 'silent'>;
-  /** The logger's own name — 'boot:app', 'boot:app:catalog'. */
-  name: string;
-  message: string;
-  args: unknown[];
-  /** Epoch milliseconds. */
-  at: number;
-}
-
-/** Where a line goes once it is written — `@fougere/log` ships one, `observability` another. */
-export type LogSink = (record: LogRecord) => void;
-
-/**
- * Where one boot's lines wait, and where they go once they can.
- *
- * PER BOOT and never per process: two apps in one process each have their own
- * destinations, and a slot shared between them sent the second app's lines to the first
- * app's facade — measured on `demos/observability`, where only the first of three printed.
- *
- * A boot writes most of what a process ever logs, and it writes it before any emission is
- * registered, so the lines that say what an app is made of are the ones a destination
- * would miss. Bounded: a boot that never finishes must not grow, and what is dropped is
- * the OLDEST since the lines explaining a refusal are the last.
- */
-export class Carry {
-  private held: LogRecord[] = [];
-  private take?: (line: LogRecord) => void;
-
-  static readonly MAX = 500;
-
-  /** Take it now, or keep it for whoever arrives. */
-  push(record: LogRecord): void {
-    if (this.take) {
-      try {
-        this.take(record);
-      } catch { /* announcing never breaks logging, for the same reason a sink does not */ }
-      return;
-    }
-    this.held.push(record);
-    if (this.held.length > Carry.MAX) this.held.shift();
-  }
-
-  /** Hand what is held over, and everything after it. */
-  to(take: (line: LogRecord) => void): () => void {
-    this.take = take;
-    for (const line of this.held.splice(0)) take(line);
-
-    return () => { this.take = undefined; };
-  }
-
-  /**
-   * Forget what is still held — a boot that refused, or an app that declares no
-   * destination. Nothing is printed: the console had every one of these lines when it was
-   * written, and the hold exists only to hand them on later.
-   */
-  forget(): void {
-    this.held.length = 0;
-  }
-}
+import type { LogLevel } from './LogLevel.js';
+import type { LogRecord } from './LogRecord.js';
+import type { Carry } from './Carry.js';
+import type { LoggerOptions } from './LoggerOptions.js';
+import type { Rendered } from './Rendered.js';
 
 const LEVELS: Record<LogLevel, number> = { debug: 0, info: 1, warn: 2, error: 3, silent: 4 };
 
@@ -125,19 +65,6 @@ function stamp(at: number | Date): string {
   return `${h}:${m}:${s}.${ms}`;
 }
 
-export interface LoggerOptions {
-  /** Logger name / prefix. */
-  name?: string;
-  /**
-   * Where its lines go — one boot's, so two apps in a process do not share a facade. A
-   * logger without one writes to the console and nowhere else, which is what the boot's
-   * first lines do and what an app declaring no destination does forever.
-   */
-  carry?: Carry;
-  /** Force color on/off. Auto-detected by default. */
-  color?: boolean;
-}
-
 export class Logger {
   private name: string;
   private color: boolean;
@@ -174,26 +101,6 @@ export class Logger {
     const { method, text } = formatted(record, this.color);
     console[method](...text);
   }
-}
-
-/**
- * One line, ready for a terminal — the console arguments and which method takes them.
- *
- * Here rather than inside the class because the boot is not the only writer: a destination
- * that prints (`@fougere/log`) hands its own record to the same formatting, so the two
- * outputs cannot drift.
- *
- * One console method per level: `debug` and `info` both went to `console.log`, so nothing
- * downstream — a terminal filter, a collector — could tell them apart.
- */
-export interface Rendered {
-  level: Exclude<LogLevel, 'silent'>;
-  name: string;
-  message: string;
-  /** Absent on most lines: a message usually carries its own detail. */
-  args?: unknown[] | null;
-  /** Epoch milliseconds from a logger, a `Date` from an entity that stamped it. */
-  at: number | Date;
 }
 
 export function formatted(

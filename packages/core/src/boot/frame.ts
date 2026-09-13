@@ -4,8 +4,8 @@
  */
 import { FieldSet, type SchemaView } from '@fougere/schema';
 import { dequal } from 'dequal';
-import { declares } from '../source.js';
-import type { Logger } from '../builtin/logger.js';
+import { declares } from '../Source.js';
+import type { Logger } from '../builtin/Logger.js';
 
 /** One write that landed, and how to take it back. */
 export interface Undo {

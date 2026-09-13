@@ -1,7 +1,7 @@
 /** Putting one frond into the app being built: its scope, what it serves, what it takes. */
 import type { Container } from '@fougere/container';
 import { lowerFirst, type Fields, type SchemaView } from '@fougere/schema';
-import type { Logger } from '../builtin/logger.js';
+import type { Logger } from '../builtin/Logger.js';
 import type { Dispatcher } from '../dispatch/Dispatcher.js';
 import type { RouteRegistry } from '../dispatch/RouteRegistry.js';
 import type { Emissions } from './Emissions.js';
@@ -22,7 +22,7 @@ import { contractsKeyOf, facadeKeyOf } from '../wire/facade.js';
 import { inheritsCrud, subjectOf } from '../prefab/CrudConstructor.js';
 import { repositoryKeyOf } from '../prefab/RepositoryConstructor.js';
 import { storageKeyOf } from '../storage/port.js';
-import { declares } from '../source.js';
+import { declares } from '../Source.js';
 import { presenterKeyOf } from '../prefab/presenter.js';
 import { collectorKeyOf } from '../prefab/collector.js';
 import { RouteAddress } from '../wire/RouteAddress.js';

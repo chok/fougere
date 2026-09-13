@@ -8,10 +8,11 @@ import { refusalOf, type Diagnostic } from '../diagnostic.js';
 import type { AuthRuntime } from './auth.js';
 import type { CreateAppOptions, App } from './types.js';
 import type { AppMiddleware } from '../wire/AppMiddleware.js';
-import { Carry, Logger } from '../builtin/logger.js';
-import type { LogRecord } from '../builtin/logger.js';
+import { Carry } from '../builtin/Carry.js';
+import { Logger } from '../builtin/Logger.js';
+import type { LogRecord } from '../builtin/LogRecord.js';
 import LogLine, { CARRIES_LINE } from '../builtin/LogLine.js';
-import { emitKeyOf, type Emit } from '../wire/emit.js';
+import { emitKeyOf, type Emit } from '../wire/Emit.js';
 
 /** The fact the boot announces, spelled once. */
 const LOG_LINE = lowerFirst(LogLine.name);

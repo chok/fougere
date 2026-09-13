@@ -2,7 +2,7 @@
  * Logger middleware — logs every operation with timing.
  */
 import type { AppMiddleware } from './AppMiddleware.js';
-import type { Logger } from '../builtin/logger.js';
+import type { Logger } from '../builtin/Logger.js';
 import { CARRIES_LINE } from '../builtin/LogLine.js';
 
 /** Create a logger middleware that logs operation entry, exit, and errors. */

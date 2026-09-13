@@ -37,7 +37,8 @@ export type { CallPage, CallRecord } from './contract.js';
 export { driftOf, agrees, explain, type CardDrift } from './contract.js';
 export type { OperationContract } from './wire/OperationContract.js';
 export type { OperationsMap } from './wire/OperationsMap.js';
-export type { Param, TypeRef } from './wire/signature.js';
+export type { Param } from './wire/Param.js';
+export type { TypeRef } from './wire/TypeRef.js';
 export { resolveEffectiveOperations } from './effective-operation.js';
 export type { EffectiveOperation } from './effective-operation.js';
 export type { ModuleLoader } from './loader.js';
@@ -77,13 +78,18 @@ export type {
   DeclaredFrond,
   DeclaredEdge,
 } from './contract.js';
-export { type Emit, type Fact, type Pipe } from './wire/emit.js';
+export { type Emit } from './wire/Emit.js';
+export { type Fact } from './wire/Fact.js';
+export { type Pipe } from './wire/Pipe.js';
 export { callValueOf } from './contract.js';
 export { toHttpError } from './wire/http-error.js';
 export { toPublicError } from './contract.js';
 export { loggerMiddleware } from './wire/loggerMiddleware.js';
-export { Carry, Logger, setLogLevel, logLevel, envLevel, formatted } from './builtin/logger.js';
-export type { LogRecord, Rendered, LogSink } from './builtin/logger.js';
+export { Carry } from './builtin/Carry.js';
+export { Logger, envLevel, formatted, logLevel, setLogLevel } from './builtin/Logger.js';
+export type { LogRecord } from './builtin/LogRecord.js';
+export type { LogSink } from './builtin/LogSink.js';
+export type { Rendered } from './builtin/Rendered.js';
 // The fact a boot announces. Its destinations are `@fougere/log`'s; the line is core's.
 export { default as LogLine, CARRIES_LINE, LOG_LINE } from './builtin/LogLine.js';
 // What a re-read config changes in a running process — and what it cannot.
@@ -92,17 +98,19 @@ export { Config } from './builtin/config.js';
 export type { StorageFactory, ListOptions, ListResult, Together } from './storage/port.js';
 // A VALUE as well as a type: it is what a wrapper extends, which is the whole of declaring one.
 export { Storage, togetherKeyOf } from './storage/port.js';
-export type { Constraint, Source, SourceConfig, SourceView } from './source.js';
-export { Sources } from './source.js';
-export { storageOver } from './storage/store.js';
-export type { Store, Values } from './storage/store.js';
+export type { Constraint } from './Constraint.js';
+export type { Source } from './Source.js';
+export type { SourceConfig } from './SourceConfig.js';
+export type { SourceView } from './SourceView.js';
+export { Sources } from './Source.js';
+export { storageOver } from './storage/Store.js';
+export type { Store } from './storage/Store.js';
+export type { Values } from './storage/Values.js';
 export type { App, CreateAppOptions } from './boot/types.js';
 export type { ScanResult } from './scan.js';
 export type { Diagnostic } from './diagnostic.js';
-export {
-  type Conventions, type ConventionsInput, DEFAULT_CONVENTIONS,
-  resolveConventions, frondPackage, frondDirsOf, providerDirsOf,
-} from './conventions.js';
+export { DEFAULT_CONVENTIONS, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, type Conventions } from './Conventions.js';
+export { type ConventionsInput } from './ConventionsInput.js';
 export type {
   FrondDescriptor,
   FrondSource,

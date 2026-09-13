@@ -2,7 +2,7 @@
 import type { FrondDescriptor, HandlerEntry } from '../descriptor/frond.js';
 import type { Diagnostic } from '../diagnostic.js';
 import type { BindingPlan } from '../wire/binding.js';
-import type { Signature } from '../wire/signature.js';
+import type { Signature } from '../wire/Signature.js';
 
 /** The parameters a binding plan names, against the ones the method declares. */
 function namesDisagreeing(plan: BindingPlan, signature: Signature): string[] {

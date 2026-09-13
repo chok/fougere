@@ -1,7 +1,8 @@
 import { Boundaries, date, number, primary, text } from '@fougere/schema';
 import { describe, expect, it, vi } from 'vitest';
 import { StorageGuard } from '../src/dispatch/StorageGuard.js';
-import { storageOver, type Store, type Values } from '../src/storage/store.js';
+import { storageOver, type Store } from '../src/storage/Store.js';
+import { type Values } from '../src/storage/Values.js';
 
 describe('StorageGuard', () => {
   const fields = { name: text(), stock: number({ min: 0 }) };

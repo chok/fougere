@@ -1,9 +1,8 @@
 import { Registry, Role, type SchemaView } from '@fougere/schema';
-import type { NameOf } from './names.js';
 import type { StorageFactory } from './storage/port.js';
-
-/** A promise the judge at the facade cannot keep, because it is about rows it never sees. */
-export type Constraint = 'unique';
+import type { Constraint } from './Constraint.js';
+import type { SourceView } from './SourceView.js';
+import type { SourceConfig } from './SourceConfig.js';
 
 /** Whether an entity asks for one, anywhere but on its key. */
 export function declares(schema: SchemaView, constraint: Constraint): boolean {
@@ -35,23 +34,6 @@ export interface Source {
   close?(): Promise<void>;
   /** What distinguishes it when a query is reported. */
   name?: string;
-}
-
-/** The app as ONE source sees it. */
-export interface SourceView {
-  fronds: readonly { readonly name: string; readonly entities: readonly { readonly name: string }[] }[];
-  /** The auth provider's own entities, when they ride with this source. */
-  auth?: unknown;
-  elsewhere: readonly string[];
-}
-
-/** What a config file can carry about a source — values, never a live driver. */
-export interface SourceConfig {
-  /** The adapter that realizes it. Absent means the conventional one. */
-  source?: NameOf<'source'>;
-  /** The entities whose rows live here. Absent on the default source: it holds the rest. */
-  entities?: string[];
-  [key: string]: unknown;
 }
 
 /** Which adapter answers a source name — one per process, no subject to hold. */

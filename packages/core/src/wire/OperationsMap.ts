@@ -1,4 +1,5 @@
-import type { TypeRef, Param } from './signature.js';
+import type { Param } from './Param.js';
+import type { TypeRef } from './TypeRef.js';
 import type { OperationContract } from './OperationContract.js';
 
 /** Map of operation name → its contract. */
