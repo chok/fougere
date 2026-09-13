@@ -22,11 +22,11 @@ function toCamel(kebab: string): string {
 
 /** Scan app/commands/ for command classes. */
 async function loadAppCommands(
-  cliRoot: string,
+  root: string,
   loader: (path: string) => Promise<Record<string, unknown>>,
 ): Promise<Map<string, new (...args: unknown[]) => { run: (raw: Record<string, unknown>) => Promise<void> }>> {
   const map = new Map();
-  const dir = join(cliRoot, 'app', 'commands');
+  const dir = join(root, 'app', 'commands');
   const files = await readdir(dir, { withFileTypes: true }).catch(() => []);
 
   for (const f of files) {
@@ -42,14 +42,21 @@ async function loadAppCommands(
   return map;
 }
 
-export async function run(app: App): Promise<void> {
+/**
+ * Every operation of an app, as a terminal command.
+ *
+ * `root` is where the PRESENTATION classes are looked for — `app/commands/`, one per command
+ * that wants to print something of its own. It defaults to this package, which is how
+ * `npx fougere` finds its fifteen; a project passes its own and gets the same treatment for
+ * the operations it declares, with no class at all where a default rendering will do.
+ */
+export async function run(app: App, root = new URL('..', import.meta.url).pathname): Promise<void> {
   const terminal = ui();
-  const cliRoot = new URL('..', import.meta.url).pathname;
 
   const { createJiti } = await import('jiti');
   const jiti = createJiti(import.meta.url, { interopDefault: true });
   const loader = (path: string) => jiti.import(path) as Promise<Record<string, unknown>>;
-  const appCommands = await loadAppCommands(cliRoot, loader);
+  const appCommands = await loadAppCommands(root, loader);
 
   const subCommands: Record<string, ReturnType<typeof defineCommand>> = {};
 
