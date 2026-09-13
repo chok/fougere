@@ -4,6 +4,7 @@ import { nameOf } from '../descriptor/frond.js';
 import type { EntityEntry, HandlerEntry, PresenterEntry } from '../descriptor/frond.js';
 import { hostedBy } from './hosted.js';
 import { installFrond, type Assembly } from './install.js';
+import { refusalOf, type Diagnostic } from '../diagnostic.js';
 import type { AuthRuntime } from './auth.js';
 import type { CreateAppOptions, App } from './types.js';
 import type { AppMiddleware } from '../wire/middleware.js';
@@ -20,14 +21,12 @@ import { registerFrames } from './together.js';
 import { Emissions } from './Emissions.js';
 import { HandlerFacade } from '../dispatch/HandlerFacade.js';
 import { targetOf } from '../prefab/prefab.js';
-import { ownersOf, refuseStorageInUserCode, refuseCrudOnOwned } from './ownership.js';
 import type { OperationContract, OperationsMap } from '../wire/operation.js';
 import {
   resolveEffectiveOperations,
   type EffectiveOperationsMap,
 } from '../effective-operation.js';
 import { StorageGuard } from '../dispatch/StorageGuard.js';
-import { portBindings } from './ports.js';
 import { InFlight } from '../dispatch/InFlight.js';
 // The keys, each read from where its concept is declared — never respelled here.
 import { facadeKeyOf, contractsKeyOf, type RpcAnswer } from '../wire/call.js';
@@ -58,29 +57,39 @@ const notLoaded = (entity: string) =>
   `  - Or declare a remote: remotes: { ${entity}: 'http://...' }`;
 
 /** Two fronds cannot claim one name — said at boot, because nothing else says it. */
-function assertOneOwnerPerKey(
+function keyClaims(
   fronds: { name: string; handlers: HandlerEntry[]; presenters: PresenterEntry[] }[],
   remotes: Record<string, string> | undefined,
+  refused: Diagnostic[],
 ): void {
   const owner = new Map<string, string>();
+  const fileOf = new Map<string, string>();
 
-  const claim = (key: string, frond: string, what: string) => {
+  const claim = (key: string, frond: string, what: string, filePath: string) => {
     const first = owner.get(key);
     if (first !== undefined && first !== frond) {
-      throw new Error(
-        `[claim] Two fronds claim the key '${key}': '${first}' and '${frond}'.\n`
-        + `  A ${what} is registered under a key that names no frond, so one would silently replace the other.\n`
-        + `  - Rename one of the two classes, or\n`
-        + `  - keep one of the two fronds out of this process (--fronds), or declare it in remotes:`,
-      );
+      refused.push({
+        severity: 'blocking',
+        code: 'frond-key-taken',
+        filePath,
+        frond,
+        subject: key,
+        message: `'${first}' and '${frond}' both claim the key '${key}'. A ${what} is registered `
+          + 'under a key that names no frond, so one would silently replace the other. Rename one '
+          + 'of the two classes, or keep one frond out of this process (--fronds). '
+          + `'${first}' declares it in ${fileOf.get(key)}.`,
+      });
+
+      return;
     }
     owner.set(key, frond);
+    fileOf.set(key, filePath);
   };
 
   for (const frond of fronds) {
     if (remotes && frond.name in remotes) continue;
-    for (const handler of frond.handlers) claim(facadeKeyOf(handler.address, handler.surface), frond.name, 'facade');
-    for (const presenter of frond.presenters) claim(presenterKeyOf(presenter.entityName), frond.name, 'presenter');
+    for (const handler of frond.handlers) claim(facadeKeyOf(handler.address, handler.surface), frond.name, 'facade', handler.filePath);
+    for (const presenter of frond.presenters) claim(presenterKeyOf(presenter.entityName), frond.name, 'presenter', presenter.filePath);
   }
 }
 
@@ -191,17 +200,8 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     for (const d of diagnostics) if (d.severity === 'warning') log.warn(`[${d.code}] ${d.message}`);
 
     /** An ambiguous convention is not a partial scan. */
-    const invalidOperations = operationModel.resolutionDiagnostics
-      .filter((diagnostic) => diagnostic.severity === 'blocking');
-    if (invalidOperations.length > 0) {
-      const details = invalidOperations.map((d) =>
-        `  [${d.code}]${d.subject ? ` ${d.subject}` : ''}\n    ${d.message}\n    ${d.filePath}`,
-      );
-      throw new Error(
-        `Fougere boot refused: ${invalidOperations.length} unresolved operation contract(s):\n`
-        + details.join('\n'),
-      );
-    }
+    const unresolved = refusalOf(operationModel.resolutionDiagnostics, 'unresolved operation contract(s)');
+    if (unresolved) throw unresolved;
 
     // Auth runtime — built once from the lazy AuthConfig produced by a provider factory
     // (e.g. betterAuth({...})) in fougere.config.ts. The provider receives our db +
@@ -278,7 +278,13 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       scopedMiddlewares.set(entity, scoped);
     }
 
-    assertOneOwnerPerKey(fronds, options.remotes);
+    /** What every check of this boot writes into — refused together, once they have all run. */
+    const refused: Diagnostic[] = [];
+    keyClaims(fronds, options.remotes, refused);
+    // Said before anything is installed: a key claimed twice makes every later error worse —
+    // the route registry collides first, and names a route instead of the two fronds.
+    const claimed = refusalOf(refused, 'declaration(s) that do not hold');
+    if (claimed) throw claimed;
 
     // Every entity of every frond, by name — so a fact can be validated where it LANDS, and
     // so a `reads:` clause can name a neighbour's.
@@ -315,10 +321,15 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // table, one emission list — so what a frond serves is there for the next one to find.
     const assembly: Assembly = {
       container, routeRegistry, emissions, dispatcher, localDispatcher, effectiveByKey,
-      boundPorts, operationModel, entityByName, frondOf, contractsOf, getMiddlewares, use,
+      boundPorts, refused, operationModel, entityByName, frondOf, contractsOf, getMiddlewares, use,
       log, options,
     };
     for (const frond of fronds) await installFrond(frond, assembly);
+
+    // Every check of the install, said at once — a boot that stops at the first makes the
+    // next one visible only after a fix and a restart.
+    const bootRefusal = refusalOf(refused, 'declaration(s) that do not hold');
+    if (bootRefusal) throw bootRefusal;
 
     // A `ports:` key that matched no port anywhere reads as a choice that was made, and
     // was not. Said once, at the end, because the entry is app-wide while a port is a
@@ -566,6 +577,16 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // The last thing the boot does, and the first thing a release undoes. An extension may
     // await here — which is what a provider needing to OPEN something could never do.
     built = app;
+
+    // What the FRONDS declared, folded in after what the host handed over — a frond's
+    // extension is written beside the code it instruments and travels with it, so it mounts
+    // on whichever process ends up serving that frond. Added here rather than at the top
+    // because the fronds are read below that line, and `up` has not run yet.
+    appLifecycle.add(...fronds.flatMap((frond) => (frond.extensions ?? []).map((one) => ({
+      name: one.name,
+      ...one.extension,
+    }))));
+
     await appLifecycle.up(app);
 
     // The boot's own lines, and every line after them. Held until here because a boot

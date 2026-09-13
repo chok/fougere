@@ -1,5 +1,6 @@
 import { nameOf, type ProviderEntry } from '../descriptor/frond.js';
 import { basesOf } from '../descriptor/bases.js';
+import type { Diagnostic } from '../diagnostic.js';
 
 /**
  * The framework's own ports — a class core exports that a user class may stand in front of.
@@ -25,23 +26,29 @@ export const SEAMS = new Set(['Storage']);
 export function seamChains(
   providers: ProviderEntry[],
   chosen: Record<string, string | readonly string[]> | undefined,
+  refused: Diagnostic[],
 ): Map<string, ProviderEntry[]> {
   const wrappers = new Map<string, ProviderEntry[]>();
   for (const provider of providers) {
     const seam = (Object.getPrototypeOf(provider.ctor) as { name?: string } | null)?.name;
     if (!seam || !SEAMS.has(seam)) continue;
     if (!provider.deps.includes(seam)) {
-      throw new Error(
-        `[ports] ${nameOf(provider)} extends ${seam}, and a seam's realization is handed in `
-        + `rather than declared — so a class extending one can only stand IN FRONT of it, `
-        + `which it says by asking for it: constructor(private inner: ${seam}).`,
-      );
+      refused.push({
+        severity: 'blocking',
+        code: 'seam-not-wrapped',
+        filePath: provider.filePath,
+        subject: nameOf(provider),
+        message: `${nameOf(provider)} extends ${seam}, and a seam's realization is handed in rather `
+          + 'than declared — so a class extending one can only stand IN FRONT of it, which it says '
+          + `by asking for it: constructor(private inner: ${seam}).`,
+      });
+      continue;
     }
     wrappers.set(seam, [...(wrappers.get(seam) ?? []), provider]);
   }
 
   const bound = new Map<string, ProviderEntry[]>();
-  for (const [seam, all] of wrappers) bound.set(seam, chain(seam, [], all, chosen?.[seam]));
+  for (const [seam, all] of wrappers) bound.set(seam, chain(seam, [], all, chosen?.[seam], refused));
 
   return bound;
 }
@@ -78,6 +85,7 @@ export function portBindings(
   providers: ProviderEntry[],
   answers: (name: string) => boolean,
   chosen: Record<string, string | readonly string[]> | undefined,
+  refused: Diagnostic[],
 ): Map<string, ProviderEntry[]> {
   const candidates = basesOf(providers, answers);
 
@@ -89,7 +97,7 @@ export function portBindings(
     const impls = all.filter((one) => !wraps(one));
     const stated = chosen?.[port];
 
-    bound.set(port, chain(port, impls, wrappers, stated));
+    bound.set(port, chain(port, impls, wrappers, stated, refused));
   }
 
   return bound;
@@ -100,6 +108,7 @@ function chain(
   impls: ProviderEntry[],
   wrappers: ProviderEntry[],
   stated: string | readonly string[] | undefined,
+  refused: Diagnostic[],
 ): ProviderEntry[] {
   // The whole chain, outside in — a string is a chain of one, and the last name is what
   // actually answers. What a deployment wraps its realization with is the same kind of
@@ -108,16 +117,21 @@ function chain(
     const order = typeof stated === 'string' ? [stated] : stated;
     const all = [...wrappers, ...impls];
 
-    return order.map((name) => {
+    return order.flatMap((name) => {
       const pick = all.find((one) => nameOf(one) === name);
       if (!pick) {
-        throw new Error(
-          `[ports] ${port}: '${name}' does not extend it. `
-          + `What does: ${all.map(nameOf).join(', ')}.`,
-        );
+        refused.push({
+          severity: 'blocking',
+          code: 'port-not-extended',
+          filePath: all[0]?.filePath ?? 'fougere.config.ts',
+          subject: `ports: { ${port}: '${name}' }`,
+          message: `${port}: '${name}' does not extend it. What does: ${all.map(nameOf).join(', ')}.`,
+        });
+
+        return [];
       }
 
-      return pick;
+      return [pick];
     });
   }
 
@@ -125,22 +139,31 @@ function chain(
     // Refusing rather than keeping one, for the reason `remotes` refuses two owners
     // of an entity: whichever won would depend on scan order, and the handler would
     // charge the wrong provider without a word.
-    throw new Error(
-      `[claim] ${impls.map(nameOf).join(' and ')} both extend ${port}, `
-      + 'and nothing says which one answers it. Which realization a deployment uses is '
-      + `not a fact about the code — state it: ports: { ${port}: '${nameOf(impls[0]!)}' } `
-      + 'in fougere.config.ts.',
-    );
+    refused.push({
+      severity: 'blocking',
+      code: 'port-implemented-twice',
+      filePath: impls[0]!.filePath,
+      subject: port,
+      message: `${impls.map(nameOf).join(' and ')} both extend ${port}, and nothing says which one `
+        + 'answers it. Which realization a deployment uses is not a fact about the code — state it: '
+        + `ports: { ${port}: '${nameOf(impls[0]!)}' } in fougere.config.ts.`,
+    });
+
+    return [...wrappers, ...impls];
   }
 
   if (wrappers.length > 1) {
     // Same refusal one layer out: two wrappers are an ORDER, and scan order is not one.
-    throw new Error(
-      `[claim] ${wrappers.map(nameOf).join(' and ')} both wrap ${port}, `
-      + 'and nothing says which stands in front. State the chain, outside in: '
-      + `ports: { ${port}: [${[...wrappers, ...impls].map((one) => `'${nameOf(one)}'`).join(', ')}] } `
-      + 'in fougere.config.ts.',
-    );
+    refused.push({
+      severity: 'blocking',
+      code: 'port-wrapped-twice',
+      filePath: wrappers[0]!.filePath,
+      subject: port,
+      message: `${wrappers.map(nameOf).join(' and ')} both wrap ${port}, and nothing says which `
+        + 'stands in front. State the chain, outside in: '
+        + `ports: { ${port}: [${[...wrappers, ...impls].map((one) => `'${nameOf(one)}'`).join(', ')}] } `
+        + 'in fougere.config.ts.',
+    });
   }
 
   return [...wrappers, ...impls];

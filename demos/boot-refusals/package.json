@@ -1,0 +1,19 @@
+{
+  "name": "fougere-demo-boot-refusals",
+  "version": "0.0.3-alpha.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/main.ts",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "@fougere/container": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/compiler": "workspace:*",
+    "@fougere/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0"
+  }
+}

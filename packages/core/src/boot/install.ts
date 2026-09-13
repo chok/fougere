@@ -12,9 +12,10 @@ import type { OperationsMap } from '../wire/operation.js';
 import type { AppMiddleware } from '../wire/middleware.js';
 import type { CreateAppOptions } from './types.js';
 import { registerFrames } from './together.js';
+import type { Diagnostic } from '../diagnostic.js';
 import { HandlerFacade } from '../dispatch/HandlerFacade.js';
 import { targetOf } from '../prefab/prefab.js';
-import { ownersOf, refuseSharedName, refuseStorageInUserCode, refuseCrudOnOwned } from './ownership.js';
+import { ownersOf, sharedNames, storageInUserCode, crudOnOwned } from './ownership.js';
 import { StorageGuard } from '../dispatch/StorageGuard.js';
 import { portBindings, seamChains, wrapping, SEAMS } from './ports.js';
 import { facadeKeyOf, contractsKeyOf } from '../wire/call.js';
@@ -45,6 +46,8 @@ export interface Assembly {
   effectiveByKey: Map<string, EffectiveOperationsMap>;
   /** Every `ports:` key some frond actually settled — what is left is a typo. */
   boundPorts: Set<string>;
+  /** Where a check writes what does not hold — collected across fronds, refused together. */
+  refused: Diagnostic[];
   /** What the model resolved before the boot performed any side effect. */
   operationModel: EffectiveOperationModel;
   entityByName: Map<string, SchemaView>;
@@ -61,7 +64,7 @@ export interface Assembly {
 export async function installFrond(frond: FrondDescriptor, assembly: Assembly): Promise<void> {
   const {
     container, routeRegistry, emissions, dispatcher, localDispatcher, effectiveByKey,
-    boundPorts, operationModel, entityByName, frondOf, contractsOf, getMiddlewares, use,
+    boundPorts, refused, operationModel, entityByName, frondOf, contractsOf, getMiddlewares, use,
     log, options,
   } = assembly;
 
@@ -117,10 +120,10 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
 
   // Who owns what, and the rule that makes owning mean something. Before anything is
   // registered, so a bad line is named by this refusal rather than by the container's.
-  refuseSharedName(frond);
-  const owners = ownersOf(frond.providers);
-  refuseStorageInUserCode(frond, owners, (entity) => entityByName.has(entity));
-  refuseCrudOnOwned(frond, owners);
+  sharedNames(frond, refused);
+  const owners = ownersOf(frond.providers, frond.name, refused);
+  storageInUserCode(frond, owners, (entity) => entityByName.has(entity), refused);
+  crudOnOwned(frond, owners, refused);
 
   for (const provider of frond.providers) {
     scope.register(nameOf(provider), provider.ctor, { deps: provider.deps });
@@ -128,7 +131,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   // What this frond puts in front of one of the framework's own ports. Its own, like every
   // provider — a link goes where its frond goes, which is what a frond behind `remotes:`
   // takes with it.
-  const seams = seamChains(frond.providers, options.ports);
+  const seams = seamChains(frond.providers, options.ports, refused);
   for (const [seam, links] of seams) {
     boundPorts.add(seam);
     frondLog.debug(`seam ${seam} → ${links.map((one) => one.ctor.name).join(' → ')} → the realization`);
@@ -137,7 +140,10 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   // reaches the realization instead of the base class it is declared against.
   // Registered AFTER the loop above so a port key always wins over the base's
   // own registration — same precedence as a declared repository over its default.
-  for (const [port, chain] of portBindings(frond.providers, (n) => scope.has(n), options.ports)) {
+  for (const [port, chain] of portBindings(frond.providers, (n) => scope.has(n), options.ports, refused)) {
+    // A chain a refusal emptied — `ports:` named a class that extends nothing. Already
+    // reported, and there is no realization left to put a key in front of.
+    if (chain.length === 0) continue;
     // A seam is bound where its realization is BUILT, not under a container key — nothing
     // resolves `Storage`, and `<Entity>Storage` is what a handler asks for.
     if (SEAMS.has(port)) continue;

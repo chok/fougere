@@ -79,7 +79,7 @@ describe('an owned entity has no other facade', () => {
   it('refuses a handler that reaches around it, naming the owner', async () => {
     const rejected = boot('fixtures-aggregate-trap');
 
-    await expect(rejected).rejects.toThrow(/\[aggregate\] LedgerHandler asks for LedgerStorage/);
+    await expect(rejected).rejects.toThrow(/\[aggregate-storage-reached\]/);
     await expect(rejected).rejects.toThrow(/AccountRepository owns ledger/);
     await expect(rejected).rejects.toThrow(/constructor\(private ledger: AccountRepository\)/);
   });
@@ -128,7 +128,7 @@ describe('what the shape refuses, and what a sentence has to refuse instead', ()
     // order, and one of the two boundaries would be held by nobody.
     const rejected = boot('fixtures-aggregate-twice');
 
-    await expect(rejected).rejects.toThrow(/\[claim\]/);
+    await expect(rejected).rejects.toThrow(/\[entity-owned-twice\]/);
     await expect(rejected).rejects.toThrow(/AccountRepository and LedgerRepository|LedgerRepository and AccountRepository/);
   });
 
@@ -139,7 +139,7 @@ describe('what the shape refuses, and what a sentence has to refuse instead', ()
     // starts and then rejects everything is found in production, so it is said here.
     const rejected = boot('fixtures-aggregate-crud');
 
-    await expect(rejected).rejects.toThrow(/\[aggregate\] LedgerHandler takes the five gestures on ledger/);
+    await expect(rejected).rejects.toThrow(/\[crud-on-owned-entity\]/);
     await expect(rejected).rejects.toThrow(/which AccountRepository owns/);
     await expect(rejected).rejects.toThrow(/constructor\(private ledger: AccountRepository\)/);
   });

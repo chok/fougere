@@ -44,6 +44,7 @@ pnpm -C demos/observability dev    # three processes; `pnpm load` (k6) and `pnpm
 pnpm -C demos/together-frame dev   # two writes that stand or fall as one — then uncomment `sources:`
 pnpm -C demos/crossing-cost dev    # a chain of three, and the config line that decides what it costs
 pnpm -C demos/oclif-catalog dev --help  # a frond as a terminal — topics, flags and help derived
+pnpm -C demos/boot-refusals dev    # every refusal the boot can answer, one case each
 pnpm -C demos/test-gradient test   # 53 tests, 44 of them from a one-line file
 pnpm -C demos/test-gradient e2e    # the browser rung — a form that states no rule of its own
 ```
@@ -122,6 +123,7 @@ demos/
   oclif-catalog/       a frond as a terminal — every flag read off the entity, nothing declared
   observability/       three Fronds in three processes, one trace — and what the wire cost
   test-gradient/       what the declaration writes on its own, and the four rungs it runs at
+  boot-refusals/       twelve projects that do not hold, and what each refusal names
   anchor-chain/        a path with two stops — which derivations hold rows, and which say nothing
   emit-multirepo/      two repositories, one fact, and the ~80-line carrier that is not Fougere's
   rust-frond/          the far side is not TypeScript, and the validator is still ours
