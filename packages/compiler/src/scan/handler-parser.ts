@@ -1,5 +1,6 @@
 /** Handler signature parser — extracts method signatures from handler source files. */
 import { type Param, type Signature, type TypeRef } from '@fougere/core/descriptor';
+import { type ErrorCode } from '@fougere/core';
 
 import type ts from '@typescript/typescript6';
 import { refusalsIn } from './refusals.js';
@@ -653,7 +654,7 @@ export async function parseRefusals(
   filePath: string,
   isOperation: (name: string) => boolean,
   projectRoot?: string,
-): Promise<Map<string, string[]>> {
+): Promise<Map<string, ErrorCode[]>> {
   const typescript = await loadTS();
   const { program } = projectOf(filePath, projectRoot);
   const { byMethod } = refusalsIn(typescript, program, isOperation);

@@ -1,4 +1,5 @@
 import { resolve } from 'node:path';
+import type { NameOf } from './names.js';
 import { existsSync } from 'node:fs';
 import type { EntityConstructor, SchemaView } from '@fougere/schema';
 import type { BindingPlan } from './wire/binding.js';
@@ -43,13 +44,13 @@ export interface OperationOverride {
 
 export interface FrondConfig {
   /** Class names exposed as the frond's public contract (all surfaces). */
-  expose?: string[];
+  expose?: (NameOf<'handler'> | NameOf<'entity'>)[];
   /** The entities this frond may read ACROSS sources, by name. */
-  reads?: string[];
+  reads?: NameOf<'entity'>[];
   /** Per-surface entity lists. Overrides default deduction for each named surface. */
-  surfaces?: Record<string, string[]>;
+  surfaces?: Record<string, NameOf<'entity'>[]>;
   /** Interface → implementation bindings for DI (e.g. { Database: 'SqliteDatabase' }). */
-  bindings?: Record<string, string>;
+  bindings?: Record<string, NameOf<'provider'>>;
   /**
    * The ops that FINISH a fact, in the order they run — by class name, keyed by fact.
    *
@@ -57,13 +58,13 @@ export interface FrondConfig {
    * fact itself and it has one owner. Without it two links refuse: nothing would say which
    * ran first, and scan order is not an answer.
    */
-  pipes?: Record<string, string[]>;
+  pipes?: Record<NameOf<'entity'>, NameOf<'handler'>[]>;
   /**
    * How far a middleware reaches, by class name. A middleware answers for its own frond
    * without being named here; `'app'` is the exception, and it is stated by the frond
    * that decides for the others.
    */
-  middlewares?: Record<string, 'frond' | 'app'>;
+  middlewares?: Record<NameOf<'middleware'>, 'frond' | 'app'>;
   /** Per-operation overrides. Key = operation name (method name on a handler). */
   operations?: Record<string, OperationOverride>;
 }

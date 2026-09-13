@@ -15,17 +15,18 @@
  * It stops at the frond. What another frond refuses is published by ITS card.
  */
 import type ts from '@typescript/typescript6';
+import { ErrorCode } from '@fougere/core';
 
 /** Where a refusal was written, and which one. */
 interface Site {
   /** `ClassName.method`, or `<fn>.name` for a module function. */
   at: string;
-  code: string;
+  code: ErrorCode;
 }
 
 export interface Refusals {
   /** `Handler.method` → the codes any path from it can reach. */
-  byMethod: Map<string, Set<string>>;
+  byMethod: Map<string, Set<ErrorCode>>;
   /** How many refusal sites the walk started from — zero is a claim, not a failure. */
   sites: number;
 }
@@ -57,16 +58,25 @@ function holderOf(typescript: typeof ts, node: ts.Node): string | undefined {
   return at ? nameOf(typescript, at) : undefined;
 }
 
-/** `new FougereError({ code: ErrorCode.CONFLICT })` → `CONFLICT`, and nothing for a computed one. */
-function codeIn(typescript: typeof ts, node: ts.NewExpression): string | undefined {
+/**
+ * `new FougereError({ code: ErrorCode.CONFLICT })` → `CONFLICT`, and nothing for a computed one.
+ *
+ * The member is read as TEXT, so it is judged against the enum before it travels: a walk reaches
+ * files the project never compiles, and a name that is not a code would otherwise be published on
+ * a card as one.
+ */
+function codeIn(typescript: typeof ts, node: ts.NewExpression): ErrorCode | undefined {
   if (node.expression.getText() !== 'FougereError') return undefined;
   const first = node.arguments?.[0];
   if (!first || !typescript.isObjectLiteralExpression(first)) return undefined;
 
   const written = first.properties.find((one) => one.name?.getText() === 'code');
   const value = written && typescript.isPropertyAssignment(written) ? written.initializer.getText() : undefined;
+  if (!value?.startsWith('ErrorCode.')) return undefined;
 
-  return value?.startsWith('ErrorCode.') ? value.slice('ErrorCode.'.length) : undefined;
+  const member = value.slice('ErrorCode.'.length);
+
+  return member in ErrorCode ? ErrorCode[member as keyof typeof ErrorCode] : undefined;
 }
 
 /**
@@ -111,8 +121,14 @@ export function refusalsIn(typescript: typeof ts, program: ts.Program, isOperati
 /** The declaration a call resolves to, named the way a refusal site is. */
 function calleeOf(typescript: typeof ts, checker: ts.TypeChecker, node: ts.CallExpression): string | undefined {
   const target = node.expression;
-  const symbol = checker.getSymbolAtLocation(target)
+  const found = checker.getSymbolAtLocation(target)
     ?? (typescript.isPropertyAccessExpression(target) ? checker.getSymbolAtLocation(target.name) : undefined);
+
+  // An IMPORTED function resolves to its import specifier, which is callable in no sense the
+  // test below admits — so the edge was dropped and the refusal never climbed out of its file.
+  // Measured on `site/fronds/blog`: moving three guards into a neighbouring module, which
+  // `fougere check` asks for, cut what `publish` promises from five codes to two.
+  const symbol = found && found.flags & typescript.SymbolFlags.Alias ? checker.getAliasedSymbol(found) : found;
 
   const declared = symbol?.declarations?.[0];
   if (!declared) return undefined;
@@ -129,8 +145,8 @@ function reached(
   sites: readonly Site[],
   callers: Map<string, Set<string>>,
   isOperation: (name: string) => boolean,
-): Map<string, Set<string>> {
-  const found = new Map<string, Set<string>>();
+): Map<string, Set<ErrorCode>> {
+  const found = new Map<string, Set<ErrorCode>>();
 
   for (const site of sites) {
     const walked = new Set([site.at]);

@@ -1,7 +1,7 @@
 import { DEFAULT_CONVENTIONS, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, togetherKeyOf, type Conventions, type ConventionsInput, type ScanDiagnostic, type ScanResult } from '@fougere/core';
 import { Fronds, awaitKeyOf, cardinalityOf, computeBindingPlan, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf } from '@fougere/core/descriptor';
 import { getModuleLoader, loadFrondConfig } from '@fougere/core/node';
-import type { FrondConfig } from '@fougere/core';
+import type { FrondConfig, ErrorCode } from '@fougere/core';
 import { readdir, readFile } from 'node:fs/promises';
 import { existsSync, type Dirent } from 'node:fs';
 import { join, dirname, basename, resolve as resolvePath } from 'node:path';
@@ -294,7 +294,7 @@ async function inferOperations(
     filePath,
     (name) => name.startsWith(`${handlerName}.`),
     projectRoot,
-  ).catch(() => new Map<string, string[]>());
+  ).catch(() => new Map<string, ErrorCode[]>());
 
   /**
    * A base class the parse could not open — an installed package, typically, whose source is not

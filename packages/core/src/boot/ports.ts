@@ -1,4 +1,5 @@
 import { nameOf, type ProviderEntry } from '../descriptor/frond.js';
+import { basesOf } from '../descriptor/bases.js';
 
 /**
  * The framework's own ports — a class core exports that a user class may stand in front of.
@@ -78,21 +79,7 @@ export function portBindings(
   answers: (name: string) => boolean,
   chosen: Record<string, string | readonly string[]> | undefined,
 ): Map<string, ProviderEntry[]> {
-  // port class name → the classes that extend it, in scan order.
-  const candidates = new Map<string, ProviderEntry[]>();
-  for (const provider of providers) {
-    const base = Object.getPrototypeOf(provider.ctor) as { name?: string } | null;
-    const port = base?.name;
-    // ONE condition: something already answers under that name. Providers are
-    // registered into this scope just above, and the builtins sit in its parent, so
-    // this covers a neighbour service and `Logger` alike — a framework class is a
-    // port like any other, which is what makes a default overridable.
-    //
-    // It is also what excludes a prefab: a repository extends the class
-    // `Repository(Post)` returned (`RepositoryBase`), and no key is ever that name.
-    if (!port || !answers(port)) continue;
-    candidates.set(port, [...(candidates.get(port) ?? []), provider]);
-  }
+  const candidates = basesOf(providers, answers);
 
   const bound = new Map<string, ProviderEntry[]>();
   for (const [port, all] of candidates) {

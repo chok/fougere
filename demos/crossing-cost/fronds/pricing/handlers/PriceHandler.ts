@@ -1,5 +1,5 @@
 import type { Facade } from '@fougere/core';
-import type ProductHandler from '../../catalog/handlers/ProductHandler.js';
+import type ProductHandler from '@fronds/catalog/handlers/ProductHandler.js';
 
 /**
  * The middle of the chain. It reaches the catalog and nothing else — and the only reason this

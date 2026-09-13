@@ -12,7 +12,7 @@ import {
 } from '@nuxt/kit';
 import type { Nuxt } from '@nuxt/schema';
 import { orderSeeds } from '@fougere/core';
-import { scanProject, emitStatement, emitFacade, frondAliases, watchPathsOf } from '@fougere/compiler';
+import { scanProject, emitStatement, emitFacade, emitNames, frondAliases, watchPathsOf } from '@fougere/compiler';
 import { frondPackage, resolveConventions, type Conventions } from '@fougere/core';
 import { setModuleLoader, loadCascadedConfig } from '@fougere/core/node';
 import { declaresStorage } from '@fougere/defaults';
@@ -315,6 +315,16 @@ const module = defineNuxtModule<FougereModuleOptions>({
       getContents: () => emitFacade(scan, { outFile: facadeFile }),
     });
     nuxt.options.alias['@fronds/facade'] = facadeFile;
+
+    // What a config may NAME, from the same scan — `ports:`, `remotes:`, `pipes:` and their
+    // neighbours designate classes by string, and a string is what nothing else here reads back.
+    // The sources are the config's own keys: no scan can find them, and a project with none
+    // states none.
+    addTemplate({
+      filename: 'fougere-names.d.ts',
+      write: true,
+      getContents: () => emitNames(scan, { sources: Object.keys(config.sources ?? {}) }),
+    });
 
     // ── 6b. Boot plugin (virtual — lives in .nuxt/) ───
     const { ordered, cycle } = orderSeeds(fronds);

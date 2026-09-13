@@ -20,6 +20,7 @@
     "smoke": "node tools/smoke.ts",
     "arch": "depcruise packages --output-type err",
     "arch:cycles": "node tools/cycle-check.ts",
+    "frond:check": "node tools/frond-check.ts",
     "coverage": "pnpm -r --filter './packages/**' exec vitest run --passWithNoTests --coverage --coverage.provider=v8 --coverage.reporter=text --coverage.include=src/**",
     "changeset": "changeset",
     "version-packages": "changeset version",

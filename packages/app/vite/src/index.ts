@@ -1,4 +1,5 @@
 /** `@fougere/vite` — the one place a Vite-built host is told what a Fougere app needs. */
+import type { FougereConfig } from '@fougere/core';
 import { readdirSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import type { Plugin } from 'vite';
@@ -39,6 +40,7 @@ export interface FougereViteOptions {
  * command and one that only starts a dev server read one file and not two.
  */
 const FACADE = '.fougere/facade.generated.ts';
+const NAMES = '.fougere/names.generated.d.ts';
 
 /**
  * The facades this app serves, written when the dev server comes up — one export per address,
@@ -54,23 +56,49 @@ const FACADE = '.fougere/facade.generated.ts';
  */
 async function writeDoors(root: string): Promise<void> {
   try {
-    const { scanProject, emitFacade } = await import('@fougere/compiler');
+    const { scanProject, emitFacade, emitNames, frondAliases } = await import('@fougere/compiler');
+    const { setModuleLoader } = await import('@fougere/core/node');
+    const { resolveConventions } = await import('@fougere/core');
+    const { createJiti } = await import('jiti');
+
+    // The scan LOADS a frond's own sources, and `@fronds/user/entities/User.js` inside a handler
+    // has to resolve there for the same reason it does in a page. Without it `scanProject`
+    // throws `Cannot find module …/Post.js`, the catch below swallows it, and the module is
+    // silently never written — which is what happened until this line existed.
+    const jiti = createJiti(import.meta.url, {
+      interopDefault: true,
+      alias: await frondAliases(root, resolveConventions()),
+    });
+    setModuleLoader((filePath: string) => jiti.import(filePath) as Promise<Record<string, unknown>>);
+    const { loadConfig } = await import('@fougere/core/node');
     const out = join(root, FACADE);
     mkdirSync(dirname(out), { recursive: true });
-    writeFileSync(out, emitFacade(await scanProject(root), { outFile: out }));
+    const scan = await scanProject(root);
+    writeFileSync(out, emitFacade(scan, { outFile: out }));
+    // What a config may NAME, from the same scan: the sources are the config's own keys, which
+    // no scan can find, and a project without one states none.
+    const config = await loadConfig(root).catch(() => ({}) as FougereConfig);
+    writeFileSync(join(root, NAMES), emitNames(scan, { sources: Object.keys(config.sources ?? {}) }));
   } catch { /* a host with no fronds, or a scan that could not run */ }
 }
 
 export function fougere(options: FougereViteOptions = {}): Plugin {
   const external = [...new Set([...RUNTIME_PACKAGES, ...(options.external ?? [])])];
+  // Where `config` said the project is, so `buildStart` writes beside the alias it set.
+  let root = process.cwd();
 
   return {
     name: 'fougere',
     configureServer(server: { config?: { root?: string } }) {
-      void writeDoors(server.config?.root ?? process.cwd());
+      void writeDoors(server.config?.root ?? root);
     },
-    buildStart() {
-      void writeDoors(process.cwd());
+    /**
+     * AWAITED, and that is the whole point: the bundler resolves `@fronds/facade` right after
+     * this hook, and a fire-and-forget write loses the race — `Could not load
+     * .fougere/facade.generated.ts`, measured on `demos/react-router-blog`.
+     */
+    async buildStart() {
+      await writeDoors(root);
     },
     /** `order. */
     config: {
@@ -82,11 +110,15 @@ export function fougere(options: FougereViteOptions = {}): Plugin {
         // A page IMPORTS its facade, so the alias sits beside the file that declares them: a
         // project that never generated it fails to resolve rather than losing its types in
         // silence.
+        root = config.root ?? root;
         config.resolve ??= {};
-        config.resolve.alias = {
-          ...config.resolve.alias,
-          '@fronds/facade': join(config.root ?? process.cwd(), FACADE),
-        };
+        // Vite admits BOTH shapes and a host picks one: SvelteKit states an array of
+        // `{ find, replacement }`, and spreading an object over it made rolldown refuse the
+        // whole plugin — `StringExpected … on BindingViteAliasPluginAlias.replacement`.
+        const facade = join(root, FACADE);
+        config.resolve.alias = Array.isArray(config.resolve.alias)
+          ? [...config.resolve.alias, { find: '@fronds/facade', replacement: facade }]
+          : { ...config.resolve.alias, '@fronds/facade': facade };
 
         if (options.keepClassNames === false) return;
 

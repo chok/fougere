@@ -66,7 +66,7 @@ export interface CardOp {
   /** How much `output` describes. */
   cardinality?: 'one' | 'maybe' | 'many' | 'page' | 'none';
   /** What this op can REFUSE, beyond what `kind` and `input` already imply. */
-  errors?: string[];
+  errors?: ErrorCode[];
 }
 
 /** What an app hosts — the wire projection of its scanned fronds. */

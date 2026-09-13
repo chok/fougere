@@ -5,6 +5,7 @@ export { AppLifecycle, migrating } from './boot/AppLifecycle.js';
 export type { Extension } from './boot/AppLifecycle.js';
 export { defineFougere } from './define.js';
 export type { FougereConfig, AdapterConfig } from './config-loader.js';
+export type { FougereNames, FougerePorts, NameOf, AnswerFor, PortChoice } from './names.js';
 export type { OperationOverride, FrondConfig } from './frond-config.js';
 export { buildGraph, clusterEntities, suggestSplit, type EntityNode, type DomainCluster } from './graph.js';
 export { Crud } from './prefab/crud.js';

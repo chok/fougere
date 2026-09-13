@@ -1,4 +1,5 @@
 import { FougereError, ErrorCode } from '@fougere/core';
+import { requireStock } from '../rules/stock.js';
 
 /**
  * The guard lives BESIDE the handler, which is the whole point of the walk: reading the method's
@@ -23,6 +24,11 @@ export default class OrderHandler {
   /** Reaches nothing that refuses — an op with no refusal of its own is the ordinary case. */
   async quote(): Promise<number> {
     return 1;
+  }
+
+  /** Across a module boundary: the guard is imported, not declared beside the handler. */
+  async reserve(): Promise<void> {
+    requireStock(0, 'reserve');
   }
 
   /** A masked refusal is not a contract: its message never leaves. */

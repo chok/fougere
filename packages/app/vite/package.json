@@ -36,9 +36,10 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
+    "@fougere/compiler": "workspace:*",
     "@fougere/core": "workspace:*",
-    "terser": "^5.44.0",
-    "@fougere/compiler": "workspace:*"
+    "jiti": "^2.7.0",
+    "terser": "^5.44.0"
   },
   "devDependencies": {
     "vite": "^8.0.0",

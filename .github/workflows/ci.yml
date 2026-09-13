@@ -117,6 +117,18 @@ jobs:
       # depends on a family depending back. Needs no build: it reads `src/` alone.
       - run: pnpm arch:cycles
 
+      # Both of the above ask about a PACKAGE. This asks whether a frond is a frond, in the
+      # framework's own vocabulary: a word declared inside the handler that no second caller
+      # can reach, a neighbour reached by `../../` rather than by name, a file at a frond's
+      # root. `fougere check` shipped, was reachable, and nothing ran it — it found six real
+      # things the first time, three of them relative imports inside the demo that exists to
+      # prove a frond can be deployed alone.
+      #
+      # A GATE on what blocks and a READING on the rest, by the rule stated above: half of
+      # what it reports asks a judgment call, and `together-frame` keeps a file whose own
+      # comment says `Nothing here is part of Fougere` — right, and no directory fits it.
+      - run: pnpm frond:check
+
   audit:
     runs-on: ubuntu-latest
     timeout-minutes: 10

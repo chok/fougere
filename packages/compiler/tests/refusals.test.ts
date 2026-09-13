@@ -20,6 +20,20 @@ describe('the walk', () => {
     expect(found.get('OrderHandler.ship')).toEqual(['CONFLICT', 'GONE', 'PRECONDITION_FAILED']);
   }, 30_000);
 
+  /**
+   * A guard reached through an IMPORT, which is what `fougere check` asks a frond to do.
+   *
+   * The callee resolved to its import specifier, callable in no sense the walk admitted, so the
+   * edge was dropped: moving three guards out of `site/fronds/blog` cut what `publish` promises
+   * from five codes to two, with no change of behaviour — exactly what walking upward exists to
+   * prevent.
+   */
+  it('crosses a helper that lives in another module', async () => {
+    const found = await walked();
+
+    expect(found.get('OrderHandler.reserve')).toEqual(['UNPROCESSABLE_ENTITY']);
+  }, 30_000);
+
   it('says nothing of an operation that reaches no refusal', async () => {
     expect((await walked()).get('OrderHandler.quote')).toBeUndefined();
   }, 30_000);

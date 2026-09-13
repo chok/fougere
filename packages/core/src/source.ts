@@ -1,4 +1,5 @@
 import { Registry, Role, type SchemaView } from '@fougere/schema';
+import type { NameOf } from './names.js';
 import type { StorageFactory } from './storage/port.js';
 
 /** A promise the judge at the facade cannot keep, because it is about rows it never sees. */
@@ -47,7 +48,7 @@ export interface SourceView {
 /** What a config file can carry about a source — values, never a live driver. */
 export interface SourceConfig {
   /** The adapter that realizes it. Absent means the conventional one. */
-  source?: string;
+  source?: NameOf<'source'>;
   /** The entities whose rows live here. Absent on the default source: it holds the rest. */
   entities?: string[];
   [key: string]: unknown;

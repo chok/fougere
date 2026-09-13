@@ -2,6 +2,7 @@ import { Crud, FougereError, ErrorCode } from '@fougere/core';
 import Post from '../entities/Post.js';
 import PostRepository from '../repositories/PostRepository.js';
 import User from '@fronds/user/entities/User.js';
+import { requireUser, requireOwn, requireFreeSlug } from '../rules/post.js';
 
 /** What an author may write — the io axes already exclude the server-owned fields. */
 export class PostDraft extends Post.pick('slug', 'title', 'summary', 'body') {}
@@ -9,34 +10,6 @@ export class PostDraft extends Post.pick('slug', 'title', 'summary', 'body') {}
 export class BySlugInput extends Post.pick('slug') {}
 /** Public card — what the blog index shows, no body. */
 export class PostCard extends Post.pick('id', 'slug', 'title', 'summary', 'authorName', 'publishedAt') {}
-
-// Judges live at module level on purpose: only PUBLIC class methods become
-// operations, so a helper out here cannot become one by accident.
-
-function requireUser(user: User | undefined, operation: string): User {
-  if (!user) {
-    throw new FougereError({ code: ErrorCode.UNAUTHORIZED, message: 'Sign in to write', entity: 'post', operation });
-  }
-  return user;
-}
-
-async function requireOwn(posts: PostRepository, id: string, author: User, operation: string): Promise<Post> {
-  const post = await posts.findById(id);
-  if (!post) {
-    throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `Post '${id}' not found`, entity: 'post', operation });
-  }
-  if (post.authorId !== author.id) {
-    throw new FougereError({ code: ErrorCode.FORBIDDEN, message: 'Only the author can do that', entity: 'post', operation });
-  }
-  return post;
-}
-
-async function requireFreeSlug(posts: PostRepository, slug: string, ownId: string | undefined, operation: string): Promise<void> {
-  const clash = await posts.findBySlug(slug);
-  if (clash && clash.id !== ownId) {
-    throw new FougereError({ code: ErrorCode.CONFLICT, message: `Slug '${slug}' is already taken`, entity: 'post', operation });
-  }
-}
 
 export default class PostHandler extends Crud(Post, { list: PostCard }) {
   // A Crud handler that declares a constructor stops getting its storage injected, so it

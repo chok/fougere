@@ -3,6 +3,13 @@
   // against the workspace config, without Nuxt or `.nuxt/tsconfig.json`.
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
+    // A frond names its neighbours, it does not walk to them. `../../pricing/` states that
+    // the two share a directory tree, which is the one constraint this demo exists to deny.
+    "paths": {
+      "@fronds/cart/*": ["./cart/*"],
+      "@fronds/pricing/*": ["./pricing/*"],
+      "@fronds/catalog/*": ["./catalog/*"]
+    },
     "noEmit": true,
     "rootDir": ".",
     "declaration": false,

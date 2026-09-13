@@ -6,6 +6,7 @@ export { emitScan } from './scan/emit.js';
 export { emitStatement } from './scan/statement.js';
 // The third projection of one scan: the facades as TYPES, so a client can narrow a refusal.
 export { emitFacade, facadeModule, type Served } from './scan/facade.js';
+export { emitNames, type NamesOptions } from './scan/names.js';
 export { adaptersOf } from './scan/adapters.js';
 export { crossFrondImports } from './imports.js';
 export { handlerDeclarations } from './declarations.js';

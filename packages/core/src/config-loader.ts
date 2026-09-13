@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 import type { AuthConfig } from './boot/auth.js';
 import type { LogLevel } from './builtin/logger.js';
 import type { ConventionsInput } from './conventions.js';
+import type { NameOf, PortChoice } from './names.js';
 import { getModuleLoader } from './loader.js';
 
 // ── Types ────────────────────────────────────────
@@ -11,7 +12,7 @@ export interface FougereConfig {
   /** Database configuration — the DEFAULT source, the one an entity lands in unnamed. */
   db?: 'sqlite' | { dialect: 'sqlite'; path?: string } | false;
   /** The other places rows live — a name, an engine, and the entities it holds. */
-  sources?: Record<string, { dialect?: 'sqlite'; path?: string; entities: string[] }>;
+  sources?: Record<string, { dialect?: 'sqlite'; path?: string; entities: NameOf<'entity'>[] }>;
   /**
    * The names the scan reads instead of deriving them — the import scope, the fronds directory,
    * the seven convention directories.
@@ -19,10 +20,16 @@ export interface FougereConfig {
   conventions?: ConventionsInput;
   /** How much every logger says. */
   logLevel?: LogLevel;
-  /** Remote fronds — frondName → base URL. */
+  /**
+   * Remote fronds — frondName → base URL.
+   *
+   * The KEY is not narrowed to `NameOf<'frond'>`, and that is a choice: constraining it means
+   * making every key optional, which puts `| undefined` on the values and changes what six
+   * readers here already treat as present. The name is checked at boot instead.
+   */
   remotes?: Record<string, string>;
   /** What answers a port — a name, or the chain from the outside in. */
-  ports?: Record<string, string | readonly string[]>;
+  ports?: PortChoice;
   /** Auth declaration — picks a provider package and forwards options to it. */
   auth?: AuthConfig;
   /** Which protocol adapters this app serves. */

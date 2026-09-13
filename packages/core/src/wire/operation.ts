@@ -1,6 +1,7 @@
 import type { SchemaView } from '@fougere/schema';
 import type { BindingPlan } from './binding.js';
 import type { Signature, TypeRef, Param } from './signature.js';
+import type { ErrorCode } from './errors.js';
 
 /** The contract of one operation — everything the façade needs to serve a call. */
 export interface OperationContract {
@@ -24,7 +25,7 @@ export interface OperationContract {
    * placement — all already on the card, so listing them per op would write one fact twice.
    * `refusalsOf` puts the two halves together for whoever reads.
    */
-  errors?: string[];
+  errors?: ErrorCode[];
 }
 
 /** Read an op's cardinality off its parsed return type. */

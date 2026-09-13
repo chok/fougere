@@ -1,6 +1,6 @@
 import type { Facade } from '@fougere/core';
-import type PriceHandler from '../../pricing/handlers/PriceHandler.js';
-import type ProductHandler from '../../catalog/handlers/ProductHandler.js';
+import type PriceHandler from '@fronds/pricing/handlers/PriceHandler.js';
+import type ProductHandler from '@fronds/catalog/handlers/ProductHandler.js';
 
 /**
  * Two neighbours by TYPE, and not a word about where either runs.

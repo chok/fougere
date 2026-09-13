@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
+import { loadConfig } from '@fougere/core/node';
 import { dirname, join, relative, resolve } from 'node:path';
-import { emitFacade, emitScan } from '@fougere/compiler';
+import { emitFacade, emitNames, emitScan } from '@fougere/compiler';
 import ProjectScan from '../services/ProjectScan.js';
 import type Build from '../entities/Build.js';
 
@@ -14,15 +15,18 @@ import type Build from '../entities/Build.js';
 export const DEFAULT_OUT = '.fougere/scan.generated.ts';
 /** Types only, beside the module — what lets a client narrow a refusal it might meet. */
 export const FACADE_OUT = 'facade.generated.ts';
+/** Types only — what a config may NAME, so a string cannot designate a class that is not there. */
+export const NAMES_OUT = 'names.generated.d.ts';
 
 export interface BuildReport {
   /** Absolute, so a caller can print it or read it back. */
   out: string;
   /** Relative to the project root — what a human recognizes. */
   path: string;
-  /** Where the facade types went, beside the module. */
   /** Where the facades were written — one export per address, the page's facade in. */
   facade: string;
+  /** Where the names went — the unions a config is judged against. */
+  names: string;
   fronds: string[];
   entities: number;
   handlers: number;
@@ -63,10 +67,17 @@ export default class BuildHandler {
     const facade = join(dirname(out), FACADE_OUT);
     await writeFile(facade, emitFacade(scan, { outFile: facade }));
 
+    // And a fourth, for the only place a name is still written as a string: a config file. The
+    // sources are the config's own keys, which no scan can find.
+    const config = await loadConfig(scan.root).catch(() => ({}) as Awaited<ReturnType<typeof loadConfig>>);
+    const names = join(dirname(out), NAMES_OUT);
+    await writeFile(names, emitNames(scan, { sources: Object.keys(config.sources ?? {}) }));
+
     return {
       out,
       path: relative(scan.root, out),
       facade: relative(scan.root, facade),
+      names: relative(scan.root, names),
       fronds: scan.fronds.map((frond) => frond.name),
       entities: scan.fronds.reduce((total, frond) => total + frond.entities.length, 0),
       handlers: scan.fronds.reduce((total, frond) => total + frond.handlers.length, 0),
