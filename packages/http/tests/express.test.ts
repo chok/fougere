@@ -6,7 +6,7 @@
  */
 import { describe, expect, it, vi } from 'vitest';
 import { createExpressRouter } from '../src/express.js';
-import type { RequestContext } from '../src/router.js';
+import type { RequestContext } from '../src/router/RequestContext.js';
 
 /** A fake Express app that hands back whatever handler was registered. */
 function fakeApp() {

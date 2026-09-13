@@ -1,8 +1,13 @@
 /**
  * Fastify adapter — bridges a Fastify server to the HttpRouter interface.
  */
-import { chain } from './router.js';
-import type { HttpRouter, HttpMethod, RequestContext, ResponseResult, Middleware, Handler } from './router.js';
+import { chain } from './router/HttpRouter.js';
+import type { Handler } from './router/Handler.js';
+import type { HttpMethod } from './router/HttpMethod.js';
+import type { HttpRouter } from './router/HttpRouter.js';
+import type { Middleware } from './router/Middleware.js';
+import type { RequestContext } from './router/RequestContext.js';
+import type { ResponseResult } from './router/ResponseResult.js';
 
 interface FastifyLike {
   addHook(hook: string, handler: Function): void;

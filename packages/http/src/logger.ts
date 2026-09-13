@@ -1,7 +1,7 @@
 /**
  * HTTP request logger middleware.
  */
-import type { Middleware } from './router.js';
+import type { Middleware } from './router/Middleware.js';
 
 interface LoggerLike {
   info(msg: string, ...args: unknown[]): void;

@@ -1,5 +1,11 @@
 /** Express adapter — bridges an Express app to the HttpRouter interface. */
-import { MalformedJsonError, chain, type HttpRouter, type HttpMethod, type RequestContext, type ResponseResult, type Middleware, type Handler } from './router.js';
+import { type Handler } from './router/Handler.js';
+import { type HttpMethod } from './router/HttpMethod.js';
+import { chain, type HttpRouter } from './router/HttpRouter.js';
+import { MalformedJsonError } from './router/MalformedJsonError.js';
+import { type Middleware } from './router/Middleware.js';
+import { type RequestContext } from './router/RequestContext.js';
+import { type ResponseResult } from './router/ResponseResult.js';
 
 interface ExpressLike {
   use(...handlers: Function[]): void;

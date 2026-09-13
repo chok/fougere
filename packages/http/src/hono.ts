@@ -1,11 +1,14 @@
 /**
  * Hono adapter — bridges a Hono app to the HttpRouter interface.
  */
-import {
-  MalformedJsonError, PASSTHROUGH,
-  type HttpRouter, type HttpMethod, type RequestContext, type ResponseResult,
-  type Middleware, type Handler,
-} from './router.js';
+import { type Handler } from './router/Handler.js';
+import { type HttpMethod } from './router/HttpMethod.js';
+import { type HttpRouter } from './router/HttpRouter.js';
+import { MalformedJsonError } from './router/MalformedJsonError.js';
+import { type Middleware } from './router/Middleware.js';
+import { PASSTHROUGH } from './router/Next.js';
+import { type RequestContext } from './router/RequestContext.js';
+import { type ResponseResult } from './router/ResponseResult.js';
 
 interface HonoLike {
   use(path: string, ...handlers: Function[]): void;
