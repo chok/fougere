@@ -1,3 +1,4 @@
+import '@fougere/adapter-sql/sqlite';
 import type { App } from '@fougere/core';
 import { Fronds, type FrondDescriptor } from '@fougere/core';
 import { lowerFirst } from '@fougere/core/contract';
