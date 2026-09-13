@@ -1615,9 +1615,24 @@ importers:
       '@fougere/defaults':
         specifier: workspace:*
         version: link:../defaults
+      '@fougere/next':
+        specifier: workspace:*
+        version: link:../app/next
+      '@fougere/nuxt':
+        specifier: workspace:*
+        version: link:../app/nuxt
+      '@fougere/oclif':
+        specifier: workspace:*
+        version: link:../app/oclif
+      '@fougere/react':
+        specifier: workspace:*
+        version: link:../app/react
       '@fougere/schema':
         specifier: workspace:*
         version: link:../schema
+      '@fougere/svelte':
+        specifier: workspace:*
+        version: link:../app/svelte
       '@fougere/testing':
         specifier: workspace:*
         version: link:../testing

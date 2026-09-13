@@ -30,6 +30,52 @@ function monorepoPackages(): string | undefined {
  */
 const TEMPLATES = fileURLToPath(new URL('../../../templates/', import.meta.url));
 
+/**
+ * Where a HOST keeps its starter, or nothing when it ships none.
+ *
+ * The package that owns the wiring owns the files: `@fougere/nuxt` knows what a
+ * `nuxt.config.ts` must say, and a copy of it here would be that knowledge written twice —
+ * which is how `templates/apps/` came to hold one host while six were published.
+ *
+ * Resolved from the main entry and walked up to the manifest, because a host does not export
+ * its own `package.json` and has no reason to.
+ *
+ * `import.meta.resolve` and not `createRequire().resolve`: a host's `exports` states only the
+ * `import` condition, so the CJS resolver answers `ERR_PACKAGE_PATH_NOT_EXPORTED` for every
+ * one of them.
+ */
+function starterOf(pkg: string): string | undefined {
+  let dir: string;
+  try {
+    dir = dirname(fileURLToPath(import.meta.resolve(pkg)));
+  } catch { return undefined; }
+
+  while (!existsSync(join(dir, 'package.json')) && dir !== dirname(dir)) dir = dirname(dir);
+  const template = join(dir, 'template');
+
+  return existsSync(template) ? template : undefined;
+}
+
+/**
+ * The hosts this CLI can scaffold: its own `@fougere/*` dependencies that ship a starter.
+ *
+ * The dependency list IS the registry — nothing to declare, and a host added to the family
+ * appears here the day the CLI depends on it.
+ */
+function hosts(): Map<string, string> {
+  const manifest = JSON.parse(readFileSync(fileURLToPath(new URL('../../../package.json', import.meta.url)), 'utf8')) as
+    { dependencies?: Record<string, string> };
+  const found = new Map<string, string>();
+
+  for (const pkg of Object.keys(manifest.dependencies ?? {})) {
+    if (!pkg.startsWith('@fougere/')) continue;
+    const starter = starterOf(pkg);
+    if (starter) found.set(pkg.slice('@fougere/'.length), starter);
+  }
+
+  return found;
+}
+
 /** The version that scaffolds is the version the templates were written for. */
 const scaffoldVersion = (): string =>
   (JSON.parse(readFileSync(fileURLToPath(new URL('../../../package.json', import.meta.url)), 'utf8')) as
@@ -102,19 +148,31 @@ export default class ProjectWriter {
     return { path: dest };
   }
 
-  /** Add an app (consumer) under apps/<name>. */
+  /** Add an app (consumer) under apps/<name>, from the host package that owns its wiring. */
   addApp(wsDir: string, template: string, name: string): { path: string } {
     const dest = join(wsDir, 'apps', name);
-    cpSync(join(TEMPLATES, 'apps', template), dest, { recursive: true });
+    const starter = hosts().get(template);
+    if (!starter) throw new Error(`No host ships a starter for '${template}'. Served: ${[...hosts().keys()].join(', ')}.`);
+
+    cpSync(starter, dest, { recursive: true });
     restoreGitignore(dest);
     setPackageName(dest, name);
     return { path: dest };
   }
 
-  /** Available templates of a kind ('fronds' | 'apps') — the directory is the registry. */
+  /**
+   * What can be scaffolded, of a kind.
+   *
+   * A FROND comes from this package: it is Fougere's own vocabulary, entities and handlers,
+   * and no other package owns it. An APP comes from its HOST — the registry is the hosts this
+   * CLI depends on, so `fougere new` offers what is published rather than what was copied here.
+   */
   listTemplates(kind: 'fronds' | 'apps'): string[] {
+    if (kind === 'apps') return [...hosts().keys()].sort();
+
     const dir = join(TEMPLATES, kind);
     if (!existsSync(dir)) return [];
+
     return readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name);
   }
 

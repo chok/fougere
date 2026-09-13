@@ -67,6 +67,32 @@ describe('workspace project scaffold', () => {
  * said 0.7 — measured. And an install that resolves differently on two machines was never
  * an install anyone could reproduce.
  */
+/**
+ * Which apps `fougere new` offers, and where their files come from.
+ *
+ * The CLI used to carry one starter under `templates/apps/` while six hosts were published:
+ * the wiring of a Nuxt app was written both in `@fougere/nuxt` and beside it. The registry is
+ * now the CLI's own `@fougere/*` dependencies that ship a `template/`, so a host appears the
+ * day it is depended on and never needs to be listed.
+ */
+describe('the apps a host can scaffold', () => {
+  it('offers every host that ships a starter, and only those', () => {
+    const offered = new ProjectWriter().listTemplates('apps');
+
+    expect(offered).toEqual(['next', 'nuxt', 'oclif', 'react', 'svelte']);
+  });
+
+  /** `@fougere/vite` is what React and Svelte are BUILT with, not an app to scaffold. */
+  it('leaves out a package that ships no starter', () => {
+    expect(new ProjectWriter().listTemplates('apps')).not.toContain('vite');
+  });
+
+  it('names what it serves when asked for a host that ships none', () => {
+    expect(() => new ProjectWriter().addApp('/tmp/nowhere', 'vite', 'web'))
+      .toThrow(/No host ships a starter for 'vite'/);
+  });
+});
+
 describe('the versions a fresh project depends on', () => {
   it('pins every @fougere/* to the version that scaffolded it', () => {
     const parent = mkdtempSync(join(tmpdir(), 'fougere-pin-'));

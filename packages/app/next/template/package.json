@@ -1,0 +1,22 @@
+{
+  "name": "fougere-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build"
+  },
+  "dependencies": {
+    "@fougere/core": "latest",
+    "@fougere/next": "latest",
+    "@fougere/react": "latest",
+    "@fougere/schema": "latest",
+    "@fougere/defaults": "latest",
+    "@fougere/container": "latest",
+    "better-sqlite3": "^13.0.3",
+    "kysely": "^0.28.17",
+    "next": "^15.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}

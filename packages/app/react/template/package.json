@@ -1,0 +1,25 @@
+{
+  "name": "fougere-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@fougere/core": "latest",
+    "@fougere/react": "latest",
+    "@fougere/schema": "latest",
+    "@fougere/defaults": "latest",
+    "@fougere/container": "latest",
+    "better-sqlite3": "^13.0.3",
+    "kysely": "^0.28.17",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@fougere/vite": "latest",
+    "@vitejs/plugin-react": "^5.0.0",
+    "vite": "^8.0.0"
+  }
+}
