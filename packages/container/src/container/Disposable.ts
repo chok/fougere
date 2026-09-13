@@ -1,4 +1,3 @@
-/** Anything holding a resource can say so, and disposing the container says it back. */
 export interface Disposable {
   dispose(): void | Promise<void>;
 }
