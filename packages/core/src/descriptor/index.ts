@@ -13,3 +13,6 @@ export { storageKeyOf } from '../storage/port.js';
 export { getPresenterFields } from '../prefab/presenter.js';
 export { targetOf, viewsOf, outputOf } from '../prefab/prefab.js';
 export { ownedBy, repositoryKeyOf } from '../prefab/repository.js';
+
+// The surfaces a handler answers on — a directory names one, and so does `frond.config.ts`.
+export { servedSurfaces } from './surface.js';

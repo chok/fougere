@@ -54,6 +54,8 @@ export { declaredTopologyOf } from './boot/declared.js';
 // Both halves of what a call can refuse, put together where they are READ — the framework's
 // follows from `kind` and `input`, so only the frond's travels.
 export { refusalsOf, type Refusable } from './wire/refusals.js';
+// The doors as TYPES — empty here, filled by the `.d.ts` the scan writes beside the app.
+export type { FougereDoors, FacadeName, Addresses, AnyHandler, HandlerOf, Refused, FougereHandlers, Answer, Rows } from './wire/doors.js';
 export type { Facade } from './wire/call.js';
 export type {
   FrondCall,
