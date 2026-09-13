@@ -6,7 +6,18 @@
     "jsx": "preserve",
     "strict": true,
     "noEmit": true,
-    "types": ["node", "react"]
+    "types": [
+      "node",
+      "react"
+    ],
+    "paths": {
+      "@fronds/facade": [
+        "./.fougere/facade.generated.ts"
+      ]
+    }
   },
-  "include": ["app", "next-env.d.ts"]
+  "include": [
+    "app",
+    "next-env.d.ts"
+  ]
 }

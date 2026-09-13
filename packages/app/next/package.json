@@ -55,9 +55,10 @@
   },
   "dependencies": {
     "@fougere/app": "workspace:*",
+    "@fougere/compiler": "workspace:*",
     "@fougere/core": "workspace:*",
-    "terser-webpack-plugin": "^5.3.14",
-    "@fougere/compiler": "workspace:*"
+    "jiti": "^2.7.0",
+    "terser-webpack-plugin": "^5.3.14"
   },
   "devDependencies": {
     "next": "^15.5.7",

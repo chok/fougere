@@ -6,20 +6,29 @@
  * table in the other Worker and validates a write there. Nothing is serialized to get it
  * here; it is the declaration, read twice.
  *
- * `useQuery(product, 'list')` names the facade that answers, never an address on a
+ * `useQuery(catalog, 'list')` names the facade that answers, never an address on a
  * network. Which process is behind it is `remotes:` in fougere.config.ts, and nothing on
  * this page knows.
  */
 import Product from '../../../fronds/catalog/entities/Product';
-import { product } from '@fronds/facade';
 
-const { items: products, loading, error, refresh } = useQuery(product, 'list');
+/**
+ * The address, written — not imported from `@fronds/facade`.
+ *
+ * This app hosts NOTHING: the catalogue is another Worker, so the scan here finds no frond and
+ * generates no facade to import. `facade(address)` is the form for exactly that, and what it
+ * costs is stated rather than hidden — the operations are unchecked and `error.code` is every
+ * code, which is what a client had before any of this existed.
+ */
+const catalog = facade('product');
+
+const { items: products, loading, error, refresh } = useQuery(catalog, 'list');
 
 // The validator is the entity's, so the form refuses here exactly as the Worker would.
 const Draft = Product.omit('id');
 const form = reactive({ name: '', sku: '', cents: 0, listed: true });
 const errors = ref<{ path: string; message: string }[]>([]);
-const create = useCommand(product, 'create');
+const create = useCommand(catalog, 'create');
 
 async function submit() {
   const validated = Draft.validate(form);

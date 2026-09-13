@@ -24,6 +24,9 @@
     "paths": {
       "@fronds/blog/*": [
         "./fronds/blog/*"
+      ],
+      "@fronds/facade": [
+        "./.fougere/facade.generated.ts"
       ]
     },
     "allowJs": true
