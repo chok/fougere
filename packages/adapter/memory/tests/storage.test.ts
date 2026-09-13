@@ -132,7 +132,7 @@ describe('output(schema)', () => {
  * The comparisons SQL compiles, answered in memory.
  *
  * Two realizations of one contract: what a criterion may say is the port's, and both
- * doors have to say it the same way — a filter that narrows in SQL and returns the table
+ * facades have to say it the same way — a filter that narrows in SQL and returns the table
  * in memory is worse than one that works nowhere.
  */
 describe('a criterion compares, here as it does in SQL', () => {

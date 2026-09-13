@@ -2,7 +2,7 @@ import { entity, primary, text, created, oneOf, date, readOnly, optional } from 
 
 /**
  * The same declaration `demos/nuxt-blog` uses, minus the author relation this demo
- * has no need for. Nothing in it names a host: `readOnly` closes the inbound door
+ * has no need for. Nothing in it names a host: `readOnly` closes the inbound facade
  * for every surface at once, and `oneOf(...)` becomes a `CHECK` in the table, an
  * enum in GraphQL, a `<select>` in the form contract and a refusal at the façade.
  */

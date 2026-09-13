@@ -12,7 +12,7 @@ import {
 } from '@nuxt/kit';
 import type { Nuxt } from '@nuxt/schema';
 import { orderSeeds } from '@fougere/core';
-import { scanProject, emitStatement, emitDoors, frondAliases, watchPathsOf } from '@fougere/compiler';
+import { scanProject, emitStatement, emitFacade, frondAliases, watchPathsOf } from '@fougere/compiler';
 import { frondPackage, resolveConventions, type Conventions } from '@fougere/core';
 import { setModuleLoader, loadCascadedConfig } from '@fougere/core/node';
 import { declaresStorage } from '@fougere/defaults';
@@ -312,7 +312,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
     addTemplate({
       filename: 'fougere-facade.ts',
       write: true,
-      getContents: () => emitDoors(scan, { outFile: facadeFile }),
+      getContents: () => emitFacade(scan, { outFile: facadeFile }),
     });
     nuxt.options.alias['@fronds/facade'] = facadeFile;
 

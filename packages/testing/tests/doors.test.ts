@@ -8,5 +8,5 @@ afterAll(() => app.dispose());
 
 // Includes the same CRUD call and the same refusal through local, RPC, REST and GraphQL.
 checkDoors(app, Article, {
-  given: { title: 'One contract', body: 'Across every door', status: 'draft', views: 1 },
+  given: { title: 'One contract', body: 'Across every facade', status: 'draft', views: 1 },
 });

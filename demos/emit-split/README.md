@@ -50,7 +50,7 @@ only says it is not hosted here.
 ## What this demo does NOT show
 
 - **Durability.** `Emit<T>` is a resolver, not a channel: it answers *who*, then hands over
-  to the door that already exists. Kill terminal 1 and the fact is lost — the dispatch logs
+  to the facade that already exists. Kill terminal 1 and the fact is lost — the dispatch logs
   the failure and the publication succeeds anyway. At-least-once means putting a real
   channel underneath, in the transport.
 - **Discovery in the other direction.** Here the emitter declares where the listener runs.

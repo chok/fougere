@@ -2,7 +2,7 @@
  * What the place rows live in keeps, and what it only appears to.
  *
  * `unique()` reads as one promise wherever it is declared, and it is not one. The judge at the
- * door refuses a duplicate it can SEE — a row already stored. Two writes arriving together see
+ * facade refuses a duplicate it can SEE — a row already stored. Two writes arriving together see
  * the same absence, and only the place they land can refuse the second. SQL does, a Map does
  * not, and until now nothing said so.
  */

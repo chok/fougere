@@ -23,7 +23,7 @@ const ops = (...names: string[]): CardOp[] => names.map((name) => ({
 const card: IdentityCard = {
   fronds: [{
     name: 'blog',
-    doors: [
+    facades: [
       {
         name: 'post',
         schema: Card.fromSchema(Post, 'post').descriptor,
@@ -75,7 +75,7 @@ describe('resourcesOf', () => {
     for (const resource of resourcesOf(card)) expect(resource.facets).toEqual({});
   });
 
-  it('does not turn a schema-less door into fake furniture', () => {
+  it('does not turn a schema-less facade into fake furniture', () => {
     expect(resourcesOf(card).map((resource) => resource.name)).not.toContain('health');
   });
 });
@@ -133,7 +133,7 @@ describe('additive extensions', () => {
 
   it('cannot remove a resource or an operation — a surface says that, not a flag', () => {
     // Both used to carry `hidden`, which hid in the browser what the façade still
-    // served. What a door serves to one audience is what a named surface states, and
+    // served. What a facade serves to one audience is what a named surface states, and
     // the card then answers restricted — so there is nothing left for a flag to do,
     // and nothing that reads as a permission while enforcing none.
     const extension = { resource: 'author', fields: {} } as AdminExtension;
@@ -145,7 +145,7 @@ describe('additive extensions', () => {
   });
 });
 
-describe('what a door serves beyond CRUD', () => {
+describe('what a facade serves beyond CRUD', () => {
   it('separates the five verbs from the business operations', () => {
     // The only thing this panel has that a generic CRUD admin has not — and until
     // `actionsOf` existed, `AdminResource.operations` fed a stats widget and nothing
@@ -154,7 +154,7 @@ describe('what a door serves beyond CRUD', () => {
     expect(actionsOf(post.operations).map((op) => op.name)).toEqual(['publish']);
   });
 
-  it('a door serving only CRUD has no actions, and says so with an empty list', () => {
+  it('a facade serving only CRUD has no actions, and says so with an empty list', () => {
     const author = resourcesOf(card).find((r) => r.name === 'author')!;
     expect(actionsOf(author.operations)).toEqual([]);
   });

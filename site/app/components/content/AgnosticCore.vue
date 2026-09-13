@@ -9,7 +9,7 @@ const { t } = useI18n();
 const families = computed(() => [
   { title: t('diagram.core.host'), lines: ['Nuxt · Next · SvelteKit', 'TanStack · React Router · Express · none'], x: 24, y: 24 },
   { title: t('diagram.core.storage'), lines: ['SQLite · Postgres', 'MySQL · SQL Server'], x: 646, y: 24 },
-  { title: t('diagram.core.door'), lines: ['in memory · JSON-RPC', 'REST · GraphQL'], x: 24, y: 284 },
+  { title: t('diagram.core.facade'), lines: ['in memory · JSON-RPC', 'REST · GraphQL'], x: 24, y: 284 },
   { title: t('diagram.core.place'), lines: ['same process · another process', 'another repo · another language'], x: 646, y: 284, note: t('diagram.core.gradientNote') },
 ]);
 

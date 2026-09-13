@@ -7,7 +7,7 @@ export interface AppQuery {
   query: string;
   variables?: Record<string, unknown>;
   operationName?: string;
-  /** The audience, when the door was mounted per surface. */
+  /** The audience, when the facade was mounted per surface. */
   surface?: string;
   /** What the server resolved about the caller — never what the wire claimed. */
   state?: Record<string, unknown>;

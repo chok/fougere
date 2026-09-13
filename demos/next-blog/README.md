@@ -14,7 +14,7 @@ pnpm -C demos/next-blog dev     # :3100
 `@fougere/schema` and `@fougere/core`. It is the same shape `demos/nuxt-blog`
 carries, minus the author relation this demo has no use for.
 
-Three doors answer from that one declaration:
+Three facades answer from that one declaration:
 
 ```bash
 curl localhost:3100/api/blog/posts                      # REST projection
@@ -41,7 +41,7 @@ app/api/[...fougere]/route.ts               export { GET, POST, PUT, PATCH, DELE
 plus `serverExternalPackages` in `next.config.mjs`, because the scan reads frond
 sources off disk at boot and they must not be bundled. Nothing else in an app moves:
 pages, layouts, your own `app/api/*` handlers and an existing auth setup are
-untouched — Next resolves a static route before a catch-all, so adding the REST door
+untouched — Next resolves a static route before a catch-all, so adding the REST facade
 takes nothing away.
 
 ## The validator, from the browser
@@ -85,7 +85,7 @@ Two things measured on the built output:
 .next/static/chunks/*.js    class Post extends …    ← the browser keeps the name
 ```
 
-and the production server boots **once** for all four doors — the repeated boots
+and the production server boots **once** for all four facades — the repeated boots
 visible in `next dev` are a dev-mode artifact of per-route compilation.
 
 `.mjs` rather than `.ts`: Next loads a TypeScript config through a CommonJS require,

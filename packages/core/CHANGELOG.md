@@ -50,23 +50,23 @@
 
 - A value is admitted and handed back in the domain's form, once.
 
-  `validate`, then `null`, then `Boundary.decode` was written three times — the client door
-  and both of the storage guard's. `FieldValueValidator.parse` is the door for the sequence,
+  `validate`, then `null`, then `Boundary.decode` was written three times — the client facade
+  and both of the storage guard's. `FieldValueValidator.parse` is the facade for the sequence,
   and the only judgement it carries is that `null` never reaches a codec.
 
-  Two doors decode, which is the policy and not an oversight: the client one on what arrives,
+  Two facades decode, which is the policy and not an oversight: the client one on what arrives,
   the guard on what a handler writes, because both hand the storage a parsed value. That asks
   the decoder for idempotence, which the shipped one happens to give on its first line and
   nothing required — `Decoder` says so now, and a test holds it.
 
-  And a derived gesture writes through the store rather than the front door: `upsertAll`
+  And a derived gesture writes through the store rather than the front facade: `upsertAll`
   reached `upsert` on `this`, so a caller that wrapped the port was traversed twice and a
   non-idempotent codec halved the row it stored.
 
 - Four rules that were written twice, and the families that had no home.
 
   The surfaces a handler answers on — its own, or the default and every surface naming it
-  without a door of its own — was written in the effective model and again inline in the boot
+  without a facade of its own — was written in the effective model and again inline in the boot
   that registers the routes. They agreed on the rule and not on the name of the absence.
   `servedSurfaces` is where it lives, and `undefined` is the default surface as every key
   already spelled it.
@@ -226,8 +226,8 @@ constraint failed`, both with a green boot.
   kind of an operation whose name leads with no known verb, and for a method inherited from
   an installed base class. Renaming a method to please the scan was the workaround; the
   right word can stay now.
-- f9b5837: The door check asks for an operation someone wrote. It asked `post.list` — a prefab op,
-  whose contract is a static that survives any build — and called the door fine while every
+- f9b5837: The facade check asks for an operation someone wrote. It asked `post.list` — a prefab op,
+  whose contract is a static that survives any build — and called the facade fine while every
   hand-written operation of a fresh project went unserved. `post.listPublished` is read
   from source at scan time and carried by nothing at runtime, so it answers only when the
   statement the host boots from carried it across.
@@ -253,11 +253,11 @@ constraint failed`, both with a green boot.
   to `debug`; and the Nuxt module says so when Nitro's console would drop that level.
 - 4287ac9: A filter is judged the way a write is. `where` was the one entrance to the read port with
   no judge at all — a field the entity does not declare passed, and so did a value the field
-  would refuse on the way in — while the admin door copies a browser's filter into it
-  verbatim. A criterion may still name a set, which is the one thing the write door refuses:
+  would refuse on the way in — while the admin facade copies a browser's filter into it
+  verbatim. A criterion may still name a set, which is the one thing the write facade refuses:
   an array is judged member by member, since that is what `IN` binds.
 
-  And a filter on a field the door does not hand back is SAID, not refused: `output(schema)`
+  And a filter on a field the facade does not hand back is SAID, not refused: `output(schema)`
   narrows what is returned and has never narrowed what is asked, so refusing it today would
   break a GraphQL relation batch on the way to closing a hole. Measured across the
   repository: zero warnings, which is what a refusal will need before it can be one.
@@ -398,7 +398,7 @@ constraint failed`, both with a green boot.
   - `@fronds/<name>` resolves in the scan: two entry points were loading a neighbour's sources
     without the alias map.
   - A `list` op reaches GraphQL with its pagination arguments, and `required` no longer demands
-    what the door refuses.
+    what the facade refuses.
   - `count` applies its own filter; the identity card reports an operation's overridden kind.
   - `presenterFor` is the dual `facadeFor` already had.
   - An operation's doc sentence now reaches both REST and GraphQL, instead of being dropped in
@@ -619,7 +619,7 @@ constraint failed`, both with a green boot.
   - `@fronds/<name>` resolves in the scan: two entry points were loading a neighbour's sources
     without the alias map.
   - A `list` op reaches GraphQL with its pagination arguments, and `required` no longer demands
-    what the door refuses.
+    what the facade refuses.
   - `count` applies its own filter; the identity card reports an operation's overridden kind.
   - `presenterFor` is the dual `facadeFor` already had.
   - An operation's doc sentence now reaches both REST and GraphQL, instead of being dropped in

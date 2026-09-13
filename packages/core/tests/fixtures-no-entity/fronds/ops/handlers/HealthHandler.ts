@@ -3,7 +3,7 @@
  *
  * There is no `Health` entity and there should not be one: nothing is stored, nothing
  * has a shape worth declaring. The frond scan found this class, and the façade loop
- * (which walked entities) then never built it — no door, no error, no log.
+ * (which walked entities) then never built it — no facade, no error, no log.
  */
 export default class HealthHandler {
   /** Whether this process can answer. */

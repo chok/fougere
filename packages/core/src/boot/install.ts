@@ -39,7 +39,7 @@ export interface Assembly {
   routeRegistry: RouteRegistry;
   emissions: Emissions;
   dispatcher: Dispatcher;
-  /** A door under a named surface answers only what that surface serves. */
+  /** A facade under a named surface answers only what that surface serves. */
   localDispatcher: Dispatcher;
   /** Filled per façade key, read back by `operationsFor` and the identity card. */
   effectiveByKey: Map<string, EffectiveOperationsMap>;
@@ -69,7 +69,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   // register nothing locally — resolve() falls through to the remote façade.
   if (options.remotes && frond.name in options.remotes) {
     log.child(frond.name).info('declared remote — not hosted locally');
-    // Its doors answer elsewhere, but what they LISTEN to was read here.
+    // Its facades answer elsewhere, but what they LISTEN to was read here.
     for (const handler of frond.handlers) {
       const key = facadeKeyOf(handler.address, handler.surface);
       const operations = operationModel.forHandler(handler);
@@ -99,7 +99,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   if (frond.reads?.length && options.sourcesFactory) {
     // Resolved across the WHOLE app, not this frond's own entities: a cross-source
     // query joins entities from different fronds by definition — `Progress` here,
-    // `Book` next door — so restricting the list to its own would make it useless.
+    // `Book` next facade — so restricting the list to its own would make it useless.
     // Naming one IS the authorization; that is what the declaration is for.
     const named = frond.reads
       .map((name) => entityByName.get(lowerFirst(name)))
@@ -182,7 +182,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
 
       // The declared chain first, then the guard OUTSIDE it: the guard hands on the value
       // it parsed, so a wrapper reads what the entity says a row is rather than what
-      // arrived. Same order the client door has held since `StorageGuard` existed.
+      // arrived. Same order the client facade has held since `StorageGuard` existed.
       const linked = wrapping('Storage', seams.get('Storage') ?? [], scoped, (dep) => scope.resolve(dep));
       // Storage is a way out like the client surface — see `StorageGuard`.
       const guarded = new StorageGuard(entity.entityClass.getFields(), entity.name).guard(linked);
@@ -194,7 +194,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
       // existed to make `repo.storage` true in both, back when `.storage` was the way in.
       //
       // Not registered for an OWNED entity: an aggregate's members are reached through it
-      // and nowhere else, and the default would be a second door under a name a handler
+      // and nowhere else, and the default would be a second facade under a name a handler
       // can spell. Every member is skipped, not just the one the key is named after —
       // that asymmetry was the whole hole.
       const repoKey = repositoryKeyOf(entity.name);
@@ -278,7 +278,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   const surfaceHandlers = frond.handlers.filter((h) => h.surface);
   const defaultHandlerMap = new Map(defaultHandlers.map((h) => [h.address, h]));
 
-  /** Build the door of a handler and register it under the audience it serves. */
+  /** Build the facade of a handler and register it under the audience it serves. */
   const buildFacade = (
     entity: EntityEntry | undefined,
     handler: HandlerEntry,
@@ -304,7 +304,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
     });
     // Emissions use the same contracts and execution path as direct calls.
     emissions.note(facade.contracts, facadeKey);
-    // The terms alongside the door, under the same audience — a surface that serves
+    // The terms alongside the facade, under the same audience — a surface that serves
     // fewer ops describes fewer ops.
     container.registerValue(contractsKeyOf(handler.address, handler.surface), facade.contracts);
     effectiveByKey.set(facadeKey, facade.effectiveOperations);
@@ -381,7 +381,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   //
   // Pointing at nothing is legal HERE TOO. This loop used to `continue` when no entity
   // carried the handler's name, so `handlers/public/SearchHandler.ts` with no `Search`
-  // entity got no door at all and no line saying why — while the very same handler at
+  // entity got no facade at all and no line saying why — while the very same handler at
   // the default surface is built and logged. One rule, both surfaces.
   for (const handler of surfaceHandlers) {
     const entity = frond.entities.find((e) => e.name === handler.address);
@@ -390,14 +390,14 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
     // Register scoped storage if output override differs from entity — under the REPOSITORY
     // key, which is what a Crud handler asks for, and under the port's own for a holder
     // that legitimately names it. Registering only the latter left a named surface with
-    // no door at all once the façade stopped spelling the storage.
+    // no facade at all once the façade stopped spelling the storage.
     if (entity && options.storageFactory) {
       const baseStorage = options.storageFactory(entity.entityClass, entity.name);
       const outputSchema = handler.outputOverride ?? (handler.ctor as any).__output;
       const scoped = outputSchema && outputSchema !== entity.entityClass
         ? baseStorage.output(outputSchema)
         : baseStorage;
-      // The view is handed over so a filter on a field this door hides is SAID. The
+      // The view is handed over so a filter on a field this facade hides is SAID. The
       // guard holds no logger — a warning is the boot's to voice, as a seed's report is.
       const guarded = new StorageGuard(entity.entityClass.getFields(), entity.name, {
         ...(outputSchema && outputSchema !== entity.entityClass

@@ -27,7 +27,7 @@ same file runs against local Fronds — one span instead of three, and nothing e
 
 The whole wiring is `src/observe.ts`, the same eleven lines in each process, differing only
 by a service name. `shipping` carries **no entity at all**: operations about no stored row
-are ordinary, and its identity card publishes a door with no schema.
+are ordinary, and its identity card publishes a facade with no schema.
 
 ## What comes out
 

@@ -134,7 +134,7 @@ constraint failed`, both with a green boot.
 
 ### Patch Changes
 
-- A descriptor is converted at the door, and a schema circulates.
+- A descriptor is converted at the facade, and a schema circulates.
 
   `SchemaOrCard` had the four adapters announce they took either form, and `toTable`
   rebuilt the schema twice for the one nobody passed them — `boot/remote.ts` already
@@ -260,7 +260,7 @@ constraint failed`, both with a green boot.
   - `@fronds/<name>` resolves in the scan: two entry points were loading a neighbour's sources
     without the alias map.
   - A `list` op reaches GraphQL with its pagination arguments, and `required` no longer demands
-    what the door refuses.
+    what the facade refuses.
   - `count` applies its own filter; the identity card reports an operation's overridden kind.
   - `presenterFor` is the dual `facadeFor` already had.
   - An operation's doc sentence now reaches both REST and GraphQL, instead of being dropped in
@@ -468,7 +468,7 @@ constraint failed`, both with a green boot.
   - `@fronds/<name>` resolves in the scan: two entry points were loading a neighbour's sources
     without the alias map.
   - A `list` op reaches GraphQL with its pagination arguments, and `required` no longer demands
-    what the door refuses.
+    what the facade refuses.
   - `count` applies its own filter; the identity card reports an operation's overridden kind.
   - `presenterFor` is the dual `facadeFor` already had.
   - An operation's doc sentence now reaches both REST and GraphQL, instead of being dropped in

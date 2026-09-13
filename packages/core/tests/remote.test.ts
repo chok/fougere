@@ -67,7 +67,7 @@ describe('a named surface across a process', () => {
     const host = await bootHost();
     const consumer = await bootConsumer(host);
 
-    // A door registers in a loop over entities, so it asks twice as readily as once.
+    // A facade registers in a loop over entities, so it asks twice as readily as once.
     expect(consumer.facadeFor('product', 'admin')).toBeUndefined();
     expect(consumer.facadeFor('product', 'admin')).toBeUndefined();
 
@@ -115,7 +115,7 @@ describe('remote façade (repli)', () => {
   });
 
   /**
-   * The door the browser actually knocks on: `createAppRunner`, not the façade object.
+   * The facade the browser actually knocks on: `createAppRunner`, not the façade object.
    * Every other test here calls `facade.list()` directly, which only exercises the
    * proxy's `get` trap — so a stand-in that answered `get` but denied `hasOwn` passed
    * them all while every real split call came back `Unknown operation`. The runner
@@ -248,7 +248,7 @@ describe('remote façade (repli)', () => {
     // `card.fronds is not iterable` was what this produced: a TypeError naming neither
     // the remote nor its address, on the one path where the value came from another process.
     await expect(createAppRunner(app)({ entity: 'post', op: 'list' }, Invocation.empty))
-      .rejects.toThrow(/Remote 'catalog' \(http:\/\/catalog.test\).*frond 'blog' has no valid doors array/s);
+      .rejects.toThrow(/Remote 'catalog' \(http:\/\/catalog.test\).*frond 'blog' has no valid facades array/s);
   });
 
   it('remotes without remoteTransport is a boot-time config error', async () => {
@@ -328,17 +328,17 @@ describe('remote façade (repli)', () => {
 /**
  * The half of the collision that `assertOneOwnerPerKey` cannot reach.
  *
- * The boot refuses two LOCAL fronds claiming one door key, and skips fronds declared
+ * The boot refuses two LOCAL fronds claiming one facade key, and skips fronds declared
  * remote because they register nothing locally. So the same collision survived across the
  * wire — and it kept the OTHER duplicate: in process `registerValue` let the last frond
  * loaded win, here `if (!byEntity.has(...))` let the first card received win. One
  * application, two topologies, two different handlers answering.
  */
 describe('two remotes serving one entity', () => {
-  /** A remote that answers `rpc.discover` with one door of the given name, and nothing else. */
-  const serving = (frond: string, door: string): Transport => async (call) => {
+  /** A remote that answers `rpc.discover` with one facade of the given name, and nothing else. */
+  const serving = (frond: string, facade: string): Transport => async (call) => {
     if (call.entity === 'rpc') {
-      return { fronds: [{ name: frond, doors: [{ name: door, ops: [{ name: 'list', kind: 'query' }] }], facts: [] }] };
+      return { fronds: [{ name: frond, facades: [{ name: facade, ops: [{ name: 'list', kind: 'query' }] }], facts: [] }] };
     }
     return [];
   };

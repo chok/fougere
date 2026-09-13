@@ -17,7 +17,7 @@ const { data: demo } = await useAsyncData(
 const opening = ref(false);
 
 /**
- * StackBlitz takes a whole project over its POST door, so the sandbox needs the sources
+ * StackBlitz takes a whole project over its POST facade, so the sandbox needs the sources
  * rather than the highlighted markup the page renders — `public/demo/<name>.json` is the
  * same files, fetched only once a reader asks to run one.
  */

@@ -71,7 +71,7 @@ const stream = (
     return { ...ray, paths: arrow(from.x, from.y, to.x, to.y, seed0 + i * 3), tip: at(ray.deg, ring / 2 + 70) };
   });
 
-const doors = stream(DOORS, SURFACE, true, 40);
+const facades = stream(DOORS, SURFACE, true, 40);
 const driven = stream(DRIVEN, PORTS, false, 70);
 </script>
 
@@ -86,9 +86,9 @@ const driven = stream(DRIVEN, PORTS, false, 70);
         <text :x="ray.tip.x + 6" :y="ray.tip.y + 5" class="hand-members">{{ ray.label }}</text>
       </template>
 
-      <template v-for="door in doors" :key="door.label">
-        <path v-for="(d, i) in door.paths" :key="i" :d="d" class="hand-accent" />
-        <text :x="door.tip.x - 6" :y="door.tip.y + 5" text-anchor="end" class="hand-members">{{ door.label }}</text>
+      <template v-for="facade in facades" :key="facade.label">
+        <path v-for="(d, i) in facade.paths" :key="i" :d="d" class="hand-accent" />
+        <text :x="facade.tip.x - 6" :y="facade.tip.y + 5" text-anchor="end" class="hand-members">{{ facade.label }}</text>
       </template>
 
       <path v-for="(d, i) in shapes.core" :key="'c' + i" :d="d" class="hand-ink" />

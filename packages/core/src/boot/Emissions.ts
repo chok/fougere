@@ -8,9 +8,9 @@ import type { Logger } from '../builtin/logger.js';
 import type { Fronds } from '../descriptor/Fronds.js';
 import type { OperationsMap } from '../wire/operation.js';
 
-/** A door and the op on it that accepts a fact. */
+/** A facade and the op on it that accepts a fact. */
 interface Listener {
-  door: string;
+  facade: string;
   op: string;
 }
 
@@ -19,7 +19,7 @@ type Carrier = (fact: string, payload: unknown) => void | Promise<void>;
 
 /** Emissions — the only place in Fougere where an initiator names a SUBJECT. */
 export class Emissions {
-  /** Who listens to what. Filled as each door's contracts are resolved. */
+  /** Who listens to what. Filled as each facade's contracts are resolved. */
   private readonly subscribers = new Map<string, Listener[]>();
 
   /** Who FINISHES a fact, in the order they run — see `orderPipes`. */
@@ -69,16 +69,16 @@ export class Emissions {
    * Who listens to what — read from the PLAN, where `{ kind: 'fact' }` is a sentence
    * `computeBindingPlan` already wrote, so nothing re-derives what a parameter is.
    */
-  note(contracts: OperationsMap, door: string): void {
+  note(contracts: OperationsMap, facade: string): void {
     for (const [op, contract] of contracts) {
       for (const bound of contract.binding ?? []) {
         if (bound.source.kind === 'pipe') {
-          this.claimPipe(bound.source.factName, { door, op });
+          this.claimPipe(bound.source.factName, { facade, op });
           continue;
         }
         if (bound.source.kind !== 'fact') continue;
         const listeners = this.subscribers.get(bound.source.factName) ?? [];
-        listeners.push({ door, op });
+        listeners.push({ facade, op });
         this.subscribers.set(bound.source.factName, listeners);
       }
     }
@@ -87,7 +87,7 @@ export class Emissions {
   /** One more op that finishes this fact. What ORDER they run in is settled at `register`. */
   private claimPipe(fact: string, taking: Listener): void {
     const held = this.pipes.get(fact) ?? [];
-    if (held.some((one) => `${one.door}.${one.op}` === `${taking.door}.${taking.op}`)) return;
+    if (held.some((one) => `${one.facade}.${one.op}` === `${taking.facade}.${taking.op}`)) return;
     held.push(taking);
     this.pipes.set(fact, held);
   }
@@ -102,7 +102,7 @@ export class Emissions {
   private orderPipes(): void {
     for (const [fact, links] of this.pipes) {
       const declared = this.ordered.get(fact);
-      const named = (one: Listener) => `${one.door}.${one.op}`;
+      const named = (one: Listener) => `${one.facade}.${one.op}`;
 
       if (!declared) {
         if (links.length < 2) continue;
@@ -115,7 +115,7 @@ export class Emissions {
         );
       }
 
-      const at = (one: Listener) => declared.findIndex((name) => doorOf(name) === one.door);
+      const at = (one: Listener) => declared.findIndex((name) => facadeOf(name) === one.facade);
       const unlisted = links.filter((one) => at(one) < 0);
       if (unlisted.length > 0) {
         throw new Error(
@@ -139,9 +139,9 @@ export class Emissions {
     return [...this.subscribers.keys()];
   }
 
-  /** The doors that accept one fact — the addresses a middleware must leave alone. */
-  doorsFor(fact: string): string[] {
-    return (this.subscribers.get(fact) ?? []).map(({ door }) => door);
+  /** The facades that accept one fact — the addresses a middleware must leave alone. */
+  facadesFor(fact: string): string[] {
+    return (this.subscribers.get(fact) ?? []).map(({ facade }) => facade);
   }
 
   /** Register one emission value per fact — announced here, or merely listened to. */
@@ -187,8 +187,8 @@ export class Emissions {
 
     const handed = this.handToListeners(fact, payload);
     if (!waiting) {
-      for (const { door, op, done } of handed) {
-        void done.catch((cause) => this.log.error(`${fact} → ${door}.${op}`, this.describeRefusal(fact, cause) ?? cause));
+      for (const { facade, op, done } of handed) {
+        void done.catch((cause) => this.log.error(`${fact} → ${facade}.${op}`, this.describeRefusal(fact, cause) ?? cause));
       }
 
       return [];
@@ -202,13 +202,13 @@ export class Emissions {
     const missing = settled.flatMap((result, at) =>
       (result.status === 'rejected' ? [{ ...handed[at]!, reason: result.reason as unknown }] : []));
     if (missing.length > 0) {
-      for (const { door, op, reason } of missing) {
-        this.log.error(`${fact} → ${door}.${op}`, this.describeRefusal(fact, reason) ?? reason);
+      for (const { facade, op, reason } of missing) {
+        this.log.error(`${fact} → ${facade}.${op}`, this.describeRefusal(fact, reason) ?? reason);
       }
       throw new AggregateError(
         missing.map((one) => one.reason),
         `${fact} — ${missing.length} of ${handed.length} subscriber(s) did not answer`
-        + ` (${missing.map((one) => `${one.door}.${one.op}`).join(', ')}).`
+        + ` (${missing.map((one) => `${one.facade}.${one.op}`).join(', ')}).`
         + ' An announcement with an answer type waits for everyone: a partial answer would'
         + ' look like a complete one.',
       );
@@ -227,14 +227,14 @@ export class Emissions {
 
     const refused = settled.flatMap((result, i) =>
       result.status === 'rejected' ? [{ ...handed[i], reason: result.reason as unknown }] : []);
-    for (const { door, op, reason } of refused) {
-      this.log.error(`${fact} → ${door}.${op}`, this.describeRefusal(fact, reason) ?? reason);
+    for (const { facade, op, reason } of refused) {
+      this.log.error(`${fact} → ${facade}.${op}`, this.describeRefusal(fact, reason) ?? reason);
     }
     if (refused.length > 0) {
       throw new AggregateError(
         refused.map((r) => r.reason),
         `${fact} — ${refused.length} of ${handed.length} listener(s) refused it`
-        + ` (${refused.map((r) => `${r.door}.${r.op}`).join(', ')}).`
+        + ` (${refused.map((r) => `${r.facade}.${r.op}`).join(', ')}).`
         + ` Nothing here holds it: the carrier decides whether it comes back.`,
       );
     }
@@ -250,7 +250,7 @@ export class Emissions {
   private async finished(fact: string, payload: unknown): Promise<unknown> {
     let carried = payload;
     for (const link of this.pipes.get(fact) ?? []) {
-      const facade = this.container.resolve<Record<string, Function>>(link.door);
+      const facade = this.container.resolve<Record<string, Function>>(link.facade);
       const answered = await facade[link.op]({ ...Invocation.empty, input: carried });
 
       // A link that answers nothing SUPPRESSES the fact — every subscriber was then handed
@@ -260,7 +260,7 @@ export class Emissions {
       // each reader; it is not a link's to decide for everyone.
       if (answered === null || answered === undefined) {
         throw new Error(
-          `${link.door}.${link.op} finishes the fact '${fact}' and answered nothing.\n`
+          `${link.facade}.${link.op} finishes the fact '${fact}' and answered nothing.\n`
           + '  A link says what the fact IS, it does not take it back — the announcer has '
           + 'already said it happened, and nothing can tell it otherwise.\n'
           + '  Return the fact, amended or as it stands.',
@@ -299,17 +299,17 @@ export class Emissions {
       return [];
     }
 
-    return listeners.map(({ door, op }) => ({
-      door,
+    return listeners.map(({ facade, op }) => ({
+      facade,
       op,
       done: ambient.enterChain(fact, async () => {
-        let facade: Record<string, Function>;
+        let handler: Record<string, Function>;
         try {
-          facade = this.container.resolve<Record<string, Function>>(door);
+          handler = this.container.resolve<Record<string, Function>>(facade);
         } catch (cause) {
-          throw new Error(`${fact} → ${door} could not be reached`, { cause });
+          throw new Error(`${fact} → ${facade} could not be reached`, { cause });
         }
-        return facade[op]({ ...Invocation.empty, input: payload });
+        return handler[op]({ ...Invocation.empty, input: payload });
       }),
     }));
   }
@@ -327,7 +327,7 @@ export class Emissions {
  * The container key a declared CLASS NAME answers under — `RedactHandler` → `redactHandler`,
  * the same key `facadeKeyOf` builds from an address.
  */
-function doorOf(declared: string): string {
+function facadeOf(declared: string): string {
   const key = lowerFirst(declared);
 
   return key.endsWith('Handler') ? key : `${key}Handler`;

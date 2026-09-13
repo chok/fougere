@@ -2,7 +2,7 @@
 import { generateRoutes } from '@fougere/adapter-rest';
 import type { App } from '@fougere/core';
 
-/** One row of the canonical table, in the form this door matches against. */
+/** One row of the canonical table, in the form this facade matches against. */
 export interface Matchable {
   method: string;
   /** `route.path` split once: a literal segment, or `:name` to capture. */
@@ -63,7 +63,7 @@ function openness(route: Matchable): number {
   return route.segments.filter((s) => s.startsWith(':')).length;
 }
 
-/** Verbs this door accepts in place of the one the table names. */
+/** Verbs this facade accepts in place of the one the table names. */
 const ALIASES: Record<string, string> = { PATCH: 'PUT' };
 
 /** Path first, method second — a router's order, and what makes a 405 possible at all. */

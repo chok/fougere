@@ -35,13 +35,13 @@ export function registerRoutes(
         }
 
         // The computed fields are already here: the façade applies the presenter on every
-        // door (`PresenterExecutor`), so a route that re-applied it did the work twice — and
+        // facade (`PresenterExecutor`), so a route that re-applied it did the work twice — and
         // once a computed field started receiving the PAGE rather than one row, the second
         // pass handed it a single object and threw `posts.map is not a function`.
 
         return {
           status: route.successStatus ?? (route.operationName === 'create' ? 201 : 200),
-          // The façade is the single egress boundary for every door. Re-encoding here
+          // The façade is the single egress boundary for every facade. Re-encoding here
           // makes custom encoders run twice and makes REST disagree with the envelope.
           data: result,
         };

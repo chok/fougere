@@ -9,7 +9,7 @@ extensions: [calls({ max: 500, panel: true })],
 ```
 
 What it sees that a middleware cannot: a call refused **before** any handler — an unknown
-route, an entity hosted elsewhere, a call arriving while the door drains — and the route
+route, an entity hosted elsewhere, a call arriving while the facade drains — and the route
 kind of every call, so a local execution and a hop to another process read the same way.
 Beside the calls it keeps a bounded ring of log lines, of errors, and — when
 `@fougere/adapter-sql` is installed — of the statements each call issued.

@@ -3,7 +3,7 @@
  *
  * An adapter hands back `Storage<T>` plus what its engine owns — the shape `SqlSource`
  * already has one level up, where `dialect`, `db` and `sink` are reached by narrowing. Below
- * it the door was shut: `depKeyOf` compared the type's name to `Storage` exactly, so a
+ * it the facade was shut: `depKeyOf` compared the type's name to `Storage` exactly, so a
  * constructor written `RankedStorage<Card>` asked the container for `'RankedStorage'` and the
  * boot refused. The subject is in the GENERIC, which is what this reads now.
  *
@@ -52,7 +52,7 @@ describe('a realization narrowing the port', () => {
     expect(repository?.deps).toEqual([storageKeyOf('Card')]);
   });
 
-  it('reaches the gesture the port does not have, through the door that owns it', async () => {
+  it('reaches the gesture the port does not have, through the facade that owns it', async () => {
     await using app = await boot();
 
     const ranked = await createLocalRunner(app)({ entity: 'card', op: 'search' }, Invocation.empty);

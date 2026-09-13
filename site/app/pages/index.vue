@@ -36,7 +36,7 @@ const { items } = await useQuery(post, 'list');
 const publish = useCommand(post, 'publish');
 
 await publish.execute({ params: { id } });
-// → every mounted query on that door revalidates`;
+// → every mounted query on that facade revalidates`;
 
 // Verbatim output of demos/rust-frond's TypeScript consumer — rules declared
 // in Rust, enforced by the TS validator before a single byte goes on the wire.

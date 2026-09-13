@@ -121,7 +121,7 @@ export default class CheckHandler {
 
     /**
      * A `pattern` that backtracks super-linearly. The pattern is fixed at declaration and
-     * the string tested against it is not: whoever calls the door chooses it, so the cost
+     * the string tested against it is not: whoever calls the facade chooses it, so the cost
      * of one match is theirs to set. Judged HERE because a regex says the same thing on
      * every run — checking it per row would pay for a verdict that never changes.
      *

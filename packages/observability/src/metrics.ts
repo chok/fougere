@@ -141,14 +141,14 @@ function topologyOf(app: App | undefined, seen: Set<string>): FrondPlacement[] {
     frond: frond.name,
     placement: 'local' as const,
     entities: frond.entities.length,
-    doors: frond.handlers.length,
+    facades: frond.handlers.length,
   }));
 
   // A frond we called but never scanned is hosted elsewhere. Its shape is not ours to
   // report — it is published by the process that owns it, under its own service name.
   const elsewhere: FrondPlacement[] = [...seen]
     .filter((name) => !local.has(name))
-    .map((name) => ({ frond: name, placement: 'remote' as const, entities: 0, doors: 0 }));
+    .map((name) => ({ frond: name, placement: 'remote' as const, entities: 0, facades: 0 }));
 
   return [...here, ...elsewhere];
 }
@@ -302,13 +302,13 @@ export function metricsPayload(service: string, snapshot: MetricsSnapshot) {
                 },
               },
               {
-                name: 'fougere.frond.doors',
-                description: 'How many doors a frond serves — its surface, as scanned.',
-                unit: '{door}',
+                name: 'fougere.frond.facades',
+                description: 'How many facades a frond serves — its surface, as scanned.',
+                unit: '{facade}',
                 gauge: {
                   dataPoints: snapshot.topology.map((f) => ({
                     attributes: [attr('fougere.frond', f.frond)],
-                    asInt: `${f.doors}`,
+                    asInt: `${f.facades}`,
                     timeUnixNano: now,
                   })),
                 },

@@ -23,7 +23,7 @@ interface AuthorHandler {
 }
 
 declare module '@fougere/core/contract' {
-  interface FougereDoors {
+  interface FougereOperations {
     'post.list': { kind: 'query'; errors: never };
     'post.publish': { kind: 'command'; errors: ErrorCode.CONFLICT | ErrorCode.FORBIDDEN };
     'author.list': { kind: 'query'; errors: never };
@@ -64,7 +64,7 @@ export function pinned(): void {
   // @ts-expect-error — no facade of this app answers at 'ledger'.
   facade('ledger');
 
-  // @ts-expect-error — an entity class is not a door: a page names the handler that answers.
+  // @ts-expect-error — an entity class is not a facade: a page names the handler that answers.
   useQuery(class Post {}, 'list');
 }
 

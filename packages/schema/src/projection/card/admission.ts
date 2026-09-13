@@ -43,7 +43,7 @@ export const oneOfTokens = <T extends readonly string[]>(
 ): value is T[number] => typeof value === 'string' && (tokens as readonly string[]).includes(value);
 
 /**
- * Compiles every `pattern` at the door, so a bad one is refused here and not at the first row.
+ * Compiles every `pattern` at the facade, so a bad one is refused here and not at the first row.
  * FR : compile chaque `pattern` à la porte : un mauvais est refusé ici, pas au premier row.
  * `{ type: 'string', pattern: '(' }` → `Field 'code' states pattern: "(", which is not a regular expression`
  */

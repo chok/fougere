@@ -83,7 +83,7 @@ export function nodesOf(report: TopologyReport): TopologyNode[] {
       frond: one.frond,
       placement: 'remote' as const,
       entities: 0,
-      doors: 0,
+      facades: 0,
       ...around(one.frond),
       ...(one.at ? { at: one.at } : {}),
       silent: true,
@@ -310,5 +310,5 @@ function labelAt(points: readonly Point[], boxes: readonly PlacedNode[], half: n
  * a frond that never answered has the same two zeroes and a different reason for them.
  */
 export function isOpaque(node: FrondPlacement): boolean {
-  return node.placement === 'remote' && node.entities === 0 && node.doors === 0;
+  return node.placement === 'remote' && node.entities === 0 && node.facades === 0;
 }

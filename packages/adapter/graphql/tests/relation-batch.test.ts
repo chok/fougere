@@ -12,9 +12,9 @@ import { registerAll } from '../src/auto-register.js';
  * façade is what applies the presenter and the output view: sourcing the rows
  * elsewhere returned them stripped of their computed fields.
  *
- * The door is `list` with a criterion naming a SET — the very one the `many` dual
+ * The facade is `list` with a criterion naming a SET — the very one the `many` dual
  * already used with a single value. No op was added: a criterion learned to name
- * several, so `one` and `many` now read through the same door.
+ * several, so `one` and `many` now read through the same facade.
  */
 class User extends entity({ id: primary(), name: text() }) {}
 class Order extends entity({ id: primary(), userId: ref(User), label: text() }) {}
@@ -55,7 +55,7 @@ const resolvePage = (relation: any, rows: any[], ctx: unknown) =>
   Promise.all(rows.map((row) => relation.resolve(row, {}, ctx, {})));
 
 describe('a relation is read by the page', () => {
-  it('asks the door ONCE for the whole page, deduplicating the keys', async () => {
+  it('asks the facade ONCE for the whole page, deduplicating the keys', async () => {
     const calls: string[][] = [];
     const { orders, relation } = build({
       findById: async () => { throw new Error('the row-at-a-time path must not be taken'); },
@@ -105,7 +105,7 @@ describe('a relation is read by the page', () => {
     expect(users[0]).toEqual({ id: 'u0', name: 'u0' });
   });
 
-  it('a door that serves no list keeps the row-at-a-time path rather than losing the relation', async () => {
+  it('a facade that serves no list keeps the row-at-a-time path rather than losing the relation', async () => {
     let perRow = 0;
     const { orders, relation } = build({
       findById: async (inv: any) => { perRow++; return { id: inv.params.id, name: 'one by one' }; },

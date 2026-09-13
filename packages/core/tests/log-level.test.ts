@@ -177,7 +177,7 @@ describe('an unknown log level', () => {
     vi.unstubAllEnvs();
   });
 
-  it('is refused by name at the door, so a cast cannot smuggle one in', () => {
+  it('is refused by name at the facade, so a cast cannot smuggle one in', () => {
     expect(() => setLogLevel('verbose' as never)).toThrow(/Unknown log level: 'verbose'/);
     expect(() => setLogLevel('verbose' as never)).toThrow(/debug, info, warn, error, silent/);
   });

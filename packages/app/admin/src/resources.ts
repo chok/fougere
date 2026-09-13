@@ -22,7 +22,7 @@ export interface AdminOperation extends CardOp {
   confirm?: string;
 }
 
-/** One door, everything the UI needs to render it. */
+/** One facade, everything the UI needs to render it. */
 export interface AdminResource extends ResourceKey {
   /** The frond it belongs to — the menu groups by it, as the card does. */
   frond: string;
@@ -40,7 +40,7 @@ export interface AdminResource extends ResourceKey {
   /** Every callable operation, including the five CRUD verbs. */
   operations: AdminOperation[];
   /**
-   * Which of the five the door actually serves. A door answering only `list` gets a
+   * Which of the five the facade actually serves. A facade answering only `list` gets a
    * list and no buttons — the card says so, so the UI never offers what would 404.
    */
   can: { list: boolean; show: boolean; create: boolean; edit: boolean; delete: boolean };
@@ -52,12 +52,12 @@ function labelOf(name: string): string {
 }
 
 /**
- * The five verbs react-admin already has pages for. Everything else a door serves is a
+ * The five verbs react-admin already has pages for. Everything else a facade serves is a
  * business operation, and gets a button rather than a page.
  */
 export const CRUD_OPS = ['list', 'findById', 'create', 'update', 'delete'] as const;
 
-/** What a door serves beyond CRUD — the only thing this panel has that a generic one has not. */
+/** What a facade serves beyond CRUD — the only thing this panel has that a generic one has not. */
 export function actionsOf(operations: readonly AdminOperation[]): AdminOperation[] {
   return operations.filter((op) => !(CRUD_OPS as readonly string[]).includes(op.name));
 }
@@ -74,25 +74,25 @@ export function capabilitiesOf(operations: readonly Pick<AdminOperation, 'name'>
   };
 }
 
-/** A door with no schema is not a resource. */
+/** A facade with no schema is not a resource. */
 export function resourcesOf(card: IdentityCard): AdminResource[] {
   const out: AdminResource[] = [];
   for (const frond of card.fronds) {
-    for (const door of frond.doors) {
-      if (!door.schema) continue;
-      const entity = Card.fromDescriptor(door.schema).toSchema() as unknown as SchemaView;
+    for (const facade of frond.facades) {
+      if (!facade.schema) continue;
+      const entity = Card.fromDescriptor(facade.schema).toSchema() as unknown as SchemaView;
       const primary = FieldSet.of(entity.getFields()).primary;
       // No primary means no row identity — a list could be drawn, but nothing could be
       // opened, edited or deleted. Refusing here is the same answer `FieldSet.primary`
       // gives by not defaulting to 'id': the caller decides, and this caller declines.
       if (!primary) continue;
-      const operations = door.ops.map((op) => ({ ...op, label: labelOf(op.name) }));
-      const columns = tableColumnsOf(entity, door.name);
-      const fields = formFieldsOf(entity, door.name);
+      const operations = facade.ops.map((op) => ({ ...op, label: labelOf(op.name) }));
+      const columns = tableColumnsOf(entity, facade.name);
+      const fields = formFieldsOf(entity, facade.name);
       out.push({
-        name: door.name,
+        name: facade.name,
         frond: frond.name,
-        label: labelOf(door.name),
+        label: labelOf(facade.name),
         facets: {},
         primary,
         columns,
@@ -105,7 +105,7 @@ export function resourcesOf(card: IdentityCard): AdminResource[] {
   return out;
 }
 
-/** The provider's index — the half of a resource it needs, keyed by door name. */
+/** The provider's index — the half of a resource it needs, keyed by facade name. */
 export function keysOf(resources: AdminResource[]): Record<string, ResourceKey> {
   return Object.fromEntries(resources.map((r) => [r.name, { name: r.name, primary: r.primary }]));
 }

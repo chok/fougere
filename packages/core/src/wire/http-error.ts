@@ -53,7 +53,7 @@ export function toHttpError(err: unknown): { status: number; body: ReturnType<Fo
     return { status: httpStatusFor(err.code), body: toPublicError(err) };
   }
   // A throw that never became a FougereError is masked by the same rule, so it goes
-  // through the same door rather than growing a second, quieter one here.
+  // through the same facade rather than growing a second, quieter one here.
   const framed = new FougereError({
     code: ErrorCode.INTERNAL_ERROR,
     message: (err as { message?: string })?.message ?? 'Internal error',

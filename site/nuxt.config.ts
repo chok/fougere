@@ -13,7 +13,7 @@ const locales: {
 /**
  * Sections a prerendered deployment cannot serve — the blog is a live Frond
  * (reading it means a database, writing it means a server), and the auth pages
- * are doors onto that server. Stated once as routes; the locale prefixes are
+ * are facades onto that server. Stated once as routes; the locale prefixes are
  * derived from the locales above rather than spelled out per language.
  *
  * This binds the crawler alone. Under `nuxt build` they are served normally,

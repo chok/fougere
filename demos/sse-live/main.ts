@@ -1,7 +1,7 @@
 /**
- * Two readers watching the same door, and only one of them is told.
+ * Two readers watching the same facade, and only one of them is told.
  *
- * `onEmit` is the only line that wires the frond to the live door, and it is the same
+ * `onEmit` is the only line that wires the frond to the live facade, and it is the same
  * line `tunnel.ts` uses. What follows it is the demo: the carrier decides WHO hears,
  * and it pushes a name rather than a row.
  */
@@ -25,7 +25,7 @@ const dim = (s: string) => `\x1b[2m${s}\x1b[0m`;
 const bold = (s: string) => `\x1b[1m${s}\x1b[0m`;
 const settle = () => new Promise((r) => setTimeout(r, 120));
 
-/** What a reader sees when it asks — always through the door, never from the push. */
+/** What a reader sees when it asks — always through the facade, never from the push. */
 async function seenBy(app: App, name: string): Promise<string> {
   const rows = (await createLocalRunner(app)({ entity: 'post', op: 'list' }, as(name))) as {
     title: string;
@@ -76,7 +76,7 @@ async function main() {
   const screen: Record<string, string> = {};
   const nudges: Record<string, number> = { alice: 0, bob: 0 };
 
-  // Two readers on the same door. Same code, different identity.
+  // Two readers on the same facade. Same code, different identity.
   const stop = await Promise.all(
     ['alice', 'bob'].map((name) =>
       watch(live.port, name, async () => {

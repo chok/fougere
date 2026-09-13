@@ -82,7 +82,7 @@ describe('the declared one wins, the default is always there', () => {
     expect(out).toEqual(rows);
   });
 
-  it('is not a door — a repository method is unreachable from the wire', async () => {
+  it('is not a facade — a repository method is unreachable from the wire', async () => {
     await using app = await createApp({ scan: await scanProject(root), createContainer, storageFactory });
 
     await expect(

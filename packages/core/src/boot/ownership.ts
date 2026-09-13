@@ -67,7 +67,7 @@ export function refuseStorageInUserCode(
   owners: Map<string, string>,
   known: (entity: string) => boolean,
 ): void {
-  const doors = [
+  const facades = [
     ...frond.handlers.map((h) => ({ ...h, kind: 'handler' })),
     ...frond.presenters.map((p) => ({ ...p, kind: 'presenter' })),
     ...frond.collectors.map((c) => ({ ...c, kind: 'collector' })),
@@ -89,7 +89,7 @@ export function refuseStorageInUserCode(
     );
   }
 
-  for (const decl of [...doors, ...holders]) {
+  for (const decl of [...facades, ...holders]) {
     const allowed = decl.kind === 'provider' ? builtOn(decl.ctor) : [];
     for (const dep of decl.deps) {
       const entity = entityOfStorageKey(dep, known);

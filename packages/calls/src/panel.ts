@@ -63,7 +63,7 @@ export function servePanel(ring: CallRing, options: PanelOptions = {}): Promise<
       return;
     }
 
-    // One door per ring, each taking a cursor: a reader asks for what is above its own,
+    // One facade per ring, each taking a cursor: a reader asks for what is above its own,
     // which is the whole protocol — no subscription to hold, nothing to replay.
     for (const [name, read] of [['logs', options.logs], ['errors', options.errors], ['queries', options.queries]] as const) {
       if (path !== `/${name}.json`) continue;
@@ -97,7 +97,7 @@ export function servePanel(ring: CallRing, options: PanelOptions = {}): Promise<
 
   return new Promise((ready, refuse) => {
     server.on('error', refuse);
-    // Loopback only. This door has no validator — `serve()` refuses to start beyond loopback
+    // Loopback only. This facade has no validator — `serve()` refuses to start beyond loopback
     // without `verify`, and this one would not know how to refuse at all.
     server.listen(options.port ?? 0, '127.0.0.1', () => {
       const port = (server.address() as { port: number }).port;

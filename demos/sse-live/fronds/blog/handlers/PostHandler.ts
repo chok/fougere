@@ -15,7 +15,7 @@ declare class PostRepository {
 /**
  * An ordinary handler. Nothing here knows a connection is being held open, and
  * nothing here knows there is more than one reader — which is the point: the
- * live door is a consumer of this file, never a variant of it.
+ * live facade is a consumer of this file, never a variant of it.
  */
 export default class PostHandler {
   constructor(private posts: PostRepository, private changed: Emit<PostChanged>) {}

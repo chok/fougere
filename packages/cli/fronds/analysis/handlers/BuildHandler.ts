@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
-import { emitDoors, emitScan } from '@fougere/compiler';
+import { emitFacade, emitScan } from '@fougere/compiler';
 import ProjectScan from '../services/ProjectScan.js';
 import type Build from '../entities/Build.js';
 
@@ -20,8 +20,8 @@ export interface BuildReport {
   out: string;
   /** Relative to the project root — what a human recognizes. */
   path: string;
-  /** Where the door types went, beside the module. */
-  /** Where the facades were written — one export per address, the page's door in. */
+  /** Where the facade types went, beside the module. */
+  /** Where the facades were written — one export per address, the page's facade in. */
   facade: string;
   fronds: string[];
   entities: number;
@@ -58,10 +58,10 @@ export default class BuildHandler {
     await writeFile(out, emitScan(scan, { outFile: out }));
 
     // The same scan, projected a third way. It holds no value and reaches no bundle: what a
-    // client cannot otherwise know is which refusals one door can answer, because TypeScript
+    // client cannot otherwise know is which refusals one facade can answer, because TypeScript
     // records nothing about what a function throws.
     const facade = join(dirname(out), FACADE_OUT);
-    await writeFile(facade, emitDoors(scan, { outFile: facade }));
+    await writeFile(facade, emitFacade(scan, { outFile: facade }));
 
     return {
       out,

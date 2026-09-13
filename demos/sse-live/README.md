@@ -59,7 +59,7 @@ reads that touches.
 
 And nothing is held. A reader that is offline when a post is published learns nothing and
 gets no catch-up — same trade as the tunnel, and the reason `emit-multirepo/broker.ts`
-exists next door.
+exists next facade.
 
 ## Files
 

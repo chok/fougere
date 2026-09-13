@@ -3,7 +3,7 @@ import type { InvocationContext } from '@fougere/core';
 import User from '../entities/User.js';
 
 /**
- * Who is asking. The SSE door and the ordinary call door put the same value on
+ * Who is asking. The SSE facade and the ordinary call facade put the same value on
  * `state.user`, so a handler never learns which one a request came through.
  */
 export default class CurrentUserCollector extends Collector(User) {

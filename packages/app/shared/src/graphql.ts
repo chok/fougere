@@ -1,4 +1,4 @@
-/** The GraphQL door — declared like the others, mounted like the others. */
+/** The GraphQL facade — declared like the others, mounted like the others. */
 import type { App } from '@fougere/core';
 import type { Outcome } from './serve.js';
 
@@ -7,7 +7,7 @@ export interface GraphQLRequest {
   query?: string;
   variables?: Record<string, unknown>;
   operationName?: string;
-  /** The audience, when the door was mounted per surface. */
+  /** The audience, when the facade was mounted per surface. */
   surface?: string;
   state: Record<string, unknown>;
 }
@@ -49,7 +49,7 @@ export async function serveGraphQL(app: App, request: GraphQLRequest): Promise<O
     variables: request.variables,
     operationName: request.operationName,
     surface: request.surface,
-    // The same state every other door stamps: what the server resolved, never the wire.
+    // The same state every other facade stamps: what the server resolved, never the wire.
     state: request.state,
   });
 

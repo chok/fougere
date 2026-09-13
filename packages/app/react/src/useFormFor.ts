@@ -34,7 +34,7 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
     Object.fromEntries(fields.map((field) => [field.name, options.initial?.[field.name] ?? field.default])),
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
-  // A form is designated by its ENTITY — it is a set of fields — so the door it submits to is
+  // A form is designated by its ENTITY — it is a set of fields — so the facade it submits to is
   // an address with no handler type behind it, and `T` stays the caller's to state.
   const command = useCommand(facadeOf(entity), options.op ?? 'create');
 

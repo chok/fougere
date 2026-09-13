@@ -15,7 +15,7 @@ const load = (input: Record<string, unknown> = {}) =>
   new LoadHandler(new ProjectScan()).execute({ root: fixture, out: '', ...input });
 
 describe('load', () => {
-  it('puts every operation the default door answers under load', async () => {
+  it('puts every operation the default facade answers under load', async () => {
     const scenario = await load();
 
     expect(scenario.operations).toEqual(['commande.servable', 'article.onHand']);
@@ -24,9 +24,9 @@ describe('load', () => {
 
   /** Read from the SCAN: a boot runs migrations and plants seeds, which describing must not. */
   it('answers without booting the project it describes', async () => {
-    const scenario = await load({ door: 'http://127.0.0.1:4200/_fougere/call' });
+    const scenario = await load({ facade: 'http://127.0.0.1:4200/_fougere/call' });
 
-    expect(scenario.door).toBe('http://127.0.0.1:4200/_fougere/call');
+    expect(scenario.facade).toBe('http://127.0.0.1:4200/_fougere/call');
     expect(scenario.script).toContain('http://127.0.0.1:4200/_fougere/call');
   }, 30_000);
 

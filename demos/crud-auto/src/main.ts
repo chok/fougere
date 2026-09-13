@@ -3,7 +3,7 @@
  *
  * AuthorHandler extends Crud and overrides create; PostHandler adds custom ops.
  * Zero SQL, zero services, zero resolvers — and now zero schema wiring: what this
- * app serves is declared in `fougere.config.ts`, and Hono mounts the doors.
+ * app serves is declared in `fougere.config.ts`, and Hono mounts the facades.
  *
  * Hono hands a standard Web `Request`, so it uses `@fougere/app/web` exactly as the
  * Next, TanStack, React Router and SvelteKit demos do. It needs no adapter package.
@@ -16,7 +16,7 @@ import { generateRoutes } from '@fougere/adapter-rest';
 
 const app = await useFougereApp();
 
-// --- One server, both doors ---------------------------
+// --- One server, both facades ---------------------------
 
 const hono = new Hono();
 hono.all('/api/*', (c) => rest(c.req.raw));
@@ -42,7 +42,7 @@ console.log(`
   REST:     ${url}/api/{frond}/{plural}
 
   Same handlers, one server, zero duplication — and zero wiring: adapters in
-  fougere.config.ts says what is served, the two lines above only mount the doors.
+  fougere.config.ts says what is served, the two lines above only mount the facades.
 
   --- GraphQL -----------------------------------------
 

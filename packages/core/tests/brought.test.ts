@@ -4,7 +4,7 @@
  * `Extension.fronds` is how an optional package accepts a fact — a subscription is a
  * signature, and `up` receives an app that already exists. Such a frond is in EVERY process
  * that installed the extension, so anything reading the card as "who hosts what" sees the
- * same door on all of them.
+ * same facade on all of them.
  */
 import { describe, it, expect } from 'vitest';
 import { createContainer } from '@fougere/container';
@@ -67,7 +67,7 @@ describe('a frond an extension brought', () => {
   it('leaves what the app does serve untouched', async () => {
     await using app = await built();
 
-    const doors = identityCardOf(app).fronds.flatMap((one) => one.doors.map((door) => door.name));
-    expect(doors).toEqual(['product']);
+    const facades = identityCardOf(app).fronds.flatMap((one) => one.facades.map((facade) => facade.name));
+    expect(facades).toEqual(['product']);
   });
 });

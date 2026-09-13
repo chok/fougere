@@ -70,7 +70,7 @@ describe('a line the frond announces', () => {
     vi.restoreAllMocks();
   });
 
-  it('separates the two doors: the shortcut prints, the raw one does not', async () => {
+  it('separates the two facades: the shortcut prints, the raw one does not', async () => {
     const printed = vi.spyOn(console, 'info').mockImplementation(() => {});
     await using built = await app(file);
 
@@ -141,7 +141,7 @@ describe('a line the frond announces', () => {
     await createLocalRunner(other)({ entity: 'order', op: 'create' }, { ...Invocation.empty, params: { id: 'b' } });
     await settle(() => said(file).includes('order a created') && said(second).includes('order b created'));
 
-    // A hold kept per PROCESS sent the second app's lines to the first app's door, and
+    // A hold kept per PROCESS sent the second app's lines to the first app's facade, and
     // only the first of three printed — measured on `demos/observability`.
     expect(said(file)).toContain('order a created');
     expect(said(file)).not.toContain('order b created');
@@ -230,7 +230,7 @@ describe('a line the frond announces', () => {
     }
 
     // An extension registers what its own destination asks for, and `up` runs after every
-    // door is built. Handing the boot's lines over before that resolved `KeepHandler`
+    // facade is built. Handing the boot's lines over before that resolved `KeepHandler`
     // first, and every held line died on `'Ring' is not registered` — measured on
     // `demos/observability`, where `@fougere/calls` registers its two rings in `up`.
     await using built = await createApp({

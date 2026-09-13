@@ -18,7 +18,7 @@ const METHOD_MAP: Record<HttpMethod, 'get' | 'post' | 'put' | 'patch' | 'delete'
   DELETE: 'delete',
 };
 
-// Core declares this cap (`wire/call.ts`) and three doors read it there. This package
+// Core declares this cap (`wire/call.ts`) and three facades read it there. This package
 // declares NO Fougere dependency — a leaf port does not take one on the kernel for a
 // number — so it keeps the fourth copy, deliberately.
 const MAX_BODY_BYTES = 1024 * 1024;
@@ -53,7 +53,7 @@ export function readExpressBody(req: any): Promise<unknown> {
     if (verb === 'GET' || verb === 'HEAD') return {};
     // `null` is parsed JSON, not evidence that no parser ran. Falling through here
     // turned an explicit domain value into `{}` (or tried to drain an already consumed
-    // stream), while every other door kept it.
+    // stream), while every other facade kept it.
     if (req.body !== undefined) return req.body;
     const contentType = String(req.headers?.['content-type'] ?? '');
     if (!contentType.toLowerCase().includes('json')) return {};

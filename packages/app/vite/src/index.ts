@@ -35,7 +35,7 @@ export interface FougereViteOptions {
 }
 
 /**
- * Where the door types land — the same place `fougere build` puts them, so a host that runs the
+ * Where the facade types land — the same place `fougere build` puts them, so a host that runs the
  * command and one that only starts a dev server read one file and not two.
  */
 const FACADE = '.fougere/facade.generated.ts';
@@ -54,10 +54,10 @@ const FACADE = '.fougere/facade.generated.ts';
  */
 async function writeDoors(root: string): Promise<void> {
   try {
-    const { scanProject, emitDoors } = await import('@fougere/compiler');
+    const { scanProject, emitFacade } = await import('@fougere/compiler');
     const out = join(root, FACADE);
     mkdirSync(dirname(out), { recursive: true });
-    writeFileSync(out, emitDoors(await scanProject(root), { outFile: out }));
+    writeFileSync(out, emitFacade(await scanProject(root), { outFile: out }));
   } catch { /* a host with no fronds, or a scan that could not run */ }
 }
 
@@ -79,7 +79,7 @@ export function fougere(options: FougereViteOptions = {}): Plugin {
         config.ssr ??= {};
         config.ssr.external = [...new Set([...(config.ssr.external ?? []), ...external])];
 
-        // A page IMPORTS its door, so the alias sits beside the file that declares them: a
+        // A page IMPORTS its facade, so the alias sits beside the file that declares them: a
         // project that never generated it fails to resolve rather than losing its types in
         // silence.
         config.resolve ??= {};

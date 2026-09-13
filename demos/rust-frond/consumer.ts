@@ -52,8 +52,8 @@ async function main(): Promise<void> {
 
   const card = (await transport({ entity: 'rpc', op: 'discover' }, Invocation.empty)) as IdentityCard;
   for (const frond of card.fronds) {
-    for (const door of frond.doors) {
-      console.log(`   ${frond.name} › ${door.name} — ops: ${door.ops.map((o) => o.name).join(', ')}`);
+    for (const facade of frond.facades) {
+      console.log(`   ${frond.name} › ${facade.name} — ops: ${facade.ops.map((o) => o.name).join(', ')}`);
     }
     // Ce frond n'annonce rien ; un qui le ferait publierait ici la forme de ses faits.
     for (const fact of frond.facts) {
@@ -66,7 +66,7 @@ async function main(): Promise<void> {
 
   // Une porte peut ne rien stocker — la carte publie alors ses ops et pas de schéma.
   // Ce frond en déclare un, donc l'absence est une panne, pas un cas à contourner.
-  const descriptor = card.fronds[0].doors[0].schema;
+  const descriptor = card.fronds[0].facades[0].schema;
   if (!descriptor) throw new Error("le frond Rust n'a publié aucun schéma — la carte est incomplète");
 
   console.log(`   ${Object.keys(descriptor.properties).length} champs · requis à la création : ${descriptor.required?.join(', ')}`);

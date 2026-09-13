@@ -31,7 +31,7 @@ async function traced(sample: number, split = true): Promise<FinishedSpan[]> {
     // The router asks the far side what it hosts before it routes anything, so the stand-in
     // answers a card for that one op and the value for every other.
     remoteTransport: () => (async (call) => (call.op === 'discover'
-      ? { fronds: [{ name: 'catalog', doors: [{ name: 'stock', ops: [{ name: 'onHand', kind: 'query' }] }], facts: [] }] }
+      ? { fronds: [{ name: 'catalog', facades: [{ name: 'stock', ops: [{ name: 'onHand', kind: 'query' }] }], facts: [] }] }
       : 3)),
     extensions: [observability({ sample, onSpan: (span) => kept.push(span) })],
   });

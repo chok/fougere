@@ -70,7 +70,7 @@ describe('the edges', () => {
   });
 
   /**
-   * A dependency on this frond's own door is not a crossing, and neither is a type key: the
+   * A dependency on this frond's own facade is not a crossing, and neither is a type key: the
    * two namespaces are separated by CASE — camelCase for a façade, PascalCase for a type —
    * which is the rule `verify()` already states.
    */

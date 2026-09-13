@@ -14,7 +14,7 @@ import { createLocalRunner, type IdentityCard } from '@fougere/core';
 import { Invocation } from '@fougere/core/contract';
 import { testApp, driftOf, agrees, explain } from '../src/index.js';
 
-/** Asked the way a consumer asks: `rpc.discover`, through the door, not through an import. */
+/** Asked the way a consumer asks: `rpc.discover`, through the facade, not through an import. */
 const cardOf = async (fixture: string): Promise<IdentityCard> => {
   await using app = await testApp({ root: join(import.meta.dirname, fixture) });
   return await createLocalRunner(app)({ entity: 'rpc', op: 'discover' }, Invocation.empty) as IdentityCard;
@@ -30,10 +30,10 @@ describe('a card against the one it was copied from', () => {
   it('names the operation the producer no longer serves', async () => {
     const drift = driftOf(await cardOf('fixtures-drift-old'), await cardOf('fixtures-drift-new'), 'blog');
 
-    expect(drift.missingOps).toEqual([{ door: 'post', ops: ['publish'] }]);
+    expect(drift.missingOps).toEqual([{ facade: 'post', ops: ['publish'] }]);
   });
 
-  it('names the bound that moved under a door still called', async () => {
+  it('names the bound that moved under a facade still called', async () => {
     const drift = driftOf(await cardOf('fixtures-drift-old'), await cardOf('fixtures-drift-new'), 'blog');
 
     expect(drift.shapes.flatMap((one) => one.changes.map((change) => change.kind))).toContain('reshaped');

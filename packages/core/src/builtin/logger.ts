@@ -21,7 +21,7 @@ export type LogSink = (record: LogRecord) => void;
  *
  * PER BOOT and never per process: two apps in one process each have their own
  * destinations, and a slot shared between them sent the second app's lines to the first
- * app's door — measured on `demos/observability`, where only the first of three printed.
+ * app's facade — measured on `demos/observability`, where only the first of three printed.
  *
  * A boot writes most of what a process ever logs, and it writes it before any emission is
  * registered, so the lines that say what an app is made of are the ones a destination
@@ -129,7 +129,7 @@ export interface LoggerOptions {
   /** Logger name / prefix. */
   name?: string;
   /**
-   * Where its lines go — one boot's, so two apps in a process do not share a door. A
+   * Where its lines go — one boot's, so two apps in a process do not share a facade. A
    * logger without one writes to the console and nowhere else, which is what the boot's
    * first lines do and what an app declaring no destination does forever.
    */

@@ -74,7 +74,7 @@ export class Card<T = Values<Fields>> {
     const descriptor = this.descriptor;
     const subject = name ? `schema '${name}'` : 'this schema';
     if (!isObject(descriptor))
-      refuse(`${subject} is not an object`, 'A card carries one JSON Schema per door.');
+      refuse(`${subject} is not an object`, 'A card carries one JSON Schema per facade.');
     const version = descriptor['x-fougere-version'];
     if (version !== 1) {
       refuse(

@@ -97,7 +97,7 @@ describe('what the table does not serve', () => {
   });
 
   it('drops an entity the frond did not expose', () => {
-    // `exposed === false` is honoured by `generateRoutes`; this door never applied it.
+    // `exposed === false` is honoured by `generateRoutes`; this facade never applied it.
     expect(match('GET', 'blog/secrets')).toBeNull();
     expect(match('DELETE', 'blog/secrets/abc')).toBeNull();
   });
@@ -129,7 +129,7 @@ describe('frond.config.ts still decides an op kind', () => {
   });
 });
 
-describe('the verbs this door promised', () => {
+describe('the verbs this facade promised', () => {
   it('keeps PATCH on update, which the table spells PUT', () => {
     // Documented as `PUT · PATCH` in docs/infra/surfaces. The table gives `update` one
     // verb; the alias keeps the promise without inventing a second route.

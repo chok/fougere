@@ -5,7 +5,7 @@ pnpm -C demos/react-router-blog dev     # :3400
 ```
 
 React Router v7 in framework mode. Like the TanStack demo, it needs **no Fougere
-package of its own**: `@fougere/app/web` for the doors, `@fougere/react` for the
+package of its own**: `@fougere/app/web` for the facades, `@fougere/react` for the
 hooks.
 
 ```ts

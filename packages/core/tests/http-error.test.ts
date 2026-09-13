@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { toHttpError, toPublicError, FougereError, ErrorCode } from '../src/index.js';
 
 /**
- * The door is where a raw throw becomes an answer, and there are two halves to it:
+ * The facade is where a raw throw becomes an answer, and there are two halves to it:
  * framing what never was a `FougereError`, and masking the one code written for
  * nobody. These assertions used to live on `errorMiddleware`, which nothing installed
  * — so the behaviour that ships had none.

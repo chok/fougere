@@ -14,7 +14,7 @@ interface Writer {
 
 /** What a guard says about a filter it let through. The boot owns the voice. */
 export interface GuardReport {
-  /** The fields this door hands back, when it hands back fewer than the entity has. */
+  /** The fields this facade hands back, when it hands back fewer than the entity has. */
   view?: Fields;
   /** Said once per field — a filter is not a write, and a warning per call is noise. */
   outOfView?: (message: string) => void;
@@ -81,7 +81,7 @@ export class StorageGuard {
   }
 
   /**
-   * The values this write carries, validated and handed on PARSED — the rule the client door
+   * The values this write carries, validated and handed on PARSED — the rule the client facade
    * already holds (`InputValidator`), applied to a write that never passed through it. What a
    * handler is allowed to write is not asked here: only the value is.
    */
@@ -92,11 +92,11 @@ export class StorageGuard {
   }
 
   /**
-   * What a read may ask for. The write door judges what LANDS in a row; this one judges
+   * What a read may ask for. The write facade judges what LANDS in a row; this one judges
    * what a caller says about one — and it was the single entrance to the port with no
    * judge at all, while `params.filter` from a browser reaches it verbatim.
    *
-   * A criterion may name a SET, which is the one thing the write door would refuse: an
+   * A criterion may name a SET, which is the one thing the write facade would refuse: an
    * array is judged member by member, since that is what `IN` binds.
    */
   private criteria(where: Record<string, unknown>): Record<string, unknown> {
@@ -110,7 +110,7 @@ export class StorageGuard {
         continue;
       }
       // A comparison names its own vocabulary, and a typo in it would otherwise be a
-      // criterion that filters nothing — the silent truncation this door exists to stop.
+      // criterion that filters nothing — the silent truncation this facade exists to stop.
       const comparison = comparisonOf(field, asked);
       if (comparison) {
         const unknown = unknownIn(comparison);
@@ -148,11 +148,11 @@ export class StorageGuard {
   }
 
   /**
-   * A filter on a field this door does not hand back.
+   * A filter on a field this facade does not hand back.
    *
    * `output(schema)` narrows what is RETURNED and has never narrowed what is asked, so a
    * caller can already sort a hidden column into existence one comparison at a time — and
-   * the admin door copies a browser's filter here verbatim. Said rather than refused: it
+   * the admin facade copies a browser's filter here verbatim. Said rather than refused: it
    * is legal today, GraphQL batches a relation on a key a view may not carry, and a
    * refusal would break that on the way to fixing this.
    */
@@ -161,7 +161,7 @@ export class StorageGuard {
     if (!view || view[field] || this.said.has(field)) return;
     this.said.add(field);
     this.report.outOfView?.(
-      `${this.entity}.list() filtered on '${field}', which this door does not hand back — `
+      `${this.entity}.list() filtered on '${field}', which this facade does not hand back — `
       + 'a filter on a hidden field answers questions about it one call at a time.',
     );
   }
@@ -182,7 +182,7 @@ export class StorageGuard {
     for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
       const field = this.fields[key];
       // A key the entity does not declare has no column to land in and no judge to pass:
-      // on the client door it is a typo, and on this one it is a mapping that went stale.
+      // on the client facade it is a typo, and on this one it is a mapping that went stale.
       if (!field) {
         errors.push(`${where}${key}: ${InputRefusal.unknownField}`);
         continue;

@@ -28,7 +28,7 @@ describe('observability as an extension', () => {
     const report = await createLocalRunner(app)({ entity: 'rpc', op: 'topology' }, EMPTY) as {
       fronds: { frond: string; placement: string }[];
     };
-    expect(report.fronds).toEqual([{ frond: 'catalog', placement: 'local', entities: 1, doors: 1 }]);
+    expect(report.fronds).toEqual([{ frond: 'catalog', placement: 'local', entities: 1, facades: 1 }]);
   });
 
   /**
@@ -58,8 +58,8 @@ describe('observability as an extension', () => {
    */
   it('withdraws its sink on release, so a discarded app stops observing', async () => {
     const first = await boot([observability()]);
-    const door = first.resolve<Facade>('productHandler');
-    const running = door.list();
+    const facade = first.resolve<Facade>('productHandler');
+    const running = facade.list();
     // A sink is registered, so `tracing()` opens a span and the call is counted.
     expect(activeCalls()).toBe(1);
     await running;

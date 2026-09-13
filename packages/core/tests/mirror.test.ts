@@ -119,7 +119,7 @@ describe('a mirror refreshes', () => {
       async *pull() { yield [{ id: 'a', title: 'A' }]; }
     }
     await new M(storage).refresh();
-    // The page written is the validator's output — the door a boundary would decode at.
+    // The page written is the validator's output — the facade a boundary would decode at.
     expect((storage as any).written[0][0]).toEqual({ id: 'a', title: 'A' });
   });
 

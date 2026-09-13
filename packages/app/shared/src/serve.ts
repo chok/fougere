@@ -1,4 +1,4 @@
-/** The three doors, decided — and nothing about how a request arrives. */
+/** The three facades, decided — and nothing about how a request arrives. */
 import {
   createAppRunner,
   callValueOf,
@@ -13,7 +13,7 @@ import { matchRoute, tableOf } from './rest.js';
 /** What a host must read off the request before any decision is possible. */
 export interface DoorRequest {
   method: string;
-  /** Path with no query string. The REST door strips its own `/api` prefix. */
+  /** Path with no query string. The REST facade strips its own `/api` prefix. */
   path: string;
   query: Record<string, string>;
   body?: unknown;
@@ -21,7 +21,7 @@ export interface DoorRequest {
   state: Record<string, unknown>;
 }
 
-/** What a host must write back. `pass` is the one that keeps a door additive. */
+/** What a host must write back. `pass` is the one that keeps a facade additive. */
 export type Outcome =
   /** Not ours — the host's own routes must still reach their handler. */
   | { kind: 'pass' }
@@ -30,7 +30,7 @@ export type Outcome =
 
 // ── The call envelope ────────────────────────────
 
-/** The audience this door serves — the path segment after `/_fougere/call`. */
+/** The audience this facade serves — the path segment after `/_fougere/call`. */
 export function surfaceOf(path: string): string | undefined {
   const named = /^\/_fougere\/call\/([A-Za-z0-9_-]+)/.exec(path.replace(/\?.*$/, ''));
   return named?.[1];
@@ -114,7 +114,7 @@ export function shapeRest(operationName: string, result: unknown): Outcome {
     };
   }
 
-  // 200 on every verb, including POST — what the Nuxt door has always answered. A 201
+  // 200 on every verb, including POST — what the Nuxt facade has always answered. A 201
   // would be better REST and is a change of behaviour, so it belongs to `schema-rest`
   // (which owns what a verb means) and not to a refactor that moved this code.
   return { kind: 'ok', status: 200, body: result };

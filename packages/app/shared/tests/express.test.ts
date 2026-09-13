@@ -1,5 +1,5 @@
 /**
- * The doors as Express middlewares.
+ * The facades as Express middlewares.
  *
  * What is pinned is mostly what they DON'T do: a middleware that answers a path it
  * was not asked for is worse than no middleware, because the app it was added to
@@ -89,7 +89,7 @@ describe('what a middleware declines', () => {
   });
 });
 
-describe('the session door', () => {
+describe('the session facade', () => {
   it('answers the view for the state the app resolved', async () => {
     const { sent } = await run(session(), {
       method: 'GET',
@@ -126,7 +126,7 @@ describe('the session door', () => {
 });
 
 describe('the three composed', () => {
-  it('lets each door see the request, and passes when none claims it', async () => {
+  it('lets each facade see the request, and passes when none claims it', async () => {
     await bootWith([]);
     const { next } = await run(fougere(), { method: 'GET', path: '/anything' });
     expect(next).toHaveBeenCalledOnce();

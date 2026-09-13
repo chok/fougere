@@ -201,7 +201,7 @@ describe('extensionsOf', () => {
    * The generated plugin imports the AUTHOR's file. No module of classes is emitted: one
    * used to be, and it re-stated what the classes already carry — signatures the checker
    * owns, operations `Crud` declares at runtime — while being imported by a path a bundler
-   * treats as external, which broke `nuxt dev` in-process. It is the same door
+   * treats as external, which broke `nuxt dev` in-process. It is the same facade
    * `configureFougere({ fronds })` opens for every host that is not Nuxt.
    */
   describe('when the app states its fronds', () => {
@@ -223,7 +223,7 @@ describe('extensionsOf', () => {
 
     it('configures even when the app states nothing, so the absence is answered', () => {
       // `hostedBy` names both keys and refuses. Skipping the call boots a silent app whose
-      // every door answers NOT_FOUND with nothing said.
+      // every facade answers NOT_FOUND with nothing said.
       const out = generateBootPlugin({ db: 'sqlite' } as FougereConfig, [], '/app/boot');
 
       expect(out).toContain('configureFougere({');

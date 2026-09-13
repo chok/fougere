@@ -4,7 +4,7 @@
  * `expose: []` in a frond's config says nothing is part of the public contract.
  * `adapter/rest/src/routes.ts` and `adapter/graphql/src/auto-register.ts` both read it —
  * `if (!surfaceName && entity.exposed === false) continue` — and nothing in
- * `core/src/boot/` does. So the entity vanishes from two doors and keeps answering on the
+ * `core/src/boot/` does. So the entity vanishes from two facades and keeps answering on the
  * third, which is the one a browser calls.
  *
  * Recorded as a test rather than as a paragraph: `CLAUDE.md` has carried this as a Known
@@ -46,7 +46,7 @@ describe('an entity withdrawn from the public contract', () => {
       state: {},
     }) as { result?: unknown; error?: unknown };
 
-    // Both answer. Whether that is right is a decision; that the three doors disagree
+    // Both answer. Whether that is right is a decision; that the three facades disagree
     // is a fact, and this is where it is written down.
     expect(local).toBeTruthy();
     expect(overRpc.error).toBeUndefined();
@@ -58,7 +58,7 @@ describe('an entity withdrawn from the public contract', () => {
 
     const rest = await serveRest(app, { method: 'GET', path: 'vault/secrets', query: {}, state: {} });
 
-    // `pass` is the door saying "not mine" — a host would fall through to a 404.
+    // `pass` is the facade saying "not mine" — a host would fall through to a 404.
     expect(rest.kind).toBe('pass');
   });
 });

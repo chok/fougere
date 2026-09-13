@@ -1,4 +1,4 @@
-/** REST catch-all — the h3 half of a door whose decisions live in `@fougere/app`. */
+/** REST catch-all — the h3 half of a facade whose decisions live in `@fougere/app`. */
 import { defineEventHandler, readBody, getQuery, createError, setResponseStatus, setResponseHeaders } from 'h3';
 import { serveRest, useFougereApp } from '@fougere/app';
 

@@ -9,7 +9,7 @@
  *
  * REST and GraphQL are NOT a third and fourth: both resolve the façade and call it
  * (`routes.ts:214`, `pothos.ts:862`), so they are the same validator by construction.
- * Claiming four doors would have inflated the theorem; there are two.
+ * Claiming four facades would have inflated the theorem; there are two.
  *
  * The inputs are not chosen, they are ENUMERATED from the declared fields — the validator
  * is a finite decision table (`validation.ts`), so for a given field the verdict and the
@@ -41,7 +41,7 @@ function verdictOfForm(schema: SchemaView & { validate(i: unknown): unknown }, i
   return result.success ? { ok: true } : { ok: false, errors: sorted(result.errors ?? []) };
 }
 
-/** What the door does on arrival. A refusal is a typed error, not a return value. */
+/** What the facade does on arrival. A refusal is a typed error, not a return value. */
 async function verdictOfFacade(run: ReturnType<typeof createLocalRunner>, op: string, input: unknown): Promise<Verdict> {
   const [entity, name] = op.split('.');
   try {

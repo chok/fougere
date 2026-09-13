@@ -57,7 +57,7 @@ async function main() {
     await local({ entity: 'reading', op: 'create' }, inv({ input: row }));
   }
 
-  // Three receivers over the SAME runner. One frond, three doors on the wire.
+  // Three receivers over the SAME runner. One frond, three facades on the wire.
   const http = await serve(local, { port: 0 });
   const socket = await serveSocket(local);
 

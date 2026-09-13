@@ -79,7 +79,7 @@ function assertOneOwnerPerKey(
 
   for (const frond of fronds) {
     if (remotes && frond.name in remotes) continue;
-    for (const handler of frond.handlers) claim(facadeKeyOf(handler.address, handler.surface), frond.name, 'door');
+    for (const handler of frond.handlers) claim(facadeKeyOf(handler.address, handler.surface), frond.name, 'facade');
     for (const presenter of frond.presenters) claim(presenterKeyOf(presenter.entityName), frond.name, 'presenter');
   }
 }
@@ -233,7 +233,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       ? createRemoteRouter(Object.fromEntries(declaredRemotes), options.remoteTransport)
       : undefined;
 
-    // What is running on this app — counted at the one door every caller goes through,
+    // What is running on this app — counted at the one facade every caller goes through,
     // so releasing it can wait for the work instead of pulling the floor out.
     const inflight = new InFlight();
 
@@ -329,14 +329,14 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       );
     }
 
-    // Once every door exists: what is announced here and what is listened to are both known.
+    // Once every facade exists: what is announced here and what is listened to are both known.
     emissions.register();
 
-    // Which doors carry a line, read from who SUBSCRIBED — so a third party's destination
+    // Which facades carry a line, read from who SUBSCRIBED — so a third party's destination
     // is left alone by the two middlewares that observe every operation.
-    for (const door of emissions.doorsFor(LOG_LINE)) {
-      CARRIES_LINE.add(door.replace(/Handler$/, '').replace(/^./, (c) => c.toLowerCase()));
-      CARRIES_LINE.add(door);
+    for (const facade of emissions.facadesFor(LOG_LINE)) {
+      CARRIES_LINE.add(facade.replace(/Handler$/, '').replace(/^./, (c) => c.toLowerCase()));
+      CARRIES_LINE.add(facade);
     }
 
     /** The last resort, held by the container so every resolution path shares it. */
@@ -386,7 +386,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       if (found) return found.entityClass;
       if (remoteRouter) {
         const route = await remoteRouter.route(entity);
-        // A remote door that stores nothing publishes ops and no shape. Saying so beats
+        // A remote facade that stores nothing publishes ops and no shape. Saying so beats
         // handing back an empty schema, which would validate every input it was given.
         if (!route.schema) {
           throw new Error(
@@ -409,12 +409,12 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       }
     };
 
-    /** Said once per pair, so a door that registers in a loop says it once. */
+    /** Said once per pair, so a facade that registers in a loop says it once. */
     const saidAbsent = new Set<string>();
 
     /**
      * A surface is declared in the frond that serves it. When that frond runs in another
-     * process, this one never asked for its doors, and answering 'no' is the only thing a
+     * process, this one never asked for its facades, and answering 'no' is the only thing a
      * synchronous rule can do — so it says so rather than registering nothing in silence.
      */
     const sayNoSurfaceAcross = (entity: string, surface: string): void => {
@@ -422,8 +422,8 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       saidAbsent.add(`${surface}:${entity}`);
       log.warn(
         `surface '${surface}' serves nothing for '${entity}' — the frond that declares it runs `
-        + 'elsewhere, and a remote is asked for its doors at the first call, not at boot. '
-        + 'The default door answers.',
+        + 'elsewhere, and a remote is asked for its facades at the first call, not at boot. '
+        + 'The default facade answers.',
       );
     };
 
@@ -465,7 +465,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       }));
     }
 
-    /** The terms beside a door, with the exact same named-surface fallback rule. */
+    /** The terms beside a facade, with the exact same named-surface fallback rule. */
     const operationsFor = (entity: string, surface?: string): EffectiveOperationsMap | undefined => {
       if (!surface) return effectiveByKey.get(facadeKeyOf(entity));
 
@@ -479,7 +479,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
     /**
      * The storage an entity is backed by — the dual of `facadeFor`, which serves its client-facing
-     * door.
+     * facade.
      */
     const storageFor = (entity: string): unknown | undefined => {
       const owner = fronds.owner(entity);
@@ -508,7 +508,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     const app: App = {
       container,
       fronds,
-      // What this app publishes, straight from fougere.config.ts — the doors read it,
+      // What this app publishes, straight from fougere.config.ts — the facades read it,
       // so an undeclared adapter serves nothing whatever a host mounted.
       adapters: options.adapters ?? {},
       // Where a call goes, as DECLARED. Kept because a reader needs it beside what the
@@ -564,7 +564,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     await appLifecycle.up(app);
 
     // The boot's own lines, and every line after them. Held until here because a boot
-    // writes most of what a process logs and writes it before any door exists — so the
+    // writes most of what a process logs and writes it before any facade exists — so the
     // lines that say what this app is made of are the ones a destination would miss.
     // `LogLine` is core's for this reason: naming it costs no optional package.
     //

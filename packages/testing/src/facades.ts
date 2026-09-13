@@ -6,13 +6,13 @@ import { Cases } from '@fougere/schema';
 import { derivedCases } from './derive.js';
 import { sampleInput, replaySeed, type SampleOptions } from './sample.js';
 
-/** The one shape both the local validator and a door already speak. */
+/** The one shape both the local validator and a facade already speak. */
 export interface Verdict {
   success: boolean;
   errors?: ValidationError[];
 }
 
-/** What a door answers, in the shape a verdict is compared in. */
+/** What a facade answers, in the shape a verdict is compared in. */
 export async function verdictOf(call: () => Promise<unknown>): Promise<Verdict> {
   try {
     await call();

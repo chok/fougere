@@ -148,7 +148,7 @@ describe('boundary · survives every field transform', () => {
   });
 
   /**
-   * Two doors decode: the client one on what arrives, `StorageGuard` on what a handler
+   * Two facades decode: the client one on what arrives, `StorageGuard` on what a handler
    * writes. The value the second sees has been through the first, so a decoder that does
    * not answer its own output stores something nobody asked for.
    */

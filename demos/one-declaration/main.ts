@@ -66,7 +66,7 @@ console.log(`     ${D('a client may send   ')} ${may.join(', ')}`);
 console.log(`     ${D('a client receives   ')} ${gets.join(', ')}`);
 console.log(D(`
      Nobody wrote "a client cannot supply an id". primary() and created() say it,
-     and the door reads them.`));
+     and the facade reads them.`));
 
 // ── 4. the validator ─────────────────────────────────────────────────────────────
 section('→', 'The validator', 'the same verdict in the browser, at the façade, and across a split');

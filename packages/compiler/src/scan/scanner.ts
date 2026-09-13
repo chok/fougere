@@ -126,7 +126,7 @@ function toAddress(className: string): string {
 function depKeyOf(type: TypeRef): string {
   // `Facade<PostHandler>` — the second port, read exactly like the first. The type names
   // what arrives: not the handler (its methods take positional arguments and it is never
-  // injected), but the door built in front of it. Same key whether that door is the local
+  // injected), but the facade built in front of it. Same key whether that facade is the local
   // façade or a doublure, which is what makes the topology invisible from a signature.
   const facadeOf = type.name === 'Facade' ? type.generics?.[0]?.name : undefined;
   if (facadeOf) return lowerFirst(facadeOf);
@@ -400,7 +400,7 @@ async function toHandlerEntry(
 
   // Read output override from Crud(Entity, Output) — static __output property
   // A handler-wide view, when it is not simply the entity — the two are compared by
-  // identity, which is why both slots are read through the same door.
+  // identity, which is why both slots are read through the same facade.
   const subject = targetOf(ctor);
   const declared = outputOf(ctor);
   const outputOverride = declared && subject && declared !== subject

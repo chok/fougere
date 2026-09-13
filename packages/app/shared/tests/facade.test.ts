@@ -1,7 +1,7 @@
 /**
  * What a page may name, and what it may not.
  *
- * The module the scan writes fills `FougereDoors` from outside; the augmentation below stands
+ * The module the scan writes fills `FougereOperations` from outside; the augmentation below stands
  * in for it, so every claim here is read by the compiler `pnpm typecheck` runs — vitest erases
  * types without checking them, which is why `tsconfig.test.json` exists at all.
  */
@@ -11,7 +11,7 @@ import { ErrorCode } from '@fougere/core/contract';
 import { addressOf, callOf, facade, type Addresses, type Refused } from '../src/client.js';
 
 declare module '@fougere/core/contract' {
-  interface FougereDoors {
+  interface FougereOperations {
     'order.quote': { kind: 'query'; errors: never };
     'order.ship': { kind: 'command'; errors: ErrorCode.CONFLICT | ErrorCode.GONE };
     'checkout.pay': { kind: 'command'; errors: ErrorCode.BAD_REQUEST };
@@ -25,7 +25,7 @@ type Exact<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 /** Only `true` is admitted, so a widened or narrowed answer fails where it is written. */
 function exact<Holds extends true>(_holds: Holds): void {}
 
-describe('the doors a page may name', () => {
+describe('the facades a page may name', () => {
   it('reads the addresses off the keys, and nothing else', () => {
     exact<Exact<Addresses, 'order' | 'checkout'>>(true);
 

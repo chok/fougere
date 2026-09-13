@@ -44,12 +44,12 @@ describe('designation', () => {
    * `checkout`, `transfer`, `health`. A page could not name one of them at all, and the
    * class was never the subject anyway: it is read for its name and nothing else.
    */
-  it('takes the address itself from a door that has no class to name it', () => {
+  it('takes the address itself from a facade that has no class to name it', () => {
     expect(addressOf('checkout')).toBe('checkout');
     expect(callOf('checkout', 'pay')).toEqual({ entity: 'checkout', op: 'pay' });
   });
 
-  it('answers the same thing either way for a door that has both', () => {
+  it('answers the same thing either way for a facade that has both', () => {
     expect(addressOf(Post)).toBe(addressOf('post'));
   });
 });

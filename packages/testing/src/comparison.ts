@@ -6,7 +6,7 @@ import { lowerFirst, type SchemaView } from '@fougere/schema';
 import { listQuery, findQuery, mutationFor, at } from './gql.js';
 import { sampleInput, type SampleOptions } from './sample.js';
 
-/** The rows a door hands back, with its own envelope taken off. */
+/** The rows a facade hands back, with its own envelope taken off. */
 function rowsOf(value: unknown): unknown {
   if (Array.isArray(value)) return [...value];
   const page = value as { items?: unknown } | null;
@@ -29,7 +29,7 @@ export interface DoorOptions extends SampleOptions {
   surface?: string;
 }
 
-interface Doors {
+interface Facades {
   local: (op: string, call?: DoorInput) => Promise<unknown>;
   rpc: (op: string, call?: DoorInput) => Promise<unknown>;
   rest: (op: string, call?: DoorInput) => Promise<unknown>;
@@ -48,17 +48,17 @@ export interface DoorContractCase {
   expected: unknown;
 }
 
-/** One entity, four doors, the same answers. */
+/** One entity, four facades, the same answers. */
 export function checkDoors(app: App, entity: SchemaView, options: DoorOptions = {}): void {
   const name = lowerFirst(entity.name ?? '');
-  const doors = doorsOf(app, entity, name, options.surface);
+  const facades = facadesOf(app, entity, name, options.surface);
   const inputOf = () => sampleInput(entity, options.given ?? {}, options);
 
-  describe(`${entity.name} — the doors agree`, () => {
+  describe(`${entity.name} — the facades agree`, () => {
     it('on create, over what the caller sent', async () => {
       const sent = inputOf();
       const answers = await Promise.all(
-        (['local', 'rpc', 'rest', 'graphql'] as const).map((door) => doors[door]('create', { input: sent })),
+        (['local', 'rpc', 'rest', 'graphql'] as const).map((facade) => facades[facade]('create', { input: sent })),
       );
 
       const [local, ...others] = answers.map((answer) => written(answer, sent));
@@ -68,33 +68,33 @@ export function checkDoors(app: App, entity: SchemaView, options: DoorOptions = 
     });
 
     it('on list', async () => {
-      await doors.local('create', { input: inputOf() });
+      await facades.local('create', { input: inputOf() });
 
-      const local = wire(rowsOf(await doors.local('list')));
+      const local = wire(rowsOf(await facades.local('list')));
       expect(Array.isArray(local) && local.length > 0, 'nothing to compare').toBe(true);
 
-      expect(wire(rowsOf(await doors.rpc('list'))), 'rpc ≠ local').toEqual(local);
-      expect(wire(rowsOf(await doors.rest('list'))), 'rest ≠ local').toEqual(local);
-      expect(wire(rowsOf(await doors.graphql('list'))), 'graphql ≠ local').toEqual(local);
+      expect(wire(rowsOf(await facades.rpc('list'))), 'rpc ≠ local').toEqual(local);
+      expect(wire(rowsOf(await facades.rest('list'))), 'rest ≠ local').toEqual(local);
+      expect(wire(rowsOf(await facades.graphql('list'))), 'graphql ≠ local').toEqual(local);
     });
 
     it('on findById', async () => {
-      const row = await doors.local('create', { input: inputOf() }) as { id: string };
+      const row = await facades.local('create', { input: inputOf() }) as { id: string };
 
-      const local = wire(await doors.local('findById', { id: row.id }));
+      const local = wire(await facades.local('findById', { id: row.id }));
 
-      expect(wire(await doors.rpc('findById', { id: row.id })), 'rpc ≠ local').toEqual(local);
-      expect(wire(await doors.rest('findById', { id: row.id })), 'rest ≠ local').toEqual(local);
-      expect(wire(await doors.graphql('findById', { id: row.id })), 'graphql ≠ local').toEqual(local);
+      expect(wire(await facades.rpc('findById', { id: row.id })), 'rpc ≠ local').toEqual(local);
+      expect(wire(await facades.rest('findById', { id: row.id })), 'rest ≠ local').toEqual(local);
+      expect(wire(await facades.graphql('findById', { id: row.id })), 'graphql ≠ local').toEqual(local);
     });
 
     it('on update, over what the caller sent', async () => {
-      const rows = await Promise.all([1, 2, 3, 4].map(() => doors.local('create', { input: inputOf() }))) as { id: string }[];
+      const rows = await Promise.all([1, 2, 3, 4].map(() => facades.local('create', { input: inputOf() }))) as { id: string }[];
       const patch = inputOf();
 
       const answers = await Promise.all(
         (['local', 'rpc', 'rest', 'graphql'] as const)
-          .map((door, index) => doors[door]('update', { id: rows[index].id, input: patch })),
+          .map((facade, index) => facades[facade]('update', { id: rows[index].id, input: patch })),
       );
 
       const [local, ...others] = answers.map((answer) => written(answer, patch));
@@ -104,32 +104,32 @@ export function checkDoors(app: App, entity: SchemaView, options: DoorOptions = 
     });
 
     it('on delete', async () => {
-      const rows = await Promise.all([1, 2, 3, 4].map(() => doors.local('create', { input: inputOf() }))) as { id: string }[];
+      const rows = await Promise.all([1, 2, 3, 4].map(() => facades.local('create', { input: inputOf() }))) as { id: string }[];
 
       const answers = await Promise.all(
-        (['local', 'rpc', 'rest', 'graphql'] as const).map((door, index) => doors[door]('delete', { id: rows[index].id })),
+        (['local', 'rpc', 'rest', 'graphql'] as const).map((facade, index) => facades[facade]('delete', { id: rows[index].id })),
       );
 
       // REST answers a deletion with no content at all, which is the protocol saying yes.
       const onTheWire = answers.map((answer) => (answer === undefined || answer === null ? true : wire(answer)));
-      expect(new Set(onTheWire).size, `the doors disagree: ${JSON.stringify(onTheWire)}`).toBe(1);
+      expect(new Set(onTheWire).size, `the facades disagree: ${JSON.stringify(onTheWire)}`).toBe(1);
     });
 
     it('on a refusal', async () => {
-      // A refusal is where the doors diverge most, and where each is most tempted to
+      // A refusal is where the facades diverge most, and where each is most tempted to
       // answer in its own words. What must match is that it WAS refused.
       const bad = { ...inputOf(), __unknown__: 'x' };
       const refusals = await Promise.all(
-        (['local', 'rpc', 'rest', 'graphql'] as const).map((door) => refused(() => doors[door]('create', { input: bad }))),
+        (['local', 'rpc', 'rest', 'graphql'] as const).map((facade) => refused(() => facades[facade]('create', { input: bad }))),
       );
 
       expect(refusals[0], 'local accepted a body outside the contract').toBe(true);
-      expect(refusals, `the doors disagree: ${JSON.stringify(refusals)}`).toEqual([true, true, true, true]);
+      expect(refusals, `the facades disagree: ${JSON.stringify(refusals)}`).toEqual([true, true, true, true]);
     });
   });
 }
 
-/** Run one hand-written invocation contract through every door. */
+/** Run one hand-written invocation contract through every facade. */
 export function checkDoorContract(
   app: App,
   entity: SchemaView,
@@ -137,13 +137,13 @@ export function checkDoorContract(
   options: Pick<DoorOptions, 'surface'> = {},
 ): void {
   const name = lowerFirst(entity.name ?? '');
-  const doors = doorsOf(app, entity, name, options.surface);
+  const facades = facadesOf(app, entity, name, options.surface);
   const names = ['local', 'rpc', 'rest', 'graphql'] as const;
 
-  describe(`${entity.name} — its invocation contract crosses every door`, () => {
+  describe(`${entity.name} — its invocation contract crosses every facade`, () => {
     for (const one of cases) {
       it(one.name, async () => {
-        const answers = await Promise.all(names.map((door) => doors[door](one.operation, one.input)));
+        const answers = await Promise.all(names.map((facade) => facades[facade](one.operation, one.input)));
         for (const [index, answer] of answers.entries()) {
           expect(wire(answer), `${names[index]} disagrees with the canonical invocation`).toEqual(wire(one.expected));
         }
@@ -156,8 +156,8 @@ async function refused(call: () => Promise<unknown>): Promise<boolean> {
   try { await call(); return false; } catch { return true; }
 }
 
-/** The four doors, each reduced to `(op, input) => answer` so the tests above read alike. */
-function doorsOf(app: App, entity: SchemaView, name: string, surface?: string): Doors {
+/** The four facades, each reduced to `(op, input) => answer` so the tests above read alike. */
+function facadesOf(app: App, entity: SchemaView, name: string, surface?: string): Facades {
   const run = createLocalRunner(app, surface);
   const state: Record<string, unknown> = {};
 
@@ -181,7 +181,7 @@ function doorsOf(app: App, entity: SchemaView, name: string, surface?: string): 
     },
 
     rest: async (op, call) => {
-      // The route the REST door itself would match, read from its own table — rebuilding
+      // The route the REST facade itself would match, read from its own table — rebuilding
       // the path here would be a second opinion on where an entity lives.
       const route = tableOf(app).find((one) => one.entityName === name && one.operationName === op);
       if (!route) throw new Error(`[checkDoors] REST serves no ${name}.${op}`);

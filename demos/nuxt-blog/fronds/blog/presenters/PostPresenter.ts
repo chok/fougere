@@ -7,7 +7,7 @@ import Author from '../entities/Author.js';
  * Each method on the presenter becomes a computed field added to the Post
  * sent out by the handlers. Method name = field name in the JSON output.
  *
- * Fougere applies this at the façade, so every door agrees: the envelope
+ * Fougere applies this at the façade, so every facade agrees: the envelope
  * (useQuery/invoke), the REST catch-all and GraphQL all carry the computed
  * fields. An op that names its output view is the exception — there the author
  * stated the list, and an addition they left out stays out.

@@ -154,7 +154,7 @@ export function registerFlush(send: () => Promise<void>): () => void {
  * counted twice. A module-level array made that a leak you had to remember to undo; a list
  * held beside the app cannot outlive it. Read at every end, so a taker added later counts.
  *
- * Two doors and not one, because a statement is not dispatched: nothing calls a middleware
+ * Two facades and not one, because a statement is not dispatched: nothing calls a middleware
  * around a query. What both need is the same table — the time a step's children accounted
  * for — so the two sit in one closure rather than reaching for each other.
  *

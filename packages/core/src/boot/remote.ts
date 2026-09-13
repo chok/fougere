@@ -35,7 +35,7 @@ export function createRemoteRouter(
   const pending = new Map(Object.entries(remotes));
   const transports = new Map<string, Transport>();
 
-  /** Which remote label claimed a door name — so a second claim can name the first. */
+  /** Which remote label claimed a facade name — so a second claim can name the first. */
   const claimedBy = new Map<string, string>();
 
   const discover = async (): Promise<void> => {
@@ -65,28 +65,28 @@ export function createRemoteRouter(
       const card = assertIdentityCard(answer, `Remote '${label}' (${url})`);
 
       for (const frond of card.fronds) {
-        // Doors only. A fact is not routable — nobody calls it, it arrives — so
-        // adding one here would answer a call with a transport to a door that
+        // Facades only. A fact is not routable — nobody calls it, it arrives — so
+        // adding one here would answer a call with a transport to a facade that
         // does not exist.
-        for (const door of frond.doors) {
-          const first = claimedBy.get(door.name);
+        for (const facade of frond.facades) {
+          const first = claimedBy.get(facade.name);
           /** Two remotes claiming one name is refused, not silently arbitrated. */
           if (first !== undefined && first !== label) {
             throw new FougereError({
               code: ErrorCode.INTERNAL_ERROR,
               message:
-                `Two remotes serve '${door.name}': '${first}' and '${label}'.\n`
+                `Two remotes serve '${facade.name}': '${first}' and '${label}'.\n`
                 + `  A call names an entity, not a frond, so nothing could choose between them.\n`
                 + `  - Keep one of the two out of \`remotes:\`, or\n`
                 + `  - expose one of them under a different entity name.`,
-              entity: door.name,
+              entity: facade.name,
             });
           }
-          claimedBy.set(door.name, label);
-          byEntity.set(door.name, {
+          claimedBy.set(facade.name, label);
+          byEntity.set(facade.name, {
             frond: frond.name,
             transport,
-            ...(door.schema ? { schema: Card.fromDescriptor(door.schema as SchemaDescriptor).toSchema() } : {}),
+            ...(facade.schema ? { schema: Card.fromDescriptor(facade.schema as SchemaDescriptor).toSchema() } : {}),
           });
         }
       }

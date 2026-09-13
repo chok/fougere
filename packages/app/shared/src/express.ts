@@ -1,4 +1,4 @@
-/** The doors as Express middlewares — the form an Express app expects. */
+/** The facades as Express middlewares — the form an Express app expects. */
 import { readExpressBody } from '@fougere/http';
 import { serveRest, serveRpc, rpcParseError } from './serve.js';
 import { serveGraphQL } from './graphql.js';
@@ -57,7 +57,7 @@ function fail(res: ExpressResponse, next: Next, err: unknown): void {
   next(err);
 }
 
-/** The call envelope, at `/_fougere/call` — the door the browser primitives use. */
+/** The call envelope, at `/_fougere/call` — the facade the browser primitives use. */
 export function call(mountPath = '/_fougere/call'): ExpressMiddleware {
   return (req, res, next) => {
     const path = pathOf(req);
@@ -143,17 +143,17 @@ export function graphql(mountPath = '/graphql'): ExpressMiddleware {
   };
 }
 
-/** Every door, for an app that wants all of them. What each one SERVES is still the
+/** Every facade, for an app that wants all of them. What each one SERVES is still the
  *  app's declaration — mounting is not publishing. */
 export function fougere(): ExpressMiddleware {
-  const doors = [call(), session(), rest(), graphql()];
+  const facades = [call(), session(), rest(), graphql()];
   return (req, res, next) => {
     let index = 0;
     const step = (err?: unknown) => {
       if (err) return next(err);
-      const door = doors[index++];
-      if (!door) return next();
-      door(req, res, step);
+      const facade = facades[index++];
+      if (!facade) return next();
+      facade(req, res, step);
     };
     step();
   };

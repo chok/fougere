@@ -36,10 +36,10 @@ export function entityClassName(name: string): string {
 }
 
 /**
- * One entry — a door or a fact — validated the same way, because sync consumes the same two
+ * One entry — a facade or a fact — validated the same way, because sync consumes the same two
  * values from both: a name it can turn into a class, and a descriptor it can rebuild.
  *
- * A missing descriptor is legal on either side and means different things: a door that
+ * A missing descriptor is legal on either side and means different things: a facade that
  * stores nothing (a health check, a search across shapes), or a fact whose announced type
  * is not a declared entity. Neither produces a row class, and demanding one here refused
  * the WHOLE card over a single entry.
@@ -72,7 +72,7 @@ function assertEntry(kind: string, frondName: string, entry: { name: string; sch
 
 function identityCardOf(value: unknown): IdentityCard {
   // The card's own shape is validated by the package that declares it — `fronds`, and each
-  // frond's `doors`. What stays here is what only a writer of files needs: a name safe to
+  // frond's `facades`. What stays here is what only a writer of files needs: a name safe to
   // become one, and the descriptor a class is generated from.
   const card = assertIdentityCard(value, 'Remote rpc.discover');
   for (const frond of card.fronds) {
@@ -83,7 +83,7 @@ function identityCardOf(value: unknown): IdentityCard {
     if (frond.facts !== undefined && !Array.isArray(frond.facts)) {
       throw new Error(`Remote frond '${frond.name}' has no valid facts array`);
     }
-    for (const door of frond.doors) assertEntry('door', frond.name, door);
+    for (const facade of frond.facades) assertEntry('facade', frond.name, facade);
     for (const fact of frond.facts ?? []) assertEntry('fact', frond.name, fact);
   }
   return card;
@@ -142,17 +142,17 @@ export default class SyncHandler {
     /**
      * What was written under each name — the barrel below is a projection of exactly this.
      *
-     * Three combinations, and all three occur: a door with rows behind it (both files), a
-     * door with none (the façade type alone), and a fact (the row class alone, because
+     * Three combinations, and all three occur: a facade with rows behind it (both files), a
+     * facade with none (the façade type alone), and a fact (the row class alone, because
      * nothing calls a fact).
      */
-    const generated = new Map<string, { row: boolean; door: boolean }>();
+    const generated = new Map<string, { row: boolean; facade: boolean }>();
     /** Absolute paths written by THIS run — anything else generated here is now stale. */
     const written = new Set<string>();
     const claim = (name: string): string => {
       const className = entityClassName(name);
       if (generated.has(className)) throw new Error(`Remote declares duplicate entity '${className}'`);
-      generated.set(className, { row: false, door: false });
+      generated.set(className, { row: false, facade: false });
       return className;
     };
 
@@ -179,16 +179,16 @@ export default class SyncHandler {
       generated.get(className)!.row = true;
     };
 
-    for (const { name, schema: descriptor, ops } of target.doors) {
+    for (const { name, schema: descriptor, ops } of target.facades) {
       const className = claim(name);
-      generated.get(className)!.door = true;
+      generated.get(className)!.facade = true;
 
-      // No shape behind this door: its operations still travel, its rows do not exist.
+      // No shape behind this facade: its operations still travel, its rows do not exist.
       // `rowType` falls back to `unknown`, which is the truth rather than an empty class.
       if (descriptor !== undefined) writeRow(className, descriptor as SchemaDescriptor);
 
       /**
-       * The door's type, next to the row's — what `Facade<T>` needs and what nothing
+       * The facade's type, next to the row's — what `Facade<T>` needs and what nothing
        * carried across a repository boundary.
        *
        * Writing `Facade<ArticleHandler>` used to require importing the handler's class.
@@ -232,9 +232,9 @@ export default class SyncHandler {
     // Barrel index
     // One binding carries the value AND the type, because a class is both — the pair of
     // re-exports that stood here was the price of declaring them separately.
-    const indexLines = [...generated].flatMap(([name, { row, door }]) => [
+    const indexLines = [...generated].flatMap(([name, { row, facade }]) => [
       ...(row ? [`export { default as ${name} } from './${entities}/${name}.js';`] : []),
-      ...(door ? [`export type { ${name}Handler } from './${handlers}/${name}Handler.js';`] : []),
+      ...(facade ? [`export type { ${name}Handler } from './${handlers}/${name}Handler.js';`] : []),
     ]);
     writeFileSync(join(frondDir, 'index.ts'), indexLines.join('\n') + '\n');
 
@@ -265,7 +265,7 @@ export default class SyncHandler {
      * — but the FILE stayed, and the generated `package.json` exports `'./entities/*'` as
      * a wildcard, so `@fronds/blog/entities/Ticket.js` kept resolving to a class nothing
      * behind it answers for. The consumer compiles, its local validator accepts, and the call
-     * comes back NOT_FOUND at the door — or never leaves, because the page dropped the
+     * comes back NOT_FOUND at the facade — or never leaves, because the page dropped the
      * call and kept the type.
      */
     const removed = [...this.prune(entitiesDir, written), ...this.prune(handlersDir, written)];

@@ -26,7 +26,7 @@ export interface RouteDefinition {
   /** The operation in words — the method's own doc sentence, carried by the contract. */
   description?: string;
   // No presenter here. A route used to carry the instance and its field names so the
-  // registration could enrich each row; the façade does that for every door now
+  // registration could enrich each row; the façade does that for every facade now
   // (`PresenterExecutor`), so the rows arrive computed and a second pass was duplicated work.
 }
 
@@ -72,7 +72,7 @@ interface FrondLike {
   handlers: HandlerEntry[];
   presenters: PresenterEntry[];
   surfaces?: Record<string, string[]>;
-  /** What `frond.config.ts` said per op — `rest:` is read here, `graphql:` next door. */
+  /** What `frond.config.ts` said per op — `rest:` is read here, `graphql:` next facade. */
   operationsOverrides?: Record<string, { rest?: { method?: string; path?: string; status?: number } }>;
 }
 

@@ -47,12 +47,12 @@ export async function heldShapes(remote: SyncedRemote): Promise<Map<string, Sche
   return cards;
 }
 
-/** The shapes a card announces, by the name a door carries. */
+/** The shapes a card announces, by the name a facade carries. */
 function servedShapes(card: IdentityCard, frond: string): Map<string, unknown> {
   const served = new Map<string, unknown>();
   for (const one of card.fronds) {
     if (one.name !== frond) continue;
-    for (const door of one.doors) if (door.schema) served.set(door.schema.title ?? door.name, door.schema);
+    for (const facade of one.facades) if (facade.schema) served.set(facade.schema.title ?? facade.name, facade.schema);
   }
   return served;
 }

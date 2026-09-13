@@ -15,7 +15,7 @@ class Line extends entity({ id: primary(), label: text({ max: 5 }) }) {}
 function guardedStorage() {
   // `list` declares its parameter: inspecting the options IS the guard's work, and
   // `StorageGuard.guard` hands back the type it was given — a double without a parameter
-  // would make the calls below uncompilable. `Record` opens the door to the unknown keys,
+  // would make the calls below uncompilable. `Record` opens the facade to the unknown keys,
   // which are precisely what these tests send.
   const list = vi.fn(async (_options?: ListOptions & Record<string, unknown>) => []);
   const storage = { list, create: vi.fn(async () => ({})), update: vi.fn(async () => ({})) };
@@ -58,7 +58,7 @@ describe('the read options are judged', () => {
   });
 });
 
-describe('a filter on a field the door does not hand back', () => {
+describe('a filter on a field the facade does not hand back', () => {
   it('says so without refusing — that is legal today', async () => {
     const said: string[] = [];
     const list = vi.fn(async (_o?: ListOptions & Record<string, unknown>) => []);
@@ -107,7 +107,7 @@ describe('a filter on a field the door does not hand back', () => {
  * The content of `where` passed in front of nobody.
  *
  * A write is judged field by field; a read was not — and `params.filter`, typed into a
- * browser, arrives here as it is through the admin door.
+ * browser, arrives here as it is through the admin facade.
  */
 describe('the criteria are judged the way a write is', () => {
   it('refuses a field the entity does not declare', async () => {

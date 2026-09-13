@@ -48,14 +48,14 @@ function frondWith(
 }
 
 describe('the surfaces a handler answers on', () => {
-  it('gives a handler with a door of its own that door alone', () => {
+  it('gives a handler with a facade of its own that facade alone', () => {
     const dedicated = handlerFor('post', 'public');
     const frond = frondWith([handlerFor('post'), dedicated], { public: ['post'] });
 
     expect(servedSurfaces(frond, dedicated)).toEqual(['public']);
   });
 
-  it('gives a handler with no door of its own the default alone when nothing names it', () => {
+  it('gives a handler with no facade of its own the default alone when nothing names it', () => {
     const handler = handlerFor('post');
 
     expect(servedSurfaces(frondWith([handler]), handler)).toEqual([undefined]);
@@ -74,7 +74,7 @@ describe('the surfaces a handler answers on', () => {
     expect(servedSurfaces(frondWith([handler], { public: ['Post'] }), handler)).toEqual([undefined, 'public']);
   });
 
-  it('steps aside where the surface opened a door of its own', () => {
+  it('steps aside where the surface opened a facade of its own', () => {
     const handler = handlerFor('post');
     const frond = frondWith([handler, handlerFor('post', 'public')], { public: ['post'], admin: ['post'] });
 

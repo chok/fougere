@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import type { App } from '@fougere/core';
 import type { SchemaView } from '@fougere/schema';
-import { checkContract, checkOutput, type CheckOptions } from './doors.js';
+import { checkContract, checkOutput, type CheckOptions } from './facades.js';
 import { checkDoors, type DoorOptions } from './comparison.js';
 
 export interface CheckAllOptions extends DoorOptions, CheckOptions {
   /** Entities to leave out, by name — one whose rows a test cannot seed, typically. */
   except?: string[];
-  /** Skip the four-door comparison. The contract and the leak are still checked. */
-  doors?: boolean;
+  /** Skip the four-facade comparison. The contract and the leak are still checked. */
+  facades?: boolean;
 }
 
 /** Every entity the app SERVES, with its handler. */
@@ -37,6 +37,6 @@ export function checkAll(app: App, options: CheckAllOptions = {}): void {
   for (const { entity } of served) {
     checkContract(app, entity, options);
     checkOutput(app, entity, options);
-    if (options.doors !== false) checkDoors(app, entity, options);
+    if (options.facades !== false) checkDoors(app, entity, options);
   }
 }

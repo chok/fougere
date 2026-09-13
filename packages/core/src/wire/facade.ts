@@ -1,12 +1,12 @@
 /**
- * Every door an app serves, as TYPES — empty here, and filled from outside by the module the
+ * Every facade an app serves, as TYPES — empty here, and filled from outside by the module the
  * scan writes.
  *
  * The same shape `FougereEntityAdapters` has in `@fougere/schema`: an interface a package
  * declares and never populates, because what fills it is a project's own code. A package cannot
  * import a file that only exists once a project has been built.
  *
- * It lives beside the call contract rather than in `@fougere/app`, because what a door is
+ * It lives beside the call contract rather than in `@fougere/app`, because what a facade is
  * ADDRESSED by is the same fact on both sides of the wire — and because a backend project runs
  * `fougere build` without ever installing a front-end package.
  *
@@ -14,8 +14,8 @@
  */
 import type { ErrorCode } from './errors.js';
 
-/** What one door answers for, keyed `address.op` — `surface:address.op` for a named surface. */
-export interface FougereDoors {}
+/** What one facade answers for, keyed `address.op` — `surface:address.op` for a named surface. */
+export interface FougereOperations {}
 
 /**
  * The handler behind each address, carried as `import('…/PostHandler').default`.
@@ -26,11 +26,11 @@ export interface FougereDoors {}
  */
 export interface FougereHandlers {}
 
-/** A door whose operations no type describes — an ungenerated project's, and a form's. */
+/** A facade whose operations no type describes — an ungenerated project's, and a form's. */
 export type AnyHandler = Record<string, (...args: never[]) => Promise<unknown>>;
 
 /**
- * One door: where a call goes, and the handler that answers there.
+ * One facade: where a call goes, and the handler that answers there.
  *
  * The address is carried as a LITERAL, which is what lets an operation be looked up by
  * `address.op`. A page never builds one by hand — the scan writes a `const` per address, and a
@@ -43,7 +43,7 @@ export interface FacadeName<Handler, Address extends string> {
   readonly handler?: Handler;
 }
 
-type Served = keyof FougereDoors & string;
+type Served = keyof FougereOperations & string;
 
 /**
  * Both halves below take the union through a type PARAMETER, which is what makes the
@@ -60,7 +60,7 @@ type AddressIn<Key> = Key extends `${infer Address}.${string}` ? Address : never
 export type Addresses = [Served] extends [never] ? string : AddressIn<Served>;
 
 /**
- * The handler that answers at one address. It falls back to an unconstrained door when nothing
+ * The handler that answers at one address. It falls back to an unconstrained facade when nothing
  * was generated, because a `never` there would refuse every call a project makes.
  */
 export type HandlerOf<Address extends string> =
@@ -72,8 +72,8 @@ export type HandlerOf<Address extends string> =
  * generated module already merged them. Every code until a scan has narrowed it.
  */
 export type Refused<Address extends string, Op extends string> =
-  `${Address}.${Op}` extends keyof FougereDoors
-    ? FougereDoors[`${Address}.${Op}`] extends { errors: infer Codes }
+  `${Address}.${Op}` extends keyof FougereOperations
+    ? FougereOperations[`${Address}.${Op}`] extends { errors: infer Codes }
       ? [Codes] extends [ErrorCode] ? Codes : ErrorCode
       : ErrorCode
     : ErrorCode;

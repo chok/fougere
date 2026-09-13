@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { machineWanted, machineText } from '../src/machine.js';
 
-describe('the machine door', () => {
+describe('the machine facade', () => {
   it('is opened by the declaration, not by the command name', () => {
     expect(machineWanted({ json: true })).toBe(true);
     expect(machineWanted({ names: 'operations' })).toBe(true);

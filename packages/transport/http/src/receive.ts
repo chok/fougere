@@ -1,8 +1,8 @@
 /**
- * The envelope door for a host that speaks `Request`/`Response` — hono, a Worker, Next, SvelteKit.
+ * The envelope facade for a host that speaks `Request`/`Response` — hono, a Worker, Next, SvelteKit.
  *
  * It reads a `Request` body and `serve` reads a `node:http` stream; the two stay separate
- * because putting Node through this reader HALVED the Node door — 0.677 to 0.341 of its
+ * because putting Node through this reader HALVED the Node facade — 0.677 to 0.341 of its
  * baseline, measured 2026-08-22.
  */
 import { handleRpc, type ReceiveOptions } from './server.js';
@@ -12,7 +12,7 @@ import type { Transport } from '@fougere/core/contract';
 export interface ReceiveHttpOptions extends ReceiveOptions {
   /** Maximum JSON-RPC body size. Default: 1 MiB. */
   maxBodyBytes?: number;
-  /** The path this door answers. Default: `/_fougere/call`. */
+  /** The path this facade answers. Default: `/_fougere/call`. */
   path?: string;
   /** Take unsigned calls, deliberately. */
   allowUnsigned?: boolean;
@@ -68,7 +68,7 @@ export function receive(
   // that starts and then rejects everything is found in production.
   if (!options.verify && !options.allowUnsigned) {
     throw new Error(
-      'A Fougere receiver takes the `state` it is handed, so this door needs to know who is calling.\n'
+      'A Fougere receiver takes the `state` it is handed, so this facade needs to know who is calling.\n'
       + '  Wire `verify` (see `verifyEnvelope`, and `fougere keys` / `fougere grant`),\n'
       + '  or say `allowUnsigned: true` — which is right for local development and for a\n'
       + '  mesh whose sidecar already established the peer.',

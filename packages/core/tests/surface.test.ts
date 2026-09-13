@@ -1,5 +1,5 @@
 /**
- * A surface is a key of the runner — the audience a door serves.
+ * A surface is a key of the runner — the audience a facade serves.
  *
  * `handlers/public/NoteHandler.ts` builds a second façade under `public:noteHandler`
  * (`bootstrap.ts`, `facadeKeyOf`). What was missing until now: nothing tested the local
@@ -54,14 +54,14 @@ const boot = () => createApp({
 });
 
 describe('the envelope, per audience', () => {
-  it('the default door serves the whole row', async () => {
+  it('the default facade serves the whole row', async () => {
     const app = await boot();
     const row = await createAppRunner(app)({ entity: 'note', op: 'list' }, Invocation.empty) as any[];
     expect(row[0]).toHaveProperty('secret', 'planqué');
     await app.dispose();
   });
 
-  it('a named door serves its own façade — the secret does not leave', async () => {
+  it('a named facade serves its own façade — the secret does not leave', async () => {
     const app = await boot();
     const row = await createAppRunner(app, 'public')({ entity: 'note', op: 'list' }, Invocation.empty) as any[];
     expect(Object.keys(row[0]).sort()).toEqual(['id', 'title']);
@@ -69,7 +69,7 @@ describe('the envelope, per audience', () => {
   });
 
   /** Naming an audience closes it: Ledger has no public handler, so it is not there. */
-  it('a named door refuses an entity nothing named into it', async () => {
+  it('a named facade refuses an entity nothing named into it', async () => {
     const app = await boot();
     await expect(
       createAppRunner(app, 'public')({ entity: 'ledger', op: 'list' }, Invocation.empty),
@@ -82,8 +82,8 @@ describe('the envelope, per audience', () => {
     const all = await createAppRunner(app)({ entity: 'rpc', op: 'discover' }, Invocation.empty) as IdentityCard;
     const pub = await createAppRunner(app, 'public')({ entity: 'rpc', op: 'discover' }, Invocation.empty) as IdentityCard;
 
-    expect(all.fronds[0].doors.map((d) => d.name).sort()).toEqual(['ledger', 'note']);
-    expect(pub.fronds[0].doors.map((d) => d.name)).toEqual(['note']);
+    expect(all.fronds[0].facades.map((d) => d.name).sort()).toEqual(['ledger', 'note']);
+    expect(pub.fronds[0].facades.map((d) => d.name)).toEqual(['note']);
     await app.dispose();
   });
 });

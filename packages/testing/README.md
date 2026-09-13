@@ -25,7 +25,7 @@ checkDoors(app, Product);      // local · REST · GraphQL · RPC answer the sam
 ```
 
 `checkDoorContract(app, Product, cases)` runs handler-specific invocation cases through
-the same four-door harness. It is useful when the handler must observe a distinction such
+the same four-facade harness. It is useful when the handler must observe a distinction such
 as omitted (`undefined`) versus explicitly supplied `null`.
 
 `testApp()` takes no argument: a file under `fronds/catalog/tests/` says its subject is

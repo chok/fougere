@@ -17,12 +17,12 @@ const CWD = import.meta.dirname;
 /**
  * The identity card a host serves on `rpc.discover` — two lists per frond, and they are
  * duals: what you may CALL, and what you will RECEIVE. Both carry a shape when there is
- * one; a door may store nothing and a fact may announce a type that is not an entity.
+ * one; a facade may store nothing and a fact may announce a type that is not an entity.
  */
 interface IdentityCard {
   fronds: {
     name: string;
-    doors: { name: string; ops: { name: string }[]; schema?: SchemaDescriptor }[];
+    facades: { name: string; ops: { name: string }[]; schema?: SchemaDescriptor }[];
     facts?: { name: string; schema?: SchemaDescriptor }[];
   }[];
 }
@@ -54,10 +54,10 @@ async function sync() {
 
     const entityNames: string[] = [];
 
-    // Doors and facts alike: both give a class when they carry a shape. A door with none
+    // Facades and facts alike: both give a class when they carry a shape. A facade with none
     // is a health check or a search across shapes; a fact with none announces a type the
     // host does not store. Neither produces a file.
-    const shaped = [...frond.doors, ...(frond.facts ?? [])]
+    const shaped = [...frond.facades, ...(frond.facts ?? [])]
       .flatMap(({ schema }) => (schema ? [schema] : []));
 
     for (const descriptor of shaped) {

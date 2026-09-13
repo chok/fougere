@@ -9,7 +9,7 @@ class Post extends entity({ id: primary(), title: text() }) {}
 const card: IdentityCard = {
   fronds: [{
     name: 'blog',
-    doors: [{
+    facades: [{
       name: 'post',
       schema: Card.fromSchema(Post, 'post').descriptor,
       ops: [{ name: 'list', kind: 'query', cardinality: 'page' }],

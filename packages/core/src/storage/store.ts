@@ -49,7 +49,7 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
 
       // Same contract as SQL: the key and the creation stamps survive an overwrite.
       // Named, and not reached through `this`: a caller may have wrapped these gestures,
-      // and a derived one that goes back through the front door is judged twice.
+      // and a derived one that goes back through the front facade is judged twice.
       const upsert = async (input: Partial<Record<string, unknown>>): Promise<Values> => {
         const values = applyCreate(fields, applyUpdate(fields, input));
         const id = values[pk] as string | undefined;

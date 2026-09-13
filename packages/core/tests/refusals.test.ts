@@ -9,13 +9,13 @@ import { describe, it, expect } from 'vitest';
 import { ErrorCode, refusalsOf } from '../src/index.js';
 
 describe('what the framework implies', () => {
-  /** `InFlight.enter` refuses a call that arrives after the door closed. Any op can meet it. */
-  it('names the drained door on every operation', () => {
+  /** `InFlight.enter` refuses a call that arrives after the facade closed. Any op can meet it. */
+  it('names the drained facade on every operation', () => {
     expect(refusalsOf({ kind: 'query' })).toContain(ErrorCode.SERVICE_UNAVAILABLE);
   });
 
   /** `validateInput` returns the invocation untouched when the op declares no view. */
-  it('judges at the door only where a view is declared', () => {
+  it('judges at the facade only where a view is declared', () => {
     expect(refusalsOf({ kind: 'query', input: {} })).toContain(ErrorCode.VALIDATION_FAILED);
     expect(refusalsOf({ kind: 'query' })).not.toContain(ErrorCode.VALIDATION_FAILED);
   });
@@ -50,7 +50,7 @@ describe('what the frond declares', () => {
     expect(all).toContain(ErrorCode.CONFLICT);
   });
 
-  /** An op that refuses nothing of its own still meets the door — the list is never empty. */
+  /** An op that refuses nothing of its own still meets the facade — the list is never empty. */
   it('answers with the framework half alone when the frond declares none', () => {
     expect(refusalsOf({ kind: 'query' })).toEqual([ErrorCode.SERVICE_UNAVAILABLE]);
   });

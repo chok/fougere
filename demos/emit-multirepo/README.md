@@ -73,12 +73,12 @@ The name is derived on both sides. The **shape** is not: `search` must know that
 `postPublished` carries an `id`, a `title` of at least one character and an `at`. Nothing on
 this disk says so.
 
-It comes from the identity card, which publishes two lists per frond — the doors you may
+It comes from the identity card, which publishes two lists per frond — the facades you may
 call, and the facts that leave:
 
 ```json
 { "name": "blog",
-  "doors": [{ "name": "post", "ops": [...], "schema": {...} }],
+  "facades": [{ "name": "post", "ops": [...], "schema": {...} }],
   "facts": [{ "name": "postPublished", "schema": {...} }] }
 ```
 

@@ -104,7 +104,7 @@ export interface App extends DispatchPort {
    * reconstructed from the remote's identity card (`rpc.discover` to `Card.toSchema`).
    */
   schemaFor(entity: string): Promise<SchemaView>;
-  /** The door a name exposes to one audience, or `undefined` when it exposes none. */
+  /** The facade a name exposes to one audience, or `undefined` when it exposes none. */
   facadeFor(entity: string, surface?: string): Record<string, Function> | undefined;
   /**
    * The canonical contracts served beside a facade, after prefab + scan + config, binding, kind,
@@ -126,7 +126,7 @@ export interface App extends DispatchPort {
   dispose(): Promise<void>;
   /** Stop taking calls, and resolve once the running ones are done. */
   drain(timeoutMs?: number): Promise<void>;
-  /** How many calls are running right now — one count for all three doors and the wire. */
+  /** How many calls are running right now — one count for all three facades and the wire. */
   inFlight(): number;
   /** The same disposal, spelled so the language does it: `await using app = await createApp(…)`. */
   [Symbol.asyncDispose](): Promise<void>;

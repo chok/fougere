@@ -6,7 +6,7 @@ import { createApp, createLocalRunner } from '../src/index.js';
 
 const root = join(import.meta.dirname, 'fixtures-contract-boundary');
 
-describe('an operation contract is one boundary on every door', () => {
+describe('an operation contract is one boundary on every facade', () => {
   it('hands decoded input to the handler and projects its declared output once', async () => {
     const app = await createApp({ scan: await scanProject(root), createContainer });
     const run = createLocalRunner(app);

@@ -75,7 +75,7 @@ describe('StorageGuard', () => {
     expect(upsertAll).not.toHaveBeenCalled();
   });
 
-  it('hands the storage the value it PARSED, the way the client door does', async () => {
+  it('hands the storage the value it PARSED, the way the client facade does', async () => {
     const create = vi.fn(async (input: object) => input);
     const guarded = new StorageGuard({ ...fields, at: date() }, 'product').guard({
       create,

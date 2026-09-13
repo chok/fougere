@@ -80,10 +80,10 @@ describe('createLocalRunner', () => {
   });
 
   /**
-   * `rpc` is the door for what the app says about ITSELF, and it is a registry — which is
+   * `rpc` is the facade for what the app says about ITSELF, and it is a registry — which is
    * what lets an optional package declare a reading core does not hold.
    */
-  describe('the rpc door', () => {
+  describe('the rpc facade', () => {
     it('names what it serves when an op is unknown — how a missing package reads', async () => {
       await using app = await createApp({ scan: await scanProject(fixturesRoot), createContainer, storageFactory });
       const run = createLocalRunner(app);
@@ -122,7 +122,7 @@ describe('createLocalRunner', () => {
     expect(frondNames).toEqual(['catalog', 'inventory', 'orders']);
 
     const catalog = card.fronds.find((f) => f.name === 'catalog')!;
-    const product = catalog.doors.find((e) => e.name === 'product')!;
+    const product = catalog.facades.find((e) => e.name === 'product')!;
     expect(product.ops.map((o) => o.name)).toEqual(expect.arrayContaining(['list', 'findById', 'search']));
     expect(product.schema).toBeTruthy();
 

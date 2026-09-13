@@ -36,10 +36,10 @@ function collect(): void {
 describe('rate, errors and duration come from one histogram', () => {
   it('counts calls and sums their time, per op', async () => {
     collect();
-    const door = app.resolve<Facade>('productHandler');
-    await door.list();
-    await door.list();
-    await door.findById({ params: { id: 'p1' }, query: {}, input: undefined, state: {} });
+    const facade = app.resolve<Facade>('productHandler');
+    await facade.list();
+    await facade.list();
+    await facade.findById({ params: { id: 'p1' }, query: {}, input: undefined, state: {} });
 
     const { series } = measured.snapshot();
     const list = series.find((s) => s.operation === 'list')!;
@@ -51,9 +51,9 @@ describe('rate, errors and duration come from one histogram', () => {
 
   it('separates a refusal into its own series, named by its code', async () => {
     collect();
-    const door = app.resolve<Facade>('productHandler');
-    await door.list();
-    await expect(door.reserve()).rejects.toThrow();
+    const facade = app.resolve<Facade>('productHandler');
+    await facade.list();
+    await expect(facade.reserve()).rejects.toThrow();
 
     const { series } = measured.snapshot();
     expect(series.map((s) => [s.operation, s.error])).toEqual(
@@ -74,8 +74,8 @@ describe('rate, errors and duration come from one histogram', () => {
    */
   it('does not grow a series per call', async () => {
     collect();
-    const door = app.resolve<Facade>('productHandler');
-    for (let i = 0; i < 50; i++) await door.list();
+    const facade = app.resolve<Facade>('productHandler');
+    for (let i = 0; i < 50; i++) await facade.list();
 
     expect(measured.snapshot().series).toHaveLength(1);
   });
@@ -90,8 +90,8 @@ describe('saturation and topology', () => {
 
   it('sees a call in flight while it runs', async () => {
     collect();
-    const door = app.resolve<Facade>('productHandler');
-    const running = door.list();
+    const facade = app.resolve<Facade>('productHandler');
+    const running = facade.list();
     expect(activeCalls()).toBe(1);
     await running;
     expect(activeCalls()).toBe(0);
@@ -114,7 +114,7 @@ describe('saturation and topology', () => {
       active: number;
       since: number;
     };
-    expect(report.fronds).toEqual([{ frond: 'catalog', placement: 'local', entities: 1, doors: 1 }]);
+    expect(report.fronds).toEqual([{ frond: 'catalog', placement: 'local', entities: 1, facades: 1 }]);
     // One process, one frond: no edge exists to report, and saying zero is the answer.
     expect(report.edges).toEqual([]);
     expect(report.active).toBe(0);
@@ -125,7 +125,7 @@ describe('saturation and topology', () => {
   it('discovers the fronds rather than being told them', async () => {
     collect();
     expect(measured.snapshot().topology).toEqual([
-      { frond: 'catalog', placement: 'local', entities: 1, doors: 1 },
+      { frond: 'catalog', placement: 'local', entities: 1, facades: 1 },
     ]);
   });
 });
@@ -146,7 +146,7 @@ describe('what leaves as OTLP', () => {
       'fougere.operation.self',
       'fougere.operations.active',
       'fougere.fronds',
-      'fougere.frond.doors',
+      'fougere.frond.facades',
     ]);
 
     const histogram = published[0].histogram!;

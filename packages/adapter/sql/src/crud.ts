@@ -169,7 +169,7 @@ export class SqlStorage {
   // A criterion may name a SET — `where: { id: [a, b, c] }` is `IN`, one query for a
   // whole page. Without it a relation had no batch form at all: the GraphQL `one`
   // resolver read row by row (50 calls for a page of 50, measured), while its `many`
-  // dual already went through this same door. An empty set matches nothing, said in
+  // dual already went through this same facade. An empty set matches nothing, said in
   // SQL rather than by returning the whole table.
   private whereAll<Q extends { where(a: any, b: any, c: any): Q }>(query: Q, criteria: Record<string, unknown>): Q {
     return Object.entries(criteria).reduce((q, [key, value]) => {

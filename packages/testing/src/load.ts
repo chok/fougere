@@ -16,8 +16,8 @@ import type { SchemaView } from '@fougere/schema';
 import { sampleInput } from './sample.js';
 
 export interface LoadOptions {
-  /** Where the calls go. The RPC door of a running app. */
-  door?: string;
+  /** Where the calls go. The RPC facade of a running app. */
+  facade?: string;
   /** The topology statement, so an op that crosses a process is given the time to. */
   remotes?: Record<string, string>;
   /** Values the generator cannot invent, by entity name — the id a `ref()` points at. */
@@ -42,8 +42,8 @@ export function reachableOps(
   const found: Reachable[] = [];
   for (const frond of app.fronds) {
     for (const handler of frond.handlers) {
-      // A named surface is a restricted door; the load of an app is what its default
-      // door answers, so a surface would count the same operation twice.
+      // A named surface is a restricted facade; the load of an app is what its default
+      // facade answers, so a surface would count the same operation twice.
       if (handler.surface) continue;
       for (const [op, contract] of handler.operations ?? []) {
         const schema = contract.input as SchemaView | undefined;
@@ -61,7 +61,7 @@ export function reachableOps(
 
 /** A k6 scenario, written from what the app answers. */
 export function loadScript(app: Serving, options: LoadOptions = {}): string {
-  const door = options.door ?? 'http://127.0.0.1:3000/_fougere/call';
+  const facade = options.facade ?? 'http://127.0.0.1:3000/_fougere/call';
   const ops = reachableOps(app, options.given, options.remotes ?? {});
   // The shape, from the one function that states it. `body` is replaced per iteration.
   const envelope = frameCall({ entity: 'ENTITY', op: 'OP' }, { params: {}, query: {}, input: undefined, state: {} } as never, 0);
@@ -75,7 +75,7 @@ export function loadScript(app: Serving, options: LoadOptions = {}): string {
 import http from 'k6/http';
 import { check } from 'k6';
 
-const DOOR = ${JSON.stringify(door)};
+const DOOR = ${JSON.stringify(facade)};
 
 // Every operation the app serves. A weight of 0 takes one out, visibly.
 const OPS = ${JSON.stringify(ops.map((op) => ({ ...op, weight: 1 })), null, 2)};

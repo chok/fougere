@@ -1,7 +1,7 @@
 /**
  * Two fronds, one handler name — and the boot used to pick a winner in silence.
  *
- * A door is registered on the ROOT container under `facadeKeyOf(address)`
+ * A facade is registered on the ROOT container under `facadeKeyOf(address)`
  * (`bootstrap.ts`), and that key carries no frond. `registerValue` is a `Map.set`, so
  * `inventory`'s `ProductHandler` simply replaced `catalog`'s: every call meant for one
  * landed on the other, with nothing said at boot or at call time.
@@ -11,7 +11,7 @@
  * while in-process the LAST one loaded did — the same application answering differently
  * depending on how it was deployed, which is exactly what the gradient must not do.
  *
- * Refusing is the honest answer while a door's name cannot say which frond it belongs
+ * Refusing is the honest answer while a facade's name cannot say which frond it belongs
  * to. It is not the final one: the day a key is qualified, this boot can accept both.
  */
 import { scanProject } from '@fougere/compiler';

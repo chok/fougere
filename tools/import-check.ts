@@ -3,7 +3,7 @@
  *
  * `tsc` answers that for the files a tsconfig reads, which is not all of them: a `.mjs`
  * host script, a scaffold template, a fenced block in a README. All three name a package's
- * door and none is type-checked, so an export pass that counts callers sees them as zero
+ * facade and none is type-checked, so an export pass that counts callers sees them as zero
  * callers and cuts.
  *
  * Measured 2026-09-11, one day after such a pass: `generateSQL` was gone from
@@ -83,15 +83,15 @@ for (const [specifier, names] of [...wanted].sort()) {
     unreadable.push(`${specifier} — ${entry ? 'not built' : 'no such export'}: ${entry ?? '(unresolved)'}`);
     continue;
   }
-  let door: Record<string, unknown>;
+  let facade: Record<string, unknown>;
   try {
-    door = await import(pathToFileURL(entry).href);
+    facade = await import(pathToFileURL(entry).href);
   } catch (refused) {
     unreadable.push(`${specifier} — ${(refused as Error).message.split('\n')[0]}`);
     continue;
   }
   for (const [name, file] of names) {
-    if (!(name in door)) closed.push(`${file} imports '${name}' from '${specifier}', which does not export it`);
+    if (!(name in facade)) closed.push(`${file} imports '${name}' from '${specifier}', which does not export it`);
   }
 }
 
@@ -100,7 +100,7 @@ for (const line of closed) console.log(`  ✗  ${line}`);
 
 const counted = `${wanted.size} specifier(s), ${[...wanted.values()].reduce((n, names) => n + names.size, 0)} name(s)`;
 if (closed.length > 0) {
-  console.log(`\n${closed.length} import(s) name a door that is closed — ${counted}`);
+  console.log(`\n${closed.length} import(s) name a facade that is closed — ${counted}`);
   process.exit(1);
 }
 console.log(`every imported name is exported — ${counted}`);

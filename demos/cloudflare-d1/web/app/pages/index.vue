@@ -2,11 +2,11 @@
 /**
  * The whole demo, on one page.
  *
- * `Product` is imported from the frond next door — the SAME class that builds the D1
+ * `Product` is imported from the frond next facade — the SAME class that builds the D1
  * table in the other Worker and validates a write there. Nothing is serialized to get it
  * here; it is the declaration, read twice.
  *
- * `useQuery(product, 'list')` names the door that answers, never an address on a
+ * `useQuery(product, 'list')` names the facade that answers, never an address on a
  * network. Which process is behind it is `remotes:` in fougere.config.ts, and nothing on
  * this page knows.
  */

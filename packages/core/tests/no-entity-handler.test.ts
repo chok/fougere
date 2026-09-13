@@ -38,12 +38,12 @@ describe('a handler with no entity', () => {
     await using app = await createApp({ scan: await scanProject(root), createContainer });
 
     // The surface loop looked the entity up and skipped the handler when it found none,
-    // so this door did not exist and `facadeFor` answered `undefined` — silently, while
+    // so this facade did not exist and `facadeFor` answered `undefined` — silently, while
     // the identical handler one directory up was built and logged.
-    const door = app.facadeFor('health', 'public');
+    const facade = app.facadeFor('health', 'public');
 
-    expect(door).toBeDefined();
-    expect(await door!.check(Invocation.empty)).toEqual({ status: 'up', audience: 'public' });
+    expect(facade).toBeDefined();
+    expect(await facade!.check(Invocation.empty)).toEqual({ status: 'up', audience: 'public' });
   });
 
   it('keeps the two audiences apart — a surface is closed, it does not shadow', async () => {
@@ -55,10 +55,10 @@ describe('a handler with no entity', () => {
   it('appears in the identity card, so a consumer can discover it', async () => {
     await using app = await createApp({ scan: await scanProject(root), createContainer });
 
-    // The card walked `frond.entities`, so this door was built, served, and invisible:
+    // The card walked `frond.entities`, so this facade was built, served, and invisible:
     // `sync` could not generate it and a remote consumer had no way to know it existed.
     const card = identityCardOf(app);
-    const health = card.fronds[0].doors.find((d) => d.name === 'health');
+    const health = card.fronds[0].facades.find((d) => d.name === 'health');
 
     expect(health?.ops.map((op) => op.name)).toEqual(['check']);
     // No shape, and that is the fact rather than an empty one: nothing is stored.
@@ -69,6 +69,6 @@ describe('a handler with no entity', () => {
     await using app = await createApp({ scan: await scanProject(root), createContainer });
 
     const publicCard = identityCardOf(app, 'public');
-    expect(publicCard.fronds[0].doors.map((d) => d.name)).toEqual(['health']);
+    expect(publicCard.fronds[0].facades.map((d) => d.name)).toEqual(['health']);
   });
 });

@@ -4,7 +4,7 @@
  * Same D1 database, same rows, same two rules the entity declares (`name` between 1 and
  * 200, `sku` between 3 and 32, `cents` at least 0, no unknown key). It exists so the
  * Fougere worker's CPU time has something to be a ratio OF — the role
- * `node-http-validated` plays in the throughput bench next door.
+ * `node-http-validated` plays in the throughput bench next facade.
  *
  * Deliberately not tidy: this is what the framework replaces, so hiding the work in
  * helpers would flatter the comparison.

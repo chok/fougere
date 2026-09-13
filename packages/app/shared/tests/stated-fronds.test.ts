@@ -4,7 +4,7 @@
  * Measured before this existed: exactly two places scan — the Nuxt module, at BUILD, and
  * this boot, at START. Next, Vite, React, Svelte and a bare Express have no scan of their
  * own; they all arrive here, so every one of them read a disk and loaded `typescript` in
- * production. One door, and it covers all five.
+ * production. One facade, and it covers all five.
  */
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';

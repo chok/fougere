@@ -501,7 +501,7 @@ const TopologyIcon = (props: SvgIconProps) => (
 );
 
 /**
- * The derived menu, plus the one entry that is not a door.
+ * The derived menu, plus the one entry that is not a facade.
  *
  * `Menu.ResourceItems` keeps the resources the card produced — the menu stays derived, and
  * this adds beside it rather than replacing it. The topology entry shows even when nothing

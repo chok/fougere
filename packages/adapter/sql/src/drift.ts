@@ -58,7 +58,7 @@ export async function drift(db: Kysely<any>, desired: TableDef[]): Promise<Drift
           column: column.name,
           declared: 'required',
           held: 'nullable',
-          reason: 'the door refuses what the table would still accept',
+          reason: 'the facade refuses what the table would still accept',
         });
       }
     }

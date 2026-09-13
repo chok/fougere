@@ -36,7 +36,7 @@ export const MAX_BODY_BYTES = 1024 * 1024;
 /** Reserved namespace — calls the runner answers itself, never a façade. */
 export const RPC_ENTITY = 'rpc';
 
-/** What an `rpc` op answers — the door for what the app says about ITSELF, never about a row. */
+/** What an `rpc` op answers — the facade for what the app says about ITSELF, never about a row. */
 export type RpcAnswer = (invocation: InvocationContext, surface?: string) => unknown;
 
 /** Everything a caller's envelope covers — the call as the sender meant it. */
@@ -73,7 +73,7 @@ export interface CardOp {
 export interface IdentityCard {
   fronds: {
     name: string;
-    doors: {
+    facades: {
       name: string;
       ops: CardOp[];
       /** The shape stored under this name — **absent when nothing is**. */
@@ -89,7 +89,7 @@ export interface FrondPlacement {
   frond: string;
   placement: 'local' | 'remote';
   entities: number;
-  doors: number;
+  facades: number;
 }
 
 /** One frond calling another — an edge of the graph, counted where the call was made. */
@@ -138,14 +138,14 @@ export interface TopologyReport {
   declared: DeclaredTopology;
 }
 
-/** The shape a card must have to be walked — `fronds`, and each frond's `doors`. */
+/** The shape a card must have to be walked — `fronds`, and each frond's `facades`. */
 export function assertIdentityCard(value: unknown, source: string): IdentityCard {
   const card = value as IdentityCard | undefined;
   const fronds = Array.isArray(card?.fronds) ? card.fronds : undefined;
   if (!fronds) throw cardRefusal(source, 'no fronds array');
   for (const frond of fronds) {
     if (!frond || typeof frond.name !== 'string') throw cardRefusal(source, 'a frond with no name');
-    if (!Array.isArray(frond.doors)) throw cardRefusal(source, `frond '${frond.name}' has no valid doors array`);
+    if (!Array.isArray(frond.facades)) throw cardRefusal(source, `frond '${frond.name}' has no valid facades array`);
   }
   return card as IdentityCard;
 }
@@ -162,7 +162,7 @@ function cardRefusal(source: string, what: string): FougereError {
 
 /** A façade as the runtime holds it: op names to functions, nothing typed about them. */
 
-/** The door built in front of a handler — the framework's second port, after `Storage`. */
+/** The facade built in front of a handler — the framework's second port, after `Storage`. */
 export type Facade<T> = {
   [K in keyof T]: T[K] extends (...args: never[]) => infer R
     ? (invocation?: InvocationContext) => R

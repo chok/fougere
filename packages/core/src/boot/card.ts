@@ -16,12 +16,12 @@ export function identityCardOf(app: App, surface?: string): IdentityCard {
     // What this app SERVES, never what instruments it. A frond an extension BROUGHT is a
     // subscriber — `@fougere/calls` and `@fougere/observability` each bring one — and it is
     // in every process that installed the extension, so two remotes then claimed the same
-    // door and routing refused: `Two remotes serve 'export'`. `FrondDescriptor.brought` is
+    // facade and routing refused: `Two remotes serve 'export'`. `FrondDescriptor.brought` is
     // the mark `calls`' panel and `rpc.topology` already read.
     fronds: app.fronds.filter((frond) => !frond.brought).map((frond) => {
       // What the frond answers to, not what it stores. This walked `frond.entities`, so a
       // handler carrying no entity — a health check, a search across shapes — was built,
-      // served, and absent from the card: `sync` could not generate its door and a remote
+      // served, and absent from the card: `sync` could not generate its facade and a remote
       // consumer had no way to know it existed. The boot has said "pointing at nothing is
       // legal" since handlers became the subject; the card had not caught up.
       const byEntity = new Map(frond.entities.map((entity) => [entity.name, entity]));
@@ -32,14 +32,14 @@ export function identityCardOf(app: App, surface?: string): IdentityCard {
 
       return {
         name: frond.name,
-        doors: addresses.flatMap((address) => {
+        facades: addresses.flatMap((address) => {
           const ops = facadeOps(app, address, surface);
           if (ops.length === 0) return [];
           const entity = byEntity.get(address);
           return [{
             name: address,
             ops,
-            // Absent when nothing of that name is stored. A door is still a door.
+            // Absent when nothing of that name is stored. A facade is still a facade.
             ...(entity ? { schema: Card.fromSchema(entity.entityClass, address).descriptor } : {}),
           }];
         }),

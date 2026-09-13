@@ -10,7 +10,7 @@ import { testApp, loadScript } from '@fougere/testing';
 
 const app = await testApp({ root: import.meta.dirname });
 writeFileSync(join(import.meta.dirname, 'load.js'), loadScript(app, {
-  door: 'http://127.0.0.1:4300/_fougere/call',
+  facade: 'http://127.0.0.1:4300/_fougere/call',
 }));
 await app.dispose();
 console.log('✓ load.js');

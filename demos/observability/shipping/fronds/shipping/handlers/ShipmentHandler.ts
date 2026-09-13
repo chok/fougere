@@ -1,6 +1,6 @@
 /**
  * A Frond with no entity at all — an operation about no stored row is ordinary,
- * and its identity card publishes a door with no schema.
+ * and its identity card publishes a facade with no schema.
  */
 export default class ShipmentHandler {
   /** What shipping this basket would cost. */

@@ -463,7 +463,7 @@ function extractClassMethods(
     // `private`/`protected` is a statement about the surface, and the AST carries it —
     // it was read past. Every helper a handler names by intent (`mustOwn`, `readMany`,
     // `refuse`) became a callable op: measured on the bench, `list.readMany` executed
-    // and `list.mayPublish` validated its argument. A door is what the author declares
+    // and `list.mayPublish` validated its argument. A facade is what the author declares
     // public, and TypeScript already has the word for it. `#name` is private too, but
     // it is not an identifier, so it never reached here in the first place.
     if (member.modifiers?.some((m) => m.kind === ts.SyntaxKind.PrivateKeyword || m.kind === ts.SyntaxKind.ProtectedKeyword)) continue;
@@ -527,7 +527,7 @@ function inheritedFromBase(
     if (skip.has(property.name)) continue;
 
     // `private`/`protected` is a statement about the surface, and the declaration carries
-    // it. A door is what the author declares public.
+    // it. A facade is what the author declares public.
     const declaration = property.declarations?.[0];
     if (declaration && typescript.canHaveModifiers(declaration)
       && typescript.getModifiers(declaration)?.some((m) => m.kind === typescript.SyntaxKind.PrivateKeyword

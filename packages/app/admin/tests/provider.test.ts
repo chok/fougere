@@ -124,7 +124,7 @@ describe('the Fougere data provider', () => {
 describe('a business operation', () => {
   it('reaches its own op, with the row id where the CRUD convention puts it', async () => {
     // The nine react-admin verbs describe a resource; `publish` describes an action, so
-    // none of them can carry it. Before this door existed, an op the card ANNOUNCED —
+    // none of them can carry it. Before this facade existed, an op the card ANNOUNCED —
     // with a label and a confirmation sentence — was unreachable from the panel.
     const sent: SentCall[] = [];
     const provider = createDataProvider({

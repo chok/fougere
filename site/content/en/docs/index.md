@@ -15,7 +15,7 @@ and they are ordinarily sold as two separate features:
 | The declaration does not name… | so that thing is… | its usual name |
 |---|---|---|
 | its table, its GraphQL type, its form, its validator | **derived** from it | single-schema |
-| its host, its storage, its door, its address | **chosen outside** it | the gradient |
+| its host, its storage, its facade, its address | **chosen outside** it | the gradient |
 
 One rule read in two directions — what a declaration produces, and what it may be
 surrounded by. The rest of this page is those two readings.

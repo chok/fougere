@@ -43,10 +43,10 @@ that has never heard of Express.</p>
 </body>`);
 });
 
-// ── adding fougere: one middleware per door ────────
+// ── adding fougere: one middleware per facade ────────
 //
 // `fougere()` mounts all three in one line, and this demo deliberately does not use
-// it. On an app that already exists, the doors are not one decision: the envelope and
+// it. On an app that already exists, the facades are not one decision: the envelope and
 // the session serve YOUR pages, while REST is a public API for anyone with the URL.
 // Taking them together would hand out a surface nobody asked for — which is the very
 // thing this shape exists to avoid.

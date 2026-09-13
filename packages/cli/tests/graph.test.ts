@@ -36,7 +36,7 @@ describe('what a pipe reads', () => {
     const parsed = JSON.parse(machineText(await graph().execute({ root: fixture })));
 
     expect(parsed.declared.edges).toEqual([{ from: 'commande', to: 'stock' }]);
-    // `nodes` is a Map, which serializes to `{}` unless the door converts it.
+    // `nodes` is a Map, which serializes to `{}` unless the facade converts it.
     expect(Object.keys(parsed.nodes)).toContain('commande');
   }, 30_000);
 });

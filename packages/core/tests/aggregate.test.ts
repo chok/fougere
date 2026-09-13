@@ -55,7 +55,7 @@ describe('the arity is the declaration', () => {
   });
 });
 
-describe('an owned entity has no other door', () => {
+describe('an owned entity has no other facade', () => {
   it('drops the default repository of EVERY member, not just the one it is named after', async () => {
     await using app = await boot('fixtures-aggregate');
     // Providers live in the frond's scope, which is the container a handler resolves in.
@@ -86,14 +86,14 @@ describe('an owned entity has no other door', () => {
 });
 
 describe('storage is reached through a repository, never through the port', () => {
-  it('refuses a door that names the port, and points at the repository key', async () => {
+  it('refuses a facade that names the port, and points at the repository key', async () => {
     const rejected = boot('fixtures-aggregate-trap');
     await expect(rejected).rejects.toThrow(/LedgerStorage/);
   });
 
   it('lets a HOLDER name the port of what its prefab was built on', async () => {
     // A Mirror writes the copy it owns; naming `Storage<BookCard>` is what `Mirror(BookCard)`
-    // exists for. The rule separates a door from a holder, not one directory from another —
+    // exists for. The rule separates a facade from a holder, not one directory from another —
     // which is why it covers `Mirror` without naming it.
     await using app = await boot('fixtures-holder');
     const catalog = app.resolve<Container>('frond:catalog');
@@ -102,7 +102,7 @@ describe('storage is reached through a repository, never through the port', () =
     expect(catalog.has(storageKeyOf('bookCard'))).toBe(true);
   });
 
-  it('lets a door depend on a class whose NAME ends in the key suffix', async () => {
+  it('lets a facade depend on a class whose NAME ends in the key suffix', async () => {
     // `FileStorage` is a provider, not `file`'s rows, and the suffix alone cannot tell.
     // Without `entityOfStorageKey`'s `known`, measured: this boot is refused.
     await using app = await boot('fixtures-holder');
@@ -114,7 +114,7 @@ describe('storage is reached through a repository, never through the port', () =
     expect(files.path('a')).toBe('/files/a');
   });
 
-  it('resolves a door that asks for RepositoryOf<E> with no file written', async () => {
+  it('resolves a facade that asks for RepositoryOf<E> with no file written', async () => {
     await using app = await boot('fixtures-holder');
     const out = await createLocalRunner(app)({ entity: 'bookCard', op: 'list' }, Invocation.empty);
 

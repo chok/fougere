@@ -11,7 +11,7 @@ const storageFactory: StorageFactory = () => ({
   findById: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn(),
 }) as never;
 
-/** The page's own door — its own port, loopback only, no CORS to arrange. */
+/** The page's own facade — its own port, loopback only, no CORS to arrange. */
 describe('the panel', () => {
   it('serves the page, a snapshot, and pushes a call as it settles', async () => {
     let at = '';
@@ -73,7 +73,7 @@ describe('the panel', () => {
       await app.dispose();
     }
 
-    // The door closed with the app: the extension's `down` awaits the server.
+    // The facade closed with the app: the extension's `down` awaits the server.
     await expect(fetch(`${at}/`)).rejects.toThrow();
   });
 });

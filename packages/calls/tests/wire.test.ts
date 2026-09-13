@@ -14,7 +14,7 @@ const storageFactory: StorageFactory = () => ({
 }) as never;
 
 /**
- * The reader is another process, so this is the only test that proves the whole door: the
+ * The reader is another process, so this is the only test that proves the whole facade: the
  * extension serves an rpc op, the host's call endpoint carries it, and a client — the same
  * one `remotes:` uses, which is the one `fougere devtools` uses — reads the page.
  */
@@ -26,12 +26,12 @@ describe('over the wire', () => {
       storageFactory,
       extensions: [calls()],
     });
-    const door = await serve(createLocalRunner(app), { port: 0 });
+    const facade = await serve(createLocalRunner(app), { port: 0 });
 
     try {
       await app.dispatch(new Call(new RouteAddress({ entity: 'order', operation: 'list' })));
 
-      const read = createHttpTransport(`http://127.0.0.1:${door.port}`);
+      const read = createHttpTransport(`http://127.0.0.1:${facade.port}`);
       const page = await read(
         { entity: 'rpc', op: 'calls' },
         { params: {}, query: {}, input: { since: 0 }, state: {} },
@@ -48,7 +48,7 @@ describe('over the wire', () => {
       ) as CallPage;
       expect(second.calls).toHaveLength(0);
     } finally {
-      await door.close();
+      await facade.close();
     }
   });
 });
@@ -68,8 +68,8 @@ describe('two apps against one hosted frond', () => {
       storageFactory,
       extensions: [calls()],
     });
-    const door = await serve(createLocalRunner(hosted), { port: 0 });
-    const at = `http://127.0.0.1:${door.port}`;
+    const facade = await serve(createLocalRunner(hosted), { port: 0 });
+    const at = `http://127.0.0.1:${facade.port}`;
 
     try {
       // Two consumers, each with its own ring, both reaching the same hosted frond.
@@ -106,7 +106,7 @@ describe('two apps against one hosted frond', () => {
 
       for (const consumer of consumers) await consumer.dispose();
     } finally {
-      await door.close();
+      await facade.close();
     }
   });
 });

@@ -27,7 +27,7 @@ export default class LoadCommand {
     if (machineWanted(raw)) return printMachine(result);
 
     if (result.operations.length === 0) {
-      this.ui.warn('No operation answers the default door — nothing to put under load.');
+      this.ui.warn('No operation answers the default facade — nothing to put under load.');
       return;
     }
 
@@ -36,7 +36,7 @@ export default class LoadCommand {
       return;
     }
 
-    this.ui.step(`${pc.bold(String(result.operations.length))} operation(s) against ${pc.dim(result.door)}`);
+    this.ui.step(`${pc.bold(String(result.operations.length))} operation(s) against ${pc.dim(result.facade)}`);
     this.ui.note(result.operations.map((one) => `  ${one}`).join('\n'), 'Under load');
     this.ui.info(`${pc.dim('Written to')} ${result.file}  ${pc.dim('— edit the weights, the stages and the thresholds.')}`);
     this.ui.info(`${pc.dim('Then:')} k6 run ${result.file}`);

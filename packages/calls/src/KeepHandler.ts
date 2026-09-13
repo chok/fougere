@@ -5,7 +5,7 @@ import { LogRing, ErrorRing } from './rings.js';
  * Every line this process logged, kept for the panel.
  *
  * A handler and not an `onLog` sink: accepting the fact IS the subscription, so the two
- * rings are filled by the same door every other reader goes through — with a validator,
+ * rings are filled by the same facade every other reader goes through — with a validator,
  * and with whatever middleware the app declared.
  *
  * The rings come from the container: the extension's `up` put them there, and this

@@ -19,7 +19,7 @@ export default class ExplainCommand {
     const operation = (raw.operation as string | undefined)?.trim();
 
     // No operation named — the question is what this project serves at all. The same
-    // model answers both, so the door is the one that was asked, never a guess.
+    // model answers both, so the facade is the one that was asked, never a guess.
     if (names || !operation) return this.listing(raw, names);
 
     const result = await this.ask('execute', raw) as ExplainResult;

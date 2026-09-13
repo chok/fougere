@@ -11,7 +11,7 @@ export default class Post extends entity({
   authorName: readOnly(optional(text())),
   createdAt: created(),
   // Server-owned pair: born draft, flipped by the publish OPERATION —
-  // never by a client writing the field (readOnly closes the inbound door).
+  // never by a client writing the field (readOnly closes the inbound facade).
   status: readOnly(oneOf('draft', 'published', { default: 'draft' })),
   publishedAt: readOnly(optional(date())),
 }) {}

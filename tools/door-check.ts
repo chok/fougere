@@ -1,5 +1,5 @@
 /**
- * Does the PUBLISHED door open? `publish:check` asks what a tarball promises in its
+ * Does the PUBLISHED facade open? `publish:check` asks what a tarball promises in its
  * `exports`; nothing asked what it RESOLVES at runtime. A Nuxt module resolves its
  * runtime by path when the host boots, so a file absent from the tarball — or present
  * but uncompiled — is invisible to every check that reads the workspace, where pnpm's
@@ -43,7 +43,7 @@ const publishable = (dir: string, found: Publishable[] = []): Publishable[] => {
   return found;
 };
 
-const work = mkdtempSync(path.join(tmpdir(), 'fougere-door-'));
+const work = mkdtempSync(path.join(tmpdir(), 'fougere-facade-'));
 const store = path.join(work, 'tarballs');
 const app = path.join(work, 'app');
 
@@ -98,10 +98,10 @@ try {
     // both answer non-200, and only the body separates them.
     console.error(log);
     if (body) console.error(body.slice(0, 4000));
-    throw new Error(`the published door did not open: GET / answered ${status || 'nothing'}`);
+    throw new Error(`the published facade did not open: GET / answered ${status || 'nothing'}`);
   }
 
-  // A PAGE is not the door. An app that boots with zero fronds renders every page and
+  // A PAGE is not the facade. An app that boots with zero fronds renders every page and
   // answers NOT_FOUND to every call — the exact failure the scan exists to prevent, and
   // one a 200 cannot see. So the check asks the domain: the scaffold's own entity, listed.
   //
@@ -110,7 +110,7 @@ try {
   // build does. `post.listPublished` is a method someone wrote — its contract is read
   // from SOURCE at scan time and no class carries it at runtime, so it answers only if
   // the statement the host boots from carried it across. Measured: it did not, and this
-  // check said the door was fine.
+  // check said the facade was fine.
   const ask = async (method: string): Promise<Record<string, unknown> | null> => {
     const call = await fetch(`http://localhost:${PORT}/_fougere/call`, {
       method: 'POST',
@@ -126,10 +126,10 @@ try {
     if (!answer || !('result' in answer)) {
       console.error(log);
       console.error(JSON.stringify(answer)?.slice(0, 2000));
-      throw new Error(`the door opens but answers nothing: ${method} returned no result`);
+      throw new Error(`the facade opens but answers nothing: ${method} returned no result`);
     }
   }
-  console.log(`the door opens: GET / → 200, and post.list and post.listPublished answer`);
+  console.log(`the facade opens: GET / → 200, and post.list and post.listPublished answer`);
 } finally {
   server?.kill('SIGTERM');
   rmSync(work, { recursive: true, force: true });

@@ -47,7 +47,7 @@ async function open(env: Env) {
     storageFactory: storage.storageFactory,
     extensions: [observability({
       service: 'catalog',
-      // The collector next door. Its exporter still buffers on a timer — which never
+      // The collector next facade. Its exporter still buffers on a timer — which never
       // fires here — so the flush below is what actually sends.
       otlp: 'https://fougere-telemetry.maxime-picaud-240.workers.dev',
       // No timer: Cloudflare refuses a deployment whose module scope sets one, and an
@@ -56,7 +56,7 @@ async function open(env: Env) {
     })],
   });
 
-  // Said out loud: this demo has no root key, so the envelope door takes the `state` a
+  // Said out loud: this demo has no root key, so the envelope facade takes the `state` a
   // caller hands it. A deployment that splits fronds across Workers wires `verify`
   // instead — `fougere keys` / `fougere grant`, and the three env vars as secrets.
   const envelope = receive(createLocalRunner(app), { allowUnsigned: true });
@@ -78,11 +78,11 @@ async function open(env: Env) {
  * serving anything yet, so nothing waits on this — and every request, the first one
  * included, meets an app that is already up.
  */
-const door = await open(env as unknown as Env);
+const facade = await open(env as unknown as Env);
 
 export default {
   async fetch(request: Request, _env: Env, ctx: { waitUntil(work: Promise<unknown>): void }): Promise<Response> {
-    const answer = await door(request);
+    const answer = await facade(request);
     // The isolate is frozen the moment this returns, so an exporter's timer never fires
     // and the window it held is lost. `waitUntil` is the platform saying "this work
     // outlives the response" — the one place a Worker can send what it measured.

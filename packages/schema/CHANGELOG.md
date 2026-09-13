@@ -25,16 +25,16 @@ anchored: false` by hand — the same re-threading that once dropped a member fr
 
 - A value is admitted and handed back in the domain's form, once.
 
-  `validate`, then `null`, then `Boundary.decode` was written three times — the client door
-  and both of the storage guard's. `FieldValueValidator.parse` is the door for the sequence,
+  `validate`, then `null`, then `Boundary.decode` was written three times — the client facade
+  and both of the storage guard's. `FieldValueValidator.parse` is the facade for the sequence,
   and the only judgement it carries is that `null` never reaches a codec.
 
-  Two doors decode, which is the policy and not an oversight: the client one on what arrives,
+  Two facades decode, which is the policy and not an oversight: the client one on what arrives,
   the guard on what a handler writes, because both hand the storage a parsed value. That asks
   the decoder for idempotence, which the shipped one happens to give on its first line and
   nothing required — `Decoder` says so now, and a test holds it.
 
-  And a derived gesture writes through the store rather than the front door: `upsertAll`
+  And a derived gesture writes through the store rather than the front facade: `upsertAll`
   reached `upsert` on `this`, so a caller that wrapped the port was traversed twice and a
   non-idempotent codec halved the row it stored.
 
@@ -82,7 +82,7 @@ anchored: false` by hand — the same re-threading that once dropped a member fr
 - Four rules that were written twice, and the families that had no home.
 
   The surfaces a handler answers on — its own, or the default and every surface naming it
-  without a door of its own — was written in the effective model and again inline in the boot
+  without a facade of its own — was written in the effective model and again inline in the boot
   that registers the routes. They agreed on the rule and not on the name of the absence.
   `servedSurfaces` is where it lives, and `undefined` is the default surface as every key
   already spelled it.
@@ -104,15 +104,15 @@ anchored: false` by hand — the same re-threading that once dropped a member fr
 - A word of the vocabulary says which of three things it is: `primitive/` builds a field,
   `preset/` states one member more on another word, `rule/` takes a field and adds a
   statement — the seven `vocabulary()` makes. `RoleRules` joins `LifecycleRules` and
-  `BoundaryRef` at the door, and `Meta` leaves `axis/`: it had one reader, `Field`, and
+  `BoundaryRef` at the facade, and `Meta` leaves `axis/`: it had one reader, `Field`, and
   says `description`, which no axis reads. Import paths inside the package moved; the
-  package's door did not — it publishes `"."` alone.
+  package's facade did not — it publishes `"."` alone.
 
 ## 0.7.0-alpha.0
 
 ### Minor Changes
 
-- A descriptor is converted at the door, and a schema circulates.
+- A descriptor is converted at the facade, and a schema circulates.
 
   `SchemaOrCard` had the four adapters announce they took either form, and `toTable`
   rebuilt the schema twice for the one nobody passed them — `boot/remote.ts` already
@@ -204,7 +204,7 @@ anchored: false` by hand — the same re-threading that once dropped a member fr
   - `@fronds/<name>` resolves in the scan: two entry points were loading a neighbour's sources
     without the alias map.
   - A `list` op reaches GraphQL with its pagination arguments, and `required` no longer demands
-    what the door refuses.
+    what the facade refuses.
   - `count` applies its own filter; the identity card reports an operation's overridden kind.
   - `presenterFor` is the dual `facadeFor` already had.
   - An operation's doc sentence now reaches both REST and GraphQL, instead of being dropped in
@@ -387,7 +387,7 @@ anchored: false` by hand — the same re-threading that once dropped a member fr
   - `@fronds/<name>` resolves in the scan: two entry points were loading a neighbour's sources
     without the alias map.
   - A `list` op reaches GraphQL with its pagination arguments, and `required` no longer demands
-    what the door refuses.
+    what the facade refuses.
   - `count` applies its own filter; the identity card reports an operation's overridden kind.
   - `presenterFor` is the dual `facadeFor` already had.
   - An operation's doc sentence now reaches both REST and GraphQL, instead of being dropped in

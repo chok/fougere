@@ -197,7 +197,7 @@ function Graph({ nodes, selected, onSelect }: {
                   <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10.5 }}>
                     {isOpaque(node)
                       ? label('topology.elsewhere', 'elsewhere')
-                      : `${node.entities} · ${node.doors}`}
+                      : `${node.entities} · ${node.facades}`}
                   </Typography>
                 )}
                 {tone !== 'grey' && (
@@ -250,7 +250,7 @@ function FrondCard({ node }: { node: TopologyNode }): ReactElement {
             : isOpaque(node)
               ? label('topology.opaque', 'Its shape is published by the process that owns it.')
               : `${label('topology.entities', `${node.entities} entities`, { smart_count: node.entities })}`
-                + ` · ${label('topology.doors', `${node.doors} doors`, { smart_count: node.doors })}`}
+                + ` · ${label('topology.facades', `${node.facades} facades`, { smart_count: node.facades })}`}
         </Typography>
         {node.calls.map((edge) => <EdgeLine key={`out-${edge.to}`} edge={edge} direction="out" />)}
         {node.calledBy.map((edge) => <EdgeLine key={`in-${edge.from}`} edge={edge} direction="in" />)}

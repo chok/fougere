@@ -22,10 +22,10 @@ import { presenterArguments, presenterPlans } from './presenterArguments.js';
 import { validateInput } from './validateInput.js';
 
 /** What boot resolved around one handler, beyond the handler and the scope it resolves in. */
-export interface Door {
-  /** The container key this door answers under. */
+export interface Facade {
+  /** The container key this facade answers under. */
   key: string;
-  /** The frond this door belongs to — travels on every OperationContext. */
+  /** The frond this facade belongs to — travels on every OperationContext. */
   frond: string;
   /** Handlers in the owning frond, used to realize a resolved implementation override. */
   handlers: readonly HandlerEntry[];
@@ -35,17 +35,17 @@ export interface Door {
   collectors: Set<string>;
   /** The presenter over this handler's entity, when the frond declares one. */
   presenter: PresenterEntry | undefined;
-  /** Presenters live in the frond's own scope, whatever sub-scope this door resolves in. */
+  /** Presenters live in the frond's own scope, whatever sub-scope this facade resolves in. */
   presenterScope: Container;
   /** The middlewares that apply to this address, read at call time and never at boot. */
   middlewares: () => AppMiddleware[];
 }
 
-/** Adapts one handler door to executable operations. */
+/** Adapts one handler facade to executable operations. */
 export class HandlerFacade {
   /** Rich operation facts shared with check, explain and adapters. */
   readonly effectiveOperations: EffectiveOperationsMap;
-  /** Contracts served by this door. */
+  /** Contracts served by this facade. */
   readonly contracts: OperationsMap;
 
   private readonly cachedViews = new Map<string, OutputView>();
@@ -61,24 +61,24 @@ export class HandlerFacade {
   constructor(
     private readonly handler: HandlerEntry,
     private readonly scope: Container,
-    private readonly door: Door,
+    private readonly facade: Facade,
   ) {
     this.refuseCrudWithoutRepository(handler);
 
-    this.presenterPlans = door.presenter
-      ? presenterPlans(door.presenter, door.collectors)
+    this.presenterPlans = facade.presenter
+      ? presenterPlans(facade.presenter, facade.collectors)
       : new Map();
 
     scope.register(this.handlerKey, handler.ctor, { deps: this.depsOf(handler) });
 
-    this.effectiveOperations = door.operations;
+    this.effectiveOperations = facade.operations;
     this.contracts = new Map(
-      [...door.operations].map(([name, operation]) => [name, operation as OperationContract] as const),
+      [...facade.operations].map(([name, operation]) => [name, operation as OperationContract] as const),
     );
     handler.operations = this.contracts;
 
     // Register model-selected implementations in the same execution scope.
-    for (const [name, operation] of door.operations) {
+    for (const [name, operation] of facade.operations) {
       if (this.isBaseImplementation(operation)) continue;
       const implementation = this.implementationHandler(name);
       this.refuseCrudWithoutRepository(implementation);
@@ -104,14 +104,14 @@ export class HandlerFacade {
     const invocation = Invocation.from(input);
     const context: OperationContext = {
       entity,
-      frond: this.door.frond,
+      frond: this.facade.frond,
       operation: op,
       args: [],
       state: invocation.state,
       invocation,
     };
 
-    return runMiddlewares(this.door.middlewares(), context, async () => {
+    return runMiddlewares(this.facade.middlewares(), context, async () => {
       const validated = validateInput(contract.input, invocation, entity, op);
       context.invocation = validated;
 
@@ -122,7 +122,7 @@ export class HandlerFacade {
       const view = this.viewOf(op);
       const output = view.project(await instance[method](...args));
 
-      const { presenter } = this.door;
+      const { presenter } = this.facade;
       return view.closed || !presenter ? output : this.present(op, presenter, output, validated);
     });
   }
@@ -136,7 +136,7 @@ export class HandlerFacade {
   ): Promise<unknown> {
     const entity = this.handler.address;
     const executor = new PresenterExecutor(
-      this.door.presenterScope.resolve(presenterKeyOf(entity)),
+      this.facade.presenterScope.resolve(presenterKeyOf(entity)),
       presenter.fields,
       entity,
       op,
@@ -147,7 +147,7 @@ export class HandlerFacade {
   }
 
   private get handlerKey(): string {
-    return `_handler:${this.door.key}`;
+    return `_handler:${this.facade.key}`;
   }
 
   private depsOf(handler: HandlerEntry): string[] {
@@ -206,7 +206,7 @@ export class HandlerFacade {
   /** The exact handler entry the pure model selected; no name-only retry or fallback. */
   private implementationHandler(operationName: string): HandlerEntry {
     const operation = this.effectiveOperations.get(operationName)!;
-    const matches = this.door.handlers.filter((handler) =>
+    const matches = this.facade.handlers.filter((handler) =>
       handler.ctor.name === operation.implementation.className
       && handler.address === operation.implementation.address
       && handler.filePath === operation.implementation.filePath);

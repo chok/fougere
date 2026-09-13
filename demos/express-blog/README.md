@@ -25,7 +25,7 @@ adapters: { rest: true }
 ```
 
 Take that away and `/api/blog/posts` returns Express's own 404 while the envelope, the
-pages and `/api/health` keep working — measured. The host puts the door in place; the
+pages and `/api/health` keep working — measured. The host puts the facade in place; the
 app decides what it serves.
 
 The same holds for GraphQL, and it is the whole GraphQL setup:
@@ -80,6 +80,6 @@ diff -r ../next-blog/fronds fronds     # no output
 ```
 
 There is no client package here and there is nothing to render with: an Express app
-brings its own view layer. What it gets from Fougere is the three doors and a
+brings its own view layer. What it gets from Fougere is the three facades and a
 server-side read named the same way every other host names it — `invokeOn(app, Post,
 'list')`.

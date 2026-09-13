@@ -4,7 +4,7 @@ export function machineWanted(raw: Record<string, unknown>): boolean {
 }
 
 /**
- * A `Map` serializes to `{}`, so the door converts it rather than each command flattening its own
+ * A `Map` serializes to `{}`, so the facade converts it rather than each command flattening its own
  * result: `GraphResult.nodes` is a Map, and `graph --json` would have printed a report with an
  * empty graph in it.
  */

@@ -45,7 +45,7 @@
 
 ### Patch Changes
 
-- A descriptor is converted at the door, and a schema circulates.
+- A descriptor is converted at the facade, and a schema circulates.
 
   `SchemaOrCard` had the four adapters announce they took either form, and `toTable`
   rebuilt the schema twice for the one nobody passed them — `boot/remote.ts` already

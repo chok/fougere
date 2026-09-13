@@ -56,7 +56,7 @@ export function orderSeeds(fronds: FrondDescriptor[]): SeedOrder {
 }
 
 /** Where a seed writes, and what it may skip — resolved per entity. */
-interface SeedDoor {
+interface SeedFacade {
   list(): Promise<unknown[]>;
   write(item: unknown): Promise<unknown>;
 }
@@ -75,13 +75,13 @@ export async function runSeeds(
     const resolve = <T>(name: string) => app.resolve<T>(name + 'Handler');
     const data = typeof seed.data === 'function' ? await (seed.data as SeedFactory)(resolve) : seed.data;
 
-    const door = doorFor(app, seed.entityName);
-    if (!door) {
+    const facade = facadeFor(app, seed.entityName);
+    if (!facade) {
       report(`  ${seed.entityName}: no handler façade nor storage — skipping seed`);
       continue;
     }
 
-    const existing = await door.list();
+    const existing = await facade.list();
     if (existing.length > 0) {
       report(`  ${seed.entityName}: skipped (${existing.length} exist)`);
       continue;
@@ -91,7 +91,7 @@ export async function runSeeds(
     // key is exactly what a seed gets wrong.
     for (const item of data) {
       try {
-        await door.write(item);
+        await facade.write(item);
       } catch (cause) {
         throw new Error(
           `Seed '${seed.entityName}' failed on ${JSON.stringify(item)}: ${(cause as Error)?.message ?? cause}`,
@@ -104,7 +104,7 @@ export async function runSeeds(
 }
 
 /** A seed is not a client. */
-function doorFor(app: App, entityName: string): SeedDoor | undefined {
+function facadeFor(app: App, entityName: string): SeedFacade | undefined {
   let handler: Record<string, Function> | undefined;
   try { handler = app.resolve<Record<string, Function>>(facadeKeyOf(entityName)); } catch {}
 

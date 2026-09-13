@@ -539,7 +539,7 @@ describe('registerAll', () => {
 
     // surface='graphql', but nothing names an entity into it: no handler under
     // handlers/graphql/, no `graphql` list. This used to widen — both entities
-    // got mounted whole on a door nobody declared.
+    // got mounted whole on a facade nobody declared.
     registerAll(builder, app, { surface: 'graphql' });
     const typeMap = builder.toSchema().getTypeMap();
 
@@ -627,7 +627,7 @@ describe('registerAll', () => {
       expect(authorFields['posts']).toBeDefined();
     });
 
-    it('ref resolver reads the target through its list door, by a criterion naming the keys', async () => {
+    it('ref resolver reads the target through its list facade, by a criterion naming the keys', async () => {
       const builder = new SchemaBuilder({});
       builder.queryType({});
       builder.mutationType({});
@@ -636,7 +636,7 @@ describe('registerAll', () => {
       const postData = [{ id: 'p1', title: 'Hello', authorId: 'a1' }];
 
       // Facade functions receive InvocationContext (not raw args). The relation reads
-      // by the PAGE now, so the door it uses is `list` with `where: { id: [...] }` —
+      // by the PAGE now, so the facade it uses is `list` with `where: { id: [...] }` —
       // the very one the `many` dual already used with a single value.
       const authorCrud = {
         ...fakeCrud(authorData),

@@ -1,5 +1,5 @@
 /**
- * The doors' decisions, pinned once for every host.
+ * The facades' decisions, pinned once for every host.
  *
  * These used to be spread across two h3 handlers; a second adapter would have made
  * them a third copy, and the copies in this repo have a history of drifting apart.
@@ -49,11 +49,11 @@ const request = (method: string, path: string) =>
   serveRest(app, { method, path, query: {}, state: {} });
 
 describe('surfaceOf', () => {
-  it('names no audience on the bare door', () => {
+  it('names no audience on the bare facade', () => {
     expect(surfaceOf('/_fougere/call')).toBeUndefined();
   });
 
-  it('takes the audience from the segment after the door', () => {
+  it('takes the audience from the segment after the facade', () => {
     expect(surfaceOf('/_fougere/call/public')).toBe('public');
   });
 
@@ -76,7 +76,7 @@ describe('the app decides which adapters it serves', () => {
   });
 
   it('declines rather than refuses, so the host keeps routing the request', async () => {
-    // `pass`, never a 404: the app that mounted the door may serve `/api/...` itself,
+    // `pass`, never a 404: the app that mounted the facade may serve `/api/...` itself,
     // and an undeclared adapter must not take that path away from it.
     const closed = appOf({ rest: false });
     const outcome = await serveRest(closed, { method: 'DELETE', path: 'blog/posts', query: {}, state: {} });
@@ -86,7 +86,7 @@ describe('the app decides which adapters it serves', () => {
   it('consults the table once declared — the same request, a different answer', async () => {
     const closed = { method: 'DELETE', path: 'blog/posts', query: {}, state: {} };
 
-    // Undeclared: the door never looks. Declared: it looks, and refuses the verb.
+    // Undeclared: the facade never looks. Declared: it looks, and refuses the verb.
     expect(await serveRest(appOf({}), closed)).toEqual({ kind: 'pass' });
     expect(await serveRest(appOf(), closed)).toMatchObject({ kind: 'error', status: 405 });
   });
@@ -138,7 +138,7 @@ describe('shapeRest', () => {
   });
 });
 
-describe('the GraphQL door obeys the same declaration', () => {
+describe('the GraphQL facade obeys the same declaration', () => {
   it('serves nothing when the app declares no graphql adapter', async () => {
     const { serveGraphQL } = await import('../src/graphql.js');
     const outcome = await serveGraphQL(appOf({ rest: true }), { query: '{ __typename }', state: {} });
@@ -153,7 +153,7 @@ describe('the GraphQL door obeys the same declaration', () => {
 
   it('checks the declaration before the query — an undeclared adapter says nothing at all', async () => {
     const { serveGraphQL } = await import('../src/graphql.js');
-    // No query AND no adapter: the answer is `pass`, not a 400. A door that is not
+    // No query AND no adapter: the answer is `pass`, not a 400. A facade that is not
     // served does not get to complain about what was sent to it.
     expect(await serveGraphQL(appOf({}), { state: {} })).toEqual({ kind: 'pass' });
   });

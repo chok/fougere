@@ -1,5 +1,5 @@
 /**
- * The live door — `tunnel.ts` whose listeners are not trusted peers.
+ * The live facade — `tunnel.ts` whose listeners are not trusted peers.
  *
  * Read this against `demos/emit-multirepo/blog/tunnel.ts`, because everything the two
  * files share is deliberately unremarkable: a connection held open, a Map of listeners,
@@ -14,7 +14,7 @@
  *      decide who may be TOLD, and it decides from the fact.
  *
  *   2. **The push carries `{ entity }` and nothing else.** Not the row, not the title, not
- *      the id. A reader learns that something moved and must ask the validating door what it
+ *      the id. A reader learns that something moved and must ask the validating facade what it
  *      now sees. What a push does not carry, it cannot leak — and that turns the fan-out
  *      into a question of permission rather than of content.
  */
@@ -97,7 +97,7 @@ export async function serveLive(): Promise<LiveDoor> {
 }
 
 /**
- * A reader. Holds the connection, and on every nudge asks the door what it now sees —
+ * A reader. Holds the connection, and on every nudge asks the facade what it now sees —
  * which is the client half of "push the invalidation, not the row".
  *
  * The browser version of this is smaller, not bigger: `@fougere/app-shared` already

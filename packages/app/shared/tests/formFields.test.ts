@@ -168,7 +168,7 @@ describe('tableColumnsOf — the dual', () => {
     expect(byName.status.render).toBe('text');
   });
 
-  it('a reference is a link, and names the door it points at', () => {
+  it('a reference is a link, and names the facade it points at', () => {
     expect(byName.authorId.render).toBe('link');
     expect(byName.authorId.to).toBe('author');
   });

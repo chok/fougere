@@ -46,7 +46,7 @@ const crud = [
 const card: IdentityCard = {
   fronds: [{
     name: 'cms',
-    doors: [
+    facades: [
       {
         name: 'post',
         schema: Card.fromSchema(Post, 'post').descriptor,
@@ -124,11 +124,11 @@ const topology: TopologyReport = {
   // Nothing is running: this report is frozen. A live one moves, and the chip only appears then.
   active: 0,
   fronds: [
-    { frond: 'cms', placement: 'local', entities: 3, doors: 4 },
-    { frond: 'media', placement: 'local', entities: 1, doors: 2 },
-    { frond: 'identity', placement: 'remote', entities: 0, doors: 0 },
-    { frond: 'billing', placement: 'remote', entities: 0, doors: 0 },
-    { frond: 'audit', placement: 'remote', entities: 0, doors: 0 },
+    { frond: 'cms', placement: 'local', entities: 3, facades: 4 },
+    { frond: 'media', placement: 'local', entities: 1, facades: 2 },
+    { frond: 'identity', placement: 'remote', entities: 0, facades: 0 },
+    { frond: 'billing', placement: 'remote', entities: 0, facades: 0 },
+    { frond: 'audit', placement: 'remote', entities: 0, facades: 0 },
   ],
   edges: [
     { from: 'cms', to: 'media', count: 640, errors: 0 },
@@ -350,7 +350,7 @@ const messages = {
         elsewhere_count: '%{smart_count} ailleurs |||| %{smart_count} ailleurs',
         paths: "%{smart_count} chemin d'appel observé |||| %{smart_count} chemins d'appel observés",
         entities: '%{smart_count} entité |||| %{smart_count} entités',
-        doors: '%{smart_count} porte |||| %{smart_count} portes',
+        facades: '%{smart_count} porte |||| %{smart_count} portes',
         refused: '%{smart_count} refus |||| %{smart_count} refus',
         inFlight: '%{smart_count} appel en cours |||| %{smart_count} appels en cours',
         unheard: 'muet',
@@ -366,7 +366,7 @@ const messages = {
       },
       structure: {
         title: 'Structure', subtitle: "Ce que la carte d'identité annonce de cette app",
-        fronds: 'Fronds', doors: 'Portes', queries: 'Lectures', commands: 'Écritures',
+        fronds: 'Fronds', facades: 'Portes', queries: 'Lectures', commands: 'Écritures',
         frondDoors: '%{smart_count} porte |||| %{smart_count} portes',
         frondFields: '%{smart_count} champ |||| %{smart_count} champs',
         read: 'lecture', write: 'écriture',

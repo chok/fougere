@@ -37,7 +37,7 @@ describe('the generated script', () => {
   it('is valid JavaScript that k6 can parse', async () => {
     await using app = await testApp({ root });
 
-    const script = loadScript(app, { door: 'http://localhost:4200/_fougere/call' });
+    const script = loadScript(app, { facade: 'http://localhost:4200/_fougere/call' });
 
     // Parsed by node rather than pattern-matched: a template that produces a syntax
     // error is the one failure a `toContain` would sail straight past. `.mjs` because

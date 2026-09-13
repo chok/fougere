@@ -161,11 +161,11 @@ function realise(
 
     case 'reshaped':
       // A tightened bound is a CHECK, and altering one on a live table is engine-specific
-      // AND may be refused by rows already stored. The validator still enforces it at the door.
+      // AND may be refused by rows already stored. The validator still enforces it at the facade.
       return {
         entity,
         field: change.field,
-        reason: `bounds moved — the door enforces them, the table keeps its old CHECK until you migrate it`,
+        reason: `bounds moved — the facade enforces them, the table keeps its old CHECK until you migrate it`,
       };
 
     case 'restated':

@@ -1,7 +1,7 @@
 import { Registry, Role, type SchemaView } from '@fougere/schema';
 import type { StorageFactory } from './storage/port.js';
 
-/** A promise the judge at the door cannot keep, because it is about rows it never sees. */
+/** A promise the judge at the facade cannot keep, because it is about rows it never sees. */
 export type Constraint = 'unique';
 
 /** Whether an entity asks for one, anywhere but on its key. */

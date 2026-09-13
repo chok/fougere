@@ -7,6 +7,6 @@ export default class Post extends entity({
   createdAt: created(),
   // Server-owned: a post is born a draft and flipped by the publish
   // operation, never by a client writing the field. readOnly closes
-  // the inbound door — the field is projected out, never accepted in.
+  // the inbound facade — the field is projected out, never accepted in.
   status: readOnly(oneOf('draft', 'published', { default: 'draft' })),
 }) {}

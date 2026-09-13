@@ -20,7 +20,7 @@ import { FieldDeclarationValidator } from '../src/validator/FieldDeclarationVali
  * `new Field({})` used to be legal from any caller without a compiler, and assigning the
  * slots wholesale used to be a one-line simplification with a prototype hole under it.
  */
-describe('the field door', () => {
+describe('the field facade', () => {
   it('refuses what is not a field, and names the key when it was given one', () => {
     expect(() => new Field({} as never)).toThrow(/shape: Every field states a shape/);
     expect(() => new Field({} as never, 'vide')).toThrow(/Field 'vide': shape:/);
@@ -46,7 +46,7 @@ describe('the field door', () => {
     }
   });
 
-  // The door judges the FORM of a generator, never the name: `Generators.register` may
+  // The facade judges the FORM of a generator, never the name: `Generators.register` may
   // still be called after `entity()`, and the registry refuses an unknown name at apply.
   it('refuses a generator that is not a name, and takes a name it does not answer yet', () => {
     const shape = { type: 'string' } as const;
@@ -104,7 +104,7 @@ describe('the field door', () => {
     expect('nawak' in f).toBe(false);
   });
 
-  it('survives a card carrying __proto__ — the input this door exists to accept', () => {
+  it('survives a card carrying __proto__ — the input this facade exists to accept', () => {
     // `Object.assign(this, init)` would copy through [[Set]], firing the `__proto__`
     // setter: the field would lose `with` and gain whatever the sender put there.
     const hostile = JSON.parse('{"shape":{"type":"string"},"__proto__":{"polluted":true}}');
@@ -122,7 +122,7 @@ describe('the field door', () => {
   });
 });
 
-describe('the schema door', () => {
+describe('the schema facade', () => {
   class Post extends entity({ id: primary(), title: text() }) {}
 
   it('survives a row carrying __proto__ — the same hole `Field` closed', () => {

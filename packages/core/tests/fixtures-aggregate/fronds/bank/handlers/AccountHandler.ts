@@ -1,6 +1,6 @@
 import type AccountRepository from '../repositories/AccountRepository.js';
 
-/** A door onto the aggregate — the only way its members are reached. */
+/** A facade onto the aggregate — the only way its members are reached. */
 export default class AccountHandler {
   constructor(private accounts: AccountRepository) {}
 

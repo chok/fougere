@@ -9,7 +9,7 @@ pnpm -C demos/sveltekit-blog dev     # :3500
 `@fougere/svelte` holds the four primitives. There is **no `@fougere/sveltekit`**,
 and that is not an omission: SvelteKit serves Web-standard `Request`/`Response` from
 `+server.ts`, and it hands every `load` function its own `event`, so there is no
-ambient-request lookup to package. The doors mount straight from `@fougere/app/web`.
+ambient-request lookup to package. The facades mount straight from `@fougere/app/web`.
 
 Compare: `@fougere/next` exists and is 124 lines, of which the substance is one
 import — `next/headers`. A host package earns its existence only when the host has
@@ -50,7 +50,7 @@ POST /api/blog/posts {status} → VALIDATION_FAILED — status: Read-only      4
 / · /drafts · /new                                                         200
 ```
 
-`/api/health` is the app's own route under the prefix the REST door also claims —
-SvelteKit matches the specific route first, so mounting the door took nothing away.
+`/api/health` is the app's own route under the prefix the REST facade also claims —
+SvelteKit matches the specific route first, so mounting the facade took nothing away.
 
 `diff -r ../next-blog/fronds fronds` is empty.

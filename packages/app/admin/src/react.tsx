@@ -202,7 +202,7 @@ function inputFor(resource: AdminResource, field: FormField, t: Translate, rende
  * an article from the back-office.
  *
  * Three things are derived and none is declared per entity: WHICH ops (everything the
- * door serves beyond the five verbs), WHETHER it asks for input (`op.input` — then the
+ * facade serves beyond the five verbs), WHETHER it asks for input (`op.input` — then the
  * dialog's form is `formFieldsOf` over the reconstructed schema, the same projection an
  * ordinary form uses), and WHETHER it confirms (`op.confirm`, from an extension).
  */
@@ -286,7 +286,7 @@ function OperationButton({
   );
 }
 
-/** Row-level actions: the verbs the door serves, then everything else it serves. */
+/** Row-level actions: the verbs the facade serves, then everything else it serves. */
 function RowActions({ resource }: { resource: AdminResource }): ReactElement {
   const actions = useMemo(() => actionsOf(resource.operations), [resource]);
   return (
@@ -304,9 +304,9 @@ const listFor = (r: AdminResource, renderers?: ReactAdminRenderers) => function 
   const t = useTranslate();
   return (
     <List>
-      {/* `can.delete` had no reader, so a door serving no `delete` still showed the
+      {/* `can.delete` had no reader, so a facade serving no `delete` still showed the
           selection checkboxes and the bulk Delete button — every one of them a 404. And
-          a door serving `update` but not `findById` had an inert row. */}
+          a facade serving `update` but not `findById` had an inert row. */}
       <Datagrid
         rowClick={r.can.show ? 'show' : r.can.edit ? 'edit' : false}
         bulkActionButtons={r.can.delete ? undefined : false}
@@ -353,7 +353,7 @@ const createFor = (r: AdminResource, renderers?: ReactAdminRenderers) => functio
   return <Create><SimpleForm>{r.fields.map((field) => inputFor(r, field, t, renderers))}</SimpleForm></Create>;
 };
 
-/** One door, as the four pages the card says it serves. */
+/** One facade, as the four pages the card says it serves. */
 export function resourceFor(r: AdminResource, options: ResourceRenderOptions = {}): ReactElement {
   const { renderers, components = {} } = options;
   const resourceOptions: FougereResourceOptions = {
@@ -498,7 +498,7 @@ export function FougereAdmin({
               components: resourceComponents?.[resource.name],
             })),
             /*
-             * The one page that renders the APP rather than a door. It is not a resource —
+             * The one page that renders the APP rather than a facade. It is not a resource —
              * there is no row behind it — so it rides a route, and its data comes from
              * `rpc.topology` rather than from the card.
              */

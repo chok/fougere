@@ -55,7 +55,7 @@ export class Shapes {
   /**
    * Every `pattern` a shape states, the nested ones included — `items`, `properties`.
    *
-   * Two readers ask two questions of the same list: the card door asks whether each one
+   * Two readers ask two questions of the same list: the card facade asks whether each one
    * compiles, `fougere check` whether each one backtracks. Neither owns the walk.
    */
   static patterns(shape: unknown): string[] {

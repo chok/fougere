@@ -10,7 +10,7 @@ import { call } from '@fougere/app/web';
  * one wire path — `/_fougere/call`, which is what the browser client knows.
  *
  * The handler takes a standard Web `Request`, so there is nothing to translate:
- * `call` is the door itself, shared with Next.
+ * `call` is the facade itself, shared with Next.
  */
 export const Route = createFileRoute('/_fougere/call')({
   server: {

@@ -15,7 +15,7 @@ function relationNameFor(fieldName: string): string | undefined {
 
 /**
  * The field a target is keyed by — what a batch read indexes its answer on. The shape
- * answers the absence and this door defaults it: `id` is what a node id falls back to.
+ * answers the absence and this facade defaults it: `id` is what a node id falls back to.
  */
 function primaryNameOf(fields: Fields): string {
   return FieldSet.of(fields).primary ?? 'id';
@@ -101,7 +101,7 @@ interface EntityEntry {
 
 interface HandlerEntry {
   /**
-   * The name the door answers to — `PostHandler` → `post`. NOT an entity name: a handler may carry
+   * The name the facade answers to — `PostHandler` → `post`. NOT an entity name: a handler may carry
    * none.
    */
   address: string;
@@ -323,13 +323,13 @@ export function registerAll(
           resolve: (parent: any, _args: unknown, ctx: unknown) => {
             const fk = parent[fieldName];
             if (fk == null) return null;
-            // A door that serves no list — a handler narrowed to `findById` — keeps the
+            // A facade that serves no list — a handler narrowed to `findById` — keeps the
             // row-at-a-time path rather than losing the relation entirely.
             if (typeof targetList !== 'function') {
               return targetEntry.facade.findById({ params: { id: fk }, query: {}, body: undefined, state: {} });
             }
             return loadByKey(ctx, directionKey(targetKey(target), targetKeyName), String(fk), (ids) =>
-              // The door the `many` dual already uses, with a SET where it names one
+              // The facade the `many` dual already uses, with a SET where it names one
               // value. Nothing new is published: a criterion learned to name several.
               readInSlices(ids, async (slice) => {
                 const result = await targetList.call(targetEntry.facade, {

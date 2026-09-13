@@ -19,7 +19,7 @@ import { frameCall, unframeResponse, type RpcResponse } from '@fougere/transport
 export type EntityClass = { name: string };
 
 export type {
-  FougereDoors,
+  FougereOperations,
   FacadeName,
   Addresses,
   AnyHandler,

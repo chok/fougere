@@ -1,5 +1,5 @@
 /**
- * The doors as types — the third projection of one scan.
+ * The facades as types — the third projection of one scan.
  *
  * TypeScript records nothing about what a function throws, so a client cannot narrow a refusal
  * without being told. The runtime scan cannot tell it: its operations travel in a `Map`, and a
@@ -8,36 +8,36 @@
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { scanProject } from '../src/index.js';
-import { emitDoors } from '../src/scan/doors.js';
+import { emitFacade } from '../src/scan/facade.js';
 
 const at = (fixture: string) => join(import.meta.dirname, fixture);
 
-describe('the doors file', () => {
+describe('the facades file', () => {
   /**
    * It AUGMENTS rather than declares, which is what puts the keys in reach of a page: a
    * composable narrows `useQuery('order', 'ship')` against the interface it already imports,
    * and nothing in the project has to name this file.
    */
   it('fills the interface the packages declare, instead of standing up its own', async () => {
-    const written = emitDoors(await scanProject(at('fixtures-refusals')), { outFile: at('fixtures-refusals/.fougere/doors.ts') });
+    const written = emitFacade(await scanProject(at('fixtures-refusals')), { outFile: at('fixtures-refusals/.fougere/facades.ts') });
 
     expect(written).toContain("declare module '@fougere/core/contract' {");
-    expect(written).toContain('  interface FougereDoors {');
-    expect(written).not.toContain('export interface FougereDoors');
+    expect(written).toContain('  interface FougereOperations {');
+    expect(written).not.toContain('export interface FougereOperations');
   }, 30_000);
 
   /**
    * An op that declares nothing still answers `SERVICE_UNAVAILABLE`: every call can meet a
-   * draining door. Writing only what the frond declares would tell a page it refuses nothing.
+   * draining facade. Writing only what the frond declares would tell a page it refuses nothing.
    */
   it('carries the framework half for an op that declares none of its own', async () => {
-    const written = emitDoors(await scanProject(at('fixtures-refusals')), { outFile: at('fixtures-refusals/.fougere/doors.ts') });
+    const written = emitFacade(await scanProject(at('fixtures-refusals')), { outFile: at('fixtures-refusals/.fougere/facades.ts') });
 
     expect(written).toContain("'order.quote': { errors: ErrorCode.SERVICE_UNAVAILABLE };");
   }, 30_000);
 
   it('names what an op can refuse, walked through the helpers beside it', async () => {
-    const written = emitDoors(await scanProject(at('fixtures-refusals')), { outFile: at('fixtures-refusals/.fougere/doors.ts') });
+    const written = emitFacade(await scanProject(at('fixtures-refusals')), { outFile: at('fixtures-refusals/.fougere/facades.ts') });
 
     expect(written).toContain(
       "'order.ship': { errors: ErrorCode.CONFLICT | ErrorCode.GONE | ErrorCode.PRECONDITION_FAILED"
@@ -46,7 +46,7 @@ describe('the doors file', () => {
   }, 30_000);
 
   /**
-   * A surface is a second door in front of the same handler. What an op refuses does not change
+   * A surface is a second facade in front of the same handler. What an op refuses does not change
    * with it — the code that throws is the same — but a client pointed at one must be offered its
    * own key, and `frond.config.ts` declares a surface just as a directory does.
    */
@@ -55,9 +55,9 @@ describe('the doors file', () => {
    * read as the right thing and then refuse to narrow `FougereError<Code>`.
    */
   it('writes enum members, not the literals that look like them', async () => {
-    const written = emitDoors(await scanProject(at('fixtures-refusals')), { outFile: at('fixtures-refusals/.fougere/doors.ts') });
+    const written = emitFacade(await scanProject(at('fixtures-refusals')), { outFile: at('fixtures-refusals/.fougere/facades.ts') });
 
-    expect(written).toContain("import type { ErrorCode, Door } from '@fougere/core/contract';");
+    expect(written).toContain("import type { ErrorCode, Facade } from '@fougere/core/contract';");
   }, 30_000);
 
   /**
@@ -65,15 +65,15 @@ describe('the doors file', () => {
    * a type-only import so nothing is printed into the file and nothing can drift.
    */
   it('names the handler that answers at each address', async () => {
-    const written = emitDoors(await scanProject(at('fixtures-refusals')), { outFile: at('fixtures-refusals/.fougere/doors.ts') });
+    const written = emitFacade(await scanProject(at('fixtures-refusals')), { outFile: at('fixtures-refusals/.fougere/facades.ts') });
 
     expect(written).toContain('  interface FougereHandlers {');
         // Without `typeof`: that names the CONSTRUCTOR, whose `keyof` is `'prototype'`.
     expect(written).toContain("'order': import('../fronds/shop/handlers/OrderHandler.js').default;");
   }, 30_000);
 
-  it('gives a named surface a door of its own', async () => {
-    const written = emitDoors(await scanProject(at('../../cli/tests/fixtures-explain')), { outFile: at('../../cli/tests/fixtures-explain/.fougere/doors.ts') });
+  it('gives a named surface a facade of its own', async () => {
+    const written = emitFacade(await scanProject(at('../../cli/tests/fixtures-explain')), { outFile: at('../../cli/tests/fixtures-explain/.fougere/facades.ts') });
 
     expect(written).toContain("'post.publish':");
     expect(written).toContain("'public:post.publish':");
@@ -84,17 +84,17 @@ describe('the doors file', () => {
    * rather than falling back to `string` in silence. The value is the address alone — the
    * handler is reached as a TYPE, so no server code travels into a bundle.
    */
-  it('exports one door per address, named after the address and never after the class', async () => {
-    const written = emitDoors(await scanProject(at('fixtures-refusals')), { outFile: at('fixtures-refusals/.fougere/doors.ts') });
+  it('exports one facade per address, named after the address and never after the class', async () => {
+    const written = emitFacade(await scanProject(at('fixtures-refusals')), { outFile: at('fixtures-refusals/.fougere/facades.ts') });
 
     expect(written).toContain(
       "export const order: FacadeName<import('../fronds/shop/handlers/OrderHandler.js').default, 'order'> = { address: 'order' };",
     );
   }, 30_000);
 
-  /** Two surfaces share one class name, so only the default one is exported as a door. */
-  it('exports one door for a handler served on two surfaces', async () => {
-    const written = emitDoors(await scanProject(at('../../cli/tests/fixtures-explain')), { outFile: at('../../cli/tests/fixtures-explain/.fougere/doors.ts') });
+  /** Two surfaces share one class name, so only the default one is exported as a facade. */
+  it('exports one facade for a handler served on two surfaces', async () => {
+    const written = emitFacade(await scanProject(at('../../cli/tests/fixtures-explain')), { outFile: at('../../cli/tests/fixtures-explain/.fougere/facades.ts') });
 
     expect(written.match(/export const post:/g)).toHaveLength(1);
     expect(written).not.toContain("'public:post'> = ");

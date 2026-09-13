@@ -141,7 +141,7 @@ export interface TableColumn {
   /** The same key a form uses for the same field — one convention, two projections. */
   labelKey: string;
   label: string;
-  /** The entity a `link` points at, under the key its door is named by. */
+  /** The entity a `link` points at, under the key its facade is named by. */
   to?: string;
 }
 

@@ -36,7 +36,7 @@ describe('drain', () => {
     await a.dispose();
   });
 
-  it('refuses a call that arrives after the door closed', async () => {
+  it('refuses a call that arrives after the facade closed', async () => {
     const a = await app();
     await a.drain();
 
@@ -53,14 +53,14 @@ describe('drain', () => {
     await a.dispose();
   });
 
-  it('counts every door the same, and a call that throws still lets go', async () => {
+  it('counts every facade the same, and a call that throws still lets go', async () => {
     const a = await app();
-    const door = a.facadeFor('slow')!;
+    const facade = a.facadeFor('slow')!;
 
-    await expect(door.boom()).rejects.toThrow('nope');
+    await expect(facade.boom()).rejects.toThrow('nope');
     expect(a.inFlight()).toBe(0);
 
-    const calls = [door.work(), door.work(), door.work()];
+    const calls = [facade.work(), facade.work(), facade.work()];
     expect(a.inFlight()).toBe(3);
     await Promise.all(calls);
     expect(a.inFlight()).toBe(0);

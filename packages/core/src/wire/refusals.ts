@@ -3,7 +3,7 @@
  * are read rather than where they are published.
  *
  * The half the FRAMEWORK owns is not on the wire, because it follows from facts that already
- * are: an op with an `input` is judged at the door, an op that is dispatched at all can meet a
+ * are: an op with an `input` is judged at the facade, an op that is dispatched at all can meet a
  * draining app, an op that crosses a process can meet the wire. Writing those beside every
  * operation would be one fact in two places — and the card would grow by three entries per op
  * that a reader can work out from `kind` and `input`.
@@ -26,11 +26,11 @@ export interface Refusable {
 
 /**
  * What the framework refuses, and the fact each one follows from. Every line is a claim about
- * the core, held by a test rather than by memory: the day a door stops judging, the claim fails
+ * the core, held by a test rather than by memory: the day a facade stops judging, the claim fails
  * before a contract starts lying.
  */
 const IMPLIED: { code: ErrorCode; when: (op: Refusable) => boolean }[] = [
-  // `InFlight.enter` — a call arriving after the door closed, which any op can meet.
+  // `InFlight.enter` — a call arriving after the facade closed, which any op can meet.
   { code: ErrorCode.SERVICE_UNAVAILABLE, when: () => true },
   // `validateInput` — it returns the invocation untouched when the op declares no view.
   { code: ErrorCode.VALIDATION_FAILED, when: (op) => op.input !== undefined },

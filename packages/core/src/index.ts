@@ -22,7 +22,7 @@ export { RouteAddress } from './contract.js';
 export { DispatchLifecycle } from './dispatch/DispatchLifecycle.js';
 export { Dispatcher } from './dispatch/Dispatcher.js';
 // The class and not only its type: an observer RECEIVES these, so a package that folds
-// them — or a test of one — has to be able to make one through the door.
+// them — or a test of one — has to be able to make one through the facade.
 export { DispatchEvent } from './dispatch/DispatchEvent.js';
 export type { CallPage, CallRecord } from './contract.js';
 export { driftOf, agrees, explain, type CardDrift } from './contract.js';
@@ -54,8 +54,8 @@ export { declaredTopologyOf } from './boot/declared.js';
 // Both halves of what a call can refuse, put together where they are READ — the framework's
 // follows from `kind` and `input`, so only the frond's travels.
 export { refusalsOf, type Refusable } from './wire/refusals.js';
-// The doors as TYPES — empty here, filled by the `.d.ts` the scan writes beside the app.
-export type { FougereDoors, FacadeName, Addresses, AnyHandler, HandlerOf, Refused, FougereHandlers, Answer, Rows } from './wire/doors.js';
+// The facades as TYPES — empty here, filled by the `.d.ts` the scan writes beside the app.
+export type { FougereOperations, FacadeName, Addresses, AnyHandler, HandlerOf, Refused, FougereHandlers, Answer, Rows } from './wire/facade.js';
 export type { Facade } from './wire/call.js';
 export type {
   FrondCall,

@@ -12,9 +12,9 @@ const report: TopologyReport = {
   since: 1,
   active: 0,
   fronds: [
-    { frond: 'shipping', placement: 'remote', entities: 0, doors: 0 },
-    { frond: 'shop', placement: 'local', entities: 2, doors: 2 },
-    { frond: 'catalog', placement: 'local', entities: 1, doors: 1 },
+    { frond: 'shipping', placement: 'remote', entities: 0, facades: 0 },
+    { frond: 'shop', placement: 'local', entities: 2, facades: 2 },
+    { frond: 'catalog', placement: 'local', entities: 1, facades: 1 },
   ],
   edges: [
     { from: 'shop', to: 'catalog', count: 12, errors: 0 },
@@ -68,9 +68,9 @@ describe('nodesOf', () => {
 
 describe('isOpaque', () => {
   it('separates a remote that publishes its shape elsewhere from a frond with nothing in it', () => {
-    expect(isOpaque({ frond: 'shipping', placement: 'remote', entities: 0, doors: 0 })).toBe(true);
+    expect(isOpaque({ frond: 'shipping', placement: 'remote', entities: 0, facades: 0 })).toBe(true);
     // A local frond with no entity is not opaque — this process DID look, and found none.
-    expect(isOpaque({ frond: 'ops', placement: 'local', entities: 0, doors: 0 })).toBe(false);
+    expect(isOpaque({ frond: 'ops', placement: 'local', entities: 0, facades: 0 })).toBe(false);
   });
 });
 

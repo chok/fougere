@@ -2,7 +2,7 @@
  * Announcing a fact — one emission, N recipients, and the emitter names none of them.
  *
  * Every other call in Fougere names one interlocutor: `remotes` one address per frond,
- * `Facade<T>` one door. This is the other half. What the tests hold is that nobody
+ * `Facade<T>` one facade. This is the other half. What the tests hold is that nobody
  * registers anything: a handler that declares `Emit<PostPublished>` and a handler that
  * accepts `Fact<PostPublished>` find each other because the scan read their signatures.
  */
@@ -90,27 +90,27 @@ describe('a fact is validated where it lands', () => {
 
   it('refuses a payload the fact itself refuses, and the op is never called', async () => {
     await using app = await createApp({ scan: await scanProject(root), createContainer });
-    const door = app.facadeFor('index')!;
+    const facade = app.facadeFor('index')!;
 
     // `PostPublished` picks `title: text({ min: 1 })` from Post, so an empty title is not
     // one. The scan fills no `input` from a parameter type, so this used to pass straight
     // through: a subscriber met no validator at all.
-    await expect(door.reindex({ ...Invocation.empty, input: { id: 'x', title: '' } }))
+    await expect(facade.reindex({ ...Invocation.empty, input: { id: 'x', title: '' } }))
       .rejects.toThrow(/title/);
     expect(heard()).toEqual([]);
   });
 
   it('lets a legal fact through, decoded', async () => {
     await using app = await createApp({ scan: await scanProject(root), createContainer });
-    const door = app.facadeFor('index')!;
+    const facade = app.facadeFor('index')!;
 
-    await door.reindex({ ...Invocation.empty, input: { id: 'ok', title: 'A fern', at: new Date().toISOString() } });
+    await facade.reindex({ ...Invocation.empty, input: { id: 'ok', title: 'A fern', at: new Date().toISOString() } });
     expect(heard()).toEqual(['search:ok']);
   });
 });
 
 describe('a listener that lives in another process', () => {
-  it('is still dispatched to — its subscription was read here, its door answers there', async () => {
+  it('is still dispatched to — its subscription was read here, its facade answers there', async () => {
     (globalThis as any).__heard = [];
     const wire: string[] = [];
 
@@ -124,7 +124,7 @@ describe('a listener that lives in another process', () => {
       remotes: { search: 'http://127.0.0.1:9' },
       remoteTransport: () => async (call) => {
         if (call.entity === 'rpc') {
-          return { fronds: [{ name: 'search', doors: [{ name: 'index', ops: [{ name: 'reindex', kind: 'command' }] }], facts: [] }] };
+          return { fronds: [{ name: 'search', facades: [{ name: 'index', ops: [{ name: 'reindex', kind: 'command' }] }], facts: [] }] };
         }
         wire.push(`${call.frond}:${call.entity}.${call.op}`);
         return undefined;
@@ -144,8 +144,8 @@ describe('a fact on the identity card', () => {
   /**
    * What made a fact stop at the repository boundary.
    *
-   * `PostPublished` has no handler, so it is not a door — and the card only published
-   * doors. A subscriber in another repository had no way to obtain the shape and kept a
+   * `PostPublished` has no handler, so it is not a facade — and the card only published
+   * facades. A subscriber in another repository had no way to obtain the shape and kept a
    * hand-written copy of it (`demos/emit-multirepo`), which is the drift the card exists
    * to prevent everywhere else.
    */
@@ -154,7 +154,7 @@ describe('a fact on the identity card', () => {
     const card = identityCardOf(app);
 
     const blog = card.fronds.find((frond) => frond.name === 'blog')!;
-    expect(blog.doors.map((door) => door.name)).toEqual(['post']);
+    expect(blog.facades.map((facade) => facade.name)).toEqual(['post']);
     expect(blog.facts.map((fact) => fact.name)).toEqual(['postPublished']);
     // The shape, so `sync` can write the class the subscriber would otherwise copy.
     expect(blog.facts[0].schema?.properties).toMatchObject({ title: expect.anything() });
@@ -165,13 +165,13 @@ describe('a fact on the identity card', () => {
     expect(app.listensTo()).toContain('postPublished');
   });
 
-  it('keeps a fact out of the doors, where hosting means answering', async () => {
+  it('keeps a fact out of the facades, where hosting means answering', async () => {
     await using app = await createApp({ scan: await scanProject(root), createContainer });
     const blog = identityCardOf(app).fronds.find((frond) => frond.name === 'blog')!;
 
-    // Listing it as a door would claim it is callable, and the runner would answer
+    // Listing it as a facade would claim it is callable, and the runner would answer
     // NOT_FOUND on every op — a remote router would even route calls to it.
-    expect(blog.doors.some((door) => door.name === 'postPublished')).toBe(false);
+    expect(blog.facades.some((facade) => facade.name === 'postPublished')).toBe(false);
   });
 });
 
@@ -218,7 +218,7 @@ describe('a fact stamped at the announcement', () => {
   it('never re-stamps a fact that arrived from elsewhere', async () => {
     await using app = await createApp({ scan: await scanProject(root), createContainer });
 
-    // `deliver` is the carrier's door. The sender already stamped this fact; doing it
+    // `deliver` is the carrier's facade. The sender already stamped this fact; doing it
     // again would give one fact two identities, one per process that relayed it.
     // It rejects here because `mail` fails on every fact by design — what this test
     // watches is the value that reached `search`, not the outcome.
@@ -251,7 +251,7 @@ describe('a sender whose copy has moved ahead', () => {
   /**
    * The log IS the evidence, so it is pinned like any other contract.
    *
-   * A door hands its 400 back to a caller who can act on it. A fact is dispatched and not
+   * A facade hands its 400 back to a caller who can act on it. A fact is dispatched and not
    * delivered, so nothing travels back and this line is all anyone gets — a bare error
    * dump would leave the most likely cause (a copy older than the sender's) unsaid.
    */
@@ -280,7 +280,7 @@ describe('a sender whose copy has moved ahead', () => {
     const announce = app.container.resolve<(fact: unknown) => Promise<unknown[]>>(emitKeyOf('PostPublished'));
 
     // The emission path, not `deliver`: this is the rule that protects the EMITTER, and
-    // an earlier version of this test asserted it through the carrier's door, which is
+    // an earlier version of this test asserted it through the carrier's facade, which is
     // exactly the party that must NOT be shielded.
     // Empty and not `undefined`: an announcement with no answer type waits for nobody, so
     // there is nothing to give back — `Emit<T, A>` is where a return means something.

@@ -1,5 +1,5 @@
 /**
- * `declares` is the ONE door for everything a schema states about itself, open wherever a
+ * `declares` is the ONE facade for everything a schema states about itself, open wherever a
  * schema is. `entity(fields, …)` is the same statement written where the fields are.
  *
  * Before it, a derivation could state NONE of them: `Post.extend({ body })` answered
@@ -68,7 +68,7 @@ describe('how a declaration folds into what the schema already states', () => {
   });
 });
 
-describe('what the door refuses', () => {
+describe('what the facade refuses', () => {
   it('an adapter entry addressing a field the schema does not carry', () => {
     expect(() =>
       // @ts-expect-error — 'nope' is not a field of this schema

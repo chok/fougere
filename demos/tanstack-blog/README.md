@@ -8,7 +8,7 @@ pnpm -C demos/tanstack-blog dev     # :3200
 
 `demos/next-blog` needed `@fougere/next`. This one needs **nothing**: there is no
 `@fougere/tanstack` package, and there is no plan for one. It imports
-`@fougere/app/web` for the doors and `@fougere/react` for the hooks — neither of
+`@fougere/app/web` for the facades and `@fougere/react` for the hooks — neither of
 which knows what a host is.
 
 ```ts
@@ -34,7 +34,7 @@ actually Next.
 
 ## Mounting is not publishing
 
-The route files put the doors in place. What they serve is declared once, in
+The route files put the facades in place. What they serve is declared once, in
 `fougere.config.ts`:
 
 ```ts

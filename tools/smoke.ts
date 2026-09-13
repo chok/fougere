@@ -11,7 +11,7 @@
  * Its ceiling is that first second. It judges that a process came up, never that what it
  * printed is true — `pnpm -C demos/ports-swap dev` refusing the third payment is the whole
  * point of that demo, and this file cannot tell that refusal from a crash. The suite in
- * `packages/` holds the claims; this holds the door. What it catches is what no unit test
+ * `packages/` holds the claims; this holds the facade. What it catches is what no unit test
  * can see: a demo left behind by a rename, an import that moved, a port taken twice.
  *
  * Demos run one after another because several of them bind the same ports on purpose

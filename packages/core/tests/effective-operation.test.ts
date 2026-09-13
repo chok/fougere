@@ -83,8 +83,8 @@ describe('EffectiveOperation as the shared runtime contract', () => {
     });
 
     const operation = app.operationsFor('post')?.get('bodyFirst');
-    const cardOperation = identityCardOf(app).fronds[0]!.doors
-      .find((door) => door.name === 'post')!.ops
+    const cardOperation = identityCardOf(app).fronds[0]!.facades
+      .find((facade) => facade.name === 'post')!.ops
       .find((op) => op.name === 'bodyFirst');
 
     expect(operation?.kind).toBe('command');

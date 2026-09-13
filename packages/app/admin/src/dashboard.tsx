@@ -35,9 +35,9 @@ import type { AdminFacets, EditorialFacet, UsersFacet } from './facets.js';
 export interface FougereResourceOptions extends ResourceOptions {
   primary: string;
   facets: AdminFacets;
-  /** The frond that owns this door — the card groups by it, so the panel can too. */
+  /** The frond that owns this facade — the card groups by it, so the panel can too. */
   frond?: string;
-  /** What the door answers, with each op's kind. `query` reads, `command` writes. */
+  /** What the facade answers, with each op's kind. `query` reads, `command` writes. */
   operations?: readonly { name: string; kind: 'query' | 'command' }[];
   /** How many columns the shape yields — a rough measure of an entity's width. */
   fieldCount?: number;
@@ -388,7 +388,7 @@ function UsersWidget(): ReactElement {
  * What the application IS, as opposed to what it holds.
  *
  * Every other widget counts rows; this one counts the shape that produced them —
- * fronds, doors, operations split by kind, and how wide each entity is. All of it comes
+ * fronds, facades, operations split by kind, and how wide each entity is. All of it comes
  * from the same card the menu was built from, so it costs no query at all.
  *
  * **Remotes are not in it, and the card is why.** `identityCardOf` maps `app.fronds`,
@@ -402,7 +402,7 @@ function StructureWidget(): ReactElement {
   const definitions = useResourceDefinitions();
 
   const structure = useMemo(() => {
-    const byFrond = new Map<string, { doors: number; queries: number; commands: number; fields: number }>();
+    const byFrond = new Map<string, { facades: number; queries: number; commands: number; fields: number }>();
     let queries = 0;
     let commands = 0;
     let fields = 0;
@@ -414,9 +414,9 @@ function StructureWidget(): ReactElement {
       const c = ops.length - q;
       const width = options?.fieldCount ?? 0;
       queries += q; commands += c; fields += width;
-      const held = byFrond.get(frond) ?? { doors: 0, queries: 0, commands: 0, fields: 0 };
+      const held = byFrond.get(frond) ?? { facades: 0, queries: 0, commands: 0, fields: 0 };
       byFrond.set(frond, {
-        doors: held.doors + 1,
+        facades: held.facades + 1,
         queries: held.queries + q,
         commands: held.commands + c,
         fields: held.fields + width,
@@ -424,14 +424,14 @@ function StructureWidget(): ReactElement {
     }
     return {
       fronds: [...byFrond.entries()].map(([name, counts]) => ({ name, ...counts })),
-      doors: Object.keys(definitions).length,
+      facades: Object.keys(definitions).length,
       queries, commands, fields,
     };
   }, [definitions]);
 
   const totals: [string, string, number][] = [
     ['structure.fronds', 'Fronds', structure.fronds.length],
-    ['structure.doors', 'Doors', structure.doors],
+    ['structure.facades', 'Facades', structure.facades],
     ['structure.queries', 'Queries', structure.queries],
     ['structure.commands', 'Commands', structure.commands],
   ];
@@ -468,7 +468,7 @@ function StructureWidget(): ReactElement {
             <Box sx={{ minWidth: 0 }}>
               <Typography noWrap sx={{ fontWeight: 640 }}>{frond.name}</Typography>
               <Typography variant="caption" color="text.secondary">
-                {t('structure.frondDoors', `${frond.doors} doors`, { smart_count: frond.doors })}
+                {t('structure.frondDoors', `${frond.facades} facades`, { smart_count: frond.facades })}
                 {' · '}
                 {t('structure.frondFields', `${frond.fields} fields`, { smart_count: frond.fields })}
               </Typography>
@@ -495,7 +495,7 @@ function CollectionsWidget(): ReactElement {
   const { loading, resources, navigate } = useFougereDashboard();
   return (
     <Card><CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
-      <Typography variant="h5">{t('collections.title', 'Collections')}</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: .4, mb: 2 }}>{t('collections.subtitle', 'Every door the card announced')}</Typography>
+      <Typography variant="h5">{t('collections.title', 'Collections')}</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: .4, mb: 2 }}>{t('collections.subtitle', 'Every facade the card announced')}</Typography>
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2,minmax(0,1fr))', lg: 'repeat(3,minmax(0,1fr))' }, gap: 1 }}>
         {loading ? [1, 2, 3].map((key) => <Skeleton key={key} height={58} />) : resources.map((resource) => (
           <Box key={resource.name} component="button" onClick={() => navigate('list', resource.name)} sx={{ appearance: 'none', width: '100%', display: 'flex', alignItems: 'center', gap: 1.5, p: 1.25, color: 'text.primary', bgcolor: 'transparent', border: 0, borderRadius: 2, textAlign: 'left', cursor: 'pointer', font: 'inherit', '&:hover': { bgcolor: 'action.hover' } }}>

@@ -25,11 +25,11 @@ Two consequences worth stating, because they are what makes it hold:
 
 If you are about to write the same constraint in two places, you have missed the derivation.
 
-## A surface is a door, never a logic
+## A surface is a facade, never a logic
 
-Every door goes through the handler **façade**, which is where validation sits: unknown-key refusal,
+Every facade goes through the handler **façade**, which is where validation sits: unknown-key refusal,
 collectors. A resolver or route you wire yourself against the storage — or worse, against the database —
-is a second door with no validator behind it, and the rules declared in the entities stop applying there.
+is a second facade with no validator behind it, and the rules declared in the entities stop applying there.
 
 Before adding a surface, reach for its **projection**:
 

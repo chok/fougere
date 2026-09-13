@@ -2,7 +2,7 @@ import type { FrondDescriptor, HandlerEntry } from './frond.js';
 
 /**
  * The surfaces a handler answers on — its own when it has one, otherwise the default
- * and every surface that names its address without opening a door of its own.
+ * and every surface that names its address without opening a facade of its own.
  * `undefined` is the default surface, as `facadeKeyOf` and `RouteAddress` spell it.
  */
 export function servedSurfaces(

@@ -12,7 +12,7 @@ const installed = new WeakMap<App, FinishedSpan[][]>();
  * an op that delegates reports almost no self time, whatever the machine it runs on:
  *
  * ```ts
- * const [op] = await spansOf(app, () => door.list());
+ * const [op] = await spansOf(app, () => facade.list());
  * expect(op.selfMs).toBeLessThan(0.1 * op.ms);   // it delegates, it does not work
  * ```
  *

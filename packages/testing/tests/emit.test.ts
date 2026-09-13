@@ -4,7 +4,7 @@
  * Two gestures with opposite rules, on purpose. Watching an announcement costs nothing —
  * `Emissions.announce` hands every fact to the carrier, so a test sits in the carrier's
  * seat and adds no second dispatcher. Its dual needed nothing at all: `app.deliver` is
- * already the carrier's door.
+ * already the carrier's facade.
  */
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
@@ -53,7 +53,7 @@ describe('its dual — a fact that arrives', () => {
   it('reaches the subscriber that accepted its type', async () => {
     await using app = await testApp({ root });
 
-    // `app.deliver` is the CARRIER's door: it waits for every subscriber and rejects if
+    // `app.deliver` is the CARRIER's facade: it waits for every subscriber and rejects if
     // one refuses, which is the opposite of what announcing does — and deliberately so.
     await app.deliver('postPublished', { id: 'p1', title: 'Delivered', at: new Date().toISOString() });
 

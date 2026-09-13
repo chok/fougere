@@ -40,7 +40,7 @@ function watched(name: string): { log: Logger; seen: LogRecord[] } {
   return { log: new Logger(name, { carry }), seen };
 }
 
-describe('the logger has a door', () => {
+describe('the logger has a facade', () => {
   it('hands out a structured record, not a formatted line', () => {
     const { log, seen } = watched('boot:app');
     vi.spyOn(console, 'info').mockImplementation(() => {});

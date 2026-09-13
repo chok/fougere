@@ -93,7 +93,7 @@ export async function run(app: App, root = new URL('..', import.meta.url).pathna
         meta: {
           name: cmdName,
           // `--help` reads the operation's own doc sentence, which the scan already
-          // carries for every door (`OperationContract.description`). A table here
+          // carries for every facade (`OperationContract.description`). A table here
           // would be the same fact written twice, and it drifted: it described `add`
           // and `doctor`, which do not exist, and had nothing for `call` or `serve`.
           description: handlerEntry.operations.get('execute')?.description,
