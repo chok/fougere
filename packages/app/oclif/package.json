@@ -1,0 +1,49 @@
+{
+  "name": "@fougere/oclif",
+  "version": "0.9.3-alpha.0",
+  "description": "A frond's operations, as a terminal: topics, flags and help derived from what it declares.",
+  "keywords": [
+    "fougere",
+    "oclif",
+    "cli"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chok/fougere.git",
+    "directory": "packages/app/oclif"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.test.json",
+    "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "@fougere/core": "workspace:*",
+    "@fougere/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@oclif/core": "^5.0.0",
+    "vitest": "^4.1.2"
+  },
+  "peerDependencies": {
+    "@oclif/core": "^4.0.0 || ^5.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
