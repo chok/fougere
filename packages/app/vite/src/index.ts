@@ -1,6 +1,6 @@
 /** `@fougere/vite` — the one place a Vite-built host is told what a Fougere app needs. */
-import { readdirSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { readdirSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
 import type { Plugin } from 'vite';
 import { RUNTIME_PACKAGES } from '@fougere/compiler';
 import { type Conventions, DEFAULT_CONVENTIONS } from '@fougere/core';
@@ -34,11 +34,40 @@ export interface FougereViteOptions {
   reserved?: string[];
 }
 
+/**
+ * Where the door types land — the same place `fougere build` puts them, so a host that runs the
+ * command and one that only starts a dev server read one file and not two.
+ */
+const DOORS = '.fougere/doors.generated.d.ts';
+
+/**
+ * The doors this app serves, as TYPES, written when the dev server comes up.
+ *
+ * TypeScript records nothing about what a function throws, so a client cannot know which
+ * refusals one door answers without being told. Nuxt writes its own beside the two modules it
+ * already generates; every other host reaches this plugin, which is what makes the narrowing
+ * something you get from starting the app rather than from remembering a command.
+ *
+ * A scan that fails is not a failure of the dev server: the types fall back to every code there
+ * is, which is what a client had before this existed.
+ */
+async function writeDoors(root: string): Promise<void> {
+  try {
+    const { scanProject, emitDoors } = await import('@fougere/compiler');
+    const out = join(root, DOORS);
+    mkdirSync(dirname(out), { recursive: true });
+    writeFileSync(out, emitDoors(await scanProject(root)));
+  } catch { /* a host with no fronds, or a scan that could not run */ }
+}
+
 export function fougere(options: FougereViteOptions = {}): Plugin {
   const external = [...new Set([...RUNTIME_PACKAGES, ...(options.external ?? [])])];
 
   return {
     name: 'fougere',
+    configureServer(server: { config?: { root?: string } }) {
+      void writeDoors(server.config?.root ?? process.cwd());
+    },
     /** `order. */
     config: {
       order: 'post',

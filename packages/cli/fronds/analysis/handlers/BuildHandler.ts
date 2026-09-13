@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from 'node:fs/promises';
-import { dirname, relative, resolve } from 'node:path';
-import { emitScan } from '@fougere/compiler';
+import { dirname, join, relative, resolve } from 'node:path';
+import { emitDoors, emitScan } from '@fougere/compiler';
 import ProjectScan from '../services/ProjectScan.js';
 import type Build from '../entities/Build.js';
 
@@ -12,12 +12,16 @@ import type Build from '../entities/Build.js';
  * This is the same scan the next build performs again, so it is gitignored.
  */
 export const DEFAULT_OUT = '.fougere/scan.generated.ts';
+/** Types only, beside the module — what lets a client narrow a refusal it might meet. */
+export const DOORS_OUT = 'doors.generated.d.ts';
 
 export interface BuildReport {
   /** Absolute, so a caller can print it or read it back. */
   out: string;
   /** Relative to the project root — what a human recognizes. */
   path: string;
+  /** Where the door types went, beside the module. */
+  doors: string;
   fronds: string[];
   entities: number;
   handlers: number;
@@ -52,9 +56,16 @@ export default class BuildHandler {
     await mkdir(dirname(out), { recursive: true });
     await writeFile(out, emitScan(scan, { outFile: out }));
 
+    // The same scan, projected a third way. It holds no value and reaches no bundle: what a
+    // client cannot otherwise know is which refusals one door can answer, because TypeScript
+    // records nothing about what a function throws.
+    const doors = join(dirname(out), DOORS_OUT);
+    await writeFile(doors, emitDoors(scan));
+
     return {
       out,
       path: relative(scan.root, out),
+      doors: relative(scan.root, doors),
       fronds: scan.fronds.map((frond) => frond.name),
       entities: scan.fronds.reduce((total, frond) => total + frond.entities.length, 0),
       handlers: scan.fronds.reduce((total, frond) => total + frond.handlers.length, 0),

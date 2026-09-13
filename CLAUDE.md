@@ -303,6 +303,17 @@ emitted scan like every other member: a contract that loses a field on disk answ
 depending on how it was booted. Pinned by `compiler/tests/refusals.test.ts` (two hops through
 helpers) and `core/tests/refusals.test.ts`.
 
+**A scan has a THIRD projection, and it is types** — `compiler/src/scan/doors.ts`, `emitDoors`,
+beside `emitScan` and `emitStatement`. The runtime scan cannot serve as one: its operations
+travel in a `Map`, and a `Map` literal widens its key to `string`, so the association between an
+op and its refusals is exactly what TypeScript drops there. An interface keeps it. The file holds
+no value, reaches no bundle, and is rewritten whenever the app starts — `fougere build` writes it
+beside the module, the Nuxt module adds a third template, and the Vite plugin writes it from
+`configureServer`, which covers React, Svelte and Vite at once. `sync` stays what it is — another
+repository, another language — and writes the same interface from the card rather than the scan.
+A host that never generates falls back to the whole `ErrorCode`, which is what a client had
+before this existed.
+
 **An op's REACH is the dual of its placement** — `EffectiveOperation.reach`, filled where
 `placement` already is. `placement` says where an op ANSWERS, `reach` where its work GOES: the
 fronds its handler crosses to, and how many of those are a process away. Both halves read the

@@ -12,7 +12,7 @@ import {
 } from '@nuxt/kit';
 import type { Nuxt } from '@nuxt/schema';
 import { orderSeeds } from '@fougere/core';
-import { scanProject, emitStatement, frondAliases, watchPathsOf } from '@fougere/compiler';
+import { scanProject, emitStatement, emitDoors, frondAliases, watchPathsOf } from '@fougere/compiler';
 import { frondPackage, resolveConventions, type Conventions } from '@fougere/core';
 import { setModuleLoader, loadCascadedConfig } from '@fougere/core/node';
 import { declaresStorage } from '@fougere/defaults';
@@ -299,6 +299,16 @@ const module = defineNuxtModule<FougereModuleOptions>({
       write: true,
       getContents: () => emitStatement(scan),
     }).dst;
+
+    // The doors as TYPES, beside the two modules above. It holds no value and reaches no
+    // bundle: what a client cannot otherwise know is which refusals one door answers, because
+    // TypeScript records nothing about what a function throws. Rewritten on every boot, so it
+    // cannot drift from the handlers it was read off.
+    addTemplate({
+      filename: 'fougere-doors.d.ts',
+      write: true,
+      getContents: () => emitDoors(scan),
+    });
 
     // ── 6b. Boot plugin (virtual — lives in .nuxt/) ───
     const { ordered, cycle } = orderSeeds(fronds);
