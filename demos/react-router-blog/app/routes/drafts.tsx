@@ -1,13 +1,13 @@
 import { useQuery, useCommand } from '@fougere/react';
-import Post from '../../fronds/blog/entities/Post';
+import { post } from '@fronds/facade';
 
 /**
  * The couple, unchanged from the Next and TanStack demos — same import, same
  * designation. `@fougere/react` does not know which of the three renders it.
  */
 export default function Drafts() {
-  const { items, loading, error, refresh } = useQuery<Post>(Post, 'listDrafts');
-  const publish = useCommand(Post, 'publish');
+  const { items, loading, error, refresh } = useQuery(post, 'listDrafts');
+  const publish = useCommand(post, 'publish');
 
   return (
     <main>

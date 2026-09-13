@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery } from '@fougere/react';
-import Post from '@fronds/blog/entities/Post';
+import { post } from '@fronds/facade';
 
 /**
  * The published list. Same hook, same designation, same import as
@@ -10,7 +10,7 @@ import Post from '@fronds/blog/entities/Post';
 export const Route = createFileRoute('/')({ component: Published });
 
 function Published() {
-  const { items, loading, error } = useQuery<Post>(Post, 'list');
+  const { items, loading, error } = useQuery(post, 'list');
 
   return (
     <main>

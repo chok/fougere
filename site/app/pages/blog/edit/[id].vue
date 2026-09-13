@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import Post from '@fronds/blog/entities/Post';
+import { post as postFacade } from '@fronds/facade';
 
 const route = useRoute();
 const { t } = useI18n();
 const localePath = useLocalePath();
 const id = route.params.id as string;
 
-interface PostValues { id: string; slug: string; title: string; status: 'draft' | 'published' }
-const { data: post } = await useQuery<PostValues>(Post, 'findById', { params: { id } });
+const { data: post } = await useQuery(postFacade, 'findById', { params: { id } });
 
 const { values, errors, submit, loading, error } = useFormFor(Post, {
   op: 'update',
@@ -15,8 +15,8 @@ const { values, errors, submit, loading, error } = useFormFor(Post, {
   initial: (post.value as Record<string, unknown> | null) ?? undefined,
 });
 
-const publish = useCommand<PostValues>(Post, 'publish');
-const remove = useCommand(Post, 'delete');
+const publish = useCommand(postFacade, 'publish');
+const remove = useCommand(postFacade, 'delete');
 const saved = ref(false);
 
 async function onSave() {

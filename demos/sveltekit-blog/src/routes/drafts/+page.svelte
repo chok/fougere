@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import { useQuery, useCommand } from '@fougere/svelte';
-	import Post from '../../../fronds/blog/entities/Post';
+	import { post } from '@fronds/facade';
 
-	const drafts = useQuery<Post>(Post, 'listDrafts');
-	const publish = useCommand(Post, 'publish');
+	
+	const drafts = useQuery(post, 'listDrafts');
+	const publish = useCommand(post, 'publish');
 
 	// The link needs to forget this read when the page goes. React does it in an
 	// effect's teardown, Vue in `onScopeDispose`; Svelte says so out loud.

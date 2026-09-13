@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import Post from '@fronds/blog/entities/Post';
+import { post as postFacade } from '@fronds/facade';
 
 const route = useRoute();
 const id = route.params.id as string;
 
-const { data: post } = await useQuery<Record<string, unknown>>(Post, 'findById', { params: { id } });
+const { data: post } = await useQuery(postFacade, 'findById', { params: { id } });
 const { fieldsByName, values, errors, submit, loading, error } = useFormFor(Post, {
   op: 'update',
   params: { id },

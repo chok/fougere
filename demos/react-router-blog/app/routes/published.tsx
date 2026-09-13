@@ -1,8 +1,8 @@
 import { useQuery } from '@fougere/react';
-import Post from '../../fronds/blog/entities/Post';
+import { post } from '@fronds/facade';
 
 export default function Published() {
-  const { items, loading, error } = useQuery<Post>(Post, 'list');
+  const { items, loading, error } = useQuery(post, 'list');
 
   return (
     <main>

@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { useQuery } from '@fougere/svelte';
-	import Post from '../../fronds/blog/entities/Post';
+	import { post } from '@fronds/facade';
 
+	
 	// A store, so `$posts` auto-subscribes. Same designation as every other host:
 	// the imported class and a verb.
-	const posts = useQuery<Post>(Post, 'list');
+	const posts = useQuery(post, 'list');
 </script>
 
 <main>

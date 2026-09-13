@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import Post from '@fronds/blog/entities/Post';
+import { post as postFacade } from '@fronds/facade';
 
 const route = useRoute();
 const id = route.params.id as string;
 
-interface PostRow { id: string; title: string; body: string; authorId?: string; createdAt?: string; status?: 'draft' | 'published'; publishedAt?: string | null }
-
-const { data: post, loading: pending } = await useQuery<PostRow>(Post, 'findById', { params: { id } });
-const del = useCommand(Post, 'delete');
-const publish = useCommand(Post, 'publish');
+const { data: post, loading: pending } = await useQuery(postFacade, 'findById', { params: { id } });
+const del = useCommand(postFacade, 'delete');
+const publish = useCommand(postFacade, 'publish');
 
 async function destroy() {
   if (!confirm('Delete this post?')) return;

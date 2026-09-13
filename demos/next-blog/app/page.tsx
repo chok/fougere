@@ -5,7 +5,7 @@ import Post from '@fronds/blog/entities/Post';
  * A server component reading a Frond directly — no fetch, no endpoint, no route.
  * `invoke` names the call (class + verb) and the runner places it: in memory here,
  * over JSON-RPC the day `remotes: { blog: … }` is uncommented in fougere.config.ts.
- * This page is the server dual of `useQuery(Post, 'list')`.
+ * This page is the server dual of `useQuery(postFacade, 'list')`.
  */
 export default async function PublishedPage() {
   const posts = await invoke<Post[]>(Post, 'list');

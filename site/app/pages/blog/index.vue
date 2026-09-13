@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import Post from '@fronds/blog/entities/Post';
 
 const { t, locale } = useI18n();
 const localePath = useLocalePath();
 
-interface Card { id: string; slug: string; title: string; summary?: string; authorName?: string; publishedAt?: string }
-const { items: posts, loading, error } = await useQuery<Card>(Post, 'list');
+import { post as postFacade } from '@fronds/facade';
+
+const { items: posts, loading, error } = await useQuery(postFacade, 'list');
 
 useSeoMeta({ title: () => `${t('blog.title')} — Fougere`, description: () => t('blog.subtitle') });
 

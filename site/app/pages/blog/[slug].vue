@@ -1,14 +1,13 @@
 <script setup lang="ts">
-import Post from '@fronds/blog/entities/Post';
 import MarkdownIt from 'markdown-it';
+import { post as postFacade } from '@fronds/facade';
 
 const route = useRoute();
 const { t, locale } = useI18n();
 const localePath = useLocalePath();
 const slug = route.params.slug as string;
 
-interface Full { id: string; slug: string; title: string; summary?: string; body?: string; authorName?: string; publishedAt?: string }
-const { data: post, error } = await useQuery<Full>(Post, 'findBySlug', { body: { slug } });
+const { data: post, error } = await useQuery(postFacade, 'findBySlug', { body: { slug } });
 
 const md = new MarkdownIt({ linkify: true });
 const rendered = computed(() => (post.value?.body ? md.render(post.value.body) : ''));

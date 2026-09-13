@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import Post from '@fronds/blog/entities/Post';
 
 const { t, locale } = useI18n();
 const localePath = useLocalePath();
 const { user } = useCurrentUser();
 
-interface PostValues { id: string; slug: string; title: string; status: 'draft' | 'published'; createdAt?: string; publishedAt?: string }
-const { items: posts, loading } = await useQuery<PostValues>(Post, 'mine');
+import { post as postFacade } from '@fronds/facade';
+
+const { items: posts, loading } = await useQuery(postFacade, 'mine');
 
 useSeoMeta({ title: () => `${t('blog.drafts.title')} — Fougere` });
 

@@ -22,7 +22,7 @@ const { t } = useI18n();
 
         <rect x="40" y="76" width="392" height="146" rx="10" class="deriv-node-rect" />
         <text x="62" y="102" class="deriv-node-label">Nuxt app</text>
-        <text x="62" y="122" class="deriv-node-hint">useQuery(Post, 'list')</text>
+        <text x="62" y="122" class="deriv-node-hint">useQuery(postFacade, 'list')</text>
 
         <rect x="240" y="86" width="172" height="52" rx="8" class="deriv-core-rect" />
         <circle cx="264" cy="112" r="4" class="grad-leaf" />
@@ -41,7 +41,7 @@ const { t } = useI18n();
 
         <rect x="528" y="76" width="150" height="146" rx="10" class="deriv-node-rect" />
         <text x="550" y="102" class="deriv-node-label">Nuxt app</text>
-        <text x="550" y="122" class="deriv-node-hint">useQuery(Post, …)</text>
+        <text x="550" y="122" class="deriv-node-hint">useQuery(postFacade, …)</text>
 
         <rect x="772" y="76" width="148" height="146" rx="10" class="deriv-node-rect" />
         <text x="792" y="102" class="deriv-node-label">:4100</text>

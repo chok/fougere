@@ -17,7 +17,7 @@ const left = computed(() => [
 const right = computed(() => [
   { label: t('diagram.form'), hint: 'useFormFor(Post)', cy: 70 },
   { label: t('diagram.graphql'), hint: 'type Post { … }', cy: 215 },
-  { label: t('diagram.designation'), hint: "useQuery(Post, 'list')", cy: 360 },
+  { label: t('diagram.designation'), hint: "useQuery(postFacade, 'list')", cy: 360 },
 ]);
 
 const code = [

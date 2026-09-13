@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import Post from '@fronds/blog/entities/Post';
-interface PostRow { id: string; title: string; body: string; authorId: string; createdAt?: string }
-const { items: posts, loading: pending, error } = await useQuery<PostRow>(Post, 'list');
+import { post as postFacade } from '@fronds/facade';
+
+const { items: posts, loading: pending, error } = await useQuery(postFacade, 'list');
 </script>
 
 <template>

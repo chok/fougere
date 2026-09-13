@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import Category from '@fronds/blog/entities/Category';
 
-interface CategoryRow { id: string; name: string }
-const { items: categories, loading: pending } = await useQuery<CategoryRow>(Category, 'list');
+import { category } from '@fronds/facade';
+
+const { items: categories, loading: pending } = await useQuery(category, 'list');
 </script>
 
 <template>

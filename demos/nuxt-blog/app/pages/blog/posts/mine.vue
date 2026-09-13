@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import Post from '@fronds/blog/entities/Post';
-
-interface PostRow { id: string; title: string; status: 'draft' | 'published'; publishedAt?: string | null }
+import { post as postFacade } from '@fronds/facade';
 
 const { user, loggedIn } = useCurrentUser();
-const { items: posts, loading } = await useQuery<PostRow>(Post, 'mine');
-const publish = useCommand(Post, 'publish');
+const { items: posts, loading } = await useQuery(postFacade, 'mine');
+const publish = useCommand(postFacade, 'publish');
 const publishError = ref('');
 
 async function doPublish(id: string) {

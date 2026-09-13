@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import Author from '@fronds/blog/entities/Author';
+import { author as authorFacade } from '@fronds/facade';
 
-interface AuthorRow { id: string; name: string; email: string; bio?: string }
-const { items: authors, loading: pending } = await useQuery<AuthorRow>(Author, 'list');
+const { items: authors, loading: pending } = await useQuery(authorFacade, 'list');
 </script>
 
 <template>

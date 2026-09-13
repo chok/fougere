@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import Category from '@fronds/blog/entities/Category';
+import { category } from '@fronds/facade';
 
-interface CategoryStat { id: string; name: string; postCount: number }
-const { items: stats, loading: pending } = await useQuery<CategoryStat>(Category, 'stats');
+const { items: stats, loading: pending } = await useQuery(category, 'stats');
 </script>
 
 <template>

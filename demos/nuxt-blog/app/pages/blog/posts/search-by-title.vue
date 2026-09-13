@@ -1,14 +1,12 @@
 <script setup lang="ts">
-import Post from '@fronds/blog/entities/Post';
 
 const query = ref('');
 const submitted = ref('');
 const searched = ref(false);
 
-interface SearchHit { id: string; title: string }
+import { post as postFacade } from '@fronds/facade';
 
-const { items: results, loading } = await useQuery<SearchHit>(
-  Post,
+const { items: results, loading } = await useQuery(postFacade,
   'searchByTitle',
   () => ({ body: { title: submitted.value } }),
   { immediate: false },

@@ -30,13 +30,13 @@ const validateSnippet = `class PostHandler extends Crud(Post) {
   }
 }`;
 
-const consumeSnippet = `import Post from '@fronds/blog/entities/Post';
+const consumeSnippet = `import { post } from '@fronds/facade';
 
-const { items } = await useQuery(Post, 'list');
-const publish = useCommand(Post, 'publish');
+const { items } = await useQuery(post, 'list');
+const publish = useCommand(post, 'publish');
 
 await publish.execute({ params: { id } });
-// → every mounted query on Post revalidates`;
+// → every mounted query on that door revalidates`;
 
 // Verbatim output of demos/rust-frond's TypeScript consumer — rules declared
 // in Rust, enforced by the TS validator before a single byte goes on the wire.

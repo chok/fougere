@@ -6,18 +6,20 @@
  * table in the other Worker and validates a write there. Nothing is serialized to get it
  * here; it is the declaration, read twice.
  *
- * `useQuery(Product, 'list')` names an entity and a verb, never an address. Which
- * process answers is `remotes:` in fougere.config.ts, and nothing on this page knows.
+ * `useQuery(product, 'list')` names the door that answers, never an address on a
+ * network. Which process is behind it is `remotes:` in fougere.config.ts, and nothing on
+ * this page knows.
  */
 import Product from '../../../fronds/catalog/entities/Product';
+import { product } from '@fronds/facade';
 
-const { items: products, loading, error, refresh } = useQuery(Product, 'list');
+const { items: products, loading, error, refresh } = useQuery(product, 'list');
 
 // The validator is the entity's, so the form refuses here exactly as the Worker would.
 const Draft = Product.omit('id');
 const form = reactive({ name: '', sku: '', cents: 0, listed: true });
 const errors = ref<{ path: string; message: string }[]>([]);
-const create = useCommand(Product, 'create');
+const create = useCommand(product, 'create');
 
 async function submit() {
   const validated = Draft.validate(form);
