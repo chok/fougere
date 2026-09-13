@@ -1,7 +1,6 @@
 import { ErrorCode, FougereError } from '../wire/errors.js';
 import { preserveArrayProperties } from './ArrayResult.js';
-
-export type PresenterArgs = Record<string, unknown[]>;
+import type { PresenterArgs } from './PresenterArgs.js';
 
 /** Adds a presenter's computed fields after output projection. */
 export class PresenterExecutor {

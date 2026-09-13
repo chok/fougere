@@ -1,8 +1,7 @@
 import type { Call } from '../wire/Call.js';
 import type { RouteAddress } from '../wire/RouteAddress.js';
 import type { Route } from './Route.js';
-
-export type RouteExecution = (call: Call) => unknown | Promise<unknown>;
+import type { RouteExecution } from './RouteExecution.js';
 
 /** One executable route, distinguished by its routing kind. */
 export class OperationRoute implements Route {

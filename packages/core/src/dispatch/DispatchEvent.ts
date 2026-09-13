@@ -1,7 +1,6 @@
 import type { Call } from '../wire/Call.js';
 import type { RouteKind } from '../wire/RouteAddress.js';
-
-export type DispatchStage = 'received' | 'resolved' | 'completed' | 'failed' | 'settled';
+import type { DispatchStage } from './DispatchStage.js';
 
 /** Immutable transition observed across one dispatch lifecycle. */
 export class DispatchEvent {
@@ -34,5 +33,3 @@ export class DispatchEvent {
     return new DispatchEvent('settled', call, routeKind);
   }
 }
-
-export type DispatchObserver = (event: DispatchEvent) => void;

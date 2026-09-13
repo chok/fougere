@@ -1,4 +1,4 @@
-import { Crud } from '../../../../../src/prefab/crud.js';
+import { Crud } from '../../../../../src/prefab/CrudConstructor.js';
 import Item from '../entities/Item.js';
 
 /** Declares a constructor and forgets its storage — must be refused at boot. */

@@ -1,7 +1,8 @@
 import { FieldSet, FieldValueValidator, InputRefusal, type Fields } from '@fougere/schema';
-import { COMPARISONS, comparisonOf, unknownIn } from '../storage/criterion.js';
+import { COMPARISONS, comparisonOf, unknownIn } from '../storage/Comparison.js';
 import { assertListOptions } from '../storage/port.js';
 import { ErrorCode, FougereError } from '../wire/errors.js';
+import type { GuardReport } from './GuardReport.js';
 
 /** The gestures this guard grafts onto. */
 interface Writer {
@@ -10,14 +11,6 @@ interface Writer {
   upsert?(...args: [Record<string, unknown>, ...unknown[]]): Promise<unknown>;
   upsertAll?(...args: [readonly Record<string, unknown>[], ...unknown[]]): Promise<unknown>;
   list?(...args: unknown[]): unknown;
-}
-
-/** What a guard says about a filter it let through. The boot owns the voice. */
-export interface GuardReport {
-  /** The fields this facade hands back, when it hands back fewer than the entity has. */
-  view?: Fields;
-  /** Said once per field — a filter is not a write, and a warning per call is noise. */
-  outOfView?: (message: string) => void;
 }
 
 /** Judges storage writes and list options without narrowing the storage interface. */

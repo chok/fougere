@@ -1,4 +1,4 @@
-import { Crud } from '../../../../../src/prefab/crud.js';
+import { Crud } from '../../../../../src/prefab/CrudConstructor.js';
 import Article from '../models/Article.js';
 
 /** A facade found under `usecases/`. */

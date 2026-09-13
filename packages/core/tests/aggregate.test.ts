@@ -15,7 +15,7 @@ import { join } from 'node:path';
 import { createContainer, type Container } from '@fougere/container';
 import { scanProject } from '@fougere/compiler';
 import { createApp, createLocalRunner, Repository } from '../src/index.js';
-import { repositoryKeyOf, ownedBy } from '../src/prefab/repository.js';
+import { ownedBy, repositoryKeyOf } from '../src/prefab/RepositoryConstructor.js';
 import { storageKeyOf, type StorageFactory } from '../src/storage/port.js';
 import { Invocation } from '../src/wire/Invocation.js';
 

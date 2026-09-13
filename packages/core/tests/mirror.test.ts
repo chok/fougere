@@ -6,7 +6,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text, updated } from '@fougere/schema';
-import { Mirror } from '../src/prefab/mirror.js';
+import { Mirror } from '../src/prefab/MirrorConstructor.js';
 import { StorageGuard } from '../src/dispatch/StorageGuard.js';
 import { targetOf } from '../src/prefab/prefab.js';
 

@@ -1,18 +1,8 @@
 import { upperFirst, type EntityConstructor } from '@fougere/schema';
 import type { Storage, ListOptions, ListResult, SelectOption } from '../storage/port.js';
 import type { SchemaView } from '@fougere/schema';
-
-/**
- * Repository(…entities) — who owns an entity's storage, and where its questions are named.
- *
- * Documented: [repositories](https://fougere.dev/docs/business/repositories).
- */
-
-/**
- * The shape a repository of ONE entity has — the port itself, plus whatever the subclass names on
- * top.
- */
-export type RepositoryOf<T> = Storage<T>;
+import type { AggregateOf } from './AggregateOf.js';
+import type { AggregateConstructor } from './AggregateConstructor.js';
 
 /** The single-entity form: the port, plus whatever the subclass names. */
 export interface RepositoryConstructor<T> {
@@ -25,21 +15,12 @@ declare abstract class AggregateShape<E extends readonly EntityConstructor[]> {
   protected storages: { [K in keyof E]: Storage<InstanceType<E[K]>> };
 }
 
-/** The tuple an aggregate holds — the readable form of {@link AggregateShape}'s member. */
-export type AggregateOf<E extends readonly EntityConstructor[]> =
-  { [K in keyof E]: Storage<InstanceType<E[K]>> };
-
-export type AggregateConstructor<E extends readonly EntityConstructor[]> =
-  (new (...storages: unknown[]) => AggregateShape<E>) & {
-    readonly __entity: unknown;
-    /** The entities this class owns. Present from two on — an owner of one owns nothing. */
-    readonly __owns: E;
-  };
-
 export function Repository<E extends EntityConstructor>(entity: E): RepositoryConstructor<InstanceType<E>>;
+
 export function Repository<E extends readonly [EntityConstructor, EntityConstructor, ...EntityConstructor[]]>(
   ...entities: E
 ): AggregateConstructor<E>;
+
 export function Repository(...entities: EntityConstructor[]): unknown {
   return entities.length === 1 ? one(entities[0]) : many(entities);
 }

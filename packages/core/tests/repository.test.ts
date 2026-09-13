@@ -13,7 +13,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, Repository } from '../src/index.js';
-import { repositoryKeyOf } from '../src/prefab/repository.js';
+import { repositoryKeyOf } from '../src/prefab/RepositoryConstructor.js';
 import { targetOf } from '../src/prefab/prefab.js';
 import type { StorageFactory } from '../src/index.js';
 import { Invocation } from '../src/wire/Invocation.js';

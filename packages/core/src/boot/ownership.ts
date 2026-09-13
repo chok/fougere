@@ -1,8 +1,8 @@
 import { lowerFirst } from '@fougere/schema';
 import { nameOf, type FrondDescriptor, type ProviderEntry } from '../descriptor/frond.js';
-import { inheritsCrud } from '../prefab/crud.js';
+import { inheritsCrud } from '../prefab/CrudConstructor.js';
 import { targetOf } from '../prefab/prefab.js';
-import { ownedBy, repositoryKeyOf } from '../prefab/repository.js';
+import { ownedBy, repositoryKeyOf } from '../prefab/RepositoryConstructor.js';
 import { entityOfStorageKey } from '../storage/port.js';
 import type { Diagnostic } from '../diagnostic.js';
 

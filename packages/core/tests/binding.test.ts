@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { computeBindingPlan, type BindingPlan } from '../src/wire/binding.js';
-import { ArgumentResolver, type CollectorLookup } from '../src/dispatch/ArgumentResolver.js';
+import { ArgumentResolver } from '../src/dispatch/ArgumentResolver.js';
+import { type CollectorLookup } from '../src/dispatch/CollectorLookup.js';
 import { lowerFirst } from '@fougere/schema';
 import type { Param } from '../src/wire/signature.js';
 import type { InvocationContext } from '../src/wire/Invocation.js';

@@ -12,7 +12,7 @@ import type { Transport } from '../wire/Transport.js';
 import type { Extension } from './AppLifecycle.js';
 import type { AuthConfig, AuthRuntime } from './auth.js';
 import type { EffectiveOperationsMap } from '../effective-operation.js';
-import type { DispatchObserver } from '../dispatch/DispatchEvent.js';
+import type { DispatchObserver } from '../dispatch/DispatchObserver.js';
 import type { DispatchPort } from '../dispatch/DispatchPort.js';
 
 /** Options for createApp(). */

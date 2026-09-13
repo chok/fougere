@@ -2,6 +2,9 @@ import { lowerFirst, type EntityConstructor, type SchemaView } from '@fougere/sc
 import type { Storage, ListOptions, ListResult } from '../storage/port.js';
 import type { OperationContract } from '../wire/operation.js';
 import { targetOf } from './prefab.js';
+import type { CrudOpName } from './CrudOpName.js';
+import type { CrudViews } from './CrudViews.js';
+import type { CrudOps } from './CrudOps.js';
 
 /**
  * A class is recognized by what it ANSWERS — the mixin leaves no other trace.
@@ -27,11 +30,14 @@ export function subjectOf(ctor: unknown, address: string): string {
 
 /** The id of the row an op acts on — a route segment, or a query fallback. */
 const byId = { name: 'id', source: { kind: 'param' as const, name: 'id' }, optional: false };
+
 const fromBody = { name: 'input', source: { kind: 'input' as const }, optional: false };
 
 /** The same five, written as the scan would have written them. */
 const idParam = { name: 'id', type: { raw: 'string', name: 'string' } };
+
 const inputParam = (entity: string) => ({ name: 'input', type: { raw: `Partial<${entity}>`, name: entity } });
+
 const returns = (raw: string, name: string, extra?: { array?: boolean; nullable?: boolean }) =>
   ({ raw, name, ...extra });
 
@@ -78,12 +84,6 @@ function asCrudConstructor<T, V>(impl: object): CrudConstructor<T, V> {
   return impl as CrudConstructor<T, V>;
 }
 
-/** The five ops the mixin fabricates. */
-export type CrudOpName = 'list' | 'findById' | 'create' | 'update' | 'delete';
-
-/** Which view each op speaks — omitted ops speak the entity, the trivial view. */
-export type CrudViews = Partial<Record<CrudOpName, EntityConstructor>>;
-
 /** The view an op emits, fabricated. */
 type OutOf<V, K extends CrudOpName, T> =
   // Bracketed on purpose: a naked `V extends …` DISTRIBUTES, and the no-view default
@@ -92,16 +92,6 @@ type OutOf<V, K extends CrudOpName, T> =
   [V] extends [EntityConstructor] ? InstanceType<V & EntityConstructor>
   : K extends keyof V ? (V[K] extends EntityConstructor ? InstanceType<V[K]> : T)
   : T;
-
-/** The five ops, typed from the entity and its views. */
-export interface CrudOps<T, V = {}> {
-  storage: Storage<T>;
-  list(options?: ListOptions, ...collected: never[]): Promise<ListResult<OutOf<V, 'list', T>>>;
-  findById(id: string, ...collected: never[]): Promise<OutOf<V, 'findById', T> | undefined>;
-  create(input: Partial<T>, ...collected: never[]): Promise<OutOf<V, 'create', T>>;
-  update(id: string, input: Partial<T>, ...collected: never[]): Promise<OutOf<V, 'update', T>>;
-  delete(id: string, ...collected: never[]): Promise<boolean>;
-}
 
 /** The prefab handler class — its ops, plus the statics the bootstrap and adapters read. */
 export interface CrudConstructor<T, V = {}> {

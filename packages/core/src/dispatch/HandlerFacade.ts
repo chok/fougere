@@ -1,15 +1,11 @@
 import type { Fields } from '@fougere/schema';
 import type { Container } from '@fougere/container';
-import {
-  runMiddlewares,
-  type AppMiddleware,
-  type OperationContext,
-} from '../wire/middleware.js';
-import type { CollectorResolver } from './ArgumentResolver.js';
+import { runMiddlewares, type OperationContext } from '../wire/middleware.js';
+import type { CollectorResolver } from './CollectorResolver.js';
 import { collectorKeyOf } from '../prefab/collector.js';
-import { inheritsCrud, subjectOf } from '../prefab/crud.js';
+import { inheritsCrud, subjectOf } from '../prefab/CrudConstructor.js';
 import { presenterKeyOf } from '../prefab/presenter.js';
-import { repositoryKeyOf } from '../prefab/repository.js';
+import { repositoryKeyOf } from '../prefab/RepositoryConstructor.js';
 import type { OperationContract, OperationsMap } from '../wire/operation.js';
 import type { EffectiveOperation, EffectiveOperationsMap } from '../effective-operation.js';
 import type { BindingPlan } from '../wire/binding.js';
@@ -20,26 +16,7 @@ import { OutputView } from './OutputView.js';
 import { PresenterExecutor } from './PresenterExecutor.js';
 import { presenterArguments, presenterPlans } from './presenterArguments.js';
 import { validateInput } from './validateInput.js';
-
-/** What boot resolved around one handler, beyond the handler and the scope it resolves in. */
-export interface Facade {
-  /** The container key this facade answers under. */
-  key: string;
-  /** The frond this facade belongs to — travels on every OperationContext. */
-  frond: string;
-  /** Handlers in the owning frond, used to realize a resolved implementation override. */
-  handlers: readonly HandlerEntry[];
-  /** The canonical operation table resolved before boot performs any side effect. */
-  operations: EffectiveOperationsMap;
-  /** Entity names this frond has a collector for. */
-  collectors: Set<string>;
-  /** The presenter over this handler's entity, when the frond declares one. */
-  presenter: PresenterEntry | undefined;
-  /** Presenters live in the frond's own scope, whatever sub-scope this facade resolves in. */
-  presenterScope: Container;
-  /** The middlewares that apply to this address, read at call time and never at boot. */
-  middlewares: () => AppMiddleware[];
-}
+import type { Facade } from './Facade.js';
 
 /** Adapts one handler facade to executable operations. */
 export class HandlerFacade {

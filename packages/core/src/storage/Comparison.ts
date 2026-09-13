@@ -1,5 +1,5 @@
-/** What a read may ask about one field, and how a storage tells the two forms apart. */
 import { type Field, Shapes } from '@fougere/schema';
+import type { ComparisonName } from './ComparisonName.js';
 
 /**
  * The comparisons a criterion may name.
@@ -22,8 +22,6 @@ export interface Comparison {
 }
 
 export const COMPARISONS = ['gte', 'lte', 'gt', 'lt', 'ne', 'between', 'contains', 'notIn', 'isNull'] as const;
-
-export type ComparisonName = (typeof COMPARISONS)[number];
 
 /**
  * Is this criterion a comparison, or a value that happens to be an object?

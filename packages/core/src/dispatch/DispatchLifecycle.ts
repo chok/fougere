@@ -1,4 +1,5 @@
-import type { DispatchEvent, DispatchObserver } from './DispatchEvent.js';
+import type { DispatchEvent } from './DispatchEvent.js';
+import type { DispatchObserver } from './DispatchObserver.js';
 
 /** Publishes dispatch transitions without participating in dispatch decisions. */
 export class DispatchLifecycle {

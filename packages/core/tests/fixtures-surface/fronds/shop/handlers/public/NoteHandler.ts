@@ -1,4 +1,4 @@
-import { Crud } from '../../../../../../src/prefab/crud.js';
+import { Crud } from '../../../../../../src/prefab/CrudConstructor.js';
 import Note from '../../entities/Note.js';
 
 /** What the public facade emits — the secret stays home. */

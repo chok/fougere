@@ -1,11 +1,6 @@
 import type { InvocationContext } from '../wire/Invocation.js';
 import type { BindingPlan } from '../wire/binding.js';
-
-export interface CollectorResolver {
-  collect(ctx: InvocationContext): Promise<unknown>;
-}
-
-export type CollectorLookup = (typeName: string) => CollectorResolver | undefined;
+import type { CollectorLookup } from './CollectorLookup.js';
 
 /** Resolves an operation's declared binding plan against one invocation. */
 export class ArgumentResolver {
