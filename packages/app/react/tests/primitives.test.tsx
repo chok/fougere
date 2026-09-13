@@ -14,6 +14,7 @@ import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { renderHook, act, waitFor, cleanup } from '@testing-library/react';
 import { entity, primary, text, oneOf, readOnly, created } from '@fougere/schema';
 import { ErrorCode } from '@fougere/core/contract';
+import { facade } from '@fougere/app/client';
 import { useQuery, useCommand } from '../src/useFougereData.js';
 import { useFormFor } from '../src/useFormFor.js';
 
@@ -24,6 +25,21 @@ class Post extends entity({
   createdAt: created(),
   status: readOnly(oneOf('draft', 'published', { default: 'draft' })),
 }) {}
+
+/**
+ * The facade, named — what a page holds instead of an entity class. The handler type is the
+ * page's contract: which operations exist, and what each answers. It never reaches a bundle.
+ */
+interface PostHandler {
+  list(): Promise<{ id: string; title: string }[]>;
+  publish(): Promise<{ id: string }>;
+}
+interface AuthorHandler {
+  list(): Promise<{ id: string; name: string }[]>;
+}
+
+const posts = facade('post');
+const authors = facade('author');
 
 /** The wire, stubbed: one JSON-RPC answer per call, and the calls recorded. */
 function wire(answer: (method: string, params: unknown) => unknown) {
@@ -58,7 +74,7 @@ afterEach(cleanup);
 describe('useQuery', () => {
   it('designates by class and verb, and reads on mount', async () => {
     const calls = wire(() => [{ id: 'a', title: 'first' }]);
-    const { result } = renderHook(() => useQuery<any>(Post, 'list'));
+    const { result } = renderHook(() => useQuery(posts, 'list'));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(calls[0]!.method).toBe('post.list');
@@ -67,7 +83,7 @@ describe('useQuery', () => {
 
   it('reads the page facts out of an envelope', async () => {
     wire(() => ({ items: [{ id: 'a' }], total: 7, hasMore: true }));
-    const { result } = renderHook(() => useQuery<any>(Post, 'list'));
+    const { result } = renderHook(() => useQuery(posts, 'list'));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.items).toEqual([{ id: 'a' }]);
@@ -77,7 +93,7 @@ describe('useQuery', () => {
 
   it('does not read when told not to', async () => {
     const calls = wire(() => []);
-    const { result } = renderHook(() => useQuery<any>(Post, 'list', undefined, { immediate: false }));
+    const { result } = renderHook(() => useQuery(posts, 'list', undefined, { immediate: false }));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(calls).toHaveLength(0);
@@ -85,7 +101,7 @@ describe('useQuery', () => {
 
   it('reads once for one designation, not once per render', async () => {
     const calls = wire(() => []);
-    const { rerender, result } = renderHook(() => useQuery<any>(Post, 'list', { query: { page: '1' } }));
+    const { rerender, result } = renderHook(() => useQuery(posts, 'list', { query: { page: '1' } }));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
     // A fresh input literal on every render — the key is what the effect depends on,
@@ -98,7 +114,7 @@ describe('useQuery', () => {
 
   it('carries a refusal instead of throwing at the component', async () => {
     wire(() => new Error('nope'));
-    const { result } = renderHook(() => useQuery<any>(Post, 'list'));
+    const { result } = renderHook(() => useQuery(posts, 'list'));
 
     await waitFor(() => expect(result.current.error).toBeTruthy());
     expect(result.current.error!.message).toContain('nope');
@@ -111,10 +127,10 @@ describe('the link — a command revalidates the reads on its entity', () => {
     let round = 0;
     const calls = wire((method) => (method === 'post.list' ? [{ id: String(++round) }] : { ok: true }));
 
-    const query = renderHook(() => useQuery<any>(Post, 'list'));
+    const query = renderHook(() => useQuery(posts, 'list'));
     await waitFor(() => expect(query.result.current.items).toEqual([{ id: '1' }]));
 
-    const command = renderHook(() => useCommand(Post, 'publish'));
+    const command = renderHook(() => useCommand(posts, 'publish'));
     await act(async () => { await command.result.current.execute({ params: { id: '1' } }); });
 
     await waitFor(() => expect(query.result.current.items).toEqual([{ id: '2' }]));
@@ -123,11 +139,11 @@ describe('the link — a command revalidates the reads on its entity', () => {
 
   it('forgets a read once its component unmounts', async () => {
     const calls = wire(() => []);
-    const query = renderHook(() => useQuery<any>(Post, 'list'));
+    const query = renderHook(() => useQuery(posts, 'list'));
     await waitFor(() => expect(query.result.current.loading).toBe(false));
     query.unmount();
 
-    const command = renderHook(() => useCommand(Post, 'publish'));
+    const command = renderHook(() => useCommand(posts, 'publish'));
     await act(async () => { await command.result.current.execute(); });
 
     expect(calls.filter((c) => c.method === 'post.list')).toHaveLength(1);
@@ -137,10 +153,10 @@ describe('the link — a command revalidates the reads on its entity', () => {
     class Author extends entity({ id: primary(), name: text() }) {}
     const calls = wire(() => []);
 
-    const query = renderHook(() => useQuery<any>(Author, 'list'));
+    const query = renderHook(() => useQuery(authors, 'list'));
     await waitFor(() => expect(query.result.current.loading).toBe(false));
 
-    const command = renderHook(() => useCommand(Post, 'publish'));
+    const command = renderHook(() => useCommand(posts, 'publish'));
     await act(async () => { await command.result.current.execute(); });
 
     expect(calls.filter((c) => c.method === 'author.list')).toHaveLength(1);
@@ -151,7 +167,7 @@ describe('the link — a command revalidates the reads on its entity', () => {
 describe('useCommand', () => {
   it('reports a refusal and rethrows it', async () => {
     wire(() => new Error('Only the author can publish'));
-    const { result } = renderHook(() => useCommand(Post, 'publish'));
+    const { result } = renderHook(() => useCommand(posts, 'publish'));
 
     await act(async () => {
       await expect(result.current.execute()).rejects.toThrow('Only the author can publish');

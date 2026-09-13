@@ -8,7 +8,7 @@ import type { FougereError } from '@fougere/core/contract';
 import {
   asFougereError,
   callOf,
-  entityKeyOf,
+  addressOf,
   invocationOf,
   itemsOf,
   mountedKeys,
@@ -17,33 +17,41 @@ import {
   sendCall,
   trackQuery,
   type CallInput,
-  type EntityClass,
+  type Answer,
+  type Refused,
+  type FacadeName,
+  type Rows,
 } from '@fougere/app/client';
 import { fetcher, onRefetch, revalidate } from './transport.js';
 
-export function useQuery<T = Record<string, unknown>>(
-  entity: EntityClass,
-  op: string,
+export function useQuery<
+  Handler,
+  Address extends string,
+  Op extends keyof Handler & string,
+>(
+  facade: FacadeName<Handler, Address>,
+  op: Op,
   input?: CallInput,
   opts?: { immediate?: boolean },
 ) {
-  const entityKey = entityKeyOf(entity);
+  type Answered = Answer<Handler, Op>;
+  const entityKey = addressOf(facade);
   // The key IS the dependency: an input literal is a new object on every render, so
   // depending on it directly would refetch forever. Its serialization is stable.
   const key = queryKeyOf(entityKey, op, input);
   const immediate = opts?.immediate !== false;
 
-  const [data, setData] = useState<T | null>(null);
+  const [data, setData] = useState<Answered | null>(null);
   const [loading, setLoading] = useState(immediate);
-  const [error, setError] = useState<FougereError | null>(null);
+  const [error, setError] = useState<FougereError<Refused<Address, Op>> | null>(null);
 
   const refresh = useCallback(async (): Promise<void> => {
     setLoading(true);
     setError(null);
     try {
-      setData((await sendCall(fetcher, callOf(entity, op), invocationOf(input))) as T);
+      setData((await sendCall(fetcher, callOf(facade, op), invocationOf(input))) as Answered);
     } catch (err) {
-      setError(asFougereError(err, entityKey, op));
+      setError(asFougereError(err, entityKey, op) as FougereError<Refused<Address, Op>>);
     } finally {
       setLoading(false);
     }
@@ -63,7 +71,7 @@ export function useQuery<T = Record<string, unknown>>(
 
   return {
     data,
-    items: itemsOf<T>(data),
+    items: itemsOf<Rows<Answered>>(data),
     total: pageOf(data).total,
     hasMore: pageOf(data).hasMore,
     loading,
@@ -72,22 +80,27 @@ export function useQuery<T = Record<string, unknown>>(
   };
 }
 
-export function useCommand<T = unknown>(entity: EntityClass, op: string) {
-  const entityKey = entityKeyOf(entity);
+export function useCommand<
+  Handler,
+  Address extends string,
+  Op extends keyof Handler & string,
+>(facade: FacadeName<Handler, Address>, op: Op) {
+  type Answered = Answer<Handler, Op>;
+  const entityKey = addressOf(facade);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<FougereError | null>(null);
+  const [error, setError] = useState<FougereError<Refused<Address, Op>> | null>(null);
 
   const execute = useCallback(
-    async (input?: CallInput): Promise<T> => {
+    async (input?: CallInput): Promise<Answered> => {
       setLoading(true);
       setError(null);
       try {
-        const result = (await sendCall(fetcher, callOf(entity, op), invocationOf(input))) as T;
+        const result = (await sendCall(fetcher, callOf(facade, op), invocationOf(input))) as Answered;
         // The link: same entity designated on both sides → revalidate its queries.
         revalidate(mountedKeys(entityKey));
         return result;
       } catch (err) {
-        const failure = asFougereError(err, entityKey, op);
+        const failure = asFougereError(err, entityKey, op) as FougereError<Refused<Address, Op>>;
         setError(failure);
         throw failure;
       } finally {

@@ -12,6 +12,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { get } from 'svelte/store';
 import { entity, primary, text, oneOf, readOnly, created } from '@fougere/schema';
 import { ErrorCode } from '@fougere/core/contract';
+import { facade } from '@fougere/app/client';
 import { useQuery, useCommand } from '../src/useFougereData.js';
 import { useFormFor } from '../src/useFormFor.js';
 
@@ -22,6 +23,22 @@ class Post extends entity({
   createdAt: created(),
   status: readOnly(oneOf('draft', 'published', { default: 'draft' })),
 }) {}
+
+/**
+ * The facade, named — what a page holds instead of an entity class. The handler type is the
+ * page's contract: which operations exist, and what each answers. It never reaches a bundle.
+ */
+interface PostHandler {
+  list(): Promise<{ id: string; title: string }[]>;
+  publish(): Promise<{ id: string }>;
+}
+interface AuthorHandler {
+  list(): Promise<{ id: string; name: string }[]>;
+}
+
+const posts = facade('post');
+const authors = facade('author');
+
 
 /** The wire, stubbed: one JSON-RPC answer per call, and the calls recorded. */
 function wire(answer: (method: string, params: unknown) => unknown) {
@@ -63,42 +80,42 @@ afterEach(() => {
 describe('useQuery', () => {
   it('designates by class and verb, and reads on mount', async () => {
     const calls = wire(() => [{ id: 'a', title: 'first' }]);
-    const posts = track(useQuery<any>(Post, 'list'));
+    const rows = track(useQuery(posts, 'list'));
 
-    expect(get(posts).loading).toBe(true);
+    expect(get(rows).loading).toBe(true);
     await settle();
 
     expect(calls[0]!.method).toBe('post.list');
-    expect(get(posts).items).toEqual([{ id: 'a', title: 'first' }]);
-    expect(get(posts).loading).toBe(false);
+    expect(get(rows).items).toEqual([{ id: 'a', title: 'first' }]);
+    expect(get(rows).loading).toBe(false);
   });
 
   it('reads the page facts out of an envelope', async () => {
     wire(() => ({ items: [{ id: 'a' }], total: 7, hasMore: true }));
-    const posts = track(useQuery<any>(Post, 'list'));
+    const rows = track(useQuery(posts, 'list'));
     await settle();
 
-    expect(get(posts).items).toEqual([{ id: 'a' }]);
-    expect(get(posts).total).toBe(7);
-    expect(get(posts).hasMore).toBe(true);
+    expect(get(rows).items).toEqual([{ id: 'a' }]);
+    expect(get(rows).total).toBe(7);
+    expect(get(rows).hasMore).toBe(true);
   });
 
   it('does not read when told not to', async () => {
     const calls = wire(() => []);
-    const posts = track(useQuery<any>(Post, 'list', undefined, { immediate: false }));
+    const rows = track(useQuery(posts, 'list', undefined, { immediate: false }));
     await settle();
 
     expect(calls).toHaveLength(0);
-    expect(get(posts).loading).toBe(false);
+    expect(get(rows).loading).toBe(false);
   });
 
   it('carries a refusal instead of throwing at the subscriber', async () => {
     wire(() => Object.assign(new Error('nope'), {}));
-    const posts = track(useQuery<any>(Post, 'list'));
+    const rows = track(useQuery(posts, 'list'));
     await settle();
 
-    expect(get(posts).error?.message).toContain('nope');
-    expect(get(posts).items).toEqual([]);
+    expect(get(rows).error?.message).toContain('nope');
+    expect(get(rows).items).toEqual([]);
   });
 });
 
@@ -107,24 +124,24 @@ describe('the link — a command revalidates the reads on its entity', () => {
     let round = 0;
     const calls = wire((method) => (method === 'post.list' ? [{ id: String(++round) }] : { ok: true }));
 
-    const posts = track(useQuery<any>(Post, 'list'));
+    const rows = track(useQuery(posts, 'list'));
     await settle();
-    expect(get(posts).items).toEqual([{ id: '1' }]);
+    expect(get(rows).items).toEqual([{ id: '1' }]);
 
-    await useCommand(Post, 'publish').execute({ params: { id: '1' } });
+    await useCommand(posts, 'publish').execute({ params: { id: '1' } });
     await settle();
 
-    expect(get(posts).items).toEqual([{ id: '2' }]);
+    expect(get(rows).items).toEqual([{ id: '2' }]);
     expect(calls.map((c) => c.method)).toEqual(['post.list', 'post.publish', 'post.list']);
   });
 
   it('forgets a read once disposed — a stale key would refetch nothing', async () => {
     const calls = wire(() => []);
-    const posts = track(useQuery<any>(Post, 'list'));
+    const rows = track(useQuery(posts, 'list'));
     await settle();
-    posts.dispose();
+    rows.dispose();
 
-    await useCommand(Post, 'publish').execute();
+    await useCommand(posts, 'publish').execute();
     await settle();
 
     expect(calls.filter((c) => c.method === 'post.list')).toHaveLength(1);
@@ -134,9 +151,9 @@ describe('the link — a command revalidates the reads on its entity', () => {
     class Author extends entity({ id: primary(), name: text() }) {}
     const calls = wire(() => []);
 
-    const authors = track(useQuery<any>(Author, 'list'));
+    const rows = track(useQuery(authors, 'list'));
     await settle();
-    await useCommand(Post, 'publish').execute();
+    await useCommand(posts, 'publish').execute();
     await settle();
 
     expect(calls.filter((c) => c.method === 'author.list')).toHaveLength(1);
@@ -146,7 +163,7 @@ describe('the link — a command revalidates the reads on its entity', () => {
 describe('useCommand', () => {
   it('reports a refusal on the store and rethrows it', async () => {
     wire(() => new Error('Only the author can publish'));
-    const publish = useCommand(Post, 'publish');
+    const publish = useCommand(posts, 'publish');
 
     await expect(publish.execute()).rejects.toThrow('Only the author can publish');
     expect(get(publish).error?.message).toContain('Only the author can publish');

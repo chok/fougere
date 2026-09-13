@@ -13,7 +13,7 @@ import type Build from '../entities/Build.js';
  */
 export const DEFAULT_OUT = '.fougere/scan.generated.ts';
 /** Types only, beside the module — what lets a client narrow a refusal it might meet. */
-export const DOORS_OUT = 'doors.generated.d.ts';
+export const FACADE_OUT = 'facade.generated.ts';
 
 export interface BuildReport {
   /** Absolute, so a caller can print it or read it back. */
@@ -21,7 +21,8 @@ export interface BuildReport {
   /** Relative to the project root — what a human recognizes. */
   path: string;
   /** Where the door types went, beside the module. */
-  doors: string;
+  /** Where the facades were written — one export per address, the page's door in. */
+  facade: string;
   fronds: string[];
   entities: number;
   handlers: number;
@@ -59,13 +60,13 @@ export default class BuildHandler {
     // The same scan, projected a third way. It holds no value and reaches no bundle: what a
     // client cannot otherwise know is which refusals one door can answer, because TypeScript
     // records nothing about what a function throws.
-    const doors = join(dirname(out), DOORS_OUT);
-    await writeFile(doors, emitDoors(scan));
+    const facade = join(dirname(out), FACADE_OUT);
+    await writeFile(facade, emitDoors(scan, { outFile: facade }));
 
     return {
       out,
       path: relative(scan.root, out),
-      doors: relative(scan.root, doors),
+      facade: relative(scan.root, facade),
       fronds: scan.fronds.map((frond) => frond.name),
       entities: scan.fronds.reduce((total, frond) => total + frond.entities.length, 0),
       handlers: scan.fronds.reduce((total, frond) => total + frond.handlers.length, 0),

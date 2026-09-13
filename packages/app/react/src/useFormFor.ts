@@ -5,9 +5,9 @@ import { validationErrorsOf } from '@fougere/core/contract';
 import {
   entityKeyOf,
   errorsByField,
+  facadeOf,
   formFieldsOf,
   payloadOf,
-  type EntityClass,
   type FormEntity,
   type FormField,
 } from '@fougere/app/client';
@@ -34,7 +34,9 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
     Object.fromEntries(fields.map((field) => [field.name, options.initial?.[field.name] ?? field.default])),
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const command = useCommand<T>(entity as EntityClass, options.op ?? 'create');
+  // A form is designated by its ENTITY — it is a set of fields — so the door it submits to is
+  // an address with no handler type behind it, and `T` stays the caller's to state.
+  const command = useCommand(facadeOf(entity), options.op ?? 'create');
 
   const setValue = useCallback((name: string, value: unknown) => {
     setValues((current) => ({ ...current, [name]: value }));
@@ -51,7 +53,7 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
   const submit = useCallback(async (): Promise<T | null> => {
     if (!validator()) return null;
     try {
-      return await command.execute({ params: options.params, input: payloadOf(values) });
+      return (await command.execute({ params: options.params, input: payloadOf(values) })) as T;
     } catch (err) {
       const refusals = validationErrorsOf(err);
       if (refusals) {

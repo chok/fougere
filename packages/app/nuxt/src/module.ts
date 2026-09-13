@@ -18,7 +18,7 @@ import { setModuleLoader, loadCascadedConfig } from '@fougere/core/node';
 import { declaresStorage } from '@fougere/defaults';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
 import { createJiti } from 'jiti';
-import { resolve, relative } from 'node:path';
+import { resolve, relative, join } from 'node:path';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 
 export interface FougereModuleOptions {
@@ -216,6 +216,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
 
     // ── 2. Composables — the primitives, nothing else ──
     addImports([
+      { name: 'facade', from: '@fougere/app/client' },
       { name: 'useQuery', from: runtimeResolve('composables/useFougereData') },
       { name: 'useCommand', from: runtimeResolve('composables/useFougereData') },
       { name: 'useFormFor', from: runtimeResolve('composables/useFormFor') },
@@ -228,7 +229,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
       method: 'post',
       handler: runtimeResolve('server/routes/call.post'),
     });
-    // The same door, per audience: `/_fougere/call/public` serves the surface named
+    // The same facade, per audience: `/_fougere/call/public` serves the surface named
     // `public`, the way `generateRoutes(app, { surface })` does for REST. The handler
     // reads the segment (see `surfaceOf`).
     addServerHandler({
@@ -300,15 +301,20 @@ const module = defineNuxtModule<FougereModuleOptions>({
       getContents: () => emitStatement(scan),
     }).dst;
 
-    // The doors as TYPES, beside the two modules above. It holds no value and reaches no
-    // bundle: what a client cannot otherwise know is which refusals one door answers, because
-    // TypeScript records nothing about what a function throws. Rewritten on every boot, so it
-    // cannot drift from the handlers it was read off.
+    // The facades, beside the two modules above — one export per address, and nothing but the
+    // address reaches a bundle. What a client cannot otherwise know is which refusals an
+    // operation answers, because TypeScript records nothing about what a function throws.
+    // Rewritten on every boot, so it cannot drift from the handlers it was read off.
+    //
+    // A page IMPORTS its facade from here, which is why the alias is set beside it: a project
+    // that never generated the file fails to resolve rather than falling back to `string`.
+    const facadeFile = join(nuxt.options.buildDir, 'fougere-facade.ts');
     addTemplate({
-      filename: 'fougere-doors.d.ts',
+      filename: 'fougere-facade.ts',
       write: true,
-      getContents: () => emitDoors(scan),
+      getContents: () => emitDoors(scan, { outFile: facadeFile }),
     });
+    nuxt.options.alias['@fronds/facade'] = facadeFile;
 
     // ── 6b. Boot plugin (virtual — lives in .nuxt/) ───
     const { ordered, cycle } = orderSeeds(fronds);

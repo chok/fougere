@@ -38,13 +38,14 @@ export interface FougereViteOptions {
  * Where the door types land — the same place `fougere build` puts them, so a host that runs the
  * command and one that only starts a dev server read one file and not two.
  */
-const DOORS = '.fougere/doors.generated.d.ts';
+const FACADE = '.fougere/facade.generated.ts';
 
 /**
- * The doors this app serves, as TYPES, written when the dev server comes up.
+ * The facades this app serves, written when the dev server comes up — one export per address,
+ * carrying the handler that answers there as a type.
  *
  * TypeScript records nothing about what a function throws, so a client cannot know which
- * refusals one door answers without being told. Nuxt writes its own beside the two modules it
+ * refusals one operation answers without being told. Nuxt writes its own beside the two modules it
  * already generates; every other host reaches this plugin, which is what makes the narrowing
  * something you get from starting the app rather than from remembering a command.
  *
@@ -54,9 +55,9 @@ const DOORS = '.fougere/doors.generated.d.ts';
 async function writeDoors(root: string): Promise<void> {
   try {
     const { scanProject, emitDoors } = await import('@fougere/compiler');
-    const out = join(root, DOORS);
+    const out = join(root, FACADE);
     mkdirSync(dirname(out), { recursive: true });
-    writeFileSync(out, emitDoors(await scanProject(root)));
+    writeFileSync(out, emitDoors(await scanProject(root), { outFile: out }));
   } catch { /* a host with no fronds, or a scan that could not run */ }
 }
 
@@ -68,12 +69,24 @@ export function fougere(options: FougereViteOptions = {}): Plugin {
     configureServer(server: { config?: { root?: string } }) {
       void writeDoors(server.config?.root ?? process.cwd());
     },
+    buildStart() {
+      void writeDoors(process.cwd());
+    },
     /** `order. */
     config: {
       order: 'post',
       handler(config: Record<string, any>) {
         config.ssr ??= {};
         config.ssr.external = [...new Set([...(config.ssr.external ?? []), ...external])];
+
+        // A page IMPORTS its door, so the alias sits beside the file that declares them: a
+        // project that never generated it fails to resolve rather than losing its types in
+        // silence.
+        config.resolve ??= {};
+        config.resolve.alias = {
+          ...config.resolve.alias,
+          '@fronds/facade': join(config.root ?? process.cwd(), FACADE),
+        };
 
         if (options.keepClassNames === false) return;
 

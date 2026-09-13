@@ -8,16 +8,63 @@ import {
   lowerFirst,
   type InvocationContext,
   type FrondCall,
+  type FacadeName,
+  type Addresses,
+  type HandlerOf,
+  type AnyHandler,
 } from '@fougere/core/contract';
 import { frameCall, unframeResponse, type RpcResponse } from '@fougere/transport-http/client';
 
 /** An entity class is a designation: its name is the registration key. */
 export type EntityClass = { name: string };
 
+export type {
+  FougereDoors,
+  FacadeName,
+  Addresses,
+  AnyHandler,
+  HandlerOf,
+  Refused,
+  FougereHandlers,
+  Answer,
+  Rows,
+} from '@fougere/core/contract';
+
+/**
+ * One facade, built from its address alone — what a project that never generated `@fronds/facade`
+ * has, and what a test writes when it stands one up by hand.
+ *
+ * A page imports its facade instead, so a missing generated module fails to resolve rather than
+ * falling back to `string` in silence. A service writes no address at all: the container
+ * resolves `Facade<PostHandler>` from the type, and a browser has no container.
+ */
+export function facade<Address extends Addresses>(address: Address): FacadeName<HandlerOf<Address>, Address> {
+  return { address };
+}
+
+/**
+ * The facade an ENTITY class names — the one designation computed rather than written, because a
+ * form is handed a set of FIELDS and works out where it submits from them. Its operations are
+ * not known from a type, which is exactly what `AnyHandler` says.
+ */
+export function facadeOf(entity: EntityClass): FacadeName<AnyHandler, string> {
+  return { address: entityKeyOf(entity) };
+}
+
+/** Where a call goes: a named facade, an entity class that happens to name one, or the address. */
+export function addressOf(designation: Designation): string {
+  if (typeof designation === 'string') return designation;
+
+  return 'address' in designation ? designation.address : entityKeyOf(designation);
+}
+
+/** The three ways a page designates one facade. */
+export type Designation = FacadeName<unknown, string> | EntityClass | string;
+
 /** What a page provides of an invocation — the rest is stamped server-side. */
 export type CallInput = Partial<Pick<InvocationContext, 'params' | 'query' | 'input'>>;
 
-/** The one door the browser knows. A named surface adds `/{surface}` to it. */
+/** The one facade the browser knows. A named surface adds `/{surface}` to it. */
 export const CALL_ENDPOINT = '/_fougere/call';
 
 export type Fetcher = <T>(url: string, options: { method: 'POST'; body: unknown }) => Promise<T>;
@@ -29,8 +76,8 @@ export function entityKeyOf(entity: EntityClass): string {
   return lowerFirst(entity.name);
 }
 
-export function callOf(entity: EntityClass, op: string): FrondCall {
-  return { entity: entityKeyOf(entity), op };
+export function callOf(designation: Designation, op: string): FrondCall {
+  return { entity: addressOf(designation), op };
 }
 
 export function invocationOf(input?: CallInput): InvocationContext {

@@ -7,7 +7,7 @@ import { ref, computed, toValue, onScopeDispose, type MaybeRefOrGetter, type Ref
 import type { FougereError } from '@fougere/core/contract';
 import {
   callOf,
-  entityKeyOf,
+  addressOf,
   invocationOf,
   queryKeyOf,
   sendCall,
@@ -17,20 +17,28 @@ import {
   pageOf,
   asFougereError,
   type CallInput,
-  type EntityClass,
+  type Answer,
+  type Refused,
+  type FacadeName,
+  type Rows,
   type Fetcher,
 } from '@fougere/app/client';
 
 export type { CallInput };
 
-export async function useQuery<T = Record<string, unknown>>(
-  entity: EntityClass,
-  op: string,
+export async function useQuery<
+  Handler,
+  Address extends string,
+  Op extends keyof Handler & string,
+>(
+  facade: FacadeName<Handler, Address>,
+  op: Op,
   input?: MaybeRefOrGetter<CallInput | undefined>,
   opts?: { immediate?: boolean },
 ) {
-  const entityKey = entityKeyOf(entity);
-  const call = callOf(entity, op);
+  type Answered = Answer<Handler, Op>;
+  const entityKey = addressOf(facade);
+  const call = callOf(facade, op);
   const key = queryKeyOf(entityKey, op, toValue(input));
   const fetcher = useRequestFetch() as Fetcher;
 
@@ -48,12 +56,12 @@ export async function useQuery<T = Record<string, unknown>>(
     },
   );
 
-  const items = computed<T[]>(() => itemsOf<T>(data.value));
+  const items = computed<Rows<Answered>[]>(() => itemsOf<Rows<Answered>>(data.value));
   const total = computed(() => pageOf(data.value).total);
   const hasMore = computed(() => pageOf(data.value).hasMore);
 
   return {
-    data: data as Ref<T | null>,
+    data: data as Ref<Answered | null>,
     items,
     total,
     hasMore,
@@ -65,24 +73,29 @@ export async function useQuery<T = Record<string, unknown>>(
   };
 }
 
-export function useCommand<T = unknown>(entity: EntityClass, op: string) {
-  const entityKey = entityKeyOf(entity);
-  const call = callOf(entity, op);
+export function useCommand<
+  Handler,
+  Address extends string,
+  Op extends keyof Handler & string,
+>(facade: FacadeName<Handler, Address>, op: Op) {
+  type Answered = Answer<Handler, Op>;
+  const entityKey = addressOf(facade);
+  const call = callOf(facade, op);
   const fetcher = useRequestFetch() as Fetcher;
   const loading = ref(false);
-  const error = ref<FougereError | null>(null);
+  const error = ref<FougereError<Refused<Address, Op>> | null>(null);
 
-  async function execute(input?: CallInput): Promise<T> {
+  async function execute(input?: CallInput): Promise<Answered> {
     loading.value = true;
     error.value = null;
     try {
-      const result = (await sendCall(fetcher, call, invocationOf(input))) as T;
+      const result = (await sendCall(fetcher, call, invocationOf(input))) as Answered;
       // The link: same entity designated on both sides → revalidate its queries.
       const keys = mountedKeys(entityKey);
       if (keys.length) await refreshNuxtData(keys);
       return result;
     } catch (err) {
-      error.value = asFougereError(err, entityKey, op);
+      error.value = asFougereError(err, entityKey, op) as FougereError<Refused<Address, Op>>;
       throw error.value;
     } finally {
       loading.value = false;
