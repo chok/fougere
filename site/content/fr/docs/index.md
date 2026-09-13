@@ -57,7 +57,7 @@ Cette seule classe est à la fois :
 - le **type TypeScript** d'une ligne (`function render(p: Post)` — pas d'`Infer<typeof …>`),
 - le **validateur** des entrées client (`Post.validate(input)`),
 - la **metadata** que chaque adapter lit (`Post.getFields()`),
-- la **désignation** que les pages utilisent pour appeler les opérations (`useQuery(Post, 'list')`),
+- les **champs** dont un formulaire est fait (`useFormFor(Post)`),
 - le **type nominal** que l'injection de dépendances matche dans les signatures (`user?: User`).
 
 ## Ce qui est choisi en dehors
