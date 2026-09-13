@@ -1,10 +1,13 @@
 /**
- * Every refusal the boot can answer, one case each — and what each one names.
+ * Thirteen of the twenty-eight codes a boot can answer, one project each.
  *
  * A refusal used to be a string: it said what was wrong and, 42 times out of 47, not WHERE.
  * Each case below is a project that does not hold, booted for its answer — a `Diagnostic`
  * carrying a stable code, the subject, and the file to open. The last one breaks three rules
  * at once, which is the whole reason they are collected rather than thrown one at a time.
+ *
+ * The fifteen not here are the operation-contract family, which `fougere check` already
+ * reports without booting, and the variants of a rule a case above already states.
  */
 import { boot } from '@fougere/compiler';
 import { createContainer } from '@fougere/container';
@@ -55,6 +58,8 @@ const CASES: Case[] = [
   { name: 'crud-on-owned-entity', states: 'LineHandler takes the five gestures on an owned entity' },
   { name: 'storage-key-is-provider', states: "services/ItemStorage.ts takes item's own container key" },
   { name: 'frond-key-taken', states: "fronds 'shop' and 'stock' both answer at itemHandler" },
+  { name: 'together-write-uncovered', states: 'the frame names Item, and LineRepository writes Line' },
+  { name: 'pipes-unordered', states: 'RoundHandler and TaxHandler both finish itemPriced' },
   { name: 'several-at-once', states: 'three of the rules above, in one project' },
 ];
 

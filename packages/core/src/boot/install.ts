@@ -229,7 +229,8 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   // so nothing is registered for a frame nobody wants.
   registerFrames(
     scope,
-    [...frond.handlers, ...frond.providers, ...frond.presenters, ...frond.collectors].flatMap((d) => d.deps),
+    [...frond.handlers, ...frond.providers, ...frond.presenters, ...frond.collectors]
+      .flatMap((d) => d.deps.map((key) => ({ key, filePath: d.filePath }))),
     frond.providers,
     {
       entityByName,
@@ -241,6 +242,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
       transacted: options.transacted,
       log: frondLog,
     },
+    refused,
   );
 
   // Register presenters in scope — PascalCase type name (e.g. 'PostPresenter')

@@ -3,6 +3,7 @@ import type { Container } from '@fougere/container';
 import { validationErrorsOf } from '../wire/errors.js';
 import { awaitKeyOf, emitKeyOf, factsAnnouncedBy, factsAwaitedBy } from '../wire/emit.js';
 import { ambient } from '#ambient';
+import type { Diagnostic } from '../diagnostic.js';
 import { Invocation } from '../wire/Invocation.js';
 import type { Logger } from '../builtin/logger.js';
 import type { Fronds } from '../descriptor/Fronds.js';
@@ -38,13 +39,21 @@ export class Emissions {
   /** What is announced AND waited for — `Emit<T, A>`, where the second type says so. */
   private readonly awaited: Set<string>;
 
+  /** Where each facade and each frond was written, so a refusal here names a file to open. */
+  private readonly fileOf = new Map<string, string>();
+
   constructor(
     fronds: Fronds,
     private readonly shapes: Map<string, SchemaView>,
     private readonly container: Container,
     private readonly log: Logger,
+    private readonly refused: Diagnostic[],
     private readonly carry?: Carrier,
   ) {
+    for (const frond of fronds) {
+      this.fileOf.set(frond.name, frond.source.path);
+      for (const handler of frond.handlers) this.fileOf.set(facadeOf(handler.name), handler.filePath);
+    }
     this.announced = new Set(fronds.flatMap((frond) => factsAnnouncedBy(frond.handlers)));
     this.awaited = new Set(fronds.flatMap((frond) => factsAwaitedBy(frond.handlers)));
     // Read from the frond that OWNS the fact: ordering is a decision about the fact, and
@@ -54,10 +63,15 @@ export class Emissions {
 
       return Object.entries(frond.pipes ?? {}).map(([fact, order]) => {
         if (!owned.has(lowerFirst(fact))) {
-          throw new Error(
-            `Frond '${frond.name}' orders the links of '${fact}', which it does not own.\n`
-            + '  The order belongs to the frond that declares the entity — state `pipes:` there.',
-          );
+          this.refused.push({
+            severity: 'blocking',
+            code: 'pipes-not-owned',
+            filePath: frond.source.path,
+            frond: frond.name,
+            subject: fact,
+            message: `Frond '${frond.name}' orders the links of '${fact}', which it does not own. `
+              + 'The order belongs to the frond that declares the entity — state `pipes:` there.',
+          });
         }
 
         return [lowerFirst(fact), order] as const;
@@ -106,23 +120,33 @@ export class Emissions {
 
       if (!declared) {
         if (links.length < 2) continue;
-        throw new Error(
-          `[claim] ${links.length} ops finish the fact '${fact}': ${links.map(named).join(', ')}.\n`
-          + '  They run one after another and nothing says in which order. State it on the '
-          + `frond that owns '${fact}':\n`
-          + `    export default { pipes: { ${fact}: ['FirstHandler', 'SecondHandler'] } };\n`
-          + '  Or make all but one accept `Fact<…>`, which changes nothing and reads it.',
-        );
+        this.refused.push({
+          severity: 'blocking',
+          code: 'pipes-unordered',
+          filePath: this.fileOf.get(links[0]!.facade) ?? '',
+          subject: fact,
+          message: `${links.length} ops finish the fact '${fact}': ${links.map(named).join(', ')}. `
+            + 'They run one after another and nothing says in which order. State it on the frond '
+            + `that owns '${fact}': export default { pipes: { ${fact}: ['FirstHandler', `
+            + "'SecondHandler'] } }; — or make all but one accept `Fact<…>`, which changes nothing "
+            + 'and reads it.',
+        });
+        continue;
       }
 
       const at = (one: Listener) => declared.findIndex((name) => facadeOf(name) === one.facade);
       const unlisted = links.filter((one) => at(one) < 0);
       if (unlisted.length > 0) {
-        throw new Error(
-          `${unlisted.map(named).join(', ')} finish${unlisted.length > 1 ? '' : 'es'} the fact `
-          + `'${fact}', and '${fact}' orders ${declared.join(', ')} — so where it runs is not said.\n`
-          + '  Add it to `pipes:`, or make it accept `Fact<…>`.',
-        );
+        this.refused.push({
+          severity: 'blocking',
+          code: 'pipes-unlisted',
+          filePath: this.fileOf.get(unlisted[0]!.facade) ?? '',
+          subject: fact,
+          message: `${unlisted.map(named).join(', ')} finish${unlisted.length > 1 ? '' : 'es'} the `
+            + `fact '${fact}', and '${fact}' orders ${declared.join(', ')} — so where it runs is `
+            + 'not said. Add it to `pipes:`, or make it accept `Fact<…>`.',
+        });
+        continue;
       }
 
       this.pipes.set(fact, [...links].sort((one, other) => at(one) - at(other)));
@@ -156,12 +180,17 @@ export class Emissions {
       // subscribers only, and say nothing about it. Refused here rather than half-answered
       // at the first call: the second type is in a signature, so a boot can read it.
       if (this.carry) {
-        throw new Error(
-          `'${fact}' is announced with an answer type, and this app has a carrier (\`onEmit\`).\n`
-          + '  Waiting means knowing who answers; a carrier reaches whoever subscribed '
-          + 'elsewhere and brings nothing back.\n'
-          + `  Name the subscribers in \`remotes:\`, or drop the second type of \`Emit<${fact}, …>\`.`,
-        );
+        this.refused.push({
+          severity: 'blocking',
+          code: 'emit-await-with-carrier',
+          filePath: this.fileOf.get(facadeOf(fact)) ?? '',
+          subject: fact,
+          message: `'${fact}' is announced with an answer type, and this app has a carrier `
+            + '(`onEmit`). Waiting means knowing who answers; a carrier reaches whoever subscribed '
+            + `elsewhere and brings nothing back. Name the subscribers in \`remotes:\`, or drop the `
+            + `second type of \`Emit<${fact}, …>\`.`,
+        });
+        continue;
       }
       this.container.registerValue(awaitKeyOf(fact), (raw: unknown) => this.announce(fact, raw, true));
     }

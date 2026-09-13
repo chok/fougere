@@ -303,6 +303,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       fronds, entityByName, container,
       // No carry: this is what CARRIES a fact, and a line about carrying one comes back.
       new Logger('boot:app'),
+      refused,
       options.onEmit,
     );
     /** Canonical operation tables, indexed by the same audience key as their facades. */
@@ -344,6 +345,11 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
     // Once every facade exists: what is announced here and what is listened to are both known.
     emissions.register();
+
+    // The third phase: what a fact's links and its answer type state. Said after `register`,
+    // which is where a pipe order and an `Emit<T, A>` are read.
+    const announced = refusalOf(refused, 'declaration(s) that do not hold');
+    if (announced) throw announced;
 
     // Which facades carry a line, read from who SUBSCRIBED — so a third party's destination
     // is left alone by the two middlewares that observe every operation.
