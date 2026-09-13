@@ -300,23 +300,22 @@ async function copyAudit() {
     <!-- Hero -->
     <section class="relative">
       <div class="hero-glow" />
-      <div class="max-w-6xl mx-auto px-6 pt-24 pb-16 text-center">
-        <UBadge :label="$t('home.badge')" variant="subtle" color="neutral" class="mb-6" />
-        <h1 class="text-4xl sm:text-6xl font-bold text-highlighted tracking-tight text-balance">
-          {{ $t('home.title') }}
-        </h1>
-        <p class="mt-6 text-lg text-muted max-w-2xl mx-auto text-pretty">
-          {{ $t('home.subtitle') }}
-        </p>
-        <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <UButton :to="localePath('/docs/existing-app')" size="lg" :label="$t('home.ctaStart')" trailing-icon="i-lucide-arrow-right" />
-          <UButton to="#audit" size="lg" variant="outline" color="neutral" :label="$t('home.ctaAudit')" />
-          <UButton :to="localePath('/docs/getting-started')" size="lg" variant="link" color="neutral" :label="$t('home.ctaScratch')" />
+      <div class="max-w-6xl mx-auto px-6 pt-24 pb-16 grid lg:grid-cols-2 gap-10 lg:gap-12 items-center">
+        <div class="text-center lg:text-left">
+          <UBadge :label="$t('home.badge')" variant="subtle" color="neutral" class="mb-6" />
+          <h1 class="text-4xl sm:text-5xl font-bold text-highlighted tracking-tight text-balance">
+            {{ $t('home.title') }}
+          </h1>
+          <p class="mt-6 text-lg text-muted text-pretty">
+            {{ $t('home.subtitle') }}
+          </p>
+          <div class="mt-8 flex flex-wrap items-center justify-center lg:justify-start gap-3">
+            <UButton :to="localePath('/docs/existing-app')" size="lg" :label="$t('home.ctaStart')" trailing-icon="i-lucide-arrow-right" />
+            <UButton to="#audit" size="lg" variant="outline" color="neutral" :label="$t('home.ctaAudit')" />
+            <UButton :to="localePath('/docs/getting-started')" size="lg" variant="link" color="neutral" :label="$t('home.ctaScratch')" />
+          </div>
         </div>
-        <p class="mt-5 text-sm text-muted flex items-center justify-center gap-1.5">
-          <UIcon name="i-lucide-file-check" class="size-4 text-muted" />
-          {{ $t('home.realCode') }}
-        </p>
+        <CodeWindow :code="derivedSnippet" filename="fronds/blog/entities/Post.ts — and what derives" lang="ts" />
       </div>
     </section>
 

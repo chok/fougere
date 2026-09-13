@@ -12,8 +12,8 @@
   },
   "home": {
     "badge": "Pré-version — les API se stabilisent",
-    "title": "Le seul framework que vous pouvez choisir n'importe quand.",
-    "subtitle": "Jour 1 ou jour 400 : vos routes, vos pages, votre rendu et vos données ne bougent pas. Ce que vous réécrivez, c'est le modèle — une entité à la fois.",
+    "title": "Ce que votre app est, et ce qu'elle fait. Tout le reste en dérive.",
+    "subtitle": "Validation, tables, surface d'API, contrats de formulaire, types GraphQL — depuis une seule classe.",
     "gradientTitle": "Le gradient",
     "gradientText": "Une Frond tourne in-process ou dans son propre process derrière JSON-RPC 2.0 — avec un code utilisateur identique. Pas de RPC sans voyage : en local, l'appel est une exécution mémoire directe.",
     "statAxes": "4 axes",
@@ -22,7 +22,6 @@
     "statPrimitivesText": "toute la surface d'appel : useQuery, useCommand, useFormFor et useCurrentUser dans la page, et invoke, leur dual serveur",
     "dogfoodTitle": "Ce site est une app Fougere",
     "dogfoodText": "Les docs que vous allez lire sont du markdown dans git. Le blog derrière /blog est une Frond : les posts sont des entités avec une transition draft→publish validée, écrits via le contrat de formulaire, lus via la primitive de query — et la Frond entière peut partir dans un autre process en décommentant une ligne de config.",
-    "realCode": "Le code ci-dessous est la Frond blog de ce site — pas du pseudocode.",
     "declareTitle": "Déclarer",
     "declareText": "Une classe d'entité. Validation, table SQLite, type GraphQL, contrat de formulaire — toutes ses projections.",
     "validateTitle": "Valider",
