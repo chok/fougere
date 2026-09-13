@@ -9,6 +9,9 @@ import {
 import { adaptersOf, crossFrondImports, handlerDeclarations, outsideConventions } from '@fougere/compiler';
 import { resolveConventions } from '@fougere/core';
 import ProjectScan from '../services/ProjectScan.js';
+import { statSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { FACADE_OUT, DEFAULT_OUT } from './BuildHandler.js';
 
 /** One thing that does not hold, in the terms of whoever has to fix it. */
 export interface Finding {
@@ -191,8 +194,41 @@ export default class CheckHandler {
       });
     }
 
+    findings.push(...facadeFindings(root, fronds));
+
     return { fronds: fronds.length, handlers, findings };
   }
+}
+
+/**
+ * A facade module older than the handlers it was read off.
+ *
+ * An ABSENT module needs no finding: a page importing one fails to resolve, loudly, and a
+ * backend project never imports one at all — warning there would fire on every project that
+ * does not want a facade, which is most of them.
+ *
+ * A STALE one is the silent case. The import resolves, the operations are the old ones, and a
+ * renamed op compiles against a name nothing serves any more. An mtime is the whole check.
+ */
+function facadeFindings(root: string, fronds: readonly { handlers: readonly { filePath: string }[] }[]): Finding[] {
+  const facade = join(root, dirname(DEFAULT_OUT), FACADE_OUT);
+  const written = statSync(facade, { throwIfNoEntry: false })?.mtimeMs;
+  if (written === undefined) return [];
+
+  const newer = fronds
+    .flatMap((frond) => frond.handlers)
+    .filter((handler) => (statSync(handler.filePath, { throwIfNoEntry: false })?.mtimeMs ?? 0) > written);
+
+  if (newer.length === 0) return [];
+
+  return [{
+    severity: 'warning',
+    code: 'facade-stale',
+    filePath: facade,
+    subject: `${newer.length} handler${newer.length > 1 ? 's' : ''}`,
+    message: 'The facade module is older than the handlers it was read off, so a page checks its '
+      + 'calls against operations that may no longer exist. Run `fougere build`.',
+  }];
 }
 
 /** A scan diagnostic IS a finding — same vocabulary, so the renderer has one shape. */

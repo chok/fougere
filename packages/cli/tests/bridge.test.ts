@@ -31,7 +31,24 @@ class Wide extends entity({
 
 const args = entityToArgs(Wide.getFields());
 
+class Identified extends entity({ id: primary() }) {}
+
 describe('entityToArgs', () => {
+  /**
+   * An operation whose whole input is `Post.pick('id')` asks the caller to NAME a row. The axes
+   * answer who may WRITE a field, and a primary is the server's — so they left this contract
+   * with no argument at all, and the call answered `Unexpected argument`.
+   */
+  it('takes the primary when the contract admits nothing else', () => {
+    const args = entityToArgs(Identified.getFields());
+
+    expect(args.id).toMatchObject({ type: 'positional', required: true });
+  });
+
+  it('leaves the primary to the server when anything else is writable', () => {
+    expect(Object.keys(entityToArgs(Wide.getFields()))).not.toContain('id');
+  });
+
   it('states every arg with its type, and nothing the axes exclude', () => {
     expect(args).toEqual({
       title: { required: true, type: 'positional' },

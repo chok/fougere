@@ -6,7 +6,7 @@
  * inspecte. Ce test appelle le handler directement, sans CLI et sans processus.
  */
 import { describe, it, expect } from 'vitest';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import CheckHandler from '../fronds/analysis/handlers/CheckHandler.js';
 import ProjectScan from '../fronds/analysis/services/ProjectScan.js';
@@ -27,6 +27,33 @@ const ambiguousInputFixture = join(repoRoot, 'packages', 'core', 'tests', 'fixtu
 const check = () => new CheckHandler(new ProjectScan());
 
 describe('check', () => {
+  /**
+   * A page imports its facade, so an ABSENT module fails to resolve and needs no finding. The
+   * silent case is a module that is present and OLDER than the handlers it was read off: the
+   * import resolves, and a renamed op compiles against a name nothing serves any more.
+   */
+  it('says nothing when no facade module was ever generated', async () => {
+    const result = await check().execute({ root: fixture });
+
+    expect(result.findings.find((f) => f.code === 'facade-stale')).toBeUndefined();
+  });
+
+  it('names a facade module older than the handlers it was read off', async () => {
+    const generated = join(fixture, '.fougere', 'facade.generated.ts');
+    mkdirSync(dirname(generated), { recursive: true });
+    writeFileSync(generated, '// stale\n');
+    utimesSync(generated, new Date(0), new Date(0));
+
+    try {
+      const result = await check().execute({ root: fixture });
+
+      expect(result.findings.find((f) => f.code === 'facade-stale')?.message)
+        .toContain('older than the handlers');
+    } finally {
+      rmSync(dirname(generated), { recursive: true, force: true });
+    }
+  });
+
   it('suit un extends vers une classe exportée par son nom, et compte ce qu\'il a vu', async () => {
     const result = await check().execute({ root: fixture });
 
