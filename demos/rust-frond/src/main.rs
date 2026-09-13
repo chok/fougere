@@ -159,7 +159,7 @@ fn identity_card(state: &AppState) -> Value {
         "fronds": [{
             "name": "telemetry",
             // Deux listes, duales : ce qu'on peut APPELER, et ce qui SORT tout seul.
-            "doors": [{
+            "facades": [{
                 "name": "sensor",
                 "ops": state.ops.clone(),
                 "schema": sensor_card()
