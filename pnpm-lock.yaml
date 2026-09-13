@@ -297,6 +297,31 @@ importers:
         specifier: ^4.21.0
         version: 4.21.0
 
+  demos/crossing-cost:
+    dependencies:
+      '@fougere/compiler':
+        specifier: workspace:*
+        version: link:../../packages/compiler
+      '@fougere/container':
+        specifier: workspace:*
+        version: link:../../packages/container
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@fougere/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
+      '@fougere/transport-http':
+        specifier: workspace:*
+        version: link:../../packages/transport/http
+    devDependencies:
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+
   demos/crud-auto:
     dependencies:
       '@fougere/adapter-graphql':

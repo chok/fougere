@@ -1,0 +1,21 @@
+{
+  "name": "fougere-demo-crossing-cost",
+  "version": "0.0.1-alpha.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/main.ts",
+    "typecheck": "tsc -p fronds"
+  },
+  "dependencies": {
+    "@fougere/compiler": "workspace:*",
+    "@fougere/container": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/observability": "workspace:*",
+    "@fougere/schema": "workspace:*",
+    "@fougere/transport-http": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0"
+  }
+}

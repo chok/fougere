@@ -42,6 +42,7 @@ pnpm -C demos/pipe-split dev       # the op that FINISHES a fact — here, then 
 pnpm -C demos/ask-quorum dev       # `Emit<T, A>` — the announcement that waits, across three processes
 pnpm -C demos/observability dev    # three processes; `pnpm load` (k6) and `pnpm signoz` beside it
 pnpm -C demos/together-frame dev   # two writes that stand or fall as one — then uncomment `sources:`
+pnpm -C demos/crossing-cost dev    # a chain of three, and the config line that decides what it costs
 pnpm -C demos/test-gradient test   # 53 tests, 44 of them from a one-line file
 pnpm -C demos/test-gradient e2e    # the browser rung — a form that states no rule of its own
 ```
@@ -115,6 +116,7 @@ demos/
   config-reload/       the config re-read under a running app, the drain, and what it refuses to change
   mirror-catalog/      a copy of rows the app cannot query, and what the second pass costs
   together-frame/      one frame, two realizations, and the config line that picks one
+  crossing-cost/       cart → pricing → catalog: 0 hops or 2, decided by `remotes:` alone
   observability/       three Fronds in three processes, one trace — and what the wire cost
   test-gradient/       what the declaration writes on its own, and the four rungs it runs at
   anchor-chain/        a path with two stops — which derivations hold rows, and which say nothing
