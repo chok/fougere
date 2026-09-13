@@ -14,7 +14,7 @@ export function refuseSharedName(frond: FrondDescriptor): void {
     const first = declared.get(name);
     if (first !== undefined) {
       throw new Error(
-        `[provider] two files declare ${name}:\n`
+        `[claim] two files declare ${name}:\n`
         + `    ${first}\n`
         + `    ${provider.filePath}\n`
         + `  A frond registers both under one key, so the second replaces the first and whoever `
@@ -40,7 +40,7 @@ export function ownersOf(providers: readonly ProviderEntry[]): Map<string, strin
         // and `remotes` two owners of an entity: whichever won would depend on scan order,
         // and one of the two aggregates would be silently unenforced.
         throw new Error(
-          `[aggregate] ${first} and ${provider.ctor.name} both own ${name}. `
+          `[claim] ${first} and ${provider.ctor.name} both own ${name}. `
           + 'An entity has one owner: merge the two, or take it out of one of them.',
         );
       }

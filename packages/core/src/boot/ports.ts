@@ -126,7 +126,7 @@ function chain(
     // of an entity: whichever won would depend on scan order, and the handler would
     // charge the wrong provider without a word.
     throw new Error(
-      `[ports] ${impls.map(nameOf).join(' and ')} both extend ${port}, `
+      `[claim] ${impls.map(nameOf).join(' and ')} both extend ${port}, `
       + 'and nothing says which one answers it. Which realization a deployment uses is '
       + `not a fact about the code — state it: ports: { ${port}: '${nameOf(impls[0]!)}' } `
       + 'in fougere.config.ts.',
@@ -136,7 +136,7 @@ function chain(
   if (wrappers.length > 1) {
     // Same refusal one layer out: two wrappers are an ORDER, and scan order is not one.
     throw new Error(
-      `[ports] ${wrappers.map(nameOf).join(' and ')} both wrap ${port}, `
+      `[claim] ${wrappers.map(nameOf).join(' and ')} both wrap ${port}, `
       + 'and nothing says which stands in front. State the chain, outside in: '
       + `ports: { ${port}: [${[...wrappers, ...impls].map((one) => `'${nameOf(one)}'`).join(', ')}] } `
       + 'in fougere.config.ts.',

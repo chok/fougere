@@ -1,6 +1,6 @@
 /** Where a STATED contract and the signature it is about have stopped agreeing. */
 import type { FrondDescriptor, HandlerEntry } from '../descriptor/frond.js';
-import type { ScanDiagnostic } from '../scan.js';
+import type { Diagnostic } from '../diagnostic.js';
 import type { BindingPlan } from '../wire/binding.js';
 import type { Signature } from '../wire/signature.js';
 
@@ -12,8 +12,8 @@ function namesDisagreeing(plan: BindingPlan, signature: Signature): string[] {
 }
 
 /** What a frond's stated contracts no longer match. */
-export function statementDrift(frond: FrondDescriptor, handler: HandlerEntry): ScanDiagnostic[] {
-  const found: ScanDiagnostic[] = [];
+export function statementDrift(frond: FrondDescriptor, handler: HandlerEntry): Diagnostic[] {
+  const found: Diagnostic[] = [];
 
   for (const [name, override] of Object.entries(frond.operationsOverrides ?? {})) {
     if (!override.binding) continue;

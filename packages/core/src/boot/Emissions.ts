@@ -107,7 +107,7 @@ export class Emissions {
       if (!declared) {
         if (links.length < 2) continue;
         throw new Error(
-          `${links.length} ops finish the fact '${fact}': ${links.map(named).join(', ')}.\n`
+          `[claim] ${links.length} ops finish the fact '${fact}': ${links.map(named).join(', ')}.\n`
           + '  They run one after another and nothing says in which order. State it on the '
           + `frond that owns '${fact}':\n`
           + `    export default { pipes: { ${fact}: ['FirstHandler', 'SecondHandler'] } };\n`
@@ -289,7 +289,8 @@ export class Emissions {
     if (walked.includes(fact)) {
       throw new Error(
         `Emission cycle: ${[...walked, fact].join(' → ')}.\n`
-        + `  A fact cannot cause itself. One of the subscribers above announces a fact that leads back here.`,
+        + '  A fact cannot cause itself. One of the subscribers above announces a fact that leads back here.\n'
+        + '  Make it accept `Fact<…>` and read, or announce outside the subscriber.',
       );
     }
 

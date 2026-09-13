@@ -68,7 +68,7 @@ function assertOneOwnerPerKey(
     const first = owner.get(key);
     if (first !== undefined && first !== frond) {
       throw new Error(
-        `Two fronds claim the key '${key}': '${first}' and '${frond}'.\n`
+        `[claim] Two fronds claim the key '${key}': '${first}' and '${frond}'.\n`
         + `  A ${what} is registered under a key that names no frond, so one would silently replace the other.\n`
         + `  - Rename one of the two classes, or\n`
         + `  - keep one of the two fronds out of this process (--fronds), or declare it in remotes:`,
@@ -171,7 +171,9 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     if (!options.fronds && !options.scan && !options.auth && brought.length === 0) {
       throw new Error(
         'createApp needs `fronds:` (what this app states) or `scan:` (what a scanner found). '
-        + 'Neither was given, and nothing else declares entities of its own.',
+        + 'Neither was given, and nothing else declares entities of its own.\n'
+        + '    createApp({ fronds: [blog] })\n'
+        + '    createApp({ scan: await scanProject(root) })',
       );
     }
     const operationModel = resolveEffectiveOperations(fronds, {
@@ -207,7 +209,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     let authRuntime: AuthRuntime | undefined;
     if (options.auth) {
       if (!options.storageFactory) {
-        throw new Error('createApp: `auth` is set but `storageFactory` is missing — auth providers need it to back their adapter.');
+        throw new Error('createApp: `auth` is set but `storageFactory` is missing — auth providers need it to back their adapter. Pass one through CreateAppOptions.storageFactory.');
       }
       if (options.db === undefined) {
         throw new Error('createApp: `auth` is set but `db` is missing — pass the storage handle through CreateAppOptions.db.');
@@ -534,7 +536,10 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         // depend on wiring order, and `discover` is in here precisely so it cannot be taken.
         const address = new RouteAddress({ entity: 'rpc', operation: op });
         if (routeRegistry.find(address)) {
-          throw new Error(`rpc operation '${op}' is already served; a second declaration would depend on wiring order`);
+          throw new Error(
+            `[claim] rpc operation '${op}' is already served; a second declaration would depend on wiring order.\n`
+            + '  Two extensions declare it — keep one out of `extensions:`.',
+          );
         }
         routeRegistry.register(new OperationRoute(
           'system',

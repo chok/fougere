@@ -49,7 +49,7 @@ describe('verify — cross-frond dependency', () => {
     const violations = verify(app);
 
     expect(violations).toHaveLength(1);
-    expect(violations[0].rule).toBe('cross-frond-dependency');
+    expect(violations[0].code).toBe('cross-frond-dependency');
     expect(violations[0].frond).toBe('blog');
     expect(violations[0].subject).toBe('PostHandler');
     // The message carries the sentence `Known issues` asks a human to remember —
@@ -121,7 +121,7 @@ describe('verify — collector in another frond', () => {
     const { scanProject } = await import('@fougere/compiler');
     const scan = await scanProject(new URL('./fixtures-collector-split', import.meta.url).pathname);
 
-    const violations = verify({ fronds: scan.fronds }).filter((v) => v.rule === 'collector-in-another-frond');
+    const violations = verify({ fronds: scan.fronds }).filter((v) => v.code === 'collector-in-another-frond');
 
     // Two ops, same misplacement — the spelling of the param changes nothing.
     expect(violations).toHaveLength(2);
@@ -154,7 +154,7 @@ describe('verify — collector in another frond', () => {
         frond('blog', { handlers: [withOp(PostHandler, 'post')] }),
         frond('identity', { collectors: [collector('authorUser', UserCollector)] }),
       ],
-    }).filter((v) => v.rule === 'collector-in-another-frond');
+    }).filter((v) => v.code === 'collector-in-another-frond');
 
     expect(violations).toHaveLength(1);
     expect(violations[0].subject).toBe('PostHandler.draft(author)');

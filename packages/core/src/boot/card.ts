@@ -65,7 +65,8 @@ function facadeOps(app: App, entityName: string, surface?: string): CardOp[] {
   const effective = app.operationsFor(entityName, surface);
   if (!effective) {
     throw new Error(
-      `Facade '${facadeKeyOf(entityName, surface)}' exists without an effective operation table.`,
+      `Facade '${facadeKeyOf(entityName, surface)}' exists without an effective operation table. `
+      + 'A facade and its table are built together, so no declaration can produce this.',
     );
   }
 
@@ -73,7 +74,8 @@ function facadeOps(app: App, entityName: string, surface?: string): CardOp[] {
     const contract = effective.get(name);
     if (!contract) {
       throw new Error(
-        `Facade '${facadeKeyOf(entityName, surface)}' serves '${name}' without an effective contract.`,
+        `Facade '${facadeKeyOf(entityName, surface)}' serves '${name}' without an effective contract. `
+        + 'A facade and its table are built together, so no declaration can produce this.',
       );
     }
 

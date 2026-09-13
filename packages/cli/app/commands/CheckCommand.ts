@@ -1,4 +1,5 @@
-import type { CheckResult, Finding } from '../../fronds/analysis/handlers/CheckHandler.js';
+import type { CheckResult } from '../../fronds/analysis/handlers/CheckHandler.js';
+import type { Diagnostic } from '@fougere/core';
 import type { App } from '@fougere/core';
 import { createAppRunner } from '@fougere/core';
 import type { ui as createUi } from '../../src/ui.js';
@@ -45,7 +46,7 @@ export default class CheckCommand {
   }
 }
 
-function render(f: Finding): string {
+function render(f: Diagnostic): string {
   const mark = f.severity === 'blocking' ? pc.red('✗') : pc.yellow('⚠');
   const where = relative(process.cwd(), f.filePath) || f.filePath;
   const what = f.subject ? ` ${f.subject}` : '';

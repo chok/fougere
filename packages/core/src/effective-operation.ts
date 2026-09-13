@@ -6,7 +6,7 @@ import { computeBindingPlan, type BindingPlan } from './wire/binding.js';
 import { targetOf } from './prefab/prefab.js';
 import type { CollectorEntry, FrondDescriptor, HandlerEntry } from './descriptor/frond.js';
 import { servedSurfaces } from './descriptor/surface.js';
-import type { ScanDiagnostic } from './scan.js';
+import type { Diagnostic } from './diagnostic.js';
 import { verify } from './verify.js';
 import {
   inferOperationKind,
@@ -127,7 +127,7 @@ export const EFFECTIVE_OPERATION_SEMANTICS = Object.freeze({
 });
 
 export interface EffectiveOperationOptions {
-  diagnostics?: readonly ScanDiagnostic[];
+  diagnostics?: readonly Diagnostic[];
   remotes?: Record<string, string>;
   adapters?: Record<string, boolean | undefined>;
 }
@@ -138,13 +138,13 @@ export interface EffectiveOperationOptions {
  */
 export class EffectiveOperationModel {
   readonly operations: EffectiveOperation[];
-  readonly diagnostics: ScanDiagnostic[];
-  readonly resolutionDiagnostics: ScanDiagnostic[];
+  readonly diagnostics: Diagnostic[];
+  readonly resolutionDiagnostics: Diagnostic[];
 
   constructor(
     operations: EffectiveOperation[],
-    diagnostics: ScanDiagnostic[],
-    resolutionDiagnostics: ScanDiagnostic[],
+    diagnostics: Diagnostic[],
+    resolutionDiagnostics: Diagnostic[],
     private readonly byHandler: Map<HandlerEntry, EffectiveOperationsMap>,
   ) {
     this.operations = operations;
@@ -164,7 +164,7 @@ export function resolveEffectiveOperations(
 ): EffectiveOperationModel {
   const operations: EffectiveOperation[] = [];
   const byHandler = new Map<HandlerEntry, EffectiveOperationsMap>();
-  const resolutionDiagnostics: ScanDiagnostic[] = [];
+  const resolutionDiagnostics: Diagnostic[] = [];
   const scanDiagnostics = [...(options.diagnostics ?? [])];
   const schemas = new Map(
     fronds.flatMap((frond) => frond.entities.map((entity) => [entity.name, entity.entityClass] as const)),
@@ -341,19 +341,12 @@ export function resolveEffectiveOperations(
 
   // Topology and DI are part of the same effective program. A dependency targeting an
   // actually remote frond is a refusal, not the warning appropriate to a future split.
-  for (const violation of verify({ fronds })) {
-    const remoteBoundary = options.remotes?.[violation.frond] !== undefined
-      || options.remotes?.[violation.dependsOn.frond] !== undefined;
-    resolutionDiagnostics.push({
-      severity: remoteBoundary && violation.rule === 'cross-frond-dependency'
-        ? 'blocking'
-        : violation.severity,
-      code: violation.rule,
-      filePath: violation.filePath,
-      frond: violation.frond,
-      subject: violation.subject,
-      message: violation.message,
-    });
+  for (const misplaced of verify({ fronds })) {
+    const remoteBoundary = options.remotes?.[misplaced.frond] !== undefined
+      || options.remotes?.[misplaced.dependsOn.frond] !== undefined;
+    resolutionDiagnostics.push(remoteBoundary && misplaced.code === 'cross-frond-dependency'
+      ? { ...misplaced, severity: 'blocking' }
+      : misplaced);
   }
 
   const resolution = uniqueDiagnostics(resolutionDiagnostics);
@@ -380,7 +373,7 @@ function normalizeBinding(
   handler: HandlerEntry,
   frond: FrondDescriptor,
   name: string,
-  diagnostics: ScanDiagnostic[],
+  diagnostics: Diagnostic[],
 ): (OperationContract & { binding: BindingPlan }) | undefined {
   const params = contract.signature?.params ?? [];
   if (!contract.binding) {
@@ -435,7 +428,7 @@ function validateProvenance(
   contract: OperationContract & { binding: BindingPlan },
   parameters: EffectiveParameter[],
   localCollectors: Map<string, CollectorEntry[]>,
-  diagnostics: ScanDiagnostic[],
+  diagnostics: Diagnostic[],
 ): boolean {
   let valid = true;
   const declared = (handler.ctor as { __ops?: Record<string, OperationContract> }).__ops?.[name];
@@ -543,7 +536,7 @@ function implementationOf(
   frond: FrondDescriptor,
   handler: HandlerEntry,
   name: string,
-  diagnostics: ScanDiagnostic[],
+  diagnostics: Diagnostic[],
 ): EffectiveOperation['implementation'] | undefined {
   const override = frond.operationsOverrides?.[name];
   const candidates = override?.handlerName
@@ -616,7 +609,7 @@ function exposedAdapters(
     .sort();
 }
 
-function uniqueDiagnostics(diagnostics: readonly ScanDiagnostic[]): ScanDiagnostic[] {
+function uniqueDiagnostics(diagnostics: readonly Diagnostic[]): Diagnostic[] {
   const seen = new Set<string>();
   return diagnostics.filter((diagnostic) => {
     const key = [diagnostic.code, diagnostic.filePath, diagnostic.subject, diagnostic.message].join('\0');

@@ -90,7 +90,8 @@ export { Sources } from './source.js';
 export { storageOver } from './storage/store.js';
 export type { Store, Values } from './storage/store.js';
 export type { App, CreateAppOptions } from './boot/types.js';
-export type { ScanResult, ScanDiagnostic } from './scan.js';
+export type { ScanResult } from './scan.js';
+export type { Diagnostic } from './diagnostic.js';
 export {
   type Conventions, type ConventionsInput, DEFAULT_CONVENTIONS,
   resolveConventions, frondPackage, frondDirsOf, providerDirsOf,
@@ -108,7 +109,7 @@ export type {
 } from './descriptor/frond.js';
 export type { AuthConfig, AuthContext, AuthRuntime } from './boot/auth.js';
 export { Fronds } from './descriptor/Fronds.js';
-export { verify, type Violation } from './verify.js';
+export { verify, type Misplaced } from './verify.js';
 // Same question as verify(), answered from the source text instead of the model.
 // Who is calling, established rather than accepted — the proof beside `state`'s claim.
 // `generateKeyPair` and `issueGrant` are NOT here: they make keys at a deployment and

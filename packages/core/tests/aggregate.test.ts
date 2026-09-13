@@ -128,7 +128,7 @@ describe('what the shape refuses, and what a sentence has to refuse instead', ()
     // order, and one of the two boundaries would be held by nobody.
     const rejected = boot('fixtures-aggregate-twice');
 
-    await expect(rejected).rejects.toThrow(/\[aggregate\]/);
+    await expect(rejected).rejects.toThrow(/\[claim\]/);
     await expect(rejected).rejects.toThrow(/AccountRepository and LedgerRepository|LedgerRepository and AccountRepository/);
   });
 

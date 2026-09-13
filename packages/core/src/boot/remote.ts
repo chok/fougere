@@ -75,7 +75,7 @@ export function createRemoteRouter(
             throw new FougereError({
               code: ErrorCode.INTERNAL_ERROR,
               message:
-                `Two remotes serve '${facade.name}': '${first}' and '${label}'.\n`
+                `[claim] Two remotes serve '${facade.name}': '${first}' and '${label}'.\n`
                 + `  A call names an entity, not a frond, so nothing could choose between them.\n`
                 + `  - Keep one of the two out of \`remotes:\`, or\n`
                 + `  - expose one of them under a different entity name.`,
@@ -101,13 +101,15 @@ export function createRemoteRouter(
       if (pending.size > 0) {
         throw new FougereError({
           code: ErrorCode.SERVICE_UNAVAILABLE,
-          message: `No reachable remote hosts '${entity}' — unreachable: ${[...pending.keys()].join(', ')}`,
+          message: `No reachable remote hosts '${entity}' — unreachable: ${[...pending.keys()].join(', ')}.\n`
+          + '  Named in `remotes:`, and did not answer.',
           entity,
         });
       }
       throw new FougereError({
         code: ErrorCode.NOT_FOUND,
-        message: `No declared remote hosts '${entity}'`,
+        message: `No declared remote hosts '${entity}'.\n`
+          + '  Nothing here serves it either — add its frond to `fronds:`/`scan:`, or name the frond that does in `remotes:`.',
         entity,
       });
     },

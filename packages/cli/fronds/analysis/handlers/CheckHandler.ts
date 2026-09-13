@@ -4,7 +4,7 @@ import {
   buildGraph,
   clusterEntities,
   resolveEffectiveOperations,
-  type ScanDiagnostic,
+  type Diagnostic,
 } from '@fougere/core';
 import { adaptersOf, crossFrondImports, handlerDeclarations, outsideConventions } from '@fougere/compiler';
 import { resolveConventions } from '@fougere/core';
@@ -13,27 +13,10 @@ import { statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { FACADE_OUT, DEFAULT_OUT } from './BuildHandler.js';
 
-/** One thing that does not hold, in the terms of whoever has to fix it. */
-export interface Finding {
-  severity: 'blocking' | 'warning';
-  /** Stable rule name — the same vocabulary a scan diagnostic uses. */
-  code: string;
-  /** Where to go and look. */
-  filePath: string;
-  /**
-   * What the finding is ABOUT — `PostHandler.whoNull(user)` — when the rule holds it
-   * as a fact rather than inside its sentence. Two ops of one handler breaking the
-   * same rule read as one repeated line without it.
-   */
-  subject?: string;
-  /** What is wrong, and what it costs. One sentence. */
-  message: string;
-}
-
 export interface CheckResult {
   fronds: number;
   handlers: number;
-  findings: Finding[];
+  findings: Diagnostic[];
 }
 
 /** Shared with `fougere graph` — one threshold, so the two never disagree. */
@@ -66,7 +49,7 @@ export default class CheckHandler {
       remotes: config.remotes,
       adapters: config.adapters,
     });
-    const findings: Finding[] = model.diagnostics.map(asFinding);
+    const findings: Diagnostic[] = [...model.diagnostics];
     const handlers = fronds.reduce((count, frond) => count + frond.handlers.length, 0);
 
     /**
@@ -210,7 +193,7 @@ export default class CheckHandler {
  * A STALE one is the silent case. The import resolves, the operations are the old ones, and a
  * renamed op compiles against a name nothing serves any more. An mtime is the whole check.
  */
-function facadeFindings(root: string, fronds: readonly { handlers: readonly { filePath: string }[] }[]): Finding[] {
+function facadeFindings(root: string, fronds: readonly { handlers: readonly { filePath: string }[] }[]): Diagnostic[] {
   const facade = join(root, dirname(DEFAULT_OUT), FACADE_OUT);
   const written = statSync(facade, { throwIfNoEntry: false })?.mtimeMs;
   if (written === undefined) return [];
@@ -231,13 +214,3 @@ function facadeFindings(root: string, fronds: readonly { handlers: readonly { fi
   }];
 }
 
-/** A scan diagnostic IS a finding — same vocabulary, so the renderer has one shape. */
-function asFinding(d: ScanDiagnostic): Finding {
-  return {
-    severity: d.severity,
-    code: d.code,
-    filePath: d.filePath,
-    subject: d.subject,
-    message: d.message,
-  };
-}

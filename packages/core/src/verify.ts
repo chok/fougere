@@ -1,27 +1,18 @@
 import type { FrondDescriptor } from './descriptor/frond.js';
+import type { Diagnostic } from './diagnostic.js';
 import { lowerFirst } from '@fougere/schema';
 import { repositoryKeyOf } from './prefab/repository.js';
 import { storageKeyOf } from './storage/port.js';
 import { presenterKeyOf } from './prefab/presenter.js';
 import { collectorKeyOf } from './prefab/collector.js';
 
-/** What a rule found in an app. */
-export interface Violation {
-  /** Rule name, stable — 'cross-frond-dependency'. */
-  rule: string;
-  /** What it costs, decided by the rule that raises it — never by whoever renders it. */
-  severity: 'blocking' | 'warning';
-  /** The frond the subject lives in. */
+/** A subject declared in one frond and reached from another — the rules below find no other kind. */
+export type Misplaced = Diagnostic & {
   frond: string;
-  /** What violates it — 'PostHandler'. */
   subject: string;
-  /** Where to go and look. */
-  filePath: string;
   /** What the subject reaches for, and where it actually lives. */
   dependsOn: { key: string; frond: string; kind: string };
-  /** What breaks, and what the caller gets instead. */
-  message: string;
-}
+};
 
 /** A dependency declared in a frond's scope, and what kind of thing it is. */
 type Registration = { frond: string; kind: string };
@@ -57,7 +48,7 @@ function injectablesOf(frond: FrondDescriptor) {
  * Does this app survive being split? A frond runs in-process or in its own process behind JSON-RPC
  * with identical user code — that is the whole claim.
  */
-export function verify(app: { fronds: readonly FrondDescriptor[] }): Violation[] {
+export function verify(app: { fronds: readonly FrondDescriptor[] }): Misplaced[] {
   const index = new Map<string, Registration>();
   for (const frond of app.fronds) {
     for (const [key, reg] of registrationsOf(frond)) index.set(key, reg);
@@ -71,7 +62,7 @@ export function verify(app: { fronds: readonly FrondDescriptor[] }): Violation[]
     for (const collector of frond.collectors) collectorFronds.set(collector.typeName, frond.name);
   }
 
-  const violations: Violation[] = [];
+  const violations: Misplaced[] = [];
   for (const frond of app.fronds) {
     // Rule 1 — a constructor dependency declared in another frond's scope.
     // Façade keys are exempt by construction, not by omission: a `Facade<X>`
@@ -86,7 +77,7 @@ export function verify(app: { fronds: readonly FrondDescriptor[] }): Violation[]
         // an unresolved dependency is the container's complaint, not this rule's.
         if (!declared || declared.frond === frond.name) continue;
         violations.push({
-          rule: 'cross-frond-dependency',
+          code: 'cross-frond-dependency',
           severity: 'warning',
           frond: frond.name,
           subject: subject.name,
@@ -120,7 +111,7 @@ export function verify(app: { fronds: readonly FrondDescriptor[] }): Violation[]
           // provably false.
           if (!elsewhere) continue;
           violations.push({
-            rule: 'collector-in-another-frond',
+            code: 'collector-in-another-frond',
             severity: 'blocking',
             frond: frond.name,
             subject: `${handler.ctor.name}.${opName}(${param.name})`,
@@ -147,6 +138,6 @@ export function verify(app: { fronds: readonly FrondDescriptor[] }): Violation[]
 export function assertSplittable(app: { fronds: readonly FrondDescriptor[] }): void {
   const violations = verify(app);
   if (violations.length === 0) return;
-  const lines = violations.map((v) => `  [${v.rule}] ${v.frond}/${v.subject}\n    ${v.message}\n    ${v.filePath}`);
+  const lines = violations.map((v) => `  [${v.code}] ${v.frond}/${v.subject}\n    ${v.message}\n    ${v.filePath}`);
   throw new Error(`${violations.length} violation(s) — this app does not survive a split:\n${lines.join('\n')}`);
 }

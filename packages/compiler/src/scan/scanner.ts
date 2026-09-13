@@ -1,4 +1,4 @@
-import { DEFAULT_CONVENTIONS, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, togetherKeyOf, type Conventions, type ConventionsInput, type ScanDiagnostic, type ScanResult } from '@fougere/core';
+import { DEFAULT_CONVENTIONS, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, togetherKeyOf, type Conventions, type ConventionsInput, type Diagnostic, type ScanResult } from '@fougere/core';
 import { Fronds, awaitKeyOf, cardinalityOf, computeBindingPlan, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf } from '@fougere/core/descriptor';
 import { getModuleLoader, loadFrondConfig } from '@fougere/core/node';
 import type { FrondConfig, ErrorCode } from '@fougere/core';
@@ -22,9 +22,9 @@ import { lowerFirst } from '@fougere/schema';
 // FS
 
 /** What this scan run could not do. */
-let diagnostics: ScanDiagnostic[] = [];
+let diagnostics: Diagnostic[] = [];
 
-function record(d: ScanDiagnostic): void {
+function record(d: Diagnostic): void {
   diagnostics.push(d);
 }
 
