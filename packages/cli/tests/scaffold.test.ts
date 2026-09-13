@@ -79,7 +79,7 @@ describe('the apps a host can scaffold', () => {
   it('offers every host that ships a starter, and only those', () => {
     const offered = new ProjectWriter().listTemplates('apps');
 
-    expect(offered).toEqual(['next', 'nuxt', 'oclif', 'react', 'svelte']);
+    expect(offered).toEqual(['admin', 'next', 'nuxt', 'oclif', 'react', 'svelte']);
   });
 
   /** `@fougere/vite` is what React and Svelte are BUILT with, not an app to scaffold. */

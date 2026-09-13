@@ -1603,6 +1603,9 @@ importers:
       '@fougere/adapter-sql':
         specifier: workspace:*
         version: link:../adapter/sql
+      '@fougere/admin':
+        specifier: workspace:*
+        version: link:../app/admin
       '@fougere/compiler':
         specifier: workspace:*
         version: link:../compiler

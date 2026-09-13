@@ -45,6 +45,7 @@
   "dependencies": {
     "@clack/prompts": "^0.10.0",
     "@fougere/adapter-sql": "workspace:*",
+    "@fougere/admin": "workspace:*",
     "@fougere/compiler": "workspace:*",
     "@fougere/container": "workspace:*",
     "@fougere/core": "workspace:*",

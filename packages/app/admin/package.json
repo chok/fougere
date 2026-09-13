@@ -31,7 +31,8 @@
   },
   "files": [
     "dist",
-    "src"
+    "src",
+    "template"
   ],
   "scripts": {
     "build": "rm -rf dist && tsc",
