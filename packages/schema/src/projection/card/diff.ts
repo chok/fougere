@@ -1,8 +1,11 @@
-import type { BoundaryRef } from '../../axis/boundary/Boundary.js';
-import type { LifecycleRules } from '../../axis/lifecycle/Lifecycle.js';
+import type { BoundaryRef } from '../../axis/boundary/BoundaryRef.js';
+import type { LifecycleRules } from '../../axis/lifecycle/LifecycleRules.js';
 import { dequal } from 'dequal';
 import { EXTENSION_SLOTS } from '../../axis/Axis.js';
-import type { FieldDescriptor, FieldExtension, RoleDescriptor, SchemaDescriptor } from './Descriptor.js';
+import type { FieldDescriptor } from './FieldDescriptor.js';
+import type { FieldExtension } from './FieldExtension.js';
+import type { RoleDescriptor } from './RoleDescriptor.js';
+import type { SchemaDescriptor } from './SchemaDescriptor.js';
 
 /** One named difference, at one place. Each kind exists because a reader asks for it. */
 export type Change =

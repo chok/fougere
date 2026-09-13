@@ -1,4 +1,5 @@
-import { Relation, type EntityConstructor } from '../../axis/role/Relation.js';
+import { type EntityConstructor } from '../../axis/role/EntityConstructor.js';
+import { Relation } from '../../axis/role/Relation.js';
 import { Field } from '../../field/Field.js';
 
 /**

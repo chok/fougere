@@ -1,11 +1,6 @@
-import type { EntityConstructor, Relation } from './Relation.js';
-
-export interface RoleRules {
-  primary?: boolean;
-  index?: boolean;
-  unique?: boolean;
-  relation?: Relation;
-}
+import type { EntityConstructor } from './EntityConstructor.js';
+import type { Relation } from './Relation.js';
+import type { RoleRules } from './RoleRules.js';
 
 export class Role {
   private readonly primary?: boolean;

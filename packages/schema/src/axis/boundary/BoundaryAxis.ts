@@ -1,7 +1,7 @@
 import type { Axis } from '../Axis.js';
 import { admitWire } from '../../projection/card/admission.js';
 import { isObject, shown } from '../../lib/utils.js';
-import type { BoundaryRef } from './Boundary.js';
+import type { BoundaryRef } from './BoundaryRef.js';
 
 export const boundaryAxis: Axis<BoundaryRef, BoundaryRef> = {
   slot: 'boundary',

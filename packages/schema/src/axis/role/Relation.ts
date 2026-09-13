@@ -1,6 +1,7 @@
-export type EntityConstructor = abstract new (...args: any[]) => any;
+import type { EntityConstructor } from './EntityConstructor.js';
 
 export const RELATION_KINDS = ['one', 'many'] as const;
+
 export const ON_DELETE = ['cascade', 'restrict', 'set null'] as const;
 
 export interface Relation {

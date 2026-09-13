@@ -1,22 +1,15 @@
 import type { JSONSchema7, JSONSchema7TypeName } from 'json-schema';
-import type { StringFormat } from './Formats.js';
-
-/**
- * The standard's own list, less `null` — a shape states that as the `[T,'null']` union —
- * and with `string` in the three forms every projection here tells apart: a `date()`, a
- * bounded set, and everything else. Those three are the whole of what this package adds.
- */
-export type ShapeType =
-  | Exclude<JSONSchema7TypeName, 'null' | 'string'>
-  | 'text'
-  | 'date'
-  | 'choice';
+import type { StringFormat } from './StringFormat.js';
+import type { ShapeType } from './ShapeType.js';
 
 type Nullably<T extends string> = T | readonly [T, 'null'];
 
 interface StringConstraints { minLength?: number; maxLength?: number; pattern?: string; enum?: readonly (string | null)[]; format?: StringFormat }
+
 interface NumericConstraints { minimum?: number; maximum?: number }
+
 interface ArrayConstraints { items?: Shape; minItems?: number; maxItems?: number }
+
 interface ObjectConstraints { properties?: Record<string, unknown>; required?: readonly string[]; additionalProperties?: boolean | Shape; propertyNames?: Shape }
 
 export type Shape =
@@ -39,6 +32,20 @@ interface ShapeParts {
   base?: BaseShape;
   nullable: boolean;
 }
+
+type Assert<T extends true> = T;
+
+type ShapeKeys<T> = T extends unknown ? keyof T : never;
+
+type _ShapeConformsToJsonSchema = Assert<
+  [Exclude<ShapeKeys<Shape>, keyof JSONSchema7>] extends [never] ? true : false
+>;
+
+type _ShapeTypesAreTheStandardsLessNull = Assert<
+  [Exclude<Exclude<JSONSchema7TypeName, 'null'>, (typeof SHAPE_TYPES)[number]>] extends [never]
+    ? true
+    : false
+>;
 
 export class Shapes {
   static is(value: unknown): value is Shape {
@@ -129,14 +136,3 @@ export class Shapes {
     return base.enum?.length ? 'choice' : 'text';
   }
 }
-
-type Assert<T extends true> = T;
-type ShapeKeys<T> = T extends unknown ? keyof T : never;
-type _ShapeConformsToJsonSchema = Assert<
-  [Exclude<ShapeKeys<Shape>, keyof JSONSchema7>] extends [never] ? true : false
->;
-type _ShapeTypesAreTheStandardsLessNull = Assert<
-  [Exclude<Exclude<JSONSchema7TypeName, 'null'>, (typeof SHAPE_TYPES)[number]>] extends [never]
-    ? true
-    : false
->;

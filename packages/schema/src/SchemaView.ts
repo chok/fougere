@@ -1,15 +1,11 @@
-import type { Field, Fields } from './field/Field.js';
-import type { CompositeUnique, PreviousNames } from './entity/EntityDeclarations.js';
+import type { Fields } from './field/Fields.js';
+import type { CompositeUnique } from './entity/CompositeUnique.js';
+import type { PreviousNames } from './entity/PreviousNames.js';
 import type { EntityAdapters } from './entity/EntityAdapters.js';
-import type { ValidationResult } from './lib/validation.js';
-import type { ValidateOptions } from './validator/InputValidator.js';
+import type { ValidationResult } from './lib/ValidationResult.js';
+import type { ValidateOptions } from './validator/ValidateOptions.js';
 import type { SchemaDerivation } from './SchemaDerivation.js';
-
-export type Values<TFields extends Fields> = {
-  [K in keyof TFields]: TFields[K] extends Field<infer T> ? T : never;
-};
-
-export type PartialValues<TFields extends Fields> = Partial<Values<TFields>>;
+import type { Values } from './Values.js';
 
 export interface SchemaView<TFields extends Fields = Fields> {
   readonly name: string;

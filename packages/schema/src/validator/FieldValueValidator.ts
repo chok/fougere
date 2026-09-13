@@ -1,9 +1,11 @@
 import { Validator, format as engineFormats } from '@cfworker/json-schema';
 import { Boundary } from '../axis/boundary/Boundary.js';
-import { Formats, type FormatPredicate } from '../axis/shape/Formats.js';
-import { Shapes, type Shape } from '../axis/shape/Shape.js';
+import { type FormatPredicate } from '../axis/shape/FormatPredicate.js';
+import { Formats } from '../axis/shape/Formats.js';
+import { type Shape } from '../axis/shape/Shape.js';
+import { Shapes } from '../axis/shape/Shape.js';
 import type { Field } from '../field/Field.js';
-import type { Checked } from '../lib/validation.js';
+import type { Checked } from '../lib/Checked.js';
 import type { OutputUnit } from '@cfworker/json-schema';
 
 interface ShapePlan {

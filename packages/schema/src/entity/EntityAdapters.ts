@@ -1,7 +1,6 @@
-import type { FieldName, Fields } from '../field/Field.js';
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-object-type
-export interface FougereEntityAdapters<K extends string> {}
+import type { FieldName } from '../field/FieldName.js';
+import type { Fields } from '../field/Fields.js';
+import type { FougereEntityAdapters } from './FougereEntityAdapters.js';
 
 export type EntityAdapters<TFields extends Fields> = Readonly<
   Partial<FougereEntityAdapters<FieldName<TFields>>>

@@ -1,42 +1,21 @@
 import { Boundary } from './axis/boundary/Boundary.js';
-import { type Fields } from './field/Field.js';
-import {
-  type CompositeUnique,
-  type EntityDeclarations,
-  type PreviousNames,
-} from './entity/EntityDeclarations.js';
+import { type Fields } from './field/Fields.js';
+import { type CompositeUnique } from './entity/CompositeUnique.js';
+import { type EntityDeclarations } from './entity/EntityDeclarations.js';
+import { type PreviousNames } from './entity/PreviousNames.js';
 import { type EntityAdapters } from './entity/EntityAdapters.js';
 import { InputValidator } from './validator/InputValidator.js';
 import { SchemaDerivation } from './SchemaDerivation.js';
-import { SchemaDefinition, type SchemaConstraints } from './SchemaDefinition.js';
-import { type ValidateOptions } from './validator/InputValidator.js';
+import { type SchemaConstraints } from './SchemaConstraints.js';
+import { SchemaDefinition } from './SchemaDefinition.js';
+import { type ValidateOptions } from './validator/ValidateOptions.js';
 import type { StandardSchemaV1 } from './projection/standard.js';
-import type { PartialValues, Values, SchemaView } from './SchemaView.js';
+
+import type { SchemaView } from './SchemaView.js';
+
+import type { SchemaConstructor } from './SchemaConstructor.js';
 
 export const ANONYMOUS_SCHEMA_NAME = 'Schema';
-
-export interface SchemaConstructor<TFields extends Fields> extends SchemaView<TFields> {
-  new (data: PartialValues<TFields>): Values<TFields>;
-  readonly '~standard': StandardSchemaV1.Props<Record<string, unknown>, Values<TFields>>;
-  readonly derivation?: SchemaDerivation;
-  readonly previous?: PreviousNames<TFields>;
-  readonly anchored?: boolean;
-  from(data: Record<string, unknown>): Values<TFields>;
-  pick<K extends string & keyof TFields>(
-    ...keys: K[]
-  ): SchemaConstructor<Pick<TFields, K>>;
-  omit<K extends string & keyof TFields>(
-    ...keys: K[]
-  ): SchemaConstructor<Omit<TFields, K>>;
-  partial(): SchemaConstructor<TFields>;
-  extend<E extends Fields>(extra: E): SchemaConstructor<TFields & E>;
-  declares(declarations: EntityDeclarations<TFields>): SchemaConstructor<TFields>;
-  anchor(): SchemaConstructor<TFields>;
-  named(name: string): SchemaConstructor<TFields>;
-  rename(
-    mapping: Partial<Record<string & keyof TFields, string>>,
-  ): SchemaConstructor<Fields>;
-}
 
 export class Schema {
   /** The one place a schema holds what it is. The readings below are its projections. */
@@ -196,6 +175,7 @@ type UnionToIntersection<U> = (U extends unknown ? (k: U) => void : never) exten
 ) => void
   ? I
   : never;
+
 type Merged<T extends SchemaView[]> = UnionToIntersection<
   T[number] extends { getFields(): infer F } ? F : Fields
 > &

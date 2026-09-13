@@ -2,7 +2,8 @@ import { EXTENSION_AXES } from '../axis/Axis.js';
 import { Shapes } from '../axis/shape/Shape.js';
 import type { Field } from '../field/Field.js';
 import { isObject, shown } from '../lib/utils.js';
-import type { ValidationError, ValidationResult } from '../lib/validation.js';
+import type { ValidationError } from '../lib/ValidationError.js';
+import type { ValidationResult } from '../lib/ValidationResult.js';
 
 export class FieldDeclarationValidator {
   private constructor(private readonly declaration: unknown) {}

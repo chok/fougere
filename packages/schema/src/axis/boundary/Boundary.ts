@@ -1,16 +1,13 @@
-import type { Decoder, Encoder } from './Boundaries.js';
-import { Boundaries } from './Boundaries.js';
+import type { Decoder } from './Decoder.js';
+import type { Encoder } from './Encoder.js';
+import { Boundaries } from './Decoder.js';
 import type { Field } from '../../field/Field.js';
-import { Shapes, type Shape } from '../shape/Shape.js';
-
-export interface BoundaryRules {
-  in?: 'closed' | { decode: string };
-  out?: 'closed' | { encode: string };
-}
-
-export type BoundaryRef = 'isoDate' | (string & {}) | BoundaryRules;
+import { type Shape } from '../shape/Shape.js';
+import { Shapes } from '../shape/Shape.js';
+import type { BoundaryRules } from './BoundaryRules.js';
 
 const identityDecoder: Decoder = (value) => ({ value });
+
 const identityEncoder: Encoder = (value) => value;
 
 export class Boundary {

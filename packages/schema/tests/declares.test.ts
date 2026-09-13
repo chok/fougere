@@ -9,7 +9,7 @@
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text } from '../src/index.js';
 
-declare module '../src/entity/EntityAdapters.js' {
+declare module '../src/entity/FougereEntityAdapters.js' {
   interface FougereEntityAdapters<K extends string> {
     warehouse?: Partial<Record<K, { columnType?: string }>>;
   }

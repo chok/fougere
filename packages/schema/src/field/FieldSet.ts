@@ -1,6 +1,8 @@
 import { Role } from '../axis/role/Role.js';
-import type { CompositeUnique } from '../entity/EntityDeclarations.js';
-import { Field, type FieldName, type Fields } from './Field.js';
+import type { CompositeUnique } from '../entity/CompositeUnique.js';
+import { Field } from './Field.js';
+import { type FieldName } from './FieldName.js';
+import { type Fields } from './Fields.js';
 
 export class FieldSet<TFields extends Fields = Fields> {
   private constructor(private readonly fields: TFields) {}

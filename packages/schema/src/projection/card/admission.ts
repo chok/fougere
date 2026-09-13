@@ -1,6 +1,6 @@
-import type { ValidationError } from '../../lib/validation.js';
+import type { ValidationError } from '../../lib/ValidationError.js';
 import { Shapes } from '../../axis/shape/Shape.js';
-import { dotted } from '../../lib/validation.js';
+import { dotted } from '../../lib/ValidationResult.js';
 
 /**
  * Throws with what is wrong AND what to write: a card's author is in another process.

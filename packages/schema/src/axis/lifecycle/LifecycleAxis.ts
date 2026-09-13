@@ -1,8 +1,9 @@
 import type { Axis } from '../Axis.js';
-import type { ValidationError } from '../../lib/validation.js';
+import type { ValidationError } from '../../lib/ValidationError.js';
 import { admitWire, oneOfTokens } from '../../projection/card/admission.js';
 import { isObject, shown } from '../../lib/utils.js';
-import { CREATE_TOKENS, UPDATE_TOKENS, type LifecycleRules } from './Lifecycle.js';
+import { CREATE_TOKENS, UPDATE_TOKENS } from './LifecycleRules.js';
+import { type LifecycleRules } from './LifecycleRules.js';
 
 export const lifecycleAxis: Axis<LifecycleRules, LifecycleRules> = {
   slot: 'lifecycle',

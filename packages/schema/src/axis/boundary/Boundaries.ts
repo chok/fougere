@@ -1,13 +1,7 @@
-import type { BoundaryRules } from './Boundary.js';
+import type { Decoder } from './Decoder.js';
+import type { Encoder } from './Encoder.js';
+import type { BoundaryRules } from './BoundaryRules.js';
 import { Registry } from '../../lib/Registry.js';
-
-/**
- * Wire to domain, and it must ANSWER a value it already produced: two facades decode — the
- * client one on what arrives, `StorageGuard` on what a handler writes — so a decoder that
- * halves cents halves them twice and stores a hundredth.
- */
-export type Decoder = (value: unknown) => { value: unknown } | { error: string };
-export type Encoder = (value: unknown) => unknown;
 
 /**
  * `decoders` for a value coming in, `encoders` for one going out, `aliases` for the word

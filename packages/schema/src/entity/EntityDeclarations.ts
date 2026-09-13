@@ -1,13 +1,7 @@
-import type { FieldName, Fields } from '../field/Field.js';
+import type { Fields } from '../field/Fields.js';
 import type { EntityAdapters } from './EntityAdapters.js';
-
-// Ex: [['title', 'name'], ['id']]
-export type CompositeUnique<TFields extends Fields> =
-  readonly (readonly FieldName<TFields>[])[];
-
-export type PreviousNames<TFields extends Fields> = Readonly<
-  Partial<Record<FieldName<TFields>, string>>
->;
+import type { CompositeUnique } from './CompositeUnique.js';
+import type { PreviousNames } from './PreviousNames.js';
 
 export interface EntityDeclarations<TFields extends Fields> {
   adapters?: EntityAdapters<TFields>;

@@ -1,10 +1,12 @@
-import type { Axis, Resolver } from '../Axis.js';
+import type { Axis } from '../Axis.js';
+import type { Resolver } from '../Resolver.js';
 import { refuse, oneOfTokens } from '../../projection/card/admission.js';
 import { isObject, lowerFirst, shown } from '../../lib/utils.js';
-import type { ValidationError } from '../../lib/validation.js';
-import { ON_DELETE, RELATION_KINDS, type EntityConstructor, type Relation } from './Relation.js';
-import { type RoleRules } from './Role.js';
-import type { RoleDescriptor } from '../../projection/card/Descriptor.js';
+import type { ValidationError } from '../../lib/ValidationError.js';
+import { type EntityConstructor } from './EntityConstructor.js';
+import { ON_DELETE, RELATION_KINDS, type Relation } from './Relation.js';
+import { type RoleRules } from './RoleRules.js';
+import type { RoleDescriptor } from '../../projection/card/RoleDescriptor.js';
 
 export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
   slot: 'role',

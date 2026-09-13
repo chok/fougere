@@ -1,7 +1,8 @@
 import { Lifecycle } from './Lifecycle.js';
 import { Generators } from './Generators.js';
 import { Clock } from './Clock.js';
-import { type Field, type Fields } from '../../field/Field.js';
+import { type Field } from '../../field/Field.js';
+import { type Fields } from '../../field/Fields.js';
 
 /**
  * Fills what the declaration leaves to the storage, so no handler stamps a date itself.

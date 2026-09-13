@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { entity, Schema, text } from '../src/index.js';
 
-declare module '../src/entity/EntityAdapters.js' {
+declare module '../src/entity/FougereEntityAdapters.js' {
   interface FougereEntityAdapters<K extends string> {
     characterization?: Partial<Record<K, { marker?: string }>>;
   }

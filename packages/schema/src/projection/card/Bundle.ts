@@ -1,9 +1,10 @@
-import type { Resolver } from '../../axis/Axis.js';
-import type { EntityConstructor } from '../../axis/role/Relation.js';
+import type { Resolver } from '../../axis/Resolver.js';
+import type { EntityConstructor } from '../../axis/role/EntityConstructor.js';
 import { lowerFirst } from '../../lib/utils.js';
 import type { SchemaView } from '../../SchemaView.js';
 import { Card } from './Card.js';
-import type { SchemaBundle, SchemaDescriptor } from './Descriptor.js';
+import type { SchemaBundle } from './SchemaBundle.js';
+import type { SchemaDescriptor } from './SchemaDescriptor.js';
 import type { Diff, SetDiff, SetDiffOptions } from './diff.js';
 
 type SchemaSet = Record<string, SchemaView> | SchemaView[];

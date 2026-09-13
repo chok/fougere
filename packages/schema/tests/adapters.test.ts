@@ -4,7 +4,7 @@ import { entity, primary, text } from '../src/index.js';
 // Stand in for an adapter package: augment the open registry exactly as an SQL
 // adapter would, from outside the core, via declaration merging. The 'sql'
 // namespace below is arbitrary — any adapter-chosen key works the same way.
-declare module '../src/entity/EntityAdapters.js' {
+declare module '../src/entity/FougereEntityAdapters.js' {
   interface FougereEntityAdapters<K extends string> {
     sql?: Partial<Record<K, { columnType?: string; index?: string }>>;
     graphql?: Partial<Record<K, { description?: string }>>;

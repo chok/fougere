@@ -17,9 +17,11 @@ import {
   type SchemaView,
   text,
 } from '../src/index.js';
-import { type RoleRules } from '../src/axis/role/Role.js';
-import { type RelationDescriptor, type RoleDescriptor } from '../src/projection/card/Descriptor.js';
-import { type EntityConstructor, type Relation } from '../src/axis/role/Relation.js';
+import { type RoleRules } from '../src/axis/role/RoleRules.js';
+import { type RelationDescriptor } from '../src/projection/card/RelationDescriptor.js';
+import { type RoleDescriptor } from '../src/projection/card/RoleDescriptor.js';
+import { type EntityConstructor } from '../src/axis/role/EntityConstructor.js';
+import { type Relation } from '../src/axis/role/Relation.js';
 
 class Author extends entity({ id: primary() }) {}
 class Tag extends entity({ id: primary() }) {}

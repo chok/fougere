@@ -1,14 +1,13 @@
 import { Boundary } from '../axis/boundary/Boundary.js';
 import { Lifecycle } from '../axis/lifecycle/Lifecycle.js';
 import { Role } from '../axis/role/Role.js';
-import type { Field, Fields } from '../field/Field.js';
-import type { ValidationError, ValidationResult } from '../lib/validation.js';
+import type { Field } from '../field/Field.js';
+import type { Fields } from '../field/Fields.js';
+import type { ValidationError } from '../lib/ValidationError.js';
+import type { ValidationResult } from '../lib/ValidationResult.js';
 import { FieldValueValidator } from './FieldValueValidator.js';
 import { InputRefusal } from './InputRefusal.js';
-
-export interface ValidateOptions {
-  patch?: boolean;
-}
+import type { ValidateOptions } from './ValidateOptions.js';
 
 export class InputValidator {
   private constructor(

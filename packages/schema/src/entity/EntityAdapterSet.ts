@@ -1,4 +1,4 @@
-import type { Fields } from '../field/Field.js';
+import type { Fields } from '../field/Fields.js';
 import { isObject } from '../lib/utils.js';
 import type { EntityAdapters } from './EntityAdapters.js';
 

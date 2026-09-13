@@ -1,0 +1,42 @@
+import type { BoundaryRules } from './BoundaryRules.js';
+import { Registry } from '../../lib/Registry.js';
+import type { Encoder } from './Encoder.js';
+
+/**
+ * Wire to domain, and it must ANSWER a value it already produced: two facades decode — the
+ * client one on what arrives, `StorageGuard` on what a handler writes — so a decoder that
+ * halves cents halves them twice and stores a hundredth.
+ */
+export type Decoder = (value: unknown) => { value: unknown } | { error: string };
+
+/**
+ * `decoders` for a value coming in, `encoders` for one going out, `aliases` for the word
+ * that names a pair. Three registries, so a codec is never half declared.
+ * FR : `decoders` à l'entrée, `encoders` à la sortie, `aliases` pour le mot qui nomme la paire.
+ * `Boundaries.aliases.register('isoDate', { in: { decode: 'isoDate' }, out: { encode: 'isoDate' } })`
+ * → a field saying `boundary: 'isoDate'` decodes to a `Date` and leaves as a string
+ */
+export const Boundaries = {
+  decoders: new Registry<Decoder>(
+    'boundary decoder',
+    'call Boundaries.decoders.register(name, fn)',
+  ),
+  encoders: new Registry<Encoder>(
+    'boundary encoder',
+    'call Boundaries.encoders.register(name, fn)',
+  ),
+  aliases: new Registry<BoundaryRules>('boundary alias'),
+};
+
+Boundaries.decoders.register('isoDate', (value) => {
+  if (value instanceof Date) return { value };
+  if (typeof value === 'string') {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? { error: 'Invalid date' } : { value: date };
+  }
+  return { error: 'Expected a date' };
+});
+Boundaries.encoders.register('isoDate', (value) =>
+  value instanceof Date ? value.toISOString() : value,
+);
+Boundaries.aliases.register('isoDate', { in: { decode: 'isoDate' }, out: { encode: 'isoDate' } });

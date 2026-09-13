@@ -1,6 +1,7 @@
-import { type Fields } from './field/Field.js';
+import { type Fields } from './field/Fields.js';
 import { type EntityDeclarations } from './entity/EntityDeclarations.js';
-import { Schema, type SchemaConstructor } from './Schema.js';
+import { Schema } from './Schema.js';
+import { type SchemaConstructor } from './SchemaConstructor.js';
 
 /**
  * The one call everything derives from: the fields, and what the entity states about them.

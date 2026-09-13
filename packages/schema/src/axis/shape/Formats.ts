@@ -1,15 +1,5 @@
 import { Registry } from '../../lib/Registry.js';
-
-export type StringFormat =
-  | 'date-time'
-  | 'date'
-  | 'time'
-  | 'email'
-  | 'uuid'
-  | 'uri'
-  | (string & {});
-
-export type FormatPredicate = (value: string) => boolean;
+import type { FormatPredicate } from './FormatPredicate.js';
 
 /**
  * String formats the JSON Schema engine does not know. `find` answers `undefined` for

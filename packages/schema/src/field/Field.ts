@@ -1,16 +1,12 @@
 import type { Shape } from '../axis/shape/Shape.js';
-import type { RoleRules } from '../axis/role/Role.js';
-import type { LifecycleRules } from '../axis/lifecycle/Lifecycle.js';
-import type { BoundaryRef } from '../axis/boundary/Boundary.js';
+import type { RoleRules } from '../axis/role/RoleRules.js';
+import type { LifecycleRules } from '../axis/lifecycle/LifecycleRules.js';
+import type { BoundaryRef } from '../axis/boundary/BoundaryRef.js';
 import type { Meta } from './Meta.js';
 import type { Axis } from '../axis/Axis.js';
 import { FieldDeclarationValidator } from '../validator/FieldDeclarationValidator.js';
 import { FieldValueValidator } from '../validator/FieldValueValidator.js';
-import { dotted } from '../lib/validation.js';
-
-export type Fields = Record<string, Field>;
-
-export type FieldName<TFields extends Fields> = Extract<keyof TFields, string>;
+import { dotted } from '../lib/ValidationResult.js';
 
 type FieldDeclaration = Pick<Field, 'shape' | Axis['slot'] | 'meta'>;
 

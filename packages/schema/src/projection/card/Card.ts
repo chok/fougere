@@ -1,17 +1,19 @@
-import { EXTENSION_AXES, type Resolver } from '../../axis/Axis.js';
+import { EXTENSION_AXES } from '../../axis/Axis.js';
+import { type Resolver } from '../../axis/Resolver.js';
 import { clean, isObject } from '../../lib/utils.js';
-import { Field, type Fields } from '../../field/Field.js';
-import { SchemaConstraints } from '../../SchemaDefinition.js';
+import { Field } from '../../field/Field.js';
+import { type Fields } from '../../field/Fields.js';
+import { SchemaConstraints } from '../../SchemaConstraints.js';
 import { InputValidator } from '../../validator/InputValidator.js';
-import { Schema, type SchemaConstructor } from '../../Schema.js';
-import type { Values, SchemaView } from '../../SchemaView.js';
+import { Schema } from '../../Schema.js';
+import { type SchemaConstructor } from '../../SchemaConstructor.js';
+import type { SchemaView } from '../../SchemaView.js';
+import type { Values } from '../../Values.js';
 import { admitPatterns, refuse } from './admission.js';
-import type {
-  DerivedFrom,
-  FieldDescriptor,
-  FieldExtension,
-  SchemaDescriptor,
-} from './Descriptor.js';
+import type { DerivedFrom } from './DerivedFrom.js';
+import type { FieldDescriptor } from './FieldDescriptor.js';
+import type { FieldExtension } from './FieldExtension.js';
+import type { SchemaDescriptor } from './SchemaDescriptor.js';
 import { compare, type Diff, type DiffOptions } from './diff.js';
 
 type FieldsOf<T> = { [K in keyof T]-?: Field<T[K]> };
