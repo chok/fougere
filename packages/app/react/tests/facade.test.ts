@@ -56,7 +56,7 @@ export function pinned(): void {
   // The refusals come from the generated keys, not from the class: TypeScript records
   // nothing about what a function throws, so only the scan's walk can say.
   const refused: ErrorCode.CONFLICT | ErrorCode.FORBIDDEN | undefined = publish.error?.code;
-  void refused;
+  void [refused, publish.error && reasonFor(publish.error.code)];
 
   // @ts-expect-error — `publsh` is not an operation of PostHandler.
   useQuery(posts, 'publsh');
@@ -66,6 +66,27 @@ export function pinned(): void {
 
   // @ts-expect-error — an entity class is not a facade: a page names the handler that answers.
   useQuery(class Post {}, 'list');
+}
+
+/**
+ * What a page does with a narrowed refusal: one case each, and a `never` default.
+ *
+ * This is the claim the whole chain exists for. The day `publish` learns to throw a fifth
+ * code, the generated module widens the union, `assertNever` receives a string where it
+ * expects `never`, and the build stops on the page that has no case for it. A page wanting
+ * the old behaviour writes `default: show(error.message)` and nothing ever breaks — the
+ * exhaustiveness is the page's choice, not the framework's rule.
+ */
+function reasonFor(code: ErrorCode.CONFLICT | ErrorCode.FORBIDDEN): string {
+  switch (code) {
+    case ErrorCode.CONFLICT: return 'Already published.';
+    case ErrorCode.FORBIDDEN: return 'Only the author can publish it.';
+    default: return assertNever(code);
+  }
+}
+
+function assertNever(code: never): never {
+  throw new Error(`Unhandled refusal: ${String(code)}`);
 }
 
 describe('the facade a page names', () => {

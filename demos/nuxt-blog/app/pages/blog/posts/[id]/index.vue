@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ErrorCode } from '@fougere/core/contract';
 import Post from '@fronds/blog/entities/Post';
 import { post as postFacade } from '@fronds/facade';
 
@@ -15,8 +16,36 @@ async function destroy() {
   navigateTo('/blog/posts');
 }
 
+/**
+ * What `publish` can refuse — read off the handler, not written here.
+ *
+ * `@fronds/facade` carries `ErrorCode.UNAUTHORIZED | NOT_FOUND | FORBIDDEN | CONFLICT |
+ * SERVICE_UNAVAILABLE | BAD_REQUEST`, walked from the four `throw` sites in `PostHandler`
+ * plus what the framework adds from `kind`. Add a fifth refusal there and this `switch`
+ * stops compiling: `assertNever` receives a code it was never given a case for.
+ */
+type Refused = NonNullable<typeof publish.error.value>['code'];
+
+function reasonFor(code: Refused): string {
+  switch (code) {
+    case ErrorCode.UNAUTHORIZED: return 'Sign in to publish this post.';
+    case ErrorCode.FORBIDDEN: return 'Only the author can publish it.';
+    case ErrorCode.NOT_FOUND: return 'This post no longer exists.';
+    case ErrorCode.CONFLICT: return 'It is already published.';
+    case ErrorCode.BAD_REQUEST: return 'The server refused what was sent.';
+    case ErrorCode.SERVICE_UNAVAILABLE: return 'The blog is restarting — try again in a moment.';
+    default: return assertNever(code);
+  }
+}
+
+/** Only reachable with a code the switch has no case for, which is why it does not compile. */
+function assertNever(code: never): never {
+  throw new Error(`Unhandled refusal: ${String(code)}`);
+}
+
 async function doPublish() {
-  await publish.execute({ params: { id } });
+  // `execute` rejects AND stores; the page reads the ref, so nothing is swallowed.
+  await publish.execute({ params: { id } }).catch(() => undefined);
 }
 </script>
 
@@ -53,6 +82,15 @@ async function doPublish() {
           <UButton variant="soft" color="error" icon="i-lucide-trash-2" label="Delete" @click="destroy" />
         </div>
       </div>
+
+      <UAlert
+        v-if="publish.error.value"
+        color="error"
+        variant="subtle"
+        icon="i-lucide-circle-alert"
+        :title="reasonFor(publish.error.value.code)"
+        :description="`${publish.error.value.code} — read off PostHandler.publish, not written in this page`"
+      />
 
       <div class="flex gap-3 text-sm text-muted">
         <span v-if="post.createdAt" class="flex items-center gap-1">
