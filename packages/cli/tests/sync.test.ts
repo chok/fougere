@@ -193,6 +193,52 @@ describe('remote frond sync', () => {
   });
 
   /**
+   * What a consumer gets of a frond it has no sources for.
+   *
+   * The card names the addresses, the operations, and what each one refuses — the same three
+   * facts a scan gives, minus the handler's class. The synthetic interface `sync` already wrote
+   * stands in for it, so a page in this repository imports `post` and narrows `error.code`
+   * exactly as one in the repository that owns the blog does.
+   */
+  it('writes the facade module from the card, refusals and all', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'fougere-sync-'));
+    process.chdir(root);
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      result: {
+        fronds: [{
+          name: 'blog',
+          facades: [{
+            name: 'post',
+            ops: [
+              { name: 'list', kind: 'query' },
+              { name: 'publish', kind: 'command', errors: ['CONFLICT', 'FORBIDDEN', 'MADE_UP_CODE'] },
+            ],
+            schema: { title: 'Post', type: 'object', properties: {}, 'x-fougere-version': 1, 'x-fougere-vendor': 'fougere' },
+          }],
+        }],
+      },
+    }), { status: 200 })));
+
+    try {
+      await new SyncHandler().execute({ frond: 'blog', from: 'https://example.test' });
+      const written = readFileSync(join(root, '.fougere', 'remotes', 'blog', 'facade.ts'), 'utf8');
+
+      expect(written).toContain("'post.publish': { errors: ErrorCode.CONFLICT | ErrorCode.FORBIDDEN };");
+      // The synthetic interface is a NAMED export, not a default: the module must reach it
+      // the way the file actually exports it, or `keyof Handler` is empty and no op compiles.
+      const handler = readFileSync(join(root, '.fougere', 'remotes', 'blog', 'handlers', 'PostHandler.ts'), 'utf8');
+      expect(handler).toContain('export interface PostHandler {');
+      expect(written).toContain("'post': import('./handlers/PostHandler.js').PostHandler;");
+
+      // A card from a NEWER host names codes this version has no member for. Writing one
+      // would stop the consumer's build on a name that resolves to nothing.
+      expect(written).not.toContain('MADE_UP_CODE');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  /**
    * What the host stops serving stops being importable.
    *
    * The barrel is rewritten each run, so a dropped entity loses its export by itself — but

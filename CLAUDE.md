@@ -326,10 +326,16 @@ travel in a `Map`, and a `Map` literal widens its key to `string`, so the associ
 op and its refusals is exactly what TypeScript drops there. An interface keeps it. The file holds
 no value, reaches no bundle, and is rewritten whenever the app starts — `fougere build` writes it
 beside the module, the Nuxt module adds a third template, and the Vite plugin writes it from
-`configureServer`, which covers React, Svelte and Vite at once. `sync` stays what it is — another
-repository, another language — and writes the same interface from the card rather than the scan.
-A host that never generates falls back to the whole `ErrorCode`, which is what a client had
-before this existed.
+`configureServer`, which covers React, Svelte and Vite at once. `fougere sync` writes the same
+module from the CARD: a frond in another repository has no sources here, and the card carries the
+three facts the module needs — the addresses, the operations, and what each one refuses. The
+handler's CLASS is the one thing it cannot carry, so the synthetic interface `sync` already wrote
+stands in its place, exported by NAME rather than by default — which is why `Served.handler` is
+the whole type EXPRESSION and not a path, and why `facadeModule` is shared rather than copied:
+two spellings of one format drift the day either gains a member. A code the card names and this
+version has no member for is DROPPED, because the far side may be newer and a name resolving to
+nothing would stop the consumer's build. A host that never generates falls back to the whole
+`ErrorCode`, which is what a client had before this existed. Pinned by `cli/tests/sync.test.ts`.
 
 **An op's REACH is the dual of its placement** — `EffectiveOperation.reach`, filled where
 `placement` already is. `placement` says where an op ANSWERS, `reach` where its work GOES: the

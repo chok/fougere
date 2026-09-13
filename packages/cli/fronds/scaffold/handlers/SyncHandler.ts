@@ -9,6 +9,23 @@ import { FacadeTypes } from '../../../src/typescript/FacadeTypes.js';
 import { assertIdentityCard, type IdentityCard } from '@fougere/core';
 import { type Conventions, resolveConventions, frondPackage } from '@fougere/core';
 import { loadConfig } from '@fougere/core/node';
+import { facadeModule, type Served } from '@fougere/compiler';
+import { ErrorCode } from '@fougere/core/contract';
+
+/**
+ * A union of enum MEMBERS, from what the card said this operation refuses.
+ *
+ * `ErrorCode` is a string enum, so `'CONFLICT'` is not assignable to it: a literal reads as the
+ * right thing and then refuses to narrow `FougereError<Code>`, which is the whole point. A code
+ * this version does not know is dropped rather than written — the far side may be newer, and a
+ * name that resolves to nothing would stop the consumer's build.
+ */
+function codesOf(errors: readonly string[] | undefined): string {
+  const known = (errors ?? []).filter((code) => code in ErrorCode);
+  if (known.length === 0) return 'never';
+
+  return known.map((code) => `ErrorCode.${code}`).join(' | ');
+}
 
 function assertSafeName(kind: string, name: string): void {
   if (typeof name !== 'string' || !/^[A-Za-z_$][A-Za-z0-9_$-]*$/.test(name)) {
@@ -179,9 +196,17 @@ export default class SyncHandler {
       generated.get(className)!.row = true;
     };
 
+    /** What the card says of each address — the same three facts a scan gives. */
+    const served: Served[] = [];
+
     for (const { name, schema: descriptor, ops } of target.facades) {
       const className = claim(name);
       generated.get(className)!.facade = true;
+      served.push({
+        at: name,
+        handler: `import('./${handlers}/${className}Handler.js').${className}Handler`,
+        ops: (ops ?? []).map((op) => ({ name: op.name, codes: codesOf(op.errors) })),
+      });
 
       // No shape behind this facade: its operations still travel, its rows do not exist.
       // `rowType` falls back to `unknown`, which is the truth rather than an empty class.
@@ -228,6 +253,20 @@ export default class SyncHandler {
       }
       writeRow(className, descriptor as SchemaDescriptor);
     }
+
+    /**
+     * The facade module, written from the CARD rather than from a scan.
+     *
+     * A frond in another repository cannot be scanned — there are no sources here. What the
+     * card carries is exactly the three facts the module needs: the addresses, the operations,
+     * and what each one refuses. The handler TYPE is the one thing it cannot carry, so the
+     * synthetic interface written above stands in its place: it names the same operations with
+     * the same answers, which is what a page reads.
+     *
+     * `facadeModule` is the compiler's own, not a copy: two spellings of one format would
+     * drift the day either gained a member.
+     */
+    writeFileSync(join(frondDir, 'facade.ts'), facadeModule(served, `${baseUrl} — a card, not a scan`));
 
     // Barrel index
     // One binding carries the value AND the type, because a class is both — the pair of

@@ -14,6 +14,25 @@ const at = (fixture: string) => join(import.meta.dirname, fixture);
 
 describe('the facades file', () => {
   /**
+   * Every name the file uses, it imports.
+   *
+   * A rename swept `FacadeName` in the body and left `Facade` in the import string, and every
+   * assertion here still passed: they read substrings, and a substring cannot see that the
+   * file names something nothing gave it.
+   */
+  it('imports exactly the names its body uses', async () => {
+    const written = emitFacade(await scanProject(at('fixtures-refusals')), { outFile: at('fixtures-refusals/.fougere/facade.ts') });
+    const imported = new Set(
+      /^import type \{ ([^}]+) \}/m.exec(written)?.[1]?.split(',').map((one) => one.trim()) ?? [],
+    );
+    // Only what a TYPE position names: `OrderHandler.js` is a path, not a name in scope.
+    const used = new Set([...written.matchAll(/(?<![\w'/.])([A-Z][A-Za-z]*)[<.]/g)].map((one) => one[1]!));
+
+    for (const name of imported) expect([...used]).toContain(name);
+    for (const name of used) expect([...imported]).toContain(name);
+  }, 30_000);
+
+  /**
    * It AUGMENTS rather than declares, which is what puts the keys in reach of a page: a
    * composable narrows `useQuery('order', 'ship')` against the interface it already imports,
    * and nothing in the project has to name this file.
@@ -57,7 +76,7 @@ describe('the facades file', () => {
   it('writes enum members, not the literals that look like them', async () => {
     const written = emitFacade(await scanProject(at('fixtures-refusals')), { outFile: at('fixtures-refusals/.fougere/facades.ts') });
 
-    expect(written).toContain("import type { ErrorCode, Facade } from '@fougere/core/contract';");
+    expect(written).toContain("import type { ErrorCode, FacadeName } from '@fougere/core/contract';");
   }, 30_000);
 
   /**
