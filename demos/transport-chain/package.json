@@ -1,0 +1,19 @@
+{
+  "name": "fougere-demo-transport-chain",
+  "version": "0.0.1-alpha.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "FOUGERE_LOG_LEVEL=warn tsx src/main.ts",
+    "typecheck": "tsc -p fronds"
+  },
+  "dependencies": {
+    "@fougere/compiler": "workspace:*",
+    "@fougere/container": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0"
+  }
+}
