@@ -28,8 +28,8 @@
       "import": "./dist/index.js"
     },
     "./sqlite": {
-      "types": "./dist/sqlite.d.ts",
-      "import": "./dist/sqlite.js"
+      "types": "./dist/sqlite/index.d.ts",
+      "import": "./dist/sqlite/index.js"
     }
   },
   "files": [

@@ -2,7 +2,7 @@ import { Kysely, sql, type Dialect as KyselyDialect } from 'kysely';
 import type { Source, SourceView } from '@fougere/core';
 import { createStorageFactory } from '../crud/SqlStorage.js';
 import { logQueries } from '../query/QuerySink.js';
-import { desiredTables, migrate } from '../diff.js';
+import { desiredTables, migrate } from '../diff/Change.js';
 import { drift, driftReport } from '../drift.js';
 import { toTableName } from '../table/TableDef.js';
 import type { DialectName } from '../dialect/DialectName.js';

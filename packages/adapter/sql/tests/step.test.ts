@@ -9,8 +9,9 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import Database from 'better-sqlite3';
 import { Kysely, SqliteDialect, sql } from 'kysely';
 import { Bundle, entity, primary, text, number, optional, type Fields, type SetDiffOptions } from '@fougere/schema';
-import { planStep, collapseChain, stepSQL, applyStep } from '../src/step.js';
-import { desiredTables, actualState, type SchemaState } from '../src/diff.js';
+import { applyStep, collapseChain, planStep, stepSQL } from '../src/step/Plan.js';
+import { desiredTables } from '../src/diff/Change.js';
+import { actualState, type SchemaState } from '../src/diff/SchemaState.js';
 import { createTableSQL } from '../src/ddl/SqlSink.js';
 
 const bundle = (fields: Fields) => Bundle.fromSchemas({ post: class extends entity(fields) {} });

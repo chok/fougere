@@ -6,7 +6,7 @@ import { createStorageFactory } from '../crud/SqlStorage.js';
 import { logQueries } from '../query/QuerySink.js';
 import { drift, driftReport } from '../drift.js';
 import { sqlEnforces, sqlSink, type SqlSource } from '../source/SqlSource.js';
-import { desiredTables, migrate } from '../diff.js';
+import { desiredTables, migrate } from '../diff/Change.js';
 import { toTableName } from '../table/TableDef.js';
 import { Sources, type Source, type SourceConfig, type SourceView } from '@fougere/core';
 import type { SqliteSourceOptions } from './SqliteSourceOptions.js';

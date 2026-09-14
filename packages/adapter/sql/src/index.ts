@@ -20,10 +20,11 @@ export { createKyselySource } from './source/SqlSource.js';
 export type { SqlSource } from './source/SqlSource.js';
 export { drift } from './drift.js';
 export type { Drift } from './drift.js';
-export { actualState, desiredTables, delta, changeSQL, migrate } from './diff.js';
+export { actualState } from './diff/SchemaState.js';
+export { changeSQL, delta, desiredTables, migrate } from './diff/Change.js';
 export type { Change } from './diff/Change.js';
 export type { SchemaState } from './diff/SchemaState.js';
 // The non-additive half — realised only from a step a human wrote down.
-export { planStep, collapseChain, applyStep } from './step.js';
+export { applyStep, collapseChain, planStep } from './step/Plan.js';
 export type { Plan } from './step/Plan.js';
 export type { StepChange } from './step/StepChange.js';
