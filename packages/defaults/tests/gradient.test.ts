@@ -19,8 +19,8 @@ import {
 } from '@fougere/schema';
 import { createSqliteSource } from '@fougere/adapter-sql/sqlite';
 import {
-  createApp, createLocalRunner, Crud, ErrorCode, frond, Invocation,
-  type App, type Storage, type Transport,
+  Collector, createApp, createLocalRunner, Crud, ErrorCode, frond, Invocation, Presenter,
+  togetherKeyOf, type App, type Storage, type Transport,
 } from '@fougere/core';
 import { layerOf, storageFrom } from '../src/storage/ResolvedStorage.js';
 
@@ -56,6 +56,42 @@ class Directory {
   }
 }
 
+/** Computed on the way out, for the WHOLE page at once — never one query per row. */
+class AuthorPresenter extends Presenter(Author) {
+  /** How many rows the presenter was handed, written on each of them. */
+  pageSize(authors: Author[]): number[] {
+    return authors.map(() => authors.length);
+  }
+
+  shout(authors: Author[]): string[] {
+    return authors.map((author) => author.name.toUpperCase());
+  }
+}
+
+/** A per-call value with no schema — what a collector answers for. */
+class Caller {
+  constructor(public readonly who: string) {}
+}
+
+/** Reads `ctx.state`, which is what every door fills and no entity declares. */
+class CallerCollector extends Collector(Caller) {
+  async collect(ctx: { state: Record<string, unknown> }): Promise<Caller> {
+    return new Caller(String(ctx.state.who ?? 'nobody'));
+  }
+}
+
+/** Writes both entities as one block — what `Together<[…]>` is for. */
+class LedgerHandler {
+  constructor(private together: unknown) {}
+
+  /** Never called: what is under test is that the BOOT refuses it once they are apart. */
+  async write(): Promise<{ ok: true }> {
+    void this.together;
+
+    return { ok: true };
+  }
+}
+
 /** Asks for `Directory` by TYPE, so moving it between fronds may not be visible here. */
 class CensusHandler {
   constructor(private directory: Directory) {}
@@ -63,6 +99,11 @@ class CensusHandler {
   /** How many authors this app can see. */
   async count(): Promise<{ authors: number }> {
     return { authors: await this.directory.count() };
+  }
+
+  /** Who is asking — resolved by TYPE from what the door put on the call. */
+  async who(caller: Caller): Promise<{ who: string }> {
+    return { who: caller.who };
   }
 }
 
@@ -75,17 +116,36 @@ interface Placement {
   apart?: boolean;
   /** The service declared in the OTHER frond — same type, another owner. */
   moved?: boolean;
+  /** The collector left behind in a frond that consumes it no longer. */
+  strandCollector?: boolean;
+  /** A frame over two entities, to see it refused once they are two processes. */
+  frame?: boolean;
 }
 
-const fronds = ({ together = false, moved = false }: Placement) => {
+const fronds = ({ together = false, moved = false, strandCollector = false, frame = false }: Placement) => {
+  const census = {
+    ctor: CensusHandler,
+    deps: ['Directory'],
+    operations: {
+      count: { binding: [] },
+      who: { binding: [{ name: 'caller', optional: false, source: { kind: 'collector' as const, typeName: 'caller' } }] },
+    },
+  };
   // Through the repository, never the port: the boot refuses `AuthorStorage` here, and it
   // is right — a repository answers every gesture and survives the entity joining an aggregate.
   const service = { ctor: Directory, deps: ['AuthorRepository'] };
+  // A frame over two entities, named the way a handler would: the boot refuses it the day one
+  // of them answers in another process.
+  const framed = frame
+    ? [{ ctor: LedgerHandler, deps: [togetherKeyOf(['author', 'article'])], operations: { write: { binding: [] } } }]
+    : [];
 
   if (together) {
     return [frond('app', {
       entities: [Author, Article],
-      handlers: [AuthorHandler, ArticleHandler, { ctor: CensusHandler, deps: ['Directory'], operations: { count: { binding: [] } } }],
+      handlers: [AuthorHandler, ArticleHandler, census, ...framed],
+      presenters: [AuthorPresenter],
+      collectors: [CallerCollector],
       providers: [service],
     })];
   }
@@ -93,12 +153,18 @@ const fronds = ({ together = false, moved = false }: Placement) => {
   return [
     frond('people', {
       entities: [Author],
-      handlers: [AuthorHandler, ...(moved ? [] : [{ ctor: CensusHandler, deps: ['Directory'], operations: { count: { binding: [] } } }])],
+      handlers: [AuthorHandler, ...(moved ? [] : [census]), ...framed],
+      presenters: [AuthorPresenter],
+      // A collector lives in the frond that CONSUMES it — one in the wrong frond refuses the
+      // boot, which is its own invariant and not something a placement may soften.
+      collectors: [CallerCollector],
       providers: moved ? [] : [service],
     }),
     frond('writing', {
       entities: [Article],
-      handlers: [ArticleHandler, ...(moved ? [{ ctor: CensusHandler, deps: ['Directory'], operations: { count: { binding: [] } } }] : [])],
+      handlers: [ArticleHandler, ...(moved ? [census] : [])],
+      // Stranded: `census` moved here and its collector did not follow.
+      collectors: moved && !strandCollector ? [CallerCollector] : [],
       providers: moved ? [service] : [],
     }),
   ];
@@ -282,20 +348,68 @@ describe('the cut holds when the code moves', () => {
   });
 });
 
+describe('presenter — the page is handed over whole', () => {
+  it.each(cases)('computes over the page, not over a row — %s', async (_name, where) => {
+    const one = await world(where);
+    for (const name of ['Ada', 'Bob', 'Carol']) {
+      await ask(one, 'author', 'create', { name, email: `${name}@b.co` });
+    }
+
+    // `pageSize` writes how many rows it was handed. Three means one call for the page; one
+    // would mean a query per row, which is the failure a presenter exists to make impossible.
+    const page = await ask(one, 'author', 'list', {}) as { pageSize: number; shout: string }[];
+    expect(page.map((row) => row.pageSize)).toEqual([3, 3, 3]);
+    expect(page.map((row) => row.shout).sort()).toEqual(['ADA', 'BOB', 'CAROL']);
+    await one.dispose();
+  });
+});
+
+describe('collector — resolved by type, from what the door filled', () => {
+  it.each(cases)('hands the handler what the call carried — %s', async (_name, where) => {
+    const one = await world(where);
+
+    const answered = await one.call(
+      { entity: 'census', op: 'who' },
+      { ...Invocation.empty, state: { who: 'ada' } as never },
+    );
+    expect(answered).toEqual({ who: 'ada' });
+    await one.dispose();
+  });
+
+  it.each(cases)('answers its own default when the door filled nothing — %s', async (_name, where) => {
+    const one = await world(where);
+
+    expect(await ask(one, 'census', 'who', {})).toEqual({ who: 'nobody' });
+    await one.dispose();
+  });
+});
+
+describe('what a placement may not soften — the refusals', () => {
+  it('refuses at boot a collector declared where nothing consumes it', async () => {
+    // The rule is its own invariant: a collector lives in the frond that CONSUMES it, and no
+    // placement makes that negotiable. Here `census` moves away from the collector's frond.
+    await expect(world({ moved: true, strandCollector: true }))
+      .rejects.toThrow(/collector/i);
+  });
+
+  it('refuses at boot a frame whose member answers in another process', async () => {
+    // `Together<[…]>` states that these two may not be separated by a change of topology —
+    // the one place where moving a boundary is refused out loud instead of quietly weakening.
+    await expect(world({ apart: true, frame: true }))
+      .rejects.toThrow(/remotes:/);
+  });
+});
+
 /**
- * What this bench cannot say yet, and why — a `todo` is a claim nobody has checked, which is
+ * What this bench still cannot say, and why — a `todo` is a claim nobody has checked, which is
  * the only honest way to leave one.
  */
 describe.todo('still unmeasured across placements', () => {
-  // Needs a presenter and a page whose size the bench can vary.
-  it.todo('presenter: the page is handed over whole, and the field count does not move');
-  // A collector is resolved from `ctx.state`, so the bench needs a door that fills it.
-  it.todo('collector: resolved by type, and one in the wrong frond refuses the boot');
-  // A middleware covers the addresses its frond SERVES — the assertion is about scope, not rows.
+  // A middleware covers the addresses its frond SERVES — an assertion about scope, and the
+  // bench varies placement, not scope. `core/tests/middleware.test.ts` is where it belongs.
   it.todo('middleware: it runs around its own frond’s addresses and around no others');
-  // An emission does not cross a process without a carrier, which is itself the invariant.
+  // An emission does not cross a process without a carrier, and that IS the invariant — what
+  // would be measured here is a carrier, which is a subject of its own.
   it.todo('Emit<T>: reached in one process, and announced rather than carried across');
   it.todo('Pipe<T>: the declared order holds, and a link that answers nothing refuses');
-  // `Together` refuses a remote member at BOOT: the refusal is the invariant, not a result.
-  it.todo('Together: refused across processes, by definition');
 });

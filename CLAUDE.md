@@ -556,8 +556,10 @@ between them passes. `Hosting` reaches the target through its OWNING frond, beca
 sees its parent and never its siblings, and the frame and the surface build their guard from
 the same answer as the frond's storage. Pinned by `core/tests/relations.test.ts` and
 `demos/together-frame`, case 5. What a placement may not change BESIDE a deletion is
-`defaults/tests/gradient.test.ts`: validation, boundary, lifecycle, `unique` and the
-reference, over the same matrix.
+`defaults/tests/gradient.test.ts`: validation, boundary, lifecycle, `unique`, the reference,
+a presenter handed the PAGE and a collector reading what the door filled — over the same
+matrix, plus the two refusals no placement may soften (a collector where nothing consumes it,
+a frame whose member answers elsewhere).
 
 **A deletion is the dual of a write, and the ORDER is the guarantee** — `dispatch/Release.ts`,
 `release`. `ref(User, { onDelete })` states `restrict` (the default, since a key with nothing
