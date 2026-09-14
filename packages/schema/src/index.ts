@@ -28,12 +28,10 @@ export { type ValidationCase } from './projection/ValidationCase.js';
 export type { FieldDescriptor } from './projection/card/FieldDescriptor.js';
 export type { SchemaBundle } from './projection/card/SchemaBundle.js';
 export type { SchemaDescriptor } from './projection/card/SchemaDescriptor.js';
-export type {
-  Change,
-  Diff,
-  SetDiff,
-  SetDiffOptions,
-} from './projection/card/diff.js';
+export type { Change } from './projection/card/Change.js';
+export type { Diff } from './projection/card/Diff.js';
+export type { SetDiff } from './projection/card/SetDiff.js';
+export type { SetDiffOptions } from './projection/card/SetDiffOptions.js';
 
 export * from './lib/index.js';
 export { Formats } from './axis/shape/Formats.js';

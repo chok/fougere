@@ -1,4 +1,5 @@
-import { nameOf, type ProviderEntry } from '../descriptor/frond.js';
+import { nameOf } from '../descriptor/FrondDescriptor.js';
+import { type ProviderEntry } from '../descriptor/ProviderEntry.js';
 import { basesOf } from '../descriptor/bases.js';
 import type { Diagnostic } from '../diagnostic.js';
 

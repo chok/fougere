@@ -4,7 +4,7 @@ import type { SchemaView } from '@fougere/schema';
 import type { AppMiddleware } from '../wire/AppMiddleware.js';
 import type { RpcAnswer } from '../wire/RpcAnswer.js';
 import type { AuthRuntime } from './AuthRuntime.js';
-import type { EffectiveOperationsMap } from '../effective-operation.js';
+import type { EffectiveOperationsMap } from '../EffectiveOperationsMap.js';
 import type { DispatchObserver } from '../dispatch/DispatchObserver.js';
 import type { DispatchPort } from '../dispatch/DispatchPort.js';
 

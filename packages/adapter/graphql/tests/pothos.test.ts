@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import SchemaBuilder from '@pothos/core';
 import { entity, primary, text, number, bool, created, ref, readOnly, writeOnly } from '@fougere/schema';
-import { registerType, registerInput, registerOperations } from '../src/pothos.js';
+import { registerInput, registerOperations, registerType } from '../src/OperationsConfig.js';
 
 // ─── Fixtures ──────────────────────────────────────
 

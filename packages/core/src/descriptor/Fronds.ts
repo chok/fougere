@@ -1,5 +1,6 @@
 import type { SchemaView } from '@fougere/schema';
-import type { EntityEntry, FrondDescriptor } from './frond.js';
+import type { EntityEntry } from './EntityEntry.js';
+import type { FrondDescriptor } from './FrondDescriptor.js';
 
 /** What this app hosts, with the questions everyone was asking it by hand. */
 export class Fronds extends Array<FrondDescriptor> {

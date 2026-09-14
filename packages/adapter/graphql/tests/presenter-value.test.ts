@@ -1,7 +1,7 @@
 import SchemaBuilder from '@pothos/core';
 import { describe, expect, it, vi } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
-import { registerType } from '../src/pothos.js';
+import { registerType } from '../src/OperationsConfig.js';
 
 /**
  * A computed field is READ from the row, never recomputed here.

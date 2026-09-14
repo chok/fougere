@@ -2,7 +2,18 @@
  * What it takes to PRODUCE a descriptor — the surface a scan reads, whoever wrote it.
  * The main entry serves what an app RUNS; this one serves what fills it in.
  */
-export * from './frond.js';
+export * from './ProviderEntry.js';
+export * from './EntityEntry.js';
+export * from './HandlerEntry.js';
+export * from './PresenterFieldMeta.js';
+export * from './PresenterEntry.js';
+export * from './CollectorEntry.js';
+export * from './MiddlewareEntry.js';
+export * from './SeedEntry.js';
+export * from './SeedFactory.js';
+export * from './FrondSource.js';
+export * from './ExtensionEntry.js';
+export * from './FrondDescriptor.js';
 export { Fronds } from './Fronds.js';
 
 export { cardinalityOf, type OperationContract } from '../wire/OperationContract.js';

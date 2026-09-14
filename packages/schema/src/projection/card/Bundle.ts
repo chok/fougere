@@ -5,7 +5,9 @@ import type { SchemaView } from '../../SchemaView.js';
 import { Card } from './Card.js';
 import type { SchemaBundle } from './SchemaBundle.js';
 import type { SchemaDescriptor } from './SchemaDescriptor.js';
-import type { Diff, SetDiff, SetDiffOptions } from './diff.js';
+import type { Diff } from './Diff.js';
+import type { SetDiff } from './SetDiff.js';
+import type { SetDiffOptions } from './SetDiffOptions.js';
 
 type SchemaSet = Record<string, SchemaView> | SchemaView[];
 

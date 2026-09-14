@@ -3,7 +3,8 @@ import { upperFirst, FieldSet, Role } from '@fougere/schema';
 import type SchemaBuilder from '@pothos/core';
 import type { Fields, SchemaView } from '@fougere/schema';
 import { Shapes } from '@fougere/schema';
-import { registerType, registerOperations, type OperationMeta } from './pothos.js';
+import { type OperationMeta } from './OperationMeta.js';
+import { registerOperations, registerType } from './OperationsConfig.js';
 
 type HandlerFacade = Record<string, Function>;
 

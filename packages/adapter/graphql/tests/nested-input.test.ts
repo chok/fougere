@@ -1,7 +1,7 @@
 import SchemaBuilder from '@pothos/core';
 import { describe, expect, it } from 'vitest';
 import { entity, json, list, number, text } from '@fougere/schema';
-import { registerInput } from '../src/pothos.js';
+import { registerInput } from '../src/OperationsConfig.js';
 
 /**
  * Une forme imbriquée EST un type, pas une chaîne.

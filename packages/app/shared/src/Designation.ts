@@ -1,7 +1,3 @@
-/**
- * The couple, minus the reactivity — everything `useQuery`/`useCommand` decide before a
- * framework's state primitives get involved.
- */
 import {
   FougereError,
   ErrorCode,
@@ -14,21 +10,9 @@ import {
   type AnyHandler,
 } from '@fougere/core/contract';
 import { frameCall, unframeResponse, type RpcResponse } from '@fougere/transport-http/client';
-
-/** An entity class is a designation: its name is the registration key. */
-export type EntityClass = { name: string };
-
-export type {
-  FougereOperations,
-  FacadeName,
-  Addresses,
-  AnyHandler,
-  HandlerOf,
-  Refused,
-  FougereHandlers,
-  Answer,
-  Rows,
-} from '@fougere/core/contract';
+import type { EntityClass } from './EntityClass.js';
+import type { CallInput } from './CallInput.js';
+import type { Fetcher } from './Fetcher.js';
 
 /**
  * One facade, built from its address alone — what a project that never generated `@fronds/facade`
@@ -61,13 +45,8 @@ export function addressOf(designation: Designation): string {
 /** The three ways a page designates one facade. */
 export type Designation = FacadeName<unknown, string> | EntityClass | string;
 
-/** What a page provides of an invocation — the rest is stamped server-side. */
-export type CallInput = Partial<Pick<InvocationContext, 'params' | 'query' | 'input'>>;
-
 /** The one facade the browser knows. A named surface adds `/{surface}` to it. */
 export const CALL_ENDPOINT = '/_fougere/call';
-
-export type Fetcher = <T>(url: string, options: { method: 'POST'; body: unknown }) => Promise<T>;
 
 let nextId = 1;
 

@@ -1,90 +1,18 @@
 import { upperFirst, Role } from '@fougere/schema';
-/**
- * @fougere/adapter-graphql — Pothos types derived from Fougere entities
- */
 import type SchemaBuilder from '@pothos/core';
 import { Shapes, Schema, type Shape } from '@fougere/schema';
 import type { Field, SchemaView } from '@fougere/schema';
 import { Boundary, Card, Lifecycle, Visibility } from '@fougere/schema';
-
-// ─── Types ─────────────────────────────────────────
+import type { TypeConfig } from './TypeConfig.js';
+import type { InputConfig } from './InputConfig.js';
+import type { ParsedSignature } from './ParsedSignature.js';
+import type { OperationMeta } from './OperationMeta.js';
+import type { ObjectFieldDef } from './ObjectFieldDef.js';
 
 type EntityClass = SchemaView & (abstract new (...args: any[]) => any);
 
 /** Presenter instance — each method is a computed field resolver. */
 type PresenterInstance = Record<string, (parent: any) => any>;
-
-export interface TypeConfig {
-  /** Nom du type GraphQL */
-  name: string;
-  /** The schema whose fields become the type — a live class, or a card that travelled. */
-  entity: SchemaView;
-  /** Champs à exclure du type GraphQL */
-  exclude?: string[];
-  /** Relations à résoudre */
-  relations?: Record<string, RelationConfig>;
-  /** Presenter instance — adds computed fields as resolveFields on this type. */
-  presenter?: PresenterInstance;
-  /** Presenter field names (methods to expose). If absent, all methods are exposed. */
-  presenterFields?: string[];
-  /** Per-field type metadata from source parsing. */
-  presenterFieldMeta?: { name: string; returnType?: string; list?: boolean; nullable?: boolean }[];
-  /**
-   * The view a computed field emits, when the presenter declared one — the object type to build
-   * for it.
-   */
-  presenterViews?: Record<string, EntityClass | [EntityClass]>;
-  /** Builds (or reuses) the GraphQL object type for a declared view. */
-  viewType?: (view: EntityClass, fieldName: string) => any;
-}
-
-export interface RelationConfig {
-  /** Type GraphQL cible (retourné par registerType) */
-  type: any;
-  /** Est-ce une liste ? */
-  list?: boolean;
-  /** Résolveur personnalisé */
-  resolve: (parent: any) => any;
-}
-
-export interface InputConfig {
-  /** The GraphQL type name. */
-  name: string;
-  /** The view to project — derive it (`pick`/`omit`/`partial`) before handing it over. */
-  schema: SchemaView;
-}
-
-/** Parsed method signature (mirrors core OperationMeta.signature). */
-export interface ParsedSignature {
-  name: string;
-  params: { name: string; type: { raw: string; name: string; array?: boolean; nullable?: boolean; undefined?: boolean; generics?: ParsedSignature['params'][0]['type'][] }; optional?: boolean }[];
-  returnType?: { raw: string; name: string; array?: boolean; nullable?: boolean; undefined?: boolean; generics?: ParsedSignature['params'][0]['type'][] };
-}
-
-export interface OperationBinding {
-  name: string;
-  optional: boolean;
-  source:
-    | { kind: 'collector' | 'context' | 'fact' }
-    | { kind: 'param'; name: string }
-    | { kind: 'input' | 'query' };
-}
-
-/** The projection-facing subset of core's EffectiveOperation. */
-export interface OperationMeta {
-  input?: SchemaView;
-  output?: SchemaView;
-  /** Canonical kind from core's EffectiveOperation. */
-  kind: 'query' | 'command';
-  signature?: ParsedSignature;
-  /** The façade's effective answer to where every parameter comes from. */
-  binding?: OperationBinding[];
-  /**
-   * The operation in words. It reaches here through core's EffectiveOperation table;
-   * this narrowed view simply carries it to the GraphQL field.
-   */
-  description?: string;
-}
 
 export interface OperationsConfig {
   /** Entity name (PascalCase). */
@@ -383,15 +311,6 @@ function isScalar(type: unknown): type is ScalarName {
 
 // ─── registerObjectType ───────────────────────────
 
-/** Declarative field definition for registerObjectType. */
-export interface ObjectFieldDef {
-  /** Scalar name ('string', 'int', 'float', 'boolean') or Pothos type ref. Use [ref] for lists. */
-  type: ScalarName | any;
-  nullable?: boolean;
-  /** Custom resolver. Defaults to `(parent) => parent[fieldName]`. */
-  resolve?: (parent: any) => any;
-}
-
 /** Register a GraphQL object type from a declarative field map. */
 export function registerObjectType(
   builder: InstanceType<typeof SchemaBuilder>,
@@ -605,6 +524,7 @@ export function registerInput(builder: InstanceType<typeof SchemaBuilder>, confi
 
 /** Who holds each root field — a GraphQL root is FLAT, and two ops can want one name. */
 const claimed = new WeakMap<object, Map<string, string>>();
+
 function claimRootField(builder: object, fieldName: string, origin: string): void {
   let perField = claimed.get(builder);
   if (!perField) { perField = new Map(); claimed.set(builder, perField); }

@@ -10,18 +10,7 @@
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
 import { FougereError, ErrorCode } from '@fougere/core/contract';
-import {
-  addressOf,
-  asFougereError,
-  callOf,
-  entityKeyOf,
-  invocationOf,
-  itemsOf,
-  mountedKeys,
-  pageOf,
-  queryKeyOf,
-  trackQuery,
-} from '../src/client.js';
+import { addressOf, asFougereError, callOf, entityKeyOf, invocationOf, itemsOf, mountedKeys, pageOf, queryKeyOf, trackQuery } from '../src/Designation.js';
 
 class Post extends entity({ id: primary(), title: text() }) {}
 class BlogPost extends entity({ id: primary(), title: text() }) {}

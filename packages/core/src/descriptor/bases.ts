@@ -1,4 +1,4 @@
-import { type ProviderEntry } from './frond.js';
+import { type ProviderEntry } from './ProviderEntry.js';
 
 /**
  * Port class name → the classes that extend it, in scan order.

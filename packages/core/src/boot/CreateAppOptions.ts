@@ -1,5 +1,5 @@
 import type { Container } from '@fougere/container';
-import type { FrondDescriptor } from '../descriptor/frond.js';
+import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import type { ScanResult } from '../scan.js';
 import type { StorageFactory } from '../storage/port.js';
 import type { Constraint } from '../Constraint.js';

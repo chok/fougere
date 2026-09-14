@@ -1,7 +1,7 @@
 import SchemaBuilder from '@pothos/core';
 import { describe, expect, it } from 'vitest';
 import { entity, oneOf, primary, text, readOnly } from '@fougere/schema';
-import { registerType, registerInput } from '../src/pothos.js';
+import { registerInput, registerType } from '../src/OperationsConfig.js';
 
 /**
  * A bounded set IS a type.

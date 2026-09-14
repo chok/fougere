@@ -9,7 +9,8 @@
  */
 import { describe, it, expect } from 'vitest';
 import { statementDrift } from '../src/boot/statement-drift.js';
-import type { FrondDescriptor, HandlerEntry } from '../src/descriptor/frond.js';
+import type { FrondDescriptor } from '../src/descriptor/FrondDescriptor.js';
+import type { HandlerEntry } from '../src/descriptor/HandlerEntry.js';
 
 class PostHandler { publish() { /* stands in for the real one */ } }
 

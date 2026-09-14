@@ -1,5 +1,5 @@
 import { Role } from '@fougere/schema';
-import type { FrondDescriptor } from './descriptor/frond.js';
+import type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
 import type { EntityNode } from './EntityNode.js';
 
 export interface DomainCluster {

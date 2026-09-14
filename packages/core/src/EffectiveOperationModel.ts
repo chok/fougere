@@ -1,10 +1,12 @@
-/** The operation model after every declaration and convention has been resolved. */
 import { lowerFirst, type SchemaView } from '@fougere/schema';
 import { statementDrift } from './boot/statement-drift.js';
 import { reachedBy, servedBy } from './boot/declared.js';
 import { computeBindingPlan, type BindingPlan } from './wire/binding.js';
 import { targetOf } from './prefab/prefab.js';
-import type { CollectorEntry, FrondDescriptor, HandlerEntry } from './descriptor/frond.js';
+import { EFFECTIVE_OPERATION_SEMANTICS } from './EffectiveOperationSemantics.js';
+import type { CollectorEntry } from './descriptor/CollectorEntry.js';
+import type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
+import type { HandlerEntry } from './descriptor/HandlerEntry.js';
 import { servedSurfaces } from './descriptor/surface.js';
 import type { Diagnostic } from './diagnostic.js';
 import { verify } from './verify.js';
@@ -12,87 +14,12 @@ import { inferOperationKind, knownVerbs, type OperationContract } from './wire/O
 import { type OperationKind } from './wire/OperationKind.js';
 import { type OperationsMap } from './wire/OperationsMap.js';
 import { type TypeRef } from './wire/TypeRef.js';
+import type { EffectiveParameter } from './EffectiveParameter.js';
+import type { EffectiveOperation } from './EffectiveOperation.js';
+import type { EffectiveOperationsMap } from './EffectiveOperationsMap.js';
+import type { EffectiveOperationOptions } from './EffectiveOperationOptions.js';
 
 type Binding = BindingPlan[number];
-
-export interface EffectiveParameter {
-  /** Position in the TypeScript signature. Never used to infer provenance. */
-  position: number;
-  name: string;
-  type: string | null;
-  optional: boolean;
-  nullable: boolean;
-  /** `?` and `| undefined` both mean canonical absence. */
-  undefinable: boolean;
-  /** The resolved provenance of this parameter. */
-  binding: Binding;
-}
-
-export interface EffectiveCollector {
-  parameter: string;
-  typeName: string;
-  className: string;
-  frond: string;
-  filePath: string;
-}
-
-export interface EffectiveOperation extends OperationContract {
-  /** Stable qualified identity: `blog/public/Post.publish`. */
-  id: string;
-  /** Human-facing identity independent of placement: `Post.publish`. */
-  operation: string;
-  name: string;
-  kind: OperationKind;
-  kindSource: 'explicit' | 'convention';
-  handler: {
-    className: string;
-    address: string;
-    filePath: string;
-  };
-  /** The class and method that execute after an optional operation override. */
-  implementation: {
-    className: string;
-    address: string;
-    method: string;
-    filePath: string;
-  };
-  /** Every valid operation has a plan, including the empty plan. */
-  binding: BindingPlan;
-  parameters: EffectiveParameter[];
-  collectors: EffectiveCollector[];
-  contexts: string[];
-  placement: {
-    frond: string;
-    runtime: 'local' | 'remote';
-    remote?: string;
-  };
-  /**
-   * What running this op reaches, and how much of that crosses a process.
-   *
-   * `placement` says where the op ANSWERS; this says where it GOES. The pair is what every
-   * number a process hard-codes is really a function of — how often a trace is sampled, where
-   * a latency histogram's bounds should sit, what a load threshold may assume. An op that
-   * answers here and hops twice is not the same subject as one that answers here and hops none.
-   *
-   * Read from the handler, never from the op: a dependency is declared on the constructor, so
-   * the crossing belongs to the CLASS. Every op of one handler reaches the same fronds, and
-   * saying otherwise would dress a structural fact as a precise effect.
-   */
-  reach: {
-    fronds: { frond: string; runtime: 'local' | 'remote' }[];
-    /** How many of them are a process away — zero when everything it reaches runs here. */
-    hops: number;
-  };
-  exposure: {
-    surfaces: string[];
-    adapters: string[];
-  };
-  /** Whether output is an explicitly closed per-operation view. */
-  outputClosed: boolean;
-  semantics: typeof EFFECTIVE_OPERATION_SEMANTICS;
-}
-
-export type EffectiveOperationsMap = Map<string, EffectiveOperation>;
 
 /**
  * Where an op's work goes: the fronds its handler reaches, and how many are a process away.
@@ -114,19 +41,6 @@ function reachOf(
   return { fronds, hops: fronds.filter((one) => one.runtime === 'remote').length };
 }
 
-/** The absence rules every facade normalises to before the handler is invoked. */
-export const EFFECTIVE_OPERATION_SEMANTICS = Object.freeze({
-  optional: 'undefined' as const,
-  undefined: 'absence' as const,
-  null: 'explicit-value' as const,
-  jsonObjectUndefined: 'omitted' as const,
-});
-
-export interface EffectiveOperationOptions {
-  diagnostics?: readonly Diagnostic[];
-  remotes?: Record<string, string>;
-  adapters?: Record<string, boolean | undefined>;
-}
 
 /**
  * One resolved program. The handler map preserves object identity from the scan, so the

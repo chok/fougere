@@ -1,5 +1,5 @@
 import type { App } from './App.js';
-import type { FrondDescriptor } from '../descriptor/frond.js';
+import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 
 /**
  * One process-level extension and its reversible lifecycle.

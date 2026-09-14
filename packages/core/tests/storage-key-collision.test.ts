@@ -8,7 +8,8 @@
 import { describe, it, expect } from 'vitest';
 import { storageInUserCode } from '../src/boot/ownership.js';
 import type { Diagnostic } from '../src/diagnostic.js';
-import type { FrondDescriptor, ProviderEntry } from '../src/descriptor/frond.js';
+import type { FrondDescriptor } from '../src/descriptor/FrondDescriptor.js';
+import type { ProviderEntry } from '../src/descriptor/ProviderEntry.js';
 
 class PostStorage {}
 class PostCatalog {}

@@ -1,8 +1,12 @@
 import { lowerFirst, type SchemaView } from '@fougere/schema';
-import type {
-  CollectorEntry, EntityEntry, FrondDescriptor, HandlerEntry, MiddlewareEntry,
-  PresenterEntry, ProviderEntry, SeedEntry,
-} from './descriptor/frond.js';
+import type { CollectorEntry } from './descriptor/CollectorEntry.js';
+import type { EntityEntry } from './descriptor/EntityEntry.js';
+import type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
+import type { HandlerEntry } from './descriptor/HandlerEntry.js';
+import type { MiddlewareEntry } from './descriptor/MiddlewareEntry.js';
+import type { PresenterEntry } from './descriptor/PresenterEntry.js';
+import type { ProviderEntry } from './descriptor/ProviderEntry.js';
+import type { SeedEntry } from './descriptor/SeedEntry.js';
 import { DEFAULT_CONVENTIONS } from './Conventions.js';
 import { getPresenterFields } from './prefab/presenter.js';
 import type { OperationContract } from './wire/OperationContract.js';

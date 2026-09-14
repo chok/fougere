@@ -46,8 +46,8 @@ export type { OperationContract } from './wire/OperationContract.js';
 export type { OperationsMap } from './wire/OperationsMap.js';
 export type { Param } from './wire/Param.js';
 export type { TypeRef } from './wire/TypeRef.js';
-export { resolveEffectiveOperations } from './effective-operation.js';
-export type { EffectiveOperation } from './effective-operation.js';
+export { resolveEffectiveOperations } from './EffectiveOperationModel.js';
+export type { EffectiveOperation } from './EffectiveOperation.js';
 export type { ModuleLoader } from './loader.js';
 export { FougereError, ErrorCode, validationErrorsOf } from './contract.js';
 export type { AppMiddleware } from './wire/AppMiddleware.js';
@@ -121,17 +121,15 @@ export type { ScanResult } from './scan.js';
 export type { Diagnostic } from './diagnostic.js';
 export { DEFAULT_CONVENTIONS, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, type Conventions } from './Conventions.js';
 export { type ConventionsInput } from './ConventionsInput.js';
-export type {
-  FrondDescriptor,
-  FrondSource,
-  ProviderEntry,
-  EntityEntry,
-  HandlerEntry,
-  SeedEntry,
-  PresenterEntry,
-  PresenterFieldMeta,
-  CollectorEntry,
-} from './descriptor/frond.js';
+export type { CollectorEntry } from './descriptor/CollectorEntry.js';
+export type { EntityEntry } from './descriptor/EntityEntry.js';
+export type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
+export type { FrondSource } from './descriptor/FrondSource.js';
+export type { HandlerEntry } from './descriptor/HandlerEntry.js';
+export type { PresenterEntry } from './descriptor/PresenterEntry.js';
+export type { PresenterFieldMeta } from './descriptor/PresenterFieldMeta.js';
+export type { ProviderEntry } from './descriptor/ProviderEntry.js';
+export type { SeedEntry } from './descriptor/SeedEntry.js';
 export type { AuthConfig } from './boot/AuthConfig.js';
 export type { AuthContext } from './boot/AuthContext.js';
 export type { AuthRuntime } from './boot/AuthRuntime.js';

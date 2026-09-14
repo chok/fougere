@@ -1,7 +1,8 @@
 import type { Container } from '@fougere/container';
 import { lowerFirst, type SchemaView } from '@fougere/schema';
 
-import type { HandlerEntry, PresenterEntry } from '../descriptor/frond.js';
+import type { HandlerEntry } from '../descriptor/HandlerEntry.js';
+import type { PresenterEntry } from '../descriptor/PresenterEntry.js';
 import { hostedBy } from './hosted.js';
 import { installFrond, type Assembly } from './install.js';
 import { refusalOf, type Diagnostic } from '../diagnostic.js';
@@ -24,10 +25,8 @@ import { Emissions } from './Emissions.js';
 
 import type { OperationContract } from '../wire/OperationContract.js';
 import type { OperationsMap } from '../wire/OperationsMap.js';
-import {
-  resolveEffectiveOperations,
-  type EffectiveOperationsMap,
-} from '../effective-operation.js';
+import { resolveEffectiveOperations } from '../EffectiveOperationModel.js';
+import { type EffectiveOperationsMap } from '../EffectiveOperationsMap.js';
 
 import { InFlight } from '../dispatch/InFlight.js';
 // The keys, each read from where its concept is declared — never respelled here.

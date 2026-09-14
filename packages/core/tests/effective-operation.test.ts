@@ -10,7 +10,7 @@ import {
   type HandlerEntry,
   type OperationContract,
 } from '../src/index.js';
-import { EFFECTIVE_OPERATION_SEMANTICS } from '../src/effective-operation.js';
+import { EFFECTIVE_OPERATION_SEMANTICS } from '../src/EffectiveOperationSemantics.js';
 import { identityCardOf } from '../src/boot/card.js';
 import { scanProject } from '@fougere/compiler';
 

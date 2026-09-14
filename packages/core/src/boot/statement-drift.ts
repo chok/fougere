@@ -1,5 +1,6 @@
 /** Where a STATED contract and the signature it is about have stopped agreeing. */
-import type { FrondDescriptor, HandlerEntry } from '../descriptor/frond.js';
+import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
+import type { HandlerEntry } from '../descriptor/HandlerEntry.js';
 import type { Diagnostic } from '../diagnostic.js';
 import type { BindingPlan } from '../wire/binding.js';
 import type { Signature } from '../wire/Signature.js';

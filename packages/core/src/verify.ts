@@ -1,4 +1,4 @@
-import type { FrondDescriptor } from './descriptor/frond.js';
+import type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
 import type { Diagnostic } from './diagnostic.js';
 import { lowerFirst } from '@fougere/schema';
 import { repositoryKeyOf } from './prefab/RepositoryConstructor.js';

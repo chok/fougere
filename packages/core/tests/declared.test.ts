@@ -9,7 +9,7 @@ import { scanProject } from '@fougere/compiler';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { declaredTopologyOf, resolveEffectiveOperations } from '../src/index.js';
-import type { FrondDescriptor } from '../src/descriptor/frond.js';
+import type { FrondDescriptor } from '../src/descriptor/FrondDescriptor.js';
 
 const root = join(import.meta.dirname, 'fixtures-cross-frond');
 

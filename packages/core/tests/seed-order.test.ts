@@ -9,7 +9,9 @@
 import { describe, it, expect } from 'vitest';
 import { entity, primary, ref, text, type EntityConstructor } from '@fougere/schema';
 import { orderSeeds } from '../src/boot/seed.js';
-import type { EntityEntry, FrondDescriptor, SeedEntry } from '../src/descriptor/frond.js';
+import type { EntityEntry } from '../src/descriptor/EntityEntry.js';
+import type { FrondDescriptor } from '../src/descriptor/FrondDescriptor.js';
+import type { SeedEntry } from '../src/descriptor/SeedEntry.js';
 
 class Tag extends entity({ id: primary(), label: text() }) {}
 class Note extends entity({ id: primary(), body: text(), tag: ref(Tag) }) {}

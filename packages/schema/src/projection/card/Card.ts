@@ -14,7 +14,8 @@ import type { DerivedFrom } from './DerivedFrom.js';
 import type { FieldDescriptor } from './FieldDescriptor.js';
 import type { FieldExtension } from './FieldExtension.js';
 import type { SchemaDescriptor } from './SchemaDescriptor.js';
-import { compare, type Diff, type DiffOptions } from './diff.js';
+import { compare, type Diff } from './Diff.js';
+import { type DiffOptions } from './DiffOptions.js';
 
 type FieldsOf<T> = { [K in keyof T]-?: Field<T[K]> };
 

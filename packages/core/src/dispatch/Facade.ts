@@ -1,7 +1,8 @@
 import type { Container } from '@fougere/container';
 import { type AppMiddleware } from '../wire/AppMiddleware.js';
-import type { EffectiveOperationsMap } from '../effective-operation.js';
-import type { HandlerEntry, PresenterEntry } from '../descriptor/frond.js';
+import type { EffectiveOperationsMap } from '../EffectiveOperationsMap.js';
+import type { HandlerEntry } from '../descriptor/HandlerEntry.js';
+import type { PresenterEntry } from '../descriptor/PresenterEntry.js';
 
 /** What boot resolved around one handler, beyond the handler and the scope it resolves in. */
 export interface Facade {

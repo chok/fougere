@@ -1,4 +1,5 @@
-import type { FrondDescriptor, HandlerEntry } from './frond.js';
+import type { FrondDescriptor } from './FrondDescriptor.js';
+import type { HandlerEntry } from './HandlerEntry.js';
 
 /**
  * The surfaces a handler answers on — its own when it has one, otherwise the default

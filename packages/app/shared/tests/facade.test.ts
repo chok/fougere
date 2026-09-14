@@ -8,7 +8,8 @@
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
 import { ErrorCode } from '@fougere/core/contract';
-import { addressOf, callOf, facade, type Addresses, type Refused } from '../src/client.js';
+import { addressOf, callOf, facade } from '../src/Designation.js';
+import type { Addresses, Refused } from '@fougere/core/contract';
 
 declare module '@fougere/core/contract' {
   interface FougereOperations {
