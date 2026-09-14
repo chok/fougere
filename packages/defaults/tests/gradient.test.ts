@@ -411,5 +411,6 @@ describe.todo('still unmeasured across placements', () => {
   // An emission does not cross a process without a carrier, and that IS the invariant — what
   // would be measured here is a carrier, which is a subject of its own.
   it.todo('Emit<T>: reached in one process, and announced rather than carried across');
-  it.todo('Pipe<T>: the declared order holds, and a link that answers nothing refuses');
+  // A LINK does cross, and `core/tests/pipe.test.ts` pins it there: it has an address, so it
+  // answers the same behind `remotes:` — and its failure stops the announcement either way.
 });

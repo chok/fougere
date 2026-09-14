@@ -11,7 +11,7 @@ import { scanProject } from '@fougere/compiler';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
-import { createApp, createLocalRunner, Invocation, frond } from '../src/index.js';
+import { createApp, createLocalRunner, Invocation, frond, type App } from '../src/index.js';
 import { entity, primary, text, created } from '@fougere/schema';
 
 const root = join(import.meta.dirname, 'fixtures-pipe');
@@ -148,5 +148,52 @@ describe('an op that finishes a fact', () => {
       fronds: [subject(), frond('elsewhere', { pipes: { postPublished: ['FirstHandler'] } })],
       createContainer,
     })).rejects.toThrow(/orders the links of 'postPublished', which it does not own/);
+  });
+});
+
+describe('a link in another process', () => {
+  /**
+   * A link is CALLED, so it has an address — local, or named in `remotes:`. That is the line
+   * `Ask` draws too, and what a carrier can never be behind: a carrier has no address.
+   *
+   * What crossing costs is stated rather than hidden: a subscriber that throws is logged and
+   * the announcer goes on, a link that throws STOPS the announcement — so behind `remotes:`,
+   * announcing depends on another process.
+   */
+  const twoProcesses = async (link: new () => unknown) => {
+    let far: App;
+    const near = await createApp({
+      fronds: [subject(), links(link)],
+      remotes: { links: 'http://links.test' },
+      remoteTransport: () => (call, invocation) => createLocalRunner(far)(call, invocation),
+      createContainer,
+    });
+    far = await createApp({ fronds: [subject(), links(link)], createContainer });
+
+    // Announced through the emitter the frond injects — `deliver` hands a fact to subscribers,
+    // and a link runs where the fact is MADE final, which is on the announcing side.
+    const announce = near.container.resolve('postPublishedEmit') as (fact: unknown) => Promise<void>;
+
+    return { announce, dispose: async () => { await near.dispose(); await far.dispose(); } };
+  };
+
+  it('finishes the fact the same way, wherever the link answers', async () => {
+    (globalThis as Record<string, unknown>).__ran = [];
+    const { announce, dispose } = await twoProcesses(First);
+
+    await announce({ id: '1', title: 'One' });
+    // The link ran over the wire, and what the subscriber reads is what it answered.
+    expect((globalThis as Record<string, unknown>).__ran).toContain('first');
+    await dispose();
+  });
+
+  it('stops the announcement when the far link throws — a link is a HARD dependency', async () => {
+    class Broken {
+      async set(): Promise<never> { throw new Error('the far process refused'); }
+    }
+    const { announce, dispose } = await twoProcesses(Broken);
+
+    await expect(announce({ id: '2', title: 'Two' })).rejects.toThrow(/refused/);
+    await dispose();
   });
 });
