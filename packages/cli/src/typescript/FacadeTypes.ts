@@ -1,6 +1,18 @@
-import { docCommentOf, propertyKey } from '../syntax.js';
-import type { FacadeTypesOptions } from './FacadeTypesOptions.js';
-import type { OpDescriptor } from './OpDescriptor.js';
+import type { SchemaDescriptor } from '@fougere/schema';
+import { docCommentOf, propertyKey } from './syntax.js';
+
+export interface OpDescriptor {
+  name: string;
+  description?: string;
+  output?: SchemaDescriptor;
+  cardinality?: 'one' | 'maybe' | 'many' | 'page' | 'none';
+}
+
+export interface FacadeTypesOptions {
+  name?: string;
+  exported?: boolean;
+  rowType?: string;
+}
 
 /** So a consumer sees the cardinality in the type, not in a doc line. */
 function returnTypeOf(op: OpDescriptor, rowType: string): string {

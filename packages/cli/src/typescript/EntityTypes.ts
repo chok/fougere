@@ -1,6 +1,10 @@
 import { upperFirst, type FieldDescriptor, type SchemaDescriptor } from '@fougere/schema';
-import { docCommentOf, propertyKey } from '../syntax.js';
-import type { EntityTypesOptions } from './EntityTypesOptions.js';
+import { docCommentOf, propertyKey } from './syntax.js';
+
+export interface EntityTypesOptions {
+  name?: string;
+  exported?: boolean;
+}
 
 /** So a nullable field lands as a union. */
 function typeOf(field: FieldDescriptor): string {
