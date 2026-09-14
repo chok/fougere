@@ -145,3 +145,28 @@ export function releasing(hosting: Hosting): Releasing {
     journal: (entity) => hosting.journal(entity),
   };
 }
+
+/**
+ * A release this process can START and cannot FINISH.
+ *
+ * Read from what is HERE and never asked of anyone: an entity states `cascade` or `set null`,
+ * and nothing registered a journal — both facts are local, so the line is too. The same shape
+ * as `unique declared, and the source does not enforce it`, one rung up: what is declared, and
+ * what this process cannot keep.
+ *
+ * Silent when a key holds every hop: the engine carries those out in one statement, and there
+ * is no half-done state for anybody to finish.
+ */
+export function unfinishable(hosting: Hosting): string[] {
+  if (hosting.journal('') !== undefined) return [];
+
+  const found: string[] = [];
+  for (const [entity] of hosting.entities()) {
+    for (const dependent of dependentsOf(entity, hosting)) {
+      if (dependent.onDelete === 'restrict') continue;
+      found.push(`${dependent.entity}.${dependent.field} → ${entity} (${dependent.onDelete})`);
+    }
+  }
+
+  return found;
+}

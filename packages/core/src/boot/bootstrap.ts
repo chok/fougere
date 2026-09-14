@@ -5,7 +5,7 @@ import type { HandlerEntry } from '../descriptor/HandlerEntry.js';
 import type { PresenterEntry } from '../descriptor/PresenterEntry.js';
 import { hostedBy } from './hosted.js';
 import { installFrond, type Assembly } from './install.js';
-import { dependentsOf, releasing, unheldAmong } from './relations.js';
+import { dependentsOf, releasing, unfinishable, unheldAmong } from './relations.js';
 import { release as releaseRow } from '../dispatch/Release.js';
 import type { Hosting } from './Hosting.js';
 import { peerOver } from './peerOver.js';
@@ -415,6 +415,18 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // `ports:` warning below is — a target is another frond's, so no single frond can tell
     // an absence from a neighbour that had not been installed yet.
     const unheld = unheldAmong(relations, hosting);
+    // Declared here, and this process cannot finish what it starts — both halves are local,
+    // so nothing is asked of anyone. Said once, after every frond installed, because a journal
+    // arrives with an extension and an extension rises last.
+    const unfinished = unfinishable(hosting);
+    if (unfinished.length > 0) {
+      log.warn(
+        `[relations] ${unfinished.join(', ')} — declared, and this process keeps nothing on `
+        + 'restart: a release interrupted here is not resumed. Install @fougere/workflow, or '
+        + 'expect to finish one by hand.',
+      );
+    }
+
     if (unheld.length > 0) {
       log.warn(
         `[relations] ${unheld.join(', ')} — declared, and nothing in this process holds them: `

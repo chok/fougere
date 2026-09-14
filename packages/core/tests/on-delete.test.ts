@@ -89,6 +89,7 @@ const booting = async ({ sources = {}, enforces = false, fronds = oneFrond(), ar
     app, of,
     users: of('user'), posts: of('post'), comments: of('comment'),
     refused: lines.filter((line) => line.includes('on-delete') || line.includes('set null')),
+    warned: lines.filter((line) => line.includes('[relations]')),
     dispose: () => app.dispose(),
   };
 };
@@ -442,6 +443,27 @@ describe('the rows live in another process', () => {
     // `comment.authorId` is restrict, and the comment lives over there — the refusal crosses back.
     await expect(world.users.delete('bob')).rejects.toThrow(/comment\.authorId holds 1 row\(s\)/);
     expect(await rows(world.users)).toEqual(['bob']);
+    await world.dispose();
+  });
+});
+
+describe('a release this process can start and cannot finish', () => {
+  const warned = (world: { warned: string[] }) => world.warned.filter((line) => line.includes('keeps nothing'));
+
+  it('says so at boot, naming the relation and what it declares', async () => {
+    // Both halves are local: an entity states `cascade`, and nothing registered a journal.
+    // Nothing is asked of anyone, which is why the line can be written at boot at all.
+    const world = await booting({ sources: { post: 'archive' } });
+
+    expect(warned(world)).toHaveLength(1);
+    expect(warned(world)[0]).toContain('post.authorId → user (cascade)');
+    await world.dispose();
+  });
+
+  it('stays quiet when a key holds every hop — there is no half-done state to finish', async () => {
+    const world = await booting({ enforces: true });
+
+    expect(warned(world)).toEqual([]);
     await world.dispose();
   });
 });
