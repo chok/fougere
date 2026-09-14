@@ -126,7 +126,7 @@ describe('references', () => {
   });
 
   it('carries onDelete only when the field declares it', () => {
-    class CascadingProduct extends entity({ id: primary(), categoryId: ref(Category, { cascade: true }) }) {}
+    class CascadingProduct extends entity({ id: primary(), categoryId: ref(Category, { onDelete: 'cascade' }) }) {}
     const cascading = toTable('products', CascadingProduct);
     expect(cascading.columns[1].references?.onDelete).toBe('cascade');
     expect(column(toTable('products', Product), 'categoryId').references?.onDelete).toBeUndefined();

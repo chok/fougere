@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Card, entity, primary, text, number, bool, created, optional, many, ref, unique, indexed, type EntityConstructor } from '@fougere/schema';
+import { Card, entity, primary, text, number, bool, created, optional, many, ON_DELETE, ref, unique, indexed, type EntityConstructor } from '@fougere/schema';
 import { createTableSQL, toTable } from '../src/index.js';
 import { addForeignKeyConstraintSQL, createIndexSQL, generateSQL } from '../src/ddl/SqlSink.js';
 
@@ -174,12 +174,15 @@ describe('createTableSQL — foreign keys', () => {
     }
   });
 
-  it('carries onDelete when the field declares cascade', () => {
-    class CascadingProduct extends entity({ id: primary(), categoryId: ref(Category, { cascade: true }) }) {}
-    const table = toTable('products', CascadingProduct);
-    expect(createTableSQL(table, 'pg')).toContain('on delete cascade');
+  it('carries every action the field may declare', () => {
+    for (const action of ON_DELETE) {
+      class Owned extends entity({ id: primary(), categoryId: ref(Category, { onDelete: action }) }) {}
+      expect(createTableSQL(toTable('products', Owned), 'pg')).toContain(`on delete ${action}`);
+    }
   });
 
+  // Not a gap: NO ACTION is what an engine does with a key it was told nothing about, and it
+  // refuses a delete that would orphan a row — the same rule `restrict` states out loud.
   it('omits the constraint clause when nothing is declared', () => {
     const table = toTable('products', Product);
     expect(createTableSQL(table, 'pg')).not.toContain('on delete');

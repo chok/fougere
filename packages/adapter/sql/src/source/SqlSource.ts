@@ -24,8 +24,12 @@ export interface SqlSource extends Source {
   transacted<R>(fn: (storageFactory: ReturnType<typeof createStorageFactory>) => Promise<R>): Promise<R>;
 }
 
-/** What every SQL engine keeps at the rows, whatever the dialect: the index IS the constraint. */
-export const sqlEnforces = ['unique'] as const;
+/**
+ * What every SQL engine keeps at the rows, whatever the dialect: the index IS the constraint,
+ * and so is the foreign key — but only over rows it can see, which is why the boot decides
+ * `relation` per PAIR and not per source: a target in another source gets a column and no key.
+ */
+export const sqlEnforces = ['unique', 'relation'] as const;
 
 /** The migration of what lives in ONE sql source, carrying its own dialect. */
 function migrating(db: Kysely<any>, dialect: DialectName, opts: SqlSourceOptions) {
