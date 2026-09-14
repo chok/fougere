@@ -1,6 +1,8 @@
 import type { CrudOpName } from './CrudOpName.js';
 import type { EntityConstructor } from '@fougere/schema';
-import type { Storage, ListOptions, ListResult } from '../storage/port.js';
+import type { ListOptions } from '../storage/ListOptions.js';
+import type { ListResult } from '../storage/ListResult.js';
+import type { Storage } from '../storage/Storage.js';
 
 /** The view an op emits, fabricated. */
 type OutOf<V, K extends CrudOpName, T> =

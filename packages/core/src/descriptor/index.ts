@@ -23,7 +23,7 @@ export { type TypeRef } from '../wire/TypeRef.js';
 export { computeBindingPlan, type BindingPlan } from '../wire/binding.js';
 export type { Signature } from '../wire/Signature.js';
 export { awaitKeyOf, emitKeyOf } from '../wire/Emit.js';
-export { storageKeyOf } from '../storage/port.js';
+export { storageKeyOf } from '../storage/Storage.js';
 export { getPresenterFields } from '../prefab/presenter.js';
 export { targetOf, viewsOf, outputOf } from '../prefab/prefab.js';
 export { ownedBy, repositoryKeyOf } from '../prefab/RepositoryConstructor.js';

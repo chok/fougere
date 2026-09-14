@@ -1,6 +1,6 @@
 import { FieldSet, FieldValueValidator, InputRefusal, type Fields } from '@fougere/schema';
 import { COMPARISONS, comparisonOf, unknownIn } from '../storage/Comparison.js';
-import { assertListOptions } from '../storage/port.js';
+import { assertListOptions } from '../storage/Storage.js';
 import { ErrorCode } from '../wire/ErrorCode.js';
 import { FougereError } from '../wire/FougereError.js';
 import type { GuardReport } from './GuardReport.js';

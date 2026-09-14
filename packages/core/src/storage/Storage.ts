@@ -1,44 +1,7 @@
 import { upperFirst, lowerFirst, type SchemaView } from '@fougere/schema';
-
-/** Options for list queries — pagination, sorting, counting. */
-export interface ListOptions {
-  /** Number of records to return. */
-  limit?: number;
-
-  /** Offset-based: skip N records. */
-  offset?: number;
-
-  /** Page-based: 1-indexed page number (requires limit). */
-  page?: number;
-
-  /** Cursor-based: fetch records after this ID. */
-  after?: string;
-
-  /** Field name to order by. */
-  orderBy?: string;
-
-  /** Sort direction (default: 'asc'). */
-  order?: 'asc' | 'desc';
-
-  /** If true, also returns total count (for pagination UIs). */
-  count?: boolean;
-
-  /**
-   * Equality criteria, field by field — `{ orderId: '…' }`. Named rather than spread across the
-   * options so an unknown key stays ignored instead of silently becoming a filter.
-   */
-  where?: Record<string, unknown>;
-}
-
-/** Result of list() — extends Array so it's backward compatible. */
-export interface ListResult<T> extends Array<T> {
-  /** Total number of matching records (only set when count: true). */
-  total?: number;
-  /** Cursor of the last item (for cursor-based pagination). */
-  endCursor?: string;
-  /** Whether more records exist after endCursor. */
-  hasMore?: boolean;
-}
+import type { ListOptions } from './ListOptions.js';
+import type { ListResult } from './ListResult.js';
+import type { SelectOption } from './SelectOption.js';
 
 /** The keys `list()` answers to. */
 const LIST_OPTION_KEYS = [
@@ -70,11 +33,6 @@ export function assertListOptions(
   throw new Error(
     `${entity}.list(): unknown orderBy \`${orderBy}\`. ${entity} declares ${declared.join(', ')}.`,
   );
-}
-
-/** Select option — restrict returned fields to those of a SchemaView. */
-export interface SelectOption {
-  select?: SchemaView;
 }
 
 /** Per-entity storage — scoped CRUD operations on a single entity type. */
@@ -179,12 +137,6 @@ export abstract class Storage<T = Record<string, unknown>> {
   get client(): unknown { return behind<T>(this).client; }
 }
 
-/**
- * Factory that creates a Storage for a given entity.
- * Called by bootstrap for every scanned entity.
- */
-export type StorageFactory = (entity: SchemaView, name: string) => Storage;
-
 /** Container key of an entity's storage — 'reading' → 'ReadingStorage'. */
 export function storageKeyOf(entity: string): string {
   return `${upperFirst(entity)}${HELD}`;
@@ -201,11 +153,6 @@ export function entityOfStorageKey(key: string, known: (entity: string) => boole
 /** What a holder keeps, said in the key it is registered under. */
 const HELD = 'Storage';
 
-/** `Together<[Account, Ledger]>` — writes that stand or fall as one. */
-export interface Together<E extends readonly unknown[], P extends readonly unknown[] = []> {
-  run<R>(fn: (entities: { [K in keyof E]: Storage<E[K]> }, providers: P) => Promise<R>): Promise<R>;
-}
-
 /**
  * The container key of a frame — `[['Account', 'Ledger'], ['RateMirror']]` →
  * 'Account+Ledger|RateMirrorTogether'.
@@ -216,7 +163,9 @@ export function togetherKeyOf(entities: readonly string[], providers: readonly s
 }
 
 const FRAME = 'Together';
+
 const SEPARATOR = '+';
+
 /** Separates the two lists — what the unwind covers, and what is rebuilt to make it true. */
 const KINDS = '|';
 

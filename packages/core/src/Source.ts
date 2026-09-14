@@ -1,5 +1,5 @@
 import { Registry, Role, type SchemaView } from '@fougere/schema';
-import type { StorageFactory } from './storage/port.js';
+import type { StorageFactory } from './storage/StorageFactory.js';
 import type { Constraint } from './Constraint.js';
 import type { SourceView } from './SourceView.js';
 import type { SourceConfig } from './SourceConfig.js';

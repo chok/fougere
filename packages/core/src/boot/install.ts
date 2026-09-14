@@ -24,7 +24,7 @@ import { portBindings, seamChains, wrapping, SEAMS } from './ports.js';
 import { contractsKeyOf, facadeKeyOf } from '../wire/facade.js';
 import { inheritsCrud, subjectOf } from '../prefab/CrudConstructor.js';
 import { repositoryKeyOf } from '../prefab/RepositoryConstructor.js';
-import { storageKeyOf } from '../storage/port.js';
+import { storageKeyOf } from '../storage/Storage.js';
 import { declares } from '../Source.js';
 import { presenterKeyOf } from '../prefab/presenter.js';
 import { collectorKeyOf } from '../prefab/collector.js';

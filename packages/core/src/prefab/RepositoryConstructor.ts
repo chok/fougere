@@ -1,5 +1,8 @@
 import { upperFirst, type EntityConstructor } from '@fougere/schema';
-import type { Storage, ListOptions, ListResult, SelectOption } from '../storage/port.js';
+import type { ListOptions } from '../storage/ListOptions.js';
+import type { ListResult } from '../storage/ListResult.js';
+import type { SelectOption } from '../storage/SelectOption.js';
+import type { Storage } from '../storage/Storage.js';
 import type { SchemaView } from '@fougere/schema';
 import type { AggregateOf } from './AggregateOf.js';
 import type { AggregateConstructor } from './AggregateConstructor.js';

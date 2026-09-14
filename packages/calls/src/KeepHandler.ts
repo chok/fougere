@@ -1,5 +1,6 @@
 import type { Fact, LogLine } from '@fougere/core';
-import { LogRing, ErrorRing } from './rings.js';
+import { ErrorRing } from './ErrorRing.js';
+import { LogRing } from './LogRing.js';
 
 /**
  * Every line this process logged, kept for the panel.

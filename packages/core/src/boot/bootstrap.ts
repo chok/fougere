@@ -36,7 +36,7 @@ import { identityCardOf } from './card.js';
 import { AppLifecycle, migrating } from './AppLifecycle.js';
 import { seeding } from './seed.js';
 
-import { storageKeyOf } from '../storage/port.js';
+import { storageKeyOf } from '../storage/Storage.js';
 
 import { presenterKeyOf } from '../prefab/presenter.js';
 

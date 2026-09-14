@@ -1,4 +1,4 @@
-import type { Storage } from '../storage/port.js';
+import type { Storage } from '../storage/Storage.js';
 import type { EntityConstructor } from '@fougere/schema';
 
 /** What an aggregate's subclass sees. */

@@ -1,6 +1,7 @@
 import { applyCreate, applyUpdate, Lifecycle, Role, type SchemaView } from '@fougere/schema';
 import { comparisonOf, comparisonsIn, type Comparison } from './Comparison.js';
-import type { Storage, StorageFactory } from './port.js';
+import type { Storage } from './Storage.js';
+import type { StorageFactory } from './StorageFactory.js';
 import type { Values } from './Values.js';
 
 /** Instances addressed by key — what an adapter supplies, and all of it. */

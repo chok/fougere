@@ -1,7 +1,9 @@
 import { CARRIES_LINE, declaredTopologyOf, frond, LogLine, type App, type Extension, type InvocationContext } from '@fougere/core';
 import KeepHandler from './KeepHandler.js';
 import { CallRing } from './CallRing.js';
-import { ErrorRing, LogRing, QueryRing } from './rings.js';
+import { ErrorRing } from './ErrorRing.js';
+import { LogRing } from './LogRing.js';
+import { QueryRing } from './QueryRing.js';
 import { servePanel, type PanelOptions } from './panel.js';
 
 export type { CallPage, CallRecord } from '@fougere/core';

@@ -1,4 +1,4 @@
-import type { StorageFactory } from '../storage/port.js';
+import type { StorageFactory } from '../storage/StorageFactory.js';
 
 /**
  * Context passed by the core to an auth provider's create() function.

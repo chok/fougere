@@ -4,7 +4,7 @@ import { type ProviderEntry } from '../descriptor/ProviderEntry.js';
 import { inheritsCrud } from '../prefab/CrudConstructor.js';
 import { targetOf } from '../prefab/prefab.js';
 import { ownedBy, repositoryKeyOf } from '../prefab/RepositoryConstructor.js';
-import { entityOfStorageKey } from '../storage/port.js';
+import { entityOfStorageKey } from '../storage/Storage.js';
 import type { Diagnostic } from '../diagnostic.js';
 
 /** One name, one file: two providers under one key and the second silently replaces the first. */

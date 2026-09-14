@@ -6,7 +6,8 @@
 import { ambient } from '#ambient';
 import { upperFirst, lowerFirst, type SchemaView } from '@fougere/schema';
 import type { Container } from '@fougere/container';
-import { membersOfTogetherKey, storageKeyOf, entityOfStorageKey, type Storage, type StorageFactory } from '../storage/port.js';
+import { entityOfStorageKey, membersOfTogetherKey, storageKeyOf, type Storage } from '../storage/Storage.js';
+import { type StorageFactory } from '../storage/StorageFactory.js';
 import type { Logger } from '../builtin/Logger.js';
 import type { ProviderEntry } from '../descriptor/ProviderEntry.js';
 import { StorageGuard } from '../dispatch/StorageGuard.js';

@@ -17,9 +17,9 @@ import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { lowerFirst } from '@fougere/schema';
 import { createApp } from '../src/index.js';
-import { storageKeyOf, entityOfStorageKey } from '../src/storage/port.js';
+import { entityOfStorageKey, storageKeyOf } from '../src/storage/Storage.js';
 import { facadeKeyOf } from '../src/wire/facade.js';
-import type { Storage } from '../src/storage/port.js';
+import type { Storage } from '../src/storage/Storage.js';
 
 const root = join(import.meta.dirname, 'fixtures');
 

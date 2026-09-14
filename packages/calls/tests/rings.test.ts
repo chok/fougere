@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { Call, DispatchEvent, RouteAddress, ErrorCode, FougereError } from '@fougere/core';
-import { ErrorRing, LogRing, QueryRing } from '../src/rings.js';
+import { ErrorRing } from '../src/ErrorRing.js';
+import { LogRing } from '../src/LogRing.js';
+import { QueryRing } from '../src/QueryRing.js';
 
 const line = (level: 'debug' | 'info' | 'warn' | 'error', message: string, args: unknown[] = []) =>
   ({ level, name: 'boot:app', message, args, at: Date.now() });

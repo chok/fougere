@@ -1,7 +1,7 @@
 import type { Container } from '@fougere/container';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import type { ScanResult } from '../scan.js';
-import type { StorageFactory } from '../storage/port.js';
+import type { StorageFactory } from '../storage/StorageFactory.js';
 import type { Constraint } from '../Constraint.js';
 import type { Transport } from '../wire/Transport.js';
 import type { Extension } from './Extension.js';

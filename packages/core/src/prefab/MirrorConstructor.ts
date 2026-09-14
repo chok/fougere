@@ -1,5 +1,5 @@
 import type { EntityConstructor } from '@fougere/schema';
-import type { Storage } from '../storage/port.js';
+import type { Storage } from '../storage/Storage.js';
 import type { Refreshed } from './Refreshed.js';
 import type { MirrorOf } from './MirrorOf.js';
 

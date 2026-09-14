@@ -16,7 +16,8 @@ import { createContainer, type Container } from '@fougere/container';
 import { scanProject } from '@fougere/compiler';
 import { createApp, createLocalRunner, Repository } from '../src/index.js';
 import { ownedBy, repositoryKeyOf } from '../src/prefab/RepositoryConstructor.js';
-import { storageKeyOf, type StorageFactory } from '../src/storage/port.js';
+import { storageKeyOf } from '../src/storage/Storage.js';
+import { type StorageFactory } from '../src/storage/StorageFactory.js';
 import { Invocation } from '../src/wire/Invocation.js';
 
 function makeStorage() {

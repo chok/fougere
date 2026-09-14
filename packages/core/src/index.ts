@@ -104,9 +104,12 @@ export { default as LogLine, CARRIES_LINE, LOG_LINE } from './builtin/LogLine.js
 // What a re-read config changes in a running process — and what it cannot.
 export { applyConfig } from './boot/apply.js';
 export { Config } from './builtin/config.js';
-export type { StorageFactory, ListOptions, ListResult, Together } from './storage/port.js';
+export type { ListOptions } from './storage/ListOptions.js';
+export type { ListResult } from './storage/ListResult.js';
+export type { StorageFactory } from './storage/StorageFactory.js';
+export type { Together } from './storage/Together.js';
 // A VALUE as well as a type: it is what a wrapper extends, which is the whole of declaring one.
-export { Storage, togetherKeyOf } from './storage/port.js';
+export { Storage, togetherKeyOf } from './storage/Storage.js';
 export type { Constraint } from './Constraint.js';
 export type { Source } from './Source.js';
 export type { SourceConfig } from './SourceConfig.js';

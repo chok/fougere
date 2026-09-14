@@ -1,5 +1,5 @@
 import type { SchemaView } from '@fougere/schema';
-import type { Storage } from '../storage/port.js';
+import type { Storage } from '../storage/Storage.js';
 
 /**
  * Runtime returned by an auth provider's create(config, ctx) function.
