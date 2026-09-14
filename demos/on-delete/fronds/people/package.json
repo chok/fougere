@@ -1,0 +1,11 @@
+{
+  "name": "@fronds/people",
+  "version": "0.0.1",
+  "type": "module",
+  "fougere": { "frond": "people" },
+  "exports": {
+    "./entities/*.js": "./entities/*.ts",
+    "./entities/*": "./entities/*.ts",
+    "./package.json": "./package.json"
+  }
+}

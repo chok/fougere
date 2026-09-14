@@ -1,0 +1,20 @@
+{
+  // A Frond is autonomous TypeScript domain code — it typechecks on its own,
+  // against the workspace config, without Nuxt or `.nuxt/tsconfig.json`.
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    // A frond names its neighbours, it does not walk to them. A relative path states that
+    // the two share a directory tree, which is the one thing `sources:` exists to move.
+    "paths": {
+      "@fronds/people/*": ["./people/*"],
+      "@fronds/blog/*": ["./blog/*"],
+      "@fronds/discussion/*": ["./discussion/*"]
+    },
+    "noEmit": true,
+    "rootDir": ".",
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false
+  },
+  "include": ["."]
+}

@@ -1,0 +1,22 @@
+{
+  "name": "fougere-demo-on-delete",
+  "version": "0.0.3-alpha.3",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/main.ts",
+    "typecheck": "tsc -p fronds"
+  },
+  "dependencies": {
+    "@fougere/adapter-sql": "workspace:*",
+    "@fougere/compiler": "workspace:*",
+    "@fougere/container": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/defaults": "workspace:*",
+    "@fougere/schema": "workspace:*",
+    "@fougere/workflow": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0"
+  }
+}

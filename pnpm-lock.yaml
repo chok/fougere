@@ -881,7 +881,35 @@ importers:
         version: 4.21.0
       vitest:
         specifier: ^4.1.0
-        version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@8.1.1))(vite@8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))
+        version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(vite@8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))
+
+  demos/on-delete:
+    dependencies:
+      '@fougere/adapter-sql':
+        specifier: workspace:*
+        version: link:../../packages/adapter/sql
+      '@fougere/compiler':
+        specifier: workspace:*
+        version: link:../../packages/compiler
+      '@fougere/container':
+        specifier: workspace:*
+        version: link:../../packages/container
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../../packages/defaults
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
+      '@fougere/workflow':
+        specifier: workspace:*
+        version: link:../../packages/workflow
+    devDependencies:
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
 
   demos/one-declaration:
     dependencies:
@@ -1482,7 +1510,7 @@ importers:
         version: 5.0.0
       vitest:
         specifier: ^4.1.2
-        version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(vite@8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))
+        version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@8.1.1))(vite@8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))
 
   packages/app/react:
     dependencies:
@@ -1941,6 +1969,27 @@ importers:
       jiti:
         specifier: ^2.6.1
         version: 2.6.1
+
+  packages/workflow:
+    devDependencies:
+      '@fougere/adapter-sql':
+        specifier: workspace:*
+        version: link:../adapter/sql
+      '@fougere/container':
+        specifier: workspace:*
+        version: link:../container
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../defaults
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../schema
+      vitest:
+        specifier: ^4.1.0
+        version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(vite@8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))
 
   site:
     dependencies:
