@@ -6,12 +6,7 @@ import { AuthUser } from './entity/AuthUser.js';
 import { AuthVerification } from './entity/AuthVerification.js';
 import { authEntities } from './entity/authEntities.js';
 import { fougereAdapter, type StorageMap } from './adapter.js';
-import {
-  translateCredential,
-  translateSocial,
-  translatePlugins,
-  type FougereProviders,
-} from './translate.js';
+import { translateCredential, translatePlugins, translateSocial, type FougereProviders } from './FougereProviders.js';
 
 export { AuthUser } from './entity/AuthUser.js';
 

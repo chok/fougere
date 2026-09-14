@@ -3,7 +3,8 @@ import { type ScanResult } from '@fougere/core';
 import { nameOf, type FrondDescriptor } from '@fougere/core/descriptor';
 import { relative } from 'node:path';
 
-import { type Aliases, type Live, operationsOf } from './contract.js';
+import { type Aliases } from './Aliases.js';
+import { operationsOf, type Live } from './Live.js';
 
 /**
  * A file becomes the specifier the PROJECT already uses for it: `@fronds/blog/…`, the import scope

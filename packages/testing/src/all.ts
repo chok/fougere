@@ -3,7 +3,8 @@ import type { App } from '@fougere/core';
 import type { SchemaView } from '@fougere/schema';
 import { type CheckOptions } from './facades/CheckOptions.js';
 import { checkContract, checkOutput } from './facades/Verdict.js';
-import { checkDoors, type DoorOptions } from './comparison.js';
+import { checkDoors } from './DoorContractCase.js';
+import { type DoorOptions } from './DoorOptions.js';
 
 export interface CheckAllOptions extends DoorOptions, CheckOptions {
   /** Entities to leave out, by name — one whose rows a test cannot seed, typically. */

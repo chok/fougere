@@ -30,7 +30,9 @@ import {
   Title,
   type ResourceOptions,
 } from 'react-admin';
-import type { AdminFacets, EditorialFacet, UsersFacet } from './facets.js';
+import type { AdminFacets } from './AdminFacets.js';
+import type { EditorialFacet } from './EditorialFacet.js';
+import type { UsersFacet } from './UsersFacet.js';
 
 export interface FougereResourceOptions extends ResourceOptions {
   primary: string;

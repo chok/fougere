@@ -1,30 +1,7 @@
-/** react-admin's `DataProvider`, answered by the Fougere wire. */
-import {
-  sendCall,
-  fetcher as browserFetcher,
-  CALL_ENDPOINT,
-  itemsOf,
-  pageOf,
-  errorsByField,
-  type Fetcher,
-} from '@fougere/app/client';
+import { sendCall, fetcher as browserFetcher, CALL_ENDPOINT, itemsOf, pageOf, errorsByField } from '@fougere/app/client';
 import { validationErrorsOf } from '@fougere/core/contract';
-
-/** What a resource must tell the provider — the rest of the card is the UI's business. */
-export interface ResourceKey {
-  /** The registration key its facade answers under — `post`, not `Post`. */
-  name: string;
-  /** The field that identifies an instance. */
-  primary: string;
-}
-
-export interface ProviderOptions {
-  /** Registration key → its identity. Built from the card by `resourcesOf`. */
-  resources: Record<string, ResourceKey>;
-  /** The call endpoint. A named surface appends `/{surface}` to it. */
-  endpoint?: string;
-  fetcher?: Fetcher;
-}
+import type { ResourceKey } from './ResourceKey.js';
+import type { ProviderOptions } from './ProviderOptions.js';
 
 type Values = Record<string, unknown>;
 

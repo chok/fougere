@@ -1,23 +1,8 @@
-/** OTLP export — the spans this process finished, in the one shape every collector reads. */
 import { Beat } from './Beat.js';
 import { Endpoint } from './Endpoint.js';
 import type { FinishedSpan, SpanSink } from './index.js';
-import { metricsPayload, type Metrics } from './metrics/Metrics.js';
-
-export interface OtlpOptions {
-  /** Which service these spans belong to — what a dashboard groups by. */
-  service: string;
-  /** Collector endpoint. Default: the OTLP/HTTP convention on localhost. */
-  url?: string;
-  /** How often a full batch leaves. Default: every second. */
-  flushMs?: number;
-  /** Told when a batch could not be sent. Default: silence — a trace must never break a call. */
-  onError?: (err: unknown) => void;
-  /** Publish these metrics on the same beat. */
-  metrics?: Metrics;
-  /** Where metrics go when it is not the same collector as traces. */
-  metricsUrl?: string;
-}
+import { metricsPayload } from './metrics/Metrics.js';
+import type { OtlpOptions } from './OtlpOptions.js';
 
 export interface OtlpExporter {
   /** Hand to `onSpan`. */
@@ -30,10 +15,12 @@ export interface OtlpExporter {
 
 /** OTLP status codes: 0 unset, 1 ok, 2 error. */
 const OK = 1;
+
 const ERROR = 2;
 
 /** OTLP span kinds, of the six only these two are ours. */
 const INTERNAL = 1;
+
 const CLIENT = 3;
 
 export function otlp(options: OtlpOptions): OtlpExporter {

@@ -1,16 +1,6 @@
-/** The REST table this app serves, and the rule that matches a request against it. */
 import { generateRoutes } from '@fougere/adapter-rest';
 import type { App } from '@fougere/core';
-
-/** One row of the canonical table, in the form this facade matches against. */
-export interface Matchable {
-  method: string;
-  /** `route.path` split once: a literal segment, or `:name` to capture. */
-  segments: string[];
-  path: string;
-  entityName: string;
-  operationName: string;
-}
+import type { Matchable } from './Matchable.js';
 
 export type RouteMatch =
   | { kind: 'match'; route: Matchable; params: Record<string, string> }

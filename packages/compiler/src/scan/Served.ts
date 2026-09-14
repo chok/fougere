@@ -1,24 +1,7 @@
-/**
- * The facades an app serves, as TYPES — what a client needs to name one and narrow its `e.code`.
- *
- * A third projection of one scan, beside the emitted module and the stated frond. It carries no
- * value: a `.d.ts` costs a consumer nothing at runtime and disappears with the directory it sits
- * in, which is what lets it be rewritten on every boot without anyone having to remember.
- *
- * The runtime scan cannot serve as this. Its operations travel in a `Map`, and a `Map` literal
- * widens its key to `string` — the association between an op and its refusals is exactly what
- * TypeScript drops there. An interface keeps it.
- *
- * Documented: [observability](https://fougere.dev/docs/infra/observability).
- */
 import { dirname, relative } from 'node:path';
 import { refusalsOf, type ScanResult } from '@fougere/core';
 import { servedSurfaces } from '@fougere/core/descriptor';
-
-export interface FacadeOptions {
-  /** Where the generated file will sit. Handler imports are written relative to it. */
-  outFile: string;
-}
+import type { FacadeOptions } from './FacadeOptions.js';
 
 /**
  * The specifier a handler is reached by, from where the generated file sits.

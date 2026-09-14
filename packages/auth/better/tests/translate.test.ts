@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { translateCredential, translateSocial, translatePlugins } from '../src/translate.js';
+import { translateCredential, translatePlugins, translateSocial } from '../src/FougereProviders.js';
 
 describe('translateCredential', () => {
   it('disables when not declared', () => {

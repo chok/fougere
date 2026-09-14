@@ -4,7 +4,9 @@ import { Invocation } from '@fougere/core/contract';
 import { serveRest, serveRpc, tableOf } from '@fougere/app';
 import { lowerFirst, type SchemaView } from '@fougere/schema';
 import { listQuery, findQuery, mutationFor, at } from './gql.js';
-import { sampleInput, type SampleOptions } from './sample.js';
+import { sampleInput } from './sample.js';
+import type { DoorOptions } from './DoorOptions.js';
+import type { DoorInput } from './DoorInput.js';
 
 /** The rows a facade hands back, with its own envelope taken off. */
 function rowsOf(value: unknown): unknown {
@@ -23,20 +25,12 @@ function written(value: unknown, sent: Record<string, unknown>): unknown {
   return wire(Object.fromEntries(Object.keys(sent).map((key) => [key, row[key]])));
 }
 
-export interface DoorOptions extends SampleOptions {
-  given?: Record<string, unknown>;
-  /** The audience, when the app serves named surfaces. */
-  surface?: string;
-}
-
 interface Facades {
   local: (op: string, call?: DoorInput) => Promise<unknown>;
   rpc: (op: string, call?: DoorInput) => Promise<unknown>;
   rest: (op: string, call?: DoorInput) => Promise<unknown>;
   graphql: (op: string, call?: DoorInput) => Promise<unknown>;
 }
-
-export interface DoorInput { id?: string; input?: Record<string, unknown> }
 
 export interface DoorContractCase {
   /** What this case proves — becomes the test name. */

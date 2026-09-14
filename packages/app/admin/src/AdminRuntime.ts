@@ -1,27 +1,9 @@
-/** One card request, shared by resource discovery and every provider operation. */
-import {
-  CALL_ENDPOINT,
-  fetcher as browserFetcher,
-  type Fetcher,
-} from '@fougere/app/client';
-import { applyAdminExtensions, type AdminExtension } from './extensions.js';
-import {
-  createDataProvider,
-  createLazyDataProvider,
-  type FougereDataProvider,
-} from './provider.js';
-import { fetchCard, keysOf, resourcesOf, type AdminResource } from './resources.js';
-
-export interface AdminRuntimeOptions {
-  endpoint?: string;
-  fetcher?: Fetcher;
-  extensions?: readonly AdminExtension[];
-}
-
-export interface LoadedAdmin {
-  resources: AdminResource[];
-  provider: FougereDataProvider;
-}
+import { CALL_ENDPOINT, fetcher as browserFetcher } from '@fougere/app/client';
+import { applyAdminExtensions } from './AdminExtension.js';
+import { createDataProvider, createLazyDataProvider, type FougereDataProvider } from './FougereDataProvider.js';
+import { fetchCard, keysOf, resourcesOf } from './AdminResource.js';
+import type { AdminRuntimeOptions } from './AdminRuntimeOptions.js';
+import type { LoadedAdmin } from './LoadedAdmin.js';
 
 export interface AdminRuntime {
   /** Loads and caches the card-derived model. */

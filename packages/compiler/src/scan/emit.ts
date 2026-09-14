@@ -3,7 +3,8 @@ import { type ScanResult } from '@fougere/core';
 import { nameOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type PresenterEntry, type ProviderEntry, type SeedEntry } from '@fougere/core/descriptor';
 import { dirname, relative } from 'node:path';
 
-import { type Aliases, type Live, lit, operationsOf, schemaRef } from './contract.js';
+import { type Aliases } from './Aliases.js';
+import { lit, operationsOf, schemaRef, type Live } from './Live.js';
 
 export interface EmitOptions {
   /** Where the generated module will sit. Imports are written relative to it. */

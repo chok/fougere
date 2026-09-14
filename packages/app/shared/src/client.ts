@@ -176,13 +176,7 @@ export function asFougereError(err: unknown, entityKey: string, op: string): Fou
 // The form contract is host-independent too, and a form is client code — so it
 // reaches the browser through this subpath rather than through the package root,
 // which carries the boot.
-export {
-  formFieldsOf,
-  tableColumnsOf,
-  payloadOf,
-  errorsByField,
-  type FormEntity,
-  type FormField,
-  type TableColumn,
-} from './form.js';
+export { errorsByField, formFieldsOf, payloadOf, tableColumnsOf, type FormEntity } from './FormEntity.js';
+export { type FormField } from './FormField.js';
+export { type TableColumn } from './TableColumn.js';
 export { sessionViewOf, type SessionView } from './session.js';

@@ -12,7 +12,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
-import { serveRest, shapeRest, surfaceOf } from '../src/serve.js';
+import { serveRest, shapeRest, surfaceOf } from '../src/Outcome.js';
 
 class Post extends entity({ id: primary(), title: text() }) {}
 

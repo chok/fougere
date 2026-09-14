@@ -1,6 +1,6 @@
 /** The GraphQL facade — declared like the others, mounted like the others. */
 import type { App } from '@fougere/core';
-import type { Outcome } from './serve.js';
+import type { Outcome } from './Outcome.js';
 
 /** What a GraphQL request carries, whatever host read it. */
 export interface GraphQLRequest {

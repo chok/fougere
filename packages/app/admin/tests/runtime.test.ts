@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Card, entity, primary, text } from '@fougere/schema';
 import type { Fetcher } from '@fougere/app/client';
 import type { IdentityCard } from '@fougere/core/contract';
-import { createAdminRuntime } from '../src/runtime.js';
+import { createAdminRuntime } from '../src/AdminRuntime.js';
 
 class Post extends entity({ id: primary(), title: text() }) {}
 

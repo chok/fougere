@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Fetcher } from '@fougere/app/client';
-import { createDataProvider } from '../src/provider.js';
+import { createDataProvider } from '../src/FougereDataProvider.js';
 
 interface SentCall {
   method: string;

@@ -18,7 +18,9 @@ import { Box, Card, CardContent, Chip, Skeleton, Typography, type Theme } from '
 import { useEffect, useMemo, useState, type ReactElement } from 'react';
 import { Title, useTranslate } from 'react-admin';
 import { CALL_ENDPOINT, fetcher as browserFetcher, type Fetcher } from '@fougere/app/client';
-import { fetchTopology, figureOf, isOpaque, layoutOf, nodesOf, type Edge, type TopologyNode, type TopologyReport } from './topology.js';
+import { type Edge, type TopologyReport } from '@fougere/core';
+import { fetchTopology, figureOf, isOpaque, layoutOf, nodesOf } from './Drawing.js';
+import { type TopologyNode } from './TopologyNode.js';
 
 /** What the page is: the report, the refusal that means "not observed", or a real failure. */
 type State =

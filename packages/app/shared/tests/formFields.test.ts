@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Card, entity, primary, text, email, url, number, bool, date, created, oneOf, ref, many, optional, writeOnly } from '@fougere/schema';
-import { formFieldsOf, tableColumnsOf, payloadOf, errorsByField } from '../src/form.js';
+import { errorsByField, formFieldsOf, payloadOf, tableColumnsOf } from '../src/FormEntity.js';
 
 class Author extends entity({ id: primary(), name: text() }) {}
 

@@ -1,4 +1,3 @@
-/** The three facades, decided — and nothing about how a request arrives. */
 import {
   createAppRunner,
   callValueOf,
@@ -8,18 +7,8 @@ import {
   type InvocationContext,
 } from '@fougere/core';
 import { handleRpc, PARSE_ERROR } from '@fougere/transport-http';
-import { matchRoute, tableOf } from './rest.js';
-
-/** What a host must read off the request before any decision is possible. */
-export interface DoorRequest {
-  method: string;
-  /** Path with no query string. The REST facade strips its own `/api` prefix. */
-  path: string;
-  query: Record<string, string>;
-  body?: unknown;
-  /** The server-resolved session. */
-  state: Record<string, unknown>;
-}
+import { matchRoute, tableOf } from './RouteMatch.js';
+import type { DoorRequest } from './DoorRequest.js';
 
 /** What a host must write back. `pass` is the one that keeps a facade additive. */
 export type Outcome =
@@ -123,6 +112,7 @@ export function shapeRest(operationName: string, result: unknown): Outcome {
 // ── The server-side dual of the couple ───────────
 
 type EntityClass = { name: string };
+
 type CallInput = Partial<InvocationContext>;
 
 /**

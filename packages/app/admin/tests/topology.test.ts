@@ -5,8 +5,8 @@
  */
 import { describe, it, expect } from 'vitest';
 import { ErrorCode, FougereError } from '@fougere/core/contract';
-import { fetchTopology, isOpaque, layoutOf, nodesOf } from '../src/topology.js';
-import type { TopologyReport } from '../src/topology.js';
+import { fetchTopology, isOpaque, layoutOf, nodesOf } from '../src/Drawing.js';
+import type { TopologyReport } from '@fougere/core';
 
 const report: TopologyReport = {
   since: 1,

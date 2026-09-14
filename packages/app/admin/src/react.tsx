@@ -17,10 +17,12 @@ import {
 import { Route } from 'react-router-dom';
 import { Box, Button, Card, CardContent, Dialog, DialogActions, DialogContent, DialogTitle, TextField as MuiTextField, Typography } from '@mui/material';
 import { cloneElement, useMemo, useState, type ComponentProps, type ComponentType, type ReactElement } from 'react';
-import { createAdminRuntime } from './runtime.js';
-import type { AdminExtension } from './extensions.js';
-import { actionsOf, type AdminOperation, type AdminResource } from './resources.js';
-import type { EditorialFacet, UsersFacet } from './facets.js';
+import { createAdminRuntime } from './AdminRuntime.js';
+import type { AdminExtension } from './AdminExtension.js';
+import { type AdminOperation } from './AdminOperation.js';
+import { actionsOf, type AdminResource } from './AdminResource.js';
+import type { EditorialFacet } from './EditorialFacet.js';
+import type { UsersFacet } from './UsersFacet.js';
 import type { Fetcher } from '@fougere/app/client';
 import { formFieldsOf, type FormField, type TableColumn } from '@fougere/app/client';
 import { Card as SchemaCard } from '@fougere/schema';

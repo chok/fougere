@@ -1,4 +1,3 @@
-/** What the app hosts, read as a back-office. */
 import { Card, FieldSet, type SchemaView } from '@fougere/schema';
 import {
   CALL_ENDPOINT,
@@ -10,17 +9,10 @@ import {
   type FormField,
   type TableColumn,
 } from '@fougere/app/client';
-import { type CardOp, type IdentityCard, Invocation } from '@fougere/core/contract';
-import type { ResourceKey } from './provider.js';
-import type { AdminFacets } from './facets.js';
-
-/** One operation as the admin meets it, before a renderer decides its widget. */
-export interface AdminOperation extends CardOp {
-  /** Display fallback. An extension may replace it without renaming the call. */
-  label: string;
-  /** Optional confirmation sentence, interpreted by renderers that support actions. */
-  confirm?: string;
-}
+import { type IdentityCard, Invocation } from '@fougere/core/contract';
+import type { ResourceKey } from './ResourceKey.js';
+import type { AdminFacets } from './AdminFacets.js';
+import type { AdminOperation } from './AdminOperation.js';
 
 /** One facade, everything the UI needs to render it. */
 export interface AdminResource extends ResourceKey {

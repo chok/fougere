@@ -9,10 +9,7 @@ export { frondOf, type Scope } from './scope.js';
 export { loadScript, reachableOps } from './load.js';
 export { statementsOf } from './statements.js';
 export { spansOf } from './spans.js';
-export {
-  checkDoorContract,
-  checkDoors,
-} from './comparison.js';
+export { checkDoorContract, checkDoors } from './DoorContractCase.js';
 export { at } from './gql.js';
 export { driftOf, agrees, explain, type CardDrift } from './remotes.js';
 export { checkAll } from './all.js';

@@ -1,20 +1,9 @@
-/** Additive presentation changes over the model derived from `rpc.discover`. */
 import type { FormField, TableColumn } from '@fougere/app/client';
-import { capabilitiesOf, type AdminOperation, type AdminResource } from './resources.js';
-import { mergeAdminFacets, type AdminFacets } from './facets.js';
-
-export interface AdminFieldExtension {
-  /** Changes the fallback in every derived view of this field. */
-  label?: string;
-  /** Removes the field from derived tables, shows and forms. */
-  hidden?: boolean;
-}
-
-export interface AdminOperationExtension {
-  label?: string;
-  /** `false` explicitly removes a confirmation added by an earlier extension. */
-  confirm?: string | false;
-}
+import { type AdminOperation } from './AdminOperation.js';
+import { capabilitiesOf, type AdminResource } from './AdminResource.js';
+import { mergeAdminFacets, type AdminFacets } from './AdminFacets.js';
+import type { AdminFieldExtension } from './AdminFieldExtension.js';
+import type { AdminOperationExtension } from './AdminOperationExtension.js';
 
 export interface AdminExtension {
   /** Registration key from the card (`post`, not `Post`). */

@@ -1,6 +1,6 @@
 /** The facades as Express middlewares — the form an Express app expects. */
 import { readExpressBody } from '@fougere/http';
-import { serveRest, serveRpc, rpcParseError } from './serve.js';
+import { rpcParseError, serveRest, serveRpc } from './Outcome.js';
 import { serveGraphQL } from './graphql.js';
 import { sessionViewOf } from './session.js';
 import { useFougereApp } from './boot.js';

@@ -1,10 +1,8 @@
 import { Lifecycle } from '@fougere/schema';
-/**
- * Form contract, pure part — derives what a create/edit form is made of from the entity's field
- * axes.
- */
 import { Shapes, lowerFirst, Role, Visibility } from '@fougere/schema';
 import type { Field, SchemaView, ShapeType, ValidationError } from '@fougere/schema';
+import type { FormField } from './FormField.js';
+import type { TableColumn } from './TableColumn.js';
 
 /** What an entity class exposes to a form — the schema statics it already has. */
 export type FormEntity = SchemaView;
@@ -12,34 +10,6 @@ export type FormEntity = SchemaView;
 /** The literal a field is born with, when it declares one. */
 function defaultOf(field: Field): unknown {
   return Lifecycle.of(field).literal?.value;
-}
-
-export interface FormField {
-  name: string;
-  /** Rendering hint derived from the shape — the page maps it to widgets. */
-  control: 'text' | 'email' | 'url' | 'number' | 'boolean' | 'date' | 'select';
-  required: boolean;
-  /** i18n key by convention: `entity.field`. The schema never carries display text. */
-  labelKey: string;
-  /** Fallback label when no i18n message fills the key. */
-  label: string;
-  /** Enum values, when control is 'select'. */
-  options?: string[];
-  /**
-   * What the browser enforces, under the names it already knows — spread this on the input and the
-   * page states no rule of its own.
-   */
-  attrs?: {
-    type?: 'text' | 'email' | 'url' | 'number';
-    required?: boolean;
-    minlength?: number;
-    maxlength?: number;
-    min?: number;
-    max?: number;
-    pattern?: string;
-  };
-  /** The value the field is born with — the literal its `lifecycle.create` rule names. */
-  default?: unknown;
 }
 
 /** The base JSON type of a shape — unwraps the `[T,'null']` union. */
@@ -129,20 +99,6 @@ export function formFieldsOf(entity: FormEntity, entityKey: string): FormField[]
       ...(defaultOf(f) !== undefined ? { default: defaultOf(f) } : {}),
     };
   });
-}
-
-export interface TableColumn {
-  name: string;
-  /**
-   * How to print the value — the dual of {@link FormField.control}, and deliberately not
-   * the same list: a closed set prints as its value, a reference prints as a link.
-   */
-  render: 'text' | 'number' | 'boolean' | 'date' | 'json' | 'link';
-  /** The same key a form uses for the same field — one convention, two projections. */
-  labelKey: string;
-  label: string;
-  /** The entity a `link` points at, under the key its facade is named by. */
-  to?: string;
 }
 
 /** Asked of the relation before the shape: a reference's own shape is a bare string. */

@@ -9,25 +9,13 @@ export {
 
 export { useFougereAuth } from './auth.js';
 
-export { tableOf } from './rest.js';
+export { tableOf } from './RouteMatch.js';
 
-export {
-  serveRest,
-  serveRpc,
-  surfaceOf,
-  rpcParseError,
-  invokeOn,
-} from './serve.js';
+export { invokeOn, rpcParseError, serveRest, serveRpc, surfaceOf } from './Outcome.js';
 
-export {
-  formFieldsOf,
-  tableColumnsOf,
-  payloadOf,
-  errorsByField,
-  type FormEntity,
-  type FormField,
-  type TableColumn,
-} from './form.js';
+export { errorsByField, formFieldsOf, payloadOf, tableColumnsOf, type FormEntity } from './FormEntity.js';
+export { type FormField } from './FormField.js';
+export { type TableColumn } from './TableColumn.js';
 
 export { sessionViewOf, type SessionView } from './session.js';
 

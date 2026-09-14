@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { Card, email, entity, oneOf, primary, readOnly, text } from '@fougere/schema';
 import type { CardOp, IdentityCard } from '@fougere/core/contract';
-import { applyAdminExtensions, defineAdminExtension, type AdminExtension } from '../src/extensions.js';
-import { actionsOf } from '../src/resources.js';
-import { resourcesOf } from '../src/resources.js';
+import { applyAdminExtensions, defineAdminExtension, type AdminExtension } from '../src/AdminExtension.js';
+import { actionsOf } from '../src/AdminResource.js';
+import { resourcesOf } from '../src/AdminResource.js';
 
 class Post extends entity({
   id: primary(),

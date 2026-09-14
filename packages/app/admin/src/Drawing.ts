@@ -1,4 +1,3 @@
-/** How the system is arranged, as the app itself reports it. */
 import dagre from '@dagrejs/dagre';
 import {
   CALL_ENDPOINT,
@@ -6,16 +5,11 @@ import {
   sendCall,
   type Fetcher,
 } from '@fougere/app/client';
-import {
-  ErrorCode,
-  type DeclaredEdge,
-  type Edge,
-  type FrondPlacement,
-  type TopologyReport,
-  Invocation,
-} from '@fougere/core/contract';
-
-export type { TopologyReport, FrondPlacement, Edge, DeclaredEdge };
+import { ErrorCode, type FrondPlacement, type TopologyReport, Invocation } from '@fougere/core/contract';
+import type { TopologyNode } from './TopologyNode.js';
+import type { Point } from './Point.js';
+import type { PlacedNode } from './PlacedNode.js';
+import type { PlacedEdge } from './PlacedEdge.js';
 
 /** The report, or `undefined` when the app serves no topology at all. */
 export async function fetchTopology(
@@ -33,23 +27,6 @@ export async function fetchTopology(
     if ((error as { code?: unknown })?.code === ErrorCode.NOT_FOUND) return undefined;
     throw error;
   }
-}
-
-/** One frond as the page draws it: its placement, and the calls observed around it. */
-export interface TopologyNode extends FrondPlacement {
-  /** Fronds this one called, with what it cost them. */
-  calls: Edge[];
-  /** Fronds that called this one. */
-  calledBy: Edge[];
-  /** Fronds its code reaches, whether or not a call has ever gone down the link. */
-  declaredCalls: DeclaredEdge[];
-  /** Where the config says to reach it, when it says so. */
-  at?: string;
-  /**
-   * Declared in `remotes:` and never heard from. A different absence from an opaque remote,
-   * which answered and keeps its shape to itself: this one may simply be down.
-   */
-  silent: boolean;
 }
 
 /** The report read as a graph — what runs here first, then what answered, then what never did. */
@@ -90,36 +67,6 @@ export function nodesOf(report: TopologyReport): TopologyNode[] {
     }));
 
   return [...heard, ...silent];
-}
-
-export interface Point {
-  x: number;
-  y: number;
-}
-
-/** A node placed on the drawing. `x`/`y` are its CENTRE, the convention the layout answers in. */
-export interface PlacedNode {
-  node: TopologyNode;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-/**
- * One link between two nodes. `count` is absent on a link nothing has travelled: the config
- * declares it and no call has gone down it, which is drawn broken rather than not drawn.
- */
-export interface PlacedEdge {
-  from: string;
-  to: string;
-  path: string;
-  /** Where this link's figure goes — clear of every node, or absent when the route is a point. */
-  at?: Point;
-  count?: number;
-  errors: number;
-  /** Where this link's volume sits among the others, `0` to `1`. Absent when nothing travelled. */
-  weight?: number;
 }
 
 export interface Drawing {

@@ -1,5 +1,6 @@
 import { genericOAuth } from 'better-auth/plugins';
 import type { BetterAuthOptions, BetterAuthPlugin } from 'better-auth';
+import type { OIDCProviderConfig } from './OIDCProviderConfig.js';
 
 /** Fougere-side provider declaration. */
 export interface FougereProviders {
@@ -15,19 +16,6 @@ export interface FougereProviders {
   discord?: { clientId: string; clientSecret: string; scope?: string[] };
   microsoft?: { clientId: string; clientSecret: string; scope?: string[] };
   oidc?: Record<string, OIDCProviderConfig>;
-}
-
-export interface OIDCProviderConfig {
-  /** Provider id used in the URL (e.g. /auth/oauth2/{id}/callback). Defaults to the dict key. */
-  id?: string;
-  /** OIDC issuer URL — used to derive the discovery URL. */
-  issuer: string;
-  clientId: string;
-  clientSecret: string;
-  scopes?: string[];
-  /** Pass-through for better-auth's genericOAuth provider config. */
-  redirectURI?: string;
-  responseType?: string;
 }
 
 const SOCIAL_KEYS = new Set(['google', 'github', 'facebook', 'apple', 'discord', 'microsoft']);
