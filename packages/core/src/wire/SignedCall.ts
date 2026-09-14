@@ -9,4 +9,6 @@ export interface SignedCall {
   query?: Record<string, unknown>;
   input?: unknown;
   state?: Record<string, unknown>;
+  /** The hour, pinned like the input: moving it is moving the call. */
+  runAt?: number;
 }

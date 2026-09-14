@@ -31,6 +31,8 @@ async function boundTo(call: SignedCall) {
     params: call.params ?? {},
     query: call.query ?? {},
     input: await digestOf(call.input),
+    // Omitted when absent, so a call with no hour pins what it always pinned.
+    ...(call.runAt === undefined ? {} : { runAt: call.runAt }),
   };
 }
 
