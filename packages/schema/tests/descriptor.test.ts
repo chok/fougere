@@ -10,10 +10,12 @@ import {
   list,
   many,
   number,
+  ON_DELETE,
   optional,
   primary,
   readOnly,
   ref,
+  Role,
   type SchemaView,
   text,
 } from '../src/index.js';
@@ -134,6 +136,20 @@ group('Card.toSchema — card to working schema', () => {
     const author = Remote.getFields().author;
     expect(author.role?.relation?.kind).toBe('one');
     expect((author.role!.relation!.to() as { name: string }).name).toBe('author');
+  });
+
+  it('carries what becomes of a row when its target goes, and refuses a word it does not know', () => {
+    class Author extends entity({ id: primary() }) {}
+    for (const action of ON_DELETE) {
+      class Comment extends entity({ id: primary(), authorId: ref(Author, { onDelete: action }) }) {}
+      const travelled = JSON.parse(JSON.stringify(Card.fromSchema(Comment, 'comment').descriptor));
+      expect(travelled.properties.authorId['x-fougere'].role.relation.onDelete).toBe(action);
+      expect(Role.of(Card.fromDescriptor(travelled).toSchema().getFields().authorId).onDelete).toBe(action);
+    }
+
+    const stated = JSON.parse(JSON.stringify(Card.fromSchema(Post, 'post').descriptor));
+    stated.properties.author['x-fougere'].role.relation.onDelete = 'burn it all';
+    expect(() => Card.fromDescriptor(stated).toSchema()).toThrow(/onDelete/);
   });
 
   it('round-trips through a schema and back to a card', () => {

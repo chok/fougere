@@ -26,6 +26,9 @@ import { inheritsCrud, subjectOf } from '../prefab/CrudConstructor.js';
 import { repositoryKeyOf } from '../prefab/RepositoryConstructor.js';
 import { storageKeyOf } from '../storage/Storage.js';
 import { declares } from '../Source.js';
+import { heldBy, refuseUnwritableNull, releasing } from './relations.js';
+import type { Hosting } from './Hosting.js';
+import type { RelationCheck } from '../dispatch/RelationCheck.js';
 import { presenterKeyOf } from '../prefab/presenter.js';
 import { collectorKeyOf } from '../prefab/collector.js';
 import { RouteAddress } from '../wire/RouteAddress.js';
@@ -51,6 +54,14 @@ export interface Assembly {
   boundPorts: Set<string>;
   /** Where a check writes what does not hold — collected across fronds, refused together. */
   refused: Diagnostic[];
+  /**
+   * The references this process reads itself, collected across fronds. Whether one is
+   * ANSWERED can only be asked once every frond has registered, which is why the list
+   * leaves here rather than being judged where it is built.
+   */
+  relations: RelationCheck[];
+  /** Where each entity is hosted — one answer for a frond's storage, its frames and its surfaces. */
+  hosting: Hosting;
   /** What the model resolved before the boot performed any side effect. */
   operationModel: EffectiveOperationModel;
   entityByName: Map<string, SchemaView>;
@@ -177,6 +188,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   // When a handler declares Crud(Entity, Output), scope the storage via .output(Output)
   if (options.storageFactory) {
     const unenforced: string[] = [];
+    const release = releasing(assembly.hosting);
     for (const entity of frond.entities) {
       const key = storageKeyOf(entity.name);
       const source = options.sourceOf?.(entity.name) ?? 'db';
@@ -197,7 +209,12 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
       // arrived. Same order the client facade has held since `StorageGuard` existed.
       const linked = wrapping('Storage', seams.get('Storage') ?? [], scoped, (dep) => scope.resolve(dep));
       // Storage is a way out like the client surface — see `StorageGuard`.
-      const guarded = new StorageGuard(entity.entityClass.getFields(), entity.name).guard(linked);
+      refused.push(...refuseUnwritableNull(entity.entityClass, entity.name, entity.filePath));
+      const relations = heldBy(entity.entityClass, entity.name, assembly.hosting);
+      assembly.relations.push(...relations);
+      const guarded = new StorageGuard(
+        entity.entityClass.getFields(), entity.name, {}, relations, release,
+      ).guard(linked);
       scope.registerValue(key, guarded);
 
       // The default repository IS the guarded port — it already answers every gesture a
@@ -246,6 +263,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
       sourceOf: options.sourceOf,
       transacts: options.transacts,
       transacted: options.transacted,
+      hosting: assembly.hosting,
       log: frondLog,
     },
     refused,
@@ -418,7 +436,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
           ? { view: (outputSchema as { getFields(): Fields }).getFields() }
           : {}),
         outOfView: (message) => frondLog.warn(message),
-      }).guard(scoped);
+      }, heldBy(entity.entityClass, entity.name, assembly.hosting), releasing(assembly.hosting)).guard(scoped);
       surfaceScope.registerValue(storageKeyOf(entity.name), guarded);
       surfaceScope.registerValue(repositoryKeyOf(entity.name), guarded);
     }

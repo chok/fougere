@@ -7,6 +7,7 @@ import type { RoutePolicy } from './RoutePolicy.js';
 import { RouteRegistry } from './RouteRegistry.js';
 import { routeNotFound, servedOperations } from './routeNotFound.js';
 import type { InFlight } from './InFlight.js';
+import type { Journal } from './Journal.js';
 
 /** Resolves and executes every call through the same transverse lifecycle. */
 export class Dispatcher implements DispatchPort {
@@ -15,9 +16,31 @@ export class Dispatcher implements DispatchPort {
     private readonly inFlight: InFlight,
     private readonly lifecycle = new DispatchLifecycle(),
     private readonly policy?: RoutePolicy,
+    private readonly journalOf?: () => Journal | undefined,
   ) {}
 
+  /**
+   * A kept call publishes no dispatch event and enters no flight: it has not been answered,
+   * and counting it here would report one call spanning the days until its hour.
+   */
+  private async keep(call: Call, runAt: number): Promise<undefined> {
+    const journal = this.journalOf?.();
+    if (!journal) {
+      throw new Error(
+        `${call.address.toString()} asks to run at ${new Date(runAt).toISOString()}, and nothing keeps it.`
+        + ' Install a package answering Journal — @fougere/workflow.',
+      );
+    }
+
+    await journal.keep(call, runAt);
+
+    return undefined;
+  }
+
   async dispatch(call: Call): Promise<unknown> {
+    const { runAt } = call.invocation;
+    if (runAt !== undefined) return this.keep(call, runAt);
+
     let route: Route | undefined;
     let release: (() => void) | undefined;
     this.lifecycle.publish(DispatchEvent.received(call));

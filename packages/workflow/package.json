@@ -1,0 +1,53 @@
+{
+  "name": "@fougere/workflow",
+  "version": "0.10.0-alpha.0",
+  "description": "A release that goes to the end: the journal is three entities, the sweep is an operation, and a shared journal is one line of remotes:.",
+  "keywords": [
+    "fougere",
+    "typescript",
+    "durable",
+    "workflow"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chok/fougere.git",
+    "directory": "packages/workflow"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit -p tsconfig.test.json",
+    "prepublishOnly": "pnpm run build"
+  },
+  "peerDependencies": {
+    "@fougere/core": "workspace:^",
+    "@fougere/schema": "workspace:^"
+  },
+  "devDependencies": {
+    "@fougere/container": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/schema": "workspace:*",
+    "@fougere/adapter-sql": "workspace:*",
+    "@fougere/defaults": "workspace:*",
+    "vitest": "^4.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

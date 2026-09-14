@@ -6,4 +6,6 @@ export interface InvocationContext {
   trace?: string;
   identity?: string;
   caller?: string;
+  /** Epoch milliseconds before which this call is not to run. */
+  runAt?: number;
 }

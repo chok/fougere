@@ -4,10 +4,13 @@ export const RELATION_KINDS = ['one', 'many'] as const;
 
 export const ON_DELETE = ['cascade', 'restrict', 'set null'] as const;
 
+/** What becomes of the rows that name a deleted one. */
+export type OnDelete = (typeof ON_DELETE)[number];
+
 export interface Relation {
   to: () => EntityConstructor;
   kind: (typeof RELATION_KINDS)[number];
-  onDelete?: (typeof ON_DELETE)[number];
+  onDelete?: OnDelete;
 }
 
 /**
@@ -19,8 +22,8 @@ export interface Relation {
  */
 export const Relation = {
   /** `() => Post` so two entities can point at each other. */
-  one(target: EntityConstructor | (() => EntityConstructor), cascade?: boolean): Relation {
-    return { to: normalizeTarget(target), kind: 'one', onDelete: cascade ? 'cascade' : undefined };
+  one(target: EntityConstructor | (() => EntityConstructor), onDelete?: OnDelete): Relation {
+    return { to: normalizeTarget(target), kind: 'one', ...(onDelete ? { onDelete } : {}) };
   },
 
   many(target: EntityConstructor | (() => EntityConstructor)): Relation {

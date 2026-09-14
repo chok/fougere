@@ -11,6 +11,8 @@ import { type StorageFactory } from '../storage/StorageFactory.js';
 import type { Logger } from '../builtin/Logger.js';
 import type { ProviderEntry } from '../descriptor/ProviderEntry.js';
 import { StorageGuard } from '../dispatch/StorageGuard.js';
+import { heldBy, releasing } from './relations.js';
+import type { Hosting } from './Hosting.js';
 import { recording, unwind, type Undo } from './frame.js';
 import type { Diagnostic } from '../diagnostic.js';
 
@@ -26,6 +28,8 @@ export interface FrameWorld {
   /** Whether that source hands one out — asked before the frame is built, not at the call. */
   transacts?: (source: string) => boolean;
   transacted?: <R>(source: string, fn: (storageFactory: StorageFactory) => Promise<R>) => Promise<R>;
+  /** What a member's references ask before a write — the answer its frond's own storage gets. */
+  hosting: Hosting;
   log: Logger;
 }
 
@@ -180,7 +184,7 @@ export function registerFrames(
 
     const sources = new Set(members.entities.map((member) => world.sourceOf?.(member.name) ?? 'db'));
     const validator = (storage: Storage, name: string, schema: SchemaView) =>
-      new StorageGuard(schema.getFields(), name).guard(storage);
+      new StorageGuard(schema.getFields(), name, {}, heldBy(schema, name, world.hosting), releasing(world.hosting)).guard(storage);
 
     // One engine and a way into it: the engine gives the unwind AND the isolation. The
     // question goes to the source these members live in — a composition answering for the

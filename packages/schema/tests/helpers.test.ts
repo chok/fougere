@@ -10,6 +10,7 @@ import {
   json,
   list,
   many,
+  ON_DELETE,
   number,
   oneOf,
   optional,
@@ -113,6 +114,17 @@ describe('helpers', () => {
     expect(f.role?.relation?.to()).toBe(Customer);
     expect(Role.of(f).isReference).toBe(true);
     expect(Role.of(f).target).toBe(Customer);
+  });
+
+  it('ref() states what becomes of this row when the target goes', () => {
+    class Customer extends entity({ id: primary() }) {}
+
+    // Unstated is `restrict`, and it is stated NOWHERE: a foreign key already refuses a
+    // delete that would orphan a row, so the absence is the same rule written by the engine.
+    expect(Role.of(ref(Customer)).onDelete).toBeUndefined();
+    for (const action of ON_DELETE) {
+      expect(Role.of(ref(Customer, { onDelete: action })).onDelete).toBe(action);
+    }
   });
 
   it('many() is an array whose elements live on the other side', () => {

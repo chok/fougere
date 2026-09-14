@@ -37,6 +37,10 @@ export { Call } from './contract.js';
 export { RouteAddress } from './contract.js';
 export { DispatchLifecycle } from './dispatch/DispatchLifecycle.js';
 export { Dispatcher } from './dispatch/Dispatcher.js';
+export { release, type Releasing } from './dispatch/Release.js';
+export { releasing } from './boot/relations.js';
+export { type Dependent } from './dispatch/Dependent.js';
+export { JOURNAL, type Journal } from './dispatch/Journal.js';
 // The class and not only its type: an observer RECEIVES these, so a package that folds
 // them — or a test of one — has to be able to make one through the facade.
 export { DispatchEvent } from './dispatch/DispatchEvent.js';

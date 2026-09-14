@@ -5,6 +5,12 @@ import type { HandlerEntry } from '../descriptor/HandlerEntry.js';
 import type { PresenterEntry } from '../descriptor/PresenterEntry.js';
 import { hostedBy } from './hosted.js';
 import { installFrond, type Assembly } from './install.js';
+import { dependentsOf, releasing, unheldAmong } from './relations.js';
+import { release as releaseRow } from '../dispatch/Release.js';
+import type { Hosting } from './Hosting.js';
+import { peerOver } from './peerOver.js';
+import { JOURNAL, type Journal } from '../dispatch/Journal.js';
+import type { RelationCheck } from '../dispatch/RelationCheck.js';
 import { refusalOf, type Diagnostic } from '../diagnostic.js';
 import type { AuthRuntime } from './AuthRuntime.js';
 import type { App } from './App.js';
@@ -30,7 +36,8 @@ import { type EffectiveOperationsMap } from '../EffectiveOperationsMap.js';
 
 import { InFlight } from '../dispatch/InFlight.js';
 // The keys, each read from where its concept is declared — never respelled here.
-import { type RpcAnswer } from '../wire/RpcAnswer.js';
+import { RPC_ENTITY, type RpcAnswer } from '../wire/RpcAnswer.js';
+import { Invocation } from '../wire/Invocation.js';
 import { facadeKeyOf } from '../wire/Facade.js';
 import { identityCardOf } from './card.js';
 import { AppLifecycle, migrating } from './AppLifecycle.js';
@@ -251,12 +258,16 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         error,
       ),
     );
-    const dispatcher = new Dispatcher(routeRegistry, inflight, dispatchLifecycle);
+    // Resolved at the call and never here: a journal is a provider of a brought frond, and
+    // the extension that registers it rises long after this line.
+    const keeping = (): Journal | undefined => journalOf();
+    const dispatcher = new Dispatcher(routeRegistry, inflight, dispatchLifecycle, undefined, keeping);
     const localDispatcher = new Dispatcher(
       routeRegistry,
       inflight,
       dispatchLifecycle,
       new LocalRoutePolicy((surface) => fronds.servedNames(surface)),
+      keeping,
     );
 
     function getMiddlewares(entity: string): AppMiddleware[] {
@@ -280,6 +291,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
     /** What every check of this boot writes into — refused together, once they have all run. */
     const refused: Diagnostic[] = [];
+    const relations: RelationCheck[] = [];
     keyClaims(fronds, options.remotes, refused);
     // Said before anything is installed: a key claimed twice makes every later error worse —
     // the route registry collides first, and names a route instead of the two fronds.
@@ -313,6 +325,78 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       [...operations].map(([name, operation]) => [name, operation as OperationContract] as const),
     );
 
+    /**
+     * The storage an entity is backed by — the dual of `facadeFor`, which serves its client-facing
+     * facade.
+     */
+    const storageFor = (entity: string): unknown | undefined => {
+      const owner = fronds.owner(entity);
+      if (!owner) return undefined;
+
+      const key = storageKeyOf(entity);
+      try {
+        return container.resolve<Container>(`frond:${owner.name}`).resolve(key);
+      } catch {
+        return undefined;
+      }
+    };
+
+    // What carries a release writes none: an instrumentation frond's own rows are kept while a
+    // release happens, and journalling them would begin one inside the one being written down.
+    const carriesRelease = new Set(
+      fronds.filter((one) => one.brought).flatMap((one) => one.entities.map((e) => e.name)),
+    );
+
+    /**
+     * The journal a package registered, found where its own frond put it — a provider lands in
+     * its frond's scope, and the app container sees none of them.
+     */
+    const journalOf = (): Journal | undefined => {
+      for (const frond of fronds) {
+        if (!frond.brought) continue;
+        const scope = container.resolve<Container>(`frond:${frond.name}`);
+        if (scope.has(JOURNAL)) return scope.resolve<Journal>(JOURNAL);
+      }
+
+      return undefined;
+    };
+
+    const hosting: Hosting = {
+      hostedHere: (entity) => !(options.remotes && (frondOf.get(entity) ?? '') in options.remotes),
+      sourceOf: (name) => options.sourceOf?.(name) ?? 'db',
+      enforces: (source, constraint) => options.enforces?.(source, constraint) ?? false,
+      storageOf: storageFor,
+      entities: () => entityByName,
+      // The two readings core serves in EVERY process, asked of the one that holds the rows.
+      // Nothing is cached: a peer that was down at boot answers the next call.
+      // Built from `remotes:` itself, not from the router: the router indexes by ENTITY, read
+      // off a card, and the question here is asked of a PROCESS about rows it may be alone
+      // in knowing about.
+      // Resolved per call and never at boot: the package that registers it rises in the
+      // ascent, long after this answer is built.
+      journal: (entity) => (carriesRelease.has(entity) ? undefined : journalOf()),
+      peers: () => (options.remoteTransport
+        ? declaredRemotes.map(([, url]) => peerOver(options.remoteTransport!(url)))
+        : []),
+      peerOf: (entity) => (remoteRouter ? {
+        dependents: async (named) => (await remoteRouter.route(entity))
+          .transport({ entity: RPC_ENTITY, op: 'dependents' },
+            { ...Invocation.empty, params: { entity: named } as never }),
+        missing: async (named, keys) => {
+          const answer = await (await remoteRouter.route(entity))
+            .transport({ entity: RPC_ENTITY, op: 'holds' },
+              { ...Invocation.empty, params: { entity: named, keys } as never });
+
+          return (answer as { missing: readonly unknown[] }).missing;
+        },
+        release: async (named, key) => {
+          const route = await remoteRouter.route(entity);
+          await route.transport({ entity: RPC_ENTITY, op: 'release' },
+            { ...Invocation.empty, params: { entity: named, key } as never });
+        },
+      } : undefined),
+    };
+
     // Every port an implementation was bound to, so a `ports:` entry that named none
     // can say so rather than look obeyed.
     const boundPorts = new Set<string>();
@@ -322,10 +406,21 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // table, one emission list — so what a frond serves is there for the next one to find.
     const assembly: Assembly = {
       container, routeRegistry, emissions, dispatcher, localDispatcher, effectiveByKey,
-      boundPorts, refused, operationModel, entityByName, frondOf, contractsOf, getMiddlewares, use,
-      log, options,
+      boundPorts, refused, relations, hosting, operationModel, entityByName, frondOf, contractsOf,
+      getMiddlewares, use, log, options,
     };
     for (const frond of fronds) await installFrond(frond, assembly);
+
+    // A reference no key holds and no storage answers: said at the END, for the reason the
+    // `ports:` warning below is — a target is another frond's, so no single frond can tell
+    // an absence from a neighbour that had not been installed yet.
+    const unheld = unheldAmong(relations, hosting);
+    if (unheld.length > 0) {
+      log.warn(
+        `[relations] ${unheld.join(', ')} — declared, and nothing in this process holds them: `
+        + 'no foreign key, and the target answers elsewhere. A row may name one that is gone.',
+      );
+    }
 
     // Every check of the install, said at once — a boot that stops at the first makes the
     // next one visible only after a fix and a restart.
@@ -495,22 +590,6 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         : undefined;
     };
 
-    /**
-     * The storage an entity is backed by — the dual of `facadeFor`, which serves its client-facing
-     * facade.
-     */
-    const storageFor = (entity: string): unknown | undefined => {
-      const owner = fronds.owner(entity);
-      if (!owner) return undefined;
-
-      const key = storageKeyOf(entity);
-      try {
-        return container.resolve<Container>(`frond:${owner.name}`).resolve(key);
-      } catch {
-        return undefined;
-      }
-    };
-
     /** The presenter of an entity, resolved through its owning frond's scope. */
     const presenterFor = (entity: string): unknown | undefined => {
       const owner = fronds.owner(entity);
@@ -577,7 +656,38 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
     // The card is an rpc op like any other, so one registry answers and one refusal names
     // what is served. A package's op is declared the same way, from outside.
+    // What a release is, resolved once and registered: a package that drives one asks for it
+    // by type, the way every other dependency is asked for.
+    container.registerValue('Releasing', releasing(hosting));
+
     app.serveRpc('discover', (_invocation, surface) => identityCardOf(app, surface));
+
+    // What a release asks another process, and what it tells it to do. Served by EVERY process
+    // the way `discover` is: a frond that hosts rows is the only one that can answer for them.
+    //
+    // Read off the STORAGE and never off a facade: a facade answers what its handler chose to
+    // show — `PostHandler.list` hands back published posts — so a draft naming a deleted user
+    // would be invisible to the very question that exists to find it.
+    // The dual of `release`, and the same reason it is served by every process: only the one
+    // that holds the rows can say a key is missing, and only from the STORAGE — a facade
+    // answers what its handler chose to show.
+    app.serveRpc('holds', async (invocation) => {
+      const named = String(invocation.params.entity);
+      const keys = (invocation.params.keys ?? []) as readonly unknown[];
+      const rows = storageFor(named) as { findByKeys(k: readonly string[]): Promise<Map<string, unknown>> } | undefined;
+      if (!rows) return { missing: [] };
+      const found = await rows.findByKeys(keys.map(String));
+
+      return { missing: keys.filter((key) => !found.has(String(key))) };
+    });
+    app.serveRpc('dependents', (invocation) =>
+      dependentsOf(String(invocation.params.entity), hosting));
+    app.serveRpc('release', async (invocation) => {
+      await releaseRow(String(invocation.params.entity), invocation.params.key, releasing(hosting),
+        (invocation.params.visited ?? []) as readonly string[]);
+
+      return { released: true };
+    });
 
     // The last thing the boot does, and the first thing a release undoes. An extension may
     // await here — which is what a provider needing to OPEN something could never do.

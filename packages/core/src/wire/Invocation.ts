@@ -31,8 +31,9 @@ export class Invocation implements InvocationContext {
   readonly trace?: string;
   readonly identity?: string;
   readonly caller?: string;
+  readonly runAt?: number;
 
-  /** Gives every entry and every transport the same seven-member value, frozen. */
+  /** Gives every entry and every transport the same eight-member value, frozen. */
   private constructor(context: PartialInvocation) {
     this.params = canonicalRecord(context.params);
     this.query = canonicalRecord(context.query);
@@ -43,6 +44,7 @@ export class Invocation implements InvocationContext {
     if (context.trace !== undefined) this.trace = context.trace;
     if (context.identity !== undefined) this.identity = context.identity;
     if (context.caller !== undefined) this.caller = context.caller;
+    if (context.runAt !== undefined) this.runAt = context.runAt;
     Object.freeze(this);
   }
 

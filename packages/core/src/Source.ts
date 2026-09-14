@@ -6,10 +6,11 @@ import type { SourceConfig } from './SourceConfig.js';
 
 /** Whether an entity asks for one, anywhere but on its key. */
 export function declares(schema: SchemaView, constraint: Constraint): boolean {
-  if (constraint !== 'unique') return false;
+  const fields = Object.values(schema.getFields());
+  if (constraint === 'relation') return fields.some((field) => Role.of(field).isReference);
   if ((schema.getUnique() ?? []).length > 0) return true;
 
-  return Object.values(schema.getFields()).some((field) => Role.of(field).isUnique);
+  return fields.some((field) => Role.of(field).isUnique);
 }
 
 /**

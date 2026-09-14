@@ -12,6 +12,7 @@ export { type Shape } from './axis/shape/Shape.js';
 export { type ShapeType } from './axis/shape/ShapeType.js';
 export { Shapes } from './axis/shape/Shape.js';
 export { Role } from './axis/role/Role.js';
+export { ON_DELETE, type OnDelete } from './axis/role/Relation.js';
 export { type EntityConstructor } from './axis/role/EntityConstructor.js';
 export { Lifecycle } from './axis/lifecycle/Lifecycle.js';
 export { Boundary } from './axis/boundary/Boundary.js';
