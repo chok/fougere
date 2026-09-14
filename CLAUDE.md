@@ -555,7 +555,9 @@ transaction: the read and the write sit in two engines by construction, so a tar
 between them passes. `Hosting` reaches the target through its OWNING frond, because a scope
 sees its parent and never its siblings, and the frame and the surface build their guard from
 the same answer as the frond's storage. Pinned by `core/tests/relations.test.ts` and
-`demos/together-frame`, case 5.
+`demos/together-frame`, case 5. What a placement may not change BESIDE a deletion is
+`defaults/tests/gradient.test.ts`: validation, boundary, lifecycle, `unique` and the
+reference, over the same matrix.
 
 **A deletion is the dual of a write, and the ORDER is the guarantee** — `dispatch/Release.ts`,
 `release`. `ref(User, { onDelete })` states `restrict` (the default, since a key with nothing
@@ -757,8 +759,19 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   it has one.** The additive pass has no `addForeignKey` (`diff/Change.ts`), and `heldBy` reads
   what the source PROMISES, not what the live table holds, so it reads nothing either. Measured
   2026-09-14 on `site/.data/site.db`: the same dangling insert passes there and is refused on a
-  fresh database. `onDelete` is the other open half — the DDL emits it (`ddl/SqlSink.ts`), so one
-  source keeps it; `StorageGuard` watches no `delete`, so nothing else does.
+  fresh database. `onDelete` widens it rather than adding a second hole: `keyed` answers from
+  what the source PROMISES, so the guard steps aside for a key the live table never got, and a
+  cascade declared on an old table is carried out by nobody. A LIMIT and not a defect to chase:
+  the pass is additive by design, a key cannot be added to a table holding rows that already
+  break it, and `drift` is where it would be said — it reads nullability today and the engine's
+  introspection carries no foreign key (`ColumnMetadata`, measured 2026-09-14). The fix is one
+  statement by hand, or a fresh table.
+- **A service reaching another frond's repository fails at the CALL, not at the boot** — a scope
+  sees its parent and never its siblings, so `AuthorRepository` registered by the frond that
+  owns the entity is unreachable from a neighbour. The refusal is right (a neighbour goes
+  through the facade, not through the rows) and it is LATE: a collector in the wrong frond
+  refuses the boot, this one answers `'AuthorRepository' is not registered` at the first call.
+  Pinned as the behaviour it is by `defaults/tests/gradient.test.ts`, measured 2026-09-14.
 - **A process carrying only its own frond cannot migrate a table whose key names an entity it
   has never seen** — `ref(User): no source hosts it`, measured 2026-09-14 while writing
   `defaults/tests/on-delete.test.ts`. `elsewhere` covers another SOURCE, not another process,

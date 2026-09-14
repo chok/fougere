@@ -312,35 +312,8 @@ describe('a chain cut twice, and code that is not here', () => {
 });
 
 /**
- * What the gradient promises, as a list.
+ * What a placement may not change, beyond a deletion — `gradient.test.ts`, beside this file.
  *
- * Every line below must answer the same at every placement. They are not all covered here —
- * what is written is what this bench can say today, and what is not is named rather than
- * implied. A `todo` is a claim nobody has checked, which is the only honest way to leave one.
+ * It runs validation, boundary, lifecycle, unique, the reference and a moved service over the
+ * same matrix, and names what it still cannot say.
  */
-describe.todo('every invariant that must survive a placement', () => {
-  it.todo('unique: refused at the rows, or announced at boot — never silently absent');
-  it.todo('validation: the same input is refused with the same code, wherever it lands');
-  it.todo('lifecycle: created() and updated() are stamped by whoever writes, not by who asks');
-  it.todo('boundary: a readOnly field is refused inbound at every surface');
-  it.todo('presenter: the page is handed over whole, and the field count does not move');
-  it.todo('collector: resolved by type, and a collector in the wrong frond refuses the boot');
-  it.todo('middleware: it runs around the addresses its frond serves, and around no others');
-  it.todo('Emit<T>: every subscriber is handed the fact, in one process or across');
-  it.todo('Pipe<T>: the declared order holds, and a link that answers nothing refuses');
-  it.todo('Together: refused across processes, by definition — the refusal IS the invariant');
-});
-
-/**
- * Moving code, not rows.
- *
- * The three boundaries above move where things LIVE. This one moves where they are DECLARED:
- * an entity, a handler or a service changes frond, and nothing about the answers may move with
- * it. What legitimately changes is the reach, the boot lines and the card.
- */
-describe.todo('the cut holds when the code moves', () => {
-  it.todo('an entity declared in another frond: same keys, same refusals, same rows');
-  it.todo('a handler moved: the address follows it, and every surface still serves it');
-  it.todo('a service moved: resolved by type, so its consumers do not name its frond');
-  it.todo('a handler naming a neighbour facade: local and remote answer the same');
-});
