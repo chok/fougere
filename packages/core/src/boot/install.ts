@@ -87,6 +87,9 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   }
   const scope = container.createScope();
   const frondLog = log.child(frond.name);
+  // The frond's own voice, a child of the APP logger and never of `log` — which is the
+  // boot's, so a service's line would have claimed `boot:` long after the boot was over.
+  scope.registerValue('Logger', container.resolve<Logger>('Logger').child(frond.name));
 
   // `reads:` is what makes a cross-source reader exist here, and the list IS its
   // environment — a source holding none of these is never opened. Registered under
