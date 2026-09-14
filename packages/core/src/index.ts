@@ -33,6 +33,7 @@ export { Repository, type RepositoryConstructor } from './prefab/RepositoryConst
 export { type RepositoryOf } from './prefab/RepositoryOf.js';
 export { Invocation } from './contract.js';
 export type { InvocationContext } from './contract.js';
+export type { PartialInvocation } from './contract.js';
 export { Call } from './contract.js';
 export { RouteAddress } from './contract.js';
 export { DispatchLifecycle } from './dispatch/DispatchLifecycle.js';

@@ -18,6 +18,7 @@ export type { Comparison } from './storage/Comparison.js';
 export { toPublicError } from './wire/http-error.js';
 export { Invocation } from './wire/Invocation.js';
 export type { InvocationContext } from './wire/InvocationContext.js';
+export type { PartialInvocation } from './wire/PartialInvocation.js';
 export { Call } from './wire/Call.js';
 export { RouteAddress } from './wire/RouteAddress.js';
 export type { FrondCall } from './wire/FrondCall.js';
