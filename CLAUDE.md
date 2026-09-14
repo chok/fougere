@@ -34,6 +34,7 @@ pnpm -C demos/schema-ecommerce dev # Apollo Server on :4000
 pnpm -C demos/container-basics dev
 pnpm -C demos/core-scanner dev
 pnpm -C demos/ports-swap dev        # one handler: two PSPs, the refusal, a chain, and a seam
+pnpm -C demos/transport-chain dev  # one handler, six behaviours — the links that carry its calls
 pnpm -C demos/config-reload dev     # one boot, a real SIGHUP, a drain — and what a re-read cannot change
 pnpm -C demos/mirror-catalog dev    # two passes over a source that only answers ?page=&since=
 pnpm -C demos/sse-live dev         # live fan-out to readers who are not trusted peers
@@ -116,6 +117,7 @@ demos/
   nuxt-blog/           FLAGSHIP — primitives, auth, draft→publish, lived split
   schema-ecommerce/    SQLite + Apollo Server
   ports-swap/          one handler, two PSPs, a chain in front of one, and `Storage` wrapped for every frond
+  transport-chain/     journal, retry, a dropped line and a replay — none of it named by a handler
   config-reload/       the config re-read under a running app, the drain, and what it refuses to change
   mirror-catalog/      a copy of rows the app cannot query, and what the second pass costs
   together-frame/      one frame, two realizations, and the config line that picks one
@@ -390,7 +392,7 @@ never installed `@fougere/observability` answers `Unknown rpc operation 'topolog
 serves discover.` The report shapes live in core (`TopologyReport`, `FrondPlacement`, `Edge`)
 because they cross a process boundary.
 
-**The names the scan reads** — `core/src/conventions.ts`, read by `@fougere/compiler`. Everything else a frond states, it
+**The names the scan reads** — `core/src/Conventions.ts`, read by `@fougere/compiler`. Everything else a frond states, it
 states by its SHAPE; the twelve convention directories and the import scope are the one place
 a NAME is the declaration, and the only ones a project may restate (`conventions:` in
 `fougere.config.ts`). Two of them extend the FRAMEWORK rather than declare a domain, and one

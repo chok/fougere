@@ -26,6 +26,11 @@
  * It reads through `@typescript/typescript6`: the native tsc at the root compiles, and does
  * not expose the compiler API this walks.
  *
+ * A file under a CONVENTION directory — `entities/`, `handlers/`, the twelve of
+ * `DEFAULT_CONVENTIONS.dirs` — is exempt from the second: the scan places it, so where it
+ * sits is its declaration and no rule here may move it. The list is imported rather than
+ * repeated, because a thirteenth directory would otherwise be a second copy going stale.
+ *
  * A DOOR is exempt from the first clause: `index.ts` publishes what a package serves, and
  * naming several concepts is what it is for.
  *
@@ -48,9 +53,13 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import ts from '@typescript/typescript6';
+import { DEFAULT_CONVENTIONS } from '../packages/core/src/Conventions.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
-const SKIP = new Set(['node_modules', 'dist', 'tests', 'test', '__tests__', 'template', '.fougere']);
+const SKIP = new Set(['node_modules', 'dist', 'tests', 'test', '__tests__', 'template', 'templates', '.fougere']);
+
+/** A file in one of these is placed by the scan, so where it sits IS its declaration. */
+const PLACED = new Set(Object.values(DEFAULT_CONVENTIONS.dirs));
 
 function sources(dir: string, found: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
@@ -148,8 +157,10 @@ const scatter: string[] = [];
 for (const [name, from] of inDegree) {
   if (from.size !== 1 || published.has(name) || ambiguous.has(name)) continue;
   const holder = [...from][0]!;
-  if (owner.get(name) === owner.get(holder)) continue;
-  scatter.push(`  ${name} → ${holder}  [${path.relative(ROOT, owner.get(name)!)}]`);
+  const file = owner.get(name)!;
+  if (owner.get(holder) === file) continue;
+  if (path.dirname(file).split(path.sep).some(part => PLACED.has(part))) continue;
+  scatter.push(`  ${name} → ${holder}  [${path.relative(ROOT, file)}]`);
 }
 
 console.log(`concept-check: ${types.size} types among ${owner.size} exported names, ${files.length} files\n`);

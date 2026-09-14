@@ -2,10 +2,10 @@
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "noEmit": true,
+    "rootDir": "..",
     "declaration": false,
     "declarationMap": false,
     "sourceMap": false,
-    "rootDir": ".",
     "allowImportingTsExtensions": true,
     "erasableSyntaxOnly": true,
     "verbatimModuleSyntax": true
