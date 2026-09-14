@@ -1,3 +1,10 @@
+import type { FougereResourceOptions } from './FougereResourceOptions.js';
+import type { FougereDashboardResource } from './FougereDashboardResource.js';
+import type { FougereDashboardMetrics } from './FougereDashboardMetrics.js';
+import type { FougereDashboardContextValue } from './FougereDashboardContextValue.js';
+import type { FougereDashboardZone } from './FougereDashboardZone.js';
+import type { FougereDashboardWidget } from './FougereDashboardWidget.js';
+import type { FougereDashboardExtension } from './FougereDashboardExtension.js';
 'use client';
 
 import {
@@ -12,67 +19,11 @@ import {
   Typography,
   type SvgIconProps,
 } from '@mui/material';
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ComponentType,
-  type ReactElement,
-} from 'react';
-import {
-  useDataProvider,
-  useLocaleState,
-  useRedirect,
-  useResourceDefinitions,
-  useTranslate,
-  Title,
-  type ResourceOptions,
-} from 'react-admin';
-import type { AdminFacets } from './AdminFacets.js';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactElement } from 'react';
+import { useDataProvider, useLocaleState, useRedirect, useResourceDefinitions, useTranslate, Title } from 'react-admin';
+
 import type { EditorialFacet } from './EditorialFacet.js';
 import type { UsersFacet } from './UsersFacet.js';
-
-export interface FougereResourceOptions extends ResourceOptions {
-  primary: string;
-  facets: AdminFacets;
-  /** The frond that owns this facade — the card groups by it, so the panel can too. */
-  frond?: string;
-  /** What the facade answers, with each op's kind. `query` reads, `command` writes. */
-  operations?: readonly { name: string; kind: 'query' | 'command' }[];
-  /** How many columns the shape yields — a rough measure of an entity's width. */
-  fieldCount?: number;
-}
-
-export interface FougereDashboardResource {
-  name: string;
-  label: string;
-  primary: string;
-  facets: AdminFacets;
-  hasCreate: boolean;
-  hasEdit: boolean;
-  hasShow: boolean;
-  total: number;
-  rows: Record<string, unknown>[];
-  states: Record<string, number>;
-}
-
-export interface FougereDashboardMetrics {
-  content: number;
-  drafts: number;
-  published: number;
-  users: number;
-}
-
-export interface FougereDashboardContextValue {
-  loading: boolean;
-  resources: FougereDashboardResource[];
-  editorial: FougereDashboardResource[];
-  users: FougereDashboardResource[];
-  metrics: FougereDashboardMetrics;
-  navigate(view: 'list' | 'show' | 'edit' | 'create', resource: string, id?: string | number): void;
-}
 
 const DashboardContext = createContext<FougereDashboardContextValue | undefined>(undefined);
 
@@ -81,28 +32,6 @@ export function useFougereDashboard(): FougereDashboardContextValue {
   const context = useContext(DashboardContext);
   if (!context) throw new Error('useFougereDashboard must be used inside FougereDashboard');
   return context;
-}
-
-export type FougereDashboardZone = 'hero' | 'metrics' | 'main';
-
-export interface FougereDashboardWidget {
-  id: string;
-  zone: FougereDashboardZone;
-  /** Twelve-column width for `main`, four-column width for `metrics`. */
-  span: number;
-  component: ComponentType;
-  hidden?: boolean;
-}
-
-/** A delta over stable widget ids; a component on a new id contributes a new widget. */
-export interface FougereDashboardExtension {
-  widget: string;
-  component?: ComponentType;
-  zone?: FougereDashboardZone;
-  span?: number;
-  hidden?: boolean;
-  before?: string;
-  after?: string;
 }
 
 export function applyDashboardExtensions(

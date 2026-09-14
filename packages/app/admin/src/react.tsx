@@ -1,3 +1,7 @@
+import type { ReactAdminRenderers } from './ReactAdminRenderers.js';
+
+import type { ResourceRenderOptions } from './ResourceRenderOptions.js';
+import type { FougereAdminProps } from './FougereAdminProps.js';
 'use client';
 /**
  * The rendering half — a column becomes a field, a form field becomes an input.
@@ -16,26 +20,22 @@ import {
 } from 'react-admin';
 import { Route } from 'react-router-dom';
 import { Box, Button, Card, CardContent, Dialog, DialogActions, DialogContent, DialogTitle, TextField as MuiTextField, Typography } from '@mui/material';
-import { cloneElement, useMemo, useState, type ComponentProps, type ComponentType, type ReactElement } from 'react';
+import { cloneElement, useMemo, useState, type ComponentProps, type ReactElement } from 'react';
 import { createAdminRuntime } from './AdminRuntime.js';
 import type { AdminExtension } from './AdminExtension.js';
 import { type AdminOperation } from './AdminOperation.js';
 import { actionsOf, type AdminResource } from './AdminResource.js';
 import type { EditorialFacet } from './EditorialFacet.js';
 import type { UsersFacet } from './UsersFacet.js';
-import type { Fetcher } from '@fougere/app/client';
+
 import { formFieldsOf, type FormField, type TableColumn } from '@fougere/app/client';
 import { Card as SchemaCard } from '@fougere/schema';
 import { FougereLayout, fougereDarkTheme, fougereLightTheme } from './theme.js';
 import { FougereTopology } from './topology-page.js';
 export { FougereTopology, type FougereTopologyProps } from './topology-page.js';
-import {
-  FougereContentIcon,
-  FougereDashboard,
-  FougereUsersIcon,
-  type FougereDashboardExtension,
-  type FougereResourceOptions,
-} from './dashboard.js';
+
+import { type FougereResourceOptions } from './FougereResourceOptions.js';
+import { FougereContentIcon, FougereDashboard, FougereUsersIcon } from './dashboard.js';
 
 export {
   FougereAppBar,
@@ -44,21 +44,14 @@ export {
   fougereDarkTheme,
   fougereLightTheme,
 } from './theme.js';
-export {
-  FOUGERE_DASHBOARD_WIDGETS,
-  FougereContentIcon,
-  FougereDashboard,
-  FougereUsersIcon,
-  applyDashboardExtensions,
-  useFougereDashboard,
-  type FougereDashboardContextValue,
-  type FougereDashboardExtension,
-  type FougereDashboardMetrics,
-  type FougereDashboardResource,
-  type FougereDashboardWidget,
-  type FougereDashboardZone,
-  type FougereResourceOptions,
-} from './dashboard.js';
+export { type FougereDashboardContextValue } from './FougereDashboardContextValue.js';
+export { type FougereDashboardExtension } from './FougereDashboardExtension.js';
+export { type FougereDashboardMetrics } from './FougereDashboardMetrics.js';
+export { type FougereDashboardResource } from './FougereDashboardResource.js';
+export { type FougereDashboardWidget } from './FougereDashboardWidget.js';
+export { type FougereDashboardZone } from './FougereDashboardZone.js';
+export { type FougereResourceOptions } from './FougereResourceOptions.js';
+export { FOUGERE_DASHBOARD_WIDGETS, FougereContentIcon, FougereDashboard, FougereUsersIcon, applyDashboardExtensions, useFougereDashboard } from './dashboard.js';
 
 const FIELDS = {
   text: TextField, number: NumberField, boolean: BooleanField, date: DateField,
@@ -143,41 +136,6 @@ function defaultInputFor(field: FormField, t: Translate): ReactElement {
       }}
     />
   );
-}
-
-export interface ReactAdminFieldContext {
-  resource: AdminResource;
-  column: TableColumn;
-  /** The maintained Fougere renderer. Call it to wrap rather than replace it. */
-  defaultRender(): ReactElement;
-}
-
-export interface ReactAdminInputContext {
-  resource: AdminResource;
-  field: FormField;
-  defaultRender(): ReactElement;
-}
-
-export type ReactAdminFieldRenderer = (context: ReactAdminFieldContext) => ReactElement;
-export type ReactAdminInputRenderer = (context: ReactAdminInputContext) => ReactElement;
-
-export interface ReactAdminRenderers {
-  /** Exact `resource.field` keys. Unmentioned and future fields keep the default renderer. */
-  fields?: Record<string, ReactAdminFieldRenderer>;
-  inputs?: Record<string, ReactAdminInputRenderer>;
-}
-
-export interface ReactAdminResourceComponents {
-  list?: ComponentType;
-  show?: ComponentType;
-  edit?: ComponentType;
-  create?: ComponentType;
-  icon?: ComponentType;
-}
-
-export interface ResourceRenderOptions {
-  renderers?: ReactAdminRenderers;
-  components?: ReactAdminResourceComponents;
 }
 
 function fieldFor(resource: AdminResource, column: TableColumn, t: Translate, renderers?: ReactAdminRenderers): ReactElement {
@@ -404,17 +362,6 @@ export function resourceFor(r: AdminResource, options: ResourceRenderOptions = {
  * app enters it, so there is nothing per-project left to build.
  */
 type BaseAdminProps = ComponentProps<typeof Admin>;
-
-export type FougereAdminProps = Omit<BaseAdminProps, 'children' | 'dataProvider'> & {
-  endpoint?: string;
-  fetcher?: Fetcher;
-  extensions?: readonly AdminExtension[];
-  renderers?: ReactAdminRenderers;
-  /** Add, move, resize, replace or hide widgets without snapshotting the dashboard. */
-  dashboardExtensions?: readonly FougereDashboardExtension[];
-  /** Explicit page-level escape hatches, scoped to one resource and one view. */
-  resourceComponents?: Record<string, ReactAdminResourceComponents>;
-};
 
 const EMPTY_EXTENSIONS: readonly AdminExtension[] = [];
 

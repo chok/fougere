@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ComponentType } from 'react';
-import { applyDashboardExtensions, type FougereDashboardWidget } from '../src/dashboard.js';
+import { type FougereDashboardWidget } from '../src/FougereDashboardWidget.js';
+import { applyDashboardExtensions } from '../src/dashboard.js';
 
 const Empty: ComponentType = () => null;
 const Replacement: ComponentType = () => null;
