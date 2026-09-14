@@ -88,12 +88,16 @@ describe('saturation and topology', () => {
     expect(activeCalls()).toBe(0);
   });
 
+  // Read from INSIDE the call: resolving a route is asynchronous whether or not it has any
+  // work to do, so a reading taken outside answers before the span is open.
   it('sees a call in flight while it runs', async () => {
     collect();
-    const facade = app.resolve<Facade>('productHandler');
-    const running = facade.list();
-    expect(activeCalls()).toBe(1);
-    await running;
+    let underway = 0;
+    app.use('product', async (_ctx, next) => { underway = activeCalls(); return next(); });
+
+    await app.resolve<Facade>('productHandler').list();
+
+    expect(underway).toBe(1);
     expect(activeCalls()).toBe(0);
   });
 

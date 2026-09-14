@@ -6,7 +6,7 @@ import { scanProject } from '@fougere/compiler';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createApp, createLocalRunner } from '@fougere/core';
-import type { InvocationContext } from '@fougere/core';
+import type { AppMiddleware, InvocationContext } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { observability, tracing, activeCalls, flushTelemetry, registerFlush } from '../src/index.js';
 import { createStorageFactory } from './fixtures/data.js';
@@ -45,9 +45,12 @@ describe('observability as an extension', () => {
     await first.dispose();
 
     // The second app is still observed: its own sink was never withdrawn.
-    const running = second.resolve<Facade>('productHandler').list();
-    expect(activeCalls()).toBe(1);
-    await running;
+    let underway = 0;
+    second.use('product', async (_ctx, next) => { underway = activeCalls(); return next(); });
+
+    await second.resolve<Facade>('productHandler').list();
+
+    expect(underway).toBe(1);
     await second.dispose();
   });
 
@@ -58,11 +61,17 @@ describe('observability as an extension', () => {
    */
   it('withdraws its sink on release, so a discarded app stops observing', async () => {
     const first = await boot([observability()]);
-    const facade = first.resolve<Facade>('productHandler');
-    const running = facade.list();
+    let underway = 0;
+    const watch: AppMiddleware = async (_ctx, next) => {
+      underway = activeCalls();
+
+      return next();
+    };
+    first.use('product', watch);
+
     // A sink is registered, so `tracing()` opens a span and the call is counted.
-    expect(activeCalls()).toBe(1);
-    await running;
+    await first.resolve<Facade>('productHandler').list();
+    expect(underway).toBe(1);
 
     await first.dispose();
 
@@ -71,9 +80,10 @@ describe('observability as an extension', () => {
     // which is the double-counting this test was written for.
     await using second = await boot(undefined);
     second.use(tracing([]).middleware);
-    const secondRunning = second.resolve<Facade>('productHandler').list();
-    expect(activeCalls()).toBe(0);
-    await secondRunning;
+    second.use('product', watch);
+
+    await second.resolve<Facade>('productHandler').list();
+    expect(underway).toBe(0);
   });
 });
 
