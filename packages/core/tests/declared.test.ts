@@ -15,6 +15,12 @@ const root = join(import.meta.dirname, 'fixtures-cross-frond');
 
 const scanned = async (): Promise<FrondDescriptor[]> => (await scanProject(root)).fronds;
 
+const announcing = async (): Promise<FrondDescriptor[]> =>
+  (await scanProject(join(import.meta.dirname, 'fixtures-announced'))).fronds;
+
+const between = (edges: readonly { from: string; to: string }[]): string[] =>
+  edges.map((edge) => `${edge.from} → ${edge.to}`).sort();
+
 describe('the fronds', () => {
   it('calls a frond local when no address names it', async () => {
     const declared = declaredTopologyOf({ fronds: await scanned(), remotes: {} });
@@ -95,6 +101,31 @@ describe('the edges', () => {
    * is left out rather than guessed. Naming the frond behind it would mean reading its card,
    * and a card is a DISCOVERY — the other half of the report.
    */
+  /**
+   * The half no dependency spells. `IndexHandler` and `HashHandler` name neither the blog nor
+   * each other — they accept the fact, which is the whole subscription — so an edge read off
+   * the deps alone reports three fronds with nothing between them.
+   */
+  it('reads a crossing off an announcement, which no dependency names', async () => {
+    const declared = declaredTopologyOf({ fronds: await announcing(), remotes: {} });
+
+    expect(between(declared.edges)).toEqual(['blog → index', 'blog → privacy']);
+  });
+
+  /** A link is called like a subscriber, so the frond that holds one is reached like one. */
+  it('counts the frond that FINISHES a fact, not only those that read it', async () => {
+    const declared = declaredTopologyOf({ fronds: await announcing(), remotes: {} });
+
+    expect(between(declared.edges)).toContain('blog → privacy');
+  });
+
+  /** A delivery inside the announcer's own frond crosses nothing, and `ArchiveHandler` is one. */
+  it('says nothing of a subscriber sitting in the frond that announces', async () => {
+    const declared = declaredTopologyOf({ fronds: await announcing(), remotes: {} });
+
+    expect(between(declared.edges)).not.toContain('blog → blog');
+  });
+
   it('says nothing about a crossing whose far side was never scanned', async () => {
     const fronds = await scanned();
     const declared = declaredTopologyOf({

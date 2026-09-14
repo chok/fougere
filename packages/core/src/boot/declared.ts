@@ -5,6 +5,7 @@
  */
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import { facadeKeyOf } from '../wire/Facade.js';
+import { factsAnnouncedBy, factsAwaitedBy, factsListenedTo } from '../wire/Emit.js';
 import { type DeclaredEdge } from '../wire/topology/DeclaredEdge.js';
 import { type DeclaredFrond } from '../wire/topology/DeclaredFrond.js';
 import { type DeclaredTopology } from '../wire/topology/DeclaredTopology.js';
@@ -65,19 +66,50 @@ export function reachedBy(deps: readonly string[], from: string, index: Map<stri
   return [...new Set(reached)];
 }
 
+/**
+ * The two ways a call leaves a frond: a façade its code names, and a fact it announces.
+ *
+ * The second cannot be read the way the first is. A dependency names what it reaches, where an
+ * announcement names a SUBJECT and a subscriber names nothing at all — so the edge is found from
+ * both ends, the announcer's deps and the listener's binding plan. Reading the deps alone
+ * reported `demos/pipe-split` as four fronds with nothing between them, and three of its four
+ * fronds are reached by a fact.
+ */
 function crossings(hosted: readonly FrondDescriptor[]): DeclaredEdge[] {
   const index = servedBy(hosted);
+  const heard = listenedBy(hosted);
   const found = new Map<string, DeclaredEdge>();
+  const cross = (from: string, to: string) => {
+    if (from !== to) found.set(`${from} ${to}`, { from, to });
+  };
 
   for (const frond of hosted) {
     for (const handler of frond.handlers) {
-      for (const to of reachedBy(handler.deps, frond.name, index)) {
-        found.set(`${frond.name} ${to}`, { from: frond.name, to });
-      }
+      for (const to of reachedBy(handler.deps, frond.name, index)) cross(frond.name, to);
+    }
+    for (const fact of announcedIn(frond)) {
+      for (const to of heard.get(fact) ?? []) cross(frond.name, to);
     }
   }
 
   return [...found.values()];
+}
+
+/** Which fronds listen to each fact — every one of them, since an announcement names no recipient. */
+function listenedBy(hosted: readonly FrondDescriptor[]): Map<string, string[]> {
+  const index = new Map<string, string[]>();
+  for (const frond of hosted) {
+    for (const fact of factsListenedTo(frond.handlers)) {
+      index.set(fact, [...(index.get(fact) ?? []), frond.name]);
+    }
+  }
+
+  return index;
+}
+
+/** A fact announced here, whether the announcer waits for an answer or not. */
+function announcedIn(frond: FrondDescriptor): string[] {
+  return [...new Set([...factsAnnouncedBy(frond.handlers), ...factsAwaitedBy(frond.handlers)])];
 }
 
 function hostOf(address: string): string {

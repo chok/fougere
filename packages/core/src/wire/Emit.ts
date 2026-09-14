@@ -1,4 +1,7 @@
 import { lowerFirst } from '@fougere/schema';
+import { computeBindingPlan } from './binding.js';
+import type { OperationContract } from './OperationContract.js';
+import type { OperationsMap } from './OperationsMap.js';
 
 /**
  * What an emitter injects. PARTIAL, because announcing is what REALIZES the fact's
@@ -51,6 +54,26 @@ export function factsAnnouncedBy(handlers: readonly { deps: readonly string[] }[
 export function factsAwaitedBy(handlers: readonly { deps: readonly string[] }[]): string[] {
   return factsIn(handlers, factOfAwaitKey);
 }
+
+/**
+ * What a set of handlers LISTENS to — the dual of what it announces, and the half no
+ * dependency spells: accepting a `Fact<T>` IS the subscription, so it is read from the
+ * binding plan, where `Emissions` reads it too.
+ */
+export function factsListenedTo(handlers: readonly { operations: OperationsMap }[]): string[] {
+  const taken = (contract: OperationContract): string[] => {
+    const plan = contract.binding
+      ?? (contract.signature ? computeBindingPlan(contract.signature.params, NO_COLLECTOR) : []);
+
+    return plan.flatMap((bound) =>
+      bound.source.kind === 'fact' || bound.source.kind === 'pipe' ? [bound.source.factName] : []);
+  };
+
+  return [...new Set(handlers.flatMap((handler) => [...handler.operations.values()].flatMap(taken)))];
+}
+
+/** `Fact` and `Pipe` name themselves, and the plan reads them before it reads a collector. */
+const NO_COLLECTOR = new Set<string>();
 
 function factsIn(
   handlers: readonly { deps: readonly string[] }[],
