@@ -36,7 +36,15 @@ export type { CardDrift } from './wire/drift.js';
 
 /** What `rpc.discover` answers. */
 export { refusalsOf, type Refusable } from './wire/refusals.js';
-export type { FougereOperations, FacadeName, Addresses, AnyHandler, HandlerOf, Refused, FougereHandlers, Answer, Rows } from './wire/facade.js';
+export type { Addresses } from './wire/Addresses.js';
+export type { Answer } from './wire/Answer.js';
+export type { AnyHandler } from './wire/AnyHandler.js';
+export type { FacadeName } from './wire/FacadeName.js';
+export type { FougereHandlers } from './wire/FougereHandlers.js';
+export type { FougereOperations } from './wire/FougereOperations.js';
+export type { HandlerOf } from './wire/HandlerOf.js';
+export type { Refused } from './wire/Refused.js';
+export type { Rows } from './wire/Rows.js';
 export type { CardOp } from './wire/card/CardOp.js';
 export type { IdentityCard } from './wire/card/IdentityCard.js';
 export type { DeclaredEdge } from './wire/topology/DeclaredEdge.js';

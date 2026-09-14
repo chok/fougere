@@ -5,7 +5,7 @@ import { factsAnnouncedBy } from '../wire/Emit.js';
 import type { InvocationContext } from '../wire/InvocationContext.js';
 import { type CardOp } from '../wire/card/CardOp.js';
 import { type IdentityCard } from '../wire/card/IdentityCard.js';
-import { facadeKeyOf } from '../wire/facade.js';
+import { facadeKeyOf } from '../wire/Facade.js';
 
 type AnyFacade = Record<string, (invocation?: InvocationContext) => Promise<unknown>>;
 

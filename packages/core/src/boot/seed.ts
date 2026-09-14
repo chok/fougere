@@ -1,5 +1,5 @@
 import { Role } from '@fougere/schema';
-import { facadeKeyOf } from '../wire/facade.js';
+import { facadeKeyOf } from '../wire/Facade.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import type { SeedEntry } from '../descriptor/SeedEntry.js';
 import type { SeedFactory } from '../descriptor/SeedFactory.js';

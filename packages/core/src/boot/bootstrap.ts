@@ -31,7 +31,7 @@ import { type EffectiveOperationsMap } from '../EffectiveOperationsMap.js';
 import { InFlight } from '../dispatch/InFlight.js';
 // The keys, each read from where its concept is declared — never respelled here.
 import { type RpcAnswer } from '../wire/RpcAnswer.js';
-import { facadeKeyOf } from '../wire/facade.js';
+import { facadeKeyOf } from '../wire/Facade.js';
 import { identityCardOf } from './card.js';
 import { AppLifecycle, migrating } from './AppLifecycle.js';
 import { seeding } from './seed.js';

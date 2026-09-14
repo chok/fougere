@@ -4,7 +4,7 @@
  * Documented: [observability](https://fougere.dev/docs/infra/observability).
  */
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
-import { facadeKeyOf } from '../wire/facade.js';
+import { facadeKeyOf } from '../wire/Facade.js';
 import { type DeclaredEdge } from '../wire/topology/DeclaredEdge.js';
 import { type DeclaredFrond } from '../wire/topology/DeclaredFrond.js';
 import { type DeclaredTopology } from '../wire/topology/DeclaredTopology.js';

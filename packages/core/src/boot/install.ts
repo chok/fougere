@@ -21,7 +21,7 @@ import { targetOf } from '../prefab/prefab.js';
 import { ownersOf, sharedNames, storageInUserCode, crudOnOwned } from './ownership.js';
 import { StorageGuard } from '../dispatch/StorageGuard.js';
 import { portBindings, seamChains, wrapping, SEAMS } from './ports.js';
-import { contractsKeyOf, facadeKeyOf } from '../wire/facade.js';
+import { contractsKeyOf, facadeKeyOf } from '../wire/Facade.js';
 import { inheritsCrud, subjectOf } from '../prefab/CrudConstructor.js';
 import { repositoryKeyOf } from '../prefab/RepositoryConstructor.js';
 import { storageKeyOf } from '../storage/Storage.js';
