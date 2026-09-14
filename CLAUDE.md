@@ -253,7 +253,13 @@ it is absent from it, so a system with a node down reads as a smaller healthy on
 `demos/observability` at rest reported three processes as a monolith. A crossing is a dep
 equal to `facadeKeyOf(address)` of an address ANOTHER frond serves, indexed FORWARD like
 `registrationsOf` (`verify.ts`) — never by reparsing a suffix — so an address nothing scanned
-resolves to nothing and is left out rather than guessed. Three readers that each held a
+resolves to nothing and is left out rather than guessed. A crossing is ALSO an announcement,
+and that one has no dep to read: a subscriber names nothing — accepting a `Fact<T>` is the
+whole subscription — so it is found from BOTH ends, the announcer's deps (`factsAnnouncedBy`)
+and the listener's binding plan (`factsListenedTo`, `wire/Emit.ts`), which is what `Emissions`
+reads rather than a type name. Read from the deps alone, `demos/pipe-split` answered four
+fronds with nothing between them, and three of its four are reached by a fact. A `Pipe<T>` link
+counts as one: it is called the same way. Three readers that each held a
 piece: `rpc.topology`, `@fougere/calls`' `servedModel` (which had its own `declared:` and its
 own `hostOf`), and `fougere graph`, which now prints the frond altitude above the entity one.
 Putting the two side by side found its first disagreement the same day: a frond whose code
@@ -689,6 +695,20 @@ X), `useFormFor` (contract, not rendering; local validator = remote validator), 
 
 Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 
+- **An op's `reach` does not see a fact, where the declared topology now does.** `servedBy`
+  indexes a dep key to ONE frond and an announcement reaches every listener, so `reachOf`
+  (`EffectiveOperationModel.ts`) counts a façade crossing and not an announced one — and with it
+  `hops`, the sampling that always keeps an op with hops, and the k6 threshold `base + hops *
+  perHop`. Measured 2026-09-14 on `demos/pipe-split`: `declaredTopologyOf` reports three edges out
+  of `blog` and `fougere explain blog/default/Post.publish` answers `reach: { fronds: [], hops: 0 }`.
+  Left as is on purpose — those three numbers are the operator's, and widening `servedBy` to
+  `Map<string, string[]>` moves a sampling rate and a load threshold at once.
+- **A `ref()` added to a table that already exists gets no foreign key, and the boot believes
+  it has one.** The additive pass has no `addForeignKey` (`diff/Change.ts`), and `heldBy` reads
+  what the source PROMISES, not what the live table holds, so it reads nothing either. Measured
+  2026-09-14 on `site/.data/site.db`: the same dangling insert passes there and is refused on a
+  fresh database. `onDelete` is the other open half — the DDL emits it (`ddl/SqlSink.ts`), so one
+  source keeps it; `StorageGuard` watches no `delete`, so nothing else does.
 - **Scanning a directory that sits under `packages/` fails** — `LogLine_base is not defined`,
   measured 2026-09-10 on `packages/log/fronds/`. The same file scanned from outside the
   workspace loads. `findWorkspaceRoot` (`compiler/src/scan/scanner.ts`) seeds a type program
