@@ -48,7 +48,7 @@ export default class TransferHandler {
    */
   async transferOverdrawn(from: string, to: string): Promise<never> {
     return this.together.run(async ([accounts, ledger]) => {
-      await ledger.create({ from, to, amount: 999 });
+      await ledger.create({ from, to, amount: 999, currency: 'EUR' });
       await accounts.update(from, { balance: -5 });
       throw new Error('unreachable — the validator refuses before this');
     });
@@ -61,6 +61,6 @@ export default class TransferHandler {
 
     await accounts.update(from, { balance: debited.balance - amount });
     await accounts.update(to, { balance: credited.balance + amount });
-    await ledger.create({ from, to, amount });
+    await ledger.create({ from, to, amount, currency: 'EUR' });
   }
 }

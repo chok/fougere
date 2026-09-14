@@ -22,7 +22,7 @@ export default class RefreshHandler {
   async syncAndFail(): Promise<never> {
     return this.together.run(async ([rates, ledger], [mirror]) => {
       const { written } = await mirror.refresh();
-      await ledger.create({ id: `sync-${Date.now()}`, from: 'sync', to: 'sync', amount: 0 });
+      await ledger.create({ id: `sync-${Date.now()}`, from: 'sync', to: 'sync', amount: 0, currency: 'EUR' });
       const inside = (await rates.list()).map((rate: any) => `${rate.code}=${rate.rate}`).sort().join(' ');
       throw new Error(
         `the partner closed the connection mid-import\n`

@@ -8,7 +8,7 @@
 import { scanProject } from '@fougere/compiler';
 import { createApp, createLocalRunner, migrating, type App, type Storage, Invocation } from '@fougere/core';
 import { createContainer } from '@fougere/container';
-import { storageFrom } from '@fougere/defaults';
+import { layerOf, storageFrom } from '@fougere/defaults';
 import { createSqliteSource } from '@fougere/adapter-sql/sqlite';
 import { createFileSource } from '@fougere/adapter-file';
 import { observeWith } from '../fronds/banking/extensions/observe.js';
@@ -49,9 +49,9 @@ console.log('─'.repeat(72));
 const app: App = await createApp({
   scan: await scanProject(root),
   createContainer,
-  storageFactory: storage.storageFactory,
-  sourceOf: storage.sourceOf,
-  transacted: storage.transacted as never,
+  // `layerOf`, not three members by hand: `enforces` is how the boot learns the engine
+  // keeps a foreign key, and picking members is how it would have been left behind.
+  ...layerOf(storage),
   // The storage's ascent, declared rather than called by hand after the boot.
   extensions: [migrating(storage.migrate)],
 });
@@ -109,12 +109,20 @@ await attempt('3. the ENTITY refusing the last write — balance may not go belo
 await attempt('4. a mirror inside the frame — its pages come back too, and EUR is RESTORED to 0.5',
   () => run('refresh', 'syncAndFail'));
 
+await attempt(`5. a line citing a rate card that does not exist — refused ${split ? 'by the READ' : 'by the KEY'}`,
+  () => storageOf('ledger').create({ from: 'ada', to: 'bob', amount: 1, currency: 'XXX' }));
+
 console.log(`\n${'─'.repeat(72)}`);
 console.log(split
   ? 'No transaction ran. Every write above was taken back by replaying its inverse —\n'
     + 'one extra read per write, and no isolation: between two writes, a reader sees the half.'
   : 'One engine, so the transactions were real: nothing above cost an extra read, and\n'
     + 'no reader could ever have seen a half-done transfer.');
+console.log(split
+  ? '`ledger.currency` still cannot name a rate card that is not there — RateCard sits in a\n'
+    + 'directory of files, so no key could say it, and the guard read the row instead.'
+  : '`ledger.currency` cannot name a rate card that is not there, and nothing read anything\n'
+    + 'to find out: both tables are in one engine, so the foreign key answered.');
 console.log(split
   ? 'Comment `sources:` out in fougere.config.ts and run again. The handlers do not change.'
   : 'Uncomment `sources:` in fougere.config.ts and run again. The handlers do not change.');
