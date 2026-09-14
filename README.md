@@ -25,7 +25,7 @@ export default class Post extends entity({
   id: primary(),
   title: text({ min: 1, max: 160 }),
   body: optional(text()),
-  authorId: readOnly(text()),                                   // stamped from the session
+  authorId: readOnly(ref(User)),                                // a User of another frond
   createdAt: created(),
   status: readOnly(oneOf('draft', 'published', { default: 'draft' })),
   publishedAt: readOnly(optional(date())),
@@ -34,6 +34,11 @@ export default class Post extends entity({
 
 `readOnly` is not a note about intent: it removes the field from what a client may ever
 send, so publishing cannot be a field write — it has to be an operation.
+
+`ref` reaches into another frond. Both share one database today, so a foreign key holds it
+and costs nothing; give the blog its own database and no key can — two of them share no
+constraint — so the write reads the row instead, and refuses the same insert. What neither
+can reach is the third answer, and the boot names it rather than letting you find out.
 
 One field changes, and there is one place to read. The table, the validator, the GraphQL
 type and the form contract are derived from it, so they cannot disagree with it — and a

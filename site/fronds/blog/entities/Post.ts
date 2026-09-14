@@ -1,4 +1,5 @@
-import { entity, primary, text, created, oneOf, date, readOnly, optional } from '@fougere/schema';
+import { entity, primary, text, created, oneOf, date, readOnly, optional, ref } from '@fougere/schema';
+import User from '@fronds/user/entities/User.js';
 
 export default class Post extends entity({
   id: primary(),
@@ -7,7 +8,7 @@ export default class Post extends entity({
   summary: optional(text({ max: 300 })),
   body: optional(text()),
   // Server-owned: stamped from the session at create, never client-written.
-  authorId: readOnly(text()),
+  authorId: readOnly(ref(User)),
   authorName: readOnly(optional(text())),
   createdAt: created(),
   // Server-owned pair: born draft, flipped by the publish OPERATION —

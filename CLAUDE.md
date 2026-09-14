@@ -46,6 +46,7 @@ pnpm -C demos/together-frame dev   # two writes that stand or fall as one — th
 pnpm -C demos/crossing-cost dev    # a chain of three, and the config line that decides what it costs
 pnpm -C demos/oclif-catalog dev --help  # a frond as a terminal — topics, flags and help derived
 pnpm -C demos/boot-refusals dev    # fourteen projects that do not hold — a code, a subject, a file
+pnpm -C demos/on-delete dev        # restrict, cascade, set null — the engine, then the guard
 pnpm -C demos/test-gradient test   # 53 tests, 44 of them from a one-line file
 pnpm -C demos/test-gradient e2e    # the browser rung — a form that states no rule of its own
 ```
@@ -87,6 +88,7 @@ packages/
   testing/             @fougere/testing       cases derived from an entity, doubles derived from a port
   calls/               @fougere/calls         optional: a bounded ring of what this process dispatched, served as rpc.calls
   log/                 @fougere/log           optional: lines to a FILE, one JSON object each — the console is Logger's
+  workflow/            @fougere/workflow      optional: a run says a release began, and a sweep finishes it
   decorators/          @fougere/decorators    `@expose` — publishable, and imported by nobody in this repo
 
   adapter/                                    project the schema onto a target
@@ -126,6 +128,7 @@ demos/
   observability/       three Fronds in three processes, one trace — and what the wire cost
   test-gradient/       what the declaration writes on its own, and the four rungs it runs at
   boot-refusals/       fourteen projects that do not hold, and what each refusal names
+  on-delete/           what a deletion does to the rows that name it — one line moves who does it
   anchor-chain/        a path with two stops — which derivations hold rows, and which say nothing
   emit-multirepo/      two repositories, one fact, and the ~80-line carrier that is not Fougere's
   rust-frond/          the far side is not TypeScript, and the validator is still ours
@@ -542,6 +545,53 @@ together see the same absence. `declares(schema, 'unique')` is its dual, read by
 too. SQL states `sqlEnforces`; a Map states nothing, and the boot names the entities that costs
 rather than refusing them. Pinned by `core/tests/enforced.test.ts`.
 
+**A `ref()` is held by a key, read by the guard, or named at boot** — `boot/relations.ts`,
+`heldBy`. `relation` is the second member of `Constraint`, and the PAIR decides, never the
+engine: SQL keeps a foreign key over rows it can see, so a key holds only when the target is
+hosted here, in the SAME source, and that source keeps relations. Anything else becomes a
+`RelationCheck` that `StorageGuard` reads before a write — one read per relation and per page —
+and a target nothing in this process answers is named once, after every frond installed. Not a
+transaction: the read and the write sit in two engines by construction, so a target deleted
+between them passes. `Hosting` reaches the target through its OWNING frond, because a scope
+sees its parent and never its siblings, and the frame and the surface build their guard from
+the same answer as the frond's storage. Pinned by `core/tests/relations.test.ts` and
+`demos/together-frame`, case 5.
+
+**A deletion is the dual of a write, and the ORDER is the guarantee** — `dispatch/Release.ts`,
+`release`. `ref(User, { onDelete })` states `restrict` (the default, since a key with nothing
+said already refuses), `cascade` or `set null`; `refuseUnwritableNull` refuses the third on a
+field admitting no null, read off the FIELD because `optional()` wraps `ref()` and only the
+final one knows. Who carries it out is `keyed` (`boot/relations.ts`), and one hop decides for
+the WHOLE tree: an engine's cascade never passes through the guard, so a keyed hop above an
+unkeyed one would take rows out with their own dependents left behind — one unkeyed hop
+anywhere below and the guard takes all of it, the engine's cascade then finding nothing to do.
+Every refusal of a level is asked BEFORE any of its rows move, because a refusal is about the
+state before the operation: `ownerId: cascade` beside `approverId: restrict` let declaration
+order decide until it was. Deepest FIRST means no intermediate state is wrong — fewer children,
+never an orphan — which is what lets a release cross a process with no two-phase commit: there
+is nothing to undo, only something to finish. Pinned by `core/tests/on-delete.test.ts` and
+`defaults/tests/on-delete.test.ts`, the bench that runs one declaration at six placements.
+
+**Core serves four readings in EVERY process** — `discover`, `holds`, `dependents`, `release`
+(`boot/bootstrap.ts`). All four read the STORAGE and never a facade: a facade answers what its
+handler chose to show, so `PostHandler.list` hiding drafts would hide exactly the row the
+question exists to find. `holds` is the write's question asked across, `release` the delete's;
+`peers()` is built from `remotes:` itself and not from the router, because the router indexes by
+entity read off a card while the question is asked of a PROCESS about rows it may be alone in
+knowing about — a frond behind `remotes:` may have no sources here at all. A `visited` trail
+travels so two processes declaring each other cannot ask each other forever, and being ASKED
+still walks locally: the trail stops a re-ask, never the work. Pinned by
+`defaults/tests/on-delete.test.ts` — three processes, and each carrying only its own frond.
+
+**A run says somebody started** — `@fougere/workflow`, a frond STATED (`frond()`) and brought by
+its extension. There is no plan and no position in it, because every hop is already idempotent:
+resuming is doing it again. `Journal` is core's key, the package answers under it, and what
+CARRIES a release writes none — the boot leaves out the entities of brought fronds, read from
+what was brought rather than written down, like `CARRIES_LINE`. A refusal from the walk closes
+the run (a decision redone is the same decision, and a run kept open for one is swept forever);
+an interruption leaves it open, which is what a run is for. The row goes LAST, handed in by
+whoever owns the gesture, so a run covers the whole thing. Pinned by `workflow/tests/release.test.ts`.
+
 **The thirteen gestures derive from four** — `core/src/storage/store.ts`, `storageOver(open)` over a
 `Store` (`get`/`has`/`set`/`delete`/`all`/`client`). `adapter/memory` is 25 lines and
 `adapter/file` 90. `transacted` is deliberately not in the frame: a unit of work belongs to
@@ -709,6 +759,11 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   2026-09-14 on `site/.data/site.db`: the same dangling insert passes there and is refused on a
   fresh database. `onDelete` is the other open half — the DDL emits it (`ddl/SqlSink.ts`), so one
   source keeps it; `StorageGuard` watches no `delete`, so nothing else does.
+- **A process carrying only its own frond cannot migrate a table whose key names an entity it
+  has never seen** — `ref(User): no source hosts it`, measured 2026-09-14 while writing
+  `defaults/tests/on-delete.test.ts`. `elsewhere` covers another SOURCE, not another process,
+  and the bench migrates once from an app that carries every frond. What each process may
+  migrate is a subject of its own.
 - **Scanning a directory that sits under `packages/` fails** — `LogLine_base is not defined`,
   measured 2026-09-10 on `packages/log/fronds/`. The same file scanned from outside the
   workspace loads. `findWorkspaceRoot` (`compiler/src/scan/scanner.ts`) seeds a type program
