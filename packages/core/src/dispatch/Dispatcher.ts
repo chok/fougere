@@ -19,11 +19,30 @@ export class Dispatcher implements DispatchPort {
     private readonly journalOf?: () => Journal | undefined,
   ) {}
 
+  /** The route that answers this address, or the refusal naming what is served instead. */
+  private async routeFor(call: Call): Promise<Route> {
+    const known = this.routes.find(call.address);
+    const resolved = known ?? await this.routes.resolve(call.address);
+    const route = resolved && (!this.policy || this.policy.accepts(resolved)) ? resolved : undefined;
+    if (!route) {
+      throw this.policy?.notFound?.(call, this.routes.routes())
+        ?? routeNotFound(call, servedOperations(call, this.routes.routes(), this.policy));
+    }
+
+    return route;
+  }
+
   /**
    * A kept call publishes no dispatch event and enters no flight: it has not been answered,
    * and counting it here would report one call spanning the days until its hour.
+   *
+   * Its address is resolved all the same. What is kept is made hours later, by then against
+   * whatever the app still serves — so an address nothing answers is refused to the caller who
+   * can still fix it, rather than to a beat nobody is watching.
    */
   private async keep(call: Call, runAt: number): Promise<undefined> {
+    await this.routeFor(call);
+
     const journal = this.journalOf?.();
     if (!journal) {
       throw new Error(
@@ -47,13 +66,7 @@ export class Dispatcher implements DispatchPort {
 
     try {
       release = this.inFlight.enter(call.address.entity, call.address.operation);
-      const known = this.routes.find(call.address);
-      const resolved = known ?? await this.routes.resolve(call.address);
-      route = resolved && (!this.policy || this.policy.accepts(resolved)) ? resolved : undefined;
-      if (!route) {
-        throw this.policy?.notFound?.(call, this.routes.routes())
-          ?? routeNotFound(call, servedOperations(call, this.routes.routes(), this.policy));
-      }
+      route = await this.routeFor(call);
 
       this.lifecycle.publish(DispatchEvent.resolved(call, route.kind));
       const result = await route.execute(call);

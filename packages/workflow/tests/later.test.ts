@@ -9,8 +9,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { createContainer } from '@fougere/container';
 import { entity, primary, text, type SchemaView } from '@fougere/schema';
 import {
-  createApp, Crud, frond, storageOver,
-  type App, type Storage, type Store,
+  Call, createApp, Crud, frond, RouteAddress, storageOver,
+  type App, type PartialInvocation, type Storage, type Store,
 } from '@fougere/core';
 import { workflow } from '../src/index.js';
 
@@ -42,6 +42,9 @@ async function booting(sweepMs: number): Promise<App> {
   });
 }
 
+const calling = (entity: string, operation: string, invocation: PartialInvocation) =>
+  new Call(new RouteAddress({ entity, operation }), invocation);
+
 const notes = (app: App) => app.storageFor('note') as Storage;
 const laters = (app: App) => app.storageFor('later') as Storage;
 
@@ -49,10 +52,9 @@ describe('a call that runs later', () => {
   it('answers nothing now, and keeps the call whole', async () => {
     const app = await booting(0);
 
-    const answer = await app.dispatch({
-      address: { entity: 'note', operation: 'create' },
-      invocation: { input: { id: 'n1', body: 'hello' }, runAt: Date.now() + 60_000 },
-    } as never);
+    const answer = await app.dispatch(
+      calling('note', 'create', { input: { id: 'n1', body: 'hello' }, runAt: Date.now() + 60_000 }),
+    );
 
     expect(answer).toBeUndefined();
     expect(await notes(app).list()).toHaveLength(0);
@@ -69,14 +71,24 @@ describe('a call that runs later', () => {
   it('makes it at its hour, through the handler that would have answered', async () => {
     const app = await booting(20);
 
-    await app.dispatch({
-      address: { entity: 'note', operation: 'create' },
-      invocation: { input: { id: 'n2', body: 'due' }, runAt: Date.now() - 1 },
-    } as never);
+    await app.dispatch(
+      calling('note', 'create', { input: { id: 'n2', body: 'due' }, runAt: Date.now() - 1 }),
+    );
 
     await vi.waitFor(async () => {
       expect(await notes(app).list()).toHaveLength(1);
     }, { timeout: 2_000 });
+
+    expect(await laters(app).list()).toHaveLength(0);
+
+    await app.dispose();
+  });
+
+  it('refuses an address nothing answers, at the hour the caller can still fix it', async () => {
+    const app = await booting(0);
+
+    await expect(app.dispatch(calling('nawak', 'zzz', { runAt: Date.now() + 60_000 })))
+      .rejects.toThrow();
 
     expect(await laters(app).list()).toHaveLength(0);
 
@@ -93,10 +105,9 @@ describe('a call that runs later', () => {
       fronds: [frond('notes', { entities: [Note], handlers: [NoteHandler] })],
     });
 
-    await expect(app.dispatch({
-      address: { entity: 'note', operation: 'create' },
-      invocation: { input: { id: 'n3', body: 'orphan' }, runAt: Date.now() + 1000 },
-    } as never)).rejects.toThrow(/@fougere\/workflow/);
+    await expect(app.dispatch(
+      calling('note', 'create', { input: { id: 'n3', body: 'orphan' }, runAt: Date.now() + 1000 }),
+    )).rejects.toThrow(/@fougere\/workflow/);
 
     await app.dispose();
   });
