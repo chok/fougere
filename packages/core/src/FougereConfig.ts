@@ -1,12 +1,12 @@
 import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
-import type { AuthConfig } from './boot/auth.js';
+import type { AuthConfig } from './boot/AuthConfig.js';
 import type { LogLevel } from './builtin/LogLevel.js';
 import type { ConventionsInput } from './ConventionsInput.js';
-import type { NameOf, PortChoice } from './names.js';
+import type { NameOf } from './NameOf.js';
+import type { PortChoice } from './PortChoice.js';
 import { getModuleLoader } from './loader.js';
-
-// ── Types ────────────────────────────────────────
+import type { AdapterConfig } from './AdapterConfig.js';
 
 export interface FougereConfig {
   /** Database configuration — the DEFAULT source, the one an entity lands in unnamed. */
@@ -35,18 +35,6 @@ export interface FougereConfig {
   /** Which protocol adapters this app serves. */
   adapters?: AdapterConfig;
 }
-
-/** Protocol adapters, by the name of the package that provides them. */
-export interface AdapterConfig {
-  /** `@fougere/adapter-rest` — REST under `/api/{frond}/{plural}`. */
-  rest?: boolean;
-  /** `@fougere/adapter-graphql` — a GraphQL schema over the same operations. */
-  graphql?: boolean;
-  /** A surface of your own; the framework only records that you declared it. */
-  [adapter: string]: boolean | undefined;
-}
-
-// ── Loading ──────────────────────────────────────
 
 const CONFIG_FILES = ['fougere.config.ts', 'fougere.config.js', 'fougere.config.mjs'];
 

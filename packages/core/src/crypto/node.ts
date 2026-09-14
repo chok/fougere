@@ -1,6 +1,9 @@
 /** Ed25519 through `node:crypto` — the default realization, and the fast one. */
 import { createHash, createPrivateKey, createPublicKey, sign, verify } from 'node:crypto';
-import type { CryptoPort, PublicJwk, Signer, Verifier } from './port.js';
+import type { CryptoPort } from './CryptoPort.js';
+import type { PublicJwk } from './PublicJwk.js';
+import type { Signer } from './Signer.js';
+import type { Verifier } from './Verifier.js';
 
 export const crypto: CryptoPort = {
   async sha256(data) {

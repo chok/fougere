@@ -1,4 +1,3 @@
-/** A frond stated by its author, for an app that will not scan. */
 import { lowerFirst, type SchemaView } from '@fougere/schema';
 import type {
   CollectorEntry, EntityEntry, FrondDescriptor, HandlerEntry, MiddlewareEntry,
@@ -7,37 +6,12 @@ import type {
 import { DEFAULT_CONVENTIONS } from './Conventions.js';
 import { getPresenterFields } from './prefab/presenter.js';
 import type { OperationContract } from './wire/OperationContract.js';
+import type { DeclaredSubject } from './DeclaredSubject.js';
+import type { DeclaredHandler } from './DeclaredHandler.js';
+import type { Declared } from './Declared.js';
 
 /** A class, as a declaration hands it over: the constructor itself. */
 type Ctor = new (...args: never[]) => unknown;
-
-/** What a subject needs beyond its class, when its constructor names a frame or a port. */
-export interface DeclaredSubject {
-  ctor: Ctor;
-  deps?: string[];
-}
-
-/** A handler, and the surface it answers on when it is not the default one. */
-export interface DeclaredHandler extends DeclaredSubject {
-  /**
-   * The scan reads this from the directory (`handlers/public/`), so a statement has to say it: two
-   * handlers over one entity collide on their address otherwise, and the refusal names the same
-   * route twice.
-   */
-  surface?: string;
-  /**
-   * What each method takes and answers — read from SOURCE by the scan, and unreachable
-   * from a class at runtime. A prefab declares its own (`Crud.__ops`) and needs nothing
-   * here; a method someone wrote does, or the route it should serve does not exist.
-   */
-  operations?: ReadonlyMap<string, OperationContract> | Record<string, OperationContract>;
-}
-
-/** A class on its own, or a class with what it asks for. */
-export type Declared = Ctor | (DeclaredSubject & {
-  /** The container key, when the class's own name cannot be trusted to survive a build. */
-  name?: string;
-});
 
 const ctorOf = (d: Declared): Ctor => (typeof d === 'function' ? d : d.ctor);
 
@@ -57,6 +31,7 @@ function subjectOf(ctor: Ctor, kind: string): { name: string } {
 
   return subject;
 }
+
 const depsOf = (d: Declared): string[] => (typeof d === 'function' ? [] : d.deps ?? []);
 
 /**

@@ -1,6 +1,9 @@
 /** Ed25519 through WebCrypto — what a runtime with no `node:` builtin has. */
 import { derOf } from './encoding.js';
-import type { CryptoPort, PublicJwk, Signer, Verifier } from './port.js';
+import type { CryptoPort } from './CryptoPort.js';
+import type { PublicJwk } from './PublicJwk.js';
+import type { Signer } from './Signer.js';
+import type { Verifier } from './Verifier.js';
 
 interface WebSubtle {
   digest(algorithm: string, data: Uint8Array): Promise<ArrayBuffer>;

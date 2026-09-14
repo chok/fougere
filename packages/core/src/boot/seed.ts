@@ -1,8 +1,8 @@
 import { Role } from '@fougere/schema';
 import { facadeKeyOf } from '../wire/facade.js';
 import type { FrondDescriptor, SeedEntry, SeedFactory } from '../descriptor/frond.js';
-import type { App } from './types.js';
-import type { Extension } from './AppLifecycle.js';
+import type { App } from './App.js';
+import type { Extension } from './Extension.js';
 
 /** What the ordering satisfied, and what no order can. */
 export interface SeedOrder {

@@ -2,12 +2,19 @@
 export { createApp } from './boot/bootstrap.js';
 export { orderSeeds, runSeeds, seeding } from './boot/seed.js';
 export { AppLifecycle, migrating } from './boot/AppLifecycle.js';
-export type { Extension } from './boot/AppLifecycle.js';
+export type { Extension } from './boot/Extension.js';
 export { defineFougere } from './define.js';
-export type { FougereConfig, AdapterConfig } from './config-loader.js';
-export type { FougereNames, FougerePorts, NameOf, AnswerFor, PortChoice } from './names.js';
-export type { OperationOverride, FrondConfig } from './frond-config.js';
-export { buildGraph, clusterEntities, suggestSplit, type EntityNode, type DomainCluster } from './graph.js';
+export type { AdapterConfig } from './AdapterConfig.js';
+export type { FougereConfig } from './FougereConfig.js';
+export type { AnswerFor } from './AnswerFor.js';
+export type { FougereNames } from './FougereNames.js';
+export type { FougerePorts } from './FougerePorts.js';
+export type { NameOf } from './NameOf.js';
+export type { PortChoice } from './PortChoice.js';
+export type { FrondConfig } from './FrondConfig.js';
+export type { OperationOverride } from './OperationOverride.js';
+export { buildGraph, clusterEntities, suggestSplit, type DomainCluster } from './DomainCluster.js';
+export { type EntityNode } from './EntityNode.js';
 export { Crud } from './prefab/CrudConstructor.js';
 export type { CrudConstructor } from './prefab/CrudConstructor.js';
 export type { CrudOpName } from './prefab/CrudOpName.js';
@@ -51,8 +58,10 @@ export { createLocalRunner, createAppRunner } from './boot/runner.js';
 
 // A frond an app STATES, for a boot that will not scan. No disk, no `typescript` — which
 // is why it sits here and not in `/node`, beside the scanner that reads a project.
-export { frond } from './declare.js';
-export type { Declared, FrondDeclaration, DeclaredSubject } from './declare.js';
+export { frond } from './FrondDeclaration.js';
+export type { Declared } from './Declared.js';
+export type { DeclaredSubject } from './DeclaredSubject.js';
+export type { FrondDeclaration } from './FrondDeclaration.js';
 // What this app would answer to `rpc.discover`. Served by the boot, and reached until now
 // only by tests through a deep path — a consumer comparing its own card to a producer's
 // had to dispatch a call to ask a question about itself.
@@ -106,7 +115,8 @@ export { Sources } from './Source.js';
 export { storageOver } from './storage/Store.js';
 export type { Store } from './storage/Store.js';
 export type { Values } from './storage/Values.js';
-export type { App, CreateAppOptions } from './boot/types.js';
+export type { App } from './boot/App.js';
+export type { CreateAppOptions } from './boot/CreateAppOptions.js';
 export type { ScanResult } from './scan.js';
 export type { Diagnostic } from './diagnostic.js';
 export { DEFAULT_CONVENTIONS, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, type Conventions } from './Conventions.js';
@@ -122,12 +132,15 @@ export type {
   PresenterFieldMeta,
   CollectorEntry,
 } from './descriptor/frond.js';
-export type { AuthConfig, AuthContext, AuthRuntime } from './boot/auth.js';
+export type { AuthConfig } from './boot/AuthConfig.js';
+export type { AuthContext } from './boot/AuthContext.js';
+export type { AuthRuntime } from './boot/AuthRuntime.js';
 export { Fronds } from './descriptor/Fronds.js';
 export { verify, type Misplaced } from './verify.js';
 // Same question as verify(), answered from the source text instead of the model.
 // Who is calling, established rather than accepted — the proof beside `state`'s claim.
 // `generateKeyPair` and `issueGrant` are NOT here: they make keys at a deployment and
 // need `node:crypto` for a gesture WebCrypto has no equal of. They sit on `/node`.
-export { signEnvelope, verifyEnvelope, identityFromEnv } from './identity.js';
-export type { FrondIdentity, SignedCall } from './identity.js';
+export { signEnvelope, verifyEnvelope, identityFromEnv } from './CallIdentity.js';
+export type { FrondIdentity } from './FrondIdentity.js';
+export type { SignedCall } from './wire/SignedCall.js';

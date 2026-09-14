@@ -1,16 +1,6 @@
 import { Role } from '@fougere/schema';
-/**
- * Entity dependency graph — analyzes ref() links between entities
- * to suggest domain boundaries for splitting fronds.
- */
 import type { FrondDescriptor } from './descriptor/frond.js';
-
-export interface EntityNode {
-  name: string;
-  frond: string;
-  refs: string[];       // entity names this entity references
-  referencedBy: string[]; // entity names that reference this entity
-}
+import type { EntityNode } from './EntityNode.js';
 
 export interface DomainCluster {
   name: string;

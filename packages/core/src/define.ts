@@ -1,4 +1,4 @@
-import type { FougereConfig } from './config-loader.js';
+import type { FougereConfig } from './FougereConfig.js';
 
 /**
  * Identity helper for fougere.config.ts — preserves literal types for autocomplete while

@@ -1,4 +1,4 @@
-import type { FougereConfig } from '../config-loader.js';
+import type { FougereConfig } from '../FougereConfig.js';
 import { envLevel, logLevel, setLogLevel } from '../builtin/Logger.js';
 import { dequal } from 'dequal';
 

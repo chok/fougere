@@ -1,10 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import {
-  identityFromEnv,
-  signEnvelope,
-  verifyEnvelope,
-  type FrondIdentity,
-} from '../src/identity.js';
+import { identityFromEnv, signEnvelope, verifyEnvelope } from '../src/CallIdentity.js';
+import { type FrondIdentity } from '../src/FrondIdentity.js';
 // Making keys is a deployment gesture and lives on the Node entry — the test issues real
 // ones rather than fixtures, because a fixture key proves nothing about the parsing.
 import { generateKeyPair, issueGrant } from '../src/identity-keys.js';

@@ -1,4 +1,4 @@
-import type { NameOf } from './names.js';
+import type { NameOf } from './NameOf.js';
 
 /** What a config file can carry about a source — values, never a live driver. */
 export interface SourceConfig {

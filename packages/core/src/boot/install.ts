@@ -10,7 +10,7 @@ import { nameOf } from '../descriptor/frond.js';
 import type { EntityEntry, FrondDescriptor, HandlerEntry } from '../descriptor/frond.js';
 import type { OperationsMap } from '../wire/OperationsMap.js';
 import type { AppMiddleware } from '../wire/AppMiddleware.js';
-import type { CreateAppOptions } from './types.js';
+import type { CreateAppOptions } from './CreateAppOptions.js';
 import { registerFrames } from './together.js';
 import type { Diagnostic } from '../diagnostic.js';
 import { HandlerFacade } from '../dispatch/HandlerFacade.js';

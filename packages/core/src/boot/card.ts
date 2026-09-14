@@ -1,6 +1,6 @@
 /** What an app says about ITSELF — the `rpc.discover` answer, built from the app. */
 import { Card } from '@fougere/schema';
-import type { App } from './types.js';
+import type { App } from './App.js';
 import { factsAnnouncedBy } from '../wire/Emit.js';
 import type { InvocationContext } from '../wire/InvocationContext.js';
 import { type CardOp } from '../wire/card/CardOp.js';

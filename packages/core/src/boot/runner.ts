@@ -1,5 +1,5 @@
 /** A Transport built from an app — the two ways a call enters this process. */
-import type { App } from './types.js';
+import type { App } from './App.js';
 import type { Transport } from '../wire/Transport.js';
 import { createTransportEntry } from '../entry/transport.js';
 

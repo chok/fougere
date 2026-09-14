@@ -1,27 +1,17 @@
-/**
- * Who is calling — the proof, not the claim.
- *
- * Documented: [identity](https://fougere.dev/docs/infra/identity).
- */
 import { crypto } from '#crypto';
-import type { PublicJwk, Signer, Verifier } from './crypto/port.js';
+import type { PublicJwk } from './crypto/PublicJwk.js';
+import type { Signer } from './crypto/Signer.js';
+import type { Verifier } from './crypto/Verifier.js';
 import { b64url, unb64url, bytesOf, textOf, unb64 } from './crypto/encoding.js';
 import type { SignedCall } from './wire/SignedCall.js';
-
-export type { SignedCall } from './wire/SignedCall.js';
+import type { FrondIdentity } from './FrondIdentity.js';
+import type { VerifiedCall } from './VerifiedCall.js';
 
 /** How long a call envelope stays valid. A signed call is not a session. */
 const ENVELOPE_TTL_MS = 60_000;
+
 /** Clock skew tolerated on both sides of a validity window. */
 const SKEW_MS = 30_000;
-
-/** What a deployment hands a frond that CALLS: its own key, and the root's word for it. */
-export interface FrondIdentity {
-  /** The frond's private key, PEM (PKCS#8). */
-  privateKey: string;
-  /** The root's statement binding this frond's name to its public key. */
-  grant: string;
-}
 
 /** The input's fingerprint. Absence and explicit null are different signed calls. */
 async function digestOf(input: unknown): Promise<string> {
@@ -42,14 +32,6 @@ async function boundTo(call: SignedCall) {
     query: call.query ?? {},
     input: await digestOf(call.input),
   };
-}
-
-/** What `verifyEnvelope` establishes — never what the caller asked for. */
-export interface VerifiedCall {
-  /** The frond that signed, as the root named it. */
-  caller: string;
-  /** The state it asserted, now proven to come from `caller`. */
-  state: Record<string, unknown>;
 }
 
 /** A JWS compact serialization, signed with Ed25519. */
