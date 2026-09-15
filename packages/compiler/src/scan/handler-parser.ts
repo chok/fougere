@@ -304,41 +304,10 @@ function parseCheckedType(type: ts.Type, raw: string, checker: ts.TypeChecker, d
   const typescript = getTS();
   if (depth > 12) return { raw, name: checker.typeToString(type) };
 
-  if (type.isUnion()) {
-    const nullable = type.types.some((member) => (member.flags & typescript.TypeFlags.Null) !== 0);
-    const undefinable = type.types.some((member) =>
-      (member.flags & (typescript.TypeFlags.Undefined | typescript.TypeFlags.Void)) !== 0,
-    );
-    const members = type.types.filter((member) =>
-      (member.flags & (typescript.TypeFlags.Null | typescript.TypeFlags.Undefined | typescript.TypeFlags.Void)) === 0,
-    );
-    // The checker represents the `boolean` keyword itself as `false | true`. Preserve
-    // the primitive vocabulary consumed by binding and presenter metadata.
-    if (
-      members.length > 0
-      && members.every((member) => (member.flags & typescript.TypeFlags.BooleanLiteral) !== 0)
-    ) {
-      return { raw, name: 'boolean', nullable, undefined: undefinable };
-    }
-    if (members.length === 1) {
-      const inner = parseCheckedType(members[0]!, raw, checker, depth + 1);
-      return {
-        ...inner,
-        raw,
-        nullable: nullable || inner.nullable,
-        undefined: undefinable || inner.undefined,
-      };
-    }
-    return {
-      raw,
-      name: members.map((member) => meaningfulSymbolName(member, checker)).join(' | ') || raw,
-      nullable,
-      undefined: undefinable,
-    };
-  }
+  if (type.isUnion()) return fromCheckedUnion(type, raw, checker, depth);
 
-  // Present at runtime in the supported compiler versions, but intentionally omitted
-  // from TypeScript's public TypeChecker declaration.
+  // Present at runtime in the supported compiler versions, but intentionally omitted from
+  // TypeScript's public TypeChecker declaration.
   const promised = (checker as ts.TypeChecker & {
     getPromisedTypeOfPromise(candidate: ts.Type): ts.Type | undefined;
   }).getPromisedTypeOfPromise(type);
@@ -347,29 +316,70 @@ function parseCheckedType(type: ts.Type, raw: string, checker: ts.TypeChecker, d
   if (checker.isArrayType(type)) {
     const [element] = checker.getTypeArguments(type as ts.TypeReference);
     const inner = element ? parseCheckedType(element, raw, checker, depth + 1) : { raw, name: 'unknown' };
+
     return { ...inner, raw, array: true, arrayDepth: (inner.arrayDepth ?? 0) + 1 };
   }
 
-  if ((type.flags & typescript.TypeFlags.StringLike) !== 0) return { raw, name: 'string' };
-  if ((type.flags & typescript.TypeFlags.NumberLike) !== 0) return { raw, name: 'number' };
-  if ((type.flags & typescript.TypeFlags.BooleanLike) !== 0) return { raw, name: 'boolean' };
-  if ((type.flags & typescript.TypeFlags.Void) !== 0) return { raw, name: 'void', undefined: true };
-  if ((type.flags & typescript.TypeFlags.Undefined) !== 0) return { raw, name: 'undefined', undefined: true };
-  if ((type.flags & typescript.TypeFlags.Null) !== 0) return { raw, name: 'null', nullable: true };
-  if ((type.flags & typescript.TypeFlags.Any) !== 0) return { raw, name: 'any' };
-  if ((type.flags & typescript.TypeFlags.Unknown) !== 0) return { raw, name: 'unknown' };
+  const primitive = fromCheckedFlags(type.flags, raw);
+  if (primitive) return primitive;
 
-  const reference = type as ts.TypeReference;
-  // A declared alias such as `Emit<PostPublished>` may reduce to a function or object
-  // type, so it is no longer a TypeReference. The checker keeps its arguments beside
-  // `aliasSymbol`; losing them turns DI keys into bare `Emit`/`Facade`.
+  // A declared alias such as `Emit<PostPublished>` may reduce to a function or object type, so it
+  // is no longer a TypeReference. The checker keeps its arguments beside `aliasSymbol`; losing
+  // them turns DI keys into bare `Emit`/`Facade`.
   const args = (type as ts.Type & { aliasTypeArguments?: readonly ts.Type[] }).aliasTypeArguments
-    ?? checker.getTypeArguments(reference);
+    ?? checker.getTypeArguments(type as ts.TypeReference);
+
   return {
     raw,
     name: meaningfulSymbolName(type, checker),
     ...(args.length && { generics: args.map((arg) => parseCheckedType(arg, checker.typeToString(arg), checker, depth + 1)) }),
   };
+}
+
+/** A union carries an absence on the side; what remains is the type. */
+function fromCheckedUnion(type: ts.UnionType, raw: string, checker: ts.TypeChecker, depth: number): TypeRef {
+  const typescript = getTS();
+  const nullable = type.types.some((member) => (member.flags & typescript.TypeFlags.Null) !== 0);
+  const undefinable = type.types.some((member) =>
+    (member.flags & (typescript.TypeFlags.Undefined | typescript.TypeFlags.Void)) !== 0,
+  );
+  const members = type.types.filter((member) =>
+    (member.flags & (typescript.TypeFlags.Null | typescript.TypeFlags.Undefined | typescript.TypeFlags.Void)) === 0,
+  );
+
+  // The checker represents the `boolean` keyword itself as `false | true`. Preserve the
+  // primitive vocabulary consumed by binding and presenter metadata.
+  const allBooleans = members.length > 0
+    && members.every((member) => (member.flags & typescript.TypeFlags.BooleanLiteral) !== 0);
+  if (allBooleans) return { raw, name: 'boolean', nullable, undefined: undefinable };
+
+  if (members.length === 1) {
+    const inner = parseCheckedType(members[0]!, raw, checker, depth + 1);
+
+    return { ...inner, raw, nullable: nullable || inner.nullable, undefined: undefinable || inner.undefined };
+  }
+
+  return {
+    raw,
+    name: members.map((member) => meaningfulSymbolName(member, checker)).join(' | ') || raw,
+    nullable,
+    undefined: undefinable,
+  };
+}
+
+/** The keywords, read off the flags the checker already carries. */
+function fromCheckedFlags(flags: ts.TypeFlags, raw: string): TypeRef | undefined {
+  const typescript = getTS();
+  if ((flags & typescript.TypeFlags.StringLike) !== 0) return { raw, name: 'string' };
+  if ((flags & typescript.TypeFlags.NumberLike) !== 0) return { raw, name: 'number' };
+  if ((flags & typescript.TypeFlags.BooleanLike) !== 0) return { raw, name: 'boolean' };
+  if ((flags & typescript.TypeFlags.Void) !== 0) return { raw, name: 'void', undefined: true };
+  if ((flags & typescript.TypeFlags.Undefined) !== 0) return { raw, name: 'undefined', undefined: true };
+  if ((flags & typescript.TypeFlags.Null) !== 0) return { raw, name: 'null', nullable: true };
+  if ((flags & typescript.TypeFlags.Any) !== 0) return { raw, name: 'any' };
+  if ((flags & typescript.TypeFlags.Unknown) !== 0) return { raw, name: 'unknown' };
+
+  return undefined;
 }
 
 // ── Module resolution ────────────────────────
