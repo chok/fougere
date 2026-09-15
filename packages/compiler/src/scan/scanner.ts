@@ -98,7 +98,7 @@ async function loadClass(filePath: string): Promise<ProviderEntry['ctor']> {
 }
 
 function isEntityClass(value: unknown): value is SchemaView {
-  return typeof value === 'function' && 'getFields' in (value as any);
+  return typeof value === 'function' && 'getFields' in (value as object);
 }
 
 // Workspace
@@ -285,8 +285,9 @@ function resolveSchema(type: TypeRef, moduleExports: Record<string, unknown>): S
         // `Partial<X>` in a signature IS the patch declaration (Crud.update) —
         // project it onto the schema view instead of dropping the wrapper, so
         // the facade validates in patch mode (absent field → untouched).
-        if (type.name === 'Partial' && 'partial' in resolved && typeof (resolved as any).partial === 'function') {
-          return (resolved as any).partial() as SchemaView;
+        const narrowing = (resolved as { partial?: () => SchemaView }).partial;
+        if (type.name === 'Partial' && typeof narrowing === 'function') {
+          return narrowing.call(resolved);
         }
         return resolved as unknown as SchemaView;
       }
@@ -516,7 +517,7 @@ async function toPresenterEntry(filePath: string): Promise<PresenterEntry | null
   const ctor = await loadClass(filePath);
   const target = targetOf(ctor);
   if (!target) return null;
-  const entityName = lowerFirst((target as any).name);
+  const entityName = lowerFirst((target as { name: string }).name);
   const fields = getPresenterFields(ctor);
   const presenterParams = await ctorParamsOf(filePath);
   const deps = presenterParams.map((p) => depKeyOf(p.type));
@@ -573,7 +574,7 @@ async function toCollectorEntry(filePath: string): Promise<CollectorEntry | null
   if (!target) return null;
   // The target's NAME and nothing else — a collector reads no fields, so the class it
   // was built on needs no schema.
-  const typeName = lowerFirst((target as any).name);
+  const typeName = lowerFirst((target as { name: string }).name);
   const collectorParams = await ctorParamsOf(filePath);
   const deps = collectorParams.map((p) => depKeyOf(p.type));
   return { typeName, ctor, deps, filePath };
