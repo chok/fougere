@@ -524,6 +524,28 @@ function readings(
   return { resolve, schemaFor, facadeFor, operationsFor, presenterFor };
 }
 
+/**
+ * Built once from the lazy `AuthConfig` a provider factory produced (`betterAuth({…})` in
+ * fougere.config.ts). The provider receives our db and storage factory, so every auth write
+ * flows through `Storage` like any other.
+ */
+async function authFor(options: CreateAppOptions, log: Logger): Promise<AuthRuntime | undefined> {
+  if (!options.auth) return undefined;
+
+  if (!options.storageFactory) {
+    throw new Error('createApp: `auth` is set but `storageFactory` is missing — auth providers need it to back their adapter. Pass one through CreateAppOptions.storageFactory.');
+  }
+  if (options.db === undefined) {
+    throw new Error('createApp: `auth` is set but `db` is missing — pass the storage handle through CreateAppOptions.db.');
+  }
+
+  log.info('initializing auth runtime');
+  const runtime = await options.auth.create({ db: options.db, storageFactory: options.storageFactory });
+  log.info(`auth ready — mounted at ${runtime.basePath}`);
+
+  return runtime;
+}
+
 /** Bootstrap a fougere application. */
 export async function createApp(options: CreateAppOptions): Promise<App> {
   const container = (options.createContainer ?? createContainer)();
@@ -593,24 +615,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
     const { fronds, operationModel } = await readFronds(options, log);
 
-    // Auth runtime — built once from the lazy AuthConfig produced by a provider factory
-    // (e.g. betterAuth({...})) in fougere.config.ts. The provider receives our db +
-    // storageFactory so all auth writes flow through Storage.
-    let authRuntime: AuthRuntime | undefined;
-    if (options.auth) {
-      if (!options.storageFactory) {
-        throw new Error('createApp: `auth` is set but `storageFactory` is missing — auth providers need it to back their adapter. Pass one through CreateAppOptions.storageFactory.');
-      }
-      if (options.db === undefined) {
-        throw new Error('createApp: `auth` is set but `db` is missing — pass the storage handle through CreateAppOptions.db.');
-      }
-      log.info('initializing auth runtime');
-      authRuntime = await options.auth.create({
-        db: options.db,
-        storageFactory: options.storageFactory,
-      });
-      log.info(`auth ready — mounted at ${authRuntime.basePath}`);
-    }
+    const authRuntime = await authFor(options, log);
 
     // Remote routing — validated at boot: declaring remotes without a transport is a config error.
     // A remote declaration wins over local presence: `remotes: { blog: url }` IS
