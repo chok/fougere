@@ -218,6 +218,67 @@ function registerStorages(
   }
 }
 
+/**
+ * Every provider under its own name, then under the PORT each one extends — so
+ * `private payment: Payment` reaches the realization instead of the base it is declared
+ * against. The port key is registered AFTER, so it always wins over the base's own.
+ *
+ * Gives back the seam chains: a seam is bound where its realization is BUILT, not under a
+ * container key, so `registerStorages` is the one that puts them in front of something.
+ */
+function registerProviders(
+  frond: FrondDescriptor,
+  scope: Container,
+  ports: CreateAppOptions['ports'],
+  boundPorts: Set<string>,
+  refused: Diagnostic[],
+  frondLog: Logger,
+): Map<string, ProviderEntry[]> {
+  for (const provider of frond.providers) {
+    scope.register(nameOf(provider), provider.ctor, { deps: provider.deps });
+  }
+  // What this frond puts in front of one of the framework's own ports. Its own, like every
+  // provider — a link goes where its frond goes, which is what a frond behind `remotes:`
+  // takes with it.
+  const seams = seamChains(frond.providers, ports, refused);
+  for (const [seam, links] of seams) {
+    boundPorts.add(seam);
+    frondLog.debug(`seam ${seam} → ${links.map((one) => one.ctor.name).join(' → ')} → the realization`);
+  }
+  // …and again under the port each one extends, so `private payment: Payment`
+  // reaches the realization instead of the base class it is declared against.
+  // Registered AFTER the loop above so a port key always wins over the base's
+  // own registration — same precedence as a declared repository over its default.
+  for (const [port, chain] of portBindings(frond.providers, (n) => scope.has(n), ports, refused)) {
+    // A chain a refusal emptied — `ports:` named a class that extends nothing. Already
+    // reported, and there is no realization left to put a key in front of.
+    if (chain.length === 0) continue;
+    // A seam is bound where its realization is BUILT, not under a container key — nothing
+    // resolves `Storage`, and `<Entity>Storage` is what a handler asks for.
+    if (SEAMS.has(port)) continue;
+    // Registered from the INSIDE OUT, each wrapper asking for the one it stands in front
+    // of: the container resolves a dep by NAME, so wrapping is a substituted key and
+    // needs nothing of the container itself. The outermost answers under the port.
+    let inner = nameOf(chain.at(-1)!);
+    for (const wrapper of [...chain.slice(0, -1)].reverse()) {
+      const deps = wrapper.deps.map((dep) => (dep === port ? inner : dep));
+      inner = nameOf(wrapper);
+      scope.register(inner, wrapper.ctor, { deps });
+    }
+    const outermost = chain[0]!;
+    scope.register(port, outermost.ctor, {
+      deps: outermost.deps.map((dep) => (dep === port ? nameOf(chain[1]!) : dep)),
+    });
+    boundPorts.add(port);
+    frondLog.debug(`port ${port} → ${chain.map((one) => one.ctor.name).join(' → ')}`);
+  }
+  if (frond.providers.length > 0) {
+    frondLog.debug(`${frond.providers.length} provider(s): ${frond.providers.map(nameOf).join(', ')}`);
+  }
+
+  return seams;
+}
+
 export async function installFrond(frond: FrondDescriptor, assembly: Assembly): Promise<void> {
   const {
     container, routeRegistry, emissions, dispatcher, localDispatcher, effectiveByKey,
@@ -261,47 +322,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   storageInUserCode(frond, owners, (entity) => entityByName.has(entity), refused);
   crudOnOwned(frond, owners, refused);
 
-  for (const provider of frond.providers) {
-    scope.register(nameOf(provider), provider.ctor, { deps: provider.deps });
-  }
-  // What this frond puts in front of one of the framework's own ports. Its own, like every
-  // provider — a link goes where its frond goes, which is what a frond behind `remotes:`
-  // takes with it.
-  const seams = seamChains(frond.providers, options.ports, refused);
-  for (const [seam, links] of seams) {
-    boundPorts.add(seam);
-    frondLog.debug(`seam ${seam} → ${links.map((one) => one.ctor.name).join(' → ')} → the realization`);
-  }
-  // …and again under the port each one extends, so `private payment: Payment`
-  // reaches the realization instead of the base class it is declared against.
-  // Registered AFTER the loop above so a port key always wins over the base's
-  // own registration — same precedence as a declared repository over its default.
-  for (const [port, chain] of portBindings(frond.providers, (n) => scope.has(n), options.ports, refused)) {
-    // A chain a refusal emptied — `ports:` named a class that extends nothing. Already
-    // reported, and there is no realization left to put a key in front of.
-    if (chain.length === 0) continue;
-    // A seam is bound where its realization is BUILT, not under a container key — nothing
-    // resolves `Storage`, and `<Entity>Storage` is what a handler asks for.
-    if (SEAMS.has(port)) continue;
-    // Registered from the INSIDE OUT, each wrapper asking for the one it stands in front
-    // of: the container resolves a dep by NAME, so wrapping is a substituted key and
-    // needs nothing of the container itself. The outermost answers under the port.
-    let inner = nameOf(chain.at(-1)!);
-    for (const wrapper of [...chain.slice(0, -1)].reverse()) {
-      const deps = wrapper.deps.map((dep) => (dep === port ? inner : dep));
-      inner = nameOf(wrapper);
-      scope.register(inner, wrapper.ctor, { deps });
-    }
-    const outermost = chain[0]!;
-    scope.register(port, outermost.ctor, {
-      deps: outermost.deps.map((dep) => (dep === port ? nameOf(chain[1]!) : dep)),
-    });
-    boundPorts.add(port);
-    frondLog.debug(`port ${port} → ${chain.map((one) => one.ctor.name).join(' → ')}`);
-  }
-  if (frond.providers.length > 0) {
-    frondLog.debug(`${frond.providers.length} provider(s): ${frond.providers.map(nameOf).join(', ')}`);
-  }
+  const seams = registerProviders(frond, scope, options.ports, boundPorts, refused, frondLog);
 
   // Register Storage for each entity — PascalCase type name (e.g. 'PostStorage')
   // When a handler declares Crud(Entity, Output), scope the storage via .output(Output)
