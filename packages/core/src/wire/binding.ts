@@ -48,66 +48,34 @@ export function computeBindingPlan(
   params: Param[],
   collectorTypeNames: Set<string>,
 ): BindingPlan {
-  return params.map((param) => {
-    const typeName = param.type.name;
-    // `lowerFirst`, never `toLowerCase()`: the collector set is keyed the way the
-    // scan spells it, and the two agree on one word only — `AuthorUser` looked up as
-    // `authoruser` missed `authorUser` and fell through to branch 4, the request input.
-    const typeKey = lowerFirst(typeName);
+  return params.map((param) => ({
+    name: param.name,
+    source: sourceOf(param, collectorTypeNames),
+    optional: param.optional ?? false,
+  }));
+}
 
-    // 0. Fact, or the same fact before it is final. Both name themselves, so nothing has
-    //    to be known in advance, and they come FIRST because branch 4 would otherwise hand
-    //    either the caller's input under the name of something that happened.
-    const announced = param.type.name === 'Fact' || param.type.name === 'Pipe'
-      ? param.type.generics?.[0]?.name
-      : undefined;
-    if (announced) {
-      return {
-        name: param.name,
-        source: {
-          kind: (param.type.name === 'Pipe' ? 'pipe' : 'fact') as 'pipe' | 'fact',
-          factName: lowerFirst(announced),
-        },
-        optional: param.optional ?? false,
-      };
-    }
+/**
+ * Where ONE parameter gets its value, in the order the branches must be asked.
+ *
+ * A fact and a link name themselves, so they come FIRST: asked later, the last branch would hand
+ * the caller's input under the name of something that happened.
+ */
+function sourceOf(param: Param, collectorTypeNames: Set<string>): ParamSource {
+  const typeName = param.type.name;
+  // `lowerFirst`, never `toLowerCase()`: the collector set is keyed the way the scan spells it,
+  // and the two agree on one word only — `AuthorUser` looked up as `authoruser` missed
+  // `authorUser` and fell through to the request input.
+  const typeKey = lowerFirst(typeName);
 
-    // 1. Collector — param type matches a type some collector answers for
-    if (collectorTypeNames.has(typeKey)) {
-      return {
-        name: param.name,
-        source: { kind: 'collector' as const, typeName: typeKey },
-        optional: param.optional ?? false,
-      };
-    }
+  const announced = typeName === 'Fact' || typeName === 'Pipe' ? param.type.generics?.[0]?.name : undefined;
+  if (announced) {
+    return { kind: typeName === 'Pipe' ? 'pipe' : 'fact', factName: lowerFirst(announced) };
+  }
 
-    // 2. InvocationContext — inject the full context
-    if (typeName === 'InvocationContext') {
-      return {
-        name: param.name,
-        source: { kind: 'context' as const },
-        optional: param.optional ?? false,
-      };
-    }
+  if (collectorTypeNames.has(typeKey)) return { kind: 'collector', typeName: typeKey };
+  if (typeName === 'InvocationContext') return { kind: 'context' };
+  if (PRIMITIVES.has(typeName)) return { kind: 'param', name: param.name, coerce: coercionFor(typeName) };
 
-    // 3. Primitives — matched by name from params > query
-    if (PRIMITIVES.has(typeName)) {
-      return {
-        name: param.name,
-        source: {
-          kind: 'param' as const,
-          name: param.name,
-          coerce: coercionFor(typeName),
-        },
-        optional: param.optional ?? false,
-      };
-    }
-
-    // 4. Everything else — input
-    return {
-      name: param.name,
-      source: { kind: 'input' as const },
-      optional: param.optional ?? false,
-    };
-  });
+  return { kind: 'input' };
 }
