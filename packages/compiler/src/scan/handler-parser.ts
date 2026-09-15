@@ -194,75 +194,81 @@ function parseTypeNode(node: ts.TypeNode, source: ts.SourceFile, checker?: ts.Ty
   const ts = getTS();
   const raw = node.getText(source);
 
-  if (checker) {
-    // `Fact<T>` and `Pipe<T>` are deliberately transparent in TypeScript (`= T`), because
-    // both receive the payload itself — one reads it, the other answers the value every
-    // reader then gets. The checker erases the marker, while the binding plan still needs
-    // it to tell either from an ordinary body.
-    if (ts.isTypeReferenceNode(node) && ts.isIdentifier(node.typeName) && ANNOUNCED.has(node.typeName.text)) {
-      return {
-        raw,
-        name: node.typeName.text,
-        generics: node.typeArguments?.map((arg) => parseTypeNode(arg, source, checker)) ?? [],
-      };
-    }
-    return parseCheckedType(checker.getTypeFromTypeNode(node), raw, checker);
-  }
+  if (checker) return announced(node, source, checker) ?? parseCheckedType(checker.getTypeFromTypeNode(node), raw, checker);
 
-  // Union types — extract nullable, strip Promise
-  if (ts.isUnionTypeNode(node)) {
-    const nonNull = node.types.filter(
-      (t) => !(ts.isLiteralTypeNode(t) && t.literal.kind === ts.SyntaxKind.NullKeyword)
-        && !(t.kind === ts.SyntaxKind.UndefinedKeyword)
-        && !(t.kind === ts.SyntaxKind.VoidKeyword)
-        && !(t.kind === ts.SyntaxKind.NullKeyword),
-    );
-    const nullable = node.types.some((t) =>
-      (ts.isLiteralTypeNode(t) && t.literal.kind === ts.SyntaxKind.NullKeyword)
-      || t.kind === ts.SyntaxKind.NullKeyword,
-    );
-    const undefinable = node.types.some((t) =>
-      t.kind === ts.SyntaxKind.UndefinedKeyword || t.kind === ts.SyntaxKind.VoidKeyword,
-    );
-    if (nonNull.length === 1) {
-      const inner = parseTypeNode(nonNull[0], source);
-      return { ...inner, nullable: nullable || inner.nullable, undefined: undefinable || inner.undefined, raw };
-    }
-    return { raw, name: raw, nullable, undefined: undefinable };
-  }
-
-  // Promise<T> — unwrap
-  if (ts.isTypeReferenceNode(node)) {
-    const typeName = node.typeName.getText(source);
-
-    if (typeName === 'Promise' && node.typeArguments?.length === 1) {
-      const inner = parseTypeNode(node.typeArguments[0], source);
-      return { ...inner, promise: true, raw };
-    }
-
-    // Array<T>
-    if (typeName === 'Array' && node.typeArguments?.length === 1) {
-      const inner = parseTypeNode(node.typeArguments[0], source);
-      return { ...inner, array: true, arrayDepth: (inner.arrayDepth ?? 0) + 1, raw };
-    }
-
-    // Generic type: Foo<Bar, Baz>
-    if (node.typeArguments && node.typeArguments.length > 0) {
-      const generics = node.typeArguments.map((arg) => parseTypeNode(arg, source));
-      return { raw, name: typeName, generics };
-    }
-
-    // Simple type reference: Post, string, etc.
-    return { raw, name: typeName };
-  }
-
-  // T[]
+  if (ts.isUnionTypeNode(node)) return fromUnion(node, source, raw);
+  if (ts.isTypeReferenceNode(node)) return fromReference(node, source, raw);
   if (ts.isArrayTypeNode(node)) {
     const inner = parseTypeNode(node.elementType, source);
+
     return { ...inner, array: true, arrayDepth: (inner.arrayDepth ?? 0) + 1, raw };
   }
 
-  // Keyword types: string, number, boolean, void
+  return fromKeyword(node, raw) ?? { raw, name: raw };
+}
+
+/**
+ * `Fact<T>` and `Pipe<T>` are deliberately transparent in TypeScript (`= T`), because both
+ * receive the payload itself — one reads it, the other answers the value every reader then gets.
+ * The checker erases the marker, while the binding plan still needs it to tell either from an
+ * ordinary body.
+ */
+function announced(node: ts.TypeNode, source: ts.SourceFile, checker: ts.TypeChecker): TypeRef | undefined {
+  const ts = getTS();
+  if (!ts.isTypeReferenceNode(node) || !ts.isIdentifier(node.typeName) || !ANNOUNCED.has(node.typeName.text)) {
+    return undefined;
+  }
+
+  return {
+    raw: node.getText(source),
+    name: node.typeName.text,
+    generics: node.typeArguments?.map((arg) => parseTypeNode(arg, source, checker)) ?? [],
+  };
+}
+
+/** `T | null`, `T | undefined`, `T | void` — the absence is an axis, the rest is the type. */
+function fromUnion(node: ts.UnionTypeNode, source: ts.SourceFile, raw: string): TypeRef {
+  const ts = getTS();
+  const isNull = (one: ts.TypeNode) =>
+    (ts.isLiteralTypeNode(one) && one.literal.kind === ts.SyntaxKind.NullKeyword)
+    || one.kind === ts.SyntaxKind.NullKeyword;
+  const isAbsent = (one: ts.TypeNode) =>
+    one.kind === ts.SyntaxKind.UndefinedKeyword || one.kind === ts.SyntaxKind.VoidKeyword;
+
+  const nullable = node.types.some(isNull);
+  const undefinable = node.types.some(isAbsent);
+  const nonNull = node.types.filter((one) => !isNull(one) && !isAbsent(one));
+
+  if (nonNull.length !== 1) return { raw, name: raw, nullable, undefined: undefinable };
+
+  const inner = parseTypeNode(nonNull[0]!, source);
+
+  return { ...inner, nullable: nullable || inner.nullable, undefined: undefinable || inner.undefined, raw };
+}
+
+/** `Promise<T>` and `Array<T>` are carriers; anything else keeps its name and its generics. */
+function fromReference(node: ts.TypeReferenceNode, source: ts.SourceFile, raw: string): TypeRef {
+  const typeName = node.typeName.getText(source);
+
+  if (typeName === 'Promise' && node.typeArguments?.length === 1) {
+    return { ...parseTypeNode(node.typeArguments[0]!, source), promise: true, raw };
+  }
+
+  if (typeName === 'Array' && node.typeArguments?.length === 1) {
+    const inner = parseTypeNode(node.typeArguments[0]!, source);
+
+    return { ...inner, array: true, arrayDepth: (inner.arrayDepth ?? 0) + 1, raw };
+  }
+
+  if (node.typeArguments && node.typeArguments.length > 0) {
+    return { raw, name: typeName, generics: node.typeArguments.map((arg) => parseTypeNode(arg, source)) };
+  }
+
+  return { raw, name: typeName };
+}
+
+function fromKeyword(node: ts.TypeNode, raw: string): TypeRef | undefined {
+  const ts = getTS();
   switch (node.kind) {
     case ts.SyntaxKind.StringKeyword: return { raw, name: 'string' };
     case ts.SyntaxKind.NumberKeyword: return { raw, name: 'number' };
@@ -272,15 +278,8 @@ function parseTypeNode(node: ts.TypeNode, source: ts.SourceFile, checker?: ts.Ty
     case ts.SyntaxKind.NullKeyword: return { raw, name: 'null', nullable: true };
     case ts.SyntaxKind.AnyKeyword: return { raw, name: 'any' };
     case ts.SyntaxKind.UnknownKeyword: return { raw, name: 'unknown' };
+    default: return undefined;
   }
-
-  // Object literal type: { title: string; limit: number }
-  if (ts.isTypeLiteralNode(node)) {
-    return { raw, name: raw };
-  }
-
-  // Fallback
-  return { raw, name: raw };
 }
 
 function meaningfulSymbolName(type: ts.Type, checker: ts.TypeChecker): string {
