@@ -1,6 +1,7 @@
 /** Putting one frond into the app being built: its scope, what it serves, what it takes. */
 import type { Container } from '@fougere/container';
 import type { ProviderEntry } from '../descriptor/ProviderEntry.js';
+import type { PresenterEntry } from '../descriptor/PresenterEntry.js';
 import { lowerFirst, type Fields, type SchemaView } from '@fougere/schema';
 import type { Logger } from '../builtin/Logger.js';
 import type { Dispatcher } from '../dispatch/Dispatcher.js';
@@ -336,6 +337,76 @@ function exposePresenters(
   }
 }
 
+/** What a facade is built out of, for one frond. */
+interface Building {
+  frond: FrondDescriptor;
+  assembly: Assembly;
+  /** The frond's own, which a presenter is resolved through whatever audience the facade serves. */
+  scope: Container;
+  collectorTypeNames: Set<string>;
+  presenterMap: Map<string, PresenterEntry>;
+  frondLog: Logger;
+}
+
+/** Build the facade of a handler, and register it under the audience it serves. */
+function buildFacadeInto(
+  { frond, assembly, scope, collectorTypeNames, presenterMap, frondLog }: Building,
+  entity: EntityEntry | undefined,
+  handler: HandlerEntry,
+  targetScope: Container,
+  facadeKey: string,
+): void {
+  const {
+    container, routeRegistry, emissions, dispatcher, localDispatcher, effectiveByKey,
+    operationModel, getMiddlewares,
+  } = assembly;
+
+  if (inheritsCrud(handler.ctor) && !entity) {
+    // An installed Crud subject may be absent from the local scan.
+    frondLog.debug(`${handler.ctor.name} extends Crud() and no scanned entity is named `
+      + `'${subjectOf(handler.ctor, handler.address)}' — installed entity, or a missing `
+      + `one: no storage will be injected`);
+  }
+
+  const facade = new HandlerFacade(handler, targetScope, {
+    key: facadeKey,
+    frond: frond.name,
+    handlers: frond.handlers,
+    operations: operationModel.forHandler(handler),
+    collectors: collectorTypeNames,
+    presenter: presenterMap.get(handler.address),
+    presenterScope: scope,
+    middlewares: () => getMiddlewares(handler.address),
+  });
+
+  // Emissions use the same contracts and execution path as direct calls, and the terms sit
+  // under the same audience — a surface that serves fewer ops describes fewer ops.
+  emissions.note(facade.contracts, facadeKey);
+  container.registerValue(contractsKeyOf(handler.address, handler.surface), facade.contracts);
+  effectiveByKey.set(facadeKey, facade.effectiveOperations);
+
+  for (const operation of facade.contracts.keys()) {
+    for (const surface of servedSurfaces(frond, handler)) {
+      routeRegistry.register(new OperationRoute(
+        'local',
+        new RouteAddress({
+          entity: handler.address,
+          operation,
+          ...(surface !== undefined ? { surface } : {}),
+        }),
+        (call) => facade.execute(operation, call.invocation),
+      ));
+    }
+  }
+
+  container.registerValue(facadeKey, facadeOperations(
+    handler.surface ? localDispatcher : dispatcher,
+    handler.address,
+    routeRegistry.operationNames(handler.address, handler.surface),
+    handler.surface,
+  ));
+}
+
 export async function installFrond(frond: FrondDescriptor, assembly: Assembly): Promise<void> {
   const {
     container, routeRegistry, emissions, dispatcher, localDispatcher, effectiveByKey,
@@ -436,62 +507,13 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   const surfaceHandlers = frond.handlers.filter((h) => h.surface);
   const defaultHandlerMap = new Map(defaultHandlers.map((h) => [h.address, h]));
 
-  /** Build the facade of a handler and register it under the audience it serves. */
+  const building: Building = { frond, assembly, scope, collectorTypeNames, presenterMap, frondLog };
   const buildFacade = (
     entity: EntityEntry | undefined,
     handler: HandlerEntry,
     targetScope: Container,
     facadeKey: string,
-  ) => {
-    if (inheritsCrud(handler.ctor) && !entity) {
-      // An installed Crud subject may be absent from the local scan.
-      frondLog.debug(`${handler.ctor.name} extends Crud() and no scanned entity is named `
-        + `'${subjectOf(handler.ctor, handler.address)}' — installed entity, or a missing `
-        + `one: no storage will be injected`);
-    }
-
-    const facade = new HandlerFacade(handler, targetScope, {
-      key: facadeKey,
-      frond: frond.name,
-      handlers: frond.handlers,
-      operations: operationModel.forHandler(handler),
-      collectors: collectorTypeNames,
-      presenter: presenterMap.get(handler.address),
-      presenterScope: scope,
-      middlewares: () => getMiddlewares(handler.address),
-    });
-    // Emissions use the same contracts and execution path as direct calls.
-    emissions.note(facade.contracts, facadeKey);
-    // The terms alongside the facade, under the same audience — a surface that serves
-    // fewer ops describes fewer ops.
-    container.registerValue(contractsKeyOf(handler.address, handler.surface), facade.contracts);
-    effectiveByKey.set(facadeKey, facade.effectiveOperations);
-
-    const surfaces = servedSurfaces(frond, handler);
-
-    for (const operation of facade.contracts.keys()) {
-      for (const surface of surfaces) {
-        const address = new RouteAddress({
-          entity: handler.address,
-          operation,
-          ...(surface !== undefined ? { surface } : {}),
-        });
-        routeRegistry.register(new OperationRoute(
-          'local',
-          address,
-          (call) => facade.execute(operation, call.invocation),
-        ));
-      }
-    }
-
-    const operations = facadeOperations(
-      handler.surface ? localDispatcher : dispatcher,
-      handler.address,
-      routeRegistry.operationNames(handler.address, handler.surface),
-      handler.surface,
-    );
-    container.registerValue(facadeKey, operations);
-  };
+  ) => buildFacadeInto(building, entity, handler, targetScope, facadeKey);
 
   // A presenter is about an entity — computed fields sit on a shape — so this walks
   // entities. Exposing the instance lazily; the bridge resolves it on first access.
