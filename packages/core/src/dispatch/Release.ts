@@ -86,57 +86,16 @@ async function walk(
   trail: readonly string[],
 ): Promise<void> {
   const dependents = world.dependentsOf(entity);
+
   // Every refusal of this level BEFORE any of its rows move: two fields of one entity are two
   // dependents, and declaration order would otherwise let a cascade beside a `restrict` win.
   // Depth needs no such pass — a level acts only once the level below it came back.
   for (const dependent of dependents.filter((one) => one.onDelete === 'restrict')) {
-    const rows = world.rowsOf(dependent.entity);
-    if (!rows) continue;
-    const found = [...(await rows.findAllByKeys(dependent.field, keys.map(String))).values()].flat();
-    if (found.length === 0) continue;
-
-    throw new FougereError({
-      code: ErrorCode.CONFLICT,
-      message: `${dependent.entity}.${dependent.field} holds ${found.length} row(s) naming this one, `
-        + `and states onDelete 'restrict' — take them out first, or declare what should happen.`,
-      entity,
-      operation: 'delete',
-    });
+    await refuseHeld(entity, dependent, keys, world);
   }
 
   for (const dependent of dependents.filter((one) => one.onDelete !== 'restrict')) {
-    const rows = world.rowsOf(dependent.entity);
-    // Nothing here holds those rows. The process that does answers the same two readings core
-    // serves everywhere, so the ask crosses and the work happens on ITS side of the wire —
-    // which is what keeps the declaration identical whatever the topology.
-    // Nothing here holds those rows: every declared remote is asked about THIS level, and the
-    // one that holds them walks its own tree from there. The trail grows by one mark per level,
-    // so a deeper ask is never mistaken for the bounce of a shallower one.
-    if (!rows) {
-      for (const key of keys) {
-        // A level already on the trail is one somebody is asking every process about, so
-        // asking again is the bounce — the same reason `release` reads it before crossing.
-        if (trail.includes(`${entity}#${String(key)}`)) continue;
-        for (const peer of world.peers()) await peer.release(entity, key, trail);
-      }
-      continue;
-    }
-
-    const naming = await rows.findAllByKeys(dependent.field, keys.map(String));
-    const found = [...naming.values()].flat();
-    if (found.length === 0) continue;
-
-    if (dependent.onDelete === 'set null') {
-      const primary = keyOf(world, dependent.entity);
-      for (const row of found) await rows.update(String(row[primary]), { [dependent.field]: null });
-      continue;
-    }
-
-    const primary = keyOf(world, dependent.entity);
-    const below = found.map((row) => row[primary]).filter((id) => !taken(seen, dependent.entity, id));
-    // Deepest first: what names THESE rows goes before they do, all the way down.
-    await walk(dependent.entity, below, world, seen, trail);
-    for (const id of below) await rows.delete(String(id));
+    await carryOut(entity, dependent, keys, world, seen, trail);
   }
 }
 
@@ -153,4 +112,69 @@ function keyOf(world: Releasing, entity: string): string {
   const schema = world.schemaOf(entity);
 
   return (schema && FieldSet.of(schema.getFields()).primary) ?? 'id';
+}
+
+/** What names these rows and states `restrict` stops the whole release, before anything moves. */
+async function refuseHeld(
+  entity: string,
+  dependent: Dependent,
+  keys: readonly unknown[],
+  world: Releasing,
+): Promise<void> {
+  const rows = world.rowsOf(dependent.entity);
+  if (!rows) return;
+
+  const found = [...(await rows.findAllByKeys(dependent.field, keys.map(String))).values()].flat();
+  if (found.length === 0) return;
+
+  throw new FougereError({
+    code: ErrorCode.CONFLICT,
+    message: `${dependent.entity}.${dependent.field} holds ${found.length} row(s) naming this one, `
+      + `and states onDelete 'restrict' — take them out first, or declare what should happen.`,
+    entity,
+    operation: 'delete',
+  });
+}
+
+/**
+ * One dependent level: cleared here, or asked of whoever holds it.
+ *
+ * Nothing here holds those rows — every declared remote is asked about THIS level, and the one
+ * that holds them walks its own tree from there. The trail grows by one mark per level, so a
+ * deeper ask is never mistaken for the bounce of a shallower one.
+ */
+async function carryOut(
+  entity: string,
+  dependent: Dependent,
+  keys: readonly unknown[],
+  world: Releasing,
+  seen: Set<string>,
+  trail: readonly string[],
+): Promise<void> {
+  const rows = world.rowsOf(dependent.entity);
+  if (!rows) {
+    for (const key of keys) {
+      // A level already on the trail is one somebody is asking every process about, so asking
+      // again is the bounce — the same reason `release` reads it before crossing.
+      if (trail.includes(`${entity}#${String(key)}`)) continue;
+      for (const peer of world.peers()) await peer.release(entity, key, trail);
+    }
+
+    return;
+  }
+
+  const found = [...(await rows.findAllByKeys(dependent.field, keys.map(String))).values()].flat();
+  if (found.length === 0) return;
+
+  const primary = keyOf(world, dependent.entity);
+  if (dependent.onDelete === 'set null') {
+    for (const row of found) await rows.update(String(row[primary]), { [dependent.field]: null });
+
+    return;
+  }
+
+  const below = found.map((row) => row[primary]).filter((id) => !taken(seen, dependent.entity, id));
+  // Deepest first: what names THESE rows goes before they do, all the way down.
+  await walk(dependent.entity, below, world, seen, trail);
+  for (const id of below) await rows.delete(String(id));
 }
