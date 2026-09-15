@@ -7,6 +7,7 @@ import type { NameOf } from './NameOf.js';
 import type { PortChoice } from './PortChoice.js';
 import { getModuleLoader } from './loader.js';
 import type { AdapterConfig } from './AdapterConfig.js';
+import { mergeStated, type FrondsStated } from './FrondsStated.js';
 
 export interface FougereConfig {
   /** Database configuration — the DEFAULT source, the one an entity lands in unnamed. */
@@ -28,6 +29,11 @@ export interface FougereConfig {
    * readers here already treat as present. The name is checked at boot instead.
    */
   remotes?: Record<string, string>;
+  /**
+   * What this app is made of, and who inherits code from whom. The key is a frond name or a
+   * module specifier; nesting says only that a child resolves what its parent declared.
+   */
+  fronds?: FrondsStated;
   /** What answers a port — a name, or the chain from the outside in. */
   ports?: PortChoice;
   /** Auth declaration — picks a provider package and forwards options to it. */
@@ -63,14 +69,18 @@ export async function loadConfig(root: string, options?: { fresh?: boolean }): P
 
 /**
  * Override a config with another, the invariant of every cascade level: scalar keys replace, but
- * `remotes` (the topology) MERGES — an override adds or redirects a frond without erasing the
- * others.
+ * the two that say what this app is made of MERGE — an override adds or redirects a frond
+ * without erasing the others.
  */
 function mergeGlobal(base: FougereConfig, override: Partial<FougereConfig>): FougereConfig {
   const merged: FougereConfig = { ...base, ...override };
   if (base.remotes || override.remotes) {
     merged.remotes = { ...base.remotes, ...override.remotes };
   }
+  if (base.fronds || override.fronds) {
+    merged.fronds = mergeStated(base.fronds ?? {}, override.fronds ?? {});
+  }
+
   return merged;
 }
 
