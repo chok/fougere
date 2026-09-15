@@ -14,6 +14,8 @@ import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, Invocation, type StorageFactory } from '../src/index.js';
 
 const root = join(import.meta.dirname, 'fixtures-seam-storage');
+/** `ledger` holds a link and answers nothing; `warehouse` declares none and sits under it. */
+const familyRoot = join(import.meta.dirname, 'fixtures-seam-family');
 
 const wrote = () => ((globalThis as Record<string, unknown>).__wrote ?? []) as string[];
 
@@ -103,5 +105,34 @@ describe('a class that stands in front of a seam', () => {
   it('refuses a `ports:` entry naming a class that stands in front of nothing', async () => {
     await expect(app({ Storage: ['Absent'] }))
       .rejects.toThrow(/\[port-not-extended\][\s\S]*Storage: 'Absent' does not extend it/);
+  });
+});
+
+describe('a link declared by the frond above', () => {
+  beforeEach(() => { (globalThis as Record<string, unknown>).__wrote = []; });
+
+  const family = (under?: Record<string, unknown>) => createApp({
+    scan: () => scanProject(familyRoot),
+    createContainer,
+    storageFactory,
+    ...(under ? { under } : {}),
+  });
+
+  it('stands in front of the rows of every frond under it', async () => {
+    await using built = await family({ ledger: { warehouse: {} } });
+
+    await createLocalRunner(built)({ entity: 'crate', op: 'add' }, { ...Invocation.empty, params: { label: 'oak' } });
+
+    // A seam has no container key — its realization is built, not resolved — so inheriting a
+    // link is a list carried down, the same shape a middleware needed.
+    expect(wrote()).toEqual(['stamping(oak)']);
+  });
+
+  it('reaches nothing while the two fronds are only neighbours', async () => {
+    await using built = await family();
+
+    await createLocalRunner(built)({ entity: 'crate', op: 'add' }, { ...Invocation.empty, params: { label: 'ash' } });
+
+    expect(wrote()).toEqual([]);
   });
 });

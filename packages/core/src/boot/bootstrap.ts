@@ -694,7 +694,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     const assembly: Assembly = {
       container, routeRegistry, emissions, dispatcher, localDispatcher, effectiveByKey,
       boundPorts, refused, relations, hosting, operationModel, entityByName, frondOf, contractsOf,
-      getMiddlewares, use, middlewaresOf: new Map(), log, options,
+      getMiddlewares, use, middlewaresOf: new Map(), seamsOf: new Map(), log, options,
     };
     for (const frond of fronds) await installFrond(frond, assembly);
 

@@ -79,6 +79,8 @@ export interface Assembly {
    * and not a scope to walk.
    */
   middlewaresOf: Map<string, AppMiddleware[]>;
+  /** What wraps each frond's seams, its ancestors' included — read the same way. */
+  seamsOf: Map<string, Map<string, ProviderEntry[]>>;
   log: Logger;
   options: CreateAppOptions;
 }
@@ -159,6 +161,21 @@ function registerMiddlewares(
   if (frond.middlewares.length > 0) {
     frondLog.debug(`${frond.middlewares.length} middleware(s): ${frond.middlewares.map((m) => m.name).join(', ')}`);
   }
+}
+
+/** What wraps a seam here: what the parent already put in front, then this frond's own. */
+function inheritedSeams(
+  frond: FrondDescriptor,
+  seamsOf: Map<string, Map<string, ProviderEntry[]>>,
+  declared: Map<string, ProviderEntry[]>,
+): Map<string, ProviderEntry[]> {
+  const above = frond.under ? seamsOf.get(frond.under) : undefined;
+  if (!above) return declared;
+
+  const all = new Map(declared);
+  for (const [seam, links] of above) all.set(seam, [...links, ...(declared.get(seam) ?? [])]);
+
+  return all;
 }
 
 /**
@@ -473,7 +490,12 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   storageInUserCode(frond, owners, (entity) => entityByName.has(entity), refused);
   crudOnOwned(frond, owners, refused);
 
-  const seams = registerProviders(frond, scope, options.ports, boundPorts, refused, frondLog);
+  const declared = registerProviders(frond, scope, options.ports, boundPorts, refused, frondLog);
+  // An ancestor's links stand OUTSIDE this frond's own, the order `wrapping` reads — and
+  // like a middleware, a link cannot be inherited through a container key, since a seam has
+  // none: its realization is built rather than resolved.
+  const seams = inheritedSeams(frond, assembly.seamsOf, declared);
+  assembly.seamsOf.set(frond.name, seams);
 
   // Register Storage for each entity — PascalCase type name (e.g. 'PostStorage')
   // When a handler declares Crud(Entity, Output), scope the storage via .output(Output)
