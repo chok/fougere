@@ -6,6 +6,7 @@ import {
   PostgresAdapter, PostgresQueryCompiler, PostgresIntrospector,
   MysqlAdapter, MysqlQueryCompiler, MysqlIntrospector,
   MssqlAdapter, MssqlQueryCompiler, MssqlIntrospector,
+  type ColumnDefinitionBuilder,
 } from 'kysely';
 import { type AppLike } from '../table/AppLike.js';
 import { type ColumnDef } from '../table/ColumnDef.js';
@@ -58,21 +59,7 @@ export function createTableSQL(
 
   for (const column of table.columns) {
     const type = columnTypeFor(dialect, column, isKeyed(table, column));
-    builder = builder.addColumn(column.name, sql.raw(type) as any, (col) => {
-      let built = col;
-      // A simple key is inline; a composite one becomes a table constraint.
-      if (column.primary && !composite) built = built.primaryKey();
-      if (!column.nullable) built = built.notNull();
-      if (column.default !== undefined) built = built.defaultTo(column.default);
-      // Uniqueness is the storage's to enforce: no shape can express it, since validating
-      // one value never sees the other rows.
-      if (column.unique) built = built.unique();
-      if (column.references && !skip?.has(column.name)) {
-        built = built.references(`${column.references.table}.${column.references.column}`);
-        if (column.references.onDelete) built = built.onDelete(column.references.onDelete);
-      }
-      return built;
-    });
+    builder = builder.addColumn(column.name, sql.raw(type) as any, (col) => stated(col, column, composite, skip));
   }
 
   if (composite) {
@@ -185,4 +172,29 @@ export function autoMigrate(app: AppLike, sink: SqlSink, options?: GenerateOptio
     .map((statement) => runOn(sink, statement))
     .filter((result): result is Promise<unknown> => typeof (result as any)?.then === 'function');
   return pending.length ? Promise.all(pending).then(() => undefined) : undefined;
+}
+
+/**
+ * What one column says about itself. A simple key is inline, a composite one becomes a table
+ * constraint below; uniqueness is the storage's to enforce, since no shape can express it —
+ * validating one value never sees the other rows.
+ */
+function stated(
+  col: ColumnDefinitionBuilder,
+  column: ColumnDef,
+  composite: boolean,
+  skip: ReadonlySet<string> | undefined,
+): ColumnDefinitionBuilder {
+  let built = col;
+  if (column.primary && !composite) built = built.primaryKey();
+  if (!column.nullable) built = built.notNull();
+  if (column.default !== undefined) built = built.defaultTo(column.default);
+  if (column.unique) built = built.unique();
+
+  if (column.references && !skip?.has(column.name)) {
+    built = built.references(`${column.references.table}.${column.references.column}`);
+    if (column.references.onDelete) built = built.onDelete(column.references.onDelete);
+  }
+
+  return built;
 }
