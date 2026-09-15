@@ -565,6 +565,43 @@ async function toMiddlewareEntry(
   };
 }
 
+/** `frond.config.ts` takes precedence; failing that, `@expose`, which defaults to exposed. */
+function markExposed(
+  entities: EntityEntry[],
+  handlers: HandlerEntry[],
+  exposed: readonly string[] | undefined,
+): void {
+  if (exposed) {
+    const stated = new Set(exposed);
+    for (const entity of entities) entity.exposed = stated.has((entity.entityClass as { name: string }).name);
+    for (const handler of handlers) handler.exposed = stated.has(handler.ctor.name);
+
+    return;
+  }
+
+  for (const entity of entities) entity.exposed = (entity.entityClass as { __exposed?: boolean }).__exposed !== false;
+  for (const handler of handlers) handler.exposed = (handler.ctor as { __exposed?: boolean }).__exposed !== false;
+}
+
+/**
+ * The only thing that needs flattening is the handler CLASS, which becomes its name — that is the
+ * DI key. Everything else travels verbatim, so a slot added to `OperationOverride` reaches its
+ * reader without a stop here; enumerating keys by hand is what used to drop whatever was added
+ * last, the same invariant `cloneField` holds one layer down.
+ */
+function overridesOf(
+  operations: FrondConfig['operations'],
+): FrondDescriptor['operationsOverrides'] {
+  if (!operations) return undefined;
+
+  return Object.fromEntries(
+    Object.entries(operations).map(([opName, { handler, ...rest }]) => [
+      opName,
+      { ...rest, handlerName: handler?.name },
+    ]),
+  );
+}
+
 async function scanFrond(frondPath: string, name: string, source: FrondDescriptor['source'], conventions: Conventions, projectRoot?: string): Promise<FrondDescriptor> {
   const {
     entities: entitiesDir, handlers: handlersDir,
@@ -616,39 +653,8 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
   const seeds = await collect(seedsDir, toSeedEntry);
   const middlewares = await collect(middlewaresDir, (f) => toMiddlewareEntry(f, frondConfig?.middlewares));
 
-  // Mark exposed entries: frond.config.ts takes precedence, then @expose decorator
-  if (frondConfig?.expose) {
-    const exposeSet = new Set(frondConfig.expose);
-    for (const e of entities) {
-      e.exposed = exposeSet.has((e.entityClass as any).name);
-    }
-    for (const h of handlers) {
-      h.exposed = exposeSet.has(h.ctor.name);
-    }
-  } else {
-    // Fallback: check @expose decorator, default to true (expose everything unless explicitly hidden)
-    for (const e of entities) {
-      e.exposed = (e.entityClass as any).__exposed !== false;
-    }
-    for (const h of handlers) {
-      h.exposed = (h.ctor as any).__exposed !== false;
-    }
-  }
-
-  // Flatten per-op config overrides: the only thing that needs flattening is the handler
-  // CLASS, which becomes its name (that is the DI key). Everything else — the surface keys
-  // AND the contract keys (`input`, `binding`) — travels verbatim, so a slot added to
-  // OperationOverride reaches its reader without a stop here. Enumerating keys by hand is
-  // what used to silently drop whatever was added last (the same invariant `cloneField`
-  // holds one layer down).
-  const operationsOverrides = frondConfig?.operations
-    ? Object.fromEntries(
-        Object.entries(frondConfig.operations).map(([opName, { handler, ...rest }]) => [
-          opName,
-          { ...rest, handlerName: handler?.name },
-        ]),
-      )
-    : undefined;
+  markExposed(entities, handlers, frondConfig?.expose);
+  const operationsOverrides = overridesOf(frondConfig?.operations);
 
   return {
     name,
