@@ -338,6 +338,61 @@ function whatTheAppKnows(
   };
 }
 
+/** What every check of the boot asks about where a row lives, and who else might hold one. */
+interface Hosted {
+  fronds: Fronds;
+  container: Container;
+  options: CreateAppOptions;
+  declaredRemotes: [string, string][];
+  remoteRouter: RemoteRouter | undefined;
+  entityByName: Map<string, SchemaView>;
+  frondOf: Map<string, string>;
+  storageOf: (entity: string) => unknown | undefined;
+}
+
+function hostingFor(
+  { fronds, container, options, declaredRemotes, remoteRouter, entityByName, frondOf, storageOf }: Hosted,
+): { hosting: Hosting; journalOf: () => Journal | undefined } {
+  // What carries a release writes none: an instrumentation frond's own rows are kept while a
+  // release happens, and journalling them would begin one inside the one being written down.
+  const carriesRelease = new Set(
+    fronds.filter((one) => one.brought).flatMap((one) => one.entities.map((entity) => entity.name)),
+  );
+
+  /**
+   * The journal a package registered, found where its own frond put it — a provider lands in its
+   * frond's scope, and the app container sees none of them. Resolved per call and never at boot:
+   * the package that registers it rises in the ascent, long after this answer is built.
+   */
+  const journalOf = (): Journal | undefined => {
+    for (const frond of fronds) {
+      if (!frond.brought) continue;
+      const scope = container.resolve<Container>(`frond:${frond.name}`);
+      if (scope.has(JOURNAL)) return scope.resolve<Journal>(JOURNAL);
+    }
+
+    return undefined;
+  };
+
+  const hosting: Hosting = {
+    hostedHere: (entity) => !(options.remotes && (frondOf.get(entity) ?? '') in options.remotes),
+    sourceOf: (name) => options.sourceOf?.(name) ?? 'db',
+    enforces: (source, constraint) => options.enforces?.(source, constraint) ?? false,
+    storageOf,
+    entities: () => entityByName,
+    journal: (entity) => (carriesRelease.has(entity) ? undefined : journalOf()),
+    // Built from `remotes:` itself and not from the router: the router indexes by ENTITY, read
+    // off a card, while the question here is asked of a PROCESS about rows it may be alone in
+    // knowing about. Nothing is cached — a peer that was down at boot answers the next call.
+    peers: () => (options.remoteTransport
+      ? declaredRemotes.map(([, url]) => peerOver(options.remoteTransport!(url)))
+      : []),
+    peerOf: (entity) => (remoteRouter ? peerBehind(entity, remoteRouter) : undefined),
+  };
+
+  return { hosting, journalOf };
+}
+
 /** Bootstrap a fougere application. */
 export async function createApp(options: CreateAppOptions): Promise<App> {
   const container = (options.createContainer ?? createContainer)();
@@ -478,43 +533,9 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
     // What carries a release writes none: an instrumentation frond's own rows are kept while a
     // release happens, and journalling them would begin one inside the one being written down.
-    const carriesRelease = new Set(
-      fronds.filter((one) => one.brought).flatMap((one) => one.entities.map((e) => e.name)),
-    );
-
-    /**
-     * The journal a package registered, found where its own frond put it — a provider lands in
-     * its frond's scope, and the app container sees none of them.
-     */
-    const journalOf = (): Journal | undefined => {
-      for (const frond of fronds) {
-        if (!frond.brought) continue;
-        const scope = container.resolve<Container>(`frond:${frond.name}`);
-        if (scope.has(JOURNAL)) return scope.resolve<Journal>(JOURNAL);
-      }
-
-      return undefined;
-    };
-
-    const hosting: Hosting = {
-      hostedHere: (entity) => !(options.remotes && (frondOf.get(entity) ?? '') in options.remotes),
-      sourceOf: (name) => options.sourceOf?.(name) ?? 'db',
-      enforces: (source, constraint) => options.enforces?.(source, constraint) ?? false,
-      storageOf: storageFor,
-      entities: () => entityByName,
-      // The two readings core serves in EVERY process, asked of the one that holds the rows.
-      // Nothing is cached: a peer that was down at boot answers the next call.
-      // Built from `remotes:` itself, not from the router: the router indexes by ENTITY, read
-      // off a card, and the question here is asked of a PROCESS about rows it may be alone
-      // in knowing about.
-      // Resolved per call and never at boot: the package that registers it rises in the
-      // ascent, long after this answer is built.
-      journal: (entity) => (carriesRelease.has(entity) ? undefined : journalOf()),
-      peers: () => (options.remoteTransport
-        ? declaredRemotes.map(([, url]) => peerOver(options.remoteTransport!(url)))
-        : []),
-      peerOf: (entity) => (remoteRouter ? peerBehind(entity, remoteRouter) : undefined),
-    };
+    const { hosting, journalOf } = hostingFor({
+      fronds, container, options, declaredRemotes, remoteRouter, entityByName, frondOf, storageOf: storageFor,
+    });
 
     // Every port an implementation was bound to, so a `ports:` entry that named none
     // can say so rather than look obeyed.
