@@ -9,6 +9,8 @@ import { FieldValueValidator } from './FieldValueValidator.js';
 import { InputRefusal } from './InputRefusal.js';
 import type { ValidateOptions } from './ValidateOptions.js';
 
+type Admitted = { path: readonly string[]; message: string } | { value: unknown };
+
 export class InputValidator {
   private constructor(
     private readonly fields: Fields,
@@ -36,45 +38,46 @@ export class InputValidator {
     }
 
     const data = input as Record<string, unknown>;
-    const errors: ValidationError[] = [];
+    const errors: ValidationError[] = this.unknownIn(data);
     const row: Record<string, unknown> = {};
 
-    for (const key of Object.keys(data)) {
-      if (!Object.hasOwn(this.fields, key)) {
-        errors.push({ path: [key], message: InputRefusal.unknownField });
-      }
-    }
-
     for (const [key, field] of Object.entries(this.fields)) {
-      const path = [key];
-      const value = data[key];
-
-      if (value === undefined) {
-        if (this.options.patch) continue;
-        const absence = this.onAbsent(field);
-        if (absence === null) {
-          errors.push({ path, message: InputRefusal.required });
-          continue;
-        }
-        if (absence === 'empty-list') row[key] = [];
-        continue;
-      }
-
-      if (Boundary.of(field).readOnly) {
-        errors.push({ path, message: InputRefusal.readOnly });
-        continue;
-      }
-      if (this.options.patch && Lifecycle.of(field).immutable) {
-        errors.push({ path, message: InputRefusal.immutable });
-        continue;
-      }
-
-      const parsed = FieldValueValidator.of(field).parse(value);
-      if ('error' in parsed) errors.push({ path: [...path, ...parsed.path ?? []], message: parsed.error });
-      else row[key] = parsed.value;
+      const verdict = this.admit(field, data[key]);
+      if (verdict === undefined) continue;
+      if ('message' in verdict) errors.push({ path: [key, ...verdict.path], message: verdict.message });
+      else row[key] = verdict.value;
     }
 
     if (errors.length > 0) return { success: false, errors };
+
     return { success: true, data: row };
+  }
+
+  private unknownIn(data: Record<string, unknown>): ValidationError[] {
+    return Object.keys(data)
+      .filter((key) => !Object.hasOwn(this.fields, key))
+      .map((key) => ({ path: [key], message: InputRefusal.unknownField }));
+  }
+
+  private admit(field: Field, value: unknown): Admitted | undefined {
+    if (value === undefined) return this.whenAbsent(field);
+
+    if (Boundary.of(field).readOnly) return { path: [], message: InputRefusal.readOnly };
+    if (this.options.patch && Lifecycle.of(field).immutable) return { path: [], message: InputRefusal.immutable };
+
+    const parsed = FieldValueValidator.of(field).parse(value);
+
+    return 'error' in parsed
+      ? { path: parsed.path ?? [], message: parsed.error }
+      : { value: parsed.value };
+  }
+
+  private whenAbsent(field: Field): Admitted | undefined {
+    if (this.options.patch) return undefined;
+
+    const absence = this.onAbsent(field);
+    if (absence === null) return { path: [], message: InputRefusal.required };
+
+    return absence === 'empty-list' ? { value: [] } : undefined;
   }
 }
