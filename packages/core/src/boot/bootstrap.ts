@@ -307,6 +307,37 @@ function dispatching(
   };
 }
 
+/** Every entity of every frond, who holds it, and the door a fact goes through. */
+function whatTheAppKnows(
+  fronds: Fronds,
+  container: Container,
+  options: CreateAppOptions,
+  refused: Diagnostic[],
+): { entityByName: Map<string, SchemaView>; frondOf: Map<string, string>; emissions: Emissions } {
+  // By name, so a fact can be validated where it LANDS and a `reads:` clause can name a
+  // neighbour's entity.
+  const entityByName = fronds.schemas();
+  // The line is core's, so its SHAPE is too: a destination that declares only a handler would
+  // otherwise be handed a line with no `at` — the announcement stamps `created()` off the shape,
+  // and the strict judge refuses what it did not stamp. Measured on `demos/observability`, where
+  // the ring held 11 calls and 0 lines.
+  if (!entityByName.has(LOG_LINE)) entityByName.set(LOG_LINE, LogLine);
+
+  return {
+    entityByName,
+    // What turns "a member is remote" into a refusal that names the FROND rather than the
+    // entity, since `remotes:` is declared per frond.
+    frondOf: new Map(fronds.flatMap((one) => one.entities.map((entity) => [entity.name, one.name] as const))),
+    emissions: new Emissions(
+      fronds, entityByName, container,
+      // No carry: this is what CARRIES a fact, and a line about carrying one comes back here.
+      new Logger('boot:app'),
+      refused,
+      options.onEmit,
+    ),
+  };
+}
+
 /** Bootstrap a fougere application. */
 export async function createApp(options: CreateAppOptions): Promise<App> {
   const container = (options.createContainer ?? createContainer)();
@@ -420,26 +451,8 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     const claimed = refusalOf(refused, 'declaration(s) that do not hold');
     if (claimed) throw claimed;
 
-    // Every entity of every frond, by name — so a fact can be validated where it LANDS, and
-    // so a `reads:` clause can name a neighbour's.
-    const entityByName = fronds.schemas();
-    // The line is core's, so its SHAPE is too: a destination that declares only a handler
-    // would otherwise be handed a line with no `at` — the announcement stamps `created()`
-    // off the shape, and the strict judge refuses what it did not stamp. Measured on
-    // `demos/observability`, where the ring held 11 calls and 0 lines.
-    if (!entityByName.has(LOG_LINE)) entityByName.set(LOG_LINE, LogLine);
-    // Which frond holds an entity — what turns "a member is remote" into a refusal that
-    // names the frond rather than the entity, since `remotes:` is declared per frond.
-    const frondOf = new Map(fronds.flatMap((f) => f.entities.map((e) => [e.name, f.name] as const)));
-    // Its own writer, which does NOT announce: this is what carries a fact, and a line
-    // about carrying one would come back here. See `LoggerOptions.carries`.
-    const emissions = new Emissions(
-      fronds, entityByName, container,
-      // No carry: this is what CARRIES a fact, and a line about carrying one comes back.
-      new Logger('boot:app'),
-      refused,
-      options.onEmit,
-    );
+    const { entityByName, frondOf, emissions } = whatTheAppKnows(fronds, container, options, refused);
+
     /** Canonical operation tables, indexed by the same audience key as their facades. */
     const effectiveByKey = new Map<string, EffectiveOperationsMap>();
 
