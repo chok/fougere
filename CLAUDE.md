@@ -10,7 +10,7 @@ table, no protocol, no host, no address. The two things this file used to call i
 ideas are its two readings, and calling them two hid the rule that produces both:
 
 1. **Single-schema** — what the declaration does not name is *derived* from it: one Entity class (`class Post extends entity({...})`) generates validation, DB tables (Kysely), GraphQL types (Pothos), form contracts, API surfaces.
-2. **The gradient** — what it does not name is *chosen outside* it: a Frond (entities + handlers + collectors + seeds) runs in-process or in its own process behind JSON-RPC, with **identical user code**. `remotes: { blog: 'http://...' }` in `fougere.config.ts` is the whole topology statement.
+2. **The gradient** — what it does not name is *chosen outside* it: a Frond (entities + handlers + collectors + seeds) runs in-process or in its own process behind JSON-RPC, with **identical user code**. `fronds:` in `fougere.config.ts` is the whole statement — a name for a frond that is here, an address for one that is elsewhere, a module specifier for one a package brings, and nesting for who inherits whose code.
 
 Reference docs: `site/content/` (en/fr).
 
@@ -415,6 +415,24 @@ already answers. The config is read BEFORE the aliases, because it names the sco
 are built from. `.fougere/` is the framework's working directory, not user vocabulary.
 Pinned by `tests/conventions.test.ts`.
 
+**`fronds:` says what an app is MADE OF, and its nesting says one thing only** —
+`FrondsStated` (`core/src/FrondsStated.ts`), judged by `boot/nesting.ts`. A child resolves what
+its parent declared, because its scope hangs off its parent's: `installFrond` starts from
+`container.resolve('frond:' + under)` and `ScopeContainer.resolve` walks up on its own, so
+providers, `<E>Repository`, presenters and port keys are inherited with no mechanism at all.
+Middlewares and seams are not — neither is a container key — so both are CARRIED lists,
+composed outside the child's own. Nesting says nothing about placement and nothing about the
+right to CALL: two fronds still reach each other through a façade or an announced fact, and
+`verify()` exempts an ancestor and no one else. What keeps that safe is the refusal: a frond a
+family inherits from may not serve (`frond-parent-serves`), may not be placed at an address
+(`frond-parent-remote`), and may not declare rows (`frond-parent-entities`) — with no façade
+nothing can call it, so nothing can move it, and it stands in every process holding one of its
+children. `remotesOf` folds the tree's string leaves and `remotes:` into one reading, so
+nothing downstream learns there are two graphies; a module key is imported by the HOST, never
+by core, and where it lands is read off its form — `up`/`down` means an extension. The word
+`fronds` had three senses and now has two: the filter is `only:`. Pinned by
+`core/tests/{fronds-stated,nesting,stated-modules}.test.ts`.
+
 **Config, consulted vs consumed** — `boot/apply.ts`, `applyConfig`. A value CONSULTED at use
 can move; a value CONSUMED to build something cannot. `logLevel` is the only consulted key
 today, and every other difference is reported as `pending`. `Logger` holds NO level:
@@ -434,12 +452,20 @@ between the two, not a convention.
 and the only one whose members apply to code they do not name. Recognized by its FORM: the
 class states `around(context, next)`, so a file in the directory that does not is not one.
 It answers for its own frond — every ADDRESS its handlers answer to, wider than its
-entities since a handler without one runs behind it too — and `middlewares: { Audit: 'app' }`
-in `frond.config.ts` is the exception, stated by the frond that decides for the others.
-Resolved per CALL and never at boot, the same reason `getMiddlewares` is: a middleware
-asking for something request-scoped would otherwise be handed the one instance the boot
-built. `App.use` and a frond's directory are two doors onto ONE writer (`use` in
-`boot/bootstrap.ts`). Pinned by `core/tests/middleware.test.ts`.
+entities since a handler without one runs behind it too — AND for the fronds under it in
+`FougereConfig.fronds`. How far it reaches is written nowhere else: `MiddlewareEntry.scope`
+is gone, because where a frond sits IS the reach and stating it twice put one decision in
+two places. A frond serving nothing has no address of its own, so what it declares only
+ever reaches its family — which is also why such a middleware used to run NOWHERE, in
+silence, `registerMiddlewares` looping over handlers it did not have. An ancestor's list is
+CARRIED (`Assembly.middlewaresOf`) rather than resolved: a middleware is not a container
+key, so the scope chain cannot hand it down. Its closure keeps the scope that built it, so
+it takes its dependencies from the frond that declared it — inheriting the code, not the
+context. Resolved per CALL and never at boot, the same reason `getMiddlewares` is: a
+middleware asking for something request-scoped would otherwise be handed the one instance
+the boot built. `App.use` and a frond's directory are two doors onto ONE writer (`use` in
+`boot/bootstrap.ts`), and `App.use` is the HOST's — it arrives after the boot and has no
+tree. Pinned by `core/tests/middleware-frond.test.ts`.
 
 **A log line is an announced fact** — `@fougere/log`. `Emit<LogLine>` is what a frond asks
 for, and a destination is a handler accepting `Fact<LogLine>` — that signature IS the
@@ -500,13 +526,16 @@ seam, since nothing else it could be. It is applied where the realization is BUI
 (`install.ts`) rather than under a container key — nothing resolves `Storage`, and
 `<Entity>Storage` is what a handler asks for.
 
-The scope is the FROND, like every other provider, and NO key widens it: the scope IS the
-location — a link sits beside the code it changes and goes where that code goes. A key would
-break the gradient: a frond moved behind `remotes:` would silently leave the reach of a link its
-own code never mentions, and the gradient promises the USER CODE is identical, not that the
-deployment statement is. A link that must be everywhere is a FROND that is everywhere, which
-`Extension.fronds` already answers — `@fougere/calls` brings one into every app that installs
-it. `middlewares: { Audit: 'app' }` has the same hole and is left as is.
+The scope is the FROND and the fronds under it, and no KEY widens it — the widening is the
+tree, and a tree is not a deployment statement. A key would break the gradient: a frond moved
+behind `remotes:` would silently leave the reach of a link its own code never mentions, and the
+gradient promises the USER CODE is identical. Nesting cannot do that, because a frond a family
+inherits from is REFUSED a placement of its own (`frond-parent-remote`) and refused handlers
+(`frond-parent-serves`) — with no façade, nothing can call it and nothing can move it, so it
+stands in every process that holds one of its children. Its links are carried down
+(`Assembly.seamsOf`) and composed outside the child's own, the same shape the middlewares
+needed, since a seam has no container key either. A link that must reach fronds of no common
+parent is still a FROND that is everywhere, which `Extension.fronds` answers.
 
 The other two candidates were MEASURED and refused, 2026-09-11, because each already has its
 mechanism: an outgoing remote call runs `runMiddlewares` before the transport
