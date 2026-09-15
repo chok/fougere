@@ -166,4 +166,4 @@ function aboutField(
 }
 
 /** What a case names: the input itself, or the field the refusal lands on. */
-const rejected = (path: readonly string[]): string => (path.length === 0 ? '.' : path[0]!);
+const rejected = (path: readonly string[]): string => path[0] ?? '.';

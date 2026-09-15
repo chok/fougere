@@ -58,7 +58,7 @@ export class Boundary {
 
   /** `date-time` means a `Date` on both sides, without a word in the entity. */
   static forShape(shape: Shape | undefined): Boundary {
-    if (Shapes.typeOf(shape) === 'date') return new Boundary(Boundaries.aliases.find('isoDate')!);
+    if (Shapes.typeOf(shape) === 'date') return new Boundary(Boundaries.aliases.resolve('isoDate'));
     return new Boundary();
   }
 

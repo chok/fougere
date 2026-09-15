@@ -35,7 +35,8 @@ export class FieldSet<TFields extends Fields = Fields> {
 
       if (group.length === 1) {
         const key = group[0]!;
-        fields[key] = fields[key]!.with({ role: { ...fields[key]!.role, unique: true } });
+        const alone = fields[key]!;
+        fields[key] = alone.with({ role: { ...alone.role, unique: true } });
         continue;
       }
       composite.push([...group]);

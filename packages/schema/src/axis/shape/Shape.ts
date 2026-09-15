@@ -48,6 +48,9 @@ type _ShapeTypesAreTheStandardsLessNull = Assert<
 >;
 
 export class Shapes {
+  private static readonly cache = new WeakMap<object, ShapeParts>();
+  private static readonly none: ShapeParts = { base: undefined, nullable: false };
+
   static is(value: unknown): value is Shape {
     if (typeof value !== 'object' || value === null) return false;
     const type = (value as Shape).type;
@@ -95,9 +98,6 @@ export class Shapes {
 
     return nullable;
   }
-
-  private static readonly cache = new WeakMap<object, ShapeParts>();
-  private static readonly none: ShapeParts = { base: undefined, nullable: false };
 
   static of(shape?: Shape): ShapeParts {
     if (!shape) return this.none;
