@@ -279,6 +279,63 @@ function registerProviders(
   return seams;
 }
 
+/**
+ * A named surface's own storage — the same rows, scoped to what this facade shows.
+ *
+ * Under the REPOSITORY key, which is what a Crud handler asks for, and under the port's own for
+ * a holder that legitimately names it: registering only the latter left a named surface with no
+ * facade at all once the façade stopped spelling the storage.
+ */
+function registerSurfaceStorage(
+  entity: EntityEntry,
+  handler: HandlerEntry,
+  surfaceScope: Container,
+  assembly: Assembly,
+  frondLog: Logger,
+): void {
+  const { options } = assembly;
+  if (!options.storageFactory) return;
+
+  const baseStorage = options.storageFactory(entity.entityClass, entity.name);
+  const outputSchema = handler.outputOverride ?? (handler.ctor as any).__output;
+  const narrowed = outputSchema && outputSchema !== entity.entityClass;
+  const scoped = narrowed ? baseStorage.output(outputSchema) : baseStorage;
+  // The view is handed over so a filter on a field this facade hides is SAID. The guard holds
+  // no logger — a warning is the boot's to voice, as a seed's report is.
+  const guarded = new StorageGuard(entity.entityClass.getFields(), entity.name, {
+    ...(narrowed ? { view: (outputSchema as { getFields(): Fields }).getFields() } : {}),
+    outOfView: (message) => frondLog.warn(message),
+  }, heldBy(entity.entityClass, entity.name, assembly.hosting), releasing(assembly.hosting)).guard(scoped);
+
+  surfaceScope.registerValue(storageKeyOf(entity.name), guarded);
+  surfaceScope.registerValue(repositoryKeyOf(entity.name), guarded);
+}
+
+/**
+ * A presenter is about an entity — computed fields sit on a shape — so this walks entities.
+ * Exposed lazily: the bridge resolves the instance on first access.
+ */
+function exposePresenters(
+  frond: FrondDescriptor,
+  presenterMap: Map<string, unknown>,
+  container: Container,
+  scope: Container,
+): void {
+  for (const entity of frond.entities) {
+    if (!presenterMap.has(entity.name)) continue;
+
+    const presenterKey = presenterKeyOf(entity.name);
+    let instance: any;
+    container.registerValue(presenterKey, new Proxy({} as any, {
+      get(_target, prop) {
+        if (!instance) instance = scope.resolve(presenterKey);
+
+        return instance[prop];
+      },
+    }));
+  }
+}
+
 export async function installFrond(frond: FrondDescriptor, assembly: Assembly): Promise<void> {
   const {
     container, routeRegistry, emissions, dispatcher, localDispatcher, effectiveByKey,
@@ -438,17 +495,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
 
   // A presenter is about an entity — computed fields sit on a shape — so this walks
   // entities. Exposing the instance lazily; the bridge resolves it on first access.
-  for (const entity of frond.entities) {
-    if (!presenterMap.has(entity.name)) continue;
-    const presenterKey = presenterKeyOf(entity.name);
-    let presenterInstance: any;
-    container.registerValue(presenterKey, new Proxy({} as any, {
-      get(_target, prop) {
-        if (!presenterInstance) presenterInstance = scope.resolve(presenterKey);
-        return presenterInstance[prop];
-      },
-    }));
-  }
+  exposePresenters(frond, presenterMap, container, scope);
 
   // A facade is about a handler, so this walks HANDLERS. It walked entities before,
   // which made an entity a precondition for being callable at all: a handler naming
@@ -492,23 +539,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
     // key, which is what a Crud handler asks for, and under the port's own for a holder
     // that legitimately names it. Registering only the latter left a named surface with
     // no facade at all once the façade stopped spelling the storage.
-    if (entity && options.storageFactory) {
-      const baseStorage = options.storageFactory(entity.entityClass, entity.name);
-      const outputSchema = handler.outputOverride ?? (handler.ctor as any).__output;
-      const scoped = outputSchema && outputSchema !== entity.entityClass
-        ? baseStorage.output(outputSchema)
-        : baseStorage;
-      // The view is handed over so a filter on a field this facade hides is SAID. The
-      // guard holds no logger — a warning is the boot's to voice, as a seed's report is.
-      const guarded = new StorageGuard(entity.entityClass.getFields(), entity.name, {
-        ...(outputSchema && outputSchema !== entity.entityClass
-          ? { view: (outputSchema as { getFields(): Fields }).getFields() }
-          : {}),
-        outOfView: (message) => frondLog.warn(message),
-      }, heldBy(entity.entityClass, entity.name, assembly.hosting), releasing(assembly.hosting)).guard(scoped);
-      surfaceScope.registerValue(storageKeyOf(entity.name), guarded);
-      surfaceScope.registerValue(repositoryKeyOf(entity.name), guarded);
-    }
+    if (entity) registerSurfaceStorage(entity, handler, surfaceScope, assembly, frondLog);
 
     const facadeKey = facadeKeyOf(handler.address, handler.surface);
     buildFacade(entity, handler, surfaceScope, facadeKey);
