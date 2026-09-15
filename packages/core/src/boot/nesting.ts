@@ -60,6 +60,8 @@ export function nestingOf(
   stated: FrondsStated | undefined,
   fronds: Fronds,
   remotes: Record<string, string> | undefined,
+  /** This process carries a subset of the project — `only:`, so an absent name is expected. */
+  narrowed = false,
 ): { under: Map<string, string>; refused: Diagnostic[] } {
   const refused: Diagnostic[] = [];
   const under = new Map<string, string>();
@@ -90,18 +92,36 @@ export function nestingOf(
     const frond = here.get(statement.key);
 
     if (frond === undefined) {
-      // A module key names a package the host resolves; a name nothing here carries is a typo,
-      // or a frond this process was told to leave out.
-      if (!statesModule(statement.key)) {
+      // Three ways a stated name is absent from this process and says nothing wrong: a module
+      // key, which the host imports; an address, whose frond answers elsewhere by definition;
+      // and a frond `only:` left out, since the config describes the PROJECT and the flag one
+      // process. What is left is a name nothing carries — a typo, and the config is where it
+      // was made, so that is where the message points.
+      const elsewhere = statement.value !== undefined || (remotes && statement.key in remotes);
+      if (!statesModule(statement.key) && !elsewhere && here.size > 0 && !narrowed) {
         refused.push({
           severity: 'blocking',
           code: 'frond-unknown',
           filePath: 'fougere.config.ts',
           subject: statement.path,
-          message: `'${statement.path}' names no frond this process holds. It has `
+          message: `'${statement.path}' names no frond this project holds. It has `
             + `${[...here.keys()].join(', ') || 'none'}. Check the spelling, or drop the entry.`,
         });
       }
+      continue;
+    }
+
+    if (statement.under !== undefined && !here.has(statement.under)) {
+      refused.push({
+        severity: 'blocking',
+        code: 'frond-family-split',
+        filePath: frond.source.path,
+        frond: frond.name,
+        subject: statement.path,
+        message: `'${statement.key}' inherits from '${statement.under}', which this process does `
+          + 'not carry. A frond cannot leave the code it resolves behind — carry the two '
+          + `together, or take '${statement.key}' out from under '${statement.under}'.`,
+      });
       continue;
     }
 
@@ -158,4 +178,19 @@ export function parentsFirst(fronds: Fronds, under: Map<string, string>): Fronds
   for (const frond of fronds) place(frond);
 
   return Fronds.hosting(ordered);
+}
+
+/**
+ * The same `under` a boot stamps, for a reader that does not boot — `fougere check` and
+ * `fougere explain` resolve the model off a scan, and a scan knows nothing of the tree.
+ * Without it they report every inherited dependency as a crossing.
+ */
+export function nested(fronds: Fronds, stated: FrondsStated | undefined): Fronds {
+  const { under } = nestingOf(stated, fronds, undefined, true);
+  for (const frond of fronds) {
+    const parent = under.get(frond.name);
+    if (parent !== undefined) frond.under = parent;
+  }
+
+  return parentsFirst(fronds, under);
 }

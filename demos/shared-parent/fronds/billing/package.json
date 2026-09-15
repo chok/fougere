@@ -1,0 +1,10 @@
+{
+  "name": "@fronds/billing",
+  "version": "0.0.1",
+  "type": "module",
+  "exports": {
+    "./services/*.js": "./services/*.ts",
+    "./services/*": "./services/*.ts",
+    "./package.json": "./package.json"
+  }
+}

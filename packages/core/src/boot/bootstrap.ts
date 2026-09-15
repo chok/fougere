@@ -136,7 +136,7 @@ async function readFronds(
     );
   }
 
-  const { under, refused } = nestingOf(options.under, fronds, options.remotes);
+  const { under, refused } = nestingOf(options.under, fronds, options.remotes, options.narrowed);
   const refusal = refusalOf(refused, 'thing(s) the frond tree does not allow');
   if (refusal) throw refusal;
 

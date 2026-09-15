@@ -89,6 +89,7 @@ export async function boot(options: BootOptions): Promise<App> {
     // Who inherits code from whom — handed over whole, because a refusal names where an
     // entry sits in the tree.
     under: config.fronds,
+    narrowed: (options.only ?? options.fronds) !== undefined,
     ports: config.ports,
     // Read from the config for the same reason `ports` is, one line up: it is a fact the
     // project states, not one the caller passes. Absent here, `serveRest` and

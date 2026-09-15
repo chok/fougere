@@ -7,6 +7,7 @@ export { defineFougere } from './define.js';
 export type { AdapterConfig } from './AdapterConfig.js';
 export type { FougereConfig } from './FougereConfig.js';
 export { statedFronds, statesModule, type FrondsStated, type FrondStated, type StatedFrond } from './FrondsStated.js';
+export { nested } from './boot/nesting.js';
 export type { AnswerFor } from './AnswerFor.js';
 export type { FougereNames } from './FougereNames.js';
 export type { FougerePorts } from './FougerePorts.js';

@@ -1,6 +1,6 @@
 import { type FougereConfig, type ScanResult } from '@fougere/core';
 import { scanProject, frondAliases } from '@fougere/compiler';
-import { resolveConventions } from '@fougere/core';
+import { nested, resolveConventions } from '@fougere/core';
 import { setModuleLoader, loadConfig } from '@fougere/core/node';
 import { resolve } from 'node:path';
 
@@ -46,6 +46,10 @@ export default class ProjectScan {
     // naming its neighbour is unreadable to the very tool that checks it.
     install(await frondAliases(target, conventions));
 
-    return { root: target, config, ...(await scanProject(target, undefined, conventions)) };
+    const scanned = await scanProject(target, undefined, conventions);
+
+    // A scan reads the disk, and the disk is flat: who inherits from whom is in the config.
+    // Stamped here so every reader of a project gets what a boot would have given it.
+    return { root: target, config, ...scanned, fronds: nested(scanned.fronds, config.fronds) };
   }
 }

@@ -54,6 +54,11 @@ export interface CreateAppOptions {
    */
   under?: FrondsStated;
   /**
+   * This process carries a subset of what the project declares — `only:` at the host. A name
+   * the tree states and this process left out is then expected, not a typo.
+   */
+  narrowed?: boolean;
+  /**
    * Remote fronds — label → address. What each remote hosts is discovered
    * at the first miss (rpc.discover), never declared here.
    */
