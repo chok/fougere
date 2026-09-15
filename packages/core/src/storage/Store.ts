@@ -80,7 +80,7 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
           if (limit) items = items.slice(0, limit);
           // The cursor is read before the scope cuts: a view that drops the key still
           // pages, the way it does over SQL.
-          const endCursor = items.length > 0 ? String((items[items.length - 1] as any)[pk] ?? '') : undefined;
+          const endCursor = items.length > 0 ? String((items[items.length - 1] as Record<string, unknown>)[pk] ?? '') : undefined;
           const result = items.map(pick) as any;
           result.hasMore = hasMore;
           result.endCursor = endCursor;

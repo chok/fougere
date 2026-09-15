@@ -171,7 +171,7 @@ function registerStorages(
 
     // Check if the default handler (no surface) declares an output override
     const defaultHandler = frond.handlers.find((h) => h.address === entity.name && !h.surface);
-    const outputSchema = defaultHandler?.outputOverride ?? (defaultHandler?.ctor as any)?.__output;
+    const outputSchema = defaultHandler?.outputOverride ?? (defaultHandler?.ctor as { __output?: SchemaView } | undefined)?.__output;
     const scoped = outputSchema && outputSchema !== entity.entityClass
       ? baseStorage.output(outputSchema)
       : baseStorage;
@@ -298,7 +298,7 @@ function registerSurfaceStorage(
   if (!options.storageFactory) return;
 
   const baseStorage = options.storageFactory(entity.entityClass, entity.name);
-  const outputSchema = handler.outputOverride ?? (handler.ctor as any).__output;
+  const outputSchema = handler.outputOverride ?? (handler.ctor as { __output?: SchemaView }).__output;
   const narrowed = outputSchema && outputSchema !== entity.entityClass;
   const scoped = narrowed ? baseStorage.output(outputSchema) : baseStorage;
   // The view is handed over so a filter on a field this facade hides is SAID. The guard holds
@@ -326,10 +326,10 @@ function exposePresenters(
     if (!presenterMap.has(entity.name)) continue;
 
     const presenterKey = presenterKeyOf(entity.name);
-    let instance: any;
-    container.registerValue(presenterKey, new Proxy({} as any, {
+    let instance: Record<string | symbol, unknown> | undefined;
+    container.registerValue(presenterKey, new Proxy({} as Record<string, unknown>, {
       get(_target, prop) {
-        if (!instance) instance = scope.resolve(presenterKey);
+        instance ??= scope.resolve<Record<string | symbol, unknown>>(presenterKey);
 
         return instance[prop];
       },
@@ -535,7 +535,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
     const entity = frond.entities.find((e) => e.name === subject);
     const facadeKey = facadeKeyOf(handler.address);
     buildFacade(entity, handler, scope, facadeKey);
-    frondLog.debug(`${facadeKey} [${Object.keys(container.resolve(facadeKey) as any).join(', ')}]`
+    frondLog.debug(`${facadeKey} [${Object.keys(container.resolve(facadeKey) as object).join(', ')}]`
       + (entity ? '' : ' — no entity of that name: no storage, no projection, no presenter'));
   }
 
@@ -565,7 +565,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
 
     const facadeKey = facadeKeyOf(handler.address, handler.surface);
     buildFacade(entity, handler, surfaceScope, facadeKey);
-    frondLog.debug(`${facadeKey} [${Object.keys(container.resolve(facadeKey) as any).join(', ')}]`
+    frondLog.debug(`${facadeKey} [${Object.keys(container.resolve(facadeKey) as object).join(', ')}]`
       + (entity ? '' : ' — no entity of that name: no storage, no projection, no presenter'));
   }
 
