@@ -48,42 +48,59 @@ function resolve(
   refused: Diagnostic[],
 ): Members | undefined {
   const before = refused.length;
-
-  const entities = names.entities.flatMap((member) => {
-    const name = lowerFirst(member);
-    const schema = world.entityByName.get(name);
-    if (!schema) {
-      refused.push({
-        ...asked,
-        code: 'together-entity-unknown',
-        message: `Together<[…${member}…]>: no entity named '${member}' is scanned in this app. `
-          + 'The first list names entities; a class of this frond goes in the second.',
-      });
-
-      return [];
-    }
-
-    return [{ name, schema }];
-  });
-
-  const providers = names.providers.flatMap((member) => {
-    const entry = declared.find((provider) => provider.ctor.name === member);
-    if (!entry) {
-      refused.push({
-        ...asked,
-        code: 'together-provider-unknown',
-        message: `Together<[…], [… ${member} …]>: this frond declares no class named '${member}'. `
-          + 'The second list names providers to rebuild inside the frame — a service, a mirror, '
-          + 'a repository — so that what they write is covered by the unwind.',
-      });
-
-      return [];
-    }
-
-    return [entry];
-  });
+  const entities = entitiesNamed(names.entities, world, asked, refused);
+  const providers = providersNamed(names.providers, declared, asked, refused);
 
   return refused.length === before ? { entities, providers } : undefined;
+}
+
+/** The first list names ENTITIES — a class of this frond goes in the second. */
+function entitiesNamed(
+  named: readonly string[],
+  world: FrameWorld,
+  asked: Asked,
+  refused: Diagnostic[],
+): { name: string; schema: SchemaView }[] {
+  return named.flatMap((member) => {
+    const name = lowerFirst(member);
+    const schema = world.entityByName.get(name);
+    if (schema) return [{ name, schema }];
+
+    refused.push({
+      ...asked,
+      code: 'together-entity-unknown',
+      message: `Together<[…${member}…]>: no entity named '${member}' is scanned in this app. `
+        + 'The first list names entities; a class of this frond goes in the second.',
+    });
+
+    return [];
+  });
+}
+
+/**
+ * The second list names the classes to REBUILD inside the frame — a service, a mirror, a
+ * repository — so that what they write is covered by the unwind.
+ */
+function providersNamed(
+  named: readonly string[],
+  declared: readonly ProviderEntry[],
+  asked: Asked,
+  refused: Diagnostic[],
+): ProviderEntry[] {
+  return named.flatMap((member) => {
+    const entry = declared.find((provider) => provider.ctor.name === member);
+    if (entry) return [entry];
+
+    refused.push({
+      ...asked,
+      code: 'together-provider-unknown',
+      message: `Together<[…], [… ${member} …]>: this frond declares no class named '${member}'. `
+        + 'The second list names providers to rebuild inside the frame — a service, a mirror, '
+        + 'a repository — so that what they write is covered by the unwind.',
+    });
+
+    return [];
+  });
 }
 
 /** Who asked for the frame, and where they wrote it — the same three fields every refusal here carries. */
