@@ -2,6 +2,7 @@ import { DEFAULT_CONVENTIONS, frondDirsOf, frondPackage, providerDirsOf, resolve
 import { Fronds, awaitKeyOf, cardinalityOf, computeBindingPlan, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf, type ExtensionEntry } from '@fougere/core/descriptor';
 import { getModuleLoader, loadFrondConfig } from '@fougere/core/node';
 import type { FrondConfig, ErrorCode } from '@fougere/core';
+import type { Signature } from '@fougere/core/descriptor';
 import { readdir, readFile } from 'node:fs/promises';
 import { existsSync, type Dirent } from 'node:fs';
 import { join, dirname, basename, resolve as resolvePath } from 'node:path';
@@ -298,6 +299,47 @@ function resolveSchema(type: TypeRef, moduleExports: Record<string, unknown>): S
   return undefined;
 }
 
+/**
+ * A convention may omit a declaration only when it has one answer.
+ *
+ * Only values the caller supplies through the BODY are candidates: a schema-typed collector,
+ * fact or context parameter is not input merely because it names an entity. Reading them all
+ * ignored provenance and took the first schema it met, so swapping two parameters silently
+ * changed the contract the façade validated the request against.
+ */
+function inputOf(
+  method: Signature,
+  handlerName: string,
+  filePath: string,
+  collectorTypeNames: Set<string>,
+  moduleExports: Record<string, unknown>,
+  stated: boolean,
+): SchemaView | undefined {
+  const binding = computeBindingPlan(method.params, collectorTypeNames);
+  const candidates = method.params.flatMap((param, index) => {
+    if (binding[index]?.source.kind !== 'input') return [];
+    const schema = resolveSchema(param.type, moduleExports);
+
+    return schema ? [{ param, schema }] : [];
+  });
+
+  if (candidates.length === 1) return candidates[0]!.schema;
+  if (candidates.length < 2 || stated) return undefined;
+
+  const subject = `${handlerName}.${method.name}`;
+  record({
+    severity: 'blocking',
+    code: 'input-contract-ambiguous',
+    filePath,
+    subject,
+    message: `Cannot infer the input contract for ${subject}: ${candidates.length} entity `
+      + `candidates — ${candidates.map(({ param }) => `${param.name}: ${param.type.raw}`).join('; ')}. `
+      + `Declare operations.${method.name}.input in frond.config.ts.`,
+  });
+
+  return undefined;
+}
+
 /** Parse ALL method signatures for unified binding. */
 async function inferOperations(
   filePath: string,
@@ -364,35 +406,11 @@ async function inferOperations(
       ...(refused?.length ? { errors: refused } : {}),
     };
 
-    // A convention may omit a declaration only when it has one answer. Only values the
-    // caller supplies through the body are candidates: a schema-typed collector, fact or
-    // context parameter is not input merely because it names an entity. The old loop
-    // ignored provenance and assigned the first schema it met, so swapping two parameters
-    // silently changed the contract the façade used to validate the request body.
-    const binding = computeBindingPlan(method.params, collectorTypeNames);
-    const candidates = method.params.flatMap((param, index) => {
-      if (binding[index]?.source.kind !== 'input') return [];
-      const schema = resolveSchema(param.type, moduleExports);
-      return schema ? [{ param, schema }] : [];
-    });
-    if (candidates.length === 1) {
-      meta.input = candidates[0].schema;
-    } else if (
-      candidates.length > 1
-      && declared[method.name]?.input === undefined
-      && !explicitInputs.has(method.name)
-    ) {
-      const subject = `${handlerName}.${method.name}`;
-      record({
-        severity: 'blocking',
-        code: 'input-contract-ambiguous',
-        filePath,
-        subject,
-        message: `Cannot infer the input contract for ${subject}: ${candidates.length} entity `
-          + `candidates — ${candidates.map(({ param }) => `${param.name}: ${param.type.raw}`).join('; ')}. `
-          + `Declare operations.${method.name}.input in frond.config.ts.`,
-      });
-    }
+    const input = inputOf(
+      method, handlerName, filePath, collectorTypeNames, moduleExports,
+      declared[method.name]?.input !== undefined || explicitInputs.has(method.name),
+    );
+    if (input) meta.input = input;
 
     if (method.returnType) {
       meta.output = resolveSchema(method.returnType, moduleExports);
