@@ -1,5 +1,6 @@
 /** Putting one frond into the app being built: its scope, what it serves, what it takes. */
 import type { Container } from '@fougere/container';
+import type { ProviderEntry } from '../descriptor/ProviderEntry.js';
 import { lowerFirst, type Fields, type SchemaView } from '@fougere/schema';
 import type { Logger } from '../builtin/Logger.js';
 import type { Dispatcher } from '../dispatch/Dispatcher.js';
@@ -140,6 +141,83 @@ function registerMiddlewares(
   }
 }
 
+/**
+ * One storage per entity, and the default repository that IS it.
+ *
+ * The declared chain first, then the guard OUTSIDE it: the guard hands on the value it parsed,
+ * so a link reads what the entity says a row is rather than what arrived.
+ */
+function registerStorages(
+  frond: FrondDescriptor,
+  assembly: Assembly,
+  scope: Container,
+  seams: Map<string, ProviderEntry[]>,
+  owners: Map<string, string>,
+  frondLog: Logger,
+): void {
+  const { options, refused } = assembly;
+  if (!options.storageFactory) return;
+
+  const unenforced: string[] = [];
+  const release = releasing(assembly.hosting);
+  for (const entity of frond.entities) {
+    const key = storageKeyOf(entity.name);
+    const source = options.sourceOf?.(entity.name) ?? 'db';
+    if (declares(entity.entityClass, 'unique') && options.enforces?.(source, 'unique') === false) {
+      unenforced.push(`${entity.name} in '${source}'`);
+    }
+    const baseStorage = options.storageFactory(entity.entityClass, entity.name);
+
+    // Check if the default handler (no surface) declares an output override
+    const defaultHandler = frond.handlers.find((h) => h.address === entity.name && !h.surface);
+    const outputSchema = defaultHandler?.outputOverride ?? (defaultHandler?.ctor as any)?.__output;
+    const scoped = outputSchema && outputSchema !== entity.entityClass
+      ? baseStorage.output(outputSchema)
+      : baseStorage;
+
+    // The declared chain first, then the guard OUTSIDE it: the guard hands on the value
+    // it parsed, so a wrapper reads what the entity says a row is rather than what
+    // arrived. Same order the client facade has held since `StorageGuard` existed.
+    const linked = wrapping('Storage', seams.get('Storage') ?? [], scoped, (dep) => scope.resolve(dep));
+    // Storage is a way out like the client surface — see `StorageGuard`.
+    refused.push(...refuseUnwritableNull(entity.entityClass, entity.name, entity.filePath));
+    const relations = heldBy(entity.entityClass, entity.name, assembly.hosting);
+    assembly.relations.push(...relations);
+    const guarded = new StorageGuard(
+      entity.entityClass.getFields(), entity.name, {}, relations, release,
+    ).guard(linked);
+    scope.registerValue(key, guarded);
+
+    // The default repository IS the guarded port — it already answers every gesture a
+    // declared one forwards, so the two forms have the same shape and a handler reads
+    // `repo.list()` either way. The wrapper that used to sit here (`{ storage: guarded }`)
+    // existed to make `repo.storage` true in both, back when `.storage` was the way in.
+    //
+    // Not registered for an OWNED entity: an aggregate's members are reached through it
+    // and nowhere else, and the default would be a second facade under a name a handler
+    // can spell. Every member is skipped, not just the one the key is named after —
+    // that asymmetry was the whole hole.
+    const repoKey = repositoryKeyOf(entity.name);
+    const owner = owners.get(entity.name);
+    if (owner) {
+      frondLog.debug(`${entity.name} — owned by ${owner}, no default repository`);
+    } else if (!scope.has(repoKey)) {
+      scope.registerValue(repoKey, guarded);
+    }
+  }
+  if (frond.entities.length > 0) {
+    frondLog.debug(`${frond.entities.length} entity storage(s): ${frond.entities.map((e) => e.name).join(', ')}`);
+  }
+  // The judge refuses a duplicate it can SEE — the row already stored. Two writes arriving
+  // together see the same absence, and only the place they land can refuse the second.
+  if (unenforced.length > 0) {
+    frondLog.warn(
+      `unique declared, and the source does not enforce it: ${unenforced.join(', ')} — `
+      + 'two concurrent writes can both pass',
+    );
+  }
+}
+
 export async function installFrond(frond: FrondDescriptor, assembly: Assembly): Promise<void> {
   const {
     container, routeRegistry, emissions, dispatcher, localDispatcher, effectiveByKey,
@@ -227,66 +305,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
 
   // Register Storage for each entity — PascalCase type name (e.g. 'PostStorage')
   // When a handler declares Crud(Entity, Output), scope the storage via .output(Output)
-  if (options.storageFactory) {
-    const unenforced: string[] = [];
-    const release = releasing(assembly.hosting);
-    for (const entity of frond.entities) {
-      const key = storageKeyOf(entity.name);
-      const source = options.sourceOf?.(entity.name) ?? 'db';
-      if (declares(entity.entityClass, 'unique') && options.enforces?.(source, 'unique') === false) {
-        unenforced.push(`${entity.name} in '${source}'`);
-      }
-      const baseStorage = options.storageFactory(entity.entityClass, entity.name);
-
-      // Check if the default handler (no surface) declares an output override
-      const defaultHandler = frond.handlers.find((h) => h.address === entity.name && !h.surface);
-      const outputSchema = defaultHandler?.outputOverride ?? (defaultHandler?.ctor as any)?.__output;
-      const scoped = outputSchema && outputSchema !== entity.entityClass
-        ? baseStorage.output(outputSchema)
-        : baseStorage;
-
-      // The declared chain first, then the guard OUTSIDE it: the guard hands on the value
-      // it parsed, so a wrapper reads what the entity says a row is rather than what
-      // arrived. Same order the client facade has held since `StorageGuard` existed.
-      const linked = wrapping('Storage', seams.get('Storage') ?? [], scoped, (dep) => scope.resolve(dep));
-      // Storage is a way out like the client surface — see `StorageGuard`.
-      refused.push(...refuseUnwritableNull(entity.entityClass, entity.name, entity.filePath));
-      const relations = heldBy(entity.entityClass, entity.name, assembly.hosting);
-      assembly.relations.push(...relations);
-      const guarded = new StorageGuard(
-        entity.entityClass.getFields(), entity.name, {}, relations, release,
-      ).guard(linked);
-      scope.registerValue(key, guarded);
-
-      // The default repository IS the guarded port — it already answers every gesture a
-      // declared one forwards, so the two forms have the same shape and a handler reads
-      // `repo.list()` either way. The wrapper that used to sit here (`{ storage: guarded }`)
-      // existed to make `repo.storage` true in both, back when `.storage` was the way in.
-      //
-      // Not registered for an OWNED entity: an aggregate's members are reached through it
-      // and nowhere else, and the default would be a second facade under a name a handler
-      // can spell. Every member is skipped, not just the one the key is named after —
-      // that asymmetry was the whole hole.
-      const repoKey = repositoryKeyOf(entity.name);
-      const owner = owners.get(entity.name);
-      if (owner) {
-        frondLog.debug(`${entity.name} — owned by ${owner}, no default repository`);
-      } else if (!scope.has(repoKey)) {
-        scope.registerValue(repoKey, guarded);
-      }
-    }
-    if (frond.entities.length > 0) {
-      frondLog.debug(`${frond.entities.length} entity storage(s): ${frond.entities.map((e) => e.name).join(', ')}`);
-    }
-    // The judge refuses a duplicate it can SEE — the row already stored. Two writes arriving
-    // together see the same absence, and only the place they land can refuse the second.
-    if (unenforced.length > 0) {
-      frondLog.warn(
-        `unique declared, and the source does not enforce it: ${unenforced.join(', ')} — `
-        + 'two concurrent writes can both pass',
-      );
-    }
-  }
+  registerStorages(frond, assembly, scope, seams, owners, frondLog);
 
   // Frames, after the ORMs and before anything that may ask for one. A frame is read
   // from the same `deps` every other port is read from — asking for it IS declaring it,
