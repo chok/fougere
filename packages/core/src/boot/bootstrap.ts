@@ -393,6 +393,137 @@ function hostingFor(
   return { hosting, journalOf };
 }
 
+/** What the readings below are built from — every one of them answers about a SERVED entity. */
+interface Serving {
+  container: Container;
+  fronds: Fronds;
+  remoteRouter: RemoteRouter | undefined;
+  localDispatcher: Dispatcher;
+  routeRegistry: RouteRegistry;
+  effectiveByKey: Map<string, EffectiveOperationsMap>;
+  log: Logger;
+}
+
+/**
+ * What an app answers about what it serves — the membership rule and its neighbours.
+ *
+ * `facadeFor` is THE rule, stated once: every projection reads it and nothing else.
+ */
+function readings(
+  { container, fronds, remoteRouter, localDispatcher, routeRegistry, effectiveByKey, log }: Serving,
+): Pick<App, 'resolve' | 'schemaFor' | 'facadeFor' | 'operationsFor' | 'presenterFor'> {
+  /** Stop taking calls, and resolve once the ones already running are done. */
+  const resolve = <T>(name: string): T => {
+    try {
+      return container.resolve<T>(name);
+    } catch (err) {
+      if (name.endsWith('Handler') && !name.includes(':') && !remoteRouter) {
+        throw new Error(notLoaded(name.replace(/Handler$/, '')));
+      }
+      throw err;
+    }
+  };
+
+  const schemaFor = async (entity: string): Promise<SchemaView> => {
+    const found = fronds.entity(entity);
+    if (found) return found.entityClass;
+    if (remoteRouter) {
+      const route = await remoteRouter.route(entity);
+      // A remote facade that stores nothing publishes ops and no shape. Saying so beats
+      // handing back an empty schema, which would validate every input it was given.
+      if (!route.schema) {
+        throw new Error(
+          `'${entity}' is served by frond '${route.frond}' but stores no rows, so it has no schema. `
+          + `Call its operations through the façade instead.`,
+        );
+      }
+      return route.schema;
+    }
+    throw new Error(notLoaded(entity));
+  };
+
+  const facadeAt = (key: string, topology: boolean): Record<string, Function> | undefined => {
+    try {
+      return topology
+        ? resolve<Record<string, Function>>(key)
+        : container.resolve<Record<string, Function>>(key);
+    } catch {
+      return undefined;
+    }
+  };
+
+  /** Said once per pair, so a facade that registers in a loop says it once. */
+  const saidAbsent = new Set<string>();
+
+  /**
+   * A surface is declared in the frond that serves it. When that frond runs in another
+   * process, this one never asked for its facades, and answering 'no' is the only thing a
+   * synchronous rule can do — so it says so rather than registering nothing in silence.
+   */
+  const sayNoSurfaceAcross = (entity: string, surface: string): void => {
+    if (!remoteRouter || saidAbsent.has(`${surface}:${entity}`)) return;
+    saidAbsent.add(`${surface}:${entity}`);
+    log.warn(
+      `surface '${surface}' serves nothing for '${entity}' — the frond that declares it runs `
+      + 'elsewhere, and a remote is asked for its facades at the first call, not at boot. '
+      + 'The default facade answers.',
+    );
+  };
+
+  /** THE membership rule, stated once — every projection reads this and nothing else. */
+  const facadeFor = (entity: string, surface?: string): Record<string, Function> | undefined => {
+    if (!surface) return facadeAt(facadeKeyOf(entity), true);
+
+    const own = facadeAt(facadeKeyOf(entity, surface), false);
+    const owner = fronds.owner(entity);
+    if (!owner) {
+      sayNoSurfaceAcross(entity, surface);
+      return own;
+    }
+
+    const declared = owner.surfaces?.[surface];
+    if (!declared) return own;
+    if (!declared.some((n) => n.toLowerCase() === entity.toLowerCase())) return undefined;
+    if (own) return own;
+
+    const fallback = facadeAt(facadeKeyOf(entity), false);
+    return fallback
+      ? facadeOperations(
+          localDispatcher,
+          entity,
+          routeRegistry.operationNames(entity, surface),
+          surface,
+        )
+      : undefined;
+  };
+
+  /** The terms beside a facade, with the exact same named-surface fallback rule. */
+  const operationsFor = (entity: string, surface?: string): EffectiveOperationsMap | undefined => {
+    if (!surface) return effectiveByKey.get(facadeKeyOf(entity));
+
+    const own = effectiveByKey.get(facadeKeyOf(entity, surface));
+    const declared = fronds.owner(entity)?.surfaces?.[surface];
+    if (!declared) return own;
+    return declared.some((name) => name.toLowerCase() === entity.toLowerCase())
+      ? (own ?? effectiveByKey.get(facadeKeyOf(entity)))
+      : undefined;
+  };
+
+  /** The presenter of an entity, resolved through its owning frond's scope. */
+  const presenterFor = (entity: string): unknown | undefined => {
+    const owner = fronds.owner(entity);
+    if (!owner) return undefined;
+
+    try {
+      return container.resolve<Container>(`frond:${owner.name}`).resolve(presenterKeyOf(entity));
+    } catch {
+      return undefined;
+    }
+  };
+
+  return { resolve, schemaFor, facadeFor, operationsFor, presenterFor };
+}
+
 /** Bootstrap a fougere application. */
 export async function createApp(options: CreateAppOptions): Promise<App> {
   const container = (options.createContainer ?? createContainer)();
@@ -598,91 +729,6 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       );
     });
 
-    /** Stop taking calls, and resolve once the ones already running are done. */
-    const resolve = <T>(name: string): T => {
-      try {
-        return container.resolve<T>(name);
-      } catch (err) {
-        if (name.endsWith('Handler') && !name.includes(':') && !remoteRouter) {
-          throw new Error(notLoaded(name.replace(/Handler$/, '')));
-        }
-        throw err;
-      }
-    };
-
-    const schemaFor = async (entity: string): Promise<SchemaView> => {
-      const found = fronds.entity(entity);
-      if (found) return found.entityClass;
-      if (remoteRouter) {
-        const route = await remoteRouter.route(entity);
-        // A remote facade that stores nothing publishes ops and no shape. Saying so beats
-        // handing back an empty schema, which would validate every input it was given.
-        if (!route.schema) {
-          throw new Error(
-            `'${entity}' is served by frond '${route.frond}' but stores no rows, so it has no schema. `
-            + `Call its operations through the façade instead.`,
-          );
-        }
-        return route.schema;
-      }
-      throw new Error(notLoaded(entity));
-    };
-
-    const facadeAt = (key: string, topology: boolean): Record<string, Function> | undefined => {
-      try {
-        return topology
-          ? resolve<Record<string, Function>>(key)
-          : container.resolve<Record<string, Function>>(key);
-      } catch {
-        return undefined;
-      }
-    };
-
-    /** Said once per pair, so a facade that registers in a loop says it once. */
-    const saidAbsent = new Set<string>();
-
-    /**
-     * A surface is declared in the frond that serves it. When that frond runs in another
-     * process, this one never asked for its facades, and answering 'no' is the only thing a
-     * synchronous rule can do — so it says so rather than registering nothing in silence.
-     */
-    const sayNoSurfaceAcross = (entity: string, surface: string): void => {
-      if (!remoteRouter || saidAbsent.has(`${surface}:${entity}`)) return;
-      saidAbsent.add(`${surface}:${entity}`);
-      log.warn(
-        `surface '${surface}' serves nothing for '${entity}' — the frond that declares it runs `
-        + 'elsewhere, and a remote is asked for its facades at the first call, not at boot. '
-        + 'The default facade answers.',
-      );
-    };
-
-    /** THE membership rule, stated once — every projection reads this and nothing else. */
-    const facadeFor = (entity: string, surface?: string): Record<string, Function> | undefined => {
-      if (!surface) return facadeAt(facadeKeyOf(entity), true);
-
-      const own = facadeAt(facadeKeyOf(entity, surface), false);
-      const owner = fronds.owner(entity);
-      if (!owner) {
-        sayNoSurfaceAcross(entity, surface);
-        return own;
-      }
-
-      const declared = owner.surfaces?.[surface];
-      if (!declared) return own;
-      if (!declared.some((n) => n.toLowerCase() === entity.toLowerCase())) return undefined;
-      if (own) return own;
-
-      const fallback = facadeAt(facadeKeyOf(entity), false);
-      return fallback
-        ? facadeOperations(
-            localDispatcher,
-            entity,
-            routeRegistry.operationNames(entity, surface),
-            surface,
-          )
-        : undefined;
-    };
-
     if (remoteRouter) {
       const remoteFacades = new Map<string, Record<string, Function>>();
       routeRegistry.addResolver(remoteRoutes((entity) => {
@@ -694,29 +740,9 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       }));
     }
 
-    /** The terms beside a facade, with the exact same named-surface fallback rule. */
-    const operationsFor = (entity: string, surface?: string): EffectiveOperationsMap | undefined => {
-      if (!surface) return effectiveByKey.get(facadeKeyOf(entity));
-
-      const own = effectiveByKey.get(facadeKeyOf(entity, surface));
-      const declared = fronds.owner(entity)?.surfaces?.[surface];
-      if (!declared) return own;
-      return declared.some((name) => name.toLowerCase() === entity.toLowerCase())
-        ? (own ?? effectiveByKey.get(facadeKeyOf(entity)))
-        : undefined;
-    };
-
-    /** The presenter of an entity, resolved through its owning frond's scope. */
-    const presenterFor = (entity: string): unknown | undefined => {
-      const owner = fronds.owner(entity);
-      if (!owner) return undefined;
-
-      try {
-        return container.resolve<Container>(`frond:${owner.name}`).resolve(presenterKeyOf(entity));
-      } catch {
-        return undefined;
-      }
-    };
+    const { resolve, schemaFor, facadeFor, operationsFor, presenterFor } = readings({
+      container, fronds, remoteRouter, localDispatcher, routeRegistry, effectiveByKey, log,
+    });
 
     const app: App = {
       container,
