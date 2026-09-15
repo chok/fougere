@@ -223,17 +223,30 @@ export class Emissions {
       return [];
     }
 
+    return this.answersOf(fact, handed);
+  }
+
+  /**
+   * A subscriber that did not answer REFUSES the announcement, it does not shrink it: an
+   * announcer handed the survivors cannot tell three answers from two, and its own law then
+   * reads silence as consent — the room one would have refused gets booked.
+   *
+   * What answers NOTHING contributes nothing: a subscriber is free to have no opinion, and
+   * `Promise<void>` is how it says so.
+   */
+  private async answersOf(
+    fact: string,
+    handed: (Listener & { done: Promise<unknown> })[],
+  ): Promise<unknown[]> {
     const settled = await Promise.allSettled(handed.map((one) => one.done));
 
-    // A subscriber that did not answer REFUSES the announcement, it does not shrink it: an
-    // announcer handed the survivors cannot tell three answers from two, and its own law
-    // then reads silence as consent — the room one would have refused gets booked.
     const missing = settled.flatMap((result, at) =>
       (result.status === 'rejected' ? [{ ...handed[at]!, reason: result.reason as unknown }] : []));
     if (missing.length > 0) {
       for (const { facade, op, reason } of missing) {
         this.log.error(`${fact} → ${facade}.${op}`, this.describeRefusal(fact, reason) ?? reason);
       }
+
       throw new AggregateError(
         missing.map((one) => one.reason),
         `${fact} — ${missing.length} of ${handed.length} subscriber(s) did not answer`
@@ -243,8 +256,6 @@ export class Emissions {
       );
     }
 
-    // What answers NOTHING contributes nothing — a subscriber is free to have no opinion,
-    // and `Promise<void>` is how it says so.
     return settled.flatMap((result) =>
       (result.status === 'fulfilled' && result.value != null ? [result.value] : []));
   }
