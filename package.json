@@ -18,6 +18,7 @@
     "door:check": "node tools/door-check.ts",
     "import:check": "node tools/import-check.ts",
     "concept:check": "node tools/concept-check.ts",
+    "story:check": "node tools/story-check.ts",
     "smoke": "node tools/smoke.ts",
     "arch": "depcruise packages --output-type err",
     "arch:cycles": "node tools/cycle-check.ts",
