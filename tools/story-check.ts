@@ -21,9 +21,14 @@ import ts from '@typescript/typescript6';
 
 const root = process.cwd();
 
-/** Enough body to have steps at all. Under this, a paragraph break is just aeration. */
-const MIN_LINES = 15;
-const MIN_PARAGRAPHS = 4;
+/**
+ * Calibrated against the style of this repo, 2026-09-15: a blank line before every `return`
+ * and blocks kept apart, so a 17-line function has six paragraphs and reads perfectly. Under
+ * 30 lines a break is aeration, not a step. At (15, 4) the tool answered 97 and half were airy
+ * guards; at (30, 5) it answers 42 and `EntityAdapterSet.of` — a run of refusals — is out.
+ */
+const MIN_LINES = 30;
+const MIN_PARAGRAPHS = 5;
 
 interface Telling {
   at: string;
