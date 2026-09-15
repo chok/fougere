@@ -228,6 +228,24 @@ function peerBehind(entity: string, router: RemoteRouter): Peer {
   };
 }
 
+/** Close the door, and answer once the calls already running are done. */
+async function drainCalls(inflight: InFlight, timeoutMs?: number): Promise<void> {
+  inflight.close();
+  if (timeoutMs === undefined) return inflight.whenIdle();
+
+  let timer: ReturnType<typeof setTimeout>;
+
+  await Promise.race([
+    inflight.whenIdle().then(() => clearTimeout(timer)),
+    new Promise<never>((_, reject) => {
+      timer = setTimeout(
+        () => reject(new Error(`[drain] ${inflight.count} call(s) still running after ${timeoutMs}ms`)),
+        timeoutMs,
+      );
+    }),
+  ]);
+}
+
 /** Bootstrap a fougere application. */
 export async function createApp(options: CreateAppOptions): Promise<App> {
   const container = (options.createContainer ?? createContainer)();
@@ -530,21 +548,6 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     });
 
     /** Stop taking calls, and resolve once the ones already running are done. */
-    const drain = async (timeoutMs?: number): Promise<void> => {
-      inflight.close();
-      if (timeoutMs === undefined) return inflight.whenIdle();
-      let timer: ReturnType<typeof setTimeout>;
-      await Promise.race([
-        inflight.whenIdle().then(() => clearTimeout(timer)),
-        new Promise<never>((_, reject) => {
-          timer = setTimeout(
-            () => reject(new Error(`[drain] ${inflight.count} call(s) still running after ${timeoutMs}ms`)),
-            timeoutMs,
-          );
-        }),
-      ]);
-    };
-
     const resolve = <T>(name: string): T => {
       try {
         return container.resolve<T>(name);
@@ -685,7 +688,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       storageFor,
       presenterFor,
       dispose: release,
-      drain,
+      drain: (timeoutMs?: number) => drainCalls(inflight, timeoutMs),
       inFlight: () => inflight.count,
       [Symbol.asyncDispose]: release,
       serveRpc(op: string, answer: RpcAnswer): void {
