@@ -246,6 +246,67 @@ async function drainCalls(inflight: InFlight, timeoutMs?: number): Promise<void>
   ]);
 }
 
+/** What a call goes through in this process, before any frond is installed into it. */
+interface Dispatching {
+  /** Counted at the one facade every caller goes through, so releasing can wait for the work. */
+  inflight: InFlight;
+  /** Where a late observer is added — `App.observe` is its only caller. */
+  dispatchLifecycle: DispatchLifecycle;
+  routeRegistry: RouteRegistry;
+  /** Follows the topology — a local façade and a remote doublure alike. */
+  dispatcher: Dispatcher;
+  /** Stays home: what this process serves, and nothing else. */
+  localDispatcher: Dispatcher;
+  getMiddlewares(entity: string): AppMiddleware[];
+  /** The one place a middleware is taken on — `App.use` is its late form, a frond's directory its early one. */
+  use(middleware: AppMiddleware, entity?: string): void;
+}
+
+function dispatching(
+  options: CreateAppOptions,
+  log: Logger,
+  fronds: Fronds,
+  journalOf: () => Journal | undefined,
+): Dispatching {
+  const inflight = new InFlight();
+  const globalMiddlewares: AppMiddleware[] = [];
+  const scopedMiddlewares = new Map<string, AppMiddleware[]>();
+  const routeRegistry = new RouteRegistry();
+  const dispatchLifecycle = new DispatchLifecycle(
+    options.dispatchObservers,
+    (error, event) => log.error(
+      `[dispatch-observer] ${event.stage} ${event.call.address.toString()}`,
+      error,
+    ),
+  );
+
+  return {
+    inflight,
+    routeRegistry,
+    dispatchLifecycle,
+    // Resolved at the call and never here: a journal is a provider of a brought frond, and the
+    // extension that registers it rises long after this line.
+    dispatcher: new Dispatcher(routeRegistry, inflight, dispatchLifecycle, undefined, journalOf),
+    localDispatcher: new Dispatcher(
+      routeRegistry,
+      inflight,
+      dispatchLifecycle,
+      new LocalRoutePolicy((surface) => fronds.servedNames(surface)),
+      journalOf,
+    ),
+    getMiddlewares: (entity) => [...globalMiddlewares, ...(scopedMiddlewares.get(entity) ?? [])],
+    use(middleware, entity) {
+      if (entity === undefined) {
+        globalMiddlewares.push(middleware);
+
+        return;
+      }
+
+      scopedMiddlewares.set(entity, [...(scopedMiddlewares.get(entity) ?? []), middleware]);
+    },
+  };
+}
+
 /** Bootstrap a fougere application. */
 export async function createApp(options: CreateAppOptions): Promise<App> {
   const container = (options.createContainer ?? createContainer)();
@@ -347,52 +408,8 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       ? createRemoteRouter(Object.fromEntries(declaredRemotes), options.remoteTransport)
       : undefined;
 
-    // What is running on this app — counted at the one facade every caller goes through,
-    // so releasing it can wait for the work instead of pulling the floor out.
-    const inflight = new InFlight();
-
-    // Middleware storage — read at call time, not at boot time
-    const globalMiddlewares: AppMiddleware[] = [];
-    const scopedMiddlewares = new Map<string, AppMiddleware[]>();
-    /** What this app took on beyond its fronds. Its `up` is the last thing the boot does. */
-    const routeRegistry = new RouteRegistry();
-    const dispatchLifecycle = new DispatchLifecycle(
-      options.dispatchObservers,
-      (error, event) => log.error(
-        `[dispatch-observer] ${event.stage} ${event.call.address.toString()}`,
-        error,
-      ),
-    );
-    // Resolved at the call and never here: a journal is a provider of a brought frond, and
-    // the extension that registers it rises long after this line.
-    const keeping = (): Journal | undefined => journalOf();
-    const dispatcher = new Dispatcher(routeRegistry, inflight, dispatchLifecycle, undefined, keeping);
-    const localDispatcher = new Dispatcher(
-      routeRegistry,
-      inflight,
-      dispatchLifecycle,
-      new LocalRoutePolicy((surface) => fronds.servedNames(surface)),
-      keeping,
-    );
-
-    function getMiddlewares(entity: string): AppMiddleware[] {
-      const scoped = scopedMiddlewares.get(entity) ?? [];
-      return [...globalMiddlewares, ...scoped];
-    }
-
-    /**
-     * The one place a middleware is taken on. `App.use` is its late form, and a frond's
-     * `middlewares/` its early one — the app does not exist yet while fronds install.
-     */
-    function use(middleware: AppMiddleware, entity?: string): void {
-      if (entity === undefined) {
-        globalMiddlewares.push(middleware);
-        return;
-      }
-      const scoped = scopedMiddlewares.get(entity) ?? [];
-      scoped.push(middleware);
-      scopedMiddlewares.set(entity, scoped);
-    }
+    const { inflight, routeRegistry, dispatchLifecycle, dispatcher, localDispatcher, getMiddlewares, use } =
+      dispatching(options, log, fronds, () => journalOf());
 
     /** What every check of this boot writes into — refused together, once they have all run. */
     const refused: Diagnostic[] = [];
