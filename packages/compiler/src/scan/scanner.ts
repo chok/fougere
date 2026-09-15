@@ -340,6 +340,42 @@ function inputOf(
   return undefined;
 }
 
+/** What one method of a handler is read against, while its contract is built. */
+interface Reading {
+  handlerName: string;
+  filePath: string;
+  moduleExports: Record<string, unknown>;
+  collectorTypeNames: Set<string>;
+  refused: ErrorCode[] | undefined;
+  stated: boolean;
+}
+
+/**
+ * The contract carries the description; `signature` is the raw material it was read from.
+ * Leaving it only on the signature meant every consumer had to look one level down, and only
+ * the façade did.
+ */
+function contractOf(method: Signature, read: Reading): OperationContract {
+  const meta: OperationContract = {
+    signature: method,
+    ...(method.description && { description: method.description }),
+    ...(read.refused?.length ? { errors: read.refused } : {}),
+  };
+
+  const input = inputOf(
+    method, read.handlerName, read.filePath, read.collectorTypeNames, read.moduleExports, read.stated,
+  );
+  if (input) meta.input = input;
+
+  if (method.returnType) {
+    meta.output = resolveSchema(method.returnType, read.moduleExports);
+    // `output` is the shape of one row; this says how many rows come back.
+    meta.cardinality = cardinalityOf(method.returnType);
+  }
+
+  return meta;
+}
+
 /** Parse ALL method signatures for unified binding. */
 async function inferOperations(
   filePath: string,
@@ -396,29 +432,11 @@ async function inferOperations(
   }
 
   for (const method of parsed.methods) {
-    // The contract is what carries the description; `signature` is the raw material it
-    // was read from. Leaving it only on the signature meant every consumer had to know
-    // to look one level down, and only the façade did.
-    const refused = refusals.get(`${handlerName}.${method.name}`);
-    const meta: OperationContract = {
-      signature: method,
-      ...(method.description && { description: method.description }),
-      ...(refused?.length ? { errors: refused } : {}),
-    };
-
-    const input = inputOf(
-      method, handlerName, filePath, collectorTypeNames, moduleExports,
-      declared[method.name]?.input !== undefined || explicitInputs.has(method.name),
-    );
-    if (input) meta.input = input;
-
-    if (method.returnType) {
-      meta.output = resolveSchema(method.returnType, moduleExports);
-      // `output` is the shape of one row; this says how many rows come back.
-      meta.cardinality = cardinalityOf(method.returnType);
-    }
-
-    map.set(method.name, meta);
+    map.set(method.name, contractOf(method, {
+      handlerName, filePath, moduleExports, collectorTypeNames,
+      refused: refusals.get(`${handlerName}.${method.name}`),
+      stated: declared[method.name]?.input !== undefined || explicitInputs.has(method.name),
+    }));
   }
 
   return map;
