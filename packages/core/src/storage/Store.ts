@@ -69,26 +69,8 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
           let items = await store.all();
           if (options?.where) items = items.filter((values) => matches(values, options.where));
           if (options?.orderBy) items = sorted(items, options.orderBy, options.order);
-          // Held before the page is cut, and after the filter: `total` answers "how many
-          // match", which is what a paginator divides. Reading `store.size` at the end
-          // answered a different question — everything the store holds, including the ones
-          // the filter exists to keep out of this caller's sight.
-          const matching = items.length;
-          const limit = options?.limit;
-          const offset = options?.page && limit ? (options.page - 1) * limit : options?.offset ?? 0;
-          if (offset > 0) items = items.slice(offset);
-          const hasMore = limit ? items.length > limit : false;
-          if (limit) items = items.slice(0, limit);
-          // The cursor is read before the scope cuts: a view that drops the key still
-          // pages, the way it does over SQL.
-          const endCursor = items.length > 0 ? String((items[items.length - 1] as Record<string, unknown>)[pk] ?? '') : undefined;
-          // An array that carries the page's terms on itself — what `ListResult` is.
-          const result = items.map(pick) as ListResult<Values>;
-          result.hasMore = hasMore;
-          result.endCursor = endCursor;
-          if (options?.count) result.total = matching;
 
-          return result;
+          return paged(items, options, pk, pick);
         },
         async findById(id: string) {
           const values = await store.get(keyOf(id));
@@ -209,3 +191,39 @@ const rank = (left: unknown, right: unknown): number => {
 
   return held === against ? 0 : held < against ? -1 : 1;
 };
+
+/**
+ * The page cut out of what matched.
+ *
+ * `total` is held BEFORE the cut and after the filter — it answers "how many match", which is
+ * what a paginator divides. Reading the store's size at the end answered a different question:
+ * everything it holds, including the rows the filter exists to keep out of this caller's sight.
+ */
+function paged(
+  matched: Values[],
+  options: { limit?: number; page?: number; offset?: number; count?: boolean } | undefined,
+  pk: string,
+  pick: (values: Values) => Values,
+): ListResult<Values> {
+  const matching = matched.length;
+  const limit = options?.limit;
+  const offset = options?.page && limit ? (options.page - 1) * limit : options?.offset ?? 0;
+
+  let items = offset > 0 ? matched.slice(offset) : matched;
+  const hasMore = limit ? items.length > limit : false;
+  if (limit) items = items.slice(0, limit);
+
+  // The cursor is read before the scope cuts: a view that drops the key still pages, the way it
+  // does over SQL.
+  const endCursor = items.length > 0
+    ? String((items[items.length - 1] as Record<string, unknown>)[pk] ?? '')
+    : undefined;
+
+  // An array that carries the page's terms on itself — what `ListResult` is.
+  const result = items.map(pick) as ListResult<Values>;
+  result.hasMore = hasMore;
+  result.endCursor = endCursor;
+  if (options?.count) result.total = matching;
+
+  return result;
+}
