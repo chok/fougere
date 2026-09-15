@@ -24,6 +24,9 @@ export function declaredTopologyOf({ fronds, remotes }: Declaring): DeclaredTopo
 
 function placements(hosted: readonly FrondDescriptor[], remotes: Readonly<Record<string, string>>): DeclaredFrond[] {
   const here = hosted
+    // A frond its family inherits from answers at no address, so it has no placement to
+    // report: it stands in every process that holds one of its children.
+    .filter((frond) => frond.handlers.length > 0)
     .filter((frond) => !remotes[frond.name])
     .map((frond) => ({ frond: frond.name, placement: 'local' as const }));
 

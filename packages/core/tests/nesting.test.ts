@@ -9,7 +9,7 @@ import { scanProject } from '@fougere/compiler';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
-import { createApp, createLocalRunner, verify } from '../src/index.js';
+import { createApp, createLocalRunner, declaredTopologyOf, verify } from '../src/index.js';
 import { nestingOf, parentsFirst } from '../src/boot/nesting.js';
 import { Fronds } from '../src/descriptor/Fronds.js';
 import { Invocation } from '../src/wire/Invocation.js';
@@ -128,5 +128,16 @@ describe('parentsFirst', () => {
     const fronds = await scanned();
 
     expect(parentsFirst(fronds, new Map())).toBe(fronds);
+  });
+});
+
+describe('the declared topology', () => {
+  it('leaves out a frond its family inherits from — it answers at no address', async () => {
+    const fronds = [...await scanned()];
+    const declared = declaredTopologyOf({ fronds, remotes: {} });
+
+    // `shop` holds what `cart` resolves and serves nothing, so it stands in every process
+    // that carries one of its children — there is no one placement to report for it.
+    expect(declared.fronds.map((one) => one.frond)).toEqual(['blog', 'cart']);
   });
 });
