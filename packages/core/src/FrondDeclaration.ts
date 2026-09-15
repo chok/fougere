@@ -69,12 +69,8 @@ export interface FrondDeclaration {
   collectors?: (Ctor | DeclaredSubject)[];
   providers?: Declared[];
   seeds?: { entityName: string; data: SeedEntry['data'] }[];
-  /**
-   * What runs around this frond's operations. The scope is stated beside the class here,
-   * where `frond.config.ts` states it by class name — a statement has no config file to
-   * put it in.
-   */
-  middlewares?: (Ctor | (DeclaredSubject & { scope?: MiddlewareEntry['scope'] }))[];
+  /** What runs around this frond's operations, and around those of the fronds under it. */
+  middlewares?: (Ctor | DeclaredSubject)[];
   /** The ops that finish a fact, in order — the same key `frond.config.ts` states. */
   pipes?: Record<string, string[]>;
   /** Per-surface entity lists — the same key `frond.config.ts` states. */
@@ -169,7 +165,6 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
   const middlewares: MiddlewareEntry[] = (declared.middlewares ?? []).map((m) => ({
     name: ctorOf(m).name,
     ctor: ctorOf(m),
-    scope: (typeof m === 'function' ? undefined : m.scope) ?? 'frond',
     deps: depsOf(m),
     filePath: '',
   }));

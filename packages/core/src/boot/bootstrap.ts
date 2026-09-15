@@ -4,6 +4,7 @@ import { lowerFirst, type SchemaView } from '@fougere/schema';
 import type { HandlerEntry } from '../descriptor/HandlerEntry.js';
 import type { PresenterEntry } from '../descriptor/PresenterEntry.js';
 import { hostedBy } from './hosted.js';
+import { nestingOf, parentsFirst } from './nesting.js';
 import type { Fronds } from '../descriptor/Fronds.js';
 import { installFrond, type Assembly } from './install.js';
 import { dependentsOf, releasing, unfinishable, unheldAmong } from './relations.js';
@@ -135,13 +136,23 @@ async function readFronds(
     );
   }
 
-  const operationModel = resolveEffectiveOperations(fronds, {
+  const { under, refused } = nestingOf(options.under, fronds, options.remotes);
+  const refusal = refusalOf(refused, 'thing(s) the frond tree does not allow');
+  if (refusal) throw refusal;
+
+  for (const frond of fronds) {
+    const parent = under.get(frond.name);
+    if (parent !== undefined) frond.under = parent;
+  }
+  const ordered = parentsFirst(fronds, under);
+
+  const operationModel = resolveEffectiveOperations(ordered, {
     diagnostics,
     remotes: options.remotes,
     adapters: options.adapters,
   });
   const scanMs = (performance.now() - scanStart).toFixed(0);
-  log.info(`read ${fronds.length} frond(s) in ${scanMs}ms`
+  log.info(`read ${ordered.length} frond(s) in ${scanMs}ms`
     + (diagnostics.length ? ` — ${diagnostics.length} thing(s) the scan could not do` : ''));
 
   /** Say what could not be read, at the one line everyone already watches. */
@@ -152,7 +163,7 @@ async function readFronds(
   const unresolved = refusalOf(operationModel.resolutionDiagnostics, 'unresolved operation contract(s)');
   if (unresolved) throw unresolved;
 
-  return { fronds, operationModel };
+  return { fronds: ordered, operationModel };
 }
 
 /**
@@ -683,7 +694,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     const assembly: Assembly = {
       container, routeRegistry, emissions, dispatcher, localDispatcher, effectiveByKey,
       boundPorts, refused, relations, hosting, operationModel, entityByName, frondOf, contractsOf,
-      getMiddlewares, use, log, options,
+      getMiddlewares, use, middlewaresOf: new Map(), log, options,
     };
     for (const frond of fronds) await installFrond(frond, assembly);
 

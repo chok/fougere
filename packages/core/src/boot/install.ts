@@ -73,6 +73,12 @@ export interface Assembly {
   getMiddlewares: (entity: string) => AppMiddleware[];
   /** Take a middleware on — every entity when no entity is named. */
   use: (middleware: AppMiddleware, entity?: string) => void;
+  /**
+   * What runs around each frond, its ancestors' included — filled as fronds install, read by
+   * their children. A middleware is not a container key, so inheriting one is a list to carry
+   * and not a scope to walk.
+   */
+  middlewaresOf: Map<string, AppMiddleware[]>;
   log: Logger;
   options: CreateAppOptions;
 }
@@ -123,22 +129,35 @@ async function registerReads(
 function registerMiddlewares(
   frond: FrondDescriptor,
   scope: Container,
-  use: (middleware: AppMiddleware, entity?: string) => void,
+  assembly: Assembly,
   frondLog: Logger,
 ): void {
+  const { use, middlewaresOf } = assembly;
+  // Its own frond means every address its handlers answer to — wider than its entities, since
+  // a handler without one runs behind it too. A frond that serves nothing has none, which is
+  // why what it declares only ever reaches its family.
+  const addresses = new Set(frond.handlers.map((h) => h.address));
+  // What the parent took on, its own ancestors included — one level up is the whole chain,
+  // because the boot installs parents first and each of them left theirs here. The closures
+  // resolve in the scope that built them, so an inherited middleware is handed the services of
+  // the frond that declared it.
+  const inherited = frond.under ? middlewaresOf.get(frond.under) ?? [] : [];
+  const mine: AppMiddleware[] = [];
+
   for (const middleware of frond.middlewares) {
     scope.register(middleware.name, middleware.ctor, { deps: middleware.deps });
-    const around: AppMiddleware = (context, next) =>
-      scope.resolve<{ around: AppMiddleware }>(middleware.name).around(context, next);
-
-    if (middleware.scope === 'app') use(around);
-    // Its own frond means every address its handlers answer to — wider than its entities,
-    // since a handler without one runs behind it too.
-    else for (const address of new Set(frond.handlers.map((h) => h.address))) use(around, address);
+    mine.push((context, next) =>
+      scope.resolve<{ around: AppMiddleware }>(middleware.name).around(context, next));
   }
 
+  // Ancestors first, so they stand OUTSIDE — `getMiddlewares` hands back insertion order.
+  for (const around of [...inherited, ...mine]) {
+    for (const address of addresses) use(around, address);
+  }
+  middlewaresOf.set(frond.name, [...inherited, ...mine]);
+
   if (frond.middlewares.length > 0) {
-    frondLog.debug(`${frond.middlewares.length} middleware(s): ${frond.middlewares.map((m) => `${m.name} (${m.scope})`).join(', ')}`);
+    frondLog.debug(`${frond.middlewares.length} middleware(s): ${frond.middlewares.map((m) => m.name).join(', ')}`);
   }
 }
 
@@ -428,7 +447,11 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
     }
     return;
   }
-  const scope = container.createScope();
+  // A child hangs off its parent, so everything the parent registered answers here too and
+  // nothing else has to know: `ScopeContainer.resolve` already walks up. The boot installs
+  // parents first, which is what makes the key below resolvable.
+  const above = frond.under ? container.resolve<Container>(`frond:${frond.under}`) : container;
+  const scope = above.createScope();
   const frondLog = log.child(frond.name);
   // The frond's own voice, a child of the APP logger and never of `log` — which is the
   // boot's, so a service's line would have claimed `boot:` long after the boot was over.
@@ -500,7 +523,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   // Register middlewares in scope, then take them on. Resolved per call and never here:
   // a middleware asking for something request-scoped would otherwise be handed the one
   // instance the boot built — the same reason `getMiddlewares` is read at call time.
-  registerMiddlewares(frond, scope, use, frondLog);
+  registerMiddlewares(frond, scope, assembly, frondLog);
 
   // Build handler facades → registered in ROOT container (public contract)
   const defaultHandlers = frond.handlers.filter((h) => !h.surface);

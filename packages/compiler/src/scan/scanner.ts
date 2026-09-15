@@ -584,10 +584,7 @@ async function toCollectorEntry(filePath: string): Promise<CollectorEntry | null
  * Recognized by its FORM: a class in `middlewares/` that declares `around`. The scope is
  * the frond's own unless `frond.config.ts` widened it, which is why the config comes first.
  */
-async function toMiddlewareEntry(
-  filePath: string,
-  scopes: FrondConfig['middlewares'],
-): Promise<MiddlewareEntry | null> {
+async function toMiddlewareEntry(filePath: string): Promise<MiddlewareEntry | null> {
   const ctor = await loadClass(filePath);
   const prototype = (ctor as { prototype?: { around?: unknown } }).prototype;
   if (typeof prototype?.around !== 'function') return null;
@@ -596,7 +593,6 @@ async function toMiddlewareEntry(
   return {
     name: ctor.name,
     ctor,
-    scope: scopes?.[ctor.name] ?? 'frond',
     deps: params.map((p) => depKeyOf(p.type)),
     filePath,
   };
@@ -688,7 +684,7 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
 
   const presenters = await collect(presentersDir, toPresenterEntry);
   const seeds = await collect(seedsDir, toSeedEntry);
-  const middlewares = await collect(middlewaresDir, (f) => toMiddlewareEntry(f, frondConfig?.middlewares));
+  const middlewares = await collect(middlewaresDir, (f) => toMiddlewareEntry(f));
 
   markExposed(entities, handlers, frondConfig?.expose);
   const operationsOverrides = overridesOf(frondConfig?.operations);

@@ -17,6 +17,16 @@ export type Misplaced = Diagnostic & {
 /** A dependency declared in a frond's scope, and what kind of thing it is. */
 type Registration = { frond: string; kind: string };
 
+/** Everything above a frond in the tree — what its scope reaches by walking up. */
+function ancestors(frond: FrondDescriptor, byName: Map<string, FrondDescriptor>): Set<string> {
+  const above = new Set<string>();
+  for (let at = frond.under; at !== undefined && !above.has(at); at = byName.get(at)?.under) {
+    above.add(at);
+  }
+
+  return above;
+}
+
 /**
  * The container keys a frond registers in its own scope, keyed as a handler's `deps` spell them —
  * DI resolves by type name, so both sides are PascalCase.
@@ -50,6 +60,7 @@ function injectablesOf(frond: FrondDescriptor) {
  */
 export function verify(app: { fronds: readonly FrondDescriptor[] }): Misplaced[] {
   const index = new Map<string, Registration>();
+  const byName = new Map(app.fronds.map((frond) => [frond.name, frond]));
   for (const frond of app.fronds) {
     for (const [key, reg] of registrationsOf(frond)) index.set(key, reg);
   }
@@ -76,6 +87,10 @@ export function verify(app: { fronds: readonly FrondDescriptor[] }): Misplaced[]
         // façade key, or an unresolved name. None is a boundary crossing, and
         // an unresolved dependency is the container's complaint, not this rule's.
         if (!declared || declared.frond === frond.name) continue;
+        // An ANCESTOR is not across: the frond tree says this one resolves what that one
+        // declared, and its scope hangs off it. A sibling, a descendant or a stranger stays
+        // refused — inheriting code is not calling a frond.
+        if (ancestors(frond, byName).has(declared.frond)) continue;
         violations.push({
           code: 'cross-frond-dependency',
           severity: 'warning',

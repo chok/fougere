@@ -1,5 +1,6 @@
 import type { Container } from '@fougere/container';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
+import type { FrondsStated } from '../FrondsStated.js';
 import type { ScanResult } from '../scan.js';
 import type { StorageFactory } from '../storage/StorageFactory.js';
 import type { Constraint } from '../Constraint.js';
@@ -46,6 +47,12 @@ export interface CreateAppOptions {
   scan?: ScanResult | (() => Promise<ScanResult> | ScanResult);
   /** What this app STATES it hosts — `frond('blog', { entities: [Post] })`. */
   fronds?: readonly FrondDescriptor[];
+  /**
+   * Who inherits code from whom — `FougereConfig.fronds`, handed over whole rather than
+   * flattened, because a refusal names where an entry sits in it (`shop.cart`). The host has
+   * already turned its addresses and its modules into `remotes` and `fronds`.
+   */
+  under?: FrondsStated;
   /**
    * Remote fronds — label → address. What each remote hosts is discovered
    * at the first miss (rpc.discover), never declared here.

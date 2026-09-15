@@ -34,6 +34,13 @@ export interface FrondDescriptor {
    * domain. Set by the boot, never by a declaration.
    */
   brought?: true;
+  /**
+   * The frond this one inherits code from — its scope hangs off that one's, so a service, a
+   * repository, a port or a middleware declared there answers here too. Set by the boot from
+   * `FougereConfig.fronds`, never by a scan: the disk is flat, and a directory says nothing
+   * about who shares its code.
+   */
+  under?: string;
   /** The ops that finish a fact, in order — see `FrondConfig.pipes`. */
   pipes?: Record<string, string[]>;
   /**

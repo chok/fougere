@@ -20,12 +20,6 @@ export interface FrondConfig {
    * ran first, and scan order is not an answer.
    */
   pipes?: Record<NameOf<'entity'>, NameOf<'handler'>[]>;
-  /**
-   * How far a middleware reaches, by class name. A middleware answers for its own frond
-   * without being named here; `'app'` is the exception, and it is stated by the frond
-   * that decides for the others.
-   */
-  middlewares?: Record<NameOf<'middleware'>, 'frond' | 'app'>;
   /** Per-operation overrides. Key = operation name (method name on a handler). */
   operations?: Record<string, OperationOverride>;
 }

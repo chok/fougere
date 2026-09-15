@@ -1,6 +1,6 @@
 import type { AppNext, OperationContext } from '@fougere/core';
 
-/** Widened to the app by `frond.config.ts` — one frond deciding for the others. */
+/** Declared in `ops`, which serves nothing — so it runs around every frond under it. */
 export default class Everywhere {
   async around(context: OperationContext, next: AppNext): Promise<unknown> {
     ((globalThis as Record<string, unknown>).__around as string[])

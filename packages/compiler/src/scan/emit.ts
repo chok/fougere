@@ -92,7 +92,7 @@ function providerOf(p: ProviderEntry, imports: Imports): string {
 
 function middlewareOf(m: MiddlewareEntry, imports: Imports): string {
   return `{ name: ${lit(m.name)}, ctor: ${imports.aliasOf(m.ctor as Live)}, `
-    + `scope: ${lit(m.scope)}, deps: ${lit(m.deps)}, filePath: ${lit(m.filePath)} }`;
+    + `deps: ${lit(m.deps)}, filePath: ${lit(m.filePath)} }`;
 }
 
 function seedOf(s: SeedEntry, imports: Imports): string {
