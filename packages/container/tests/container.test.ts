@@ -121,10 +121,19 @@ describe('Container', () => {
       expect(() => container.resolve('other')).toThrow();
     });
 
-    it('is inherited by a child scope', () => {
+    it('answers a child, because the descent ends at the root', () => {
       const container = createContainer();
       container.setFallback?.(() => ({ made: true }));
       expect(container.createScope().resolve('anything')).toEqual({ made: true });
+    });
+
+    it('set from a child, lands on the root — the tree has one', () => {
+      const root = createContainer();
+      const scope = root.createScope();
+      scope.setFallback?.(() => ({ made: true }));
+
+      expect(root.resolve('anything')).toEqual({ made: true });
+      expect(root.createScope().resolve('other')).toEqual({ made: true });
     });
   });
 
@@ -186,6 +195,29 @@ describe('Container', () => {
       expect(log).toEqual(['good']);
     });
 
+    it('closes a scope opened while its siblings were closing', async () => {
+      const log: string[] = [];
+      const root = createContainer();
+      const scope = root.createScope();
+      scope.register('X', class {
+        async dispose() { root.createScope().register('Late', closing(log, 'late'), { lifetime: 'singleton' }); }
+      }, { lifetime: 'singleton' });
+      scope.resolve('X');
+
+      await expect(root.dispose()).resolves.toBeUndefined();
+    });
+
+    it('refuses one opened after that, while what it built was closing', async () => {
+      const root = createContainer();
+      root.register('X', class { async dispose() { root.createScope(); } }, { lifetime: 'singleton' });
+      root.resolve('X');
+
+      const refused = await root.dispose().then(() => undefined, (error: AggregateError) => error);
+
+      expect(refused).toBeInstanceOf(AggregateError);
+      expect(refused!.errors[0].message).toContain('1 scope(s) still held after this one closed');
+    });
+
     it('ignores an instance with no dispose method', async () => {
       const container = createContainer();
       container.register('Logger', Logger, { lifetime: 'singleton' });
@@ -206,7 +238,7 @@ describe('Container', () => {
       container.register('B', class { constructor(z: unknown) {} }, { deps: ['Zzz'] });
 
       expect(() => container.resolve('A'))
-        .toThrow("[container] 'Zzz' is not registered (resolving: A → B → Zzz)");
+        .toThrow("'Zzz' is not registered (resolving: A → B → Zzz)");
     });
 
     it('refuses a cycle, naming the turn', () => {
@@ -214,7 +246,7 @@ describe('Container', () => {
       container.register('A', class { constructor(b: unknown) {} }, { deps: ['B'] });
       container.register('B', class { constructor(a: unknown) {} }, { deps: ['A'] });
 
-      expect(() => container.resolve('A')).toThrow('[container] dependency cycle: A → B → A');
+      expect(() => container.resolve('A')).toThrow('dependency cycle: A → B → A');
     });
 
     it('names the turn, not the path that led to it', () => {
@@ -223,7 +255,7 @@ describe('Container', () => {
       container.register('B', class { constructor(c: unknown) {} }, { deps: ['C'] });
       container.register('C', class { constructor(b: unknown) {} }, { deps: ['B'] });
 
-      expect(() => container.resolve('A')).toThrow('[container] dependency cycle: A → B → C → B');
+      expect(() => container.resolve('A')).toThrow('dependency cycle: A → B → C → B');
     });
 
     it('carries the path across scopes, since the descent continues in the parent', () => {
@@ -233,7 +265,7 @@ describe('Container', () => {
       root.register('B', class { constructor(a: unknown) {} }, { deps: ['A'] });
 
       expect(() => child.resolve('A'))
-        .toThrow("[container] 'A' is not registered (resolving: A → B → A)");
+        .toThrow("'A' is not registered (resolving: A → B → A)");
     });
 
     it('forgets a name whose constructor threw — the next resolution is not a cycle', () => {

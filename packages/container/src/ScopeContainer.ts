@@ -1,5 +1,6 @@
 import type { Container } from './Container.js';
 import { Disposables, type Disposable } from './Disposable.js';
+import { ContainerError } from './ContainerError.js';
 import type { Constructor } from './registration/Constructor.js';
 import type { Lifetime } from './registration/Lifetime.js';
 import type { RegisterOptions } from './registration/RegisterOptions.js';
@@ -12,17 +13,12 @@ interface Entry {
 
 /** A scope reaches its parent and its children through members only a scope can read. */
 export class ScopeContainer implements Container {
-  private readonly registry = new Map<string, Entry>();
-
-  private readonly built: unknown[] = [];
-  // Closed by this container, and before `built` — a child may hold what this scope built,
-  // never the other way round.
+  private readonly built: Disposable[] = [];
   private readonly children: ScopeContainer[] = [];
-  private fallback: ((name: string) => unknown) | undefined;
-  // The names being built right now, shared by the whole tree: a miss here is answered by the
-  // parent and the descent continues there, so only one stack can name the path whole —
-  // `child.resolve('A')` reaching a parent's `B` that asks for `A` back reports `A → B → A`.
+  private readonly registry = new Map<string, Entry>();
   private readonly resolving: string[];
+
+  private fallback: ((name: string) => unknown) | undefined;
 
   constructor(private readonly parent?: ScopeContainer) {
     this.resolving = parent?.resolving ?? [];
@@ -30,7 +26,9 @@ export class ScopeContainer implements Container {
 
   register<T>(name: string, ctor: Constructor<T>, options?: RegisterOptions): void {
     const lifetime = options?.lifetime ?? 'transient';
+
     const deps = options?.deps ?? [];
+
     this.registry.set(name, {
       factory: (c) => new ctor(...deps.map((d) => c.resolve(d))),
       lifetime,
@@ -38,7 +36,6 @@ export class ScopeContainer implements Container {
   }
 
   registerValue<T>(name: string, value: T): void {
-    // A value the container did not build is not the container's to dispose.
     this.registry.set(name, {
       factory: () => value,
       lifetime: 'singleton',
@@ -49,44 +46,103 @@ export class ScopeContainer implements Container {
   resolve<T>(name: string): T {
     const entry = this.registry.get(name);
 
-    // Not found locally — the parent holds it, and holds its instance too.
-    if (!entry && this.parent?.entryOf(name)) {
-      return this.parent.resolve<T>(name);
-    }
-
-    // Nobody holds it. A frond declared in `remotes` registers nothing here, so its
-    // façade is fabricated by the fallback rather than found.
     if (!entry) {
-      const made = this.fallbackOf()?.(name);
-      if (made !== undefined) {
-        this.registry.set(name, {
-          factory: () => made,
-          lifetime: 'singleton',
-          instance: made,
-        });
+      if (this.parent) return this.parent.resolve<T>(name);
 
-        return made as T;
-      }
-      throw new Error(`[container] '${name}' is not registered${this.through(name)}`);
+      return this.buildFallback<T>(name);
     }
 
     if (entry.instance !== undefined) return entry.instance as T;
 
-    if (this.resolving.includes(name)) {
-      throw new Error(
-        `[container] dependency cycle: ${[...this.resolving, name].join(' → ')}`,
+    return this.build<T>(name, entry);
+  }
+
+  has(name: string): boolean {
+    return this.registry.has(name) || (this.parent?.has(name) ?? false);
+  }
+
+  createScope(): Container {
+    const child = new ScopeContainer(this);
+
+    this.children.push(child);
+
+    return child;
+  }
+
+  async dispose(): Promise<void> {
+    this.parent?.forget(this);
+
+    const failures = await this.disposeChildren();
+
+    failures.push(...(await this.disposeBuilt()));
+
+    this.registry.clear();
+
+    if (this.children.length > 0) {
+      failures.push(
+        new ContainerError(
+          `${this.children.length} scope(s) still held after this one closed — probably opened while it was closing.`,
+        ),
       );
     }
 
-    // Popped in a finally, because a constructor that throws leaves the name on the stack
-    // otherwise and the next resolution of it reports a cycle that is not there.
+    if (failures.length > 0) {
+      throw ContainerError.all(failures, 'one or more disposals failed');
+    }
+  }
+
+  private async disposeChildren(): Promise<unknown[]> {
+    const failures: unknown[] = [];
+
+    while (this.children.length > 0) {
+      const child = this.children[this.children.length - 1]!;
+
+      try {
+        await child.dispose();
+      } catch (error) {
+        failures.push(error);
+      } finally {
+        this.forget(child);
+      }
+    }
+
+    return failures;
+  }
+
+  private async disposeBuilt(): Promise<unknown[]> {
+    const failures: unknown[] = [];
+    while (this.built.length > 0) {
+      try {
+        await this.built.pop()?.dispose();
+      } catch (error) {
+        failures.push(error);
+      }
+    }
+
+    return failures;
+  }
+
+  setFallback(resolve: (name: string) => unknown): void {
+    if (this.parent) return this.parent.setFallback(resolve);
+
+    this.fallback = resolve;
+  }
+
+  private build<T>(name: string, entry: Entry): T {
+    if (this.resolving.includes(name)) {
+      throw new ContainerError(
+        `dependency cycle: ${[...this.resolving, name].join(' → ')}`,
+      );
+    }
+
     this.resolving.push(name);
+
     try {
       const value = entry.factory(this) as T;
-      // The container disposes what it KEEPS: a transient is handed over and forgotten,
-      // and its caller is the one who knows when it is done.
+
       if (entry.lifetime === 'singleton') {
         entry.instance = value;
+
         this.remember(value);
       }
 
@@ -96,74 +152,36 @@ export class ScopeContainer implements Container {
     }
   }
 
-  has(name: string): boolean {
-    return this.registry.has(name) || (this.parent?.has(name) ?? false);
-  }
+  private buildFallback<T>(name: string): T {
+    const made = this.fallback?.(name);
+    if (made === undefined) throw new ContainerError(this.errorMessage(name));
 
-  createScope(): Container {
-    const child = new ScopeContainer(this);
-    this.children.push(child);
+    this.registry.set(name, {
+      factory: () => made,
+      lifetime: 'singleton',
+      instance: made,
+    });
 
-    return child;
-  }
-
-  async dispose(): Promise<void> {
-    // Everything is told before anything throws, then the failures travel together.
-    // Dropped from the parent first: a scope that closes itself leaves a reference the
-    // parent would hold for the life of the process.
-    this.parent?.forget(this);
-    const failures: unknown[] = [];
-    // A copy: closing a child splices it out of `children`, so walking the array
-    // itself stepped over every second sibling.
-    for (const child of [...this.children].reverse()) {
-      try {
-        await child.dispose();
-      } catch (error) {
-        failures.push(error);
-      }
-    }
-    this.children.length = 0;
-    for (const value of this.built.reverse()) {
-      try {
-        await (value as Disposable).dispose();
-      } catch (error) {
-        failures.push(error);
-      }
-    }
-    this.built.length = 0;
-    this.registry.clear();
-    if (failures.length > 0) {
-      throw new AggregateError(failures, '[container] one or more disposals failed');
-    }
-  }
-
-  setFallback(resolve: (name: string) => unknown): void {
-    this.fallback = resolve;
-  }
-
-  private entryOf(name: string): Entry | undefined {
-    return this.registry.get(name) ?? this.parent?.entryOf(name);
-  }
-
-  /** Set on the root, honoured from any scope — a scope inherits it by asking upward. */
-  private fallbackOf(): ((name: string) => unknown) | undefined {
-    return this.fallback ?? this.parent?.fallbackOf();
+    return made as T;
   }
 
   private forget(child: ScopeContainer): void {
     const at = this.children.indexOf(child);
+
     if (at !== -1) this.children.splice(at, 1);
   }
 
-  private through(name: string): string {
-    return this.resolving.length > 0
-      ? ` (resolving: ${[...this.resolving, name].join(' → ')})`
-      : '';
+  /** What this scope will close. A value that answers no `dispose` is not one of them. */
+  private remember(value: unknown): void {
+    if (Disposables.is(value)) this.built.push(value);
   }
 
-  private remember<T>(value: T): T {
-    if (Disposables.is(value)) this.built.push(value);
+  private errorMessage(name: string): string {
+    const path =
+      this.resolving.length > 0
+        ? ` (resolving: ${[...this.resolving, name].join(' → ')})`
+        : '';
 
-    return value;
+    return `'${name}' is not registered${path}`;
   }
 }
