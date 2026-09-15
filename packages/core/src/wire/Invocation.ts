@@ -24,6 +24,8 @@ function canonicalRecord(value: unknown): Record<string, unknown> {
 
 /** Canonical invocation shared by every entry and transport. */
 export class Invocation implements InvocationContext {
+  static readonly empty = Invocation.from();
+
   readonly params: Record<string, unknown>;
   readonly query: Record<string, unknown>;
   readonly input: unknown;
@@ -53,7 +55,6 @@ export class Invocation implements InvocationContext {
     return context instanceof Invocation ? context : new Invocation(context ?? {});
   }
 
-  static readonly empty = Invocation.from();
 
   /** Replaces the input — how the façade hands on the value it parsed. */
   withInput(input: unknown): Invocation {

@@ -40,6 +40,11 @@ export class HandlerFacade {
   /** A computed field's parameters and the collectors in scope are both boot-time facts. */
   private readonly presenterPlans: Map<string, BindingPlan>;
 
+  private collectorResolver = (typeName: string): CollectorResolver | undefined => {
+    try { return this.scope.resolve(collectorKeyOf(typeName)) as CollectorResolver; }
+    catch { return undefined; }
+  };
+
   constructor(
     private readonly handler: HandlerEntry,
     private readonly scope: Container,
@@ -167,11 +172,6 @@ export class HandlerFacade {
     this.cachedViews.set(op, resolved);
     return resolved;
   }
-
-  private collectorResolver = (typeName: string): CollectorResolver | undefined => {
-    try { return this.scope.resolve(collectorKeyOf(typeName)) as CollectorResolver; }
-    catch { return undefined; }
-  };
 
   /** The handler itself, resolved on first call — never at boot. */
   private resolveHandler(): any {
