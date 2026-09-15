@@ -3,6 +3,7 @@ import { comparisonOf, comparisonsIn, type Comparison } from './Comparison.js';
 import type { Storage } from './Storage.js';
 import type { StorageFactory } from './StorageFactory.js';
 import type { Values } from './Values.js';
+import type { ListResult } from './ListResult.js';
 
 /** Instances addressed by key — what an adapter supplies, and all of it. */
 export interface Store {
@@ -81,10 +82,12 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
           // The cursor is read before the scope cuts: a view that drops the key still
           // pages, the way it does over SQL.
           const endCursor = items.length > 0 ? String((items[items.length - 1] as Record<string, unknown>)[pk] ?? '') : undefined;
-          const result = items.map(pick) as any;
+          // An array that carries the page's terms on itself — what `ListResult` is.
+          const result = items.map(pick) as ListResult<Values>;
           result.hasMore = hasMore;
           result.endCursor = endCursor;
           if (options?.count) result.total = matching;
+
           return result;
         },
         async findById(id: string) {
