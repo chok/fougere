@@ -156,21 +156,23 @@ function recordUpserts({ base, recorded, entity, key, journal }: Recording, sche
     };
   };
 
-  if (typeof base.upsert === 'function') {
+  const upsert = base.upsert;
+  if (typeof upsert === 'function') {
     recorded.upsert = async function (input, ...rest) {
       if (declares(schema, 'unique')) refuseAmbiguousUpsert(entity, 'upsert');
       const undo = await undoUpsert.call(this, [input]);
-      const row = await base.upsert!.call(this, input, ...rest);
+      const row = await upsert.call(this, input, ...rest);
       journal.push(undo);
       return row;
     };
   }
 
-  if (typeof base.upsertAll === 'function') {
+  const upsertAll = base.upsertAll;
+  if (typeof upsertAll === 'function') {
     recorded.upsertAll = async function (inputs, ...rest) {
       if (declares(schema, 'unique')) refuseAmbiguousUpsert(entity, 'upsertAll');
       const undo = await undoUpsert.call(this, inputs);
-      const written = await base.upsertAll!.call(this, inputs, ...rest);
+      const written = await upsertAll.call(this, inputs, ...rest);
       journal.push(undo);
       return written;
     };
