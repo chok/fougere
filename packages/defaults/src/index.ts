@@ -1,7 +1,7 @@
 /** @fougere/defaults — the conventional boot, declared once. */
 import { type App, type CreateAppOptions } from '@fougere/core';
 import { boot } from '@fougere/compiler';
-import { loadConfig } from '@fougere/core/node';
+import { loadConfig, remotesOf } from '@fougere/core/node';
 import { createHttpTransport } from '@fougere/transport-http';
 import { type DbConfig } from './storage/DbConfig.js';
 import { resolveStorage } from './storage/ResolvedStorage.js';
@@ -32,7 +32,7 @@ export interface BootAppOptions {
  */
 export async function bootApp(root: string, opts: BootAppOptions = {}): Promise<App> {
   const config = await loadConfig(root);
-  const remotes = config.remotes ?? {};
+  const remotes = remotesOf(config);
   const useRemotes = (opts.topology ?? true) && Object.keys(remotes).length > 0;
 
   return boot({

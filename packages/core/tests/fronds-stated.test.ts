@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { statedFronds, statesModule, mergeStated } from '../src/FrondsStated.js';
+import { remotesOf } from '../src/FougereConfig.js';
 
 describe('statesModule', () => {
   it('tells a module specifier from a frond name', () => {
@@ -70,5 +71,26 @@ describe('mergeStated', () => {
 
     expect(merged).toEqual({ shop: { cart: {} }, cart: { shop: {} } });
     expect(statedFronds(merged).twice).toEqual([{ key: 'cart', paths: ['shop.cart', 'cart'] }]);
+  });
+});
+
+describe('remotesOf', () => {
+  it('reads an address off a string leaf of the tree', () => {
+    expect(remotesOf({ fronds: { shop: { cart: {} }, blog: 'http://localhost:4100' } }))
+      .toEqual({ blog: 'http://localhost:4100' });
+  });
+
+  it('leaves a module argument out — it is not an address', () => {
+    expect(remotesOf({ fronds: { '@fougere/log': './lines.jsonl' } })).toEqual({});
+  });
+
+  it('reads the two graphies as one', () => {
+    expect(remotesOf({ fronds: { blog: 'http://a' }, remotes: { shop: 'http://b' } }))
+      .toEqual({ blog: 'http://a', shop: 'http://b' });
+  });
+
+  it('refuses one frond placed at two addresses', () => {
+    expect(() => remotesOf({ fronds: { blog: 'http://a' }, remotes: { blog: 'http://b' } }))
+      .toThrow(/one address/);
   });
 });

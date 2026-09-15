@@ -33,7 +33,10 @@ export async function testApp(options: TestAppOptions = {}): Promise<TestApp> {
     fronds: options.fronds ?? (scope?.frond ? [scope.frond] : undefined),
     // `boot` merges this over the file, so a project declaring a real database still
     // gets the in-memory one here.
-    config: options.topology ? undefined : { remotes: {} },
+    // `boot` merges this over the file, and an address may also sit in the tree — so the
+    // one that neutralizes both is the one `boot` hands to `createApp`.
+    config: options.topology ? undefined : { remotes: {}, fronds: {} },
+    ...(options.topology ? {} : { remotes: {} }),
     db: () => resolveStorage(db),
   });
 

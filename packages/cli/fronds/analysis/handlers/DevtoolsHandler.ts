@@ -1,6 +1,7 @@
 import { createHttpTransport } from '@fougere/transport-http/client';
 import type { CallPage, CallRecord } from '@fougere/core';
 import ProjectScan from '../services/ProjectScan.js';
+import { remotesOf } from '@fougere/core/node';
 
 /**
  * Where an app answers in development — Nuxt, Next and the site all sit there, so it is a
@@ -80,7 +81,7 @@ export default class DevtoolsHandler {
   private async addresses(root?: string): Promise<{ url: string; frond?: string }[]> {
     const { config } = await this.projectScan.at(root);
     const here = local();
-    const remotes = Object.entries(config.remotes ?? {})
+    const remotes = Object.entries(remotesOf(config))
       .map(([frond, url]) => ({ url: trimmed(url), frond }));
 
     return [{ url: here }, ...remotes.filter((one) => one.url !== here)];

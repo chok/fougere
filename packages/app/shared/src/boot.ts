@@ -2,7 +2,7 @@
 import { applyConfig, createApp, identityFromEnv, Logger } from '@fougere/core';
 import { scanProject, frondAliases } from '@fougere/compiler';
 import { resolveConventions } from '@fougere/core';
-import { loadCascadedConfig, setModuleLoader } from '@fougere/core/node';
+import { loadCascadedConfig, remotesOf, setModuleLoader } from '@fougere/core/node';
 
 import { createMemoryStorage } from '@fougere/adapter-memory';
 import type { App, CreateAppOptions, FougereConfig, Transport } from '@fougere/core';
@@ -141,8 +141,9 @@ async function boot(): Promise<App> {
   // the default would import the transport and read the environment for a key, both
   // pointless once the caller has said who carries the call.
   let remoteTransport: ((url: string) => Transport) | undefined = _config.remoteTransport;
-  if (!remoteTransport && Object.keys(fileConfig.remotes ?? {}).length > 0) {
-    log.debug(`remotes declared (${Object.keys(fileConfig.remotes!).join(', ')}) — wiring HTTP transport`);
+  const remotes = remotesOf(fileConfig);
+  if (!remoteTransport && Object.keys(remotes).length > 0) {
+    log.debug(`remotes declared (${Object.keys(remotes).join(', ')}) — wiring HTTP transport`);
     const { createHttpTransport } = await import('@fougere/transport-http');
     // A call that leaves this process carries a proof of who sent it, when the
     // deployment gave one. Without a key it travels as a bare claim, which only a
@@ -169,7 +170,9 @@ async function boot(): Promise<App> {
     ...layerOf(storage, createMemoryStorage),
     auth: fileConfig.auth,
     adapters: fileConfig.adapters,
-    remotes: fileConfig.remotes,
+    remotes,
+    /** Who inherits code from whom — the tree, whole, so a refusal can name where an entry sits. */
+    under: fileConfig.fronds,
     remoteTransport,
     extensions: _config.extensions ?? [],
     // Opened before the container, so released after it. Never wired here until now:

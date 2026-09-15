@@ -12,6 +12,7 @@ import ProjectScan from '../services/ProjectScan.js';
 import { statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { FACADE_OUT, DEFAULT_OUT } from './BuildHandler.js';
+import { remotesOf } from '@fougere/core/node';
 
 export interface CheckResult {
   fronds: number;
@@ -46,7 +47,7 @@ export default class CheckHandler {
     // migration, seed or adapter mount is needed for a global semantic check.
     const model = resolveEffectiveOperations(fronds, {
       diagnostics,
-      remotes: config.remotes,
+      remotes: remotesOf(config),
       adapters: config.adapters,
     });
     const findings: Diagnostic[] = [...model.diagnostics];

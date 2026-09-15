@@ -1,5 +1,5 @@
 import { Logger, applyConfig, createApp, type App, type CreateAppOptions, type Extension, type FougereConfig, type Transport } from '@fougere/core';
-import { loadConfig } from '@fougere/core/node';
+import { loadConfig, remotesOf } from '@fougere/core/node';
 import { scanProject } from './scan/scanner.js';
 
 import type { Container } from '@fougere/container';
@@ -73,7 +73,13 @@ export async function boot(options: BootOptions): Promise<App> {
     storageFactory: dbSetup?.storageFactory,
     db: dbSetup?.db,
     auth: config.auth,
-    remotes: options.remotes,
+    // The tree's string leaves say the same thing `remotes:` does, and this boot read
+    // neither of them from the file until now — a project stating its topology got a
+    // process that believed every frond was local.
+    remotes: options.remotes ?? remotesOf(config),
+    // Who inherits code from whom — handed over whole, because a refusal names where an
+    // entry sits in the tree.
+    under: config.fronds,
     ports: config.ports,
     // Read from the config for the same reason `ports` is, one line up: it is a fact the
     // project states, not one the caller passes. Absent here, `serveRest` and

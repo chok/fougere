@@ -6,6 +6,7 @@ import {
 import { relative } from 'node:path';
 import ProjectScan from '../services/ProjectScan.js';
 import { ANONYMOUS_SCHEMA_NAME, lowerFirst, type SchemaView } from '@fougere/schema';
+import { remotesOf } from '@fougere/core/node';
 
 type Cardinality = NonNullable<OperationContract['cardinality']>;
 type Binding = EffectiveOperation['binding'][number];
@@ -91,7 +92,7 @@ export default class ExplainHandler {
   /** The names this project serves — the list `explain` used to spell in a refusal only. */
   async list(input: { root?: string }): Promise<ExplainListing> {
     const { scan, model } = await this.modelOf(input.root);
-    const remotes = scan.config.remotes ?? {};
+    const remotes = remotesOf(scan.config);
     const counted = new Map<string, number>();
     for (const operation of model.operations) {
       const frond = operation.placement.frond;
@@ -115,7 +116,7 @@ export default class ExplainHandler {
       scan,
       model: resolveEffectiveOperations(scan.fronds, {
         diagnostics: scan.diagnostics,
-        remotes: scan.config.remotes,
+        remotes: remotesOf(scan.config),
         adapters: scan.config.adapters,
       }),
     };

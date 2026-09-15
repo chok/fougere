@@ -2,6 +2,7 @@ import { loadScript, reachableOps } from '@fougere/testing';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import ProjectScan from '../services/ProjectScan.js';
+import { remotesOf } from '@fougere/core/node';
 
 export interface LoadScenario {
   /** Where it was written, or `null` when it was only printed. */
@@ -27,7 +28,7 @@ export default class LoadHandler {
     const facade = input.facade?.trim() || undefined;
     // The topology statement travels with it: an op that crosses a process is not held to the
     // same figure as one that never leaves, and `remotes:` is what says which is which.
-    const remotes = config.remotes ?? {};
+    const remotes = remotesOf(config);
     const script = loadScript({ fronds }, { ...(facade ? { facade } : {}), remotes });
 
     const file = input.out === undefined ? join(root, 'load.js') : input.out || null;

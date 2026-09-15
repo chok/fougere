@@ -3,6 +3,7 @@ import {
   type DeclaredTopology, type EntityNode, type DomainCluster, type FrondDescriptor,
 } from '@fougere/core';
 import ProjectScan from '../services/ProjectScan.js';
+import { remotesOf } from '@fougere/core/node';
 
 export interface GraphResult {
   fronds: FrondDescriptor[];
@@ -25,7 +26,7 @@ export default class GraphHandler {
 
     return {
       fronds,
-      declared: declaredTopologyOf({ fronds, remotes: config.remotes ?? {} }),
+      declared: declaredTopologyOf({ fronds, remotes: remotesOf(config) }),
       nodes,
       clusters,
       totalEntities: nodes.size,

@@ -7,7 +7,7 @@ import type { NameOf } from './NameOf.js';
 import type { PortChoice } from './PortChoice.js';
 import { getModuleLoader } from './loader.js';
 import type { AdapterConfig } from './AdapterConfig.js';
-import { mergeStated, type FrondsStated } from './FrondsStated.js';
+import { mergeStated, statedFronds, statesModule, type FrondsStated } from './FrondsStated.js';
 
 export interface FougereConfig {
   /** Database configuration — the DEFAULT source, the one an entity lands in unnamed. */
@@ -63,6 +63,30 @@ async function loadConfigFrom(dir: string, fresh?: boolean): Promise<FougereConf
 /** Load the root fougere.config.{ts,js,mjs} from the given directory. */
 export async function loadConfig(root: string, options?: { fresh?: boolean }): Promise<FougereConfig> {
   return loadConfigFrom(root, options?.fresh);
+}
+
+/**
+ * Where each frond answers, whichever way the config says it — a string leaf of `fronds:` is
+ * an address, and `remotes:` says the same thing outside the tree. One reading, so nothing
+ * downstream learns there are two ways to write it.
+ */
+export function remotesOf(config: FougereConfig): Record<string, string> {
+  const addresses: Record<string, string> = {};
+  for (const stated of statedFronds(config.fronds).fronds) {
+    if (stated.value !== undefined && !statesModule(stated.key)) addresses[stated.key] = stated.value;
+  }
+  for (const [frond, url] of Object.entries(config.remotes ?? {})) {
+    const inTree = addresses[frond];
+    if (inTree !== undefined && inTree !== url) {
+      throw new Error(
+        `Fougere config: '${frond}' is placed at ${inTree} in \`fronds:\` and at ${url} in `
+        + '`remotes:`. One frond answers at one address — keep the one you meant.',
+      );
+    }
+    addresses[frond] = url;
+  }
+
+  return addresses;
 }
 
 // ── Merging ──────────────────────────────────────
