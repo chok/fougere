@@ -26,7 +26,8 @@ import { emitKeyOf, type Emit } from '../wire/Emit.js';
 /** The fact the boot announces, spelled once. */
 const LOG_LINE = lowerFirst(LogLine.name);
 import { Config } from '../builtin/config.js';
-import { createRemoteRouter, createRemoteFacade } from './remote.js';
+import { createRemoteRouter, createRemoteFacade, type RemoteRouter } from './remote.js';
+import type { Peer } from './Peer.js';
 
 import { Emissions } from './Emissions.js';
 
@@ -209,6 +210,22 @@ function warnAboutRelations(relations: RelationCheck[], hosting: Hosting, log: L
       + 'no foreign key, and the target answers elsewhere. A row may name one that is gone.',
     );
   }
+}
+
+/** The process that serves an entity, asked the three questions a release travels on. */
+function peerBehind(entity: string, router: RemoteRouter): Peer {
+  const ask = async (op: string, params: Record<string, unknown>): Promise<unknown> =>
+    (await router.route(entity)).transport(
+      { entity: RPC_ENTITY, op },
+      { ...Invocation.empty, params: params as never },
+    );
+
+  return {
+    dependents: async (named) => await ask('dependents', { entity: named }) as never,
+    missing: async (named, keys) =>
+      (await ask('holds', { entity: named, keys }) as { missing: readonly unknown[] }).missing,
+    release: async (named, key) => { await ask('release', { entity: named, key }); },
+  };
 }
 
 /** Bootstrap a fougere application. */
@@ -448,23 +465,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       peers: () => (options.remoteTransport
         ? declaredRemotes.map(([, url]) => peerOver(options.remoteTransport!(url)))
         : []),
-      peerOf: (entity) => (remoteRouter ? {
-        dependents: async (named) => (await remoteRouter.route(entity))
-          .transport({ entity: RPC_ENTITY, op: 'dependents' },
-            { ...Invocation.empty, params: { entity: named } as never }),
-        missing: async (named, keys) => {
-          const answer = await (await remoteRouter.route(entity))
-            .transport({ entity: RPC_ENTITY, op: 'holds' },
-              { ...Invocation.empty, params: { entity: named, keys } as never });
-
-          return (answer as { missing: readonly unknown[] }).missing;
-        },
-        release: async (named, key) => {
-          const route = await remoteRouter.route(entity);
-          await route.transport({ entity: RPC_ENTITY, op: 'release' },
-            { ...Invocation.empty, params: { entity: named, key } as never });
-        },
-      } : undefined),
+      peerOf: (entity) => (remoteRouter ? peerBehind(entity, remoteRouter) : undefined),
     };
 
     // Every port an implementation was bound to, so a `ports:` entry that named none
