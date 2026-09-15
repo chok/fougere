@@ -1,6 +1,5 @@
 import { type App } from '@fougere/core';
 import { boot } from '@fougere/compiler';
-import { createContainer } from '@fougere/container';
 import { resolveStorage, type DbConfig } from '@fougere/defaults';
 import { installStubs, type Stub } from '../stub/Stub.js';
 import type { Port } from '../stub/Port.js';
@@ -31,7 +30,6 @@ export async function testApp(options: TestAppOptions = {}): Promise<TestApp> {
   const app = await boot({
     onEmit: (fact, payload) => { heard.push({ fact, payload }); },
     root: options.root ?? scope?.root,
-    createContainer,
     fronds: options.fronds ?? (scope?.frond ? [scope.frond] : undefined),
     // `boot` merges this over the file, so a project declaring a real database still
     // gets the in-memory one here.

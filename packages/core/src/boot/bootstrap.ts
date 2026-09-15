@@ -1,4 +1,4 @@
-import type { Container } from '@fougere/container';
+import { createContainer, type Container } from '@fougere/container';
 import { lowerFirst, type SchemaView } from '@fougere/schema';
 
 import type { HandlerEntry } from '../descriptor/HandlerEntry.js';
@@ -102,7 +102,7 @@ function keyClaims(
 
 /** Bootstrap a fougere application. */
 export async function createApp(options: CreateAppOptions): Promise<App> {
-  const container = options.createContainer();
+  const container = (options.createContainer ?? createContainer)();
 
   // Held out here, and not where the ascent reads it, because releasing needs it and
   // releasing has to work from the first line the boot takes something.

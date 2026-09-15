@@ -4,7 +4,6 @@ import { scanProject, frondAliases } from '@fougere/compiler';
 import { resolveConventions } from '@fougere/core';
 import { loadCascadedConfig, setModuleLoader } from '@fougere/core/node';
 
-import { createContainer } from '@fougere/container';
 import { createMemoryStorage } from '@fougere/adapter-memory';
 import type { App, CreateAppOptions, FougereConfig, Transport } from '@fougere/core';
 import { layerOf, type ResolvedStorage } from '@fougere/defaults';
@@ -165,7 +164,6 @@ async function boot(): Promise<App> {
     ...(!_config.fronds && !_config.scan
       ? { scan: await scanProject(root, undefined, conventions) }
       : {}),
-    createContainer,
     // The layer, spread whole. Naming a few of its members is how `transacted` and `close`
     // were left behind once, under Nuxt only.
     ...layerOf(storage, createMemoryStorage),

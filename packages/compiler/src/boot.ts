@@ -9,8 +9,8 @@ interface BootOptions {
   root?: string;
   /** Override config (merged with fougere.config.ts). */
   config?: Partial<FougereConfig>;
-  /** Container factory. Required. */
-  createContainer: () => Container;
+  /** The container to resolve through. Absent, core builds its own. */
+  createContainer?: () => Container;
   /** Only boot these fronds (by name). Absent = all. */
   fronds?: string[];
   /**

@@ -11,8 +11,13 @@ import type { App } from './App.js';
 
 /** Options for createApp(). */
 export interface CreateAppOptions {
-  /** Factory function to create the container. Required. */
-  createContainer: () => Container;
+  /**
+   * The container this app resolves through. Absent, core builds its own — the only
+   * realization there is. A host states one to fill the root BEFORE the boot runs: the CLI
+   * registers its terminal that way, and a seed resolving a handler during the ascent would
+   * never see a value registered after `createApp` returned.
+   */
+  createContainer?: () => Container;
   /** Factory to auto-generate Storage for each scanned entity. */
   storageFactory?: StorageFactory;
   /**

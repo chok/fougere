@@ -2,7 +2,6 @@
 import { type App, type CreateAppOptions } from '@fougere/core';
 import { boot } from '@fougere/compiler';
 import { loadConfig } from '@fougere/core/node';
-import { createContainer } from '@fougere/container';
 import { createHttpTransport } from '@fougere/transport-http';
 import { type DbConfig } from './storage/DbConfig.js';
 import { resolveStorage } from './storage/ResolvedStorage.js';
@@ -38,7 +37,6 @@ export async function bootApp(root: string, opts: BootAppOptions = {}): Promise<
 
   return boot({
     root,
-    createContainer,
     fronds: opts.fronds,
     remotes: useRemotes ? remotes : undefined,
     remoteTransport: useRemotes ? (url) => createHttpTransport(url) : undefined,
