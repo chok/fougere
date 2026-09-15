@@ -117,10 +117,12 @@ function facadeFor(app: App, entityName: string): SeedFacade | undefined {
   let handler: Record<string, Function> | undefined;
   try { handler = app.resolve<Record<string, Function>>(facadeKeyOf(entityName)); } catch {}
 
-  if (typeof handler?.list === 'function' && typeof handler.create === 'function') {
+  const list = handler?.list;
+  const create = handler?.create;
+  if (typeof list === 'function' && typeof create === 'function') {
     return {
-      list: () => handler!.list() as Promise<unknown[]>,
-      write: (item) => handler!.create({ params: {}, query: {}, input: item, state: {} }),
+      list: () => list.call(handler) as Promise<unknown[]>,
+      write: (item) => create.call(handler, { params: {}, query: {}, input: item, state: {} }),
     };
   }
 

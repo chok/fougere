@@ -44,11 +44,12 @@ export async function hostedBy(sources: HostedSources): Promise<ScanResult> {
     ? await (typeof sources.scan === 'function' ? sources.scan() : sources.scan)
     : undefined;
 
-  if (!sources.fronds) return scanned ?? { fronds: Fronds.hosting([]), diagnostics: [] };
+  const stated = sources.fronds;
+  if (!stated) return scanned ?? { fronds: Fronds.hosting([]), diagnostics: [] };
 
   const found = scanned?.fronds ?? [];
-  const configured = sources.fronds.map((f) => completed(f, found.find((s) => s.name === f.name)));
-  const discovered = found.filter((f) => !sources.fronds!.some((s) => s.name === f.name));
+  const configured = stated.map((f) => completed(f, found.find((s) => s.name === f.name)));
+  const discovered = found.filter((f) => !stated.some((s) => s.name === f.name));
 
   return { fronds: Fronds.hosting([...configured, ...discovered]), diagnostics: scanned?.diagnostics ?? [] };
 }

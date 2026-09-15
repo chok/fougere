@@ -172,7 +172,7 @@ const KINDS = '|';
 /** The members behind a frame key, or `undefined` when the key is not one. */
 export function membersOfTogetherKey(key: string): { entities: string[]; providers: string[] } | undefined {
   if (key.length <= FRAME.length || !key.endsWith(FRAME)) return undefined;
-  const [entities, providers = ''] = key.slice(0, -FRAME.length).split(KINDS);
+  const [entities = '', providers = ''] = key.slice(0, -FRAME.length).split(KINDS);
   const split = (list: string) => list.split(SEPARATOR).filter(Boolean);
-  return { entities: split(entities!), providers: split(providers) };
+  return { entities: split(entities), providers: split(providers) };
 }

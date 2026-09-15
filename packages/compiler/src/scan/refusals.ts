@@ -86,6 +86,17 @@ function codeIn(typescript: typeof ts, node: ts.NewExpression): ErrorCode | unde
  * on `PostRepository`, which is the same node a refusal inside it was charged to. No name
  * matching, and no guess about what a dependency holds.
  */
+/** The set held under a key, created the first time something lands in it. */
+function into<T>(held: Map<string, Set<T>>, key: string): Set<T> {
+  const already = held.get(key);
+  if (already) return already;
+
+  const made = new Set<T>();
+  held.set(key, made);
+
+  return made;
+}
+
 export function refusalsIn(typescript: typeof ts, program: ts.Program, isOperation: (name: string) => boolean): Refusals {
   const checker = program.getTypeChecker();
   const sites: Site[] = [];
@@ -106,7 +117,7 @@ export function refusalsIn(typescript: typeof ts, program: ts.Program, isOperati
         const callee = calleeOf(typescript, checker, node);
         const caller = callee ? holderOf(typescript, node) : undefined;
         if (callee && caller && callee !== caller) {
-          (callers.get(callee) ?? callers.set(callee, new Set()).get(callee)!).add(caller);
+          into(callers, callee).add(caller);
         }
       }
 
@@ -154,7 +165,7 @@ function reached(
 
     while (queue.length > 0) {
       const at = queue.shift()!;
-      if (isOperation(at)) (found.get(at) ?? found.set(at, new Set()).get(at)!).add(site.code);
+      if (isOperation(at)) into(found, at).add(site.code);
       for (const caller of callers.get(at) ?? []) {
         if (walked.has(caller)) continue;
         walked.add(caller);
