@@ -177,11 +177,14 @@ export function registerFrames(
 ): void {
   let registered = 0;
   const seen = new Set<string>();
+
   for (const { key, filePath } of wanted) {
     if (seen.has(key)) continue;
     seen.add(key);
+
     const names = membersOfTogetherKey(key);
     if (!names) continue;
+
     registered += 1;
     const asked = { severity: 'blocking', filePath, subject: key } as const;
     if (!world.storageFactory) {
@@ -196,51 +199,66 @@ export function registerFrames(
     const members = resolve(names, providers, world, asked, refused);
     // Nothing left to build a frame out of, and the refusals above already say what is missing.
     if (!members) continue;
+
     remoteMembers(members, world, asked, refused);
     uncoveredWrites(members, world, asked, refused);
-
-    const sources = new Set(members.entities.map((member) => world.sourceOf?.(member.name) ?? 'db'));
-    const validator = (storage: Storage, name: string, schema: SchemaView) =>
-      new StorageGuard(schema.getFields(), name, {}, heldBy(schema, name, world.hosting), releasing(world.hosting)).guard(storage);
-
-    // One engine and a way into it: the engine gives the unwind AND the isolation. The
-    // question goes to the source these members live in — a composition answering for the
-    // default one would compensate a frame whose own engine holds transactions.
-    const source = sources.size === 1 ? [...sources][0]! : undefined;
-    if (world.transacted && source !== undefined && (world.transacts?.(source) ?? true)) {
-      world.log.info(`${key} — transaction, source '${source}'`);
-      scope.registerValue(key, {
-        run: <R>(fn: (entities: never, providers: never) => Promise<R>) =>
-          ambient.enterFrame(key, () =>
-            world.transacted!(source, (factory) => inScope(scope, members, factory, validator, fn as never))),
-      });
-      continue;
-    }
-
-    // Split, or an engine that hands out no transaction: the frame keeps the before-image
-    // of every write and replays the inverses itself. `validator` stays OUTSIDE `recording`, so
-    // a write the entity refuses never enters the journal.
-    const why = sources.size > 1
-      ? members.entities.map((m) => `${m.name} in '${world.sourceOf?.(m.name) ?? 'db'}'`).join(', ')
-      : 'this storage hands out no transaction';
-    world.log.info(`${key} — compensated: ${why} — no isolation`);
-    scope.registerValue(key, {
-      run: <R>(fn: (entities: never, providers: never) => Promise<R>): Promise<R> => ambient.enterFrame(key, async () => {
-        const journal: Undo[] = [];
-        const record = (storage: Storage, name: string, schema: SchemaView) =>
-          validator(recording(storage, name, schema, journal), name, schema);
-        try {
-          return await inScope(scope, members, world.storageFactory!, record, fn as never);
-        } catch (cause) {
-          return unwind(journal, cause, world.log);
-        }
-      }),
-    });
+    scope.registerValue(key, frameOver(key, members, scope, world));
   }
+
   if (registered > 0 && ambient.degraded) {
     world.log.warn(
       'no async context on this runtime — frames run one at a time, and a frame opened '
       + 'inside another times out instead of being refused',
     );
   }
+}
+
+/**
+ * A transaction when one engine holds every member, a compensation otherwise.
+ *
+ * One engine and a way into it: the engine gives the unwind AND the isolation. The question goes
+ * to the SOURCE these members live in — a composition answering for the default one would
+ * compensate a frame whose own engine holds transactions.
+ */
+function frameOver(key: string, members: Members, scope: Container, world: FrameWorld): Frame {
+  const sources = new Set(members.entities.map((member) => world.sourceOf?.(member.name) ?? 'db'));
+  const validator = (storage: Storage, name: string, schema: SchemaView) =>
+    new StorageGuard(schema.getFields(), name, {}, heldBy(schema, name, world.hosting), releasing(world.hosting)).guard(storage);
+
+  const source = sources.size === 1 ? [...sources][0]! : undefined;
+  if (world.transacted && source !== undefined && (world.transacts?.(source) ?? true)) {
+    world.log.info(`${key} — transaction, source '${source}'`);
+
+    return {
+      run: <R>(fn: (entities: never, providers: never) => Promise<R>) =>
+        ambient.enterFrame(key, () =>
+          world.transacted!(source, (factory) => inScope(scope, members, factory, validator, fn as never))),
+    };
+  }
+
+  // Split, or an engine that hands out no transaction: the frame keeps the before-image of every
+  // write and replays the inverses itself. `validator` stays OUTSIDE `recording`, so a write the
+  // entity refuses never enters the journal.
+  const why = sources.size > 1
+    ? members.entities.map((one) => `${one.name} in '${world.sourceOf?.(one.name) ?? 'db'}'`).join(', ')
+    : 'this storage hands out no transaction';
+  world.log.info(`${key} — compensated: ${why} — no isolation`);
+
+  return {
+    run: <R>(fn: (entities: never, providers: never) => Promise<R>): Promise<R> => ambient.enterFrame(key, async () => {
+      const journal: Undo[] = [];
+      const record = (storage: Storage, name: string, schema: SchemaView) =>
+        validator(recording(storage, name, schema, journal), name, schema);
+      try {
+        return await inScope(scope, members, world.storageFactory!, record, fn as never);
+      } catch (cause) {
+        return unwind(journal, cause, world.log);
+      }
+    }),
+  };
+}
+
+/** What a `Together<[…]>` key resolves to — the block, and nothing else. */
+interface Frame {
+  run<R>(fn: (entities: never, providers: never) => Promise<R>): Promise<R>;
 }
