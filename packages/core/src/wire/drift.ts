@@ -15,8 +15,14 @@ export interface CardDrift {
 }
 
 /** Every facade of a card, by name. */
-function facadesOf(card: IdentityCard, frond: string): Map<string, { ops: Set<string>; schema?: SchemaDescriptor }> {
-  const found = new Map<string, { ops: Set<string>; schema?: SchemaDescriptor }>();
+/** What a door of that card answers, and the shape of the row it hands back. */
+interface Answering {
+  ops: Set<string>;
+  schema?: SchemaDescriptor;
+}
+
+function facadesOf(card: IdentityCard, frond: string): Map<string, Answering> {
+  const found = new Map<string, Answering>();
   for (const one of card.fronds) {
     if (one.name !== frond) continue;
     for (const facade of one.facades) {
@@ -37,37 +43,58 @@ function factsOf(card: IdentityCard, frond: string): Map<string, SchemaDescripto
 
 /** What a consumer's synced copy no longer matches in what the producer serves. */
 export function driftOf(mine: IdentityCard, theirs: IdentityCard, frond: string): CardDrift {
-  const mineFacades = facadesOf(mine, frond);
-  const served = facadesOf(theirs, frond);
   const drift: CardDrift = { frond, missingDoors: [], missingOps: [], shapes: [], facts: [] };
 
-  for (const [name, facade] of mineFacades) {
-    const there = served.get(name);
-    if (!there) { drift.missingDoors.push(name); continue; }
+  driftInDoors(facadesOf(mine, frond), facadesOf(theirs, frond), drift);
+  driftInFacts(factsOf(mine, frond), factsOf(theirs, frond), drift);
+
+  return drift;
+}
+
+/** A door that is gone, an operation it no longer answers, or a row that changed shape. */
+function driftInDoors(
+  mine: Map<string, Answering>,
+  theirs: Map<string, Answering>,
+  drift: CardDrift,
+): void {
+  for (const [name, facade] of mine) {
+    const there = theirs.get(name);
+    if (!there) {
+      drift.missingDoors.push(name);
+      continue;
+    }
 
     const missing = [...facade.ops].filter((op) => !there.ops.has(op));
     if (missing.length > 0) drift.missingOps.push({ facade: name, ops: missing.sort() });
 
-    if (facade.schema && there.schema) {
-      // `Card.diff` never guesses a rename — a field gone plus a field appeared lands in
-      // `ambiguous`, and only a declaration settles it. Here nobody can declare one, so
-      // the pair is reported as it is and a human reads it.
-      const moved = Card.fromDescriptor(facade.schema).diff(Card.fromDescriptor(there.schema));
-      if (moved.changes.length > 0) drift.shapes.push({ facade: name, changes: moved.changes });
-    }
-  }
+    if (!facade.schema || !there.schema) continue;
 
-  const heldFacts = factsOf(mine, frond);
-  const servedFacts = factsOf(theirs, frond);
-  for (const [name, shape] of heldFacts) {
-    if (!servedFacts.has(name)) { drift.facts.push({ fact: name, changes: 'gone' }); continue; }
-    const there = servedFacts.get(name);
+    // `Card.diff` never guesses a rename — a field gone plus a field appeared lands in
+    // `ambiguous`, and only a declaration settles it. Here nobody can declare one, so the
+    // pair is reported as it is and a human reads it.
+    const moved = Card.fromDescriptor(facade.schema).diff(Card.fromDescriptor(there.schema));
+    if (moved.changes.length > 0) drift.shapes.push({ facade: name, changes: moved.changes });
+  }
+}
+
+/** A fact nobody announces any more, or one whose payload moved under its readers. */
+function driftInFacts(
+  mine: Map<string, SchemaDescriptor | undefined>,
+  theirs: Map<string, SchemaDescriptor | undefined>,
+  drift: CardDrift,
+): void {
+  for (const [name, shape] of mine) {
+    if (!theirs.has(name)) {
+      drift.facts.push({ fact: name, changes: 'gone' });
+      continue;
+    }
+
+    const there = theirs.get(name);
     if (!shape || !there) continue;
+
     const moved = Card.fromDescriptor(shape).diff(Card.fromDescriptor(there));
     if (moved.changes.length > 0) drift.facts.push({ fact: name, changes: moved.changes });
   }
-
-  return drift;
 }
 
 /** Whether anything at all separates the two cards. */
