@@ -27,65 +27,65 @@ export function compare(
   is: SchemaDescriptor,
   options: DiffOptions = {},
 ): Diff {
-  const changes: Change[] = [];
   const renamed = options.renamed ?? {};
   const before = was.properties ?? {};
   const after = is.properties ?? {};
-  const requiredBefore = new Set(was.required ?? []);
-  const requiredAfter = new Set(is.required ?? []);
+  const wasRequired = new Set(was.required ?? []);
+  const isRequired = new Set(is.required ?? []);
 
-  // Apply a declared rename first so subsequent differences use the new field name.
-  const nameAfter = (field: string): string => renamed[field] ?? field;
+  const kept: Change[] = [];
   const removed: string[] = [];
+  // A declared rename first, so every difference below is read under the new name.
   for (const [field, descriptor] of Object.entries(before)) {
-    const now = nameAfter(field);
+    const now = renamed[field] ?? field;
     const target = after[now];
     if (target === undefined) {
       removed.push(field);
       continue;
     }
-
-    if (now !== field)
-      changes.push({ kind: 'renamed', from: field, to: now, field: target });
-
-    const wasType = typesOf(descriptor);
-    const isType = typesOf(target);
-    if (!dequal(wasType, isType))
-      changes.push({ kind: 'retyped', field: now, from: wasType, to: isType });
-    else if (!dequal(boundsOf(descriptor), boundsOf(target))) {
-      changes.push({ kind: 'reshaped', field: now, from: descriptor, to: target });
-    }
-
-    const wasRequired = requiredBefore.has(field);
-    const isRequired = requiredAfter.has(now);
-    if (wasRequired !== isRequired) {
-      changes.push({ kind: 'required', field: now, from: wasRequired, to: isRequired });
-    }
-    changes.push(...restated(now, descriptor['x-fougere'], target['x-fougere']));
+    kept.push(...movedIn(field, now, descriptor, target, wasRequired.has(field), isRequired.has(now)));
   }
 
   const claimed = new Set(Object.values(renamed));
-  const added = Object.keys(after).filter(
-    (field) => !(field in before) && !claimed.has(field),
-  );
-  for (const field of removed) {
-    changes.push({
-      kind: 'removed',
-      field,
-      from: before[field],
-      required: requiredBefore.has(field),
-    });
-  }
-  for (const field of added) {
-    changes.push({
-      kind: 'added',
-      field,
-      to: after[field],
-      required: requiredAfter.has(field),
-    });
+  const added = Object.keys(after).filter((field) => !(field in before) && !claimed.has(field));
+
+  return {
+    changes: [
+      ...kept,
+      ...removed.map((field): Change => ({
+        kind: 'removed', field, from: before[field]!, required: wasRequired.has(field),
+      })),
+      ...added.map((field): Change => ({
+        kind: 'added', field, to: after[field]!, required: isRequired.has(field),
+      })),
+    ],
+    ambiguous: candidates(removed, added, before, after),
+  };
+}
+
+/** What one field that survived the two descriptions says about itself now. */
+function movedIn(
+  field: string,
+  now: string,
+  before: FieldDescriptor,
+  after: FieldDescriptor,
+  was: boolean,
+  is: boolean,
+): Change[] {
+  const changes: Change[] = [];
+  if (now !== field) changes.push({ kind: 'renamed', from: field, to: now, field: after });
+
+  const wasType = typesOf(before);
+  const isType = typesOf(after);
+  if (!dequal(wasType, isType)) changes.push({ kind: 'retyped', field: now, from: wasType, to: isType });
+  else if (!dequal(boundsOf(before), boundsOf(after))) {
+    changes.push({ kind: 'reshaped', field: now, from: before, to: after });
   }
 
-  return { changes, ambiguous: candidates(removed, added, before, after) };
+  if (was !== is) changes.push({ kind: 'required', field: now, from: was, to: is });
+  changes.push(...restated(now, before['x-fougere'], after['x-fougere']));
+
+  return changes;
 }
 
 function restated(

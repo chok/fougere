@@ -95,66 +95,70 @@ export class Cases {
 function enumerate(entity: SchemaView, valid: Record<string, unknown>): ValidationCase[] {
   const fields = entity.getFields();
   const validator = InputValidator.of(fields);
+
+  return [
+    ...aboutTheInput(valid),
+    ...Object.entries(fields).flatMap(([name, field]) => aboutField(name, field as Field, valid, validator)),
+  ];
+}
+
+function aboutTheInput(valid: Record<string, unknown>): ValidationCase[] {
+  return [
+    { why: 'a valid input', input: valid, patch: false, expect: 'accept' },
+    {
+      why: 'a key outside the contract',
+      input: { ...valid, __unknown__: 'x' },
+      patch: false,
+      expect: { reject: '__unknown__' },
+    },
+    { why: 'not an object at all', input: 'a string', patch: false, expect: { reject: '.' } },
+  ];
+}
+
+function aboutField(
+  name: string,
+  field: Field,
+  valid: Record<string, unknown>,
+  validator: InputValidator,
+): ValidationCase[] {
+  const withField = (value: unknown) => ({ ...valid, [name]: value });
   const cases: ValidationCase[] = [];
-  const withField = (name: string, value: unknown) => ({ ...valid, [name]: value });
 
-  cases.push({ why: 'a valid input', input: valid, patch: false, expect: 'accept' });
-  cases.push({
-    why: 'a key outside the contract',
-    input: { ...valid, __unknown__: 'x' },
-    patch: false,
-    expect: { reject: '__unknown__' },
-  });
-  cases.push({
-    why: 'not an object at all',
-    input: 'a string',
-    patch: false,
-    expect: { reject: '.' },
-  });
+  if (validator.onAbsent(field) === null && name in valid) {
+    const input = { ...valid };
+    delete input[name];
+    cases.push({ why: `${name} absent`, input, patch: false, expect: { reject: name } });
+  }
 
-  for (const [name, field] of Object.entries(fields) as [string, Field][]) {
-    // A reference names a row that must exist; the caller supplied its id and we do not
-    // get to invent a second one, so the only case we can state about it is the bound one.
-    const isRef = Role.of(field).isReference;
+  if (Boundary.of(field).readOnly) {
+    cases.push({
+      why: `${name} supplied although read-only`,
+      input: withField(wrongTypeFor(field)),
+      patch: false,
+      expect: { reject: name },
+    });
+  }
 
-    if (validator.onAbsent(field) === null && name in valid) {
-      const input = { ...valid };
-      delete input[name];
-      cases.push({ why: `${name} absent`, input, patch: false, expect: { reject: name } });
-    }
+  if (Lifecycle.of(field).immutable && !Role.of(field).isPrimary) {
+    cases.push({
+      why: `${name} supplied on an update`,
+      input: { [name]: valid[name] ?? wrongTypeFor(field) },
+      patch: true,
+      expect: { reject: name },
+    });
+  }
 
-    if (Boundary.of(field).readOnly) {
-      cases.push({
-        why: `${name} supplied although read-only`,
-        input: withField(name, wrongTypeFor(field)),
-        patch: false,
-        expect: { reject: name },
-      });
-    }
-
-    if (Lifecycle.of(field).immutable && !Role.of(field).isPrimary) {
-      cases.push({
-        why: `${name} supplied on an update`,
-        input: { [name]: valid[name] ?? wrongTypeFor(field) },
-        patch: true,
-        expect: { reject: name },
-      });
-    }
-
-    if (name in valid && !isRef) {
-      cases.push({
-        why: `${name} of the wrong type`,
-        input: withField(name, wrongTypeFor(field)),
-        patch: false,
-        expect: { reject: name },
-      });
-      for (const { why, value } of outOfBoundsFor(field))
-        cases.push({
-          why: `${name} ${why}`,
-          input: withField(name, value),
-          patch: false,
-          expect: { reject: name },
-        });
+  // A reference names a row that must exist; the caller supplied its id and we do not
+  // get to invent a second one, so the only case we can state about it is the bound one.
+  if (name in valid && !Role.of(field).isReference) {
+    cases.push({
+      why: `${name} of the wrong type`,
+      input: withField(wrongTypeFor(field)),
+      patch: false,
+      expect: { reject: name },
+    });
+    for (const { why, value } of outOfBoundsFor(field)) {
+      cases.push({ why: `${name} ${why}`, input: withField(value), patch: false, expect: { reject: name } });
     }
   }
 
