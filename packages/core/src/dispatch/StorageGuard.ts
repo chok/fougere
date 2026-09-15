@@ -34,22 +34,37 @@ export class StorageGuard {
     const writer = storage as unknown as Writer;
     if (typeof writer.create !== 'function' || typeof writer.update !== 'function') return storage;
 
-    const validation = this;
     const guarded = Object.create(storage) as T & Writer;
 
-    const remove = writer.delete;
-    if (typeof remove === 'function' && validation.releasing) {
-      // What names this row goes first, and this row last: an interruption then leaves fewer
-      // children rather than an orphan. A key holds the rest, at the rows, in one statement.
-      guarded.delete = async function (id) {
-        let gone = false;
-        await release(validation.entity, id, validation.releasing!, [], async () => {
-          gone = await remove.call(this, id);
-        });
+    this.guardDelete(guarded, writer);
+    this.guardWrites(guarded, writer);
+    this.guardList(guarded, writer);
 
-        return gone;
-      };
-    }
+    return guarded;
+  }
+
+  /**
+   * What names this row goes first, and this row last: an interruption then leaves fewer
+   * children rather than an orphan. A key holds the rest, at the rows, in one statement.
+   */
+  private guardDelete(guarded: Writer, writer: Writer): void {
+    const remove = writer.delete;
+    if (typeof remove !== 'function' || !this.releasing) return;
+
+    const validation = this;
+    guarded.delete = async function (id) {
+      let gone = false;
+      await release(validation.entity, id, validation.releasing!, [], async () => {
+        gone = await remove.call(this, id);
+      });
+
+      return gone;
+    };
+  }
+
+  /** Every gesture that puts a row down: judged first, and handed on the value it parsed. */
+  private guardWrites(guarded: Writer, writer: Writer): void {
+    const validation = this;
 
     guarded.create = async function (...args) {
       args[0] = validation.validated(args[0], 'create');
@@ -74,29 +89,29 @@ export class StorageGuard {
 
     const upsertAll = writer.upsertAll;
     if (typeof upsertAll === 'function') {
-      // Every row before the first write: a page refused halfway leaves rows behind that
-      // the caller asked for as one, and the refusal is readable from the input alone.
+      // Every row before the first write, and the keys of the whole page in one read per
+      // relation: a page refused on its fourth row has already written three.
       guarded.upsertAll = async function (...args) {
         args[0] = args[0].map((row, index) => validation.validated(row, 'upsertAll', index));
-        // The keys of the whole page in one read per relation, for the reason above: a page
-        // refused on its fourth row has already written three.
         await validation.targetsOf(args[0], 'upsertAll');
         return upsertAll.apply(this, args);
       };
     }
+  }
 
+  /** A criterion is read where the entity declares it, so a page is asked for what it can answer. */
+  private guardList(guarded: Writer, writer: Writer): void {
     const list = writer.list;
-    if (typeof list === 'function') {
-      guarded.list = async function (...args: unknown[]) {
-        const options = args[0] as { where?: Record<string, unknown> } | undefined;
-        assertListOptions(options, validation.entity, Object.keys(validation.fields));
-        if (options?.where) args[0] = { ...options, where: validation.criteria(options.where) };
+    if (typeof list !== 'function') return;
 
-        return list.apply(this, args);
-      };
-    }
+    const validation = this;
+    guarded.list = async function (...args: unknown[]) {
+      const options = args[0] as { where?: Record<string, unknown> } | undefined;
+      assertListOptions(options, validation.entity, Object.keys(validation.fields));
+      if (options?.where) args[0] = { ...options, where: validation.criteria(options.where) };
 
-    return guarded;
+      return list.apply(this, args);
+    };
   }
 
   /**
