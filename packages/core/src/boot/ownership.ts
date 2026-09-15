@@ -84,6 +84,83 @@ function builtOn(ctor: unknown): string[] {
 }
 
 /** `Storage<E>` is not a word of the user's vocabulary — `<E>Repository` is the one way in. */
+/**
+ * A provider named `<Entity>Storage` takes the key of that entity's own storage — and the storage
+ * is registered second, so the provider is never resolved. The name is already wrong by two other
+ * rules, which is why nothing hits it; it is said rather than left silent.
+ */
+function refuseStorageKeyAsProvider(
+  provider: ProviderEntry,
+  frond: string,
+  known: (entity: string) => boolean,
+  refused: Diagnostic[],
+): void {
+  // The key the boot registers it under, which a bundler may have renamed — the same reading
+  // `ProviderEntry.name` exists for.
+  const registered = nameOf(provider);
+  const held = entityOfStorageKey(registered, known);
+  if (!held) return;
+
+  refused.push({
+    severity: 'blocking',
+    code: 'storage-key-is-provider',
+    filePath: provider.filePath,
+    frond,
+    subject: registered,
+    message: `${registered} is a provider, and it is the container key of ${held}'s own storage `
+      + '— the storage is registered second, so the provider is never resolved. Name it for '
+      + 'what it holds; `<Entity>Storage` belongs to the entity.',
+  });
+}
+
+/**
+ * Storage is reached through a repository, and an OWNED entity's not even that way: an aggregate's
+ * members are reached through it and nowhere else. The ownership question is asked first, so a
+ * member says who owns it rather than being told to write a repository it may not have.
+ */
+function refuseStorageReached(
+  decl: { ctor: { name: string }; deps: string[]; filePath: string; kind: string },
+  frond: string,
+  owners: Map<string, string>,
+  known: (entity: string) => boolean,
+  refused: Diagnostic[],
+): void {
+  const allowed = decl.kind === 'provider' ? builtOn(decl.ctor) : [];
+
+  for (const dep of decl.deps) {
+    const entity = entityOfStorageKey(dep, known);
+    if (!entity) continue;
+
+    const owner = owners.get(entity);
+    if (owner && owner !== decl.ctor.name) {
+      refused.push({
+        severity: 'blocking',
+        code: 'aggregate-storage-reached',
+        filePath: decl.filePath,
+        frond,
+        subject: `${decl.ctor.name}(${dep})`,
+        message: `${decl.ctor.name} asks for ${dep}, and ${owner} owns ${entity}. Nothing else `
+          + `reaches an owned entity's storage — name the operation on ${owner} and ask for it: `
+          + `constructor(private ${entity}: ${owner}) {}`,
+      });
+      continue;
+    }
+    if (allowed.includes(entity)) continue;
+
+    refused.push({
+      severity: 'blocking',
+      code: 'storage-outside-repository',
+      filePath: decl.filePath,
+      frond,
+      subject: `${decl.ctor.name}(${dep})`,
+      message: `${decl.ctor.name} asks for ${dep}. Storage is reached through a repository, never `
+        + `through the port: constructor(private ${entity}: ${repositoryKeyOf(entity)}) {}. It `
+        + `answers every gesture ${dep} does, whether or not anyone wrote the file — and the day `
+        + `${entity} belongs to an aggregate, this line does not move.`,
+    });
+  }
+}
+
 export function storageInUserCode(
   frond: FrondDescriptor,
   owners: Map<string, string>,
@@ -97,59 +174,10 @@ export function storageInUserCode(
   ];
   const holders = frond.providers.map((p) => ({ ...p, kind: 'provider' as const }));
 
-  for (const provider of holders) {
-    // The key the boot registers it under, which a bundler may have renamed — the same
-    // reading `ProviderEntry.name` exists for.
-    const registered = nameOf(provider);
-    const held = entityOfStorageKey(registered, known);
-    if (!held) continue;
-
-    refused.push({
-      severity: 'blocking',
-      code: 'storage-key-is-provider',
-      filePath: provider.filePath,
-      frond: frond.name,
-      subject: registered,
-      message: `${registered} is a provider, and it is the container key of ${held}'s own storage `
-        + '— the storage is registered second, so the provider is never resolved. Name it for '
-        + 'what it holds; `<Entity>Storage` belongs to the entity.',
-    });
-  }
+  for (const provider of holders) refuseStorageKeyAsProvider(provider, frond.name, known, refused);
 
   for (const decl of [...facades, ...holders]) {
-    const allowed = decl.kind === 'provider' ? builtOn(decl.ctor) : [];
-    for (const dep of decl.deps) {
-      const entity = entityOfStorageKey(dep, known);
-      if (!entity) continue;
-
-      const owner = owners.get(entity);
-      if (owner && owner !== decl.ctor.name) {
-        refused.push({
-          severity: 'blocking',
-          code: 'aggregate-storage-reached',
-          filePath: decl.filePath,
-          frond: frond.name,
-          subject: `${decl.ctor.name}(${dep})`,
-          message: `${decl.ctor.name} asks for ${dep}, and ${owner} owns ${entity}. Nothing else `
-            + `reaches an owned entity's storage — name the operation on ${owner} and ask for it: `
-            + `constructor(private ${entity}: ${owner}) {}`,
-        });
-        continue;
-      }
-      if (allowed.includes(entity)) continue;
-
-      refused.push({
-        severity: 'blocking',
-        code: 'storage-outside-repository',
-        filePath: decl.filePath,
-        frond: frond.name,
-        subject: `${decl.ctor.name}(${dep})`,
-        message: `${decl.ctor.name} asks for ${dep}. Storage is reached through a repository, never `
-          + `through the port: constructor(private ${entity}: ${repositoryKeyOf(entity)}) {}. It `
-          + `answers every gesture ${dep} does, whether or not anyone wrote the file — and the day `
-          + `${entity} belongs to an aggregate, this line does not move.`,
-      });
-    }
+    refuseStorageReached(decl, frond.name, owners, known, refused);
   }
 }
 
