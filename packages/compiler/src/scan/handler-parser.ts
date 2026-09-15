@@ -684,6 +684,39 @@ export async function parseConstructorParams(filePath: string, projectRoot?: str
   return ctor ? ctor.parameters.map((p) => parsedParam(p, source, checker)) : [];
 }
 
+/**
+ * The CLASSES a scanned class says it implements — never the interfaces, which is the
+ * ordinary case.
+ *
+ * `implements` is erased, so `Object.getPrototypeOf(ctor).name` is empty and the boot binds
+ * no port: the class registers under its own name, and the first dependency on the port
+ * answers `'Payment' is not registered`. Read here because only the source says it.
+ */
+export async function parseImplementedClasses(filePath: string, projectRoot?: string): Promise<string[]> {
+  const ts = await loadTS();
+  const { source, checker } = checkedSourceOf(filePath, projectRoot);
+  const cls = findDefaultClass(source);
+  if (!cls?.heritageClauses) return [];
+
+  const classes: string[] = [];
+  for (const clause of cls.heritageClauses) {
+    if (clause.token !== ts.SyntaxKind.ImplementsKeyword) continue;
+
+    for (const base of clause.types) {
+      if (!ts.isIdentifier(base.expression)) continue;
+
+      let symbol = checker.getSymbolAtLocation(base.expression);
+      if (!symbol) continue;
+      if (symbol.flags & ts.SymbolFlags.Alias) symbol = checker.getAliasedSymbol(symbol);
+      if (symbol.declarations?.some((one) => ts.isClassDeclaration(one))) {
+        classes.push(base.expression.text);
+      }
+    }
+  }
+
+  return classes;
+}
+
 const CONSTRUCTOR_ONLY = new Set(['constructor']);
 
 function parseClassMethods(

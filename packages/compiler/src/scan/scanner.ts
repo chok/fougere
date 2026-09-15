@@ -13,6 +13,7 @@ import {
   parseRefusals,
   parsePresenterMethods,
   parseConstructorParams,
+  parseImplementedClasses,
   resetTypePrograms,
   seedTypeProgram,
 } from './handler-parser.js';
@@ -176,6 +177,9 @@ function tupleMembers(raw: string): string[] {
 const ctorParamsOf = (filePath: string) =>
   parseConstructorParams(filePath);
 
+const implementedClassesOf = (filePath: string) =>
+  parseImplementedClasses(filePath);
+
 const presenterMethodsOf = (filePath: string) =>
   parsePresenterMethods(filePath);
 
@@ -189,6 +193,22 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
   const name = ctor.name;
   const params = await ctorParamsOf(filePath);
   const deps = params.map((p) => depKeyOf(p.type));
+
+  // A port is answered by EXTENDING it: the boot reads the prototype chain, and `implements`
+  // leaves none. Said here rather than refused, because implementing a class is legal — only
+  // the author knows whether a port was meant. Warned, so `createApp` prints it too.
+  for (const base of await implementedClassesOf(filePath)) {
+    record({
+      severity: 'warning',
+      code: 'port-implemented-not-extended',
+      filePath,
+      subject: name,
+      message: `${name} implements the class ${base}. A port is answered by EXTENDING it — `
+        + `\`implements\` leaves nothing at runtime, so the boot binds no port and the first `
+        + `dependency on ${base} answers '${base}' is not registered. Write `
+        + `\`class ${name} extends ${base}\`, or ${base} states an interface if its shape is all you wanted.`,
+    });
+  }
 
   // A repository inherits its constructor from `Repository(…)`, so the file declares none
   // and the scan reads no parameter. The mixin knows what it was built for and says so at
