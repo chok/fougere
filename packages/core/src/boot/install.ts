@@ -75,6 +75,71 @@ export interface Assembly {
   options: CreateAppOptions;
 }
 
+/**
+ * A cross-source reader over the entities this frond NAMED — resolved across the whole app,
+ * because such a query joins entities of different fronds by definition. Naming one IS the
+ * authorization; that is what the declaration is for.
+ */
+async function registerReads(
+  frond: FrondDescriptor,
+  scope: Container,
+  entityByName: Map<string, unknown>,
+  sourcesFactory: CreateAppOptions['sourcesFactory'],
+  frondLog: Logger,
+): Promise<void> {
+  if (!frond.reads?.length) return;
+
+  if (!sourcesFactory) {
+    frondLog.warn(
+      `[reads] ${frond.reads.join(', ')} — declared in frond.config.ts, but this boot passes no `
+      + '`sourcesFactory`, so no reader is registered and a handler asking for `Reads` will fail '
+      + 'at its first call. Pass one (`@fougere/adapter-duckdb`), or drop the clause.',
+    );
+
+    return;
+  }
+
+  const named = frond.reads
+    .map((name) => entityByName.get(lowerFirst(name)))
+    .filter((entity): entity is NonNullable<typeof entity> => entity !== undefined);
+  if (named.length !== frond.reads.length) {
+    const missing = frond.reads.filter((name) => !entityByName.has(lowerFirst(name)));
+    frondLog.warn(
+      `[reads] ${missing.join(', ')} — named in frond.config.ts but scanned nowhere in this app, `
+      + 'so a query naming one would find no table. Check the spelling, or the entity file.',
+    );
+  }
+
+  scope.registerValue('Reads', await sourcesFactory(named, frond.name));
+  frondLog.debug(`cross-source reader over ${named.length} entit(ies)`);
+}
+
+/**
+ * Registered here and RESOLVED per call: a middleware asking for something request-scoped would
+ * otherwise be handed the one instance the boot built.
+ */
+function registerMiddlewares(
+  frond: FrondDescriptor,
+  scope: Container,
+  use: (middleware: AppMiddleware, entity?: string) => void,
+  frondLog: Logger,
+): void {
+  for (const middleware of frond.middlewares) {
+    scope.register(middleware.name, middleware.ctor, { deps: middleware.deps });
+    const around: AppMiddleware = (context, next) =>
+      scope.resolve<{ around: AppMiddleware }>(middleware.name).around(context, next);
+
+    if (middleware.scope === 'app') use(around);
+    // Its own frond means every address its handlers answer to — wider than its entities,
+    // since a handler without one runs behind it too.
+    else for (const address of new Set(frond.handlers.map((h) => h.address))) use(around, address);
+  }
+
+  if (frond.middlewares.length > 0) {
+    frondLog.debug(`${frond.middlewares.length} middleware(s): ${frond.middlewares.map((m) => `${m.name} (${m.scope})`).join(', ')}`);
+  }
+}
+
 export async function installFrond(frond: FrondDescriptor, assembly: Assembly): Promise<void> {
   const {
     container, routeRegistry, emissions, dispatcher, localDispatcher, effectiveByKey,
@@ -109,31 +174,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   // Declaring `reads:` with nothing to build the reader is a boot that ignores a
   // clause: the handler asking for `Reads` then dies at its first call, on a
   // container message that names neither the clause nor what is missing.
-  if (frond.reads?.length && !options.sourcesFactory) {
-    frondLog.warn(
-      `[reads] ${frond.reads.join(', ')} — declared in frond.config.ts, but this boot passes no `
-      + '`sourcesFactory`, so no reader is registered and a handler asking for `Reads` will fail '
-      + 'at its first call. Pass one (`@fougere/adapter-duckdb`), or drop the clause.',
-    );
-  }
-  if (frond.reads?.length && options.sourcesFactory) {
-    // Resolved across the WHOLE app, not this frond's own entities: a cross-source
-    // query joins entities from different fronds by definition — `Progress` here,
-    // `Book` next facade — so restricting the list to its own would make it useless.
-    // Naming one IS the authorization; that is what the declaration is for.
-    const named = frond.reads
-      .map((name) => entityByName.get(lowerFirst(name)))
-      .filter((entity): entity is NonNullable<typeof entity> => entity !== undefined);
-    if (named.length !== frond.reads.length) {
-      const missing = frond.reads.filter((name) => !entityByName.has(lowerFirst(name)));
-      frondLog.warn(
-        `[reads] ${missing.join(', ')} — named in frond.config.ts but scanned nowhere in this app, `
-        + 'so a query naming one would find no table. Check the spelling, or the entity file.',
-      );
-    }
-    scope.registerValue('Reads', await options.sourcesFactory(named, frond.name));
-    frondLog.debug(`cross-source reader over ${named.length} entit(ies)`);
-  }
+  await registerReads(frond, scope, entityByName, options.sourcesFactory, frondLog);
 
   // Who owns what, and the rule that makes owning mean something. Before anything is
   // registered, so a bad line is named by this refusal rather than by the container's.
@@ -291,19 +332,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   // Register middlewares in scope, then take them on. Resolved per call and never here:
   // a middleware asking for something request-scoped would otherwise be handed the one
   // instance the boot built — the same reason `getMiddlewares` is read at call time.
-  for (const middleware of frond.middlewares) {
-    scope.register(middleware.name, middleware.ctor, { deps: middleware.deps });
-    const around: AppMiddleware = (context, next) =>
-      scope.resolve<{ around: AppMiddleware }>(middleware.name).around(context, next);
-
-    if (middleware.scope === 'app') use(around);
-    // Its own frond means every address its handlers answer to — wider than its entities,
-    // since a handler without one runs behind it too.
-    else for (const address of new Set(frond.handlers.map((h) => h.address))) use(around, address);
-  }
-  if (frond.middlewares.length > 0) {
-    frondLog.debug(`${frond.middlewares.length} middleware(s): ${frond.middlewares.map((m) => `${m.name} (${m.scope})`).join(', ')}`);
-  }
+  registerMiddlewares(frond, scope, use, frondLog);
 
   // Build handler facades → registered in ROOT container (public contract)
   const defaultHandlers = frond.handlers.filter((h) => !h.surface);
