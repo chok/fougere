@@ -65,36 +65,9 @@ export function createRemoteRouter(
 
     for (const answered of cards) {
       if (!answered) continue;
-      const { label, url, transport, answer } = answered;
-      pending.delete(label);
-      const card = assertIdentityCard(answer, `Remote '${label}' (${url})`);
 
-      for (const frond of card.fronds) {
-        // Facades only. A fact is not routable — nobody calls it, it arrives — so
-        // adding one here would answer a call with a transport to a facade that
-        // does not exist.
-        for (const facade of frond.facades) {
-          const first = claimedBy.get(facade.name);
-          /** Two remotes claiming one name is refused, not silently arbitrated. */
-          if (first !== undefined && first !== label) {
-            throw new FougereError({
-              code: ErrorCode.INTERNAL_ERROR,
-              message:
-                `[claim] Two remotes serve '${facade.name}': '${first}' and '${label}'.\n`
-                + `  A call names an entity, not a frond, so nothing could choose between them.\n`
-                + `  - Keep one of the two out of \`remotes:\`, or\n`
-                + `  - expose one of them under a different entity name.`,
-              entity: facade.name,
-            });
-          }
-          claimedBy.set(facade.name, label);
-          byEntity.set(facade.name, {
-            frond: frond.name,
-            transport,
-            ...(facade.schema ? { schema: Card.fromDescriptor(facade.schema as SchemaDescriptor).toSchema() } : {}),
-          });
-        }
-      }
+      pending.delete(answered.label);
+      claimFacades(answered, byEntity, claimedBy);
     }
   };
 
@@ -140,4 +113,49 @@ export function createRemoteFacade(
   };
 
   return dynamicOperations(opFn) as Facade;
+}
+
+/** What one remote answered `discover` with, once it has been reached. */
+interface Answered {
+  label: string;
+  url: string;
+  transport: Transport;
+  answer: unknown;
+}
+
+/**
+ * Which remote serves which facade. Facades only: a fact is not routable — nobody calls it, it
+ * arrives — so adding one here would answer a call with a transport to a facade that does not
+ * exist. Two remotes claiming one name is refused, never silently arbitrated.
+ */
+function claimFacades(
+  { label, url, transport, answer }: Answered,
+  byEntity: Map<string, Route>,
+  claimedBy: Map<string, string>,
+): void {
+  const card = assertIdentityCard(answer, `Remote '${label}' (${url})`);
+
+  for (const frond of card.fronds) {
+    for (const facade of frond.facades) {
+      const first = claimedBy.get(facade.name);
+      if (first !== undefined && first !== label) {
+        throw new FougereError({
+          code: ErrorCode.INTERNAL_ERROR,
+          message:
+            `[claim] Two remotes serve '${facade.name}': '${first}' and '${label}'.\n`
+            + `  A call names an entity, not a frond, so nothing could choose between them.\n`
+            + `  - Keep one of the two out of \`remotes:\`, or\n`
+            + `  - expose one of them under a different entity name.`,
+          entity: facade.name,
+        });
+      }
+
+      claimedBy.set(facade.name, label);
+      byEntity.set(facade.name, {
+        frond: frond.name,
+        transport,
+        ...(facade.schema ? { schema: Card.fromDescriptor(facade.schema as SchemaDescriptor).toSchema() } : {}),
+      });
+    }
+  }
 }
