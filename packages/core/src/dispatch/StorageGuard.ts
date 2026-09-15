@@ -206,6 +206,18 @@ export class StorageGuard {
   }
 
   /** One value against one field — validated, then decoded the way the wire hands it. */
+  /**
+   * One key a handler wrote. A key the entity does not declare has no column to land in and no
+   * judge to pass: on the client facade it is a typo, and on this one a mapping that went stale.
+   */
+  private written(key: string, item: unknown): { value: unknown } | { error: string } {
+    const field = this.fields[key];
+    if (!field) return { error: InputRefusal.unknownField };
+    if (item === undefined) return { value: item };
+
+    return FieldValueValidator.of(field).parse(item);
+  }
+
   private value(field: Fields[string], asked: unknown): { value: unknown } | { error: string } {
     if (asked === null || asked === undefined) return { value: asked };
     return FieldValueValidator.of(field).parse(asked);
@@ -219,20 +231,9 @@ export class StorageGuard {
     const parsed: Record<string, unknown> = {};
 
     for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
-      const field = this.fields[key];
-      // A key the entity does not declare has no column to land in and no judge to pass:
-      // on the client facade it is a typo, and on this one it is a mapping that went stale.
-      if (!field) {
-        errors.push(`${where}${key}: ${InputRefusal.unknownField}`);
-        continue;
-      }
-      if (item === undefined) {
-        parsed[key] = item;
-        continue;
-      }
-      const value = FieldValueValidator.of(field).parse(item);
-      if ('error' in value) errors.push(`${where}${key}: ${value.error}`);
-      else parsed[key] = value.value;
+      const read = this.written(key, item);
+      if ('error' in read) errors.push(`${where}${key}: ${read.error}`);
+      else parsed[key] = read.value;
     }
 
     if (errors.length > 0) {

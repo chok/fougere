@@ -98,20 +98,30 @@ export class HandlerFacade {
       invocation,
     };
 
-    return runMiddlewares(this.facade.middlewares(), context, async () => {
-      const validated = validateInput(contract.input, invocation, entity, op);
-      context.invocation = validated;
+    return runMiddlewares(this.facade.middlewares(), context, () => this.answer(op, contract, context, invocation));
+  }
 
-      const args = contract.binding
-        ? await this.arguments.resolve(contract.binding, validated)
-        : [];
-      const { instance, method } = this.resolveImplementation(op);
-      const view = this.viewOf(op);
-      const output = view.project(await instance[method](...args));
+  /**
+   * What the handler answers, once the middlewares let the call through: the input judged, the
+   * arguments bound, the row projected onto the view this audience sees.
+   */
+  private async answer(
+    op: string,
+    contract: OperationContract,
+    context: OperationContext,
+    invocation: Invocation,
+  ): Promise<unknown> {
+    const validated = validateInput(contract.input, invocation, this.handler.address, op);
+    context.invocation = validated;
 
-      const { presenter } = this.facade;
-      return view.closed || !presenter ? output : this.present(op, presenter, output, validated);
-    });
+    const args = contract.binding ? await this.arguments.resolve(contract.binding, validated) : [];
+    const { instance, method } = this.resolveImplementation(op);
+    const view = this.viewOf(op);
+    const output = view.project(await instance[method](...args));
+
+    const { presenter } = this.facade;
+
+    return view.closed || !presenter ? output : this.present(op, presenter, output, validated);
   }
 
   /** The computed fields a presenter adds, over the page the façade just projected. */
