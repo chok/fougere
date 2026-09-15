@@ -15,32 +15,8 @@ export interface SeedOrder {
 
 /** Seeds in dependency order — a `ref()` target is planted before its referrer. */
 export function orderSeeds(fronds: FrondDescriptor[]): SeedOrder {
-  const refs = new Map<string, Set<string>>();
-  for (const frond of fronds) {
-    for (const entity of frond.entities) {
-      const targets = new Set<string>();
-      for (const field of Object.values(entity.entityClass.getFields())) {
-        if (!Role.of(field).isReference) continue;
-        const target = (Role.of(field).target as { name?: string }).name?.toLowerCase();
-        if (target && target !== entity.name.toLowerCase()) targets.add(target);
-      }
-      refs.set(entity.name.toLowerCase(), targets);
-    }
-  }
-
   const seeds = fronds.flatMap((frond) => frond.seeds);
-  const seeded = new Set(seeds.map((seed) => seed.entityName.toLowerCase()));
-
-  // Only what is actually seeded can be waited for: a relation to an entity with no seed
-  // is already satisfied by whatever put its rows there.
-  const waiting = new Map(
-    seeds.map((seed) => {
-      const own = seed.entityName.toLowerCase();
-      const targets = [...(refs.get(own) ?? [])].filter((target) => seeded.has(target) && target !== own);
-
-      return [seed, new Set(targets)] as const;
-    }),
-  );
+  const waiting = whatEachWaitsFor(fronds, seeds);
 
   const ordered: SeedEntry[] = [];
   const planted = new Set<string>();
@@ -55,6 +31,37 @@ export function orderSeeds(fronds: FrondDescriptor[]): SeedOrder {
   }
 
   return { ordered, cycle: [...waiting.keys()] };
+}
+
+/**
+ * Only what is actually SEEDED can be waited for: a relation to an entity with no seed is
+ * already satisfied by whatever put its rows there, and an entity naming itself waits for
+ * nobody.
+ */
+function whatEachWaitsFor(
+  fronds: FrondDescriptor[],
+  seeds: SeedEntry[],
+): Map<SeedEntry, Set<string>> {
+  const refs = new Map<string, Set<string>>();
+  for (const frond of fronds) {
+    for (const entity of frond.entities) {
+      const targets = new Set<string>();
+      for (const field of Object.values(entity.entityClass.getFields())) {
+        if (!Role.of(field).isReference) continue;
+        const target = (Role.of(field).target as { name?: string }).name?.toLowerCase();
+        if (target && target !== entity.name.toLowerCase()) targets.add(target);
+      }
+      refs.set(entity.name.toLowerCase(), targets);
+    }
+  }
+
+  const seeded = new Set(seeds.map((seed) => seed.entityName.toLowerCase()));
+
+  return new Map(seeds.map((seed) => {
+    const own = seed.entityName.toLowerCase();
+
+    return [seed, new Set([...(refs.get(own) ?? [])].filter((target) => seeded.has(target) && target !== own))] as const;
+  }));
 }
 
 /** Where a seed writes, and what it may skip — resolved per entity. */
