@@ -218,6 +218,18 @@ export class SqlStorage {
   }
 
   async list(options?: ListOptions & SelectOption & { where?: Record<string, unknown> }): Promise<ListResult<Record<string, unknown>>> {
+    const rows = (await this.pageQuery(options).execute()).map((row: any) => this.fromRow(row));
+    const result = this.paged(rows, options?.limit);
+
+    if (options?.count) result.total = await this.matching(options.where);
+
+    const sel = this.resolveSelect(options);
+
+    return sel ? pickList(result, sel) : result;
+  }
+
+  /** The filter, the cursor, the order and the page — one query, built in that order. */
+  private pageQuery(options?: ListOptions & { where?: Record<string, unknown> }) {
     let query = this.db.selectFrom(this.table.name).selectAll();
 
     // The criteria a caller states — `list({ where: { orderId } })`, and the whole of
@@ -231,16 +243,13 @@ export class SqlStorage {
       query = this.whereAll(query as any, options.where) as any;
     }
 
-    // Cursor-based: fetch after a given id (uses the first PK field).
-    if (options?.after) {
-      query = query.where(this.column(this.pk.names[0]), '>', options.after);
-    }
+    if (options?.after) query = query.where(this.column(this.pk.names[0]), '>', options.after);
     if (options?.orderBy) {
       query = query.orderBy(this.column(options.orderBy), options.order === 'desc' ? 'desc' : 'asc');
     }
 
     const limit = options?.limit;
-    // Fetch one extra to determine hasMore.
+    // One extra row, which is how `hasMore` is answered without a second query.
     if (limit !== undefined) query = query.limit(limit + 1);
 
     const offset = options?.page !== undefined && limit !== undefined
@@ -253,33 +262,34 @@ export class SqlStorage {
       query = query.offset(offset);
     }
 
-    const rows = (await query.execute()).map((row: any) => this.fromRow(row));
+    return query;
+  }
 
+  /** The extra row fetched above, turned into `hasMore` and the cursor the next page starts at. */
+  private paged(rows: Record<string, unknown>[], limit?: number): ListResult<Record<string, unknown>> {
     const hasMore = limit !== undefined && rows.length > limit;
     const data = hasMore ? rows.slice(0, limit) : rows;
     const result = data as ListResult<Record<string, unknown>>;
     result.hasMore = hasMore;
 
-    if (data.length > 0) {
-      result.endCursor = String(data[data.length - 1][this.pk.names[0]] ?? '');
-    }
+    if (data.length > 0) result.endCursor = String(data[data.length - 1]![this.pk.names[0]] ?? '');
 
-    // Count is opt-in — a separate query, over the same FILTER.
-    //
-    // It used to count the whole table: `list({ where: { authorId }, count: true })`
-    // returned this author's page beside everybody's total, so a paginator computed the
-    // wrong number of pages and a tenant learned how many rows the other tenants have.
-    // `where` is the filter and belongs here; `after`, `limit` and `offset` are the page
-    // and do not — `total` is what the query matches, not what this page holds.
-    if (options?.count) {
-      let counting = this.db.selectFrom(this.table.name).select((eb: any) => eb.fn.countAll().as('count'));
-      if (options.where) counting = this.whereAll(counting as any, options.where) as any;
-      const row = await counting.executeTakeFirst();
-      result.total = Number((row as any)?.count ?? 0);
-    }
+    return result;
+  }
 
-    const sel = this.resolveSelect(options);
-    return sel ? pickList(result, sel) : result;
+  /**
+   * What the query matches, over the same FILTER and never the page.
+   *
+   * It used to count the whole table: `list({ where: { authorId }, count: true })` returned this
+   * author's page beside everybody's total, so a paginator computed the wrong number of pages and
+   * a tenant learned how many rows the other tenants have.
+   */
+  private async matching(where?: Record<string, unknown>): Promise<number> {
+    let counting = this.db.selectFrom(this.table.name).select((eb: any) => eb.fn.countAll().as('count'));
+    if (where) counting = this.whereAll(counting as any, where) as any;
+    const row = await counting.executeTakeFirst();
+
+    return Number((row as any)?.count ?? 0);
   }
 
   /**
