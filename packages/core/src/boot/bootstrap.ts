@@ -4,6 +4,7 @@ import { lowerFirst, type SchemaView } from '@fougere/schema';
 import type { HandlerEntry } from '../descriptor/HandlerEntry.js';
 import type { PresenterEntry } from '../descriptor/PresenterEntry.js';
 import { hostedBy } from './hosted.js';
+import type { Fronds } from '../descriptor/Fronds.js';
 import { installFrond, type Assembly } from './install.js';
 import { dependentsOf, releasing, unfinishable, unheldAmong } from './relations.js';
 import { release as releaseRow } from '../dispatch/Release.js';
@@ -31,7 +32,7 @@ import { Emissions } from './Emissions.js';
 
 import type { OperationContract } from '../wire/OperationContract.js';
 import type { OperationsMap } from '../wire/OperationsMap.js';
-import { resolveEffectiveOperations } from '../EffectiveOperationModel.js';
+import { resolveEffectiveOperations, type EffectiveOperationModel } from '../EffectiveOperationModel.js';
 import { type EffectiveOperationsMap } from '../EffectiveOperationsMap.js';
 
 import { InFlight } from '../dispatch/InFlight.js';
@@ -97,6 +98,116 @@ function keyClaims(
     if (remotes && frond.name in remotes) continue;
     for (const handler of frond.handlers) claim(facadeKeyOf(handler.address, handler.surface), frond.name, 'facade', handler.filePath);
     for (const presenter of frond.presenters) claim(presenterKeyOf(presenter.entityName), frond.name, 'presenter', presenter.filePath);
+  }
+}
+
+/**
+ * What this app hosts, and what its operations effectively are.
+ *
+ * Producing it may read a disk; consuming it never does, which is the whole reason this file
+ * names no builtin and a Worker can run what it builds.
+ */
+async function readFronds(
+  options: CreateAppOptions,
+  log: Logger,
+): Promise<{ fronds: Fronds; operationModel: EffectiveOperationModel }> {
+  const scanStart = performance.now();
+  // An extension's fronds sit beside the app's own: it is installed like any other, and
+  // its handlers resolve at call time — by which point the extension's `up` has put what
+  // they ask for in the container.
+  const brought = (options.extensions ?? [])
+    .flatMap((extension) => extension?.fronds ?? [])
+    .map((frond) => ({ ...frond, brought: true as const }));
+  const { fronds, diagnostics } = await hostedBy(
+    brought.length > 0 ? { ...options, fronds: [...(options.fronds ?? []), ...brought] } : options,
+  );
+  // An app that states nothing AND scans nothing is a mistake — unless something else it
+  // declares brings its own entities, which an auth provider does. Refused here and not in
+  // `hostedBy`, which is handed the frond sources and cannot see the rest of the app. The
+  // condition is the KEYS, not the count: a scan that found nothing is an ordinary answer.
+  if (!options.fronds && !options.scan && !options.auth && brought.length === 0) {
+    throw new Error(
+      'createApp needs `fronds:` (what this app states) or `scan:` (what a scanner found). '
+      + 'Neither was given, and nothing else declares entities of its own.\n'
+      + '    createApp({ fronds: [blog] })\n'
+      + '    createApp({ scan: await scanProject(root) })',
+    );
+  }
+
+  const operationModel = resolveEffectiveOperations(fronds, {
+    diagnostics,
+    remotes: options.remotes,
+    adapters: options.adapters,
+  });
+  const scanMs = (performance.now() - scanStart).toFixed(0);
+  log.info(`read ${fronds.length} frond(s) in ${scanMs}ms`
+    + (diagnostics.length ? ` — ${diagnostics.length} thing(s) the scan could not do` : ''));
+
+  /** Say what could not be read, at the one line everyone already watches. */
+  for (const d of diagnostics.filter((one) => one.severity === 'blocking')) log.error(`[${d.code}] ${d.message}`, d.cause);
+  for (const d of diagnostics) if (d.severity === 'warning') log.warn(`[${d.code}] ${d.message}`);
+
+  /** An ambiguous convention is not a partial scan. */
+  const unresolved = refusalOf(operationModel.resolutionDiagnostics, 'unresolved operation contract(s)');
+  if (unresolved) throw unresolved;
+
+  return { fronds, operationModel };
+}
+
+/**
+ * What core answers under `rpc`, in every process, whatever fronds it carries.
+ *
+ * All four read the STORAGE and never a facade: a facade answers what its handler chose to show,
+ * so `PostHandler.list` hiding drafts would hide exactly the row the question exists to find.
+ */
+function serveCoreRpc(
+  app: App,
+  hosting: Hosting,
+  storageFor: (entity: string) => unknown | undefined,
+): void {
+  app.serveRpc('discover', (_invocation, surface) => identityCardOf(app, surface));
+
+  app.serveRpc('holds', async (invocation) => {
+    const named = String(invocation.params.entity);
+    const keys = (invocation.params.keys ?? []) as readonly unknown[];
+    const rows = storageFor(named) as { findByKeys(k: readonly string[]): Promise<Map<string, unknown>> } | undefined;
+    if (!rows) return { missing: [] };
+    const found = await rows.findByKeys(keys.map(String));
+
+    return { missing: keys.filter((key) => !found.has(String(key))) };
+  });
+
+  app.serveRpc('dependents', (invocation) => dependentsOf(String(invocation.params.entity), hosting));
+
+  app.serveRpc('release', async (invocation) => {
+    await releaseRow(String(invocation.params.entity), invocation.params.key, releasing(hosting),
+      (invocation.params.visited ?? []) as readonly string[]);
+
+    return { released: true };
+  });
+}
+
+/**
+ * What no single frond can see about a `ref()`, so it is said once every frond is installed.
+ *
+ * A target belongs to another frond, and a journal arrives with an extension, which rises last.
+ */
+function warnAboutRelations(relations: RelationCheck[], hosting: Hosting, log: Logger): void {
+  const unfinished = unfinishable(hosting);
+  if (unfinished.length > 0) {
+    log.warn(
+      `[relations] ${unfinished.join(', ')} — declared, and this process keeps nothing on `
+      + 'restart: a release interrupted here is not resumed. Install @fougere/workflow, or '
+      + 'expect to finish one by hand.',
+    );
+  }
+
+  const unheld = unheldAmong(relations, hosting);
+  if (unheld.length > 0) {
+    log.warn(
+      `[relations] ${unheld.join(', ')} — declared, and nothing in this process holds them: `
+      + 'no foreign key, and the target answers elsewhere. A row may name one that is gone.',
+    );
   }
 }
 
@@ -167,48 +278,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     container.register('Config', Config, { lifetime: 'singleton' });
     log.debug('builtins registered (Logger, Config)');
 
-    // What this app hosts is HANDED IN — stated, scanned, or both (`hostedBy`). Producing
-    // it may read a disk; consuming it never does, which is the whole reason this file names
-    // no builtin and a Worker can run what it builds.
-    const scanStart = performance.now();
-    // An extension's fronds sit beside the app's own: it is installed like any other, and
-    // its handlers resolve at call time — by which point the extension's `up` has put what
-    // they ask for in the container.
-    const brought = (options.extensions ?? [])
-      .flatMap((extension) => extension?.fronds ?? [])
-      .map((frond) => ({ ...frond, brought: true as const }));
-    const { fronds, diagnostics } = await hostedBy(
-      brought.length > 0 ? { ...options, fronds: [...(options.fronds ?? []), ...brought] } : options,
-    );
-    // An app that states nothing AND scans nothing is a mistake — unless something else it
-    // declares brings its own entities, which an auth provider does. Refused here and not in
-    // `hostedBy`, which is handed the frond sources and cannot see the rest of the app. The
-    // condition is the KEYS, not the count: a scan that found nothing is an ordinary answer.
-    if (!options.fronds && !options.scan && !options.auth && brought.length === 0) {
-      throw new Error(
-        'createApp needs `fronds:` (what this app states) or `scan:` (what a scanner found). '
-        + 'Neither was given, and nothing else declares entities of its own.\n'
-        + '    createApp({ fronds: [blog] })\n'
-        + '    createApp({ scan: await scanProject(root) })',
-      );
-    }
-    const operationModel = resolveEffectiveOperations(fronds, {
-      diagnostics,
-      remotes: options.remotes,
-      adapters: options.adapters,
-    });
-    const scanMs = (performance.now() - scanStart).toFixed(0);
-    const blocking = diagnostics.filter((d) => d.severity === 'blocking');
-    log.info(`read ${fronds.length} frond(s) in ${scanMs}ms`
-      + (diagnostics.length ? ` — ${diagnostics.length} thing(s) the scan could not do` : ''));
-
-    /** Say what could not be read, at the one line everyone already watches. */
-    for (const d of blocking) log.error(`[${d.code}] ${d.message}`, d.cause);
-    for (const d of diagnostics) if (d.severity === 'warning') log.warn(`[${d.code}] ${d.message}`);
-
-    /** An ambiguous convention is not a partial scan. */
-    const unresolved = refusalOf(operationModel.resolutionDiagnostics, 'unresolved operation contract(s)');
-    if (unresolved) throw unresolved;
+    const { fronds, operationModel } = await readFronds(options, log);
 
     // Auth runtime — built once from the lazy AuthConfig produced by a provider factory
     // (e.g. betterAuth({...})) in fougere.config.ts. The provider receives our db +
@@ -411,28 +481,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     };
     for (const frond of fronds) await installFrond(frond, assembly);
 
-    // A reference no key holds and no storage answers: said at the END, for the reason the
-    // `ports:` warning below is — a target is another frond's, so no single frond can tell
-    // an absence from a neighbour that had not been installed yet.
-    const unheld = unheldAmong(relations, hosting);
-    // Declared here, and this process cannot finish what it starts — both halves are local,
-    // so nothing is asked of anyone. Said once, after every frond installed, because a journal
-    // arrives with an extension and an extension rises last.
-    const unfinished = unfinishable(hosting);
-    if (unfinished.length > 0) {
-      log.warn(
-        `[relations] ${unfinished.join(', ')} — declared, and this process keeps nothing on `
-        + 'restart: a release interrupted here is not resumed. Install @fougere/workflow, or '
-        + 'expect to finish one by hand.',
-      );
-    }
-
-    if (unheld.length > 0) {
-      log.warn(
-        `[relations] ${unheld.join(', ')} — declared, and nothing in this process holds them: `
-        + 'no foreign key, and the target answers elsewhere. A row may name one that is gone.',
-      );
-    }
+    warnAboutRelations(relations, hosting, log);
 
     // Every check of the install, said at once — a boot that stops at the first makes the
     // next one visible only after a fix and a restart.
@@ -672,34 +721,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // by type, the way every other dependency is asked for.
     container.registerValue('Releasing', releasing(hosting));
 
-    app.serveRpc('discover', (_invocation, surface) => identityCardOf(app, surface));
-
-    // What a release asks another process, and what it tells it to do. Served by EVERY process
-    // the way `discover` is: a frond that hosts rows is the only one that can answer for them.
-    //
-    // Read off the STORAGE and never off a facade: a facade answers what its handler chose to
-    // show — `PostHandler.list` hands back published posts — so a draft naming a deleted user
-    // would be invisible to the very question that exists to find it.
-    // The dual of `release`, and the same reason it is served by every process: only the one
-    // that holds the rows can say a key is missing, and only from the STORAGE — a facade
-    // answers what its handler chose to show.
-    app.serveRpc('holds', async (invocation) => {
-      const named = String(invocation.params.entity);
-      const keys = (invocation.params.keys ?? []) as readonly unknown[];
-      const rows = storageFor(named) as { findByKeys(k: readonly string[]): Promise<Map<string, unknown>> } | undefined;
-      if (!rows) return { missing: [] };
-      const found = await rows.findByKeys(keys.map(String));
-
-      return { missing: keys.filter((key) => !found.has(String(key))) };
-    });
-    app.serveRpc('dependents', (invocation) =>
-      dependentsOf(String(invocation.params.entity), hosting));
-    app.serveRpc('release', async (invocation) => {
-      await releaseRow(String(invocation.params.entity), invocation.params.key, releasing(hosting),
-        (invocation.params.visited ?? []) as readonly string[]);
-
-      return { released: true };
-    });
+    serveCoreRpc(app, hosting, storageFor);
 
     // The last thing the boot does, and the first thing a release undoes. An extension may
     // await here — which is what a provider needing to OPEN something could never do.
