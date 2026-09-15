@@ -124,95 +124,106 @@ function derivePath(entityName: string, opName: string): string {
 // ─── Public API ─────────────────────────────────
 
 /** Generate REST route definitions from a fougere App. */
-export function generateRoutes(app: AppLike, options?: GenerateRoutesOptions): RouteDefinition[] {
-  const prefix = options?.prefix ?? '';
-  const overrides = options?.overrides ?? {};
-  const routes: RouteDefinition[] = [];
+export function generateRoutes(app: AppLike, options: GenerateRoutesOptions = {}): RouteDefinition[] {
+  return app.fronds.flatMap((frond) =>
+    frond.entities.flatMap((entity) => routesOf(app, frond, entity, options)));
+}
 
-  for (const frond of app.fronds) {
-    const handlerMap = new Map(frond.handlers.filter((h) => !h.surface).map((h) => [h.address, h]));
+/** What one entity answers on REST — nothing, when this surface does not serve it. */
+function routesOf(
+  app: AppLike,
+  frond: FrondLike,
+  entity: EntityEntry,
+  options: GenerateRoutesOptions,
+): RouteDefinition[] {
+  const surface = options.surface;
+  // Membership is core's answer, not ours — one rule, read here (see App.facadeFor).
+  const facade = app.facadeFor(entity.name, surface) as HandlerFacade | undefined;
+  if (!facade) return [];
+  if (options.filter && !options.filter(entity, frond.name)) return [];
+  if (!surface && entity.exposed === false) return [];
 
-    const surfaceName = options?.surface;
-
-    for (const entity of frond.entities) {
-      // Membership is core's answer, not ours — one rule, read here (see App.facadeFor).
-      const facade = app.facadeFor(entity.name, surfaceName) as HandlerFacade | undefined;
-      if (!facade) continue;
-
-      if (options?.filter && !options.filter(entity, frond.name)) continue;
-      if (!surfaceName && entity.exposed === false) continue;
-
-      const handler = (surfaceName
-        ? frond.handlers.find((h) => h.address === entity.name && h.surface === surfaceName)
-        : undefined) ?? handlerMap.get(entity.name);
-      const effectiveOperations = app.operationsFor(entity.name, surfaceName);
-      if (!effectiveOperations) {
-        throw new Error(
-          `REST cannot project '${entity.name}' without its EffectiveOperation table.`,
-        );
-      }
-      // The resolved table defines the public operation set. This also works for remote
-      // proxy facades, which intentionally cannot enumerate their keys before discovery.
-      const opNames = [...effectiveOperations.keys()];
-      const entityOverrides = overrides[entity.name] ?? {};
-      // Use handler's output schema if declared, otherwise entity. A frond whose class
-      // never crossed the wire arrives as one too: boot rebuilds the card before here.
-      const outputSchema: SchemaView = handler?.outputOverride
-        ?? handler?.ctor?.__output
-        ?? entity.entityClass;
-      const fields = outputSchema.getFields();
-
-      for (const opName of opNames) {
-        const meta = effectiveOperations.get(opName);
-        if (!meta) {
-          throw new Error(
-            `REST facade '${entity.name}' exposes '${opName}' but its EffectiveOperation table does not.`,
-          );
-        }
-        // What the FROND said, then what this call said, then the convention. The frond
-        // comes first because it names the operation; a host that overrides is deciding
-        // for someone else's, which is what `overrides:` is for and why it wins.
-        const stated = frond.operationsOverrides?.[opName]?.rest as
-          { method?: HttpMethod; path?: string; status?: number } | undefined;
-        const override = { ...stated, ...entityOverrides[opName] } as
-          { method?: HttpMethod; path?: string; status?: number };
-        const method = override.method ?? deriveMethod(opName, meta?.kind);
-        const path = prefix + (override.path ?? derivePath(entity.name, opName));
-
-        // Input/output fields: use meta if available, fallback to entity fields for CRUD.
-        // Both pass through the client-surface projections (write-only out, read-only in).
-        let inputFields: Fields | undefined;
-        let outputFields: Fields | undefined = Visibility.of(fields).output;
-        if (meta?.input) {
-          inputFields = meta.input.getFields();
-        } else if (opName === 'create' || opName === 'update') {
-          inputFields = Visibility.of(fields).input;
-        }
-        if (meta?.output) outputFields = Visibility.of(meta.output.getFields()).output;
-
-        // Handler/method overrides are already executed by the facade from the same
-        // EffectiveOperation local and RPC use. The adapter never resolves DI itself.
-        const op = facade[opName];
-        if (typeof op !== 'function') {
-          throw new Error(
-            `REST EffectiveOperation table exposes '${opName}' but its facade does not.`,
-          );
-        }
-
-        routes.push({
-          method,
-          path,
-          operationName: opName,
-          entityName: entity.name,
-          handler: (invocation) => op(invocation),
-          inputFields,
-          outputFields,
-          successStatus: override.status,
-          ...(meta?.description && { description: meta.description }),
-        });
-      }
-    }
+  const effectiveOperations = app.operationsFor(entity.name, surface);
+  if (!effectiveOperations) {
+    throw new Error(`REST cannot project '${entity.name}' without its EffectiveOperation table.`);
   }
 
-  return routes;
+  const handler = (surface
+    ? frond.handlers.find((one) => one.address === entity.name && one.surface === surface)
+    : undefined) ?? frond.handlers.find((one) => !one.surface && one.address === entity.name);
+  // The handler's output schema if declared, otherwise the entity. A frond whose class never
+  // crossed the wire arrives as one too: boot rebuilds the card before here.
+  const outputSchema: SchemaView = handler?.outputOverride ?? handler?.ctor?.__output ?? entity.entityClass;
+
+  // The resolved table defines the public operation set. This also works for remote proxy
+  // facades, which intentionally cannot enumerate their keys before discovery.
+  return [...effectiveOperations.keys()].map((opName) => routeFor({
+    entity,
+    frond,
+    facade,
+    fields: outputSchema.getFields(),
+    opName,
+    meta: effectiveOperations.get(opName),
+    options,
+  }));
+}
+
+/** One operation of one entity, and everything that decides how it is addressed. */
+interface Projecting {
+  entity: EntityEntry;
+  frond: FrondLike;
+  facade: HandlerFacade;
+  fields: Fields;
+  opName: string;
+  meta: OperationMeta | undefined;
+  options: GenerateRoutesOptions;
+}
+
+function routeFor({ entity, frond, facade, fields, opName, meta, options }: Projecting): RouteDefinition {
+  if (!meta) {
+    throw new Error(
+      `REST facade '${entity.name}' exposes '${opName}' but its EffectiveOperation table does not.`,
+    );
+  }
+
+  // What the FROND said, then what this call said, then the convention. The frond comes first
+  // because it names the operation; a host that overrides is deciding for someone else's,
+  // which is what `overrides:` is for and why it wins.
+  const stated = frond.operationsOverrides?.[opName]?.rest as
+    { method?: HttpMethod; path?: string; status?: number } | undefined;
+  const override = { ...stated, ...(options.overrides?.[entity.name] ?? {})[opName] } as
+    { method?: HttpMethod; path?: string; status?: number };
+
+  // Handler and method overrides are already executed by the facade, from the same
+  // EffectiveOperation local and RPC use. The adapter never resolves DI itself.
+  const op = facade[opName];
+  if (typeof op !== 'function') {
+    throw new Error(`REST EffectiveOperation table exposes '${opName}' but its facade does not.`);
+  }
+
+  return {
+    method: override.method ?? deriveMethod(opName, meta.kind),
+    path: (options.prefix ?? '') + (override.path ?? derivePath(entity.name, opName)),
+    operationName: opName,
+    entityName: entity.name,
+    handler: (invocation) => op(invocation),
+    ...inputAndOutput(meta, fields, opName),
+    successStatus: override.status,
+    ...(meta.description && { description: meta.description }),
+  };
+}
+
+/** Both pass through the client-surface projections — write-only out, read-only in. */
+function inputAndOutput(
+  meta: OperationMeta,
+  fields: Fields,
+  opName: string,
+): { inputFields: Fields | undefined; outputFields: Fields | undefined } {
+  const inputFields = meta.input?.getFields()
+    ?? (opName === 'create' || opName === 'update' ? Visibility.of(fields).input : undefined);
+
+  return {
+    inputFields,
+    outputFields: meta.output ? Visibility.of(meta.output.getFields()).output : Visibility.of(fields).output,
+  };
 }
