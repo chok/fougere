@@ -45,6 +45,15 @@ function refuseAmbiguousUpsert(entity: string, gesture: string): never {
  * The storage a member is handed inside a compensated frame: the same port, writing the same rows,
  * leaving an inverse behind each time.
  */
+/** What one member's writes are recorded against, inside one frame. */
+interface Recording {
+  base: Undoable;
+  recorded: Undoable;
+  entity: string;
+  key: string;
+  journal: Undo[];
+}
+
 export function recording<T extends object>(storage: T, entity: string, schema: SchemaView, journal: Undo[]): T {
   const base = storage as unknown as Undoable;
   if (typeof base.create !== 'function' || typeof base.update !== 'function') return storage;
@@ -58,22 +67,37 @@ export function recording<T extends object>(storage: T, entity: string, schema: 
   }
 
   const recorded = Object.create(storage) as T & Undoable;
+  const into: Recording = { base, recorded, entity, key, journal };
 
+  recordCreate(into);
+  recordUpdate(into);
+  recordDelete(into);
+  recordUpserts(into, schema);
+
+  return recorded;
+}
+
+/** The inverse of an insertion is a deletion by the key the write handed back. */
+function recordCreate({ base, recorded, entity, key, journal }: Recording): void {
   recorded.create = async function (...args) {
     const row = await base.create.apply(this, args);
     const id = String(row[key]);
     journal.push({ what: `create ${entity}#${id}`, run: () => base.delete.call(this, id).then(() => undefined) });
     return row;
   };
+}
 
+/**
+ * Compared against what the WRITE produced, not against the patch: an `update: 'now'` field is
+ * stamped by the storage, so the patch is not what the row now holds.
+ */
+function recordUpdate({ base, recorded, entity, journal }: Recording): void {
   recorded.update = async function (...args) {
     const [id, patch] = args;
     const before = await base.findById.call(this, id);
     const row = await base.update.apply(this, args);
     if (!before) return row;
 
-    // Compare against what the WRITE produced, not against the patch: a `update: 'now'`
-    // field is stamped by the storage, so the patch is not what the row now holds.
     const touched = Object.keys(patch);
     const wrote = pick(row, touched);
     journal.push({
@@ -97,7 +121,10 @@ export function recording<T extends object>(storage: T, entity: string, schema: 
     });
     return row;
   };
+}
 
+/** Nothing to take back when the row was already gone. */
+function recordDelete({ base, recorded, entity, journal }: Recording): void {
   recorded.delete = async function (id) {
     const before = await base.findById.call(this, id);
     const removed = await base.delete.call(this, id);
@@ -106,10 +133,14 @@ export function recording<T extends object>(storage: T, entity: string, schema: 
     }
     return removed;
   };
+}
 
-  // An upsert says neither what it wrote over nor what it inserted, so the frame reads the
-  // keys first: what was there is restored, what was not is deleted. One extra query for
-  // the page, which is the same bargain `update` already makes for one row.
+/**
+ * An upsert says neither what it wrote over nor what it inserted, so the frame reads the keys
+ * first: what was there is restored, what was not is deleted. One extra query for the page,
+ * the same bargain `update` already makes for one row.
+ */
+function recordUpserts({ base, recorded, entity, key, journal }: Recording, schema: SchemaView): void {
   const undoUpsert = async function (this: unknown, rows: readonly Record<string, unknown>[]): Promise<Undo> {
     const ids = rows.map((row) => String(row[key]));
     const before = await base.findByKeys.call(this, ids);
@@ -144,8 +175,6 @@ export function recording<T extends object>(storage: T, entity: string, schema: 
       return written;
     };
   }
-
-  return recorded;
 }
 
 /** Replay the inverses, most recent first, and report rather than pretend. */
