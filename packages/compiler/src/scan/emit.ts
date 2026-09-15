@@ -125,25 +125,11 @@ export function emitScan(result: ScanResult, options: EmitOptions): string {
   const imports = new Imports(options.outFile);
   const core = options.core ?? '@fougere/core';
 
-  // Every class the descriptor names by a file comes first: a schema slot holding one of
-  // them then finds it in the table instead of being imported a second time.
-  for (const f of result.fronds) {
-    for (const e of f.entities) {
-      imports.default(e.entityClass as Live, e.filePath);
-      const name = (e.entityClass as { name?: string }).name;
-      if (name) imports.byClassName.set(name, e.entityClass as Live);
-    }
-    for (const p of f.providers) imports.default(p.ctor as Live, p.filePath);
-    for (const h of f.handlers) imports.default(h.ctor as Live, h.filePath);
-    for (const p of f.presenters) imports.default(p.ctor as Live, p.filePath);
-    for (const c of f.collectors) imports.default(c.ctor as Live, c.filePath);
-    for (const m of f.middlewares) imports.default(m.ctor as Live, m.filePath);
-    for (const s of f.seeds) if (typeof s.data === 'function') imports.default(s.data as Live, s.filePath);
-  }
+  collectImports(result, imports);
 
-  const fronds = result.fronds.map((f) => frondOf(f, imports)).join(',\n');
-  // `cause` is dropped: it is an Error, and the build that produced this already reported
-  // it. What a boot logs is the message, and that travels.
+  const fronds = result.fronds.map((one) => frondOf(one, imports)).join(',\n');
+  // `cause` is dropped: it is an Error, and the build that produced this already reported it.
+  // What a boot logs is the message, and that travels.
   const diagnostics = result.diagnostics.map(({ cause: _cause, ...rest }) => lit(rest));
 
   // The annotation is a convenience for a file a human's tsc will read; it is never what
@@ -165,4 +151,27 @@ ${fronds}
   diagnostics: [${diagnostics.join(', ')}],
 };
 `;
+}
+
+/**
+ * Every class the descriptor names by a file, imported first: a schema slot holding one of them
+ * then finds it in the table instead of being imported a second time.
+ */
+function collectImports(result: ScanResult, imports: Imports): void {
+  for (const frond of result.fronds) {
+    for (const entity of frond.entities) {
+      imports.default(entity.entityClass as Live, entity.filePath);
+      const name = (entity.entityClass as { name?: string }).name;
+      if (name) imports.byClassName.set(name, entity.entityClass as Live);
+    }
+
+    for (const one of frond.providers) imports.default(one.ctor as Live, one.filePath);
+    for (const one of frond.handlers) imports.default(one.ctor as Live, one.filePath);
+    for (const one of frond.presenters) imports.default(one.ctor as Live, one.filePath);
+    for (const one of frond.collectors) imports.default(one.ctor as Live, one.filePath);
+    for (const one of frond.middlewares) imports.default(one.ctor as Live, one.filePath);
+    for (const seed of frond.seeds) {
+      if (typeof seed.data === 'function') imports.default(seed.data as Live, seed.filePath);
+    }
+  }
 }
