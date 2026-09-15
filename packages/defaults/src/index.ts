@@ -12,7 +12,9 @@ export type { DbConfig } from './storage/DbConfig.js';
 export type { ResolvedStorage } from './storage/ResolvedStorage.js';
 
 export interface BootAppOptions {
-  /** Boot only these fronds (by name). Absent = every discovered frond. */
+  /** Boot only these fronds, by name. Absent = every discovered frond. */
+  only?: string[];
+  /** @deprecated The name `only:` now carries. */
   fronds?: string[];
   /**
    * Follow `remotes:` from config (default true). A host process (`serve`)
@@ -37,7 +39,7 @@ export async function bootApp(root: string, opts: BootAppOptions = {}): Promise<
 
   return boot({
     root,
-    fronds: opts.fronds,
+    only: opts.only ?? opts.fronds,
     remotes: useRemotes ? remotes : undefined,
     remoteTransport: useRemotes ? (url) => createHttpTransport(url) : undefined,
     // One resolver, one place that knows a storage package.

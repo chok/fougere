@@ -36,7 +36,7 @@ export default class ServeCommand {
     // the same way rather than the first one being special.
     const conventions = await installLoader(root, watching);
 
-    let hosted = await bootApp(root, { fronds: [frond], topology: false });
+    let hosted = await bootApp(root, { only: [frond], topology: false });
     if (!hosted.fronds.some((f) => f.name === frond)) {
       this.ui.error(`Frond '${frond}' introuvable dans ce projet.`);
       return;
@@ -64,7 +64,7 @@ export default class ServeCommand {
       const started = Date.now();
       let next: App;
       try {
-        next = await bootApp(root, { fronds: [frond], topology: false });
+        next = await bootApp(root, { only: [frond], topology: false });
       } catch (error) {
         // The previous app keeps serving: a dev loop that dies on a typo is worse than
         // one that holds the last state which booted.
