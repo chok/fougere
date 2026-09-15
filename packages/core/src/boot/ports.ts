@@ -111,35 +111,54 @@ function chain(
   stated: string | readonly string[] | undefined,
   refused: Diagnostic[],
 ): ProviderEntry[] {
-  // The whole chain, outside in — a string is a chain of one, and the last name is what
-  // actually answers. What a deployment wraps its realization with is the same kind of
-  // decision as which realization it uses, so it is the same key.
-  if (stated !== undefined) {
-    const order = typeof stated === 'string' ? [stated] : stated;
-    const all = [...wrappers, ...impls];
+  if (stated !== undefined) return statedChain(port, [...wrappers, ...impls], stated, refused);
 
-    return order.flatMap((name) => {
-      const pick = all.find((one) => nameOf(one) === name);
-      if (!pick) {
-        refused.push({
-          severity: 'blocking',
-          code: 'port-not-extended',
-          filePath: all[0]?.filePath ?? 'fougere.config.ts',
-          subject: `ports: { ${port}: '${name}' }`,
-          message: `${port}: '${name}' does not extend it. What does: ${all.map(nameOf).join(', ')}.`,
-        });
+  refuseUndecided(port, impls, wrappers, refused);
 
-        return [];
-      }
+  return [...wrappers, ...impls];
+}
 
-      return [pick];
+/**
+ * The whole chain, outside in — a string is a chain of one, and the last name is what actually
+ * answers. What a deployment wraps its realization with is the same kind of decision as which
+ * realization it uses, so it is the same key.
+ */
+function statedChain(
+  port: string,
+  all: ProviderEntry[],
+  stated: string | readonly string[],
+  refused: Diagnostic[],
+): ProviderEntry[] {
+  const order = typeof stated === 'string' ? [stated] : stated;
+
+  return order.flatMap((name) => {
+    const pick = all.find((one) => nameOf(one) === name);
+    if (pick) return [pick];
+
+    refused.push({
+      severity: 'blocking',
+      code: 'port-not-extended',
+      filePath: all[0]?.filePath ?? 'fougere.config.ts',
+      subject: `ports: { ${port}: '${name}' }`,
+      message: `${port}: '${name}' does not extend it. What does: ${all.map(nameOf).join(', ')}.`,
     });
-  }
 
+    return [];
+  });
+}
+
+/**
+ * Two realizations, or two wrappers, and nothing saying which — refused rather than settled by
+ * scan order, the same reason `remotes` refuses two owners of one entity: whichever won would
+ * depend on the order files were read, and the handler would charge the wrong provider silently.
+ */
+function refuseUndecided(
+  port: string,
+  impls: ProviderEntry[],
+  wrappers: ProviderEntry[],
+  refused: Diagnostic[],
+): void {
   if (impls.length > 1) {
-    // Refusing rather than keeping one, for the reason `remotes` refuses two owners
-    // of an entity: whichever won would depend on scan order, and the handler would
-    // charge the wrong provider without a word.
     refused.push({
       severity: 'blocking',
       code: 'port-implemented-twice',
@@ -149,12 +168,9 @@ function chain(
         + 'answers it. Which realization a deployment uses is not a fact about the code — state it: '
         + `ports: { ${port}: '${nameOf(impls[0]!)}' } in fougere.config.ts.`,
     });
-
-    return [...wrappers, ...impls];
   }
 
   if (wrappers.length > 1) {
-    // Same refusal one layer out: two wrappers are an ORDER, and scan order is not one.
     refused.push({
       severity: 'blocking',
       code: 'port-wrapped-twice',
@@ -166,6 +182,4 @@ function chain(
         + 'in fougere.config.ts.',
     });
   }
-
-  return [...wrappers, ...impls];
 }
