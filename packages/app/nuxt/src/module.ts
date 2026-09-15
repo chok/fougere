@@ -347,9 +347,10 @@ export default module;
 
 /** What of the config a generated plugin can carry: values, never providers. */
 function carried(config: FougereConfig): Partial<FougereConfig> {
-  const { remotes, adapters, sources, logLevel } = config as FougereConfig & { sources?: unknown };
+  const { remotes, fronds, adapters, sources, logLevel } = config as FougereConfig & { sources?: unknown };
   return {
     ...(remotes ? { remotes } : {}),
+    ...(fronds ? { fronds } : {}),
     ...(adapters ? { adapters } : {}),
     ...(sources ? { sources } : {}),
     // The host hands its config over, so nothing re-reads the file at runtime — a key

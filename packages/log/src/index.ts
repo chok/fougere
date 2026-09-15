@@ -41,3 +41,10 @@ export const logFrond = (path: string) => {
     }],
   });
 };
+
+/**
+ * The name `fronds: { '@fougere/log': './lines.jsonl' }` reaches — the last segment of the
+ * specifier is the export, which is what the Nuxt module already assumes of `calls` and
+ * `observability`.
+ */
+export const log = logFrond;

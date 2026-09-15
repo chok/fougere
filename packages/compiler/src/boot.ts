@@ -1,5 +1,5 @@
 import { Logger, applyConfig, createApp, type App, type CreateAppOptions, type Extension, type FougereConfig, type Transport } from '@fougere/core';
-import { loadConfig, remotesOf } from '@fougere/core/node';
+import { loadConfig, remotesOf, statedModules } from '@fougere/core/node';
 import { scanProject } from './scan/scanner.js';
 
 import type { Container } from '@fougere/container';
@@ -11,7 +11,12 @@ interface BootOptions {
   config?: Partial<FougereConfig>;
   /** The container to resolve through. Absent, core builds its own. */
   createContainer?: () => Container;
-  /** Only boot these fronds (by name). Absent = all. */
+  /**
+   * Boot only these fronds, by name — absent, every one found. Not `fronds:`, which says what
+   * an app is MADE of: this narrows the same list to what one process carries.
+   */
+  only?: string[];
+  /** @deprecated The name `only:` now carries. */
   fronds?: string[];
   /**
    * Remote fronds — label → address. A declared remote wins over local
@@ -64,11 +69,15 @@ export async function boot(options: BootOptions): Promise<App> {
     log.info('database initialized');
   }
 
+  // What the config names by module — imported here, because core resolves no specifier.
+  const stated = await statedModules(config.fronds);
+
   log.debug('creating app (scan + container)');
   const app = await createApp({
+    ...(stated.fronds.length > 0 ? { fronds: stated.fronds } : {}),
     // boot() lives on the Node entry, so boot() is what reads the disk. `createApp` is
     // handed the answer and reaches for nothing.
-    scan: await scanProject(root, options.fronds, config.conventions),
+    scan: await scanProject(root, options.only ?? options.fronds, config.conventions),
     createContainer: options.createContainer,
     storageFactory: dbSetup?.storageFactory,
     db: dbSetup?.db,
@@ -93,7 +102,7 @@ export async function boot(options: BootOptions): Promise<App> {
     // Its own gesture, handed over whole. The ORDER — tables, then rows, then whatever this
     // host takes on — is `createApp`'s, and was written out by four hosts before.
     migrate: dbSetup?.migrate,
-    extensions: options.extensions ?? [],
+    extensions: [...stated.extensions, ...(options.extensions ?? [])],
     onEmit: options.onEmit,
     remoteTransport: options.remoteTransport,
   });

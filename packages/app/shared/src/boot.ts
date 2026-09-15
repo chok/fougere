@@ -2,7 +2,7 @@
 import { applyConfig, createApp, identityFromEnv, Logger } from '@fougere/core';
 import { scanProject, frondAliases } from '@fougere/compiler';
 import { resolveConventions } from '@fougere/core';
-import { loadCascadedConfig, remotesOf, setModuleLoader } from '@fougere/core/node';
+import { loadCascadedConfig, remotesOf, setModuleLoader, statedModules } from '@fougere/core/node';
 
 import { createMemoryStorage } from '@fougere/adapter-memory';
 import type { App, CreateAppOptions, FougereConfig, Transport } from '@fougere/core';
@@ -141,6 +141,8 @@ async function boot(): Promise<App> {
   // the default would import the transport and read the environment for a key, both
   // pointless once the caller has said who carries the call.
   let remoteTransport: ((url: string) => Transport) | undefined = _config.remoteTransport;
+  // What the config names by module — imported here, because core resolves no specifier.
+  const stated = await statedModules(fileConfig.fronds);
   const remotes = remotesOf(fileConfig);
   if (!remoteTransport && Object.keys(remotes).length > 0) {
     log.debug(`remotes declared (${Object.keys(remotes).join(', ')}) — wiring HTTP transport`);
@@ -165,6 +167,9 @@ async function boot(): Promise<App> {
     ...(!_config.fronds && !_config.scan
       ? { scan: await scanProject(root, undefined, conventions) }
       : {}),
+    ...(stated.fronds.length > 0
+      ? { fronds: [...(_config.fronds ?? []), ...stated.fronds] }
+      : {}),
     // The layer, spread whole. Naming a few of its members is how `transacted` and `close`
     // were left behind once, under Nuxt only.
     ...layerOf(storage, createMemoryStorage),
@@ -174,7 +179,7 @@ async function boot(): Promise<App> {
     /** Who inherits code from whom — the tree, whole, so a refusal can name where an entry sits. */
     under: fileConfig.fronds,
     remoteTransport,
-    extensions: _config.extensions ?? [],
+    extensions: [...stated.extensions, ...(_config.extensions ?? [])],
     // Opened before the container, so released after it. Never wired here until now:
     // this host boots the storage and no host closed one, which is what made a reload
     // leak the pool of every app it discarded.
