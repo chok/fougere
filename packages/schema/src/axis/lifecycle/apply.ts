@@ -1,5 +1,4 @@
 import { Lifecycle } from './Lifecycle.js';
-import { Generators } from './Generators.js';
 import { Clock } from './Clock.js';
 import { type Field } from '../../field/Field.js';
 import { type Fields } from '../../field/Fields.js';
@@ -15,25 +14,12 @@ export function applyCreate(fields: Fields, input: Record<string, unknown>): Rec
 
   for (const [name, field] of Object.entries(fields) as [string, Field][]) {
     if (name in values) continue;
-    const rule = Lifecycle.of(field);
+    const born = Lifecycle.of(field).bornWith(instant);
 
-    if (rule.stampedAtCreate) values[name] = new Date(instant);
-    else if (rule.literal) values[name] = freshValue(rule.literal.value);
-    else if (rule.generator) values[name] = Generators.resolve(rule.generator)();
+    if (born) values[name] = born.value;
   }
 
   return values;
-}
-
-/**
- * Clones a declared default, so two rows born of `create: { value: [] }` hold two arrays.
- * FR : clone un défaut déclaré, pour que deux lignes nées de `create: { value: [] }`
- * tiennent deux tableaux.
- * `create: { value: [] }` → each instance gets its own array
- */
-function freshValue(value: unknown): unknown {
-  if (value === null || typeof value !== 'object') return value;
-  return structuredClone(value);
 }
 
 /**
