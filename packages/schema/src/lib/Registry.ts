@@ -1,13 +1,12 @@
 export class Registry<T> {
   private readonly entries: Map<string, T>;
 
-  /** `Unknown boundary decoder 'celsius' — call Boundaries.decoders.register(name, fn).` */
   constructor(
     private readonly label: string,
     private readonly hint?: string,
-    builtins?: Iterable<readonly [string, T]>,
+    entries?: Iterable<readonly [string, T]>,
   ) {
-    this.entries = new Map(builtins);
+    this.entries = new Map(entries);
   }
 
   register(name: string, value: T): T {
