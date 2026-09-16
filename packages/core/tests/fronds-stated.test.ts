@@ -23,7 +23,7 @@ describe('statedFronds', () => {
       { key: 'billing', path: 'billing' },
       { key: 'blog', path: 'blog', value: 'http://localhost:4100' },
       { key: '@fougere/log', path: '@fougere/log', value: './lines.jsonl' },
-      { key: 'cart', path: 'billing.cart', under: 'billing' },
+      { key: 'cart', path: 'billing.cart', extends: 'billing' },
     ]);
   });
 

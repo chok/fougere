@@ -36,11 +36,11 @@ export interface FrondDescriptor {
   brought?: true;
   /**
    * The frond this one inherits code from — its scope hangs off that one's, so a service, a
-   * repository, a port or a middleware declared there answers here too. Set by the boot from
-   * `FougereConfig.fronds`, never by a scan: the disk is flat, and a directory says nothing
-   * about who shares its code.
+   * repository, a port or a middleware declared there answers here too. The same word the
+   * config uses, set by the boot from `FougereConfig.fronds` and never by a scan: the disk is
+   * flat, and a directory says nothing about who shares its code.
    */
-  under?: string;
+  extends?: string;
   /** The ops that finish a fact, in order — see `FrondConfig.pipes`. */
   pipes?: Record<string, string[]>;
   /**

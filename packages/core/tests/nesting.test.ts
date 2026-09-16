@@ -52,7 +52,7 @@ describe('a child resolves what its parent declared', () => {
 describe('verify', () => {
   it('exempts an ancestor and keeps refusing a stranger', async () => {
     const fronds = [...await scanned()].map((frond): FrondDescriptor =>
-      (frond.name === 'cart' ? { ...frond, under: 'shop' } : frond));
+      (frond.name === 'cart' ? { ...frond, extends: 'shop' } : frond));
 
     const violations = verify({ fronds });
 

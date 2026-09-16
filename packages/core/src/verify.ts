@@ -20,7 +20,7 @@ type Registration = { frond: string; kind: string };
 /** Everything above a frond in the tree — what its scope reaches by walking up. */
 function ancestors(frond: FrondDescriptor, byName: Map<string, FrondDescriptor>): Set<string> {
   const above = new Set<string>();
-  for (let at = frond.under; at !== undefined && !above.has(at); at = byName.get(at)?.under) {
+  for (let at = frond.extends; at !== undefined && !above.has(at); at = byName.get(at)?.extends) {
     above.add(at);
   }
 

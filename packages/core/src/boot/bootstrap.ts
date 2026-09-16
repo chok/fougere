@@ -142,7 +142,7 @@ async function readFronds(
 
   for (const frond of fronds) {
     const parent = under.get(frond.name);
-    if (parent !== undefined) frond.under = parent;
+    if (parent !== undefined) frond.extends = parent;
   }
   const ordered = parentsFirst(fronds, under);
 

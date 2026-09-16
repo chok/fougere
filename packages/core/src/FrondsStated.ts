@@ -56,8 +56,8 @@ export function statesModule(key: string): boolean {
 export interface StatedFrond {
   /** The key as written — a frond name, or a module specifier. */
   key: string;
-  /** Who it inherits code from, absent when nothing names it. */
-  under?: string;
+  /** The frond it inherits code from, absent when it names none. */
+  extends?: string;
   /** The entry that named it, for a refusal that says where to look. */
   path: string;
   /** An address for a frond that is elsewhere, an argument for a module. */
@@ -84,13 +84,14 @@ export function statedFronds(stated: FrondsStated | undefined): StatedFrond[] {
   const read = ([key, value]: [string, FrondStated | undefined]): StatedFrond | undefined => {
     if (value === undefined) return undefined;
 
-    const { extends: under, ...rest } = attributesOf(value, key);
-    const carries = statesModule(key) ? rest.options : rest.remote;
+    const attributes = attributesOf(value, key);
+    const above = attributes.extends;
+    const carries = statesModule(key) ? attributes.options : attributes.remote;
 
     return {
       key,
-      path: under !== undefined ? `${under}.${key}` : key,
-      ...(under !== undefined ? { under } : {}),
+      path: above !== undefined ? `${above}.${key}` : key,
+      ...(above !== undefined ? { extends: above } : {}),
       ...(carries !== undefined ? { value: carries } : {}),
     };
   };
@@ -98,7 +99,7 @@ export function statedFronds(stated: FrondsStated | undefined): StatedFrond[] {
   const stands = (one: StatedFrond | undefined): one is StatedFrond => one !== undefined;
   const all = entries.map(read).filter(stands);
 
-  return [...all.filter((one) => one.under === undefined), ...all.filter((one) => one.under !== undefined)];
+  return [...all.filter((one) => one.extends === undefined), ...all.filter((one) => one.extends !== undefined)];
 }
 
 /**

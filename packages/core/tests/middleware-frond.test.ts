@@ -45,8 +45,14 @@ const app = (under?: typeof family) => createApp({
   storageFactory: memory,
 });
 
+/** What `Audit` counts about itself — on `globalThis` for the reason `Trail` is. */
+const audit = () => (globalThis as Record<string, unknown>).__audit as { built: number; closed: number };
+
 describe('a middleware the frond declares', () => {
-  beforeEach(() => { (globalThis as Record<string, unknown>).__around = []; });
+  beforeEach(() => {
+    (globalThis as Record<string, unknown>).__around = [];
+    (globalThis as Record<string, unknown>).__audit = { built: 0, closed: 0 };
+  });
 
   it('runs around its own frond, and takes its dependencies from the frond scope', async () => {
     await using built = await app();
@@ -106,5 +112,54 @@ describe('a middleware the frond declares', () => {
     // `NotAMiddleware` sits in the directory and declares no `around`. The directory does
     // not make a middleware; stating the method does.
     expect(shop?.middlewares.map((middleware) => middleware.name)).toEqual(['Audit']);
+  });
+});
+
+describe('how long a middleware lives', () => {
+  beforeEach(() => {
+    (globalThis as Record<string, unknown>).__around = [];
+    (globalThis as Record<string, unknown>).__audit = { built: 0, closed: 0 };
+  });
+
+  it('is built once for its frond, not once per call', async () => {
+    await using built = await app();
+    const run = createLocalRunner(built);
+
+    for (let call = 0; call < 5; call++) await run({ entity: 'note', op: 'list' }, Invocation.empty);
+
+    // Its only consumer is the dispatch, which lives as long as the app — so there is nothing
+    // a sixth construction would give that the first did not.
+    expect(around()).toHaveLength(5);
+    expect(audit().built).toBe(1);
+  });
+
+  it('is not built before a call asks for it', async () => {
+    await using _built = await app();
+
+    // A dependency may be registered by an extension's `up`, which rises after the fronds.
+    expect(audit().built).toBe(0);
+  });
+
+  it('is closed with its frond, since it answers `Symbol.asyncDispose`', async () => {
+    const built = await app();
+    await createLocalRunner(built)({ entity: 'note', op: 'list' }, Invocation.empty);
+
+    expect(audit().closed).toBe(0);
+    await built.dispose();
+
+    expect(audit().closed).toBe(1);
+  });
+
+  it('serves two calls at once, because what one call holds travels in its context', async () => {
+    await using built = await app();
+    const run = createLocalRunner(built);
+
+    await Promise.all([
+      run({ entity: 'note', op: 'list' }, Invocation.empty),
+      run({ entity: 'note', op: 'findById' }, { ...Invocation.empty, params: { id: 'n1' } }),
+    ]);
+
+    expect(audit().built).toBe(1);
+    expect([...around()].sort()).toEqual(['audit:note.findById', 'audit:note.list']);
   });
 });

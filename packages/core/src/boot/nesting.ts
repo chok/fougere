@@ -72,22 +72,22 @@ export function nestingOf(
   const childrenOf = new Map<string, string[]>();
   const inherits = new Set<string>();
   for (const statement of statements) {
-    if (statement.under === undefined) continue;
+    if (statement.extends === undefined) continue;
 
     inherits.add(statement.key);
-    childrenOf.set(statement.under, [...(childrenOf.get(statement.under) ?? []), statement.key]);
+    childrenOf.set(statement.extends, [...(childrenOf.get(statement.extends) ?? []), statement.key]);
   }
 
   for (const statement of statements) {
-    if (statement.under === undefined || !inherits.has(statement.under)) continue;
+    if (statement.extends === undefined || !inherits.has(statement.extends)) continue;
 
     refused.push({
       severity: 'blocking',
       code: 'frond-extends-chain',
       filePath: 'fougere.config.ts',
       subject: statement.path,
-      message: `'${statement.key}' inherits from '${statement.under}', which inherits from `
-        + `'${statedFronds(stated).find((one) => one.key === statement.under)?.under}'. `
+      message: `'${statement.key}' inherits from '${statement.extends}', which inherits from `
+        + `'${statedFronds(stated).find((one) => one.key === statement.extends)?.extends}'. `
         + 'Inheriting goes one level: a scope hangs off the one above it, and a chain would make '
         + 'a frond depend on code its own family never named. Move what they share into one '
         + 'frond they both inherit from.',
@@ -142,21 +142,21 @@ export function nestingOf(
       continue;
     }
 
-    if (statement.under !== undefined && !here.has(statement.under)) {
+    if (statement.extends !== undefined && !here.has(statement.extends)) {
       refused.push({
         severity: 'blocking',
         code: 'frond-family-split',
         filePath: frond.source.path,
         frond: frond.name,
         subject: statement.path,
-        message: `'${statement.key}' inherits from '${statement.under}', which this process does `
+        message: `'${statement.key}' inherits from '${statement.extends}', which this process does `
           + 'not carry. A frond cannot leave the code it resolves behind — carry the two '
-          + `together, or take '${statement.key}' out from under '${statement.under}'.`,
+          + `together, or take '${statement.key}' out from under '${statement.extends}'.`,
       });
       continue;
     }
 
-    if (statement.under !== undefined) under.set(statement.key, statement.under);
+    if (statement.extends !== undefined) under.set(statement.key, statement.extends);
   }
 
   return { under, refused };
@@ -188,7 +188,7 @@ export function nested(fronds: Fronds, stated: FrondsStated | undefined): Fronds
   const { under } = nestingOf(stated, fronds, undefined, true);
   for (const frond of fronds) {
     const parent = under.get(frond.name);
-    if (parent !== undefined) frond.under = parent;
+    if (parent !== undefined) frond.extends = parent;
   }
 
   return parentsFirst(fronds, under);

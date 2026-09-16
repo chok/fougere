@@ -125,8 +125,11 @@ async function registerReads(
 }
 
 /**
- * Registered here and RESOLVED per call: a middleware asking for something request-scoped would
- * otherwise be handed the one instance the boot built.
+ * ONE instance per frond scope, built at its first call and closed with its frond.
+ *
+ * Its only consumer is the dispatch, which lives as long as the app, so its lifetime is not a
+ * choice. Resolved at the call and never at boot: a dependency may be registered by an
+ * extension's `up`, which rises after every frond is installed.
  */
 function registerMiddlewares(
   frond: FrondDescriptor,
@@ -143,11 +146,11 @@ function registerMiddlewares(
   // because the boot installs parents first and each of them left theirs here. The closures
   // resolve in the scope that built them, so an inherited middleware is handed the services of
   // the frond that declared it.
-  const inherited = frond.under ? middlewaresOf.get(frond.under) ?? [] : [];
+  const inherited = frond.extends ? middlewaresOf.get(frond.extends) ?? [] : [];
   const mine: AppMiddleware[] = [];
 
   for (const middleware of frond.middlewares) {
-    scope.register(middleware.name, middleware.ctor, { deps: middleware.deps });
+    scope.register(middleware.name, middleware.ctor, { deps: middleware.deps, lifetime: 'singleton' });
     mine.push((context, next) =>
       scope.resolve<{ around: AppMiddleware }>(middleware.name).around(context, next));
   }
@@ -169,7 +172,7 @@ function inheritedSeams(
   seamsOf: Map<string, Map<string, ProviderEntry[]>>,
   declared: Map<string, ProviderEntry[]>,
 ): Map<string, ProviderEntry[]> {
-  const above = frond.under ? seamsOf.get(frond.under) : undefined;
+  const above = frond.extends ? seamsOf.get(frond.extends) : undefined;
   if (!above) return declared;
 
   const all = new Map(declared);
@@ -473,7 +476,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   // A child hangs off its parent, so everything the parent registered answers here too and
   // nothing else has to know: `ScopeContainer.resolve` already walks up. The boot installs
   // parents first, which is what makes the key below resolvable.
-  const above = frond.under ? container.resolve<Container>(`frond:${frond.under}`) : container;
+  const above = frond.extends ? container.resolve<Container>(`frond:${frond.extends}`) : container;
   const scope = above.createScope();
   const frondLog = log.child(frond.name);
   // The frond's own voice, a child of the APP logger and never of `log` — which is the
