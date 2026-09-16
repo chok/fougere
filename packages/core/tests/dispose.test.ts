@@ -31,11 +31,11 @@ describe('app.dispose', () => {
     expect(order).toEqual(['container', 'handed in']);
   });
 
-  it('disposes a provider that says how — the container contract, unchanged', async () => {
+  it('disposes a provider that says how — the container contract', async () => {
     let closed = false;
     const app = await createApp({ scan: await scanProject(root), createContainer });
     const scope = app.resolve<ReturnType<typeof createContainer>>('frond:billing');
-    scope.register('Pool', class { dispose() { closed = true; } }, { lifetime: 'singleton' });
+    scope.register('Pool', class { [Symbol.asyncDispose]() { closed = true; } }, { lifetime: 'singleton' });
     scope.resolve('Pool');
 
     await app.dispose();

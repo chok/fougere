@@ -1,5 +1,5 @@
 import type { Container } from './Container.js';
-import { Disposables, type Disposable } from './Disposable.js';
+import { Disposables } from './Disposable.js';
 import { ContainerError } from './ContainerError.js';
 import type { Constructor } from './registration/Constructor.js';
 import type { Lifetime } from './registration/Lifetime.js';
@@ -13,7 +13,7 @@ interface Entry {
 
 /** A scope reaches its parent and its children through members only a scope can read. */
 export class ScopeContainer implements Container {
-  private readonly built: (Disposable | AsyncDisposable)[] = [];
+  private readonly built: AsyncDisposable[] = [];
   private readonly children: ScopeContainer[] = [];
   private readonly registry = new Map<string, Entry>();
   private readonly resolving: string[];
@@ -113,8 +113,7 @@ export class ScopeContainer implements Container {
     const failures: unknown[] = [];
     while (this.built.length > 0) {
       try {
-        const value = this.built.pop();
-        if (value) await Disposables.close(value);
+        await this.built.pop()?.[Symbol.asyncDispose]();
       } catch (error) {
         failures.push(error);
       }
@@ -172,7 +171,7 @@ export class ScopeContainer implements Container {
     if (at !== -1) this.children.splice(at, 1);
   }
 
-  /** What this scope will close. A value that answers no `dispose` is not one of them. */
+  /** What this scope will close. A value that answers no `[Symbol.asyncDispose]` is not one of them. */
   private remember(value: unknown): void {
     if (Disposables.is(value)) this.built.push(value);
   }

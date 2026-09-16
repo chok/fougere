@@ -26,7 +26,7 @@ class UserService {
 /** Records that it was told, and in which order relative to its siblings. */
 const closing = (log: string[], name: string) =>
   class {
-    async dispose() { log.push(name); }
+    async [Symbol.asyncDispose]() { log.push(name); }
   };
 
 // --- Tests ---
@@ -175,7 +175,7 @@ describe('Container', () => {
     it('does not dispose a value it did not build', async () => {
       const log: string[] = [];
       const container = createContainer();
-      container.registerValue('db', { dispose: async () => { log.push('db'); } });
+      container.registerValue('db', { [Symbol.asyncDispose]: async () => { log.push('db'); } });
       container.resolve('db');
 
       await container.dispose();
@@ -186,7 +186,7 @@ describe('Container', () => {
     it('tells everyone even when one refuses, then reports together', async () => {
       const log: string[] = [];
       const container = createContainer();
-      container.register('Bad', class { dispose() { throw new Error('nope'); } }, { lifetime: 'singleton' });
+      container.register('Bad', class { [Symbol.asyncDispose]() { throw new Error('nope'); } }, { lifetime: 'singleton' });
       container.register('Good', closing(log, 'good'), { lifetime: 'singleton' });
       container.resolve('Bad');
       container.resolve('Good');
@@ -200,7 +200,7 @@ describe('Container', () => {
       const root = createContainer();
       const scope = root.createScope();
       scope.register('X', class {
-        async dispose() { root.createScope().register('Late', closing(log, 'late'), { lifetime: 'singleton' }); }
+        async [Symbol.asyncDispose]() { root.createScope().register('Late', closing(log, 'late'), { lifetime: 'singleton' }); }
       }, { lifetime: 'singleton' });
       scope.resolve('X');
 
@@ -209,7 +209,7 @@ describe('Container', () => {
 
     it('refuses one opened after that, while what it built was closing', async () => {
       const root = createContainer();
-      root.register('X', class { async dispose() { root.createScope(); } }, { lifetime: 'singleton' });
+      root.register('X', class { async [Symbol.asyncDispose]() { root.createScope(); } }, { lifetime: 'singleton' });
       root.resolve('X');
 
       const refused = await root.dispose().then(() => undefined, (error: AggregateError) => error);
@@ -218,7 +218,7 @@ describe('Container', () => {
       expect(refused!.errors[0].message).toContain('1 scope(s) still held after this one closed');
     });
 
-    it('ignores an instance with no dispose method', async () => {
+    it('ignores an instance with no [Symbol.asyncDispose]', async () => {
       const container = createContainer();
       container.register('Logger', Logger, { lifetime: 'singleton' });
       container.resolve('Logger');
@@ -285,9 +285,9 @@ describe('a scope closes what it opened', () => {
     const child = root.createScope();
     const grandchild = child.createScope();
 
-    root.register('R', class { dispose() { order.push('root'); } }, { lifetime: 'singleton' });
-    child.register('C', class { dispose() { order.push('child'); } }, { lifetime: 'singleton' });
-    grandchild.register('G', class { dispose() { order.push('grandchild'); } }, { lifetime: 'singleton' });
+    root.register('R', class { [Symbol.asyncDispose]() { order.push('root'); } }, { lifetime: 'singleton' });
+    child.register('C', class { [Symbol.asyncDispose]() { order.push('child'); } }, { lifetime: 'singleton' });
+    grandchild.register('G', class { [Symbol.asyncDispose]() { order.push('grandchild'); } }, { lifetime: 'singleton' });
     root.resolve('R'); child.resolve('C'); grandchild.resolve('G');
 
     await root.dispose();
@@ -301,7 +301,7 @@ describe('a scope closes what it opened', () => {
     const root = createContainer();
     for (const name of ['first', 'second', 'third']) {
       const child = root.createScope();
-      child.register('R', class { dispose() { order.push(name); } }, { lifetime: 'singleton' });
+      child.register('R', class { [Symbol.asyncDispose]() { order.push(name); } }, { lifetime: 'singleton' });
       child.resolve('R');
     }
 
@@ -317,8 +317,8 @@ describe('a scope closes what it opened', () => {
     const child = root.createScope();
     let reached = false;
 
-    child.register('Bad', class { dispose() { throw new Error('nope'); } }, { lifetime: 'singleton' });
-    root.register('Good', class { dispose() { reached = true; } }, { lifetime: 'singleton' });
+    child.register('Bad', class { [Symbol.asyncDispose]() { throw new Error('nope'); } }, { lifetime: 'singleton' });
+    root.register('Good', class { [Symbol.asyncDispose]() { reached = true; } }, { lifetime: 'singleton' });
     child.resolve('Bad'); root.resolve('Good');
 
     await expect(root.dispose()).rejects.toThrow(AggregateError);
