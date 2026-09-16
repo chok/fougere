@@ -16,7 +16,7 @@ export { ON_DELETE, type OnDelete } from './axis/role/Relation.js';
 export { type EntityConstructor } from './axis/role/EntityConstructor.js';
 export { Lifecycle } from './axis/lifecycle/Lifecycle.js';
 export { Boundary } from './axis/boundary/Boundary.js';
-export { applyCreate, applyUpdate } from './axis/lifecycle/apply.js';
+export { applyCreate, applyOverwrite, applyUpdate } from './axis/lifecycle/apply.js';
 export { InputRefusal } from './validator/InputRefusal.js';
 export { SchemaError } from './SchemaError.js';
 export { type ValidationError } from './lib/ValidationError.js';

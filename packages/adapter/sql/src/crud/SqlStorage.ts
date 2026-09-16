@@ -1,6 +1,6 @@
-import { Lifecycle, Role } from '@fougere/schema';
+import { Role } from '@fougere/schema';
 import { sql, type Kysely } from 'kysely';
-import { applyCreate, applyUpdate, type Fields, type SchemaView } from '@fougere/schema';
+import { applyCreate, applyOverwrite, applyUpdate, type Fields, type SchemaView } from '@fougere/schema';
 import { toTable, toTableName, type TableDef } from '../table/TableDef.js';
 import { resolveDialect, type Dialect } from '../dialect/Dialect.js';
 import { type DialectName } from '../dialect/DialectName.js';
@@ -349,18 +349,9 @@ export class SqlStorage {
     // `update: 'now'`, so filling the creation side first leaves nothing for the
     // update side to stamp — the row would carry the moment it was inserted forever.
     const data = applyCreate(this.fields, applyUpdate(this.fields, input));
-    // Never overwritten by a later write: the key identifies the row, and a stamp that
-    // is create-ONLY records when it appeared. One that is also `update: 'now'` is the
-    // opposite — it exists to move.
-    const frozen = this.frozenColumns();
-    const row = this.toRow(data);
-    const replaced = Object.fromEntries(Object.entries(row).filter(([column]) => !frozen.has(column)));
+    const replaced = this.toRow(applyOverwrite(this.fields, input));
 
-    const insert = this.db.insertInto(this.table.name).values(row);
-    await (this.upsertClause === 'on conflict'
-      ? insert.onConflict((oc: any) => oc.columns(this.pk.names.map((n) => this.column(n))).doUpdateSet(replaced))
-      : (insert as any).onDuplicateKeyUpdate(replaced)
-    ).execute();
+    await this.onExisting(this.db.insertInto(this.table.name).values(this.toRow(data)), replaced).execute();
 
     const id = this.pk.isComposite
       ? Object.fromEntries(this.pk.names.map((n) => [n, data[n]]))
@@ -378,38 +369,41 @@ export class SqlStorage {
     }
     if (inputs.length === 0) return 0;
 
-    const rows = inputs.map((input) => this.toRow(applyCreate(this.fields, applyUpdate(this.fields, input))));
-    const frozen = this.frozenColumns();
-    const columns = new Set(rows.flatMap((row) => Object.keys(row)));
-    const replaced = Object.fromEntries(
-      [...columns].filter((column) => !frozen.has(column)).map((column) => [column, sql.ref(`excluded.${column}`)]),
-    );
-    // A statement binds VALUES: one row costs as many as it has columns.
-    const perStatement = Math.max(1, Math.floor(this.maxBindings / Math.max(1, columns.size)));
+    // One statement replaces the same columns on every row it holds, so rows that name
+    // different fields go in different statements — or one row's gap erases another's value.
+    const pages = new Map<string, { replaced: string[]; rows: Record<string, unknown>[] }>();
+    for (const input of inputs) {
+      const replaced = Object.keys(this.toRow(applyOverwrite(this.fields, input))).sort();
+      const page = pages.get(replaced.join()) ?? pages.set(replaced.join(), { replaced, rows: [] }).get(replaced.join())!;
+      page.rows.push(this.toRow(applyCreate(this.fields, applyUpdate(this.fields, input))));
+    }
 
     let written = 0;
-    for (const slice of chunks([...rows], perStatement)) {
-      const insert = this.db.insertInto(this.table.name).values(slice);
-      await (this.upsertClause === 'on conflict'
-        ? insert.onConflict((oc: any) => oc.columns(this.pk.names.map((n) => this.column(n))).doUpdateSet(replaced))
-        : (insert as any).onDuplicateKeyUpdate(replaced)
-      ).execute();
-      written += slice.length;
+    for (const { replaced, rows } of pages.values()) {
+      const excluded = Object.fromEntries(replaced.map((column) => [column, sql.ref(`excluded.${column}`)]));
+      // A statement binds VALUES: one row costs as many as it has columns.
+      const width = new Set(rows.flatMap((row) => Object.keys(row))).size;
+      const perStatement = Math.max(1, Math.floor(this.maxBindings / Math.max(1, width)));
+
+      for (const slice of chunks(rows, perStatement)) {
+        await this.onExisting(this.db.insertInto(this.table.name).values(slice), excluded).execute();
+        written += slice.length;
+      }
     }
+
     return written;
   }
 
-  /**
-   * The COLUMNS a later write must not touch: the key, and a stamp that is create-only.
-   * One that is also `update: 'now'` is the opposite — it exists to move.
-   */
-  private frozenColumns(): Set<string> {
-    return new Set([
-      ...this.pk.names.map((name) => this.column(name)),
-      ...Object.entries(this.fields)
-        .filter(([, field]) => Lifecycle.of(field).stampedOnce)
-        .map(([name]) => this.column(name)),
-    ]);
+  /** What a row that is already there becomes — and nothing, when the write replaces no column. */
+  private onExisting(insert: any, replaced: Record<string, unknown>) {
+    const keys = this.pk.names.map((n) => this.column(n));
+    const empty = Object.keys(replaced).length === 0;
+
+    if (this.upsertClause === 'on conflict') {
+      return insert.onConflict((oc: any) => (empty ? oc.columns(keys).doNothing() : oc.columns(keys).doUpdateSet(replaced)));
+    }
+
+    return insert.onDuplicateKeyUpdate(empty ? { [keys[0]!]: sql.ref(keys[0]!) } : replaced);
   }
 
   async findById(id: string | Record<string, unknown>, options?: SelectOption): Promise<Record<string, unknown> | undefined> {

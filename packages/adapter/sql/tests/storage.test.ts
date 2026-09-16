@@ -5,7 +5,7 @@
  * field↔column mapping, and the lifecycle rules realised on write.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { entity, primary, text, number, bool, created, updated, optional } from '@fougere/schema';
+import { entity, primary, text, number, bool, created, updated, optional, immutable } from '@fougere/schema';
 import { autoMigrate } from '../src/index.js';
 import { codecFor } from '../src/values.js';
 import { createSqliteSource, type SqliteSource } from '../src/sqlite/SqliteSource.js';
@@ -425,5 +425,47 @@ describe('upsertAll', () => {
 
   it('writes nothing for an empty page', async () => {
     expect(await storage.upsertAll([])).toBe(0);
+  });
+});
+
+describe('an upsert over a row that exists', () => {
+  class Page extends entity({
+    id: primary(),
+    slug: immutable(text()),
+    title: text(),
+    views: number({ integer: true, default: 0 }),
+    note: optional(text()),
+    createdAt: created(),
+    updatedAt: updated(),
+  }) {}
+
+  it('replaces what it names, and leaves the rest where it was', async () => {
+    const pages = await (async () => { await autoMigrate({ fronds: [{ name: 'test', entities: [{ name: 'page', entityClass: Page }] }] }, setup.sqlite); return setup.storageFactory(Page, 'page') as any; })();
+    const first = await pages.create({ slug: 'hello', title: 'A', note: 'kept' });
+    await pages.update(first.id, { views: 5 });
+
+    const again = await pages.upsert({ id: first.id, slug: 'moved', title: 'B', createdAt: new Date(0) });
+
+    expect(again.title).toBe('B');
+    expect(again.note).toBe('kept');
+    expect(again.views).toBe(5);
+    expect(again.slug).toBe('hello');
+    expect(again.createdAt).toEqual(first.createdAt);
+  });
+
+  it('leaves each row its own gaps, in one page', async () => {
+    const pages = await (async () => { await autoMigrate({ fronds: [{ name: 'test', entities: [{ name: 'page', entityClass: Page }] }] }, setup.sqlite); return setup.storageFactory(Page, 'page') as any; })();
+    const a = await pages.create({ slug: 'a', title: 'A', note: 'a' });
+    const b = await pages.create({ slug: 'b', title: 'B' });
+    await pages.update(a.id, { views: 3 });
+
+    await pages.upsertAll([
+      { id: a.id, slug: 'a', title: 'A2' },
+      { id: b.id, slug: 'b', title: 'B', note: 'b' },
+    ]);
+
+    const [after, other] = [await pages.findById(a.id), await pages.findById(b.id)];
+    expect([after.title, after.note, after.views]).toEqual(['A2', 'a', 3]);
+    expect([other.title, other.note]).toEqual(['B', 'b']);
   });
 });

@@ -26,16 +26,19 @@ export class Lifecycle {
     return { value: Generators.resolve(rule.generate)() };
   }
 
+  overwrittenWith(assigned: { value: unknown } | undefined, instant: number): { value: unknown } | undefined {
+    if (this.immutable) return undefined;
+    if (assigned) return assigned;
+
+    return this.stampedOnUpdate ? { value: new Date(instant) } : undefined;
+  }
+
   get requiredAtCreate(): boolean {
     return this.create === undefined;
   }
 
   get stampedAtCreate(): boolean {
     return this.create === 'now';
-  }
-
-  get stampedOnce(): boolean {
-    return this.stampedAtCreate && !this.stampedOnUpdate;
   }
 
   get immutable(): boolean {

@@ -6,7 +6,7 @@
  * which is what these tests hold; and reading them raised a case the old version hid.
  */
 import { describe, it, expect } from 'vitest';
-import { entity, primary, text, number, oneOf, created } from '@fougere/schema';
+import { entity, primary, text, number, oneOf, created, updated, immutable, optional } from '@fougere/schema';
 import { createMemoryStorage } from '../src/index.js';
 
 class Post extends entity({
@@ -203,5 +203,31 @@ describe('the order the port promises is the order it hands back', () => {
     // never saw — the first page of a sorted table was the wrong two rows.
     const page = await (await unsorted()).list({ orderBy: 'reads', limit: 2 });
     expect(page.map((row) => row.reads)).toEqual([1, 5]);
+  });
+});
+
+describe('an upsert over a row that exists', () => {
+  class Page extends entity({
+    id: primary(),
+    slug: immutable(text()),
+    title: text(),
+    views: number({ integer: true, default: 0 }),
+    note: optional(text()),
+    createdAt: created(),
+    updatedAt: updated(),
+  }) {}
+
+  it('replaces what it names, and leaves the rest where it was', async () => {
+    const pages = await createMemoryStorage(Page as never, 'page') as any;
+    const first = await pages.create({ slug: 'hello', title: 'A', note: 'kept' });
+    await pages.update(first.id, { views: 5 });
+
+    const again = await pages.upsert({ id: first.id, slug: 'moved', title: 'B', createdAt: new Date(0) });
+
+    expect(again.title).toBe('B');
+    expect(again.note).toBe('kept');
+    expect(again.views).toBe(5);
+    expect(again.slug).toBe('hello');
+    expect(again.createdAt).toEqual(first.createdAt);
   });
 });
