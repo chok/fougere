@@ -5,6 +5,10 @@
  * and never names a PSP. What changes is `ports:` in fougere.config.ts: which realization
  * answers (1-3), what stands IN FRONT of it (4), and the same statement one level up, on a
  * port the framework declares rather than you (5).
+ *
+ * The sixth is the other half: not WHICH provider answers, but HOW LONG it lives. A class
+ * holding something says `implements AsyncDisposable`, and its frond's scope keeps it and
+ * closes it; one saying nothing is built per consumer, and its caller decides.
  */
 import { createLocalRunner, Invocation, type Storage } from '@fougere/core';
 import { boot } from '@fougere/compiler';
@@ -79,6 +83,19 @@ console.log('   it extends Storage and asks for one, and nothing else declares i
   await app.dispose();
 }
 
-console.log('\nCheckoutHandler and ProductHandler were not touched between the five.');
+console.log('\n6. what a provider says about its own lifetime — billing/services/Ledger.ts');
+console.log('   `implements AsyncDisposable`: one per frond, and the frond\'s scope closes it.');
+{
+  const app = await booted({ Payment: 'StripePayment' });
+  const call = createLocalRunner(app);
+  // Two handlers, one Ledger — a single "opened" line above, whatever they ask.
+  await call({ entity: 'checkout', op: 'pay' }, Invocation.empty);
+  await call({ entity: 'invoice', op: 'record' }, { ...Invocation.empty, params: { reference: 'INV-2' } });
+  // `Payment` states nothing, so each consumer got its own and nobody closes it — which is
+  // what a class holding nothing wants.
+  await app.dispose();
+}
+
+console.log('\nCheckoutHandler and ProductHandler were not touched between the six.');
 console.log('A link is a CLASS this process loads, so it cannot live behind `remotes:` —');
 console.log('the same line `Pipe<T>` draws. What crosses a wire is a fact, not a link.\n');
