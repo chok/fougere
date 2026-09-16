@@ -237,7 +237,7 @@ hosts assembled those two members themselves (`compiler/src/boot.ts`,
 `app/shared/src/boot.ts`, the Nuxt codegen as a STRING, and a demo), and eight demos wrote
 nothing — so they had no migration and nothing said it. Rows before tables is a boot that
 finds none, which is not a host's preference to hold. `Source.migrate` is declared once and
-travels whole: `layerOf(storage)` (`defaults/src/storage.ts`) is the ONE place that spreads
+travels whole: `layerOf(storage)` (`defaults/src/storage/ResolvedStorage.ts`) is the ONE place that spreads
 the data layer into what `createApp` takes, so a host names no member of it — naming a few
 is how `transacted` and `close` were left behind once, under Nuxt only. Pinned by
 `tests/lifecycle.test.ts`.
@@ -836,7 +836,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   own declaration in `handler-parser.ts` (`parseCheckedType`). Measured 2026-09-10; the
   alias was removed rather than shipped broken.
 - **`onQuery` is still a module-level list, and the path between its ends is the CONTEXT** —
-  `adapter/sql/src/query.ts`. The producer is a Kysely built by `createSqliteSource()` BEFORE
+  `adapter/sql/src/query/QuerySink.ts`. The producer is a Kysely built by `createSqliteSource()` BEFORE
   any app exists, and no object path runs to the consumer: an app holds `db`, never the
   source, and a Kysely's `log` is fixed at construction. What closes it is not a path but the
   stack — a sink runs SYNCHRONOUSLY inside the async context the tracer opened, so
@@ -885,7 +885,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   plain `registry.set`, so the entity's storage overwrites the provider. `refuseStorageInUserCode`
   does not cover it: it reads `decl.deps`, never `decl.ctor.name`. Measured 2026-09-09. The name
   is already wrong by two rules, which is why nothing hits it; left as is.
-- **`Mirror` holds a loop and a page contract, and nothing else** (`core/src/prefab/mirror.ts`).
+- **`Mirror` holds a loop and a page contract, and nothing else** (`core/src/prefab/MirrorConstructor.ts`).
   What it held of its own is gone — `StorageGuard` guards every write gesture now, so a page is
   judged where every other row is. The mark is the CALLER's since it read one off its own rows,
   which carry when WE wrote them: a pass that threw halfway still advanced it, and what the
@@ -941,7 +941,7 @@ One line each, kept because a past version of this file asserted the opposite.
   `release` reads `built`, so before the app exists it runs the two levels that do. Pinned by
   `tests/lifecycle.test.ts`.
 - **A composition answers for the source the work runs in** — `transacts(source)`
-  (`defaults/src/storage.ts`), the dual of `transacted`. Reading the default source's capacity
+  (`defaults/src/storage/ResolvedStorage.ts`), the dual of `transacted`. Reading the default source's capacity
   compensated a frame whose own engine held transactions. Pinned by `defaults/tests/sources.test.ts`.
 - **The data layer travels as ONE subject** — `FougereServerConfig.storage: ResolvedStorage`
   (`app/shared/src/boot.ts`), and the Nuxt codegen passes it whole. Naming a few of its members
