@@ -53,6 +53,23 @@ describe('a stamp is one instant, but never one object', () => {
   });
 });
 
+describe('a declared default is never one object either', () => {
+  class Tagged extends entity({
+    id: primary(),
+    tags: { shape: { type: 'array', items: { type: 'string' } }, lifecycle: { create: { value: [] } } },
+  }) {}
+
+  it('gives each ROW its own array', () => {
+    const a = applyCreate(Tagged.getFields(), {}).tags as string[];
+    const b = applyCreate(Tagged.getFields(), {}).tags as string[];
+
+    a.push('moved');
+
+    expect(b).toEqual([]);
+    expect(applyCreate(Tagged.getFields(), {}).tags).toEqual([]);
+  });
+});
+
 describe('a declared default is validated once, where it is written', () => {
   it('refuses a default its own shape refuses', () => {
     // `applyCreate` writes this into every row without passing the client validator — which

@@ -18,8 +18,10 @@ export class Lifecycle {
     const rule = this.create;
 
     if (rule === 'now') return { value: new Date(instant) };
+
     if (typeof rule !== 'object') return undefined;
-    if ('value' in rule) return { value: freshValue(rule.value) };
+
+    if ('value' in rule) return { value: structuredClone(rule.value) };
 
     return { value: Generators.resolve(rule.generate)() };
   }
@@ -51,16 +53,4 @@ export class Lifecycle {
       ? { value: (rule as { value: unknown }).value }
       : undefined;
   }
-}
-
-/**
- * Clones a declared default, so two rows born of `create: { value: [] }` hold two arrays.
- * FR : clone un défaut déclaré, pour que deux lignes nées de `create: { value: [] }`
- * tiennent deux tableaux.
- * `create: { value: [] }` → each instance gets its own array
- */
-function freshValue(value: unknown): unknown {
-  if (value === null || typeof value !== 'object') return value;
-
-  return structuredClone(value);
 }
