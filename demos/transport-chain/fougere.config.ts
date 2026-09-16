@@ -5,7 +5,7 @@ import { defineFougere } from '@fougere/core';
  * there — a list read from the outside in, the same order `ports:` already uses.
  */
 export default defineFougere({
-  remotes: {
+  fronds: {
     catalog: 'memory://catalog',
   },
 });

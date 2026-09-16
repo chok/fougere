@@ -10,7 +10,7 @@
  */
 import { scanProject } from '@fougere/compiler';
 import { createApp, createLocalRunner, type Storage, type Transport } from '@fougere/core';
-import { loadConfig } from '@fougere/core/node';
+import { loadConfig, remotesOf } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { join } from 'node:path';
 import { memory } from './transport/memory.js';
@@ -42,7 +42,7 @@ async function run(name: string, chain: Transport) {
     scan,
     createContainer,
     storageFactory: shelf,
-    remotes: config.remotes ?? {},
+    remotes: remotesOf(config),
     remoteTransport: () => chain,
   });
 

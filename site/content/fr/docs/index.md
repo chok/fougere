@@ -69,7 +69,7 @@ L'énoncé de topologie entier tient en une ligne de config :
 
 ```ts
 // fougere.config.ts
-remotes: { blog: 'http://127.0.0.1:4100' }
+fronds: { blog: 'http://127.0.0.1:4100' }
 ```
 
 Pas de RPC sans voyage : un appel est une valeur `(entity, operation, invocation)` ; le

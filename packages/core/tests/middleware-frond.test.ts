@@ -36,7 +36,7 @@ const memory: StorageFactory = () => {
 };
 
 /** `ops` serves nothing and holds `Everywhere`; the two that serve sit under it. */
-const family = { ops: { shop: {}, mail: {} } };
+const family = { ops: { fronds: ['shop', 'mail'] } };
 
 const app = (under?: typeof family) => createApp({
   scan: () => scanProject(root),

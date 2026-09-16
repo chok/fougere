@@ -91,8 +91,8 @@ describe('applyConfig', () => {
   it('does not report a key as pending when only the member order moved', () => {
     setLogLevel('warn');
     const out = applyConfig(
-      { logLevel: 'warn', remotes: { blog: 'http://a', shop: 'http://b' } },
-      { logLevel: 'warn', remotes: { shop: 'http://b', blog: 'http://a' } },
+      { logLevel: 'warn', fronds: { blog: 'http://a', shop: 'http://b' } },
+      { logLevel: 'warn', fronds: { shop: 'http://b', blog: 'http://a' } },
     );
 
     expect(out.pending).toEqual([]);
@@ -101,11 +101,11 @@ describe('applyConfig', () => {
   it('still reports a key whose value actually moved', () => {
     setLogLevel('warn');
     const out = applyConfig(
-      { logLevel: 'warn', remotes: { blog: 'http://a' } },
-      { logLevel: 'warn', remotes: { blog: 'http://elsewhere' } },
+      { logLevel: 'warn', fronds: { blog: 'http://a' } },
+      { logLevel: 'warn', fronds: { blog: 'http://elsewhere' } },
     );
 
-    expect(out.pending).toEqual(['remotes']);
+    expect(out.pending).toEqual(['fronds']);
   });
 
   it('lets the environment win over the file — the CLI speaks that way', () => {

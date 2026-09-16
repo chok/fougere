@@ -14,7 +14,7 @@ import type { Nuxt } from '@nuxt/schema';
 import { orderSeeds } from '@fougere/core';
 import { scanProject, emitStatement, emitFacade, emitNames, frondAliases, watchPathsOf } from '@fougere/compiler';
 import { frondPackage, resolveConventions, type Conventions } from '@fougere/core';
-import { setModuleLoader, loadCascadedConfig } from '@fougere/core/node';
+import { setModuleLoader, loadCascadedConfig, remotesOf } from '@fougere/core/node';
 import { declaresStorage } from '@fougere/defaults';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
 import { createJiti } from 'jiti';
@@ -181,9 +181,9 @@ const module = defineNuxtModule<FougereModuleOptions>({
       ...(await syncedEntityNames(rootDir, conventions)),
     ];
     const entityNames = [...new Set(designated)];
-    if (Object.keys(config.remotes ?? {}).length > 0 && entityNames.length === 0) {
+    if (Object.keys(remotesOf(config)).length > 0 && entityNames.length === 0) {
       useLogger('fougere').warn(
-        'fougere: this app declares `remotes:` and no entity name could be reserved against the minifier.\n'
+        'fougere: this app places a frond elsewhere and no entity name could be reserved against the minifier.\n'
         + '  A class name IS the JSON-RPC method, so a mangled one leaves as `f.list` and the remote refuses it.\n'
         + '  Run `fougere sync` so the remote entities land in .fougere/, or keep a frond of your own.',
       );
@@ -347,9 +347,8 @@ export default module;
 
 /** What of the config a generated plugin can carry: values, never providers. */
 function carried(config: FougereConfig): Partial<FougereConfig> {
-  const { remotes, fronds, adapters, sources, logLevel } = config as FougereConfig & { sources?: unknown };
+  const { fronds, adapters, sources, logLevel } = config as FougereConfig & { sources?: unknown };
   return {
-    ...(remotes ? { remotes } : {}),
     ...(fronds ? { fronds } : {}),
     ...(adapters ? { adapters } : {}),
     ...(sources ? { sources } : {}),

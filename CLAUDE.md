@@ -10,7 +10,7 @@ table, no protocol, no host, no address. The two things this file used to call i
 ideas are its two readings, and calling them two hid the rule that produces both:
 
 1. **Single-schema** — what the declaration does not name is *derived* from it: one Entity class (`class Post extends entity({...})`) generates validation, DB tables (Kysely), GraphQL types (Pothos), form contracts, API surfaces.
-2. **The gradient** — what it does not name is *chosen outside* it: a Frond (entities + handlers + collectors + seeds) runs in-process or in its own process behind JSON-RPC, with **identical user code**. `fronds:` in `fougere.config.ts` is the whole statement — a name for a frond that is here, an address for one that is elsewhere, a module specifier for one a package brings, and nesting for who inherits whose code.
+2. **The gradient** — what it does not name is *chosen outside* it: a Frond (entities + handlers + collectors + seeds) runs in-process or in its own process behind JSON-RPC, with **identical user code**. `fronds:` in `fougere.config.ts` is the whole statement — an entry per frond, whose `fronds:` names the ones inheriting its code, whose `remote:` says where it answers, and whose key names a module when a package brings it.
 
 Reference docs: `site/content/` (en/fr).
 
@@ -29,7 +29,7 @@ pnpm -C packages/schema vitest run tests/entity.test.ts
 pnpm -C site dev                   # :3000 — vitrine + docs + blog Frond
 pnpm -C demos/nuxt-blog dev:blog   # blog Frond alone in its process (:4100)
 pnpm -C demos/nuxt-blog dev        # Nuxt app (:3000), consumes it via remotes
-                                   # comment `remotes:` → same app in-process
+                                   # comment `fronds:` → same app in-process
 pnpm -C demos/schema-ecommerce dev # Apollo Server on :4000
 pnpm -C demos/container-basics dev
 pnpm -C demos/core-scanner dev
@@ -40,7 +40,7 @@ pnpm -C demos/mirror-catalog dev    # two passes over a source that only answers
 pnpm -C demos/sse-live dev         # live fan-out to readers who are not trusted peers
 pnpm -C demos/log-destinations dev # two destinations for one line, and the frond that names neither
 pnpm -C demos/shared-parent dev    # one frond holds what a family shares, and answers nothing
-pnpm -C demos/pipe-split dev       # the op that FINISHES a fact — here, then behind `remotes:`
+pnpm -C demos/pipe-split dev       # the op that FINISHES a fact — here, then behind `fronds:`
 pnpm -C demos/ask-quorum dev       # `Emit<T, A>` — the announcement that waits, across three processes
 pnpm -C demos/observability dev    # three processes; `pnpm load` (k6) and `pnpm signoz` beside it
 pnpm -C demos/together-frame dev   # two writes that stand or fall as one — then uncomment `sources:`
@@ -124,7 +124,7 @@ demos/
   config-reload/       the config re-read under a running app, the drain, and what it refuses to change
   mirror-catalog/      a copy of rows the app cannot query, and what the second pass costs
   together-frame/      one frame, two realizations, and the config line that picks one
-  crossing-cost/       cart → pricing → catalog: 0 hops or 2, decided by `remotes:` alone
+  crossing-cost/       cart → pricing → catalog: 0 hops or 2, decided by `fronds:` alone
   oclif-catalog/       a frond as a terminal — every flag read off the entity, nothing declared
   observability/       three Fronds in three processes, one trace — and what the wire cost
   test-gradient/       what the declaration writes on its own, and the four rungs it runs at
@@ -176,7 +176,7 @@ the entity did not name keeps what the shape would give. `EntityAdapterSet`
 (`schema/src/entity/EntityAdapterSet.ts`) owns the two levels an entry is addressed by —
 adapter name, then field name — and always exists, so `getAdapters()` is never `undefined`.
 What the OPERATOR decides is not stated here: it belongs in `fougere.config.ts` beside
-`remotes:`, `sources:` and `ports:`. Pinned by `adapter/sql/tests/adapters.test.ts`.
+`fronds:`, `sources:` and `ports:`. Pinned by `adapter/sql/tests/adapters.test.ts`.
 
 **The entry has a validator, and the adapter writes it as DATA.** `AdapterFieldValidator`
 (`schema/src/validator/AdapterFieldValidator.ts`) takes a format and refuses what it does not admit;
@@ -268,7 +268,7 @@ counts as one: it is called the same way. Three readers that each held a
 piece: `rpc.topology`, `@fougere/calls`' `servedModel` (which had its own `declared:` and its
 own `hostOf`), and `fougere graph`, which now prints the frond altitude above the entity one.
 Putting the two side by side found its first disagreement the same day: a frond whose code
-sits in the project is SCANNED, so `remotes:` leaves it in `app.fronds`, and `topologyOf`
+sits in the project is SCANNED, so `fronds:` leaves it in `app.fronds`, and `topologyOf`
 answered `local` for a frond every call reached over HTTP. Pinned by
 `core/tests/declared.test.ts` and `observability/tests/edges.test.ts` — which is also the
 first test in that package to pin a non-empty edge at all.
@@ -375,7 +375,7 @@ against a `k6` threshold per tag. The histogram BOUNDS are deliberately NOT deri
 per-op bounds would silently break the panel that asks for the p95 of the whole service. They
 left the library instead (`observability({ bounds })`) — a list of bounds is an operator's
 decision, not a literal a package holds. Pinned by `observability/tests/sampling.test.ts`, which
-runs the same fixture with and without `remotes:`.
+runs the same fixture with and without `fronds:`.
 
 **A host owns its own starter, and the dependency list is the registry** —
 `packages/app/*/template/`, resolved by `ProjectWriter` (`listTemplates('apps')`). The CLI held
@@ -411,15 +411,17 @@ of those two is the only directory with an ORDER: `vocabulary/` is read before `
 because a file there registers a word at module level (`Generators.register('ulid', …)`) and
 an entity beside it may write that name — a registry refuses one it does not hold. The other,
 `extensions/`, is recognized by its FORM, a module stating `up` or `down`, and it travels with
-its frond: behind `remotes:` it mounts on the process serving it there, which is why no key
+its frond: behind `fronds:` it mounts on the process serving it there, which is why no key
 widens it — what must be everywhere is a frond that is everywhere, which `Extension.fronds`
 already answers. The config is read BEFORE the aliases, because it names the scope they
 are built from. `.fougere/` is the framework's working directory, not user vocabulary.
 Pinned by `tests/conventions.test.ts`.
 
-**`fronds:` says what an app is MADE OF, and its nesting says one thing only** —
-`FrondsStated` (`core/src/FrondsStated.ts`), judged by `boot/nesting.ts`. A child resolves what
-its parent declared, because its scope hangs off its parent's: `installFrond` starts from
+**`fronds:` says what an app is MADE OF, and a family says one thing only** —
+`FrondsStated` (`core/src/FrondsStated.ts`), judged by `boot/nesting.ts`. An entry is EITHER a
+shorthand string or a set of attributes, never a mix: the fronds inheriting from it are NAMED
+under `fronds:` rather than nested beside it, so no attribute can collide with a frond's name
+and nothing is reserved. A child resolves what its parent declared, because its scope hangs off its parent's: `installFrond` starts from
 `container.resolve('frond:' + under)` and `ScopeContainer.resolve` walks up on its own, so
 providers, `<E>Repository`, presenters and port keys are inherited with no mechanism at all.
 Middlewares and seams are not — neither is a container key — so both are CARRIED lists,
@@ -429,7 +431,7 @@ right to CALL: two fronds still reach each other through a façade or an announc
 family inherits from may not serve (`frond-parent-serves`), may not be placed at an address
 (`frond-parent-remote`), and may not declare rows (`frond-parent-entities`) — with no façade
 nothing can call it, so nothing can move it, and it stands in every process holding one of its
-children. `remotesOf` folds the tree's string leaves and `remotes:` into one reading, so
+children. `remotesOf` folds the tree's string leaves and `fronds:` into one reading, so
 nothing downstream learns there are two graphies; a module key is imported by the HOST, never
 by core, and where it lands is read off its form — `up`/`down` means an extension. The word
 `fronds` had three senses and now has two: the filter is `only:`. Pinned by
@@ -530,7 +532,7 @@ seam, since nothing else it could be. It is applied where the realization is BUI
 
 The scope is the FROND and the fronds under it, and no KEY widens it — the widening is the
 tree, and a tree is not a deployment statement. A key would break the gradient: a frond moved
-behind `remotes:` would silently leave the reach of a link its own code never mentions, and the
+behind `fronds:` would silently leave the reach of a link its own code never mentions, and the
 gradient promises the USER CODE is identical. Nesting cannot do that, because a frond a family
 inherits from is REFUSED a placement of its own (`frond-parent-remote`) and refused handlers
 (`frond-parent-serves`) — with no façade, nothing can call it and nothing can move it, so it
@@ -611,9 +613,9 @@ is nothing to undo, only something to finish. Pinned by `core/tests/on-delete.te
 (`boot/bootstrap.ts`). All four read the STORAGE and never a facade: a facade answers what its
 handler chose to show, so `PostHandler.list` hiding drafts would hide exactly the row the
 question exists to find. `holds` is the write's question asked across, `release` the delete's;
-`peers()` is built from `remotes:` itself and not from the router, because the router indexes by
+`peers()` is built from `fronds:` itself and not from the router, because the router indexes by
 entity read off a card while the question is asked of a PROCESS about rows it may be alone in
-knowing about — a frond behind `remotes:` may have no sources here at all. A `visited` trail
+knowing about — a frond behind `fronds:` may have no sources here at all. A `visited` trail
 travels so two processes declaring each other cannot ask each other forever, and being ASKED
 still walks locally: the trail stops a re-ask, never the work. Pinned by
 `defaults/tests/on-delete.test.ts` — three processes, and each carrying only its own frond.
@@ -692,11 +694,11 @@ by crash, every subscriber handed `null`. A fact is what HAPPENED — the announ
 said so and `Emit` returns void, so nothing could tell it otherwise. Filtering belongs to
 whoever announces, or to each reader.
 
-A link is CALLED, so it needs an address — local, or named in `remotes:`. A carrier has no
+A link is CALLED, so it needs an address — local, or named in `fronds:`. A carrier has no
 address, so a link can never live behind one, the same line `Ask` draws. It is a HARD
 dependency where a subscriber is not — a subscriber that throws is
 logged and the announcer goes on, a link that throws stops the announcement, and behind
-`remotes:` that makes announcing depend on another process. Pinned by `tests/pipe.test.ts`
+`fronds:` that makes announcing depend on another process. Pinned by `tests/pipe.test.ts`
 and `demos/pipe-split`. `Fact` and `Pipe` are both transparent (`= T`), so the scan keeps
 them by NAME (`handler-parser.ts`, `ANNOUNCED`) — the checker keeps nothing of an alias.
 
@@ -846,7 +848,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 - **`CrudViews` is typed on the five CRUD names** (`core/src/prefab/crud.ts`). Widening it to
   admit a custom op also admits `{ lst: Card }`, the typo the five names catch. Measured
   2026-08-24: zero custom ops want a closed view.
-- **`remotes:` names one address per frond**, so the same frond cannot be deployed twice. The
+- **`fronds:` names one address per frond**, so the same frond cannot be deployed twice. The
   key is a frond NAME, a type, while a deployment has instances. Not implemented.
 - **A named surface serves nothing when the frond is remote** — `boot/bootstrap.ts`,
   `facadeFor` resolves a surface key in the local container only. True of all three doors.

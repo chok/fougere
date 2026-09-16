@@ -11,7 +11,7 @@
  */
 import { scanProject } from '@fougere/compiler';
 import { createApp, createLocalRunner, declaredTopologyOf, resolveEffectiveOperations, type Storage } from '@fougere/core';
-import { loadConfig } from '@fougere/core/node';
+import { loadConfig, remotesOf } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { join } from 'node:path';
 
@@ -34,13 +34,13 @@ await using app = await createApp({
   scan,
   createContainer,
   storageFactory: shelf,
-  remotes: config.remotes ?? {},
+  remotes: remotesOf(config),
   // Nothing answers at those addresses. A call would refuse; reading the shape does not.
   remoteTransport: () => (async () => { throw new Error('nobody is listening there'); }),
 });
 
 const declared = declaredTopologyOf(app);
-const { operations } = resolveEffectiveOperations(app.fronds, { remotes: config.remotes ?? {} });
+const { operations } = resolveEffectiveOperations(app.fronds, { remotes: remotesOf(config) });
 
 console.log('\n  Declared — what the config says\n');
 for (const frond of declared.fronds) {

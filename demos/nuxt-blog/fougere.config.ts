@@ -9,7 +9,7 @@ export default defineFougere({
   adapters: { rest: true, graphql: true },
   // La Frond blog vit dans un autre process (pnpm dev:blog). Commenter cette
   // ligne pour la ravoir in-process — le code ne change pas d'une virgule.
-  remotes: { blog: 'http://127.0.0.1:4100' },
+  fronds: { blog: 'http://127.0.0.1:4100' },
   auth: betterAuth({
     user: User,
     secret: 'nuxt-blog-demo-secret-at-least-32-characters!',

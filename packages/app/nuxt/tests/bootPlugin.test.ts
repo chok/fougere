@@ -134,15 +134,15 @@ describe('a storage that could not be opened', () => {
   });
 
   it('carries the topology, because a consumer has nothing else', () => {
-    // `remotes:` is the whole reason an app that hosts nothing boots at all, and `boot()`
+    // `fronds:` is the whole reason an app that hosts nothing boots at all, and `boot()`
     // used to re-read it off a disk the Worker does not have. `auth` is deliberately not
     // carried: it holds a live provider, not a value.
     const out = generateBootPlugin(
-      { db: false, remotes: { catalog: 'https://x.workers.dev' }, auth: (() => {}) as never },
+      { db: false, fronds: { catalog: 'https://x.workers.dev' }, auth: (() => {}) as never },
       [], '/app/boot', [], '/app/fronds.ts',
     );
 
-    expect(out).toContain('"remotes":{"catalog":"https://x.workers.dev"}');
+    expect(out).toContain('"fronds":{"catalog":"https://x.workers.dev"}');
     expect(out).not.toContain('auth');
   });
 });

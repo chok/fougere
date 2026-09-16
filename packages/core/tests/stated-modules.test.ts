@@ -21,7 +21,7 @@ describe('statedModules', () => {
 
   it('sends a descriptor to the fronds and a rising shape to the extensions', async () => {
     const { fronds, extensions } = await statedModules({
-      shop: { cart: {} },
+      shop: { fronds: ['cart'] },
       '@acme/audit': './lines.jsonl',
       '@acme/watch': {},
     });
@@ -42,7 +42,7 @@ describe('statedModules', () => {
   });
 
   it('says nothing about the fronds a scan finds on disk', async () => {
-    const { fronds, extensions } = await statedModules({ shop: { cart: {} }, blog: 'http://a' });
+    const { fronds, extensions } = await statedModules({ shop: { fronds: ['cart'] }, blog: 'http://a' });
 
     expect(fronds).toEqual([]);
     expect(extensions).toEqual([]);

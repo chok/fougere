@@ -9,7 +9,7 @@
 import { createJiti } from 'jiti';
 import { createApp, createLocalRunner, Logger } from '@fougere/core';
 import { scanProject, frondAliases } from '@fougere/compiler';
-import { setModuleLoader, loadConfig } from '@fougere/core/node';
+import { setModuleLoader, loadConfig, remotesOf } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { resolveStorage, layerOf } from '@fougere/defaults';
 import { serve } from '@fougere/transport-http';
@@ -26,13 +26,13 @@ const jiti = createJiti(import.meta.url, {
 });
 setModuleLoader((filePath: string) => jiti.import(filePath) as Promise<Record<string, unknown>>);
 
-// Commenting `remotes:` is how you take the frond back in-process, so its absence
-// means this process has no caller — say that rather than binding a port nobody dials.
+// Commenting the address is how you take the frond back in-process, so its absence means
+// this process has no caller — say that rather than binding a port nobody dials.
 const config = await loadConfig(process.cwd());
-const address = config.remotes?.blog;
+const address = remotesOf(config).blog;
 if (!address) {
   throw new Error(
-    'No `remotes.blog` in fougere.config.ts — that line is what sends calls here.\n'
+    "No address for 'blog' in fougere.config.ts — `fronds: { blog: 'http://…' }` is what sends calls here.\n"
     + '  Uncomment it to run the frond split, or drop this process and run the app in-process.',
   );
 }

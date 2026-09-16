@@ -119,7 +119,7 @@ describe('a link declared by the frond above', () => {
   });
 
   it('stands in front of the rows of every frond under it', async () => {
-    await using built = await family({ ledger: { warehouse: {} } });
+    await using built = await family({ ledger: { fronds: ['warehouse'] } });
 
     await createLocalRunner(built)({ entity: 'crate', op: 'add' }, { ...Invocation.empty, params: { label: 'oak' } });
 

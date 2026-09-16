@@ -67,7 +67,7 @@ is one line of config:
 
 ```ts
 // fougere.config.ts
-remotes: { blog: 'http://127.0.0.1:4100' }
+fronds: { blog: 'http://127.0.0.1:4100' }
 ```
 
 There is no RPC without travel: a call is a value `(entity, operation, invocation)`; the

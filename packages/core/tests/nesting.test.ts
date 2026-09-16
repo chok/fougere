@@ -17,7 +17,7 @@ import type { FrondDescriptor } from '../src/descriptor/FrondDescriptor.js';
 
 const root = join(import.meta.dirname, 'fixtures-nesting');
 
-const family = { shop: { cart: {} } };
+const family = { shop: { fronds: ['cart'] } };
 
 const scanned = async (only?: string[]): Promise<Fronds> =>
   Fronds.hosting((await scanProject(root, only)).fronds);
@@ -70,7 +70,7 @@ describe('nestingOf', () => {
   });
 
   it('refuses a parent that serves', async () => {
-    const { refused } = nestingOf({ cart: { shop: {} } }, await scanned(), undefined);
+    const { refused } = nestingOf({ cart: { fronds: ['shop'] } }, await scanned(), undefined);
 
     expect(codesOf(refused)).toEqual(['frond-parent-serves']);
     expect(refused[0]?.message).toContain('answers at cart');
@@ -83,14 +83,14 @@ describe('nestingOf', () => {
   });
 
   it('refuses a parent that declares rows', async () => {
-    const { refused } = nestingOf({ catalog: { shop: {} } }, await scanned(), undefined);
+    const { refused } = nestingOf({ catalog: { fronds: ['shop'] } }, await scanned(), undefined);
 
     expect(codesOf(refused)).toEqual(['frond-parent-entities']);
     expect(refused[0]?.message).toContain('product');
   });
 
   it('names a frond the process does not hold', async () => {
-    const { refused } = nestingOf({ shop: { basket: {} } }, await scanned(), undefined);
+    const { refused } = nestingOf({ shop: { fronds: ['basket'] } }, await scanned(), undefined);
 
     expect(codesOf(refused)).toEqual(['frond-unknown']);
     expect(refused[0]?.subject).toBe('shop.basket');
@@ -103,7 +103,7 @@ describe('nestingOf', () => {
   });
 
   it('refuses a name stated at two places in the tree', async () => {
-    const { refused } = nestingOf({ shop: { cart: {} }, blog: { cart: {} } }, await scanned(), undefined);
+    const { refused } = nestingOf({ shop: { fronds: ['cart'] }, blog: { fronds: ['cart'] } }, await scanned(), undefined);
 
     expect(codesOf(refused)).toEqual(['frond-under-twice']);
   });

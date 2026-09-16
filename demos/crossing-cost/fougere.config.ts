@@ -12,7 +12,7 @@ import { defineFougere } from '@fougere/core';
  * that never happened leaves no trace to count.
  */
 export default defineFougere({
-  remotes: {
+  fronds: {
     // pricing: 'http://127.0.0.1:4610',
     // catalog: 'http://127.0.0.1:4620',
     ledger: 'http://127.0.0.1:4630',

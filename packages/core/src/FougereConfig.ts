@@ -22,14 +22,6 @@ export interface FougereConfig {
   /** How much every logger says. */
   logLevel?: LogLevel;
   /**
-   * Remote fronds — frondName → base URL.
-   *
-   * The KEY is not narrowed to `NameOf<'frond'>`, and that is a choice: constraining it means
-   * making every key optional, which puts `| undefined` on the values and changes what six
-   * readers here already treat as present. The name is checked at boot instead.
-   */
-  remotes?: Record<string, string>;
-  /**
    * What this app is made of, and who inherits code from whom. The key is a frond name or a
    * module specifier; nesting says only that a child resolves what its parent declared.
    */
@@ -66,24 +58,14 @@ export async function loadConfig(root: string, options?: { fresh?: boolean }): P
 }
 
 /**
- * Where each frond answers, whichever way the config says it — a string leaf of `fronds:` is
- * an address, and `remotes:` says the same thing outside the tree. One reading, so nothing
- * downstream learns there are two ways to write it.
+ * Where each frond answers — a string leaf of `fronds:`, which is the one place a config says
+ * it. `CreateAppOptions.remotes` still takes this shape: the option is what the whole boot
+ * reads, and translating here is what keeps it from learning about the tree.
  */
 export function remotesOf(config: FougereConfig): Record<string, string> {
   const addresses: Record<string, string> = {};
   for (const stated of statedFronds(config.fronds).fronds) {
     if (stated.value !== undefined && !statesModule(stated.key)) addresses[stated.key] = stated.value;
-  }
-  for (const [frond, url] of Object.entries(config.remotes ?? {})) {
-    const inTree = addresses[frond];
-    if (inTree !== undefined && inTree !== url) {
-      throw new Error(
-        `Fougere config: '${frond}' is placed at ${inTree} in \`fronds:\` and at ${url} in `
-        + '`remotes:`. One frond answers at one address — keep the one you meant.',
-      );
-    }
-    addresses[frond] = url;
   }
 
   return addresses;
@@ -93,14 +75,11 @@ export function remotesOf(config: FougereConfig): Record<string, string> {
 
 /**
  * Override a config with another, the invariant of every cascade level: scalar keys replace, but
- * the two that say what this app is made of MERGE — an override adds or redirects a frond
+ * the one that says what this app is made of MERGES — an override adds or redirects a frond
  * without erasing the others.
  */
 function mergeGlobal(base: FougereConfig, override: Partial<FougereConfig>): FougereConfig {
   const merged: FougereConfig = { ...base, ...override };
-  if (base.remotes || override.remotes) {
-    merged.remotes = { ...base.remotes, ...override.remotes };
-  }
   if (base.fronds || override.fronds) {
     merged.fronds = mergeStated(base.fronds ?? {}, override.fronds ?? {});
   }
