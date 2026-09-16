@@ -8,7 +8,7 @@ import { InputValidator } from '../../validator/InputValidator.js';
 import { Schema } from '../../Schema.js';
 import { type SchemaConstructor } from '../../SchemaConstructor.js';
 import type { SchemaView } from '../../SchemaView.js';
-import type { Values } from '../../Values.js';
+import type { Values } from '../../field/Values.js';
 import { admitPatterns, refuse } from './admission.js';
 import type { DerivedFrom } from './DerivedFrom.js';
 import type { FieldDescriptor } from './FieldDescriptor.js';

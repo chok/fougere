@@ -5,7 +5,7 @@ import type { EntityAdapters } from './entity/EntityAdapters.js';
 import type { ValidationResult } from './lib/ValidationResult.js';
 import type { ValidateOptions } from './validator/ValidateOptions.js';
 import type { SchemaDerivation } from './SchemaDerivation.js';
-import type { Values } from './Values.js';
+import type { Values } from './field/Values.js';
 
 export interface SchemaView<TFields extends Fields = Fields> {
   readonly name: string;
