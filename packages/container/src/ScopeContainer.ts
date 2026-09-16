@@ -154,6 +154,7 @@ export class ScopeContainer implements Container {
 
   private buildFallback<T>(name: string): T {
     const made = this.fallback?.(name);
+
     if (made === undefined) throw new ContainerError(this.errorMessage(name));
 
     this.registry.set(name, {
