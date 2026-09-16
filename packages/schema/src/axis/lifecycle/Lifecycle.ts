@@ -18,7 +18,6 @@ export class Lifecycle {
     return this.create === undefined;
   }
 
-  /** The server fills it at create, so a client form never carries it. */
   get stampedAtCreate(): boolean {
     return this.create === 'now';
   }
@@ -37,6 +36,7 @@ export class Lifecycle {
 
   get literal(): { value: unknown } | undefined {
     const rule = this.create;
+
     return typeof rule === 'object' && rule !== null && 'value' in rule
       ? { value: (rule as { value: unknown }).value }
       : undefined;
@@ -44,6 +44,7 @@ export class Lifecycle {
 
   get generator(): GeneratorRef | undefined {
     const rule = this.create;
+
     return typeof rule === 'object' && rule !== null && 'generate' in rule
       ? (rule as { generate: GeneratorRef }).generate
       : undefined;
