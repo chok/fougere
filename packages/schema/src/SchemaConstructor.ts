@@ -1,9 +1,10 @@
+import type { StandardSchemaV1 } from '@standard-schema/spec';
+
 import { type Fields } from './field/Fields.js';
 
 import { type EntityDeclarations } from './entity/EntityDeclarations.js';
 import { type PreviousNames } from './entity/PreviousNames.js';
 import { SchemaDerivation } from './SchemaDerivation.js';
-import type { StandardSchemaV1 } from './projection/standard.js';
 import type { SchemaView } from './SchemaView.js';
 import type { Values } from './field/Values.js';
 

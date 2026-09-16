@@ -1,3 +1,5 @@
+import type { StandardSchemaV1 } from '@standard-schema/spec';
+
 import { Boundary } from './axis/boundary/Boundary.js';
 import { type Fields } from './field/Fields.js';
 import { type CompositeUnique } from './entity/CompositeUnique.js';
@@ -9,7 +11,6 @@ import { SchemaDerivation } from './SchemaDerivation.js';
 import { type SchemaConstraints } from './SchemaConstraints.js';
 import { SchemaDefinition } from './SchemaDefinition.js';
 import { type ValidateOptions } from './validator/ValidateOptions.js';
-import type { StandardSchemaV1 } from './projection/standard.js';
 
 import type { SchemaView } from './SchemaView.js';
 
