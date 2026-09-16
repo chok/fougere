@@ -14,10 +14,9 @@ import {
   parseRefusals,
   parsePresenterMethods,
   parseConstructorParams,
-  parseImplements,
-  resetTypePrograms,
-  seedTypeProgram,
 } from './handler-parser.js';
+import { parseImplements } from './Implemented.js';
+import { resetTypePrograms, seedTypeProgram } from './TypeProgram.js';
 
 import { lowerFirst } from '@fougere/schema';
 
