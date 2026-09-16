@@ -5,6 +5,7 @@ import type { Field } from '../../field/Field.js';
 import { type Shape } from '../shape/Shape.js';
 import { Shapes } from '../shape/Shape.js';
 import type { BoundaryRules } from './BoundaryRules.js';
+import { SchemaError } from '../../SchemaError.js';
 
 const identityDecoder: Decoder = (value) => ({ value });
 
@@ -33,7 +34,7 @@ export class Boundary {
     if (typeof ref !== 'string') return new Boundary(ref);
 
     const alias = Boundaries.aliases.find(ref);
-    if (!alias) throw new Error(`Unknown boundary alias: '${ref}'`);
+    if (!alias) throw new SchemaError(`Unknown boundary alias: '${ref}'`);
     return new Boundary(alias);
   }
 

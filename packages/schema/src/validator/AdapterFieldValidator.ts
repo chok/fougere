@@ -1,6 +1,7 @@
 import { Validator } from '@cfworker/json-schema';
 import type { Shape } from '../axis/shape/Shape.js';
 import { isObject } from '../lib/utils.js';
+import { SchemaError } from '../SchemaError.js';
 
 /**
  * The format is DATA, not a TypeScript interface: an interface is erased before a JS
@@ -19,7 +20,7 @@ export class AdapterFieldValidator {
     if (entries === undefined) return;
 
     if (!isObject(entries)) {
-      throw new Error(
+      throw new SchemaError(
         `${path}: expected an object keyed by field name, got ${typeof entries}.`,
       );
     }
@@ -34,7 +35,7 @@ export class AdapterFieldValidator {
       const failure = units[units.length - 1] ?? verdict.errors[0];
       const nested = (failure?.instanceLocation ?? '#').slice(1).replaceAll('/', '.');
 
-      throw new Error(`${path}.${field}${nested}: ${failure?.error ?? 'does not match the format'}`);
+      throw new SchemaError(`${path}.${field}${nested}: ${failure?.error ?? 'does not match the format'}`);
     }
   }
 }

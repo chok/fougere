@@ -1,6 +1,7 @@
 import type { ValidationError } from '../../lib/ValidationError.js';
 import { Shapes } from '../../axis/shape/Shape.js';
 import { dotted } from '../../lib/ValidationResult.js';
+import { SchemaError } from '../../SchemaError.js';
 
 /**
  * Throws with what is wrong AND what to write: a card's author is in another process.
@@ -8,7 +9,7 @@ import { dotted } from '../../lib/ValidationResult.js';
  * `refuse('role.relation.kind is "maybe"', 'Expected one of one, many.')`
  */
 export function refuse(what: string, fix: string): never {
-  throw new Error(`This card cannot be read: ${what}.\n  ${fix}`);
+  throw new SchemaError(`This card cannot be read: ${what}.\n  ${fix}`);
 }
 
 /**

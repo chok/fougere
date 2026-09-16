@@ -1,6 +1,7 @@
 import { Field } from '../field/Field.js';
 import { EXTENSION_SLOTS } from '../axis/Axis.js';
 import { dequal } from 'dequal';
+import { SchemaError } from '../SchemaError.js';
 
 const MEMBER_SLOTS = [...EXTENSION_SLOTS, 'meta'] as const;
 
@@ -38,7 +39,7 @@ function merge(name: string, field: Field, given: Partial<Field>): Partial<Field
     for (const [member, value] of Object.entries(members)) {
       const previous = already?.[member];
       if (previous === undefined || dequal(previous, value)) continue;
-      throw new Error(
+      throw new SchemaError(
         `vocabulary: \`${name}\` states ${slot}.${member} = ${JSON.stringify(value)}, but the ` +
           `field already states ${JSON.stringify(previous)}. Apply one or the other, not both.`,
       );

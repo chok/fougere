@@ -1,6 +1,7 @@
 import type { Fields } from '../field/Fields.js';
 import { isObject } from '../lib/utils.js';
 import type { EntityAdapters } from './EntityAdapters.js';
+import { SchemaError } from '../SchemaError.js';
 
 type AdapterConfiguration = Record<string, unknown>;
 type AdapterConfigurations = Record<string, AdapterConfiguration>;
@@ -19,14 +20,14 @@ export class EntityAdapterSet {
     if (!adapters) return new EntityAdapterSet({});
 
     if (!isObject(adapters)) {
-      throw new Error(
+      throw new SchemaError(
         `adapters: expected an object keyed by adapter name, got ${typeof adapters}.`,
       );
     }
 
     for (const [adapter, fields] of Object.entries(adapters)) {
       if (!isObject(fields)) {
-        throw new Error(
+        throw new SchemaError(
           `adapters.${adapter}: expected an object keyed by field name, got ${typeof fields}. ` +
             `What an adapter is handed is addressed by the field it applies to.`,
         );

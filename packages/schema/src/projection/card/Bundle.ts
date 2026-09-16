@@ -8,6 +8,7 @@ import type { SchemaDescriptor } from './SchemaDescriptor.js';
 import type { Diff } from './Diff.js';
 import type { SetDiff } from './SetDiff.js';
 import type { SetDiffOptions } from './SetDiffOptions.js';
+import { SchemaError } from '../../SchemaError.js';
 
 type SchemaSet = Record<string, SchemaView> | SchemaView[];
 
@@ -26,7 +27,7 @@ export class Bundle {
       const key = lowerFirst(entry.name);
       const previous = claimedBy.get(key);
       if (previous !== undefined) {
-        throw new Error(
+        throw new SchemaError(
           `Schemas '${previous}' and '${entry.name}' both claim bundle key '${key}'. `
           + 'Each schema in a bundle must have a distinct registration key.',
         );

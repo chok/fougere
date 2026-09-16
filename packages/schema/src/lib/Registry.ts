@@ -1,3 +1,5 @@
+import { SchemaError } from '../SchemaError.js';
+
 export class Registry<T> {
   private readonly entries: Map<string, T>;
 
@@ -24,7 +26,7 @@ export class Registry<T> {
 
     if (found !== undefined) return found;
 
-    throw new Error(
+    throw new SchemaError(
       `${path ? `${path}: ` : ''}Unknown ${this.label} '${name}'${this.hint ? ` — ${this.hint}` : ''}. ` +
         `This process answers ${this.names.join(', ') || 'nothing yet'}.`,
     );

@@ -3,6 +3,7 @@ import type { CompositeUnique } from '../entity/CompositeUnique.js';
 import { Field } from './Field.js';
 import { type FieldName } from './FieldName.js';
 import { type Fields } from './Fields.js';
+import { SchemaError } from '../SchemaError.js';
 
 export class FieldSet<TFields extends Fields = Fields> {
   private constructor(private readonly fields: TFields) {}
@@ -28,7 +29,7 @@ export class FieldSet<TFields extends Fields = Fields> {
     for (const group of unique ?? []) {
       const missing = group.filter((key) => !Object.hasOwn(fields, key));
       if (missing.length)
-        throw new Error(
+        throw new SchemaError(
           `unique: [${group.join(', ')}] names ` +
             `${missing.map((key) => `'${key}'`).join(', ')}, which the entity does not declare.`,
         );
@@ -52,7 +53,7 @@ export class FieldSet<TFields extends Fields = Fields> {
       .map(([name]) => name);
 
     if (primaries.length > 1) {
-      throw new Error(
+      throw new SchemaError(
         `FieldSet.primary: ${primaries.map((name) => JSON.stringify(name)).join(', ')} all declare ` +
           '`primary`; a field set can have only one primary field.',
       );

@@ -1,4 +1,5 @@
 import { Field } from '../../field/Field.js';
+import { SchemaError } from '../../SchemaError.js';
 
 export interface ListOptions {
   min?: number;
@@ -12,7 +13,7 @@ export interface ListOptions {
  */
 export function list<T>(item: Field<T>, opts?: ListOptions): Field<T[]> {
   if (item.role?.relation)
-    throw new Error(
+    throw new SchemaError(
       'list() takes a value field (text(), number()…) — a relation has no value shape',
     );
   return new Field<T[]>({

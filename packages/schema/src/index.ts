@@ -18,6 +18,7 @@ export { Lifecycle } from './axis/lifecycle/Lifecycle.js';
 export { Boundary } from './axis/boundary/Boundary.js';
 export { applyCreate, applyUpdate } from './axis/lifecycle/apply.js';
 export { InputRefusal } from './validator/InputRefusal.js';
+export { SchemaError } from './SchemaError.js';
 export { type ValidationError } from './lib/ValidationError.js';
 export { dotted, type ValidationResult } from './lib/ValidationResult.js';
 

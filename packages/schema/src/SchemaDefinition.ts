@@ -9,6 +9,7 @@ import { SchemaDerivation } from './SchemaDerivation.js';
 import { type ValidateOptions } from './validator/ValidateOptions.js';
 import type { SchemaView } from './SchemaView.js';
 import { SchemaConstraints } from './SchemaConstraints.js';
+import { SchemaError } from './SchemaError.js';
 
 /**
  * Everything a definition is made of, every member required.
@@ -225,7 +226,7 @@ export class SchemaDefinition {
     const strangers = keys.filter((key) => !Object.hasOwn(this.fields, key));
     if (strangers.length === 0) return;
 
-    throw new Error(
+    throw new SchemaError(
       `${operation}(): unknown field ${strangers.map((s) => `\`${s}\``).join(', ')}. ` +
         `This schema carries ${Object.keys(this.fields).join(', ')}.`,
     );

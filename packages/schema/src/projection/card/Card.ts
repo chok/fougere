@@ -16,6 +16,7 @@ import type { FieldExtension } from './FieldExtension.js';
 import type { SchemaDescriptor } from './SchemaDescriptor.js';
 import { compare, type Diff } from './Diff.js';
 import { type DiffOptions } from './DiffOptions.js';
+import { SchemaError } from '../../SchemaError.js';
 
 type FieldsOf<T> = { [K in keyof T]-?: Field<T[K]> };
 
@@ -192,7 +193,7 @@ function reconstructField(
 ): Field {
   const shape = reconstructShape(property);
   if (!shape) {
-    throw new Error(
+    throw new SchemaError(
       `Field '${key}': the card carries no \`type\` for it, so there is no shape to rebuild. ` +
         'A field always states one.',
     );
