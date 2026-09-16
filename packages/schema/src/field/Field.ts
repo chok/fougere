@@ -39,10 +39,10 @@ export class Field<T = unknown> {
     const create = this.lifecycle?.create;
     if (typeof create === 'object' && create !== null && 'value' in create) {
       const checked = FieldValueValidator.of(this).validate(create.value);
-      if ('refusal' in checked)
+      if ('message' in checked)
         throw new SchemaError(
           `${key ? `Field '${key}': ` : ''}the declared default ${JSON.stringify(create.value)} ` +
-            `is not a legal value for it — ${checked.refusal}.`,
+            `is not a legal value for it — ${checked.message}.`,
         );
     }
   }

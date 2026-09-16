@@ -32,17 +32,17 @@ export class FieldValueValidator {
     if (value !== null) {
       if (base?.type === 'object' && !base.properties) return { value };
       if (type === 'date' && value instanceof Date) {
-        return Number.isNaN(value.getTime()) ? { refusal: 'Invalid date' } : { value };
+        return Number.isNaN(value.getTime()) ? { message: 'Invalid date' } : { value };
       }
       if ((type === 'number' || type === 'integer') && typeof value === 'number' && Number.isNaN(value)) {
-        return { refusal: 'Expected a number' };
+        return { message: 'Expected a number' };
       }
     }
     const plan = FieldValueValidator.planFor(shape);
     const result = plan.validator.validate(value);
     if (!result.valid) return refusalOf(result.errors);
     if (plan.custom && typeof value === 'string' && !plan.custom(value)) {
-      return { refusal: `String does not match format "${plan.formatName}".` };
+      return { message: `String does not match format "${plan.formatName}".` };
     }
     return { value };
   }
@@ -53,7 +53,7 @@ export class FieldValueValidator {
    */
   parse(value: unknown): Verdict {
     const verdict = this.validate(value);
-    if ('refusal' in verdict) return verdict;
+    if ('message' in verdict) return verdict;
     if (verdict.value === null) return { value: null };
 
     return Boundary.of(this.field).decode(verdict.value);
@@ -96,10 +96,10 @@ function refusalOf(errors: readonly OutputUnit[]): Verdict {
     (held, one) => (held && depthOf(held) >= depthOf(one) ? held : one),
     undefined,
   );
-  if (!deepest) return { refusal: 'Invalid value' };
+  if (!deepest) return { message: 'Invalid value' };
   const path = locationOf(deepest.instanceLocation);
 
-  return path.length > 0 ? { refusal: deepest.error, path } : { refusal: deepest.error };
+  return path.length > 0 ? { message: deepest.error, path } : { message: deepest.error };
 }
 
 const depthOf = (unit: OutputUnit): number => locationOf(unit.instanceLocation).length;

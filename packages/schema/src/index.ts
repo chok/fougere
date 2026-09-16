@@ -20,6 +20,7 @@ export { applyCreate, applyUpdate } from './axis/lifecycle/apply.js';
 export { InputRefusal } from './validator/InputRefusal.js';
 export { SchemaError } from './SchemaError.js';
 export { type ValidationError } from './lib/ValidationError.js';
+export { type Verdict } from './lib/Verdict.js';
 export { dotted, type ValidationResult } from './lib/ValidationResult.js';
 
 export { Card } from './projection/card/Card.js';

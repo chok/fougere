@@ -43,7 +43,7 @@ export class InputValidator {
     for (const [key, field] of Object.entries(this.fields)) {
       const verdict = this.admit(field, data[key]);
       if (verdict === undefined) continue;
-      if ('refusal' in verdict) errors.push({ path: [key, ...(verdict.path ?? [])], message: verdict.refusal });
+      if ('message' in verdict) errors.push({ path: [key, ...(verdict.path ?? [])], message: verdict.message });
       else row[key] = verdict.value;
     }
 
@@ -61,8 +61,8 @@ export class InputValidator {
   private admit(field: Field, value: unknown): Verdict | undefined {
     if (value === undefined) return this.whenAbsent(field);
 
-    if (Boundary.of(field).readOnly) return { refusal: InputRefusal.readOnly };
-    if (this.options.patch && Lifecycle.of(field).immutable) return { refusal: InputRefusal.immutable };
+    if (Boundary.of(field).readOnly) return { message: InputRefusal.readOnly };
+    if (this.options.patch && Lifecycle.of(field).immutable) return { message: InputRefusal.immutable };
 
     return FieldValueValidator.of(field).parse(value);
   }
@@ -71,7 +71,7 @@ export class InputValidator {
     if (this.options.patch) return undefined;
 
     const absence = this.onAbsent(field);
-    if (absence === null) return { refusal: InputRefusal.required };
+    if (absence === null) return { message: InputRefusal.required };
 
     return absence === 'empty-list' ? { value: [] } : undefined;
   }

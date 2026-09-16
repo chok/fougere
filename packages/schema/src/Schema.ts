@@ -76,7 +76,7 @@ export class Schema {
         continue;
       }
       const decoded = Boundary.of(field).decode(value);
-      row[key] = 'refusal' in decoded ? value : decoded.value;
+      row[key] = 'message' in decoded ? value : decoded.value;
     }
     return row;
   }

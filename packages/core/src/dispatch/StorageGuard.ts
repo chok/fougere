@@ -1,4 +1,4 @@
-import { FieldSet, FieldValueValidator, InputRefusal, type Fields } from '@fougere/schema';
+import { FieldSet, FieldValueValidator, InputRefusal, type Fields, type Verdict } from '@fougere/schema';
 import { COMPARISONS, comparisonOf, unknownIn } from '../storage/Comparison.js';
 import { assertListOptions } from '../storage/Storage.js';
 import { ErrorCode } from '../wire/ErrorCode.js';
@@ -139,7 +139,7 @@ export class StorageGuard {
 
     for (const [key, asked] of Object.entries(where)) {
       const read = this.criterion(key, asked);
-      if ('error' in read) errors.push(`${key}: ${read.error}`);
+      if ('message' in read) errors.push(`${key}: ${read.message}`);
       else {
         parsed[key] = read.value;
         this.beyondTheView(key);
@@ -165,23 +165,23 @@ export class StorageGuard {
    * A comparison names its own vocabulary, and a typo in it would otherwise be a criterion that
    * filters nothing — the silent truncation this facade exists to stop.
    */
-  private criterion(key: string, asked: unknown): { value: unknown } | { error: string } {
+  private criterion(key: string, asked: unknown): Verdict {
     const field = this.fields[key];
-    if (!field) return { error: InputRefusal.unknownField };
+    if (!field) return { message: InputRefusal.unknownField };
 
     const comparison = comparisonOf(field, asked);
     if (comparison) {
       const unknown = unknownIn(comparison);
 
       return unknown.length
-        ? { error: `unknown comparison ${unknown.join(', ')} — one of ${COMPARISONS.join(', ')}` }
+        ? { message: `unknown comparison ${unknown.join(', ')} — one of ${COMPARISONS.join(', ')}` }
         : { value: comparison };
     }
 
     const values = Array.isArray(asked) ? asked : [asked];
     const each = values.map((value) => this.value(field, value));
-    const refused = each.find((one) => typeof one === 'object' && one !== null && 'error' in one);
-    if (refused) return { error: (refused as { error: string }).error };
+    const refused = each.find((one) => 'message' in one);
+    if (refused) return refused;
 
     return { value: Array.isArray(asked) ? each.map(unwrap) : unwrap(each[0]) };
   }
@@ -210,15 +210,15 @@ export class StorageGuard {
    * One key a handler wrote. A key the entity does not declare has no column to land in and no
    * judge to pass: on the client facade it is a typo, and on this one a mapping that went stale.
    */
-  private written(key: string, item: unknown): { value: unknown } | { error: string } {
+  private written(key: string, item: unknown): Verdict {
     const field = this.fields[key];
-    if (!field) return { error: InputRefusal.unknownField };
+    if (!field) return { message: InputRefusal.unknownField };
     if (item === undefined) return { value: item };
 
     return FieldValueValidator.of(field).parse(item);
   }
 
-  private value(field: Fields[string], asked: unknown): { value: unknown } | { error: string } {
+  private value(field: Fields[string], asked: unknown): Verdict {
     if (asked === null || asked === undefined) return { value: asked };
     return FieldValueValidator.of(field).parse(asked);
   }
@@ -232,7 +232,7 @@ export class StorageGuard {
 
     for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
       const read = this.written(key, item);
-      if ('error' in read) errors.push(`${where}${key}: ${read.error}`);
+      if ('message' in read) errors.push(`${where}${key}: ${read.message}`);
       else parsed[key] = read.value;
     }
 
@@ -287,5 +287,5 @@ export class StorageGuard {
   }
 }
 
-const unwrap = (one: { value: unknown } | { error: string }): unknown =>
+const unwrap = (one: Verdict): unknown =>
   'value' in one ? one.value : undefined;
