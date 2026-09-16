@@ -14,7 +14,7 @@ import {
   parseRefusals,
   parsePresenterMethods,
   parseConstructorParams,
-  parseImplementedClasses,
+  parseImplements,
   resetTypePrograms,
   seedTypeProgram,
 } from './handler-parser.js';
@@ -178,8 +178,8 @@ function tupleMembers(raw: string): string[] {
 const ctorParamsOf = (filePath: string) =>
   parseConstructorParams(filePath);
 
-const implementedClassesOf = (filePath: string) =>
-  parseImplementedClasses(filePath);
+const implementsOf = (filePath: string) =>
+  parseImplements(filePath);
 
 const presenterMethodsOf = (filePath: string) =>
   parsePresenterMethods(filePath);
@@ -195,10 +195,12 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
   const params = await ctorParamsOf(filePath);
   const deps = params.map((p) => depKeyOf(p.type));
 
+  const stated = await implementsOf(filePath);
+
   // A port is answered by EXTENDING it: the boot reads the prototype chain, and `implements`
   // leaves none. Said here rather than refused, because implementing a class is legal — only
   // the author knows whether a port was meant. Warned, so `createApp` prints it too.
-  for (const base of await implementedClassesOf(filePath)) {
+  for (const { name: base } of stated.filter((one) => one.isClass)) {
     record({
       severity: 'warning',
       code: 'port-implemented-not-extended',
@@ -210,6 +212,10 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
         + `\`class ${name} extends ${base}\`, or ${base} states an interface if its shape is all you wanted.`,
     });
   }
+
+  // `implements AsyncDisposable` — the language's own marker, which `App` already answers. It
+  // says two things at once: there is ONE of me in this frond's scope, and that scope closes me.
+  const kept = stated.some((one) => one.name === 'AsyncDisposable');
 
   // A repository inherits its constructor from `Repository(…)`, so the file declares none
   // and the scan reads no parameter. The mixin knows what it was built for and says so at
@@ -230,7 +236,7 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
   // `name` beside `ctor`, and it IS the registration key — what `depKeyOf` returns, since
   // it reads the type as written. It used to be asked of `ctor.name` at boot, which held
   // until a bundler lowered a static field and renamed the declaration doing it.
-  return { name, ctor, deps, filePath };
+  return { name, ctor, deps, filePath, ...(kept ? { kept: true as const } : {}) };
 }
 
 /**

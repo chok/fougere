@@ -694,20 +694,19 @@ export async function parseConstructorParams(filePath: string, projectRoot?: str
 }
 
 /**
- * The CLASSES a scanned class says it implements — never the interfaces, which is the
- * ordinary case.
+ * What a scanned class says it IMPLEMENTS, and whether each name is a class.
  *
- * `implements` is erased, so `Object.getPrototypeOf(ctor).name` is empty and the boot binds
- * no port: the class registers under its own name, and the first dependency on the port
- * answers `'Payment' is not registered`. Read here because only the source says it.
+ * A class is the interesting case: `implements` is erased, so `Object.getPrototypeOf(ctor).name`
+ * is empty and the boot binds no port. An interface is the ordinary one — and one of them,
+ * `AsyncDisposable`, is how a provider says its scope keeps it and closes it.
  */
-export async function parseImplementedClasses(filePath: string, projectRoot?: string): Promise<string[]> {
+export async function parseImplements(filePath: string, projectRoot?: string): Promise<Implemented[]> {
   const ts = await loadTS();
   const { source, checker } = checkedSourceOf(filePath, projectRoot);
   const cls = findDefaultClass(source);
   if (!cls?.heritageClauses) return [];
 
-  const classes: string[] = [];
+  const found: Implemented[] = [];
   for (const clause of cls.heritageClauses) {
     if (clause.token !== ts.SyntaxKind.ImplementsKeyword) continue;
 
@@ -715,15 +714,22 @@ export async function parseImplementedClasses(filePath: string, projectRoot?: st
       if (!ts.isIdentifier(base.expression)) continue;
 
       let symbol = checker.getSymbolAtLocation(base.expression);
-      if (!symbol) continue;
-      if (symbol.flags & ts.SymbolFlags.Alias) symbol = checker.getAliasedSymbol(symbol);
-      if (symbol.declarations?.some((one) => ts.isClassDeclaration(one))) {
-        classes.push(base.expression.text);
-      }
+      if (symbol && symbol.flags & ts.SymbolFlags.Alias) symbol = checker.getAliasedSymbol(symbol);
+
+      found.push({
+        name: base.expression.text,
+        isClass: symbol?.declarations?.some((one) => ts.isClassDeclaration(one)) ?? false,
+      });
     }
   }
 
-  return classes;
+  return found;
+}
+
+/** One `implements` clause, and what the checker says its name is. */
+export interface Implemented {
+  name: string;
+  isClass: boolean;
 }
 
 const CONSTRUCTOR_ONLY = new Set(['constructor']);

@@ -13,7 +13,7 @@ interface Entry {
 
 /** A scope reaches its parent and its children through members only a scope can read. */
 export class ScopeContainer implements Container {
-  private readonly built: Disposable[] = [];
+  private readonly built: (Disposable | AsyncDisposable)[] = [];
   private readonly children: ScopeContainer[] = [];
   private readonly registry = new Map<string, Entry>();
   private readonly resolving: string[];
@@ -113,7 +113,8 @@ export class ScopeContainer implements Container {
     const failures: unknown[] = [];
     while (this.built.length > 0) {
       try {
-        await this.built.pop()?.dispose();
+        const value = this.built.pop();
+        if (value) await Disposables.close(value);
       } catch (error) {
         failures.push(error);
       }

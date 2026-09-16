@@ -272,7 +272,13 @@ function registerProviders(
   frondLog: Logger,
 ): Map<string, ProviderEntry[]> {
   for (const provider of frond.providers) {
-    scope.register(nameOf(provider), provider.ctor, { deps: provider.deps });
+    // `kept` is `implements AsyncDisposable` — one per frond scope, closed when it closes.
+    // Without it a provider is built per consumer and closed by nobody, which is what a
+    // service holding nothing wants.
+    scope.register(nameOf(provider), provider.ctor, {
+      deps: provider.deps,
+      ...(provider.kept ? { lifetime: 'singleton' as const } : {}),
+    });
   }
   // What this frond puts in front of one of the framework's own ports. Its own, like every
   // provider — a link goes where its frond goes, which is what a frond behind `remotes:`

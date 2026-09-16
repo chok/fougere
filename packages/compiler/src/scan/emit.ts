@@ -86,8 +86,11 @@ function collectorOf(c: CollectorEntry, imports: Imports): string {
 }
 
 function providerOf(p: ProviderEntry, imports: Imports): string {
+  // `kept` travels like every other member: a provider that loses it on disk is registered
+  // transient, so the same code would answer differently depending on how it was booted.
   return `{ name: ${lit(nameOf(p))}, ctor: ${imports.aliasOf(p.ctor as Live)}, `
-    + `deps: ${lit(p.deps)}, filePath: ${lit(p.filePath)} }`;
+    + `deps: ${lit(p.deps)}, filePath: ${lit(p.filePath)}`
+    + `${p.kept ? ', kept: true' : ''} }`;
 }
 
 function middlewareOf(m: MiddlewareEntry, imports: Imports): string {
