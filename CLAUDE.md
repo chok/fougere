@@ -962,8 +962,9 @@ One line each, kept because a past version of this file asserted the opposite.
 - `FieldSet.primary` refuses two primaries, naming both. The absence is answered, not defaulted.
 - `heritage-unresolved` under an installed package was fixed before the entry describing it was
   written (`87b4738`). Remeasured 2026-08-28 against real tarballs: nothing reported.
-- A registry that cannot say what it holds is not the owner: `Generators` registers its three
-  builtins rather than switching on them.
+- A registry that cannot say what it holds is not the owner: `Generators` registers `cuid2`
+  like any other name rather than switching on it, which is what let `uuid` leave without a
+  branch to remove.
 - **A copy does not import, so no reader count can see it.** Measured 2026-08-25: nine
   hand-written copies of four declared functions, five of them divergent.
 - The shape is held on three paths: the façade validates input, `StorageGuard` validates every write,
