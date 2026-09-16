@@ -11,6 +11,7 @@ import {
   applyUpdate,
   created,
   entity,
+  list,
   number,
   primary,
   text,
@@ -56,7 +57,7 @@ describe('a stamp is one instant, but never one object', () => {
 describe('a declared default is never one object either', () => {
   class Tagged extends entity({
     id: primary(),
-    tags: { shape: { type: 'array', items: { type: 'string' } }, lifecycle: { create: { value: [] } } },
+    tags: list(text()).with({ lifecycle: { create: { value: [] } } }),
   }) {}
 
   it('gives each ROW its own array', () => {
