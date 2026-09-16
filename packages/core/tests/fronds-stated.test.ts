@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { statedFronds, statesModule, mergeStated } from '../src/FrondsStated.js';
+import { statesModule, mergeStated } from '../src/FrondsStated.js';
+import { statedFronds } from '../src/StatedFrond.js';
 import { remotesOf } from '../src/FougereConfig.js';
 
 describe('statesModule', () => {

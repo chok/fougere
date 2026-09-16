@@ -8,7 +8,8 @@
 import type { Diagnostic } from '../diagnostic.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import { Fronds } from '../descriptor/Fronds.js';
-import { statedFronds, statesModule, type FrondsStated } from '../FrondsStated.js';
+import { statesModule, type FrondsStated } from '../FrondsStated.js';
+import { statedFronds } from '../StatedFrond.js';
 
 /** A frond that holds what a family shares serves nothing — which is what keeps it here. */
 function refuseServingParent(

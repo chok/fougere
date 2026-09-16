@@ -7,7 +7,8 @@ import type { NameOf } from './NameOf.js';
 import type { PortChoice } from './PortChoice.js';
 import { getModuleLoader } from './loader.js';
 import type { AdapterConfig } from './AdapterConfig.js';
-import { mergeStated, statedFronds, statesModule, type FrondsStated } from './FrondsStated.js';
+import { mergeStated, statesModule, type FrondsStated } from './FrondsStated.js';
+import { statedFronds } from './StatedFrond.js';
 
 export interface FougereConfig {
   /** Database configuration — the DEFAULT source, the one an entity lands in unnamed. */

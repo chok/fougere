@@ -10,7 +10,8 @@
  */
 import type { Extension } from './boot/Extension.js';
 import type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
-import { statedFronds, statesModule, type FrondsStated } from './FrondsStated.js';
+import { statesModule, type FrondsStated } from './FrondsStated.js';
+import { statedFronds } from './StatedFrond.js';
 import { getModuleLoader } from './loader.js';
 
 /** The export a specifier reaches: its last segment, `default` failing that. */
