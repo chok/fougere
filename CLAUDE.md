@@ -10,7 +10,7 @@ table, no protocol, no host, no address. The two things this file used to call i
 ideas are its two readings, and calling them two hid the rule that produces both:
 
 1. **Single-schema** — what the declaration does not name is *derived* from it: one Entity class (`class Post extends entity({...})`) generates validation, DB tables (Kysely), GraphQL types (Pothos), form contracts, API surfaces.
-2. **The gradient** — what it does not name is *chosen outside* it: a Frond (entities + handlers + collectors + seeds) runs in-process or in its own process behind JSON-RPC, with **identical user code**. `fronds:` in `fougere.config.ts` is the whole statement — an entry per frond, whose `fronds:` names the ones inheriting its code, whose `remote:` says where it answers, and whose key names a module when a package brings it.
+2. **The gradient** — what it does not name is *chosen outside* it: a Frond (entities + handlers + collectors + seeds) runs in-process or in its own process behind JSON-RPC, with **identical user code**. `fronds:` in `fougere.config.ts` is the whole statement — an entry per frond, whose `extends:` names the one it inherits code from, whose `remote:` says where it answers, and whose key names a module when a package brings it.
 
 Reference docs: `site/content/` (en/fr).
 
@@ -417,11 +417,16 @@ already answers. The config is read BEFORE the aliases, because it names the sco
 are built from. `.fougere/` is the framework's working directory, not user vocabulary.
 Pinned by `tests/conventions.test.ts`.
 
-**`fronds:` says what an app is MADE OF, and a family says one thing only** —
-`FrondsStated` (`core/src/FrondsStated.ts`), judged by `boot/nesting.ts`. An entry is EITHER a
-shorthand string or a set of attributes, never a mix: the fronds inheriting from it are NAMED
-under `fronds:` rather than nested beside it, so no attribute can collide with a frond's name
-and nothing is reserved. A child resolves what its parent declared, because its scope hangs off its parent's: `installFrond` starts from
+**`fronds:` says what an app is MADE OF, and `extends:` says one thing only** —
+`FrondsStated` (`core/src/FrondsStated.ts`), judged by `boot/nesting.ts`. It is the INHERITOR
+that names what it inherits from, and by a scalar: a name then lives in one place, so moving a
+frond is one edit and removing it leaves nothing dangling, where a parent listing its own put
+every name twice. It is also the form `tsconfig`, Maven and Kubernetes all chose for
+inheritance — and each of the three that later opened it to a list had to write "the last one
+wins". ONE level: the frond an `extends` names may not inherit itself (`frond-extends-chain`),
+which is what keeps a cycle out without a cycle check, the way Cargo's single level does. A
+frond a family inherits from needs NO entry of its own, so what it may not be is asked of the
+NAMES rather than of the entries. A child resolves what its parent declared, because its scope hangs off its parent's: `installFrond` starts from
 `container.resolve('frond:' + under)` and `ScopeContainer.resolve` walks up on its own, so
 providers, `<E>Repository`, presenters and port keys are inherited with no mechanism at all.
 Middlewares and seams are not — neither is a container key — so both are CARRIED lists,

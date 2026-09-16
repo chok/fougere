@@ -21,17 +21,22 @@ export type FrondsStated = {
 /**
  * Everything an entry says, or the one string that is the whole of it — an address for a frond
  * that answers elsewhere, the argument for a module key.
- *
- * An entry is EITHER that shorthand or a set of attributes, never a mix. The fronds that
- * inherit from it are named under an attribute of their own rather than beside them: an object
- * holding both would have two natures, and telling them apart would take a reserved word no
- * frond could then be called.
  */
 export type FrondStated = string | FrondAttributes;
 
 export interface FrondAttributes {
-  /** The fronds that inherit this one's code, by name. */
-  fronds?: readonly (NameOf<'frond'> | (string & {}))[];
+  /**
+   * The frond this one inherits code from — its scope hangs off that one's.
+   *
+   * Said by the INHERITOR, and scalar: a name then lives in one place, so moving a frond from
+   * one family to another is one edit and removing it leaves nothing dangling. It is the form
+   * `tsconfig`, Maven and Kubernetes all chose for inheritance, and the one that makes
+   * "one parent" a fact of the shape rather than a refusal at boot.
+   *
+   * ONE level: the frond it names may not inherit itself (`frond-extends-chain`). Nothing in
+   * this repo has ever wanted a chain, and refusing it is also what keeps a cycle out.
+   */
+  extends?: NameOf<'frond'> | (string & {});
   /** Where it answers — the same thing the shorthand says. */
   remote?: string;
   /** What the host hands a module key when it imports it. */
@@ -67,70 +72,39 @@ function attributesOf(stated: FrondStated, key: string): FrondAttributes {
 }
 
 /**
- * Every frond the config states, each before the ones that inherit from it — which is also the
- * order a boot installs them in, since a child's scope hangs off its parent's.
+ * Every frond the config states, those inheriting from nothing first — which is also the order
+ * a boot installs them in, since a scope hangs off the one above it.
  *
- * A name two entries claim is reported rather than resolved: which one a frond inherits from
- * would otherwise depend on reading order.
+ * A partition and not a sort: with one level, a frond that inherits has nothing under it, so
+ * two passes put every parent before every child without knowing the tree.
  */
-export function statedFronds(stated: FrondsStated | undefined): {
-  fronds: StatedFrond[];
-  twice: { key: string; paths: [string, string] }[];
-} {
+export function statedFronds(stated: FrondsStated | undefined): StatedFrond[] {
   const entries = Object.entries(stated ?? {}) as [string, FrondStated | undefined][];
-  const fronds: StatedFrond[] = [];
-  const placed = new Set<string>();
-  const twice: { key: string; paths: [string, string] }[] = [];
 
-  // Named by an entry rather than nested in one: a child is a NAME here, so what it says about
-  // itself stays its own entry, wherever that sits.
-  const under = new Map<string, string>();
-  for (const [key, value] of entries) {
-    if (value === undefined) continue;
+  const read = ([key, value]: [string, FrondStated | undefined]): StatedFrond | undefined => {
+    if (value === undefined) return undefined;
 
-    for (const child of attributesOf(value, key).fronds ?? []) {
-      const first = under.get(child);
-      if (first !== undefined) {
-        twice.push({ key: child, paths: [`${first}.${child}`, `${key}.${child}`] });
-        continue;
-      }
-      under.set(child, key);
-    }
-  }
+    const { extends: under, ...rest } = attributesOf(value, key);
+    const carries = statesModule(key) ? rest.options : rest.remote;
 
-  const take = (key: string, value: FrondStated | undefined): void => {
-    if (value === undefined || placed.has(key)) return;
-
-    placed.add(key);
-    const parent = under.get(key);
-    if (parent !== undefined && !placed.has(parent)) take(parent, stated?.[parent]);
-
-    const attributes = attributesOf(value, key);
-    const carries = statesModule(key) ? attributes.options : attributes.remote;
-    fronds.push({
+    return {
       key,
-      path: parent !== undefined ? `${parent}.${key}` : key,
-      ...(parent !== undefined ? { under: parent } : {}),
+      path: under !== undefined ? `${under}.${key}` : key,
+      ...(under !== undefined ? { under } : {}),
       ...(carries !== undefined ? { value: carries } : {}),
-    });
+    };
   };
 
-  for (const [key, value] of entries) take(key, value);
-  // A name a family claims and no entry declares is still a frond of the tree: the refusal
-  // that says so has to see it.
-  for (const [child, parent] of under) {
-    if (placed.has(child)) continue;
+  const stands = (one: StatedFrond | undefined): one is StatedFrond => one !== undefined;
+  const all = entries.map(read).filter(stands);
 
-    placed.add(child);
-    fronds.push({ key: child, path: `${parent}.${child}`, under: parent });
-  }
-
-  return { fronds, twice };
+  return [...all.filter((one) => one.under === undefined), ...all.filter((one) => one.under !== undefined)];
 }
 
 /**
- * Two levels of the cascade, folded. An entry merges by attribute, and the family ADDS — a
- * config naming one more frond under `shop` may not erase the ones the workspace named.
+ * Two levels of the cascade, folded. An entry merges by attribute, so an app naming a frond's
+ * address keeps the `extends` the workspace gave it — and an app naming a different `extends`
+ * replaces it, silently, the way every scalar key of this config replaces.
  */
 export function mergeStated(base: FrondsStated, override: FrondsStated): FrondsStated {
   const merged: Record<string, FrondStated> = { ...base } as Record<string, FrondStated>;
@@ -140,15 +114,8 @@ export function mergeStated(base: FrondsStated, override: FrondsStated): FrondsS
     const mine = merged[key];
     merged[key] = typeof value === 'string' || typeof mine === 'string' || mine === undefined
       ? value
-      : { ...mine, ...value, ...family(mine, value) };
+      : { ...mine, ...value };
   }
 
   return merged;
-}
-
-/** The one attribute that adds rather than replaces. */
-function family(base: FrondAttributes, override: FrondAttributes): FrondAttributes {
-  if (!base.fronds && !override.fronds) return {};
-
-  return { fronds: [...new Set([...base.fronds ?? [], ...override.fronds ?? []])] };
 }

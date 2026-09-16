@@ -17,7 +17,7 @@ import type { FrondDescriptor } from '../src/descriptor/FrondDescriptor.js';
 
 const root = join(import.meta.dirname, 'fixtures-nesting');
 
-const family = { shop: { fronds: ['cart'] } };
+const family = { cart: { extends: 'shop' } };
 
 const scanned = async (only?: string[]): Promise<Fronds> =>
   Fronds.hosting((await scanProject(root, only)).fronds);
@@ -70,7 +70,7 @@ describe('nestingOf', () => {
   });
 
   it('refuses a parent that serves', async () => {
-    const { refused } = nestingOf({ cart: { fronds: ['shop'] } }, await scanned(), undefined);
+    const { refused } = nestingOf({ shop: { extends: 'cart' } }, await scanned(), undefined);
 
     expect(codesOf(refused)).toEqual(['frond-parent-serves']);
     expect(refused[0]?.message).toContain('answers at cart');
@@ -83,14 +83,14 @@ describe('nestingOf', () => {
   });
 
   it('refuses a parent that declares rows', async () => {
-    const { refused } = nestingOf({ catalog: { fronds: ['shop'] } }, await scanned(), undefined);
+    const { refused } = nestingOf({ shop: { extends: 'catalog' } }, await scanned(), undefined);
 
     expect(codesOf(refused)).toEqual(['frond-parent-entities']);
     expect(refused[0]?.message).toContain('product');
   });
 
   it('names a frond the process does not hold', async () => {
-    const { refused } = nestingOf({ shop: { fronds: ['basket'] } }, await scanned(), undefined);
+    const { refused } = nestingOf({ basket: { extends: 'shop' } }, await scanned(), undefined);
 
     expect(codesOf(refused)).toEqual(['frond-unknown']);
     expect(refused[0]?.subject).toBe('shop.basket');
@@ -102,10 +102,16 @@ describe('nestingOf', () => {
     expect(refused).toEqual([]);
   });
 
-  it('refuses a name stated at two places in the tree', async () => {
-    const { refused } = nestingOf({ shop: { fronds: ['cart'] }, blog: { fronds: ['cart'] } }, await scanned(), undefined);
+  it('refuses a chain — inheriting goes one level', async () => {
+    const { refused } = nestingOf(
+      { cart: { extends: 'shop' }, shop: { extends: 'blog' } },
+      await scanned(),
+      undefined,
+    );
 
-    expect(codesOf(refused)).toEqual(['frond-under-twice']);
+    // `shop` also serves, so it is refused twice — both are true, and a boot names them together.
+    expect(codesOf(refused)).toContain('frond-extends-chain');
+    expect(refused[0]?.message).toContain("'cart' inherits from 'shop', which inherits from 'blog'");
   });
 
   it('answers nothing when the config states no tree', async () => {
@@ -121,7 +127,8 @@ describe('parentsFirst', () => {
     const fronds = await scanned();
     const ordered = parentsFirst(fronds, new Map([['blog', 'cart']]));
 
-    expect(ordered.map((frond) => frond.name).slice(0, 2)).toEqual(['cart', 'blog']);
+    // Every frond that inherits goes last, the rest keep the order the scan gave them.
+    expect(ordered.map((frond) => frond.name).at(-1)).toBe('blog');
   });
 
   it('leaves a flat app exactly as it was', async () => {

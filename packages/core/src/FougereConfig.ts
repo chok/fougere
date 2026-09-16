@@ -64,7 +64,7 @@ export async function loadConfig(root: string, options?: { fresh?: boolean }): P
  */
 export function remotesOf(config: FougereConfig): Record<string, string> {
   const addresses: Record<string, string> = {};
-  for (const stated of statedFronds(config.fronds).fronds) {
+  for (const stated of statedFronds(config.fronds)) {
     if (stated.value !== undefined && !statesModule(stated.key)) addresses[stated.key] = stated.value;
   }
 

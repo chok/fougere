@@ -67,28 +67,59 @@ export function nestingOf(
   const under = new Map<string, string>();
   if (stated === undefined) return { under, refused };
 
-  const { fronds: statements, twice } = statedFronds(stated);
+  const statements = statedFronds(stated);
   const here = new Map(fronds.map((frond) => [frond.name, frond]));
   const childrenOf = new Map<string, string[]>();
+  const inherits = new Set<string>();
   for (const statement of statements) {
     if (statement.under === undefined) continue;
+
+    inherits.add(statement.key);
     childrenOf.set(statement.under, [...(childrenOf.get(statement.under) ?? []), statement.key]);
   }
 
-  for (const { key, paths } of twice) {
+  for (const statement of statements) {
+    if (statement.under === undefined || !inherits.has(statement.under)) continue;
+
     refused.push({
       severity: 'blocking',
-      code: 'frond-under-twice',
+      code: 'frond-extends-chain',
       filePath: 'fougere.config.ts',
-      subject: key,
-      message: `'${key}' is stated at ${paths[0]} and at ${paths[1]}. A frond inherits from one `
-        + 'place: two would make the service it resolves depend on reading order. This can only '
-        + 'come from a cascade — check the workspace config beside the app one.',
+      subject: statement.path,
+      message: `'${statement.key}' inherits from '${statement.under}', which inherits from `
+        + `'${statedFronds(stated).find((one) => one.key === statement.under)?.under}'. `
+        + 'Inheriting goes one level: a scope hangs off the one above it, and a chain would make '
+        + 'a frond depend on code its own family never named. Move what they share into one '
+        + 'frond they both inherit from.',
     });
   }
 
+  // A frond a family inherits from needs no entry of its own — `extends` is said by the
+  // inheritor — so what it may not be is asked of the NAMES, not of the entries.
+  for (const [parent, children] of childrenOf) {
+    const frond = here.get(parent);
+    if (frond === undefined) continue;
+
+    const placed = stated[parent];
+    const address = typeof placed === 'string' ? placed : placed?.remote;
+    if (address !== undefined || (remotes && parent in remotes)) {
+      refused.push({
+        severity: 'blocking',
+        code: 'frond-parent-remote',
+        filePath: frond.source.path,
+        frond: frond.name,
+        subject: parent,
+        message: `'${parent}' is inherited from by ${children.join(', ')} and is placed at `
+          + `${address ?? remotes?.[parent]}. A frond they inherit from stands in every process `
+          + 'that holds one of them, so it has no address of its own. Give the address to one of '
+          + 'them, or have them inherit from somewhere else.',
+      });
+    }
+
+    if (!refuseServingParent(frond, children, refused)) refuseParentEntities(frond, children, refused);
+  }
+
   for (const statement of statements) {
-    const children = childrenOf.get(statement.key);
     const frond = here.get(statement.key);
 
     if (frond === undefined) {
@@ -125,26 +156,6 @@ export function nestingOf(
       continue;
     }
 
-    if (children === undefined) {
-      if (statement.under !== undefined) under.set(statement.key, statement.under);
-      continue;
-    }
-
-    if (statement.value !== undefined || (remotes && statement.key in remotes)) {
-      refused.push({
-        severity: 'blocking',
-        code: 'frond-parent-remote',
-        filePath: frond.source.path,
-        frond: frond.name,
-        subject: statement.path,
-        message: `'${statement.key}' has children (${children.join(', ')}) and is placed at `
-          + `${statement.value ?? remotes?.[statement.key]}. A frond they inherit from stands in `
-          + 'every process that holds one of them, so it has no address of its own. Give the '
-          + 'address to a child, or take the children out.',
-      });
-    }
-
-    if (!refuseServingParent(frond, children, refused)) refuseParentEntities(frond, children, refused);
     if (statement.under !== undefined) under.set(statement.key, statement.under);
   }
 
@@ -152,32 +163,20 @@ export function nestingOf(
 }
 
 /**
- * The same fronds, each parent before the children that inherit from it — the order the boot
- * installs them in, since a child's scope hangs off its parent's.
+ * The same fronds, each parent before the ones inheriting from it — the order the boot installs
+ * them in, since a scope hangs off the one above it.
  *
- * Stable: a frond only moves when another one is under it, so a flat app keeps the order it
- * was given, which is what `orderSeeds` reads.
+ * A partition and not a sort: inheriting goes one level, so a frond that inherits has nothing
+ * under it and two passes are enough. Stable, and the same array when nothing inherits — which
+ * is what `orderSeeds` reads.
  */
 export function parentsFirst(fronds: Fronds, under: Map<string, string>): Fronds {
   if (under.size === 0) return fronds;
 
-  const placed = new Set<string>();
-  const byName = new Map(fronds.map((frond) => [frond.name, frond]));
-  const ordered: FrondDescriptor[] = [];
-
-  const place = (frond: FrondDescriptor): void => {
-    if (placed.has(frond.name)) return;
-
-    placed.add(frond.name);
-    const parent = under.get(frond.name);
-    const above = parent !== undefined ? byName.get(parent) : undefined;
-    if (above) place(above);
-    ordered.push(frond);
-  };
-
-  for (const frond of fronds) place(frond);
-
-  return Fronds.hosting(ordered);
+  return Fronds.hosting([
+    ...fronds.filter((frond) => !under.has(frond.name)),
+    ...fronds.filter((frond) => under.has(frond.name)),
+  ]);
 }
 
 /**

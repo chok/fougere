@@ -14,79 +14,38 @@ describe('statesModule', () => {
 
 describe('statedFronds', () => {
   it('reads the cases off the shape of an entry', () => {
-    const { fronds } = statedFronds({
-      shop: { fronds: ['cart', 'pricing'] },
+    expect(statedFronds({
+      billing: {},
+      cart: { extends: 'billing' },
       blog: 'http://localhost:4100',
       '@fougere/log': './lines.jsonl',
-    });
-
-    expect(fronds).toEqual([
-      { key: 'shop', path: 'shop' },
+    })).toEqual([
+      { key: 'billing', path: 'billing' },
       { key: 'blog', path: 'blog', value: 'http://localhost:4100' },
       { key: '@fougere/log', path: '@fougere/log', value: './lines.jsonl' },
-      { key: 'cart', path: 'shop.cart', under: 'shop' },
-      { key: 'pricing', path: 'shop.pricing', under: 'shop' },
+      { key: 'cart', path: 'billing.cart', under: 'billing' },
     ]);
   });
 
   it('says the same thing in the long form', () => {
-    const { fronds } = statedFronds({ blog: { remote: 'http://localhost:4100' } });
-
-    expect(fronds).toEqual([{ key: 'blog', path: 'blog', value: 'http://localhost:4100' }]);
+    expect(statedFronds({ blog: { remote: 'http://localhost:4100' } }))
+      .toEqual([{ key: 'blog', path: 'blog', value: 'http://localhost:4100' }]);
   });
 
-  it('answers a frond before the ones that inherit from it', () => {
-    const { fronds } = statedFronds({
-      cart: { fronds: ['basket'] },
-      shop: { fronds: ['cart'] },
-    });
+  it('answers a frond before the ones inheriting from it, whatever the order written', () => {
+    const fronds = statedFronds({ cart: { extends: 'billing' }, billing: {}, invoice: { extends: 'billing' } });
 
-    expect(fronds.map((one) => one.key)).toEqual(['shop', 'cart', 'basket']);
-  });
-
-  it('reports a name two families claim rather than resolving it', () => {
-    const { twice } = statedFronds({ shop: { fronds: ['cart'] }, mail: { fronds: ['cart'] } });
-
-    expect(twice).toEqual([{ key: 'cart', paths: ['shop.cart', 'mail.cart'] }]);
+    expect(fronds.map((one) => one.key)).toEqual(['billing', 'cart', 'invoice']);
   });
 
   it('answers nothing for a config that states nothing', () => {
-    expect(statedFronds(undefined).fronds).toEqual([]);
-  });
-});
-
-describe('mergeStated', () => {
-  it('adds a frond to a family without erasing the ones already named', () => {
-    const merged = mergeStated(
-      { shop: { fronds: ['cart', 'pricing'] } },
-      { shop: { fronds: ['catalog'] } },
-    );
-
-    expect(merged).toEqual({ shop: { fronds: ['cart', 'pricing', 'catalog'] } });
-  });
-
-  it('lets an override redirect one frond and keep the others', () => {
-    const merged = mergeStated(
-      { blog: {}, shop: { fronds: ['cart'] } },
-      { blog: 'http://localhost:4100' },
-    );
-
-    expect(merged).toEqual({ blog: 'http://localhost:4100', shop: { fronds: ['cart'] } });
-  });
-
-  it('can fold two levels into a cycle, which one config alone never could', () => {
-    const merged = mergeStated({ shop: { fronds: ['cart'] } }, { cart: { fronds: ['shop'] } });
-    const { fronds } = statedFronds(merged);
-
-    // Each names the other as its child, so each is under the other — a pair no order can
-    // satisfy. Nothing here resolves it: `parentsFirst` does not loop, and the boot refuses.
-    expect(fronds.map((one) => [one.key, one.under])).toEqual([['cart', 'shop'], ['shop', 'cart']]);
+    expect(statedFronds(undefined)).toEqual([]);
   });
 });
 
 describe('remotesOf', () => {
   it('reads an address off a string leaf of the tree', () => {
-    expect(remotesOf({ fronds: { shop: { fronds: ['cart'] }, blog: 'http://localhost:4100' } }))
+    expect(remotesOf({ fronds: { cart: { extends: 'billing' }, blog: 'http://localhost:4100' } }))
       .toEqual({ blog: 'http://localhost:4100' });
   });
 

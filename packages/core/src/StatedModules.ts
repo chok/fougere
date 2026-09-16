@@ -34,7 +34,7 @@ export async function statedModules(
   const extensions: Extension[] = [];
   const loader = getModuleLoader();
 
-  for (const entry of statedFronds(stated).fronds) {
+  for (const entry of statedFronds(stated)) {
     if (!statesModule(entry.key)) continue;
 
     const module = await loader(entry.key) as Record<string, unknown>;
