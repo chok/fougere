@@ -165,7 +165,11 @@ function originOf(schema: SchemaView): DerivedFrom | undefined {
  * `{ type: 'string', maxLength: 200 }` → the same shape `text({ max: 200 })` states
  */
 function reconstructShape(property: FieldDescriptor): Field['shape'] | undefined {
-  const types = Array.isArray(property.type) ? property.type : property.type ? [property.type] : [];
+  const types = Array.isArray(property.type)
+    ? property.type
+    : property.type
+      ? [property.type]
+      : [];
   if (!types.some((type) => type !== 'null')) return undefined;
 
   // `describeField` writes the shape whole, so it is read whole: a list of keywords here
@@ -215,7 +219,10 @@ function reconstructField(
  * FR : écrit un groupe sur CHAQUE membre — un lecteur du fil ne voit qu'un champ.
  * `carryGroup(properties.listId, ['listId', 'docId'])` → the pair lands under its `role`
  */
-function carryGroup(property: FieldDescriptor | undefined, group: readonly string[]): void {
+function carryGroup(
+  property: FieldDescriptor | undefined,
+  group: readonly string[],
+): void {
   if (!property) return;
   const extension = (property['x-fougere'] ??= {}) as { role?: { unique?: string[][] } };
   const role = (extension.role ??= {});
