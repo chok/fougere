@@ -25,7 +25,7 @@ import {
 } from '../src/index.js';
 
 class Product extends entity({
-  id: primary({ generate: 'uuid' }),
+  id: primary(),
   sku: text({ min: 3 }),
   status: oneOf('draft', 'published', { default: 'draft' }),
   stock: number({ default: 0 }),
@@ -40,7 +40,7 @@ describe('applyCreate — what the system writes at creation', () => {
   it('fills the three rules and leaves the rest alone', () => {
     const row = applyCreate(fields, { sku: 'ABC-123' });
 
-    expect(row.id).toMatch(/^[0-9a-f-]{36}$/);   // { generate }
+    expect(row.id).toMatch(/^[a-z][a-z0-9]{23}$/);   // { generate }
     expect(row.status).toBe('draft');             // { value } — the one only SQL kept
     expect(row.stock).toBe(0);                    // a falsy default is still a default
     expect(row.createdAt).toBeInstanceOf(Date);   // 'now'

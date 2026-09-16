@@ -33,7 +33,7 @@ describe('helpers', () => {
     expect(f.lifecycle).toEqual({ create: { generate: 'cuid2' }, update: 'forbidden' });
   });
 
-  it('primary({ generate: "uuid" }) uses UUID generator', () => {
+  it('primary({ generate }) replaces the default', () => {
     const f = primary({ generate: 'uuid' });
     expect(f.role?.primary).toBe(true);
     expect(f.lifecycle?.create).toEqual({ generate: 'uuid' });
