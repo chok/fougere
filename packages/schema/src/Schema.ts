@@ -15,6 +15,7 @@ import { type ValidateOptions } from './validator/ValidateOptions.js';
 import type { SchemaView } from './SchemaView.js';
 
 import type { SchemaConstructor } from './SchemaConstructor.js';
+import { SchemaError } from './SchemaError.js';
 
 export const ANONYMOUS_SCHEMA_NAME = 'Schema';
 
@@ -75,7 +76,7 @@ export class Schema {
         continue;
       }
       const decoded = Boundary.of(field).decode(value);
-      row[key] = 'error' in decoded ? value : decoded.value;
+      row[key] = 'refusal' in decoded ? value : decoded.value;
     }
     return row;
   }
@@ -129,10 +130,10 @@ export class Schema {
 
   static named(name: string) {
     if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name)) {
-      throw new Error(`named(): \`${name}\` is not a valid class name.`);
+      throw new SchemaError(`named(): \`${name}\` is not a valid class name.`);
     }
     if (this.name !== ANONYMOUS_SCHEMA_NAME) {
-      throw new Error(
+      throw new SchemaError(
         `named(): \`${this.name}\` is already named by its class declaration.`,
       );
     }

@@ -1,13 +1,14 @@
 import type { BoundaryRules } from './BoundaryRules.js';
 import { Registry } from '../../lib/Registry.js';
 import type { Encoder } from './Encoder.js';
+import type { Verdict } from '../../lib/Verdict.js';
 
 /**
  * Wire to domain, and it must ANSWER a value it already produced: two facades decode — the
  * client one on what arrives, `StorageGuard` on what a handler writes — so a decoder that
  * halves cents halves them twice and stores a hundredth.
  */
-export type Decoder = (value: unknown) => { value: unknown } | { error: string };
+export type Decoder = (value: unknown) => Verdict;
 
 /**
  * `decoders` for a value coming in, `encoders` for one going out, `aliases` for the word
@@ -32,9 +33,9 @@ Boundaries.decoders.register('isoDate', (value) => {
   if (value instanceof Date) return { value };
   if (typeof value === 'string') {
     const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? { error: 'Invalid date' } : { value: date };
+    return Number.isNaN(date.getTime()) ? { refusal: 'Invalid date' } : { value: date };
   }
-  return { error: 'Expected a date' };
+  return { refusal: 'Expected a date' };
 });
 Boundaries.encoders.register('isoDate', (value) =>
   value instanceof Date ? value.toISOString() : value,

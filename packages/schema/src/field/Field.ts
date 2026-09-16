@@ -7,6 +7,7 @@ import type { Axis } from '../axis/Axis.js';
 import { FieldDeclarationValidator } from '../validator/FieldDeclarationValidator.js';
 import { FieldValueValidator } from '../validator/FieldValueValidator.js';
 import { dotted } from '../lib/ValidationResult.js';
+import { SchemaError } from '../SchemaError.js';
 
 type FieldDeclaration = Pick<Field, 'shape' | Axis['slot'] | 'meta'>;
 
@@ -23,7 +24,7 @@ export class Field<T = unknown> {
     const verdict = FieldDeclarationValidator.of(init).verdict;
 
     if (!verdict.success) {
-      throw new Error(
+      throw new SchemaError(
         `${key ? `Field '${key}': ` : ''}` +
           verdict.errors.map((e) => `${dotted(e.path)}: ${e.message}`).join('; '),
       );
@@ -38,10 +39,10 @@ export class Field<T = unknown> {
     const create = this.lifecycle?.create;
     if (typeof create === 'object' && create !== null && 'value' in create) {
       const checked = FieldValueValidator.of(this).validate(create.value);
-      if ('error' in checked)
-        throw new Error(
+      if ('refusal' in checked)
+        throw new SchemaError(
           `${key ? `Field '${key}': ` : ''}the declared default ${JSON.stringify(create.value)} ` +
-            `is not a legal value for it — ${checked.error}.`,
+            `is not a legal value for it — ${checked.refusal}.`,
         );
     }
   }

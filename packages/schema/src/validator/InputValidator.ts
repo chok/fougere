@@ -3,13 +3,12 @@ import { Lifecycle } from '../axis/lifecycle/Lifecycle.js';
 import { Role } from '../axis/role/Role.js';
 import type { Field } from '../field/Field.js';
 import type { Fields } from '../field/Fields.js';
+import type { Verdict } from '../lib/Verdict.js';
 import type { ValidationError } from '../lib/ValidationError.js';
 import type { ValidationResult } from '../lib/ValidationResult.js';
 import { FieldValueValidator } from './FieldValueValidator.js';
 import { InputRefusal } from './InputRefusal.js';
 import type { ValidateOptions } from './ValidateOptions.js';
-
-type Admitted = { path: readonly string[]; message: string } | { value: unknown };
 
 export class InputValidator {
   private constructor(
@@ -44,7 +43,7 @@ export class InputValidator {
     for (const [key, field] of Object.entries(this.fields)) {
       const verdict = this.admit(field, data[key]);
       if (verdict === undefined) continue;
-      if ('message' in verdict) errors.push({ path: [key, ...verdict.path], message: verdict.message });
+      if ('refusal' in verdict) errors.push({ path: [key, ...(verdict.path ?? [])], message: verdict.refusal });
       else row[key] = verdict.value;
     }
 
@@ -59,24 +58,20 @@ export class InputValidator {
       .map((key) => ({ path: [key], message: InputRefusal.unknownField }));
   }
 
-  private admit(field: Field, value: unknown): Admitted | undefined {
+  private admit(field: Field, value: unknown): Verdict | undefined {
     if (value === undefined) return this.whenAbsent(field);
 
-    if (Boundary.of(field).readOnly) return { path: [], message: InputRefusal.readOnly };
-    if (this.options.patch && Lifecycle.of(field).immutable) return { path: [], message: InputRefusal.immutable };
+    if (Boundary.of(field).readOnly) return { refusal: InputRefusal.readOnly };
+    if (this.options.patch && Lifecycle.of(field).immutable) return { refusal: InputRefusal.immutable };
 
-    const parsed = FieldValueValidator.of(field).parse(value);
-
-    return 'error' in parsed
-      ? { path: parsed.path ?? [], message: parsed.error }
-      : { value: parsed.value };
+    return FieldValueValidator.of(field).parse(value);
   }
 
-  private whenAbsent(field: Field): Admitted | undefined {
+  private whenAbsent(field: Field): Verdict | undefined {
     if (this.options.patch) return undefined;
 
     const absence = this.onAbsent(field);
-    if (absence === null) return { path: [], message: InputRefusal.required };
+    if (absence === null) return { refusal: InputRefusal.required };
 
     return absence === 'empty-list' ? { value: [] } : undefined;
   }
