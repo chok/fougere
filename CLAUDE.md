@@ -470,9 +470,14 @@ silence, `registerMiddlewares` looping over handlers it did not have. An ancesto
 CARRIED (`Assembly.middlewaresOf`) rather than resolved: a middleware is not a container
 key, so the scope chain cannot hand it down. Its closure keeps the scope that built it, so
 it takes its dependencies from the frond that declared it — inheriting the code, not the
-context. Resolved per CALL and never at boot, the same reason `getMiddlewares` is: a
-middleware asking for something request-scoped would otherwise be handed the one instance
-the boot built. `App.use` and a frond's directory are two doors onto ONE writer (`use` in
+context. ONE instance per frond scope — its only consumer is the dispatch, which lives as
+long as the app, so its lifetime is not a choice — built at its FIRST call and never at
+boot, because a dependency may be registered by an extension's `up`, and closed with its
+frond when it answers `[Symbol.asyncDispose]`. The price: two calls at once share it, so a
+middleware holds nothing of a call on `this` — what a call carries travels in `context`.
+It used to be built per call, to hand a request-scoped dependency its own instance; no
+such scope exists (a call is not a request, and the transport is a leaf), and five calls
+built five. `App.use` and a frond's directory are two doors onto ONE writer (`use` in
 `boot/bootstrap.ts`), and `App.use` is the HOST's — it arrives after the boot and has no
 tree. Pinned by `core/tests/middleware-frond.test.ts`.
 
