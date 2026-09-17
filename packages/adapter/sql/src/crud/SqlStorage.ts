@@ -380,18 +380,23 @@ export class SqlStorage {
 
     let written = 0;
     for (const { replaced, rows } of pages.values()) {
-      const excluded = Object.fromEntries(replaced.map((column) => [column, sql.ref(`excluded.${column}`)]));
+      const incoming = Object.fromEntries(replaced.map((column) => [column, this.incoming(column)]));
       // A statement binds VALUES: one row costs as many as it has columns.
       const width = new Set(rows.flatMap((row) => Object.keys(row))).size;
       const perStatement = Math.max(1, Math.floor(this.maxBindings / Math.max(1, width)));
 
       for (const slice of chunks(rows, perStatement)) {
-        await this.onExisting(this.db.insertInto(this.table.name).values(slice), excluded).execute();
+        await this.onExisting(this.db.insertInto(this.table.name).values(slice), incoming).execute();
         written += slice.length;
       }
     }
 
     return written;
+  }
+
+  /** The value a refused row brought for a column: `excluded` on SQLite and Postgres, `VALUES()` on MySQL. */
+  private incoming(column: string) {
+    return this.upsertClause === 'on conflict' ? sql.ref(`excluded.${column}`) : sql`values(${sql.ref(column)})`;
   }
 
   /** What a row that is already there becomes — and nothing, when the write replaces no column. */
