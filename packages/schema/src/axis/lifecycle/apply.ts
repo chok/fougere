@@ -1,5 +1,4 @@
 import { Lifecycle } from './Lifecycle.js';
-import { Clock } from './Clock.js';
 import { type Field } from '../../field/Field.js';
 import { type Fields } from '../../field/Fields.js';
 
@@ -13,7 +12,7 @@ export function applyCreate(
   input: Record<string, unknown>,
 ): Record<string, unknown> {
   const values: Record<string, unknown> = { ...input };
-  const instant = Clock.now();
+  const instant = Date.now();
 
   for (const [name, field] of Object.entries(fields) as [string, Field][]) {
     if (name in values) continue;
@@ -37,7 +36,7 @@ export function applyUpdate(
   patch: Record<string, unknown>,
 ): Record<string, unknown> {
   const values: Record<string, unknown> = { ...patch };
-  const instant = Clock.now();
+  const instant = Date.now();
 
   for (const [name, field] of Object.entries(fields) as [string, Field][]) {
     if (Lifecycle.of(field).stampedOnUpdate && !(name in values))

@@ -40,7 +40,6 @@ export * from './lib/index.js';
 export { Formats } from './axis/shape/Formats.js';
 export { Generators } from './axis/lifecycle/Generators.js';
 export { Boundaries } from './axis/boundary/Decoder.js';
-export { Clock } from './axis/lifecycle/Clock.js';
 export { type FougereEntityAdapters } from './entity/FougereEntityAdapters.js';
 export { InputValidator } from './validator/InputValidator.js';
 export { FieldValueValidator } from './validator/FieldValueValidator.js';

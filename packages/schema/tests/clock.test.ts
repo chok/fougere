@@ -1,13 +1,11 @@
 /**
  * What "now" means, when a test needs it to hold still.
  *
- * One place reads the clock — `applyCreate` and `applyUpdate` share it — because those two
- * are where `created()`, `updated()` and `create: 'now'` are realized. So freezing it is a
- * value, not an interception: nothing here is a channel, and a stable instant is a fact
- * about the run.
+ * `applyCreate` and `applyUpdate` read the system clock at the write, so the runner's own fake
+ * timers reach every `created()`, `updated()` and `create: 'now'` — nothing to import from here.
  */
-import { describe, it, expect, afterEach } from 'vitest';
-import { entity, primary, text, created, updated, applyCreate, applyUpdate, Clock } from '../src/index.js';
+import { describe, it, expect, afterEach, vi } from 'vitest';
+import { entity, primary, text, created, updated, applyCreate, applyUpdate } from '../src/index.js';
 
 class Post extends entity({
   id: primary(),
@@ -16,13 +14,15 @@ class Post extends entity({
   updatedAt: updated(),
 }) {}
 
-let restore: (() => void) | undefined;
-afterEach(() => { restore?.(); restore = undefined; });
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe('a frozen clock', () => {
   it('stamps the instant the test named', () => {
     const at = new Date('2026-01-02T03:04:05.000Z');
-    restore = Clock.freeze(at);
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(at);
 
     const row = applyCreate(Post.getFields(), { title: 'A title' }) as { createdAt: Date };
 
@@ -30,7 +30,8 @@ describe('a frozen clock', () => {
   });
 
   it('holds across two stamps, so a created and an updated row agree', () => {
-    restore = Clock.freeze(1_767_000_000_000);
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(1_767_000_000_000);
 
     const created = applyCreate(Post.getFields(), { title: 'A' }) as { createdAt: Date };
     const updated = applyUpdate(Post.getFields(), {}) as { updatedAt: Date };
@@ -38,10 +39,11 @@ describe('a frozen clock', () => {
     expect(updated.updatedAt.getTime()).toBe(created.createdAt.getTime());
   });
 
-  it('moves again once released', () => {
-    const release = Clock.freeze(0);
+  it('moves again once the real clock is back', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(0);
     const frozen = applyCreate(Post.getFields(), { title: 'A' }) as { createdAt: Date };
-    release();
+    vi.useRealTimers();
 
     const live = applyCreate(Post.getFields(), { title: 'A' }) as { createdAt: Date };
 

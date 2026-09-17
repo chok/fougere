@@ -189,7 +189,7 @@ tell it from a typo, which is what `fougere check` reports as `unknown-adapter`.
 **A registry is an instance of `Registry<T>`** (`schema/src/lib/Registry.ts`). `Formats`,
 `Generators` and the three of `Boundaries` are bare instances; `Sources` extends it to add
 `open`. `resolve` throws and lists what the process answers; `find` returns `undefined` for
-a caller that has its own words for the absence. `Clock` is not one: it registers nothing.
+a caller that has its own words for the absence.
 
 **`Repository(…entities)` — the arity is the declaration.** At ONE, the repository IS that
 entity's storage and forwards all thirteen gestures. From TWO on it is an aggregate: no
