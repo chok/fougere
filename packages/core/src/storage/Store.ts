@@ -1,4 +1,4 @@
-import { applyCreate, applyOverwrite, applyUpdate, Role, type SchemaView } from '@fougere/schema';
+import { applyCreate, applyUpdate, Role, type SchemaView } from '@fougere/schema';
 import { comparisonOf, comparisonsIn, type Comparison } from './Comparison.js';
 import type { Storage } from './Storage.js';
 import type { StorageFactory } from './StorageFactory.js';
@@ -46,8 +46,8 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
         ? Object.fromEntries(Object.entries(values).filter(([key]) => selected.has(key)))
         : values);
 
-      // Same contract as SQL: what the write leaves out, and what `update: 'forbidden'` holds,
-      // survive an overwrite.
+      // Same contract as SQL: a row that is already there is UPDATED, so what the write leaves
+      // out stays where it was.
       // Named, and not reached through `this`: a caller may have wrapped these gestures,
       // and a derived one that goes back through the front facade is judged twice.
       const upsert = async (input: Partial<Record<string, unknown>>): Promise<Values> => {
@@ -55,7 +55,7 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
         const id = created[pk] as string | undefined;
         if (id === undefined) throw new Error(`${name}.upsert(): no \`${pk}\` — an upsert needs the key it writes at.`);
         const previous = await store.get(keyOf(id));
-        const values = previous ? { ...previous, ...applyOverwrite(fields, input) } : created;
+        const values = previous ? { ...previous, ...applyUpdate(fields, input) } : created;
         await store.set(keyOf(id), values);
         return pick(values);
       };

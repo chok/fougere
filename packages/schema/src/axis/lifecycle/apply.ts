@@ -46,23 +46,3 @@ export function applyUpdate(
 
   return values;
 }
-
-/**
- * A write over a row that exists: what it names, and what `update: 'now'` stamps. What the row
- * declares `update: 'forbidden'` keeps what it had, and so does every field the write leaves out.
- * FR : une écriture sur une ligne qui existe : ce qu'elle nomme, et ce que `update: 'now'` estampe.
- * `applyOverwrite(fields, { id, slug: 'moved', title: 'B' })` → `title`, `updatedAt`
- */
-export function applyOverwrite(fields: Fields, input: Record<string, unknown>): Record<string, unknown> {
-  const values: Record<string, unknown> = {};
-  const instant = Clock.now();
-
-  for (const [name, field] of Object.entries(fields) as [string, Field][]) {
-    const assigned = name in input ? { value: input[name] } : undefined;
-    const written = Lifecycle.of(field).overwrittenWith(assigned, instant);
-
-    if (written) values[name] = written.value;
-  }
-
-  return values;
-}

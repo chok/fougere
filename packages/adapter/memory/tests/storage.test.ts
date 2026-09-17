@@ -217,7 +217,7 @@ describe('an upsert over a row that exists', () => {
     updatedAt: updated(),
   }) {}
 
-  it('replaces what it names, and leaves the rest where it was', async () => {
+  it('updates what it names — `immutable` included, which is the facade\'s to refuse — and leaves the rest', async () => {
     const pages = await createMemoryStorage(Page as never, 'page') as any;
     const first = await pages.create({ slug: 'hello', title: 'A', note: 'kept' });
     await pages.update(first.id, { views: 5 });
@@ -227,7 +227,7 @@ describe('an upsert over a row that exists', () => {
     expect(again.title).toBe('B');
     expect(again.note).toBe('kept');
     expect(again.views).toBe(5);
-    expect(again.slug).toBe('hello');
-    expect(again.createdAt).toEqual(first.createdAt);
+    expect(again.slug).toBe('moved');
+    expect(again.createdAt).toEqual(new Date(0));
   });
 });

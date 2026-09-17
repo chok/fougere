@@ -1,6 +1,6 @@
 import { Role } from '@fougere/schema';
 import { sql, type Kysely } from 'kysely';
-import { applyCreate, applyOverwrite, applyUpdate, type Fields, type SchemaView } from '@fougere/schema';
+import { applyCreate, applyUpdate, type Fields, type SchemaView } from '@fougere/schema';
 import { toTable, toTableName, type TableDef } from '../table/TableDef.js';
 import { resolveDialect, type Dialect } from '../dialect/Dialect.js';
 import { type DialectName } from '../dialect/DialectName.js';
@@ -349,7 +349,7 @@ export class SqlStorage {
     // `update: 'now'`, so filling the creation side first leaves nothing for the
     // update side to stamp — the row would carry the moment it was inserted forever.
     const data = applyCreate(this.fields, applyUpdate(this.fields, input));
-    const replaced = this.toRow(applyOverwrite(this.fields, input));
+    const replaced = this.toRow(applyUpdate(this.fields, input));
 
     await this.onExisting(this.db.insertInto(this.table.name).values(this.toRow(data)), replaced).execute();
 
@@ -373,7 +373,7 @@ export class SqlStorage {
     // different fields go in different statements — or one row's gap erases another's value.
     const pages = new Map<string, { replaced: string[]; rows: Record<string, unknown>[] }>();
     for (const input of inputs) {
-      const replaced = Object.keys(this.toRow(applyOverwrite(this.fields, input))).sort();
+      const replaced = Object.keys(this.toRow(applyUpdate(this.fields, input))).sort();
       const page = pages.get(replaced.join()) ?? pages.set(replaced.join(), { replaced, rows: [] }).get(replaced.join())!;
       page.rows.push(this.toRow(applyCreate(this.fields, applyUpdate(this.fields, input))));
     }

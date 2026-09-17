@@ -370,7 +370,7 @@ describe('upsert', () => {
     expect(await storage.list()).toHaveLength(1);
   });
 
-  it('keeps the moment the row appeared, whatever a later write says', async () => {
+  it('keeps the moment the row appeared, when a later write leaves it out', async () => {
     const first = await storage.upsert({ id: 'p1', title: 'first', body: 'b', secret: 's' });
     await new Promise((r) => setTimeout(r, 5));
     const again = await storage.upsert({ id: 'p1', title: 'revised', body: 'b', secret: 's' });
@@ -439,7 +439,7 @@ describe('an upsert over a row that exists', () => {
     updatedAt: updated(),
   }) {}
 
-  it('replaces what it names, and leaves the rest where it was', async () => {
+  it('updates what it names — `immutable` included, which is the facade\'s to refuse — and leaves the rest', async () => {
     const pages = await (async () => { await autoMigrate({ fronds: [{ name: 'test', entities: [{ name: 'page', entityClass: Page }] }] }, setup.sqlite); return setup.storageFactory(Page, 'page') as any; })();
     const first = await pages.create({ slug: 'hello', title: 'A', note: 'kept' });
     await pages.update(first.id, { views: 5 });
@@ -449,8 +449,8 @@ describe('an upsert over a row that exists', () => {
     expect(again.title).toBe('B');
     expect(again.note).toBe('kept');
     expect(again.views).toBe(5);
-    expect(again.slug).toBe('hello');
-    expect(again.createdAt).toEqual(first.createdAt);
+    expect(again.slug).toBe('moved');
+    expect(again.createdAt).toEqual(new Date(0));
   });
 
   it('leaves each row its own gaps, in one page', async () => {
