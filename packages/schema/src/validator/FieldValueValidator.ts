@@ -1,4 +1,4 @@
-import { Validator, format as engineFormats } from '@cfworker/json-schema';
+import { format as engineFormats } from '@cfworker/json-schema';
 import { Boundary } from '../axis/boundary/Boundary.js';
 import { type FormatPredicate } from '../axis/shape/FormatPredicate.js';
 import { Formats } from '../axis/shape/Formats.js';
@@ -6,11 +6,11 @@ import { type Shape } from '../axis/shape/Shape.js';
 import { Shapes } from '../axis/shape/Shape.js';
 import type { Field } from '../field/Field.js';
 import type { Verdict } from '../lib/Verdict.js';
-import type { OutputUnit } from '@cfworker/json-schema';
 import { SchemaError } from '../SchemaError.js';
+import type { JsonSchema } from '../lib/JsonSchema.js';
+import { JsonSchemaValidator } from './JsonSchemaValidator.js';
 
 interface ShapePlan {
-  validator: Validator;
   custom?: FormatPredicate;
   formatName?: string;
 }
@@ -39,8 +39,10 @@ export class FieldValueValidator {
       }
     }
     const plan = FieldValueValidator.planFor(shape);
-    const result = plan.validator.validate(value);
-    if (!result.valid) return refusalOf(result.errors);
+    const refusal = JsonSchemaValidator.of(shape as JsonSchema).refusalOf(value, []);
+    if (refusal) {
+      return refusal.path.length > 0 ? { message: refusal.message, path: refusal.path } : { message: refusal.message };
+    }
     if (plan.custom && typeof value === 'string' && !plan.custom(value)) {
       return { message: `String does not match format "${plan.formatName}".` };
     }
@@ -65,7 +67,6 @@ export class FieldValueValidator {
       const base = Shapes.of(shape).base;
       const formatName = base?.type === 'string' ? base.format : undefined;
       plan = {
-        validator: new Validator(shape as object, '2020-12', true),
         custom: formatName === undefined ? undefined : this.customFormatOf(formatName),
         formatName,
       };
@@ -85,29 +86,3 @@ export class FieldValueValidator {
     return custom;
   }
 }
-
-/**
- * The engine states its refusals outermost first, so `errors[0]` on a nested shape is the
- * parent's `Property "street" does not match schema.` — true, and never the reason. The
- * DEEPEST one is the reason, and it is the one that says where.
- */
-function refusalOf(errors: readonly OutputUnit[]): Verdict {
-  const deepest = errors.reduce<OutputUnit | undefined>(
-    (held, one) => (held && depthOf(held) >= depthOf(one) ? held : one),
-    undefined,
-  );
-  if (!deepest) return { message: 'Invalid value' };
-  const path = locationOf(deepest.instanceLocation);
-
-  return path.length > 0 ? { message: deepest.error, path } : { message: deepest.error };
-}
-
-const depthOf = (unit: OutputUnit): number => locationOf(unit.instanceLocation).length;
-
-/** `#/city/zip` — a JSON Pointer fragment, and `~1`/`~0` are how it spells `/` and `~`. */
-const locationOf = (instanceLocation: string): string[] =>
-  instanceLocation
-    .replace(/^#/, '')
-    .split('/')
-    .filter(Boolean)
-    .map((segment) => segment.replace(/~1/g, '/').replace(/~0/g, '~'));

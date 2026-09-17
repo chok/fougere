@@ -1,32 +1,10 @@
 import type { Axis } from '../Axis.js';
-import { admitWire } from '../../projection/card/admission.js';
-import { isObject, shown } from '../../lib/utils.js';
-import type { BoundaryRef } from './BoundaryRef.js';
+import { BOUNDARY_FORMAT, type BoundaryRef } from './BoundaryRef.js';
 
 export const boundaryAxis: Axis<BoundaryRef, BoundaryRef> = {
   slot: 'boundary',
-
-  validator(value, errors) {
-    if (typeof value === 'string') return; 
-    if (!isObject(value)) {
-      errors.push({
-        path: ['boundary'],
-        message: `Expected an alias name or { in, out } — got ${shown(value)}`,
-      });
-      return;
-    }
-    for (const [side, verb] of [['in', 'decode'], ['out', 'encode']] as const) {
-      const rule = value[side];
-      if (rule === undefined || rule === 'closed') continue;
-      if (!isObject(rule) || typeof rule[verb] !== 'string') {
-        errors.push({ path: ['boundary', side], message: `Expected 'closed' or { ${verb}: <name> }` });
-      }
-    }
-  },
+  format: BOUNDARY_FORMAT,
 
   describe: (value) => value,
-  reconstruct: (wire) => {
-    admitWire(boundaryAxis.validator, wire, 'boundary');
-    return wire;
-  },
+  reconstruct: (wire) => wire,
 };

@@ -212,7 +212,7 @@ function reconstructField(
       property.description !== undefined
         ? { description: property.description }
         : undefined,
-  } as never);
+  } as never, key);
 }
 
 /**

@@ -178,9 +178,19 @@ adapter name, then field name — and always exists, so `getAdapters()` is never
 What the OPERATOR decides is not stated here: it belongs in `fougere.config.ts` beside
 `fronds:`, `sources:` and `ports:`. Pinned by `adapter/sql/tests/adapters.test.ts`.
 
-**The entry has a validator, and the adapter writes it as DATA.** `AdapterFieldValidator`
-(`schema/src/validator/AdapterFieldValidator.ts`) takes a format and refuses what it does not admit;
-`adapter/sql/src/adapter.schema.json` is that format, imported with `with { type: 'json' }`,
+**ONE door onto the engine, and a declaration has a format.** `JsonSchemaValidator`
+(`schema/src/validator/JsonSchemaValidator.ts`) judges a field's value against its shape and a
+declaration against the format of its key, and it is the one place that picks which of the
+engine's refusals to report. An axis states its format beside its type — `LIFECYCLE_FORMAT`,
+`ROLE_FORMAT`, `BOUNDARY_FORMAT`, and `META_FORMAT` for `meta`. Each axis used to hold a
+validator written by hand, whose messages copied the token lists, and
+`lifecycle: { craete: 'now' }` passed. The tokens stay `as const` and the format spreads them,
+because a JSON import keeps a KEY as a literal and widens a VALUE to `string`. `Axis.refusals`
+holds what JSON cannot state: `role.relation.to` is a function. A key set to `undefined` is read
+as absent. A card is judged at the same door: `reconstruct` rebuilds, and `new Field(…, key)`
+refuses. Pinned by `schema/tests/field-door.test.ts` and `descriptor.test.ts`.
+
+`adapter/sql/src/adapter.schema.json` is the adapter's format, imported with `with { type: 'json' }`,
 and `SqlField` is DERIVED from it. It is validated where the adapter READS
 (`adapter/sql/src/table.ts`, `toTable`), not at `entity()`, because `entity()` runs at its
 own module's evaluation. A name this process never loaded is SKIPPED: only the project can
@@ -847,7 +857,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   not an app (`demos/cloudflare-d1`, `ctx.waitUntil`).
 - **An un-augmented `adapters:` accepts anything, silently.** With no adapter in the program
   `EntityAdapters<TFields>` is `Partial<{}>`, which in TypeScript means "anything
-  non-nullish". The RUNTIME half is closed since `AdapterFieldValidator`; what remains open is the type.
+  non-nullish". The RUNTIME half is closed since the adapter's format; what remains open is the type.
 - **A seed cycle is not satisfiable by ordering** — `core/src/boot/seed.ts`, `orderSeeds`.
   It returns them as `cycle` beside `ordered` and the boot NAMES them; they are still planted
   in declaration order and the source answers. Not "scan order": `createApp` takes `fronds:`
@@ -906,6 +916,31 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 - **`clean` decides nothing** (`schema/src/lib/utils.ts`) — a free function nobody has
   validated as a word of the package.
 - `graphql` dual ESM/CJS hazard in tests — use `schema.getTypeMap()`, not `printSchema()`
+- **Replicas booting together plant the same seeds** — `runSeeds` (`core/src/boot/seed.ts`) asks
+  `list()` and inserts when it is empty, with no lock, and every process runs `seeding()` in its own
+  ascent. Measured 2026-09-17, 4 Bun replicas on one Postgres 17: 10 or 15 rows instead of 5 in 3
+  runs of 8; with `unique()` no duplicate, but a replica REFUSES its boot
+  (`Seed 'note' failed … A row with these values already exists`).
+- **Replicas booting together race the migration, and one refuses its boot** — `migrating` runs in
+  every process's ascent. `ADD COLUMN` has no guard (`delta`, `diff/Change.ts`): 6 replicas of 40
+  refused, `column "body" of relation "notes" already exists`. `CREATE TABLE IF NOT EXISTS`
+  (`createTableSQL`) is NOT safe either under Postgres: two concurrent ones collide on
+  `pg_type_typname_nsp_index`, and 2 replicas of 4 refused. Measured 2026-09-17.
+- **A host with no `db:` falls back to memory and says so at `debug` only** — `boot`
+  (`app/shared/src/boot.ts`). Two replicas: a row written on one answers 404 on the other, and the
+  `info` log never names the fallback. Measured 2026-09-17.
+- **A primitive parameter is coerced, never refused** — `ArgumentResolver` (`dispatch/ArgumentResolver.ts`),
+  the `param` branch, and `coercionFor` (`wire/binding.ts`). `excitement?: number` receives `NaN`
+  for `?excitement=abc` and `0` for `?excitement=`, and the op answers 200. The doc says
+  "coerced" (`4.business/1.handlers.md`) and nothing about a refusal. Measured 2026-09-17.
+- **`unique()` builds two unique indexes on a fresh table** — `createTableSQL` writes the column
+  constraint (`<table>_<column>_key`) and `delta` adds `<table>_<column>_idx` through `indexSQL`
+  for the same column, so every write on it is checked twice. Measured on Postgres 17, 2026-09-17.
+- **Under Bun, a schema refused while a handler module loads surfaces as a TDZ error** —
+  `toHandlerEntry` (`compiler/src/scan/scanner.ts`) spreads the module (`{ ...mod }`), and Bun
+  throws `Cannot access 'CheckInput' before initialization` on the class whose `entity({…})` threw.
+  Node shows the real `SchemaError` (here `Every field states a shape — got {"anyOf":…}`).
+  Measured 2026-09-17.
 
 ### Settled
 
@@ -917,7 +952,7 @@ One line each, kept because a past version of this file asserted the opposite.
   Pinned by `core/tests/emit.test.ts`, through the typed emitter.
 
 - **A refusal says WHERE, all the way down** — `ValidationError.path` is SEGMENTS
-  (`['addr', 'street']`), and `FieldValueValidator` keeps the engine's `instanceLocation` and its
+  (`['addr', 'street']`), and `JsonSchemaValidator` keeps the engine's `instanceLocation` and its
   DEEPEST refusal: `errors[0]` on a nested shape is the parent's `Property "…" does not match
   schema.`, true and never the reason. `dotted()` writes a path for a message and nothing reads one
   back — the price a field legally named `a.b` sets. Pinned by `schema/tests/nested-path.test.ts`.

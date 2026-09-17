@@ -29,17 +29,18 @@ describe('the field facade', () => {
 
   it('validates every axis against its own vocabulary, and names the one that failed', () => {
     const shape = { type: 'string' } as const;
-    const refused: readonly (readonly [object, RegExp])[] = [
-      [{ shape, lifecycle: 'nawak' }, /lifecycle: Expected an object/],
-      [{ shape, lifecycle: { create: 'nawak' } }, /lifecycle\.create: Expected 'now', 'optional'/],
-      [{ shape, lifecycle: { update: 'nawak' } }, /lifecycle\.update: Expected 'now' or 'forbidden'/],
-      [{ shape, lifecycle: { create: { nawak: 1 } } }, /lifecycle\.create: Expected 'now', 'optional'/],
-      [{ shape, role: 'nawak' }, /role: Expected an object/],
-      [{ shape, role: { relation: { kind: 'nawak', to: () => ({}) } } }, /role\.relation\.kind/],
-      [{ shape, role: { relation: { kind: 'one' } } }, /role\.relation\.to: Expected a function returning the target entity/],
-      [{ shape, role: { unique: 'yes' } }, /role\.unique: Expected a boolean/],
-      [{ shape, boundary: { in: { nawak: 'x' } } }, /boundary\.in/],
-      [{ shape, meta: 42 }, /meta: Expected an object/],
+    const refused: readonly (readonly [object, string])[] = [
+      [{ shape, lifecycle: 'nawak' }, 'lifecycle: Instance type "string" is invalid. Expected "object".'],
+      [{ shape, lifecycle: { create: 'nawak' } }, 'lifecycle.create: Instance does not match any of ["now","optional"].'],
+      [{ shape, lifecycle: { update: 'nawak' } }, 'lifecycle.update: Instance does not match any of ["now","forbidden"].'],
+      [{ shape, lifecycle: { create: { nawak: 1 } } }, 'lifecycle.create: Property "nawak" does not match additional properties schema.'],
+      [{ shape, lifecycle: { craete: 'now' } }, 'lifecycle: Property "craete" does not match additional properties schema.'],
+      [{ shape, role: 'nawak' }, 'role: Instance type "string" is invalid. Expected "object".'],
+      [{ shape, role: { relation: { kind: 'nawak', to: () => ({}) } } }, 'role.relation.kind: Instance does not match any of ["one","many"].'],
+      [{ shape, role: { relation: { kind: 'one' } } }, 'role.relation.to: Expected a function returning the target entity'],
+      [{ shape, role: { unique: 'yes' } }, 'role.unique: Instance type "string" is invalid. Expected "boolean".'],
+      [{ shape, boundary: { in: { nawak: 'x' } } }, 'boundary.in: Property "nawak" does not match additional properties schema.'],
+      [{ shape, meta: 42 }, 'meta: Instance type "number" is invalid. Expected "object".'],
     ];
     for (const [init, message] of refused) {
       expect(() => new Field(init as never)).toThrow(message);
@@ -51,13 +52,12 @@ describe('the field facade', () => {
   it('refuses a generator that is not a name, and takes a name it does not answer yet', () => {
     const shape = { type: 'string' } as const;
     const refused: readonly (readonly [unknown, string])[] = [
-      [3, 'got 3'],
-      [undefined, 'got undefined'],
-      [() => 'x', 'got function'],
+      [3, 'lifecycle.create.generate: Instance type "number" is invalid. Expected "string".'],
+      [undefined, 'lifecycle.create: Instance does not have at least 1 properties.'],
+      [() => 'x', 'lifecycle: Instances of "function" type are not supported.'],
     ];
-    for (const [generate, said] of refused) {
-      expect(() => new Field({ shape, lifecycle: { create: { generate } } } as never))
-        .toThrow(`lifecycle.create.generate: Expected a generator name — ${said}`);
+    for (const [generate, message] of refused) {
+      expect(() => new Field({ shape, lifecycle: { create: { generate } } } as never)).toThrow(message);
     }
 
     expect(() => new Field({ shape, lifecycle: { create: { generate: 'ulid' } } } as never)).not.toThrow();

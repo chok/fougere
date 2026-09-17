@@ -1,5 +1,5 @@
 import { Lifecycle, Role } from '@fougere/schema';
-import { Shapes, lowerFirst, type Field, type SchemaView } from '@fougere/schema';
+import { SchemaError, Shapes, dotted, lowerFirst, type Field, type SchemaView } from '@fougere/schema';
 import { boundsOf } from '../check.js';
 import { type SqlField } from '../fields/SqlField.js';
 import { sqlEntries } from '../fields/SqlFields.js';
@@ -125,7 +125,10 @@ export function toTable(tableName: string, schema: SchemaView, relations?: Relat
   // Judged HERE and not at `entity()`: this runs at boot, after every import, so the
   // format is always loaded. A validator registered with `schema` would depend on which
   // module was imported first.
-  sqlEntries.assert(configuration, `${schema.name}.adapters.sql`);
+  const refusal = configuration === undefined
+    ? undefined
+    : sqlEntries.refusalOf(configuration, [`${schema.name}.adapters.sql`]);
+  if (refusal) throw new SchemaError(`${dotted(refusal.path)}: ${refusal.message}`);
   const columns: ColumnDef[] = [];
   for (const [fieldName, field] of Object.entries(fields)) {
     if (!isStored(field)) continue;

@@ -43,4 +43,5 @@ export { Boundaries } from './axis/boundary/Decoder.js';
 export { type FougereEntityAdapters } from './entity/FougereEntityAdapters.js';
 export { InputValidator } from './validator/InputValidator.js';
 export { FieldValueValidator } from './validator/FieldValueValidator.js';
-export { AdapterFieldValidator } from './validator/AdapterFieldValidator.js';
+export { JsonSchemaValidator } from './validator/JsonSchemaValidator.js';
+export type { JsonSchema } from './lib/JsonSchema.js';

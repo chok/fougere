@@ -345,12 +345,12 @@ group('a card is admitted before it becomes a validator', () => {
 
   it('refuses a relation whose kind is not one of the two', () => {
     const bad = { ...card(), properties: { a: { type: 'string' as const, 'x-fougere': { role: { relation: { to: 'post', kind: 'plusieurs' } } } } } };
-    expect(() => Card.fromDescriptor(bad as never).toSchema()).toThrow(/role\.relation\.kind is "plusieurs"/);
+    expect(() => Card.fromDescriptor(bad as never).toSchema()).toThrow(`Field 'a': role.relation.kind: Instance does not match any of ["one","many"].`);
   });
 
   it('refuses an onDelete outside the closed list', () => {
     const bad = { ...card(), properties: { a: { type: 'string' as const, 'x-fougere': { role: { relation: { to: 'post', kind: 'one', onDelete: 'boom' } } } } } };
-    expect(() => Card.fromDescriptor(bad as never).toSchema()).toThrow(/role\.relation\.onDelete is "boom"/);
+    expect(() => Card.fromDescriptor(bad as never).toSchema()).toThrow(`Field 'a': role.relation.onDelete: Instance does not match any of ["cascade","restrict","set null"].`);
   });
 
   it('refuses a property that is not a JSON Schema object', () => {
@@ -367,7 +367,6 @@ group('a card is admitted before it becomes a validator', () => {
     expect(() => Card.fromDescriptor(nested as never).toSchema()).toThrow(/Field 'a' states `pattern/);
   });
 
-  // lifecycle and boundary describe themselves as themselves, so their own validator reads the wire.
   it('refuses a lifecycle and a boundary through the validator that already reads them', () => {
     const lifecycle = { ...card(), properties: { a: { type: 'string' as const, 'x-fougere': { lifecycle: { update: 'jamais' } } } } };
     expect(() => Card.fromDescriptor(lifecycle as never).toSchema()).toThrow(/lifecycle\.update/);

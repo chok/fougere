@@ -1,6 +1,4 @@
-import type { ValidationError } from '../../lib/ValidationError.js';
 import { Shapes } from '../../axis/shape/Shape.js';
-import { dotted } from '../../lib/ValidationResult.js';
 import { SchemaError } from '../../SchemaError.js';
 
 /**
@@ -11,37 +9,6 @@ import { SchemaError } from '../../SchemaError.js';
 export function refuse(what: string, fix: string): never {
   throw new SchemaError(`This card cannot be read: ${what}.\n  ${fix}`);
 }
-
-/**
- * Runs a card's axis through the validator a hand-written field goes through, so there is
- * one judge and not two.
- * FR : passe l'axe d'une carte par le juge d'un champ écrit à la main : un juge, pas deux.
- * `{ update: 'maybe' }` → `lifecycle is malformed — lifecycle.update: Expected 'now' or 'forbidden'`
- */
-export function admitWire(
-  validator: (value: unknown, errors: ValidationError[]) => void,
-  value: unknown,
-  slot: string,
-): void {
-  const errors: ValidationError[] = [];
-  validator(value, errors);
-  if (errors.length) {
-    refuse(
-      `${slot} is malformed — ${errors.map((e) => `${dotted(e.path)}: ${e.message}`).join('; ')}`,
-      'A card states an axis the way a declaration does.',
-    );
-  }
-}
-
-/**
- * Checks a token against the list that declares it, never against a copy written here.
- * FR : vérifie un mot contre la liste qui le déclare, jamais contre une copie locale.
- * `oneOfTokens('many', RELATION_KINDS)` → `true`
- */
-export const oneOfTokens = <T extends readonly string[]>(
-  value: unknown,
-  tokens: T,
-): value is T[number] => typeof value === 'string' && (tokens as readonly string[]).includes(value);
 
 /**
  * Compiles every `pattern` at the facade, so a bad one is refused here and not at the first row.
