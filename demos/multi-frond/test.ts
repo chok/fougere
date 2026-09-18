@@ -55,8 +55,19 @@ async function main() {
     detached: true,
   });
 
+  // Nothing reads the pipe otherwise, so a boot that REFUSES reads as a slow one: the
+  // deadline names the wait and the reason dies in the pipe.
+  const said: string[] = [];
+  server.stdout?.on('data', (chunk) => said.push(String(chunk)));
+  server.stderr?.on('data', (chunk) => said.push(String(chunk)));
+
   try {
-    await waitForServer(`http://localhost:${PORT}/api/posts`);
+    try {
+      await waitForServer(`http://localhost:${PORT}/api/posts`);
+    } catch (error) {
+      console.error(said.join('') || '  the server said nothing');
+      throw error;
+    }
     pass('Remote server started');
 
     // 2. Test discovery — rpc.discover on the envelope, the one surface

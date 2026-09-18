@@ -22,6 +22,8 @@ export class Format<T = unknown> {
   static readonly text = new Format<string>({ type: 'string' });
   static readonly flag = new Format<boolean>({ type: 'boolean' });
 
+  declare readonly _admits?: T;
+
   protected constructor(
     private readonly stated: Stated,
     readonly id?: string,
