@@ -8,12 +8,12 @@ const HERE = 'https://fougere.dev/schema/';
 const absolute = (id?: string): string | undefined =>
   id === undefined || id.includes('://') ? id : `${HERE}${id}`;
 
-/** What a format admits, as a type — `Admits<typeof Lifecycle.format>`. */
-export type Admits<F> = F extends Format<infer T> ? T : never;
+/** The values a format lets in, as a type — `Accepted<typeof Lifecycle.format>`. */
+export type Accepted<F> = F extends Format<infer T> ? T : never;
 
 /**
  * How a format is written here: its keys, never its JSON Schema. `$id`, `$ref`, `$defs` and the
- * closing are produced, and what it admits is carried as a TYPE, so a declaration is stated once.
+ * closing are produced, and what it accepts is carried as a TYPE, so a declaration is stated once.
  * FR : on écrit les clés d'un format ; le document et le type sont produits.
  * `Format.of('axis/tenancy').key('scope', Format.tokens(SCOPES)).closed()`
  */
@@ -46,7 +46,7 @@ export class Format<T = unknown> {
   /** One of these keys and no other — `{ value }` or `{ generate }`, never both and never neither. */
   static exactlyOne<Keys extends Record<string, Format<unknown>>>(
     keys: Keys,
-  ): Format<{ [K in keyof Keys]: { [P in K]: Admits<Keys[K]> } }[keyof Keys]> {
+  ): Format<{ [K in keyof Keys]: { [P in K]: Accepted<Keys[K]> } }[keyof Keys]> {
     return new Format({
       type: 'object',
       properties: Object.fromEntries(

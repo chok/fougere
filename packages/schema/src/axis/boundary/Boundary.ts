@@ -5,7 +5,7 @@ import type { Field } from '../../field/Field.js';
 import { type Shape } from '../shape/Shape.js';
 import { Shapes } from '../shape/Shape.js';
 import { SchemaError } from '../../SchemaError.js';
-import { Format, type Admits } from '../../lib/Format.js';
+import { Format, type Accepted } from '../../lib/Format.js';
 
 const closedOr = <Verb extends 'decode' | 'encode'>(verb: Verb) =>
   Format.either(Format.tokens(['closed']), Format.of().key(verb, Format.text).needs(verb).closed());
@@ -17,9 +17,9 @@ const BOUNDARY = Format.named(
   Format.either(Format.text.as<'isoDate' | (string & {})>(), RULES),
 );
 
-export type BoundaryRules = Admits<typeof RULES>;
+export type BoundaryRules = Accepted<typeof RULES>;
 
-export type BoundaryRef = Admits<typeof BOUNDARY>;
+export type BoundaryRef = Accepted<typeof BOUNDARY>;
 
 const identityDecoder: Decoder = (value) => ({ value });
 

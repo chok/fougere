@@ -1,8 +1,8 @@
-import { Format, type Admits } from '../../lib/Format.js';
+import { Format, type Accepted } from '../../lib/Format.js';
 import { Generators } from './Generators.js';
 import type { GeneratorRef } from './Generators.js';
 
-export type LifecycleRules = Admits<typeof Lifecycle.format>;
+export type LifecycleRules = Accepted<typeof Lifecycle.format>;
 export class Lifecycle {
   static readonly CREATE = ['now', 'optional'] as const;
   static readonly UPDATE = ['now', 'forbidden'] as const;
@@ -27,8 +27,16 @@ export class Lifecycle {
     return new Lifecycle(field.lifecycle);
   }
 
+  private get create() {
+    return this.rules.create;
+  }
+
+  private get update() {
+    return this.rules.update;
+  }
+
   bornWith(instant: number): { value: unknown } | undefined {
-    const rule = this.rules.create;
+    const rule = this.create;
 
     if (rule === 'now') return { value: new Date(instant) };
 
@@ -40,23 +48,23 @@ export class Lifecycle {
   }
 
   get requiredAtCreate(): boolean {
-    return this.rules.create === undefined;
+    return this.create === undefined;
   }
 
   get stampedAtCreate(): boolean {
-    return this.rules.create === 'now';
+    return this.create === 'now';
   }
 
   get immutable(): boolean {
-    return this.rules.update === 'forbidden';
+    return this.update === 'forbidden';
   }
 
   get stampedOnUpdate(): boolean {
-    return this.rules.update === 'now';
+    return this.update === 'now';
   }
 
   get literal(): { value: unknown } | undefined {
-    const rule = this.rules.create;
+    const rule = this.create;
 
     return typeof rule === 'object' && rule !== null && 'value' in rule
       ? { value: (rule as { value: unknown }).value }

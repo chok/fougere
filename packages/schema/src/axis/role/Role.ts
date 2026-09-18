@@ -2,7 +2,7 @@ import type { Relation } from './Relation.js';
 import type { EntityConstructor } from './EntityConstructor.js';
 import type { Resolver } from '../Resolver.js';
 import { isObject, lowerFirst } from '../../lib/utils.js';
-import { Format, type Admits } from '../../lib/Format.js';
+import { Format, type Accepted } from '../../lib/Format.js';
 import { ON_DELETE, RELATION_KINDS } from './Relation.js';
 import type { RoleDescriptor } from '../../projection/card/RoleDescriptor.js';
 
@@ -106,4 +106,4 @@ export class Role {
   }
 }
 
-export type RoleRules = Admits<typeof Role.format>;
+export type RoleRules = Accepted<typeof Role.format>;
