@@ -60,7 +60,8 @@ describe('a mirror refreshes', () => {
     // Never read off the rows: those carry when WE wrote them, not what the source
     // has changed since — and a pass that half-wrote would push the mark past its own gap.
     expect(asked).toEqual(mark);
-    expect(done.since).toEqual(mark);
+    // Reported as data: the mark goes out as an ISO string, which is what crosses a facade.
+    expect(done.since).toBe(mark.toISOString());
   });
 
   it('leaves the caller free to keep its mark where a failed pass cannot move it', async () => {

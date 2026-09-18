@@ -27,7 +27,7 @@ export function Mirror<E extends EntityConstructor>(shape: E): MirrorConstructor
         written += await this.storage.upsertAll(page);
       }
 
-      return { written, since, ms: Date.now() - started };
+      return { written, ...(since && { since: since.toISOString() }), ms: Date.now() - started };
     }
   }
 
