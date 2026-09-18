@@ -1,24 +1,24 @@
 import { SchemaError } from '../SchemaError.js';
 
 export class Registry<T> {
-  private readonly entries: Map<string, T>;
+  private readonly held: Map<string, T>;
 
   constructor(
     private readonly label: string,
     private readonly hint?: string,
     entries?: Iterable<readonly [string, T]>,
   ) {
-    this.entries = new Map(entries);
+    this.held = new Map(entries);
   }
 
   register(name: string, value: T): T {
-    this.entries.set(name, value);
+    this.held.set(name, value);
 
     return value;
   }
 
   find(name: string): T | undefined {
-    return this.entries.get(name);
+    return this.held.get(name);
   }
 
   resolve(name: string, path?: string): T {
@@ -33,10 +33,14 @@ export class Registry<T> {
   }
 
   get names(): string[] {
-    return [...this.entries.keys()];
+    return [...this.held.keys()];
+  }
+
+  get entries(): [string, T][] {
+    return [...this.held];
   }
 
   get all(): T[] {
-    return [...this.entries.values()];
+    return [...this.held.values()];
   }
 }

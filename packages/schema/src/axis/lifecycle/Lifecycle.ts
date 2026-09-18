@@ -1,4 +1,3 @@
-import type { Axis } from '../Axis.js';
 import { Format } from '../../lib/Format.js';
 import { Generators } from './Generators.js';
 import type { GeneratorRef } from './Generators.js';
@@ -11,10 +10,8 @@ export interface LifecycleRules {
   update?: (typeof UPDATE_TOKENS)[number];
 }
 
-export const lifecycleAxis: Axis<LifecycleRules, LifecycleRules> = {
-  slot: 'lifecycle',
-
-  format: Format.of('axis/lifecycle')
+export class Lifecycle {
+  static readonly format = Format.of('axis/lifecycle')
     .key(
       'create',
       Format.either(
@@ -23,10 +20,8 @@ export const lifecycleAxis: Axis<LifecycleRules, LifecycleRules> = {
       ),
     )
     .key('update', Format.tokens(UPDATE_TOKENS))
-    .closed(),
-};
+    .closed();
 
-export class Lifecycle {
   private readonly create?: LifecycleRules['create'];
   private readonly update?: LifecycleRules['update'];
 

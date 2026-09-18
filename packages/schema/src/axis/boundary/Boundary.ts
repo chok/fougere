@@ -5,7 +5,6 @@ import type { Field } from '../../field/Field.js';
 import { type Shape } from '../shape/Shape.js';
 import { Shapes } from '../shape/Shape.js';
 import { SchemaError } from '../../SchemaError.js';
-import type { Axis } from '../Axis.js';
 import { Format } from '../../lib/Format.js';
 
 export interface BoundaryRules {
@@ -21,23 +20,21 @@ const closedOr = (verb: 'decode' | 'encode'): Format =>
     Format.of().key(verb, Format.text).needs(verb).closed(),
   );
 
-export const boundaryAxis: Axis<BoundaryRef, BoundaryRef> = {
-  slot: 'boundary',
-
-  format: Format.named(
+const BOUNDARY = Format.named(
     'axis/boundary',
     Format.either(
       Format.text,
-      Format.of().key('in', closedOr('decode')).key('out', closedOr('encode')).closed(),
-    ),
+    Format.of().key('in', closedOr('decode')).key('out', closedOr('encode')).closed(),
   ),
-};
+);
 
 const identityDecoder: Decoder = (value) => ({ value });
 
 const identityEncoder: Encoder = (value) => value;
 
 export class Boundary {
+  static readonly format = BOUNDARY;
+
   private readonly in?: BoundaryRules['in'];
   private readonly out?: BoundaryRules['out'];
   readonly decode: Decoder;

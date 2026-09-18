@@ -8,9 +8,9 @@ import { META_FORMAT } from './Meta.js';
  * cited by its `$id`, so the document travels alone and a key keeps its own identity. `shape` is
  * JSON Schema itself, and `Shapes.is` is what reads it.
  */
-export function fieldFormat(axes: readonly Axis[]): JsonSchema {
+export function fieldFormat(axes: readonly [string, Axis][]): JsonSchema {
   const document = axes.reduce(
-    (held, axis) => held.cites(axis.slot, axis.format),
+    (held, [slot, axis]) => held.cites(slot, axis.format),
     Format.of('field').key('shape', Format.anything),
   );
 

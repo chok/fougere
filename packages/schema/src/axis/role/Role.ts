@@ -1,6 +1,5 @@
 import type { Relation } from './Relation.js';
 import type { EntityConstructor } from './EntityConstructor.js';
-import type { Axis } from '../Axis.js';
 import type { Resolver } from '../Resolver.js';
 import { isObject, lowerFirst } from '../../lib/utils.js';
 import { Format } from '../../lib/Format.js';
@@ -14,10 +13,10 @@ export interface RoleRules {
   relation?: Relation;
 }
 
-export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
-  slot: 'role',
+type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
-  format: Format.of('axis/role')
+export class Role {
+  static readonly format = Format.of('axis/role')
     .key('primary', Format.flag)
     .key('index', Format.flag)
     .key('unique', Format.flag)
@@ -30,17 +29,17 @@ export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
         .needs('kind')
         .closed(),
     )
-    .closed(),
+    .closed();
 
-  refusals(value) {
+  static refusals(value: unknown) {
     const relation = isObject(value) ? value.relation : undefined;
     if (!isObject(relation) || typeof relation.to === 'function') return [];
 
     return [{ path: ['role', 'relation', 'to'], message: 'Expected a function returning the target entity, such as () => Post' }];
-  },
+  }
 
   /** A card carries the target's NAME: a class cannot cross a process boundary. */
-  describe(role, key) {
+  static describe(role: RoleRules, key: string): RoleDescriptor | undefined {
     const descriptor: Mutable<RoleDescriptor> = {};
     if (role.primary) descriptor.primary = true;
     if (role.unique) descriptor.unique = [[key]];
@@ -54,9 +53,9 @@ export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
       };
     }
     return Object.keys(descriptor).length ? descriptor : undefined;
-  },
+  }
 
-  reconstruct(wire, resolve?: Resolver) {
+  static reconstruct(wire: RoleDescriptor, resolve?: Resolver): RoleRules {
     const rules: RoleRules = {};
     if (wire.primary) rules.primary = true;
     if (wire.unique?.some((group) => group.length === 1)) rules.unique = true;
@@ -70,12 +69,8 @@ export const roleAxis: Axis<RoleRules, RoleDescriptor> = {
       };
     }
     return rules;
-  },
-};
+  }
 
-type Mutable<T> = { -readonly [K in keyof T]: T[K] };
-
-export class Role {
   private readonly primary?: boolean;
   private readonly index?: boolean;
   private readonly unique?: boolean;

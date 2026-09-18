@@ -42,8 +42,8 @@ export class Field<T = unknown> {
 
     const stated = init as unknown as Record<string, unknown>;
 
-    for (const axis of Axes.all) {
-      (this as unknown as Record<string, unknown>)[axis.slot] = stated[axis.slot];
+    for (const slot of Axes.names) {
+      (this as unknown as Record<string, unknown>)[slot] = stated[slot];
     }
 
     const create = this.lifecycle?.create;

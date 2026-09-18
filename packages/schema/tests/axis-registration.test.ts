@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Axes, Card, entity, Field, Format, primary, text, type Axis } from '../src/index.js';
+import { Axes, Card, entity, Field, Format, primary, text } from '../src/index.js';
 
 interface TenancyRules {
   scope: 'tenant' | 'global';
@@ -10,13 +10,10 @@ const TENANCY_FORMAT = Format.of('https://acme.example/schema/axis/tenancy')
   .needs('scope')
   .closed();
 
-const tenancyAxis: Axis<TenancyRules, TenancyRules> = {
-  slot: 'tenancy',
-  format: TENANCY_FORMAT,
-
-  describe: (value) => value,
-  reconstruct: (wire) => wire,
-};
+/** The static side is the axis — `Axes.register` is where it is checked. */
+class Tenancy {
+  static readonly format = TENANCY_FORMAT;
+}
 
 const shape = { type: 'string' } as const;
 const stating = (tenancy: unknown) => () => new Field({ shape, tenancy } as never, 'owner');
@@ -31,7 +28,7 @@ describe('an axis registered from outside', () => {
       'tenancy: Instance does not match any of ["shape","role","lifecycle","boundary","meta"].',
     );
 
-    Axes.register(tenancyAxis.slot, tenancyAxis);
+    Axes.register('tenancy', Tenancy);
 
     expect(stating({ scope: 'tenant' })).not.toThrow();
   });

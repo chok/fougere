@@ -126,11 +126,11 @@ export class Card<T = Values<Fields>> {
  */
 function describeExtension(field: Field, key: string): FieldExtension | undefined {
   const extension: Record<string, unknown> = {};
-  for (const axis of Axes.all) {
-    const declared = (field as unknown as Record<string, unknown>)[axis.slot];
+  for (const [slot, axis] of Axes.entries) {
+    const declared = (field as unknown as Record<string, unknown>)[slot];
     if (declared === undefined) continue;
     const wire = axis.describe ? axis.describe(declared, key) : declared;
-    if (wire !== undefined) extension[axis.slot] = wire;
+    if (wire !== undefined) extension[slot] = wire;
   }
   clean(extension);
   return Object.keys(extension).length ? (extension as FieldExtension) : undefined;
@@ -201,9 +201,9 @@ function reconstructField(
   admitPatterns(shape, `Field '${key}'`);
   const extension = property['x-fougere'];
   const axes: Record<string, unknown> = {};
-  for (const axis of Axes.all) {
-    const wire = (extension as Record<string, unknown> | undefined)?.[axis.slot];
-    if (wire !== undefined) axes[axis.slot] = axis.reconstruct ? axis.reconstruct(wire, resolve) : wire;
+  for (const [slot, axis] of Axes.entries) {
+    const wire = (extension as Record<string, unknown> | undefined)?.[slot];
+    if (wire !== undefined) axes[slot] = axis.reconstruct ? axis.reconstruct(wire, resolve) : wire;
   }
   return new Field({
     shape,

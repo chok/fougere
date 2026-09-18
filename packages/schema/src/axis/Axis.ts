@@ -3,8 +3,6 @@ import type { ValidationError } from '../lib/ValidationError.js';
 import type { Resolver } from './Resolver.js';
 
 export interface Axis<Declared = unknown, Wire = unknown> {
-  readonly slot: string;
-
   readonly format: Format;
 
   /** What a format cannot state: `role.relation.to` is a function, and JSON holds none. */

@@ -216,13 +216,15 @@ at `entity()`, so an axis registers in `vocabulary/`, the one convention directo
 reads BEFORE `entities/`. What stays closed is the MODEL — a field has four axes, and three
 tests admit one. Pinned by `schema/tests/axis-registration.test.ts`.
 
-**An axis is ONE file: what it admits, what it reads, and the conversion it needs** —
-`axis/lifecycle/Lifecycle.ts`, `axis/boundary/Boundary.ts`, `axis/role/Role.ts`. The trio each
-had (rules, axis, reading) was one subject cut in three, and the cut came from the card: an axis
-was given `describe`/`reconstruct` the day a card needed an aller-retour. Both are OPTIONAL now,
-and only `role` states them — its card carries a NAME where the declaration carries a function,
-where `lifecycle` and `boundary` travel as themselves and used to write `(value) => value`
-twice. Pinned by `schema/tests/descriptor.test.ts`.
+**An axis IS its class, and the registry key is its slot** — `Lifecycle`, `Boundary`, `Role`.
+What it admits is `static format`, what a card needs is `static describe`/`static reconstruct`,
+and what it reads is the instance: `Lifecycle.of(field).immutable`. The trio each had — rules,
+axis object, reading — was one subject cut in three, and `slot` was the name written a second
+time beside the key `Axes` already holds. The two conversions are OPTIONAL and only `role` states
+them: its card carries a NAME where the declaration carries a function, where `lifecycle` and
+`boundary` travel as themselves and used to write `(value) => value` twice. A class cannot
+`implements` an axis — the axis is its STATIC side — so `Axes.register` is where it is checked.
+Pinned by `schema/tests/axis-registration.test.ts`.
 
 **A registry is an instance of `Registry<T>`** (`schema/src/lib/Registry.ts`). `StringFormats`,
 `Generators` and the three of `Boundaries` are bare instances; `Sources` extends it to add

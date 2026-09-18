@@ -2,9 +2,9 @@ import { Registry } from '../lib/Registry.js';
 import type { JsonSchema } from '../lib/JsonSchema.js';
 import { fieldFormat } from '../field/FieldFormat.js';
 import type { Axis } from './Axis.js';
-import { boundaryAxis } from './boundary/Boundary.js';
-import { lifecycleAxis } from './lifecycle/Lifecycle.js';
-import { roleAxis } from './role/Role.js';
+import { Boundary } from './boundary/Boundary.js';
+import { Lifecycle } from './lifecycle/Lifecycle.js';
+import { Role } from './role/Role.js';
 
 class AxisRegistry extends Registry<Axis> {
   private composed?: JsonSchema;
@@ -17,7 +17,7 @@ class AxisRegistry extends Registry<Axis> {
 
   /** The document a field declaration is judged against, rebuilt the next time one arrives. */
   get fieldFormat(): JsonSchema {
-    this.composed ??= fieldFormat(this.all);
+    this.composed ??= fieldFormat(this.entries);
 
     return this.composed;
   }
@@ -26,10 +26,10 @@ class AxisRegistry extends Registry<Axis> {
 /**
  * The axes this process reads, and the door an axis declared elsewhere comes through.
  * FR : les axes que ce process lit, et la porte par où un axe déclaré ailleurs entre.
- * `Axes.register('tenancy', tenancyAxis)` — from a `vocabulary/` file, read before `entities/`
+ * `Axes.register('tenancy', Tenancy)` — from a `vocabulary/` file, read before `entities/`
  */
 export const Axes = new AxisRegistry('axis', 'call Axes.register(slot, axis)', [
-  [roleAxis.slot, roleAxis],
-  [lifecycleAxis.slot, lifecycleAxis],
-  [boundaryAxis.slot, boundaryAxis],
+  ['role', Role],
+  ['lifecycle', Lifecycle],
+  ['boundary', Boundary],
 ]);
