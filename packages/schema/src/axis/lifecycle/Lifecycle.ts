@@ -2,24 +2,24 @@ import { Format } from '../../lib/Format.js';
 import { Generators } from './Generators.js';
 import type { GeneratorRef } from './Generators.js';
 
-export const CREATE_TOKENS = ['now', 'optional'] as const;
-export const UPDATE_TOKENS = ['now', 'forbidden'] as const;
-
 export interface LifecycleRules {
-  create?: { value: unknown } | { generate: GeneratorRef } | (typeof CREATE_TOKENS)[number];
-  update?: (typeof UPDATE_TOKENS)[number];
+  create?: { value: unknown } | { generate: GeneratorRef } | (typeof Lifecycle.CREATE)[number];
+  update?: (typeof Lifecycle.UPDATE)[number];
 }
 
 export class Lifecycle {
+  static readonly CREATE = ['now', 'optional'] as const;
+  static readonly UPDATE = ['now', 'forbidden'] as const;
+
   static readonly format = Format.of('axis/lifecycle')
     .key(
       'create',
       Format.either(
-        Format.tokens(CREATE_TOKENS),
+        Format.tokens(Lifecycle.CREATE),
         Format.exactlyOne({ value: Format.anything, generate: Format.text }),
       ),
     )
-    .key('update', Format.tokens(UPDATE_TOKENS))
+    .key('update', Format.tokens(Lifecycle.UPDATE))
     .closed();
 
   private readonly create?: LifecycleRules['create'];
