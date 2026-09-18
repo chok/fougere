@@ -11,4 +11,11 @@ export default defineConfig({
     "anti-slop/no-unknown-type-aliases": "error",
     "anti-slop/no-widen-then-assert": "error",
   },
+  overrides: [
+    {
+      // `then` under `axis/` is the JSON Schema keyword of a format, never a thenable.
+      files: ["packages/schema/src/axis/**"],
+      rules: { "unicorn/no-thenable": "off" },
+    },
+  ],
 });
