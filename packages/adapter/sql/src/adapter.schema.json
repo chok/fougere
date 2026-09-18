@@ -1,4 +1,5 @@
 {
+  "$id": "https://fougere.dev/schema/adapter/sql",
   "type": "object",
   "properties": {
     "columnType": {

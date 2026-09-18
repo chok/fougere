@@ -10,6 +10,7 @@ const closedOr = (verb: 'decode' | 'encode'): JsonSchema => ({
 });
 
 export const BOUNDARY_FORMAT: JsonSchema = {
+  $id: 'https://fougere.dev/schema/axis/boundary',
   if: { type: 'string' },
   else: {
     type: 'object',

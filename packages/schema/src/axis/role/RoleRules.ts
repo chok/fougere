@@ -9,6 +9,7 @@ export interface RoleRules {
 }
 
 export const ROLE_FORMAT: JsonSchema = {
+  $id: 'https://fougere.dev/schema/axis/role',
   type: 'object',
   properties: {
     primary: { type: 'boolean' },

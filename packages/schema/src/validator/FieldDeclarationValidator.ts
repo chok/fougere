@@ -1,7 +1,7 @@
 import { EXTENSION_AXES } from '../axis/Axis.js';
 import { Shapes } from '../axis/shape/Shape.js';
 import type { Field } from '../field/Field.js';
-import { META_FORMAT } from '../field/Meta.js';
+import { FIELD_FORMAT } from '../field/FieldFormat.js';
 import { isObject, shown } from '../lib/utils.js';
 import type { ValidationError } from '../lib/ValidationError.js';
 import type { ValidationResult } from '../lib/ValidationResult.js';
@@ -38,19 +38,10 @@ export class FieldDeclarationValidator {
       });
     }
 
+    errors.push(...JsonSchemaValidator.of(FIELD_FORMAT).refusalsOf(declaration, []));
+
     for (const axis of EXTENSION_AXES) {
-      const declared = declaration[axis.slot];
-      if (declared === undefined) continue;
-
-      const refusal = JsonSchemaValidator.of(axis.format).refusalOf(declared, [axis.slot]);
-      if (refusal) errors.push(refusal);
-
-      errors.push(...(axis.refusals?.(declared) ?? []));
-    }
-
-    if (declaration.meta !== undefined) {
-      const refusal = JsonSchemaValidator.of(META_FORMAT).refusalOf(declaration.meta, ['meta']);
-      if (refusal) errors.push(refusal);
+      errors.push(...(axis.refusals?.(declaration[axis.slot]) ?? []));
     }
 
     return errors.length

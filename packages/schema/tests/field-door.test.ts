@@ -54,7 +54,7 @@ describe('the field facade', () => {
     const refused: readonly (readonly [unknown, string])[] = [
       [3, 'lifecycle.create.generate: Instance type "number" is invalid. Expected "string".'],
       [undefined, 'lifecycle.create: Instance does not have at least 1 properties.'],
-      [() => 'x', 'lifecycle: Instances of "function" type are not supported.'],
+      [() => 'x', 'lifecycle.create.generate: Expected a JSON value — got function'],
     ];
     for (const [generate, message] of refused) {
       expect(() => new Field({ shape, lifecycle: { create: { generate } } } as never)).toThrow(message);
@@ -99,21 +99,19 @@ describe('the field facade', () => {
     expect(short.success).toBe(false);
   });
 
-  it('keeps the five slots and nothing else', () => {
-    const f = new Field({ shape: { type: 'string' }, nawak: 42 } as never);
-    expect('nawak' in f).toBe(false);
+  it('refuses a key no axis states, naming the ones that are legal', () => {
+    expect(() => new Field({ shape: { type: 'string' }, nawak: 42 } as never)).toThrow(
+      'nawak: Instance does not match any of ["shape","role","lifecycle","boundary","meta"].',
+    );
   });
 
-  it('survives a card carrying __proto__ — the input this facade exists to accept', () => {
+  it('refuses a card carrying __proto__, and pollutes nothing on its way out', () => {
     // `Object.assign(this, init)` would copy through [[Set]], firing the `__proto__`
     // setter: the field would lose `with` and gain whatever the sender put there.
     const hostile = JSON.parse('{"shape":{"type":"string"},"__proto__":{"polluted":true}}');
-    const f = new Field(hostile);
 
-    expect(Object.getPrototypeOf(f)).toBe(Field.prototype);
-    expect(typeof f.with).toBe('function');
-    expect((f as unknown as { polluted?: boolean }).polluted).toBeUndefined();
-    expect(({} as { polluted?: boolean }).polluted).toBeUndefined();  // nor globally
+    expect(() => new Field(hostile)).toThrow('__proto__: Instance does not match any of');
+    expect(({} as { polluted?: boolean }).polluted).toBeUndefined();
   });
 
   it('a field built from the vocabulary is the same thing', () => {

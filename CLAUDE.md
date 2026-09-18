@@ -182,9 +182,13 @@ What the OPERATOR decides is not stated here: it belongs in `fougere.config.ts` 
 (`schema/src/validator/JsonSchemaValidator.ts`) judges a field's value against its shape and a
 declaration against the format of its key, and it is the one place that picks which of the
 engine's refusals to report. An axis states its format beside its type — `LIFECYCLE_FORMAT`,
-`ROLE_FORMAT`, `BOUNDARY_FORMAT`, and `META_FORMAT` for `meta`. Each axis used to hold a
-validator written by hand, whose messages copied the token lists, and
-`lifecycle: { craete: 'now' }` passed. The tokens stay `as const` and the format spreads them,
+`ROLE_FORMAT`, `BOUNDARY_FORMAT`, and `META_FORMAT` for `meta` — each under its own `$id`, and
+`FIELD_FORMAT` (`schema/src/field/FieldFormat.ts`) composes them: it carries each one whole in
+`$defs`, cites it by `$ref`, and lists the legal keys in `propertyNames`, so the document
+travels alone and a key a format does not claim is REFUSED — `{ shape, nawak: 42 }` used to be
+accepted and the key dropped. That is also where an axis added from outside would enter: one
+entry, and the three lines take it. Each axis used to hold a validator written by hand, whose
+messages copied the token lists, and `lifecycle: { craete: 'now' }` passed. The tokens stay `as const` and the format spreads them,
 because a JSON import keeps a KEY as a literal and widens a VALUE to `string`. `Axis.refusals`
 holds what JSON cannot state: `role.relation.to` is a function. A key set to `undefined` is read
 as absent. A card is judged at the same door: `reconstruct` rebuilds, and `new Field(…, key)`
@@ -810,6 +814,17 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   of `blog` and `fougere explain blog/default/Post.publish` answers `reach: { fronds: [], hops: 0 }`.
   Left as is on purpose — those three numbers are the operator's, and widening `servedBy` to
   `Map<string, string[]>` moves a sampling rate and a load threshold at once.
+- **A card does not carry `reach`, so a chain stops at the first neighbour.** `CardOp`
+  (`core/src/wire/card/CardOp.ts`) publishes everything an op states about itself — `input`,
+  `output`, `kind`, `cardinality`, `errors` — except where its own work goes. And `reachOf`
+  (`EffectiveOperationModel.ts`) reads `handler.deps` against the fronds THIS process places
+  remotely, so `hops` is a WIDTH, how many remote fronds one handler calls, never a depth.
+  Measured 2026-09-17. While a repository is one process nothing notices: what is local to a
+  neighbour is already paid in its latency, and the caller measures that. The day a neighbour
+  splits, every caller under-counts in silence and `base + hops * perHop` keeps naming the
+  figure that was true before it. Depth is a LOCAL fact and it composes — a process answers for
+  what it knows and the caller adds — which is the shape `holds` and `release` already have,
+  `visited` trail included, since two fronds naming each other need one.
 - **A `ref()` added to a table that already exists gets no foreign key, and the boot believes
   it has one.** The additive pass has no `addForeignKey` (`diff/Change.ts`), and `heldBy` reads
   what the source PROMISES, not what the live table holds, so it reads nothing either. Measured
@@ -855,6 +870,15 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   in one process feed one list. `registerFlush` is the same shape read once instead of per
   line; it lives there because the host that calls `flushTelemetry()` holds a request handler,
   not an app (`demos/cloudflare-d1`, `ctx.waitUntil`).
+- **A card states `role` in a form of its own, and nothing judges it** — `schema/src/axis/role/RoleAxis.ts`,
+  `reconstruct`. `role` is the one slot whose wire differs from its declaration: `relation.to` is a
+  function here and a name there, `unique` a boolean here and a list of groups there — so `ROLE_FORMAT`
+  cannot serve both, where `lifecycle`, `boundary` and `meta` are judged by the format they already
+  state. Measured 2026-09-17 through `Card.fromDescriptor(…).toSchema()`: `unique: 'x'` throws
+  `wire.unique?.some is not a function`, `primary: 'yes'` is read as `true`, `relation: { to: 3 }`
+  passes, and a key nothing reads is dropped. What closes it is a format beside `RoleDescriptor`,
+  read before the rebuild — everything the rebuild produces is refused by `new Field(…, key)` already.
+
 - **An un-augmented `adapters:` accepts anything, silently.** With no adapter in the program
   `EntityAdapters<TFields>` is `Partial<{}>`, which in TypeScript means "anything
   non-nullish". The RUNTIME half is closed since the adapter's format; what remains open is the type.

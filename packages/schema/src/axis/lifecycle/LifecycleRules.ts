@@ -10,6 +10,7 @@ export interface LifecycleRules {
 }
 
 export const LIFECYCLE_FORMAT: JsonSchema = {
+  $id: 'https://fougere.dev/schema/axis/lifecycle',
   type: 'object',
   properties: {
     create: {

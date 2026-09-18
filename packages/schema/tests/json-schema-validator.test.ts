@@ -40,8 +40,8 @@ describe('JsonSchemaValidator', () => {
 
   it('refuses a value JSON cannot hold, rather than throwing past the caller', () => {
     expect(validator.refusalOf({ columnType: () => 'tsvector' }, ['body'])).toEqual({
-      path: ['body'],
-      message: 'Instances of "function" type are not supported.',
+      path: ['body', 'columnType'],
+      message: 'Expected a JSON value — got function',
     });
   });
 });
