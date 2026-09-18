@@ -94,7 +94,9 @@ async function main() {
     // 3. Test REST API works
     log('Testing REST API...');
     const postsRes = await fetch(`http://localhost:${PORT}/api/posts`);
-    const posts = await postsRes.json() as any[];
+    // A paged op answers `{ items, total, hasMore, endCursor }` — the counts are FIELDS, so
+    // they survive the wire. Carried as properties of an array, JSON kept only the indices.
+    const { items: posts } = await postsRes.json() as { items: any[] };
     if (!Array.isArray(posts) || posts.length < 2) fail('Expected seeded posts');
     pass(`REST API returns ${posts.length} seeded posts`);
 

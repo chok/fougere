@@ -29,6 +29,7 @@ export { MAX_BODY_BYTES } from './wire/SignedCall.js';
 // call log ignoring its own reader — has to be able to name it.
 export { RPC_ENTITY } from './wire/RpcAnswer.js';
 export type { CallPage } from './wire/CallPage.js';
+export { pageOf, asPage, type Page } from './wire/Page.js';
 export type { CallRecord } from './wire/CallRecord.js';
 // The comparison of two cards, which a consumer runs about a producer — browser-safe on
 // purpose: a panel showing the drift holds only the two cards, never the app.

@@ -82,9 +82,10 @@ describe('a write-only field never crosses the façade outbound', () => {
     const { app, run } = await boot(root);
     const out = await run({ entity: 'secret', op: 'list' }, empty) as any;
 
-    expect(out[0]).toEqual({ id: 'a1', label: 'prod key' });
+    expect(out.items[0]).toEqual({ id: 'a1', label: 'prod key' });
     expect(JSON.stringify(out)).not.toContain(SECRET);
-    // ListResult is an array — projecting the rows must not drop its metadata.
+    // A page states its counts as FIELDS, so projecting the rows leaves them where they are —
+    // and `JSON.stringify` keeps them, which an array carrying them as properties did not.
     expect(out.total).toBe(1);
     expect(out.hasMore).toBe(false);
     expect(out.endCursor).toBe('a1');

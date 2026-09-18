@@ -1,7 +1,7 @@
 import type { CrudOpName } from './CrudOpName.js';
 import type { EntityConstructor } from '@fougere/schema';
 import type { ListOptions } from '../storage/ListOptions.js';
-import type { ListResult } from '../storage/ListResult.js';
+import type { Page } from '../wire/Page.js';
 import type { Storage } from '../storage/Storage.js';
 
 /** The view an op emits, fabricated. */
@@ -16,7 +16,7 @@ type OutOf<V, K extends CrudOpName, T> =
 /** The five ops, typed from the entity and its views. */
 export interface CrudOps<T, V = {}> {
   storage: Storage<T>;
-  list(options?: ListOptions, ...collected: never[]): Promise<ListResult<OutOf<V, 'list', T>>>;
+  list(options?: ListOptions, ...collected: never[]): Promise<Page<OutOf<V, 'list', T>>>;
   findById(id: string, ...collected: never[]): Promise<OutOf<V, 'findById', T> | undefined>;
   create(input: Partial<T>, ...collected: never[]): Promise<OutOf<V, 'create', T>>;
   update(id: string, input: Partial<T>, ...collected: never[]): Promise<OutOf<V, 'update', T>>;

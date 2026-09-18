@@ -36,7 +36,7 @@ export function cardinalityOf(type: TypeRef | undefined): OperationContract['car
   if (!type) return undefined;
   const inner = type.name === 'Promise' ? type.generics?.[0] : type;
   if (!inner) return 'none';
-  if (inner.name === 'ListResult') return 'page';
+  if (inner.name === 'Page' || inner.name === 'ListResult') return 'page';
   if (inner.array) return 'many';
   if (PRIMITIVE_RETURNS.has(inner.name)) return 'none';
   return inner.nullable || inner.undefined ? 'maybe' : 'one';

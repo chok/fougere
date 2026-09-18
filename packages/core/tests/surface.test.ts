@@ -56,15 +56,15 @@ const boot = () => createApp({
 describe('the envelope, per audience', () => {
   it('the default facade serves the whole row', async () => {
     const app = await boot();
-    const row = await createAppRunner(app)({ entity: 'note', op: 'list' }, Invocation.empty) as any[];
-    expect(row[0]).toHaveProperty('secret', 'planqué');
+    const page = await createAppRunner(app)({ entity: 'note', op: 'list' }, Invocation.empty) as { items: any[] };
+    expect(page.items[0]).toHaveProperty('secret', 'planqué');
     await app.dispose();
   });
 
   it('a named facade serves its own façade — the secret does not leave', async () => {
     const app = await boot();
-    const row = await createAppRunner(app, 'public')({ entity: 'note', op: 'list' }, Invocation.empty) as any[];
-    expect(Object.keys(row[0]).sort()).toEqual(['id', 'title']);
+    const page = await createAppRunner(app, 'public')({ entity: 'note', op: 'list' }, Invocation.empty) as { items: any[] };
+    expect(Object.keys(page.items[0]).sort()).toEqual(['id', 'title']);
     await app.dispose();
   });
 

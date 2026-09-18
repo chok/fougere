@@ -357,9 +357,9 @@ describe('presenter — the page is handed over whole', () => {
 
     // `pageSize` writes how many rows it was handed. Three means one call for the page; one
     // would mean a query per row, which is the failure a presenter exists to make impossible.
-    const page = await ask(one, 'author', 'list', {}) as { pageSize: number; shout: string }[];
-    expect(page.map((row) => row.pageSize)).toEqual([3, 3, 3]);
-    expect(page.map((row) => row.shout).sort()).toEqual(['ADA', 'BOB', 'CAROL']);
+    const { items } = await ask(one, 'author', 'list', {}) as { items: { pageSize: number; shout: string }[] };
+    expect(items.map((row) => row.pageSize)).toEqual([3, 3, 3]);
+    expect(items.map((row) => row.shout).sort()).toEqual(['ADA', 'BOB', 'CAROL']);
     await one.dispose();
   });
 });

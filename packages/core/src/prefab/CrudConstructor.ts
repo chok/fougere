@@ -6,6 +6,7 @@ import type { OperationContract } from '../wire/OperationContract.js';
 import { targetOf } from './prefab.js';
 import type { CrudOpName } from './CrudOpName.js';
 import type { CrudViews } from './CrudViews.js';
+import { pageOf, type Page } from '../wire/Page.js';
 import type { CrudOps } from './CrudOps.js';
 
 /**
@@ -56,7 +57,7 @@ function crudOps(entity: SchemaView & { partial?: () => SchemaView }): Record<st
       output: entity, cardinality: 'page',
       binding: [{ name: 'options', source: { kind: 'query' }, optional: true }],
       signature: {
-        name: 'list', returnType: returns(`ListResult<${name}>`, 'ListResult'),
+        name: 'list', returnType: returns(`Page<${name}>`, 'Page'),
         params: [{ name: 'options', type: { raw: 'ListOptions', name: 'ListOptions' }, optional: true }],
       },
     },
@@ -139,7 +140,7 @@ export function Crud<E extends EntityConstructor, V extends CrudViews | EntityCo
       this.storage = storage as Storage<T>;
     }
 
-    async list(options?: ListOptions): Promise<ListResult<T>> { return this.storage.list(options) as Promise<ListResult<T>>; }
+    async list(options?: ListOptions): Promise<Page<T>> { return pageOf(await this.storage.list(options)); }
     async findById(id: string): Promise<T | undefined> { return this.storage.findById(id); }
     async create(input: Partial<T>): Promise<T> { return this.storage.create(input); }
     async update(id: string, input: Partial<T>): Promise<T> { return this.storage.update(id, input); }

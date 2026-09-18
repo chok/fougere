@@ -59,8 +59,8 @@ describe('its dual — a fact that arrives', () => {
 
     // `list` answers an array CARRYING its page metadata (`hasMore`, `total`), so the
     // rows are copied out before comparing — otherwise those properties are compared too.
-    const rows = await createLocalRunner(app)({ entity: 'indexed', op: 'list' }, Invocation.empty) as unknown[];
-    expect([...rows]).toMatchObject([{ postId: 'p1', title: 'Delivered' }]);
+    const rows = await createLocalRunner(app)({ entity: 'indexed', op: 'list' }, Invocation.empty) as { items: unknown[] };
+    expect(rows.items).toMatchObject([{ postId: 'p1', title: 'Delivered' }]);
   });
 
   it('is validated on arrival, and a refusal reaches the carrier', async () => {
@@ -79,7 +79,7 @@ describe('its dual — a fact that arrives', () => {
     await run({ entity: 'post', op: 'publish' }, { ...Invocation.empty, input: { id: post.id, title: 'Both' } });
 
     expect(app.announced(PostPublished)).toHaveLength(1);
-    const rows = await run({ entity: 'indexed', op: 'list' }, Invocation.empty) as unknown[];
-    expect([...rows]).toHaveLength(1);
+    const rows = await run({ entity: 'indexed', op: 'list' }, Invocation.empty) as { items: unknown[] };
+    expect(rows.items).toHaveLength(1);
   });
 });

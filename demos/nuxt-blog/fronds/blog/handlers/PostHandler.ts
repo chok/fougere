@@ -1,4 +1,4 @@
-import { Crud, FougereError, ErrorCode } from '@fougere/core';
+import { Crud, FougereError, ErrorCode, pageOf, type Page } from '@fougere/core';
 import Post from '../entities/Post.js';
 import User from '@fronds/user/entities/User.js';
 
@@ -7,9 +7,9 @@ export class SearchByTitleOutput extends Post.pick('id', 'title') {}
 
 export default class PostHandler extends Crud(Post) {
   /** Public reading: only published posts exist for the outside world. */
-  async list(): Promise<Post[]> {
+  async list(): Promise<Page<Post>> {
     const all = await this.storage.list();
-    return all.filter((p) => p.status === 'published');
+    return pageOf(all.filter((p) => p.status === 'published'));
   }
 
   /** A post is visible when published, or when it's the reader's own draft. */

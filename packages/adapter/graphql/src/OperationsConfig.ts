@@ -725,8 +725,9 @@ function resolveOutputType(
     return { type: 'Boolean', isList: false, nullable: false };
   }
 
-  // ListResult<T> → paginated list wrapper
-  if (rt?.name === 'ListResult') {
+  // A paged op → the paginated list wrapper. `Page<T>` is what a prefab answers; `ListResult<T>`
+  // is the array a handler writing its own op still hands back from the storage.
+  if (rt?.name === 'Page' || rt?.name === 'ListResult') {
     return { type: 'list-wrapper', isList: true, nullable: false };
   }
 
@@ -798,7 +799,12 @@ export function registerOperations(builder: InstanceType<typeof SchemaBuilder>, 
 
           // List wrapper: shape the result for the paginated type
           if (isListWrapper) {
-            const items = Array.isArray(result) ? [...result] : result;
+            // A paged op answers `{ items, … }`; an op writing its own signature may still
+            // answer the array the storage handed it.
+            const page = result as { items?: unknown[] } | null;
+            const items = Array.isArray(result) ? [...result]
+              : Array.isArray(page?.items) ? page.items
+              : result;
             return {
               items,
               endCursor: result?.endCursor,

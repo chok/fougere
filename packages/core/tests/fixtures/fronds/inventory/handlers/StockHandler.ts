@@ -1,5 +1,6 @@
 import { entity, primary, text, number } from '@fougere/schema';
 import { Crud } from '../../../../../src/prefab/CrudConstructor.js';
+import type { Page } from '../../../../../src/wire/Page.js';
 import Item from '../entities/Item.js';
 
 export class StockSearchInput extends entity({
@@ -14,7 +15,7 @@ export class StockSearchOutput extends entity({
 
 /** Handler that overrides list + adds a custom op. Tests child-wins merge. */
 export default class StockHandler extends Crud(Item) {
-  async list(): Promise<Item[]> { return []; }
+  async list(): Promise<Page<Item>> { return { items: [] }; }
 
   async searchStock(input: StockSearchInput): Promise<StockSearchOutput[]> {
     return [];

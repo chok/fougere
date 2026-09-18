@@ -1,4 +1,4 @@
-import { Crud, FougereError, ErrorCode } from '@fougere/core';
+import { Crud, FougereError, ErrorCode, pageOf, type Page } from '@fougere/core';
 import Post from '../entities/Post.js';
 import PostRepository from '../repositories/PostRepository.js';
 import User from '@fronds/user/entities/User.js';
@@ -21,10 +21,11 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
   }
 
   /** Public reading: published only, newest first, card shape — no body on the index. */
-  async list(): Promise<PostCard[]> {
+  async list(): Promise<Page<PostCard>> {
     const published = await this.posts.published();
-    return published.map(({ id, slug, title, summary, authorName, publishedAt }) =>
-      ({ id, slug, title, summary, authorName, publishedAt }));
+
+    return pageOf(published.map(({ id, slug, title, summary, authorName, publishedAt }) =>
+      ({ id, slug, title, summary, authorName, publishedAt })));
   }
 
   /** Public reading: one published post, full body, designated by slug. */

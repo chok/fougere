@@ -102,6 +102,8 @@ describe('createApp on a flat project', () => {
 
     const run = createLocalRunner(app);
     const rows = await run({ entity: 'product', op: 'list' }, Invocation.empty);
+    // Its own method, answering the storage's array: the envelope is `Crud.list`'s doing,
+    // and an author writing the op keeps the shape they wrote.
     expect(rows).toEqual([{ id: '1', name: 'Fern', price: 12.5 }]);
   });
 });
@@ -196,8 +198,8 @@ describe('handler facades', () => {
     // ItemHandler extends Crud(Item) — it declares the five by inheriting them.
     const itemHandler = app.resolve<Record<string, Function>>('itemHandler');
 
-    const result = await itemHandler.list({ params: {}, query: {}, input: undefined, state: {} });
-    expect(result).toEqual([{ id: '1' }]);
+    const page = await itemHandler.list({ params: {}, query: {}, input: undefined, state: {} });
+    expect(page).toEqual({ items: [{ id: '1' }] });
     expect(storage.list).toHaveBeenCalled();
   });
 

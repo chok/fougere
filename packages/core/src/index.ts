@@ -49,6 +49,7 @@ export { JOURNAL, type Journal } from './dispatch/Journal.js';
 // them — or a test of one — has to be able to make one through the facade.
 export { DispatchEvent } from './dispatch/DispatchEvent.js';
 export type { CallPage, CallRecord } from './contract.js';
+export { pageOf, asPage, type Page } from './contract.js';
 export { driftOf, agrees, explain, type CardDrift } from './contract.js';
 export type { OperationContract } from './wire/OperationContract.js';
 export type { OperationsMap } from './wire/OperationsMap.js';

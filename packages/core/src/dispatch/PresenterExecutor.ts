@@ -2,6 +2,7 @@ import { ErrorCode } from '../wire/ErrorCode.js';
 import { FougereError } from '../wire/FougereError.js';
 import { preserveArrayProperties } from './ArrayResult.js';
 import type { PresenterArgs } from './PresenterArgs.js';
+import { asPage } from '../wire/Page.js';
 
 /** Adds a presenter's computed fields after output projection. */
 export class PresenterExecutor {
@@ -16,6 +17,12 @@ export class PresenterExecutor {
     if (!this.presenter || !this.fieldNames?.length || result === null || typeof result !== 'object') {
       return result;
     }
+
+    // A paged op answers an envelope, and what a computed field sits on is a ROW. Handed the
+    // envelope itself, a presenter added its fields to `{ items, total }` and every row came
+    // back untouched.
+    const page = asPage(result, Object.fromEntries(this.fieldNames.map((name) => [name, true])));
+    if (page) return { ...page, items: await this.present(page.items, args) as unknown[] };
 
     const rows = Array.isArray(result) ? result : [result];
     const values = new Map<string, unknown[]>();
