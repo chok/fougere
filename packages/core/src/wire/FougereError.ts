@@ -20,7 +20,7 @@ export class FougereError<Code extends ErrorCode = ErrorCode> extends Error {
 
   constructor(options: FougereErrorOptions<Code>) {
     super(options.message, { cause: options.cause });
-    this.name = new.target.name;
+    this.name = 'FougereError';
     this.code = options.code;
     this.entity = options.entity;
     this.operation = options.operation;

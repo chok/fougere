@@ -2,7 +2,7 @@ export class ContainerError extends Error {
   constructor(message: string) {
     super(message);
 
-    this.name = new.target.name;
+    this.name = 'ContainerError';
   }
 
   static all(failures: unknown[], message: string): AggregateError {

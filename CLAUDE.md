@@ -993,6 +993,13 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 
 One line each, kept because a past version of this file asserted the opposite.
 
+- **An error names itself with a LITERAL, not `new.target.name`** — `SchemaError`,
+  `ContainerError`, `FougereError`. A bundler mangles a class name: measured 2026-09-18 in
+  `site/.output`, `SchemaError` ships as `class e extends Error`, so every refusal the browser
+  raised was named `e`. The same mangling already bit an entity — `Product` became `f` and the
+  call left as `f.list` (`app/nuxt/src/module.ts`). A subclass would now report the base's name,
+  and there is none in the tree.
+
 - **`Emit<T>` is PARTIAL, because announcing realizes the fact's `lifecycle.create`** — a
   `created()` stamped by `Emissions`, which asking the announcer for made every emitter cast
   past its own type. A missing field is still refused, by the judge that reads the fact.
