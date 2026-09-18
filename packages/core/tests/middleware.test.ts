@@ -54,7 +54,10 @@ describe('runMiddlewares', () => {
   it('allows middleware to short-circuit', async () => {
     const handler = vi.fn(async () => 'ok');
 
-    const blocker: AppMiddleware = async () => 'blocked';
+    // The cast is the point: a middleware answers the TYPE the chain answers, and `T` is one
+    // it cannot name — so inventing a value means saying out loud that it has the right shape.
+    // Refusing needs no cast at all: a `throw` produces nothing.
+    const blocker: AppMiddleware = async () => 'blocked' as never;
 
     const result = await runMiddlewares([blocker], ctx(), handler);
     expect(result).toBe('blocked');
