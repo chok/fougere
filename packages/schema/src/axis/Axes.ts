@@ -2,9 +2,9 @@ import { Registry } from '../lib/Registry.js';
 import type { JsonSchema } from '../lib/JsonSchema.js';
 import { fieldFormat } from '../field/FieldFormat.js';
 import type { Axis } from './Axis.js';
-import { boundaryAxis } from './boundary/BoundaryAxis.js';
-import { lifecycleAxis } from './lifecycle/LifecycleAxis.js';
-import { roleAxis } from './role/RoleAxis.js';
+import { boundaryAxis } from './boundary/Boundary.js';
+import { lifecycleAxis } from './lifecycle/Lifecycle.js';
+import { roleAxis } from './role/Role.js';
 
 class AxisRegistry extends Registry<Axis> {
   private composed?: JsonSchema;

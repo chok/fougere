@@ -129,7 +129,7 @@ function describeExtension(field: Field, key: string): FieldExtension | undefine
   for (const axis of Axes.all) {
     const declared = (field as unknown as Record<string, unknown>)[axis.slot];
     if (declared === undefined) continue;
-    const wire = axis.describe(declared, key);
+    const wire = axis.describe ? axis.describe(declared, key) : declared;
     if (wire !== undefined) extension[axis.slot] = wire;
   }
   clean(extension);
@@ -203,7 +203,7 @@ function reconstructField(
   const axes: Record<string, unknown> = {};
   for (const axis of Axes.all) {
     const wire = (extension as Record<string, unknown> | undefined)?.[axis.slot];
-    if (wire !== undefined) axes[axis.slot] = axis.reconstruct(wire, resolve);
+    if (wire !== undefined) axes[axis.slot] = axis.reconstruct ? axis.reconstruct(wire, resolve) : wire;
   }
   return new Field({
     shape,

@@ -1,5 +1,30 @@
+import type { Axis } from '../Axis.js';
+import { Format } from '../../lib/Format.js';
 import { Generators } from './Generators.js';
-import type { LifecycleRules } from './LifecycleRules.js';
+import type { GeneratorRef } from './Generators.js';
+
+export const CREATE_TOKENS = ['now', 'optional'] as const;
+export const UPDATE_TOKENS = ['now', 'forbidden'] as const;
+
+export interface LifecycleRules {
+  create?: { value: unknown } | { generate: GeneratorRef } | (typeof CREATE_TOKENS)[number];
+  update?: (typeof UPDATE_TOKENS)[number];
+}
+
+export const lifecycleAxis: Axis<LifecycleRules, LifecycleRules> = {
+  slot: 'lifecycle',
+
+  format: Format.of('axis/lifecycle')
+    .key(
+      'create',
+      Format.either(
+        Format.tokens(CREATE_TOKENS),
+        Format.exactlyOne({ value: Format.anything, generate: Format.text }),
+      ),
+    )
+    .key('update', Format.tokens(UPDATE_TOKENS))
+    .closed(),
+};
 
 export class Lifecycle {
   private readonly create?: LifecycleRules['create'];

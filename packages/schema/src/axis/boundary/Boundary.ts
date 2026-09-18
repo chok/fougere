@@ -4,8 +4,34 @@ import { Boundaries } from './Decoder.js';
 import type { Field } from '../../field/Field.js';
 import { type Shape } from '../shape/Shape.js';
 import { Shapes } from '../shape/Shape.js';
-import type { BoundaryRules } from './BoundaryRules.js';
 import { SchemaError } from '../../SchemaError.js';
+import type { Axis } from '../Axis.js';
+import { Format } from '../../lib/Format.js';
+
+export interface BoundaryRules {
+  in?: 'closed' | { decode: string };
+  out?: 'closed' | { encode: string };
+}
+
+export type BoundaryRef = 'isoDate' | (string & {}) | BoundaryRules;
+
+const closedOr = (verb: 'decode' | 'encode'): Format =>
+  Format.either(
+    Format.tokens(['closed']),
+    Format.of().key(verb, Format.text).needs(verb).closed(),
+  );
+
+export const boundaryAxis: Axis<BoundaryRef, BoundaryRef> = {
+  slot: 'boundary',
+
+  format: Format.named(
+    'axis/boundary',
+    Format.either(
+      Format.text,
+      Format.of().key('in', closedOr('decode')).key('out', closedOr('encode')).closed(),
+    ),
+  ),
+};
 
 const identityDecoder: Decoder = (value) => ({ value });
 

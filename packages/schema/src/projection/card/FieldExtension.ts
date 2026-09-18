@@ -1,5 +1,5 @@
-import type { BoundaryRef } from '../../axis/boundary/BoundaryRef.js';
-import type { LifecycleRules } from '../../axis/lifecycle/LifecycleRules.js';
+import type { BoundaryRef } from '../../axis/boundary/Boundary.js';
+import type { LifecycleRules } from '../../axis/lifecycle/Lifecycle.js';
 import type { RoleDescriptor } from './RoleDescriptor.js';
 
 export interface FieldExtension {

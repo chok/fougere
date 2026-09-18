@@ -19,7 +19,7 @@ import {
   type SchemaView,
   text,
 } from '../src/index.js';
-import { type RoleRules } from '../src/axis/role/RoleRules.js';
+import { type RoleRules } from '../src/axis/role/Role.js';
 import { type RelationDescriptor } from '../src/projection/card/RelationDescriptor.js';
 import { type RoleDescriptor } from '../src/projection/card/RoleDescriptor.js';
 import { type EntityConstructor } from '../src/axis/role/EntityConstructor.js';

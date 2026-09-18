@@ -216,6 +216,14 @@ at `entity()`, so an axis registers in `vocabulary/`, the one convention directo
 reads BEFORE `entities/`. What stays closed is the MODEL — a field has four axes, and three
 tests admit one. Pinned by `schema/tests/axis-registration.test.ts`.
 
+**An axis is ONE file: what it admits, what it reads, and the conversion it needs** —
+`axis/lifecycle/Lifecycle.ts`, `axis/boundary/Boundary.ts`, `axis/role/Role.ts`. The trio each
+had (rules, axis, reading) was one subject cut in three, and the cut came from the card: an axis
+was given `describe`/`reconstruct` the day a card needed an aller-retour. Both are OPTIONAL now,
+and only `role` states them — its card carries a NAME where the declaration carries a function,
+where `lifecycle` and `boundary` travel as themselves and used to write `(value) => value`
+twice. Pinned by `schema/tests/descriptor.test.ts`.
+
 **A registry is an instance of `Registry<T>`** (`schema/src/lib/Registry.ts`). `StringFormats`,
 `Generators` and the three of `Boundaries` are bare instances; `Sources` extends it to add
 `open`, and `Axes` to rebuild the composed format a registration changes. `resolve` throws and lists what the process answers; `find` returns `undefined` for
@@ -883,8 +891,8 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   in one process feed one list. `registerFlush` is the same shape read once instead of per
   line; it lives there because the host that calls `flushTelemetry()` holds a request handler,
   not an app (`demos/cloudflare-d1`, `ctx.waitUntil`).
-- **A card states `role` in a form of its own, and nothing judges it** — `schema/src/axis/role/RoleAxis.ts`,
-  `reconstruct`. `role` is the one slot whose wire differs from its declaration: `relation.to` is a
+- **A card states `role` in a form of its own, and nothing judges it** — `schema/src/axis/role/Role.ts`,
+  `roleAxis.reconstruct`. `role` is the one slot whose wire differs from its declaration: `relation.to` is a
   function here and a name there, `unique` a boolean here and a list of groups there — so `ROLE_FORMAT`
   cannot serve both, where `lifecycle`, `boundary` and `meta` are judged by the format they already
   state. Measured 2026-09-17 through `Card.fromDescriptor(…).toSchema()`: `unique: 'x'` throws

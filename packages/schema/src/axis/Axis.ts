@@ -10,7 +10,8 @@ export interface Axis<Declared = unknown, Wire = unknown> {
   /** What a format cannot state: `role.relation.to` is a function, and JSON holds none. */
   refusals?(value: unknown): ValidationError[];
 
-  describe(value: Declared, key: string): Wire | undefined;
+  /** Stated by an axis whose card differs from its declaration; a card that IS one states neither. */
+  describe?(value: Declared, key: string): Wire | undefined;
 
-  reconstruct(wire: Wire, resolve?: Resolver): Declared;
+  reconstruct?(wire: Wire, resolve?: Resolver): Declared;
 }
