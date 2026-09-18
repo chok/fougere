@@ -32,7 +32,7 @@ describe('what an entity states for sql', () => {
 });
 
 /**
- * The format is stated in `src/adapter.schema.json` and validated where this adapter reads it,
+ * The format is stated in `src/fields/SqlFields.ts` and validated where this adapter reads it,
  * which is `toTable` — at boot, after every import. Nothing above validates below a field name.
  */
 describe('what the format refuses', () => {
@@ -44,7 +44,7 @@ describe('what the format refuses', () => {
 
   it('a key this adapter does not read', () => {
     expect(stating({ sql: { body: { columnTpye: { pg: 'tsvector' } } } })).toThrow(
-      'Draft.adapters.sql.body: Property "columnTpye" does not match additional properties schema.',
+      'Draft.adapters.sql.body.columnTpye: Instance does not match any of ["columnType"].',
     );
   });
 
@@ -56,7 +56,7 @@ describe('what the format refuses', () => {
 
   it('an engine no dialect answers to', () => {
     expect(stating({ sql: { body: { columnType: { postgre: 'tsvector' } } } })).toThrow(
-      'Draft.adapters.sql.body.columnType: Property "postgre" does not match additional properties schema.',
+      'Draft.adapters.sql.body.columnType.postgre: Instance does not match any of ["sqlite","pg","mysql","mssql"].',
     );
   });
 

@@ -1,17 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { Axes, Card, entity, Field, primary, text, type Axis, type JsonSchema } from '../src/index.js';
+import { Axes, Card, entity, Field, Format, primary, text, type Axis } from '../src/index.js';
 
 interface TenancyRules {
   scope: 'tenant' | 'global';
 }
 
-const TENANCY_FORMAT: JsonSchema = {
-  $id: 'https://acme.example/schema/axis/tenancy',
-  type: 'object',
-  properties: { scope: { enum: ['tenant', 'global'] } },
-  required: ['scope'],
-  additionalProperties: false,
-};
+const TENANCY_FORMAT = Format.of('https://acme.example/schema/axis/tenancy')
+  .key('scope', Format.tokens(['tenant', 'global']))
+  .needs('scope')
+  .closed();
 
 const tenancyAxis: Axis<TenancyRules, TenancyRules> = {
   slot: 'tenancy',
@@ -44,7 +41,7 @@ describe('an axis registered from outside', () => {
       `Field 'owner': tenancy.scope: Instance does not match any of ["tenant","global"].`,
     );
     expect(stating({ scope: 'tenant', nawak: 1 })).toThrow(
-      `Field 'owner': tenancy: Property "nawak" does not match additional properties schema.`,
+      `Field 'owner': tenancy.nawak: Instance does not match any of ["scope"].`,
     );
   });
 

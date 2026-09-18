@@ -178,20 +178,30 @@ adapter name, then field name — and always exists, so `getAdapters()` is never
 What the OPERATOR decides is not stated here: it belongs in `fougere.config.ts` beside
 `fronds:`, `sources:` and `ports:`. Pinned by `adapter/sql/tests/adapters.test.ts`.
 
-**ONE door onto the engine, and a declaration has a format.** `JsonSchemaValidator`
+**ONE door onto the engine, and a format is WRITTEN BY `Format`.** `JsonSchemaValidator`
 (`schema/src/validator/JsonSchemaValidator.ts`) judges a field's value against its shape and a
 declaration against the format of its key, and it is the one place that picks which of the
-engine's refusals to report. An axis states its format beside its type — `LIFECYCLE_FORMAT`,
-`ROLE_FORMAT`, `BOUNDARY_FORMAT`, and `META_FORMAT` for `meta` — each under its own `$id`, and
-`fieldFormat` (`schema/src/field/FieldFormat.ts`) composes them: it carries each one whole in
-`$defs`, cites it by `$ref`, and lists the legal keys in `propertyNames`, so the document
-travels alone and a key a format does not claim is REFUSED — `{ shape, nawak: 42 }` used to be
-accepted and the key dropped. Each axis used to hold a validator written by hand, whose
-messages copied the token lists, and `lifecycle: { craete: 'now' }` passed. The tokens stay `as const` and the format spreads them,
-because a JSON import keeps a KEY as a literal and widens a VALUE to `string`. `Axis.refusals`
-holds what JSON cannot state: `role.relation.to` is a function. A key set to `undefined` is read
-as absent. A card is judged at the same door: `reconstruct` rebuilds, and `new Field(…, key)`
-refuses. Pinned by `schema/tests/field-door.test.ts` and `descriptor.test.ts`.
+engine's refusals to report. What a key admits is stated in KEYS and never in JSON Schema:
+`Format.of('axis/lifecycle').key('create', …).closed()` (`schema/src/lib/Format.ts`), which
+produces the `$id`, the `$ref`, the `$defs` and the closing. `Format.either` tells a word from a
+shape by TYPE rather than by `anyOf`, because the engine reports the LAST branch of an `anyOf`
+and `create: 'nawak'` then answered `Expected "object"`; `closed()` closes with
+`propertyNames`, so an unknown key is refused UNDER its own name and the message lists the legal
+ones. `fieldFormat` (`schema/src/field/FieldFormat.ts`) composes the keys of a field the same
+way, carrying each format whole and citing it by its `$id`. Each axis used to hold a validator
+written by hand, whose messages copied the token lists, and `lifecycle: { craete: 'now' }`
+passed; `{ shape, nawak: 42 }` was accepted and the key dropped. The tokens stay `as const` and
+`Format.tokens` spreads them, because a JSON import keeps a KEY as a literal and widens a VALUE
+to `string`. `Axis.refusals` holds what JSON cannot state: `role.relation.to` is a function. A
+key set to `undefined` is read as absent. A card is judged at the same door: `reconstruct`
+rebuilds, and `new Field(…, key)` refuses. Pinned by `schema/tests/field-door.test.ts` and
+`descriptor.test.ts`.
+
+`adapter/sql` states its entry the same way (`fields/SqlFields.ts`), from `ENGINES` — the list
+`Engine` is read off too, so a fifth dialect is one line. It is validated where the adapter READS
+(`adapter/sql/src/table.ts`, `toTable`), not at `entity()`, because `entity()` runs at its own
+module's evaluation. A name this process never loaded is SKIPPED: only the project can tell it
+from a typo, which is what `fougere check` reports as `unknown-adapter`.
 
 **An axis is REGISTERED, and the document is what it holds** — `Axes`
 (`schema/src/axis/Axes.ts`), a `Registry<Axis>` carrying the three, and
@@ -205,12 +215,6 @@ stays structural — `Lifecycle.of(field)` asks for `{ lifecycle?: … }` and ne
 at `entity()`, so an axis registers in `vocabulary/`, the one convention directory the scan
 reads BEFORE `entities/`. What stays closed is the MODEL — a field has four axes, and three
 tests admit one. Pinned by `schema/tests/axis-registration.test.ts`.
-
-`adapter/sql/src/adapter.schema.json` is the adapter's format, imported with `with { type: 'json' }`,
-and `SqlField` is DERIVED from it. It is validated where the adapter READS
-(`adapter/sql/src/table.ts`, `toTable`), not at `entity()`, because `entity()` runs at its
-own module's evaluation. A name this process never loaded is SKIPPED: only the project can
-tell it from a typo, which is what `fougere check` reports as `unknown-adapter`.
 
 **A registry is an instance of `Registry<T>`** (`schema/src/lib/Registry.ts`). `Formats`,
 `Generators` and the three of `Boundaries` are bare instances; `Sources` extends it to add
@@ -778,9 +782,6 @@ X), `useFormFor` (contract, not rendering; local validator = remote validator), 
 ## Conventions
 
 - TypeScript strict, ESM, ES2022, Node16 resolution ; pnpm ; vitest ; no decorators, no Zod
-- **`module` is `node20`, `moduleResolution` stays `Node16`** — `Node16` refuses an import
-  attribute (TS2823), and an adapter states its entry format as a `.json` it imports.
-  `resolveJsonModule` is on for the same reason.
 - **TS 7 (native tsc) at the root** ; `packages/core` compiles and scans with
   `@typescript/typescript6` — measured ~25 % faster than 5.9 on the scan's program, same
   answer. `unstable/` is not a destination yet, and neither is oxc while the scan reads types.

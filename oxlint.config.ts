@@ -13,8 +13,8 @@ export default defineConfig({
   },
   overrides: [
     {
-      // `then` under `axis/` is the JSON Schema keyword of a format, never a thenable.
-      files: ["packages/schema/src/axis/**"],
+      // `then` in `Format` is the JSON Schema keyword it emits, never a thenable.
+      files: ["packages/schema/src/lib/Format.ts"],
       rules: { "unicorn/no-thenable": "off" },
     },
   ],

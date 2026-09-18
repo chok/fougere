@@ -33,13 +33,13 @@ describe('the field facade', () => {
       [{ shape, lifecycle: 'nawak' }, 'lifecycle: Instance type "string" is invalid. Expected "object".'],
       [{ shape, lifecycle: { create: 'nawak' } }, 'lifecycle.create: Instance does not match any of ["now","optional"].'],
       [{ shape, lifecycle: { update: 'nawak' } }, 'lifecycle.update: Instance does not match any of ["now","forbidden"].'],
-      [{ shape, lifecycle: { create: { nawak: 1 } } }, 'lifecycle.create: Property "nawak" does not match additional properties schema.'],
-      [{ shape, lifecycle: { craete: 'now' } }, 'lifecycle: Property "craete" does not match additional properties schema.'],
+      [{ shape, lifecycle: { create: { nawak: 1 } } }, 'lifecycle.create.nawak: Instance does not match any of ["value","generate"].'],
+      [{ shape, lifecycle: { craete: 'now' } }, 'lifecycle.craete: Instance does not match any of ["create","update"].'],
       [{ shape, role: 'nawak' }, 'role: Instance type "string" is invalid. Expected "object".'],
       [{ shape, role: { relation: { kind: 'nawak', to: () => ({}) } } }, 'role.relation.kind: Instance does not match any of ["one","many"].'],
       [{ shape, role: { relation: { kind: 'one' } } }, 'role.relation.to: Expected a function returning the target entity'],
       [{ shape, role: { unique: 'yes' } }, 'role.unique: Instance type "string" is invalid. Expected "boolean".'],
-      [{ shape, boundary: { in: { nawak: 'x' } } }, 'boundary.in: Property "nawak" does not match additional properties schema.'],
+      [{ shape, boundary: { in: { nawak: 'x' } } }, 'boundary.in.nawak: Instance does not match any of ["decode"].'],
       [{ shape, meta: 42 }, 'meta: Instance type "number" is invalid. Expected "object".'],
     ];
     for (const [init, message] of refused) {

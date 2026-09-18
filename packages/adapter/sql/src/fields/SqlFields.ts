@@ -2,27 +2,25 @@
  * What an entity may state for THIS adapter, declared from OUTSIDE `@fougere/schema` — which names
  * no engine and no column type, and must not learn one to let this exist.
  */
-import { JsonSchemaValidator, type JsonSchema } from '@fougere/schema';
-import ENTRY_FORMAT from '../adapter.schema.json' with { type: 'json' };
-import type { DialectName } from '../dialect/DialectName.js';
+import { Format, JsonSchemaValidator, type JsonSchema } from '@fougere/schema';
+import { ENGINES } from './Engine.js';
 import type { SqlField } from './SqlField.js';
-import type { Engine } from './Engine.js';
 
 /** What sql holds, addressed by field — the shape every augmentation of the registry takes. */
 export type SqlFields<K extends string> = Readonly<Partial<Record<K, SqlField>>>;
 
+const ENTRY_FORMAT = Format.of('https://fougere.dev/schema/adapter/sql')
+  .key(
+    'columnType',
+    ENGINES.reduce((held, engine) => held.key(engine, Format.text), Format.of()).closed(),
+  )
+  .closed();
+
 /** Judges what an entity states under `adapters.sql`: the format this adapter ships, keyed by field. */
 export const sqlEntries = JsonSchemaValidator.of({
   type: 'object',
-  additionalProperties: ENTRY_FORMAT as JsonSchema,
+  additionalProperties: ENTRY_FORMAT.schema as JsonSchema,
 });
-
-type Assert<T extends true> = T;
-
-/** A fifth dialect does not compile until `adapter.schema.json` names it. */
-type _EnginesMatchDialects = Assert<
-  [Exclude<DialectName, Engine>] extends [never] ? true : false
->;
 
 declare module '@fougere/schema' {
   interface FougereEntityAdapters<K extends string> {

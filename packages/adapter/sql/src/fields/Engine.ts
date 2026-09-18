@@ -1,4 +1,11 @@
-import ENTRY_FORMAT from '../adapter.schema.json' with { type: 'json' };
+import type { DialectName } from '../dialect/DialectName.js';
 
-/** The engines the format names — the one list, read off the file that states it. */
-export type Engine = keyof typeof ENTRY_FORMAT.properties.columnType.properties;
+/** The engines an entry may address: the dialects this adapter speaks, and nothing else. */
+export const ENGINES = ['sqlite', 'pg', 'mysql', 'mssql'] as const;
+
+export type Engine = (typeof ENGINES)[number];
+
+type Assert<T extends true> = T;
+
+/** A fifth dialect does not compile until `ENGINES` names it. */
+type _EnginesMatchDialects = Assert<[Exclude<DialectName, Engine>] extends [never] ? true : false>;

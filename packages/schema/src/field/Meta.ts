@@ -1,12 +1,7 @@
-import type { JsonSchema } from '../lib/JsonSchema.js';
+import { Format } from '../lib/Format.js';
 
 export interface Meta {
   description?: string;
 }
 
-export const META_FORMAT: JsonSchema = {
-  $id: 'https://fougere.dev/schema/field/meta',
-  type: 'object',
-  properties: { description: { type: 'string' } },
-  additionalProperties: false,
-};
+export const META_FORMAT = Format.of('field/meta').key('description', Format.text).closed();
