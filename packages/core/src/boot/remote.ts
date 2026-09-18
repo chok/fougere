@@ -15,6 +15,7 @@ import { ErrorCode } from '../wire/ErrorCode.js';
 import { FougereError } from '../wire/FougereError.js';
 import { Card, type SchemaView, type SchemaDescriptor } from '@fougere/schema';
 import { dynamicOperations } from '../entry/facade.js';
+import { decoded } from '../dispatch/decoded.js';
 
 interface Route {
   frond: string;
@@ -103,13 +104,19 @@ export function createRemoteFacade(
   middlewaresFor: (address: string) => AppMiddleware[],
 ): Facade {
   const opFn = (op: string) => async (invocation: InvocationContext = Invocation.empty) => {
-    const { frond, transport } = await router.route(entity);
+    const { frond, transport, schema } = await router.route(entity);
     const call: FrondCall = { frond, entity, op };
     const ctx: OperationContext = {
       entity, frond, operation: op, args: [], state: invocation.state, invocation,
     };
-    return runMiddlewares(middlewaresFor(entity), ctx, () =>
+    const answer = await runMiddlewares(middlewaresFor(entity), ctx, () =>
       transport(call, ctx.invocation ?? invocation));
+
+    // The schema the card carried, put to work: a row crosses as data and comes back through
+    // the same codecs a local facade applies, so a placement does not decide what a caller
+    // holds. It is the ENTITY's — an op serving a narrower view is the far side's business,
+    // and what this card names is the shape it publishes.
+    return decoded(schema, answer);
   };
 
   return dynamicOperations(opFn) as Facade;

@@ -33,6 +33,28 @@ export class Visibility {
     return result;
   }
 
+  /**
+   * The dual of `encode`, read where a caller RECEIVES a row.
+   *
+   * `date-time` means a `Date` on both sides, and only the outgoing half was ever applied: a
+   * handler answered `new Date(0)`, the facade encoded it, and the caller was handed
+   * `"1970-01-01T00:00:00.000Z"` while its type said `Date` — locally as well as across a wire.
+   *
+   * It converts and never judges: what arrives was validated where it was produced, so a value
+   * the codec refuses is kept as it came rather than replaced or thrown over.
+   */
+  decode(record: Record<string, unknown>): Record<string, unknown> {
+    const out: Record<string, unknown> = { ...record };
+    for (const [key, field] of Object.entries(this.fields)) {
+      const value = record[key];
+      if (!(key in record) || value === null || value === undefined) continue;
+      const verdict = Boundary.of(field).decode(value);
+      if ('value' in verdict) out[key] = verdict.value;
+    }
+
+    return out;
+  }
+
   encode(record: Record<string, unknown>): Record<string, unknown> {
     const out: Record<string, unknown> = { ...record };
     for (const [key, field] of Object.entries(this.fields)) {

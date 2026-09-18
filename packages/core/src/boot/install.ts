@@ -37,6 +37,7 @@ import { RouteAddress } from '../wire/RouteAddress.js';
 import { servedSurfaces } from '../descriptor/surface.js';
 import { OperationRoute } from '../dispatch/OperationRoute.js';
 import { facadeOperations } from '../entry/facade.js';
+import { decoded } from '../dispatch/decoded.js';
 
 /**
  * What the app is made of while it is still being made. `createApp` builds these, hands
@@ -449,6 +450,9 @@ function buildFacadeInto(
     handler.address,
     routeRegistry.operationNames(handler.address, handler.surface),
     handler.surface,
+    // The output SCHEMA, per op: `Crud(Post, { list: PostCard })` names a different one for
+    // one operation, so the answer is read back through the view that op actually serves.
+    (operation, answer) => decoded(facade.effectiveOperations.get(operation)?.output, answer),
   ));
 }
 
