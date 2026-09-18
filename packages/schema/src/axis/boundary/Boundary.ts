@@ -5,28 +5,21 @@ import type { Field } from '../../field/Field.js';
 import { type Shape } from '../shape/Shape.js';
 import { Shapes } from '../shape/Shape.js';
 import { SchemaError } from '../../SchemaError.js';
-import { Format } from '../../lib/Format.js';
+import { Format, type Admits } from '../../lib/Format.js';
 
-export interface BoundaryRules {
-  in?: 'closed' | { decode: string };
-  out?: 'closed' | { encode: string };
-}
+const closedOr = <Verb extends 'decode' | 'encode'>(verb: Verb) =>
+  Format.either(Format.tokens(['closed']), Format.of().key(verb, Format.text).needs(verb).closed());
 
-export type BoundaryRef = 'isoDate' | (string & {}) | BoundaryRules;
-
-const closedOr = (verb: 'decode' | 'encode'): Format =>
-  Format.either(
-    Format.tokens(['closed']),
-    Format.of().key(verb, Format.text).needs(verb).closed(),
-  );
+const RULES = Format.of().key('in', closedOr('decode')).key('out', closedOr('encode')).closed();
 
 const BOUNDARY = Format.named(
-    'axis/boundary',
-    Format.either(
-      Format.text,
-    Format.of().key('in', closedOr('decode')).key('out', closedOr('encode')).closed(),
-  ),
+  'axis/boundary',
+  Format.either(Format.text.as<'isoDate' | (string & {})>(), RULES),
 );
+
+export type BoundaryRules = Admits<typeof RULES>;
+
+export type BoundaryRef = Admits<typeof BOUNDARY>;
 
 const identityDecoder: Decoder = (value) => ({ value });
 
@@ -35,17 +28,13 @@ const identityEncoder: Encoder = (value) => value;
 export class Boundary {
   static readonly format = BOUNDARY;
 
-  private readonly in?: BoundaryRules['in'];
-  private readonly out?: BoundaryRules['out'];
   readonly decode: Decoder;
   readonly encode: Encoder;
 
   private constructor(
-    rules: BoundaryRules = {},
+    private readonly rules: BoundaryRules = {},
     codecs?: { decode: Decoder; encode: Encoder },
   ) {
-    this.in = rules.in;
-    this.out = rules.out;
     this.decode = codecs?.decode ?? identityDecoder;
     this.encode = codecs?.encode ?? identityEncoder;
   }
@@ -65,8 +54,8 @@ export class Boundary {
     const declared = Boundary.declared(field);
     const derived = Boundary.forShape(field.shape);
     const rules: BoundaryRules = {
-      in: declared.in ?? derived.in,
-      out: declared.out ?? derived.out,
+      in: declared.rules.in ?? derived.rules.in,
+      out: declared.rules.out ?? derived.rules.out,
     };
     return new Boundary(rules, {
       decode:
@@ -88,14 +77,14 @@ export class Boundary {
 
   /** The dual of `declared`: what `readOnly()` writes back on the field, not a judge. */
   declaring(overrides: BoundaryRules): BoundaryRules {
-    return { in: overrides.in ?? this.in, out: overrides.out ?? this.out };
+    return { in: overrides.in ?? this.rules.in, out: overrides.out ?? this.rules.out };
   }
 
   get readOnly(): boolean {
-    return this.in === 'closed';
+    return this.rules.in === 'closed';
   }
 
   get writeOnly(): boolean {
-    return this.out === 'closed';
+    return this.rules.out === 'closed';
   }
 }

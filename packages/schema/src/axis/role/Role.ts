@@ -2,16 +2,9 @@ import type { Relation } from './Relation.js';
 import type { EntityConstructor } from './EntityConstructor.js';
 import type { Resolver } from '../Resolver.js';
 import { isObject, lowerFirst } from '../../lib/utils.js';
-import { Format } from '../../lib/Format.js';
+import { Format, type Admits } from '../../lib/Format.js';
 import { ON_DELETE, RELATION_KINDS } from './Relation.js';
 import type { RoleDescriptor } from '../../projection/card/RoleDescriptor.js';
-
-export interface RoleRules {
-  primary?: boolean;
-  index?: boolean;
-  unique?: boolean;
-  relation?: Relation;
-}
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
@@ -23,17 +16,17 @@ export class Role {
     .key(
       'relation',
       Format.of()
-        .key('to', Format.anything)
+        .key('to', Format.anything.as<() => EntityConstructor>())
         .key('kind', Format.tokens(RELATION_KINDS))
         .key('onDelete', Format.tokens(ON_DELETE))
-        .needs('kind')
+        .needs('to', 'kind')
         .closed(),
     )
     .closed();
 
   static refusals(value: unknown) {
     const relation = isObject(value) ? value.relation : undefined;
-    if (!isObject(relation) || typeof relation.to === 'function') return [];
+    if (!isObject(relation) || !('to' in relation) || typeof relation.to === 'function') return [];
 
     return [{ path: ['role', 'relation', 'to'], message: 'Expected a function returning the target entity, such as () => Post' }];
   }
@@ -71,54 +64,46 @@ export class Role {
     return rules;
   }
 
-  private readonly primary?: boolean;
-  private readonly index?: boolean;
-  private readonly unique?: boolean;
-  private readonly relation?: Relation;
-
-  private constructor(rules: RoleRules = {}) {
-    this.primary = rules.primary;
-    this.index = rules.index;
-    this.unique = rules.unique;
-    this.relation = rules.relation;
-  }
+  private constructor(private readonly rules: RoleRules = {}) {}
 
   static of(field: { role?: RoleRules }): Role {
     return new Role(field.role);
   }
 
   get isPrimary(): boolean {
-    return this.primary === true;
+    return this.rules.primary === true;
   }
 
   get isIndexed(): boolean {
-    return this.index === true;
+    return this.rules.index === true;
   }
 
   /** A field unique on its own. A group spanning several belongs to the schema. */
   get isUnique(): boolean {
-    return this.unique === true;
+    return this.rules.unique === true;
   }
 
   get isCollection(): boolean {
-    return this.relation?.kind === 'many';
+    return this.rules.relation?.kind === 'many';
   }
 
   get isReference(): boolean {
-    return this.relation?.kind === 'one';
+    return this.rules.relation?.kind === 'one';
   }
 
   /** Either kind — what a CLI flag and a GraphQL selection both leave out. */
   get isRelation(): boolean {
-    return this.relation !== undefined;
+    return this.rules.relation !== undefined;
   }
 
   /** Calls `() => Post` so no caller has to. */
   get target(): EntityConstructor | undefined {
-    return this.relation?.to();
+    return this.rules.relation?.to();
   }
 
   get onDelete(): Relation['onDelete'] {
-    return this.relation?.onDelete;
+    return this.rules.relation?.onDelete;
   }
 }
+
+export type RoleRules = Admits<typeof Role.format>;

@@ -8,16 +8,19 @@ const HERE = 'https://fougere.dev/schema/';
 const absolute = (id?: string): string | undefined =>
   id === undefined || id.includes('://') ? id : `${HERE}${id}`;
 
+/** What a format admits, as a type — `Admits<typeof Lifecycle.format>`. */
+export type Admits<F> = F extends Format<infer T> ? T : never;
+
 /**
- * How a format is written here: its keys, never its JSON Schema. `$id`, `$ref`, `$defs` and
- * the closing are produced, so an axis states what it admits and nothing about the document.
- * FR : on écrit les clés d'un format, jamais son JSON Schema — le document est produit.
+ * How a format is written here: its keys, never its JSON Schema. `$id`, `$ref`, `$defs` and the
+ * closing are produced, and what it admits is carried as a TYPE, so a declaration is stated once.
+ * FR : on écrit les clés d'un format ; le document et le type sont produits.
  * `Format.of('axis/tenancy').key('scope', Format.tokens(SCOPES)).closed()`
  */
-export class Format {
-  static readonly anything = new Format(true);
-  static readonly text = new Format({ type: 'string' });
-  static readonly flag = new Format({ type: 'boolean' });
+export class Format<T = unknown> {
+  static readonly anything = new Format<unknown>(true);
+  static readonly text = new Format<string>({ type: 'string' });
+  static readonly flag = new Format<boolean>({ type: 'boolean' });
 
   protected constructor(
     private readonly stated: Stated,
@@ -25,12 +28,12 @@ export class Format {
   ) {}
 
   /** `Format.tokens(['now', 'optional'])` → `Instance does not match any of ["now","optional"].` */
-  static tokens(tokens: readonly string[]): Format {
-    return new Format({ enum: [...tokens] });
+  static tokens<const Words extends readonly string[]>(words: Words): Format<Words[number]> {
+    return new Format({ enum: [...words] });
   }
 
   /** A word or a shape, told apart by TYPE, so a refusal names the half the value belongs to. */
-  static either(word: Format, shape: Format): Format {
+  static either<Word, Shape>(word: Format<Word>, shape: Format<Shape>): Format<Word | Shape> {
     return new Format({
       if: { type: 'string' },
       then: word.schema as JsonSchema,
@@ -39,10 +42,14 @@ export class Format {
   }
 
   /** One of these keys and no other — `{ value }` or `{ generate }`, never both and never neither. */
-  static exactlyOne(keys: Record<string, Format>): Format {
+  static exactlyOne<Keys extends Record<string, Format<unknown>>>(
+    keys: Keys,
+  ): Format<{ [K in keyof Keys]: { [P in K]: Admits<Keys[K]> } }[keyof Keys]> {
     return new Format({
       type: 'object',
-      properties: Object.fromEntries(Object.entries(keys).map(([key, format]) => [key, format.schema])),
+      properties: Object.fromEntries(
+        Object.entries(keys).map(([key, format]) => [key, format.schema]),
+      ),
       propertyNames: { enum: Object.keys(keys) },
       minProperties: 1,
       maxProperties: 1,
@@ -50,15 +57,20 @@ export class Format {
   }
 
   /** A name resolves under this project's own space; another one states its whole `$id`. */
-  static of(id?: string): ObjectFormat {
+  static of(id?: string): ObjectFormat<object> {
     return new ObjectFormat(absolute(id));
   }
 
   /** What `of` does for an object, for a format that is not one — `either`, a list of words. */
-  static named(id: string, format: Format): Format {
+  static named<Value>(id: string, format: Format<Value>): Format<Value> {
     const named = absolute(id) as string;
 
     return new Format({ $id: named, ...(format.schema as JsonSchema) }, named);
+  }
+
+  /** The type JSON Schema cannot carry: a generator's name, a thunk to an entity. */
+  as<Value>(): Format<Value> {
+    return this as unknown as Format<Value>;
   }
 
   get schema(): Stated {
@@ -66,7 +78,7 @@ export class Format {
   }
 }
 
-export class ObjectFormat extends Format {
+export class ObjectFormat<T extends object> extends Format<T> {
   private readonly keys = new Map<string, Stated>();
   private readonly cited = new Map<string, JsonSchema>();
   private readonly needed: string[] = [];
@@ -75,31 +87,41 @@ export class ObjectFormat extends Format {
     super(true, id);
   }
 
-  key(name: string, format: Format): this {
+  key<Name extends string, Value>(
+    name: Name,
+    format: Format<Value>,
+  ): ObjectFormat<T & { [K in Name]?: Value }> {
     this.keys.set(name, format.schema);
 
-    return this;
+    return this as ObjectFormat<T & { [K in Name]?: Value }>;
   }
 
   /** A key carried whole and pointed at by its `$id`, so it keeps an identity of its own. */
-  cites(name: string, format: Format): this {
+  cites<Name extends string, Value>(
+    name: Name,
+    format: Format<Value>,
+  ): ObjectFormat<T & { [K in Name]?: Value }> {
     if (!format.id) {
-      throw new SchemaError(`A format cited as '${name}' states no \`$id\`, so nothing can point at it.`);
+      throw new SchemaError(
+        `A format cited as '${name}' states no \`$id\`, so nothing can point at it.`,
+      );
     }
     this.keys.set(name, { $ref: format.id });
     this.cited.set(name, format.schema as JsonSchema);
 
-    return this;
+    return this as ObjectFormat<T & { [K in Name]?: Value }>;
   }
 
-  needs(...names: string[]): this {
+  needs<Name extends keyof T & string>(
+    ...names: Name[]
+  ): ObjectFormat<Omit<T, Name> & Required<Pick<T, Name>>> {
     this.needed.push(...names);
 
-    return this;
+    return this as unknown as ObjectFormat<Omit<T, Name> & Required<Pick<T, Name>>>;
   }
 
   /** These keys and no other: a name nothing states is refused UNDER that name. */
-  closed(): Format {
+  closed(): Format<{ [K in keyof T]: T[K] }> {
     return new Format(
       {
         ...(this.id ? { $id: this.id } : {}),
