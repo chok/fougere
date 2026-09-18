@@ -1,7 +1,7 @@
 import { format as engineFormats } from '@cfworker/json-schema';
 import { Boundary } from '../axis/boundary/Boundary.js';
 import { type FormatPredicate } from '../axis/shape/FormatPredicate.js';
-import { Formats } from '../axis/shape/Formats.js';
+import { StringFormats } from '../axis/shape/StringFormats.js';
 import { type Shape } from '../axis/shape/Shape.js';
 import { Shapes } from '../axis/shape/Shape.js';
 import type { Field } from '../field/Field.js';
@@ -76,10 +76,10 @@ export class FieldValueValidator {
   }
 
   private static customFormatOf(name: string): FormatPredicate | undefined {
-    const custom = Formats.find(name);
+    const custom = StringFormats.find(name);
     if (!custom && !(name in engineFormats)) {
       throw new SchemaError(
-        `Unknown format: '${name}'. Register it with Formats.register('${name}', …) — ` +
+        `Unknown format: '${name}'. Register it with StringFormats.register('${name}', …) — ` +
           `the engine validates ${Object.keys(engineFormats).length} formats natively and this is not one of them.`,
       );
     }

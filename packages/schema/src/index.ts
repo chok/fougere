@@ -37,7 +37,7 @@ export type { SetDiff } from './projection/card/SetDiff.js';
 export type { SetDiffOptions } from './projection/card/SetDiffOptions.js';
 
 export * from './lib/index.js';
-export { Formats } from './axis/shape/Formats.js';
+export { StringFormats } from './axis/shape/StringFormats.js';
 export { Generators } from './axis/lifecycle/Generators.js';
 export { Boundaries } from './axis/boundary/Decoder.js';
 export { type FougereEntityAdapters } from './entity/FougereEntityAdapters.js';

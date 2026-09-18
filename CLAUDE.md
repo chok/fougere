@@ -216,9 +216,9 @@ at `entity()`, so an axis registers in `vocabulary/`, the one convention directo
 reads BEFORE `entities/`. What stays closed is the MODEL — a field has four axes, and three
 tests admit one. Pinned by `schema/tests/axis-registration.test.ts`.
 
-**A registry is an instance of `Registry<T>`** (`schema/src/lib/Registry.ts`). `Formats`,
+**A registry is an instance of `Registry<T>`** (`schema/src/lib/Registry.ts`). `StringFormats`,
 `Generators` and the three of `Boundaries` are bare instances; `Sources` extends it to add
-`open`. `resolve` throws and lists what the process answers; `find` returns `undefined` for
+`open`, and `Axes` to rebuild the composed format a registration changes. `resolve` throws and lists what the process answers; `find` returns `undefined` for
 a caller that has its own words for the absence.
 
 **`Repository(…entities)` — the arity is the declaration.** At ONE, the repository IS that
