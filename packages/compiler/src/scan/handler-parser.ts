@@ -172,6 +172,107 @@ function parseCheckedType(type: ts.Type, raw: string, checker: ts.TypeChecker, d
   };
 }
 
+/**
+ * What an operation ANSWERS is read here, and the question asked of it is whether it is data.
+ *
+ * Data is what JSON keeps, so every node is asked one thing: can something in it be CALLED? A
+ * `Date` carries `toString`, a `Map` carries `clear`, an Effect carries `pipe`. Measured
+ * 2026-09-18 over the facade's own exit: `{ at: new Date(0) }` reaches a local caller as a `Date`
+ * and a remote one as a string, and an object with methods loses them on both sides, differently.
+ *
+ * It answers the PATH and the type sitting there — `at: Date` reads as the declaration it came
+ * from, where the first callable member (`toString`) names nothing an author wrote. `any` and
+ * `unknown` are left alone: nothing was declared to judge.
+ *
+ * Documented: [handlers](https://fougere.dev/docs/business/handlers).
+ */
+function notData(
+  type: ts.Type,
+  path: string,
+  checker: ts.TypeChecker,
+  seen = new Set<ts.Type>(),
+): string | undefined {
+  const typescript = getTS();
+  if (seen.has(type)) return undefined;
+
+  const judged = typescript.TypeFlags.Any | typescript.TypeFlags.Unknown | typescript.TypeFlags.Never
+    | typescript.TypeFlags.StringLike | typescript.TypeFlags.NumberLike | typescript.TypeFlags.BooleanLike
+    | typescript.TypeFlags.BigIntLike | typescript.TypeFlags.Null | typescript.TypeFlags.Undefined
+    | typescript.TypeFlags.Void;
+  if (type.flags & judged) return undefined;
+
+  if (type.isUnion() || type.isIntersection()) return firstRefused(type.types, (member) => notData(member, path, checker, seen));
+
+  if (type.getCallSignatures().length > 0) return `${path}: ${checker.typeToString(type)}`;
+  if (declaresShape(type)) return undefined;
+
+  seen.add(type);
+
+  const items = itemsOf(type, checker);
+  if (items) return firstRefused(items, (item) => notData(item, `${path}[]`, checker, seen));
+
+  return firstRefused(checker.getPropertiesOfType(type), (property) => {
+    const held = checker.getTypeOfSymbol(property);
+    // A symbol key never survives JSON either, and it is how an iterable declares itself.
+    if (property.escapedName.toString().startsWith('__@') || held.getCallSignatures().length > 0) {
+      return `${path}: ${checker.typeToString(type)}`;
+    }
+
+    return notData(held, `${path}.${property.name}`, checker, seen);
+  });
+}
+
+/**
+ * A class the schema declares — `extends entity({…})`, or a projection of one.
+ *
+ * Read from the HERITAGE rather than from what `resolveSchema` resolved: a frond answering with
+ * an entity its neighbour declares (a `Pipe<PostPublished>` finishing a fact) has no schema in
+ * its own module exports, so the op carries no output and would be judged as if nothing
+ * converted it. Its fields do convert it, wherever the class was written.
+ */
+function declaresShape(type: ts.Type): boolean {
+  const typescript = getTS();
+
+  return (type.getSymbol()?.declarations ?? []).some((declaration) =>
+    typescript.isClassDeclaration(declaration)
+    && (declaration.heritageClauses ?? []).some((clause) =>
+      /entity\(|\.(pick|omit|partial|extend)\(/.test(clause.getText())));
+}
+
+/**
+ * What a type holds if it is read as a list — its elements, or nothing.
+ *
+ * By its numeric INDEX and not by `isArrayType`: `ListResult<T> extends Array<T>` is a subtype,
+ * so the array test says no and the walk reached `push` and `map` instead of the rows. What rides
+ * beside the rows (`total`, `hasMore`) is data and is judged with everything else.
+ */
+function itemsOf(type: ts.Type, checker: ts.TypeChecker): readonly ts.Type[] | undefined {
+  const typescript = getTS();
+  if (checker.isArrayType(type) || checker.isTupleType(type)) {
+    return checker.getTypeArguments(type as ts.TypeReference);
+  }
+  const numeric = checker.getIndexTypeOfType(type, typescript.IndexKind.Number);
+
+  return numeric ? [numeric] : undefined;
+}
+
+function firstRefused<T>(members: readonly T[], read: (member: T) => string | undefined): string | undefined {
+  for (const member of members) {
+    const refused = read(member);
+    if (refused) return refused;
+  }
+
+  return undefined;
+}
+
+/** The type an operation hands back, past the promise every dispatch awaits. */
+function answeredBy(signature: ts.Signature | undefined, checker: ts.TypeChecker): ts.Type | undefined {
+  if (!signature) return undefined;
+  const returned = signature.getReturnType();
+
+  return checker.getAwaitedType(returned) ?? returned;
+}
+
 /** A union carries an absence on the side; what remains is the type. */
 function fromCheckedUnion(type: ts.UnionType, raw: string, checker: ts.TypeChecker, depth: number): TypeRef {
   const typescript = getTS();
@@ -318,9 +419,18 @@ function extractClassMethods(
     if (skip.has(name)) continue;
 
     const params = member.parameters.map((p) => parsedParam(p, source, checker));
-    const returnType = member.type ? parseTypeNode(member.type, source, checker) : undefined;
+    // An op that annotates nothing still HAS a return type, and the checker holds it — so it
+    // carries an output on the card, a cardinality, and the codecs a caller reads it back
+    // through. Measured 2026-09-18: 18 of the 42 unannotated ops here answer a declared entity,
+    // and every one of them handed a caller the encoded row its type called a `Date`.
+    const answered = checker ? answeredBy(checker.getSignatureFromDeclaration(member), checker) : undefined;
+    const returnType = member.type ? parseTypeNode(member.type, source, checker)
+      : answered && checker ? parseCheckedType(answered, checker.typeToString(answered), checker)
+      : undefined;
+    const refused = answered && checker ? notData(answered, name, checker) : undefined;
     results.push({
       name, params, returnType,
+      ...(refused ? { notData: refused } : {}),
       description: docSentenceOf(member, source),
     });
   }
@@ -383,6 +493,7 @@ function inheritedFromBase(
     if (!signature) continue;
 
     const returned = signature.getReturnType();
+    const refusedOutput = notData(checker.getAwaitedType(returned) ?? returned, property.name, checker);
     const sentence = typescript.displayPartsToString(property.getDocumentationComment(checker)).trim();
     results.push({
       name: property.name,
@@ -395,6 +506,7 @@ function inheritedFromBase(
         };
       }),
       returnType: parseCheckedType(returned, checker.typeToString(returned), checker),
+      ...(refusedOutput ? { notData: refusedOutput } : {}),
       ...(sentence ? { description: sentence.split(/(?<=\.)\s/)[0] } : {}),
     });
   }

@@ -15,7 +15,9 @@ export default class NoteHandler {
   constructor(private notes: NoteRepository) {}
 
   async retitle(input: Record<string, unknown>) {
-    return { ...(await this.notes.findById('note-1')), title: input.title };
+    const note = await this.notes.findById('note-1');
+
+    return { id: note?.id ?? 'note-1', title: input.title };
   }
 }
 

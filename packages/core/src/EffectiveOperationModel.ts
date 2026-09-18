@@ -117,6 +117,25 @@ export function resolveEffectiveOperations(
         const contract = normalizeBinding(rawContract, handler, frond, name, resolutionDiagnostics);
         if (!contract) continue;
 
+        // An operation answers DATA — what JSON keeps. A DECLARED output is converted by its
+        // fields, so `created()` leaves as an ISO string and nothing is asked of it here; an
+        // undeclared one has nothing to convert it, so it must already be data. Measured
+        // 2026-09-18: `{ at: new Date(0) }` reaches a local caller as a `Date` and a remote one
+        // as a string, and an object carrying methods loses them on both sides, differently.
+        if (!contract.output && contract.signature?.notData) {
+          resolutionDiagnostics.push({
+            severity: 'blocking',
+            code: 'operation-output-not-data',
+            filePath: handler.filePath,
+            frond: frond.name,
+            subject,
+            message: `${subject}() answers ${contract.signature.notData}, which carries methods.\n`
+              + '  An operation answers data — what JSON keeps.\n'
+              + '  Declare the output as an entity, whose fields convert it, or answer what it produces.',
+          });
+          continue;
+        }
+
         const override = frond.operationsOverrides?.[name];
         const inference = inferOperationKind(name);
         const inferredKinds = new Set<OperationKind>();
