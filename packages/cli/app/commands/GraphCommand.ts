@@ -19,12 +19,12 @@ export default class GraphCommand {
 
     if (machineWanted(raw)) return printMachine(result);
 
-    if (result.fronds.length === 0) {
+    if (result.totalFronds === 0) {
       this.ui.warn('No fronds found. Run this from a Fougere project root.');
       return;
     }
 
-    this.ui.step(`${pc.bold(String(result.totalEntities))} entities, ${pc.bold(String(result.totalRefs))} refs, ${pc.bold(String(result.fronds.length))} frond(s)`);
+    this.ui.step(`${pc.bold(String(result.totalEntities))} entities, ${pc.bold(String(result.totalRefs))} refs, ${pc.bold(String(result.totalFronds))} frond(s)`);
     this.ui.note(renderFronds(result.declared), 'Fronds');
     this.ui.note(renderGraph(result.nodes), 'Entity Graph');
 
@@ -33,7 +33,7 @@ export default class GraphCommand {
       this.ui.note(renderClusters(result.clusters), 'Suggested Domains');
     }
 
-    if (result.fronds.length === 1 && result.clusters.length > 1 && result.totalEntities >= min) {
+    if (result.totalFronds === 1 && result.clusters.length > 1 && result.totalEntities >= min) {
       this.ui.info(`${pc.dim('Tip:')} ${result.clusters.length} natural domains detected. Consider splitting into separate fronds.`);
     }
 
@@ -63,8 +63,8 @@ function renderFronds(declared: DeclaredTopology): string {
   }).join('\n');
 }
 
-function renderGraph(nodes: Map<string, EntityNode>): string {
-  return [...nodes.entries()].map(([name, node]) => {
+function renderGraph(nodes: Record<string, EntityNode>): string {
+  return Object.entries(nodes).map(([name, node]) => {
     const refs = node.refs.length > 0
       ? ` ${pc.dim('→')} ${node.refs.map((r) => pc.cyan(r)).join(', ')}`
       : '';
