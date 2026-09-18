@@ -10,8 +10,8 @@ const { items: posts, loading } = await useQuery(postFacade, 'mine');
 
 useSeoMeta({ title: () => `${t('blog.drafts.title')} — Fougere` });
 
-function day(iso?: string) {
-  return iso ? new Date(iso).toLocaleDateString(locale.value === 'fr' ? 'fr-FR' : 'en-US', { dateStyle: 'medium' }) : '';
+function day(at?: Date | null) {
+  return at ? at.toLocaleDateString(locale.value === 'fr' ? 'fr-FR' : 'en-US', { dateStyle: 'medium' }) : '';
 }
 </script>
 

@@ -17,8 +17,8 @@ useSeoMeta({
   description: () => post.value?.summary,
 });
 
-function day(iso?: string) {
-  return iso ? new Date(iso).toLocaleDateString(locale.value === 'fr' ? 'fr-FR' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+function day(at?: Date | null) {
+  return at ? at.toLocaleDateString(locale.value === 'fr' ? 'fr-FR' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
 }
 </script>
 

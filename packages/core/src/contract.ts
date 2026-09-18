@@ -56,6 +56,7 @@ export type { Edge } from './wire/topology/Edge.js';
 export type { FrondPlacement } from './wire/topology/FrondPlacement.js';
 export type { TopologyReport } from './wire/topology/TopologyReport.js';
 export { assertIdentityCard } from './wire/card/IdentityCard.js';
+export { decoded } from './dispatch/decoded.js';
 
 /** The key a class name is filed under — 'Post' → 'post'. */
 export { lowerFirst } from '@fougere/schema';

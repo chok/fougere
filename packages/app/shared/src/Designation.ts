@@ -1,6 +1,9 @@
 import {
   FougereError,
   ErrorCode,
+  RPC_ENTITY,
+  assertIdentityCard,
+  decoded,
   lowerFirst,
   type InvocationContext,
   type FrondCall,
@@ -13,6 +16,7 @@ import { frameCall, unframeResponse, type RpcResponse } from '@fougere/transport
 import type { EntityClass } from './EntityClass.js';
 import type { CallInput } from './CallInput.js';
 import type { Fetcher } from './Fetcher.js';
+import { Card, type SchemaView, type SchemaDescriptor } from '@fougere/schema';
 
 /**
  * One facade, built from its address alone — what a project that never generated `@fronds/facade`
@@ -68,17 +72,81 @@ export function queryKeyOf(entityKey: string, op: string, input?: CallInput): st
   return `fougere:${entityKey}.${op}:${JSON.stringify(input ?? {})}`;
 }
 
+async function postCall(
+  fetcher: Fetcher,
+  call: FrondCall,
+  invocation: InvocationContext,
+  endpoint: string,
+): Promise<unknown> {
+  const response = await fetcher<RpcResponse>(endpoint, {
+    method: 'POST',
+    body: frameCall(call, invocation, nextId++),
+  });
+
+  return unframeResponse(response, call);
+}
+
+/**
+ * The schemas this browser reads a row back through, asked ONCE per endpoint.
+ *
+ * `date-time` means a `Date` on both sides, and a page held the string: three of this repo's own
+ * pages wrote `day(iso?: string)` and called `new Date(iso)` by hand, against the type their
+ * composable handed them. A server-side caller has the schema by construction — a browser has
+ * to ask for it, and the card already carries it (645 bytes for a seven-field entity).
+ *
+ * An app serving no card decodes nothing, which is what a page had before this existed.
+ */
+const schemas = new Map<string, Promise<Map<string, SchemaView>>>();
+
+/** A card read as the schemas it carries, indexed the way a call names its facade. */
+function schemasIn(answer: unknown, endpoint: string): Map<string, SchemaView> {
+  const found = new Map<string, SchemaView>();
+  const card = assertIdentityCard(answer, `The app at ${endpoint}`);
+  for (const frond of card.fronds) {
+    for (const facade of frond.facades) {
+      if (facade.schema) found.set(facade.name, Card.fromDescriptor(facade.schema as SchemaDescriptor).toSchema());
+    }
+  }
+
+  return found;
+}
+
+/**
+ * Learned from a card that went past on its own, so an app already asking for one — the admin
+ * panel asks before it draws a resource — pays for a single discovery rather than two.
+ */
+function learn(answer: unknown, endpoint: string): void {
+  try { schemas.set(endpoint, Promise.resolve(schemasIn(answer, endpoint))); }
+  catch { /* not a card: whatever else `rpc` answered */ }
+}
+
+function schemasOf(fetcher: Fetcher, endpoint: string): Promise<Map<string, SchemaView>> {
+  const asked = schemas.get(endpoint) ?? (async () => {
+    try {
+      return schemasIn(await postCall(fetcher, { entity: RPC_ENTITY, op: 'discover' }, invocationOf(), endpoint), endpoint);
+    } catch { /* unreachable, or an app that publishes no card */ }
+
+    return new Map<string, SchemaView>();
+  })();
+  schemas.set(endpoint, asked);
+
+  return asked;
+}
+
 export async function sendCall(
   fetcher: Fetcher,
   call: FrondCall,
   invocation: InvocationContext,
   endpoint: string = CALL_ENDPOINT,
 ): Promise<unknown> {
-  const response = await fetcher<RpcResponse>(endpoint, {
-    method: 'POST',
-    body: frameCall(call, invocation, nextId++),
-  });
-  return unframeResponse(response, call);
+  const answer = await postCall(fetcher, call, invocation, endpoint);
+  if (call.entity === RPC_ENTITY) {
+    if (call.op === 'discover') learn(answer, endpoint);
+
+    return answer;
+  }
+
+  return decoded((await schemasOf(fetcher, endpoint)).get(call.entity), answer);
 }
 
 // ── The link ─────────────────────────────────────
