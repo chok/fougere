@@ -1,9 +1,9 @@
 import { Field } from '../field/Field.js';
-import { EXTENSION_SLOTS } from '../axis/Axis.js';
+import { Axes } from '../axis/Axes.js';
 import { dequal } from 'dequal';
 import { SchemaError } from '../SchemaError.js';
 
-const MEMBER_SLOTS = [...EXTENSION_SLOTS, 'meta'] as const;
+const memberSlots = (): string[] => [...Axes.names, 'meta'];
 
 /**
  * Builds a `rule/` word, which states members on the field it receives.
@@ -26,12 +26,14 @@ export type FieldWord = (field: Field<any>) => Field<any>;
  */
 function merge(name: string, field: Field, given: Partial<Field>): Partial<Field> {
   const merged: Record<string, unknown> = {};
+  const stated = given as Record<string, unknown>;
+  const held = field as unknown as Record<string, unknown>;
   if ('shape' in given) merged.shape = given.shape;
 
-  for (const slot of MEMBER_SLOTS) {
-    const members = given[slot];
+  for (const slot of memberSlots()) {
+    const members = stated[slot];
     if (members === undefined) continue;
-    const already = field[slot] as Record<string, unknown> | undefined;
+    const already = held[slot] as Record<string, unknown> | undefined;
     if (typeof members !== 'object' || members === null || typeof already !== 'object') {
       merged[slot] = members;
       continue;

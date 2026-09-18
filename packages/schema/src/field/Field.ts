@@ -3,13 +3,20 @@ import type { RoleRules } from '../axis/role/RoleRules.js';
 import type { LifecycleRules } from '../axis/lifecycle/LifecycleRules.js';
 import type { BoundaryRef } from '../axis/boundary/BoundaryRef.js';
 import type { Meta } from './Meta.js';
-import type { Axis } from '../axis/Axis.js';
+import { Axes } from '../axis/Axes.js';
+import type { FougereFieldAxes } from './FougereFieldAxes.js';
 import { FieldDeclarationValidator } from '../validator/FieldDeclarationValidator.js';
 import { FieldValueValidator } from '../validator/FieldValueValidator.js';
 import { dotted } from '../lib/ValidationResult.js';
 import { SchemaError } from '../SchemaError.js';
 
-type FieldDeclaration = Pick<Field, 'shape' | Axis['slot'] | 'meta'>;
+interface FieldDeclaration extends FougereFieldAxes {
+  shape: Shape;
+  role?: RoleRules;
+  lifecycle?: LifecycleRules;
+  boundary?: BoundaryRef;
+  meta?: Meta;
+}
 
 export class Field<T = unknown> {
   readonly shape: Shape;
@@ -31,10 +38,13 @@ export class Field<T = unknown> {
     }
 
     this.shape = init.shape;
-    this.role = init.role;
-    this.lifecycle = init.lifecycle;
-    this.boundary = init.boundary;
     this.meta = init.meta;
+
+    const stated = init as unknown as Record<string, unknown>;
+
+    for (const axis of Axes.all) {
+      (this as unknown as Record<string, unknown>)[axis.slot] = stated[axis.slot];
+    }
 
     const create = this.lifecycle?.create;
     if (typeof create === 'object' && create !== null && 'value' in create) {

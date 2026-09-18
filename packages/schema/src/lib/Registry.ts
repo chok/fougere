@@ -32,7 +32,11 @@ export class Registry<T> {
     );
   }
 
-  private get names(): string[] {
+  get names(): string[] {
     return [...this.entries.keys()];
+  }
+
+  get all(): T[] {
+    return [...this.entries.values()];
   }
 }

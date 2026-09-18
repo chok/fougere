@@ -1,4 +1,4 @@
-import { EXTENSION_AXES } from '../../axis/Axis.js';
+import { Axes } from '../../axis/Axes.js';
 import { type Resolver } from '../../axis/Resolver.js';
 import { clean, isObject } from '../../lib/utils.js';
 import { Field } from '../../field/Field.js';
@@ -126,7 +126,7 @@ export class Card<T = Values<Fields>> {
  */
 function describeExtension(field: Field, key: string): FieldExtension | undefined {
   const extension: Record<string, unknown> = {};
-  for (const axis of EXTENSION_AXES) {
+  for (const axis of Axes.all) {
     const declared = (field as unknown as Record<string, unknown>)[axis.slot];
     if (declared === undefined) continue;
     const wire = axis.describe(declared, key);
@@ -201,7 +201,7 @@ function reconstructField(
   admitPatterns(shape, `Field '${key}'`);
   const extension = property['x-fougere'];
   const axes: Record<string, unknown> = {};
-  for (const axis of EXTENSION_AXES) {
+  for (const axis of Axes.all) {
     const wire = (extension as Record<string, unknown> | undefined)?.[axis.slot];
     if (wire !== undefined) axes[axis.slot] = axis.reconstruct(wire, resolve);
   }

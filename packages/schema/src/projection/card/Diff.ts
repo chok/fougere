@@ -1,5 +1,5 @@
 import { dequal } from 'dequal';
-import { EXTENSION_SLOTS } from '../../axis/Axis.js';
+import { Axes } from '../../axis/Axes.js';
 import type { FieldDescriptor } from './FieldDescriptor.js';
 import type { FieldExtension } from './FieldExtension.js';
 
@@ -93,7 +93,7 @@ function restated(
   before: FieldExtension | undefined,
   after: FieldExtension | undefined,
 ): Change[] {
-  return EXTENSION_SLOTS.filter((axis) => !dequal(before?.[axis], after?.[axis])).map(
+  return Axes.names.filter((axis) => !dequal(before?.[axis], after?.[axis])).map(
     (axis) =>
       ({
         kind: 'restated',

@@ -183,16 +183,28 @@ What the OPERATOR decides is not stated here: it belongs in `fougere.config.ts` 
 declaration against the format of its key, and it is the one place that picks which of the
 engine's refusals to report. An axis states its format beside its type — `LIFECYCLE_FORMAT`,
 `ROLE_FORMAT`, `BOUNDARY_FORMAT`, and `META_FORMAT` for `meta` — each under its own `$id`, and
-`FIELD_FORMAT` (`schema/src/field/FieldFormat.ts`) composes them: it carries each one whole in
+`fieldFormat` (`schema/src/field/FieldFormat.ts`) composes them: it carries each one whole in
 `$defs`, cites it by `$ref`, and lists the legal keys in `propertyNames`, so the document
 travels alone and a key a format does not claim is REFUSED — `{ shape, nawak: 42 }` used to be
-accepted and the key dropped. That is also where an axis added from outside would enter: one
-entry, and the three lines take it. Each axis used to hold a validator written by hand, whose
+accepted and the key dropped. Each axis used to hold a validator written by hand, whose
 messages copied the token lists, and `lifecycle: { craete: 'now' }` passed. The tokens stay `as const` and the format spreads them,
 because a JSON import keeps a KEY as a literal and widens a VALUE to `string`. `Axis.refusals`
 holds what JSON cannot state: `role.relation.to` is a function. A key set to `undefined` is read
 as absent. A card is judged at the same door: `reconstruct` rebuilds, and `new Field(…, key)`
 refuses. Pinned by `schema/tests/field-door.test.ts` and `descriptor.test.ts`.
+
+**An axis is REGISTERED, and the document is what it holds** — `Axes`
+(`schema/src/axis/Axes.ts`), a `Registry<Axis>` carrying the three, and
+`Axes.register('tenancy', tenancyAxis)` is how a package declares a fourth. The composed
+format is rebuilt at the first declaration that follows a registration, since the registry is
+what knows it changed. `Field` keeps a slot per REGISTERED axis rather than the five it used
+to name, so a slot nothing in core declares survives on the instance and on the card;
+`FougereFieldAxes` is the empty interface that types what a
+declaration may state, like `FougereEntityAdapters` does for `adapters:`, and reading a slot
+stays structural — `Lifecycle.of(field)` asks for `{ lifecycle?: … }` and never for a `Field`. Where it registers is not free: a format is read
+at `entity()`, so an axis registers in `vocabulary/`, the one convention directory the scan
+reads BEFORE `entities/`. What stays closed is the MODEL — a field has four axes, and three
+tests admit one. Pinned by `schema/tests/axis-registration.test.ts`.
 
 `adapter/sql/src/adapter.schema.json` is the adapter's format, imported with `with { type: 'json' }`,
 and `SqlField` is DERIVED from it. It is validated where the adapter READS
