@@ -51,6 +51,11 @@ export class Boundary {
     return new Boundary(alias);
   }
 
+  /** The server fills it, so a caller never sends it. */
+  static admitsAbsence(field: Field): boolean {
+    return this.of(field).readOnly;
+  }
+
   static of(field: Field): Boundary {
     const declared = Boundary.declared(field);
     const derived = Boundary.forShape(field.shape);

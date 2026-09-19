@@ -23,6 +23,11 @@ export class Lifecycle {
 
   private constructor(private readonly rules: LifecycleRules = {}) {}
 
+  /** `optional()`, a default, a generator: the rule says the value need not arrive. */
+  static admitsAbsence(field: { lifecycle?: LifecycleRules }): boolean {
+    return !this.of(field).requiredAtCreate;
+  }
+
   static of(field: { lifecycle?: LifecycleRules }): Lifecycle {
     return new Lifecycle(field.lifecycle);
   }

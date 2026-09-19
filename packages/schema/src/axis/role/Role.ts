@@ -50,6 +50,11 @@ export class Role {
 
   private constructor(private readonly rules: RoleRules = {}) {}
 
+  /** A collection has no column: the far side of the relation carries the key. */
+  static admitsAbsence(field: { role?: RoleRules }): boolean {
+    return this.of(field).isCollection;
+  }
+
   static of(field: { role?: RoleRules }): Role {
     return new Role(field.role);
   }

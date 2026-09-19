@@ -1,3 +1,4 @@
+import { Axes } from '../axis/Axes.js';
 import { Boundary } from '../axis/boundary/Boundary.js';
 import { Lifecycle } from '../axis/lifecycle/Lifecycle.js';
 import { Role } from '../axis/role/Role.js';
@@ -20,14 +21,8 @@ export class InputValidator {
     return new InputValidator(fields, options);
   }
 
-  /**
-   * Whether a caller has to supply it. A collection is not theirs to send — the other side of
-   * the relation carries the key — so its absence is neither a fault nor a value to stand in.
-   */
   requires(field: Field): boolean {
-    return !Boundary.of(field).readOnly
-      && Lifecycle.of(field).requiredAtCreate
-      && !Role.of(field).isCollection;
+    return !Axes.all.some((axis) => axis.admitsAbsence?.(field));
   }
 
   /** Hands on the value it PARSED, so a handler never re-checks a row. */
@@ -46,7 +41,8 @@ export class InputValidator {
     for (const [key, field] of Object.entries(this.fields)) {
       const verdict = this.admit(field, data[key]);
       if (verdict === undefined) continue;
-      if ('message' in verdict) errors.push({ path: [key, ...(verdict.path ?? [])], message: verdict.message });
+      if ('message' in verdict)
+        errors.push({ path: [key, ...(verdict.path ?? [])], message: verdict.message });
       else row[key] = verdict.value;
     }
 
@@ -67,7 +63,8 @@ export class InputValidator {
     if (Boundary.of(field).readOnly) return { message: InputRefusal.readOnly };
     // The other side of the relation carries the key: there is nothing to write here.
     if (Role.of(field).isCollection) return { message: InputRefusal.readOnly };
-    if (this.options.patch && Lifecycle.of(field).immutable) return { message: InputRefusal.immutable };
+    if (this.options.patch && Lifecycle.of(field).immutable)
+      return { message: InputRefusal.immutable };
 
     return FieldValueValidator.of(field).parse(value);
   }

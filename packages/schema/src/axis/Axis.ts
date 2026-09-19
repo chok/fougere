@@ -1,4 +1,5 @@
 import type { Format } from '../lib/Format.js';
+import type { Field } from '../field/Field.js';
 import type { ValidationError } from '../lib/ValidationError.js';
 
 export interface Axis {
@@ -10,4 +11,10 @@ export interface Axis {
    * primary key that admits null states one legal `role` beside one legal `shape`.
    */
   refusals?(value: unknown, declaration: Record<string, unknown>): ValidationError[];
+
+  /**
+   * Whether this axis alone lets the field be absent from what a caller sends. Asked of every
+   * REGISTERED axis, so a fourth one weighs on it without the validator naming it.
+   */
+  admitsAbsence?(field: Field): boolean;
 }
