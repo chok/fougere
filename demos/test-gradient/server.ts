@@ -11,7 +11,7 @@
 import { createServer } from 'node:http';
 import { createLocalRunner, type Page } from '@fougere/core';
 import { Invocation } from '@fougere/core/contract';
-import { formFieldsOf, serveRpc } from '@fougere/app';
+import { formFieldsOf, payloadOf, serveRpc } from '@fougere/app';
 import { testApp } from '@fougere/testing';
 import Product from './fronds/catalog/entities/Product.js';
 
@@ -56,21 +56,25 @@ const error = document.querySelector('#error');
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
   error.hidden = true;
-  const values = Object.fromEntries(new FormData(form));
-  // Le champ déclaré \`integer\` arrive en chaîne d'un formulaire HTML — la page convertit
-  // ce que sa propre balise a produit, elle n'invente aucune règle.
-  if (values.cents !== undefined) values.cents = Number(values.cents);
-  const response = await fetch('/_fougere/call', {
+  // Le texte du formulaire, tel quel : c'est le serveur, comme useFormFor, qui le lit selon
+  // la forme de Product. La page ne nomme aucun champ.
+  const response = await fetch('/form/product', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'product.create',
-      params: { params: {}, query: {}, input: values, state: {} } }),
+    body: JSON.stringify(Object.fromEntries(new FormData(form))),
   });
   const answer = await response.json();
   if (answer.error) { error.textContent = answer.error.message; error.hidden = false; return; }
   location.reload();
 });
 </script>`;
+}
+
+async function bodyOf(request: AsyncIterable<unknown>): Promise<unknown> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of request) chunks.push(chunk as Buffer);
+
+  return JSON.parse(Buffer.concat(chunks).toString());
 }
 
 createServer(async (request, response) => {
@@ -81,9 +85,18 @@ createServer(async (request, response) => {
     return;
   }
   if (request.method === 'POST' && request.url === '/_fougere/call') {
-    const chunks: Buffer[] = [];
-    for await (const chunk of request) chunks.push(chunk as Buffer);
-    const answer = await serveRpc(app, { path: '', body: JSON.parse(Buffer.concat(chunks).toString()), state: {} });
+    const answer = await serveRpc(app, { path: '', body: await bodyOf(request), state: {} });
+    response.writeHead(200, { 'content-type': 'application/json' });
+    response.end(JSON.stringify(answer));
+
+    return;
+  }
+  // Ce que fait useFormFor dans un hôte : le texte d'un formulaire, lu selon la forme de
+  // l'entité, puis la même porte. `/_fougere/call` reste strict pour un client JSON.
+  if (request.method === 'POST' && request.url === '/form/product') {
+    const input = payloadOf(Product, await bodyOf(request) as Record<string, unknown>);
+    const answer = await serveRpc(app, { path: '', body: { jsonrpc: '2.0', id: 1, method: 'product.create',
+      params: { params: {}, query: {}, input, state: {} } }, state: {} });
     response.writeHead(200, { 'content-type': 'application/json' });
     response.end(JSON.stringify(answer));
 
