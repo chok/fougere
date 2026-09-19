@@ -9,7 +9,7 @@
  *   pnpm dev     puis http://127.0.0.1:4300
  */
 import { createServer } from 'node:http';
-import { createLocalRunner } from '@fougere/core';
+import { createLocalRunner, type Page } from '@fougere/core';
 import { Invocation } from '@fougere/core/contract';
 import { formFieldsOf, serveRpc } from '@fougere/app';
 import { testApp } from '@fougere/testing';
@@ -40,12 +40,12 @@ function inputFor(field: ReturnType<typeof formFieldsOf>[number]): string {
 }
 
 async function page(): Promise<string> {
-  const rows = await run({ entity: 'product', op: 'list' }, Invocation.empty) as { sku: string; name: string }[];
+  const { items } = await run({ entity: 'product', op: 'list' }, Invocation.empty) as Page<Product>;
   const fields = formFieldsOf(Product, 'product');
 
   return `<!doctype html><meta charset="utf-8"><title>test-gradient</title>
 <h1>Catalogue</h1>
-<ul id="products">${[...rows].map((row) => `<li data-sku="${escape(row.sku)}">${escape(row.name)}</li>`).join('')}</ul>
+<ul id="products">${items.map((row) => `<li data-sku="${escape(row.sku)}">${escape(row.name)}</li>`).join('')}</ul>
 <form id="new-product">${fields.map(inputFor).join('')}<button type="submit">Ajouter</button></form>
 <p id="error" hidden></p>
 <script type="module">

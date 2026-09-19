@@ -7,7 +7,7 @@
  * to `Mirror` and are written nowhere in this demo.
  */
 import { bootApp } from '@fougere/defaults';
-import { createLocalRunner, Invocation } from '@fougere/core';
+import { createLocalRunner, Invocation, type Refreshed } from '@fougere/core';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { startPartner } from './partner.js';
@@ -23,11 +23,11 @@ process.env.PARTNER_URL = partner.url;
 
 const app = await bootApp(root);
 const call = createLocalRunner(app);
-const refresh = () => call({ entity: 'catalog', op: 'refresh' }, Invocation.empty) as Promise<{ written: number; since?: Date; ms: number }>;
+const refresh = () => call({ entity: 'catalog', op: 'refresh' }, Invocation.empty) as Promise<Refreshed>;
 
-const say = (label: string, r: { written: number; since?: Date }) =>
+const say = (label: string, r: Refreshed) =>
   console.log(`   → ${r.written} row(s) written, asked the partner for everything since `
-    + `${r.since ? r.since.toISOString() : 'the beginning of time'}`);
+    + `${r.since ?? 'the beginning of time'}`);
 
 console.log(`\n1. nothing has been pulled yet, so the pass asks for everything`);
 say('first', await refresh());
