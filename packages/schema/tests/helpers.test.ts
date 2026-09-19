@@ -148,6 +148,12 @@ describe('helpers', () => {
     expect(() => json(Address, { description: 'a' })).not.toThrow();
   });
 
+  it('writes the refused value in the message', () => {
+    const loose = primary as (...args: unknown[]) => unknown;
+
+    expect(() => loose(42)).toThrow('primary() takes a field or an object of options — got 42');
+  });
+
   it('primary() refuses what is neither a field nor an object of options', () => {
     const loose = primary as (...args: unknown[]) => unknown;
 

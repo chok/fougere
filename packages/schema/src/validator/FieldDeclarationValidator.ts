@@ -1,7 +1,8 @@
 import { Axes } from '../axis/Axes.js';
 import { Shapes } from '../axis/shape/Shape.js';
 import type { Field } from '../field/Field.js';
-import { isObject, shown } from '../lib/utils.js';
+import { isObject } from '../lib/utils.js';
+import { SchemaError } from '../SchemaError.js';
 import type { ValidationError } from '../lib/ValidationError.js';
 import type { ValidationResult } from '../lib/ValidationResult.js';
 import { JsonSchemaValidator } from './JsonSchemaValidator.js';
@@ -22,7 +23,7 @@ export class FieldDeclarationValidator {
         errors: [
           {
             path: [],
-            message: `Expected an object — got ${shown(declaration)}`,
+            message: `Expected an object — got ${SchemaError.inspect(declaration)}`,
           },
         ],
       };
@@ -33,7 +34,7 @@ export class FieldDeclarationValidator {
     if (!Shapes.is(declaration.shape)) {
       errors.push({
         path: ['shape'],
-        message: `Every field states a shape — got ${shown(declaration.shape)}`,
+        message: `Every field states a shape — got ${SchemaError.inspect(declaration.shape)}`,
       });
     }
 

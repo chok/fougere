@@ -1,7 +1,7 @@
 import { Field, type Shared } from '../../field/Field.js';
 import type { SchemaView } from '../../SchemaView.js';
 import { InputValidator } from '../../validator/InputValidator.js';
-import { isObject, shown } from '../../lib/utils.js';
+import { isObject } from '../../lib/utils.js';
 import { SchemaError } from '../../SchemaError.js';
 
 type Entity = SchemaView & (new (...args: never[]) => unknown);
@@ -20,7 +20,7 @@ export function json(of?: Entity | Shared<unknown>, opts?: Shared<unknown>): Fie
   const [schema, shared] = typeof of === 'function' ? [of, opts] : [undefined, of];
 
   if (shared !== undefined && !isObject(shared))
-    throw new SchemaError(`json() takes its options as an object — got ${shown(shared)}`);
+    throw new SchemaError('json() takes its options as an object', { received: shared });
 
   if (schema && typeof schema.getFields !== 'function')
     throw new SchemaError('json() takes an entity, such as json(Address) — got a function that is not one');
