@@ -13,7 +13,7 @@
  */
 import { Command, Config, handle, run as runOclif } from '@oclif/core';
 import type { App, FrondDescriptor } from '@fougere/core';
-import { inputToShape, paramsToShape, type Shape } from './bridge.js';
+import { inputOf, inputToShape, paramsOf, paramsToShape, type Shape } from './bridge.js';
 
 /**
  * What oclif runs: a command's shape in its cache, plus the way to reach the class.
@@ -53,8 +53,10 @@ function commandFor(id: string, call: (input: Record<string, unknown>) => Promis
 
     async run(): Promise<unknown> {
       const { args, flags } = await this.parse(Built);
+      // `--json` is oclif's own flag (`enableJsonFlag`), not a field: it reached the judge as one.
+      const own = Object.fromEntries(Object.entries(flags).filter(([at]) => at in shape.flags));
 
-      return this.logJson(await call({ ...args, ...flags }));
+      return this.logJson(await call({ ...args, ...own }));
     }
   };
   Built.id = id;
@@ -80,12 +82,13 @@ export function commandsOf(app: App): Loadable[] {
         // A view when the op names one, its signature otherwise: `findById(id: string)` takes
         // a bare parameter, and an entity-shaped derivation would offer nothing at all for it.
         const fields = contract.input?.getFields?.();
-        const shape = fields
-          ? inputToShape(fields)
-          : paramsToShape(contract.signature?.params ?? []);
+        const params = contract.signature?.params ?? [];
+        const shape = fields ? inputToShape(fields) : paramsToShape(params);
         const Built = commandFor(
           `${handler.address}:${kebab(name)}`,
-          (parsed) => facade[name]!(fields ? { input: parsed } : { params: parsed }),
+          (parsed) => facade[name]!(
+            fields ? { input: inputOf(fields, parsed) } : { params: paramsOf(params, parsed) },
+          ),
           shape,
           contract.description,
         );

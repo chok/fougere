@@ -3,7 +3,7 @@ import { entity, primary, text, number, oneOf, optional } from '@fougere/schema'
 /**
  * One declaration, and the terminal reads every word of it: `--sku` is required because the
  * axes say a caller writes it, `--state` lists its three values because `oneOf` named them,
- * and `--cents` is an integer flag because the shape is a number.
+ * and `--cents` reaches the handler as a number because the shape is one.
  */
 export default class Product extends entity({
   id: primary(),

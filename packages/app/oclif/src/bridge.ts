@@ -81,8 +81,8 @@ export function inputToShape(fields: Fields): Shape {
     const type = Shapes.typeOf(field.shape);
     const description = field.meta?.description;
     const required = Role.of(field).isPrimary || (!nullable && Lifecycle.of(field).requiredAtCreate);
-    const options = shape?.type === 'string' && shape.enum?.length
-      ? shape.enum.filter((value): value is string => typeof value === 'string')
+    const options = shape && 'enum' in shape && shape.enum?.length
+      ? shape.enum.filter((value) => value !== null).map(String)
       : undefined;
 
     // The first required plain string becomes positional, the rule `fougere explain --root`
@@ -96,12 +96,36 @@ export function inputToShape(fields: Fields): Shape {
 
     const at = kebab(key);
     const fallback = Lifecycle.of(field).literal?.value;
-    flags[at] = options
-      ? Flags.string({ description, options, required, default: fallback as string | undefined })
-      : type === 'boolean' ? Flags.boolean({ description, default: fallback as boolean | undefined })
-      : type === 'number' ? Flags.integer({ description, required, default: fallback as number | undefined })
-      : Flags.string({ description, required, default: fallback as string | undefined });
+    // A flag is text; `inputOf` reads it back as the shape declares it, so a number needs no
+    // flag of its own — `Flags.integer` refused `9.5` for a `number()` and passed an integer on
+    // as a string.
+    flags[at] = type === 'boolean'
+      ? Flags.boolean({ description, default: fallback as boolean | undefined })
+      : Flags.string({ description, options, required, default: fallback === undefined ? undefined : String(fallback) });
   }
 
   return { args: args as ArgInput, flags: flags as FlagInput };
+}
+
+/** What oclif parsed, under the names the operation declared: a flag is kebab, a field is not. */
+function renamed(parsed: Record<string, unknown>, names: readonly string[]): Record<string, unknown> {
+  const byFlag = new Map(names.map((name) => [kebab(name), name]));
+
+  return Object.fromEntries(Object.entries(parsed).map(([at, value]) => [byFlag.get(at) ?? at, value]));
+}
+
+/** The dual of `inputToShape`: what oclif parsed, handed back as the entity declares it. */
+export function inputOf(fields: Fields, parsed: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(renamed(parsed, Object.keys(fields)))
+      .map(([key, value]) => [key, Shapes.fromText(fields[key]?.shape, value)]),
+  );
+}
+
+/** The dual of `paramsToShape`: an operation's bare parameters, under their own names. */
+export function paramsOf(
+  params: readonly { name: string }[],
+  parsed: Record<string, unknown>,
+): Record<string, unknown> {
+  return renamed(parsed, params.map((param) => param.name));
 }

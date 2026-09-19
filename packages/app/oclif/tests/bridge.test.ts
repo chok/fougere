@@ -7,7 +7,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text, number, oneOf, optional, created } from '@fougere/schema';
-import { inputToShape, paramsToShape } from '../src/bridge.js';
+import { inputOf, inputToShape, paramsOf, paramsToShape } from '../src/bridge.js';
 
 class Product extends entity({
   id: primary(),
@@ -71,5 +71,36 @@ describe('a bare parameter, as flags', () => {
     ]);
 
     expect(Object.keys({ ...args, ...flags })).toEqual(['id']);
+  });
+});
+
+// Both were measured before this was written: `Flags.integer` refused `9.5` for a `number()`
+// and passed an integer on as text, and `--unit-price` reached the judge as `unit-price`, an
+// unknown field beside a missing `unitPrice`.
+describe('what oclif parsed, handed back', () => {
+  class Line extends entity({
+    id: primary(),
+    sku: text(),
+    unitPrice: number(),
+    quantity: number({ integer: true }),
+    angle: oneOf(0, 90, 180, 270),
+  }) {}
+
+  it('lists a set of numbers, the way it lists a set of strings', () => {
+    const { flags } = inputToShape(Line.getFields());
+
+    expect((flags.angle as { options?: string[] }).options).toEqual(['0', '90', '180', '270']);
+  });
+
+  it('under the field\'s own name, and as its shape declares it', () => {
+    const parsed = { sku: 'S1', 'unit-price': '9.5', quantity: '3', angle: '90' };
+    const input = inputOf(Line.getFields(), parsed);
+
+    expect(input).toEqual({ sku: 'S1', unitPrice: 9.5, quantity: 3, angle: 90 });
+    expect(Line.validate(input).success).toBe(true);
+  });
+
+  it('gives a bare parameter back its own name too', () => {
+    expect(paramsOf([{ name: 'postId' }], { 'post-id': 'p1' })).toEqual({ postId: 'p1' });
   });
 });

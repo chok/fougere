@@ -53,6 +53,14 @@ describe('a frond as a terminal', () => {
     expect(await fougere('product:find-by-id', '--help')).toContain('product:find-by-id ID');
   }, 60_000);
 
+  // Two refusals stood between this line and a row: `Flags.integer` turned `12.5` away for a
+  // `number()`, and `--json`, oclif's own flag, reached the judge as an unknown field.
+  it('hands the judge a number where the shape declares one, and keeps --json out of the input', async () => {
+    const written = await fougere('product:create', 'SKU-7', '--name', 'Desk', '--cents', '12.5', '--json');
+
+    expect(written).toContain('"cents": 12.5');
+  }, 60_000);
+
   it('writes a row, and reads it back in another process', async () => {
     rmSync(join(root, '.fougere'), { recursive: true, force: true });
     await fougere('product:create', 'SKU-9', '--name', 'Lamp', '--cents', '2500');
