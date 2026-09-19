@@ -3,13 +3,18 @@ import {
   created,
   entity,
   Field,
+  indexed,
   list,
+  many,
+  nullable,
   oneOf,
   optional,
   primary,
+  ref,
   Role,
   Schema,
   text,
+  unique,
   updated,
 } from '../src/index.js';
 import { FieldDeclarationValidator } from '../src/validator/FieldDeclarationValidator.js';
@@ -70,6 +75,24 @@ describe('the field facade', () => {
     if (!verdict.success) {
       expect(verdict.errors.map((e) => e.path)).toEqual([['shape'], ['lifecycle', 'update'], ['meta']]);
     }
+  });
+
+  /**
+   * A contradiction is a PAIR, and each half is legal on its own — which is why an axis is
+   * handed the whole declaration beside its slot. A primary key that admits null states one
+   * legal `role` and one legal `shape`; a collection carries no column an index could sit on.
+   */
+  it('refuses a pair whose halves are each legal', () => {
+    class Target extends entity({ id: primary() }) {}
+
+    expect(() => nullable(primary())).toThrow(/A primary key admits no null/);
+    expect(() => optional(primary())).toThrow(/A primary key admits no null/);
+    expect(() => unique(many(Target))).toThrow(/A collection has no column of its own/);
+    expect(() => indexed(many(Target))).toThrow(/A collection has no column of its own/);
+
+    expect(() => unique(ref(Target))).not.toThrow();
+    expect(() => nullable(ref(Target))).not.toThrow();
+    expect(() => indexed(primary())).not.toThrow();
   });
 
   it('accepts everything the vocabulary builds', () => {

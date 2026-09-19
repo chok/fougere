@@ -1,6 +1,8 @@
 import type { Relation } from './Relation.js';
 import type { EntityConstructor } from './EntityConstructor.js';
 import { isObject } from '../../lib/utils.js';
+import { Shapes, type Shape } from '../shape/Shape.js';
+import type { ValidationError } from '../../lib/ValidationError.js';
 import { Format, type Accepted } from '../../lib/Format.js';
 import { ON_DELETE, RELATION_KINDS } from './Relation.js';
 
@@ -20,11 +22,30 @@ export class Role {
     )
     .closed();
 
-  static refusals(value: unknown) {
+  static refusals(value: unknown, declaration: Record<string, unknown> = {}): ValidationError[] {
+    const role = Role.of({ role: isObject(value) ? (value as RoleRules) : undefined });
+    const errors: ValidationError[] = [];
     const relation = isObject(value) ? value.relation : undefined;
-    if (!isObject(relation) || !('to' in relation) || typeof relation.to === 'function') return [];
 
-    return [{ path: ['role', 'relation', 'to'], message: 'Expected a function returning the target entity, such as () => Post' }];
+    if (isObject(relation) && 'to' in relation && typeof relation.to !== 'function')
+      errors.push({
+        path: ['role', 'relation', 'to'],
+        message: 'Expected a function returning the target entity, such as () => Post',
+      });
+
+    if (role.isPrimary && Shapes.isNullable(declaration.shape as Shape))
+      errors.push({
+        path: ['role', 'primary'],
+        message: 'A primary key admits no null — a row is addressed by it',
+      });
+
+    if (role.isCollection && (role.isUnique || role.isIndexed))
+      errors.push({
+        path: ['role', role.isUnique ? 'unique' : 'index'],
+        message: 'A collection has no column of its own, so there is nothing to index',
+      });
+
+    return errors;
   }
 
   private constructor(private readonly rules: RoleRules = {}) {}
