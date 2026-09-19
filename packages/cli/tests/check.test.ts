@@ -6,7 +6,9 @@
  * inspecte. Ce test appelle le handler directement, sans CLI et sans processus.
  */
 import { describe, it, expect } from 'vitest';
-import { existsSync, mkdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, utimesSync, writeFileSync } from 'node:fs';
+import { cp, mkdtemp } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import CheckHandler from '../fronds/analysis/handlers/CheckHandler.js';
 import ProjectScan from '../fronds/analysis/services/ProjectScan.js';
@@ -39,20 +41,20 @@ describe('check', () => {
     expect(result.findings.find((f) => f.code === 'facade-stale')).toBeUndefined();
   });
 
+  // On a COPY: the fixture is versioned, and `build.test.ts` copies it while this runs —
+  // writing here made that copy fail on a `.fougere` that existed for some twenty milliseconds.
   it('names a facade module older than the handlers it was read off', async () => {
-    const generated = join(fixture, '.fougere', 'facade.generated.ts');
+    const root = await mkdtemp(join(tmpdir(), 'fougere-check-'));
+    await cp(fixture, root, { recursive: true });
+    const generated = join(root, '.fougere', 'facade.generated.ts');
     mkdirSync(dirname(generated), { recursive: true });
     writeFileSync(generated, '// stale\n');
     utimesSync(generated, new Date(0), new Date(0));
 
-    try {
-      const result = await check().execute({ root: fixture });
+    const result = await check().execute({ root });
 
-      expect(result.findings.find((f) => f.code === 'facade-stale')?.message)
-        .toContain('older than the handlers');
-    } finally {
-      rmSync(dirname(generated), { recursive: true, force: true });
-    }
+    expect(result.findings.find((f) => f.code === 'facade-stale')?.message)
+      .toContain('older than the handlers');
   });
 
   it('suit un extends vers une classe exportée par son nom, et compte ce qu\'il a vu', async () => {
