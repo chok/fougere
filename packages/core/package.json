@@ -68,12 +68,12 @@
   "dependencies": {
     "@fougere/container": "workspace:*",
     "@fougere/schema": "workspace:*",
-    "@typescript/typescript6": "^6.0.2",
     "dequal": "^2.0.3"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "@fougere/compiler": "workspace:*"
+    "@fougere/compiler": "workspace:*",
+    "@typescript/typescript6": "^6.0.2"
   },
   "publishConfig": {
     "access": "public"

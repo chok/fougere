@@ -1789,9 +1789,6 @@ importers:
       '@fougere/schema':
         specifier: workspace:*
         version: link:../schema
-      '@typescript/typescript6':
-        specifier: ^6.0.2
-        version: 6.0.2
       dequal:
         specifier: ^2.0.3
         version: 2.0.3
@@ -1802,6 +1799,9 @@ importers:
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.15
+      '@typescript/typescript6':
+        specifier: ^6.0.2
+        version: 6.0.2
 
   packages/decorators: {}
 
