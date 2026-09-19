@@ -3,5 +3,6 @@ import { Field } from '../../field/Field.js';
 
 export function updated(): Field<Date> {
   const base = created();
+
   return base.with({ lifecycle: { ...base.lifecycle, update: 'now' } });
 }
