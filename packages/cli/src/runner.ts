@@ -8,6 +8,7 @@ import { lowerFirst } from '@fougere/core/contract';
 import { defineCommand, runMain } from 'citty';
 import { ui } from './ui.js';
 import { machineWanted } from './machine.js';
+import { Shapes } from '@fougere/schema';
 import { entityToArgs } from './bridge.js';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -110,10 +111,13 @@ export async function run(app: App, root = new URL('..', import.meta.url).pathna
           if (cmdName !== 'completion' && !machineOutput) terminal.intro();
 
           // citty adds `_` (raw positionals) and `--` (passthrough); strip them
-          // so only the entity's own fields reach the handler.
-          const input = { ...(parsed as Record<string, unknown>) };
-          delete input._;
-          delete input['--'];
+          // so only the entity's own fields reach the handler — read as their shape says,
+          // since a flag is text.
+          const input = Object.fromEntries(
+            Object.entries(parsed as Record<string, unknown>)
+              .filter(([key]) => key !== '_' && key !== '--')
+              .map(([key, value]) => [key, Shapes.fromText(fields[key]?.shape, value)]),
+          );
 
           try {
             if (AppCommand) {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  entity, primary, text, number, bool, date, oneOf, optional, ref, many, created,
+  entity, primary, text, number, bool, date, oneOf, optional, ref, many, created, Shapes, type Fields,
 } from '@fougere/schema';
 import { entityToArgs } from '../src/bridge.js';
 
@@ -80,5 +80,24 @@ describe('entityToArgs', () => {
     // `force` is required and named on purpose — it is the one key the rule excludes.
     expect(args.title?.type).toBe('positional');
     expect(args.count?.type).toBe('string');
+  });
+});
+
+describe('a flag is text, and the shape says what it stands for', () => {
+  class Turn extends entity({ id: primary(), angle: oneOf(0, 90, 180, 270), count: number({ integer: true }) }) {}
+  const args = entityToArgs(Turn.getFields());
+
+  it('lists a set of numbers, the way it lists a set of strings', () => {
+    expect(args.angle).toMatchObject({ type: 'enum', options: ['0', '90', '180', '270'] });
+  });
+
+  it('hands the judge a number where the shape declares one', () => {
+    const fields: Fields = Turn.getFields();
+    const parsed = { angle: '90', count: '3' };
+    const input = Object.fromEntries(
+      Object.entries(parsed).map(([key, value]) => [key, Shapes.fromText(fields[key]?.shape, value)]),
+    );
+
+    expect(Turn.validate(input).success).toBe(true);
   });
 });

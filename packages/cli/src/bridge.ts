@@ -53,8 +53,8 @@ export function entityToArgs(fields: Fields): ArgsDef {
     // A closed set is citty's `enum`: the shape already names the legal values, so the
     // refusal and the `--help` listing come from the declaration rather than a check
     // written beside it.
-    const options = shape?.type === 'string' && shape.enum?.length
-      ? shape.enum.filter((value): value is string => value !== null)
+    const options = shape && 'enum' in shape && shape.enum?.length
+      ? shape.enum.filter((value) => value !== null).map(String)
       : undefined;
     // First required field becomes positional — but never a boolean, a closed set, or a
     // date-time, which stay named flags.
