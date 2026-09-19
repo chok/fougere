@@ -12,7 +12,7 @@
     "typecheck": "pnpm -r typecheck",
     "typecheck:tools": "tsc -p tools",
     "test": "pnpm -r test",
-    "lint": "oxlint packages site demos",
+    "lint": "oxlint .",
     "knip": "knip",
     "publish:check": "node tools/publish-check.ts",
     "door:check": "node tools/door-check.ts",
