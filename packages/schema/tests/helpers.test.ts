@@ -7,18 +7,22 @@ import {
   entity,
   Field,
   immutable,
+  indexed,
   json,
   list,
   many,
+  nullable,
   ON_DELETE,
   number,
   oneOf,
   optional,
   primary,
+  readOnly,
   ref,
   Role,
   Shapes,
   text,
+  unique,
   updated,
   url,
 } from '../src/index.js';
@@ -166,9 +170,26 @@ describe('helpers', () => {
     expect(Post.validate({ tags: 'a' }).success).toBe(false);                // not an array
   });
 
-  it('list() rejects a relation field — a list is a value, not a relation', () => {
+  it('list() keeps the shape of an element, and refuses every axis stated beside it', () => {
     class Other extends entity({ id: primary() }) {}
-    expect(() => list(many(Other) as never)).toThrow(/value field/);
+
+    // `nullable()` writes into the shape, so it is the one rule an element can carry.
+    expect(list(nullable(text())).shape).toEqual({
+      type: 'array',
+      items: { type: ['string', 'null'] },
+    });
+
+    const beside = [
+      many(Other),
+      unique(text()),
+      indexed(text()),
+      readOnly(text()),
+      immutable(text()),
+      optional(text()),
+    ];
+
+    for (const stated of beside)
+      expect(() => list(stated as never)).toThrow(/says nothing of one/);
   });
 
   it('format predicates (email, uuid, uri) are asserted by the engine', () => {
