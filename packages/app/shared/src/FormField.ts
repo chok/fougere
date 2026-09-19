@@ -8,7 +8,7 @@ export interface FormField {
   /** Fallback label when no i18n message fills the key. */
   label: string;
   /** Enum values, when control is 'select'. */
-  options?: string[];
+  options?: (string | number)[];
   /**
    * What the browser enforces, under the names it already knows — spread this on the input and the
    * page states no rule of its own.

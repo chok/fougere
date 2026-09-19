@@ -37,7 +37,7 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
 
   /** Local pre-verdict — same rules as the handler, saves a lost round-trip. */
   function validator(): boolean {
-    const result = entity.validate(payloadOf(get(values)));
+    const result = entity.validate(payloadOf(entity, get(values)));
     errors.set(result.success ? {} : errorsByField(result.errors));
 
     return result.success;
@@ -46,7 +46,7 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
   async function submit(): Promise<T | null> {
     if (!validator()) return null;
     try {
-      return (await command.execute({ params: options.params, input: payloadOf(get(values)) })) as T;
+      return (await command.execute({ params: options.params, input: payloadOf(entity, get(values)) })) as T;
     } catch (err) {
       const refusals = validationErrorsOf(err);
       if (refusals) {

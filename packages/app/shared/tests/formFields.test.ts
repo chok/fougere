@@ -59,8 +59,30 @@ describe('formFieldsOf — membership and axes', () => {
 
 describe('payloadOf — an empty control is an absent value', () => {
   it('drops empty strings and undefined, keeps everything else', () => {
-    expect(payloadOf({ title: 'a', subtitle: '', views: 0, published: false, secret: undefined }))
+    expect(payloadOf(Article, { title: 'a', subtitle: '', views: 0, published: false, secret: undefined }))
       .toEqual({ title: 'a', views: 0, published: false });
+  });
+
+  it('restores a number the browser handed back as a string, and nothing else', () => {
+    expect(payloadOf(Article, { views: '12', title: '12' })).toEqual({ views: 12, title: '12' });
+  });
+
+  it('leaves what does not read as a number for the judge to refuse by name', () => {
+    expect(payloadOf(Article, { views: 'abc' })).toEqual({ views: 'abc' });
+    expect(Article.validate({ ...payloadOf(Article, { views: 'abc' }) }).success).toBe(false);
+  });
+});
+
+describe('a set of numbers', () => {
+  class Turn extends entity({ id: primary(), angle: oneOf(0, 90, 180, 270) }) {}
+  const [angle] = formFieldsOf(Turn, 'turn');
+
+  it('is a select over its members, not a free number input', () => {
+    expect(angle).toMatchObject({ name: 'angle', control: 'select', options: [0, 90, 180, 270] });
+  });
+
+  it('reaches the judge as the number its option stood for', () => {
+    expect(Turn.validate(payloadOf(Turn, { angle: '90' })).success).toBe(true);
   });
 });
 

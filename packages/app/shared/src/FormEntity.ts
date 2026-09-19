@@ -38,6 +38,8 @@ const CONTROL_BY_TYPE: Record<Exclude<ShapeType, 'text'>, FormField['control']> 
 };
 
 function controlOf(field: Field): FormField['control'] {
+  if (enumOf(field)) return 'select';
+
   const type = Shapes.typeOf(field.shape);
   if (type && type !== 'text') return CONTROL_BY_TYPE[type];
 
@@ -48,10 +50,10 @@ function controlOf(field: Field): FormField['control'] {
 }
 
 /** A closed set's members, when the shape declares one — `oneOf('draft','live')`. */
-function enumOf(field: Field): readonly (string | null)[] | undefined {
+function enumOf(field: Field): readonly (string | number | null)[] | undefined {
   const base = Shapes.of(field.shape).base;
 
-  return base?.type === 'string' ? base.enum : undefined;
+  return base && 'enum' in base ? base.enum : undefined;
 }
 
 /** Controls that ARE an `<input type>` — see the two absences on {@link FormField.attrs}. */
@@ -90,15 +92,14 @@ export function formFieldsOf(entity: FormEntity, entityKey: string): FormField[]
     const control = controlOf(f);
     const required = Lifecycle.of(f).requiredAtCreate;
     const attrs = attrsOf(f, control, required);
+    const members = enumOf(f);
 
     return {
       name,
       control,
       required,
       ...labelOf(name, entityKey),
-      ...(Array.isArray(enumOf(f))
-        ? { options: enumOf(f)!.filter((value): value is string => typeof value === 'string') }
-        : {}),
+      ...(members ? { options: members.filter((value) => value !== null) } : {}),
       ...(Object.keys(attrs).length ? { attrs } : {}),
       ...(defaultOf(f) !== undefined ? { default: defaultOf(f) } : {}),
     };
@@ -145,9 +146,16 @@ export function tableColumnsOf(entity: FormEntity, entityKey: string): TableColu
  * (absence is validated by the lifecycle axis, an empty string would be validated as a present bad
  * value).
  */
-export function payloadOf(values: Record<string, unknown>): Record<string, unknown> {
+export function payloadOf(
+  entity: FormEntity,
+  values: Record<string, unknown>,
+): Record<string, unknown> {
+  const fields = entity.getFields();
+
   return Object.fromEntries(
-    Object.entries(values).filter(([, v]) => v !== undefined && v !== ''),
+    Object.entries(values)
+      .filter(([, value]) => value !== undefined && value !== '')
+      .map(([name, value]) => [name, Shapes.fromText(fields[name]?.shape, value)]),
   );
 }
 
