@@ -122,7 +122,7 @@ group('Card.toSchema — card to working schema', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.createdAt).toBeInstanceOf(Date);
-      expect(result.data.tags).toEqual([]); // many relation fills empty
+      expect('tags' in result.data).toBe(false); // a many relation is not a caller's to send
     }
   });
 

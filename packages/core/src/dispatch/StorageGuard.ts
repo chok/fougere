@@ -1,4 +1,4 @@
-import { FieldSet, FieldValueValidator, InputRefusal, type Fields, type Verdict } from '@fougere/schema';
+import { FieldSet, FieldValueValidator, InputRefusal, Role, type Fields, type Verdict } from '@fougere/schema';
 import { COMPARISONS, comparisonOf, unknownIn } from '../storage/Comparison.js';
 import { assertListOptions } from '../storage/Storage.js';
 import { ErrorCode } from '../wire/ErrorCode.js';
@@ -218,6 +218,8 @@ export class StorageGuard {
   private written(key: string, item: unknown): Verdict {
     const field = this.fields[key];
     if (!field) return { message: InputRefusal.unknownField };
+    // Declared, and still nothing to write: the other side of the relation carries the key.
+    if (Role.of(field).isCollection) return { message: InputRefusal.readOnly };
     if (item === undefined) return { value: item };
 
     return FieldValueValidator.of(field).parse(item);

@@ -904,6 +904,13 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   passes, and a key nothing reads is dropped. What closes it is a format beside `RoleDescriptor`,
   read before the rebuild — everything the rebuild produces is refused by `new Field(…, key)` already.
 
+- **A `many()` cannot be written from its own side, and the pair is not offered either.** The
+  key sits on the far row — `tags.post_id`, never a column of `posts` — so
+  `post.create({ tags: [...] })` has nowhere to land. It is refused now rather than dropped:
+  `InputValidator` answers `Read-only` on the client door and `StorageGuard` the same for a
+  handler, where the value used to reach SQLite as `no column named tags`. What a caller
+  would want is to hand the tags over and have the write place the key on the other side —
+  a write across two tables, which no gesture of `Storage` names. Measured 2026-09-20.
 - **An un-augmented `adapters:` accepts anything, silently.** With no adapter in the program
   `EntityAdapters<TFields>` is `Partial<{}>`, which in TypeScript means "anything
   non-nullish". The RUNTIME half is closed since the adapter's format; what remains open is the type.

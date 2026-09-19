@@ -129,7 +129,9 @@ describe('Entity', () => {
       }
     });
 
-    it('many fields default to empty array', () => {
+    // A collection is not a caller's to send: the other side of the relation carries the key,
+    // and standing one in as `[]` wrote a key no table has room for.
+    it('many fields are neither required nor stood in for', () => {
       const result = Order.validate({
         id: '1',
         customerId: 'c1',
@@ -138,7 +140,7 @@ describe('Entity', () => {
       });
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.lines).toEqual([]);
+        expect('lines' in result.data).toBe(false);
       }
     });
   });

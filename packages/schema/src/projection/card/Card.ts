@@ -39,7 +39,7 @@ export class Card<T = Values<Fields>> {
     const required: string[] = [];
     for (const [key, field] of Object.entries(fields)) {
       properties[key] = describeField(field, key);
-      if (validator.onAbsent(field) === null) required.push(key);
+      if (validator.requires(field)) required.push(key);
     }
     for (const group of schema.getUnique() ?? [])
       for (const member of group) carryGroup(properties[member], group);

@@ -41,7 +41,7 @@ export function json(
       ? { ...field.shape, description: field.meta.description }
       : field.shape;
 
-    if (validator.onAbsent(field) === null) required.push(key);
+    if (validator.requires(field)) required.push(key);
   }
 
   return new Field({

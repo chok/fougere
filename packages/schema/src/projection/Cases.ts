@@ -132,7 +132,7 @@ function aboutField(
   const withField = (value: unknown) => ({ ...valid, [name]: value });
   const cases: ValidationCase[] = [];
 
-  if (validator.onAbsent(field) === null && name in valid) {
+  if (validator.requires(field) && name in valid) {
     const input = { ...valid };
     delete input[name];
     cases.push({ why: `${name} absent`, input, patch: false, expect: { reject: name } });
@@ -142,6 +142,15 @@ function aboutField(
     cases.push({
       why: `${name} supplied although read-only`,
       input: withField(wrongTypeFor(field)),
+      patch: false,
+      expect: { reject: name },
+    });
+  }
+
+  if (Role.of(field).isCollection) {
+    cases.push({
+      why: `${name} supplied although the other side carries it`,
+      input: withField([]),
       patch: false,
       expect: { reject: name },
     });

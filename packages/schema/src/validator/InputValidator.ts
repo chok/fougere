@@ -20,12 +20,14 @@ export class InputValidator {
     return new InputValidator(fields, options);
   }
 
-  onAbsent(field: Field): 'skip' | 'empty-list' | null {
-    if (Boundary.of(field).readOnly) return 'skip';
-    if (!Lifecycle.of(field).requiredAtCreate) return 'skip';
-    if (Role.of(field).isCollection) return 'empty-list';
-
-    return null;
+  /**
+   * Whether a caller has to supply it. A collection is not theirs to send — the other side of
+   * the relation carries the key — so its absence is neither a fault nor a value to stand in.
+   */
+  requires(field: Field): boolean {
+    return !Boundary.of(field).readOnly
+      && Lifecycle.of(field).requiredAtCreate
+      && !Role.of(field).isCollection;
   }
 
   /** Hands on the value it PARSED, so a handler never re-checks a row. */
@@ -63,6 +65,8 @@ export class InputValidator {
     if (value === undefined) return this.whenAbsent(field);
 
     if (Boundary.of(field).readOnly) return { message: InputRefusal.readOnly };
+    // The other side of the relation carries the key: there is nothing to write here.
+    if (Role.of(field).isCollection) return { message: InputRefusal.readOnly };
     if (this.options.patch && Lifecycle.of(field).immutable) return { message: InputRefusal.immutable };
 
     return FieldValueValidator.of(field).parse(value);
@@ -71,9 +75,6 @@ export class InputValidator {
   private whenAbsent(field: Field): Verdict | undefined {
     if (this.options.patch) return undefined;
 
-    const absence = this.onAbsent(field);
-    if (absence === null) return { message: InputRefusal.required };
-
-    return absence === 'empty-list' ? { value: [] } : undefined;
+    return this.requires(field) ? { message: InputRefusal.required } : undefined;
   }
 }
