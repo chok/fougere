@@ -133,6 +133,31 @@ describe('helpers', () => {
     expect(() => oneOf('a', 1)).toThrow(/takes strings or numbers/);
   });
 
+  // The two other words that sort their arguments by type before the door, and read a stray
+  // one as options with nothing said.
+  it('json() refuses options that are not an object, and a function that is not an entity', () => {
+    class Address extends entity({ street: text() }) {}
+    const loose = json as (...args: unknown[]) => unknown;
+
+    expect(() => loose(42)).toThrow(/takes its options as an object/);
+    expect(() => loose(Address, 'x')).toThrow(/takes its options as an object/);
+    expect(() => loose(() => 1)).toThrow(/takes an entity/);
+
+    expect(() => json()).not.toThrow();
+    expect(() => json({ description: 'a' })).not.toThrow();
+    expect(() => json(Address, { description: 'a' })).not.toThrow();
+  });
+
+  it('primary() refuses what is neither a field nor an object of options', () => {
+    const loose = primary as (...args: unknown[]) => unknown;
+
+    expect(() => loose(42)).toThrow(/takes a field or an object of options/);
+    expect(() => loose('x')).toThrow(/takes a field or an object of options/);
+
+    expect(() => primary()).not.toThrow();
+    expect(() => primary(number({ integer: true }))).not.toThrow();
+  });
+
   it('ref() creates a one-relation field', () => {
     class Customer extends entity({ id: primary() }) {}
     const f = ref(Customer);

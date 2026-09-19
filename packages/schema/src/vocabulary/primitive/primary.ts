@@ -1,5 +1,7 @@
 import { Field, type Described } from '../../field/Field.js';
 import { Generators, type GeneratorRef } from '../../axis/lifecycle/Generators.js';
+import { isObject, shown } from '../../lib/utils.js';
+import { SchemaError } from '../../SchemaError.js';
 
 interface PrimaryOptions extends Described {
   generate?: GeneratorRef | [name: string, fn: () => string];
@@ -21,7 +23,10 @@ export function primary(fieldOrOptions?: Field | PrimaryOptions): Field {
     });
   }
 
-  const opts = (fieldOrOptions ?? {}) as PrimaryOptions;
+  if (fieldOrOptions !== undefined && !isObject(fieldOrOptions))
+    throw new SchemaError(`primary() takes a field or an object of options — got ${shown(fieldOrOptions)}`);
+
+  const opts: PrimaryOptions = fieldOrOptions ?? {};
   let generate: GeneratorRef;
   if (Array.isArray(opts.generate)) {
     const [name, fn] = opts.generate;
