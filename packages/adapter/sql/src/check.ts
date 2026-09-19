@@ -42,7 +42,7 @@ export function boundsOf(shape: Record<string, unknown> | undefined): ShapeBound
   if (!shape) return undefined;
 
   const bounds: ShapeBounds = {};
-  if (Array.isArray(shape.enum) && shape.enum.length > 0) bounds.enum = shape.enum as string[];
+  if (Array.isArray(shape.enum) && shape.enum.length > 0) bounds.enum = shape.enum;
   for (const key of ['minLength', 'maxLength', 'minimum', 'maximum'] as const) {
     if (typeof shape[key] === 'number') bounds[key] = shape[key] as number;
   }

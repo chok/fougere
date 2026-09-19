@@ -6,7 +6,7 @@ type Nullably<T extends string> = T | readonly [T, 'null'];
 
 interface StringConstraints { minLength?: number; maxLength?: number; pattern?: string; enum?: readonly (string | null)[]; format?: StringFormat }
 
-interface NumericConstraints { minimum?: number; maximum?: number }
+interface NumericConstraints { minimum?: number; maximum?: number; enum?: readonly (number | null)[] }
 
 interface ArrayConstraints { items?: Shape; minItems?: number; maxItems?: number }
 
@@ -93,7 +93,7 @@ export class Shapes {
     if (Array.isArray(shape.type)) return shape;
     const nullable = { ...shape, type: [shape.type, 'null'] } as unknown as Shape;
     if ('enum' in nullable && nullable.enum && !nullable.enum.includes(null)) {
-      (nullable as { enum: readonly (string | null)[] }).enum = [...nullable.enum, null];
+      (nullable as { enum: readonly (string | number | null)[] }).enum = [...nullable.enum, null];
     }
 
     return nullable;
@@ -107,7 +107,7 @@ export class Shapes {
         const baseType = shape.type.find((t) => t !== 'null');
         const base = { ...shape, type: baseType } as BaseShape;
         if ('enum' in base && base.enum) {
-          (base as { enum: readonly (string | null)[] }).enum = base.enum.filter((v) => v !== null);
+          (base as { enum: readonly (string | number | null)[] }).enum = base.enum.filter((v) => v !== null);
         }
         parts = { base, nullable: true };
       } else {
@@ -121,6 +121,22 @@ export class Shapes {
 
   static isNullable(shape?: Shape): boolean {
     return this.of(shape).nullable;
+  }
+
+  /**
+   * A value that came in as text — a form control, a command-line flag — read as the shape
+   * declares it. What does not read that way stays as it came, for the judge to refuse by name.
+   * `fromText({ type: 'integer' }, '12')` → `12`, and `fromText({ type: 'integer' }, 'abc')` → `'abc'`
+   */
+  static fromText(shape: Shape | undefined, value: unknown): unknown {
+    const type = this.of(shape).base?.type;
+
+    if ((type !== 'number' && type !== 'integer') || typeof value !== 'string' || value === '')
+      return value;
+
+    const number = Number(value);
+
+    return Number.isFinite(number) ? number : value;
   }
 
   /**

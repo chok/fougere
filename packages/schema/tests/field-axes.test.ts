@@ -257,3 +257,23 @@ describe('vocabulary — a word states axis members, and a contradiction is refu
     expect(optional(created()).lifecycle?.create).toBe('now');
   });
 });
+
+describe('Shapes.fromText — what a form or a flag hands back is text', () => {
+  it('reads a number where the shape declares one, the nullable form included', () => {
+    expect(Shapes.fromText({ type: 'integer' }, '12')).toBe(12);
+    expect(Shapes.fromText({ type: 'number' }, '9.5')).toBe(9.5);
+    expect(Shapes.fromText({ type: ['integer', 'null'], enum: [0, 90, null] }, '90')).toBe(90);
+  });
+
+  it('leaves what does not read as one for the judge to refuse by name', () => {
+    expect(Shapes.fromText({ type: 'integer' }, 'abc')).toBe('abc');
+    expect(Shapes.fromText({ type: 'integer' }, 'Infinity')).toBe('Infinity');
+    expect(Shapes.fromText({ type: 'integer' }, '')).toBe('');
+  });
+
+  it('touches nothing the shape does not declare a number', () => {
+    expect(Shapes.fromText({ type: 'string' }, '12')).toBe('12');
+    expect(Shapes.fromText({ type: 'integer' }, 12)).toBe(12);
+    expect(Shapes.fromText(undefined, '12')).toBe('12');
+  });
+});

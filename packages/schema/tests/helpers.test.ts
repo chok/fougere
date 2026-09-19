@@ -112,14 +112,25 @@ describe('helpers', () => {
 
   // The types refuse all four; a caller without a compiler does not have them, and these were
   // read as a smaller enum, or as options, with nothing said.
-  it('oneOf() refuses what is neither a value nor its options in last place', () => {
-    const stray: readonly (readonly unknown[])[] = [['a', 42], ['a', null], ['a', ['x']], [{ default: 'a' }, 'a']];
+  it('oneOf() takes numbers too, and reads integers as integer', () => {
+    expect(oneOf(0, 90, 180, 270).shape).toEqual({ type: 'integer', enum: [0, 90, 180, 270] });
+    expect(oneOf(0.5, 1).shape).toEqual({ type: 'number', enum: [0.5, 1] });
+    expect(oneOf(0, 90, { default: 90 }).lifecycle?.create).toEqual({ value: 90 });
+  });
+
+  it('oneOf() refuses what is neither strings, numbers nor their options in last place', () => {
+    const stray: readonly (readonly unknown[])[] = [
+      ['a', 42], ['a', null], ['a', ['x']], [{ default: 'a' }, 'a'], [true, false],
+    ];
 
     for (const args of stray)
-      expect(() => (oneOf as (...args: unknown[]) => unknown)(...args)).toThrow(/takes one value or more/);
+      expect(() => (oneOf as (...args: unknown[]) => unknown)(...args)).toThrow(/takes strings or numbers/);
 
     // @ts-expect-error an enum no value satisfies
-    expect(() => oneOf()).toThrow(/takes one value or more/);
+    expect(() => oneOf()).toThrow(/takes strings or numbers/);
+
+    // @ts-expect-error GraphQL has no union of scalars, so a set is one kind or the other
+    expect(() => oneOf('a', 1)).toThrow(/takes strings or numbers/);
   });
 
   it('ref() creates a one-relation field', () => {

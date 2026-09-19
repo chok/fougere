@@ -66,6 +66,18 @@ describe('the table', () => {
 });
 
 describe('each case', () => {
+  // A string sent to a set of integers is refused by the TYPE, and the case still passed
+  // while testing nothing about the set.
+  it('gives a numeric set an outsider of its own type, so the set is what refuses it', () => {
+    class Turn extends entity({ id: primary(), angle: oneOf(0, 90, 180, 270) }) {}
+    const outside = Cases.of(Turn, { angle: 90 }).all.find((one) => one.why === 'angle outside the stated set');
+    const result = InputValidator.of(Turn.getFields(), { patch: false }).validate(outside!.input);
+
+    expect(typeof (outside!.input as { angle: unknown }).angle).toBe('number');
+    expect(result.success).toBe(false);
+    expect(JSON.stringify(result)).toContain('0,90,180,270');
+  });
+
   it('gets from the validator the verdict it states', () => {
     for (const one of table) {
       const result = verdict(one.input, one.patch);
