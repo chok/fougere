@@ -21,6 +21,7 @@ import type { Diagnostic } from '../diagnostic.js';
 import { HandlerFacade } from '../dispatch/HandlerFacade.js';
 import { targetOf } from '../prefab/prefab.js';
 import { ownersOf, sharedNames, storageInUserCode, crudOnOwned } from './ownership.js';
+import { refuseArityDrift } from './arity.js';
 import { StorageGuard } from '../dispatch/StorageGuard.js';
 import { portBindings, seamChains, wrapping, SEAMS } from './ports.js';
 import { contractsKeyOf, facadeKeyOf } from '../wire/Facade.js';
@@ -500,6 +501,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   // Who owns what, and the rule that makes owning mean something. Before anything is
   // registered, so a bad line is named by this refusal rather than by the container's.
   sharedNames(frond, refused);
+  refuseArityDrift(frond, refused);
   const owners = ownersOf(frond.providers, frond.name, refused);
   storageInUserCode(frond, owners, (entity) => entityByName.has(entity), refused);
   crudOnOwned(frond, owners, refused);
