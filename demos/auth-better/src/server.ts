@@ -45,6 +45,7 @@ const hono = new Hono<{ Variables: Session }>();
 // Auth catch-all — better-auth handler wrapped via the AuthRuntime
 hono.all('/auth/*', async (c) => {
   const response = await app.auth!.handler(c.req.raw);
+
   return response;
 });
 
@@ -58,6 +59,7 @@ hono.use('/api/*', async (c, next) => {
     c.set('user', result.user);
     c.set('session', result.session);
   }
+
   return next();
 });
 
@@ -66,6 +68,7 @@ hono.get('/api/me', async (c) => {
   if (!user) return c.json({ error: 'Not logged in' }, 401);
   const sessions = await (app.auth!.storages.session as any).findAllBy({ userId: user.id });
   const accounts = await (app.auth!.storages.account as any).findAllBy({ userId: user.id });
+
   return c.json({
     user: { id: user.id, email: user.email, name: user.name, role: user.role },
     activeSessions: sessions.length,
@@ -77,6 +80,7 @@ hono.get('/api/notes', async (c) => {
   const user = c.get('user');
   if (!user) return c.json({ error: 'Not logged in' }, 401);
   const notes = await noteStorage.findAllBy({ userId: user.id });
+
   return c.json(notes);
 });
 
@@ -87,6 +91,7 @@ hono.post('/api/notes', async (c) => {
   const validation = CreateNote.validate(body);
   if (!validation.success) return c.json({ errors: validation.errors }, 400);
   const note = await noteStorage.create({ ...validation.data, userId: user.id as string });
+
   return c.json(note, 201);
 });
 
@@ -97,6 +102,7 @@ hono.delete('/api/notes/:id', async (c) => {
   const note = await noteStorage.findById(id);
   if (!note || (note as any).userId !== user.id) return c.json({ error: 'Not found' }, 404);
   await noteStorage.delete(id);
+
   return c.json({ success: true });
 });
 

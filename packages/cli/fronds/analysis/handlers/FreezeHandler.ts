@@ -101,6 +101,7 @@ export default class FreezeHandler {
    */
   private async read(input: Omit<Freeze, 'json'>) {
     const scan = await this.projectScan.at(input.root ?? undefined);
+
     return Promise.all(
       scan.fronds
         .filter((frond) => frond.entities.length > 0)
@@ -133,6 +134,7 @@ function declaredRenames(
     const key = lowerFirst(name);
     if (previous) out[key] = Object.fromEntries(Object.entries(previous).map(([now, was]) => [was, now]));
   }
+
   return out;
 }
 
@@ -145,6 +147,7 @@ function settled(
   for (const source of [...sources, answers]) {
     for (const [entity, pairs] of Object.entries(source)) out[entity] = { ...out[entity], ...pairs };
   }
+
   return out;
 }
 
@@ -160,6 +163,7 @@ function previousName(inspected: readonly Inspected[]): string | undefined {
 function merge(inspected: readonly Inspected[]): SetDiff | undefined {
   const steps = inspected.map(({ step }) => step).filter((step): step is SetDiff => Boolean(step));
   if (steps.length === 0) return undefined;
+
   return {
     entities: Object.assign({}, ...steps.map((step) => step.entities)),
     entitiesAdded: steps.flatMap((step) => step.entitiesAdded),
@@ -174,5 +178,6 @@ async function previousOf(root: string, version: string): Promise<{ name: string
   if (!last) return undefined;
 
   const raw = await readFile(join(root, VERSIONS, last, 'shape.json'), 'utf8').catch(() => undefined);
+
   return raw ? { name: last, bundle: JSON.parse(raw) as SchemaBundle } : undefined;
 }

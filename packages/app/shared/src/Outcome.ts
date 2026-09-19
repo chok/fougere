@@ -22,6 +22,7 @@ export type Outcome =
 /** The audience this facade serves — the path segment after `/_fougere/call`. */
 export function surfaceOf(path: string): string | undefined {
   const named = /^\/_fougere\/call\/([A-Za-z0-9_-]+)/.exec(path.replace(/\?.*$/, ''));
+
   return named?.[1];
 }
 
@@ -32,6 +33,7 @@ export function surfaceOf(path: string): string | undefined {
  */
 export async function serveRpc(app: App, request: Pick<DoorRequest, 'path' | 'body' | 'state'>): Promise<unknown> {
   const runner = createAppRunner(app, surfaceOf(request.path));
+
   return handleRpc((call, invocation) => runner(call, { ...invocation, state: request.state }), request.body);
 }
 
@@ -82,6 +84,7 @@ export async function serveRest(app: App, request: DoorRequest): Promise<Outcome
     );
   } catch (err) {
     const { status, body } = toHttpError(err);
+
     return { kind: 'error', status, body: body as { message: string } & Record<string, unknown> };
   }
 
@@ -96,6 +99,7 @@ export function shapeRest(operationName: string, result: unknown): Outcome {
   // facts ride beside the rows instead of on the array, where JSON drops them.
   if (operationName === 'list' && Array.isArray(result)) {
     const page = result as unknown as { total?: number; hasMore?: boolean; endCursor?: string };
+
     return {
       kind: 'ok',
       status: 200,
@@ -130,5 +134,6 @@ export async function invokeOn<T = unknown>(
   // An explicit `state` on the input wins over the request's — the caller who spells
   // it is answering for it, which is what makes a call outside any request possible.
   const explicit = typeof opOrInput === 'string' ? input : opOrInput;
+
   return (await createAppRunner(app)(call, { ...invocation, state: explicit?.state ?? state })) as T;
 }

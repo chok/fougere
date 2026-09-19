@@ -23,6 +23,7 @@ function makeMemoryStorage(): Storage & {
           if (av == null) return -1;
           if (bv == null) return 1;
           const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+
           return opts.order === 'desc' ? -cmp : cmp;
         });
       }
@@ -30,6 +31,7 @@ function makeMemoryStorage(): Storage & {
       if (opts?.limit !== undefined) items = items.slice(0, opts.limit);
       const result = items as ReturnType<Storage['list']> extends Promise<infer R> ? R : never;
       (result as { total?: number }).total = store.size;
+
       return result as never;
     },
     async findById(id) {
@@ -39,6 +41,7 @@ function makeMemoryStorage(): Storage & {
       const id = (input as { id?: string }).id ?? `mem-${++seq}`;
       const record = { ...input, id };
       store.set(id, record as Record<string, unknown>);
+
       return record as never;
     },
     async update(id, input) {
@@ -46,6 +49,7 @@ function makeMemoryStorage(): Storage & {
       if (!existing) throw new Error(`not found ${id}`);
       const updated = { ...existing, ...input, id };
       store.set(id, updated);
+
       return updated as never;
     },
     async delete(id) {
@@ -56,6 +60,7 @@ function makeMemoryStorage(): Storage & {
     },
     async findBy(criteria) {
       for (const row of store.values()) if (matches(row, criteria)) return row;
+
       return undefined;
     },
     async findAllBy(criteria) {

@@ -29,6 +29,7 @@ function fieldsOfPost(meta: { name: string; returnType?: string; list?: boolean 
     presenterFields: meta.map((m) => m.name),
     presenterFieldMeta: meta,
   });
+
   return (builder.toSchema().getTypeMap().Post as any).getFields();
 }
 

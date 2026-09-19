@@ -40,6 +40,7 @@ export function toPublicError(err: FougereError): ReturnType<FougereError['toJSO
   if (err.code !== ErrorCode.INTERNAL_ERROR) return err.toJSON();
   const where = [err.entity, err.operation].filter(Boolean).join('.');
   log.error(`${where || 'internal'}: ${err.message}`, err.cause ?? err);
+
   return {
     code: ErrorCode.INTERNAL_ERROR,
     message: 'Internal error',
@@ -60,5 +61,6 @@ export function toHttpError(err: unknown): { status: number; body: ReturnType<Fo
     message: (err as { message?: string })?.message ?? 'Internal error',
     cause: err,
   });
+
   return { status: 500, body: toPublicError(framed) };
 }

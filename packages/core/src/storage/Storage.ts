@@ -159,6 +159,7 @@ const HELD = 'Storage';
  */
 export function togetherKeyOf(entities: readonly string[], providers: readonly string[] = []): string {
   const named = entities.map(upperFirst).join(SEPARATOR);
+
   return `${named}${providers.length ? KINDS + providers.map(upperFirst).join(SEPARATOR) : ''}${FRAME}`;
 }
 
@@ -174,5 +175,6 @@ export function membersOfTogetherKey(key: string): { entities: string[]; provide
   if (key.length <= FRAME.length || !key.endsWith(FRAME)) return undefined;
   const [entities = '', providers = ''] = key.slice(0, -FRAME.length).split(KINDS);
   const split = (list: string) => list.split(SEPARATOR).filter(Boolean);
+
   return { entities: split(entities), providers: split(providers) };
 }

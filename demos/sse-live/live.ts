@@ -86,6 +86,7 @@ export async function serveLive(): Promise<LiveDoor> {
         res.write(`data: ${JSON.stringify({ entity })}\n\n`);
         told.push(viewer.name);
       }
+
       return told;
     },
     async close() {

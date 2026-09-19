@@ -27,6 +27,7 @@ const memory: StorageFactory = () => {
     async findById(id: string) { return rows.get(id); },
     async create(input: Record<string, unknown>) {
       rows.set(String(input.id), input);
+
       return input;
     },
     async update() { throw new Error('not exercised'); },

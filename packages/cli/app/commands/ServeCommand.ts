@@ -27,6 +27,10 @@ export default class ServeCommand {
 
   async run(raw: Record<string, unknown>) {
     const frond = raw.frond as string | undefined;
+
+
+
+
     if (!frond) { this.ui.error('Usage: fougere serve <frond>'); return; }
 
     const root = process.cwd();
@@ -39,6 +43,7 @@ export default class ServeCommand {
     let hosted = await bootApp(root, { only: [frond], topology: false });
     if (!hosted.fronds.some((f) => f.name === frond)) {
       this.ui.error(`Frond '${frond}' introuvable dans ce projet.`);
+
       return;
     }
 
@@ -56,6 +61,7 @@ export default class ServeCommand {
 
     if (!watching) {
       this.ui.info('Ctrl-C pour arrêter.');
+
       // The listening server keeps the event loop alive; the command returns and stays up.
       return;
     }
@@ -69,6 +75,7 @@ export default class ServeCommand {
         // The previous app keeps serving: a dev loop that dies on a typo is worse than
         // one that holds the last state which booted.
         this.ui.error(`reload refused — ${(error as Error).message}`);
+
         return;
       }
       const previous = hosted;

@@ -23,6 +23,7 @@ function whereToCriteria(where: readonly CleanedWhere[]): Record<string, unknown
     }
     criteria[clause.field] = clause.value;
   }
+
   return criteria;
 }
 
@@ -35,6 +36,7 @@ function storageOf(storageMap: StorageMap, model: string): Storage {
       `Plugins that ship their own schema need entities registered explicitly.`,
     );
   }
+
   return storage;
 }
 
@@ -55,6 +57,7 @@ export function fougereAdapter(storageMap: StorageMap) {
     adapter: (): CustomAdapter => ({
       create: async ({ model, data }: { model: string; data: Record<string, unknown> }) => {
         const storage = storageOf(storageMap, model);
+
         return (await storage.create(data)) as never;
       },
 
@@ -63,9 +66,11 @@ export function fougereAdapter(storageMap: StorageMap) {
         const criteria = whereToCriteria(where);
         if (Object.keys(criteria).length === 1 && 'id' in criteria) {
           const found = await storage.findById(criteria.id as string);
+
           return (found ?? null) as never;
         }
         const found = await storage.findBy(criteria);
+
         return (found ?? null) as never;
       },
 
@@ -86,6 +91,7 @@ export function fougereAdapter(storageMap: StorageMap) {
         if (where && where.length > 0) {
           const criteria = whereToCriteria(where);
           const rows = await storage.findAllBy(criteria);
+
           return applyClientSidePagination(rows, sortBy, offset, limit) as never;
         }
         const rows = await storage.list({
@@ -94,6 +100,7 @@ export function fougereAdapter(storageMap: StorageMap) {
           orderBy: sortBy?.field,
           order: sortBy?.direction,
         });
+
         return rows as never;
       },
 
@@ -102,9 +109,11 @@ export function fougereAdapter(storageMap: StorageMap) {
         if (where && where.length > 0) {
           const criteria = whereToCriteria(where);
           const rows = await storage.findAllBy(criteria);
+
           return rows.length;
         }
         const rows = await storage.list({ count: true });
+
         return rows.total ?? rows.length;
       },
 
@@ -115,6 +124,7 @@ export function fougereAdapter(storageMap: StorageMap) {
           ? await storage.findById(criteria.id as string)
           : await storage.findBy(criteria);
         if (!target) return null;
+
         return (await storage.update(target.id as string, update as Partial<Record<string, unknown>>)) as T;
       },
 
@@ -123,6 +133,7 @@ export function fougereAdapter(storageMap: StorageMap) {
         const criteria = whereToCriteria(where);
         const targets = await storage.findAllBy(criteria);
         for (const target of targets) await storage.update(target.id as string, update);
+
         return targets.length;
       },
 
@@ -140,6 +151,7 @@ export function fougereAdapter(storageMap: StorageMap) {
         const criteria = whereToCriteria(where);
         const targets = await storage.findAllBy(criteria);
         for (const target of targets) await storage.delete(target.id as string);
+
         return targets.length;
       },
     }),
@@ -169,10 +181,12 @@ function applyClientSidePagination(
       if (av == null) return -1;
       if (bv == null) return 1;
       const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+
       return direction === 'desc' ? -cmp : cmp;
     });
   }
   if (offset !== undefined) result = result.slice(offset);
   if (limit !== undefined) result = result.slice(0, limit);
+
   return result;
 }

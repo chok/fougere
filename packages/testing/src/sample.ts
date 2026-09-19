@@ -11,6 +11,7 @@ export interface SampleOptions {
 function seedOf(name: string): number {
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) | 0;
+
   return Math.abs(hash) || 1;
 }
 
@@ -62,5 +63,6 @@ export function sampleInput(
     // disagree on `readonly`, which no value crosses.
     input[name] = generateSync((field as Field).shape as JsonSchema, { seed: seed + nth++ });
   }
+
   return input;
 }

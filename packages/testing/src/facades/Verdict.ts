@@ -17,16 +17,19 @@ export interface Verdict {
 export async function verdictOf(call: () => Promise<unknown>): Promise<Verdict> {
   try {
     await call();
+
     return { success: true };
   } catch (error) {
     const refusals = validationErrorsOf(error);
     if (!refusals) throw error;
+
     return { success: false, errors: refusals };
   }
 }
 
 function opsFor(entity: SchemaView): { create: string; update: string; name: string } {
   const name = lowerFirst(entity.name ?? '');
+
   return { name, create: 'create', update: 'update' };
 }
 

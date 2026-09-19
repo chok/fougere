@@ -22,6 +22,7 @@ class Snapshot extends entity({
 
 const open = () => {
   const path = mkdtempSync(join(tmpdir(), 'fougere-file-'));
+
   return { path, source: createFileSource({ path }) };
 };
 

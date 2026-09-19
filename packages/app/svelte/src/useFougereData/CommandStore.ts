@@ -24,6 +24,7 @@ export function useCommand<
         // The link: same entity designated on both sides → revalidate its queries.
         revalidate(mountedKeys(entityKey));
         store.set({ loading: false, error: null });
+
         return result;
       } catch (err) {
         const failure = asFougereError(err, entityKey, op);

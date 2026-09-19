@@ -16,12 +16,14 @@ export default class TaskHandler extends Crud(Task) {
     if (task.status === 'done') {
       throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already done', entity: 'task', operation: 'complete' });
     }
+
     return this.storage.update(id, { status: 'done' });
   }
 
   /** Still-open tasks, projected to the card contract. */
   async open(): Promise<TaskCard[]> {
     const tasks = await this.storage.list({ where: { status: 'open' } });
+
     return tasks.map(({ id, title, status }) => ({ id, title, status }));
   }
 }

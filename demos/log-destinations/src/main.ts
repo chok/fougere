@@ -32,6 +32,7 @@ const storageFactory = () => ({
   async create(input: Record<string, unknown>) {
     const row = { ...input, id: input.id ?? `o${rows.size + 1}` };
     rows.set(String(row.id), row);
+
     return row;
   },
   async update() { throw new Error('not exercised'); },

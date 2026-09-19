@@ -22,6 +22,7 @@ export function servedEntities(app: App): { name: string; entity: SchemaView }[]
       if (addresses.has(entity.name)) served.push({ name: entity.name, entity: entity.entityClass });
     }
   }
+
   return served;
 }
 

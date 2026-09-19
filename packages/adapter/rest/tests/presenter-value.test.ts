@@ -51,6 +51,7 @@ async function getPosts(app: never) {
     },
   };
   registerRoutes(router as never, routes);
+
   return handler({ params: {}, query: {}, state: {}, body: async () => undefined });
 }
 

@@ -24,6 +24,7 @@ export function createSqliteSource(opts: SqliteSourceOptions = {}): SqliteSource
   sqlite.pragma('journal_mode = WAL');
   sqlite.pragma('foreign_keys = ON');
   const db = new Kysely<any>({ dialect: new SqliteDialect({ database: sqlite }), log: logQueries(opts.name ?? path) });
+
   return {
     db,
     sqlite,

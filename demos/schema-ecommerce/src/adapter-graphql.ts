@@ -186,6 +186,7 @@ builder.mutationType({});
       }
       // An empty patch has no SET clause to run — just hand back the current row.
       if (Object.keys(updates).length === 0) return (await productStorage.findById(id)) ?? null;
+
       return productStorage.update(id, updates);
     },
   }),

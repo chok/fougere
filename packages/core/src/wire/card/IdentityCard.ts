@@ -27,6 +27,7 @@ export function assertIdentityCard(value: unknown, source: string): IdentityCard
     if (!frond || typeof frond.name !== 'string') throw cardRefusal(source, 'a frond with no name');
     if (!Array.isArray(frond.facades)) throw cardRefusal(source, `frond '${frond.name}' has no valid facades array`);
   }
+
   return card as IdentityCard;
 }
 

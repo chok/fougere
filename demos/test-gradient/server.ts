@@ -30,12 +30,14 @@ function inputFor(field: ReturnType<typeof formFieldsOf>[number]): string {
 
   if (field.control === 'select') {
     const options = (field.options ?? []).map((one) => `<option value="${escape(one)}">${escape(one)}</option>`).join('');
+
     return `${label}<select id="${field.name}" name="${field.name}" ${attrs}>${options}</select>`;
   }
   // `attrs` porte déjà `type` quand la forme le décide : ne pas le réécrire, sinon la
   // balise en a deux et c'est la page qui a tranché.
   const type = 'type' in (field.attrs ?? {}) ? ''
     : ` type="${field.control === 'boolean' ? 'checkbox' : field.control}"`;
+
   return `${label}<input id="${field.name}" name="${field.name}"${type} ${attrs}>`;
 }
 
@@ -75,6 +77,7 @@ createServer(async (request, response) => {
   if (request.url === '/' ) {
     response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
     response.end(await page());
+
     return;
   }
   if (request.method === 'POST' && request.url === '/_fougere/call') {
@@ -83,6 +86,7 @@ createServer(async (request, response) => {
     const answer = await serveRpc(app, { path: '', body: JSON.parse(Buffer.concat(chunks).toString()), state: {} });
     response.writeHead(200, { 'content-type': 'application/json' });
     response.end(JSON.stringify(answer));
+
     return;
   }
   response.writeHead(404).end();

@@ -17,9 +17,11 @@ function validate() {
   const result = CreateProduct.validate(form);
   if (result.success) {
     errors.value = [];
+
     return result.data;
   }
   errors.value = result.errors;
+
   return null;
 }
 

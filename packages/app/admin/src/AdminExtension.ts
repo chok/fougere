@@ -40,6 +40,7 @@ function mergeExtensions(extensions: readonly AdminExtension[]): Omit<AdminExten
       }
     }
   }
+
   return merged;
 }
 
@@ -50,6 +51,7 @@ function extendFields<T extends FormField | TableColumn>(
   return fields.flatMap((field) => {
     const patch = patches?.[field.name];
     if (patch?.hidden) return [];
+
     return [{ ...field, ...(patch?.label !== undefined ? { label: patch.label } : {}) }];
   });
 }
@@ -60,6 +62,7 @@ function extendOperations(
 ): AdminOperation[] {
   return operations.map((operation) => {
     const patch = patches?.[operation.name];
+
     return {
       ...operation,
       ...(patch?.label !== undefined ? { label: patch.label } : {}),
@@ -87,6 +90,7 @@ export function applyAdminExtensions(
   return resources.map((resource) => {
     const patch = mergeExtensions(byResource.get(resource.name) ?? []);
     const operations = extendOperations(resource.operations, patch.operations);
+
     return {
       ...resource,
       ...(patch.label !== undefined ? { label: patch.label } : {}),

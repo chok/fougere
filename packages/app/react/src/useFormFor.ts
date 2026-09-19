@@ -46,6 +46,7 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
   const validator = useCallback((): boolean => {
     const result = entity.validate(payloadOf(values));
     setErrors(result.success ? {} : errorsByField(result.errors));
+
     return result.success;
   }, [entity, values]);
 
@@ -58,6 +59,7 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
       const refusals = validationErrorsOf(err);
       if (refusals) {
         setErrors(errorsByField(refusals));
+
         return null;
       }
       throw err;

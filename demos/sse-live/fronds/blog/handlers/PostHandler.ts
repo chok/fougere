@@ -28,6 +28,7 @@ export default class PostHandler {
    */
   async list(user?: User): Promise<Post[]> {
     const all = await this.posts.list();
+
     return all.filter((post) => post.status === 'published' || post.author === user?.name);
   }
 
@@ -41,6 +42,7 @@ export default class PostHandler {
     if (!user) throw new FougereError({ code: ErrorCode.UNAUTHORIZED, message: 'sign in to write' });
     const post = await this.posts.create({ ...input, author: user.name, status: 'draft' });
     await this.changed({ id: post.id, author: post.author, status: post.status, at: new Date() });
+
     return post;
   }
 
@@ -48,6 +50,7 @@ export default class PostHandler {
   async publish(id: string): Promise<Post> {
     const post = await this.posts.update(id, { status: 'published' });
     await this.changed({ id: post.id, author: post.author, status: post.status, at: new Date() });
+
     return post;
   }
 }

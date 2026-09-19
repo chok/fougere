@@ -22,6 +22,7 @@ export interface Dialect {
 function messageOf(error: unknown): string {
   const e = error as { message?: unknown; code?: unknown; cause?: unknown } | null;
   const own = `${typeof e?.message === 'string' ? e.message : ''} ${typeof e?.code === 'string' ? e.code : ''}`;
+
   // Kysely wraps a driver error, and D1 wraps it again: the wording is often one level down.
   return e?.cause ? `${own} ${messageOf(e.cause)}` : own;
 }
@@ -31,6 +32,7 @@ const KEY_LENGTH = 255;
 
 function keyLength(column: ColumnDef): number {
   const declared = column.bounds?.maxLength;
+
   return declared !== undefined && declared > 0 && declared <= KEY_LENGTH ? declared : KEY_LENGTH;
 }
 
@@ -147,6 +149,7 @@ export const dialects: Record<DialectName, Dialect> = {
 export function resolveDialect(name: DialectName): Dialect {
   const dialect = dialects[name];
   if (!dialect) throw new Error(`Unknown SQL dialect '${name}'. Known: ${Object.keys(dialects).join(', ')}`);
+
   return dialect;
 }
 

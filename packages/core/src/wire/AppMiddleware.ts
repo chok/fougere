@@ -27,7 +27,9 @@ export function runMiddlewares(
     if (index < middlewares.length) {
       return middlewares[index++](ctx, next);
     }
+
     return handler();
   };
+
   return next();
 }

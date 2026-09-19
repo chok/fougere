@@ -33,6 +33,7 @@ describe('runMiddlewares', () => {
       order.push('mw1:before');
       const result = await next();
       order.push('mw1:after');
+
       return result;
     };
 
@@ -40,11 +41,13 @@ describe('runMiddlewares', () => {
       order.push('mw2:before');
       const result = await next();
       order.push('mw2:after');
+
       return result;
     };
 
     await runMiddlewares([mw1, mw2], ctx(), async () => {
       order.push('handler');
+
       return 'done';
     });
 
@@ -88,6 +91,7 @@ describe('runMiddlewares', () => {
   it('passes context to all middlewares', async () => {
     const mw: AppMiddleware = async (ctx, next) => {
       ctx.state.touched = true;
+
       return next();
     };
 

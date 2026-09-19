@@ -22,6 +22,7 @@ type Verdict = { success: boolean; paths: string[][] };
 
 function rowVerdict<T>(result: ValidationResult<T>): Verdict {
   if (result.success) return { success: true, paths: [] };
+
   return { success: false, paths: result.errors.map((error) => [...error.path]) };
 }
 
@@ -30,6 +31,7 @@ function standardVerdict<T>(
 ): Verdict {
   if (result instanceof Promise) throw new Error('expected synchronous validation');
   if (!result.issues) return { success: true, paths: [] };
+
   return {
     success: false,
     paths: result.issues.map((issue) => (issue.path ?? [])

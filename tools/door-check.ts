@@ -40,6 +40,7 @@ const publishable = (dir: string, found: Publishable[] = []): Publishable[] => {
       if (pkg.name && pkg.private !== true) found.push({ name: pkg.name, dir });
     }
   }
+
   return found;
 };
 

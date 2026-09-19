@@ -307,7 +307,7 @@ function registerProviders(
     // of: the container resolves a dep by NAME, so wrapping is a substituted key and
     // needs nothing of the container itself. The outermost answers under the port.
     let inner = nameOf(chain.at(-1)!);
-    for (const wrapper of [...chain.slice(0, -1)].reverse()) {
+    for (const wrapper of chain.slice(0, -1).reverse()) {
       const deps = wrapper.deps.map((dep) => (dep === port ? inner : dep));
       inner = nameOf(wrapper);
       scope.register(inner, wrapper.ctor, { deps });
@@ -475,6 +475,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
       emissions.note(contractsOf(operations), key);
 
     }
+
     return;
   }
   // A child hangs off its parent, so everything the parent registered answers here too and

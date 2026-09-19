@@ -71,6 +71,7 @@ export class Dispatcher implements DispatchPort {
       this.lifecycle.publish(DispatchEvent.resolved(call, route.kind));
       const result = await route.execute(call);
       this.lifecycle.publish(DispatchEvent.completed(call, route.kind));
+
       return result;
     } catch (error) {
       this.lifecycle.publish(DispatchEvent.failed(call, error, route?.kind));

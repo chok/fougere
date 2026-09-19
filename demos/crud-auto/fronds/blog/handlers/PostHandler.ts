@@ -15,6 +15,7 @@ export default class PostHandler extends Crud(Post) {
     input: SearchByTitleInput,
   ): Promise<SearchByTitleOutput[]> {
     const all = await this.storage.list();
+
     return all
       .filter((p) =>
         String(p.title).toLowerCase().includes(input.title.toLowerCase()),
@@ -24,6 +25,7 @@ export default class PostHandler extends Crud(Post) {
 
   async publish(input: PublishInput): Promise<PublishOutput | undefined> {
     console.log(`[PostHandler] Publishing post: ${input.id}`);
+
     return await this.storage.findById(input.id);
   }
 }

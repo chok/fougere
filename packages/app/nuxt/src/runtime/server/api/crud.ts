@@ -29,5 +29,6 @@ export default defineEventHandler(async (event) => {
   }
 
   setResponseStatus(event, outcome.status);
+
   return outcome.body;
 });

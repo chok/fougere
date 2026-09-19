@@ -24,6 +24,7 @@ export class Carry {
       try {
         this.take(record);
       } catch { /* announcing never breaks logging, for the same reason a sink does not */ }
+
       return;
     }
     this.held.push(record);

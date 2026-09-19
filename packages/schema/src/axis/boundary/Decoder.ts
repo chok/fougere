@@ -33,8 +33,10 @@ Boundaries.decoders.register('isoDate', (value) => {
   if (value instanceof Date) return { value };
   if (typeof value === 'string') {
     const date = new Date(value);
+
     return Number.isNaN(date.getTime()) ? { message: 'Invalid date' } : { value: date };
   }
+
   return { message: 'Expected a date' };
 });
 Boundaries.encoders.register('isoDate', (value) =>

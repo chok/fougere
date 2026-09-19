@@ -27,6 +27,7 @@ export function json(of?: SchemaView | Shared<unknown>, opts?: Shared<unknown>):
       : field.shape;
     if (validator.onAbsent(field) === null) required.push(key);
   }
+
   return new Field({
     shape: { type: 'object', properties, ...(required.length ? { required } : {}) },
   }).setShared(shared);

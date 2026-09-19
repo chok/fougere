@@ -41,12 +41,14 @@ export async function testApp(options: TestAppOptions = {}): Promise<TestApp> {
   });
 
   const doubles = installStubs(app, options.stub ?? []);
+
   return Object.assign(app, {
     announced(fact: { name: string } | string): unknown[] {
       // A fact travels under its REGISTRATION key — `postPublished`, not `PostPublished`
       // — the same lowering every entity gets. Both spellings are accepted here and
       // lowered before comparing, so a caller may hand in the class or the name.
       const wanted = lowerFirst(typeof fact === 'string' ? fact : fact.name);
+
       return heard.filter((one) => lowerFirst(one.fact) === wanted).map((one) => one.payload);
     },
     stub<T>(port: abstract new (...args: never[]) => T): Stub<T> {
@@ -56,6 +58,7 @@ export async function testApp(options: TestAppOptions = {}): Promise<TestApp> {
           `[stub] ${(port as Port).name} was not stubbed — name it: testApp({ stub: [${(port as Port).name}] }).`,
         );
       }
+
       return found as Stub<T>;
     },
   });
@@ -64,5 +67,6 @@ export async function testApp(options: TestAppOptions = {}): Promise<TestApp> {
 /** Vitest's own answer to "which file is running", or nothing. */
 function currentTestPath(): string | undefined {
   const globals = globalThis as { __vitest_worker__?: { filepath?: string } };
+
   return globals.__vitest_worker__?.filepath;
 }

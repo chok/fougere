@@ -24,6 +24,7 @@ function parseFlags(tokens: string[]): Record<string, unknown> {
     if (next === undefined || next.startsWith('--')) out[key] = true;
     else { out[key] = next; i++; }
   }
+
   return out;
 }
 
@@ -39,6 +40,7 @@ export default class CallCommand {
     const target = raw.operation as string | undefined;
     if (!target || !target.includes('.')) {
       this.ui.error('Usage: fougere call <entity>.<op> [--field value …]');
+
       return;
     }
     const [entityName, op] = target.split('.');

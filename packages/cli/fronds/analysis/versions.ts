@@ -54,5 +54,6 @@ export async function chainOf(frondPath: string): Promise<Version[]> {
   if (adrift.length > 0) {
     throw new Error(`${directory}: ${adrift.join(', ')} follow no version in the chain that starts at ${roots[0]}.`);
   }
+
   return chain;
 }

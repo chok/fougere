@@ -44,8 +44,10 @@ export async function loadFrondConfig(frondPath: string): Promise<FrondConfig | 
     const path = resolve(frondPath, file);
     if (existsSync(path)) {
       const mod = await import(path);
+
       return mod.default ?? mod;
     }
   }
+
   return undefined;
 }

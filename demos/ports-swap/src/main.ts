@@ -27,6 +27,10 @@ const storageFactory = (() => {
     async findAllBy() { return []; },
     async findByKeys() { return new Map(); },
     async findAllByKeys() { return new Map(); },
+
+
+
+
     async create(input: Record<string, unknown>) { rows.push(input); return input; },
     async upsert(input: Record<string, unknown>) { return input; },
     async upsertAll() { return 0; },
@@ -48,6 +52,7 @@ const pay = async (ports?: Record<string, string | readonly string[]>) => {
   const app = await booted(ports);
   const out = await createLocalRunner(app)({ entity: 'checkout', op: 'pay' }, Invocation.empty);
   await app.dispose();
+
   return out;
 };
 

@@ -37,6 +37,7 @@ export function identityCardOf(app: App, surface?: string): IdentityCard {
           const ops = facadeOps(app, address, surface);
           if (ops.length === 0) return [];
           const entity = byEntity.get(address);
+
           return [{
             name: address,
             ops,
@@ -47,6 +48,7 @@ export function identityCardOf(app: App, surface?: string): IdentityCard {
         /** What leaves on its own — the same list on every surface, deliberately. */
         facts: factsAnnouncedBy(frond.handlers).map((name) => {
           const entityClass = declared.get(name);
+
           return { name, ...(entityClass ? { schema: Card.fromSchema(entityClass, name).descriptor } : {}) };
         }),
       };

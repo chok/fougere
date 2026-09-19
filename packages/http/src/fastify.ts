@@ -43,6 +43,7 @@ function buildContext(req: any): RequestContext {
           ...(hasBody && req.body !== undefined ? { body: JSON.stringify(req.body) } : {}),
         });
       }
+
       return request;
     },
     method: method as HttpMethod,

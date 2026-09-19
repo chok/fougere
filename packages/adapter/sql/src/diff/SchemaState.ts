@@ -9,5 +9,6 @@ export async function actualState(db: Kysely<any>): Promise<SchemaState> {
     if (table.isView) continue;
     state.set(table.name, new Set(table.columns.map((column) => column.name)));
   }
+
   return state;
 }

@@ -16,6 +16,7 @@ function setup(execute: Route['execute']) {
   const events: DispatchEvent[] = [];
   const inFlight = new InFlight();
   routes.register(route);
+
   return {
     call: new Call(address),
     dispatcher: new Dispatcher(

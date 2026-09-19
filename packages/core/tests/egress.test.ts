@@ -50,6 +50,7 @@ export default class SecretHandler extends Crud(Secret) {
   writeFileSync(join(frond, 'frond.config.js'), `
 export default { operations: { audit: { kind: 'query' } } };
 `);
+
   return root;
 }
 
@@ -68,6 +69,7 @@ async function boot(root: string) {
     output: () => storage,
   };
   const app = await createApp({ scan: await scanProject(root), createContainer, storageFactory: (() => storage) as unknown as StorageFactory });
+
   return { app, run: createLocalRunner(app) };
 }
 

@@ -18,6 +18,7 @@ function resultFetcher(
   return async <T,>(_url: string, options: { method: 'POST'; body: unknown }): Promise<T> => {
     const call = options.body as SentCall & { id: number };
     sent.push(call);
+
     return { jsonrpc: '2.0', id: call.id, result: answer(call) } as T;
   };
 }
@@ -88,6 +89,7 @@ describe('the Fougere data provider', () => {
       options: { method: 'POST'; body: unknown },
     ): Promise<T> => {
       const call = options.body as { id: number };
+
       return {
         jsonrpc: '2.0',
         id: call.id,

@@ -47,6 +47,7 @@ function build(userDoor: Record<string, Function>) {
   registerAll(builder, app);
   const schema = builder.toSchema();
   const relation = (schema.getTypeMap()['Order'] as any).getFields().user;
+
   return { orders, relation };
 }
 
@@ -62,6 +63,7 @@ describe('a relation is read by the page', () => {
       list: async (inv: any) => {
         const ids = inv.query.where.id;
         calls.push(ids);
+
         return ids.map((id: string) => ({ id, name: `name-${id}` }));
       },
     });
@@ -80,6 +82,7 @@ describe('a relation is read by the page', () => {
     const { orders, relation } = build({
       list: async (inv: any) => {
         seen.push(inv.query.where.id);
+
         return inv.query.where.id.map((id: string) => ({ id, name: id }));
       },
     });
@@ -108,6 +111,10 @@ describe('a relation is read by the page', () => {
   it('a facade that serves no list keeps the row-at-a-time path rather than losing the relation', async () => {
     let perRow = 0;
     const { orders, relation } = build({
+
+
+
+
       findById: async (inv: any) => { perRow++; return { id: inv.params.id, name: 'one by one' }; },
     });
 
@@ -145,6 +152,7 @@ describe('the many side of a relation', () => {
           list: async (inv: any) => {
             const keys = inv.query.where.shelfId;
             calls.push(keys);
+
             return slots.filter((s) => keys.includes(s.shelfId));
           },
         }

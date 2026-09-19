@@ -12,6 +12,7 @@ export class AppLifecycle {
       if (at === -1) this.members.push(extension);
       else this.members[at] = extension;
     }
+
     return this;
   }
 

@@ -3,6 +3,7 @@ export default class SlowHandler {
   /** Take a while, then answer. */
   async work(): Promise<{ done: boolean }> {
     await new Promise((resolve) => setTimeout(resolve, 40));
+
     return { done: true };
   }
 
@@ -14,6 +15,7 @@ export default class SlowHandler {
   /** Never answer — what a drain with a deadline is for. */
   async hang(): Promise<{ done: boolean }> {
     await new Promise(() => {});
+
     return { done: true };
   }
 }

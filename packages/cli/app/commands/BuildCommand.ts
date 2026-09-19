@@ -27,6 +27,7 @@ export default class BuildCommand {
 
     if (built.fronds.length === 0) {
       this.ui.warn('No fronds found. Run this from a Fougere project root.');
+
       return;
     }
 

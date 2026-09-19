@@ -47,6 +47,7 @@ function build(fronds: { name: string; handler: string; overrides?: Record<strin
   builder.queryType({});
   builder.mutationType({});
   registerAll(builder, app);
+
   return builder.toSchema();
 }
 

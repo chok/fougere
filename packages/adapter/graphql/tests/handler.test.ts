@@ -88,6 +88,7 @@ function pickOps(ops: Map<string, any>, names: string[]): Map<string, any> {
     const entry = ops.get(name);
     if (entry) result.set(name, entry);
   }
+
   return result;
 }
 
@@ -100,6 +101,7 @@ function withCustomOps(
   for (const [name, meta] of Object.entries(custom)) {
     result.set(name, meta);
   }
+
   return result;
 }
 
@@ -115,6 +117,7 @@ function fakeApp(
       address: e.name,
       operations: crudOps(e.entityClass.name, e.entityClass),
     }));
+
   return {
     fronds: [{ name: 'test', entities, handlers: effectiveHandlers, presenters: [], surfaces }],
     resolve: <T>(name: string) => facades[name] as unknown as T,
@@ -125,6 +128,7 @@ function fakeApp(
       const own = facades[`${surface}:${entity}Handler`];
       const declared = surfaces?.[surface];
       if (!declared) return own;
+
       return declared.some((n) => n.toLowerCase() === entity.toLowerCase())
         ? (own ?? facades[`${entity}Handler`])
         : undefined;
@@ -642,6 +646,7 @@ describe('registerAll', () => {
         ...fakeCrud(authorData),
         list: vi.fn(async (ctx: any) => {
           const ids = ctx?.query?.where?.id;
+
           return ids ? authorData.filter((d) => ids.includes(d.id)) : authorData;
         }),
         findById: vi.fn(async (ctx: any) => authorData.find((d) => d.id === ctx.params.id)),

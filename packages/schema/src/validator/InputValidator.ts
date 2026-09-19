@@ -24,6 +24,7 @@ export class InputValidator {
     if (Boundary.of(field).readOnly) return 'skip';
     if (!Lifecycle.of(field).requiredAtCreate) return 'skip';
     if (Role.of(field).isCollection) return 'empty-list';
+
     return null;
   }
 

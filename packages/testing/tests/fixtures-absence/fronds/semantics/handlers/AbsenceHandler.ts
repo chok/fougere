@@ -4,6 +4,7 @@ import Presence from '../entities/Presence.js';
 function observed(value: unknown): string {
   if (value === undefined) return 'undefined';
   if (value === null) return 'null';
+
   return String(value);
 }
 

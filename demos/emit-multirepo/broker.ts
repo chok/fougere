@@ -51,6 +51,7 @@ createServer(async (req, res) => {
     for (const entry of missed) send(res, entry);
 
     req.on('close', () => live.delete(res));
+
     return;
   }
 
@@ -69,6 +70,7 @@ createServer(async (req, res) => {
     // this file that held nothing: `reached === 0` is no longer a fact lost.
     console.log(`\x1b[35m[broker]\x1b[0m #${entry.seq} ${topic} → ${reached} online, kept in the log`);
     res.writeHead(204).end();
+
     return;
   }
 
@@ -79,6 +81,7 @@ createServer(async (req, res) => {
     if (seq > (cursor.get(name) ?? 0)) cursor.set(name, seq);
     console.log(`\x1b[35m[broker]\x1b[0m   ${name} acked #${seq}`);
     res.writeHead(204).end();
+
     return;
   }
 

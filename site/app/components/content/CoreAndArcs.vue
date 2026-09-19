@@ -68,6 +68,7 @@ const stream = (
     const onRing = at(ray.deg, ring / 2);
     const word = at(ray.deg, ring / 2 + 58);
     const [from, to] = outward ? [onRing, word] : [word, onRing];
+
     return { ...ray, paths: arrow(from.x, from.y, to.x, to.y, seed0 + i * 3), tip: at(ray.deg, ring / 2 + 70) };
   });
 

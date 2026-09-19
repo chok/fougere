@@ -27,6 +27,7 @@ const said = (fn: () => void): string[] => {
     .map((method) => vi.spyOn(console, method).mockImplementation(take));
   fn();
   for (const spy of spies) spy.mockRestore();
+
   return lines;
 };
 

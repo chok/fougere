@@ -22,6 +22,7 @@ function payloadTooLarge(): Error & { statusCode: number; statusMessage: string 
 
 function parseRawJson(raw: string): unknown {
   if (Buffer.byteLength(raw) > MAX_BODY_BYTES) throw payloadTooLarge();
+
   return raw ? JSON.parse(raw) : {};
 }
 
@@ -44,6 +45,7 @@ async function readWebBody(req: WebReq): Promise<unknown> {
       }
       chunks.push(chunk);
     }
+
     return parseRawJson(Buffer.concat(chunks).toString('utf8'));
   }
 
@@ -52,6 +54,7 @@ async function readWebBody(req: WebReq): Promise<unknown> {
   // check above still rejects declared oversized payloads; standard Request objects
   // take the streamed branch and enforce the limit while reading.
   if (typeof req.json === 'function') return req.json();
+
   return {};
 }
 
@@ -62,11 +65,13 @@ async function readJsonBody(event: { req?: unknown; node?: { req?: unknown } }):
   const preset = nodeReq?.body;
   if (typeof preset === 'string') {
     if (Buffer.byteLength(preset) > MAX_BODY_BYTES) throw payloadTooLarge();
+
     return parseRawJson(preset);
   }
   if (preset instanceof Uint8Array) {
     if (preset.byteLength > MAX_BODY_BYTES) throw payloadTooLarge();
     const raw = Buffer.from(preset).toString('utf8');
+
     return parseRawJson(raw);
   }
   const webReq = event.req && typeof event.req === 'object' ? event.req as WebReq : undefined;
@@ -86,6 +91,7 @@ async function readJsonBody(event: { req?: unknown; node?: { req?: unknown } }):
         if (size > MAX_BODY_BYTES) {
           exceeded = true;
           reject(payloadTooLarge());
+
           return;
         }
         chunks.push(buffer);
@@ -93,8 +99,10 @@ async function readJsonBody(event: { req?: unknown; node?: { req?: unknown } }):
       nodeReq.on!('end', () => { if (!exceeded) resolve(Buffer.concat(chunks).toString('utf8')); });
       nodeReq.on!('error', reject);
     });
+
     return parseRawJson(raw);
   }
+
   return {};
 }
 
@@ -108,6 +116,7 @@ export default defineEventHandler(async (event) => {
     });
   } catch (err) {
     if ((err as { statusCode?: number })?.statusCode === 413) throw err;
+
     return rpcParseError();
   }
 });

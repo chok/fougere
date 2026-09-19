@@ -115,6 +115,7 @@ describe('a line carries the call it was written inside', () => {
         log.info('about to list');
         sent.push({ traceId: currentSpan()?.traceId });
       }
+
       return next();
     });
 

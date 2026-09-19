@@ -82,6 +82,7 @@ export async function handleRpc(runner: Transport, raw: unknown, options: Receiv
           cause: err,
         });
     const data = toPublicError(failure);
+
     return { jsonrpc: '2.0', id, error: { code: APP_ERROR, message: data.message, data } };
   }
 }
@@ -91,5 +92,6 @@ function refused(id: string | number, why: string, entity: string, op: string): 
   const data = toPublicError(
     new FougereError({ code: ErrorCode.UNAUTHORIZED, message: `Refused: ${why}`, entity, operation: op }),
   );
+
   return { jsonrpc: '2.0', id, error: { code: APP_ERROR, message: data.message, data } };
 }

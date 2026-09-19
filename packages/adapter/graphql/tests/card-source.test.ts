@@ -32,6 +32,7 @@ class Post extends entity({
 /** The app shape both sources produce — only `entityClass` differs. */
 function fakeApp(authorSchema: unknown, postSchema: unknown) {
   const facade = { list: async () => [], findById: async () => undefined };
+
   return {
     fronds: [{
       name: 'blog',
@@ -57,6 +58,7 @@ function schemaFrom(app: any) {
   builder.queryType({});
   builder.mutationType({});
   registerAll(builder, app);
+
   return builder.toSchema();
 }
 

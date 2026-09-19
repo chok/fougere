@@ -11,6 +11,7 @@ export function requireUser(user: User | undefined, operation: string): User {
   if (!user) {
     throw new FougereError({ code: ErrorCode.UNAUTHORIZED, message: 'Sign in to write', entity: 'post', operation });
   }
+
   return user;
 }
 
@@ -22,6 +23,7 @@ export async function requireOwn(posts: PostRepository, id: string, author: User
   if (post.authorId !== author.id) {
     throw new FougereError({ code: ErrorCode.FORBIDDEN, message: 'Only the author can do that', entity: 'post', operation });
   }
+
   return post;
 }
 

@@ -188,12 +188,14 @@ export class HandlerFacade {
       operation?.outputClosed ?? false,
     );
     this.cachedViews.set(op, resolved);
+
     return resolved;
   }
 
   /** The handler itself, resolved on first call — never at boot. */
   private resolveHandler(): any {
     if (!this.instance) this.instance = this.scope.resolve(this.handlerKey);
+
     return this.instance;
   }
 
@@ -216,6 +218,7 @@ export class HandlerFacade {
         + `${operation.implementation.method}, but boot found ${matches.length} matching handlers.`,
       );
     }
+
     return matches[0]!;
   }
 
@@ -233,6 +236,7 @@ export class HandlerFacade {
       instance = this.scope.resolve(key);
       this.implementationInstances.set(key, instance);
     }
+
     return { instance, method: operation.implementation.method };
   }
 }

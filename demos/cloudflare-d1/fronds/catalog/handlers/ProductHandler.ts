@@ -8,6 +8,7 @@ export default class ProductHandler extends Crud(Product) {
   async toggle(input: ListedInput): Promise<Product | undefined> {
     const product = await this.storage.findById(input.id);
     if (!product) return undefined;
+
     return this.storage.update(input.id, { listed: !product.listed });
   }
 }

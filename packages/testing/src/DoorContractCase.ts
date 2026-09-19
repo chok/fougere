@@ -12,6 +12,7 @@ import type { DoorInput } from './DoorInput.js';
 function rowsOf(value: unknown): unknown {
   if (Array.isArray(value)) return [...value];
   const page = value as { items?: unknown } | null;
+
   return page && typeof page === 'object' && 'items' in page ? page.items : value;
 }
 
@@ -22,6 +23,7 @@ const wire = (value: unknown): unknown => JSON.parse(JSON.stringify(value ?? nul
 function written(value: unknown, sent: Record<string, unknown>): unknown {
   const row = value as Record<string, unknown> | null;
   if (!row || typeof row !== 'object') return wire(row);
+
   return wire(Object.fromEntries(Object.keys(sent).map((key) => [key, row[key]])));
 }
 
@@ -147,6 +149,10 @@ export function checkDoorContract(
 }
 
 async function refused(call: () => Promise<unknown>): Promise<boolean> {
+
+
+
+
   try { await call(); return false; } catch { return true; }
 }
 
@@ -171,6 +177,7 @@ function facadesOf(app: App, entity: SchemaView, name: string, surface?: string)
         state,
       }) as { result?: unknown; error?: { message: string } };
       if (answer.error) throw new Error(answer.error.message);
+
       return answer.result;
     },
 
@@ -183,6 +190,7 @@ function facadesOf(app: App, entity: SchemaView, name: string, surface?: string)
 
       const answer = await serveRest(app, { method: route.method, path, query: {}, body: call?.input, state });
       if (answer.kind !== 'ok') throw new Error(`[checkDoors] REST answered ${answer.kind} on ${name}.${op}`);
+
       return answer.body;
     },
 
@@ -196,6 +204,7 @@ function facadesOf(app: App, entity: SchemaView, name: string, surface?: string)
 
       const answer = await executeOn(app as never, { query: built.query, state });
       if (answer.errors?.length) throw new Error(`[checkDoors] GraphQL: ${answer.errors[0].message}`);
+
       return at(answer.data, built.at);
     },
   };

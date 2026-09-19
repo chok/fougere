@@ -35,14 +35,24 @@ export function ui(options?: UiTheme) {
     /** Text input. */
     async text(opts: { message: string; placeholder?: string; defaultValue?: string; validate?: (value: string) => string | undefined }) {
       const result = await clack.text(opts);
+
+
+
+
       if (clack.isCancel(result)) { this.cancel(); return ''; }
+
       return result as string;
     },
 
     /** Yes/no confirmation. */
     async confirm(opts: { message: string; initialValue?: boolean }) {
       const result = await clack.confirm(opts);
+
+
+
+
       if (clack.isCancel(result)) { this.cancel(); return false; }
+
       return result as boolean;
     },
 
@@ -53,7 +63,12 @@ export function ui(options?: UiTheme) {
       initialValue?: string;
     }) {
       const result = await clack.select(opts as Parameters<typeof clack.select>[0]);
+
+
+
+
       if (clack.isCancel(result)) { this.cancel(); return ''; }
+
       return result as string;
     },
 
@@ -64,7 +79,12 @@ export function ui(options?: UiTheme) {
       required?: boolean;
     }) {
       const result = await clack.multiselect(opts as Parameters<typeof clack.multiselect>[0]);
+
+
+
+
       if (clack.isCancel(result)) { this.cancel(); return [] as string[]; }
+
       return result as string[];
     },
 
@@ -74,6 +94,7 @@ export function ui(options?: UiTheme) {
     spinner(message?: string) {
       const s = clack.spinner();
       s.start(message);
+
       return {
         update: (msg: string) => s.message(msg),
         stop: (msg?: string) => s.stop(msg),

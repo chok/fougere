@@ -3,6 +3,7 @@ import type { RouteAddressInput } from './RouteAddressInput.js';
 /** Refuses an empty segment, so no address can be built that nothing can serve. */
 function required(value: string, name: string): string {
   if (value.trim().length === 0) throw new TypeError(`Route ${name} cannot be empty`);
+
   return value;
 }
 
@@ -38,6 +39,7 @@ export class RouteAddress {
   /** Writes the address the way a log and an error message name it. */
   toString(): string {
     const audience = this.surface ? `${this.surface}/` : '';
+
     return `${audience}${this.entity}.${this.operation}`;
   }
 

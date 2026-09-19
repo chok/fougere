@@ -38,6 +38,7 @@ export function queryFieldFor(
     const takesId = field.args.some((arg) => arg.name === 'id');
     if (op === 'findById' ? takesId : !takesId) return field.name;
   }
+
   return undefined;
 }
 
@@ -45,6 +46,7 @@ export function queryFieldFor(
 export function listQuery(schema: Introspectable, entity: SchemaView): { query: string; at: string[] } | undefined {
   const field = queryFieldFor(schema, entity, 'list');
   if (!field) return undefined;
+
   // The list type wraps its rows — `ProductList { items }` — so the reader below has to
   // be told where to look rather than assume the answer IS the rows.
   return { query: `{ ${field} { items { ${selectionOf(entity)} } } }`, at: [field, 'items'] };
@@ -54,6 +56,7 @@ export function listQuery(schema: Introspectable, entity: SchemaView): { query: 
 export function findQuery(schema: Introspectable, entity: SchemaView, id: string): { query: string; at: string[] } | undefined {
   const field = queryFieldFor(schema, entity, 'findById');
   if (!field) return undefined;
+
   return { query: `{ ${field}(id: ${JSON.stringify(id)}) { ${selectionOf(entity)} } }`, at: [field] };
 }
 
@@ -66,6 +69,7 @@ export function at(data: unknown, path: string[]): unknown {
 export function mutationFieldFor(schema: Introspectable, entity: SchemaView, op: string): string | undefined {
   const fields = schema.getMutationType?.()?.getFields() ?? {};
   const candidates = [`${op}${entity.name}`, op];
+
   return candidates.find((name) => name in fields);
 }
 
@@ -87,6 +91,7 @@ export function mutationFor(
   // `delete` answers a Boolean, which takes no sub-selection — asking for one is a syntax
   // error, and the schema is what says which case this is.
   const scalar = String(schema.getMutationType?.()?.getFields()[field]?.type ?? '').replace(/[!]/g, '') === 'Boolean';
+
   return { query: `mutation { ${call}${scalar ? '' : ` { ${selectionOf(entity)} }`} }`, at: [field] };
 }
 
@@ -106,5 +111,6 @@ function literalOf(value: unknown, enums: Set<string> = new Set(), key?: string)
     return `{${Object.entries(value as Record<string, unknown>)
       .map(([name, one]) => `${name}: ${literalOf(one, enums, name)}`).join(', ')}}`;
   }
+
   return JSON.stringify(value);
 }

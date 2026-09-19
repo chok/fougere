@@ -40,6 +40,7 @@ export interface AdminResource extends ResourceKey {
 
 function labelOf(name: string): string {
   const words = name.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/[-_]+/g, ' ');
+
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
@@ -57,6 +58,7 @@ export function actionsOf(operations: readonly AdminOperation[]): AdminOperation
 /** Capabilities are a reading of the visible operations, never a second list to maintain. */
 export function capabilitiesOf(operations: readonly Pick<AdminOperation, 'name'>[]): AdminResource['can'] {
   const serves = new Set(operations.map((op) => op.name));
+
   return {
     list: serves.has('list'),
     show: serves.has('findById'),
@@ -94,6 +96,7 @@ export function resourcesOf(card: IdentityCard): AdminResource[] {
       });
     }
   }
+
   return out;
 }
 

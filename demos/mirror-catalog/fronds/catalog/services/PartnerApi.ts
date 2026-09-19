@@ -9,6 +9,7 @@ export default class PartnerApi {
     const query = new URLSearchParams({ page: String(page) });
     if (since) query.set('since', since.toISOString());
     const response = await fetch(`${this.base}/books?${query}`);
+
     return await response.json() as { items: Record<string, unknown>[]; next: number | null };
   }
 }

@@ -348,6 +348,7 @@ export default module;
 /** What of the config a generated plugin can carry: values, never providers. */
 function carried(config: FougereConfig): Partial<FougereConfig> {
   const { fronds, adapters, sources, logLevel } = config as FougereConfig & { sources?: unknown };
+
   return {
     ...(fronds ? { fronds } : {}),
     ...(adapters ? { adapters } : {}),
@@ -376,6 +377,7 @@ async function syncedEntityNames(rootDir: string, conventions: Conventions): Pro
         if (name !== file) names.push(name);
       }
     }
+
     return names;
   } catch {
     return [];
@@ -429,6 +431,7 @@ export function generateBootPlugin(
     const states = statedPath ? 'fronds, ' : '';
     lines.push(`  configureFougere({ ${states}config: ${JSON.stringify(carried(config))} });`);
     lines.push(`});`);
+
     return lines.join('\n') + '\n';
   }
 

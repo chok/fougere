@@ -20,6 +20,7 @@ function fixture() {
     use: vi.fn() as never,
     on(method, path, handler) { handlers.set(`${method} ${path}`, handler); },
   };
+
   return { schema, mutate, router, handlers };
 }
 

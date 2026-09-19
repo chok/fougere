@@ -38,6 +38,7 @@ function primaryColumnOf(target: Partial<SchemaView>): string {
   for (const [name, field] of Object.entries(target.getFields())) {
     if (Role.of(field).isPrimary) return toSnakeCase(name);
   }
+
   return 'id'; // declared no primary() field — defensive, shouldn't happen
 }
 
@@ -77,6 +78,7 @@ function referenceFor(
   }
   const table = mapped ?? resolve(lowerFirst(target.name ?? ''));
   const column = primaryColumnOf(target);
+
   return role.onDelete ? { table, column, onDelete: role.onDelete } : { table, column };
 }
 
@@ -113,6 +115,7 @@ function toColumn(
   const references = referenceFor(field, resolve, tableNameOf, hosted);
   if (references) column.references = references;
   if (stated) column.stated = stated;
+
   return column;
 }
 
@@ -208,6 +211,7 @@ export function toTables(app: AppLike, resolve: (name: string) => string): Table
   const hosted = app.elsewhere
     ? { here: new Set(entries.map((entry) => lowerFirst(entry.name))), elsewhere: new Set(app.elsewhere.map(lowerFirst)) }
     : undefined;
+
   return entries.map((entry) => toTable(resolve(entry.name), entry.entityClass, { resolve, tableNameOf, hosted }));
 }
 

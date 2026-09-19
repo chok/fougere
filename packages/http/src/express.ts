@@ -41,6 +41,7 @@ export function readRawBody(req: any): Promise<string> {
       if (size > MAX_BODY_BYTES) {
         exceeded = true;
         reject(Object.assign(new Error('Payload too large'), { statusCode: 413 }));
+
         return;
       }
       chunks.push(Buffer.from(chunk));
@@ -71,6 +72,7 @@ export function readExpressBody(req: any): Promise<unknown> {
       throw new MalformedJsonError({ cause });
     }
   })();
+
   return req.__fougereBody;
 }
 
@@ -100,6 +102,7 @@ function buildContext(req: any): RequestContext {
           ),
         });
       }
+
       return request;
     },
     method: verb as HttpMethod,
@@ -151,10 +154,12 @@ export function createExpressRouter(app: ExpressLike): HttpRouter {
           // one. Fastify's own parser answers before we ever see the request.
           if (err instanceof MalformedJsonError) {
             sendResponse(res, { status: 400, data: { code: 'BAD_REQUEST', message: 'Malformed JSON body' } });
+
             return;
           }
           if ((err as { statusCode?: number })?.statusCode === 413) {
             sendResponse(res, { status: 413, data: { code: 'PAYLOAD_TOO_LARGE', message: 'Payload too large' } });
+
             return;
           }
           // Anything else goes to Express's error pipeline rather than crashing the

@@ -44,6 +44,7 @@ const storageFactory: StorageFactory = () => {
     client: undefined,
     output: () => storage,
   } as Storage;
+
   return storage;
 };
 
@@ -51,6 +52,7 @@ const storageFactory: StorageFactory = () => {
 async function shopOnAnotherProcess(): Promise<Transport> {
   // Plain `const` — this app must outlive the function that builds it.
   const host = await createApp({ scan: await scanProject(root), createContainer, storageFactory });
+
   return createLocalRunner(host);
 }
 
@@ -67,6 +69,7 @@ function verdictOf(outcome: unknown, error: unknown): Verdict {
   const err = error as FougereError;
   const raw = err.details ?? [];
   const errors = (Array.isArray(raw) ? raw : []) as { path: string[]; message: string }[];
+
   return {
     ok: false,
     errors: errors
@@ -84,6 +87,7 @@ function browserVerdict(input: unknown): Verdict {
     | { success: true }
     | { success: false; errors: { path: string[]; message: string }[] };
   if (result.success) return { ok: true, errors: [] };
+
   return {
     ok: false,
     errors: result.errors
@@ -95,6 +99,7 @@ function browserVerdict(input: unknown): Verdict {
 async function validator(run: ReturnType<typeof createLocalRunner>, op: string, input: unknown): Promise<Verdict> {
   try {
     const out = await run({ entity: 'product', op }, { ...Invocation.empty, input });
+
     return verdictOf(out, undefined);
   } catch (e) {
     return verdictOf(undefined, e);

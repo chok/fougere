@@ -47,6 +47,7 @@ export class Boundary {
 
     const alias = Boundaries.aliases.find(ref);
     if (!alias) throw new SchemaError(`Unknown boundary alias: '${ref}'`);
+
     return new Boundary(alias);
   }
 
@@ -57,6 +58,7 @@ export class Boundary {
       in: declared.rules.in ?? derived.rules.in,
       out: declared.rules.out ?? derived.rules.out,
     };
+
     return new Boundary(rules, {
       decode:
         typeof rules.in === 'object'
@@ -72,6 +74,7 @@ export class Boundary {
   /** `date-time` means a `Date` on both sides, without a word in the entity. */
   static forShape(shape: Shape | undefined): Boundary {
     if (Shapes.typeOf(shape) === 'date') return new Boundary(Boundaries.aliases.resolve('isoDate'));
+
     return new Boundary();
   }
 

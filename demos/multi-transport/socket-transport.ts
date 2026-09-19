@@ -22,6 +22,7 @@ import { frameCall, unframeResponse, handleRpc, type RpcResponse } from '@fouger
 /** One JSON value per line — the whole framing a stream protocol needs. */
 function lines(onLine: (raw: string) => void): (chunk: Buffer) => void {
   let buffer = '';
+
   return (chunk) => {
     buffer += chunk.toString('utf8');
     let cut: number;
@@ -42,6 +43,7 @@ export function serveSocket(runner: Transport, port = 0): Promise<{ port: number
     }));
     socket.on('error', () => socket.destroy());
   });
+
   return new Promise((resolve) => {
     server.listen(port, '127.0.0.1', () => {
       const address = server.address();
@@ -102,9 +104,11 @@ export function createSocketTransport(
     });
 
     if (outcome.error) throw outcome.error;
+
     return unframeResponse(outcome.response!, call);
   }) as Transport & { close(): void };
 
   transport.close = () => socket.destroy();
+
   return transport;
 }

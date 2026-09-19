@@ -98,6 +98,7 @@ function onSource(step: SetDiff, source: string, sourceOf: (entity: string) => s
 /** Every recorded step, oldest first — the chain composes, so it is replayed whole. */
 async function stepsOf(frondPath: string): Promise<{ version: string; step: SetDiff }[]> {
   const chain = await chainOf(frondPath);
+
   // The first version has a shape and no step — there was nothing before it to move from.
   return chain.flatMap(({ name, step }) => (step ? [{ version: name, step }] : []));
 }

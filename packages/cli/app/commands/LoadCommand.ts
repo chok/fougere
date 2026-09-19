@@ -28,11 +28,13 @@ export default class LoadCommand {
 
     if (result.operations.length === 0) {
       this.ui.warn('No operation answers the default facade — nothing to put under load.');
+
       return;
     }
 
     if (!result.file) {
       process.stdout.write(result.script);
+
       return;
     }
 

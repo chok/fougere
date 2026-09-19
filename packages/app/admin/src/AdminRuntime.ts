@@ -24,6 +24,7 @@ export function createAdminRuntime(options: AdminRuntimeOptions = {}): AdminRunt
   const load = (): Promise<LoadedAdmin> => loading ??= fetchCard(endpoint, fetcher)
     .then((card) => {
       const resources = applyAdminExtensions(resourcesOf(card), extensions);
+
       return {
         resources,
         provider: createDataProvider({ resources: keysOf(resources), endpoint, fetcher }),

@@ -19,6 +19,7 @@ function guardedStorage() {
   // which are precisely what these tests send.
   const list = vi.fn(async (_options?: ListOptions & Record<string, unknown>) => []);
   const storage = { list, create: vi.fn(async () => ({})), update: vi.fn(async () => ({})) };
+
   return { storage, guarded: new StorageGuard(Line.getFields(), 'line').guard(storage) };
 }
 

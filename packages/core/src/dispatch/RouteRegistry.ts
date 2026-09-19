@@ -35,6 +35,7 @@ export class RouteRegistry {
       entity: address.entity,
       operation: address.operation,
     }).key());
+
     return shared?.kind === 'system' ? shared : undefined;
   }
 
@@ -48,6 +49,7 @@ export class RouteRegistry {
 
     const resolution = this.resolveUnknown(address).finally(() => this.pending.delete(key));
     this.pending.set(key, resolution);
+
     return resolution;
   }
 
@@ -56,8 +58,10 @@ export class RouteRegistry {
       const route = await resolver(address);
       if (!route) continue;
       this.register(route);
+
       return route;
     }
+
     return undefined;
   }
 

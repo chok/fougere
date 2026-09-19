@@ -16,7 +16,9 @@ export function mergeAdminFacets(base: AdminFacets, patch: AdminFacets): AdminFa
     if (!isObject(left) || !isObject(right)) return right;
     const out: Record<string, unknown> = { ...left };
     for (const [key, value] of Object.entries(right)) out[key] = merge(out[key], value);
+
     return out;
   };
+
   return merge(base, patch) as AdminFacets;
 }

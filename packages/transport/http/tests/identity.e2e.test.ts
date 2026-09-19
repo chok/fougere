@@ -27,6 +27,7 @@ const runner: Transport = async (_call, invocation) => ({
 /** What `fougere keys issue <name>` produces, and what a deployment injects. */
 function issue(rootPrivateKey: string, name: string): FrondIdentity {
   const pair = generateKeyPair();
+
   return { privateKey: pair.privateKey, grant: issueGrant(rootPrivateKey, name, pair.publicKey) };
 }
 
@@ -55,6 +56,7 @@ async function post(params: unknown): Promise<{ result?: unknown; error?: { data
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'post.list', params }),
   });
+
   return res.json() as Promise<{ result?: unknown; error?: { data?: { code?: string } } }>;
 }
 
@@ -139,6 +141,7 @@ describe('a receiver that establishes nothing', () => {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'post.list', params }),
     });
+
     return (await res.json()) as { result: { state: unknown; caller?: string } };
   };
 

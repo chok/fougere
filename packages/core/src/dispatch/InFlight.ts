@@ -23,6 +23,7 @@ export class InFlight {
 
     this.running++;
     let released = false;
+
     return () => {
       if (released) return;
       released = true;
@@ -41,6 +42,7 @@ export class InFlight {
 
   whenIdle(): Promise<void> {
     if (this.running === 0) return Promise.resolve();
+
     return new Promise((resolve) => this.idle.push(resolve));
   }
 }

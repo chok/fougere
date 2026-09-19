@@ -78,6 +78,7 @@ export class Schema {
       const decoded = Boundary.of(field).decode(value);
       row[key] = 'message' in decoded ? value : decoded.value;
     }
+
     return row;
   }
 
@@ -90,6 +91,7 @@ export class Schema {
       validate(value: unknown) {
         const verdict = InputValidator.of(fields, opts).validate(value);
         if (verdict.success) return { value: verdict.data };
+
         return {
           issues: verdict.errors.map((e) => ({
             message: e.message,
@@ -138,6 +140,7 @@ export class Schema {
       );
     }
     Object.defineProperty(this, 'name', { value: name, configurable: true });
+
     return this;
   }
 
@@ -168,6 +171,7 @@ export class Schema {
       value: ANONYMOUS_SCHEMA_NAME,
       configurable: true,
     });
+
     return Derived as unknown as SchemaConstructor<Fields>;
   }
 }

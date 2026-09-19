@@ -54,6 +54,7 @@ export function createRemoteRouter(
         transports.set(url, transport);
         try {
           const answer = await transport({ entity: RPC_ENTITY, op: 'discover' }, Invocation.empty);
+
           // Judged below and not here: this catch means "unreachable, retry", and a
           // refusal thrown inside it would be swallowed into another silent retry.
           return { label, url, transport, answer };

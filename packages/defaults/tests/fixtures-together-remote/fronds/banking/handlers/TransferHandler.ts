@@ -11,6 +11,7 @@ export default class TransferHandler {
     return this.together.run(async ([accounts, ledger]) => {
       await accounts.update(from, { balance: amount });
       await ledger.create({ id: 'x', from, to, amount });
+
       return { ok: true as const };
     });
   }

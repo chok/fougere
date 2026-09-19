@@ -44,6 +44,7 @@ function operationIsQuery(
       + 'Pass the EffectiveOperation table produced by core.',
     );
   }
+
   return resolved === 'query';
 }
 
@@ -85,6 +86,7 @@ function fieldToGraphQL(
     const ref = enumFor(values);
     if (ref) {
       const resolve = (parent: any) => parent[fieldName] ?? null;
+
       return nullable ? t.field({ type: ref, nullable: true, resolve }) : t.field({ type: ref, resolve });
     }
   }
@@ -108,6 +110,7 @@ function fieldToGraphQL(
         nullable,
         resolve: (parent: any) => {
           const val = parent[fieldName];
+
           return val != null ? JSON.stringify(val) : null;
         },
       });
@@ -126,6 +129,7 @@ function fieldToGraphQL(
             nullable,
             resolve: (parent: any) => {
               const val = parent[fieldName];
+
               return val != null ? val.map((v: unknown) => JSON.stringify(v)) : (nullable ? null : []);
             },
           });
@@ -141,10 +145,12 @@ function fieldToGraphQL(
           nullable,
           resolve: (parent: any) => {
             const val = parent[fieldName];
+
             return val != null ? Boundary.of(field).encode(val) : null;
           },
         });
       }
+
       // string (id, texte, enum, ref) → String GraphQL
       return nullable ? t.string({ nullable: true, resolve: (parent: any) => parent[fieldName] ?? null })
                       : t.exposeString(fieldName);
@@ -182,10 +188,12 @@ function nestedInputType(
           default: out[key] = t.string({ required: isRequired }); break;
         }
       }
+
       return out;
     },
   });
   perBuilder.set(name, type);
+
   return type;
 }
 
@@ -209,6 +217,7 @@ function enumValuesOf(shape: Shape | undefined): string[] | undefined {
   const values = shape && 'enum' in shape ? shape.enum : undefined;
   if (!Array.isArray(values) || values.length === 0) return undefined;
   if (!values.every((v) => typeof v === 'string' && GRAPHQL_NAME.test(v))) return undefined;
+
   return values as string[];
 }
 
@@ -227,11 +236,13 @@ function enumTypeFor(
   const known = perBuilder.get(name);
   if (known) {
     const same = known.values.length === values.length && known.values.every((v, i) => v === values[i]);
+
     return same ? known.ref : undefined;
   }
 
   const ref = (builder as any).enumType(name, { values });
   perBuilder.set(name, { ref, values });
+
   return ref;
 }
 
@@ -281,6 +292,7 @@ function fieldToInput(
         case 'object': {
           // A nested shape IS a type — serializing it would make the caller encode JSON by hand.
           const built = nested?.(items, 'Item');
+
           return built ? t.field({ type: [built], required }) : t.stringList({ required });
         }
         default: return t.stringList({ required });
@@ -350,6 +362,7 @@ export function registerObjectType(
           result[key] = t.field({ type: def.type, nullable, resolve: (parent: any) => parent[key] });
         }
       }
+
       return result;
     },
   });
@@ -383,6 +396,7 @@ export function registerType(builder: InstanceType<typeof SchemaBuilder>, config
 
         result[fieldName] = fieldToGraphQL(t, field, fieldName, (values) => {
           const name = enumNameFor(enumOwner, fieldName);
+
           return name ? enumTypeFor(builder, name, values) : undefined;
         });
       }
@@ -473,6 +487,7 @@ export function registerType(builder: InstanceType<typeof SchemaBuilder>, config
                 resolve: async (parent: any) => {
                   const value = await resolve(parent);
                   if (value == null) return null;
+
                   return typeof value === 'string' ? value : JSON.stringify(value);
                 },
               });
@@ -510,6 +525,7 @@ export function registerInput(builder: InstanceType<typeof SchemaBuilder>, confi
           (shape, suffix) => nestedInputType(builder, shape, `${config.name}${upperFirst(fieldName)}${suffix}`),
           (values) => {
             const name = enumNameFor(enumOwner, fieldName);
+
             return name ? enumTypeFor(builder, name, values) : undefined;
           },
         );
@@ -740,6 +756,7 @@ function resolveOutputType(
   if (rt?.array) {
     return { type: [type], isList: false, nullable: false };
   }
+
   return { type, isList: false, nullable: rt?.nullable === true || rt?.undefined === true };
 }
 
@@ -758,6 +775,7 @@ export function registerOperations(builder: InstanceType<typeof SchemaBuilder>, 
         resolve: async (parent: any) => {
           if (parent.total !== undefined) return parent.total;
           if (parent._count) return (await parent._count()).total ?? null;
+
           return null;
         },
       },
@@ -805,6 +823,7 @@ export function registerOperations(builder: InstanceType<typeof SchemaBuilder>, 
             const items = Array.isArray(result) ? [...result]
               : Array.isArray(page?.items) ? page.items
               : result;
+
             return {
               items,
               endCursor: result?.endCursor,

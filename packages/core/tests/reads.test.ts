@@ -34,6 +34,7 @@ export default class Report {
   if (reads !== undefined) {
     writeFileSync(join(frond, 'frond.config.js'), `export default { reads: ${reads} };`);
   }
+
   return root;
 }
 
@@ -44,6 +45,10 @@ describe('a frond that declares what it reads', () => {
 
   it('is handed a reader built over the CLASSES it named', async () => {
     const built: unknown[][] = [];
+
+
+
+
     const sourcesFactory = vi.fn(async (reads: unknown[]) => { built.push(reads); return { tag: 'reader' }; });
     const app = await createApp({ scan: await scanProject(root), createContainer, sourcesFactory });
 
@@ -107,6 +112,10 @@ describe('a name `reads:` gets wrong', () => {
     const built: unknown[][] = [];
     const app = await createApp({
       scan: await scanProject(root), createContainer,
+
+
+
+
       sourcesFactory: async (reads: unknown[]) => { built.push(reads); return {}; },
     });
 
@@ -136,6 +145,10 @@ export default class ${entity} extends entity({ id: primary(), label: text() }) 
     const built: unknown[][] = [];
     const app = await createApp({
       scan: await scanProject(root), createContainer,
+
+
+
+
       sourcesFactory: async (reads: unknown[]) => { built.push(reads); return {}; },
     });
     expect(built[0]!.map((c: any) => c.name).sort()).toEqual(['Book', 'Order']);

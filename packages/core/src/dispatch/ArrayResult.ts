@@ -6,5 +6,6 @@ export function preserveArrayProperties<T extends unknown[]>(source: unknown[], 
         (source as unknown as Record<string, unknown>)[key];
     }
   }
+
   return target;
 }

@@ -12,6 +12,7 @@ export default class AccountRepository extends Repository(Account, Ledger) {
     const account = await accounts.findById(id);
     await accounts.update(id, { balance: account!.balance - amount });
     await ledger.create({ account: id, amount: -amount });
+
     return account;
   }
 }

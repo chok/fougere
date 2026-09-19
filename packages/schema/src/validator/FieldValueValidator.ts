@@ -46,6 +46,7 @@ export class FieldValueValidator {
     if (plan.custom && typeof value === 'string' && !plan.custom(value)) {
       return { message: `String does not match format "${plan.formatName}".` };
     }
+
     return { value };
   }
 
@@ -72,6 +73,7 @@ export class FieldValueValidator {
       };
       this.plans.set(shape, plan);
     }
+
     return plan;
   }
 
@@ -83,6 +85,7 @@ export class FieldValueValidator {
           `the engine validates ${Object.keys(engineFormats).length} formats natively and this is not one of them.`,
       );
     }
+
     return custom;
   }
 }

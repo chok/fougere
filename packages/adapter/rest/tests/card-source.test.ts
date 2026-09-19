@@ -72,6 +72,7 @@ function fakeApp(entityClass: unknown) {
     create: vi.fn(async (input: any) => input),
     update: vi.fn(async (input: any) => input),
   };
+
   return {
     fronds: [{
       name: 'blog',

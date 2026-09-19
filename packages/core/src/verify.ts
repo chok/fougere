@@ -42,6 +42,7 @@ function registrationsOf(frond: FrondDescriptor): Map<string, Registration> {
     put(storageKeyOf(e.name), 'storage');
     put(repositoryKeyOf(e.name), 'repository');
   }
+
   return out;
 }
 
@@ -143,6 +144,7 @@ export function verify(app: { fronds: readonly FrondDescriptor[] }): Misplaced[]
       }
     }
   }
+
   return violations;
 }
 

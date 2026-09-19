@@ -56,6 +56,7 @@ export class Bundle {
       byName[name.toLowerCase()] = schema as unknown as EntityConstructor;
       schemas[name] = schema;
     }
+
     return schemas;
   }
 
@@ -72,6 +73,7 @@ export class Bundle {
       );
       if (diff.changes.length > 0 || diff.ambiguous.length > 0) entities[name] = diff;
     }
+
     return {
       entitiesAdded: Object.keys(after).filter((name) => !(name in before)),
       entitiesRemoved: Object.keys(before).filter((name) => !(name in after)),

@@ -24,6 +24,7 @@ export default class SensorHandler {
     const me = process.env.NODE_ID ?? 'sensor-?';
     if (fact.node && fact.node !== me) {
       console.log(`\x1b[2m  [${me}] recalibration for ${fact.node} — not mine\x1b[0m`);
+
       return;
     }
     this.offset = fact.offset;

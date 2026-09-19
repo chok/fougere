@@ -9,5 +9,6 @@ export class Config {
 
 function envOfProcess(): Record<string, string | undefined> {
   const proc = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process;
+
   return proc?.env ?? {};
 }

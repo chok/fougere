@@ -48,6 +48,7 @@ function wire(answer: (method: string, params: unknown) => unknown) {
     const body = JSON.parse(init.body);
     calls.push({ method: body.method, params: body.params });
     const result = answer(body.method, body.params);
+
     return {
       json: async () =>
         result instanceof Error
@@ -55,6 +56,7 @@ function wire(answer: (method: string, params: unknown) => unknown) {
           : { jsonrpc: '2.0', id: body.id, result },
     } as any;
   }) as any;
+
   return calls;
 }
 

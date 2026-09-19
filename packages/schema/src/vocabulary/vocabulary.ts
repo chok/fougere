@@ -46,5 +46,6 @@ function merge(name: string, field: Field, given: Partial<Field>): Partial<Field
     }
     merged[slot] = { ...already, ...members };
   }
+
   return merged as Partial<Field>;
 }

@@ -159,6 +159,7 @@ export function trackQuery(entityKey: string, key: string): () => void {
   const keys = mounted.get(entityKey) ?? new Set<string>();
   keys.add(key);
   mounted.set(entityKey, keys);
+
   return () => keys.delete(key);
 }
 
@@ -175,6 +176,7 @@ export function onRefetch(key: string, run: () => void): () => void {
   const set = refetchers.get(key) ?? new Set<() => void>();
   set.add(run);
   refetchers.set(key, set);
+
   return () => set.delete(run);
 }
 
@@ -189,6 +191,7 @@ export const fetcher: Fetcher = async <T,>(url: string, options: { method: 'POST
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(options.body),
   });
+
   return (await response.json()) as T;
 };
 
@@ -200,6 +203,7 @@ export function itemsOf<T>(data: unknown): T[] {
   if (data && typeof data === 'object' && Array.isArray((data as { items?: unknown }).items)) {
     return (data as { items: T[] }).items;
   }
+
   return [];
 }
 

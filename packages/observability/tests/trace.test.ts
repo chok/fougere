@@ -32,6 +32,7 @@ function serveSocket(runner: Transport): Promise<{ port: number; server: Server 
       socket.end(JSON.stringify(await handleRpc(runner, JSON.parse(raw))));
     });
   });
+
   return new Promise((resolve) => {
     server.listen(0, '127.0.0.1', () => {
       const address = server.address();

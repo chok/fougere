@@ -340,6 +340,7 @@ describe('two remotes serving one entity', () => {
     if (call.entity === 'rpc') {
       return { fronds: [{ name: frond, facades: [{ name: facade, ops: [{ name: 'list', kind: 'query' }] }], facts: [] }] };
     }
+
     return [];
   };
 
@@ -363,6 +364,7 @@ describe('two remotes serving one entity', () => {
     // only order a reader can predict from their own config.
     const slowEast: Transport = async (call) => {
       await new Promise((r) => setTimeout(r, 20));
+
       return serving('catalog', 'product')(call, Invocation.empty);
     };
 

@@ -50,6 +50,7 @@ function opsMap(
       map.set(name, { kind: operationKinds[name], ...meta });
     }
   }
+
   return map;
 }
 
@@ -72,6 +73,7 @@ function fakeApp(
       const own = facades[`${surface}:${entity}Handler`];
       const declared = surfaces?.[surface];
       if (!declared) return own;
+
       return declared.some((n) => n.toLowerCase() === entity.toLowerCase())
         ? (own ?? facades[`${entity}Handler`])
         : undefined;
@@ -82,6 +84,7 @@ function fakeApp(
       const facade = facades[`${surface ? `${surface}:` : ''}${entity}Handler`]
         ?? facades[`${entity}Handler`];
       if (!facade) return undefined;
+
       return new Map(Object.keys(facade).map((name) => [
         name,
         { kind: operationKinds[name], ...handler?.operations.get(name) },

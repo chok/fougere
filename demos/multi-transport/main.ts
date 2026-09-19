@@ -32,8 +32,10 @@ function render(value: unknown): string {
   if (Array.isArray(value)) return `${value.length} rows · ${value.map((r) => (r as { station: string }).station).join(', ')}`;
   if (value && typeof value === 'object') {
     const row = value as { station?: string; celsius?: number };
+
     return row.station ? `${row.station} ${row.celsius}°C` : JSON.stringify(value);
   }
+
   return String(value);
 }
 

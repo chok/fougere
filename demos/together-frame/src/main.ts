@@ -65,6 +65,7 @@ const app: App = await createApp({
 const outside = createSqliteSource({ path: join(data, 'app.db') });
 observeWith(async () => {
   const ada = outside.sqlite.prepare('select balance from accounts where id = ?').get('ada') as { balance: number };
+
   return `ada ${ada.balance}`;
 });
 
@@ -82,6 +83,7 @@ const state = async () => {
   const [ada, bob] = await Promise.all([storageOf('account').findById('ada'), storageOf('account').findById('bob')]);
   const lines = await storageOf('ledger').list();
   const rates = await storageOf('rateCard').list();
+
   return `ada ${ada.balance} · bob ${bob.balance} · ledger ${lines.length} · rates ${rates
     .map((r: any) => `${r.code}=${r.rate}`).sort().join(' ')}`;
 };

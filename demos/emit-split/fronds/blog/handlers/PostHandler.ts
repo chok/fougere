@@ -13,6 +13,7 @@ export default class PostHandler {
   /** Publish a draft, and say so. */
   async publish(id: string, title: string): Promise<{ id: string; status: string }> {
     await this.published({ id, title, at: new Date() });
+
     return { id, status: 'published' };
   }
 }

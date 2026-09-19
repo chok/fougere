@@ -52,6 +52,7 @@ const returns = (raw: string, name: string, extra?: { array?: boolean; nullable?
 function crudOps(entity: SchemaView & { partial?: () => SchemaView }): Record<string, OperationContract> {
   const name = (entity as { name?: string }).name ?? 'Entity';
   const input = inputParam(name);
+
   return {
     list: {
       output: entity, cardinality: 'page',

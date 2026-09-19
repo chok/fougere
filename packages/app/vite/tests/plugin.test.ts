@@ -23,6 +23,7 @@ function projectWith(fronds: Record<string, string[]>): string {
     mkdirSync(dir, { recursive: true });
     for (const entity of entities) writeFileSync(join(dir, entity), '');
   }
+
   return root;
 }
 
@@ -30,6 +31,7 @@ function projectWith(fronds: Record<string, string[]>): string {
 function resolve(plugin: ReturnType<typeof fougere>, config: Record<string, any> = {}) {
   const hook = plugin.config as { handler: (c: Record<string, any>) => void };
   hook.handler(config);
+
   return config;
 }
 

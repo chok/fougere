@@ -9,6 +9,7 @@ export default class ListPresenter extends Presenter(List) {
 
   canEdit(lists: List[], user?: User): boolean[] {
     ListPresenter.calls++;
+
     return lists.map((list) => Boolean(user) && list.ownerUserId === user!.id);
   }
 

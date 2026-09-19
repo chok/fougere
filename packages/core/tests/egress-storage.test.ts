@@ -30,11 +30,13 @@ function spyStorage() {
     findById: vi.fn(async () => ({ id: 'c1' })),
     output: vi.fn(function (this: unknown) { return Object.create(this as object); }),
   };
+
   return storage;
 }
 
 const validated = () => {
   const storage = spyStorage();
+
   return { storage, guarded: new StorageGuard(Contact.getFields(), 'contact').guard(storage) };
 };
 

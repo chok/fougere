@@ -64,6 +64,7 @@ function payload(service: string, records: CapturedLog[]) {
             scope: { name: '@fougere/observability' },
             logRecords: records.map((record) => {
               const severity = SEVERITY[record.level];
+
               return {
                 timeUnixNano: `${record.at * 1e6}`,
                 observedTimeUnixNano: `${record.at * 1e6}`,
@@ -90,6 +91,7 @@ function payload(service: string, records: CapturedLog[]) {
  */
 function bodyOf(record: CapturedLog): string {
   if (record.args.length === 0) return record.message;
+
   return [record.message, ...record.args.map(readable)].join(' ');
 }
 

@@ -31,6 +31,7 @@ function fakeStorage(overrides: Partial<Storage> = {}): Storage {
     output: () => storage,
     ...overrides,
   };
+
   return storage;
 }
 

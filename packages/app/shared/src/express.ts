@@ -31,6 +31,7 @@ export type ExpressMiddleware = (req: any, res: any, next: Next) => void;
 /** Who the caller is, from what ran before. */
 function stateOf(req: ExpressRequest): Record<string, unknown> {
   if (req.fougereState) return req.fougereState;
+
   return req.user ? { user: req.user } : {};
 }
 
@@ -52,6 +53,7 @@ function fail(res: ExpressResponse, next: Next, err: unknown): void {
   const code = (err as { name?: string })?.name === 'MalformedJsonError' ? 400 : 0;
   if (code === 400) {
     res.status(400).json({ code: 'BAD_REQUEST', message: 'Malformed JSON body' });
+
     return;
   }
   next(err);
@@ -71,6 +73,7 @@ export function call(mountPath = '/_fougere/call'): ExpressMiddleware {
           body = await readExpressBody(req);
         } catch {
           res.status(200).json(rpcParseError());
+
           return;
         }
         res.status(200).json(await serveRpc(app, { path, body, state: stateOf(req) }));
@@ -147,6 +150,7 @@ export function graphql(mountPath = '/graphql'): ExpressMiddleware {
  *  app's declaration — mounting is not publishing. */
 export function fougere(): ExpressMiddleware {
   const facades = [call(), session(), rest(), graphql()];
+
   return (req, res, next) => {
     let index = 0;
     const step = (err?: unknown) => {

@@ -38,6 +38,7 @@ export default class ExplainCommand {
         ? listing.fronds.map((frond) => frond.name)
         : listing.operations;
       if (values.length > 0) process.stdout.write(values.join('\n') + '\n');
+
       return;
     }
 
@@ -94,6 +95,7 @@ export function renderExplain(result: ExplainResult): string {
   );
 
   if (result.handler.file) lines.push(`${pc.dim('Source:')}    ${result.handler.file}`);
+
   return lines.join('\n');
 }
 

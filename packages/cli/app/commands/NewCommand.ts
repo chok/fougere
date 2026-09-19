@@ -30,6 +30,10 @@ export default class NewCommand {
     const dir = join(process.cwd(), name);
     if (existsSync(dir) && !raw.force) {
       const ok = await this.ui.confirm({ message: `${name}/ existe déjà. Écraser ?` });
+
+
+
+
       if (!ok) { this.ui.cancel(); return; }
     }
 
@@ -50,6 +54,7 @@ export default class NewCommand {
       this.ui.info(`${template} at the root`);
       this.ui.note([`cd ${name}`, INSTALL, `pnpm dev`].join('\n'), `${name} — one frond, at the root`);
       this.ui.outro('Ready.');
+
       return;
     }
 
@@ -59,6 +64,7 @@ export default class NewCommand {
       if (raw.local) pw.linkLocal(dir); else pw.pinVersions(dir);
       this.ui.note([`cd ${name}`, `fougere new   # compose it (guided)`].join('\n'), `${name} — empty workspace`);
       this.ui.outro('Ready.');
+
       return;
     }
 
@@ -97,6 +103,7 @@ export default class NewCommand {
       this.ui.info(`${kind}/${itemName}`);
       count++;
     }
+
     return count;
   }
 
@@ -124,6 +131,7 @@ export default class NewCommand {
       this.ui.info(`${kind}/${itemName}`);
       count++;
     }
+
     return count;
   }
 }

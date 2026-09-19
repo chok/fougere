@@ -56,6 +56,7 @@ export default {
         );
         await env.DB.batch(rows.map((r) => insert.bind(...r)));
       }
+
       return new Response(JSON.stringify({ partialSuccess: {} }), { headers: { 'content-type': 'application/json' } });
     }
 
@@ -65,6 +66,7 @@ export default {
       const { results } = await env.DB.prepare(
         'select * from spans order by started_ns desc limit 50',
       ).all();
+
       return new Response(JSON.stringify(results), {
         headers: { 'content-type': 'application/json', 'access-control-allow-origin': '*' },
       });
@@ -73,6 +75,7 @@ export default {
     const { results } = await env.DB.prepare(
       'select * from spans order by started_ns desc limit 200',
     ).all();
+
     return new Response(html(results as Record<string, unknown>[]), { headers: { 'content-type': 'text/html; charset=utf-8' } });
   },
 };

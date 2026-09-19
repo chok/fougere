@@ -31,6 +31,7 @@ function validator(body: Record<string, unknown>): string[] {
   if (typeof cents !== 'number') errors.push('cents: Required');
   else if (cents < 0) errors.push('cents: below minimum');
   if (typeof listed !== 'boolean') errors.push('listed: Required');
+
   return errors;
 }
 
@@ -42,12 +43,14 @@ export default {
 
     if (request.method === 'GET' && url.pathname === '/api/products') {
       const { results } = await db.prepare('select * from products').all();
+
       return json(results.map(row));
     }
 
     if (request.method === 'GET' && url.pathname.startsWith('/api/products/')) {
       const found = await db.prepare('select * from products where id = ?')
         .bind(url.pathname.split('/').pop()).first();
+
       return found ? json(row(found as Record<string, unknown>)) : json({ code: 'NOT_FOUND' }, 404);
     }
 
@@ -57,6 +60,7 @@ export default {
       if (errors.length > 0) return json({ code: 'VALIDATION_FAILED', message: errors.join(', ') }, 400);
       await db.prepare('insert into products values (?, ?, ?, ?, ?)')
         .bind(body.id, body.name, body.sku, body.cents, body.listed ? 1 : 0).run();
+
       return json(body);
     }
 

@@ -33,8 +33,10 @@ function doublure(entity: string, transport: Transport): Record<string, (input?:
   return new Proxy({} as Record<string, (input?: Partial<InvocationContext>) => Promise<unknown>>, {
     get(_target, prop) {
       if (typeof prop !== 'string' || prop === 'then') return undefined;
+
       return async (input: Partial<InvocationContext> = {}) => {
         const call: FrondCall = { entity, op: prop };
+
         return transport(call, { ...Invocation.empty, ...input });
       };
     },

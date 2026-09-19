@@ -38,6 +38,7 @@ const docsRoot = computed(() => localePath('/docs'));
 const sidebar = computed(() => {
   const docs = findNode((nav.value ?? []) as NavItem[], docsRoot.value);
   const entries = (docs?.children ?? []).filter((item) => item.path !== docsRoot.value);
+
   return entries.map((item) =>
     item.children?.length
       ? { label: item.title, items: item.children.filter((c) => c.path !== item.path) }

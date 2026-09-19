@@ -35,6 +35,7 @@ const inv = (over: Partial<InvocationContext> = {}): InvocationContext =>
 /** One JSON value per line — the whole framing a stream protocol needs. */
 function lines(onLine: (raw: string) => void): (chunk: Buffer) => void {
   let buffer = '';
+
   return (chunk) => {
     buffer += chunk.toString('utf8');
     let cut: number;
@@ -54,6 +55,7 @@ function serveSocket(runner: Transport): Promise<{ port: number; server: Server 
       socket.write(`${JSON.stringify(response)}\n`);
     }));
   });
+
   return new Promise((resolve) => {
     server.listen(0, '127.0.0.1', () => {
       const address = server.address();
@@ -88,10 +90,12 @@ function createSocketTransport(port: number): Transport & { close(): void } {
       pending.set(id, { resolve: resolve as (v: unknown) => void, reject });
       socket.write(`${JSON.stringify(frameCall(call, invocation, id))}\n`);
     });
+
     return unframeResponse(response, call);
   }) as Transport & { close(): void };
 
   transport.close = () => socket.destroy();
+
   return transport;
 }
 
@@ -140,6 +144,7 @@ async function outcomeOf(run: () => Promise<unknown>): Promise<unknown> {
   } catch (err) {
     if (err instanceof FougereError) {
       const { code, message, entity, operation, details } = err;
+
       return { failed: { code, message, entity, operation, details } };
     }
     throw err;

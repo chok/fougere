@@ -17,6 +17,7 @@ function fakeApp() {
     post: vi.fn((path: string, handler: Function) => routes.set(`POST ${path}`, handler)),
     put: vi.fn(), patch: vi.fn(), delete: vi.fn(),
   };
+
   return { app, handlerFor: (key: string) => routes.get(key)! };
 }
 
@@ -24,11 +25,28 @@ function fakeApp() {
 function fakeRes() {
   const sent: { status?: number; json?: unknown; raw?: unknown; headers: Record<string, unknown> } = { headers: {} };
   const res = {
+
+
+
+
     status: vi.fn((code: number) => { sent.status = code; return res; }),
+
+
+
+
     set: vi.fn((key: string, value: unknown) => { sent.headers[key] = value; return res; }),
+
+
+
+
     json: vi.fn((data: unknown) => { sent.json = data; return res; }),
+
+
+
+
     send: vi.fn((data: unknown) => { sent.raw = data; return res; }),
   };
+
   return { res, sent };
 }
 
@@ -57,6 +75,7 @@ describe('Express adapter — the body nobody parsed', () => {
     let seen: unknown;
     router.on('POST', '/items', async (ctx) => {
       seen = await ctx.body();
+
       return { status: 200, data: { ok: true } };
     });
 
@@ -73,6 +92,7 @@ describe('Express adapter — the body nobody parsed', () => {
     let seen: unknown;
     router.on('POST', '/items', async (ctx) => {
       seen = await ctx.body();
+
       return { status: 200, data: {} };
     });
 
@@ -87,10 +107,12 @@ describe('Express adapter — the body nobody parsed', () => {
     const reads: unknown[] = [];
     router.use(async (ctx: RequestContext, next) => {
       reads.push(await ctx.body());
+
       return next();
     });
     router.on('POST', '/items', async (ctx) => {
       reads.push(await ctx.body());
+
       return { status: 200, data: {} };
     });
 
@@ -103,6 +125,7 @@ describe('Express adapter — the body nobody parsed', () => {
     const router = createExpressRouter(app);
     router.on('POST', '/items', async (ctx) => {
       await ctx.body();
+
       return { status: 200, data: {} };
     });
 
@@ -121,6 +144,7 @@ describe('Express adapter — the body nobody parsed', () => {
     let seen: unknown;
     router.on('GET', '/items', async (ctx) => {
       seen = await ctx.body();
+
       return { status: 200, data: {} };
     });
 
@@ -135,6 +159,10 @@ describe('Express adapter — the Request it builds', () => {
     const { app, handlerFor } = fakeApp();
     const router = createExpressRouter(app);
     let ctx: RequestContext | undefined;
+
+
+
+
     router.on('GET', '/items', async (c) => { ctx = c; return { status: 200, data: {} }; });
 
     const req = {
@@ -161,6 +189,10 @@ describe('Express adapter — the Request it builds', () => {
     const { app, handlerFor } = fakeApp();
     const router = createExpressRouter(app);
     let ctx: RequestContext | undefined;
+
+
+
+
     router.on('GET', '/items', async (c) => { ctx = c; return { status: 200, data: {} }; });
 
     const req = { ...streamingReq(''), method: 'GET', query: { tag: ['a', 'b'] } };

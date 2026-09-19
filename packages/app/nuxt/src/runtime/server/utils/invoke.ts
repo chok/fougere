@@ -14,6 +14,7 @@ export async function invoke<T = unknown>(
   input?: CallInput,
 ): Promise<T> {
   const app = await useFougereApp();
+
   return invokeOn<T>(app, target, opOrInput, input, requestState());
 }
 

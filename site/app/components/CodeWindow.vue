@@ -8,6 +8,7 @@ const props = defineProps<{ code: string; filename: string; lang?: string }>();
 
 const { data: html } = await useAsyncData(`cw:${props.filename}`, async () => {
   const { codeToHtml } = await import('shiki');
+
   return codeToHtml(props.code, {
     lang: props.lang ?? 'ts',
     themes: { default: 'github-light', dark: 'github-dark' },

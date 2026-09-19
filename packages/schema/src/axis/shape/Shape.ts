@@ -115,6 +115,7 @@ export class Shapes {
       }
       this.cache.set(shape, parts);
     }
+
     return parts;
   }
 

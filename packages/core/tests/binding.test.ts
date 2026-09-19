@@ -181,6 +181,7 @@ describe('ArgumentResolver', () => {
     ];
     const args = await resolve(plan, ctx({ state: { userId: 'u1' } }), (typeName) => {
       if (typeName === 'user') return { collect: async () => fakeUser };
+
       return undefined;
     });
     expect(args).toEqual([fakeUser]);
@@ -205,6 +206,7 @@ describe('ArgumentResolver', () => {
     ];
     const args = await resolve(plan, ctx({ input, state: { userId: 'u1' } }), (name) => {
       if (name === 'user') return { collect: async () => user };
+
       return undefined;
     });
     expect(args).toEqual([input, user]);

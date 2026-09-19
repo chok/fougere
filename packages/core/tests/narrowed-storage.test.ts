@@ -37,6 +37,7 @@ function makeStorage() {
     // The gesture the frame cannot derive, and the reason a realization is narrowed at all.
     search: vi.fn(async () => ['c1', 'c2']),
   };
+
   return storage;
 }
 

@@ -58,6 +58,7 @@ async function boot(split: boolean) {
   await storageOf('account').create({ id: 'b', owner: 'Bob', balance: 0 });
 
   const call = createLocalRunner(app);
+
   return {
     said,
     storage: storageOf,

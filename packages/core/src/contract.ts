@@ -80,5 +80,6 @@ export function callValueOf(
     typeof opOrInput === 'string'
       ? [{ entity: lowerFirst((target as { name: string }).name), op: opOrInput }, input]
       : [target as FrondCall, opOrInput];
+
   return { call, invocation: Invocation.from(given) };
 }

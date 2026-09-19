@@ -16,6 +16,7 @@ export async function invoke<T = unknown>(
   input?: CallInput,
 ): Promise<T> {
   const app = await useFougereApp();
+
   return invokeOn<T>(app, target, opOrInput, input, await requestState());
 }
 
@@ -28,6 +29,7 @@ async function requestState(): Promise<Record<string, unknown>> {
   try {
     // Awaited on purpose: async in Next 15+, synchronous before — `await` accepts both.
     const { headers } = await import('next/headers');
+
     return await stateFor(await headers());
   } catch {
     return {};

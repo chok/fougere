@@ -43,10 +43,12 @@ async function bodyWithin(request: Request, max: number): Promise<string | typeo
     size += value.byteLength;
     if (size > max) {
       await reader.cancel();
+
       return TOO_LARGE;
     }
     chunks.push(value);
   }
+
   return new TextDecoder().decode(concat(chunks, size));
 }
 
@@ -57,6 +59,7 @@ function concat(chunks: readonly Uint8Array[], size: number): Uint8Array {
     all.set(chunk, at);
     at += chunk.byteLength;
   }
+
   return all;
 }
 
@@ -92,6 +95,7 @@ export function receive(
     } catch {
       return json(parseError());
     }
+
     return json(await handleRpc(runner, parsed, options));
   };
 }

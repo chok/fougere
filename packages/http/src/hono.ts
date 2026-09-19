@@ -32,6 +32,7 @@ function buildContext(c: any): RequestContext {
   // Reuse state across middleware/handler calls within the same request
   const state = c.get('_fougereState') ?? {};
   c.set('_fougereState', state);
+
   return {
     request: c.req.raw,
     method: c.req.method.toUpperCase() as HttpMethod,
@@ -68,6 +69,7 @@ function sendResponse(c: any, result: ResponseResult): Response {
   if (result.raw) {
     return c.body(result.data, result.status);
   }
+
   return c.json(result.data, result.status);
 }
 
@@ -88,6 +90,7 @@ export function createHonoRouter(app: HonoLike): HttpRouter {
           const ctx = buildContext(c);
           const result = await mw(ctx, async () => {
             await next();
+
             // After next(), Hono has already set the response. The sentinel says so, and it
             // is a symbol on purpose — see PASSTHROUGH.
             return { status: c.res.status, data: PASSTHROUGH };
@@ -117,6 +120,7 @@ export function createHonoRouter(app: HonoLike): HttpRouter {
         const ctx = buildContext(c);
         try {
           const result = await handler(ctx);
+
           return sendResponse(c, result);
         } catch (err) {
           if (err instanceof MalformedJsonError) return malformedJsonResponse(c);

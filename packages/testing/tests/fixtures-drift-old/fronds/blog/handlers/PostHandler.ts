@@ -8,6 +8,7 @@ export default class PostHandler extends Crud(Post) {
   /** Publishes a post. */
   async publish(input: Post): Promise<Post> {
     await this.published({ id: input.id, title: input.title } as never);
+
     return input;
   }
 }

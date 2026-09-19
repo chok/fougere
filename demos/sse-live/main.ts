@@ -32,6 +32,7 @@ async function seenBy(app: App, name: string): Promise<string> {
     status: string;
   }[];
   if (rows.length === 0) return dim('0 rows');
+
   return rows.map((r) => `${r.title} ${dim(`(${r.status})`)}`).join(', ');
 }
 

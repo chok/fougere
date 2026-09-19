@@ -12,6 +12,7 @@ export class Fronds extends Array<FrondDescriptor> {
   static hosting(fronds: readonly FrondDescriptor[]): Fronds {
     const all = new Fronds();
     all.push(...fronds);
+
     return all;
   }
 
@@ -26,6 +27,7 @@ export class Fronds extends Array<FrondDescriptor> {
       const found = frond.entities.find((e) => e.name === name);
       if (found) return found;
     }
+
     return undefined;
   }
 

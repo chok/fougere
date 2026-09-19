@@ -83,6 +83,7 @@ function recordCreate({ base, recorded, entity, key, journal }: Recording): void
     const row = await base.create.apply(this, args);
     const id = String(row[key]);
     journal.push({ what: `create ${entity}#${id}`, run: () => base.delete.call(this, id).then(() => undefined) });
+
     return row;
   };
 }
@@ -119,6 +120,7 @@ function recordUpdate({ base, recorded, entity, journal }: Recording): void {
         await base.update.call(this, id, pick(before, touched));
       },
     });
+
     return row;
   };
 }
@@ -131,6 +133,7 @@ function recordDelete({ base, recorded, entity, journal }: Recording): void {
     if (removed && before) {
       journal.push({ what: `delete ${entity}#${id}`, run: () => base.create.call(this, before).then(() => undefined) });
     }
+
     return removed;
   };
 }
@@ -144,6 +147,7 @@ function recordUpserts({ base, recorded, entity, key, journal }: Recording, sche
   const undoUpsert = async function (this: unknown, rows: readonly Record<string, unknown>[]): Promise<Undo> {
     const ids = rows.map((row) => String(row[key]));
     const before = await base.findByKeys.call(this, ids);
+
     return {
       what: `upsert ${entity} (${ids.length} row(s))`,
       run: async () => {
@@ -163,6 +167,7 @@ function recordUpserts({ base, recorded, entity, key, journal }: Recording, sche
       const undo = await undoUpsert.call(this, [input]);
       const row = await upsert.call(this, input, ...rest);
       journal.push(undo);
+
       return row;
     };
   }
@@ -174,6 +179,7 @@ function recordUpserts({ base, recorded, entity, key, journal }: Recording, sche
       const undo = await undoUpsert.call(this, inputs);
       const written = await upsertAll.call(this, inputs, ...rest);
       journal.push(undo);
+
       return written;
     };
   }

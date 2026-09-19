@@ -30,6 +30,7 @@ function typeMapOf(register: (builder: any) => void) {
   const builder = new SchemaBuilder({});
   builder.queryType({ fields: (t: any) => ({ ok: t.boolean({ resolve: () => true }) }) });
   register(builder);
+
   return builder.toSchema().getTypeMap();
 }
 
@@ -40,6 +41,7 @@ function typeMapOf(register: (builder: any) => void) {
  */
 function enumValueNames(type: unknown): string[] | undefined {
   const t = type as { getValues?: () => { name: string }[] } | undefined;
+
   return typeof t?.getValues === 'function' ? t.getValues().map((v) => v.name) : undefined;
 }
 

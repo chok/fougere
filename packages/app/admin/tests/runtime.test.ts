@@ -29,6 +29,7 @@ describe('admin runtime', () => {
       const call = options.body as { id: number; method: string };
       urls.push(url);
       methods.push(call.method);
+
       return {
         jsonrpc: '2.0',
         id: call.id,
@@ -63,6 +64,7 @@ describe('a discovery that failed', () => {
     const flaky: Fetcher = async <T,>() => {
       attempts += 1;
       if (attempts === 1) throw new Error('ECONNREFUSED');
+
       return { jsonrpc: '2.0', id: 1, result: card } as T;
     };
 
@@ -78,6 +80,7 @@ describe('a discovery that failed', () => {
     let calls = 0;
     const counting: Fetcher = async <T,>() => {
       calls += 1;
+
       return { jsonrpc: '2.0', id: 1, result: card } as T;
     };
     const runtime = createAdminRuntime({ fetcher: counting });

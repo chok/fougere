@@ -30,6 +30,7 @@ async function stockOnAnotherProcess(): Promise<Transport> {
   // it — the transport returned below still calls into it. A scope-bound disposal here
   // closes the host before the first call, which is exactly what this test then reports.
   const host = await createApp({ scan: await scanProject(root, ['stock']), createContainer,});
+
   return createLocalRunner(host);
 }
 

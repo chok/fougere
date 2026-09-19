@@ -8,11 +8,13 @@ export default class OrderService {
 
   listOrders() {
     this.logger.info('listing orders');
+
     return this.orderRepository.findAll();
   }
 
   getOrder(id: string) {
     this.logger.info(`getting order ${id}`);
+
     return this.orderRepository.findById(id);
   }
 }

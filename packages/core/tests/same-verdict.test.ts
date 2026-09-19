@@ -39,6 +39,7 @@ const sorted = (errors: { path: string; message: string }[]) =>
 /** What the browser does before sending — `useFormFor.ts:46`, verbatim. */
 function verdictOfForm(schema: SchemaView & { validate(i: unknown): unknown }, input: unknown): Verdict {
   const result = schema.validate(input) as { success: boolean; errors?: { path: string; message: string }[] };
+
   return result.success ? { ok: true } : { ok: false, errors: sorted(result.errors ?? []) };
 }
 
@@ -47,9 +48,11 @@ async function verdictOfFacade(run: ReturnType<typeof createLocalRunner>, op: st
   const [entity, name] = op.split('.');
   try {
     await run({ entity, op: name }, { ...Invocation.empty, input });
+
     return { ok: true };
   } catch (error) {
     if (!(error instanceof FougereError) || error.code !== 'VALIDATION_FAILED') throw error;
+
     return { ok: false, errors: sorted((error.details ?? []) as { path: string; message: string }[]) };
   }
 }
@@ -101,6 +104,7 @@ describe('un corps, deux juges', () => {
 /** Storage is not what is under test — the validator runs before it. */
 const fakeStorage: StorageFactory = () => {
   const row = { id: 'a1', ...baseline, status: 'draft', createdAt: new Date().toISOString() };
+
   return {
     list: async () => [], findById: async () => row, findBy: async () => row, findAllBy: async () => [],
     create: async () => row, update: async () => row, delete: async () => true,

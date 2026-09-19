@@ -52,6 +52,7 @@ const MAX_SAFE = BigInt(Number.MAX_SAFE_INTEGER);
 function nullSafe(codec: ValueCodec): ValueCodec {
   const pass = (fn: (v: unknown) => unknown) => (v: unknown) =>
     v === null || v === undefined ? v : fn(v);
+
   return { write: pass(codec.write), read: pass(codec.read) };
 }
 
@@ -82,5 +83,6 @@ export function codecsOf(columns: { field: string; type?: ShapeType }[]): Map<st
     const codec = codecFor(column.type);
     if (codec !== identity) codecs.set(column.field, codec);
   }
+
   return codecs;
 }

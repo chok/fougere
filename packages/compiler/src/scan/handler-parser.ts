@@ -13,6 +13,7 @@ import { join, dirname, resolve as resolvePath } from 'node:path';
 function parsedParam(param: ts.ParameterDeclaration, source: ts.SourceFile, checker?: ts.TypeChecker): Param {
   const ts = getTS();
   const type = param.type ? parseTypeNode(param.type, source, checker) : { raw: 'unknown', name: 'unknown' };
+
   return {
     name: ts.isIdentifier(param.name) ? param.name.text : param.name.getText(source),
     type,
@@ -336,6 +337,7 @@ function resolveSpecifier(specifier: string, fromFile: string, projectRoot: stri
     if (resolved.endsWith('.js')) resolved = resolved.slice(0, -3) + '.ts';
     if (!resolved.endsWith('.ts')) resolved += '.ts';
     if (existsSync(resolved)) return resolved;
+
     return undefined;
   }
 
@@ -362,11 +364,13 @@ function classInExpression(expr: ts.Node, depth = 0): ts.ClassExpression | undef
       const found = classInExpression(arg, depth + 1);
       if (found) return found;
     }
+
     return undefined;
   }
   if (ts.isAsExpression(expr) || ts.isSatisfiesExpression(expr) || ts.isParenthesizedExpression(expr)) {
     return classInExpression(expr.expression, depth + 1);
   }
+
   return undefined;
 }
 
@@ -389,6 +393,7 @@ function findClassInFunction(source: ts.SourceFile, functionName: string): ts.Cl
       if (ts.isClassDeclaration(inner)) return inner;
     }
   }
+
   return undefined;
 }
 
@@ -467,6 +472,7 @@ function declarationFileOf(node: ts.Node, checker: ts.TypeChecker): string | und
   let symbol = checker.getSymbolAtLocation(node);
   if (!symbol) return undefined;
   if (symbol.flags & typescript.SymbolFlags.Alias) symbol = checker.getAliasedSymbol(symbol);
+
   return symbol.declarations?.[0]?.getSourceFile().fileName;
 }
 
@@ -499,6 +505,7 @@ function inheritedFromBase(
       name: property.name,
       params: signature.getParameters().map((parameter) => {
         const type = checker.getTypeOfSymbolAtLocation(parameter, base);
+
         return {
           name: parameter.name,
           type: parseCheckedType(type, checker.typeToString(type), checker),
@@ -510,6 +517,7 @@ function inheritedFromBase(
       ...(sentence ? { description: sentence.split(/(?<=\.)\s/)[0] } : {}),
     });
   }
+
   return results;
 }
 
@@ -569,6 +577,7 @@ export interface HandlerParse {
  */
 export async function parseAllHandlerMethods(filePath: string, projectRoot?: string): Promise<HandlerParse> {
   await loadTS();
+
   return parseClassMethods(filePath, CONSTRUCTOR_ONLY, projectRoot);
 }
 
@@ -593,6 +602,7 @@ export async function parseRefusals(
 /** Parse a presenter source file and extract all method signatures. */
 export async function parsePresenterMethods(filePath: string, projectRoot?: string): Promise<Signature[]> {
   await loadTS();
+
   // No `projectRoot`, so no heritage pass and nothing to report: a presenter's
   // computed fields are its own methods.
   return parseClassMethods(filePath, CONSTRUCTOR_ONLY, undefined, projectRoot).methods;
@@ -609,6 +619,7 @@ export async function parseConstructorParams(filePath: string, projectRoot?: str
   if (!cls) return [];
 
   const ctor = cls.members.find(ts.isConstructorDeclaration);
+
   return ctor ? ctor.parameters.map((p) => parsedParam(p, source, checker)) : [];
 }
 
@@ -635,6 +646,7 @@ function parseClassMethods(
     const parentOnly = inherited
       .filter((m) => !childNames.has(m.name))
       .map((m) => ({ ...m, inherited: true }));
+
     return { methods: [...childMethods, ...parentOnly], unresolvedHeritage: unresolved };
   }
 

@@ -13,6 +13,7 @@ export const crypto: CryptoPort = {
   async signerOf(privateKeyPem): Promise<Signer> {
     // Parsed here and captured, so a call signs against a KeyObject and never a string.
     const key = createPrivateKey(privateKeyPem);
+
     return { async sign(data) { return new Uint8Array(sign(null, data, key)); } };
   },
 
@@ -20,6 +21,7 @@ export const crypto: CryptoPort = {
     const parsed = typeof key === 'string'
       ? createPublicKey(key)
       : createPublicKey({ key: key as never, format: 'jwk' });
+
     return { async verify(data, signature) { return verify(null, data, parsed, signature); } };
   },
 };

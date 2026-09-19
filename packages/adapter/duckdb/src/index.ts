@@ -64,6 +64,7 @@ function targetOf(declaration: { path?: string; attach?: string }, alias: string
       `and an in-memory database of its own would hold none of your rows.`,
     );
   }
+
   return target;
 }
 
@@ -123,6 +124,7 @@ export async function connectSources(options: ConnectOptions): Promise<Reads> {
         const sql = parts.reduce((out, part, i) => out + part + (i < refs.length ? qualify(refs[i], placed) : ''), '');
         const rows = (await db.runAndReadAll(sql)).getRowObjects();
         if (rows.length > 0) refuseMismatch(shape, names, rows[0] as Record<string, unknown>, sql);
+
         return rows.map((row) => project(names, codecs, row as Record<string, unknown>)) as InstanceType<E>[];
       };
     },
@@ -173,6 +175,7 @@ function project(
     const raw = column in row ? row[column] : row[name];
     out[name] = codecs.get(name)?.read(raw) ?? raw;
   }
+
   return out;
 }
 

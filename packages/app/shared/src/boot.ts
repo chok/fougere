@@ -58,6 +58,7 @@ export function useFougereApp(): Promise<App> {
   if (!_appPromise) {
     _appPromise = boot();
   }
+
   return _appPromise;
 }
 
@@ -72,6 +73,7 @@ export async function reloadFougere(timeoutMs?: number): Promise<App> {
     await old.drain(timeoutMs);
     await old.dispose();
   }
+
   return next;
 }
 

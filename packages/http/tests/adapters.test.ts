@@ -11,6 +11,7 @@ describe('Hono adapter', () => {
     const router = createHonoRouter(app);
     router.on('POST', '/items', async (ctx) => {
       await ctx.body();
+
       return { status: 200, data: {} };
     });
 
@@ -44,6 +45,7 @@ describe('Hono adapter', () => {
     const router = createHonoRouter(app);
     router.use(async (ctx, next) => {
       await ctx.body();
+
       return next();
     });
 
@@ -133,6 +135,10 @@ describe('a middleware that refuses with no body', () => {
       get: (key: string) => state.get(key),
       set: (key: string, value: unknown) => state.set(key, value),
       header: vi.fn(),
+
+
+
+
       body: vi.fn((data: unknown, status: number) => { bodies.push({ data, status }); return { data, status }; }),
       json: vi.fn((data: unknown, status: number) => ({ data, status })),
     };

@@ -36,6 +36,7 @@ type State =
  */
 function useLabels() {
   const translate = useTranslate();
+
   return (key: string, fallback: string, options?: Record<string, unknown>) =>
     translate(`fougere.admin.${key}`, { _: fallback, ...options });
 }
@@ -47,6 +48,7 @@ const Row = ({ children }: { children: React.ReactNode }) => (
 /** One call path, with its refusals — the only number here that is a health signal. */
 function EdgeLine({ edge, direction }: { edge: Edge; direction: 'out' | 'in' }): ReactElement {
   const label = useLabels();
+
   return (
     <Row>
       <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
@@ -166,6 +168,7 @@ function Graph({ nodes, selected, onSelect }: {
 
         {drawing.nodes.map(({ node, x, y, width, height }) => {
           const tone = toneOf(node);
+
           return (
             <Box
               key={node.frond}
@@ -228,6 +231,7 @@ function Graph({ nodes, selected, onSelect }: {
 function FrondCard({ node }: { node: TopologyNode }): ReactElement {
   const label = useLabels();
   const here = node.placement === 'local';
+
   return (
     <Card variant="outlined">
       <CardContent sx={{ display: 'grid', gap: 1 }}>
@@ -277,6 +281,7 @@ export function FougereTopology({ endpoint = CALL_ENDPOINT, fetcher = browserFet
     fetchTopology(endpoint, fetcher)
       .then((report) => { if (live) setState(report ? { status: 'served', report } : { status: 'unobserved' }); })
       .catch((error: unknown) => { if (live) setState({ status: 'failed', error }); });
+
     return () => { live = false; };
   }, [endpoint, fetcher]);
 

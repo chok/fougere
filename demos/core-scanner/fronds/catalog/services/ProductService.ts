@@ -5,6 +5,7 @@ export default class ProductService {
 
   listProducts() {
     this.logger.info('listing products');
+
     return [
       { id: '1', name: 'Fougère royale', price: 24.90 },
       { id: '2', name: 'Asplenium nidus', price: 19.90 },

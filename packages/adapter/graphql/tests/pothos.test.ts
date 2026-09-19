@@ -404,6 +404,7 @@ describe('registerOperations', () => {
       facade: {
         inspect: (invocation: any) => {
           invocations.push(invocation);
+
           return categories[0];
         },
       },

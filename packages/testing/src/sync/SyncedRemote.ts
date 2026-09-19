@@ -14,6 +14,7 @@ export async function syncedRemotes(root: string): Promise<SyncedRemote[]> {
   try {
     const raw = await readFile(join(root, '.fougere', 'remotes.json'), 'utf8');
     const parsed = JSON.parse(raw) as Record<string, { url: string; path: string }>;
+
     return Object.entries(parsed).map(([name, one]) => ({ name, ...one }));
   } catch {
     // No file is the ordinary case: an app with no remote synced nothing.

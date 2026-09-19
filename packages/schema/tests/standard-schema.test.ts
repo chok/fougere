@@ -17,12 +17,14 @@ type MaybeAsync<T> = StandardSchemaV1.Result<T> | Promise<StandardSchemaV1.Resul
 function ok<T>(result: MaybeAsync<T>): T {
   if (result instanceof Promise) throw new Error('expected a sync result');
   if (result.issues) throw new Error(`expected success, got: ${result.issues[0]?.message}`);
+
   return result.value;
 }
 
 function issuesOf<T>(result: MaybeAsync<T>): readonly StandardSchemaV1.Issue[] {
   if (result instanceof Promise) throw new Error('expected a sync result');
   if (!result.issues) throw new Error('expected failure, got success');
+
   return result.issues;
 }
 

@@ -19,6 +19,7 @@ import ProjectScan from '../fronds/analysis/services/ProjectScan.js';
  */
 const repoRoot = ((d: string): string => {
   while (!existsSync(join(d, 'pnpm-workspace.yaml'))) d = dirname(d);
+
   return d;
 })(import.meta.dirname);
 

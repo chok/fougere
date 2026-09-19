@@ -27,6 +27,7 @@ export default class RefreshHandler {
     return this.together.run(async ([, ledger], [mirror]) => {
       const { written } = await mirror.refresh();
       await ledger.create({ id: 'sync', from: 'sync', to: 'sync', amount: 1 });
+
       return { written };
     });
   }

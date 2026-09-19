@@ -35,6 +35,7 @@ export function schemaOf(app: AppLike, surface?: string): GraphQLSchema {
 
   const schema = builder.toSchema() as GraphQLSchema;
   perApp.set(key, schema);
+
   return schema;
 }
 

@@ -21,6 +21,7 @@ export default class FreezeCommand {
   async run(raw: Record<string, unknown>) {
     if (!raw.version) {
       this.ui.error('Usage: fougere freeze <version>');
+
       return;
     }
 
@@ -37,11 +38,13 @@ export default class FreezeCommand {
 
     if (seen.entities.length === 0) {
       this.ui.warn('No entities found. Run this from a Fougere project root.');
+
       return;
     }
 
     if (seen.written) {
       this.report(seen);
+
       return;
     }
 
@@ -77,11 +80,13 @@ export default class FreezeCommand {
         // record a decision nobody made.
         if (!answer) {
           this.ui.warn(`${entity}.${removed} treated as dropped — say so explicitly if that is right.`);
+
           return undefined;
         }
         renamed[entity] = { ...renamed[entity], [removed]: answer };
       }
     }
+
     return renamed;
   }
 
@@ -89,6 +94,7 @@ export default class FreezeCommand {
     const { step } = written;
     if (!step) {
       this.ui.success(`${written.version} recorded — ${written.entities.length} entities, and nothing before it`);
+
       return;
     }
 
@@ -108,5 +114,6 @@ function describeChange(change: Change): string {
   if (change.kind === 'renamed') return `${change.from} → ${change.to}`;
   // An axis that moved names WHICH: "restated title" says nothing a reader can act on.
   if (change.kind === 'restated') return `${change.field}: ${change.axis} moved`;
+
   return `${change.kind} ${change.field}`;
 }

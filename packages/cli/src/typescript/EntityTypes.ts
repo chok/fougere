@@ -12,6 +12,7 @@ function typeOf(field: FieldDescriptor): string {
   const nullable = types.includes('null');
   const base = types.find((t) => t !== 'null');
   const inner = baseTypeOf(base, field);
+
   return nullable ? `${inner} | null` : inner;
 }
 
@@ -41,8 +42,10 @@ function baseTypeOf(base: string | undefined, field: FieldDescriptor): string {
 function objectTypeOf(properties: Record<string, FieldDescriptor>, required: readonly string[]): string {
   const members = Object.entries(properties).map(([name, field]) => {
     const optional = required.includes(name) ? '' : '?';
+
     return `${propertyKey(name)}${optional}: ${typeOf(field)}`;
   });
+
   return `{ ${members.join('; ')} }`;
 }
 
@@ -53,8 +56,10 @@ function shapeTypeOf(descriptor: SchemaDescriptor, indent = ''): string {
 
   const lines = entries.map(([key, field]) => {
     const doc = docCommentOf(field.description, `${indent}  `);
+
     return `${doc}${indent}  ${propertyKey(key)}: ${typeOf(field)};`;
   });
+
   return `{\n${lines.join('\n')}\n${indent}}`;
 }
 
@@ -82,5 +87,6 @@ function identifierOf(name: string): string {
   if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name)) {
     throw new Error(`'${name}' is not a TypeScript identifier — it cannot name a generated declaration`);
   }
+
   return name;
 }

@@ -28,6 +28,7 @@ export default class CheckCommand {
 
     if (result.fronds === 0) {
       this.ui.warn('No fronds found. Run this from a Fougere project root.');
+
       return;
     }
 
@@ -35,6 +36,7 @@ export default class CheckCommand {
 
     if (result.findings.length === 0) {
       this.ui.success('Nothing to report.');
+
       return;
     }
 
@@ -50,6 +52,7 @@ function render(f: Diagnostic): string {
   const mark = f.severity === 'blocking' ? pc.red('✗') : pc.yellow('⚠');
   const where = relative(process.cwd(), f.filePath) || f.filePath;
   const what = f.subject ? ` ${f.subject}` : '';
+
   return `  ${mark} ${pc.bold(`[${f.code}]`)}${what}\n${wrap(f.message, 76, '    ')}\n    ${pc.dim(where)}`;
 }
 
@@ -62,5 +65,6 @@ function wrap(text: string, width: number, indent: string): string {
     else line = line ? `${line} ${word}` : word;
   }
   if (line) lines.push(line);
+
   return lines.map((l) => indent + l).join('\n');
 }

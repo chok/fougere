@@ -154,13 +154,16 @@ async function inScope<R>(
     const storages = members.entities.map((member) => {
       const storage = wrap(factory(member.schema, member.name), member.name, member.schema);
       scope.registerValue(storageKeyOf(member.name), storage);
+
       return storage;
     });
     // Providers after every storage is in place: one may depend on another member's.
     const built = members.providers.map((provider) => {
       scope.register(provider.ctor.name, provider.ctor, { deps: provider.deps });
+
       return scope.resolve(provider.ctor.name);
     });
+
     return await fn(storages, built);
   } finally {
     await scope.dispose();

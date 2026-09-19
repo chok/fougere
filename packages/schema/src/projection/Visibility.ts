@@ -21,6 +21,7 @@ export class Visibility {
       if (Boundary.of(field).readOnly) continue;
       result[name] = field;
     }
+
     return result;
   }
 
@@ -30,6 +31,7 @@ export class Visibility {
       if (Boundary.of(field).writeOnly) continue;
       result[name] = field;
     }
+
     return result;
   }
 
@@ -68,6 +70,7 @@ export class Visibility {
       if (value === null || value === undefined) continue;
       out[key] = boundary.encode(value);
     }
+
     return out;
   }
 }

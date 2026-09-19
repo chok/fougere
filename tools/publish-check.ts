@@ -38,6 +38,7 @@ const publishable = (dir: string): Publishable[] => {
       if (pkg.name && pkg.private !== true && pkg.exports) found.push({ name: pkg.name, dir });
     }
   }
+
   return found;
 };
 
@@ -69,6 +70,7 @@ const attwOf = (dir: string): string[] => {
     });
   } catch { /* a finding is an exit code; the report is on disk either way */ }
   const problems: Record<string, Problem[]> = JSON.parse(readFileSync(report, 'utf8')).problems ?? {};
+
   return Object.entries(problems)
     .filter(([kind]) => kind !== ESM_BY_DESIGN)
     .flatMap(([, hits]) => hits.filter((hit) => hit.resolutionKind !== PRE_EXPORTS))

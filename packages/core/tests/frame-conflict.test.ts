@@ -20,11 +20,13 @@ class Doc extends entity({
 
 function storageReturning(current: Record<string, unknown>) {
   const updates: { id: string; patch: Record<string, unknown> }[] = [];
+
   return {
     updates,
     async create(input: Record<string, unknown>) { return input; },
     async update(id: string, patch: Record<string, unknown>) {
       updates.push({ id, patch });
+
       return { ...current, ...patch };
     },
     async delete() { return true; },
@@ -43,6 +45,7 @@ async function updateThenUnwind(stored: Record<string, unknown>, wrote: Record<s
   }).update('1', wrote);
 
   expect(journal).toHaveLength(1);
+
   return { journal, storage };
 }
 
@@ -90,6 +93,7 @@ describe('a compensated update, replayed', () => {
       async update(_id: string, patch: Record<string, unknown>) {
         updates.push(patch);
         row = { ...row, ...patch };
+
         return row;
       },
       async delete() { return true; },
@@ -98,6 +102,7 @@ describe('a compensated update, replayed', () => {
         const answer = { ...row };
         // Someone else writes the instant this read returns — the window the check is blind to.
         if (reads === 2) row = { ...row, payload: { a: 99 } };
+
         return answer;
       },
       async findByKeys() { return new Map(); },

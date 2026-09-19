@@ -29,6 +29,7 @@ function facadesOf(card: IdentityCard, frond: string): Map<string, Answering> {
       found.set(facade.name, { ops: new Set(facade.ops.map((op) => op.name)), schema: facade.schema });
     }
   }
+
   return found;
 }
 
@@ -38,6 +39,7 @@ function factsOf(card: IdentityCard, frond: string): Map<string, SchemaDescripto
     if (one.name !== frond) continue;
     for (const fact of one.facts ?? []) found.set(fact.name, fact.schema as SchemaDescriptor | undefined);
   }
+
   return found;
 }
 
@@ -117,6 +119,7 @@ export function explain(drift: CardDrift): string[] {
     if (changes === 'gone') { lines.push(`${fact} — you subscribe to it, it is no longer announced`); continue; }
     for (const change of changes) lines.push(`${fact} — ${describe(change)} → re-sync and deploy the readers, THEN the sender`);
   }
+
   return lines;
 }
 

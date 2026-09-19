@@ -31,6 +31,7 @@ const DashboardContext = createContext<FougereDashboardContextValue | undefined>
 export function useFougereDashboard(): FougereDashboardContextValue {
   const context = useContext(DashboardContext);
   if (!context) throw new Error('useFougereDashboard must be used inside FougereDashboard');
+
   return context;
 }
 
@@ -71,6 +72,7 @@ export function applyDashboardExtensions(
     if (anchor === -1) widgets.push(moving);
     else widgets.splice(anchor + (extension.after ? 1 : 0), 0, moving);
   }
+
   return widgets.filter((widget) => !widget.hidden);
 }
 
@@ -108,6 +110,7 @@ const unique = (values: readonly (string | undefined)[]): string[] =>
  */
 function useLabels() {
   const translate = useTranslate();
+
   return (key: string, fallback: string, options?: Record<string, unknown>) =>
     translate(`fougere.admin.${key}`, { _: fallback, ...options });
 }
@@ -128,6 +131,7 @@ function titleOf(row: Record<string, unknown>, resource: FougereDashboardResourc
     const value = row[key];
     if (typeof value === 'string' || typeof value === 'number') return String(value);
   }
+
   return '';
 }
 
@@ -141,6 +145,7 @@ function timestampOf(row: Record<string, unknown>, resource: FougereDashboardRes
       if (!Number.isNaN(timestamp)) return timestamp;
     }
   }
+
   return 0;
 }
 
@@ -164,6 +169,7 @@ function MetricCard({
   icon: ReactElement;
 }): ReactElement {
   const { loading } = useFougereDashboard();
+
   return (
     <Card sx={{ height: '100%' }}>
       <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
@@ -229,21 +235,25 @@ function OverviewWidget(): ReactElement {
 const ContentMetricWidget = () => {
   const { metrics, editorial } = useFougereDashboard();
   const t = useLabels();
+
   return <MetricCard label={t('metric.content', 'Content')} value={metrics.content} hint={t('metric.contentHint', `${editorial.length} collections`, { smart_count: editorial.length })} icon={<FougereContentIcon />} />;
 };
 const DraftMetricWidget = () => {
   const { metrics } = useFougereDashboard();
   const t = useLabels();
+
   return <MetricCard label={t('metric.drafts', 'Drafts')} value={metrics.drafts} hint={t('metric.draftsHint', 'To finish or review')} icon={<DraftIcon />} />;
 };
 const PublishedMetricWidget = () => {
   const { metrics } = useFougereDashboard();
   const t = useLabels();
+
   return <MetricCard label={t('metric.published', 'Published')} value={metrics.published} hint={t('metric.publishedHint', 'Currently visible')} icon={<PublishedIcon />} />;
 };
 const UsersMetricWidget = () => {
   const { metrics, users } = useFougereDashboard();
   const t = useLabels();
+
   return <MetricCard label={t('metric.users', 'Users')} value={metrics.users} hint={users.length ? t('metric.usersHint', 'Managed accounts') : t('metric.noUsersFacet', 'No users facet declared')} icon={<FougereUsersIcon />} />;
 };
 
@@ -254,6 +264,7 @@ function RecentContentWidget(): ReactElement {
   const recent = useMemo(() => editorial.flatMap((resource) => resource.rows.map((row) => ({
     resource, row, date: timestampOf(row, resource),
   }))).sort((a, b) => b.date - a.date).slice(0, 6), [editorial]);
+
   return (
     <Card sx={{ height: '100%' }}>
       <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
@@ -267,6 +278,7 @@ function RecentContentWidget(): ReactElement {
               const facet = resource.facets.editorial as EditorialFacet;
               const state = facet.state && typeof row[facet.state.field] === 'string' ? String(row[facet.state.field]) : undefined;
               const id = row.id as string | number | undefined;
+
               return (
                 <ButtonBase key={`${resource.name}-${String(id ?? index)}`}
                   onClick={() => resource.hasShow && id !== undefined ? navigate('show', resource.name, id) : navigate('list', resource.name)}
@@ -287,6 +299,7 @@ function UsersWidget(): ReactElement {
   const t = useLabels();
   const resource = users[0];
   const facet = resource?.facets.users as UsersFacet | undefined;
+
   return (
     <Card sx={{ height: '100%' }}>
       <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
@@ -300,6 +313,7 @@ function UsersWidget(): ReactElement {
               const id = row.id as string | number | undefined;
               const role = facet.role && typeof row[facet.role] === 'string' ? String(row[facet.role]) : undefined;
               const state = facet.state && typeof row[facet.state.field] === 'string' ? String(row[facet.state.field]) : undefined;
+
               return (
                 <ButtonBase key={String(id ?? index)}
                   onClick={() => id !== undefined && resource.hasEdit ? navigate('edit', resource.name, id) : navigate('list', resource.name)}
@@ -353,6 +367,7 @@ function StructureWidget(): ReactElement {
         fields: held.fields + width,
       });
     }
+
     return {
       fronds: [...byFrond.entries()].map(([name, counts]) => ({ name, ...counts })),
       facades: Object.keys(definitions).length,
@@ -424,6 +439,7 @@ function StructureWidget(): ReactElement {
 function CollectionsWidget(): ReactElement {
   const t = useLabels();
   const { loading, resources, navigate } = useFougereDashboard();
+
   return (
     <Card><CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
       <Typography variant="h5">{t('collections.title', 'Collections')}</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: .4, mb: 2 }}>{t('collections.subtitle', 'Every facade the card announced')}</Typography>
@@ -468,6 +484,7 @@ export function FougereDashboard({ extensions = EMPTY_EXTENSIONS }: { extensions
     if (!listable.length) {
       setResources([]);
       setLoading(false);
+
       return () => { active = false; };
     }
     setLoading(true);
@@ -482,14 +499,17 @@ export function FougereDashboard({ extensions = EMPTY_EXTENSIONS }: { extensions
         const states = editorial?.state ? Object.fromEntries(await Promise.all(stateValues.map(async (state) => {
           try {
             const filtered = await dataProvider.getList(definition.name, { pagination: { page: 1, perPage: 1 }, sort: { field: primary, order: 'DESC' }, filter: { [editorial.state!.field]: state } });
+
             return [state, filtered.total ?? filtered.data.length] as const;
           } catch { return [state, 0] as const; }
         }))) : {};
+
         return { name: definition.name, label: options?.label ?? definition.name, primary, facets, hasCreate: !!definition.hasCreate, hasEdit: !!definition.hasEdit, hasShow: !!definition.hasShow, total: page.total ?? page.data.length, rows: page.data as Record<string, unknown>[], states };
       } catch {
         return { name: definition.name, label: options?.label ?? definition.name, primary, facets, hasCreate: !!definition.hasCreate, hasEdit: !!definition.hasEdit, hasShow: !!definition.hasShow, total: 0, rows: [], states: {} };
       }
     })).then((loaded) => { if (active) setResources(loaded); }).finally(() => { if (active) setLoading(false); });
+
     return () => { active = false; };
   }, [dataProvider, resourceKey]);
 
@@ -499,10 +519,12 @@ export function FougereDashboard({ extensions = EMPTY_EXTENSIONS }: { extensions
     content: editorial.reduce((sum, resource) => sum + resource.total, 0),
     drafts: editorial.reduce((sum, resource) => {
       const facet = resource.facets.editorial as EditorialFacet;
+
       return sum + (facet.state?.draft ?? []).reduce((subtotal, state) => subtotal + (resource.states[state] ?? 0), 0);
     }, 0),
     published: editorial.reduce((sum, resource) => {
       const facet = resource.facets.editorial as EditorialFacet;
+
       return sum + (facet.state?.published ?? []).reduce((subtotal, state) => subtotal + (resource.states[state] ?? 0), 0);
     }, 0),
     users: users.reduce((sum, resource) => sum + resource.total, 0),
@@ -526,6 +548,7 @@ export function FougereDashboard({ extensions = EMPTY_EXTENSIONS }: { extensions
       : zone === 'metrics'
         ? { xs: 'span 1', lg: `span ${Math.min(4, Math.max(1, widget.span))}` }
         : undefined;
+
     return <Box key={widget.id} sx={gridColumn ? { gridColumn } : undefined}><Widget /></Box>;
   });
 

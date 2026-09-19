@@ -14,6 +14,7 @@ export function primary<T>(field: Field<T>): Field<T>;
 export function primary(fieldOrOptions?: Field | PrimaryOptions): Field {
   if (Field.is(fieldOrOptions)) {
     const field = fieldOrOptions;
+
     return field.with({
       role: { ...field.role, primary: true },
       lifecycle: { ...field.lifecycle, update: 'forbidden' },
@@ -29,6 +30,7 @@ export function primary(fieldOrOptions?: Field | PrimaryOptions): Field {
   } else {
     generate = opts.generate ?? 'cuid2';
   }
+
   return new Field<string>({
     shape: { type: 'string' },
     role: { primary: true },

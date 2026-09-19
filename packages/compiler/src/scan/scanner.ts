@@ -48,17 +48,20 @@ async function readEntries(path: string): Promise<Dirent[]> {
         + 'the app, and nothing downstream can tell that from an empty directory.',
       cause,
     });
+
     return [];
   }
 }
 
 async function dirs(path: string): Promise<string[]> {
   const entries = await readEntries(path);
+
   return entries.filter((e) => e.isDirectory()).map((e) => e.name);
 }
 
 async function files(path: string): Promise<string[]> {
   const entries = await readEntries(path);
+
   return entries
     .filter((e) => e.isFile() && (e.name.endsWith('.ts') || e.name.endsWith('.js')))
     .map((e) => join(path, e.name));
@@ -72,6 +75,7 @@ async function loadModule(filePath: string): Promise<Record<string, unknown>> {
 
 async function loadDefault(filePath: string): Promise<unknown> {
   const mod = await loadModule(filePath);
+
   return mod.default;
 }
 
@@ -93,6 +97,7 @@ async function loadClass(filePath: string): Promise<ProviderEntry['ctor']> {
       + 'the scan reads without interpreting and an import still reaches.',
     );
   }
+
   return ctor as ProviderEntry['ctor'];
 }
 
@@ -109,12 +114,14 @@ function findWorkspaceRoot(from: string): string {
     if (existsSync(join(dir, 'pnpm-workspace.yaml')) && existsSync(join(dir, 'packages'))) return dir;
     dir = dirname(dir);
   }
+
   return resolvePath(from); // fallback: use project root itself
 }
 
 /** Strip the 'Handler' suffix → the name the handler answers to. */
 function toAddress(className: string): string {
   const base = className.endsWith('Handler') ? className.slice(0, -7) : className;
+
   return lowerFirst(base);
 }
 
@@ -272,6 +279,7 @@ async function toEntityEntry(filePath: string): Promise<EntityEntry | null> {
     ? runtimeName
     : basename(filePath).replace(/\.[^.]+$/, '');
   const name = lowerFirst(declaredName);
+
   return { name, entityClass: exported, filePath };
 }
 
@@ -294,6 +302,7 @@ function resolveSchema(type: TypeRef, moduleExports: Record<string, unknown>): S
         if (type.name === 'Partial' && typeof narrowing === 'function') {
           return narrowing.call(resolved);
         }
+
         return resolved as unknown as SchemaView;
       }
     }
@@ -302,6 +311,7 @@ function resolveSchema(type: TypeRef, moduleExports: Record<string, unknown>): S
   if (resolved && typeof resolved === 'function' && 'getFields' in resolved) {
     return resolved as unknown as SchemaView;
   }
+
   return undefined;
 }
 
@@ -409,6 +419,7 @@ async function inferOperations(
         + 'façade serves them unbound. Not the same as a handler with no operation.',
       cause,
     });
+
     return map;
   }
 
@@ -506,6 +517,7 @@ async function toHandlerEntry(
 /** Strip '.seed' suffix → entity name. 'Author.seed.ts' → 'author'. */
 function toSeedEntityName(fileName: string): string {
   const base = fileName.replace(/\.seed\.(ts|js)$/, '').replace(/\.(ts|js)$/, '');
+
   return lowerFirst(base);
 }
 
@@ -513,8 +525,10 @@ async function toSeedEntry(filePath: string): Promise<SeedEntry | null> {
   const data = await loadDefault(filePath);
   if (Array.isArray(data) || typeof data === 'function') {
     const fileName = filePath.split('/').pop()!;
+
     return { entityName: toSeedEntityName(fileName), data: data as SeedEntry['data'], filePath };
   }
+
   return null;
 }
 
@@ -582,6 +596,7 @@ async function toCollectorEntry(filePath: string): Promise<CollectorEntry | null
   const typeName = lowerFirst((target as { name: string }).name);
   const collectorParams = await ctorParamsOf(filePath);
   const deps = collectorParams.map((p) => depKeyOf(p.type));
+
   return { typeName, ctor, deps, filePath };
 }
 
@@ -652,6 +667,7 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
     read: (filePath: string) => Promise<T | null>,
   ): Promise<T[]> => {
     const entries: (T | null)[] = await Promise.all((await files(join(frondPath, dir))).map(read));
+
     return entries.filter((entry): entry is T => entry !== null);
   };
 
@@ -719,6 +735,7 @@ async function frondNameOf(frondPath: string, dirName: string): Promise<string> 
       fougere?: { frond?: unknown };
     };
     const declared = pkg.fougere?.frond;
+
     return typeof declared === 'string' && declared.length > 0 ? declared : dirName;
   } catch {
     return dirName;
@@ -732,6 +749,7 @@ async function frondNameOf(frondPath: string, dirName: string): Promise<string> 
 async function rootFrondOf(root: string, workspaceRoot: string, conventions: Conventions): Promise<FrondDescriptor | null> {
   if ((await files(join(root, conventions.dirs.entities))).length === 0) return null;
   const name = await frondNameOf(root, basename(resolvePath(root)));
+
   return scanFrond(root, name, { path: root, package: frondPackage(name, conventions) }, conventions, workspaceRoot);
 }
 
@@ -798,6 +816,7 @@ export async function scanProject(
     Promise.all(
       dirNames.map(async (dir) => {
         const name = await frondNameOf(join(frondsDir, dir), dir);
+
         return scanFrond(
           join(frondsDir, dir), name,
           { path: join(frondsDir, dir), package: frondPackage(name, conventions) },

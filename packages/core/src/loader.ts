@@ -11,6 +11,7 @@ const defaultLoader: ModuleLoader = async (filePath, options) => {
   // On the URL, never on the path: `pathToFileURL` percent-encodes a `?` into the
   // filename, and the import then looks for a file whose name ends in `%3Fv=…`.
   const url = pathToFileURL(filePath).href;
+
   return await import(options?.fresh ? `${url}?v=${Date.now()}` : url);
 };
 

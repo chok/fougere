@@ -27,6 +27,7 @@ async function billing() {
   const run = createLocalRunner(app);
   const call = (op: string, invocation: Record<string, unknown>) =>
     run({ entity: 'invoice', op }, { params: {}, query: {}, input: undefined, state: {}, ...invocation } as never);
+
   return { app, call };
 }
 

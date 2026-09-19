@@ -56,6 +56,7 @@ function viewOf(
   const fronds = typed.fronds
     .map((frond) => ({ ...frond, entities: frond.entities.filter((entry) => holds(entry.name)) }))
     .filter((frond) => frond.entities.length > 0);
+
   return {
     fronds,
     auth: withAuth ? typed.auth : undefined,
@@ -86,6 +87,7 @@ export function resolveStorage(
   for (const [name, conf] of Object.entries(sources ?? {})) {
     named[name] = { source: built(conf, `sources.${name}`, root), entities: conf.entities };
   }
+
   return storageFrom({
     db: built(typeof dbConf === 'object' ? dbConf : {}, 'db', root),
     sources: named,
@@ -156,6 +158,7 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
   const engineOf = (source: string) => (source === DEFAULT ? base : engines.get(source));
   const engineFor = (entityName: string) => {
     const source = home.get(lowerFirst(entityName));
+
     return (source && engines.get(source)) || base;
   };
 
@@ -178,6 +181,7 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
       const engine = engineOf(source);
       if (!engine) throw new Error(`No source named '${source}' — declared sources are ${[DEFAULT, ...engines.keys()].join(', ')}.`);
       if (!engine.transacted) throw new Error(`Source '${source}' hands out no transaction.`);
+
       return engine.transacted(fn);
     },
     // One pass per source, each seeing only its own entities and the NAMES of the others —

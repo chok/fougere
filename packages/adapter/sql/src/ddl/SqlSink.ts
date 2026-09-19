@@ -40,6 +40,7 @@ export function compiler(name: DialectName): Kysely<any> {
     },
   });
   engines.set(name, engine);
+
   return engine;
 }
 
@@ -94,6 +95,7 @@ export function indexSQL(table: TableDef, column: ColumnDef, dialectName: Dialec
   // arrives — or the statement fails on the rows that already break it, which is the answer.
   if (column.unique) builder = builder.unique();
   if (dialectName !== 'mssql') builder = builder.ifNotExists();
+
   return builder.compile().sql;
 }
 
@@ -115,6 +117,7 @@ export function addForeignKeyConstraintSQL(table: TableDef, column: ColumnDef, d
     .schema.alterTable(table.name)
     .addForeignKeyConstraint(name, [column.name], ref.table, [ref.column]);
   if (ref.onDelete) builder = builder.onDelete(ref.onDelete);
+
   return builder.compile().sql;
 }
 
@@ -151,6 +154,7 @@ export function generateSQL(app: AppLike, options?: GenerateOptions): string[] {
   // Indexes last: every table exists by then, and an index on a table that does not is
   // the one ordering mistake this pass can make.
   const indexes = ordered.flatMap((table) => createIndexSQL(table, dialect));
+
   return [...creates, ...constraints, ...indexes];
 }
 
@@ -171,6 +175,7 @@ export function autoMigrate(app: AppLike, sink: SqlSink, options?: GenerateOptio
   const pending = generateSQL(app, options)
     .map((statement) => runOn(sink, statement))
     .filter((result): result is Promise<unknown> => typeof (result as any)?.then === 'function');
+
   return pending.length ? Promise.all(pending).then(() => undefined) : undefined;
 }
 

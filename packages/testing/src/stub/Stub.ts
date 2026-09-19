@@ -18,6 +18,7 @@ export function methodsOf(port: Port): string[] {
     }
     proto = Object.getPrototypeOf(proto) as object | null;
   }
+
   return [...found];
 }
 
@@ -25,6 +26,7 @@ export function methodsOf(port: Port): string[] {
 export function stubOf<T>(port: Port): Stub<T> {
   const double: Record<string, Mock> = {};
   for (const method of methodsOf(port)) double[method] = vi.fn();
+
   return double as Stub<T>;
 }
 
@@ -45,5 +47,6 @@ export function installStubs(app: App, ports: Port[]): Map<Port, Stub<unknown>> 
     for (const scope of answering) scope.registerValue(port.name, double);
     doubles.set(port, double);
   }
+
   return doubles;
 }

@@ -22,6 +22,7 @@ function fakeApp(presenterFields: string[], views?: Record<string, any>) {
     list: async () => [],
     findById: async () => undefined,
   };
+
   return {
     fronds: [{
       name: 'orders',
@@ -56,6 +57,7 @@ function build(presenterFields: string[], views?: Record<string, any>) {
   builder.queryType({});
   builder.mutationType({});
   registerAll(builder, fakeApp(presenterFields, views));
+
   return builder.toSchema();
 }
 

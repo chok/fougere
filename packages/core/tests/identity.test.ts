@@ -14,6 +14,7 @@ const CALL = { entity: 'post', op: 'list' };
 /** What `fougere keys issue <name>` produces, and what the deployment injects. */
 function issue(root: { privateKey: string }, name: string): FrondIdentity {
   const pair = generateKeyPair();
+
   return { privateKey: pair.privateKey, grant: issueGrant(root.privateKey, name, pair.publicKey) };
 }
 

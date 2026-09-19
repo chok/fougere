@@ -56,6 +56,7 @@ export class Card<T = Values<Fields>> {
 
     const origin = originOf(schema);
     if (origin) descriptor['x-fougere-derived'] = origin;
+
     return new Card<Values<TFields>>(descriptor);
   }
 
@@ -111,6 +112,7 @@ export class Card<T = Values<Fields>> {
     const title = name ?? descriptor.title;
     if (title)
       Object.defineProperty(schema, 'name', { value: title, configurable: true });
+
     return schema as unknown as SchemaConstructor<FieldsOf<T>>;
   }
 
@@ -135,6 +137,7 @@ function describeExtension(field: Field, key: string): FieldExtension | undefine
     if (wire !== undefined) extension[slot] = wire;
   }
   clean(extension);
+
   return Object.keys(extension).length ? (extension as FieldExtension) : undefined;
 }
 
@@ -145,6 +148,7 @@ function describeField(field: Field, key: string): FieldDescriptor {
   if (field.meta?.description) descriptor.description = field.meta.description;
   const extension = describeExtension(field, key);
   if (extension) descriptor['x-fougere'] = extension;
+
   return descriptor;
 }
 
@@ -159,6 +163,7 @@ function originOf(schema: SchemaView): DerivedFrom | undefined {
   const nameOf = Object.fromEntries(
     Object.entries(derivation.nameOf).map(([key, value]) => [key, value ?? null]),
   );
+
   return { from: derivation.sourceName, nameOf };
 }
 
@@ -208,6 +213,7 @@ function reconstructField(
     const form = CardForms.find(slot);
     if (wire !== undefined) axes[slot] = form ? form.reconstruct(wire, resolve) : wire;
   }
+
   return new Field({
     shape,
     ...axes,

@@ -26,6 +26,7 @@ function noteStorage() {
     delete: vi.fn(async () => true),
     output: vi.fn(() => storage),
   };
+
   return storage;
 }
 
@@ -35,6 +36,7 @@ async function boot() {
     createContainer,
     storageFactory: vi.fn(() => noteStorage()) as unknown as StorageFactory,
   });
+
   return { app, run: createLocalRunner(app) };
 }
 

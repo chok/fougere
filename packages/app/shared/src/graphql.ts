@@ -23,6 +23,7 @@ type ExecuteOn = (app: unknown, request: {
 async function executor(): Promise<ExecuteOn> {
   try {
     const { executeOn } = await import('@fougere/adapter-graphql');
+
     return executeOn as unknown as ExecuteOn;
   } catch (cause) {
     throw new Error(

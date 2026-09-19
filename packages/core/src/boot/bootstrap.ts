@@ -448,6 +448,7 @@ function readings(
           + `Call its operations through the façade instead.`,
         );
       }
+
       return route.schema;
     }
     throw new Error(notLoaded(entity));
@@ -489,6 +490,7 @@ function readings(
     const owner = fronds.owner(entity);
     if (!owner) {
       sayNoSurfaceAcross(entity, surface);
+
       return own;
     }
 
@@ -498,6 +500,7 @@ function readings(
     if (own) return own;
 
     const fallback = facadeAt(facadeKeyOf(entity), false);
+
     return fallback
       ? facadeOperations(
           localDispatcher,
@@ -515,6 +518,7 @@ function readings(
     const own = effectiveByKey.get(facadeKeyOf(entity, surface));
     const declared = fronds.owner(entity)?.surfaces?.[surface];
     if (!declared) return own;
+
     return declared.some((name) => name.toLowerCase() === entity.toLowerCase())
       ? (own ?? effectiveByKey.get(facadeKeyOf(entity)))
       : undefined;
@@ -735,6 +739,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     container.setFallback?.((name) => {
       if (!remoteRouter) return undefined;
       if (!name.endsWith('Handler') || name.includes(':')) return undefined;
+
       // Façade-shaped stand-in; routing happens lazily at the first call. Through
       // `lowerFirst` because a DEPENDENCY names the type as written — `ProductHandler`,
       // PascalCase — while a card declares `product`, so the raw strip asked the router for
@@ -752,6 +757,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         if (known) return known;
         const facade = createRemoteFacade(entity, remoteRouter, getMiddlewares);
         remoteFacades.set(entity, facade);
+
         return facade;
       }));
     }
@@ -769,7 +775,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       // Where a call goes, as DECLARED. Kept because a reader needs it beside what the
       // runtime OBSERVED — `rpc.topology` calls a frond remote because it answered, never
       // because a key said so, and the two disagree exactly when something is misconfigured.
-      remotes: Object.freeze({ ...(options.remotes ?? {}) }),
+      remotes: Object.freeze({ ...options.remotes }),
       dispatch: (call) => dispatcher.dispatch(call),
       local: localDispatcher,
       resolve,

@@ -26,17 +26,20 @@ export default class MigrateCommand {
 
     if (result.chain.length === 0) {
       this.ui.warn('No frozen step to apply. `fougere freeze <version>` records one.');
+
       return;
     }
 
     if (result.refusals.length > 0) {
       this.ui.error(`This chain cannot be realised as it stands (${result.chain.join(' → ')}):`);
       for (const one of result.refusals) this.ui.step(`${pc.bold(`${one.entity}.${one.field}`)} — ${one.reason}`);
+
       return;
     }
 
     if (result.changes.length === 0) {
       this.ui.success(`Up to date — ${result.chain.join(' → ')} already realised.`);
+
       return;
     }
 
@@ -50,6 +53,7 @@ export default class MigrateCommand {
 
     if (result.ran.length === 0) {
       this.ui.info(`${result.changes.length} statement(s) — run again with ${pc.bold('--apply')} to make it so.`);
+
       return;
     }
     this.ui.success(`${result.ran.length} statement(s) run.`);

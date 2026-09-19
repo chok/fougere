@@ -17,12 +17,14 @@ export const ambient: Ambient = {
         + `are ONE frame — declare a single Together naming every member.`,
       ));
     }
+
     return frame.run(key, fn);
   },
 
   beforeAnnounce(fact: string): Promise<void> {
     const open = frame.getStore();
     if (open === undefined) return Promise.resolve();
+
     return Promise.reject(new Error(
       `${fact} cannot be announced inside Together<[…]> (${open}): announcing is dispatch, `
       + `so subscribers and the carrier would have it while these writes can still be taken `

@@ -18,6 +18,7 @@ export function oneOf<const T extends readonly string[]>(
   const hasOpts = typeof last === 'object' && last !== null && !Array.isArray(last);
   const values = (hasOpts ? args.slice(0, -1) : args) as unknown as readonly string[];
   const opts = hasOpts ? (last as Shared<T[number]>) : {};
+
   return new Field<T[number]>({ shape: { type: 'string', enum: values } }).setShared(
     opts,
   );

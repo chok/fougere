@@ -318,6 +318,7 @@ export class Emissions {
    */
   private stamped(fact: string, raw: unknown): unknown {
     const shape = this.shapes.get(fact);
+
     return shape && raw !== null && typeof raw === 'object' && !Array.isArray(raw)
       ? applyCreate(shape.getFields(), raw as Record<string, unknown>)
       : raw;
@@ -337,6 +338,7 @@ export class Emissions {
     const listeners = this.subscribers.get(fact) ?? [];
     if (listeners.length === 0) {
       this.log.debug(`${fact} — nobody listens in this process`);
+
       return [];
     }
 
@@ -350,6 +352,7 @@ export class Emissions {
         } catch (cause) {
           throw new Error(`${fact} → ${facade} could not be reached`, { cause });
         }
+
         return handler[op]({ ...Invocation.empty, input: payload });
       }),
     }));
@@ -359,6 +362,7 @@ export class Emissions {
   private describeRefusal(fact: string, cause: unknown): string | undefined {
     const refusals = validationErrorsOf(cause);
     if (!refusals?.length) return undefined;
+
     return `refused the shape — ${refusals.map((d) => `${dotted(d.path)}: ${d.message}`).join(', ')}.`
       + ` If '${fact}' gained a field, this copy is older than the sender's: re-run \`fougere sync\`.`;
   }

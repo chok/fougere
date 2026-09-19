@@ -45,6 +45,7 @@ export class ErrorRing extends Ring<ErrorGroup> {
       // Without it a refusal seen forty times reports one, forever: the group is mutated
       // in place, and a cursor asks only for what is above it.
       seen.seq = ++this.seq;
+
       return;
     }
 

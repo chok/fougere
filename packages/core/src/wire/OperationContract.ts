@@ -39,6 +39,7 @@ export function cardinalityOf(type: TypeRef | undefined): OperationContract['car
   if (inner.name === 'Page' || inner.name === 'ListResult') return 'page';
   if (inner.array) return 'many';
   if (PRIMITIVE_RETURNS.has(inner.name)) return 'none';
+
   return inner.nullable || inner.undefined ? 'maybe' : 'one';
 }
 

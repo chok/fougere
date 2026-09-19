@@ -23,6 +23,7 @@ const SOCIAL_KEYS = new Set(['google', 'github', 'facebook', 'apple', 'discord',
 export function translateCredential(providers?: FougereProviders): BetterAuthOptions['emailAndPassword'] {
   const cred = providers?.credential;
   if (!cred) return { enabled: false };
+
   return {
     enabled: true,
     minPasswordLength: cred.minPasswordLength,
@@ -37,6 +38,7 @@ export function translateSocial(providers?: FougereProviders): BetterAuthOptions
   for (const [key, value] of Object.entries(providers)) {
     if (SOCIAL_KEYS.has(key)) social[key] = value;
   }
+
   return social as BetterAuthOptions['socialProviders'];
 }
 
@@ -55,5 +57,6 @@ export function translatePlugins(providers?: FougereProviders): BetterAuthPlugin
     }));
     plugins.push(genericOAuth({ config }));
   }
+
   return plugins;
 }

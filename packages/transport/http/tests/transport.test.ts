@@ -27,6 +27,7 @@ const runner: Transport = async (call, invocation) => {
   }
   if (call.op === 'slow') {
     await new Promise((r) => setTimeout(r, 400));
+
     return 'late';
   }
   throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `Unknown op '${call.op}'`, entity: call.entity, operation: call.op });

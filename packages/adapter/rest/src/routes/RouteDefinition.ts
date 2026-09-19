@@ -93,6 +93,7 @@ function deriveMethod(
   if (opName.startsWith('create')) return 'POST';
   if (opName.startsWith('update') || opName.startsWith('edit')) return 'PUT';
   if (opName.startsWith('delete') || opName.startsWith('remove')) return 'DELETE';
+
   return 'POST';
 }
 

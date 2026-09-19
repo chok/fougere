@@ -7,6 +7,7 @@ import { join, resolve, dirname, relative, isAbsolute } from 'node:path';
 let _ts: typeof ts | undefined;
 async function loadTs(): Promise<typeof ts> {
   if (!_ts) _ts = (await import('@typescript/typescript6')).default;
+
   return _ts;
 }
 
@@ -26,6 +27,7 @@ export interface CrossFrondImport {
 /** Is `child` inside `parent`? Path-based, so it says nothing about either existing. */
 function inside(parent: string, child: string): boolean {
   const rel = relative(parent, child);
+
   return rel !== '' && !rel.startsWith('..') && !isAbsolute(rel);
 }
 
@@ -45,6 +47,7 @@ async function sourcesUnder(dir: string): Promise<string[]> {
     if (entry.isDirectory()) out.push(...await sourcesUnder(full));
     else if (entry.name.endsWith('.ts') && !entry.name.endsWith('.d.ts')) out.push(full);
   }
+
   return out;
 }
 
@@ -90,5 +93,6 @@ export async function crossFrondImports(
       }
     }
   }
+
   return found;
 }

@@ -34,6 +34,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
     if (!post) {
       throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `No published post at '${input.slug}'`, entity: 'post', operation: 'findBySlug' });
     }
+
     return post;
   }
 
@@ -42,6 +43,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
     const post = await this.posts.findById(id);
     if (!post) return undefined;
     const own = user && post.authorId === user.id;
+
     return post.status === 'published' || own ? post : undefined;
   }
 
@@ -51,6 +53,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
     // The repository answers newest first; sort is stable, so ordering survives the
     // draft-first pass — a presentation tiebreak, not a question for the storage.
     const own = await this.posts.ofAuthor(user.id);
+
     return own.sort((a, b) => (a.status === 'draft' ? 0 : 1) - (b.status === 'draft' ? 0 : 1));
   }
 
@@ -58,6 +61,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
   async create(input: PostDraft, user?: User): Promise<Post> {
     const author = requireUser(user, 'create');
     await requireFreeSlug(this.posts, input.slug, undefined, 'create');
+
     return this.posts.create({
       ...input,
       authorId: author.id,
@@ -70,6 +74,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
     const author = requireUser(user, 'update');
     const post = await requireOwn(this.posts, id, author, 'update');
     if (input.slug && input.slug !== post.slug) await requireFreeSlug(this.posts, input.slug, id, 'update');
+
     return this.posts.update(id, input);
   }
 
@@ -87,6 +92,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
     if (!post.body?.trim()) {
       throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Cannot publish an empty draft', entity: 'post', operation: 'publish' });
     }
+
     return this.posts.update(id, { status: 'published', publishedAt: new Date() });
   }
 
@@ -94,6 +100,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
   async delete(id: string, user?: User): Promise<boolean> {
     const author = requireUser(user, 'delete');
     await requireOwn(this.posts, id, author, 'delete');
+
     return this.posts.delete(id);
   }
 }

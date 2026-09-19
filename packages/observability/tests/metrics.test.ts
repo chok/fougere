@@ -93,6 +93,10 @@ describe('saturation and topology', () => {
   it('sees a call in flight while it runs', async () => {
     collect();
     let underway = 0;
+
+
+
+
     app.use('product', async (_ctx, next) => { underway = activeCalls(); return next(); });
 
     await app.resolve<Facade>('productHandler').list();

@@ -18,6 +18,7 @@ export function Presenter<E extends EntityConstructor>(entity: E, views?: Presen
     static readonly __entity = entity;
     static readonly __views = views;
   }
+
   return PresenterBase;
 }
 

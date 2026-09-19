@@ -34,6 +34,7 @@ function makeStorage() {
     output: vi.fn(() => storage),
     client: {},
   };
+
   return storage;
 }
 

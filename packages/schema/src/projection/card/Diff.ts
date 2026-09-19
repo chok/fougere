@@ -107,6 +107,7 @@ function restated(
 
 function shapeOf(descriptor: FieldDescriptor): Record<string, unknown> {
   const { 'x-fougere': _extension, description: _description, ...shape } = descriptor;
+
   return shape as Record<string, unknown>;
 }
 
@@ -118,6 +119,7 @@ function shapeOf(descriptor: FieldDescriptor): Record<string, unknown> {
 function typesOf(descriptor: FieldDescriptor): TypeSet {
   const type = descriptor.type;
   if (type === undefined) return [];
+
   return (Array.isArray(type) ? [...type] : [type]).sort();
 }
 
@@ -128,6 +130,7 @@ function typesOf(descriptor: FieldDescriptor): TypeSet {
  */
 function boundsOf(descriptor: FieldDescriptor): Record<string, unknown> {
   const { type: _type, ...rest } = shapeOf(descriptor);
+
   return rest;
 }
 
@@ -153,5 +156,6 @@ function candidates(
   const now = Object.keys(after);
   const apart = ({ removed: gone, added: appeared }: RenameCandidate): number =>
     Math.abs(now.indexOf(appeared) - was.indexOf(gone));
+
   return found.sort((a, b) => apart(a) - apart(b));
 }

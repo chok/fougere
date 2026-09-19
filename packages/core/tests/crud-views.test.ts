@@ -29,12 +29,14 @@ function fullRowStorage() {
     delete: vi.fn(async () => true),
     output: vi.fn(() => storage),
   };
+
   return storage;
 }
 
 async function boot() {
   const storage = fullRowStorage();
   const app = await createApp({ scan: await scanProject(root), createContainer, storageFactory: vi.fn(() => storage) as unknown as StorageFactory });
+
   return { app, storage, run: createLocalRunner(app) };
 }
 

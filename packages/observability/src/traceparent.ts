@@ -26,6 +26,7 @@ export function parseTraceparent(header: string | undefined): SpanContext | unde
 
   const [, traceId, spanId, flags] = found;
   if (traceId === NO_TRACE || spanId === NO_SPAN) return undefined;
+
   return { traceId, spanId, sampled: (parseInt(flags, 16) & 1) === 1 };
 }
 
@@ -37,5 +38,6 @@ export function randomHex(bytes: number): string {
   crypto.getRandomValues(buffer);
   let out = '';
   for (const byte of buffer) out += HEX[byte >> 4] + HEX[byte & 15];
+
   return out;
 }

@@ -38,10 +38,23 @@ async function bootWith(rows: { id: string; title: string }[]) {
 function fakeRes() {
   const sent: { status?: number; body?: unknown; headers: Record<string, unknown> } = { headers: {} };
   const res: any = {
+
+
+
+
     status: (code: number) => { sent.status = code; return res; },
+
+
+
+
     set: (k: string, v: unknown) => { sent.headers[k] = v; return res; },
+
+
+
+
     json: (body: unknown) => { sent.body = body; return res; },
   };
+
   return { res, sent };
 }
 
@@ -51,6 +64,7 @@ async function run(mw: ReturnType<typeof call>, req: any) {
   const next = vi.fn();
   mw(req, res, next);
   await new Promise((r) => setTimeout(r, 5));
+
   return { sent, next };
 }
 

@@ -12,6 +12,7 @@ let threshold: number = LEVELS[envLevel() ?? 'info'];
 /** The level the PROCESS was started with. */
 export function envLevel(): LogLevel | undefined {
   const raw = typeof process === 'undefined' ? undefined : process.env.FOUGERE_LOG_LEVEL;
+
   return raw !== undefined && raw in LEVELS ? (raw as LogLevel) : undefined;
 }
 
@@ -51,8 +52,10 @@ function supportsColor(): boolean {
   if (typeof process !== 'undefined') {
     if (process.env.NO_COLOR) return false;
     if (process.env.FORCE_COLOR === '1') return true;
+
     return process.stdout?.isTTY === true;
   }
+
   return false;
 }
 
@@ -62,6 +65,7 @@ function stamp(at: number | Date): string {
   const m = String(d.getMinutes()).padStart(2, '0');
   const s = String(d.getSeconds()).padStart(2, '0');
   const ms = String(d.getMilliseconds()).padStart(3, '0');
+
   return `${h}:${m}:${s}.${ms}`;
 }
 

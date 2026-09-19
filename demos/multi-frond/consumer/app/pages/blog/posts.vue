@@ -18,9 +18,11 @@ function validate() {
   const result = CreatePost.validate(form);
   if (result.success) {
     errors.value = [];
+
     return result.data;
   }
   errors.value = result.errors;
+
   return null;
 }
 

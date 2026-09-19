@@ -5,6 +5,7 @@ import type { Placement } from './Placement.js';
 /** Does this config ask for persistence at all? */
 export function declaresStorage(dbConf: DbConfig): boolean {
   if (dbConf === false || dbConf === undefined) return false;
+
   return true;
 }
 

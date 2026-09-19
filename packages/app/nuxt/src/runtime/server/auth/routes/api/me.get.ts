@@ -6,5 +6,6 @@ export default defineEventHandler((event) => {
     throw createError({ statusCode: 401, message: 'Not logged in' });
   }
   const { passwordHash, ...safe } = user as Record<string, unknown>;
+
   return safe;
 });

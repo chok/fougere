@@ -49,6 +49,7 @@ export function entityClassName(name: string): string {
   if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(identifier)) {
     throw new Error(`Entity name '${name}' cannot be represented as a TypeScript identifier`);
   }
+
   return identifier;
 }
 
@@ -103,6 +104,7 @@ function identityCardOf(value: unknown): IdentityCard {
     for (const facade of frond.facades) assertEntry('facade', frond.name, facade);
     for (const fact of frond.facts ?? []) assertEntry('fact', frond.name, fact);
   }
+
   return card;
 }
 
@@ -170,6 +172,7 @@ export default class SyncHandler {
       const className = entityClassName(name);
       if (generated.has(className)) throw new Error(`Remote declares duplicate entity '${className}'`);
       generated.set(className, { row: false, facade: false });
+
       return className;
     };
 
@@ -324,6 +327,7 @@ export default class SyncHandler {
       rmSync(path);
       dropped.push(name);
     }
+
     return dropped;
   }
 

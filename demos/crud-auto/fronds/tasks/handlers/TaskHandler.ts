@@ -8,6 +8,7 @@ export default class TaskHandler extends Crud(Task) {
   async toggle(input: ToggleInput): Promise<ToggleOutput | undefined> {
     const task = await this.storage.findById(input.id);
     if (!task) return undefined;
+
     return this.storage.update(input.id, { done: !task.done });
   }
 }

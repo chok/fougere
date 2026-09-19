@@ -421,6 +421,7 @@ function leaflets(
     const dx = 2 * (1 - t) * (cx - bx) + 2 * t * (tx - cx);
     const dy = 2 * (1 - t) * (cy - by) + 2 * t * (ty - cy);
     const n = Math.hypot(dx, dy);
+
     return [dx / n, dy / n] as const;
   };
   const r = (n: number) => n.toFixed(2);
@@ -447,6 +448,7 @@ function leaflets(
       );
     }
   }
+
   return out;
 }
 
@@ -509,6 +511,7 @@ const TopologyIcon = (props: SvgIconProps) => (
  */
 const FougereMenu = () => {
   const translate = useTranslate();
+
   return (
     <Menu>
       <Menu.DashboardItem />

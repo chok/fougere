@@ -93,6 +93,7 @@ export function useCommand<
       // The link: same entity designated on both sides → revalidate its queries.
       const keys = mountedKeys(entityKey);
       if (keys.length) await refreshNuxtData(keys);
+
       return result;
     } catch (err) {
       error.value = asFougereError(err, entityKey, op) as FougereError<Refused<Address, Op>>;

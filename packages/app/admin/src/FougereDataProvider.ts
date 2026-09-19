@@ -9,6 +9,7 @@ type Values = Record<string, unknown>;
 function asAdminError(err: unknown): unknown {
   const refusals = validationErrorsOf(err);
   if (!refusals) return err;
+
   return Object.assign(new Error((err as Error).message), {
     status: 400,
     body: { errors: errorsByField(refusals) },
@@ -21,6 +22,7 @@ export function createDataProvider(options: ProviderOptions) {
   const keyOf = (resource: string): ResourceKey => {
     const known = resources[resource];
     if (!known) throw new Error(`Unknown resource '${resource}' — the card names none of that address`);
+
     return known;
   };
 
@@ -42,6 +44,7 @@ export function createDataProvider(options: ProviderOptions) {
   const deidentified = (data: Values, key: ResourceKey): Values => {
     if (key.primary === 'id') return data;
     const { id, ...rest } = data;
+
     return id === undefined ? rest : { ...rest, [key.primary]: id };
   };
 
@@ -51,6 +54,7 @@ export function createDataProvider(options: ProviderOptions) {
   ): Promise<{ data: Values[]; total?: number }> => {
     const key = keyOf(resource);
     const answer = await call(resource, 'list', { query });
+
     return {
       data: itemsOf<Values>(answer).map((values) => identified(values, key)!),
       total: pageOf(answer).total,
@@ -75,6 +79,7 @@ export function createDataProvider(options: ProviderOptions) {
         ...(params.filter && Object.keys(params.filter).length ? { where: params.filter } : {}),
       });
       const hasNextPage = data.length > perPage;
+
       return {
         data: hasNextPage ? data.slice(0, perPage) : data,
         ...(total !== undefined ? { total } : {}),
@@ -86,6 +91,7 @@ export function createDataProvider(options: ProviderOptions) {
       const key = keyOf(resource);
       const values = identified((await call(resource, 'findById', { params: { id: params.id } })) as Values, key);
       if (!values) throw Object.assign(new Error(`${resource} ${params.id} not found`), { status: 404 });
+
       return { data: values };
     },
 
@@ -95,6 +101,7 @@ export function createDataProvider(options: ProviderOptions) {
       const found = await Promise.all(
         params.ids.map((id) => call(resource, 'findById', { params: { id } })),
       );
+
       return { data: found.map((values) => identified(values as Values, key)).filter((values): values is Values => !!values) };
     },
 
@@ -107,6 +114,7 @@ export function createDataProvider(options: ProviderOptions) {
       filter?: Record<string, unknown>;
     }) => {
       const { page = 1, perPage = 25 } = params.pagination ?? {};
+
       return list(resource, {
         limit: perPage,
         offset: (page - 1) * perPage,
@@ -121,6 +129,7 @@ export function createDataProvider(options: ProviderOptions) {
     create: async (resource: string, params: { data: Values }) => {
       const key = keyOf(resource);
       const values = await call(resource, 'create', { input: deidentified(params.data, key) });
+
       return { data: identified(values as Values, key)! };
     },
 
@@ -130,11 +139,13 @@ export function createDataProvider(options: ProviderOptions) {
         params: { id: params.id },
         input: deidentified(params.data, key),
       });
+
       return { data: identified(values as Values, key)! };
     },
 
     delete: async (resource: string, params: { id: string | number; previousData?: Values }) => {
       await call(resource, 'delete', { params: { id: params.id } });
+
       return { data: (params.previousData ?? { id: params.id }) as Values };
     },
 
@@ -144,11 +155,13 @@ export function createDataProvider(options: ProviderOptions) {
       await Promise.all(params.ids.map((id) => call(resource, 'update', {
         params: { id }, input: deidentified(params.data, key),
       })));
+
       return { data: params.ids };
     },
 
     deleteMany: async (resource: string, params: { ids: (string | number)[] }) => {
       await Promise.all(params.ids.map((id) => call(resource, 'delete', { params: { id } })));
+
       return { data: params.ids };
     },
 

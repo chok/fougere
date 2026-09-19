@@ -41,8 +41,10 @@ function storageFor(entity: { name: string }) {
       delete: vi.fn(async () => true),
       output: (schema: { getFields(): Record<string, unknown> }) => make(Object.keys(schema.getFields())),
     };
+
     return storage;
   };
+
   return make();
 }
 

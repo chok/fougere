@@ -25,12 +25,14 @@ export default class PostHandler extends Crud(Post) {
     if (post.status === 'published') {
       throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published', entity: 'post', operation: 'publish' });
     }
+
     return this.storage.update(id, { status: 'published' });
   }
 
   /** Only published posts, projected to the card. */
   async listPublished(): Promise<PostCard[]> {
     const posts = await this.storage.list({ where: { status: 'published' } });
+
     return posts.map(({ id, title, status }) => ({ id, title, status }));
   }
 }

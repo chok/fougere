@@ -47,6 +47,7 @@ function tsFiles(dir: string, out: string[] = []): string[] {
       if (entry !== 'node_modules' && entry !== 'dist') tsFiles(p, out);
     } else if (entry.endsWith('.ts') && !entry.endsWith('.d.ts')) out.push(p);
   }
+
   return out;
 }
 
@@ -55,6 +56,7 @@ function typeOnly(line: string): boolean {
   if (/^\s*(import|export)\s+type\b/.test(line)) return true;
   const braces = line.match(/\{([^}]*)\}/);
   const members = braces ? braces[1].split(',').map((s) => s.trim()).filter(Boolean) : [];
+
   return members.length > 0 && members.every((m) => m.startsWith('type '));
 }
 
@@ -83,6 +85,7 @@ function edgesOf(pkg: string): Map<string, Edge[]> {
       found.push({ from: rel, to: target, value: !typeOnly(line) });
     }
   }
+
   return edges;
 }
 
@@ -91,6 +94,7 @@ const packages = readdirSync('packages', { withFileTypes: true })
   .flatMap((d) => {
     const here = path.join('packages', d.name);
     if (statSync(path.join(here, 'src'), { throwIfNoEntry: false })?.isDirectory()) return [here];
+
     return readdirSync(here, { withFileTypes: true })
       .filter((c) => c.isDirectory()
         && statSync(path.join(here, c.name, 'src'), { throwIfNoEntry: false })?.isDirectory())

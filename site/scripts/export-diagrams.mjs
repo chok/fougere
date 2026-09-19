@@ -38,6 +38,7 @@ async function embeddedFont() {
   const href = sheet.match(/\/_fonts\/[A-Za-z0-9_-]+\.woff2/)?.[0];
   if (!href) throw new Error('no self-hosted font found — is the site running?');
   const buf = Buffer.from(await (await fetch(SITE + href)).arrayBuffer());
+
   return `@font-face { font-family: 'Architects Daughter'; font-display: block;
   src: url(data:font/woff2;base64,${buf.toString('base64')}) format('woff2'); }`;
 }
@@ -55,6 +56,7 @@ text { font-family: 'Architects Daughter', 'Bradley Hand', cursive; }
 const pages = new Map();
 const load = async (page) => {
   if (!pages.has(page)) pages.set(page, await (await fetch(SITE + page)).text());
+
   return pages.get(page);
 };
 
@@ -71,6 +73,7 @@ for (const { id, page } of WANTED) {
     const svg = found[0]
       .replace(/<svg[^>]*viewBox="([^"]+)"[^>]*>/, (_, vb) => {
         const [, , w, h] = vb.split(/\s+/);
+
         return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="${w}" height="${h}"><style>${css(colours, font)}</style>`;
       })
       .replace(/ class="hand-svg[^"]*"/, '');

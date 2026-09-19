@@ -21,6 +21,7 @@ export default class GrantCommand {
     const frond = raw.frond as string | undefined;
     if (!frond) {
       this.ui.error('Usage: fougere grant <frond>');
+
       return;
     }
 
@@ -29,6 +30,7 @@ export default class GrantCommand {
       rootPrivateKey = await readFile(join(process.cwd(), ROOT_KEY), 'utf8');
     } catch {
       this.ui.error(`No ${ROOT_KEY} — run \`fougere keys\` first.`);
+
       return;
     }
 

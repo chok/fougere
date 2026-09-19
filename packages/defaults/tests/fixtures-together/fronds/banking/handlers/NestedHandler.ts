@@ -17,6 +17,7 @@ export default class NestedHandler {
         await ledger.create({ id: 'nested', from: 'a', to: 'b', amount: 1 });
         throw new Error('inner boom');
       });
+
       return { ok: true as const };
     });
   }

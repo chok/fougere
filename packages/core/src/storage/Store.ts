@@ -57,6 +57,7 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
         const previous = await store.get(keyOf(id));
         const values = previous ? { ...previous, ...applyUpdate(fields, input) } : created;
         await store.set(keyOf(id), values);
+
         return pick(values);
       };
 
@@ -71,10 +72,12 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
         },
         async findById(id: string) {
           const values = await store.get(keyOf(id));
+
           return values && pick(values);
         },
         async findBy(criteria: Record<string, unknown>) {
           const values = (await store.all()).find((held) => matches(held, criteria));
+
           return values && pick(values);
         },
         async findAllBy(criteria: Record<string, unknown>) {
@@ -87,6 +90,7 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
             const values = await store.get(keyOf(id));
             if (values) found.set(String(id), pick(values));
           }
+
           return found;
         },
         // The dual, same contract as SQL: grouped by the value read off the instance.
@@ -100,11 +104,13 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
             const bucket = grouped.get(key);
             if (bucket) bucket.push(pick(values)); else grouped.set(key, [pick(values)]);
           }
+
           return grouped;
         },
         upsert,
         async upsertAll(inputs: readonly Partial<Record<string, unknown>>[]) {
           for (const input of inputs) await upsert(input);
+
           return inputs.length;
         },
         async create(input: Partial<Record<string, unknown>>) {
@@ -125,6 +131,7 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
             throw new Error(`${name}.create: '${pk}' ${JSON.stringify(id)} already exists.`);
           }
           await store.set(keyOf(id), values);
+
           return pick(values);
         },
         async update(id: string, input: Partial<Record<string, unknown>>) {
@@ -132,6 +139,7 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
           if (!existing) throw new Error(`Not found: ${id}`);
           const updated = { ...existing, ...applyUpdate(fields, input), [pk]: existing[pk] };
           await store.set(keyOf(id), updated);
+
           return pick(updated);
         },
         async delete(id: string) { return await store.delete(keyOf(id)); },

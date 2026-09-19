@@ -296,6 +296,7 @@ const dashboardExtensions: readonly FougereDashboardExtension[] = [
  */
 function StatusChip({ column, positive }: { column: { name: string; label: string }; positive: string }) {
   const record = useRecordContext();
+
   return (
     <ChipField
       source={column.name}

@@ -112,6 +112,7 @@ export default class ExplainHandler {
 
   private async modelOf(root?: string) {
     const scan = await this.projectScan.at(root);
+
     return {
       scan,
       model: resolveEffectiveOperations(scan.fronds, {
@@ -215,6 +216,7 @@ function parseSelector(value: string): Selector {
   }
 
   const qualifiers = path.slice(0, -1);
+
   return {
     ...(qualifiers[0] ? { frond: qualifiers[0] } : {}),
     ...(qualifiers[1] ? { surface: qualifiers[1] } : {}),
@@ -232,27 +234,32 @@ function matches(operation: EffectiveOperation, selector: Selector): boolean {
 
 function addressOf(value: string): string {
   const base = value.endsWith('Handler') ? value.slice(0, -'Handler'.length) : value;
+
   return lowerFirst(base);
 }
 
 function inputTypeOf(operation: EffectiveOperation): string | null {
   const body = operation.parameters.find((parameter) => parameter.binding.source.kind === 'input');
+
   return body?.type ?? schemaName(operation.input) ?? null;
 }
 
 function outputOf(operation: EffectiveOperation): ExplainResult['output'] {
   const type = schemaName(operation.output) ?? parsedOutput(operation.signature?.returnType?.raw);
+
   return type ? { type, cardinality: operation.cardinality ?? null } : null;
 }
 
 function schemaName(schema: SchemaView | undefined): string | undefined {
   if (!schema) return undefined;
   if (schema.name && schema.name !== ANONYMOUS_SCHEMA_NAME) return schema.name;
+
   return schema.derivation?.sourceName;
 }
 
 function parsedOutput(raw: string | undefined): string | undefined {
   if (!raw) return undefined;
+
   return raw.startsWith('Promise<') && raw.endsWith('>') ? raw.slice(8, -1) : raw;
 }
 

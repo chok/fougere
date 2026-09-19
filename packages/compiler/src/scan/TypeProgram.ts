@@ -7,10 +7,12 @@ import { join, dirname, resolve as resolvePath } from 'node:path';
 let _ts: typeof ts | undefined;
 export async function loadTS(): Promise<typeof ts> {
   if (!_ts) _ts = (await import('@typescript/typescript6')).default;
+
   return _ts;
 }
 export function getTS(): typeof ts {
   if (!_ts) throw new Error('TypeScript not loaded — call an async parse function first');
+
   return _ts;
 }
 
@@ -47,10 +49,12 @@ function keptHost(key: string, options: ts.CompilerOptions): ts.CompilerHost {
       if (cached && cached.mtime === mtime) return cached.file;
       const file = base.getSourceFile(fileName, languageVersion, onError, shouldCreate);
       if (file && mtime >= 0) sourceFiles.set(path, { mtime, file });
+
       return file;
     },
   };
   retained.set(key, { host, program: undefined as unknown as ts.Program });
+
   return host;
 }
 
@@ -61,6 +65,7 @@ function builtProgram(key: string, roots: readonly string[], options: ts.Compile
     rootNames: [...roots], options, host, oldProgram: retained.get(key)?.program,
   });
   retained.set(key, { host, program });
+
   return program;
 }
 
@@ -88,6 +93,7 @@ function compilerProjectOf(filePath: string, projectRoot?: string): { key: strin
       options: { ...parsed.options, allowJs: true, noEmit: true },
     };
     compilerProjects.set(key, configured);
+
     return configured;
   }
 
@@ -108,6 +114,7 @@ function compilerProjectOf(filePath: string, projectRoot?: string): { key: strin
     },
   };
   compilerProjects.set(key, configured);
+
   return configured;
 }
 
@@ -166,6 +173,7 @@ export function checkedSourceOf(filePath: string, projectRoot?: string): { sourc
 /** A file, opened. Five places read and parsed one, each spelling the same two calls. */
 export function sourceOf(filePath: string): ts.SourceFile {
   const ts = getTS();
+
   return ts.createSourceFile(filePath, readFileSync(filePath, 'utf-8'), ts.ScriptTarget.Latest, true);
 }
 

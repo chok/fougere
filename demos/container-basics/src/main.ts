@@ -14,6 +14,7 @@ class UserRepository {
 
   findAll() {
     this.logger.info('UserRepository.findAll()');
+
     return [
       { id: '1', name: 'Alice', email: 'alice@example.com' },
       { id: '2', name: 'Bob', email: 'bob@example.com' },
@@ -48,6 +49,7 @@ class UserService {
     const user = this.userRepository.findById(id);
     if (!user) throw new Error(`User ${id} not found`);
     this.notificationService.send(user.email, `Hello ${user.name}!`);
+
     return user;
   }
 }

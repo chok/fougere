@@ -34,6 +34,7 @@ function servedModel(app: App): unknown {
       entities: frond.entities.map((entity) => entity.name),
       operations: frond.handlers.flatMap((handler) => {
         const ops = app.operationsFor(handler.address);
+
         return [...(ops?.values() ?? [])].map((op) => ({
           id: op.id,
           operation: op.operation,
@@ -82,6 +83,7 @@ function frondIndex(app: App): (address: string) => string | undefined {
 async function queriesFrom(queries: QueryRing): Promise<() => void> {
   try {
     const { onQuery } = await import('@fougere/adapter-sql');
+
     return onQuery((event) => queries.record(event));
   } catch {
     return () => {};
@@ -148,6 +150,7 @@ export function calls(options: CallsOptions = {}): Extension {
 
       if (!options.panel) {
         stopping.set(app, stop);
+
         return;
       }
 

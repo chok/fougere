@@ -39,10 +39,12 @@ export class FacadeTypes {
     const rowType = options.rowType ?? 'unknown';
     const members = this.operations.map((operation) => {
       const doc = docCommentOf(operation.description, '  ');
+
       return `${doc}  ${propertyKey(operation.name)}(invocation?: Invocation): Promise<${returnTypeOf(operation, rowType)}>;`;
     });
 
     if (members.length === 0) return `${exported}interface ${name} {}`;
+
     return `${exported}interface ${name} {\n${members.join('\n')}\n}`;
   }
 }

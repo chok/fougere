@@ -17,6 +17,7 @@ export async function actualState(db: Kysely<any>): Promise<SchemaState> {
     if (table.isView) continue;
     state.set(table.name, new Set(table.columns.map((column) => column.name)));
   }
+
   return state;
 }
 
@@ -57,6 +58,7 @@ export function delta(desired: TableDef[], actual: SchemaState): Change[] {
       if (column.index || (column.unique && !column.primary)) changes.push({ kind: 'createIndex', table, column });
     }
   }
+
   return changes;
 }
 
@@ -81,6 +83,7 @@ export function orderChanges(changes: Change[], dialectName: DialectName): Chang
 
   const createChanges: Change[] = ordered.map((table) => {
     const names = deferredColumnsOf.get(table.name);
+
     return names ? { kind: 'createTable', table, deferredColumns: [...names] } : { kind: 'createTable', table };
   });
   const constraintChanges: Change[] = deferred.map(({ table, column }) => ({ kind: 'addConstraint', table, column }));
@@ -95,6 +98,7 @@ export function changeSQL(change: Change, dialectName: DialectName): string {
   if (change.kind === 'createTable') {
     // Reuse the same renderer as a fresh install — one builder, no drift.
     const skip = change.deferredColumns ? new Set(change.deferredColumns) : undefined;
+
     return createTableSQL(change.table, dialectName, { skipReferences: skip });
   }
   if (change.kind === 'addConstraint') {
@@ -107,6 +111,7 @@ export function changeSQL(change: Change, dialectName: DialectName): string {
   }
   const { table, column } = change;
   const type = columnTypeFor(dialect, column, isKeyed(table, column));
+
   return compiler(dialectName)
     .schema.alterTable(table.name)
     .addColumn(column.name, sql.raw(type) as any, (col) => {
@@ -126,6 +131,7 @@ export function changeSQL(change: Change, dialectName: DialectName): string {
       // arrives later is bounded like a column that was there from the start.
       const check = checkFor(column);
       if (check) built = built.check(check);
+
       return built;
     })
     .compile().sql;
@@ -139,6 +145,7 @@ export async function planMigration(
 ): Promise<{ changes: Change[]; statements: string[] }> {
   const dialect = options?.dialect ?? 'sqlite';
   const changes = orderChanges(delta(desiredTables(app, options), await actualState(db)), dialect);
+
   return { changes, statements: changes.map((change) => changeSQL(change, dialect)) };
 }
 
@@ -153,5 +160,6 @@ export async function migrate(
   for (const statement of statements) {
     await sql.raw(statement).execute(db);
   }
+
   return changes;
 }

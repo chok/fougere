@@ -38,6 +38,7 @@ const PRIMITIVES = new Set(['string', 'number', 'boolean']);
 function coercionFor(typeName: string): 'number' | 'boolean' | undefined {
   if (typeName === 'number') return 'number';
   if (typeName === 'boolean') return 'boolean';
+
   return undefined;
 }
 

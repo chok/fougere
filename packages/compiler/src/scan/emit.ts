@@ -20,6 +20,7 @@ const isTypeScript = (outFile: string): boolean => /\.tsx?$/.test(outFile);
 function specifierOf(filePath: string, outFile: string): string {
   const path = relative(dirname(outFile), filePath);
   const rel = isTypeScript(outFile) ? path.replace(/\.tsx?$/, '.js') : path;
+
   return rel.startsWith('.') ? rel : `./${rel}`;
 }
 
@@ -38,6 +39,7 @@ class Imports implements Aliases {
     const alias = `_${this.lines.length}`;
     this.lines.push(`import ${alias} from '${specifierOf(filePath, this.outFile)}';`);
     this.byValue.set(value, alias);
+
     return alias;
   }
 
@@ -48,6 +50,7 @@ class Imports implements Aliases {
     const alias = `_${this.lines.length}`;
     this.lines.push(`import { ${name} as ${alias} } from '${specifierOf(filePath, this.outFile)}';`);
     this.byValue.set(value, alias);
+
     return alias;
   }
 
@@ -65,6 +68,7 @@ function entityOf(e: EntityEntry, imports: Imports): string {
 function handlerOf(h: HandlerEntry, imports: Imports): string {
   const ops = operationsOf(h.operations, h.filePath, imports, '    ');
   const override = schemaRef(h.outputOverride, h.filePath, imports);
+
   return `{ name: ${lit(h.name)}, address: ${lit(h.address)}, ctor: ${imports.aliasOf(h.ctor as Live)}, `
     + `deps: ${lit(h.deps)}, filePath: ${lit(h.filePath)}, exposed: ${lit(h.exposed)}, `
     + (h.surface ? `surface: ${lit(h.surface)}, ` : '')
@@ -100,12 +104,14 @@ function middlewareOf(m: MiddlewareEntry, imports: Imports): string {
 
 function seedOf(s: SeedEntry, imports: Imports): string {
   const data = typeof s.data === 'function' ? imports.aliasOf(s.data as Live) : lit(s.data);
+
   return `{ entityName: ${lit(s.entityName)}, data: ${data}, filePath: ${lit(s.filePath)} }`;
 }
 
 function frondOf(f: FrondDescriptor, imports: Imports): string {
   const list = (label: string, items: string[]) =>
     `    ${label}: [${items.length ? `\n      ${items.join(',\n      ')},\n    ` : ''}],`;
+
   return [
     '  {',
     `    name: ${lit(f.name)},`,

@@ -34,12 +34,14 @@ function spyStorage() {
     create: vi.fn(async (input: Record<string, unknown>) => {
       const row = { id: 'generated', ...input };
       rows.push(row);
+
       return row;
     }),
     update: vi.fn(async (id: string, input: Record<string, unknown>) => ({ id, ...input })),
     delete: vi.fn(async () => true),
     output: () => storage,
   };
+
   return storage;
 }
 
@@ -47,6 +49,7 @@ async function boot(root: string) {
   const storage = spyStorage();
   const storageFactory: StorageFactory = vi.fn(() => storage) as unknown as StorageFactory;
   const app = await createApp({ scan: await scanProject(root), createContainer, storageFactory });
+
   return { app, storage, run: createLocalRunner(app) };
 }
 
@@ -77,6 +80,7 @@ import { Crud } from ${JSON.stringify(coreDist)};
 import Note from '../entities/Note.js';
 export default class NoteHandler extends Crud(Note) {}
 `);
+
   return root;
 }
 

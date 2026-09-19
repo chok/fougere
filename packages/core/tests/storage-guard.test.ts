@@ -96,6 +96,7 @@ describe('StorageGuard', () => {
     let decoded = 0;
     Boundaries.decoders.register('guardCents', (value) => {
       decoded += 1;
+
       return { value: Number(value) / 100 };
     });
     const rows = new Map<string, Values>();

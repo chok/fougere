@@ -20,6 +20,7 @@ const nextCssMinifier = () => require('./webpack/plugins/css-minimizer-plugin');
 
 function runWebpack(config: ReturnType<typeof withFougere>, webpackConfig: any = {}) {
   const context = { isServer: true } as any;
+
   return (config.webpack as (c: any, ctx: any) => any)(webpackConfig, context);
 }
 
@@ -88,6 +89,7 @@ describe('the app\'s own webpack function', () => {
     const seen: unknown[] = [];
     const userWebpack = vi.fn((c: any) => {
       seen.push(c.optimization?.minimizer?.length ?? 0);
+
       return c;
     });
 

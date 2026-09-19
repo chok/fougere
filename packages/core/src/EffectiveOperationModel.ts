@@ -174,6 +174,7 @@ export function resolveEffectiveOperations(
           const undefinable = binding.optional
             || param?.optional === true
             || param?.type.undefined === true;
+
           return {
             position,
             name: param?.name ?? binding.name,
@@ -238,6 +239,7 @@ export function resolveEffectiveOperations(
           collectors: parameters.flatMap((parameter) => {
             if (parameter.binding.source.kind !== 'collector') return [];
             const collector = collectorsByType.get(parameter.binding.source.typeName)?.[0];
+
             return collector ? [{
               parameter: parameter.name,
               typeName: collector.typeName,
@@ -279,6 +281,7 @@ export function resolveEffectiveOperations(
   }
 
   const resolution = uniqueDiagnostics(resolutionDiagnostics);
+
   return new EffectiveOperationModel(
     operations,
     uniqueDiagnostics([...scanDiagnostics, ...resolution]),
@@ -294,6 +297,7 @@ function groupedCollectors(collectors: readonly CollectorEntry[]): Map<string, C
     sameName.push(collector);
     grouped.set(collector.typeName, sameName);
   }
+
   return grouped;
 }
 
@@ -315,6 +319,7 @@ function normalizeBinding(
       subject: `${handler.ctor.name}.${name}`,
       message: `${handler.ctor.name}.${name} declares ${params.length} parameter(s) and has no binding plan.`,
     });
+
     return undefined;
   }
   if (params.length === 0) return { ...contract, binding: contract.binding };
@@ -341,8 +346,10 @@ function normalizeBinding(
         + `${invalid.length ? `Invalid: ${invalid.map((param) => param.name).join(', ')}. ` : ''}`
         + `${extras.length ? `Unknown: ${extras.join(', ')}.` : ''}`,
     });
+
     return undefined;
   }
+
   return {
     ...contract,
     binding: params.map((param) => byName.get(param.name)![0]!),
@@ -387,6 +394,7 @@ function validateProvenance(
             + `${matches.map((parameter) => `${parameter.name}: ${parameter.type ?? 'unknown'}`).join('; ')} `
             + 'all match the resolved input contract. Declare an explicit binding plan.',
         });
+
         return false;
       }
       if (matches.length === 1) inferredBody.add(matches[0]!);
@@ -448,6 +456,7 @@ function validateProvenance(
         + 'local collector or resolved input schema. Declare an explicit binding.',
     });
   }
+
   return valid;
 }
 
@@ -458,6 +467,7 @@ function structural(type: TypeRef | undefined): boolean {
 function schemaMatches(schema: SchemaView, type: TypeRef | undefined): boolean {
   const names = new Set([schema.name, schema.derivation?.sourceName].filter(Boolean));
   if (type?.name && names.has(type.name)) return true;
+
   return type?.generics?.some((generic) => generic.name && names.has(generic.name)) ?? false;
 }
 
@@ -481,6 +491,7 @@ function implementationOf(
       message: `Operation ${handler.ctor.name}.${name} names handler '${override?.handlerName}', `
         + `but ${candidates.length} matching handlers were found.`,
     });
+
     return undefined;
   }
   const implementation = candidates[0]!;
@@ -498,8 +509,10 @@ function implementationOf(
       message: `Operation ${handler.ctor.name}.${name} resolves to `
         + `${implementation.ctor.name}.${method}, but that method does not exist.`,
     });
+
     return undefined;
   }
+
   return {
     className: implementation.ctor.name,
     address: implementation.address,
@@ -524,6 +537,7 @@ function effectiveOutput(
   const target = targetOf(handler.ctor) as { name?: string } | undefined;
   const address = target?.name ? lowerFirst(target.name) : handler.address;
   const entity = frond.entities.find((candidate) => candidate.name === address);
+
   return { ...(entity ? { schema: entity.entityClass } : {}), closed: false };
 }
 
@@ -532,6 +546,7 @@ function exposedAdapters(
   adapters: Record<string, boolean | undefined> | undefined,
 ): string[] {
   if (handler.exposed === false && !handler.surface) return [];
+
   return Object.entries(adapters ?? {})
     .filter(([, enabled]) => enabled === true)
     .map(([adapter]) => adapter)
@@ -540,10 +555,12 @@ function exposedAdapters(
 
 function uniqueDiagnostics(diagnostics: readonly Diagnostic[]): Diagnostic[] {
   const seen = new Set<string>();
+
   return diagnostics.filter((diagnostic) => {
     const key = [diagnostic.code, diagnostic.filePath, diagnostic.subject, diagnostic.message].join('\0');
     if (seen.has(key)) return false;
     seen.add(key);
+
     return true;
   });
 }

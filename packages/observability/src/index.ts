@@ -140,6 +140,7 @@ export async function flushTelemetry(): Promise<void> {
 /** Declare an exporter's flush, and answer the way to withdraw it — like `onSpan`. */
 export function registerFlush(send: () => Promise<void>): () => void {
   flushes.push(send);
+
   return () => {
     const at = flushes.indexOf(send);
     if (at >= 0) flushes.splice(at, 1);
@@ -241,6 +242,7 @@ export function tracing(takers: readonly SpanSink[], options: TracingOptions = {
       try {
         const result = await next();
         finish(undefined);
+
         return result;
       } catch (err) {
         finish(codeOf(err));
@@ -316,6 +318,7 @@ export async function statementsUnder(tracer: Tracing): Promise<() => void> {
 
 function codeOf(err: unknown): string {
   const code = (err as { code?: unknown })?.code;
+
   return typeof code === 'string' ? code : ((err as Error)?.name ?? 'error');
 }
 

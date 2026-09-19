@@ -24,6 +24,7 @@ export async function heldShapes(remote: SyncedRemote): Promise<Map<string, Sche
     if (typeof entity !== 'function' || typeof (entity as SchemaView).getFields !== 'function') continue;
     cards.set(name, Card.fromSchema(entity).descriptor);
   }
+
   return cards;
 }
 
@@ -34,6 +35,7 @@ function servedShapes(card: IdentityCard, frond: string): Map<string, unknown> {
     if (one.name !== frond) continue;
     for (const facade of one.facades) if (facade.schema) served.set(facade.schema.title ?? facade.name, facade.schema);
   }
+
   return served;
 }
 
@@ -52,6 +54,7 @@ export function syncDriftOf(
     const moved = Card.fromDescriptor(mine).diff(Card.fromDescriptor(theirs as SchemaDescriptor));
     if (moved.changes.length > 0) drift.moved.push({ entity: name, changes: moved.changes });
   }
+
   return drift;
 }
 

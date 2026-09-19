@@ -19,5 +19,6 @@ export async function stateFor(headers: Headers): Promise<Record<string, unknown
     // An unreachable or misconfigured provider leaves the caller anonymous rather
     // than failing the request — the same choice the Nuxt middleware makes.
   }
+
   return {};
 }

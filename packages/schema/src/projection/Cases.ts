@@ -16,6 +16,7 @@ import type { ValidationCase } from './ValidationCase.js';
 function wrongTypeFor(field: Field): unknown {
   const declared = (field.shape as { type?: string | readonly string[] }).type;
   const names = Array.isArray(declared) ? declared : [declared];
+
   return names.includes('string') ? 42 : 'not-a-value-of-this-shape';
 }
 
@@ -52,6 +53,7 @@ function outOfBoundsFor(field: Field): { why: string; value: unknown }[] {
         value: Array.from({ length: shape.maxItems + 1 }, () => null),
       });
   }
+
   return cases;
 }
 
@@ -74,6 +76,7 @@ export class Cases {
   ): boolean {
     if (expected === 'accept') return result.success;
     if (result.success) return false;
+
     return (result.errors ?? []).some((error) => rejected(error.path) === expected.reject);
   }
 

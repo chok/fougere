@@ -25,6 +25,7 @@ function build() {
   const builder = new SchemaBuilder({});
   builder.queryType({ fields: (t: any) => ({ ok: t.boolean({ resolve: () => true }) }) });
   registerInput(builder, { name: 'CreateOrderInput', schema: CreateOrder });
+
   return builder.toSchema();
 }
 

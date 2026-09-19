@@ -50,6 +50,7 @@ export async function rest(request: Request): Promise<Response> {
   if (outcome.kind === 'error') {
     return Response.json(outcome.body, { status: outcome.status, headers: outcome.headers });
   }
+
   return Response.json(outcome.body, { status: outcome.status });
 }
 
@@ -76,5 +77,6 @@ export async function graphql(request: Request): Promise<Response> {
   if (outcome.kind === 'pass') {
     return Response.json({ message: 'GraphQL is not served by this app' }, { status: 404 });
   }
+
   return Response.json(outcome.body, { status: outcome.status });
 }

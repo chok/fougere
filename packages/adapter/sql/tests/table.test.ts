@@ -38,6 +38,7 @@ class Order extends entity({
 const column = (table: { columns: ColumnDef[] }, field: string): ColumnDef => {
   const found = table.columns.find((c) => c.field === field);
   if (!found) throw new Error(`no column for '${field}'`);
+
   return found;
 };
 
@@ -161,6 +162,7 @@ describe('columnType', () => {
   const table = toTable('products', Product);
   const typeOf = (dialect: keyof typeof dialects, field: string) => {
     const col = column(table, field);
+
     return dialects[dialect].columnType(col, isKeyed(table, col));
   };
 

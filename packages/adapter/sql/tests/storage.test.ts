@@ -440,6 +440,10 @@ describe('an upsert over a row that exists', () => {
   }) {}
 
   it('updates what it names — `immutable` included, which is the facade\'s to refuse — and leaves the rest', async () => {
+
+
+
+
     const pages = await (async () => { await autoMigrate({ fronds: [{ name: 'test', entities: [{ name: 'page', entityClass: Page }] }] }, setup.sqlite); return setup.storageFactory(Page, 'page') as any; })();
     const first = await pages.create({ slug: 'hello', title: 'A', note: 'kept' });
     await pages.update(first.id, { views: 5 });
@@ -454,6 +458,10 @@ describe('an upsert over a row that exists', () => {
   });
 
   it('leaves each row its own gaps, in one page', async () => {
+
+
+
+
     const pages = await (async () => { await autoMigrate({ fronds: [{ name: 'test', entities: [{ name: 'page', entityClass: Page }] }] }, setup.sqlite); return setup.storageFactory(Page, 'page') as any; })();
     const a = await pages.create({ slug: 'a', title: 'A', note: 'a' });
     const b = await pages.create({ slug: 'b', title: 'B' });

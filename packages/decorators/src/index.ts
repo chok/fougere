@@ -35,5 +35,6 @@ export function getExposedMethods(cls: Function): Set<string> {
   if (!exposedMethods.has(cls)) {
     try { new (cls as any)(); } catch { /* best effort */ }
   }
+
   return exposedMethods.get(cls) ?? new Set<string>();
 }

@@ -34,6 +34,7 @@ function excerptField(presenter: object) {
     presenterFields: ['excerpt'],
     presenterFieldMeta: [{ name: 'excerpt', returnType: 'string' }],
   });
+
   return (builder.toSchema().getTypeMap().Post as any).getFields().excerpt;
 }
 

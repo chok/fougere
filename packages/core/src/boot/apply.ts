@@ -40,5 +40,6 @@ export function applyConfig(next: FougereConfig, inForce?: FougereConfig): Confi
       pending.push(key);
     }
   }
+
   return { applied, pending };
 }

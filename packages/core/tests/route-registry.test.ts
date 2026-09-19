@@ -74,6 +74,7 @@ describe('RouteRegistry', () => {
     const pending = new Promise<void>((resolve) => { finish = resolve; });
     const resolve = vi.fn(async () => {
       await pending;
+
       return resolved;
     });
     registry.addResolver(resolve);

@@ -71,6 +71,7 @@ describe('TanStack Form', () => {
       validators: { onChange: CreatePost },
     });
     form.mount();
+
     return form;
   };
 

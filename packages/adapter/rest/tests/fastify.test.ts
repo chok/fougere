@@ -11,6 +11,7 @@ function fakeRouter() {
       registered.push({ method, path, handler });
     },
   };
+
   return {
     router,
     getHandler(method: HttpMethod, path: string) {

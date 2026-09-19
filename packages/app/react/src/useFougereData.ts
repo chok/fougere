@@ -63,6 +63,7 @@ export function useQuery<
     const untrack = trackQuery(entityKey, key);
     const off = onRefetch(key, () => void refresh());
     if (immediate) void refresh();
+
     return () => {
       untrack();
       off();
@@ -98,6 +99,7 @@ export function useCommand<
         const result = (await sendCall(fetcher, callOf(facade, op), invocationOf(input))) as Answered;
         // The link: same entity designated on both sides → revalidate its queries.
         revalidate(mountedKeys(entityKey));
+
         return result;
       } catch (err) {
         const failure = asFougereError(err, entityKey, op) as FougereError<Refused<Address, Op>>;

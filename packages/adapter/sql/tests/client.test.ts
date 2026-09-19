@@ -18,6 +18,7 @@ async function app() {
   const fake = { fronds: [{ name: 'shop', entities: [{ name: 'product', entityClass: Product }] }] };
   // `migrate` prend le setup : le cas normal n'a plus besoin d'atteindre l'instance brute.
   await migrate(fake as never, setup);
+
   return { setup, storage: setup.storageFactory(Product, 'product') };
 }
 

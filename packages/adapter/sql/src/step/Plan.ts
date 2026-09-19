@@ -45,11 +45,13 @@ function compose(held: ShapeChange[], change: ShapeChange): void {
     const at = held.findIndex((each) => each.kind === 'renamed' && each.to === change.from);
     if (at === -1) {
       held.push(change);
+
       return;
     }
     const first = held[at] as Extract<ShapeChange, { kind: 'renamed' }>;
     if (first.from === change.to) held.splice(at, 1);
     else held[at] = { ...first, to: change.to };
+
     return;
   }
 
@@ -59,6 +61,7 @@ function compose(held: ShapeChange[], change: ShapeChange): void {
   const at = held.findIndex((each) => each.kind === 'renamed' && each.to === field);
   if (at === -1) {
     held.push(change);
+
     return;
   }
 
@@ -119,6 +122,7 @@ function realise(
       if (!change.required) return {};
       const column = target.columns.find((each) => each.field === change.field);
       if (column?.default !== undefined) return {};
+
       return {
         entity,
         field: change.field,
@@ -128,6 +132,7 @@ function realise(
 
     case 'required':
       if (!change.to) return {}; // Loosening is the engine's business, and no row is at risk.
+
       return {
         entity,
         field: change.field,
@@ -165,6 +170,7 @@ function restated(entity: string, change: Extract<ShapeChange, { kind: 'restated
     const was = literalOf(change.from);
     const is = literalOf(change.to);
     if (was === is) return {};
+
     return refuse(`default moved ${show(was)} → ${show(is)} — the table keeps the old one, and nothing here alters a DEFAULT`);
   }
 
@@ -180,12 +186,14 @@ function restated(entity: string, change: Extract<ShapeChange, { kind: 'restated
   // What is left is the index, and only its appearance: the additive pass proposes every
   // declared index at every boot, and nothing has ever dropped one.
   if (from.index && !to.index) return refuse(`index gone — nothing drops an index today, so the table keeps it`);
+
   return {};
 }
 
 /** The value a lifecycle declares at create, when it declares one — what reaches DEFAULT. */
 function literalOf(rules: { create?: unknown } | undefined): unknown {
   const create = rules?.create;
+
   return create && typeof create === 'object' && 'value' in create ? (create as { value: unknown }).value : undefined;
 }
 
@@ -194,6 +202,7 @@ const show = (value: unknown): string => (value === undefined ? 'none' : JSON.st
 /** Has the table already moved? Read off the columns themselves. */
 function done(change: StepChange, columns: Set<string> | undefined): boolean {
   if (!columns) return false;
+
   return change.kind === 'renameColumn'
     ? !columns.has(change.from) && columns.has(change.to)
     : !columns.has(change.column);
@@ -202,6 +211,7 @@ function done(change: StepChange, columns: Set<string> | undefined): boolean {
 /** One statement per change — the same rule `migrate` follows: no driver here batches. */
 export function stepSQL(change: StepChange, dialectName: DialectName = 'sqlite'): string {
   const alter = compiler(dialectName).schema.alterTable(change.table);
+
   return change.kind === 'renameColumn'
     ? alter.renameColumn(change.from, change.to).compile().sql
     : alter.dropColumn(change.column).compile().sql;
@@ -222,5 +232,6 @@ export async function applyStep(plan: Plan, db: Kysely<any>, dialectName: Dialec
     await sql.raw(statement).execute(db);
     run.push(statement);
   }
+
   return run;
 }

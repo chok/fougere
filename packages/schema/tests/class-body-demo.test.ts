@@ -81,6 +81,7 @@ class DateRange extends entity({
     if (base.success && base.data.start > base.data.end) {
       return { success: false as const, errors: [{ path: ['end'], message: 'end < start' }] };
     }
+
     return base;
   }
 }

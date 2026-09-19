@@ -10,6 +10,7 @@ export function Collector<T extends abstract new (...args: any[]) => any>(target
   class CollectorBase {
     static readonly __entity = target;
   }
+
   return CollectorBase;
 }
 

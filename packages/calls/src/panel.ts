@@ -60,6 +60,7 @@ export function servePanel(ring: CallRing, options: PanelOptions = {}): Promise<
       response.write(`event: hello\ndata: ${JSON.stringify({ calls: backlog.calls, fronds: options.fronds ?? [] })}\n\n`);
       readers.add(response);
       request.on('close', () => readers.delete(response));
+
       return;
     }
 
@@ -70,24 +71,28 @@ export function servePanel(ring: CallRing, options: PanelOptions = {}): Promise<
       const since = Number(new URL(request.url ?? '/', 'http://panel').searchParams.get('since') ?? 0);
       response.writeHead(200, { 'content-type': 'application/json' });
       response.end(JSON.stringify(read?.(Number.isFinite(since) ? since : 0) ?? { lines: [], cursor: 0, dropped: 0 }));
+
       return;
     }
 
     if (path === '/model.json') {
       response.writeHead(200, { 'content-type': 'application/json' });
       response.end(JSON.stringify(options.model ?? { fronds: [] }));
+
       return;
     }
 
     if (path === '/calls.json') {
       response.writeHead(200, { 'content-type': 'application/json' });
       response.end(JSON.stringify(ring.since(0)));
+
       return;
     }
 
     if (path === '/' || path === '/index.html') {
       response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
       response.end(html);
+
       return;
     }
 

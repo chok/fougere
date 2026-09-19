@@ -87,6 +87,7 @@ export default {
     // and the window it held is lost. `waitUntil` is the platform saying "this work
     // outlives the response" — the one place a Worker can send what it measured.
     ctx.waitUntil(flushTelemetry().catch(() => {}));
+
     return answer;
   },
 };
@@ -97,6 +98,7 @@ function landing(app: App): string {
     frond.handlers.map((handler) => `<li><code>${frond.name}</code> — <code>${handler.address}</code>
       · <a href="/api/${handler.address}s">/api/${handler.address}s</a></li>`),
   );
+
   return `<!doctype html><meta charset=utf-8><title>Fougere on Workers</title>
 <style>body{font:16px/1.6 ui-sans-serif,system-ui;max-width:44rem;margin:4rem auto;padding:0 1.5rem}
 code{background:#f4f4f5;padding:.1em .35em;border-radius:.25em}

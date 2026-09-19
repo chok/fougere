@@ -21,6 +21,7 @@ export default class GraphCommand {
 
     if (result.totalFronds === 0) {
       this.ui.warn('No fronds found. Run this from a Fougere project root.');
+
       return;
     }
 
@@ -71,6 +72,7 @@ function renderGraph(nodes: Record<string, EntityNode>): string {
     const badge = node.referencedBy.length > 0
       ? pc.dim(` (${node.referencedBy.length} incoming)`)
       : '';
+
     return `  ${pc.bold(name)}${refs}${badge}`;
   }).join('\n');
 }
@@ -83,6 +85,7 @@ function renderClusters(clusters: DomainCluster[]): string {
       ? [`    ${pc.dim('cross-refs:')}`, ...cluster.crossRefs.map((r) =>
           `      ${r.from} ${pc.dim('→')} ${pc.yellow(r.to)} ${pc.dim(`(${r.targetCluster})`)}`)]
       : [];
+
     return [header, ...entities, ...crossRefs, ''].join('\n');
   }).join('\n');
 }

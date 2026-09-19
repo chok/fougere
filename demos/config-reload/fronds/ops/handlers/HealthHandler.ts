@@ -11,6 +11,7 @@ export default class HealthHandler {
   /** Take a while — a call still running when the app is let go. */
   async pingSlow(): Promise<{ done: boolean }> {
     await new Promise((resolve) => setTimeout(resolve, 30));
+
     return { done: true };
   }
 
@@ -18,6 +19,7 @@ export default class HealthHandler {
   async check(): Promise<{ logger: string }> {
     this.logger.debug('a debug line');
     this.logger.info('an info line');
+
     return { logger: this.logger.constructor.name };
   }
 }

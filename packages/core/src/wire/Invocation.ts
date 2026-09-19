@@ -8,6 +8,7 @@ function canonicalValue(value: unknown): unknown {
 
   const prototype = Object.getPrototypeOf(value);
   if (prototype !== Object.prototype && prototype !== null) return value;
+
   return canonicalRecord(value);
 }
 
@@ -19,6 +20,7 @@ function canonicalRecord(value: unknown): Record<string, unknown> {
   for (const [key, member] of Object.entries(value)) {
     if (member !== undefined) result[key] = canonicalValue(member);
   }
+
   return Object.freeze(result);
 }
 

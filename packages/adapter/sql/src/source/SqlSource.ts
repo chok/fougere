@@ -54,6 +54,7 @@ export function createKyselySource(
   opts: SqlSourceOptions = {},
 ): SqlSource {
   const db = new Kysely<any>({ dialect: kyselyDialect, log: logQueries(opts.name ?? dialect) });
+
   return {
     db,
     dialect,

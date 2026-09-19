@@ -48,6 +48,7 @@ function chunks<T>(values: T[], size: number): T[][] {
   if (values.length <= size) return [values];
   const out: T[][] = [];
   for (let i = 0; i < values.length; i += size) out.push(values.slice(i, i + size));
+
   return out;
 }
 
@@ -57,6 +58,7 @@ const UNBOUNDED = 1_000_000_000;
 function pick<T extends Record<string, unknown>>(obj: T, keys: Set<string>): T {
   const result: Record<string, unknown> = {};
   for (const key of keys) if (key in obj) result[key] = obj[key];
+
   return result as T;
 }
 
@@ -65,6 +67,7 @@ function pickList<T extends Record<string, unknown>>(list: ListResult<T>, keys: 
   result.total = list.total;
   result.endCursor = list.endCursor;
   result.hasMore = list.hasMore;
+
   return result;
 }
 
@@ -118,11 +121,13 @@ export class SqlStorage {
   output(schema: SchemaView): SqlStorage {
     const scoped = Object.create(this) as SqlStorage;
     scoped.selectFields = new Set(Object.keys(schema.getFields()));
+
     return scoped;
   }
 
   private resolveSelect(options?: SelectOption): Set<string> | undefined {
     if (options?.select) return new Set(Object.keys(options.select.getFields()));
+
     return this.selectFields;
   }
 
@@ -139,6 +144,7 @@ export class SqlStorage {
   private toRow(data: Record<string, unknown>): Record<string, unknown> {
     const row: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(data)) row[this.column(key)] = this.write(key, value);
+
     return row;
   }
 
@@ -149,6 +155,7 @@ export class SqlStorage {
       const field = this.toField.get(key) ?? key;
       data[field] = this.codecs.get(field)?.read(value) ?? value;
     }
+
     return data;
   }
 
@@ -156,9 +163,11 @@ export class SqlStorage {
   private wherePk<Q extends { where(a: any, b: any, c: any): Q }>(query: Q, id: string | Record<string, unknown>): Q {
     if (this.pk.isComposite) {
       const composite = id as Record<string, unknown>;
+
       return this.pk.names.reduce((q, name) => q.where(this.column(name), '=', this.write(name, composite[name])), query);
     }
     const name = this.pk.names[0];
+
     return query.where(this.column(name), '=', this.write(name, id));
   }
 
@@ -317,6 +326,7 @@ export class SqlStorage {
         found.set(String(data[name]), sel ? pick(data, sel) : data);
       }
     }
+
     return found;
   }
 
@@ -334,6 +344,7 @@ export class SqlStorage {
       const bucket = grouped.get(key);
       if (bucket) bucket.push(row); else grouped.set(key, [row]);
     }
+
     return grouped;
   }
 
@@ -356,6 +367,7 @@ export class SqlStorage {
     const id = this.pk.isComposite
       ? Object.fromEntries(this.pk.names.map((n) => [n, data[n]]))
       : (data[this.pk.names[0]!] as string);
+
     return (await this.findById(id as never, options))!;
   }
 
@@ -416,6 +428,7 @@ export class SqlStorage {
     if (!row) return undefined;
     const data = this.fromRow(row);
     const sel = this.resolveSelect(options);
+
     return sel ? pick(data, sel) : data;
   }
 
@@ -426,6 +439,7 @@ export class SqlStorage {
     if (!row) return undefined;
     const data = this.fromRow(row);
     const sel = this.resolveSelect(options);
+
     return sel ? pick(data, sel) : data;
   }
 
@@ -441,6 +455,7 @@ export class SqlStorage {
         out.push(sel ? pick(data, sel) : data);
       }
     }
+
     return out;
   }
 
@@ -467,6 +482,7 @@ export class SqlStorage {
       );
     }
     const [key, values] = oversized[0]!;
+
     return chunks([...new Set(values as unknown[])], this.maxBindings)
       .map((slice) => ({ ...criteria, [key]: slice }));
   }
@@ -487,6 +503,7 @@ export class SqlStorage {
     const created = id !== undefined ? await this.findById(id) : undefined;
     const result = created ?? data;
     const sel = this.resolveSelect(options);
+
     return sel ? pick(result, sel) : result;
   }
 
@@ -498,6 +515,7 @@ export class SqlStorage {
     const updated = await this.findById(id);
     const result = updated ?? (typeof id === 'string' ? { id, ...data } : { ...id, ...data });
     const sel = this.resolveSelect(options);
+
     return sel ? pick(result, sel) : result;
   }
 
@@ -522,6 +540,7 @@ export class SqlStorage {
     const before = await this.findById(id);
     if (!before) return false;
     await this.wherePk(this.db.deleteFrom(this.table.name) as any, id).execute();
+
     return true;
   }
 }
@@ -529,5 +548,6 @@ export class SqlStorage {
 /** Create a StorageFactory backed by Kysely — same call shape on every engine. */
 export function createStorageFactory(db: Kysely<any>, options?: StorageFactoryOptions, dialect: DialectName = 'sqlite') {
   const resolve = options?.tableName ?? toTableName;
+
   return (entity: SchemaView, name: string) => new SqlStorage(db, entity, resolve(name), undefined, dialect);
 }

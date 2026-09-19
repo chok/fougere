@@ -19,6 +19,7 @@ class UserService {
 
   getUsers() {
     this.logger.log('fetching users');
+
     return this.userRepository.findAll();
   }
 }

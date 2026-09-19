@@ -15,6 +15,7 @@ export default class CommandeHandler {
   /** Can this order be served from the shelf? */
   async servable(): Promise<boolean> {
     const onHand = await this.articleFacade.onHand() as number;
+
     return onHand > 0;
   }
 }

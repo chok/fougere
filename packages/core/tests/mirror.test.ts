@@ -22,6 +22,10 @@ function spyStorage(shape: { getFields(): never } | unknown, rows: Record<string
   const written: Record<string, unknown>[][] = [];
   const spy = {
     list: async (o: any) => (o?.orderBy ? [...rows].sort((a: any, b: any) => b[o.orderBy] - a[o.orderBy]).slice(0, o.limit) : rows),
+
+
+
+
     upsertAll: async (page: any[]) => { written.push(page); return page.length; },
     create: () => { throw new Error('a mirror writes pages'); },
     update: () => { throw new Error('a mirror writes pages'); },

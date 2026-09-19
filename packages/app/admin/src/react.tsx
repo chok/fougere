@@ -101,6 +101,7 @@ function defaultFieldFor(column: TableColumn, t: Translate): ReactElement {
     );
   }
   const Field = FIELDS[column.render];
+
   return <Field key={column.name} source={column.name} label={labelOf(t, column)} />;
 }
 
@@ -131,6 +132,7 @@ function defaultInputFor(field: FormField, t: Translate): ReactElement {
   if (field.control === 'date') return <DateTimeInput {...common} />;
 
   const { minlength, maxlength, ...attrs } = field.attrs ?? {};
+
   return (
     <TextInput
       {...common}
@@ -150,6 +152,7 @@ function fieldFor(resource: AdminResource, column: TableColumn, t: Translate, re
   const defaultRender = () => defaultFieldFor(column, t);
   const renderer = renderers?.fields?.[`${resource.name}.${column.name}`];
   const rendered = renderer ? renderer({ resource, column, defaultRender }) : defaultRender();
+
   return cloneElement(rendered, { key: column.name });
 }
 
@@ -157,6 +160,7 @@ function inputFor(resource: AdminResource, field: FormField, t: Translate, rende
   const defaultRender = () => defaultInputFor(field, t);
   const renderer = renderers?.inputs?.[`${resource.name}.${field.name}`];
   const rendered = renderer ? renderer({ resource, field, defaultRender }) : defaultRender();
+
   return cloneElement(rendered, { key: field.name });
 }
 
@@ -257,6 +261,7 @@ function OperationButton({
 /** Row-level actions: the verbs the facade serves, then everything else it serves. */
 function RowActions({ resource }: { resource: AdminResource }): ReactElement {
   const actions = useMemo(() => actionsOf(resource.operations), [resource]);
+
   return (
     <Box sx={{ display: 'flex', gap: .5, justifyContent: 'flex-end' }}>
       {actions.filter((op) => op.kind === 'command').map((op) => (
@@ -270,6 +275,7 @@ function RowActions({ resource }: { resource: AdminResource }): ReactElement {
 
 const listFor = (r: AdminResource, renderers?: ReactAdminRenderers) => function ResourceList() {
   const t = useTranslate();
+
   return (
     <List>
       {/* `can.delete` had no reader, so a facade serving no `delete` still showed the
@@ -289,6 +295,7 @@ const listFor = (r: AdminResource, renderers?: ReactAdminRenderers) => function 
 };
 const showFor = (r: AdminResource, renderers?: ReactAdminRenderers) => function ResourceShow() {
   const t = useTranslate();
+
   return (
     <Show>
       <SimpleShowLayout>{r.columns.map((column) => fieldFor(r, column, t, renderers))}</SimpleShowLayout>
@@ -308,6 +315,7 @@ const showFor = (r: AdminResource, renderers?: ReactAdminRenderers) => function 
  */
 const editFor = (r: AdminResource, renderers?: ReactAdminRenderers) => function ResourceEdit() {
   const t = useTranslate();
+
   return (
     <Edit mutationMode="pessimistic">
       <SimpleForm toolbar={r.can.delete ? undefined : <Toolbar><SaveButton /></Toolbar>}>
@@ -318,6 +326,7 @@ const editFor = (r: AdminResource, renderers?: ReactAdminRenderers) => function 
 };
 const createFor = (r: AdminResource, renderers?: ReactAdminRenderers) => function ResourceCreate() {
   const t = useTranslate();
+
   return <Create><SimpleForm>{r.fields.map((field) => inputFor(r, field, t, renderers))}</SimpleForm></Create>;
 };
 
@@ -334,6 +343,7 @@ export function resourceFor(r: AdminResource, options: ResourceRenderOptions = {
     operations: r.operations.map(({ name, kind }) => ({ name, kind })),
     fieldCount: r.columns.length,
   };
+
   return (
     <Resource
       key={r.name}
@@ -385,6 +395,7 @@ const EMPTY_EXTENSIONS: readonly AdminExtension[] = [];
 function DiscoveryError({ error, onRetry }: { error: unknown; onRetry: () => void }): ReactElement {
   const t = useTranslate();
   const label = (key: string, fallback: string) => t(`fougere.admin.${key}`, { _: fallback });
+
   return (
     <Box sx={{ display: 'grid', placeItems: 'center', minHeight: '60vh', p: 3 }}>
       <Card sx={{ maxWidth: 460, width: '100%' }}>
@@ -435,6 +446,7 @@ export function FougereAdmin({
   const dashboard = useMemo<BaseAdminProps['dashboard']>(() => {
     if (dashboardOverride !== undefined) return dashboardOverride;
     const DerivedDashboard = () => <FougereDashboard extensions={dashboardExtensions} />;
+
     return DerivedDashboard;
   }, [dashboardOverride, dashboardExtensions]);
 

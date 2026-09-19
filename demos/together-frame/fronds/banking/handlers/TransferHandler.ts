@@ -18,6 +18,7 @@ export default class TransferHandler {
   async move(from: string, to: string, amount: number): Promise<{ ok: true }> {
     return this.together.run(async ([accounts, ledger]) => {
       await this.write(accounts, ledger, from, to, amount);
+
       return { ok: true as const };
     });
   }

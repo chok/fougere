@@ -140,6 +140,7 @@ export function suggestSplit(
     const hub = entities
       .map((name) => ({ name, score: nodes.get(name)!.referencedBy.length }))
       .sort((a, b) => b.score - a.score)[0];
+
     return { name: hub.name, entities, crossRefs: [] as DomainCluster['crossRefs'] };
   });
 

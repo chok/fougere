@@ -80,6 +80,7 @@ function builtOn(ctor: unknown): string[] {
   const owned = ownedBy(ctor);
   if (owned.length > 0) return owned.map((e) => lowerFirst((e as { name: string }).name));
   const target = targetOf(ctor) as { name?: string } | undefined;
+
   return target?.name ? [lowerFirst(target.name)] : [];
 }
 

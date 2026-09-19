@@ -17,6 +17,7 @@ export default class CartHandler {
   async checkout() {
     const products = await this.productHandler.list();
     const shipping = await this.shipmentHandler.quote();
+
     return { items: products.length, shipping: shipping.cents };
   }
 
@@ -24,6 +25,7 @@ export default class CartHandler {
   async report() {
     const products = await this.productHandler.list();
     await new Promise((resolve) => setTimeout(resolve, 5 + Math.floor(Math.random() * 180)));
+
     return { lines: products.length };
   }
 }

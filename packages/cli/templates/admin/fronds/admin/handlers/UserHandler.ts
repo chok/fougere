@@ -16,12 +16,14 @@ export default class UserHandler extends Crud(User) {
     if (user.status === 'inactive') {
       throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already inactive', entity: 'user', operation: 'deactivate' });
     }
+
     return this.storage.update(id, { status: 'inactive' });
   }
 
   /** Active users, projected to the card contract. */
   async active(): Promise<UserCard[]> {
     const users = await this.storage.list({ where: { status: 'active' } });
+
     return users.map(({ id, name, status }) => ({ id, name, status }));
   }
 }

@@ -9,6 +9,7 @@ export default class PostHandler extends Crud(Post) {
   /** Public reading: only published posts exist for the outside world. */
   async list(): Promise<Page<Post>> {
     const all = await this.storage.list();
+
     return pageOf(all.filter((p) => p.status === 'published'));
   }
 
@@ -17,6 +18,7 @@ export default class PostHandler extends Crud(Post) {
     const post = await this.storage.findById(id);
     if (!post) return undefined;
     const own = user && post.authorId === user.id;
+
     return post.status === 'published' || own ? post : undefined;
   }
 
@@ -38,11 +40,13 @@ export default class PostHandler extends Crud(Post) {
     if (post.status === 'published') {
       throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published', entity: 'post', operation: 'publish' });
     }
+
     return this.storage.update(id, { status: 'published', publishedAt: new Date() });
   }
 
   async searchByTitle(input: SearchByTitleInput): Promise<SearchByTitleOutput[]> {
     const all = await this.storage.list();
+
     return all
       .filter((p) => p.status === 'published')
       .filter((p) => p.title.toLowerCase().includes(input.title.toLowerCase()))
@@ -56,6 +60,7 @@ export default class PostHandler extends Crud(Post) {
   async mine(user?: User): Promise<Post[]> {
     if (!user) return [];
     const all = await this.storage.list();
+
     return all.filter((p) => p.authorId === user.id);
   }
 }

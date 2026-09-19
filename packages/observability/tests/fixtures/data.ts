@@ -16,6 +16,7 @@ export function createStorageFactory(): () => Storage {
     },
     async findById(id: string) {
       const hit = PRODUCTS.find((product) => product.id === id);
+
       return hit ? { ...hit } : undefined;
     },
     async create(input: Record<string, unknown>) {

@@ -20,6 +20,7 @@ async function digestOf(input: unknown): Promise<string> {
   const canonical = input === undefined
     ? { kind: 'undefined' }
     : { kind: 'value', value: input };
+
   return b64url(await crypto.sha256(bytesOf(JSON.stringify(canonical))));
 }
 
@@ -39,6 +40,7 @@ async function boundTo(call: SignedCall) {
 /** A JWS compact serialization, signed with Ed25519. */
 async function signJws(header: object, payload: object, signer: Signer): Promise<string> {
   const signingInput = `${b64url(JSON.stringify(header))}.${b64url(JSON.stringify(payload))}`;
+
   return `${signingInput}.${b64url(await signer.sign(bytesOf(signingInput)))}`;
 }
 
@@ -54,6 +56,7 @@ async function verifyJws(token: string, verifier: Verifier, what: string): Promi
   const now = Date.now();
   if (typeof payload.exp === 'number' && now > payload.exp + SKEW_MS) throw new Error(`Expired ${what}`);
   if (typeof payload.nbf === 'number' && now < payload.nbf - SKEW_MS) throw new Error(`${what} not yet valid`);
+
   return payload;
 }
 
@@ -61,6 +64,7 @@ async function verifyJws(token: string, verifier: Verifier, what: string): Promi
 function headerOf(token: string): Record<string, unknown> {
   const encodedHeader = token.split('.')[0];
   if (!encodedHeader) throw new Error('Malformed envelope');
+
   return JSON.parse(textOf(unb64url(encodedHeader))) as Record<string, unknown>;
 }
 
@@ -73,6 +77,7 @@ export async function signEnvelope(identity: FrondIdentity, call: SignedCall): P
 async function sealWith(signer: Signer, grant: string, call: SignedCall): Promise<string> {
   const now = Date.now();
   const { sub } = JSON.parse(textOf(unb64url(grant.split('.')[1]))) as { sub: string };
+
   return signJws(
     { alg: 'EdDSA', typ: 'fougere-call', grant },
     { iss: sub, state: call.state ?? {}, bound: await boundTo(call), iat: now, exp: now + ENVELOPE_TTL_MS },
@@ -151,5 +156,6 @@ export async function identityFromEnv(env: Record<string, string | undefined> = 
 /** A Worker has no `process`. Reading the global is what makes an absent one an empty env. */
 function envOfProcess(): Record<string, string | undefined> {
   const proc = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process;
+
   return proc?.env ?? {};
 }

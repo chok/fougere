@@ -38,6 +38,7 @@ export function unframeResponse(response: unknown, call: FrondCall): unknown {
       operation: call.op,
     });
   }
+
   return response.result;
 }
 
@@ -142,5 +143,6 @@ function isTimeout(err: unknown): boolean {
 
 function isConnectionFailure(err: unknown): boolean {
   const code = (err as { cause?: { code?: string } })?.cause?.code;
+
   return typeof code === 'string' && CONNECTION_FAILURES.has(code);
 }

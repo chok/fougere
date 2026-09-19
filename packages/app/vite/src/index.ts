@@ -21,6 +21,7 @@ export function entityNamesIn(root: string, conventions: Conventions = DEFAULT_C
       if (match) names.add(match[1]!);
     }
   }
+
   return [...names];
 }
 

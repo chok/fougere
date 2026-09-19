@@ -22,6 +22,7 @@ function fixture(mixinBody: string): { dir: string; handler: string } {
     join(dir, 'handlers', 'ThingHandler.ts'),
     `import { Prefab } from '../prefab.js';\nexport default class ThingHandler extends Prefab() {}\n`,
   );
+
   return { dir, handler: join(dir, 'handlers', 'ThingHandler.ts') };
 }
 

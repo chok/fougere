@@ -19,6 +19,7 @@ export function loggerMiddleware(logger: Logger): AppMiddleware {
       const result = await next();
       const ms = (performance.now() - start).toFixed(1);
       logger.info(`${ctx.entity}.${ctx.operation} (${ms}ms)`);
+
       return result;
     } catch (err) {
       const ms = (performance.now() - start).toFixed(1);

@@ -46,6 +46,10 @@ describe('observability as an extension', () => {
 
     // The second app is still observed: its own sink was never withdrawn.
     let underway = 0;
+
+
+
+
     second.use('product', async (_ctx, next) => { underway = activeCalls(); return next(); });
 
     await second.resolve<Facade>('productHandler').list();

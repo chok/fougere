@@ -17,6 +17,7 @@ function monorepoPackages(): string | undefined {
     if (existsSync(join(d, 'pnpm-workspace.yaml'))) return join(d, 'packages');
     d = dirname(d);
   }
+
   return undefined;
 }
 
@@ -102,6 +103,7 @@ export default class ProjectWriter {
     cpSync(join(TEMPLATES, 'workspace'), dir, { recursive: true });
     restoreGitignore(dir);
     setPackageName(dir, name);
+
     return { path: dir };
   }
 
@@ -114,6 +116,7 @@ export default class ProjectWriter {
     cpSync(join(TEMPLATES, 'flat'), dir, { recursive: true });
     restoreGitignore(dir);
     setPackageName(dir, name);
+
     return { path: dir };
   }
 
@@ -129,6 +132,7 @@ export default class ProjectWriter {
       if (!entry.isDirectory()) continue;
       cpSync(join(src, entry.name), join(dir, entry.name), { recursive: true });
     }
+
     return { path: dir };
   }
 
@@ -145,6 +149,7 @@ export default class ProjectWriter {
       pkg.name = frondPackage(name, conventions);
       writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
     }
+
     return { path: dest };
   }
 
@@ -157,6 +162,7 @@ export default class ProjectWriter {
     cpSync(starter, dest, { recursive: true });
     restoreGitignore(dest);
     setPackageName(dest, name);
+
     return { path: dest };
   }
 

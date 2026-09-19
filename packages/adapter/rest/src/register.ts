@@ -47,6 +47,7 @@ export function registerRoutes(
         };
       } catch (err) {
         const { status, body } = toHttpError(err);
+
         return { status, data: body };
       }
     });

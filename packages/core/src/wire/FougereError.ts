@@ -41,6 +41,7 @@ export class FougereError<Code extends ErrorCode = ErrorCode> extends Error {
   static fromJSON(json: unknown): FougereError {
     const raw = (typeof json === 'object' && json !== null ? json : {}) as Record<string, unknown>;
     const known = Object.values(ErrorCode).includes(raw.code as ErrorCode);
+
     return new FougereError({
       code: known ? (raw.code as ErrorCode) : ErrorCode.INTERNAL_ERROR,
       message: typeof raw.message === 'string' ? raw.message : 'Unknown error',
@@ -65,5 +66,6 @@ export function validationErrorsOf(error: unknown): ValidationError[] | undefine
       && Array.isArray((entry as ValidationError).path)
       && typeof (entry as ValidationError).message === 'string',
   );
+
   return refusals.length === details.length ? refusals : undefined;
 }

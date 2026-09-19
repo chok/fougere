@@ -69,12 +69,14 @@ export class StorageGuard {
     guarded.create = async function (...args) {
       args[0] = validation.validated(args[0], 'create');
       await validation.targetsOf([args[0]], 'create');
+
       return writer.create.apply(this, args);
     };
 
     guarded.update = async function (...args) {
       args[1] = validation.validated(args[1], 'update');
       await validation.targetsOf([args[1]], 'update');
+
       return writer.update.apply(this, args);
     };
 
@@ -83,6 +85,7 @@ export class StorageGuard {
       guarded.upsert = async function (...args) {
         args[0] = validation.validated(args[0], 'upsert');
         await validation.targetsOf([args[0]], 'upsert');
+
         return upsert.apply(this, args);
       };
     }
@@ -94,6 +97,7 @@ export class StorageGuard {
       guarded.upsertAll = async function (...args) {
         args[0] = args[0].map((row, index) => validation.validated(row, 'upsertAll', index));
         await validation.targetsOf(args[0], 'upsertAll');
+
         return upsertAll.apply(this, args);
       };
     }
@@ -122,6 +126,7 @@ export class StorageGuard {
   private rowAt(row: unknown, index: number): string {
     const primary = FieldSet.of(this.fields).primary;
     const key = primary === undefined ? undefined : (row as Record<string, unknown>)[primary];
+
     return key === undefined ? `row ${index} of this page` : `row ${primary} ${JSON.stringify(key)}`;
   }
 
@@ -220,6 +225,7 @@ export class StorageGuard {
 
   private value(field: Fields[string], asked: unknown): Verdict {
     if (asked === null || asked === undefined) return { value: asked };
+
     return FieldValueValidator.of(field).parse(asked);
   }
 

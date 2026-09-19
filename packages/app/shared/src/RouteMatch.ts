@@ -32,6 +32,7 @@ export function tableOf(app: App): Matchable[] {
   );
 
   tables.set(app, table);
+
   return table;
 }
 
@@ -45,6 +46,7 @@ function paramsOf(route: Matchable, segments: string[]): Record<string, string> 
     if (pattern.startsWith(':')) params[pattern.slice(1)] = decodeURIComponent(segments[i]!);
     else if (pattern !== segments[i]) return null;
   }
+
   return params;
 }
 

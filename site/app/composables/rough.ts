@@ -43,6 +43,7 @@ export function roughHand() {
       const [ax, ay] = head(0.5);
       const [bx, by] = head(-0.5);
       const TIP = { roughness: 0.6, bowing: 0.8 } as const;
+
       return [
         ...d(gen.line(x1, y1, x2, y2, { ...HAND, seed })),
         ...d(gen.line(ax, ay, x2, y2, { ...TIP, seed: seed + 1 })),

@@ -61,6 +61,7 @@ async function main() {
       if (msg.subscribe) {
         fleet.set(socket, { id: msg.id ?? '?', topics: new Set(msg.subscribe) });
         console.log(`\x1b[32m[hub]\x1b[0m + ${msg.id} listens to ${msg.subscribe.join(', ')} — ${fleet.size} online`);
+
         return;
       }
 

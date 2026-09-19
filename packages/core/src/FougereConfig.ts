@@ -47,9 +47,11 @@ async function loadConfigFrom(dir: string, fresh?: boolean): Promise<FougereConf
       // return the config already in force. The loader owns its own cache, so it is the
       // one told; the old module stays in memory, re-reading being for a change.
       const mod = await loader(path, fresh ? { fresh } : undefined);
+
       return ((mod as { default?: FougereConfig }).default ?? mod) as FougereConfig;
     }
   }
+
   return {};
 }
 
@@ -92,5 +94,6 @@ function mergeGlobal(base: FougereConfig, override: Partial<FougereConfig>): Fou
 export async function loadCascadedConfig(workspaceRoot: string, appRoot: string): Promise<FougereConfig> {
   const base = await loadConfig(workspaceRoot);
   if (resolve(workspaceRoot) === resolve(appRoot)) return base;
+
   return mergeGlobal(base, await loadConfig(appRoot));
 }

@@ -34,6 +34,7 @@ async function submit() {
   const validated = Draft.validate(form);
   if (!validated.success) {
     errors.value = validated.errors;
+
     return;
   }
   errors.value = [];

@@ -81,6 +81,7 @@ async function outcomeOf(run: () => Promise<unknown>): Promise<unknown> {
   } catch (err) {
     if (err instanceof FougereError) {
       const { code, message, entity, operation, details } = err;
+
       return { failed: { code, message, entity, operation, details } };
     }
     throw err;

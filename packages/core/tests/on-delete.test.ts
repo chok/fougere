@@ -178,6 +178,10 @@ describe('a source that keeps relations', () => {
     const world = await populated(await booting({
       enforces: true,
       around: (_name, storage) => Object.assign(Object.create(storage), {
+
+
+
+
         findAllByKeys: (...args: never[]) => { read(...args); return (storage as any).findAllByKeys(...args); },
       }),
     }));
@@ -280,6 +284,10 @@ describe('cascade — the rows that name it go first', () => {
     const read = vi.fn();
     const world = await booting({
       around: (name, storage) => (name !== 'post' ? storage : Object.assign(Object.create(storage), {
+
+
+
+
         findAllByKeys: (...args: any[]) => { read(...args); return (storage as any).findAllByKeys(...args); },
       })),
     });
@@ -363,6 +371,10 @@ describe('an engine hop above a guard hop — the trap', () => {
     const world = await populated(await booting({
       enforces: true,
       around: (_name, storage) => Object.assign(Object.create(storage), {
+
+
+
+
         findAllByKeys: (...args: any[]) => { read(...args); return (storage as any).findAllByKeys(...args); },
       }),
     }));

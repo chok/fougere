@@ -17,6 +17,7 @@ export function frondOf(path: string, frondsDir: string = DEFAULT_CONVENTIONS.fr
   const at = parts.lastIndexOf(frondsDir);
   if (at === -1 || at + 1 >= parts.length) return undefined;
   const name = parts[at + 1];
+
   return name && !name.endsWith('.ts') ? name : undefined;
 }
 
@@ -29,6 +30,7 @@ export function rootOf(path: string): string | undefined {
     previous = at;
     at = dirname(at);
   }
+
   return undefined;
 }
 
@@ -40,6 +42,7 @@ export async function scopeOf(path: string): Promise<Scope | undefined> {
   // the position is read against it.
   const { fronds } = resolveConventions((await loadConfig(root)).conventions);
   const frond = frondOf(path, fronds);
+
   return { root, ...(frond ? { frond } : {}) };
 }
 

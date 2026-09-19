@@ -22,6 +22,7 @@ export class LocalRoutePolicy implements RoutePolicy {
     const hosted = this.hostedNames(call.address.surface);
     const entity = call.address.entity;
     const surface = call.address.surface;
+
     return new FougereError({
       code: ErrorCode.NOT_FOUND,
       message: (surface

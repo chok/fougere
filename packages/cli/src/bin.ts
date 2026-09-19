@@ -40,8 +40,10 @@ async function newestDeclaration(root: string): Promise<number> {
     const stats = await Promise.all(entries
       .filter((entry) => entry.isFile() && entry.name.endsWith('.ts'))
       .map((entry) => stat(join(dir, entry.name)).then((s) => s.mtimeMs).catch(() => 0)));
+
     return Math.max(0, ...stats);
   }));
+
   return Math.max(0, ...times);
 }
 
@@ -62,6 +64,7 @@ async function scanOf(root: string): Promise<ScanResult> {
   const spin = process.stdout.isTTY ? terminal.spinner('reading fronds') : undefined;
   const scan = await scanProject(root);
   spin?.stop(`${scan.fronds.length} frond(s)`);
+
   return scan;
 }
 

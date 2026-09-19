@@ -40,6 +40,7 @@ function dirStore(root: string, name: string): Store {
       const file = fileOf(dir, key);
       if ((await read(file)) === undefined) return false;
       await rm(file);
+
       return true;
     },
     all: async () => {

@@ -7,12 +7,14 @@ export default class ShipmentHandler {
   async quote() {
     // Carriers are slow and uneven; that is the whole point of quoting one.
     await new Promise((resolve) => setTimeout(resolve, 8 + Math.floor(Math.random() * 45)));
+
     return { carrier: 'colissimo', cents: 490 + Math.floor(Math.random() * 300) };
   }
 
   /** Where a parcel is. */
   async track() {
     await new Promise((resolve) => setTimeout(resolve, 4 + Math.floor(Math.random() * 20)));
+
     return { status: 'in_transit' };
   }
 }

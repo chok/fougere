@@ -10,5 +10,6 @@ export async function useFougereAuth(): Promise<AuthRuntime> {
       'Auth not configured — declare `auth: { provider, ... }` in fougere.config.ts.',
     );
   }
+
   return app.auth;
 }

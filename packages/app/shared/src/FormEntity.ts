@@ -15,6 +15,7 @@ function defaultOf(field: Field): unknown {
 /** The base JSON type of a shape — unwraps the `[T,'null']` union. */
 function baseType(type: unknown): string {
   if (Array.isArray(type)) return (type.find((t) => t !== 'null') as string) ?? 'string';
+
   return (type as string) ?? 'string';
 }
 
@@ -49,6 +50,7 @@ function controlOf(field: Field): FormField['control'] {
 /** A closed set's members, when the shape declares one — `oneOf('draft','live')`. */
 function enumOf(field: Field): readonly (string | null)[] | undefined {
   const base = Shapes.of(field.shape).base;
+
   return base?.type === 'string' ? base.enum : undefined;
 }
 
@@ -69,6 +71,7 @@ function attrsOf(field: Field, control: FormField['control'], required: boolean)
     max: numeric?.maximum,
     pattern: text?.pattern,
   };
+
   return Object.fromEntries(Object.entries(attrs).filter(([, v]) => v !== undefined));
 }
 
@@ -87,6 +90,7 @@ export function formFieldsOf(entity: FormEntity, entityKey: string): FormField[]
     const control = controlOf(f);
     const required = Lifecycle.of(f).requiredAtCreate;
     const attrs = attrsOf(f, control, required);
+
     return {
       name,
       control,
@@ -126,6 +130,7 @@ export function tableColumnsOf(entity: FormEntity, entityKey: string): TableColu
     .filter(([, field]) => !Role.of(field).isCollection)
     .map(([name, field]) => {
       const target = Role.of(field).target;
+
       return {
         name,
         render: renderOf(field),
@@ -154,5 +159,6 @@ export function errorsByField(errors: ValidationError[]): Record<string, string>
     if (field === undefined) continue;
     byField[field] ??= err.message;
   }
+
   return byField;
 }

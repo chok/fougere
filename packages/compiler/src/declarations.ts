@@ -7,6 +7,7 @@ import { readFile } from 'node:fs/promises';
 let _ts: typeof ts | undefined;
 async function loadTs(): Promise<typeof ts> {
   if (!_ts) _ts = (await import('@typescript/typescript6')).default;
+
   return _ts;
 }
 

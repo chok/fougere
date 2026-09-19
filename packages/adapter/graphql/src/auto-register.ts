@@ -11,6 +11,7 @@ type HandlerFacade = Record<string, Function>;
 /** The relation a foreign key points at — `authorId → author`, `user_id → user`. */
 function relationNameFor(fieldName: string): string | undefined {
   const stripped = fieldName.replace(/(_id|Id|ID)$/, '');
+
   return stripped && stripped !== fieldName ? stripped : undefined;
 }
 
@@ -44,6 +45,7 @@ async function readInSlices<R>(
   for (let i = 0; i < keys.length; i += KEYS_PER_READ) {
     merge(all, await read(keys.slice(i, i + KEYS_PER_READ)));
   }
+
   return all;
 }
 
@@ -82,12 +84,14 @@ function loadByKey<R>(
     // their keys travel together. Closed first, so the following tick opens a new one.
     const rows = Promise.resolve().then(() => {
       open!.delete(entityKey);
+
       return read([...keys]);
     });
     batch = { keys, rows };
     open.set(entityKey, batch);
   }
   batch.keys.add(id);
+
   return batch.rows.then((found) => found.get(id) ?? absent());
 }
 
@@ -186,6 +190,7 @@ function viewTypeOf(
   if (known) return known;
   const type = registerType(builder, { name, entity: view });
   viewTypes.set(view, type);
+
   return type;
 }
 
@@ -329,6 +334,7 @@ export function registerAll(
             if (typeof targetList !== 'function') {
               return targetEntry.facade.findById({ params: { id: fk }, query: {}, body: undefined, state: {} });
             }
+
             return loadByKey(ctx, directionKey(targetKey(target), targetKeyName), String(fk), (ids) =>
               // The facade the `many` dual already uses, with a SET where it names one
               // value. Nothing new is published: a criterion learned to name several.
@@ -337,6 +343,7 @@ export function registerAll(
                   params: {}, query: { where: { [targetKeyName]: slice } }, body: undefined, state: {},
                 }) as any;
                 const rows = Array.isArray(result) ? result : result?.items ?? result?.data ?? [];
+
                 return new Map<string, any>(rows.map((row: any) => [String(row?.[targetKeyName]), row]));
               }, keepEach),
             () => null);
@@ -366,6 +373,7 @@ export function registerAll(
           resolve: (parent: any, _args: unknown, ctx: unknown) => {
             const id = parent.id;
             if (id == null) return [];
+
             // The same batch as its `one` dual, one query for the whole page — the two
             // directions differ only in what a key answers: one row there, a group here.
             //
@@ -384,6 +392,7 @@ export function registerAll(
                   const bucket = grouped.get(key);
                   if (bucket) bucket.push(row); else grouped.set(key, [row]);
                 }
+
                 return grouped;
               }, concatEach),
             () => []);
@@ -398,6 +407,7 @@ export function registerAll(
         for (const [name, factory] of Object.entries(relationFields)) {
           result[name] = factory(t);
         }
+
         return result;
       });
     }

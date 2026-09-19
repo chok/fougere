@@ -127,6 +127,7 @@ describe('a listener that lives in another process', () => {
           return { fronds: [{ name: 'search', facades: [{ name: 'index', ops: [{ name: 'reindex', kind: 'command' }] }], facts: [] }] };
         }
         wire.push(`${call.frond}:${call.entity}.${call.op}`);
+
         return undefined;
       },
     });
