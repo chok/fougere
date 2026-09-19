@@ -21,6 +21,12 @@ export class InputValidator {
     return new InputValidator(fields, options);
   }
 
+  /**
+   * The three REGISTERED axes decide, and the shape is not one of them — it could not answer
+   * anyway: `nullable(text())` and `optional(text())` both shape `['string', 'null']`, and only
+   * the second dispenses. JSON Schema draws the same line, where `required` is a list on the
+   * OBJECT and never a keyword on the property.
+   */
   requires(field: Field): boolean {
     return !Axes.all.some((axis) => axis.admitsAbsence?.(field));
   }
