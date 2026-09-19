@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-  bool, date, entity, json, list, many, number, oneOf, primary, ref, text,
+  bool, created, date, entity, json, list, many, number, oneOf, primary, ref, text, updated,
 } from '../src/index.js';
 
 class Target extends entity({ id: primary() }) {}
@@ -21,6 +21,8 @@ const words = {
   primary: primary({ description: 'a' }),
   ref: ref(Target, { description: 'a' }),
   many: many(Target, { description: 'a' }),
+  created: created({ description: 'a' }),
+  updated: updated({ description: 'a' }),
 };
 
 describe('what every word admits', () => {
@@ -36,6 +38,8 @@ describe('what every word admits', () => {
   it('turns a value into the create rule, for the words that shape one', () => {
     expect(date({ default: new Date(0) }).lifecycle?.create).toEqual({ value: new Date(0) });
     expect(list(text(), { default: [] }).lifecycle?.create).toEqual({ value: [] });
+    expect(json({ default: { any: 1 } }).lifecycle?.create).toEqual({ value: { any: 1 } });
+    expect(ref(Target, { default: 'anonymous' }).lifecycle?.create).toEqual({ value: 'anonymous' });
   });
 
   it('offers no value where the word has none to hold', () => {
@@ -43,6 +47,8 @@ describe('what every word admits', () => {
     many(Target, { default: [] });
     // @ts-expect-error a generated key already states how it is born
     primary({ default: 'x' });
+    // @ts-expect-error a stamp states `create: 'now'`, so there is no value to offer
+    created({ default: new Date(0) });
   });
 
 });

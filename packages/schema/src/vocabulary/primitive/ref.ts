@@ -1,8 +1,8 @@
 import { type EntityConstructor } from '../../axis/role/EntityConstructor.js';
 import { Relation, type OnDelete } from '../../axis/role/Relation.js';
-import { Field, type Described } from '../../field/Field.js';
+import { Field, type Shared } from '../../field/Field.js';
 
-export interface RefOptions extends Described {
+export interface RefOptions extends Shared<string> {
   onDelete?: OnDelete;
 }
 
