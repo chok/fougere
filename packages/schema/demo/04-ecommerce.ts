@@ -5,6 +5,7 @@
  */
 import {
   entity, primary, text, number, bool, oneOf, ref, many, created, optional, json,
+  type EntityConstructor,
 } from '../src/index.js';
 
 // ─── Entités ─────────────────────────────────────
@@ -38,6 +39,8 @@ class Customer extends entity({
 
 class OrderLine extends entity({
   id: primary(),
+  // La clé de la relation vit ICI : une ligne nomme sa commande, jamais l'inverse.
+  orderId: ref((): EntityConstructor => Order),
   productId: ref(Product),
   quantity: number({ min: 1, integer: true }),
   unitPrice: number({ min: 0 }),
