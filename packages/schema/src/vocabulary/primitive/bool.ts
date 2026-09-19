@@ -1,10 +1,5 @@
-import { Field } from '../../field/Field.js';
+import { Field, type Shared } from '../../field/Field.js';
 
-export function bool(opts?: { default?: boolean; description?: string }): Field<boolean> {
-  return new Field<boolean>({
-    shape: { type: 'boolean' },
-    lifecycle:
-      opts?.default !== undefined ? { create: { value: opts.default } } : undefined,
-    meta: opts?.description !== undefined ? { description: opts.description } : undefined,
-  });
+export function bool(opts?: Shared<boolean>): Field<boolean> {
+  return new Field<boolean>({ shape: { type: 'boolean' } }).setShared(opts);
 }

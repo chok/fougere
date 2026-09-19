@@ -1,13 +1,11 @@
-import { Field } from '../../field/Field.js';
+import { Field, type Shared } from '../../field/Field.js';
 import { type StringFormat } from '../../axis/shape/StringFormat.js';
 
-export interface TextOptions {
+export interface TextOptions extends Shared<string> {
   min?: number;
   max?: number;
   pattern?: string;
   format?: StringFormat;
-  default?: string;
-  description?: string;
 }
 
 export function text(opts?: TextOptions): Field<string> {
@@ -19,8 +17,5 @@ export function text(opts?: TextOptions): Field<string> {
       pattern: opts?.pattern,
       format: opts?.format,
     },
-    lifecycle:
-      opts?.default !== undefined ? { create: { value: opts.default } } : undefined,
-    meta: opts?.description !== undefined ? { description: opts.description } : undefined,
-  });
+  }).setShared(opts);
 }

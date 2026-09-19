@@ -1,11 +1,9 @@
-import { Field } from '../../field/Field.js';
+import { Field, type Shared } from '../../field/Field.js';
 
-export interface NumberOptions {
+export interface NumberOptions extends Shared<number> {
   min?: number;
   max?: number;
   integer?: boolean;
-  default?: number;
-  description?: string;
 }
 
 export function number(opts?: NumberOptions): Field<number> {
@@ -15,8 +13,5 @@ export function number(opts?: NumberOptions): Field<number> {
       minimum: opts?.min,
       maximum: opts?.max,
     },
-    lifecycle:
-      opts?.default !== undefined ? { create: { value: opts.default } } : undefined,
-    meta: opts?.description !== undefined ? { description: opts.description } : undefined,
-  });
+  }).setShared(opts);
 }

@@ -10,6 +10,12 @@ import { FieldValueValidator } from '../validator/FieldValueValidator.js';
 import { dotted } from '../lib/ValidationResult.js';
 import { SchemaError } from '../SchemaError.js';
 
+/** What every word admits, whatever it shapes — stated once, extended by each one's options. */
+export interface Shared<T> {
+  default?: T;
+  description?: string;
+}
+
 interface FieldDeclaration extends FougereFieldAxes {
   shape: Shape;
   role?: RoleRules;
@@ -63,5 +69,23 @@ export class Field<T = unknown> {
 
   with<U = T>(overrides: Partial<FieldDeclaration>): Field<U> {
     return new Field<U>({ ...this, ...overrides });
+  }
+
+  /**
+   * What a word admits whatever its shape, put where each one lands — `default` is a
+   * lifecycle rule, `description` is meta, and no word writes either conversion itself.
+   * FR : ce que tout mot admet quelle que soit sa forme, posé là où chacun atterrit.
+   * `text({ max: 200 }).setShared({ description: 'The title' })` → `meta.description`
+   */
+  setShared(opts?: Shared<T>): Field<T> {
+    const overrides: Partial<FieldDeclaration> = {};
+
+    if (opts?.default !== undefined)
+      overrides.lifecycle = { ...this.lifecycle, create: { value: opts.default } };
+
+    if (opts?.description !== undefined)
+      overrides.meta = { ...this.meta, description: opts.description };
+
+    return Object.keys(overrides).length ? this.with<T>(overrides) : this;
   }
 }
