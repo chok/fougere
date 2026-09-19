@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx src/main.ts",
     "test": "vitest run",
-    "typecheck": "tsc -p fronds"
+    "typecheck": "tsc -p . --noEmit && tsc -p fronds"
   },
   "dependencies": {
     "@fougere/core": "workspace:*",

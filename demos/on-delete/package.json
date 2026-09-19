@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx src/main.ts",
-    "typecheck": "tsc -p fronds"
+    "typecheck": "tsc -p . --noEmit && tsc -p fronds"
   },
   "dependencies": {
     "@fougere/adapter-sql": "workspace:*",
