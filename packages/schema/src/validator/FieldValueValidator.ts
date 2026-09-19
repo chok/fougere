@@ -30,7 +30,6 @@ export class FieldValueValidator {
     const type = Shapes.typeOf(shape);
     const base = Shapes.of(shape).base;
     if (value !== null) {
-      if (base?.type === 'object' && !base.properties) return { value };
       if (type === 'date' && value instanceof Date) {
         return Number.isNaN(value.getTime()) ? { message: 'Invalid date' } : { value };
       }

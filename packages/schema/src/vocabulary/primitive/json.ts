@@ -13,17 +13,21 @@ export function json<E extends SchemaView & (new (...args: any[]) => any)>(
 ): Field<InstanceType<E>>;
 
 /**
- * `json(Address)` where the object has a shape; `json()` alone admits any shape forever.
  * `json(Address)` → the entity's properties, and its required keys
  */
-export function json(of?: Entity | Shared<unknown>, opts?: Shared<unknown>): Field<unknown> {
+export function json(
+  of?: Entity | Shared<unknown>,
+  opts?: Shared<unknown>,
+): Field<unknown> {
   const [schema, shared] = typeof of === 'function' ? [of, opts] : [undefined, of];
 
   if (shared !== undefined && !isObject(shared))
     throw new SchemaError('json() takes its options as an object', { received: shared });
 
   if (schema && typeof schema.getFields !== 'function')
-    throw new SchemaError('json() takes an entity, such as json(Address) — got a function that is not one');
+    throw new SchemaError(
+      'json() takes an entity, such as json(Address) — got a function that is not one',
+    );
 
   if (!schema) return new Field({ shape: { type: 'object' } }).setShared(shared);
 
@@ -31,10 +35,12 @@ export function json(of?: Entity | Shared<unknown>, opts?: Shared<unknown>): Fie
   const validator = InputValidator.of(fields);
   const properties: Record<string, unknown> = {};
   const required: string[] = [];
+
   for (const [key, field] of Object.entries(fields)) {
     properties[key] = field.meta?.description
       ? { ...field.shape, description: field.meta.description }
       : field.shape;
+
     if (validator.onAbsent(field) === null) required.push(key);
   }
 
