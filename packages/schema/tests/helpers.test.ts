@@ -233,6 +233,10 @@ describe('helpers', () => {
       items: { type: ['string', 'null'] },
     });
 
+    // `meta` is not an axis, and was the one thing a list still swallowed: a sentence about
+    // an element reached nobody.
+    expect(() => list(text({ description: 'un tag' }))).toThrow(/meta says nothing of one/);
+
     const beside = [
       many(Other),
       unique(text()),
