@@ -25,7 +25,6 @@ class AxisRegistry extends Registry<Axis> {
 
 /**
  * The axes this process reads, and the door an axis declared elsewhere comes through.
- * FR : les axes que ce process lit, et la porte par où un axe déclaré ailleurs entre.
  * `Axes.register('tenancy', Tenancy)` — from a `vocabulary/` file, read before `entities/`
  */
 export const Axes = new AxisRegistry('axis', 'call Axes.register(slot, axis)', [

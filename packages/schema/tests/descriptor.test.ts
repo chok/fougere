@@ -20,8 +20,7 @@ import {
   text,
 } from '../src/index.js';
 import { type RoleRules } from '../src/axis/role/Role.js';
-import { type RelationDescriptor } from '../src/projection/card/RelationDescriptor.js';
-import { type RoleDescriptor } from '../src/projection/card/RoleDescriptor.js';
+import { type RelationDescriptor, type RoleDescriptor } from '../src/projection/card/RoleDescriptor.js';
 import { type EntityConstructor } from '../src/axis/role/EntityConstructor.js';
 import { type Relation } from '../src/axis/role/Relation.js';
 

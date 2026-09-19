@@ -29,9 +29,6 @@ const STATED = new Map([
     'Two owners addressing each other: the field holds the facts, the validator holds the ' +
     'verdict, and neither owns the other. Nesting `validator/` under `field/` would say the ' +
     'field owns the decision, which `FieldDeclarationValidator.of(value)` denies.'],
-  ['packages/schema axis↔projection',
-    'A projection and its inverse: the three axes reach `card/admission.ts` to ADMIT a ' +
-    'wire value back into a schema. The return edge is the dual, not a leak.'],
   ['packages/schema axis↔field',
     'Type-only, two edges: an axis reads the field it qualifies, and a field declares ' +
     'the axes it carries. Mutual by definition — neither can be named without the other.'],

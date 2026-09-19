@@ -770,8 +770,10 @@ cycles too and marks what the emitted JS does not contain, and it prints the THI
 because that is what moves. It reads pairs, and it does not read a package's ROOT as a family — which is where the
   passes of 2026-09-10 found what it could not see: a family reaching down for a leaf that
   depends on nothing (`schema/src/lib/validation.ts`, `core/src/storage/`) while the root
-  reached back up into it. Four exceptions are stated
-with their reason: `field`↔`validator`, `axis`↔`projection`, `axis`↔`field`, `entity`↔`field`.
+  reached back up into it. Three exceptions are stated
+with their reason: `field`↔`validator`, `axis`↔`field`, `entity`↔`field`. A fourth went the day
+`RoleDescriptor` moved beside the axis that converts it: one import ran from `axis` to
+`projection` against twenty the other way, and it was the card form of `role`.
 
 **An imported name is a check** — `tools/import-check.ts`, `pnpm import:check`, run in CI
 beside `publish:check` and `door:check`. Those two ask about the PACKAGE — what a tarball
