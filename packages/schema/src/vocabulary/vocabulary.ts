@@ -3,7 +3,8 @@ import { Axes } from '../axis/Axes.js';
 import { dequal } from 'dequal';
 import { SchemaError } from '../SchemaError.js';
 
-const memberSlots = (): string[] => [...Axes.names, 'meta'];
+/** What a field states BESIDE its shape: every registered axis, and its sentence. */
+export const memberSlots = (): string[] => [...Axes.names, 'meta'];
 
 /**
  * Builds a `rule/` word

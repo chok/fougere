@@ -1,5 +1,5 @@
-import { Axes } from '../../axis/Axes.js';
 import { Field, type Shared } from '../../field/Field.js';
+import { memberSlots } from '../vocabulary.js';
 import { SchemaError } from '../../SchemaError.js';
 
 export interface ListOptions<T = unknown> extends Shared<T[]> {
@@ -14,7 +14,7 @@ export interface ListOptions<T = unknown> extends Shared<T[]> {
  */
 export function list<T>(item: Field<T>, opts?: ListOptions<T>): Field<T[]> {
   const declared = item as unknown as Record<string, unknown>;
-  const stated = Axes.names.filter((axis) => declared[axis]);
+  const stated = memberSlots().filter((slot) => declared[slot]);
 
   if (stated.length)
     throw new SchemaError(
