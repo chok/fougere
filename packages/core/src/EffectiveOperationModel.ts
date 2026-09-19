@@ -1,5 +1,5 @@
 import { lowerFirst, type SchemaView } from '@fougere/schema';
-import { statementDrift } from './boot/statement-drift.js';
+import { statementDrift, unansweredOperations } from './boot/statement-drift.js';
 import { reachedBy, servedBy } from './boot/declared.js';
 import { computeBindingPlan, type BindingPlan } from './wire/binding.js';
 import { targetOf } from './prefab/prefab.js';
@@ -111,6 +111,7 @@ export function resolveEffectiveOperations(
       // A statement wins over the scan on purpose; saying so out loud is what keeps the
       // win from hiding a rename. Compared here, where both readings are in hand.
       resolutionDiagnostics.push(...statementDrift(frond, handler));
+      resolutionDiagnostics.push(...unansweredOperations(frond, handler, contracts.keys()));
 
       for (const [name, rawContract] of contracts) {
         const subject = `${handler.ctor.name}.${name}`;

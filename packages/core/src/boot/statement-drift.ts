@@ -41,3 +41,28 @@ export function statementDrift(frond: FrondDescriptor, handler: HandlerEntry): D
 
   return found;
 }
+
+/**
+ * A contract with no method under its name. The scan cannot produce one; a declaration can, and
+ * its first call used to fail as `instance[method] is not a function` — a server error for what
+ * is a typo in the declaration.
+ */
+export function unansweredOperations(
+  frond: FrondDescriptor,
+  handler: HandlerEntry,
+  names: Iterable<string>,
+): Diagnostic[] {
+  const prototype = handler.ctor.prototype as Record<string, unknown>;
+
+  return [...names]
+    .filter((name) => typeof prototype[name] !== 'function')
+    .map((name) => ({
+      severity: 'blocking',
+      code: 'operation-without-method',
+      filePath: handler.filePath,
+      frond: frond.name,
+      subject: `${handler.ctor.name}.${name}`,
+      message: `${handler.ctor.name}.${name} is declared as an operation, and ${handler.ctor.name} `
+        + 'has no method of that name — its first call would fail as a server error.',
+    }));
+}
