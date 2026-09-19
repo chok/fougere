@@ -5,6 +5,7 @@ type OneOfOptions<V extends string = string> = Shared<V>;
 export function oneOf<const T extends readonly string[]>(
   ...values: [...T]
 ): Field<T[number]>;
+
 export function oneOf<const T extends readonly string[]>(
   ...args: [...T, OneOfOptions<T[number]>]
 ): Field<T[number]>;
