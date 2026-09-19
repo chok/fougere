@@ -8,4 +8,9 @@ export default class ProductPresenter extends Presenter(Product) {
 
     return products.map((product) => product.name.toUpperCase());
   }
+
+  /** Derived from a field the client is never handed — which only holds before the view cuts. */
+  expensive(products: Product[]): boolean[] {
+    return products.map((product) => (product.cost ?? 0) > 100);
+  }
 }

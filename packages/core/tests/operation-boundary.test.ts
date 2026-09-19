@@ -39,7 +39,10 @@ describe('an operation crosses its boundary in one order', () => {
     );
 
     // `internal` survives: the op declares no closed view, and an open one adds without cutting.
-    expect(created).toEqual({ id: 'p1', name: 'Fern', internal: true, shouted: 'FERN' });
+    // `cost` does not: the view cuts it, AFTER the presenter derived `expensive` from it.
+    expect(created).toEqual({
+      id: 'p1', name: 'Fern', internal: true, shouted: 'FERN', expensive: true,
+    });
     expect(trace).toEqual([
       'middleware:before',
       'handler',

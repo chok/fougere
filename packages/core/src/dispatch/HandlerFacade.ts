@@ -116,15 +116,23 @@ export class HandlerFacade {
 
     const args = contract.binding ? await this.arguments.resolve(contract.binding, validated) : [];
     const { instance, method } = this.resolveImplementation(op);
+    const answered = await instance[method](...args);
+
     const view = this.viewOf(op);
-    const output = view.project(await instance[method](...args));
-
     const { presenter } = this.facade;
+    const computed = view.closed || !presenter
+      ? answered
+      : await this.present(op, presenter, answered, validated);
 
-    return view.closed || !presenter ? output : this.present(op, presenter, output, validated);
+    return view.project(computed);
   }
 
-  /** The computed fields a presenter adds, over the page the façade just projected. */
+  /**
+   * The computed fields a presenter adds, over the rows the handler answered and BEFORE the
+   * view projects them. A presenter runs on the server, so what it reads is the row the
+   * storage holds: a `writeOnly` field is gone by the time the client sees it, and deriving
+   * from one is the whole reason to declare it.
+   */
   private present(
     op: string,
     presenter: PresenterEntry,
