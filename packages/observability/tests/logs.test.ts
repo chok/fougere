@@ -48,7 +48,8 @@ describe('the logger has a facade', () => {
     log.info('scanned %s fronds', 3);
 
     expect(seen).toHaveLength(1);
-    expect(seen[0]).toMatchObject({ level: 'info', name: 'boot:app', message: 'scanned %s fronds', args: [3] });
+    // A scalar travels wrapped: `LogLine.args` states `json()`, and a `json()` is an object.
+    expect(seen[0]).toMatchObject({ level: 'info', name: 'boot:app', message: 'scanned %s fronds', args: [{ value: 3 }] });
     expect(seen[0].at).toBeGreaterThan(0);
   });
 

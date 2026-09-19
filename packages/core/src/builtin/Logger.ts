@@ -96,7 +96,7 @@ export class Logger {
       level: level as LogRecord['level'], name: this.name, message: msg, args, at: Date.now(),
     };
 
-    this.carry?.push(record);
+    this.carry?.push({ ...record, args: args.map(objectOf) });
 
     // The console ALWAYS, whoever else took the line. Skipping it once a destination
     // existed made `calls()` — a devtools ring that prints nothing — silence the
@@ -106,6 +106,10 @@ export class Logger {
     console[method](...text);
   }
 }
+
+/** A line travels as a fact, where `args` states `json()` — an object. */
+const objectOf = (arg: unknown): object =>
+  typeof arg === 'object' && arg !== null && !Array.isArray(arg) ? arg : { value: arg };
 
 export function formatted(
   record: Rendered,
