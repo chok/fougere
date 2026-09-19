@@ -110,6 +110,18 @@ describe('helpers', () => {
     expect(f.shape).toEqual({ type: 'string', enum: ['pending', 'paid', 'shipped'] });
   });
 
+  // The types refuse all four; a caller without a compiler does not have them, and these were
+  // read as a smaller enum, or as options, with nothing said.
+  it('oneOf() refuses what is neither a value nor its options in last place', () => {
+    const stray: readonly (readonly unknown[])[] = [['a', 42], ['a', null], ['a', ['x']], [{ default: 'a' }, 'a']];
+
+    for (const args of stray)
+      expect(() => (oneOf as (...args: unknown[]) => unknown)(...args)).toThrow(/takes one value or more/);
+
+    // @ts-expect-error an enum no value satisfies
+    expect(() => oneOf()).toThrow(/takes one value or more/);
+  });
+
   it('ref() creates a one-relation field', () => {
     class Customer extends entity({ id: primary() }) {}
     const f = ref(Customer);
