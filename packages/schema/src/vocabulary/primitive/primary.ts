@@ -1,7 +1,7 @@
-import { Field } from '../../field/Field.js';
+import { Field, type Described } from '../../field/Field.js';
 import { Generators, type GeneratorRef } from '../../axis/lifecycle/Generators.js';
 
-interface PrimaryOptions {
+interface PrimaryOptions extends Described {
   generate?: GeneratorRef | [name: string, fn: () => string];
 }
 
@@ -34,5 +34,5 @@ export function primary(fieldOrOptions?: Field | PrimaryOptions): Field {
     shape: { type: 'string' },
     role: { primary: true },
     lifecycle: { create: { generate }, update: 'forbidden' },
-  });
+  }).setShared(opts);
 }

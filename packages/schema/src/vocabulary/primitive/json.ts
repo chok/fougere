@@ -1,19 +1,23 @@
-import { Field } from '../../field/Field.js';
+import { Field, type Described } from '../../field/Field.js';
 import type { SchemaView } from '../../SchemaView.js';
 import { InputValidator } from '../../validator/InputValidator.js';
 
-export function json<T = unknown>(): Field<T>;
+export function json<T = unknown>(opts?: Described): Field<T>;
 export function json<E extends SchemaView & (new (...args: any[]) => any)>(
   of: E,
+  opts?: Described,
 ): Field<InstanceType<E>>;
 /**
  * `json(Address)` where the object has a shape; `json()` alone admits any shape forever.
  * FR : `json(Address)` quand l'objet a une forme ; `json()` seul admet tout, à jamais.
  * `json(Address)` → the entity's properties, and its required keys
  */
-export function json(of?: SchemaView): Field<unknown> {
-  if (!of) return new Field({ shape: { type: 'object' } });
-  const fields = of.getFields();
+export function json(of?: SchemaView | Described, opts?: Described): Field<unknown> {
+  const hasSchema = typeof of === 'function';
+  const schema = hasSchema ? (of as SchemaView) : undefined;
+  const described = hasSchema ? opts : (of as Described | undefined);
+  if (!schema) return new Field({ shape: { type: 'object' } }).setShared(described);
+  const fields = schema.getFields();
   const validator = InputValidator.of(fields);
   const properties: Record<string, unknown> = {};
   const required: string[] = [];
@@ -25,5 +29,5 @@ export function json(of?: SchemaView): Field<unknown> {
   }
   return new Field({
     shape: { type: 'object', properties, ...(required.length ? { required } : {}) },
-  });
+  }).setShared(described);
 }

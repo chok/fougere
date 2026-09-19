@@ -10,10 +10,23 @@ import { FieldValueValidator } from '../validator/FieldValueValidator.js';
 import { dotted } from '../lib/ValidationResult.js';
 import { SchemaError } from '../SchemaError.js';
 
-/** What every word admits, whatever it shapes — stated once, extended by each one's options. */
-export interface Shared<T> {
-  default?: T;
+/**
+ * Where a shared option lands: `default` IS a lifecycle rule and `description` IS meta.
+ * The fact is stated here alone, so neither a word nor this class writes the conversion.
+ */
+const SHARED: Readonly<Record<string, readonly [string, ...string[]]>> = {
+  default: ['lifecycle', 'create', 'value'],
+  description: ['meta', 'description'],
+};
+
+/** The sentence any word admits, whatever it shapes — a relation and a date carry one too. */
+export interface Described {
   description?: string;
+}
+
+/** And a value it is born with, for the words that shape one. `many()` has none to hold. */
+export interface Shared<T> extends Described {
+  default?: T;
 }
 
 interface FieldDeclaration extends FougereFieldAxes {
@@ -72,19 +85,23 @@ export class Field<T = unknown> {
   }
 
   /**
-   * What a word admits whatever its shape, put where each one lands — `default` is a
-   * lifecycle rule, `description` is meta, and no word writes either conversion itself.
-   * FR : ce que tout mot admet quelle que soit sa forme, posé là où chacun atterrit.
+   * What a word admits whatever its shape, written where `SHARED` says it lands.
+   * FR : ce que tout mot admet quelle que soit sa forme, écrit là où `SHARED` dit.
    * `text({ max: 200 }).setShared({ description: 'The title' })` → `meta.description`
    */
   setShared(opts?: Shared<T>): Field<T> {
-    const overrides: Partial<FieldDeclaration> = {};
+    const stated = opts as Record<string, unknown> | undefined;
+    const axes = this as unknown as Record<string, object | undefined>;
+    const overrides: Record<string, unknown> = {};
 
-    if (opts?.default !== undefined)
-      overrides.lifecycle = { ...this.lifecycle, create: { value: opts.default } };
+    for (const [option, [axis, ...under]] of Object.entries(SHARED)) {
+      const value = stated?.[option];
 
-    if (opts?.description !== undefined)
-      overrides.meta = { ...this.meta, description: opts.description };
+      if (value === undefined) continue;
+
+      const member = under.reduceRight<unknown>((held, key) => ({ [key]: held }), value);
+      overrides[axis] = { ...(overrides[axis] ?? axes[axis]), ...(member as object) };
+    }
 
     return Object.keys(overrides).length ? this.with<T>(overrides) : this;
   }

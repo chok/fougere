@@ -1,6 +1,6 @@
 import { type EntityConstructor } from '../../axis/role/EntityConstructor.js';
 import { Relation } from '../../axis/role/Relation.js';
-import { Field } from '../../field/Field.js';
+import { Field, type Described } from '../../field/Field.js';
 
 /**
  * The far side of a `ref()`: no column of its own, and absent from what a client sends.
@@ -9,9 +9,10 @@ import { Field } from '../../field/Field.js';
  */
 export function many<E extends EntityConstructor>(
   target: E | (() => E),
+  opts?: Described,
 ): Field<InstanceType<E>[]> {
   return new Field<InstanceType<E>[]>({
     shape: { type: 'array' },
     role: { relation: Relation.many(target) },
-  });
+  }).setShared(opts);
 }
