@@ -15,4 +15,8 @@ export function clean<T extends Record<string, unknown>>(obj: T): T {
 export const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-export const shown = (value: unknown): string => JSON.stringify(value) ?? typeof value;
+export const isArrayOf = <T>(
+  values: readonly unknown[],
+  is: (value: unknown) => value is T,
+): values is readonly T[] => values.every(is);
+
