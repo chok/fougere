@@ -7,7 +7,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createContainer, type Container } from '@fougere/container';
-import { entity, primary, ref, text, type SchemaView } from '@fougere/schema';
+import { entity, many, primary, ref, text, type EntityConstructor, type SchemaView } from '@fougere/schema';
 import { createApp, frond, storageOver, togetherKeyOf, type Storage, type Store } from '../src/index.js';
 
 interface Frame {
@@ -184,5 +184,42 @@ describe('the target behind remotes:', () => {
     expect(world.warned).toHaveLength(1);
     expect(world.warned[0]).toContain('authorId → author');
     await world.dispose();
+  });
+});
+
+describe('a many() whose target references nothing back', () => {
+  /** Quiet: a boot writes what it installed, and only the refusal is the subject here. */
+  const booted = async (entities: SchemaView[]) => {
+    const spies = (['debug', 'info', 'log', 'warn', 'error'] as const)
+      .map((method) => vi.spyOn(console, method).mockImplementation(() => {}));
+
+    try {
+      return await createApp({
+        createContainer,
+        storageFactory: storageOver(() => store()),
+        fronds: [frond('press', { entities })],
+      });
+    } finally {
+      for (const spy of spies) spy.mockRestore();
+    }
+  };
+
+  it('refuses the boot, naming both sides and what to declare', async () => {
+    class Label extends entity({ id: primary() }) {}
+    class Piece extends entity({ id: primary(), title: text(), tags: many(Label) }) {}
+
+    await expect(booted([Piece, Label]))
+      .rejects.toThrow(/Piece\.tags states many\(Label\), and no field of Label references Piece/);
+  });
+
+  it('says nothing once the far side carries the key', async () => {
+    // Declared in this order on purpose: each side names the other through a thunk, and
+    // writing both as one expression is what TypeScript cannot infer.
+    class Label extends entity({ id: primary(), pieceId: ref((): EntityConstructor => Piece) }) {}
+    class Piece extends entity({ id: primary(), title: text(), tags: many(Label) }) {}
+
+    await using app = await booted([Piece, Label]);
+
+    expect(app.fronds.map((one) => one.name)).toEqual(['press']);
   });
 });

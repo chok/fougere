@@ -5,6 +5,7 @@ import type { RelationCheck } from '../dispatch/RelationCheck.js';
 import type { Hosting } from './Hosting.js';
 import type { Diagnostic } from '../diagnostic.js';
 import type { Releasing, Rows } from '../dispatch/Release.js';
+import type { EntityEntry } from '../descriptor/EntityEntry.js';
 
 /**
  * Does a foreign key hold this reference? Both sides in ONE source that keeps relations — two
@@ -117,6 +118,42 @@ export function refuseUnwritableNull(entity: SchemaView, name: string, filePath:
         + 'row could neither be emptied nor kept. Wrap it in `optional()`, or state `cascade` '
         + 'to take the row out with its target.',
     });
+  }
+
+  return refused;
+}
+
+/**
+ * A `many()` whose target declares no `ref()` back. The key lives on the far row, so a
+ * relation neither side states can never be filled: SQL emits no column, GraphQL drops the
+ * field when it finds no reverse key, and nothing says why.
+ *
+ * Asked once every frond is installed, since the target may belong to another one — and left
+ * alone when it answers elsewhere, where its fields are declared and cannot be read here.
+ */
+export function unpaired(entities: readonly EntityEntry[], hosting: Hosting): Diagnostic[] {
+  const refused: Diagnostic[] = [];
+
+  for (const entry of entities) {
+    for (const [field, declared] of Object.entries(entry.entityClass.getFields())) {
+      const role = Role.of(declared);
+      const target = role.isCollection ? role.target?.name : undefined;
+      if (!target || !hosting.hostedHere(lowerFirst(target))) continue;
+
+      const held = referencesTo(lowerFirst(entry.name), hosting)
+        .some((one) => one.entity === lowerFirst(target));
+      if (held) continue;
+
+      refused.push({
+        severity: 'blocking',
+        code: 'many-without-reference',
+        filePath: entry.filePath,
+        subject: `${entry.name}.${field}`,
+        message: `${entry.entityClass.name}.${field} states many(${target}), and no field of `
+          + `${target} references ${entry.entityClass.name}: the relation is declared on neither `
+          + `side, so nothing can fill it. Declare the ref() on ${target}.`,
+      });
+    }
   }
 
   return refused;

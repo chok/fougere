@@ -7,7 +7,7 @@ import { hostedBy } from './hosted.js';
 import { nestingOf, parentsFirst } from './nesting.js';
 import type { Fronds } from '../descriptor/Fronds.js';
 import { installFrond, type Assembly } from './install.js';
-import { dependentsOf, releasing, unfinishable, unheldAmong } from './relations.js';
+import { dependentsOf, releasing, unfinishable, unheldAmong, unpaired } from './relations.js';
 import { release as releaseRow } from '../dispatch/Release.js';
 import type { Hosting } from './Hosting.js';
 import { peerOver } from './peerOver.js';
@@ -703,6 +703,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     for (const frond of fronds) await installFrond(frond, assembly);
 
     warnAboutRelations(relations, hosting, log);
+    refused.push(...unpaired(fronds.flatMap((frond) => frond.entities), hosting));
 
     // Every check of the install, said at once — a boot that stops at the first makes the
     // next one visible only after a fix and a restart.
