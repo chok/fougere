@@ -6,8 +6,7 @@ import { SchemaError } from '../SchemaError.js';
 const memberSlots = (): string[] => [...Axes.names, 'meta'];
 
 /**
- * Builds a `rule/` word, which states members on the field it receives.
- * FR : fabrique un mot de `rule/`, qui énonce des membres sur le champ reçu.
+ * Builds a `rule/` word
  * `vocabulary('indexed', () => ({ role: { index: true } }))`
  */
 export function vocabulary(
@@ -21,7 +20,6 @@ export type FieldWord = (field: Field<any>) => Field<any>;
 
 /**
  * Refuses two words stating one member differently, rather than letting the outer win.
- * FR : refuse deux mots qui énoncent un même membre différemment.
  * `readOnly(writeOnly(text()))` → both apply; `immutable(created())` → throws
  */
 function merge(name: string, field: Field, given: Partial<Field>): Partial<Field> {

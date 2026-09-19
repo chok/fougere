@@ -7,9 +7,9 @@ export function json<E extends SchemaView & (new (...args: any[]) => any)>(
   of: E,
   opts?: Described,
 ): Field<InstanceType<E>>;
+
 /**
  * `json(Address)` where the object has a shape; `json()` alone admits any shape forever.
- * FR : `json(Address)` quand l'objet a une forme ; `json()` seul admet tout, à jamais.
  * `json(Address)` → the entity's properties, and its required keys
  */
 export function json(of?: SchemaView | Described, opts?: Described): Field<unknown> {

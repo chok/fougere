@@ -9,7 +9,6 @@ export function primary(opts?: PrimaryOptions): Field<string>;
 export function primary<T>(field: Field<T>): Field<T>;
 /**
  * `primary()` for a generated id; `primary(number())` to make a declared field the key.
- * FR : `primary()` pour un identifiant généré ; `primary(number())` pour promouvoir un champ.
  * `primary()` → `create: { generate: 'cuid2' }`, `update: 'forbidden'`
  */
 export function primary(fieldOrOptions?: Field | PrimaryOptions): Field {
