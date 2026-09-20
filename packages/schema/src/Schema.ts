@@ -16,6 +16,7 @@ import type { SchemaView } from './SchemaView.js';
 
 import type { SchemaConstructor } from './SchemaConstructor.js';
 import { SchemaError } from './SchemaError.js';
+import type { UnionToIntersection } from './lib/UnionToIntersection.js';
 
 export const ANONYMOUS_SCHEMA_NAME = 'Schema';
 
@@ -175,12 +176,6 @@ export class Schema {
     return Derived as unknown as SchemaConstructor<Fields>;
   }
 }
-
-type UnionToIntersection<U> = (U extends unknown ? (k: U) => void : never) extends (
-  k: infer I,
-) => void
-  ? I
-  : never;
 
 type Merged<T extends SchemaView[]> = UnionToIntersection<
   T[number] extends { getFields(): infer F } ? F : Fields
