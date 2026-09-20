@@ -19,7 +19,7 @@ function suppliedIn(fields: Fields): Fields {
   if (Object.keys(written).length > 0) return written;
 
   return Object.fromEntries(
-    Object.entries(fields).filter(([, field]) => Role.of(field).isPrimary),
+    Object.entries(fields).filter(([, field]) => Role.of(field).isPrimary()),
   ) as Fields;
 }
 
@@ -75,12 +75,12 @@ export function inputToShape(fields: Fields): Shape {
   let positional = false;
 
   for (const [key, field] of Object.entries(suppliedIn(fields))) {
-    if (Role.of(field).isRelation) continue;
+    if (Role.of(field).isRelation()) continue;
 
     const { base: shape, nullable } = Shapes.of(field.shape);
     const type = Shapes.typeOf(field.shape);
     const description = field.shape?.description;
-    const required = Role.of(field).isPrimary || (!nullable && Lifecycle.of(field).requiredAtCreate);
+    const required = Role.of(field).isPrimary() || (!nullable && Lifecycle.of(field).requiredAtCreate());
     const options = shape && 'enum' in shape && shape.enum?.length
       ? shape.enum.filter((value) => value !== null).map(String)
       : undefined;

@@ -138,7 +138,7 @@ function aboutField(
     cases.push({ why: `${name} absent`, input, patch: false, expect: { reject: name } });
   }
 
-  if (Boundary.of(field).readOnly) {
+  if (Boundary.of(field).readOnly()) {
     cases.push({
       why: `${name} supplied although read-only`,
       input: withField(wrongTypeFor(field)),
@@ -147,7 +147,7 @@ function aboutField(
     });
   }
 
-  if (Role.of(field).isCollection) {
+  if (Role.of(field).isCollection()) {
     cases.push({
       why: `${name} supplied although the other side carries it`,
       input: withField([]),
@@ -156,7 +156,7 @@ function aboutField(
     });
   }
 
-  if (Lifecycle.of(field).immutable && !Role.of(field).isPrimary) {
+  if (Lifecycle.of(field).immutable() && !Role.of(field).isPrimary()) {
     cases.push({
       why: `${name} supplied on an update`,
       input: { [name]: valid[name] ?? wrongTypeFor(field) },
@@ -167,7 +167,7 @@ function aboutField(
 
   // A reference names a row that must exist; the caller supplied its id and we do not
   // get to invent a second one, so the only case we can state about it is the bound one.
-  if (name in valid && !Role.of(field).isReference) {
+  if (name in valid && !Role.of(field).isReference()) {
     cases.push({
       why: `${name} of the wrong type`,
       input: withField(wrongTypeFor(field)),

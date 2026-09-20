@@ -29,14 +29,14 @@ export function toSnakeCase(str: string): string {
  * other field becomes exactly one column.
  */
 function isStored(field: Field): boolean {
-  return !Role.of(field).isCollection;
+  return !Role.of(field).isCollection();
 }
 
 /** The target's primary key column. */
 function primaryColumnOf(target: Partial<SchemaView>): string {
   if (typeof target.getFields !== 'function') return 'id';
   for (const [name, field] of Object.entries(target.getFields())) {
-    if (Role.of(field).isPrimary) return toSnakeCase(name);
+    if (Role.of(field).isPrimary()) return toSnakeCase(name);
   }
 
   return 'id'; // declared no primary() field — defensive, shouldn't happen
@@ -50,7 +50,7 @@ function referenceFor(
   hosted?: HostedNames,
 ): ColumnReference | undefined {
   const role = Role.of(field);
-  if (!role.isReference) return undefined;
+  if (!role.isReference()) return undefined;
   const target = role.target as Partial<SchemaView> & { name?: string };
   const mapped = tableNameOf?.get(target as SchemaView);
   if (mapped === undefined && hosted !== undefined) {
@@ -100,7 +100,7 @@ function toColumn(
     name: toSnakeCase(fieldName),
     type: Shapes.typeOf(field.shape),
     nullable,
-    primary: Role.of(field).isPrimary,
+    primary: Role.of(field).isPrimary(),
   };
   const bounds = boundsOf(base as Record<string, unknown> | undefined);
   if (bounds) column.bounds = bounds;
@@ -110,8 +110,8 @@ function toColumn(
   // redundant constraint on every engine. So would indexing what `unique` constrains.
   // Only a constraint of ONE becomes a column constraint; a group of several is a table
   // constraint, emitted once from `uniqueGroups` rather than once per member column.
-  if (Role.of(field).isUnique && !column.primary) column.unique = true;
-  if (Role.of(field).isIndexed && !column.primary && !column.unique) column.index = true;
+  if (Role.of(field).isUnique() && !column.primary) column.unique = true;
+  if (Role.of(field).isIndexed() && !column.primary && !column.unique) column.index = true;
   const references = referenceFor(field, resolve, tableNameOf, hosted);
   if (references) column.references = references;
   if (stated) column.stated = stated;

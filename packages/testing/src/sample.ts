@@ -21,7 +21,7 @@ function seedOf(name: string): number {
  */
 function referencesIn(fields: Fields): string[] {
   return Object.entries(fields)
-    .filter(([, field]) => Role.of(field as Field).isReference)
+    .filter(([, field]) => Role.of(field as Field).isReference())
     .map(([name]) => name);
 }
 

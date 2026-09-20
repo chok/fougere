@@ -53,7 +53,7 @@ export class Boundary {
 
   /** The server fills it, so a caller never sends it. */
   static admitsAbsence(field: Field): boolean {
-    return this.of(field).readOnly;
+    return this.of(field).readOnly();
   }
 
   static of(field: Field): Boundary {
@@ -88,11 +88,11 @@ export class Boundary {
     return { in: overrides.in ?? this.rules.in, out: overrides.out ?? this.rules.out };
   }
 
-  get readOnly(): boolean {
+  readOnly(): boolean {
     return this.rules.in === 'closed';
   }
 
-  get writeOnly(): boolean {
+  writeOnly(): boolean {
     return this.rules.out === 'closed';
   }
 }

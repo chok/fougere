@@ -20,6 +20,9 @@ export interface FieldDeclaration extends FougereFieldAxes {
   shape: Shape;
 }
 
+/** The registry answers strings, and a member of a declaration is what they name. */
+const registered = (): (keyof FieldDeclaration)[] => Axes.names as (keyof FieldDeclaration)[];
+
 /**
  * The axes it carries are `FougereFieldAxes`, which each axis writes its own line in — so the
  * three of the core are typed the way a fourth declared outside is, and the class names what
@@ -44,7 +47,7 @@ export class Field<T = unknown> {
 
     this.shape = init.shape;
 
-    for (const name of Axes.names as (keyof FieldDeclaration)[]) {
+    for (const name of registered()) {
       Object.defineProperty(this, name, {
         value: init[name], writable: true, enumerable: true, configurable: true,
       });
@@ -77,15 +80,15 @@ export class Field<T = unknown> {
   /** Every axis it declares, and nothing for the ones it says nothing on. */
   get axes(): Record<string, unknown> {
     return Object.fromEntries(
-      (Axes.names as (keyof FieldDeclaration)[])
+      registered()
         .map((name) => [name, this.axis(name)])
         .filter(([, declared]) => declared !== undefined),
     );
   }
 
   /** Whether it states anything at all beside its shape. */
-  get hasAxes(): boolean {
-    return Object.keys(this.axes).length > 0;
+  hasAxes(): boolean {
+    return registered().some((name) => this.axis(name) !== undefined);
   }
 
   with<U = T>(overrides: Partial<FieldDeclaration>): Field<U> {

@@ -90,7 +90,7 @@ export function formFieldsOf(entity: FormEntity, entityKey: string): FormField[]
   return Object.entries(Visibility.of(entity.getFields()).input).map(([name, field]) => {
     const f = field;
     const control = controlOf(f);
-    const required = Lifecycle.of(f).requiredAtCreate;
+    const required = Lifecycle.of(f).requiredAtCreate();
     const attrs = attrsOf(f, control, required);
     const members = enumOf(f);
 
@@ -119,7 +119,7 @@ const RENDER_BY_TYPE: Record<ShapeType, TableColumn['render']> = {
 };
 
 function renderOf(field: Field): TableColumn['render'] {
-  if (Role.of(field).isReference) return 'link';
+  if (Role.of(field).isReference()) return 'link';
   const type = Shapes.typeOf(field.shape);
 
   return type ? RENDER_BY_TYPE[type] : 'text';
@@ -128,7 +128,7 @@ function renderOf(field: Field): TableColumn['render'] {
 /** The columns a list is made of. */
 export function tableColumnsOf(entity: FormEntity, entityKey: string): TableColumn[] {
   return Object.entries(Visibility.of(entity.getFields()).output)
-    .filter(([, field]) => !Role.of(field).isCollection)
+    .filter(([, field]) => !Role.of(field).isCollection())
     .map(([name, field]) => {
       const target = Role.of(field).target;
 

@@ -47,7 +47,7 @@ function whatEachWaitsFor(
     for (const entity of frond.entities) {
       const targets = new Set<string>();
       for (const field of Object.values(entity.entityClass.getFields())) {
-        if (!Role.of(field).isReference) continue;
+        if (!Role.of(field).isReference()) continue;
         const target = (Role.of(field).target as { name?: string }).name?.toLowerCase();
         if (target && target !== entity.name.toLowerCase()) targets.add(target);
       }

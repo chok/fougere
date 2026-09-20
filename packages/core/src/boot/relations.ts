@@ -35,7 +35,7 @@ function referencesTo(target: string, hosting: Hosting): { entity: string; field
   for (const [entity, schema] of hosting.entities()) {
     for (const [field, declared] of Object.entries(schema.getFields())) {
       const role = Role.of(declared);
-      if (role.isReference && role.target?.name && lowerFirst(role.target.name) === target) {
+      if (role.isReference() && role.target?.name && lowerFirst(role.target.name) === target) {
         found.push({ entity, field, role });
       }
     }
@@ -59,7 +59,7 @@ export function heldBy(entity: SchemaView, name: string, hosting: Hosting): Rela
 
   for (const [field, declared] of Object.entries(entity.getFields())) {
     const role = Role.of(declared);
-    if (!role.isReference || !role.target?.name) continue;
+    if (!role.isReference() || !role.target?.name) continue;
 
     const target = lowerFirst(role.target.name);
     if (keyed(name, target, hosting)) continue;
@@ -137,7 +137,7 @@ export function unpaired(entities: readonly EntityEntry[], hosting: Hosting): Di
   for (const entry of entities) {
     for (const [field, declared] of Object.entries(entry.entityClass.getFields())) {
       const role = Role.of(declared);
-      const target = role.isCollection ? role.target?.name : undefined;
+      const target = role.isCollection() ? role.target?.name : undefined;
       if (!target || !hosting.hostedHere(lowerFirst(target))) continue;
 
       const held = referencesTo(lowerFirst(entry.name), hosting)

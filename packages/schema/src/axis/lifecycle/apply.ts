@@ -39,7 +39,7 @@ export function applyUpdate(
   const instant = Date.now();
 
   for (const [name, field] of Object.entries(fields) as [string, Field][]) {
-    if (Lifecycle.of(field).stampedOnUpdate && !(name in values))
+    if (Lifecycle.of(field).stampedOnUpdate() && !(name in values))
       values[name] = new Date(instant);
   }
 

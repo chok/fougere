@@ -15,10 +15,10 @@ export class Visibility {
     const result: Fields = {};
     for (const [name, field] of Object.entries(this.fields)) {
       const role = Role.of(field);
-      if (role.isPrimary) continue;
-      if (Lifecycle.of(field).stampedAtCreate) continue;
-      if (role.isCollection) continue;
-      if (Boundary.of(field).readOnly) continue;
+      if (role.isPrimary()) continue;
+      if (Lifecycle.of(field).stampedAtCreate()) continue;
+      if (role.isCollection()) continue;
+      if (Boundary.of(field).readOnly()) continue;
       result[name] = field;
     }
 
@@ -28,7 +28,7 @@ export class Visibility {
   get output(): Fields {
     const result: Fields = {};
     for (const [name, field] of Object.entries(this.fields)) {
-      if (Boundary.of(field).writeOnly) continue;
+      if (Boundary.of(field).writeOnly()) continue;
       result[name] = field;
     }
 
@@ -62,7 +62,7 @@ export class Visibility {
     for (const [key, field] of Object.entries(this.fields)) {
       if (!(key in record)) continue;
       const boundary = Boundary.of(field);
-      if (boundary.writeOnly) {
+      if (boundary.writeOnly()) {
         delete out[key];
         continue;
       }

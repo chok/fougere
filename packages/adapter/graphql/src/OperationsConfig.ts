@@ -262,7 +262,7 @@ function fieldToInput(
   // caller must supply it (no `lifecycle.create` rule answers absence), null is
   // not legal, and the view is not in patch mode (a patch omits freely).
   const { base: shape, nullable } = Shapes.of(field.shape);
-  const required = !patch && !nullable && Lifecycle.of(field).requiredAtCreate;
+  const required = !patch && !nullable && Lifecycle.of(field).requiredAtCreate();
 
   // The dual of the output side, and it must be the SAME type: an input left as `String`
   // would refuse nothing the enum refuses, and a client could not hand back the value a
@@ -388,11 +388,11 @@ export function registerType(builder: InstanceType<typeof SchemaBuilder>, config
       for (const [fieldName, field] of Object.entries(fields)) {
         if (exclude.has(fieldName)) continue;
         // Skip 'many' fields — handled by relations
-        if (Role.of(field).isCollection) continue;
+        if (Role.of(field).isCollection()) continue;
         // Skip fields that have a relation override
         if (config.relations?.[fieldName]) continue;
         // Write-only (boundary out: 'closed', e.g. password): never emitted
-        if (Boundary.of(field).writeOnly) continue;
+        if (Boundary.of(field).writeOnly()) continue;
 
         result[fieldName] = fieldToGraphQL(t, field, fieldName, (values) => {
           const name = enumNameFor(enumOwner, fieldName);
@@ -505,7 +505,7 @@ export function registerType(builder: InstanceType<typeof SchemaBuilder>, config
 export function registerInput(builder: InstanceType<typeof SchemaBuilder>, config: InputConfig): any {
   const fields = Object.fromEntries(
     Object.entries(config.schema.getFields())
-      .filter(([, field]) => !Role.of(field).isCollection && !Boundary.of(field).readOnly),
+      .filter(([, field]) => !Role.of(field).isCollection() && !Boundary.of(field).readOnly()),
   );
   if (Object.keys(fields).length === 0) return undefined;
   // The view's SOURCE, not the input's name: `CreatePostInput` derives from `Post`, and its

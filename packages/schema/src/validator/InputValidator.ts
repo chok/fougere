@@ -66,10 +66,10 @@ export class InputValidator {
   private admit(field: Field, value: unknown): Verdict | undefined {
     if (value === undefined) return this.whenAbsent(field);
 
-    if (Boundary.of(field).readOnly) return { message: InputRefusal.readOnly };
+    if (Boundary.of(field).readOnly()) return { message: InputRefusal.readOnly };
     // The other side of the relation carries the key: there is nothing to write here.
-    if (Role.of(field).isCollection) return { message: InputRefusal.readOnly };
-    if (this.options.patch && Lifecycle.of(field).immutable)
+    if (Role.of(field).isCollection()) return { message: InputRefusal.readOnly };
+    if (this.options.patch && Lifecycle.of(field).immutable())
       return { message: InputRefusal.immutable };
 
     return FieldValueValidator.of(field).parse(value);

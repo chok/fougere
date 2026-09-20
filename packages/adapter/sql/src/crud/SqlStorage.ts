@@ -37,7 +37,7 @@ interface PrimaryKeyInfo {
 /** The primary key, read off the role axis. */
 function analyzeFields(entity: SchemaView): { pk: PrimaryKeyInfo } {
   const pkNames = Object.entries(entity.getFields())
-    .filter(([, field]) => Role.of(field).isPrimary)
+    .filter(([, field]) => Role.of(field).isPrimary())
     .map(([name]) => name);
 
   return { pk: { names: pkNames, isComposite: pkNames.length > 1 } };

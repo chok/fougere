@@ -13,7 +13,7 @@ export interface ListOptions<T = unknown> extends Shared<T[]> {
  * `list(text(), { max: 5 })` → `{ type: 'array', items: { type: 'string' }, maxItems: 5 }`
  */
 export function list<T>(field: Field<T>, opts?: ListOptions<T>): Field<T[]> {
-  if (field.hasAxes)
+  if (field.hasAxes())
     throw new SchemaError(
       'list() takes a value, not a rule. Put the rule on the list: unique(list(text())).',
     );

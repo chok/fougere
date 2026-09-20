@@ -25,7 +25,7 @@ export class Lifecycle {
 
   /** `optional()`, a default, a generator: the rule says the value need not arrive. */
   static admitsAbsence(field: { lifecycle?: LifecycleRules }): boolean {
-    return !this.of(field).requiredAtCreate;
+    return !this.of(field).requiredAtCreate();
   }
 
   static of(field: { lifecycle?: LifecycleRules }): Lifecycle {
@@ -52,19 +52,19 @@ export class Lifecycle {
     return { value: Generators.resolve(rule.generate)() };
   }
 
-  get requiredAtCreate(): boolean {
+  requiredAtCreate(): boolean {
     return this.create === undefined;
   }
 
-  get stampedAtCreate(): boolean {
+  stampedAtCreate(): boolean {
     return this.create === 'now';
   }
 
-  get immutable(): boolean {
+  immutable(): boolean {
     return this.update === 'forbidden';
   }
 
-  get stampedOnUpdate(): boolean {
+  stampedOnUpdate(): boolean {
     return this.update === 'now';
   }
 

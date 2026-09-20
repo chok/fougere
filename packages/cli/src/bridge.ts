@@ -24,7 +24,7 @@ function suppliedIn(fields: Fields): Fields {
   if (Object.keys(written).length > 0) return written;
 
   return Object.fromEntries(
-    Object.entries(fields).filter(([, field]) => Role.of(field).isPrimary),
+    Object.entries(fields).filter(([, field]) => Role.of(field).isPrimary()),
   ) as Fields;
 }
 
@@ -36,7 +36,7 @@ export function entityToArgs(fields: Fields): ArgsDef {
   // The CLI additionally skips ALL relations: a ref is not a flag — supplying related rows is
   // not a CLI gesture.
   for (const [key, field] of Object.entries(suppliedIn(fields))) {
-    if (Role.of(field).isRelation) continue;
+    if (Role.of(field).isRelation()) continue;
 
     // A `default(v)` travels as the create rule `{ value }` — citty shows it.
     const defaultValue = Lifecycle.of(field).literal?.value;
@@ -44,10 +44,10 @@ export function entityToArgs(fields: Fields): ArgsDef {
     const type = Shapes.typeOf(field.shape);
     // Naming a row is required by definition: a generator fills a primary the server writes,
     // never one a caller hands in to designate.
-    const designates = Role.of(field).isPrimary;
+    const designates = Role.of(field).isPrimary();
     const common = {
       description: field.shape?.description,
-      required: designates || (!nullable && Lifecycle.of(field).requiredAtCreate),
+      required: designates || (!nullable && Lifecycle.of(field).requiredAtCreate()),
     };
 
     // A closed set is citty's `enum`: the shape already names the legal values, so the

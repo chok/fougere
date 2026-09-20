@@ -130,7 +130,7 @@ describe('the field facade', () => {
 
   it('takes a plain role — the object a config or another language writes', () => {
     const f = new Field({ shape: { type: 'string' }, role: { unique: true } } as never, 'slug');
-    expect(Role.of(f).isUnique).toBe(true);
+    expect(Role.of(f).isUnique()).toBe(true);
   });
 
   it('takes a plain object — a config, plain JS, a card another language wrote', () => {

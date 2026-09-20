@@ -171,7 +171,7 @@ describe('helpers', () => {
     expect(f.shape?.type).toBe('string');
     expect(f.role?.relation?.kind).toBe('one');
     expect(f.role?.relation?.to()).toBe(Customer);
-    expect(Role.of(f).isReference).toBe(true);
+    expect(Role.of(f).isReference()).toBe(true);
     expect(Role.of(f).target).toBe(Customer);
   });
 
@@ -194,7 +194,7 @@ describe('helpers', () => {
     expect(f.shape).toEqual({ type: 'array' });
     expect(f.role?.relation?.kind).toBe('many');
     expect(f.role?.relation?.to()).toBe(OrderLine);
-    expect(Role.of(f).isCollection).toBe(true);
+    expect(Role.of(f).isCollection()).toBe(true);
     expect(Role.of(f).target).toBe(OrderLine);
     expect(Role.of(text()).target).toBeUndefined();
   });

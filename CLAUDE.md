@@ -235,7 +235,11 @@ tests admit one. Pinned by `schema/tests/axis-registration.test.ts`.
 
 **An axis IS its class, and the registry key is its name** — `Lifecycle`, `Boundary`, `Role`.
 What it admits is `static format`, what a card needs is `static describe`/`static reconstruct`,
-and what it reads is the instance: `Lifecycle.of(field).immutable`. The trio each had — rules,
+and what it reads is the instance: `Lifecycle.of(field).immutable()`. A predicate is a METHOD
+and never a getter — a getter promises that reading does nothing, and `Field.hasAxes` was
+building an object to answer yes or no behind one. The rule needs no judgement of cost, which
+is why it catches what "a getter when it is free" let through. What a type predicate narrows
+(`Field.is(value): value is Field`) could never have been a getter anyway. The trio each had — rules,
 axis object, reading — was one subject cut in three, and `slot` was the name written a second
 time beside the key `Axes` already holds. `slot` is gone as a WORD too: the registry says
 `register(name, …)` and `Axes.names`, so a reader that called the same thing a slot was a

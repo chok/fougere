@@ -304,7 +304,7 @@ export function registerAll(
     const relationFields: Record<string, (t: any) => any> = {};
 
     for (const [fieldName, field] of Object.entries(fields)) {
-      if (Role.of(field).isReference) {
+      if (Role.of(field).isReference()) {
         const target = Role.of(field).target;
         if (!target) continue;
         const targetEntry = typeRegistry.get(targetKey(target));
@@ -351,7 +351,7 @@ export function registerAll(
         });
       }
 
-      if (Role.of(field).isCollection) {
+      if (Role.of(field).isCollection()) {
         const target = Role.of(field).target;
         if (!target) continue;
         const targetEntry = typeRegistry.get(targetKey(target));
@@ -361,7 +361,7 @@ export function registerAll(
         // Read off the registry, not off the target object: a target rebuilt from a card is
         // a `{ name }` stand-in with no fields to walk, and the registry already holds them.
         const reverseFk = Object.entries(targetEntry.fields).find(
-          ([, f]) => Role.of(f).isReference
+          ([, f]) => Role.of(f).isReference()
             && targetKey(Role.of(f).target) === entityName,
         );
         if (!reverseFk) continue;

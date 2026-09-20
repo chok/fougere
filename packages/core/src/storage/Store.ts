@@ -21,7 +21,7 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
   return (entity: SchemaView, name: string): Storage => {
     const fields = entity.getFields();
     const store = open(entity, name);
-    const pk = Object.entries(fields).find(([, field]) => Role.of(field).isPrimary)?.[0] ?? 'id';
+    const pk = Object.entries(fields).find(([, field]) => Role.of(field).isPrimary())?.[0] ?? 'id';
     // `Storage.findById(id: string)` — but a key can hold a number, and a Map keyed on
     // `1` does not answer `'1'`. SQL never had the question; here the divergence was
     // silent and only on this storage.

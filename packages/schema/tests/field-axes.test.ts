@@ -201,13 +201,13 @@ describe('unique / indexed — declared here, enforced by the storage', () => {
   it('sets the role flag and leaves every other axis alone', () => {
     // `entity()` names the carrier, so a group of one arrives already resolved — the live
     // schema and a reconstructed one now answer the same thing.
-    expect(Role.of(fields.email!).isUnique).toBe(true);
+    expect(Role.of(fields.email!).isUnique()).toBe(true);
     expect(fields.city.role?.index).toBe(true);
-    expect(Role.of(fields.city).isIndexed).toBe(true);
-    expect(Role.of(fields.bio).isIndexed).toBe(false);
+    expect(Role.of(fields.city).isIndexed()).toBe(true);
+    expect(Role.of(fields.bio).isIndexed()).toBe(false);
     // The wrapper composes: `indexed(optional(...))` keeps the optionality.
     expect(fields.city.lifecycle?.create).toBe('optional');
-    expect(Role.of(fields.bio).isUnique).toBe(false);
+    expect(Role.of(fields.bio).isUnique()).toBe(false);
   });
 
   /**
@@ -228,7 +228,7 @@ describe('unique / indexed — declared here, enforced by the storage', () => {
     expect(card.properties.city['x-fougere']).toMatchObject({ role: { index: true } });
 
     const rebuilt = Card.fromDescriptor(card).toSchema();
-    expect(Role.of(rebuilt.getFields().email!).isUnique).toBe(true);
+    expect(Role.of(rebuilt.getFields().email!).isUnique()).toBe(true);
     expect(rebuilt.getFields().city.role?.index).toBe(true);
     // A constraint of one is not a composite — it is fully stated by the field itself.
     expect(rebuilt.getUnique()).toBeUndefined();

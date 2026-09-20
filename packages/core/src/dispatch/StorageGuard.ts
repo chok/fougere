@@ -219,7 +219,7 @@ export class StorageGuard {
     const field = this.fields[key];
     if (!field) return { message: InputRefusal.unknownField };
     // Declared, and still nothing to write: the other side of the relation carries the key.
-    if (Role.of(field).isCollection) return { message: InputRefusal.readOnly };
+    if (Role.of(field).isCollection()) return { message: InputRefusal.readOnly };
     if (item === undefined) return { value: item };
 
     return FieldValueValidator.of(field).parse(item);

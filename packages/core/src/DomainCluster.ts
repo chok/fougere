@@ -17,7 +17,7 @@ export function buildGraph(fronds: FrondDescriptor[]): Map<string, EntityNode> {
     for (const entity of frond.entities) {
       const refs: string[] = [];
       for (const [, field] of Object.entries(entity.entityClass.getFields())) {
-        if (Role.of(field).isReference) {
+        if (Role.of(field).isReference()) {
           const resolved = Role.of(field).target;
           const targetName = typeof resolved === 'function' && 'name' in resolved
             ? (resolved.name as string).toLowerCase()

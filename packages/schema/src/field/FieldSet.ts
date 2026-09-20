@@ -49,7 +49,7 @@ export class FieldSet<TFields extends Fields = Fields> {
   /** A second `primary` is refused, naming both, rather than the first winning silently. */
   get primary(): FieldName<TFields> | undefined {
     const primaries = Object.entries(this.fields)
-      .filter(([, field]) => Role.of(field).isPrimary)
+      .filter(([, field]) => Role.of(field).isPrimary())
       .map(([name]) => name);
 
     if (primaries.length > 1) {
