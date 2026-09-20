@@ -103,4 +103,13 @@ describe('what oclif parsed, handed back', () => {
   it('gives a bare parameter back its own name too', () => {
     expect(paramsOf([{ name: 'postId' }], { 'post-id': 'p1' })).toEqual({ postId: 'p1' });
   });
+
+  // `Flags.integer` refused `9.5` for a parameter declared `number`, which admits it.
+  it('reads a numeric parameter back as a number, and leaves the rest as text', () => {
+    const params = [{ name: 'price', type: { name: 'number' } }];
+
+    expect(paramsToShape(params).flags.price).toMatchObject({ type: 'option' });
+    expect(paramsOf(params, { price: '9.5' })).toEqual({ price: 9.5 });
+    expect(paramsOf(params, { price: 'abc' })).toEqual({ price: 'abc' });
+  });
 });

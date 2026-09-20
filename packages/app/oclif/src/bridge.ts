@@ -60,9 +60,9 @@ export function paramsToShape(params: readonly { name: string; type: { name?: st
     }
 
     const at = kebab(param.name);
-    flags[at] = type === 'boolean' ? Flags.boolean({})
-      : type === 'number' ? Flags.integer({ required })
-      : Flags.string({ required });
+    // A flag is text, and `paramsOf` reads it back: `Flags.integer` turned `9.5` away for a
+    // parameter declared `number`, which admits it.
+    flags[at] = type === 'boolean' ? Flags.boolean({}) : Flags.string({ required });
   }
 
   return { args: args as ArgInput, flags: flags as FlagInput };
@@ -124,8 +124,18 @@ export function inputOf(fields: Fields, parsed: Record<string, unknown>): Record
 
 /** The dual of `paramsToShape`: an operation's bare parameters, under their own names. */
 export function paramsOf(
-  params: readonly { name: string }[],
+  params: readonly { name: string; type?: { name?: string } }[],
   parsed: Record<string, unknown>,
 ): Record<string, unknown> {
-  return renamed(parsed, params.map((param) => param.name));
+  const declared = new Map(params.map((param) => [param.name, param.type?.name]));
+
+  return Object.fromEntries(
+    Object.entries(renamed(parsed, params.map((param) => param.name)))
+      // A bare parameter states a TypeScript type, not a shape — `number` is the one that
+      // stands for a value the terminal can only hand over as text.
+      .map(([name, value]) => [
+        name,
+        declared.get(name) === 'number' ? Shapes.fromText({ type: 'number' }, value) : value,
+      ]),
+  );
 }
