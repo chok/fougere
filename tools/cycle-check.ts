@@ -30,9 +30,9 @@ const STATED = new Map([
     'verdict, and neither owns the other. Nesting `validator/` under `field/` would say the ' +
     'field owns the decision, which `FieldDeclarationValidator.of(value)` denies.'],
   ['packages/schema axis↔field',
-    'Type-only both ways: an axis reads the field it qualifies AND declares, by augmenting ' +
-    '`FougereFieldAxes`, the member it writes on one — while a field names the axes it ' +
-    'carries. Mutual by definition — neither can be named without the other.'],
+    'Type-only both ways: an axis reads the field it qualifies, and a field names the axes ' +
+    'it carries. Mutual by definition — neither can be named without the other. What an axis ' +
+    'WRITES on a field is not in it: `FougereFieldAxes` sits at the root, outside the layering.'],
   ['packages/schema entity↔field',
     'Type-only and shallow: an entity states `unique`, `adapters` and `previousNames` ' +
     'about ITSELF and the field set reads them, while the two declarations name `Fields` ' +

@@ -97,7 +97,7 @@ export class Boundary {
   }
 }
 
-declare module '../../field/FougereFieldAxes.js' {
+declare module '../../FougereFieldAxes.js' {
   interface FougereFieldAxes {
     readonly boundary?: BoundaryRef;
   }

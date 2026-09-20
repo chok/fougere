@@ -97,7 +97,7 @@ export class Role {
 
 export type RoleRules = Accepted<typeof Role.format>;
 
-declare module '../../field/FougereFieldAxes.js' {
+declare module '../../FougereFieldAxes.js' {
   interface FougereFieldAxes {
     readonly role?: RoleRules;
   }

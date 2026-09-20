@@ -220,7 +220,9 @@ format is rebuilt at the first declaration that follows a registration, since th
 what knows it changed. `Field` keeps a member per REGISTERED axis and NAMES only its shape:
 `FougereFieldAxes` is the interface every axis writes its own line in — the three of the core
 by a relative `declare module`, a package by `declare module '@fougere/schema'`, the way
-`adapter/sql` already augments `FougereEntityAdapters`. It is exported from `index.ts` for
+`adapter/sql` already augments `FougereEntityAdapters`. It sits at `schema/src/`, the ROOT,
+because what an axis writes on a field belongs to neither family: under `field/` it made each
+axis cross a family to declare its own member, and `axis↔field` read 8 edges against 5. It is exported from `index.ts` for
 exactly that; it was not, so nothing outside could augment it and the class named the three in
 its place. What that bought is not a cast saved but a PORT: `Tenancy.of(field)` written the way
 `Lifecycle.of(field)` is — `{ tenancy?: … }` and never a `Field` — answered `TS2559, no

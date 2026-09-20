@@ -77,7 +77,7 @@ export class Lifecycle {
   }
 }
 
-declare module '../../field/FougereFieldAxes.js' {
+declare module '../../FougereFieldAxes.js' {
   interface FougereFieldAxes {
     readonly lifecycle?: LifecycleRules;
   }

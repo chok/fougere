@@ -1,6 +1,6 @@
 import type { Shape } from '../axis/shape/Shape.js';
 import { Axes } from '../axis/Axes.js';
-import type { FougereFieldAxes } from './FougereFieldAxes.js';
+import type { FougereFieldAxes } from '../FougereFieldAxes.js';
 import { FieldDeclarationValidator } from '../validator/FieldDeclarationValidator.js';
 import { FieldValueValidator } from '../validator/FieldValueValidator.js';
 import { dotted } from '../lib/ValidationResult.js';
