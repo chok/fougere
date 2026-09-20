@@ -23,7 +23,7 @@ import { FieldDeclarationValidator } from '../src/validator/FieldDeclarationVali
  * The constructor is the only way to obtain a field, so it is where a field is validated —
  * and where hostile input stops. Both halves are pinned here because both were reachable:
  * `new Field({})` used to be legal from any caller without a compiler, and assigning the
- * slots wholesale used to be a one-line simplification with a prototype hole under it.
+ * axes wholesale used to be a one-line simplification with a prototype hole under it.
  */
 describe('the field facade', () => {
   it('refuses what is not a field, and names the key when it was given one', () => {
@@ -100,7 +100,7 @@ describe('the field facade', () => {
 
   /**
    * A contradiction is a PAIR, and each half is legal on its own — which is why an axis is
-   * handed the whole declaration beside its slot. A primary key that admits null states one
+   * handed the whole declaration beside its name. A primary key that admits null states one
    * legal `role` and one legal `shape`; a collection carries no column an index could sit on.
    */
   it('refuses a pair whose halves are each legal', () => {

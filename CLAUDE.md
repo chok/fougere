@@ -158,9 +158,9 @@ read `Entity.getFields()`. The reasoning behind each line below lives in
 **A field has four axes** — `shape` (which IS JSON Schema), `role` (primary, ref…),
 `lifecycle` (who writes the value and when), `boundary` (readOnly/writeOnly). A field is
 recognized by its FORM: it states a `shape`. `new Field(field, key)` is the door, and a
-shapeless entry is refused there. There is no fifth slot: `description` is a JSON Schema
+shapeless entry is refused there. There is no fifth member: `description` is a JSON Schema
 keyword, so `text({ description })` writes it INTO the shape, where it travels on a card and
-lands in `json(Address)`'s properties with no one folding it in. A `meta` slot beside the
+lands in `json(Address)`'s properties with no one folding it in. A `meta` member beside the
 shape put one sentence in two places and had it copied by hand at three sites.
 
 **The façade validates, the storage realizes.** Client input goes through the façade (unknown
@@ -217,20 +217,22 @@ from a typo, which is what `fougere check` reports as `unknown-adapter`.
 (`schema/src/axis/Axes.ts`), a `Registry<Axis>` carrying the three, and
 `Axes.register('tenancy', tenancyAxis)` is how a package declares a fourth. The composed
 format is rebuilt at the first declaration that follows a registration, since the registry is
-what knows it changed. `Field` keeps a slot per REGISTERED axis rather than the five it used
-to name, so a slot nothing in core declares survives on the instance and on the card;
+what knows it changed. `Field` keeps a member per REGISTERED axis rather than the five it used
+to name, so an axis nothing in core declares survives on the instance and on the card;
 `FougereFieldAxes` is the empty interface that types what a
-declaration may state, like `FougereEntityAdapters` does for `adapters:`, and reading a slot
+declaration may state, like `FougereEntityAdapters` does for `adapters:`, and reading one
 stays structural — `Lifecycle.of(field)` asks for `{ lifecycle?: … }` and never for a `Field`. Where it registers is not free: a format is read
 at `entity()`, so an axis registers in `vocabulary/`, the one convention directory the scan
 reads BEFORE `entities/`. What stays closed is the MODEL — a field has four axes, and three
 tests admit one. Pinned by `schema/tests/axis-registration.test.ts`.
 
-**An axis IS its class, and the registry key is its slot** — `Lifecycle`, `Boundary`, `Role`.
+**An axis IS its class, and the registry key is its name** — `Lifecycle`, `Boundary`, `Role`.
 What it admits is `static format`, what a card needs is `static describe`/`static reconstruct`,
 and what it reads is the instance: `Lifecycle.of(field).immutable`. The trio each had — rules,
 axis object, reading — was one subject cut in three, and `slot` was the name written a second
-time beside the key `Axes` already holds. The two conversions are OPTIONAL and only `role` states
+time beside the key `Axes` already holds. `slot` is gone as a WORD too: the registry says
+`register(name, …)` and `Axes.names`, so a reader that called the same thing a slot was a
+second vocabulary for one subject. The two conversions are OPTIONAL and only `role` states
 them: its card carries a NAME where the declaration carries a function, where `lifecycle` and
 `boundary` travel as themselves and used to write `(value) => value` twice. A class cannot
 `implements` an axis — the axis is its STATIC side — so `Axes.register` is where it is checked.
@@ -906,7 +908,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   line; it lives there because the host that calls `flushTelemetry()` holds a request handler,
   not an app (`demos/cloudflare-d1`, `ctx.waitUntil`).
 - **A card states `role` in a form of its own, and nothing judges it** — `schema/src/axis/role/Role.ts`,
-  `roleAxis.reconstruct`. `role` is the one slot whose wire differs from its declaration: `relation.to` is a
+  `roleAxis.reconstruct`. `role` is the one axis whose wire differs from its declaration: `relation.to` is a
   function here and a name there, `unique` a boolean here and a list of groups there — so `ROLE_FORMAT`
   cannot serve both, where `lifecycle` and `boundary` are judged by the format they already
   state. Measured 2026-09-17 through `Card.fromDescriptor(…).toSchema()`: `unique: 'x'` throws

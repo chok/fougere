@@ -7,7 +7,7 @@ export interface Axis {
 
   /**
    * What a format cannot state: `role.relation.to` is a function, and JSON holds none.
-   * The whole declaration comes with the slot, because a contradiction is a PAIR — a
+   * The whole declaration comes with the name, because a contradiction is a PAIR — a
    * primary key that admits null states one legal `role` beside one legal `shape`.
    */
   refusals?(value: unknown, declaration: Record<string, unknown>): ValidationError[];

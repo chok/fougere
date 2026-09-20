@@ -42,7 +42,7 @@ describe('an axis registered from outside', () => {
     );
   });
 
-  it('keeps its slot on the field, and travels on a card', () => {
+  it('keeps its own key on the field, and travels on a card', () => {
     class Doc extends entity({
       id: primary(),
       owner: new Field<string>({ shape, tenancy: { scope: 'tenant' } } as never),

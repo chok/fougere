@@ -36,8 +36,8 @@ export class FieldDeclarationValidator {
 
     errors.push(...JsonSchemaValidator.of(Axes.fieldFormat).refusalsOf(declaration, []));
 
-    for (const [slot, axis] of Axes.entries) {
-      errors.push(...(axis.refusals?.(declaration[slot], declaration) ?? []));
+    for (const [name, axis] of Axes.entries) {
+      errors.push(...(axis.refusals?.(declaration[name], declaration) ?? []));
     }
 
     return errors.length

@@ -58,8 +58,8 @@ export class Field<T = unknown> {
 
     const stated = init as unknown as Record<string, unknown>;
 
-    for (const slot of Axes.names) {
-      (this as unknown as Record<string, unknown>)[slot] = stated[slot];
+    for (const name of Axes.names) {
+      (this as unknown as Record<string, unknown>)[name] = stated[name];
     }
 
     const create = this.lifecycle?.create;
@@ -78,12 +78,12 @@ export class Field<T = unknown> {
   }
 
   /**
-   * What this field states under one slot — a registered axis, so a fourth one declared outside
-   * reads back like the three. The slots are members, so reading one by NAME is the one cast a
-   * field owns; three callers wrote it themselves.
+   * What this field states under one axis, a fourth one declared outside included. The axes
+   * are members, so reading one by NAME is the one cast a field owns; three callers wrote it
+   * themselves.
    */
-  stated(slot: string): unknown {
-    return (this as unknown as Record<string, unknown>)[slot];
+  stated(name: string): unknown {
+    return (this as unknown as Record<string, unknown>)[name];
   }
 
   with<U = T>(overrides: Partial<FieldDeclaration>): Field<U> {
@@ -96,17 +96,17 @@ export class Field<T = unknown> {
    * `text({ max: 200 }).setShared({ description: 'The title' })` → `shape.description`
    */
   setShared(opts?: Shared<T>): Field<T> {
-    const stated = opts as Record<string, unknown> | undefined;
-    const slots = this as unknown as Record<string, object | undefined>;
+    const given = opts as Record<string, unknown> | undefined;
+    const stated = this as unknown as Record<string, object | undefined>;
     const overrides: Record<string, unknown> = {};
 
-    for (const [option, [slot, ...under]] of Object.entries(SHARED)) {
-      const value = stated?.[option];
+    for (const [option, [name, ...under]] of Object.entries(SHARED)) {
+      const value = given?.[option];
 
       if (value === undefined) continue;
 
       const member = under.reduceRight<unknown>((held, key) => ({ [key]: held }), value);
-      overrides[slot] = { ...(overrides[slot] ?? slots[slot]), ...(member as object) };
+      overrides[name] = { ...(overrides[name] ?? stated[name]), ...(member as object) };
     }
 
     return Object.keys(overrides).length ? this.with<T>(overrides) : this;

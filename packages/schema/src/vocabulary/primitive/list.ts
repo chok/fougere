@@ -14,7 +14,7 @@ export interface ListOptions<T = unknown> extends Shared<T[]> {
  * `list(text(), { max: 5 })` → `{ type: 'array', items: { type: 'string' }, maxItems: 5 }`
  */
 export function list<T>(item: Field<T>, opts?: ListOptions<T>): Field<T[]> {
-  const stated = Axes.names.filter((slot) => item.stated(slot));
+  const stated = Axes.names.filter((name) => item.stated(name));
 
   if (stated.length)
     throw new SchemaError(

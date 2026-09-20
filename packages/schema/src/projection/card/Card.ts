@@ -129,12 +129,12 @@ export class Card<T = Values<Fields>> {
  */
 function describeExtension(field: Field, key: string): FieldExtension | undefined {
   const extension: Record<string, unknown> = {};
-  for (const slot of Axes.names) {
-    const declared = field.stated(slot);
+  for (const name of Axes.names) {
+    const declared = field.stated(name);
     if (declared === undefined) continue;
-    const form = CardForms.find(slot);
+    const form = CardForms.find(name);
     const wire = form ? form.describe(declared, key) : declared;
-    if (wire !== undefined) extension[slot] = wire;
+    if (wire !== undefined) extension[name] = wire;
   }
   clean(extension);
 
@@ -207,10 +207,10 @@ function reconstructField(
   admitPatterns(shape, `Field '${key}'`);
   const extension = property['x-fougere'];
   const axes: Record<string, unknown> = {};
-  for (const slot of Axes.names) {
-    const wire = (extension as Record<string, unknown> | undefined)?.[slot];
-    const form = CardForms.find(slot);
-    if (wire !== undefined) axes[slot] = form ? form.reconstruct(wire, resolve) : wire;
+  for (const name of Axes.names) {
+    const wire = (extension as Record<string, unknown> | undefined)?.[name];
+    const form = CardForms.find(name);
+    if (wire !== undefined) axes[name] = form ? form.reconstruct(wire, resolve) : wire;
   }
 
   return new Field({ shape, ...axes } as never, key);

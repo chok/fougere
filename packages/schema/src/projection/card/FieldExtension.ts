@@ -7,6 +7,6 @@ export interface FieldExtension {
   lifecycle?: LifecycleRules;
   boundary?: BoundaryRef;
 
-  /** An axis registered from outside writes its own slot here, under its own name. */
-  [slot: string]: unknown;
+  /** An axis registered from outside writes here, under its own name. */
+  [axis: string]: unknown;
 }

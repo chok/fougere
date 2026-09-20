@@ -10,7 +10,7 @@ import { SHAPE_FORMAT } from '../axis/shape/ShapeFormat.js';
  */
 export function fieldFormat(axes: readonly [string, Axis][]): JsonSchema {
   const document = axes.reduce(
-    (held, [slot, axis]) => held.cites(slot, axis.format),
+    (held, [name, axis]) => held.cites(name, axis.format),
     Format.of('field').cites('shape', SHAPE_FORMAT),
   );
 
