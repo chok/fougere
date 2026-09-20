@@ -1,19 +1,21 @@
 import { type FieldName } from './field/FieldName.js';
 import { type Fields } from './field/Fields.js';
-import { type CompositeUnique } from './entity/CompositeUnique.js';
+import { type FieldGroups } from './entity/FieldGroups.js';
 
 /**
- * What a schema constrains beyond any single field.
- *
- * `unique` is the one member today. It sits under an owner rather than beside `fields`
- * and `opts` because the next rule spanning two fields — a check, an exclusion — is a
- * member here, not an eighth positional argument in a list that has already lost one.
+ * What a schema states beyond any single field: groups of names. `unique` constrains the
+ * rows, `index` says how they are reached — two decisions, and neither implies the other.
+ * They sit under an owner rather than beside `fields` and `opts` because the next rule
+ * spanning two fields — a check, an exclusion — is a member here, not an eighth positional
+ * argument in a list that has already lost one.
  */
 export class SchemaConstraints<TFields extends Fields = Fields> {
-  readonly unique?: CompositeUnique<TFields>;
+  readonly unique?: FieldGroups<TFields>;
+  readonly index?: FieldGroups<TFields>;
 
-  private constructor(unique?: CompositeUnique<TFields>) {
+  private constructor(unique?: FieldGroups<TFields>, index?: FieldGroups<TFields>) {
     if (unique) this.unique = unique;
+    if (index) this.index = index;
   }
 
   static readonly none = new SchemaConstraints();
@@ -24,23 +26,39 @@ export class SchemaConstraints<TFields extends Fields = Fields> {
    * `SchemaConstraints.of([['a','b'], ['a','b']])` → `unique` holds one group
    */
   static of<TFields extends Fields>(
-    groups: readonly (readonly FieldName<TFields>[])[],
+    stated: { unique?: FieldGroups<TFields>; index?: FieldGroups<TFields> },
   ): SchemaConstraints<TFields> {
-    const seen = new Map<string, readonly FieldName<TFields>[]>();
-    for (const group of groups) seen.set(JSON.stringify(group), group);
-
-    return new SchemaConstraints(seen.size ? [...seen.values()] : undefined);
+    return new SchemaConstraints(deduped(stated.unique), deduped(stated.index));
   }
 
-  /** One member gone and the group is gone: it constrained a pair that no longer exists. */
+  /** One member gone and the group is gone: it named a pair that no longer exists. */
   renamed(transform: (key: string) => string | undefined): SchemaConstraints {
-    if (!this.unique) return SchemaConstraints.none;
-    const kept: string[][] = [];
-    for (const group of this.unique) {
-      const renamed = group.map(transform);
-      if (renamed.every((key): key is string => key !== undefined)) kept.push(renamed);
-    }
-
-    return SchemaConstraints.of(kept);
+    return SchemaConstraints.of({
+      unique: survivors(this.unique, transform),
+      index: survivors(this.index, transform),
+    });
   }
 }
+
+const deduped = <TFields extends Fields>(
+  groups?: FieldGroups<TFields>,
+): FieldGroups<TFields> | undefined => {
+  if (!groups) return undefined;
+  const seen = new Map<string, readonly FieldName<TFields>[]>();
+  for (const group of groups) seen.set(JSON.stringify(group), group);
+
+  return seen.size ? [...seen.values()] : undefined;
+};
+
+const survivors = (
+  groups: FieldGroups<Fields> | undefined,
+  transform: (key: string) => string | undefined,
+): string[][] => {
+  const kept: string[][] = [];
+  for (const group of groups ?? []) {
+    const renamed = group.map(transform);
+    if (renamed.every((key): key is string => key !== undefined)) kept.push(renamed);
+  }
+
+  return kept;
+};

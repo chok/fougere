@@ -217,7 +217,7 @@ group('the three axes a JSON Schema reader cannot see', () => {
     const V2 = shapeOf({ id: primary(), title: indexed(text()), body: text() });
 
     expect(V1.diff(V2).changes).toEqual([
-      { kind: 'restated', field: 'title', axis: 'role', from: undefined, to: { index: true } },
+      { kind: 'restated', field: 'title', axis: 'role', from: undefined, to: { index: [['title']] } },
     ]);
   });
 

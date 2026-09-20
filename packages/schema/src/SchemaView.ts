@@ -1,5 +1,5 @@
 import type { Fields } from './field/Fields.js';
-import type { CompositeUnique } from './entity/CompositeUnique.js';
+import type { FieldGroups } from './entity/FieldGroups.js';
 import type { PreviousNames } from './entity/PreviousNames.js';
 import type { EntityAdapters } from './entity/EntityAdapters.js';
 import type { ValidationResult } from './lib/ValidationResult.js';
@@ -17,7 +17,8 @@ export interface SchemaView<TFields extends Fields = Fields> {
   readonly anchored?: boolean;
   getFields(): TFields;
   getAdapters(): EntityAdapters<TFields>;
-  getUnique(): CompositeUnique<TFields> | undefined;
+  getUnique(): FieldGroups<TFields> | undefined;
+  getIndex(): FieldGroups<TFields> | undefined;
   getOpts(): ValidateOptions;
   validate(input: unknown): ValidationResult<Values<TFields>>;
 }

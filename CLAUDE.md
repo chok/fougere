@@ -168,8 +168,16 @@ keys → `Unknown field`); handlers write freely through the storage, which appl
 `applyCreate`/`applyUpdate` (`schema/src/axis/lifecycle/apply.ts`). Refusing stays the
 validator's: `update: 'forbidden'` lives in `InputValidator`, patch mode.
 
-**An entity states two things about itself** — `unique` and `adapters`, the 2nd argument of
-`entity()`. A derivation that drops a member of a unique group drops the group.
+**An entity states GROUPS of its own field names** — `unique` and `index`, the 2nd argument of
+`entity()` beside `adapters`, both carried by `SchemaConstraints` and read through
+`getUnique()`/`getIndex()`. They are two decisions and neither implies the other: `unique`
+constrains the rows, `index` says how they are reached. A group of ONE is the word on the field
+(`unique: [['slug']]` IS `unique(text())`), which is what lets a derivation drop it with its
+field; a group of several is what no single field can state, and a derivation that drops a member
+drops the group. The ORDER inside a group counts for both — an index on `(a, b)` serves a filter
+on `a` alone and never on `b` alone. On the wire they are both LISTS under `x-fougere.role`, since
+a reader sees one field at a time; `role.index` used to be a bare `true` there, which no composite
+could have travelled as. Pinned by `schema/tests/declares.test.ts` and `adapter/sql/tests/ddl.test.ts`.
 
 **`adapters:` is addressed, and the effect is the adapter's to name.**
 `FougereEntityAdapters` (`schema/src/entity/EntityAdapters.ts`) is an EMPTY interface an
@@ -853,8 +861,10 @@ X), `useFormFor` (contract, not rendering; local validator = remote validator), 
   `python3 scripts/stale-notes.py --since 7`. Measured over 31 entries: the six that were
   false all cited code touched in the last seven days.
 - Commits: title + 1-3 lines. Never `git add -A` (parallel sessions)
-- **Everything committed here is in English** — commit messages, PR bodies, comments, tests,
-  `README.md`, `CLAUDE.md`. The one exception is `site/content/fr/`, a translation target.
+- **Everything committed here is in English** — PR bodies, comments, tests, `README.md`,
+  `CLAUDE.md`. Two exceptions: `site/content/fr/`, a translation target, and the COMMIT
+  MESSAGES, which are in French — `git plan` reads this file to pick the language it
+  proposes them in.
 
 ## Known issues
 

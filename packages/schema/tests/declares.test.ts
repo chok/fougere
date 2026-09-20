@@ -7,7 +7,7 @@
  * never receive a per-adapter entry nor join a composite group.
  */
 import { describe, it, expect } from 'vitest';
-import { entity, primary, text } from '../src/index.js';
+import { Card, Role, entity, primary, text } from '../src/index.js';
 
 declare module '../src/entity/FougereEntityAdapters.js' {
   interface FougereEntityAdapters<K extends string> {
@@ -33,6 +33,34 @@ describe('what a derivation may now state about itself', () => {
     const grouped = Post.extend({ slug: text() }).declares({ unique: [['tenantId', 'slug']] });
 
     expect(grouped.getUnique()).toEqual([['tenantId', 'slug']]);
+  });
+
+  /**
+   * `unique` constrains the rows and `index` says how they are reached — two decisions, and
+   * neither implies the other. A group of ONE is the word on the field, which is what lets a
+   * derivation drop it with its field; a group of several is kept whole.
+   */
+  it('declares index groups beside unique ones, and a group of one lands on the field', () => {
+    const stated = Post.extend({ slug: text(), status: text() }).declares({
+      unique: [['tenantId', 'slug']],
+      index: [['tenantId', 'status'], ['title']],
+    });
+
+    expect(stated.getUnique()).toEqual([['tenantId', 'slug']]);
+    expect(stated.getIndex()).toEqual([['tenantId', 'status']]);
+    expect(Role.of(stated.getFields().title).isIndexed()).toBe(true);
+    expect(Role.of(stated.getFields().status).isIndexed()).toBe(false);
+
+    const rebuilt = Card.fromDescriptor(Card.fromSchema(stated, 'post').descriptor).toSchema();
+    expect(rebuilt.getIndex()).toEqual([['tenantId', 'status']]);
+    expect(Role.of(rebuilt.getFields().title).isIndexed()).toBe(true);
+  });
+
+  it('refuses an index group naming a field the entity does not declare', () => {
+    // @ts-expect-error — 'nope' is not a field of this entity
+    expect(() => Post.declares({ index: [['tenantId', 'nope']] })).toThrow(
+      /index: \[tenantId, nope\] names 'nope', which the entity does not declare/,
+    );
   });
 
   it('keeps the fields it was handed, so the type does not move', () => {

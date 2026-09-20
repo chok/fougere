@@ -330,6 +330,32 @@ describe('unique and index reach the DDL', () => {
   });
 
   /**
+   * A group is not its members indexed apart: an index on `(a, b)` serves a filter on `a`
+   * alone and never on `b` alone, so the ORDER is part of the declaration.
+   */
+  it('emits a composite index, in the order the entity stated', () => {
+    class Post extends entity({
+      id: primary(),
+      authorId: text(),
+      status: text(),
+      seen: number({ integer: true }),
+    }, { index: [['authorId', 'status'], ['seen']] }) {}
+
+    const posts = toTable('posts', Post);
+
+    expect(posts.indexGroups).toEqual([['author_id', 'status']]);
+    expect(createIndexSQL(posts, 'pg')).toEqual([
+      expect.stringMatching(/create index if not exists "posts_seen_idx" on "posts" \("seen"\)/i),
+      expect.stringMatching(
+        /create index if not exists "posts_author_id_status_idx" on "posts" \("author_id", "status"\)/i,
+      ),
+    ]);
+
+    // A member of a group is keyed too, so MySQL bounds it like any indexed column.
+    expect(createTableSQL(posts, 'mysql')).toMatch(/`author_id` varchar\(255\)/);
+  });
+
+  /**
    * MySQL and SQL Server refuse an unbounded TEXT column in an index — which is what
    * `isKeyed` exists to answer. It used to answer for the primary key alone, because no
    * vocabulary word could produce anything else to answer for.

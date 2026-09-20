@@ -19,7 +19,11 @@
       "type": "string",
       "x-fougere": {
         "role": {
-          "index": true
+          "index": [
+            [
+              "slug"
+            ]
+          ]
         }
       }
     },

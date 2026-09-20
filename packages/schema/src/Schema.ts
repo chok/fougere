@@ -2,7 +2,7 @@ import type { StandardSchemaV1 } from '@standard-schema/spec';
 
 import { Boundary } from './axis/boundary/Boundary.js';
 import { type Fields } from './field/Fields.js';
-import { type CompositeUnique } from './entity/CompositeUnique.js';
+import { type FieldGroups } from './entity/FieldGroups.js';
 import { type EntityDeclarations } from './entity/EntityDeclarations.js';
 import { type PreviousNames } from './entity/PreviousNames.js';
 import { type EntityAdapters } from './entity/EntityAdapters.js';
@@ -54,8 +54,12 @@ export class Schema {
   static getAdapters(): EntityAdapters<Fields> {
     return this.definition.adapterSet.adapters;
   }
-  static getUnique(): CompositeUnique<Fields> | undefined {
+  static getUnique(): FieldGroups<Fields> | undefined {
     return this.definition.constraints.unique;
+  }
+
+  static getIndex(): FieldGroups<Fields> | undefined {
+    return this.definition.constraints.index;
   }
   static getOpts(): ValidateOptions {
     return this.definition.opts;

@@ -5,9 +5,14 @@ import type { Resolver } from '../../axis/Resolver.js';
 import { lowerFirst } from '../../lib/utils.js';
 import type { CardForm } from './CardForm.js';
 
-/** What a role becomes on a card: a target is a NAME there, and a unique is a group. */
-export type RoleDescriptor = Pick<RoleRules, 'primary' | 'index'> & {
+/**
+ * What a role becomes on a card: a target is a NAME there, and `unique` and `index` are both
+ * GROUPS — the field says `true`, the card says which names go together, since a group of
+ * several belongs to no single field.
+ */
+export type RoleDescriptor = Pick<RoleRules, 'primary'> & {
   unique?: string[][];
+  index?: string[][];
   relation?: RelationDescriptor;
 };
 
@@ -21,7 +26,7 @@ export const roleOnCard: CardForm<RoleRules, RoleDescriptor> = {
     const descriptor: Mutable<RoleDescriptor> = {};
     if (role.primary) descriptor.primary = true;
     if (role.unique) descriptor.unique = [[key]];
-    if (role.index) descriptor.index = true;
+    if (role.index) descriptor.index = [[key]];
     if (role.relation) {
       const target = role.relation.to() as { name?: string };
       descriptor.relation = {
@@ -38,7 +43,7 @@ export const roleOnCard: CardForm<RoleRules, RoleDescriptor> = {
     const rules: Mutable<RoleRules> = {};
     if (wire.primary) rules.primary = true;
     if (wire.unique?.some((group) => group.length === 1)) rules.unique = true;
-    if (wire.index) rules.index = true;
+    if (wire.index?.some((group) => group.length === 1)) rules.index = true;
     if (wire.relation) {
       const name = wire.relation.to;
       rules.relation = {

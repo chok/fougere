@@ -17,6 +17,8 @@ export interface TableDef {
   compositePrimary: string[];
   /** Column groups unique together, from `entity(fields, { unique: [...] })`. */
   uniqueGroups: string[][];
+  /** Column groups indexed together, from `entity(fields, { index: [...] })`. */
+  indexGroups: string[][];
 }
 
 /** camelCase → snake_case */
@@ -142,7 +144,7 @@ export function toTable(tableName: string, schema: SchemaView, relations?: Relat
   // Declared in field names, realized in column names — and a group naming a field the
   // storage does not keep is not enforceable, so it is dropped rather than emitted against
   // a column that will not exist.
-  const uniqueGroups = (schema.getUnique() ?? [])
+  const realized = (groups: readonly (readonly string[])[]) => groups
     .map((group) => group.map(toSnakeCase))
     .filter((members) => members.every((column) => stored.has(column)));
 
@@ -150,7 +152,8 @@ export function toTable(tableName: string, schema: SchemaView, relations?: Relat
     name: tableName,
     columns,
     compositePrimary: primaries.length > 1 ? primaries : [],
-    uniqueGroups,
+    uniqueGroups: realized(schema.getUnique() ?? []),
+    indexGroups: realized(schema.getIndex() ?? []),
   };
 }
 
@@ -162,7 +165,9 @@ export function isKeyed(table: TableDef, column: ColumnDef): boolean {
   return column.primary
     || column.unique === true
     || column.index === true
-    || table.compositePrimary.includes(column.name);
+    || table.compositePrimary.includes(column.name)
+    || table.indexGroups.some((group) => group.includes(column.name))
+    || table.uniqueGroups.some((group) => group.includes(column.name));
 }
 
 // ─── App-wide entity collection — shared by generateSQL and desiredTables ──

@@ -84,26 +84,39 @@ export function createTableSQL(
   return builder.compile().sql;
 }
 
-/** `CREATE INDEX` for every column that asked for one. */
+/** `CREATE INDEX` for one column that asked for one. */
 export function indexSQL(table: TableDef, column: ColumnDef, dialectName: DialectName): string {
-  let builder = compiler(dialectName)
-    .schema.createIndex(`${table.name}_${column.name}_idx`)
-    .on(table.name)
-    .column(column.name);
   // A `unique()` on a table that already exists has nowhere else to land: `createTable`
   // writes it as a column constraint, and no engine here can ALTER one in. As an index it
   // arrives — or the statement fails on the rows that already break it, which is the answer.
-  if (column.unique) builder = builder.unique();
+  return indexOver(table, [column.name], dialectName, column.unique === true);
+}
+
+/**
+ * Every index one table asks for — one statement each. A GROUP is not the same thing as its
+ * members indexed apart: an index on `(a, b)` serves a filter on `a` alone and never on `b`.
+ */
+export function createIndexSQL(table: TableDef, dialectName: DialectName): string[] {
+  return [
+    ...table.columns.filter((column) => column.index).map((column) => indexSQL(table, column, dialectName)),
+    ...table.indexGroups.map((group) => indexOver(table, group, dialectName)),
+  ];
+}
+
+function indexOver(
+  table: TableDef,
+  columns: readonly string[],
+  dialectName: DialectName,
+  unique = false,
+): string {
+  let builder = compiler(dialectName)
+    .schema.createIndex(`${table.name}_${columns.join('_')}_idx`)
+    .on(table.name)
+    .columns([...columns]);
+  if (unique) builder = builder.unique();
   if (dialectName !== 'mssql') builder = builder.ifNotExists();
 
   return builder.compile().sql;
-}
-
-/** Every index one table asks for — one statement each. */
-export function createIndexSQL(table: TableDef, dialectName: DialectName): string[] {
-  return table.columns
-    .filter((column) => column.index)
-    .map((column) => indexSQL(table, column, dialectName));
 }
 
 /**

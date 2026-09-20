@@ -225,7 +225,7 @@ describe('unique / indexed — declared here, enforced by the storage', () => {
     // Members are NAMED on the wire: a consumer reads the constraint without having to
     // know which property the group hangs on.
     expect(card.properties.email['x-fougere']).toMatchObject({ role: { unique: [['email']] } });
-    expect(card.properties.city['x-fougere']).toMatchObject({ role: { index: true } });
+    expect(card.properties.city['x-fougere']).toMatchObject({ role: { index: [['city']] } });
 
     const rebuilt = Card.fromDescriptor(card).toSchema();
     expect(Role.of(rebuilt.getFields().email!).isUnique()).toBe(true);

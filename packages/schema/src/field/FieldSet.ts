@@ -1,5 +1,5 @@
 import { Role } from '../axis/role/Role.js';
-import type { CompositeUnique } from '../entity/CompositeUnique.js';
+import type { FieldGroups } from '../entity/FieldGroups.js';
 import { Field } from './Field.js';
 import { type FieldName } from './FieldName.js';
 import { type Fields } from './Fields.js';
@@ -17,33 +17,41 @@ export class FieldSet<TFields extends Fields = Fields> {
    * FR : partage un `unique` déclaré : un groupe d'un va au champ, plusieurs restent au schéma.
    * `declaring(fields, [['email'], ['listId', 'docId']])` → `email` carries it, the pair is a group
    */
+  /**
+   * A group of ONE is the word on the field — `unique: [['slug']]` is `unique(text())` — so it
+   * is written there and never kept as a group, which is what lets a derivation drop it with
+   * its field. A group of several is what no single field can state, and it is kept whole.
+   */
   static declaring<TFields extends Fields>(
     declared: TFields,
-    unique?: CompositeUnique<TFields>,
-  ): { fields: TFields; groups: CompositeUnique<TFields> } {
+    stated: { unique?: FieldGroups<TFields>; index?: FieldGroups<TFields> } = {},
+  ): { fields: TFields; unique: FieldGroups<TFields>; index: FieldGroups<TFields> } {
     const fields: Fields = {};
     for (const [key, field] of Object.entries(declared))
       fields[key] = new Field(field, key);
 
-    const composite: FieldName<TFields>[][] = [];
-    for (const group of unique ?? []) {
-      const missing = group.filter((key) => !Object.hasOwn(fields, key));
-      if (missing.length)
-        throw new SchemaError(
-          `unique: [${group.join(', ')}] names ` +
-            `${missing.map((key) => `'${key}'`).join(', ')}, which the entity does not declare.`,
-        );
+    const composite = { unique: [] as FieldName<TFields>[][], index: [] as FieldName<TFields>[][] };
 
-      if (group.length === 1) {
-        const key = group[0]!;
-        const alone = fields[key]!;
-        fields[key] = alone.with({ role: { ...alone.role, unique: true } });
-        continue;
+    for (const kind of ['unique', 'index'] as const) {
+      for (const group of stated[kind] ?? []) {
+        const missing = group.filter((key) => !Object.hasOwn(fields, key));
+        if (missing.length)
+          throw new SchemaError(
+            `${kind}: [${group.join(', ')}] names ` +
+              `${missing.map((key) => `'${key}'`).join(', ')}, which the entity does not declare.`,
+          );
+
+        if (group.length === 1) {
+          const key = group[0]!;
+          const alone = fields[key]!;
+          fields[key] = alone.with({ role: { ...alone.role, [kind]: true } });
+          continue;
+        }
+        composite[kind].push([...group]);
       }
-      composite.push([...group]);
     }
 
-    return { fields: fields as TFields, groups: composite };
+    return { fields: fields as TFields, unique: composite.unique, index: composite.index };
   }
 
   /** A second `primary` is refused, naming both, rather than the first winning silently. */

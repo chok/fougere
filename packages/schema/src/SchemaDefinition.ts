@@ -113,7 +113,7 @@ export class SchemaDefinition {
       ...addressed,
       ...Object.keys(declarations.previous ?? {}),
     ]);
-    const declared = FieldSet.declaring(this.fields, declarations.unique);
+    const declared = FieldSet.declaring(this.fields, declarations);
 
     return this.restated({
       fields: declared.fields,
@@ -123,9 +123,9 @@ export class SchemaDefinition {
       ]),
       previous: declarations.previous ?? this.previous,
       constraints:
-        declarations.unique === undefined
+        declarations.unique === undefined && declarations.index === undefined
           ? this.constraints
-          : SchemaConstraints.of(declared.groups),
+          : SchemaConstraints.of(declared),
     });
   }
 
@@ -199,11 +199,13 @@ export class SchemaDefinition {
   static merged(views: readonly SchemaView[]): SchemaDefinition {
     const fields: Fields = {};
     let opts: ValidateOptions = {};
-    const groups: (readonly string[])[] = [];
+    const groups: { unique: (readonly string[])[]; index: (readonly string[])[] } =
+      { unique: [], index: [] };
     for (const view of views) {
       Object.assign(fields, view.getFields());
       opts = { ...opts, ...view.getOpts() };
-      groups.push(...(view.getUnique() ?? []));
+      groups.unique.push(...(view.getUnique() ?? []));
+      groups.index.push(...(view.getIndex() ?? []));
     }
 
     return SchemaDefinition.derived({

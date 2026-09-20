@@ -41,8 +41,9 @@ export class Card<T = Values<Fields>> {
       properties[key] = describeField(field, key);
       if (validator.requires(field)) required.push(key);
     }
-    for (const group of schema.getUnique() ?? [])
-      for (const member of group) carryGroup(properties[member], group);
+    for (const kind of ['unique', 'index'] as const)
+      for (const group of (kind === 'unique' ? schema.getUnique() : schema.getIndex()) ?? [])
+        for (const member of group) carryGroup(properties[member], kind, group);
 
     const descriptor: SchemaDescriptor = {
       type: 'object',
@@ -96,7 +97,7 @@ export class Card<T = Values<Fields>> {
     }
 
     const fields: Fields = {};
-    const groups: string[][] = [];
+    const groups: { unique: string[][]; index: string[][] } = { unique: [], index: [] };
     for (const [key, property] of Object.entries(descriptor.properties)) {
       if (!isObject(property)) {
         refuse(
@@ -105,8 +106,9 @@ export class Card<T = Values<Fields>> {
         );
       }
       fields[key] = reconstructField(property, key, resolve);
-      for (const group of property['x-fougere']?.role?.unique ?? [])
-        if (group.length > 1) groups.push([...group]);
+      for (const kind of ['unique', 'index'] as const)
+        for (const group of property['x-fougere']?.role?.[kind] ?? [])
+          if (group.length > 1) groups[kind].push([...group]);
     }
     const schema = Schema.of({ fields, constraints: SchemaConstraints.of(groups) });
     const title = name ?? descriptor.title;
@@ -221,10 +223,11 @@ function reconstructField(
  */
 function carryGroup(
   property: FieldDescriptor | undefined,
+  kind: 'unique' | 'index',
   group: readonly string[],
 ): void {
   if (!property) return;
-  const extension = (property['x-fougere'] ??= {}) as { role?: { unique?: string[][] } };
+  const extension = (property['x-fougere'] ??= {}) as { role?: Record<string, string[][]> };
   const role = (extension.role ??= {});
-  (role.unique ??= []).push([...group]);
+  (role[kind] ??= []).push([...group]);
 }
