@@ -22,10 +22,13 @@ export function primary(fieldOrOptions?: Field | PrimaryOptions): Field {
   }
 
   const opts: PrimaryOptions = fieldOrOptions ?? {};
+
   let generate: GeneratorRef;
   if (Array.isArray(opts.generate)) {
     const [name, fn] = opts.generate;
+
     Generators.register(name, fn);
+
     generate = name;
   } else {
     generate = opts.generate ?? 'cuid2';
