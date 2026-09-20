@@ -49,12 +49,15 @@ export class Format<T = unknown> {
     return new Format({ $ref: absolute(id) as string });
   }
 
-  /** A word or a shape, told apart by TYPE, so a refusal names the half the value belongs to. */
-  static either<Word, Shape>(word: Format<Word>, shape: Format<Shape>): Format<Word | Shape> {
+  /**
+   * A word or anything else, told apart by TYPE, so a refusal names the half the value belongs
+   * to — `create: 'nawak'` reads against the words, `type: ['string', 'null']` against the list.
+   */
+  static either<Word, Other>(word: Format<Word>, otherwise: Format<Other>): Format<Word | Other> {
     return new Format({
       if: { type: 'string' },
       then: word.schema as JsonSchema,
-      else: shape.schema as JsonSchema,
+      else: otherwise.schema as JsonSchema,
     });
   }
 

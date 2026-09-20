@@ -186,9 +186,9 @@ What the OPERATOR decides is not stated here: it belongs in `fougere.config.ts` 
 declaration against the format of its key, and it is the one place that picks which of the
 engine's refusals to report. What a key admits is stated in KEYS and never in JSON Schema:
 `Format.of('axis/lifecycle').key('create', …).closed()` (`schema/src/lib/Format.ts`), which
-produces the `$id`, the `$ref`, the `$defs` and the closing. `Format.either` tells a word from a
-shape by TYPE rather than by `anyOf`, because the engine reports the LAST branch of an `anyOf`
-and `create: 'nawak'` then answered `Expected "object"`; `closed()` closes with
+produces the `$id`, the `$ref`, the `$defs` and the closing. `Format.either` tells a word from
+anything else by TYPE rather than by `anyOf`, because the engine reports the LAST branch of an
+`anyOf` and `create: 'nawak'` then answered `Expected "object"`; `closed()` closes with
 `propertyNames`, so an unknown key is refused UNDER its own name and the message lists the legal
 ones. `fieldFormat` (`schema/src/field/FieldFormat.ts`) composes the keys of a field the same
 way, carrying each format whole and citing it by its `$id`. Each axis used to hold a validator

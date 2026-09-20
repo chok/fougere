@@ -71,8 +71,8 @@ function outOfBoundsFor(field: Field): { why: string; value: unknown }[] {
 export class Cases {
   private constructor(readonly all: readonly ValidationCase[]) {}
 
-  static of(entity: SchemaView, valid: Record<string, unknown>): Cases {
-    return new Cases(enumerate(entity, valid));
+  static of(schema: SchemaView, valid: Record<string, unknown>): Cases {
+    return new Cases(enumerate(schema, valid));
   }
 
   static holds(
@@ -100,8 +100,8 @@ export class Cases {
  * FR : lit les quatre axes plutôt qu'une liste tenue à la main : un cas existe parce qu'un
  * champ déclare la règle qu'il casse.
  */
-function enumerate(entity: SchemaView, valid: Record<string, unknown>): ValidationCase[] {
-  const fields = entity.getFields();
+function enumerate(schema: SchemaView, valid: Record<string, unknown>): ValidationCase[] {
+  const fields = schema.getFields();
   const validator = InputValidator.of(fields);
 
   return [
