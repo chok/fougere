@@ -15,6 +15,13 @@ class Tenancy {
   static readonly format = TENANCY_FORMAT;
 }
 
+/** What a package writes beside its `Axes.register`, naming `@fougere/schema` from outside. */
+declare module '../src/index.js' {
+  interface FougereFieldAxes {
+    readonly tenancy?: TenancyRules;
+  }
+}
+
 const shape = { type: 'string' } as const;
 const stating = (tenancy: unknown) => () => new Field({ shape, tenancy } as never, 'owner');
 
@@ -45,20 +52,16 @@ describe('an axis registered from outside', () => {
   it('keeps its own key on the field, and travels on a card', () => {
     class Doc extends entity({
       id: primary(),
-      owner: new Field<string>({ shape, tenancy: { scope: 'tenant' } } as never),
+      owner: new Field<string>({ shape, tenancy: { scope: 'tenant' } }),
       title: text(),
     }) {}
 
-    expect((Doc.getFields().owner as unknown as { tenancy: TenancyRules }).tenancy).toEqual({
-      scope: 'tenant',
-    });
+    expect(Doc.getFields().owner.tenancy).toEqual({ scope: 'tenant' });
 
     const descriptor = Card.fromSchema(Doc, 'doc').descriptor;
     expect(descriptor.properties.owner['x-fougere']?.tenancy).toEqual({ scope: 'tenant' });
 
     const rebuilt = Card.fromDescriptor(descriptor).toSchema();
-    expect((rebuilt.getFields().owner as unknown as { tenancy: TenancyRules }).tenancy).toEqual({
-      scope: 'tenant',
-    });
+    expect(rebuilt.getFields().owner.tenancy).toEqual({ scope: 'tenant' });
   });
 });

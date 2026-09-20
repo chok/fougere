@@ -96,3 +96,9 @@ export class Boundary {
     return this.rules.out === 'closed';
   }
 }
+
+declare module '../../field/FougereFieldAxes.js' {
+  interface FougereFieldAxes {
+    readonly boundary?: BoundaryRef;
+  }
+}

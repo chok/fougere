@@ -76,3 +76,9 @@ export class Lifecycle {
       : undefined;
   }
 }
+
+declare module '../../field/FougereFieldAxes.js' {
+  interface FougereFieldAxes {
+    readonly lifecycle?: LifecycleRules;
+  }
+}

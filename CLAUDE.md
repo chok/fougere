@@ -217,11 +217,16 @@ from a typo, which is what `fougere check` reports as `unknown-adapter`.
 (`schema/src/axis/Axes.ts`), a `Registry<Axis>` carrying the three, and
 `Axes.register('tenancy', tenancyAxis)` is how a package declares a fourth. The composed
 format is rebuilt at the first declaration that follows a registration, since the registry is
-what knows it changed. `Field` keeps a member per REGISTERED axis rather than the five it used
-to name, so an axis nothing in core declares survives on the instance and on the card;
-`FougereFieldAxes` is the empty interface that types what a
-declaration may state, like `FougereEntityAdapters` does for `adapters:`, and reading one
-stays structural — `Lifecycle.of(field)` asks for `{ lifecycle?: … }` and never for a `Field`. Where it registers is not free: a format is read
+what knows it changed. `Field` keeps a member per REGISTERED axis and NAMES only its shape:
+`FougereFieldAxes` is the interface every axis writes its own line in — the three of the core
+by a relative `declare module`, a package by `declare module '@fougere/schema'`, the way
+`adapter/sql` already augments `FougereEntityAdapters`. It is exported from `index.ts` for
+exactly that; it was not, so nothing outside could augment it and the class named the three in
+its place. What that bought is not a cast saved but a PORT: `Tenancy.of(field)` written the way
+`Lifecycle.of(field)` is — `{ tenancy?: … }` and never a `Field` — answered `TS2559, no
+properties in common`, because a target whose members are all optional refuses a source sharing
+none. The core never met it, sharing `lifecycle`. Reading stays structural, which is why the
+three ports did not move. Where it registers is not free: a format is read
 at `entity()`, so an axis registers in `vocabulary/`, the one convention directory the scan
 reads BEFORE `entities/`. What stays closed is the MODEL — a field has four axes, and three
 tests admit one. Pinned by `schema/tests/axis-registration.test.ts`.

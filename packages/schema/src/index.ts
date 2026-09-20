@@ -41,6 +41,7 @@ export { StringFormats } from './axis/shape/StringFormats.js';
 export { Generators } from './axis/lifecycle/Generators.js';
 export { Boundaries } from './axis/boundary/Decoder.js';
 export { type FougereEntityAdapters } from './entity/FougereEntityAdapters.js';
+export { type FougereFieldAxes } from './field/FougereFieldAxes.js';
 export { InputValidator } from './validator/InputValidator.js';
 export { FieldValueValidator } from './validator/FieldValueValidator.js';
 export { JsonSchemaValidator } from './validator/JsonSchemaValidator.js';

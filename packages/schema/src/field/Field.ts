@@ -1,7 +1,4 @@
 import type { Shape } from '../axis/shape/Shape.js';
-import type { RoleRules } from '../axis/role/Role.js';
-import type { LifecycleRules } from '../axis/lifecycle/Lifecycle.js';
-import type { BoundaryRef } from '../axis/boundary/Boundary.js';
 import { Axes } from '../axis/Axes.js';
 import type { FougereFieldAxes } from './FougereFieldAxes.js';
 import { FieldDeclarationValidator } from '../validator/FieldDeclarationValidator.js';
@@ -21,18 +18,19 @@ export interface Shared<T> extends Described {
 
 export interface FieldDeclaration extends FougereFieldAxes {
   shape: Shape;
-  role?: RoleRules;
-  lifecycle?: LifecycleRules;
-  boundary?: BoundaryRef;
+}
+
+/**
+ * The axes it carries are `FougereFieldAxes`, which each axis writes its own line in — so the
+ * three of the core are typed the way a fourth declared outside is, and the class names what
+ * the registry decides only once, in the constructor.
+ */
+export interface Field<T = unknown> extends FougereFieldAxes {
+  readonly _type?: T;
 }
 
 export class Field<T = unknown> {
   readonly shape: Shape;
-  readonly role?: RoleRules;
-  readonly lifecycle?: LifecycleRules;
-  readonly boundary?: BoundaryRef;
-
-  declare readonly _type?: T;
 
   constructor(init: FieldDeclaration, key?: string) {
     const verdict = FieldDeclarationValidator.of(init).verdict;
@@ -73,9 +71,7 @@ export class Field<T = unknown> {
    * own before this existed.
    */
   axis(name: keyof FieldDeclaration): unknown {
-    const declared: FieldDeclaration = this;
-
-    return declared[name];
+    return (this satisfies FieldDeclaration)[name];
   }
 
   /** Every axis it declares, and nothing for the ones it says nothing on. */
@@ -100,13 +96,14 @@ export class Field<T = unknown> {
   setShared(opts?: Shared<T>): Field<T> {
     if (!opts) return this;
 
-    const overrides: Partial<FieldDeclaration> = {};
-
-    if (opts.description !== undefined)
-      overrides.shape = { ...this.shape, description: opts.description };
-
-    if (opts.default !== undefined)
-      overrides.lifecycle = { ...this.lifecycle, create: { value: opts.default } };
+    const overrides: Partial<FieldDeclaration> = {
+      ...(opts.description !== undefined
+        ? { shape: { ...this.shape, description: opts.description } }
+        : {}),
+      ...(opts.default !== undefined
+        ? { lifecycle: { ...this.lifecycle, create: { value: opts.default } } }
+        : {}),
+    };
 
     return Object.keys(overrides).length ? this.with<T>(overrides) : this;
   }
