@@ -225,16 +225,16 @@ describe('helpers', () => {
     expect(Post.validate({ tags: 'a' }).success).toBe(false);                // not an array
   });
 
-  it('list() keeps the shape of an element, and refuses every axis stated beside it', () => {
+  it('list() keeps the shape of an item, and refuses every axis stated beside it', () => {
     class Other extends entity({ id: primary() }) {}
 
-    // `nullable()` writes into the shape, so it is the one rule an element can carry.
+    // `nullable()` writes into the shape, so it is the one rule an item can carry.
     expect(list(nullable(text())).shape).toEqual({
       type: 'array',
       items: { type: ['string', 'null'] },
     });
 
-    // A sentence about an element is JSON Schema, so it lands in the shape and travels with it.
+    // A sentence about an item is JSON Schema, so it lands in the shape and travels with it.
     expect(list(text({ description: 'un tag' })).shape).toEqual({
       type: 'array',
       items: { type: 'string', description: 'un tag' },
@@ -250,7 +250,7 @@ describe('helpers', () => {
     ];
 
     for (const stated of beside)
-      expect(() => list(stated as never)).toThrow(/says nothing of one/);
+      expect(() => list(stated as never)).toThrow(/Put the rule on the list/);
   });
 
   it('format predicates (email, uuid, uri) are asserted by the engine', () => {

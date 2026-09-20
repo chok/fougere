@@ -83,6 +83,11 @@ export class Field<T = unknown> {
     );
   }
 
+  /** Whether it states anything at all beside its shape. */
+  get hasAxes(): boolean {
+    return Object.keys(this.axes).length > 0;
+  }
+
   with<U = T>(overrides: Partial<FieldDeclaration>): Field<U> {
     return new Field<U>({ ...this, ...overrides });
   }
