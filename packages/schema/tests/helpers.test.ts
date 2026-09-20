@@ -136,31 +136,41 @@ describe('helpers', () => {
 
   // The two other words that sort their arguments by type before the door, and read a stray
   // one as options with nothing said.
-  it('json() refuses options that are not an object, and a function that is not an entity', () => {
+  /**
+   * Options are read in ONE place — `Field.setShared` — so every word refuses the same way.
+   * Three of the twelve used to guard for themselves, and the nine others took `text(42)`
+   * for a bare `text()`.
+   */
+  it('every word refuses options that are not an object', () => {
     class Address extends entity({ street: text() }) {}
-    const loose = json as (...args: unknown[]) => unknown;
+    const loose = <A extends unknown[]>(word: (...args: never[]) => unknown) =>
+      (...args: A) => (word as (...args: unknown[]) => unknown)(...args);
 
-    expect(() => loose(42)).toThrow(/takes its options as an object/);
-    expect(() => loose(Address, 'x')).toThrow(/takes its options as an object/);
-    expect(() => loose(() => 1)).toThrow(/takes an entity/);
+    const refused: Record<string, () => unknown> = {
+      text: () => loose(text)(42),
+      number: () => loose(number)(42),
+      bool: () => loose(bool)(42),
+      date: () => loose(date)(42),
+      json: () => loose(json)(42),
+      'json(Address, …)': () => loose(json)(Address, 'x'),
+      primary: () => loose(primary)(42),
+      list: () => loose(list)(text(), 42),
+      ref: () => loose(ref)(Address, 42),
+      many: () => loose(many)(Address, 42),
+      created: () => loose(created)(42),
+      updated: () => loose(updated)(42),
+    };
+
+    for (const [word, call] of Object.entries(refused))
+      expect(call, word).toThrow(/Options must go in an object/);
+
+    expect(() => loose(primary)(42)).toThrow('Options must go in an object, like { max: 200 } — got 42');
+
+    // What is NOT about the options keeps its own words.
+    expect(() => loose(json)(() => 1)).toThrow(/takes an entity/);
+    expect(() => loose(oneOf)('a', 42)).toThrow(/takes strings or numbers/);
 
     expect(() => json()).not.toThrow();
-    expect(() => json({ description: 'a' })).not.toThrow();
-    expect(() => json(Address, { description: 'a' })).not.toThrow();
-  });
-
-  it('writes the refused value in the message', () => {
-    const loose = primary as (...args: unknown[]) => unknown;
-
-    expect(() => loose(42)).toThrow('primary() takes a field or an object of options — got 42');
-  });
-
-  it('primary() refuses what is neither a field nor an object of options', () => {
-    const loose = primary as (...args: unknown[]) => unknown;
-
-    expect(() => loose(42)).toThrow(/takes a field or an object of options/);
-    expect(() => loose('x')).toThrow(/takes a field or an object of options/);
-
     expect(() => primary()).not.toThrow();
     expect(() => primary(number({ integer: true }))).not.toThrow();
   });

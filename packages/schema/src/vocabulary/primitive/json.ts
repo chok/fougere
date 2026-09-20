@@ -21,9 +21,6 @@ export function json(
 ): Field<unknown> {
   const [schema, shared] = typeof of === 'function' ? [of, opts] : [undefined, of];
 
-  if (shared !== undefined && !isObject(shared))
-    throw new SchemaError('json() takes its options as an object', { received: shared });
-
   if (schema && typeof schema.getFields !== 'function')
     throw new SchemaError(
       'json() takes an entity, such as json(Address) — got a function that is not one',

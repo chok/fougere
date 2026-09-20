@@ -3,6 +3,7 @@ import { Axes } from '../axis/Axes.js';
 import type { FougereFieldAxes } from '../FougereFieldAxes.js';
 import { FieldDeclarationValidator } from '../validator/FieldDeclarationValidator.js';
 import { FieldValueValidator } from '../validator/FieldValueValidator.js';
+import { isObject } from '../lib/utils.js';
 import { dotted } from '../lib/ValidationResult.js';
 import { SchemaError } from '../SchemaError.js';
 
@@ -19,6 +20,15 @@ export interface Shared<T> extends Described {
 export interface FieldDeclaration extends FougereFieldAxes {
   shape: Shape;
 }
+
+/**
+ * Every word ends on `setShared`, so the options are read in ONE place and refused there.
+ * `text(42)` used to pass for a bare `text()`, and nine of the twelve words took it.
+ */
+const refuseLooseOptions = (opts: unknown): void => {
+  if (!isObject(opts))
+    throw new SchemaError('Options must go in an object, like { max: 200 }', { received: opts });
+};
 
 /** The registry answers strings, and a member of a declaration is what they name. */
 const registered = (): (keyof FieldDeclaration)[] => Axes.names as (keyof FieldDeclaration)[];
@@ -102,7 +112,9 @@ export class Field<T = unknown> {
    * `text({ max: 200 }).setShared({ description: 'The title' })` → `shape.description`
    */
   setShared(opts?: Shared<T>): Field<T> {
-    if (!opts) return this;
+    if (opts === undefined) return this;
+
+    refuseLooseOptions(opts);
 
     const overrides: Partial<FieldDeclaration> = {
       ...(opts.description !== undefined
