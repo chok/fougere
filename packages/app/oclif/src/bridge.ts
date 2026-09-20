@@ -79,7 +79,7 @@ export function inputToShape(fields: Fields): Shape {
 
     const { base: shape, nullable } = Shapes.of(field.shape);
     const type = Shapes.typeOf(field.shape);
-    const description = field.meta?.description;
+    const description = field.shape?.description;
     const required = Role.of(field).isPrimary || (!nullable && Lifecycle.of(field).requiredAtCreate);
     const options = shape && 'enum' in shape && shape.enum?.length
       ? shape.enum.filter((value) => value !== null).map(String)

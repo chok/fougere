@@ -27,7 +27,7 @@ const words = {
 
 describe('what every word admits', () => {
   it.each(Object.entries(words))('%s carries a sentence', (_name, field) => {
-    expect(field.meta?.description).toBe('a');
+    expect(field.shape?.description).toBe('a');
   });
 
   it('leaves what the word already stated alone', () => {

@@ -21,6 +21,8 @@ export class Format<T = unknown> {
   static readonly anything = new Format<unknown>(true);
   static readonly text = new Format<string>({ type: 'string' });
   static readonly flag = new Format<boolean>({ type: 'boolean' });
+  static readonly number = new Format<number>({ type: 'number' });
+  static readonly count = new Format<number>({ type: 'integer', minimum: 0 });
 
   declare readonly _admits?: T;
 
@@ -32,6 +34,19 @@ export class Format<T = unknown> {
   /** `Format.tokens(['now', 'optional'])` → `Instance does not match any of ["now","optional"].` */
   static tokens<const Words extends readonly string[]>(words: Words): Format<Words[number]> {
     return new Format({ enum: [...words] });
+  }
+
+  /** `enum`, `required` — a list of one format, so `enum: 'draft'` is refused as the scalar it is. */
+  static listOf<Value>(format: Format<Value>): Format<Value[]> {
+    return new Format({ type: 'array', items: format.schema });
+  }
+
+  /**
+   * A format naming ITSELF, which no value can do while it is being built: `items` holds a shape,
+   * and the shape is what declares `items`. The `$id` `of()` already posts is what it points at.
+   */
+  static ref(id: string): Format<unknown> {
+    return new Format({ $ref: absolute(id) as string });
   }
 
   /** A word or a shape, told apart by TYPE, so a refusal names the half the value belongs to. */

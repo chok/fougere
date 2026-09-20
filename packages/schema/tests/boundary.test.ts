@@ -137,9 +137,9 @@ describe('boundary · survives every field transform', () => {
   });
 
   it('primary(field) keeps the boundary AND the description', () => {
-    const f = primary(new Field<string>({ shape: { type: 'string' }, boundary: 'moneyCents', meta: { description: 'id' } }));
+    const f = primary(new Field<string>({ shape: { type: 'string', description: 'id' }, boundary: 'moneyCents' }));
     expect(Boundary.of(f).decode(1099)).toEqual({ value: 10.99 });
-    expect(f.meta?.description).toBe('id');
+    expect(f.shape?.description).toBe('id');
   });
 
   it('partial() keeps the boundary', () => {

@@ -1,5 +1,4 @@
 import { Axes } from '../axis/Axes.js';
-import { Shapes } from '../axis/shape/Shape.js';
 import type { Field } from '../field/Field.js';
 import { isObject } from '../lib/utils.js';
 import { SchemaError } from '../SchemaError.js';
@@ -31,11 +30,8 @@ export class FieldDeclarationValidator {
 
     const errors: ValidationError[] = [];
 
-    if (!Shapes.is(declaration.shape)) {
-      errors.push({
-        path: ['shape'],
-        message: `Every field states a shape — got ${SchemaError.inspect(declaration.shape)}`,
-      });
+    if (declaration.shape === undefined) {
+      errors.push({ path: ['shape'], message: 'Every field states a shape' });
     }
 
     errors.push(...JsonSchemaValidator.of(Axes.fieldFormat).refusalsOf(declaration, []));

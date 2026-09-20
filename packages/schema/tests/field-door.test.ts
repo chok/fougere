@@ -46,7 +46,28 @@ describe('the field facade', () => {
       [{ shape, role: { relation: { kind: 'one', to: 'Post' } } }, 'role.relation.to: Expected a function returning the target entity'],
       [{ shape, role: { unique: 'yes' } }, 'role.unique: Instance type "string" is invalid. Expected "boolean".'],
       [{ shape, boundary: { in: { nawak: 'x' } } }, 'boundary.in.nawak: Instance does not match any of ["decode"].'],
-      [{ shape, meta: 42 }, 'meta: Instance type "number" is invalid. Expected "object".'],
+    ];
+    for (const [init, message] of refused) {
+      expect(() => new Field(init as never)).toThrow(message);
+    }
+  });
+
+  /**
+   * `shape` was the one key of a declaration nothing read past its `type`, so `minLenght: 1`
+   * passed and travelled, where `lifecycle: { craete: 'now' }` had been refused since `Format`.
+   * A shape holds a shape, so the format cites its own `$id` and the refusal says how deep.
+   * `description` is judged here too: it is JSON Schema's keyword, so it lives in the shape.
+   */
+  it('judges the shape itself, down to the shape inside one', () => {
+    const refused: readonly (readonly [object, string])[] = [
+      [{ shape: 'nawak' }, 'shape: Instance type "string" is invalid. Expected "object".'],
+      [{ shape: { minLength: 1 } }, 'shape: Instance does not have required property "type".'],
+      [{ shape: { type: 'nawak' } }, 'shape.type: Instance does not match any of ["string","number","integer","boolean","array","object"].'],
+      [{ shape: { type: 'string', minLenght: 1 } }, 'shape.minLenght: Instance does not match any of ["type","description","minLength"'],
+      [{ shape: { type: 'string', minLength: 'trois' } }, 'shape.minLength: Instance type "string" is invalid. Expected "integer".'],
+      [{ shape: { type: 'string', description: 42 } }, 'shape.description: Instance type "number" is invalid. Expected "string".'],
+      [{ shape: { type: 'string', enum: 'draft' } }, 'shape.enum: Instance type "string" is invalid. Expected "array".'],
+      [{ shape: { type: 'array', items: { type: 'string', minLenght: 1 } } }, 'shape.items.minLenght: Instance does not match any of ["type","description","minLength"'],
     ];
     for (const [init, message] of refused) {
       expect(() => new Field(init as never)).toThrow(message);
@@ -70,10 +91,10 @@ describe('the field facade', () => {
   });
 
   it('reports every fault at once, not the first', () => {
-    const verdict = FieldDeclarationValidator.of({ shape: 42, lifecycle: { update: 'nawak' }, meta: 7 }).verdict;
+    const verdict = FieldDeclarationValidator.of({ shape: 42, lifecycle: { update: 'nawak' }, nawak: 7 }).verdict;
     expect(verdict.success).toBe(false);
     if (!verdict.success) {
-      expect(verdict.errors.map((e) => e.path)).toEqual([['shape'], ['lifecycle', 'update'], ['meta']]);
+      expect(verdict.errors.map((e) => e.path)).toEqual([['nawak'], ['shape'], ['lifecycle', 'update']]);
     }
   });
 
@@ -125,7 +146,7 @@ describe('the field facade', () => {
 
   it('refuses a key no axis states, naming the ones that are legal', () => {
     expect(() => new Field({ shape: { type: 'string' }, nawak: 42 } as never)).toThrow(
-      'nawak: Instance does not match any of ["shape","role","lifecycle","boundary","meta"].',
+      'nawak: Instance does not match any of ["shape","role","lifecycle","boundary"].',
     );
   });
 
@@ -140,7 +161,7 @@ describe('the field facade', () => {
 
   it('a field built from the vocabulary is the same thing', () => {
     expect(text()).toBeInstanceOf(Field);
-    expect(text().with({ meta: { description: 'x' } }).shape).toEqual({ type: 'string' });
+    expect(text({ description: 'x' }).shape).toEqual({ type: 'string', description: 'x' });
   });
 });
 

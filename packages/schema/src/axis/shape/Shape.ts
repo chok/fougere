@@ -4,27 +4,30 @@ import type { ShapeType } from './ShapeType.js';
 
 type Nullably<T extends string> = T | readonly [T, 'null'];
 
-interface StringConstraints { minLength?: number; maxLength?: number; pattern?: string; enum?: readonly (string | null)[]; format?: StringFormat }
+/** The sentence a field carries, where JSON Schema already holds one. */
+interface Documented { description?: string }
 
-interface NumericConstraints { minimum?: number; maximum?: number; enum?: readonly (number | null)[] }
+interface StringConstraints extends Documented { minLength?: number; maxLength?: number; pattern?: string; enum?: readonly (string | null)[]; format?: StringFormat }
 
-interface ArrayConstraints { items?: Shape; minItems?: number; maxItems?: number }
+interface NumericConstraints extends Documented { minimum?: number; maximum?: number; enum?: readonly (number | null)[] }
 
-interface ObjectConstraints { properties?: Record<string, unknown>; required?: readonly string[]; additionalProperties?: boolean | Shape; propertyNames?: Shape }
+interface ArrayConstraints extends Documented { items?: Shape; minItems?: number; maxItems?: number }
+
+interface ObjectConstraints extends Documented { properties?: Record<string, unknown>; required?: readonly string[]; additionalProperties?: boolean | Shape; propertyNames?: Shape }
 
 export type Shape =
   | ({ type: Nullably<'string'> } & StringConstraints)
   | ({ type: Nullably<'number'> | Nullably<'integer'> } & NumericConstraints)
-  | { type: Nullably<'boolean'> }
+  | ({ type: Nullably<'boolean'> } & Documented)
   | ({ type: Nullably<'array'> } & ArrayConstraints)
   | ({ type: Nullably<'object'> } & ObjectConstraints);
 
-const SHAPE_TYPES = ['string', 'number', 'integer', 'boolean', 'array', 'object'] as const;
+export const SHAPE_TYPES = ['string', 'number', 'integer', 'boolean', 'array', 'object'] as const;
 
 type BaseShape =
   | ({ type: 'string' } & StringConstraints)
   | ({ type: 'number' | 'integer' } & NumericConstraints)
-  | { type: 'boolean' }
+  | ({ type: 'boolean' } & Documented)
   | ({ type: 'array' } & ArrayConstraints)
   | ({ type: 'object' } & ObjectConstraints);
 
@@ -51,16 +54,6 @@ export class Shapes {
   private static readonly cache = new WeakMap<object, ShapeParts>();
   private static readonly none: ShapeParts = { base: undefined, nullable: false };
 
-  static is(value: unknown): value is Shape {
-    if (typeof value !== 'object' || value === null) return false;
-    const type = (value as Shape).type;
-    const names = Array.isArray(type) ? type : [type];
-
-    return (
-      names.some((name) => (SHAPE_TYPES as readonly unknown[]).includes(name)) &&
-      names.every((name) => name === 'null' || (SHAPE_TYPES as readonly unknown[]).includes(name))
-    );
-  }
 
   /**
    * Every `pattern` a shape states, the nested ones included — `items`, `properties`.

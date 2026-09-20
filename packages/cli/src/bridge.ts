@@ -46,7 +46,7 @@ export function entityToArgs(fields: Fields): ArgsDef {
     // never one a caller hands in to designate.
     const designates = Role.of(field).isPrimary;
     const common = {
-      description: field.meta?.description,
+      description: field.shape?.description,
       required: designates || (!nullable && Lifecycle.of(field).requiredAtCreate),
     };
 

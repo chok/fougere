@@ -37,9 +37,7 @@ export function json(
   const required: string[] = [];
 
   for (const [key, field] of Object.entries(fields)) {
-    properties[key] = field.meta?.description
-      ? { ...field.shape, description: field.meta.description }
-      : field.shape;
+    properties[key] = field.shape;
 
     if (validator.requires(field)) required.push(key);
   }

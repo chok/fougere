@@ -2,7 +2,6 @@ import type { Shape } from '../axis/shape/Shape.js';
 import type { RoleRules } from '../axis/role/Role.js';
 import type { LifecycleRules } from '../axis/lifecycle/Lifecycle.js';
 import type { BoundaryRef } from '../axis/boundary/Boundary.js';
-import type { Meta } from './Meta.js';
 import { Axes } from '../axis/Axes.js';
 import type { FougereFieldAxes } from './FougereFieldAxes.js';
 import { FieldDeclarationValidator } from '../validator/FieldDeclarationValidator.js';
@@ -11,12 +10,13 @@ import { dotted } from '../lib/ValidationResult.js';
 import { SchemaError } from '../SchemaError.js';
 
 /**
- * Where a shared option lands: `default` IS a lifecycle rule and `description` IS meta.
+ * Where a shared option lands: `default` IS a lifecycle rule and `description` IS a JSON Schema
+ * keyword, so it belongs to the shape rather than beside it.
  * The fact is stated here alone, so neither a word nor this class writes the conversion.
  */
 const SHARED: Readonly<Record<string, readonly [string, ...string[]]>> = {
   default: ['lifecycle', 'create', 'value'],
-  description: ['meta', 'description'],
+  description: ['shape', 'description'],
 };
 
 /** The sentence any word admits, whatever it shapes — a relation and a date carry one too. */
@@ -34,7 +34,6 @@ interface FieldDeclaration extends FougereFieldAxes {
   role?: RoleRules;
   lifecycle?: LifecycleRules;
   boundary?: BoundaryRef;
-  meta?: Meta;
 }
 
 export class Field<T = unknown> {
@@ -42,7 +41,6 @@ export class Field<T = unknown> {
   readonly role?: RoleRules;
   readonly lifecycle?: LifecycleRules;
   readonly boundary?: BoundaryRef;
-  readonly meta?: Meta;
 
   declare readonly _type?: T;
 
@@ -57,7 +55,6 @@ export class Field<T = unknown> {
     }
 
     this.shape = init.shape;
-    this.meta = init.meta;
 
     const stated = init as unknown as Record<string, unknown>;
 
@@ -80,6 +77,15 @@ export class Field<T = unknown> {
     return FieldDeclarationValidator.of(value).verdict.success;
   }
 
+  /**
+   * What this field states under one slot — a registered axis, so a fourth one declared outside
+   * reads back like the three. The slots are members, so reading one by NAME is the one cast a
+   * field owns; three callers wrote it themselves.
+   */
+  stated(slot: string): unknown {
+    return (this as unknown as Record<string, unknown>)[slot];
+  }
+
   with<U = T>(overrides: Partial<FieldDeclaration>): Field<U> {
     return new Field<U>({ ...this, ...overrides });
   }
@@ -87,20 +93,20 @@ export class Field<T = unknown> {
   /**
    * What a word admits whatever its shape, written where `SHARED` says it lands.
    * FR : ce que tout mot admet quelle que soit sa forme, écrit là où `SHARED` dit.
-   * `text({ max: 200 }).setShared({ description: 'The title' })` → `meta.description`
+   * `text({ max: 200 }).setShared({ description: 'The title' })` → `shape.description`
    */
   setShared(opts?: Shared<T>): Field<T> {
     const stated = opts as Record<string, unknown> | undefined;
-    const axes = this as unknown as Record<string, object | undefined>;
+    const slots = this as unknown as Record<string, object | undefined>;
     const overrides: Record<string, unknown> = {};
 
-    for (const [option, [axis, ...under]] of Object.entries(SHARED)) {
+    for (const [option, [slot, ...under]] of Object.entries(SHARED)) {
       const value = stated?.[option];
 
       if (value === undefined) continue;
 
       const member = under.reduceRight<unknown>((held, key) => ({ [key]: held }), value);
-      overrides[axis] = { ...(overrides[axis] ?? axes[axis]), ...(member as object) };
+      overrides[slot] = { ...(overrides[slot] ?? slots[slot]), ...(member as object) };
     }
 
     return Object.keys(overrides).length ? this.with<T>(overrides) : this;

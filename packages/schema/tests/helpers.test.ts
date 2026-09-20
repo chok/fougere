@@ -70,8 +70,9 @@ describe('helpers', () => {
 
   it('number() creates a number field with constraints', () => {
     const f = number({ min: 0, max: 100, integer: true, description: 'Percentage' });
-    expect(f.shape).toEqual({ type: 'integer', minimum: 0, maximum: 100 });
-    expect(f.meta).toEqual({ description: 'Percentage' });
+    expect(f.shape).toEqual({
+      type: 'integer', minimum: 0, maximum: 100, description: 'Percentage',
+    });
   });
 
   it('bool() creates a boolean field', () => {
@@ -233,9 +234,11 @@ describe('helpers', () => {
       items: { type: ['string', 'null'] },
     });
 
-    // `meta` is not an axis, and was the one thing a list still swallowed: a sentence about
-    // an element reached nobody.
-    expect(() => list(text({ description: 'un tag' }))).toThrow(/meta says nothing of one/);
+    // A sentence about an element is JSON Schema, so it lands in the shape and travels with it.
+    expect(list(text({ description: 'un tag' })).shape).toEqual({
+      type: 'array',
+      items: { type: 'string', description: 'un tag' },
+    });
 
     const beside = [
       many(Other),

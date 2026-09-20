@@ -158,7 +158,10 @@ read `Entity.getFields()`. The reasoning behind each line below lives in
 **A field has four axes** — `shape` (which IS JSON Schema), `role` (primary, ref…),
 `lifecycle` (who writes the value and when), `boundary` (readOnly/writeOnly). A field is
 recognized by its FORM: it states a `shape`. `new Field(field, key)` is the door, and a
-shapeless entry is refused there.
+shapeless entry is refused there. There is no fifth slot: `description` is a JSON Schema
+keyword, so `text({ description })` writes it INTO the shape, where it travels on a card and
+lands in `json(Address)`'s properties with no one folding it in. A `meta` slot beside the
+shape put one sentence in two places and had it copied by hand at three sites.
 
 **The façade validates, the storage realizes.** Client input goes through the façade (unknown
 keys → `Unknown field`); handlers write freely through the storage, which applies
@@ -192,7 +195,14 @@ way, carrying each format whole and citing it by its `$id`. Each axis used to ho
 written by hand, whose messages copied the token lists, and `lifecycle: { craete: 'now' }`
 passed; `{ shape, nawak: 42 }` was accepted and the key dropped. The tokens stay `as const` and
 `Format.tokens` spreads them, because a JSON import keeps a KEY as a literal and widens a VALUE
-to `string`. `Axis.refusals` holds what JSON cannot state: `role.relation.to` is a function. A
+to `string`. `shape` is cited like an axis (`schema/src/axis/shape/ShapeFormat.ts`) rather than
+admitting anything: it is JSON Schema, so JSON Schema's own keywords are what it states, and
+`{ type: 'string', minLenght: 1 }` used to pass where `lifecycle: { craete: 'now' }` was already
+refused. `items` holds a shape, so the format points at its OWN `$id` — `Format.ref`, a name and
+not a value, because no format can hand itself over while it is being built. `properties` stays
+open, since what it holds is a projection's output. The one thing a format cannot say is that the
+key is MISSING, and that stays `FieldDeclarationValidator`'s line and its own sentence.
+`Axis.refusals` holds what JSON cannot state: `role.relation.to` is a function. A
 key set to `undefined` is read as absent. A card is judged at the same door: `reconstruct`
 rebuilds, and `new Field(…, key)` refuses. Pinned by `schema/tests/field-door.test.ts` and
 `descriptor.test.ts`.
@@ -898,7 +908,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 - **A card states `role` in a form of its own, and nothing judges it** — `schema/src/axis/role/Role.ts`,
   `roleAxis.reconstruct`. `role` is the one slot whose wire differs from its declaration: `relation.to` is a
   function here and a name there, `unique` a boolean here and a list of groups there — so `ROLE_FORMAT`
-  cannot serve both, where `lifecycle`, `boundary` and `meta` are judged by the format they already
+  cannot serve both, where `lifecycle` and `boundary` are judged by the format they already
   state. Measured 2026-09-17 through `Card.fromDescriptor(…).toSchema()`: `unique: 'x'` throws
   `wire.unique?.some is not a function`, `primary: 'yes'` is read as `true`, `relation: { to: 3 }`
   passes, and a key nothing reads is dropped. What closes it is a format beside `RoleDescriptor`,

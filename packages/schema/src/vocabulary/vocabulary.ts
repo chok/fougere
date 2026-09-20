@@ -3,9 +3,6 @@ import { Axes } from '../axis/Axes.js';
 import { dequal } from 'dequal';
 import { SchemaError } from '../SchemaError.js';
 
-/** What a field states BESIDE its shape: every registered axis, and its sentence. */
-export const memberSlots = (): string[] => [...Axes.names, 'meta'];
-
 /**
  * Builds a `rule/` word
  * `vocabulary('indexed', () => ({ role: { index: true } }))`
@@ -26,13 +23,12 @@ export type FieldWord = (field: Field<any>) => Field<any>;
 function merge(name: string, field: Field, given: Partial<Field>): Partial<Field> {
   const merged: Record<string, unknown> = {};
   const stated = given as Record<string, unknown>;
-  const held = field as unknown as Record<string, unknown>;
   if ('shape' in given) merged.shape = given.shape;
 
-  for (const slot of memberSlots()) {
+  for (const slot of Axes.names) {
     const members = stated[slot];
     if (members === undefined) continue;
-    const already = held[slot] as Record<string, unknown> | undefined;
+    const already = field.stated(slot) as Record<string, unknown> | undefined;
     if (typeof members !== 'object' || members === null || typeof already !== 'object') {
       merged[slot] = members;
       continue;

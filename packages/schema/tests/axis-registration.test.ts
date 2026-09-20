@@ -25,7 +25,7 @@ const stating = (tenancy: unknown) => () => new Field({ shape, tenancy } as neve
 describe('an axis registered from outside', () => {
   it('has no legal key until it registers, and the refusal names the ones that are', () => {
     expect(stating({ scope: 'tenant' })).toThrow(
-      'tenancy: Instance does not match any of ["shape","role","lifecycle","boundary","meta"].',
+      'tenancy: Instance does not match any of ["shape","role","lifecycle","boundary"].',
     );
 
     Axes.register('tenancy', Tenancy);

@@ -130,7 +130,7 @@ export class Card<T = Values<Fields>> {
 function describeExtension(field: Field, key: string): FieldExtension | undefined {
   const extension: Record<string, unknown> = {};
   for (const slot of Axes.names) {
-    const declared = (field as unknown as Record<string, unknown>)[slot];
+    const declared = field.stated(slot);
     if (declared === undefined) continue;
     const form = CardForms.find(slot);
     const wire = form ? form.describe(declared, key) : declared;
@@ -145,7 +145,6 @@ function describeField(field: Field, key: string): FieldDescriptor {
   // The shape IS JSON Schema, so it lands whole rather than key by key — which is what let
   // it be copied under a computed key into a type that names its own.
   const descriptor: FieldDescriptor = clean({ ...field.shape }) as FieldDescriptor;
-  if (field.meta?.description) descriptor.description = field.meta.description;
   const extension = describeExtension(field, key);
   if (extension) descriptor['x-fougere'] = extension;
 
@@ -182,7 +181,7 @@ function reconstructShape(property: FieldDescriptor): Field['shape'] | undefined
 
   // `describeField` writes the shape whole, so it is read whole: a list of keywords here
   // would be a second inventory, and the one that forgets a keyword loses it in silence.
-  const { 'x-fougere': _extension, description: _description, ...shape } = property;
+  const { 'x-fougere': _extension, ...shape } = property;
   if (shape.items) shape.items = reconstructShape(shape.items) as FieldDescriptor;
 
   return clean(shape) as Field['shape'];
@@ -214,14 +213,7 @@ function reconstructField(
     if (wire !== undefined) axes[slot] = form ? form.reconstruct(wire, resolve) : wire;
   }
 
-  return new Field({
-    shape,
-    ...axes,
-    meta:
-      property.description !== undefined
-        ? { description: property.description }
-        : undefined,
-  } as never, key);
+  return new Field({ shape, ...axes } as never, key);
 }
 
 /**
