@@ -30,8 +30,9 @@ const STATED = new Map([
     'verdict, and neither owns the other. Nesting `validator/` under `field/` would say the ' +
     'field owns the decision, which `FieldDeclarationValidator.of(value)` denies.'],
   ['packages/schema axis↔field',
-    'Type-only, two edges: an axis reads the field it qualifies, and a field declares ' +
-    'the axes it carries. Mutual by definition — neither can be named without the other.'],
+    'Type-only both ways: an axis reads the field it qualifies AND declares, by augmenting ' +
+    '`FougereFieldAxes`, the member it writes on one — while a field names the axes it ' +
+    'carries. Mutual by definition — neither can be named without the other.'],
   ['packages/schema entity↔field',
     'Type-only and shallow: an entity states `unique`, `adapters` and `previousNames` ' +
     'about ITSELF and the field set reads them, while the two declarations name `Fields` ' +
@@ -50,6 +51,16 @@ function tsFiles(dir: string, out: string[] = []): string[] {
 
   return out;
 }
+
+/**
+ * What one file names of another: the `from` of an import or export, and the module a
+ * `declare module '…'` augments. The second has no `from`, so it was invisible here while
+ * being exactly what this guard is for — `axis/lifecycle/Lifecycle.ts` declaring the member
+ * it writes on a field reaches `field/` and imports nothing from it.
+ */
+const REACHES = /(?:from|declare\s+module)\s+'(\.[^']*)'/g;
+
+const augments = (line: string): boolean => /^\s*declare\s+module\b/.test(line);
 
 /** Erased by tsc: `import type {…}`, or every specifier prefixed with `type`. */
 function typeOnly(line: string): boolean {
@@ -73,16 +84,19 @@ function edgesOf(pkg: string): Map<string, Edge[]> {
   for (const file of tsFiles(root)) {
     const rel = path.relative(root, file);
     const text = readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*/g, '');
-    for (const m of text.matchAll(/from '(\.[^']*)'/g)) {
-      const line = text.slice(text.lastIndexOf('\n', m.index) + 1, m.index);
-      if (!/^\s*(import|export)\b/.test(line)) continue; // a string, not an import
+    for (const m of text.matchAll(REACHES)) {
+      // The WHOLE line, because `declare module` opens it and `from` sits in the middle of one.
+      const ends = text.indexOf('\n', m.index);
+      const line = text.slice(text.lastIndexOf('\n', m.index) + 1, ends === -1 ? text.length : ends);
+      if (!/^\s*(import|export|declare)\b/.test(line)) continue; // a string, not a declaration
       const target = path.relative(root, path.resolve(path.dirname(file), m[1].replace(/\.js$/, '.ts')));
       const [a, b] = [familyOf(rel), familyOf(target)];
       if (a === b) continue;
       const key = `${a} ${b}`;
       const found = edges.get(key) ?? [];
       edges.set(key, found);
-      found.push({ from: rel, to: target, value: !typeOnly(line) });
+      // An augmentation emits nothing, whatever its specifiers say.
+      found.push({ from: rel, to: target, value: !augments(line) && !typeOnly(line) });
     }
   }
 
