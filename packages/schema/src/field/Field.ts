@@ -9,16 +9,6 @@ import { FieldValueValidator } from '../validator/FieldValueValidator.js';
 import { dotted } from '../lib/ValidationResult.js';
 import { SchemaError } from '../SchemaError.js';
 
-/**
- * Where a shared option lands: `default` IS a lifecycle rule and `description` IS a JSON Schema
- * keyword, so it belongs to the shape rather than beside it.
- * The fact is stated here alone, so neither a word nor this class writes the conversion.
- */
-const SHARED: Readonly<Record<string, readonly [string, ...string[]]>> = {
-  default: ['lifecycle', 'create', 'value'],
-  description: ['shape', 'description'],
-};
-
 /** The sentence any word admits, whatever it shapes — a relation and a date carry one too. */
 export interface Described {
   description?: string;
@@ -29,7 +19,7 @@ export interface Shared<T> extends Described {
   default?: T;
 }
 
-interface FieldDeclaration extends FougereFieldAxes {
+export interface FieldDeclaration extends FougereFieldAxes {
   shape: Shape;
   role?: RoleRules;
   lifecycle?: LifecycleRules;
@@ -56,10 +46,10 @@ export class Field<T = unknown> {
 
     this.shape = init.shape;
 
-    const stated = init as unknown as Record<string, unknown>;
-
-    for (const name of Axes.names) {
-      (this as unknown as Record<string, unknown>)[name] = stated[name];
+    for (const name of Axes.names as (keyof FieldDeclaration)[]) {
+      Object.defineProperty(this, name, {
+        value: init[name], writable: true, enumerable: true, configurable: true,
+      });
     }
 
     const create = this.lifecycle?.create;
@@ -78,12 +68,23 @@ export class Field<T = unknown> {
   }
 
   /**
-   * What this field states under one axis, a fourth one declared outside included. The axes
-   * are members, so reading one by NAME is the one cast a field owns; three callers wrote it
-   * themselves.
+   * What this field declares on ONE axis, a fourth one registered outside included. An axis is
+   * a member, so it is read by NAME, and three callers reached for it through a cast of their
+   * own before this existed.
    */
-  stated(name: string): unknown {
-    return (this as unknown as Record<string, unknown>)[name];
+  axis(name: keyof FieldDeclaration): unknown {
+    const declared: FieldDeclaration = this;
+
+    return declared[name];
+  }
+
+  /** Every axis it declares, and nothing for the ones it says nothing on. */
+  get axes(): Record<string, unknown> {
+    return Object.fromEntries(
+      (Axes.names as (keyof FieldDeclaration)[])
+        .map((name) => [name, this.axis(name)])
+        .filter(([, declared]) => declared !== undefined),
+    );
   }
 
   with<U = T>(overrides: Partial<FieldDeclaration>): Field<U> {
@@ -91,23 +92,21 @@ export class Field<T = unknown> {
   }
 
   /**
-   * What a word admits whatever its shape, written where `SHARED` says it lands.
-   * FR : ce que tout mot admet quelle que soit sa forme, écrit là où `SHARED` dit.
+   * What a word admits whatever its shape, and where it lands: `description` IS a JSON Schema
+   * keyword, `default` IS a lifecycle rule. Stated here alone, so no word writes the conversion.
+   * FR : ce que tout mot admet quelle que soit sa forme, et où ça atterrit.
    * `text({ max: 200 }).setShared({ description: 'The title' })` → `shape.description`
    */
   setShared(opts?: Shared<T>): Field<T> {
-    const given = opts as Record<string, unknown> | undefined;
-    const stated = this as unknown as Record<string, object | undefined>;
-    const overrides: Record<string, unknown> = {};
+    if (!opts) return this;
 
-    for (const [option, [name, ...under]] of Object.entries(SHARED)) {
-      const value = given?.[option];
+    const overrides: Partial<FieldDeclaration> = {};
 
-      if (value === undefined) continue;
+    if (opts.description !== undefined)
+      overrides.shape = { ...this.shape, description: opts.description };
 
-      const member = under.reduceRight<unknown>((held, key) => ({ [key]: held }), value);
-      overrides[name] = { ...(overrides[name] ?? stated[name]), ...(member as object) };
-    }
+    if (opts.default !== undefined)
+      overrides.lifecycle = { ...this.lifecycle, create: { value: opts.default } };
 
     return Object.keys(overrides).length ? this.with<T>(overrides) : this;
   }

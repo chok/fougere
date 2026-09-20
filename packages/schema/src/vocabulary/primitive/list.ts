@@ -1,4 +1,3 @@
-import { Axes } from '../../axis/Axes.js';
 import { Field, type Shared } from '../../field/Field.js';
 import { SchemaError } from '../../SchemaError.js';
 
@@ -14,11 +13,11 @@ export interface ListOptions<T = unknown> extends Shared<T[]> {
  * `list(text(), { max: 5 })` → `{ type: 'array', items: { type: 'string' }, maxItems: 5 }`
  */
 export function list<T>(item: Field<T>, opts?: ListOptions<T>): Field<T[]> {
-  const stated = Axes.names.filter((name) => item.stated(name));
+  const axes = Object.keys(item.axes);
 
-  if (stated.length)
+  if (axes.length)
     throw new SchemaError(
-      `list() takes the shape of an element — ${stated.join(', ')} says nothing of one`,
+      `list() takes the shape of an element — ${axes.join(', ')} says nothing of one`,
     );
 
   return new Field<T[]>({

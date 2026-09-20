@@ -129,9 +129,7 @@ export class Card<T = Values<Fields>> {
  */
 function describeExtension(field: Field, key: string): FieldExtension | undefined {
   const extension: Record<string, unknown> = {};
-  for (const name of Axes.names) {
-    const declared = field.stated(name);
-    if (declared === undefined) continue;
+  for (const [name, declared] of Object.entries(field.axes)) {
     const form = CardForms.find(name);
     const wire = form ? form.describe(declared, key) : declared;
     if (wire !== undefined) extension[name] = wire;

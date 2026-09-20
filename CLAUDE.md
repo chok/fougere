@@ -232,7 +232,13 @@ and what it reads is the instance: `Lifecycle.of(field).immutable`. The trio eac
 axis object, reading — was one subject cut in three, and `slot` was the name written a second
 time beside the key `Axes` already holds. `slot` is gone as a WORD too: the registry says
 `register(name, …)` and `Axes.names`, so a reader that called the same thing a slot was a
-second vocabulary for one subject. The two conversions are OPTIONAL and only `role` states
+second vocabulary for one subject. `Field.axis(name)` is where one is read by name and
+`Field.axes` where they are read together, and the cast is on the NAME — `Axes.names as (keyof
+FieldDeclaration)[]`, true because a registry answers strings — never on the field, which was
+`as unknown as Record<string, unknown>` at three call sites. `Reflect.get` is the same hole
+under another name and `anti-slop` refuses it. WRITING a member still needs
+`Object.defineProperty`: a union of keys is not assignable, and it passes through no setter,
+which is what had `Object.assign(this, init)` refused over `__proto__`. The two conversions are OPTIONAL and only `role` states
 them: its card carries a NAME where the declaration carries a function, where `lifecycle` and
 `boundary` travel as themselves and used to write `(value) => value` twice. A class cannot
 `implements` an axis — the axis is its STATIC side — so `Axes.register` is where it is checked.

@@ -1,4 +1,4 @@
-import { Field } from '../field/Field.js';
+import { Field, type FieldDeclaration } from '../field/Field.js';
 import { Axes } from '../axis/Axes.js';
 import { dequal } from 'dequal';
 import { SchemaError } from '../SchemaError.js';
@@ -22,19 +22,19 @@ export type FieldWord = (field: Field<any>) => Field<any>;
  */
 function merge(word: string, field: Field, given: Partial<Field>): Partial<Field> {
   const merged: Record<string, unknown> = {};
-  const stated = given as Record<string, unknown>;
   if ('shape' in given) merged.shape = given.shape;
+  const stated: Partial<FieldDeclaration> = given;
 
-  for (const name of Axes.names) {
+  for (const name of Axes.names as (keyof FieldDeclaration)[]) {
     const members = stated[name];
     if (members === undefined) continue;
-    const already = field.stated(name) as Record<string, unknown> | undefined;
-    if (typeof members !== 'object' || members === null || typeof already !== 'object') {
+    const already = field.axis(name);
+    if (typeof members !== 'object' || members === null || typeof already !== 'object' || already === null) {
       merged[name] = members;
       continue;
     }
     for (const [member, value] of Object.entries(members)) {
-      const previous = already?.[member];
+      const previous = (already as Record<string, unknown>)[member];
       if (previous === undefined || dequal(previous, value)) continue;
       throw new SchemaError(
         `vocabulary: \`${word}\` states ${name}.${member} = ${JSON.stringify(value)}, but the ` +
