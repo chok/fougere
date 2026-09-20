@@ -1,7 +1,6 @@
 import { Field, type Shared } from '../../field/Field.js';
 import type { SchemaView } from '../../SchemaView.js';
 import { InputValidator } from '../../validator/InputValidator.js';
-import { isObject } from '../../lib/utils.js';
 import { SchemaError } from '../../SchemaError.js';
 
 type Entity = SchemaView & (new (...args: never[]) => unknown);
