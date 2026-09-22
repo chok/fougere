@@ -15,6 +15,7 @@ import { JOURNAL, type Journal } from '../dispatch/Journal.js';
 import type { RelationCheck } from '../dispatch/RelationCheck.js';
 import { refusalOf, type Diagnostic } from '../diagnostic.js';
 import type { App } from './App.js';
+import type { Extension } from './Extension.js';
 import type { CreateAppOptions } from './CreateAppOptions.js';
 import type { AppMiddleware } from '../wire/AppMiddleware.js';
 import { Carry } from '../builtin/Carry.js';
@@ -23,8 +24,6 @@ import type { LogRecord } from '../builtin/LogRecord.js';
 import LogLine, { CARRIES_LINE } from '../builtin/LogLine.js';
 import { emitKeyOf, type Emit } from '../wire/Emit.js';
 
-/** The fact the boot announces, spelled once. */
-const LOG_LINE = lowerFirst(LogLine.name);
 import { Config } from '../builtin/config.js';
 import { createRemoteRouter, createRemoteFacade, type RemoteRouter } from './remote.js';
 import type { Peer } from './Peer.js';
@@ -37,8 +36,7 @@ import { resolveEffectiveOperations, type EffectiveOperationModel } from '../Eff
 import { type EffectiveOperationsMap } from '../EffectiveOperationsMap.js';
 
 import { InFlight } from '../dispatch/InFlight.js';
-// The keys, each read from where its concept is declared — never respelled here.
-import { RPC_ENTITY, type RpcAnswer } from '../wire/RpcAnswer.js';
+import { RPC_ENTITY } from '../wire/RpcAnswer.js';
 import { Invocation } from '../wire/Invocation.js';
 import { addressOf, facadeKeyOf, isFacadeKey } from '../wire/Facade.js';
 import { identityCardOf } from './card.js';
@@ -58,6 +56,8 @@ import { OperationRoute } from '../dispatch/OperationRoute.js';
 import { remoteRoutes } from '../dispatch/remoteRoutes.js';
 import { RouteRegistry } from '../dispatch/RouteRegistry.js';
 import { facadeOperations } from '../entry/facade.js';
+
+const LOG_LINE = lowerFirst(LogLine.name);
 
 /** The one wording for "nobody hosts this here", with both ways out. */
 const notLoaded = (entity: string) =>
@@ -367,7 +367,6 @@ interface Hosted {
   fronds: Fronds;
   container: Container;
   options: CreateAppOptions;
-  declaredRemotes: [string, string][];
   remoteRouter: RemoteRouter | undefined;
   entityByName: Map<string, SchemaView>;
   frondOf: Map<string, string>;
@@ -375,7 +374,7 @@ interface Hosted {
 }
 
 function hostingFor(
-  { fronds, container, options, declaredRemotes, remoteRouter, entityByName, frondOf, storageOf }: Hosted,
+  { fronds, container, options, remoteRouter, entityByName, frondOf, storageOf }: Hosted,
 ): { hosting: Hosting; journalOf: () => Journal | undefined } {
   // What carries a release writes none: an instrumentation frond's own rows are kept while a
   // release happens, and journalling them would begin one inside the one being written down.
@@ -409,7 +408,7 @@ function hostingFor(
     // off a card, while the question here is asked of a PROCESS about rows it may be alone in
     // knowing about. Nothing is cached — a peer that was down at boot answers the next call.
     peers: () => (options.remoteTransport
-      ? declaredRemotes.map(([, url]) => peerOver(options.remoteTransport!(url)))
+      ? Object.values(options.remotes ?? {}).map((url) => peerOver(options.remoteTransport!(url)))
       : []),
     peerOf: (entity) => (remoteRouter ? peerBehind(entity, remoteRouter) : undefined),
   };
@@ -535,123 +534,184 @@ function readings(
   return { resolve, schemaFor, facadeFor, operationsFor, presenterFor };
 }
 
+/**
+ * Every level told to close even when one refuses, the refusals leaving together — the rule
+ * `Lifecycle.down` applies inside its list, applied across the levels. An extension's refusals
+ * are already an `AggregateError`, and are flattened into the one list.
+ */
+async function closeAll(levels: readonly (() => unknown)[]): Promise<void> {
+  const refused: unknown[] = [];
+  for (const level of levels) {
+    try {
+      await level();
+    } catch (error) {
+      if (error instanceof AggregateError) refused.push(...error.errors);
+      else refused.push(error);
+    }
+  }
+
+  if (refused.length > 0) {
+    throw new AggregateError(refused, `${refused.length} refusal(s) while releasing the app`);
+  }
+}
+
+/**
+ * Registered under the class name, for type-based DI. A logger holds no level — it reads
+ * `setLogLevel`'s at each line — and a frond declaring `class X extends Logger` takes the key.
+ */
+function registerBuiltins(container: Container, carry: Carry): void {
+  container.registerValue('Logger', new Logger('app', { carry }));
+  container.register('Config', Config, { lifetime: 'singleton' });
+}
+
+/** `remotes:` IS the topology statement: the frond's code may sit here, it runs elsewhere. */
+function remoteRouterOf(options: CreateAppOptions): RemoteRouter | undefined {
+  const declared = Object.entries(options.remotes ?? {});
+  if (declared.length === 0) return undefined;
+
+  if (!options.remoteTransport) {
+    throw new Error(
+      'createApp: `remotes` is declared but `remoteTransport` is missing — pass one (e.g. from @fougere/transport-http).',
+    );
+  }
+
+  return createRemoteRouter(Object.fromEntries(declared), options.remoteTransport);
+}
+
+/** Every check of a phase, said at once — a boot that stops at the first shows the next after a restart. */
+function refuseWhatDoesNotHold(refused: Diagnostic[]): void {
+  const refusal = refusalOf(refused, 'declaration(s) that do not hold');
+  if (refusal) throw refusal;
+}
+
+/**
+ * A `ports:` key no port matched reads as a choice that was made. Said once every frond is
+ * installed: the entry is app-wide, and no single frond can tell a typo from a neighbour's port.
+ */
+function warnAboutUnboundPorts(options: CreateAppOptions, boundPorts: Set<string>, log: Logger): void {
+  const unbound = Object.keys(options.ports ?? {}).filter((port) => !boundPorts.has(port));
+  if (unbound.length === 0) return;
+
+  log.warn(
+    `[ports] ${unbound.join(', ')} — named in fougere.config.ts, but no scanned class extends `
+    + 'them, so nothing was chosen. Check the spelling, or drop the entry.',
+  );
+}
+
+/** Read from who SUBSCRIBED, so a third party's destination is left alone by the two middlewares that observe every operation. */
+function markLineCarriers(emissions: Emissions): void {
+  for (const facade of emissions.facadesFor(LOG_LINE)) {
+    CARRIES_LINE.add(addressOf(facade));
+    CARRIES_LINE.add(facade);
+  }
+}
+
+/**
+ * A handler another process serves: a stand-in for whoever asks for it by type, and a route for
+ * whoever calls it. A dependency names the type as written — `ProductHandler` — while a card
+ * declares `product`.
+ */
+function answerRemotes(
+  { container, routeRegistry, dispatcher, getMiddlewares }: Pick<Assembly, 'container' | 'routeRegistry' | 'dispatcher' | 'getMiddlewares'>,
+  remoteRouter: RemoteRouter,
+): void {
+  container.setFallback((name) => (isFacadeKey(name) ? facadeOperations(dispatcher, addressOf(name)) : undefined));
+
+  const remoteFacades = new Map<string, Record<string, Function>>();
+  routeRegistry.addResolver(remoteRoutes((entity) => {
+    const known = remoteFacades.get(entity);
+    if (known) return known;
+    const facade = createRemoteFacade(entity, remoteRouter, getMiddlewares);
+    remoteFacades.set(entity, facade);
+
+    return facade;
+  }));
+}
+
+/** Refused rather than replaced: two declarations of one name would make the answer depend on wiring order. */
+function serveRpcOn(routeRegistry: RouteRegistry): App['serveRpc'] {
+  return (op, answer) => {
+    const address = new RouteAddress({ entity: 'rpc', operation: op });
+    if (routeRegistry.find(address)) {
+      throw new Error(
+        `[claim] rpc operation '${op}' is already served; a second declaration would depend on wiring order.\n`
+        + '  Two extensions declare it — keep one out of `extensions:`.',
+      );
+    }
+
+    routeRegistry.register(new OperationRoute('system', address, (call) => answer(call.invocation, call.address.surface)));
+  };
+}
+
+/** A frond's extension travels with its code, so it mounts on whichever process serves that frond. */
+function frondExtensions(fronds: Fronds): Extension[] {
+  return fronds.flatMap((frond) => (frond.extensions ?? []).map((one) => ({ name: one.name, ...one.extension })));
+}
+
+/**
+ * The boot's held lines, and every line after them, handed to the app's destinations — or let go
+ * when it has none. After the ascent, because handing them over resolves the destination, and what
+ * an extension's destination depends on is registered by that extension's `up`: resolved before,
+ * every held line died on `'LogRing' is not registered` (`demos/observability`). A line keeps
+ * `at`, when it was WRITTEN, which for a held boot line is not when it is handed over.
+ */
+function announceLines(emissions: Emissions, container: Container, carry: Carry): (() => void) | undefined {
+  if (!emissions.listensTo().includes(LOG_LINE)) {
+    carry.forget();
+
+    return undefined;
+  }
+
+  const emit = container.resolve<Emit<LogLine>>(emitKeyOf(LogLine.name));
+
+  return carry.to(({ at, ...line }: LogRecord) => void emit({ ...line, at: new Date(at) }));
+}
+
 /** Bootstrap a fougere application. */
 export async function createApp(options: CreateAppOptions): Promise<App> {
   const container = (options.createContainer ?? createContainer)();
-
-  // Held out here, and not where the ascent reads it, because releasing needs it and
-  // releasing has to work from the first line the boot takes something.
-  // The conventional ascent, ordered here: tables, then rows, then whatever the host took
-  // on. Four hosts assembled these two members themselves — the order is not theirs to
-  // choose, and a host that forgot lost its migration in silence.
-  const appLifecycle = new AppLifecycle().add(
-    migrating(options.migrate),
-    seeding(),
-    ...(options.extensions ?? []),
-  );
-  /** The app once it exists — a refusal before that releases the two levels that do. */
-  let built: App | undefined;
-  /** Where THIS boot's lines wait — never a process-wide slot, see `Carry`. */
+  // Tables, then rows, then whatever the host took on — the order is not a host's to choose.
+  const appLifecycle = new AppLifecycle().add(migrating(options.migrate), seeding(), ...(options.extensions ?? []));
   const carry = new Carry();
-  /** Given back by `carry.to`, so a released app stops writing into a dead container. */
+  let built: App | undefined;
   let stopAnnouncing: (() => void) | undefined;
 
-  /**
-   * Everything this app holds, let go in reverse of how it was taken: what an extension took on
-   * last, then the container's own, then whoever handed a resource in.
-   */
+  /** What an extension took on last, then the container's own, then whoever handed a resource in. */
   const release = async (): Promise<void> => {
-    // Every level is told to close even when one refuses, and the refusals leave together —
-    // the rule `Lifecycle.down` applies INSIDE its list, applied ACROSS the three. Stated
-    // there and broken here, a refusing extension took the container and the connection
-    // down with it, which is the leak this gesture exists to prevent.
-    const refused: unknown[] = [];
-    // Whatever is still held will never reach a destination — the console had it.
     stopAnnouncing?.();
     carry.forget();
-    const levels = [
+
+    await closeAll([
       ...(built ? [() => appLifecycle.down(built!)] : []),
       () => container.dispose(),
       () => options.onDispose?.(),
-    ];
-    for (const level of levels) {
-      try {
-        await level();
-      } catch (error) {
-        // Flattened one level: an extension's refusals are already an AggregateError, and
-        // nesting them would make the caller unwrap twice to read one list.
-        if (error instanceof AggregateError) refused.push(...error.errors);
-        else refused.push(error);
-      }
-    }
-    if (refused.length > 0) {
-      throw new AggregateError(refused, `${refused.length} refusal(s) while releasing the app`);
-    }
+    ]);
   };
 
   try {
-    // Boot chatter is debug by default; a host (e.g. the CLI) can quiet it.
     const log = new Logger('boot:app', { carry });
-
-    // Builtins — registered under class name (PascalCase) for type-based DI.
-    // No level here and none anywhere: a logger consults `setLogLevel`'s value at each
-    // emission, so this instance survives a level change and so does every handler that
-    // was handed it. A frond declaring `class X extends Logger` takes this key over,
-    // like any other port.
-    container.registerValue('Logger', new Logger('app', { carry }));
-    container.register('Config', Config, { lifetime: 'singleton' });
+    registerBuiltins(container, carry);
     log.debug('builtins registered (Logger, Config)');
 
     const { fronds, operationModel } = await readFronds(options, log);
-
-    // Remote routing — validated at boot: declaring remotes without a transport is a config error.
-    // A remote declaration wins over local presence: `remotes: { blog: url }` IS
-    // the topology statement — the frond's code may sit in fronds/**, it runs elsewhere.
-    const declaredRemotes = Object.entries(options.remotes ?? {});
-    if (declaredRemotes.length > 0 && !options.remoteTransport) {
-      throw new Error(
-        'createApp: `remotes` is declared but `remoteTransport` is missing — pass one (e.g. from @fougere/transport-http).',
-      );
-    }
-    const remoteRouter = declaredRemotes.length > 0 && options.remoteTransport
-      ? createRemoteRouter(Object.fromEntries(declaredRemotes), options.remoteTransport)
-      : undefined;
-
+    const remoteRouter = remoteRouterOf(options);
     const { inflight, routeRegistry, dispatchLifecycle, dispatcher, localDispatcher, getMiddlewares, use } =
       dispatching(options, log, fronds, () => journalOf());
 
-    /** What every check of this boot writes into — refused together, once they have all run. */
     const refused: Diagnostic[] = [];
-    const relations: RelationCheck[] = [];
     keyClaims(fronds, options.remotes, refused);
-    // Said before anything is installed: a key claimed twice makes every later error worse —
-    // the route registry collides first, and names a route instead of the two fronds.
-    const claimed = refusalOf(refused, 'declaration(s) that do not hold');
-    if (claimed) throw claimed;
+    refuseWhatDoesNotHold(refused);
 
     const { entityByName, frondOf, emissions } = whatTheAppKnows(fronds, container, options, refused);
-
-    /** Canonical operation tables, indexed by the same audience key as their facades. */
     const effectiveByKey = new Map<string, EffectiveOperationsMap>();
-
-    const contractsOf = (operations: EffectiveOperationsMap): OperationsMap => new Map(
-      [...operations].map(([name, operation]) => [name, operation as OperationContract] as const),
-    );
-
     const storageFor = <T = Record<string, unknown>>(entity: string): Storage<T> | undefined =>
       ownedBy<Storage<T>>(fronds, container, entity, storageKeyOf(entity));
-
     const { hosting, journalOf } = hostingFor({
-      fronds, container, options, declaredRemotes, remoteRouter, entityByName, frondOf, storageOf: storageFor,
+      fronds, container, options, remoteRouter, entityByName, frondOf, storageOf: storageFor,
     });
 
-    // Every port an implementation was bound to, so a `ports:` entry that named none
-    // can say so rather than look obeyed.
+    const relations: RelationCheck[] = [];
     const boundPorts = new Set<string>();
-
-    // Register frond scopes
-    // What every frond is installed into, and reads while it is: one container, one route
-    // table, one emission list — so what a frond serves is there for the next one to find.
     const assembly: Assembly = {
       container, routeRegistry, emissions, dispatcher, localDispatcher, effectiveByKey,
       boundPorts, refused, relations, hosting, operationModel, entityByName, frondOf, contractsOf,
@@ -661,58 +721,15 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
     warnAboutRelations(relations, hosting, log);
     refused.push(...unpaired(fronds.flatMap((frond) => frond.entities), hosting));
+    refuseWhatDoesNotHold(refused);
+    warnAboutUnboundPorts(options, boundPorts, log);
 
-    // Every check of the install, said at once — a boot that stops at the first makes the
-    // next one visible only after a fix and a restart.
-    const bootRefusal = refusalOf(refused, 'declaration(s) that do not hold');
-    if (bootRefusal) throw bootRefusal;
-
-    // A `ports:` key that matched no port anywhere reads as a choice that was made, and
-    // was not. Said once, at the end, because the entry is app-wide while a port is a
-    // frond's — no single frond can tell whether a key is a typo or a neighbour's.
-    const unused = Object.keys(options.ports ?? {}).filter((port) => !boundPorts.has(port));
-    if (unused.length > 0) {
-      log.warn(
-        `[ports] ${unused.join(', ')} — named in fougere.config.ts, but no scanned class extends `
-        + 'them, so nothing was chosen. Check the spelling, or drop the entry.',
-      );
-    }
-
-    // Once every facade exists: what is announced here and what is listened to are both known.
+    // A pipe order and an `Emit<T, A>` are read here, once every facade exists.
     emissions.register();
+    refuseWhatDoesNotHold(refused);
+    markLineCarriers(emissions);
 
-    // The third phase: what a fact's links and its answer type state. Said after `register`,
-    // which is where a pipe order and an `Emit<T, A>` are read.
-    const announced = refusalOf(refused, 'declaration(s) that do not hold');
-    if (announced) throw announced;
-
-    // Which facades carry a line, read from who SUBSCRIBED — so a third party's destination
-    // is left alone by the two middlewares that observe every operation.
-    for (const facade of emissions.facadesFor(LOG_LINE)) {
-      CARRIES_LINE.add(addressOf(facade));
-      CARRIES_LINE.add(facade);
-    }
-
-    /** The last resort, held by the container so every resolution path shares it. */
-    container.setFallback((name) => {
-      if (!remoteRouter || !isFacadeKey(name)) return undefined;
-
-      // Façade-shaped stand-in; routing happens lazily at the first call. A DEPENDENCY names
-      // the type as written — `ProductHandler` — while a card declares `product`.
-      return facadeOperations(dispatcher, addressOf(name));
-    });
-
-    if (remoteRouter) {
-      const remoteFacades = new Map<string, Record<string, Function>>();
-      routeRegistry.addResolver(remoteRoutes((entity) => {
-        const known = remoteFacades.get(entity);
-        if (known) return known;
-        const facade = createRemoteFacade(entity, remoteRouter, getMiddlewares);
-        remoteFacades.set(entity, facade);
-
-        return facade;
-      }));
-    }
+    if (remoteRouter) answerRemotes(assembly, remoteRouter);
 
     const { resolve, schemaFor, facadeFor, operationsFor, presenterFor } = readings({
       container, fronds, remoteRouter, localDispatcher, routeRegistry, effectiveByKey, log,
@@ -721,12 +738,8 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     const app: App = {
       container,
       fronds,
-      // What this app publishes, straight from fougere.config.ts — the facades read it,
-      // so an undeclared adapter serves nothing whatever a host mounted.
       adapters: options.adapters ?? {},
-      // Where a call goes, as DECLARED. Kept because a reader needs it beside what the
-      // runtime OBSERVED — `rpc.topology` calls a frond remote because it answered, never
-      // because a key said so, and the two disagree exactly when something is misconfigured.
+      // As DECLARED, beside what the runtime observes — the two disagree exactly when something is misconfigured.
       remotes: Object.freeze({ ...options.remotes }),
       dispatch: (call) => dispatcher.dispatch(call),
       local: localDispatcher,
@@ -742,26 +755,9 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       drain: (timeoutMs?: number) => drainCalls(inflight, timeoutMs),
       inFlight: () => inflight.count,
       [Symbol.asyncDispose]: release,
-      serveRpc(op: string, answer: RpcAnswer): void {
-        // Refused rather than replaced: two declarations of one name would make the answer
-        // depend on wiring order, and `discover` is in here precisely so it cannot be taken.
-        const address = new RouteAddress({ entity: 'rpc', operation: op });
-        if (routeRegistry.find(address)) {
-          throw new Error(
-            `[claim] rpc operation '${op}' is already served; a second declaration would depend on wiring order.\n`
-            + '  Two extensions declare it — keep one out of `extensions:`.',
-          );
-        }
-        routeRegistry.register(new OperationRoute(
-          'system',
-          address,
-          (call) => answer(call.invocation, call.address.surface),
-        ));
-      },
+      serveRpc: serveRpcOn(routeRegistry),
       extensions: () => appLifecycle.names(),
-      observe(observer) {
-        return dispatchLifecycle.add(observer);
-      },
+      observe: (observer) => dispatchLifecycle.add(observer),
       use(...args: [AppMiddleware] | [string, AppMiddleware]): void {
         return typeof args[0] === 'string'
           ? use(args[1] as AppMiddleware, args[0])
@@ -769,56 +765,18 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       },
     };
 
-    // The card is an rpc op like any other, so one registry answers and one refusal names
-    // what is served. A package's op is declared the same way, from outside.
-    // What a release is, resolved once and registered: a package that drives one asks for it
-    // by type, the way every other dependency is asked for.
     container.registerValue('Releasing', releasing(hosting));
-
     serveCoreRpc(app, hosting, storageFor);
 
-    // The last thing the boot does, and the first thing a release undoes. An extension may
-    // await here — which is what a provider needing to OPEN something could never do.
     built = app;
-
-    // What the FRONDS declared, folded in after what the host handed over — a frond's
-    // extension is written beside the code it instruments and travels with it, so it mounts
-    // on whichever process ends up serving that frond. Added here rather than at the top
-    // because the fronds are read below that line, and `up` has not run yet.
-    appLifecycle.add(...fronds.flatMap((frond) => (frond.extensions ?? []).map((one) => ({
-      name: one.name,
-      ...one.extension,
-    }))));
-
+    appLifecycle.add(...frondExtensions(fronds));
     await appLifecycle.up(app);
-
-    // The boot's own lines, and every line after them. Held until here because a boot
-    // writes most of what a process logs and writes it before any facade exists — so the
-    // lines that say what this app is made of are the ones a destination would miss.
-    // `LogLine` is core's for this reason: naming it costs no optional package.
-    //
-    // AFTER the ascent, because handing them over RESOLVES the destination, and what a
-    // destination an extension brought depends on is registered by that same extension's
-    // `up`: `calls()` registers `LogRing` and `ErrorRing` there, and `KeepHandler` asks for
-    // both. Resolved before the ascent, every held line died on `'LogRing' is not
-    // registered` — measured on `demos/observability`.
-    if (emissions.listensTo().includes(LOG_LINE)) {
-      const emit = container.resolve<Emit<LogLine>>(emitKeyOf(LogLine.name));
-      // `at` is the record's own epoch, and the entity says `created()` — so the line
-      // keeps WHEN IT WAS WRITTEN rather than when it was handed over, which for a held
-      // boot line is a different moment.
-      stopAnnouncing = carry.to(({ at, ...line }: LogRecord) => void emit({ ...line, at: new Date(at) }));
-    } else {
-      // No destination in this app: the console had them, and holding more would grow.
-      carry.forget();
-    }
+    stopAnnouncing = announceLines(emissions, container, carry);
 
     return app;
   } catch (cause) {
-    // The caller cannot release what a failed boot took: it handed `onDispose` over before
-    // this call and never receives the app that would carry it back. Whoever opened a
-    // connection to give us would otherwise leak it on every refusal — a source, a scan
-    // that threw, a port bound twice, and not only an extension that refused to rise.
+    // The caller never receives the app that would carry `onDispose` back, so a refused boot
+    // releases what it took itself — a source, a scan that threw, a port bound twice.
     try {
       await release();
     } catch (refused) {
@@ -829,4 +787,9 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     }
     throw cause;
   }
+}
+
+/** The contract every effective operation already is — the façade reads nothing else. */
+function contractsOf(operations: EffectiveOperationsMap): OperationsMap {
+  return new Map([...operations].map(([name, operation]) => [name, operation as OperationContract] as const));
 }
