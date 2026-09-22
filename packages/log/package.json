@@ -1,6 +1,6 @@
 {
   "name": "@fougere/log",
-  "version": "0.12.2-alpha.0",
+  "version": "0.12.4-alpha.0",
   "description": "Logging for Fougere: a line is an announced fact, and a destination is a handler that accepts it. Ships the console one.",
   "keywords": [
     "fougere",
