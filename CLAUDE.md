@@ -861,10 +861,8 @@ X), `useFormFor` (contract, not rendering; local validator = remote validator), 
   `python3 scripts/stale-notes.py --since 7`. Measured over 31 entries: the six that were
   false all cited code touched in the last seven days.
 - Commits: title + 1-3 lines. Never `git add -A` (parallel sessions)
-- **Everything committed here is in English** — PR bodies, comments, tests, `README.md`,
-  `CLAUDE.md`. Two exceptions: `site/content/fr/`, a translation target, and the COMMIT
-  MESSAGES, which are in French — `git plan` reads this file to pick the language it
-  proposes them in.
+- **Everything committed here is in English** — commit messages, PR bodies, comments, tests,
+  `README.md`, `CLAUDE.md`. The one exception is `site/content/fr/`, a translation target.
 
 ## Known issues
 
