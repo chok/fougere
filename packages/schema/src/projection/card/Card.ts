@@ -1,4 +1,5 @@
 import { Axes } from '../../axis/Axes.js';
+import { Shapes } from '../../axis/shape/Shape.js';
 import { CardForms } from './CardForms.js';
 import { type Resolver } from '../../axis/Resolver.js';
 import { clean, isObject } from '../../lib/utils.js';
@@ -172,11 +173,7 @@ function originOf(schema: SchemaView): DerivedFrom | undefined {
  * `{ type: 'string', maxLength: 200 }` → the same shape `text({ max: 200 })` states
  */
 function reconstructShape(property: FieldDescriptor): Field['shape'] | undefined {
-  const types = Array.isArray(property.type)
-    ? property.type
-    : property.type
-      ? [property.type]
-      : [];
+  const types = Shapes.typesOf(property);
   if (!types.some((type) => type !== 'null')) return undefined;
 
   // `describeField` writes the shape whole, so it is read whole: a list of keywords here
