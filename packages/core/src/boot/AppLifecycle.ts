@@ -25,18 +25,29 @@ export class AppLifecycle {
   }
 
   async down(app: App): Promise<void> {
-    const refused: unknown[] = [];
-    for (const extension of [...this.members].reverse()) {
-      try {
-        await extension.down?.(app);
-      } catch (error) {
-        refused.push(error);
-      }
-    }
-    if (refused.length > 0) {
-      throw new AggregateError(refused, `${refused.length} extension(s) refused to release`);
+    await closeAll(
+      [...this.members].reverse().map((extension) => () => extension.down?.(app)),
+      'extension(s) refused to release',
+    );
+  }
+}
+
+/**
+ * Every level told to close even when one refuses, the refusals leaving together in one
+ * `AggregateError` — one already carried by a level is flattened into the list.
+ */
+export async function closeAll(levels: readonly (() => unknown)[], refusals: string): Promise<void> {
+  const refused: unknown[] = [];
+  for (const level of levels) {
+    try {
+      await level();
+    } catch (error) {
+      if (error instanceof AggregateError) refused.push(...error.errors);
+      else refused.push(error);
     }
   }
+
+  if (refused.length > 0) throw new AggregateError(refused, `${refused.length} ${refusals}`);
 }
 
 /** The replaceable migration slot of the application lifecycle. */

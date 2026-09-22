@@ -40,7 +40,7 @@ import { RPC_ENTITY } from '../wire/RpcAnswer.js';
 import { Invocation } from '../wire/Invocation.js';
 import { addressOf, facadeKeyOf, isFacadeKey } from '../wire/Facade.js';
 import { identityCardOf } from './card.js';
-import { AppLifecycle, migrating } from './AppLifecycle.js';
+import { AppLifecycle, closeAll, migrating } from './AppLifecycle.js';
 import { seeding } from './seed.js';
 
 import { storageKeyOf, type Storage } from '../storage/Storage.js';
@@ -246,24 +246,6 @@ function ownedBy<T>(fronds: Fronds, container: Container, entity: string, key: s
   const scope = container.resolve<Container>(scopeKey);
 
   return scope.has(key) ? scope.resolve<T>(key) : undefined;
-}
-
-/** Close the door, and answer once the calls already running are done. */
-async function drainCalls(inflight: InFlight, timeoutMs?: number): Promise<void> {
-  inflight.close();
-  if (timeoutMs === undefined) return inflight.whenIdle();
-
-  let timer: ReturnType<typeof setTimeout>;
-
-  await Promise.race([
-    inflight.whenIdle().then(() => clearTimeout(timer)),
-    new Promise<never>((_, reject) => {
-      timer = setTimeout(
-        () => reject(new Error(`[drain] ${inflight.count} call(s) still running after ${timeoutMs}ms`)),
-        timeoutMs,
-      );
-    }),
-  ]);
 }
 
 /** What a call goes through in this process, before any frond is installed into it. */
@@ -530,27 +512,6 @@ function readings(
 }
 
 /**
- * Every level told to close even when one refuses, the refusals leaving together — the rule
- * `Lifecycle.down` applies inside its list, applied across the levels. An extension's refusals
- * are already an `AggregateError`, and are flattened into the one list.
- */
-async function closeAll(levels: readonly (() => unknown)[]): Promise<void> {
-  const refused: unknown[] = [];
-  for (const level of levels) {
-    try {
-      await level();
-    } catch (error) {
-      if (error instanceof AggregateError) refused.push(...error.errors);
-      else refused.push(error);
-    }
-  }
-
-  if (refused.length > 0) {
-    throw new AggregateError(refused, `${refused.length} refusal(s) while releasing the app`);
-  }
-}
-
-/**
  * Registered under the class name, for type-based DI. A logger holds no level — it reads
  * `setLogLevel`'s at each line — and a frond declaring `class X extends Logger` takes the key.
  */
@@ -680,7 +641,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       ...(built ? [() => appLifecycle.down(built!)] : []),
       () => container.dispose(),
       () => options.onDispose?.(),
-    ]);
+    ], 'refusal(s) while releasing the app');
   };
 
   try {
@@ -747,7 +708,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       storageFor,
       presenterFor,
       dispose: release,
-      drain: (timeoutMs?: number) => drainCalls(inflight, timeoutMs),
+      drain: (timeoutMs?: number) => inflight.drain(timeoutMs),
       inFlight: () => inflight.count,
       [Symbol.asyncDispose]: release,
       serveRpc: serveRpcOn(routeRegistry),
