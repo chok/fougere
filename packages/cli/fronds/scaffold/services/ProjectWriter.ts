@@ -1,4 +1,6 @@
-import { cpSync, existsSync, renameSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { cpSync, existsSync, mkdirSync, renameSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type Conventions, DEFAULT_CONVENTIONS, frondPackage } from '@fougere/core';
@@ -38,6 +40,14 @@ const TEMPLATES = fileURLToPath(new URL('../../../templates/', import.meta.url))
  * `nuxt.config.ts` must say, and a copy of it here would be that knowledge written twice —
  * which is how `templates/apps/` came to hold one host while six were published.
  *
+ * Two ways to reach them, and the first is the monorepo's: a host is on disk there, and in
+ * every process that installed one for its own reasons.
+ */
+function starterOf(pkg: string): string | undefined {
+  return carried(pkg) ?? fetched(pkg);
+}
+
+/**
  * Resolved from the main entry and walked up to the manifest, because a host does not export
  * its own `package.json` and has no reason to.
  *
@@ -45,7 +55,7 @@ const TEMPLATES = fileURLToPath(new URL('../../../templates/', import.meta.url))
  * `import` condition, so the CJS resolver answers `ERR_PACKAGE_PATH_NOT_EXPORTED` for every
  * one of them.
  */
-function starterOf(pkg: string): string | undefined {
+function carried(pkg: string): string | undefined {
   let dir: string;
   try {
     dir = dirname(fileURLToPath(import.meta.resolve(pkg)));
@@ -58,23 +68,50 @@ function starterOf(pkg: string): string | undefined {
 }
 
 /**
- * The hosts this CLI can scaffold: its own `@fougere/*` dependencies that ship a starter.
+ * The starter of a host this process does not carry, read out of its published tarball.
+ *
+ * A host is no longer a `dependencies` entry: what is wanted of it is a directory of files, and
+ * npm answers a dependency by installing the whole tree behind it — `next` brought 300 MB and
+ * `nuxt` its own, so that 28 files weighing 112 KB could be copied. A tarball is 27 to 388 KB,
+ * and the peers it names are the scaffolded app's to install, never this CLI's.
+ *
+ * Pinned to `scaffoldVersion()` for the reason `pinVersions` states, and extracted under that
+ * version, so a second call reuses what the first unpacked and a released CLI never reads the
+ * starter of another one.
+ */
+function fetched(pkg: string): string | undefined {
+  const dir = join(tmpdir(), 'fougere-starter', `${pkg.replace('/', '-')}@${scaffoldVersion()}`);
+  const template = join(dir, 'package', 'template');
+  if (existsSync(template)) return template;
+
+  try {
+    mkdirSync(dir, { recursive: true });
+    const tarball = execFileSync('npm', ['pack', `${pkg}@${scaffoldVersion()}`, '--pack-destination', dir, '--silent'],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    execFileSync('tar', ['-xzf', join(dir, tarball), '-C', dir, 'package/template'], { stdio: 'ignore' });
+  } catch { return undefined; }
+
+  return existsSync(template) ? template : undefined;
+}
+
+/**
+ * The hosts this CLI can scaffold: the `@fougere/*` packages it is developed against.
  *
  * The dependency list IS the registry — nothing to declare, and a host added to the family
- * appears here the day the CLI depends on it.
+ * appears here the day the CLI names it. It names them under `devDependencies`, because what
+ * it wants of a host is a directory of files rather than a module to load, and `dependencies`
+ * is what had `npm create fougere` install Next.js and Nuxt to copy 28 files.
+ *
+ * The NAMES are read here and the FILES only where an app is written, so offering the list
+ * costs nothing: resolving all six would fetch six tarballs to print six words.
  */
-function hosts(): Map<string, string> {
+function hosts(): string[] {
   const manifest = JSON.parse(readFileSync(fileURLToPath(new URL('../../../package.json', import.meta.url)), 'utf8')) as
-    { dependencies?: Record<string, string> };
-  const found = new Map<string, string>();
+    { devDependencies?: Record<string, string> };
 
-  for (const pkg of Object.keys(manifest.dependencies ?? {})) {
-    if (!pkg.startsWith('@fougere/')) continue;
-    const starter = starterOf(pkg);
-    if (starter) found.set(pkg.slice('@fougere/'.length), starter);
-  }
-
-  return found;
+  return Object.keys(manifest.devDependencies ?? {})
+    .filter((pkg) => pkg.startsWith('@fougere/'))
+    .map((pkg) => pkg.slice('@fougere/'.length));
 }
 
 /** The version that scaffolds is the version the templates were written for. */
@@ -156,8 +193,8 @@ export default class ProjectWriter {
   /** Add an app (consumer) under apps/<name>, from the host package that owns its wiring. */
   addApp(wsDir: string, template: string, name: string): { path: string } {
     const dest = join(wsDir, 'apps', name);
-    const starter = hosts().get(template);
-    if (!starter) throw new Error(`No host ships a starter for '${template}'. Served: ${[...hosts().keys()].join(', ')}.`);
+    const starter = hosts().includes(template) ? starterOf(`@fougere/${template}`) : undefined;
+    if (!starter) throw new Error(`No host ships a starter for '${template}'. Served: ${hosts().join(', ')}.`);
 
     cpSync(starter, dest, { recursive: true });
     restoreGitignore(dest);
@@ -174,7 +211,7 @@ export default class ProjectWriter {
    * CLI depends on, so `fougere new` offers what is published rather than what was copied here.
    */
   listTemplates(kind: 'fronds' | 'apps'): string[] {
-    if (kind === 'apps') return [...hosts().keys()].sort();
+    if (kind === 'apps') return hosts().sort();
 
     const dir = join(TEMPLATES, kind);
     if (!existsSync(dir)) return [];

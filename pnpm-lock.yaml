@@ -1697,9 +1697,6 @@ importers:
       '@fougere/adapter-sql':
         specifier: workspace:*
         version: link:../adapter/sql
-      '@fougere/admin':
-        specifier: workspace:*
-        version: link:../app/admin
       '@fougere/compiler':
         specifier: workspace:*
         version: link:../compiler
@@ -1712,24 +1709,9 @@ importers:
       '@fougere/defaults':
         specifier: workspace:*
         version: link:../defaults
-      '@fougere/next':
-        specifier: workspace:*
-        version: link:../app/next
-      '@fougere/nuxt':
-        specifier: workspace:*
-        version: link:../app/nuxt
-      '@fougere/oclif':
-        specifier: workspace:*
-        version: link:../app/oclif
-      '@fougere/react':
-        specifier: workspace:*
-        version: link:../app/react
       '@fougere/schema':
         specifier: workspace:*
         version: link:../schema
-      '@fougere/svelte':
-        specifier: workspace:*
-        version: link:../app/svelte
       '@fougere/testing':
         specifier: workspace:*
         version: link:../testing
@@ -1752,6 +1734,24 @@ importers:
         specifier: ^2.1.1
         version: 2.1.1
     devDependencies:
+      '@fougere/admin':
+        specifier: workspace:*
+        version: link:../app/admin
+      '@fougere/next':
+        specifier: workspace:*
+        version: link:../app/next
+      '@fougere/nuxt':
+        specifier: workspace:*
+        version: link:../app/nuxt
+      '@fougere/oclif':
+        specifier: workspace:*
+        version: link:../app/oclif
+      '@fougere/react':
+        specifier: workspace:*
+        version: link:../app/react
+      '@fougere/svelte':
+        specifier: workspace:*
+        version: link:../app/svelte
       vitest:
         specifier: ^4.1.0
         version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(vite@8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))
