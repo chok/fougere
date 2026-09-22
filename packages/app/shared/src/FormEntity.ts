@@ -12,13 +12,6 @@ function defaultOf(field: Field): unknown {
   return Lifecycle.of(field).literal?.value;
 }
 
-/** The base JSON type of a shape — unwraps the `[T,'null']` union. */
-function baseType(type: unknown): string {
-  if (Array.isArray(type)) return (type.find((t) => t !== 'null') as string) ?? 'string';
-
-  return (type as string) ?? 'string';
-}
-
 /** The formats a browser has an input type for — the rest stay `text`, validated later. */
 const CONTROL_BY_FORMAT: Record<string, FormField['control']> = {
   'date-time': 'date',
