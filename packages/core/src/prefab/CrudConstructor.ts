@@ -1,10 +1,8 @@
 import { lowerFirst, type EntityConstructor, type SchemaView } from '@fougere/schema';
 import type { ListOptions } from '../storage/ListOptions.js';
-import type { ListResult } from '../storage/ListResult.js';
 import type { Storage } from '../storage/Storage.js';
 import type { OperationContract } from '../wire/OperationContract.js';
 import { targetOf } from './prefab.js';
-import type { CrudOpName } from './CrudOpName.js';
 import type { CrudViews } from './CrudViews.js';
 import { pageOf, type Page } from '../wire/Page.js';
 import type { CrudOps } from './CrudOps.js';
@@ -87,15 +85,6 @@ function crudOps(entity: SchemaView & { partial?: () => SchemaView }): Record<st
 function asCrudConstructor<T, V>(impl: object): CrudConstructor<T, V> {
   return impl as CrudConstructor<T, V>;
 }
-
-/** The view an op emits, fabricated. */
-type OutOf<V, K extends CrudOpName, T> =
-  // Bracketed on purpose: a naked `V extends …` DISTRIBUTES, and the no-view default
-  // is the empty map, whose `keyof` is `never` — distribution would then collapse
-  // every op's output to `never` instead of falling through to the entity.
-  [V] extends [EntityConstructor] ? InstanceType<V & EntityConstructor>
-  : K extends keyof V ? (V[K] extends EntityConstructor ? InstanceType<V[K]> : T)
-  : T;
 
 /** The prefab handler class — its ops, plus the statics the bootstrap and adapters read. */
 export interface CrudConstructor<T, V = {}> {

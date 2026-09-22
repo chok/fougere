@@ -459,8 +459,8 @@ function buildFacadeInto(
 
 export async function installFrond(frond: FrondDescriptor, assembly: Assembly): Promise<void> {
   const {
-    container, routeRegistry, emissions, dispatcher, localDispatcher, effectiveByKey,
-    boundPorts, refused, operationModel, entityByName, frondOf, contractsOf, getMiddlewares, use,
+    container, emissions, effectiveByKey,
+    boundPorts, refused, operationModel, entityByName, frondOf, contractsOf,
     log, options,
   } = assembly;
 

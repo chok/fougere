@@ -1,16 +1,6 @@
 import { lowerFirst } from '@fougere/schema';
 
 import type { InvocationContext } from './InvocationContext.js';
-import type { FougereOperations } from './FougereOperations.js';
-
-type Served = keyof FougereOperations & string;
-
-/**
- * Both halves below take the union through a type PARAMETER, which is what makes the
- * conditional distribute: `Served` is an alias, and an alias is matched whole — `'a.x' | 'b.y'`
- * does not extend `` `${string}.${string}` `` as one thing, so the naive form answers `never`.
- */
-type AddressIn<Key> = Key extends `${infer Address}.${string}` ? Address : never;
 
 /**
  * The facade built in front of a handler — the framework's second port, after `Storage`.
