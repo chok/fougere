@@ -1,5 +1,5 @@
 import { DEFAULT_CONVENTIONS, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, togetherKeyOf, type Conventions, type ConventionsInput, type Diagnostic, type ScanResult } from '@fougere/core';
-import { Fronds, awaitKeyOf, cardinalityOf, computeBindingPlan, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf, type ExtensionEntry } from '@fougere/core/descriptor';
+import { Fronds, addressOf, awaitKeyOf, cardinalityOf, computeBindingPlan, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf, type ExtensionEntry } from '@fougere/core/descriptor';
 import { getModuleLoader, loadFrondConfig } from '@fougere/core/node';
 import type { FrondConfig, ErrorCode } from '@fougere/core';
 import type { Signature } from '@fougere/core/descriptor';
@@ -116,13 +116,6 @@ function findWorkspaceRoot(from: string): string {
   }
 
   return resolvePath(from); // fallback: use project root itself
-}
-
-/** Strip the 'Handler' suffix → the name the handler answers to. */
-function toAddress(className: string): string {
-  const base = className.endsWith('Handler') ? className.slice(0, -7) : className;
-
-  return lowerFirst(base);
 }
 
 // Scan
@@ -479,7 +472,7 @@ async function toHandlerEntry(
     if (!(className in augmented)) augmented[className] = entityClass;
   }
 
-  const address = toAddress(ctor.name);
+  const address = addressOf(ctor.name);
   const declaredOps = (ctor as { __ops?: Record<string, OperationContract> }).__ops ?? {};
   const operations = await inferOperations(
     filePath,

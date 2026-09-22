@@ -1,3 +1,5 @@
+import { lowerFirst } from '@fougere/schema';
+
 import type { InvocationContext } from './InvocationContext.js';
 import type { FougereOperations } from './FougereOperations.js';
 
@@ -33,6 +35,21 @@ export type Facade<T> = {
 export function facadeKeyOf(entityName: string, surface?: string): string {
   return surface ? `${surface}:${entityName}Handler` : `${entityName}Handler`;
 }
+
+/**
+ * The address a handler answers at, read off its class name or its facade key — the dual of
+ * `facadeKeyOf`. `PostHandler` → `post`, `postHandler` → `post`.
+ */
+export function addressOf(name: string): string {
+  return lowerFirst(name.endsWith(HANDLER) ? name.slice(0, -HANDLER.length) : name);
+}
+
+/** A default facade's key — `postHandler`, never `admin:postHandler` nor `PostStorage`. */
+export function isFacadeKey(key: string): boolean {
+  return key.endsWith(HANDLER) && !key.includes(':');
+}
+
+const HANDLER = 'Handler';
 
 /** Where the contracts behind a façade live — the dual of `facadeKeyOf`. */
 export function contractsKeyOf(entityName: string, surface?: string): string {

@@ -41,7 +41,7 @@ import { InFlight } from '../dispatch/InFlight.js';
 // The keys, each read from where its concept is declared — never respelled here.
 import { RPC_ENTITY, type RpcAnswer } from '../wire/RpcAnswer.js';
 import { Invocation } from '../wire/Invocation.js';
-import { facadeKeyOf } from '../wire/Facade.js';
+import { addressOf, facadeKeyOf, isFacadeKey } from '../wire/Facade.js';
 import { identityCardOf } from './card.js';
 import { AppLifecycle, migrating } from './AppLifecycle.js';
 import { seeding } from './seed.js';
@@ -423,14 +423,11 @@ interface Serving {
 function readings(
   { container, fronds, remoteRouter, localDispatcher, routeRegistry, effectiveByKey, log }: Serving,
 ): Pick<App, 'resolve' | 'schemaFor' | 'facadeFor' | 'operationsFor' | 'presenterFor'> {
-  /** Stop taking calls, and resolve once the ones already running are done. */
   const resolve = <T>(name: string): T => {
     try {
       return container.resolve<T>(name);
     } catch (err) {
-      if (name.endsWith('Handler') && !name.includes(':') && !remoteRouter) {
-        throw new Error(notLoaded(name.replace(/Handler$/, '')));
-      }
+      if (isFacadeKey(name) && !remoteRouter) throw new Error(notLoaded(addressOf(name)));
       throw err;
     }
   };
@@ -732,23 +729,17 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     // Which facades carry a line, read from who SUBSCRIBED — so a third party's destination
     // is left alone by the two middlewares that observe every operation.
     for (const facade of emissions.facadesFor(LOG_LINE)) {
-      CARRIES_LINE.add(facade.replace(/Handler$/, '').replace(/^./, (c) => c.toLowerCase()));
+      CARRIES_LINE.add(addressOf(facade));
       CARRIES_LINE.add(facade);
     }
 
     /** The last resort, held by the container so every resolution path shares it. */
     container.setFallback((name) => {
-      if (!remoteRouter) return undefined;
-      if (!name.endsWith('Handler') || name.includes(':')) return undefined;
+      if (!remoteRouter || !isFacadeKey(name)) return undefined;
 
-      // Façade-shaped stand-in; routing happens lazily at the first call. Through
-      // `lowerFirst` because a DEPENDENCY names the type as written — `ProductHandler`,
-      // PascalCase — while a card declares `product`, so the raw strip asked the router for
-      // 'Product' and every by-type dependency on a remote handler answered NOT_FOUND.
-      return facadeOperations(
-        dispatcher,
-        lowerFirst(name.replace(/Handler$/, '')),
-      );
+      // Façade-shaped stand-in; routing happens lazily at the first call. A DEPENDENCY names
+      // the type as written — `ProductHandler` — while a card declares `product`.
+      return facadeOperations(dispatcher, addressOf(name));
     });
 
     if (remoteRouter) {

@@ -1,11 +1,12 @@
 import {
+  addressOf,
   resolveEffectiveOperations,
   type EffectiveOperation,
   type OperationContract,
 } from '@fougere/core';
 import { relative } from 'node:path';
 import ProjectScan from '../services/ProjectScan.js';
-import { ANONYMOUS_SCHEMA_NAME, lowerFirst, type SchemaView } from '@fougere/schema';
+import { ANONYMOUS_SCHEMA_NAME, type SchemaView } from '@fougere/schema';
 import { remotesOf } from '@fougere/core/node';
 
 type Cardinality = NonNullable<OperationContract['cardinality']>;
@@ -230,12 +231,6 @@ function matches(operation: EffectiveOperation, selector: Selector): boolean {
     && operation.name === selector.op
     && (!selector.frond || operation.placement.frond === selector.frond)
     && (!selector.surface || operation.exposure.surfaces.includes(selector.surface));
-}
-
-function addressOf(value: string): string {
-  const base = value.endsWith('Handler') ? value.slice(0, -'Handler'.length) : value;
-
-  return lowerFirst(base);
 }
 
 function inputTypeOf(operation: EffectiveOperation): string | null {

@@ -91,7 +91,7 @@ export type { FougereOperations } from './wire/FougereOperations.js';
 export type { HandlerOf } from './wire/HandlerOf.js';
 export type { Refused } from './wire/Refused.js';
 export type { Rows } from './wire/Rows.js';
-export type { Facade } from './wire/Facade.js';
+export { addressOf, type Facade } from './wire/Facade.js';
 export type {
   FrondCall,
   Transport,
