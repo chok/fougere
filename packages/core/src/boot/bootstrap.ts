@@ -498,17 +498,15 @@ function readings(
     if (!surface) return facadeAt(facadeKeyOf(entity), true);
 
     const own = facadeAt(facadeKeyOf(entity, surface), false);
-    const owner = fronds.owner(entity);
-    if (!owner) {
+    if (!fronds.owner(entity)) {
       sayNoSurfaceAcross(entity, surface);
 
       return own;
     }
 
-    const declared = owner.surfaces?.[surface];
-    if (!declared) return own;
-    if (!declared.some((n) => n.toLowerCase() === entity.toLowerCase())) return undefined;
-    if (own) return own;
+    const admitted = fronds.admits(surface, entity);
+    if (admitted === false) return undefined;
+    if (own || admitted === undefined) return own;
 
     const fallback = facadeAt(facadeKeyOf(entity), false);
 
@@ -522,17 +520,15 @@ function readings(
       : undefined;
   };
 
-  /** The terms beside a facade, with the exact same named-surface fallback rule. */
+  /** The terms beside a facade, read through the same `admits`. */
   const operationsFor = (entity: string, surface?: string): EffectiveOperationsMap | undefined => {
     if (!surface) return effectiveByKey.get(facadeKeyOf(entity));
 
     const own = effectiveByKey.get(facadeKeyOf(entity, surface));
-    const declared = fronds.owner(entity)?.surfaces?.[surface];
-    if (!declared) return own;
+    const admitted = fronds.admits(surface, entity);
+    if (admitted === false) return undefined;
 
-    return declared.some((name) => name.toLowerCase() === entity.toLowerCase())
-      ? (own ?? effectiveByKey.get(facadeKeyOf(entity)))
-      : undefined;
+    return admitted ? (own ?? effectiveByKey.get(facadeKeyOf(entity))) : own;
   };
 
   const presenterFor = (entity: string): unknown | undefined => ownedBy(fronds, container, entity, presenterKeyOf(entity));
