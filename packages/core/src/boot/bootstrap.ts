@@ -238,10 +238,6 @@ function peerBehind(entity: string, router: RemoteRouter): Peer {
   };
 }
 
-/**
- * What the frond owning an entity registered under `key` — asked with `has`, so a constructor
- * that throws is said rather than read as an absence. A remote frond registers no scope here.
- */
 function ownedBy<T>(fronds: Fronds, container: Container, entity: string, key: string): T | undefined {
   const owner = fronds.owner(entity);
   const scopeKey = `frond:${owner?.name}`;
@@ -518,7 +514,6 @@ function readings(
       : undefined;
   };
 
-  /** The terms beside a facade, read through the same `admits`. */
   const operationsFor = (entity: string, surface?: string): EffectiveOperationsMap | undefined => {
     if (!surface) return effectiveByKey.get(facadeKeyOf(entity));
 
@@ -789,7 +784,6 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   }
 }
 
-/** The contract every effective operation already is — the façade reads nothing else. */
 function contractsOf(operations: EffectiveOperationsMap): OperationsMap {
   return new Map([...operations].map(([name, operation]) => [name, operation as OperationContract] as const));
 }

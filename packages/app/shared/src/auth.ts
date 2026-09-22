@@ -1,7 +1,6 @@
 import { AUTH, type App, type AuthRuntime } from '@fougere/core';
 import { useFougereApp } from './boot.js';
 
-/** The runtime an auth extension registered — absent when `fougere.config.ts` declares no `auth`. */
 export function authOf(app: App): AuthRuntime | undefined {
   return app.container.has(AUTH) ? app.container.resolve<AuthRuntime>(AUTH) : undefined;
 }

@@ -138,10 +138,7 @@ export class Shapes {
     return nullable;
   }
 
-  /**
-   * Every type name a shape states, whether it states one, a union of them, or none — a card
-   * may carry a property with no `type`.
-   */
+  /** Every type name a shape states — none, since a card may carry a property with no `type`. */
   static typesOf(shape: { type?: string | readonly string[] }): readonly string[] {
     if (shape.type === undefined) return [];
 

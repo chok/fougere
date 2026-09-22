@@ -64,7 +64,6 @@ export function betterAuth(opts: BetterAuthOptions): Extension {
   };
 }
 
-/** Each better-auth model, reached through the frond that holds its entity. */
 function storagesOf(app: App, models: Record<string, SchemaView>): StorageMap {
   return new Map(Object.entries(models).map(([model, schema]) => {
     const entity = lowerFirst(schema.name);

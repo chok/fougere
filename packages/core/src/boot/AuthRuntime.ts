@@ -1,8 +1,4 @@
-/**
- * What an auth provider answers once it has risen — the handler a host mounts and the API a
- * session is read through. The provider is an extension: it brings the frond its rows live in,
- * and registers this under {@link AUTH} in its `up`.
- */
+/** What an auth extension registers under {@link AUTH} once it has risen. */
 export interface AuthRuntime {
   /** Web Standard handler that processes `/auth/*` requests. */
   handler: (request: Request) => Promise<Response>;
