@@ -3,7 +3,6 @@ import type { Fronds } from '../descriptor/Fronds.js';
 import type { SchemaView } from '@fougere/schema';
 import type { AppMiddleware } from '../wire/AppMiddleware.js';
 import type { RpcAnswer } from '../wire/RpcAnswer.js';
-import type { AuthRuntime } from './AuthRuntime.js';
 import type { EffectiveOperationsMap } from '../EffectiveOperationsMap.js';
 import type { DispatchObserver } from '../dispatch/DispatchObserver.js';
 import type { DispatchPort } from '../dispatch/DispatchPort.js';
@@ -67,6 +66,4 @@ export interface App extends DispatchPort {
   use(middleware: AppMiddleware): void;
   /** Register an app middleware scoped to a specific entity. */
   use(entity: string, middleware: AppMiddleware): void;
-  /** Auth runtime, present when fougere.config.ts declares `auth`. */
-  auth?: AuthRuntime;
 }

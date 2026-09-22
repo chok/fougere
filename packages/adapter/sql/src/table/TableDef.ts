@@ -199,9 +199,6 @@ function collectEntities(app: AppLike): EntityEntry[] {
       if (verdictOn(entry) === 'table') hold(entry);
     }
   }
-  if (app.auth?.entities) {
-    for (const [name, entityClass] of Object.entries(app.auth.entities)) hold({ name, entityClass });
-  }
 
   return entries;
 }

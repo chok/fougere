@@ -4,7 +4,7 @@ import { entity, primary, text, date, created } from '@fougere/schema';
  * Default Verification entity — better-auth shape.
  * Used for email verification, password reset, magic links, etc.
  */
-export class AuthVerification extends entity({
+class Verification extends entity({
   id: primary(),
   identifier: text(),
   value: text(),
@@ -12,3 +12,5 @@ export class AuthVerification extends entity({
   createdAt: created(),
   updatedAt: created(),
 }) {}
+
+export { Verification as AuthVerification };

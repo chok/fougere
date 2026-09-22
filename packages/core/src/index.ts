@@ -150,9 +150,7 @@ export type { PresenterEntry } from './descriptor/PresenterEntry.js';
 export type { PresenterFieldMeta } from './descriptor/PresenterFieldMeta.js';
 export type { ProviderEntry } from './descriptor/ProviderEntry.js';
 export type { SeedEntry } from './descriptor/SeedEntry.js';
-export type { AuthConfig } from './boot/AuthConfig.js';
-export type { AuthContext } from './boot/AuthContext.js';
-export type { AuthRuntime } from './boot/AuthRuntime.js';
+export { AUTH, type AuthRuntime } from './boot/AuthRuntime.js';
 export { Fronds } from './descriptor/Fronds.js';
 export { verify, type Misplaced } from './verify.js';
 // Same question as verify(), answered from the source text instead of the model.

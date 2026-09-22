@@ -14,7 +14,6 @@ import { peerOver } from './peerOver.js';
 import { JOURNAL, type Journal } from '../dispatch/Journal.js';
 import type { RelationCheck } from '../dispatch/RelationCheck.js';
 import { refusalOf, type Diagnostic } from '../diagnostic.js';
-import type { AuthRuntime } from './AuthRuntime.js';
 import type { App } from './App.js';
 import type { CreateAppOptions } from './CreateAppOptions.js';
 import type { AppMiddleware } from '../wire/AppMiddleware.js';
@@ -123,11 +122,11 @@ async function readFronds(
   const { fronds, diagnostics } = await hostedBy(
     brought.length > 0 ? { ...options, fronds: [...(options.fronds ?? []), ...brought] } : options,
   );
-  // An app that states nothing AND scans nothing is a mistake — unless something else it
-  // declares brings its own entities, which an auth provider does. Refused here and not in
-  // `hostedBy`, which is handed the frond sources and cannot see the rest of the app. The
-  // condition is the KEYS, not the count: a scan that found nothing is an ordinary answer.
-  if (!options.fronds && !options.scan && !options.auth && brought.length === 0) {
+  // An app that states nothing AND scans nothing is a mistake — unless an extension brings
+  // fronds of its own. Refused here and not in `hostedBy`, which is handed the frond sources
+  // and cannot see the rest of the app. The condition is the KEYS, not the count: a scan that
+  // found nothing is an ordinary answer.
+  if (!options.fronds && !options.scan && brought.length === 0) {
     throw new Error(
       'createApp needs `fronds:` (what this app states) or `scan:` (what a scanner found). '
       + 'Neither was given, and nothing else declares entities of its own.\n'
@@ -536,28 +535,6 @@ function readings(
   return { resolve, schemaFor, facadeFor, operationsFor, presenterFor };
 }
 
-/**
- * Built once from the lazy `AuthConfig` a provider factory produced (`betterAuth({…})` in
- * fougere.config.ts). The provider receives our db and storage factory, so every auth write
- * flows through `Storage` like any other.
- */
-async function authFor(options: CreateAppOptions, log: Logger): Promise<AuthRuntime | undefined> {
-  if (!options.auth) return undefined;
-
-  if (!options.storageFactory) {
-    throw new Error('createApp: `auth` is set but `storageFactory` is missing — auth providers need it to back their adapter. Pass one through CreateAppOptions.storageFactory.');
-  }
-  if (options.db === undefined) {
-    throw new Error('createApp: `auth` is set but `db` is missing — pass the storage handle through CreateAppOptions.db.');
-  }
-
-  log.info('initializing auth runtime');
-  const runtime = await options.auth.create({ db: options.db, storageFactory: options.storageFactory });
-  log.info(`auth ready — mounted at ${runtime.basePath}`);
-
-  return runtime;
-}
-
 /** Bootstrap a fougere application. */
 export async function createApp(options: CreateAppOptions): Promise<App> {
   const container = (options.createContainer ?? createContainer)();
@@ -626,8 +603,6 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     log.debug('builtins registered (Logger, Config)');
 
     const { fronds, operationModel } = await readFronds(options, log);
-
-    const authRuntime = await authFor(options, log);
 
     // Remote routing — validated at boot: declaring remotes without a transport is a config error.
     // A remote declaration wins over local presence: `remotes: { blog: url }` IS
@@ -792,7 +767,6 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
           ? use(args[1] as AppMiddleware, args[0])
           : use(args[0] as AppMiddleware);
       },
-      auth: authRuntime,
     };
 
     // The card is an rpc op like any other, so one registry answers and one refusal names

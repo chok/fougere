@@ -175,13 +175,12 @@ async function boot(): Promise<App> {
     // The layer, spread whole. Naming a few of its members is how `transacted` and `close`
     // were left behind once, under Nuxt only.
     ...layerOf(storage, createMemoryStorage),
-    auth: fileConfig.auth,
     adapters: fileConfig.adapters,
     remotes,
     /** Who inherits code from whom — the tree, whole, so a refusal can name where an entry sits. */
     under: fileConfig.fronds,
     remoteTransport,
-    extensions: [...stated.extensions, ...(_config.extensions ?? [])],
+    extensions: [...stated.extensions, ...(_config.extensions ?? []), fileConfig.auth],
     // Opened before the container, so released after it. Never wired here until now:
     // this host boots the storage and no host closed one, which is what made a reload
     // leak the pool of every app it discarded.
@@ -191,7 +190,7 @@ async function boot(): Promise<App> {
   log.info(`ascent: ${app.extensions().join(' → ') || 'nothing declared'}`);
 
   const ms = (performance.now() - bootStart).toFixed(0);
-  log.info(`ready in ${ms}ms — ${app.fronds.length} frond(s)${app.auth ? ` + auth (${app.auth.basePath})` : ''}`);
+  log.info(`ready in ${ms}ms — ${app.fronds.length} frond(s)${fileConfig.auth ? ' + auth' : ''}`);
 
   return app;
 }

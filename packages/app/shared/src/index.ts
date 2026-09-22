@@ -7,7 +7,7 @@ export {
   type FougereServerConfig,
 } from './boot.js';
 
-export { useFougereAuth } from './auth.js';
+export { authOf, useFougereAuth } from './auth.js';
 
 export { tableOf } from './RouteMatch.js';
 
