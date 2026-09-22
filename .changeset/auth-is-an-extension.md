@@ -5,6 +5,7 @@
 '@fougere/adapter-sql': minor
 '@fougere/defaults': minor
 '@fougere/compiler': minor
+'@fougere/nuxt': patch
 ---
 
 An auth provider is an extension, and its rows live in a frond.
@@ -19,3 +20,8 @@ Gone with the slot: `CreateAppOptions.auth` and `.db`, `App.auth`, `AuthConfig`,
 runtime with `authOf(app)` (`@fougere/app`) and a storage with `app.storageFor('session')`.
 `fougere.config.ts` keeps `auth: betterAuth({ … })`. The default user's class is now named
 `User`, so its table is `users` rather than `auth_users`.
+
+Under Nuxt the provider never reached the app: the config crosses into the generated plugin
+as JSON, and a provider made of functions was dropped there, so every `/auth/*` answered
+`Auth not configured`. The plugin now imports it from the config file (`configFileIn`,
+`@fougere/core/node`).

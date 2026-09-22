@@ -37,22 +37,20 @@ export interface FougereConfig {
 
 const CONFIG_FILES = ['fougere.config.ts', 'fougere.config.js', 'fougere.config.mjs'];
 
+/** The config file a directory holds, if it holds one. */
+export function configFileIn(dir: string): string | undefined {
+  return CONFIG_FILES.map((file) => resolve(dir, file)).find((path) => existsSync(path));
+}
+
 async function loadConfigFrom(dir: string, fresh?: boolean): Promise<FougereConfig> {
-  const loader = getModuleLoader();
-  for (const file of CONFIG_FILES) {
-    const path = resolve(dir, file);
-    if (existsSync(path)) {
-      // A module is cached by its specifier, so a second load of an EDITED file hands
-      // back what was read the first time — measured, and it made re-reading a config
-      // return the config already in force. The loader owns its own cache, so it is the
-      // one told; the old module stays in memory, re-reading being for a change.
-      const mod = await loader(path, fresh ? { fresh } : undefined);
+  const path = configFileIn(dir);
+  if (!path) return {};
 
-      return ((mod as { default?: FougereConfig }).default ?? mod) as FougereConfig;
-    }
-  }
+  // A module is cached by its specifier, so a second load of an EDITED file hands back what
+  // was read the first time. The loader owns its own cache, so it is the one told.
+  const mod = await getModuleLoader()(path, fresh ? { fresh } : undefined);
 
-  return {};
+  return ((mod as { default?: FougereConfig }).default ?? mod) as FougereConfig;
 }
 
 /** Load the root fougere.config.{ts,js,mjs} from the given directory. */
