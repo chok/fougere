@@ -42,6 +42,21 @@ export class Format<T = unknown> {
   }
 
   /**
+   * A list of a FIXED length, each place stating its own format — `['string', 'null']` and
+   * never `['string', 'number']`, which a list of one format cannot tell apart.
+   */
+  static tuple<const Places extends readonly Format<unknown>[]>(
+    ...places: Places
+  ): Format<{ -readonly [K in keyof Places]: Accepted<Places[K]> }> {
+    return new Format({
+      type: 'array',
+      prefixItems: places.map((place) => place.schema),
+      minItems: places.length,
+      maxItems: places.length,
+    });
+  }
+
+  /**
    * A format naming ITSELF, which no value can do while it is being built: `items` holds a shape,
    * and the shape is what declares `items`. The `$id` `of()` already posts is what it points at.
    */

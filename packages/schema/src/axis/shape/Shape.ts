@@ -5,15 +5,36 @@ import type { ShapeType } from './ShapeType.js';
 type Nullably<T extends string> = T | readonly [T, 'null'];
 
 /** The sentence a field carries, where JSON Schema already holds one. */
-interface Documented { description?: string }
+interface Documented {
+  description?: string;
+}
 
-interface StringConstraints extends Documented { minLength?: number; maxLength?: number; pattern?: string; enum?: readonly (string | null)[]; format?: StringFormat }
+interface StringConstraints extends Documented {
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  enum?: readonly (string | null)[];
+  format?: StringFormat;
+}
 
-interface NumericConstraints extends Documented { minimum?: number; maximum?: number; enum?: readonly (number | null)[] }
+interface NumericConstraints extends Documented {
+  minimum?: number;
+  maximum?: number;
+  enum?: readonly (number | null)[];
+}
 
-interface ArrayConstraints extends Documented { items?: Shape; minItems?: number; maxItems?: number }
+interface ArrayConstraints extends Documented {
+  items?: Shape;
+  minItems?: number;
+  maxItems?: number;
+}
 
-interface ObjectConstraints extends Documented { properties?: Record<string, unknown>; required?: readonly string[]; additionalProperties?: boolean | Shape; propertyNames?: Shape }
+interface ObjectConstraints extends Documented {
+  properties?: Record<string, unknown>;
+  required?: readonly string[];
+  additionalProperties?: boolean | Shape;
+  propertyNames?: Shape;
+}
 
 export type Shape =
   | ({ type: Nullably<'string'> } & StringConstraints)
@@ -22,7 +43,14 @@ export type Shape =
   | ({ type: Nullably<'array'> } & ArrayConstraints)
   | ({ type: Nullably<'object'> } & ObjectConstraints);
 
-export const SHAPE_TYPES = ['string', 'number', 'integer', 'boolean', 'array', 'object'] as const;
+export const SHAPE_TYPES = [
+  'string',
+  'number',
+  'integer',
+  'boolean',
+  'array',
+  'object',
+] as const;
 
 type BaseShape =
   | ({ type: 'string' } & StringConstraints)
@@ -45,15 +73,20 @@ type _ShapeConformsToJsonSchema = Assert<
 >;
 
 type _ShapeTypesAreTheStandardsLessNull = Assert<
-  [Exclude<Exclude<JSONSchema7TypeName, 'null'>, (typeof SHAPE_TYPES)[number]>] extends [never]
+  [Exclude<Exclude<JSONSchema7TypeName, 'null'>, (typeof SHAPE_TYPES)[number]>] extends [
+    never,
+  ]
     ? true
     : false
 >;
 
+/** Every type name a shape states, whether it states one or a union of them. */
+const typesOf = (shape: Shape): readonly string[] =>
+  (Array.isArray(shape.type) ? shape.type : [shape.type]) as readonly string[];
+
 export class Shapes {
   private static readonly cache = new WeakMap<object, ShapeParts>();
   private static readonly none: ShapeParts = { base: undefined, nullable: false };
-
 
   /**
    * Every `pattern` a shape states, the nested ones included — `items`, `properties`.
@@ -82,11 +115,28 @@ export class Shapes {
     for (const member of Object.values(value)) Shapes.collectPatterns(member, found);
   }
 
+  /**
+   * `null` enters the grammar, and every constraint stays. It is added when it is ABSENT,
+   * read off the shape rather than assumed from its form — a shape already stating it comes
+   * back as itself, so `optional(nullable(text()))` does the work once.
+   *
+   * `enum` is widened TOO, because JSON Schema checks it apart from `type`: a shape saying
+   * `['string','null']` and `enum: ['draft','live']` calls null a legal type and not a legal
+   * value, and the engine answers `Instance does not match any of ["draft","live"]`.
+   *
+   * `{ type: 'string', minLength: 3 }`      → `{ type: ['string','null'], minLength: 3 }`
+   * `{ type: 'string', enum: ['draft'] }`   → `{ type: ['string','null'], enum: ['draft', null] }`
+   */
   static nullable(shape: Shape): Shape {
-    if (Array.isArray(shape.type)) return shape;
-    const nullable = { ...shape, type: [shape.type, 'null'] } as unknown as Shape;
+    const types = typesOf(shape);
+    if (types.includes('null')) return shape;
+
+    const nullable = { ...shape, type: [...types, 'null'] } as unknown as Shape;
     if ('enum' in nullable && nullable.enum && !nullable.enum.includes(null)) {
-      (nullable as { enum: readonly (string | number | null)[] }).enum = [...nullable.enum, null];
+      (nullable as { enum: readonly (string | number | null)[] }).enum = [
+        ...nullable.enum,
+        null,
+      ];
     }
 
     return nullable;
@@ -100,7 +150,9 @@ export class Shapes {
         const baseType = shape.type.find((t) => t !== 'null');
         const base = { ...shape, type: baseType } as BaseShape;
         if ('enum' in base && base.enum) {
-          (base as { enum: readonly (string | number | null)[] }).enum = base.enum.filter((v) => v !== null);
+          (base as { enum: readonly (string | number | null)[] }).enum = base.enum.filter(
+            (v) => v !== null,
+          );
         }
         parts = { base, nullable: true };
       } else {
@@ -124,7 +176,11 @@ export class Shapes {
   static fromText(shape: Shape | undefined, value: unknown): unknown {
     const type = this.of(shape).base?.type;
 
-    if ((type !== 'number' && type !== 'integer') || typeof value !== 'string' || value === '')
+    if (
+      (type !== 'number' && type !== 'integer') ||
+      typeof value !== 'string' ||
+      value === ''
+    )
       return value;
 
     const number = Number(value);

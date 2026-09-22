@@ -3,9 +3,10 @@ import { SHAPE_TYPES, type Shape } from './Shape.js';
 
 const SHAPE = 'field/shape';
 
+/** A word, or that word beside `null` — the second place is what makes a shape nullable. */
 const TYPE = Format.either(
   Format.tokens(SHAPE_TYPES),
-  Format.listOf(Format.tokens([...SHAPE_TYPES, 'null'])),
+  Format.tuple(Format.tokens(SHAPE_TYPES), Format.tokens(['null'])),
 );
 
 /**
