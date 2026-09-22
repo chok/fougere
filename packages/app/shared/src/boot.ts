@@ -93,11 +93,11 @@ async function boot(): Promise<App> {
   // must not need them. Nothing in `fougere.config.ts` may import `@fronds/*`.
   //
   // And installed only when something is going to READ a source. A host that handed in
-  // both its scan and its config has nothing left to load, and jiti cannot run where
+  // its config and its fronds — scanned or stated — has nothing left to load, and jiti cannot run where
   // there is no module resolver: measured on workerd, `createJiti` threw
   // `Cannot read properties of undefined (reading 'paths')` and every request answered
   // 500 — the loader was being built for files that no longer needed opening.
-  const reads = _config.scan === undefined || _config.config === undefined;
+  const reads = (_config.scan === undefined && _config.fronds === undefined) || _config.config === undefined;
   const installLoader = (alias?: Record<string, string>): void => {
     if (!reads) return;
     const jiti = createJiti(import.meta.url, { interopDefault: true, ...(alias ? { alias } : {}) });
