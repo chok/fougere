@@ -12,12 +12,14 @@ export class EntityAdapterSet {
    */
   private constructor(readonly adapters: EntityAdapters<Fields>) {}
 
+  static readonly none = new EntityAdapterSet({});
+
   /**
    * Stops a malformed declaration from propagating, by checking its two levels.
    * `of({ sql: { body: 3 } })` → passes; `of({ sql: 'oops' })` → throws, naming `adapters.sql`
    */
   static of(adapters?: EntityAdapters<Fields>): EntityAdapterSet {
-    if (!adapters) return new EntityAdapterSet({});
+    if (!adapters) return EntityAdapterSet.none;
 
     if (!isObject(adapters)) {
       throw new SchemaError(

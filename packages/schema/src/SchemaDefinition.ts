@@ -3,7 +3,6 @@ import { FieldSet } from './field/FieldSet.js';
 
 import { type EntityDeclarations } from './entity/EntityDeclarations.js';
 import { type PreviousNames } from './entity/PreviousNames.js';
-import { type EntityAdapters } from './entity/EntityAdapters.js';
 import { EntityAdapterSet } from './entity/EntityAdapterSet.js';
 import { SchemaDerivation } from './SchemaDerivation.js';
 import { type ValidateOptions } from './validator/ValidateOptions.js';
@@ -26,6 +25,13 @@ interface SchemaState {
   derivation: SchemaDerivation | undefined;
   anchored: boolean;
   constraints: SchemaConstraints;
+}
+
+/** What a schema is built from; the rest is stated by `declares` or inherited by a derivation. */
+export interface SchemaDeclaration<TFields extends Fields> {
+  fields: TFields;
+  opts?: ValidateOptions;
+  constraints?: SchemaConstraints;
 }
 
 /** The keys a derivation keeps, in the order it keeps them, under the names they take. */
@@ -74,53 +80,31 @@ export class SchemaDefinition {
    * What they do not name is kept, and that is the whole difference with `derived`.
    */
   private restated(state: Partial<SchemaState>): SchemaDefinition {
-    return new SchemaDefinition({
-      fields: this.fields,
-      adapterSet: this.adapterSet,
-      opts: this.opts,
-      previous: this.previous,
-      derivation: this.derivation,
-      anchored: this.anchored,
-      constraints: this.constraints,
-      ...state,
-    });
+    return new SchemaDefinition({ ...this, ...state });
   }
 
   /** Built complete or not at all — no static assigned on the side. */
-  static of(declaration: {
-    fields: Fields;
-    adapters?: EntityAdapters<Fields>;
-    opts?: ValidateOptions;
-    previous?: PreviousNames<Fields>;
-    derivation?: SchemaDerivation;
-    anchored?: boolean;
-    constraints?: SchemaConstraints;
-  }): SchemaDefinition {
-    return new SchemaDefinition({
+  static of(declaration: SchemaDeclaration<Fields>): SchemaDefinition {
+    return SchemaDefinition.derived({
       fields: declaration.fields,
-      adapterSet: EntityAdapterSet.of(declaration.adapters),
+      adapterSet: EntityAdapterSet.none,
       opts: declaration.opts ?? {},
-      previous: declaration.previous,
-      derivation: declaration.derivation,
-      anchored: declaration.anchored ?? false,
+      derivation: undefined,
       constraints: declaration.constraints ?? SchemaConstraints.none,
     });
   }
 
   declaring(declarations: EntityDeclarations<Fields>): SchemaDefinition {
-    const addressed = EntityAdapterSet.of(declarations.adapters).fieldNames;
+    const adapterSet = EntityAdapterSet.of(declarations.adapters);
     this.assertKnown('declares', [
-      ...addressed,
+      ...adapterSet.fieldNames,
       ...Object.keys(declarations.previous ?? {}),
     ]);
     const declared = FieldSet.declaring(this.fields, declarations);
 
     return this.restated({
       fields: declared.fields,
-      adapterSet: EntityAdapterSet.merged([
-        this.adapterSet,
-        EntityAdapterSet.of(declarations.adapters),
-      ]),
+      adapterSet: EntityAdapterSet.merged([this.adapterSet, adapterSet]),
       previous: declarations.previous ?? this.previous,
       constraints:
         declarations.unique === undefined && declarations.index === undefined

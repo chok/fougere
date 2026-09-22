@@ -8,8 +8,7 @@ import { type PreviousNames } from './entity/PreviousNames.js';
 import { type EntityAdapters } from './entity/EntityAdapters.js';
 import { InputValidator } from './validator/InputValidator.js';
 import { SchemaDerivation } from './SchemaDerivation.js';
-import { type SchemaConstraints } from './SchemaConstraints.js';
-import { SchemaDefinition } from './SchemaDefinition.js';
+import { SchemaDefinition, type SchemaDeclaration } from './SchemaDefinition.js';
 import { type ValidateOptions } from './validator/ValidateOptions.js';
 
 import type { SchemaView } from './SchemaView.js';
@@ -155,15 +154,7 @@ export class Schema {
     ) as unknown as SchemaConstructor<Merged<T>>;
   }
 
-  static of<TFields extends Fields>(declaration: {
-    fields: TFields;
-    derivation?: SchemaDerivation;
-    adapters?: EntityAdapters<TFields>;
-    opts?: ValidateOptions;
-    previous?: PreviousNames<TFields>;
-    anchored?: boolean;
-    constraints?: SchemaConstraints;
-  }): SchemaConstructor<TFields> {
+  static of<TFields extends Fields>(declaration: SchemaDeclaration<TFields>): SchemaConstructor<TFields> {
     return Schema.subclass(
       SchemaDefinition.of(declaration),
     ) as unknown as SchemaConstructor<TFields>;
