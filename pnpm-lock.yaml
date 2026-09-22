@@ -1695,7 +1695,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.1
       '@fougere/adapter-sql':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../adapter/sql
       '@fougere/compiler':
         specifier: workspace:*

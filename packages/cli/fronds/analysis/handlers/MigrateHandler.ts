@@ -1,6 +1,6 @@
 import { loadConfig } from '@fougere/core/node';
 import { resolveStorage } from '@fougere/defaults';
-import { actualState, desiredTables, planStep, collapseChain, applyStep, type Plan, type StepChange } from '@fougere/adapter-sql';
+import type { Plan, StepChange } from '@fougere/adapter-sql';
 import type { SetDiff } from '@fougere/schema';
 import ProjectScan from '../services/ProjectScan.js';
 import { chainOf } from '../versions.js';
@@ -53,6 +53,12 @@ export default class MigrateHandler {
         ran: [],
       };
     }
+
+    // Resolved from the project rather than named in this package's dependencies:
+    // `@fougere/adapter-sql` declares `better-sqlite3`, so a CLI depending on it installs
+    // 26 MB of native module into every `npm create fougere`. A project that migrates
+    // declares the adapter itself, which is where this resolves from.
+    const { actualState, desiredTables, planStep, collapseChain, applyStep } = await import('@fougere/adapter-sql');
 
     const tables = desiredTables(scan as never);
     // Each frond's chain is composed on its own — its versions are its own line — and the

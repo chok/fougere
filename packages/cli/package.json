@@ -1,6 +1,6 @@
 {
   "name": "@fougere/cli",
-  "version": "0.12.2-alpha.0",
+  "version": "0.12.3-alpha.0",
   "description": "The Fougere CLI \u2014 compose a workspace, serve a frond, call an operation.",
   "keywords": [
     "fougere",
@@ -44,7 +44,6 @@
   },
   "dependencies": {
     "@clack/prompts": "^0.10.0",
-    "@fougere/adapter-sql": "workspace:*",
     "@fougere/compiler": "workspace:*",
     "@fougere/container": "workspace:*",
     "@fougere/core": "workspace:*",
@@ -69,5 +68,13 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "peerDependencies": {
+    "@fougere/adapter-sql": "workspace:^"
+  },
+  "peerDependenciesMeta": {
+    "@fougere/adapter-sql": {
+      "optional": true
+    }
   }
 }
