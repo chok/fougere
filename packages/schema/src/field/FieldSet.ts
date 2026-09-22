@@ -24,7 +24,7 @@ export class FieldSet<TFields extends Fields = Fields> {
    */
   static declaring<TFields extends Fields>(
     declared: TFields,
-    stated: { unique?: FieldGroups<TFields>; index?: FieldGroups<TFields> } = {},
+    groups: { unique?: FieldGroups<TFields>; index?: FieldGroups<TFields> } = {},
   ): { fields: TFields; unique: FieldGroups<TFields>; index: FieldGroups<TFields> } {
     const fields: Fields = {};
     for (const [key, field] of Object.entries(declared))
@@ -33,7 +33,7 @@ export class FieldSet<TFields extends Fields = Fields> {
     const composite = { unique: [] as FieldName<TFields>[][], index: [] as FieldName<TFields>[][] };
 
     for (const kind of ['unique', 'index'] as const) {
-      for (const group of stated[kind] ?? []) {
+      for (const group of groups[kind] ?? []) {
         const missing = group.filter((key) => !Object.hasOwn(fields, key));
         if (missing.length)
           throw new SchemaError(

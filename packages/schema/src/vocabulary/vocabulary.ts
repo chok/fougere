@@ -17,16 +17,16 @@ export function vocabulary(
 export type FieldWord = (field: Field<any>) => Field<any>;
 
 /**
- * Refuses two words stating one member differently, rather than letting the outer win.
- * `readOnly(writeOnly(text()))` → both apply; `immutable(created())` → throws
+ * Refuses two words stating one member DIFFERENTLY, rather than letting the outer win.
+ * `readOnly(writeOnly(text()))` → both apply, they write two members; `immutable(created())`
+ * too, since both say `update: 'forbidden'`; `immutable(updated())` → throws.
  */
-function merge(word: string, field: Field, given: Partial<Field>): Partial<Field> {
+function merge(word: string, field: Field, changes: Partial<FieldDeclaration>): Partial<Field> {
   const merged: Record<string, unknown> = {};
-  if ('shape' in given) merged.shape = given.shape;
-  const stated: Partial<FieldDeclaration> = given;
+  if ('shape' in changes) merged.shape = changes.shape;
 
   for (const name of Axes.names as (keyof FieldDeclaration)[]) {
-    const members = stated[name];
+    const members = changes[name];
     if (members === undefined) continue;
     const already = field.axis(name);
     if (typeof members !== 'object' || members === null || typeof already !== 'object' || already === null) {

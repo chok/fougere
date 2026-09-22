@@ -26,9 +26,9 @@ export class SchemaConstraints<TFields extends Fields = Fields> {
    * `SchemaConstraints.of([['a','b'], ['a','b']])` → `unique` holds one group
    */
   static of<TFields extends Fields>(
-    stated: { unique?: FieldGroups<TFields>; index?: FieldGroups<TFields> },
+    groups: { unique?: FieldGroups<TFields>; index?: FieldGroups<TFields> },
   ): SchemaConstraints<TFields> {
-    return new SchemaConstraints(deduped(stated.unique), deduped(stated.index));
+    return new SchemaConstraints(deduped(groups.unique), deduped(groups.index));
   }
 
   /** One member gone and the group is gone: it named a pair that no longer exists. */
