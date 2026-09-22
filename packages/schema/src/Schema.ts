@@ -149,18 +149,16 @@ export class Schema {
   }
 
   static compose<T extends SchemaView[]>(...sources: T): SchemaConstructor<Merged<T>> {
-    return Schema.subclass(
-      SchemaDefinition.merged(sources),
-    ) as unknown as SchemaConstructor<Merged<T>>;
+    return Schema.subclass(SchemaDefinition.merged(sources));
   }
 
   static of<TFields extends Fields>(declaration: SchemaDeclaration<TFields>): SchemaConstructor<TFields> {
-    return Schema.subclass(
-      SchemaDefinition.of(declaration),
-    ) as unknown as SchemaConstructor<TFields>;
+    return Schema.subclass(SchemaDefinition.of(declaration));
   }
 
-  private static subclass(definition: SchemaDefinition): SchemaConstructor<Fields> {
+  private static subclass<TFields extends Fields = Fields>(
+    definition: SchemaDefinition,
+  ): SchemaConstructor<TFields> {
     class Derived extends Schema {}
     Derived.definition = definition;
     Object.defineProperty(Derived, 'name', {
@@ -168,7 +166,7 @@ export class Schema {
       configurable: true,
     });
 
-    return Derived as unknown as SchemaConstructor<Fields>;
+    return Derived as unknown as SchemaConstructor<TFields>;
   }
 }
 
