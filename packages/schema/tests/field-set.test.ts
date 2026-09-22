@@ -19,6 +19,6 @@ describe('FieldSet', () => {
     ) {}
 
     expect(Account.getUnique()).toEqual([['tenant', 'email']]);
-    expect(entity({ email: text() }).getUnique()).toBeUndefined();
+    expect(entity({ email: text() }).getUnique()).toEqual([]);
   });
 });

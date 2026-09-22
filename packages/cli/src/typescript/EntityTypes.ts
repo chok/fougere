@@ -1,4 +1,4 @@
-import { upperFirst, type FieldDescriptor, type SchemaDescriptor } from '@fougere/schema';
+import { Shapes, upperFirst, type FieldDescriptor, type SchemaDescriptor } from '@fougere/schema';
 import { docCommentOf, propertyKey } from './syntax.js';
 
 export interface EntityTypesOptions {
@@ -8,7 +8,7 @@ export interface EntityTypesOptions {
 
 /** So a nullable field lands as a union. */
 function typeOf(field: FieldDescriptor): string {
-  const types = Array.isArray(field.type) ? field.type : field.type ? [field.type] : [];
+  const types = Shapes.typesOf(field);
   const nullable = types.includes('null');
   const base = types.find((t) => t !== 'null');
   const inner = baseTypeOf(base, field);

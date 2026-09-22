@@ -93,11 +93,11 @@ async function boot(): Promise<App> {
   // must not need them. Nothing in `fougere.config.ts` may import `@fronds/*`.
   //
   // And installed only when something is going to READ a source. A host that handed in
-  // both its scan and its config has nothing left to load, and jiti cannot run where
+  // its config and its fronds — scanned or stated — has nothing left to load, and jiti cannot run where
   // there is no module resolver: measured on workerd, `createJiti` threw
   // `Cannot read properties of undefined (reading 'paths')` and every request answered
   // 500 — the loader was being built for files that no longer needed opening.
-  const reads = _config.scan === undefined || _config.config === undefined;
+  const reads = (_config.scan === undefined && _config.fronds === undefined) || _config.config === undefined;
   const installLoader = (alias?: Record<string, string>): void => {
     if (!reads) return;
     const jiti = createJiti(import.meta.url, { interopDefault: true, ...(alias ? { alias } : {}) });
@@ -175,13 +175,12 @@ async function boot(): Promise<App> {
     // The layer, spread whole. Naming a few of its members is how `transacted` and `close`
     // were left behind once, under Nuxt only.
     ...layerOf(storage, createMemoryStorage),
-    auth: fileConfig.auth,
     adapters: fileConfig.adapters,
     remotes,
     /** Who inherits code from whom — the tree, whole, so a refusal can name where an entry sits. */
     under: fileConfig.fronds,
     remoteTransport,
-    extensions: [...stated.extensions, ...(_config.extensions ?? [])],
+    extensions: [...stated.extensions, ...(_config.extensions ?? []), fileConfig.auth],
     // Opened before the container, so released after it. Never wired here until now:
     // this host boots the storage and no host closed one, which is what made a reload
     // leak the pool of every app it discarded.
@@ -191,7 +190,7 @@ async function boot(): Promise<App> {
   log.info(`ascent: ${app.extensions().join(' → ') || 'nothing declared'}`);
 
   const ms = (performance.now() - bootStart).toFixed(0);
-  log.info(`ready in ${ms}ms — ${app.fronds.length} frond(s)${app.auth ? ` + auth (${app.auth.basePath})` : ''}`);
+  log.info(`ready in ${ms}ms — ${app.fronds.length} frond(s)${fileConfig.auth ? ' + auth' : ''}`);
 
   return app;
 }

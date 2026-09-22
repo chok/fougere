@@ -1,7 +1,7 @@
 import { entity, primary, text, bool, created, optional } from '@fougere/schema';
 
-/** Default User entity — shipped as a fallback. */
-export class AuthUser extends entity({
+/** The user better-auth writes when the app names none — `User`, since the model is `user`. */
+class User extends entity({
   id: primary(),
   name: text(),
   email: text(),
@@ -10,3 +10,5 @@ export class AuthUser extends entity({
   createdAt: created(),
   updatedAt: created(),
 }) {}
+
+export { User as AuthUser };

@@ -59,8 +59,8 @@ describe('composite unique', () => {
   });
 
   it('a derivation that drops a member drops the group — a remnant would say more', () => {
-    expect(ListBook.pick('id', 'listId').getUnique()).toBeUndefined();
-    expect(ListBook.omit('docId').getUnique()).toBeUndefined();
+    expect(ListBook.pick('id', 'listId').getUnique()).toEqual([]);
+    expect(ListBook.omit('docId').getUnique()).toEqual([]);
     // Both members survive, so the fact survives.
     expect(ListBook.omit('addedAt').getUnique()).toEqual([['listId', 'docId']]);
   });

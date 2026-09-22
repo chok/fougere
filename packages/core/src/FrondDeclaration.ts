@@ -1,4 +1,5 @@
 import { lowerFirst, type SchemaView } from '@fougere/schema';
+import { addressOf } from './wire/Facade.js';
 import type { CollectorEntry } from './descriptor/CollectorEntry.js';
 import type { EntityEntry } from './descriptor/EntityEntry.js';
 import type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
@@ -52,13 +53,6 @@ function statedOperations(h: Ctor | DeclaredHandler): Map<string, OperationContr
   }
 
   return merged;
-}
-
-/** `PostHandler` answers at `post` — the same rule the scan applies to a file it found. */
-function addressOf(className: string): string {
-  const base = className.endsWith('Handler') ? className.slice(0, -7) : className;
-
-  return lowerFirst(base);
 }
 
 /** What a declaration states about one frond. Everything else is derived from the classes. */

@@ -231,7 +231,7 @@ describe('unique / indexed — declared here, enforced by the storage', () => {
     expect(Role.of(rebuilt.getFields().email!).isUnique()).toBe(true);
     expect(rebuilt.getFields().city.role?.index).toBe(true);
     // A constraint of one is not a composite — it is fully stated by the field itself.
-    expect(rebuilt.getUnique()).toBeUndefined();
+    expect(rebuilt.getUnique()).toEqual([]);
   });
 });
 

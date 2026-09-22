@@ -1,7 +1,7 @@
 import { betterAuth as betterAuthLib } from 'better-auth';
 import { createId } from '@paralleldrive/cuid2';
-import type { AuthConfig, AuthContext, AuthRuntime } from '@fougere/core';
-import type { SchemaView } from '@fougere/schema';
+import { AUTH, frond, type App, type AuthRuntime, type Extension, type Storage } from '@fougere/core';
+import { lowerFirst, type SchemaView } from '@fougere/schema';
 import { AuthUser } from './entity/AuthUser.js';
 import { AuthVerification } from './entity/AuthVerification.js';
 import { authEntities } from './entity/authEntities.js';
@@ -24,33 +24,29 @@ export interface BetterAuthOptions {
   verification?: SchemaView;
 }
 
-/** Factory used in fougere.config.ts. */
-export function betterAuth(opts: BetterAuthOptions): AuthConfig {
-  const userSchema = opts.user ?? AuthUser;
-  const { AuthSession, AuthAccount } = authEntities(userSchema);
-  const sessionSchema = opts.session ?? AuthSession;
-  const accountSchema = opts.account ?? AuthAccount;
-  const verificationSchema = opts.verification ?? AuthVerification;
+/**
+ * The auth provider, as an extension: it brings the frond its rows live in — the user too, when
+ * the app names none — and registers the runtime under `AUTH` once the app exists.
+ */
+export function betterAuth(opts: BetterAuthOptions): Extension {
+  const user = opts.user ?? AuthUser;
+  const { AuthSession, AuthAccount } = authEntities(user);
+  const models: Record<string, SchemaView> = {
+    user,
+    session: opts.session ?? AuthSession,
+    account: opts.account ?? AuthAccount,
+    verification: opts.verification ?? AuthVerification,
+  };
+  const brought = Object.values(models).filter((schema) => schema !== opts.user);
   const providers = opts.providers ?? {};
   const basePath = opts.basePath ?? '/auth';
 
   return {
-    entities: {
-      user: userSchema,
-      session: sessionSchema,
-      account: accountSchema,
-      verification: verificationSchema,
-    },
-    create({ storageFactory }: AuthContext): AuthRuntime {
-      const storageMap: StorageMap = new Map([
-        ['user', storageFactory(userSchema, 'user')],
-        ['session', storageFactory(sessionSchema, 'session')],
-        ['account', storageFactory(accountSchema, 'account')],
-        ['verification', storageFactory(verificationSchema, 'verification')],
-      ]);
-
+    name: 'auth',
+    fronds: [frond('auth', { entities: brought })],
+    up(app) {
       const engine = betterAuthLib({
-        database: fougereAdapter(storageMap),
+        database: fougereAdapter(storagesOf(app, models)),
         secret: opts.secret,
         baseURL: opts.baseUrl,
         basePath,
@@ -61,19 +57,19 @@ export function betterAuth(opts: BetterAuthOptions): AuthConfig {
         socialProviders: translateSocial(providers),
         plugins: translatePlugins(providers),
       });
+      const runtime: AuthRuntime = { handler: engine.handler, api: engine.api as Record<string, unknown>, basePath };
 
-      return {
-        entities: {
-          user: userSchema,
-          session: sessionSchema,
-          account: accountSchema,
-          verification: verificationSchema,
-        },
-        storages: Object.fromEntries(storageMap),
-        handler: engine.handler,
-        api: engine.api as Record<string, unknown>,
-        basePath,
-      };
+      app.container.registerValue(AUTH, runtime);
     },
   };
+}
+
+function storagesOf(app: App, models: Record<string, SchemaView>): StorageMap {
+  return new Map(Object.entries(models).map(([model, schema]) => {
+    const entity = lowerFirst(schema.name);
+    const storage: Storage | undefined = app.storageFor(entity);
+    if (!storage) throw new Error(`[auth] no frond in this process holds '${entity}', the ${model} better-auth writes.`);
+
+    return [model, storage];
+  }));
 }

@@ -85,19 +85,19 @@ describe('authEntities — FK target', () => {
     const { AuthSession } = authEntities(Member);
     const sql = createTableSQL(toTable('sessions', AuthSession), 'pg');
     expect(sql).toContain('references "members" ("id")');
-    expect(sql).not.toContain('auth_users');
+    expect(sql).not.toContain('"users"');
   });
 
   it("account.user_id references the app's own User table when one is provided", () => {
     const { AuthAccount } = authEntities(Member);
     const sql = createTableSQL(toTable('accounts', AuthAccount), 'pg');
     expect(sql).toContain('references "members" ("id")');
-    expect(sql).not.toContain('auth_users');
+    expect(sql).not.toContain('"users"');
   });
 
-  it('falls back to AuthUser\'s own table when no User is provided', () => {
+  it('falls back to the default user, named for the model better-auth writes', () => {
     const { AuthSession, AuthAccount } = authEntities(AuthUser);
-    expect(createTableSQL(toTable('sessions', AuthSession), 'pg')).toContain('references "auth_users" ("id")');
-    expect(createTableSQL(toTable('accounts', AuthAccount), 'pg')).toContain('references "auth_users" ("id")');
+    expect(createTableSQL(toTable('sessions', AuthSession), 'pg')).toContain('references "users" ("id")');
+    expect(createTableSQL(toTable('accounts', AuthAccount), 'pg')).toContain('references "users" ("id")');
   });
 });

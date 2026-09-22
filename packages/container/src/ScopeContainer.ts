@@ -1,5 +1,4 @@
 import type { Container } from './Container.js';
-import { Disposables } from './Disposable.js';
 import { ContainerError } from './ContainerError.js';
 import type { Constructor } from './registration/Constructor.js';
 import type { Lifetime } from './registration/Lifetime.js';
@@ -87,7 +86,7 @@ export class ScopeContainer implements Container {
     }
 
     if (failures.length > 0) {
-      throw ContainerError.all(failures, 'one or more disposals failed');
+      throw new AggregateError(failures, 'one or more disposals failed');
     }
   }
 
@@ -157,11 +156,7 @@ export class ScopeContainer implements Container {
 
     if (made === undefined) throw new ContainerError(this.errorMessage(name));
 
-    this.registry.set(name, {
-      factory: () => made,
-      lifetime: 'singleton',
-      instance: made,
-    });
+    this.registerValue(name, made);
 
     return made as T;
   }
@@ -174,7 +169,12 @@ export class ScopeContainer implements Container {
 
   /** What this scope will close. A value that answers no `[Symbol.asyncDispose]` is not one of them. */
   private remember(value: unknown): void {
-    if (Disposables.is(value)) this.built.push(value);
+    if (ScopeContainer.disposable(value)) this.built.push(value);
+  }
+
+  private static disposable(value: unknown): value is AsyncDisposable {
+    return typeof value === 'object' && value !== null
+      && typeof (value as AsyncDisposable)[Symbol.asyncDispose] === 'function';
   }
 
   private errorMessage(name: string): string {

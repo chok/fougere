@@ -152,11 +152,6 @@ describe('generateSQL', () => {
     expect(sql).toContain('create table if not exists "app_author"');
   });
 
-  it('includes auth runtime entities', () => {
-    const app = { ...fakeApp([]), auth: { entities: { user: Author } } };
-    expect(generateSQL(app)[0]).toContain('"users"');
-  });
-
   it('targets the requested dialect', () => {
     const [sql] = generateSQL(fakeApp([{ name: 'post', entityClass: Post }]), { dialect: 'pg' });
     expect(sql).toContain('double precision');

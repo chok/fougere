@@ -1,19 +1,12 @@
-import type { SchemaView } from '@fougere/schema';
-import type { Storage } from '../storage/Storage.js';
-
-/**
- * Runtime returned by an auth provider's create(config, ctx) function.
- * The core mounts this on the App and the HTTP layer (Nuxt module / router) uses it.
- */
+/** What an auth extension registers under {@link AUTH} once it has risen. */
 export interface AuthRuntime {
-  /** Entities used by the provider, including any defaults it filled in. */
-  entities: Record<string, SchemaView>;
-  /** Per-entity ORMs the provider built for itself. */
-  storages: Record<string, Storage>;
-  /** Web Standard handler that processes /auth/* requests. */
+  /** Web Standard handler that processes `/auth/*` requests. */
   handler: (request: Request) => Promise<Response>;
   /** Programmatic API exposed by the provider (getSession, signOut, ...). */
   api: Record<string, unknown>;
-  /** Effective mount path (echoes config.basePath or the provider's default). */
+  /** Effective mount path. */
   basePath: string;
 }
+
+/** The container key an auth provider registers its runtime under. */
+export const AUTH = 'AuthRuntime';

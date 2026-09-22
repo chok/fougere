@@ -152,8 +152,8 @@ export function toTable(tableName: string, schema: SchemaView, relations?: Relat
     name: tableName,
     columns,
     compositePrimary: primaries.length > 1 ? primaries : [],
-    uniqueGroups: realized(schema.getUnique() ?? []),
-    indexGroups: realized(schema.getIndex() ?? []),
+    uniqueGroups: realized(schema.getUnique()),
+    indexGroups: realized(schema.getIndex()),
   };
 }
 
@@ -198,9 +198,6 @@ function collectEntities(app: AppLike): EntityEntry[] {
     for (const entry of frond.entities) {
       if (verdictOn(entry) === 'table') hold(entry);
     }
-  }
-  if (app.auth?.entities) {
-    for (const [name, entityClass] of Object.entries(app.auth.entities)) hold({ name, entityClass });
   }
 
   return entries;

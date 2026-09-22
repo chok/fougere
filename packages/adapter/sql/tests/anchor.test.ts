@@ -69,28 +69,28 @@ describe('a derivation that only widened', () => {
   });
 });
 
-/**
- * The auth runtime re-registers the app's own `User` under the same name the frond
- * scanned it by. Two entries for one name are two `CREATE TABLE` for one table — the
- * skip that used to hide this also hid the entity's whole verdict.
- */
+/** Two entries for one name are two `CREATE TABLE` for one table. */
 describe('one entity registered twice', () => {
   class User extends entity({ id: primary(), email: text() }) {}
 
   it('makes one table, not two', () => {
     const app = {
-      fronds: [{ name: 'account', entities: [{ name: 'user', entityClass: User }] }],
-      auth: { entities: { user: User } },
+      fronds: [
+        { name: 'account', entities: [{ name: 'user', entityClass: User }] },
+        { name: 'auth', entities: [{ name: 'user', entityClass: User }] },
+      ],
     };
 
     expect(tablesOf(app)).toEqual(['users']);
   });
 
-  it('still brings in what only the auth runtime holds', () => {
+  it('brings in what a frond an extension brought holds', () => {
     class Session extends entity({ id: primary(), userId: text() }) {}
     const app = {
-      fronds: [{ name: 'account', entities: [{ name: 'user', entityClass: User }] }],
-      auth: { entities: { user: User, session: Session } },
+      fronds: [
+        { name: 'account', entities: [{ name: 'user', entityClass: User }] },
+        { name: 'auth', entities: [{ name: 'session', entityClass: Session }] },
+      ],
     };
 
     expect(tablesOf(app).sort()).toEqual(['sessions', 'users']);

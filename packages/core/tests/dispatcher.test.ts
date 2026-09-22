@@ -85,7 +85,7 @@ describe('Dispatcher', () => {
   it('observes a call refused by closed admission', async () => {
     const events: DispatchEvent[] = [];
     const inFlight = new InFlight();
-    inFlight.close();
+    await inFlight.drain();
     const dispatcher = new Dispatcher(
       new RouteRegistry(),
       inFlight,

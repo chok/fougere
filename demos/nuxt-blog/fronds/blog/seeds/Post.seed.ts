@@ -8,10 +8,10 @@ type Facade = Record<string, (inv?: Record<string, unknown>) => Promise<any>>;
 
 export default async (resolve: <T>(name: string) => T) => {
   const posts = resolve<Facade>('post');
-  const published = await posts.list();
+  const { items: published } = await posts.list();
   if (published.length > 0) return [];
 
-  const authors = await resolve<Facade>('author').list();
+  const { items: authors } = await resolve<Facade>('author').list();
   const [alice, bob] = authors;
 
   const items = [

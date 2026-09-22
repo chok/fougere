@@ -91,7 +91,7 @@ export type { FougereOperations } from './wire/FougereOperations.js';
 export type { HandlerOf } from './wire/HandlerOf.js';
 export type { Refused } from './wire/Refused.js';
 export type { Rows } from './wire/Rows.js';
-export type { Facade } from './wire/Facade.js';
+export { addressOf, type Facade } from './wire/Facade.js';
 export type {
   FrondCall,
   Transport,
@@ -150,9 +150,7 @@ export type { PresenterEntry } from './descriptor/PresenterEntry.js';
 export type { PresenterFieldMeta } from './descriptor/PresenterFieldMeta.js';
 export type { ProviderEntry } from './descriptor/ProviderEntry.js';
 export type { SeedEntry } from './descriptor/SeedEntry.js';
-export type { AuthConfig } from './boot/AuthConfig.js';
-export type { AuthContext } from './boot/AuthContext.js';
-export type { AuthRuntime } from './boot/AuthRuntime.js';
+export { AUTH, type AuthRuntime } from './boot/AuthRuntime.js';
 export { Fronds } from './descriptor/Fronds.js';
 export { verify, type Misplaced } from './verify.js';
 // Same question as verify(), answered from the source text instead of the model.

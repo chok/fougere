@@ -117,7 +117,7 @@ export function inferOperationKind(name: string): OperationKindInference {
 }
 
 /** Explicit config is authoritative; otherwise the finite convention may decline. */
-export function resolveOperationKind(
+function resolveOperationKind(
   name: string,
   overrides?: Record<string, { kind?: OperationKind }>,
 ): OperationKind | undefined {

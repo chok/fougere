@@ -10,15 +10,12 @@ import { type FieldGroups } from './entity/FieldGroups.js';
  * argument in a list that has already lost one.
  */
 export class SchemaConstraints<TFields extends Fields = Fields> {
-  readonly unique?: FieldGroups<TFields>;
-  readonly index?: FieldGroups<TFields>;
+  private constructor(
+    readonly unique: FieldGroups<TFields>,
+    readonly index: FieldGroups<TFields>,
+  ) {}
 
-  private constructor(unique?: FieldGroups<TFields>, index?: FieldGroups<TFields>) {
-    if (unique) this.unique = unique;
-    if (index) this.index = index;
-  }
-
-  static readonly none = new SchemaConstraints();
+  static readonly none = new SchemaConstraints([], []);
 
   /**
    * The order is part of a group, so `['a','b']` and `['b','a']` are two constraints.
@@ -41,21 +38,20 @@ export class SchemaConstraints<TFields extends Fields = Fields> {
 }
 
 const deduped = <TFields extends Fields>(
-  groups?: FieldGroups<TFields>,
-): FieldGroups<TFields> | undefined => {
-  if (!groups) return undefined;
+  groups: FieldGroups<TFields> = [],
+): FieldGroups<TFields> => {
   const seen = new Map<string, readonly FieldName<TFields>[]>();
   for (const group of groups) seen.set(JSON.stringify(group), group);
 
-  return seen.size ? [...seen.values()] : undefined;
+  return [...seen.values()];
 };
 
 const survivors = (
-  groups: FieldGroups<Fields> | undefined,
+  groups: FieldGroups<Fields>,
   transform: (key: string) => string | undefined,
 ): string[][] => {
   const kept: string[][] = [];
-  for (const group of groups ?? []) {
+  for (const group of groups) {
     const renamed = group.map(transform);
     if (renamed.every((key): key is string => key !== undefined)) kept.push(renamed);
   }

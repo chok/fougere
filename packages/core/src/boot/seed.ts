@@ -67,7 +67,7 @@ function whatEachWaitsFor(
 /** Where a seed writes, and what it may skip — resolved per entity. */
 interface SeedFacade {
   list(): Promise<unknown[]>;
-  write(item: unknown): Promise<unknown>;
+  write(item: Record<string, unknown>): Promise<unknown>;
 }
 
 /**
@@ -126,9 +126,7 @@ function facadeFor(app: App, entityName: string): SeedFacade | undefined {
     };
   }
 
-  const storage = app.storageFor(entityName) as
-    | { list: () => Promise<unknown[]>; create: (input: unknown) => Promise<unknown> }
-    | undefined;
+  const storage = app.storageFor(entityName);
   if (!storage) return undefined;
 
   return { list: () => storage.list(), write: (item) => storage.create(item) };

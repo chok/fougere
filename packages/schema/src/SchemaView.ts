@@ -17,8 +17,8 @@ export interface SchemaView<TFields extends Fields = Fields> {
   readonly anchored?: boolean;
   getFields(): TFields;
   getAdapters(): EntityAdapters<TFields>;
-  getUnique(): FieldGroups<TFields> | undefined;
-  getIndex(): FieldGroups<TFields> | undefined;
+  getUnique(): FieldGroups<TFields>;
+  getIndex(): FieldGroups<TFields>;
   getOpts(): ValidateOptions;
   validate(input: unknown): ValidationResult<Values<TFields>>;
 }

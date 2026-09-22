@@ -1,4 +1,5 @@
 import { applyCreate, dotted, lowerFirst, type SchemaView } from '@fougere/schema';
+import { addressOf, facadeKeyOf } from '../wire/Facade.js';
 import type { Container } from '@fougere/container';
 import { validationErrorsOf } from '../wire/FougereError.js';
 import { awaitKeyOf, emitKeyOf, factsAnnouncedBy, factsAwaitedBy } from '../wire/Emit.js';
@@ -368,12 +369,7 @@ export class Emissions {
   }
 }
 
-/**
- * The container key a declared CLASS NAME answers under — `RedactHandler` → `redactHandler`,
- * the same key `facadeKeyOf` builds from an address.
- */
+/** The container key a declared CLASS NAME answers under — `RedactHandler` → `redactHandler`. */
 function facadeOf(declared: string): string {
-  const key = lowerFirst(declared);
-
-  return key.endsWith('Handler') ? key : `${key}Handler`;
+  return facadeKeyOf(addressOf(declared));
 }

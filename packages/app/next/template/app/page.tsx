@@ -1,3 +1,4 @@
+import type { Page } from '@fougere/core';
 import { invoke } from '@fougere/next';
 // Replace with an entity your own frond declares.
 import Post from '@fronds/blog/entities/Post';
@@ -10,7 +11,7 @@ import Post from '@fronds/blog/entities/Post';
  * `useQuery` from `@fougere/react` instead, with a facade from `@fronds/facade`.
  */
 export default async function Home() {
-  const rows = await invoke<Post[]>(Post, 'list');
+  const { items: rows } = await invoke<Page<Post>>(Post, 'list');
 
   return (
     <main style={{ maxWidth: 720, margin: '3rem auto', fontFamily: 'system-ui' }}>

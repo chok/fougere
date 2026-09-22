@@ -141,7 +141,7 @@ describe('`entity(fields, …)` is the short form of the same statement', () => 
     );
 
     expect(Article.declares({ previous: { title: 'headline' } }).getUnique()).toEqual([['tenant', 'title']]);
-    expect(Article.declares({ unique: [] }).getUnique()).toBeUndefined();
+    expect(Article.declares({ unique: [] }).getUnique()).toEqual([]);
   });
 
   it('tells two groups apart when a field name carries a space', () => {

@@ -8,7 +8,7 @@ import type { SourceConfig } from './SourceConfig.js';
 export function declares(schema: SchemaView, constraint: Constraint): boolean {
   const fields = Object.values(schema.getFields());
   if (constraint === 'relation') return fields.some((field) => Role.of(field).isReference());
-  if ((schema.getUnique() ?? []).length > 0) return true;
+  if (schema.getUnique().length > 0) return true;
 
   return fields.some((field) => Role.of(field).isUnique());
 }

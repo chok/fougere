@@ -457,90 +457,51 @@ function buildFacadeInto(
   ));
 }
 
-export async function installFrond(frond: FrondDescriptor, assembly: Assembly): Promise<void> {
-  const {
-    container, routeRegistry, emissions, dispatcher, localDispatcher, effectiveByKey,
-    boundPorts, refused, operationModel, entityByName, frondOf, contractsOf, getMiddlewares, use,
-    log, options,
-  } = assembly;
-
-  // Declared remote: keep the scanned metadata (bridges route with it),
-  // register nothing locally — resolve() falls through to the remote façade.
-  if (options.remotes && frond.name in options.remotes) {
-    log.child(frond.name).info('declared remote — not hosted locally');
-    // Its facades answer elsewhere, but what they LISTEN to was read here.
-    for (const handler of frond.handlers) {
-      const key = facadeKeyOf(handler.address, handler.surface);
-      const operations = operationModel.forHandler(handler);
-      effectiveByKey.set(key, operations);
-      emissions.note(contractsOf(operations), key);
-
-    }
-
-    return;
+/** Its facades answer elsewhere, but what they LISTEN to is read here, and the bridges route with it. */
+function noteRemoteFrond(frond: FrondDescriptor, { operationModel, effectiveByKey, emissions, contractsOf, log }: Assembly): void {
+  log.child(frond.name).info('declared remote — not hosted locally');
+  for (const handler of frond.handlers) {
+    const key = facadeKeyOf(handler.address, handler.surface);
+    const operations = operationModel.forHandler(handler);
+    effectiveByKey.set(key, operations);
+    emissions.note(contractsOf(operations), key);
   }
-  // A child hangs off its parent, so everything the parent registered answers here too and
-  // nothing else has to know: `ScopeContainer.resolve` already walks up. The boot installs
-  // parents first, which is what makes the key below resolvable.
-  const above = frond.extends ? container.resolve<Container>(`frond:${frond.extends}`) : container;
-  const scope = above.createScope();
-  const frondLog = log.child(frond.name);
-  // The frond's own voice, a child of the APP logger and never of `log` — which is the
-  // boot's, so a service's line would have claimed `boot:` long after the boot was over.
-  scope.registerValue('Logger', container.resolve<Logger>('Logger').child(frond.name));
+}
 
-  // `reads:` is what makes a cross-source reader exist here, and the list IS its
-  // environment — a source holding none of these is never opened. Registered under
-  // the type's own name, which is the key `depKeyOf` already derives for a plain
-  // parameter: `constructor(private reads: Reads)` and nothing else to say.
-  // Declaring `reads:` with nothing to build the reader is a boot that ignores a
-  // clause: the handler asking for `Reads` then dies at its first call, on a
-  // container message that names neither the clause nor what is missing.
-  await registerReads(frond, scope, entityByName, options.sourcesFactory, frondLog);
-
-  // Who owns what, and the rule that makes owning mean something. Before anything is
-  // registered, so a bad line is named by this refusal rather than by the container's.
+/**
+ * Who owns what, and the rule that makes owning mean something — refused before anything is
+ * registered, so a bad line is named here rather than by the container.
+ */
+function ownershipOf(frond: FrondDescriptor, { entityByName, refused }: Assembly): Map<string, string> {
   sharedNames(frond, refused);
   refuseArityDrift(frond, refused);
   const owners = ownersOf(frond.providers, frond.name, refused);
   storageInUserCode(frond, owners, (entity) => entityByName.has(entity), refused);
   crudOnOwned(frond, owners, refused);
 
-  const declared = registerProviders(frond, scope, options.ports, boundPorts, refused, frondLog);
-  // An ancestor's links stand OUTSIDE this frond's own, the order `wrapping` reads — and
-  // like a middleware, a link cannot be inherited through a container key, since a seam has
-  // none: its realization is built rather than resolved.
-  const seams = inheritedSeams(frond, assembly.seamsOf, declared);
-  assembly.seamsOf.set(frond.name, seams);
+  return owners;
+}
 
-  // Register Storage for each entity — PascalCase type name (e.g. 'PostStorage')
-  // When a handler declares Crud(Entity, Output), scope the storage via .output(Output)
-  registerStorages(frond, assembly, scope, seams, owners, frondLog);
+/** A frame is read from the same `deps` every port is: asking for one IS declaring it. */
+function registerFramesOf(frond: FrondDescriptor, assembly: Assembly, scope: Container, frondLog: Logger): void {
+  const { entityByName, frondOf, options, hosting, refused } = assembly;
+  const wanted = [...frond.handlers, ...frond.providers, ...frond.presenters, ...frond.collectors]
+    .flatMap((declared) => declared.deps.map((key) => ({ key, filePath: declared.filePath })));
 
-  // Frames, after the ORMs and before anything that may ask for one. A frame is read
-  // from the same `deps` every other port is read from — asking for it IS declaring it,
-  // so nothing is registered for a frame nobody wants.
-  registerFrames(
-    scope,
-    [...frond.handlers, ...frond.providers, ...frond.presenters, ...frond.collectors]
-      .flatMap((d) => d.deps.map((key) => ({ key, filePath: d.filePath }))),
-    frond.providers,
-    {
-      entityByName,
-      frondOf,
-      hostedHere: (name) => !(options.remotes && name in options.remotes),
-      storageFactory: options.storageFactory,
-      sourceOf: options.sourceOf,
-      transacts: options.transacts,
-      transacted: options.transacted,
-      hosting: assembly.hosting,
-      log: frondLog,
-    },
-    refused,
-  );
+  registerFrames(scope, wanted, frond.providers, {
+    entityByName,
+    frondOf,
+    hostedHere: (name) => !(options.remotes && name in options.remotes),
+    storageFactory: options.storageFactory,
+    sourceOf: options.sourceOf,
+    transacts: options.transacts,
+    transacted: options.transacted,
+    hosting,
+    log: frondLog,
+  }, refused);
+}
 
-  // Register presenters in scope — PascalCase type name (e.g. 'PostPresenter')
-  const presenterMap = new Map(frond.presenters.map((p) => [p.entityName, p]));
+function registerPresenters(frond: FrondDescriptor, scope: Container, frondLog: Logger): Map<string, PresenterEntry> {
   for (const presenter of frond.presenters) {
     scope.register(presenterKeyOf(presenter.entityName), presenter.ctor, { deps: presenter.deps });
   }
@@ -548,104 +509,117 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
     frondLog.debug(`${frond.presenters.length} presenter(s): ${frond.presenters.map((p) => p.entityName).join(', ')}`);
   }
 
-  // Register collectors in scope — PascalCase type name (e.g. 'UserCollector')
-  const collectorTypeNames = new Set(frond.collectors.map((c) => c.typeName));
+  return new Map(frond.presenters.map((presenter) => [presenter.entityName, presenter]));
+}
+
+function registerCollectors(frond: FrondDescriptor, scope: Container, frondLog: Logger): Set<string> {
   for (const collector of frond.collectors) {
-    const key = collectorKeyOf(collector.typeName);
-    scope.register(key, collector.ctor, { deps: collector.deps });
+    scope.register(collectorKeyOf(collector.typeName), collector.ctor, { deps: collector.deps });
   }
   if (frond.collectors.length > 0) {
     frondLog.debug(`${frond.collectors.length} collector(s): ${frond.collectors.map((c) => c.typeName).join(', ')}`);
   }
 
-  // Register middlewares in scope, then take them on. Resolved per call and never here:
-  // a middleware asking for something request-scoped would otherwise be handed the one
-  // instance the boot built — the same reason `getMiddlewares` is read at call time.
-  registerMiddlewares(frond, scope, assembly, frondLog);
+  return new Set(frond.collectors.map((collector) => collector.typeName));
+}
 
-  // Build handler facades → registered in ROOT container (public contract)
-  const defaultHandlers = frond.handlers.filter((h) => !h.surface);
-  const surfaceHandlers = frond.handlers.filter((h) => h.surface);
-  const defaultHandlerMap = new Map(defaultHandlers.map((h) => [h.address, h]));
+function sayFacade(building: Building, facadeKey: string, entity: EntityEntry | undefined): void {
+  const operations = Object.keys(building.assembly.container.resolve(facadeKey) as object).join(', ');
+  building.frondLog.debug(`${facadeKey} [${operations}]`
+    + (entity ? '' : ' — no entity of that name: no storage, no projection, no presenter'));
+}
 
-  const building: Building = { frond, assembly, scope, collectorTypeNames, presenterMap, frondLog };
-  const buildFacade = (
-    entity: EntityEntry | undefined,
-    handler: HandlerEntry,
-    targetScope: Container,
-    facadeKey: string,
-  ) => buildFacadeInto(building, entity, handler, targetScope, facadeKey);
-
-  // A presenter is about an entity — computed fields sit on a shape — so this walks
-  // entities. Exposing the instance lazily; the bridge resolves it on first access.
-  exposePresenters(frond, presenterMap, container, scope);
-
-  // A facade is about a handler, so this walks HANDLERS. It walked entities before,
-  // which made an entity a precondition for being callable at all: a handler naming
-  // none was scanned, then never built, and nothing said so.
-  for (const handler of defaultHandlers) {
-    // Two ways to know the subject, and the explicit one wins: `Crud(Item)` names the
-    // entity it was built on, whatever the handler is called. Otherwise the handler's
-    // own name is the only thing pointing at one — and pointing at nothing is legal.
-    //
-    // By NAME, not by identity: the scanner loads an entity through its own loader and
-    // the handler imports it through the runtime's, so the same class arrives as two
-    // objects. `===` compares module instances, which is not the question being asked.
+/**
+ * A facade is about a handler, so this walks HANDLERS — pointing at no entity is legal. The
+ * subject is `Crud(Item)`'s when it names one, the handler's own name otherwise, compared by
+ * NAME: the scanner and the runtime load one class as two objects.
+ */
+function buildDefaultFacades(building: Building, handlers: readonly HandlerEntry[]): void {
+  for (const handler of handlers) {
     const crudTarget = targetOf(handler.ctor);
     const subject = crudTarget?.name ? lowerFirst(crudTarget.name) : handler.address;
-    const entity = frond.entities.find((e) => e.name === subject);
+    const entity = building.frond.entities.find((e) => e.name === subject);
     const facadeKey = facadeKeyOf(handler.address);
-    buildFacade(entity, handler, scope, facadeKey);
-    frondLog.debug(`${facadeKey} [${Object.keys(container.resolve(facadeKey) as object).join(', ')}]`
-      + (entity ? '' : ' — no entity of that name: no storage, no projection, no presenter'));
+    buildFacadeInto(building, entity, handler, building.scope, facadeKey);
+    sayFacade(building, facadeKey, entity);
   }
+}
 
-  // The dual, and it stays: a shape that declares no operation answers nothing. Said
-  // once per entity rather than deduced from a silence.
-  for (const entity of frond.entities) {
-    if (!defaultHandlerMap.has(entity.name)) {
-      frondLog.debug(`${entity.name} — entity only, no handler: exposes nothing`);
-    }
+/** A shape that declares no operation answers nothing — said once per entity rather than deduced from a silence. */
+function sayUnhandledEntities(building: Building, handlers: readonly HandlerEntry[]): void {
+  const handled = new Set(handlers.map((handler) => handler.address));
+  for (const entity of building.frond.entities) {
+    if (!handled.has(entity.name)) building.frondLog.debug(`${entity.name} — entity only, no handler: exposes nothing`);
   }
+}
 
-  // Surface handlers — create sub-scope per surface handler with scoped storage
-  //
-  // Pointing at nothing is legal HERE TOO. This loop used to `continue` when no entity
-  // carried the handler's name, so `handlers/public/SearchHandler.ts` with no `Search`
-  // entity got no facade at all and no line saying why — while the very same handler at
-  // the default surface is built and logged. One rule, both surfaces.
-  for (const handler of surfaceHandlers) {
-    const entity = frond.entities.find((e) => e.name === handler.address);
-    const surfaceScope = scope.createScope();
-
-    // Register scoped storage if output override differs from entity — under the REPOSITORY
-    // key, which is what a Crud handler asks for, and under the port's own for a holder
-    // that legitimately names it. Registering only the latter left a named surface with
-    // no facade at all once the façade stopped spelling the storage.
-    if (entity) registerSurfaceStorage(entity, handler, surfaceScope, assembly, frondLog);
+/**
+ * One sub-scope per surface handler, holding the storage its view scopes — under the REPOSITORY
+ * key a Crud handler asks for. Pointing at no entity is legal here too: one rule, both surfaces.
+ */
+function buildSurfaceFacades(building: Building, handlers: readonly HandlerEntry[]): void {
+  for (const handler of handlers) {
+    const entity = building.frond.entities.find((e) => e.name === handler.address);
+    const surfaceScope = building.scope.createScope();
+    if (entity) registerSurfaceStorage(entity, handler, surfaceScope, building.assembly, building.frondLog);
 
     const facadeKey = facadeKeyOf(handler.address, handler.surface);
-    buildFacade(entity, handler, surfaceScope, facadeKey);
-    frondLog.debug(`${facadeKey} [${Object.keys(container.resolve(facadeKey) as object).join(', ')}]`
-      + (entity ? '' : ' — no entity of that name: no storage, no projection, no presenter'));
+    buildFacadeInto(building, entity, handler, surfaceScope, facadeKey);
+    sayFacade(building, facadeKey, entity);
   }
+}
 
-  // A named surface is closed, so what it contains is a fact worth stating.
-  // Saying it at boot is the difference between a rule and a rule you can
-  // check: an entity you meant to serve and never wrote a handler for is
-  // absent HERE, in one line, instead of being discovered missing later.
-  const surfaceNames = [...new Set(surfaceHandlers.map((h) => h.surface as string))].sort();
+/** A named surface is closed, so what it serves — and what it leaves out — is said at boot, in one line. */
+function sayWhatSurfacesServe(frond: FrondDescriptor, handlers: readonly HandlerEntry[], frondLog: Logger): void {
+  const surfaceNames = [...new Set(handlers.map((h) => h.surface as string))].sort();
   for (const surfaceName of surfaceNames) {
-    const served = surfaceHandlers
-      .filter((h) => h.surface === surfaceName)
-      .map((h) => h.address)
-      .sort();
+    const served = handlers.filter((h) => h.surface === surfaceName).map((h) => h.address).sort();
     const absent = frond.entities.map((e) => e.name).filter((n) => !served.includes(n));
     frondLog.info(
       `surface '${surfaceName}' — ${served.length} entit${served.length === 1 ? 'y' : 'ies'}: ${served.join(', ')}` +
       (absent.length > 0 ? ` (not served: ${absent.join(', ')})` : ''),
     );
   }
+}
+
+export async function installFrond(frond: FrondDescriptor, assembly: Assembly): Promise<void> {
+  const { container, entityByName, options, log } = assembly;
+
+  if (options.remotes && frond.name in options.remotes) {
+    noteRemoteFrond(frond, assembly);
+
+    return;
+  }
+
+  // A child hangs off its parent, so what the parent registered answers here too — parents are installed first.
+  const above = frond.extends ? container.resolve<Container>(`frond:${frond.extends}`) : container;
+  const scope = above.createScope();
+  const frondLog = log.child(frond.name);
+  // A child of the APP logger, never of the boot's, whose `boot:` would outlive the boot.
+  scope.registerValue('Logger', container.resolve<Logger>('Logger').child(frond.name));
+
+  await registerReads(frond, scope, entityByName, options.sourcesFactory, frondLog);
+  const owners = ownershipOf(frond, assembly);
+
+  const declared = registerProviders(frond, scope, options.ports, assembly.boundPorts, assembly.refused, frondLog);
+  // An ancestor's links stand OUTSIDE this frond's own; a seam has no container key to inherit through.
+  const seams = inheritedSeams(frond, assembly.seamsOf, declared);
+  assembly.seamsOf.set(frond.name, seams);
+  registerStorages(frond, assembly, scope, seams, owners, frondLog);
+  registerFramesOf(frond, assembly, scope, frondLog);
+
+  const presenterMap = registerPresenters(frond, scope, frondLog);
+  const collectorTypeNames = registerCollectors(frond, scope, frondLog);
+  registerMiddlewares(frond, scope, assembly, frondLog);
+  exposePresenters(frond, presenterMap, container, scope);
+
+  const building: Building = { frond, assembly, scope, collectorTypeNames, presenterMap, frondLog };
+  const defaultHandlers = frond.handlers.filter((h) => !h.surface);
+  const surfaceHandlers = frond.handlers.filter((h) => h.surface);
+  buildDefaultFacades(building, defaultHandlers);
+  sayUnhandledEntities(building, defaultHandlers);
+  buildSurfaceFacades(building, surfaceHandlers);
+  sayWhatSurfacesServe(frond, surfaceHandlers, frondLog);
 
   container.registerValue(`frond:${frond.name}`, scope);
   frondLog.info(`registered — ${frond.entities.length} entities, ${frond.handlers.length} handlers, ${frond.seeds.length} seeds`);

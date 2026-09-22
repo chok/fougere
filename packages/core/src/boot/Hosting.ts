@@ -2,6 +2,7 @@ import type { SchemaView } from '@fougere/schema';
 import type { Constraint } from '../Constraint.js';
 import type { Peer } from './Peer.js';
 import type { Journal } from '../dispatch/Journal.js';
+import type { Storage } from '../storage/Storage.js';
 
 /**
  * Where an entity's rows are hosted, and what the host keeps — what a `ref()` asks the boot.
@@ -17,7 +18,7 @@ export interface Hosting {
    * Resolved through the frond that owns it, never the asking frond's scope: a scope sees its
    * parent and not its siblings, so a target of another frond was answered by nothing.
    */
-  storageOf(entity: string): unknown | undefined;
+  storageOf(entity: string): Storage | undefined;
   /** Every entity of every frond — a row is named from wherever its namer was declared. */
   entities(): ReadonlyMap<string, SchemaView>;
   /**

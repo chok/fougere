@@ -157,7 +157,7 @@ suite('a card is a schema source', () => {
     // `(listId)` alone says nothing about the pair — keeping the remnant would state a
     // stronger fact than the author wrote, so both the declaration and the projection go.
     const amputated = ListBook.pick('id', 'listId');
-    expect(amputated.getUnique()).toBeUndefined();
+    expect(amputated.getUnique()).toEqual([]);
     // The rest of the role is untouched — dropping the group is not dropping the ref.
     expect((Card.fromSchema(amputated).descriptor.properties.listId!['x-fougere'] as any).role)
       .toEqual({ relation: { to: 'author', kind: 'one' } });

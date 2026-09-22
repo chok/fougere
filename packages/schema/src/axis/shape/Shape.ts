@@ -80,10 +80,6 @@ type _ShapeTypesAreTheStandardsLessNull = Assert<
     : false
 >;
 
-/** Every type name a shape states, whether it states one or a union of them. */
-const typesOf = (shape: Shape): readonly string[] =>
-  (Array.isArray(shape.type) ? shape.type : [shape.type]) as readonly string[];
-
 export class Shapes {
   private static readonly cache = new WeakMap<object, ShapeParts>();
   private static readonly none: ShapeParts = { base: undefined, nullable: false };
@@ -128,7 +124,7 @@ export class Shapes {
    * `{ type: 'string', enum: ['draft'] }`   → `{ type: ['string','null'], enum: ['draft', null] }`
    */
   static nullable(shape: Shape): Shape {
-    const types = typesOf(shape);
+    const types = Shapes.typesOf(shape);
     if (types.includes('null')) return shape;
 
     const nullable = { ...shape, type: [...types, 'null'] } as unknown as Shape;
@@ -140,6 +136,13 @@ export class Shapes {
     }
 
     return nullable;
+  }
+
+  /** Every type name a shape states — none, since a card may carry a property with no `type`. */
+  static typesOf(shape: { type?: string | readonly string[] }): readonly string[] {
+    if (shape.type === undefined) return [];
+
+    return typeof shape.type === 'string' ? [shape.type] : shape.type;
   }
 
   static of(shape?: Shape): ShapeParts {

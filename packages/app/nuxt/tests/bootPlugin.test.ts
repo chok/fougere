@@ -230,4 +230,22 @@ describe('extensionsOf', () => {
       expect(out).not.toContain('import fronds');
     });
   });
+  describe('auth', () => {
+    it('imports the provider from the config, since its functions cannot travel as JSON', () => {
+      const out = generateBootPlugin(
+        { db: 'sqlite' } as FougereConfig, [], '/app/boot', [], undefined, undefined,
+        ['/app/fougere.config.ts', '/workspace/fougere.config.ts']);
+
+      expect(out).toContain("import config_0 from '/app/fougere.config';");
+      expect(out).toContain("import config_1 from '/workspace/fougere.config';");
+      expect(out).toContain('(config_0.auth ?? config_1.auth),');
+    });
+
+    it('hands it over even when the app declares no storage', () => {
+      const out = generateBootPlugin(
+        { db: false } as FougereConfig, [], '/app/boot', [], undefined, undefined, ['/app/fougere.config.ts']);
+
+      expect(out).toContain('extensions: [(config_0.auth)]');
+    });
+  });
 });

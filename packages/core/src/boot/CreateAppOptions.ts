@@ -6,8 +6,6 @@ import type { StorageFactory } from '../storage/StorageFactory.js';
 import type { Constraint } from '../Constraint.js';
 import type { Transport } from '../wire/Transport.js';
 import type { Extension } from './Extension.js';
-import type { AuthConfig } from './AuthConfig.js';
-import type { DispatchObserver } from '../dispatch/DispatchObserver.js';
 import type { App } from './App.js';
 
 /** Options for createApp(). */
@@ -86,13 +84,4 @@ export interface CreateAppOptions {
   adapters?: Record<string, boolean | undefined>;
   /** Carries an announced fact out of this process — a broker, a queue, a log. */
   onEmit?: (fact: string, payload: unknown) => void | Promise<void>;
-  /** Passive observers of every dispatch transition. */
-  dispatchObservers?: readonly DispatchObserver[];
-  /**
-   * Storage handle to expose to the auth provider via AuthContext.db.
-   * Required when `auth` is set.
-   */
-  db?: unknown;
-  /** Auth declaration to wire into the app at boot. */
-  auth?: AuthConfig;
 }

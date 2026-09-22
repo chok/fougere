@@ -21,6 +21,9 @@ import type { EffectiveOperationOptions } from './EffectiveOperationOptions.js';
 
 type Binding = BindingPlan[number];
 
+/** A contract whose parameters are all bound. */
+type BoundContract = OperationContract & { binding: BindingPlan };
+
 /**
  * Where an op's work goes: the fronds its handler reaches, and how many are a process away.
  *
@@ -47,24 +50,28 @@ function reachOf(
  * boot never has to find a handler again by an order-dependent name lookup.
  */
 export class EffectiveOperationModel {
-  readonly operations: EffectiveOperation[];
-  readonly diagnostics: Diagnostic[];
-  readonly resolutionDiagnostics: Diagnostic[];
-
   constructor(
-    operations: EffectiveOperation[],
-    diagnostics: Diagnostic[],
-    resolutionDiagnostics: Diagnostic[],
+    readonly operations: EffectiveOperation[],
+    readonly diagnostics: Diagnostic[],
+    readonly resolutionDiagnostics: Diagnostic[],
     private readonly byHandler: Map<HandlerEntry, EffectiveOperationsMap>,
-  ) {
-    this.operations = operations;
-    this.diagnostics = diagnostics;
-    this.resolutionDiagnostics = resolutionDiagnostics;
-  }
+  ) {}
 
   forHandler(handler: HandlerEntry): EffectiveOperationsMap {
     return this.byHandler.get(handler) ?? new Map();
   }
+}
+
+/** What one handler's operations are resolved against. */
+interface Resolving {
+  fronds: readonly FrondDescriptor[];
+  frond: FrondDescriptor;
+  handler: HandlerEntry;
+  schemas: Map<string, SchemaView>;
+  served: Map<string, string>;
+  collectorsByType: Map<string, CollectorEntry[]>;
+  options: EffectiveOperationOptions;
+  diagnostics: Diagnostic[];
 }
 
 /** Resolve the complete operation model without starting the application. */
@@ -74,214 +81,40 @@ export function resolveEffectiveOperations(
 ): EffectiveOperationModel {
   const operations: EffectiveOperation[] = [];
   const byHandler = new Map<HandlerEntry, EffectiveOperationsMap>();
-  const resolutionDiagnostics: Diagnostic[] = [];
   const scanDiagnostics = [...(options.diagnostics ?? [])];
   const schemas = new Map(
     fronds.flatMap((frond) => frond.entities.map((entity) => [entity.name, entity.entityClass] as const)),
   );
-  /** Every address a frond answers, so a dependency naming one is read as the crossing it is. */
   const served = servedBy(fronds);
 
-  // Input ambiguity is produced where schemas are available (the scanner), but it is a
-  // resolution failure. Lift it into the same refusal table as kind/binding/topology.
-  resolutionDiagnostics.push(...scanDiagnostics.filter((diagnostic) =>
-    diagnostic.code === 'input-contract-ambiguous'));
+  // Input ambiguity is found by the scanner, where schemas are, but it is a resolution failure.
+  const diagnostics = scanDiagnostics.filter((diagnostic) => diagnostic.code === 'input-contract-ambiguous');
 
   for (const frond of fronds) {
     const collectorsByType = groupedCollectors(frond.collectors);
-    for (const [typeName, collectors] of collectorsByType) {
-      if (collectors.length < 2) continue;
-      resolutionDiagnostics.push({
-        severity: 'blocking',
-        code: 'collector-ambiguous',
-        filePath: collectors[0]!.filePath,
-        frond: frond.name,
-        subject: typeName,
-        message: `Frond '${frond.name}' declares ${collectors.length} collectors for '${typeName}' — `
-          + `${collectors.map((collector) => collector.ctor.name).sort().join(', ')}. `
-          + 'Exactly one collector must own a parameter type.',
-      });
-    }
+    refuseAmbiguousCollectors(frond, collectorsByType, diagnostics);
 
     const collectorNames = new Set(frond.collectors.map((collector) => collector.typeName));
     for (const handler of frond.handlers) {
       const effective = new Map<string, EffectiveOperation>();
       byHandler.set(handler, effective);
       const contracts = resolveContracts(handler, frond.operationsOverrides, collectorNames);
-      // A statement wins over the scan on purpose; saying so out loud is what keeps the
-      // win from hiding a rename. Compared here, where both readings are in hand.
-      resolutionDiagnostics.push(...statementDrift(frond, handler));
-      resolutionDiagnostics.push(...unansweredOperations(frond, handler, contracts.keys()));
+      // A statement wins over the scan on purpose; saying so is what keeps the win from hiding a rename.
+      diagnostics.push(...statementDrift(frond, handler));
+      diagnostics.push(...unansweredOperations(frond, handler, contracts.keys()));
 
-      for (const [name, rawContract] of contracts) {
-        const subject = `${handler.ctor.name}.${name}`;
-        const contract = normalizeBinding(rawContract, handler, frond, name, resolutionDiagnostics);
-        if (!contract) continue;
-
-        // An operation answers DATA — what JSON keeps. A DECLARED output is converted by its
-        // fields, so `created()` leaves as an ISO string and nothing is asked of it here; an
-        // undeclared one has nothing to convert it, so it must already be data. Measured
-        // 2026-09-18: `{ at: new Date(0) }` reaches a local caller as a `Date` and a remote one
-        // as a string, and an object carrying methods loses them on both sides, differently.
-        if (!contract.output && contract.signature?.notData) {
-          resolutionDiagnostics.push({
-            severity: 'blocking',
-            code: 'operation-output-not-data',
-            filePath: handler.filePath,
-            frond: frond.name,
-            subject,
-            message: `${subject}() answers ${contract.signature.notData}, which carries methods.\n`
-              + '  An operation answers data — what JSON keeps.\n'
-              + '  Declare the output as an entity, whose fields convert it, or answer what it produces.',
-          });
-          continue;
-        }
-
-        const override = frond.operationsOverrides?.[name];
-        const inference = inferOperationKind(name);
-        const inferredKinds = new Set<OperationKind>();
-        if (inference.kind) inferredKinds.add(inference.kind);
-        if (inference.queryMatches.length > 0) inferredKinds.add('query');
-        if (inference.commandMatches.length > 0) inferredKinds.add('command');
-        const kind = override?.kind
-          ?? (inferredKinds.size === 1 ? [...inferredKinds][0] : undefined);
-        if (!kind) {
-          const ambiguous = inferredKinds.size > 1;
-          resolutionDiagnostics.push({
-            severity: 'blocking',
-            code: ambiguous ? 'operation-kind-ambiguous' : 'operation-kind-unknown',
-            filePath: handler.filePath,
-            frond: frond.name,
-            subject,
-            message: ambiguous
-              ? `Cannot resolve the kind of ${subject}: its name carries query evidence `
-                + `(${inference.queryMatches.join(', ')}) and command evidence `
-                + `(${inference.commandMatches.join(', ')}). `
-                + `Declare operations.${name}.kind.`
-              : `Cannot resolve the kind of ${subject}: '${name}' leads with no known verb. `
-                + `Rename it to lead with one, or declare operations.${name}.kind in `
-                + `frond.config.ts.\n  query:   ${knownVerbs().query.join(', ')}`
-                + `\n  command: ${knownVerbs().command.join(', ')}`,
-          });
-          continue;
-        }
-
-        const implementation = implementationOf(frond, handler, name, resolutionDiagnostics);
-        if (!implementation) continue;
-
-        const params = contract.signature?.params ?? [];
-        const parameters = contract.binding.map((binding, position) => {
-          const param = params[position];
-          const undefinable = binding.optional
-            || param?.optional === true
-            || param?.type.undefined === true;
-
-          return {
-            position,
-            name: param?.name ?? binding.name,
-            type: param?.type.raw ?? null,
-            optional: undefinable,
-            nullable: param?.type.nullable === true,
-            undefinable,
-            binding,
-          } satisfies EffectiveParameter;
-        });
-
-        if (!validateProvenance(
-          fronds,
-          frond,
-          handler,
-          name,
-          contract,
-          parameters,
-          collectorsByType,
-          resolutionDiagnostics,
-        )) continue;
-
-        // A fact is validated by the entity it names. This used to be patched into the
-        // facade after resolution, leaving check/explain with a different input.
-        const announced = contract.binding.find((binding) =>
-          binding.source.kind === 'fact' || binding.source.kind === 'pipe');
-        const fact = announced?.source.kind === 'fact' || announced?.source.kind === 'pipe'
-          ? schemas.get(announced.source.factName)
-          : undefined;
-        const input = contract.input ?? fact;
-
-        // An op that FINISHES a fact answers the fact, so its answer is the fact's shape:
-        // derived here, where its input already is. Left to the ordinary projection it
-        // came back stripped — measured, the subscriber got a value with no `id`.
-        const output = announced?.source.kind === 'pipe' && fact
-          ? { schema: fact, closed: false }
-          : effectiveOutput(frond, handler, name, contract);
-        const className = handler.ctor.name.endsWith('Handler')
-          ? handler.ctor.name.slice(0, -'Handler'.length)
-          : handler.ctor.name;
-        const surface = handler.surface ? `/${handler.surface}` : '/default';
-        const remote = options.remotes?.[frond.name];
-        const op: EffectiveOperation = {
-          ...contract,
-          ...(input ? { input } : {}),
-          ...(output.schema ? { output: output.schema } : {}),
-          id: `${frond.name}${surface}/${className}.${name}`,
-          operation: `${className}.${name}`,
-          name,
-          kind,
-          kindSource: override?.kind
-            ? 'explicit'
-            : 'convention',
-          handler: {
-            className: handler.ctor.name,
-            address: handler.address,
-            filePath: handler.filePath,
-          },
-          implementation,
-          binding: contract.binding,
-          parameters,
-          collectors: parameters.flatMap((parameter) => {
-            if (parameter.binding.source.kind !== 'collector') return [];
-            const collector = collectorsByType.get(parameter.binding.source.typeName)?.[0];
-
-            return collector ? [{
-              parameter: parameter.name,
-              typeName: collector.typeName,
-              className: collector.ctor.name,
-              frond: frond.name,
-              filePath: collector.filePath,
-            }] : [];
-          }),
-          contexts: parameters
-            .filter((parameter) => parameter.binding.source.kind === 'context')
-            .map((parameter) => parameter.name),
-          placement: {
-            frond: frond.name,
-            runtime: remote ? 'remote' : 'local',
-            ...(remote ? { remote } : {}),
-          },
-          reach: reachOf(handler.deps, frond.name, served, options.remotes ?? {}),
-          exposure: {
-            surfaces: servedSurfaces(frond, handler).map((surface) => surface ?? 'default'),
-            adapters: exposedAdapters(handler, options.adapters),
-          },
-          outputClosed: output.closed,
-          semantics: EFFECTIVE_OPERATION_SEMANTICS,
-        };
+      const resolving: Resolving = { fronds, frond, handler, schemas, served, collectorsByType, options, diagnostics };
+      for (const [name, contract] of contracts) {
+        const op = resolveOperation(resolving, name, contract);
+        if (!op) continue;
         effective.set(name, op);
         operations.push(op);
       }
     }
   }
 
-  // Topology and DI are part of the same effective program. A dependency targeting an
-  // actually remote frond is a refusal, not the warning appropriate to a future split.
-  for (const misplaced of verify({ fronds })) {
-    const remoteBoundary = options.remotes?.[misplaced.frond] !== undefined
-      || options.remotes?.[misplaced.dependsOn.frond] !== undefined;
-    resolutionDiagnostics.push(remoteBoundary && misplaced.code === 'cross-frond-dependency'
-      ? { ...misplaced, severity: 'blocking' }
-      : misplaced);
-  }
-
-  const resolution = uniqueDiagnostics(resolutionDiagnostics);
+  diagnostics.push(...placementRefusals(fronds, options));
+  const resolution = uniqueDiagnostics(diagnostics);
 
   return new EffectiveOperationModel(
     operations,
@@ -289,6 +122,193 @@ export function resolveEffectiveOperations(
     resolution,
     byHandler,
   );
+}
+
+function refuseAmbiguousCollectors(
+  frond: FrondDescriptor,
+  collectorsByType: Map<string, CollectorEntry[]>,
+  diagnostics: Diagnostic[],
+): void {
+  for (const [typeName, collectors] of collectorsByType) {
+    if (collectors.length < 2) continue;
+    diagnostics.push({
+      severity: 'blocking',
+      code: 'collector-ambiguous',
+      filePath: collectors[0]!.filePath,
+      frond: frond.name,
+      subject: typeName,
+      message: `Frond '${frond.name}' declares ${collectors.length} collectors for '${typeName}' — `
+        + `${collectors.map((collector) => collector.ctor.name).sort().join(', ')}. `
+        + 'Exactly one collector must own a parameter type.',
+    });
+  }
+}
+
+/** One operation, or nothing when a refusal was written for it. */
+function resolveOperation(resolving: Resolving, name: string, rawContract: OperationContract): EffectiveOperation | undefined {
+  const { fronds, frond, handler, schemas, served, collectorsByType, options, diagnostics } = resolving;
+  const contract = normalizeBinding(rawContract, handler, frond, name, diagnostics);
+  if (!contract || !answersData(resolving, name, contract)) return undefined;
+
+  const kind = kindOf(resolving, name);
+  if (!kind) return undefined;
+
+  const implementation = implementationOf(frond, handler, name, diagnostics);
+  if (!implementation) return undefined;
+
+  const parameters = parametersOf(contract);
+  if (!validateProvenance(fronds, frond, handler, name, contract, parameters, collectorsByType, diagnostics)) {
+    return undefined;
+  }
+
+  // A fact is validated by the entity it names, and an op that FINISHES one answers its shape —
+  // left to the ordinary projection, the subscriber got a value with no `id`.
+  const announced = contract.binding.find((binding) => binding.source.kind === 'fact' || binding.source.kind === 'pipe');
+  const fact = announced?.source.kind === 'fact' || announced?.source.kind === 'pipe'
+    ? schemas.get(announced.source.factName)
+    : undefined;
+  const input = contract.input ?? fact;
+  const output = announced?.source.kind === 'pipe' && fact
+    ? { schema: fact, closed: false }
+    : effectiveOutput(frond, handler, name, contract);
+
+  const className = handler.ctor.name.replace(/Handler$/, '');
+  const surface = handler.surface ? `/${handler.surface}` : '/default';
+  const remote = options.remotes?.[frond.name];
+
+  return {
+    ...contract,
+    ...(input ? { input } : {}),
+    ...(output.schema ? { output: output.schema } : {}),
+    id: `${frond.name}${surface}/${className}.${name}`,
+    operation: `${className}.${name}`,
+    name,
+    kind,
+    kindSource: frond.operationsOverrides?.[name]?.kind ? 'explicit' : 'convention',
+    handler: { className: handler.ctor.name, address: handler.address, filePath: handler.filePath },
+    implementation,
+    binding: contract.binding,
+    parameters,
+    collectors: collectorsOf(parameters, collectorsByType, frond),
+    contexts: parameters
+      .filter((parameter) => parameter.binding.source.kind === 'context')
+      .map((parameter) => parameter.name),
+    placement: { frond: frond.name, runtime: remote ? 'remote' : 'local', ...(remote ? { remote } : {}) },
+    reach: reachOf(handler.deps, frond.name, served, options.remotes ?? {}),
+    exposure: {
+      surfaces: servedSurfaces(frond, handler).map((surface) => surface ?? 'default'),
+      adapters: exposedAdapters(handler, options.adapters),
+    },
+    outputClosed: output.closed,
+    semantics: EFFECTIVE_OPERATION_SEMANTICS,
+  };
+}
+
+/**
+ * An operation answers DATA — what JSON keeps. A declared output is converted by its fields; an
+ * undeclared one has nothing to convert it. Measured 2026-09-18: `{ at: new Date(0) }` reaches a
+ * local caller as a `Date` and a remote one as a string.
+ */
+function answersData({ frond, handler, diagnostics }: Resolving, name: string, contract: OperationContract): boolean {
+  if (contract.output || !contract.signature?.notData) return true;
+
+  const subject = `${handler.ctor.name}.${name}`;
+  diagnostics.push({
+    severity: 'blocking',
+    code: 'operation-output-not-data',
+    filePath: handler.filePath,
+    frond: frond.name,
+    subject,
+    message: `${subject}() answers ${contract.signature.notData}, which carries methods.\n`
+      + '  An operation answers data — what JSON keeps.\n'
+      + '  Declare the output as an entity, whose fields convert it, or answer what it produces.',
+  });
+
+  return false;
+}
+
+/** Stated in `frond.config.ts`, or read off the verb the name leads with — never guessed between two. */
+function kindOf({ frond, handler, diagnostics }: Resolving, name: string): OperationKind | undefined {
+  const stated = frond.operationsOverrides?.[name]?.kind;
+  if (stated) return stated;
+
+  const inference = inferOperationKind(name);
+  const inferred = new Set<OperationKind>();
+  if (inference.kind) inferred.add(inference.kind);
+  if (inference.queryMatches.length > 0) inferred.add('query');
+  if (inference.commandMatches.length > 0) inferred.add('command');
+  if (inferred.size === 1) return [...inferred][0];
+
+  const subject = `${handler.ctor.name}.${name}`;
+  const ambiguous = inferred.size > 1;
+  diagnostics.push({
+    severity: 'blocking',
+    code: ambiguous ? 'operation-kind-ambiguous' : 'operation-kind-unknown',
+    filePath: handler.filePath,
+    frond: frond.name,
+    subject,
+    message: ambiguous
+      ? `Cannot resolve the kind of ${subject}: its name carries query evidence `
+        + `(${inference.queryMatches.join(', ')}) and command evidence `
+        + `(${inference.commandMatches.join(', ')}). `
+        + `Declare operations.${name}.kind.`
+      : `Cannot resolve the kind of ${subject}: '${name}' leads with no known verb. `
+        + `Rename it to lead with one, or declare operations.${name}.kind in `
+        + `frond.config.ts.\n  query:   ${knownVerbs().query.join(', ')}`
+        + `\n  command: ${knownVerbs().command.join(', ')}`,
+  });
+
+  return undefined;
+}
+
+function parametersOf(contract: BoundContract): EffectiveParameter[] {
+  const params = contract.signature?.params ?? [];
+
+  return contract.binding.map((binding, position) => {
+    const param = params[position];
+    const undefinable = binding.optional || param?.optional === true || param?.type.undefined === true;
+
+    return {
+      position,
+      name: param?.name ?? binding.name,
+      type: param?.type.raw ?? null,
+      optional: undefinable,
+      nullable: param?.type.nullable === true,
+      undefinable,
+      binding,
+    };
+  });
+}
+
+function collectorsOf(
+  parameters: readonly EffectiveParameter[],
+  collectorsByType: Map<string, CollectorEntry[]>,
+  frond: FrondDescriptor,
+): EffectiveOperation['collectors'] {
+  return parameters.flatMap((parameter) => {
+    if (parameter.binding.source.kind !== 'collector') return [];
+    const collector = collectorsByType.get(parameter.binding.source.typeName)?.[0];
+
+    return collector ? [{
+      parameter: parameter.name,
+      typeName: collector.typeName,
+      className: collector.ctor.name,
+      frond: frond.name,
+      filePath: collector.filePath,
+    }] : [];
+  });
+}
+
+/** A dependency on a frond that actually runs elsewhere is a refusal, not the warning a future split deserves. */
+function placementRefusals(fronds: readonly FrondDescriptor[], options: EffectiveOperationOptions): Diagnostic[] {
+  return verify({ fronds }).map((misplaced) => {
+    const remoteBoundary = options.remotes?.[misplaced.frond] !== undefined
+      || options.remotes?.[misplaced.dependsOn.frond] !== undefined;
+
+    return remoteBoundary && misplaced.code === 'cross-frond-dependency'
+      ? { ...misplaced, severity: 'blocking' as const }
+      : misplaced;
+  });
 }
 
 function groupedCollectors(collectors: readonly CollectorEntry[]): Map<string, CollectorEntry[]> {
@@ -308,7 +328,7 @@ function normalizeBinding(
   frond: FrondDescriptor,
   name: string,
   diagnostics: Diagnostic[],
-): (OperationContract & { binding: BindingPlan }) | undefined {
+): BoundContract | undefined {
   const params = contract.signature?.params ?? [];
   if (!contract.binding) {
     if (params.length === 0) return { ...contract, binding: [] };
@@ -567,7 +587,7 @@ function uniqueDiagnostics(diagnostics: readonly Diagnostic[]): Diagnostic[] {
 }
 
 /** The contract of every operation a handler serves — the three producers, merged once. */
-export function resolveContracts(
+function resolveContracts(
   handler: Pick<HandlerEntry, 'ctor' | 'operations'>,
   overrides: FrondDescriptor['operationsOverrides'],
   collectorTypeNames: Set<string>,

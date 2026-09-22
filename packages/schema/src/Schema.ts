@@ -8,8 +8,7 @@ import { type PreviousNames } from './entity/PreviousNames.js';
 import { type EntityAdapters } from './entity/EntityAdapters.js';
 import { InputValidator } from './validator/InputValidator.js';
 import { SchemaDerivation } from './SchemaDerivation.js';
-import { type SchemaConstraints } from './SchemaConstraints.js';
-import { SchemaDefinition } from './SchemaDefinition.js';
+import { SchemaDefinition, type SchemaDeclaration } from './SchemaDefinition.js';
 import { type ValidateOptions } from './validator/ValidateOptions.js';
 
 import type { SchemaView } from './SchemaView.js';
@@ -54,11 +53,11 @@ export class Schema {
   static getAdapters(): EntityAdapters<Fields> {
     return this.definition.adapterSet.adapters;
   }
-  static getUnique(): FieldGroups<Fields> | undefined {
+  static getUnique(): FieldGroups<Fields> {
     return this.definition.constraints.unique;
   }
 
-  static getIndex(): FieldGroups<Fields> | undefined {
+  static getIndex(): FieldGroups<Fields> {
     return this.definition.constraints.index;
   }
   static getOpts(): ValidateOptions {
@@ -150,26 +149,16 @@ export class Schema {
   }
 
   static compose<T extends SchemaView[]>(...sources: T): SchemaConstructor<Merged<T>> {
-    return Schema.subclass(
-      SchemaDefinition.merged(sources),
-    ) as unknown as SchemaConstructor<Merged<T>>;
+    return Schema.subclass(SchemaDefinition.merged(sources));
   }
 
-  static of<TFields extends Fields>(declaration: {
-    fields: TFields;
-    derivation?: SchemaDerivation;
-    adapters?: EntityAdapters<TFields>;
-    opts?: ValidateOptions;
-    previous?: PreviousNames<TFields>;
-    anchored?: boolean;
-    constraints?: SchemaConstraints;
-  }): SchemaConstructor<TFields> {
-    return Schema.subclass(
-      SchemaDefinition.of(declaration),
-    ) as unknown as SchemaConstructor<TFields>;
+  static of<TFields extends Fields>(declaration: SchemaDeclaration<TFields>): SchemaConstructor<TFields> {
+    return Schema.subclass(SchemaDefinition.of(declaration));
   }
 
-  private static subclass(definition: SchemaDefinition): SchemaConstructor<Fields> {
+  private static subclass<TFields extends Fields = Fields>(
+    definition: SchemaDefinition,
+  ): SchemaConstructor<TFields> {
     class Derived extends Schema {}
     Derived.definition = definition;
     Object.defineProperty(Derived, 'name', {
@@ -177,7 +166,7 @@ export class Schema {
       configurable: true,
     });
 
-    return Derived as unknown as SchemaConstructor<Fields>;
+    return Derived as unknown as SchemaConstructor<TFields>;
   }
 }
 

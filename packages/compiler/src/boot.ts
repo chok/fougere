@@ -80,8 +80,6 @@ export async function boot(options: BootOptions): Promise<App> {
     scan: await scanProject(root, options.only ?? options.fronds, config.conventions),
     createContainer: options.createContainer,
     storageFactory: dbSetup?.storageFactory,
-    db: dbSetup?.db,
-    auth: config.auth,
     // The tree's string leaves say the same thing `remotes:` does, and this boot read
     // neither of them from the file until now — a project stating its topology got a
     // process that believed every frond was local.
@@ -103,7 +101,7 @@ export async function boot(options: BootOptions): Promise<App> {
     // Its own gesture, handed over whole. The ORDER — tables, then rows, then whatever this
     // host takes on — is `createApp`'s, and was written out by four hosts before.
     migrate: dbSetup?.migrate,
-    extensions: [...stated.extensions, ...(options.extensions ?? [])],
+    extensions: [...stated.extensions, ...(options.extensions ?? []), config.auth],
     onEmit: options.onEmit,
     remoteTransport: options.remoteTransport,
   });

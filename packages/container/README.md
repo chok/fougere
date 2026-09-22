@@ -63,8 +63,6 @@ The holes, probed rather than assumed:
 - **A second `register` of one name overwrites, silently.** `Bundle` refuses a duplicate
   registration key, `serveRpc` a second reading, `portBindings` two implementations of a
   port. This does not.
-- `RegisterOptions` and `Disposable` are named by `Container` but not exported from the
-  entry, so a caller cannot spell the options object it passes.
 
 ## Why not didi
 

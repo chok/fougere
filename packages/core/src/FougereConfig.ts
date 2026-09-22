@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
-import type { AuthConfig } from './boot/AuthConfig.js';
+import type { Extension } from './boot/Extension.js';
 import type { LogLevel } from './builtin/LogLevel.js';
 import type { ConventionsInput } from './ConventionsInput.js';
 import type { NameOf } from './NameOf.js';
@@ -29,30 +29,28 @@ export interface FougereConfig {
   fronds?: FrondsStated;
   /** What answers a port — a name, or the chain from the outside in. */
   ports?: PortChoice;
-  /** Auth declaration — picks a provider package and forwards options to it. */
-  auth?: AuthConfig;
+  /** The auth provider — an extension, which brings the frond its rows live in. */
+  auth?: Extension;
   /** Which protocol adapters this app serves. */
   adapters?: AdapterConfig;
 }
 
 const CONFIG_FILES = ['fougere.config.ts', 'fougere.config.js', 'fougere.config.mjs'];
 
+/** The config file a directory holds, if it holds one. */
+export function configFileIn(dir: string): string | undefined {
+  return CONFIG_FILES.map((file) => resolve(dir, file)).find((path) => existsSync(path));
+}
+
 async function loadConfigFrom(dir: string, fresh?: boolean): Promise<FougereConfig> {
-  const loader = getModuleLoader();
-  for (const file of CONFIG_FILES) {
-    const path = resolve(dir, file);
-    if (existsSync(path)) {
-      // A module is cached by its specifier, so a second load of an EDITED file hands
-      // back what was read the first time — measured, and it made re-reading a config
-      // return the config already in force. The loader owns its own cache, so it is the
-      // one told; the old module stays in memory, re-reading being for a change.
-      const mod = await loader(path, fresh ? { fresh } : undefined);
+  const path = configFileIn(dir);
+  if (!path) return {};
 
-      return ((mod as { default?: FougereConfig }).default ?? mod) as FougereConfig;
-    }
-  }
+  // A module is cached by its specifier, so a second load of an EDITED file hands back what
+  // was read the first time. The loader owns its own cache, so it is the one told.
+  const mod = await getModuleLoader()(path, fresh ? { fresh } : undefined);
 
-  return {};
+  return ((mod as { default?: FougereConfig }).default ?? mod) as FougereConfig;
 }
 
 /** Load the root fougere.config.{ts,js,mjs} from the given directory. */

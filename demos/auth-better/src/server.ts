@@ -7,7 +7,7 @@
  */
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
-import { createApp, frond, type Storage } from '@fougere/core';
+import { AUTH, createApp, frond, type AuthRuntime } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { createStorageFactory } from '@fougere/adapter-sql';
 import { db } from './db.js';
@@ -26,14 +26,13 @@ const storageFactory = createStorageFactory(db, {
 const app = await createApp({
   createContainer,
   storageFactory,
-  db,
-  auth: config.auth,
   fronds: [frond('notes', { entities: [User, Note] })],
+  extensions: [config.auth],
 });
 
-if (!app.auth) throw new Error('auth not initialized');
+const auth = app.container.resolve<AuthRuntime>(AUTH);
 
-const noteStorage = app.storageFor('note') as Storage<Note>;
+const noteStorage = app.storageFor<Note>('note')!;
 
 // ─── HTTP layer (Hono) ─────────────────────────────
 
@@ -44,7 +43,7 @@ const hono = new Hono<{ Variables: Session }>();
 
 // Auth catch-all — better-auth handler wrapped via the AuthRuntime
 hono.all('/auth/*', async (c) => {
-  const response = await app.auth!.handler(c.req.raw);
+  const response = await auth.handler(c.req.raw);
 
   return response;
 });
@@ -54,7 +53,7 @@ hono.all('/auth/*', async (c) => {
 hono.use('/api/*', async (c, next) => {
   const cookie = c.req.header('cookie');
   if (!cookie) return next();
-  const result = await (app.auth!.api as any).getSession({ headers: c.req.raw.headers });
+  const result = await (auth.api as any).getSession({ headers: c.req.raw.headers });
   if (result?.session && result?.user) {
     c.set('user', result.user);
     c.set('session', result.session);
@@ -66,8 +65,8 @@ hono.use('/api/*', async (c, next) => {
 hono.get('/api/me', async (c) => {
   const user = c.get('user');
   if (!user) return c.json({ error: 'Not logged in' }, 401);
-  const sessions = await (app.auth!.storages.session as any).findAllBy({ userId: user.id });
-  const accounts = await (app.auth!.storages.account as any).findAllBy({ userId: user.id });
+  const sessions = await app.storageFor('session')!.findAllBy({ userId: user.id });
+  const accounts = await app.storageFor('account')!.findAllBy({ userId: user.id });
 
   return c.json({
     user: { id: user.id, email: user.email, name: user.name, role: user.role },

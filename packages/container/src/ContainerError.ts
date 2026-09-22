@@ -4,8 +4,4 @@ export class ContainerError extends Error {
 
     this.name = 'ContainerError';
   }
-
-  static all(failures: unknown[], message: string): AggregateError {
-    return new AggregateError(failures, message);
-  }
 }

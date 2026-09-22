@@ -1,3 +1,4 @@
+import type { Page } from '@fougere/core';
 import { invoke } from '@fougere/next';
 import Post from '@fronds/blog/entities/Post';
 
@@ -8,7 +9,7 @@ import Post from '@fronds/blog/entities/Post';
  * This page is the server dual of `useQuery(postFacade, 'list')`.
  */
 export default async function PublishedPage() {
-  const posts = await invoke<Post[]>(Post, 'list');
+  const { items: posts } = await invoke<Page<Post>>(Post, 'list');
 
   return (
     <main>

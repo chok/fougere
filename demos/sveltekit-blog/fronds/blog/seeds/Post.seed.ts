@@ -14,7 +14,7 @@ type Facade = Record<string, (invocation?: Record<string, unknown>) => Promise<a
 
 export default async (resolve: <T>(name: string) => T) => {
   const posts = resolve<Facade>('post');
-  if ((await posts.list()).length > 0) return [];
+  if ((await posts.list()).items.length > 0) return [];
 
   const items = [
     {

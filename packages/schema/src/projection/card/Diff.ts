@@ -1,5 +1,6 @@
 import { dequal } from 'dequal';
 import { Axes } from '../../axis/Axes.js';
+import { Shapes } from '../../axis/shape/Shape.js';
 import type { FieldDescriptor } from './FieldDescriptor.js';
 import type { FieldExtension } from './FieldExtension.js';
 
@@ -117,10 +118,7 @@ function shapeOf(descriptor: FieldDescriptor): Record<string, unknown> {
  * `typesOf({ type: ['null', 'string'] })` → `['null', 'string']`
  */
 function typesOf(descriptor: FieldDescriptor): TypeSet {
-  const type = descriptor.type;
-  if (type === undefined) return [];
-
-  return (Array.isArray(type) ? [...type] : [type]).sort();
+  return [...Shapes.typesOf(descriptor)].sort();
 }
 
 /**

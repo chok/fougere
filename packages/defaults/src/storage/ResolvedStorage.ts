@@ -12,7 +12,7 @@ import type { Placement } from './Placement.js';
 import type { DeclaredStorage } from './DeclaredStorage.js';
 
 export interface ResolvedStorage {
-  /** Opaque handle handed to auth providers. */
+  /** The default source's engine handle — what `fougere migrate` reads the live tables through. */
   db?: unknown;
   storageFactory: ((entity: any, name: string) => any) | undefined;
   /**
@@ -47,11 +47,9 @@ export interface ResolvedStorage {
 function viewOf(
   app: App,
   holds: (name: string) => boolean,
-  withAuth: boolean,
 ): SourceView {
   const typed = app as unknown as {
     fronds: { name: string; entities: { name: string }[] }[];
-    auth?: unknown;
   };
   const fronds = typed.fronds
     .map((frond) => ({ ...frond, entities: frond.entities.filter((entry) => holds(entry.name)) }))
@@ -59,7 +57,6 @@ function viewOf(
 
   return {
     fronds,
-    auth: withAuth ? typed.auth : undefined,
     // Lifted, because this function reads its app structurally on purpose — a caller
     // may hand it a shape that is app-LIKE, and the question is still the same one.
     elsewhere: Fronds.hosting(typed.fronds as FrondDescriptor[]).entityNames().filter((name) => !holds(name)),
@@ -188,9 +185,9 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
     // which is what makes a cross-source `ref()` a miss rather than a constraint against a
     // stranger. What a pass DOES is the source's own: it knows its engine, this does not.
     migrate: async (app) => {
-      await base.migrate?.(viewOf(app, (name) => !home.has(lowerFirst(name)), true));
+      await base.migrate?.(viewOf(app, (name) => !home.has(lowerFirst(name))));
       for (const [name, engine] of engines) {
-        await engine.migrate?.(viewOf(app, (e) => home.get(lowerFirst(e)) === name, false));
+        await engine.migrate?.(viewOf(app, (e) => home.get(lowerFirst(e)) === name));
       }
     },
     // Every source, the default one last: a named source may hold what the default refers
@@ -217,6 +214,5 @@ export function layerOf(storage: ResolvedStorage, fallback?: ResolvedStorage['st
     enforces: storage.enforces,
     transacted: storage.transacted as never,
     migrate: storage.migrate,
-    db: storage.db,
   };
 }

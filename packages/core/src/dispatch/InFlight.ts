@@ -36,11 +36,25 @@ export class InFlight {
     };
   }
 
-  close(): void {
+  /** Close the door, and answer once the calls already running are done — or refuse at the deadline, naming what is left. */
+  async drain(timeoutMs?: number): Promise<void> {
     this.accepting = false;
+    if (timeoutMs === undefined) return this.whenIdle();
+
+    let timer: ReturnType<typeof setTimeout>;
+
+    await Promise.race([
+      this.whenIdle().then(() => clearTimeout(timer)),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error(`[drain] ${this.running} call(s) still running after ${timeoutMs}ms`)),
+          timeoutMs,
+        );
+      }),
+    ]);
   }
 
-  whenIdle(): Promise<void> {
+  private whenIdle(): Promise<void> {
     if (this.running === 0) return Promise.resolve();
 
     return new Promise((resolve) => this.idle.push(resolve));
