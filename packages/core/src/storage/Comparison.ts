@@ -1,5 +1,4 @@
 import { type Field, Shapes } from '@fougere/schema';
-import type { ComparisonName } from './ComparisonName.js';
 
 /**
  * The comparisons a criterion may name.
@@ -21,7 +20,11 @@ export interface Comparison {
   isNull?: boolean;
 }
 
-export const COMPARISONS = ['gte', 'lte', 'gt', 'lt', 'ne', 'between', 'contains', 'notIn', 'isNull'] as const;
+export type ComparisonName = keyof Comparison;
+
+export const COMPARISONS = Object.keys({
+  gte: true, lte: true, gt: true, lt: true, ne: true, between: true, contains: true, notIn: true, isNull: true,
+} satisfies Record<ComparisonName, true>);
 
 /**
  * Is this criterion a comparison, or a value that happens to be an object?
@@ -42,11 +45,11 @@ export function comparisonOf(field: Field | undefined, asked: unknown): Comparis
 /** The comparisons a criterion names, in the order the caller wrote them. */
 export function comparisonsIn(comparison: Comparison): [ComparisonName, unknown][] {
   return Object.entries(comparison).filter(
-    (entry): entry is [ComparisonName, unknown] => (COMPARISONS as readonly string[]).includes(entry[0]),
+    (entry): entry is [ComparisonName, unknown] => COMPARISONS.includes(entry[0]),
   );
 }
 
 /** What a comparison names that this vocabulary does not — a typo, said as one. */
 export function unknownIn(comparison: Comparison): string[] {
-  return Object.keys(comparison).filter((name) => !(COMPARISONS as readonly string[]).includes(name));
+  return Object.keys(comparison).filter((name) => !COMPARISONS.includes(name));
 }

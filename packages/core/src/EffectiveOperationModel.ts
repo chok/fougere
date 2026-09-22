@@ -567,7 +567,7 @@ function uniqueDiagnostics(diagnostics: readonly Diagnostic[]): Diagnostic[] {
 }
 
 /** The contract of every operation a handler serves — the three producers, merged once. */
-export function resolveContracts(
+function resolveContracts(
   handler: Pick<HandlerEntry, 'ctor' | 'operations'>,
   overrides: FrondDescriptor['operationsOverrides'],
   collectorTypeNames: Set<string>,

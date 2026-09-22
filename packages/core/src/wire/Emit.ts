@@ -35,7 +35,7 @@ export function factOfEmitKey(key: string): string | undefined {
 }
 
 /** The fact behind an awaited emission's key — the dual, read the same way. */
-export function factOfAwaitKey(key: string): string | undefined {
+function factOfAwaitKey(key: string): string | undefined {
   return behind(key, AWAIT_SUFFIX);
 }
 
