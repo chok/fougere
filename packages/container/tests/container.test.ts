@@ -116,7 +116,7 @@ describe('Container', () => {
   describe('fallback', () => {
     it('fabricates what no scope holds', () => {
       const container = createContainer();
-      container.setFallback?.((name) => (name === 'remote' ? { made: true } : undefined));
+      container.setFallback((name) => (name === 'remote' ? { made: true } : undefined));
 
       expect(container.resolve('remote')).toEqual({ made: true });
       expect(() => container.resolve('other')).toThrow();
@@ -124,14 +124,14 @@ describe('Container', () => {
 
     it('answers a child, because the descent ends at the root', () => {
       const container = createContainer();
-      container.setFallback?.(() => ({ made: true }));
+      container.setFallback(() => ({ made: true }));
       expect(container.createScope().resolve('anything')).toEqual({ made: true });
     });
 
     it('set from a child, lands on the root — the tree has one', () => {
       const root = createContainer();
       const scope = root.createScope();
-      scope.setFallback?.(() => ({ made: true }));
+      scope.setFallback(() => ({ made: true }));
 
       expect(root.resolve('anything')).toEqual({ made: true });
       expect(root.createScope().resolve('other')).toEqual({ made: true });

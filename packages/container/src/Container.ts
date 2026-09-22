@@ -16,7 +16,7 @@ export interface Container {
   has(name: string): boolean;
 
   /** A resolver of last resort, consulted when no scope holds the name. */
-  setFallback?(resolve: (name: string) => unknown): void;
+  setFallback(resolve: (name: string) => unknown): void;
 
   /** The child reads every registration above it; the parent closes it. */
   createScope(): Container;

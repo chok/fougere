@@ -737,7 +737,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     }
 
     /** The last resort, held by the container so every resolution path shares it. */
-    container.setFallback?.((name) => {
+    container.setFallback((name) => {
       if (!remoteRouter) return undefined;
       if (!name.endsWith('Handler') || name.includes(':')) return undefined;
 
