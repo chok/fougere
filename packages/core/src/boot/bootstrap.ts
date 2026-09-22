@@ -297,7 +297,7 @@ function dispatching(
   const scopedMiddlewares = new Map<string, AppMiddleware[]>();
   const routeRegistry = new RouteRegistry();
   const dispatchLifecycle = new DispatchLifecycle(
-    options.dispatchObservers,
+    [],
     (error, event) => log.error(
       `[dispatch-observer] ${event.stage} ${event.call.address.toString()}`,
       error,

@@ -30,8 +30,8 @@ describe('App.dispatch', () => {
       scan: await scanProject(fixtures),
       createContainer,
       storageFactory,
-      dispatchObservers: [(event) => events.push(event)],
     });
+    app.observe((event) => events.push(event));
     const call = new Call(new RouteAddress({ entity: 'product', operation: 'list' }));
 
     await expect(app.dispatch(call)).resolves.toMatchObject([{ id: '1', name: 'Fern' }]);
@@ -64,8 +64,8 @@ describe('App.dispatch', () => {
       scan: await scanProject(fixtures),
       createContainer,
       storageFactory,
-      dispatchObservers: [(event) => events.push(event)],
     });
+    app.observe((event) => events.push(event));
 
     await createAppRunner(app)({ entity: 'product', op: 'list' }, Invocation.empty);
 
@@ -79,8 +79,8 @@ describe('App.dispatch', () => {
       scan: await scanProject(fixtures),
       createContainer,
       storageFactory,
-      dispatchObservers: [(event) => events.push(event)],
     });
+    app.observe((event) => events.push(event));
 
     await createAppRunner(app, 'admin')(
       { entity: 'rpc', op: 'discover' },
