@@ -6,7 +6,7 @@
  * same handlers, the same results, and one line of boot output that is not the same.
  */
 import { scanProject } from '@fougere/compiler';
-import { createApp, createLocalRunner, migrating, type App, type Storage, Invocation } from '@fougere/core';
+import { createApp, createLocalRunner, migrating, type App, Invocation } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { layerOf, storageFrom } from '@fougere/defaults';
 import { createSqliteSource } from '@fougere/adapter-sql/sqlite';
@@ -69,7 +69,7 @@ observeWith(async () => {
   return `ada ${ada.balance}`;
 });
 
-const storageOf = (entity: string) => app.storageFor(entity) as Storage;
+const storageOf = (entity: string) => app.storageFor(entity)!;
 const call = createLocalRunner(app);
 const run = (entity: string, op: string, params: Record<string, unknown> = {}) =>
   call({ entity, op }, { ...Invocation.empty, params: params as never });

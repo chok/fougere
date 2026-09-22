@@ -46,7 +46,7 @@ import { identityCardOf } from './card.js';
 import { AppLifecycle, migrating } from './AppLifecycle.js';
 import { seeding } from './seed.js';
 
-import { storageKeyOf } from '../storage/Storage.js';
+import { storageKeyOf, type Storage } from '../storage/Storage.js';
 
 import { presenterKeyOf } from '../prefab/presenter.js';
 
@@ -175,14 +175,14 @@ async function readFronds(
 function serveCoreRpc(
   app: App,
   hosting: Hosting,
-  storageFor: (entity: string) => unknown | undefined,
+  storageFor: (entity: string) => Storage | undefined,
 ): void {
   app.serveRpc('discover', (_invocation, surface) => identityCardOf(app, surface));
 
   app.serveRpc('holds', async (invocation) => {
     const named = String(invocation.params.entity);
     const keys = (invocation.params.keys ?? []) as readonly unknown[];
-    const rows = storageFor(named) as { findByKeys(k: readonly string[]): Promise<Map<string, unknown>> } | undefined;
+    const rows = storageFor(named);
     if (!rows) return { missing: [] };
     const found = await rows.findByKeys(keys.map(String));
 
@@ -237,6 +237,20 @@ function peerBehind(entity: string, router: RemoteRouter): Peer {
       (await ask('holds', { entity: named, keys }) as { missing: readonly unknown[] }).missing,
     release: async (named, key) => { await ask('release', { entity: named, key }); },
   };
+}
+
+/**
+ * What the frond owning an entity registered under `key` — asked with `has`, so a constructor
+ * that throws is said rather than read as an absence. A remote frond registers no scope here.
+ */
+function ownedBy<T>(fronds: Fronds, container: Container, entity: string, key: string): T | undefined {
+  const owner = fronds.owner(entity);
+  const scopeKey = `frond:${owner?.name}`;
+  if (!owner || !container.has(scopeKey)) return undefined;
+
+  const scope = container.resolve<Container>(scopeKey);
+
+  return scope.has(key) ? scope.resolve<T>(key) : undefined;
 }
 
 /** Close the door, and answer once the calls already running are done. */
@@ -358,7 +372,7 @@ interface Hosted {
   remoteRouter: RemoteRouter | undefined;
   entityByName: Map<string, SchemaView>;
   frondOf: Map<string, string>;
-  storageOf: (entity: string) => unknown | undefined;
+  storageOf: (entity: string) => Storage | undefined;
 }
 
 function hostingFor(
@@ -521,17 +535,7 @@ function readings(
       : undefined;
   };
 
-  /** The presenter of an entity, resolved through its owning frond's scope. */
-  const presenterFor = (entity: string): unknown | undefined => {
-    const owner = fronds.owner(entity);
-    if (!owner) return undefined;
-
-    try {
-      return container.resolve<Container>(`frond:${owner.name}`).resolve(presenterKeyOf(entity));
-    } catch {
-      return undefined;
-    }
-  };
+  const presenterFor = (entity: string): unknown | undefined => ownedBy(fronds, container, entity, presenterKeyOf(entity));
 
   return { resolve, schemaFor, facadeFor, operationsFor, presenterFor };
 }
@@ -663,24 +667,9 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       [...operations].map(([name, operation]) => [name, operation as OperationContract] as const),
     );
 
-    /**
-     * The storage an entity is backed by — the dual of `facadeFor`, which serves its client-facing
-     * facade.
-     */
-    const storageFor = (entity: string): unknown | undefined => {
-      const owner = fronds.owner(entity);
-      if (!owner) return undefined;
+    const storageFor = <T = Record<string, unknown>>(entity: string): Storage<T> | undefined =>
+      ownedBy<Storage<T>>(fronds, container, entity, storageKeyOf(entity));
 
-      const key = storageKeyOf(entity);
-      try {
-        return container.resolve<Container>(`frond:${owner.name}`).resolve(key);
-      } catch {
-        return undefined;
-      }
-    };
-
-    // What carries a release writes none: an instrumentation frond's own rows are kept while a
-    // release happens, and journalling them would begin one inside the one being written down.
     const { hosting, journalOf } = hostingFor({
       fronds, container, options, declaredRemotes, remoteRouter, entityByName, frondOf, storageOf: storageFor,
     });

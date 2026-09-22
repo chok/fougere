@@ -7,6 +7,7 @@ import type { AuthRuntime } from './AuthRuntime.js';
 import type { EffectiveOperationsMap } from '../EffectiveOperationsMap.js';
 import type { DispatchObserver } from '../dispatch/DispatchObserver.js';
 import type { DispatchPort } from '../dispatch/DispatchPort.js';
+import type { Storage } from '../storage/Storage.js';
 
 /** The App object returned by createApp(). */
 export interface App extends DispatchPort {
@@ -42,7 +43,7 @@ export interface App extends DispatchPort {
    * The storage an entity is backed by, resolved through its owning frond's scope — the dual of
    * {@link facadeFor}.
    */
-  storageFor(entity: string): unknown | undefined;
+  storageFor<T = Record<string, unknown>>(entity: string): Storage<T> | undefined;
   /** The presenter of an entity, resolved through its owning frond's scope. */
   presenterFor(entity: string): unknown | undefined;
   /** Dispose the root container. */

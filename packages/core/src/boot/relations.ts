@@ -4,7 +4,7 @@ import type { Dependent } from '../dispatch/Dependent.js';
 import type { RelationCheck } from '../dispatch/RelationCheck.js';
 import type { Hosting } from './Hosting.js';
 import type { Diagnostic } from '../diagnostic.js';
-import type { Releasing, Rows } from '../dispatch/Release.js';
+import type { Releasing } from '../dispatch/Release.js';
 import type { EntityEntry } from '../descriptor/EntityEntry.js';
 
 /**
@@ -44,11 +44,6 @@ function referencesTo(target: string, hosting: Hosting): { entity: string; field
   return found;
 }
 
-/** What a target's storage has to answer for a key set to be judged in one read. */
-interface ByKeys {
-  findByKeys(keys: readonly string[]): Promise<Map<string, unknown>>;
-}
-
 /**
  * The references a foreign key cannot hold, each as a read the guard makes before the write.
  *
@@ -68,7 +63,7 @@ export function heldBy(entity: SchemaView, name: string, hosting: Hosting): Rela
       field,
       target,
       missing: async (keys) => {
-        const storage = hosting.storageOf(target) as ByKeys | undefined;
+        const storage = hosting.storageOf(target);
         // Nothing here holds those rows — the process that does answers the same reading,
         // so the question crosses rather than being given up on.
         if (!storage) return hosting.peerOf(target)?.missing(target, keys) ?? [];
@@ -176,7 +171,7 @@ export function unheldAmong(checks: readonly RelationCheck[], hosting: Hosting):
 export function releasing(hosting: Hosting): Releasing {
   return {
     dependentsOf: (entity) => dependentsOf(entity, hosting),
-    rowsOf: (entity) => hosting.storageOf(entity) as Rows | undefined,
+    rowsOf: (entity) => hosting.storageOf(entity),
     schemaOf: (entity) => hosting.entities().get(entity),
     peers: () => hosting.peers(),
     journal: (entity) => hosting.journal(entity),

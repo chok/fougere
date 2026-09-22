@@ -7,7 +7,7 @@
  */
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
-import { createApp, frond, type Storage } from '@fougere/core';
+import { createApp, frond } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { createStorageFactory } from '@fougere/adapter-sql';
 import { db } from './db.js';
@@ -33,7 +33,7 @@ const app = await createApp({
 
 if (!app.auth) throw new Error('auth not initialized');
 
-const noteStorage = app.storageFor('note') as Storage<Note>;
+const noteStorage = app.storageFor<Note>('note')!;
 
 // ─── HTTP layer (Hono) ─────────────────────────────
 
