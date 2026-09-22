@@ -50,7 +50,7 @@ describe('metadata propagation across every schema operation', () => {
     });
 
     it('drops a group missing a member, keeps one whose members are all picked', () => {
-      expect(Post.pick('id', 'title').getUnique()).toBeUndefined();
+      expect(Post.pick('id', 'title').getUnique()).toEqual([]);
       expect(Post.pick('title', 'body').getUnique()).toEqual([['title', 'body']]);
     });
   });
@@ -71,7 +71,7 @@ describe('metadata propagation across every schema operation', () => {
     });
 
     it('drops a group missing a member, keeps one whose members are all retained', () => {
-      expect(Post.omit('body').getUnique()).toBeUndefined();
+      expect(Post.omit('body').getUnique()).toEqual([]);
       expect(Post.omit('id').getUnique()).toEqual([['title', 'body']]);
     });
   });

@@ -54,11 +54,11 @@ export class Schema {
   static getAdapters(): EntityAdapters<Fields> {
     return this.definition.adapterSet.adapters;
   }
-  static getUnique(): FieldGroups<Fields> | undefined {
+  static getUnique(): FieldGroups<Fields> {
     return this.definition.constraints.unique;
   }
 
-  static getIndex(): FieldGroups<Fields> | undefined {
+  static getIndex(): FieldGroups<Fields> {
     return this.definition.constraints.index;
   }
   static getOpts(): ValidateOptions {

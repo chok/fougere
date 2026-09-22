@@ -204,8 +204,8 @@ export class SchemaDefinition {
     for (const view of views) {
       Object.assign(fields, view.getFields());
       opts = { ...opts, ...view.getOpts() };
-      groups.unique.push(...(view.getUnique() ?? []));
-      groups.index.push(...(view.getIndex() ?? []));
+      groups.unique.push(...view.getUnique());
+      groups.index.push(...view.getIndex());
     }
 
     return SchemaDefinition.derived({

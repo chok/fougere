@@ -42,7 +42,7 @@ export class Card<T = Values<Fields>> {
       if (validator.requires(field)) required.push(key);
     }
     for (const kind of ['unique', 'index'] as const)
-      for (const group of (kind === 'unique' ? schema.getUnique() : schema.getIndex()) ?? [])
+      for (const group of kind === 'unique' ? schema.getUnique() : schema.getIndex())
         for (const member of group) carryGroup(properties[member], kind, group);
 
     const descriptor: SchemaDescriptor = {
