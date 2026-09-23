@@ -145,3 +145,19 @@ describe('the criteria are judged the way a write is', () => {
     await expect(guarded.list({ where: { label: ['a', 'far too long'] } })).rejects.toThrow(/label/);
   });
 });
+
+describe('a refused read option leaves as BAD_REQUEST, its message kept', () => {
+  it('for an option the port does not read', async () => {
+    const { guarded } = guardedStorage();
+    await expect(guarded.list({ order_id: 'x' })).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+  });
+
+  it('for a count that did not read as a whole number', async () => {
+    const { guarded } = guardedStorage();
+    await expect(guarded.list({ limit: Number('abc') })).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      message: expect.stringMatching(/`limit` is NaN, not a whole number/),
+    });
+    await expect(guarded.list({ offset: -1 })).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+  });
+});

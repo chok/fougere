@@ -2,15 +2,21 @@ import { upperFirst, lowerFirst, type SchemaView } from '@fougere/schema';
 import type { ListOptions } from './ListOptions.js';
 import type { ListResult } from './ListResult.js';
 import type { SelectOption } from './SelectOption.js';
+import { ErrorCode } from '../wire/ErrorCode.js';
+import { FougereError } from '../wire/FougereError.js';
 
-/** The keys `list()` answers to. */
-const LIST_OPTION_KEYS = [
-  'limit', 'offset', 'page', 'after', 'orderBy', 'order', 'count', 'where', 'select',
-] as const;
+/** The keys `list()` answers to, checked against `ListOptions` so neither can drift. */
+const LIST_OPTION_KEYS = Object.keys({
+  limit: true, offset: true, page: true, after: true, orderBy: true, order: true, count: true, where: true, select: true,
+} satisfies Record<keyof (ListOptions & SelectOption), true>);
+
+/** What a count must be — a text that did not read as a number arrives as `NaN`. */
+const COUNTS = ['limit', 'offset', 'page'] as const;
 
 /**
- * Refuse an option the port does not answer to, and an order by a field the entity does not
- * declare — an unhonoured `orderBy` returns the page in whatever order the engine chose.
+ * Refuse an option the port does not answer to, a count that is not one, and an order by a
+ * field the entity does not declare — an unhonoured `orderBy` returns the page in whatever order
+ * the engine chose. Refused as BAD_REQUEST: a plain Error left as INTERNAL_ERROR, its message hidden.
  */
 export function assertListOptions(
   options: object | undefined,
@@ -18,21 +24,29 @@ export function assertListOptions(
   declared: readonly string[],
 ): void {
   if (!options) return;
-  const legal = new Set<string>(LIST_OPTION_KEYS);
-  const strangers = Object.keys(options).filter((key) => !legal.has(key));
+  const strangers = Object.keys(options).filter((key) => !LIST_OPTION_KEYS.includes(key));
   if (strangers.length > 0) {
-    throw new Error(
+    refuse(
       `${entity}.list(): unknown option ${strangers.map((s) => `\`${s}\``).join(', ')}. ` +
       `Known options are ${LIST_OPTION_KEYS.join(', ')} — to filter, pass \`where: { ${strangers[0]}: … }\`.`,
     );
   }
 
+  for (const count of COUNTS) {
+    const value = (options as ListOptions)[count];
+    if (value !== undefined && !(Number.isInteger(value) && value >= 0)) {
+      refuse(`${entity}.list(): \`${count}\` is ${typeof value === 'number' ? value : JSON.stringify(value)}, not a whole number.`);
+    }
+  }
+
   const { orderBy } = options as ListOptions;
   if (orderBy === undefined || declared.includes(orderBy)) return;
 
-  throw new Error(
-    `${entity}.list(): unknown orderBy \`${orderBy}\`. ${entity} declares ${declared.join(', ')}.`,
-  );
+  refuse(`${entity}.list(): unknown orderBy \`${orderBy}\`. ${entity} declares ${declared.join(', ')}.`);
+}
+
+function refuse(message: string): never {
+  throw new FougereError({ code: ErrorCode.BAD_REQUEST, message });
 }
 
 /** Per-entity storage — scoped CRUD operations on a single entity type. */
