@@ -12,6 +12,13 @@ import type { FougereConfig } from '@fougere/core';
  * resolveStorage(), the single place that owns the default.
  */
 describe('generateBootPlugin — db path convergence', () => {
+  it('no db: names no engine — the host resolves memory, the same as every other host', () => {
+    const out = generateBootPlugin({} as FougereConfig, [], '@fougere/nuxt/fougereApp');
+
+    expect(out).not.toContain('resolveStorage');
+    expect(out).not.toContain('sqlite');
+  });
+
   it('db: "sqlite" (string form) passes the config through unchanged — no path override', () => {
     const out = generateBootPlugin({ db: 'sqlite' } as FougereConfig, [], '@fougere/nuxt/fougereApp');
 

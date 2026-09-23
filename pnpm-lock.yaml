@@ -1810,6 +1810,9 @@ importers:
 
   packages/defaults:
     dependencies:
+      '@fougere/adapter-memory':
+        specifier: workspace:*
+        version: link:../adapter/memory
       '@fougere/adapter-sql':
         specifier: workspace:*
         version: link:../adapter/sql

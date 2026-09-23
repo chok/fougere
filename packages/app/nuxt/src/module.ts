@@ -120,7 +120,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
     const optionsOverride = Object.fromEntries(
       Object.entries(options).filter(([, v]) => v !== undefined),
     ) as Partial<FougereConfig>;
-    const config: FougereConfig = { db: 'sqlite', ...fileConfig, ...optionsOverride };
+    const config: FougereConfig = { ...fileConfig, ...optionsOverride };
     // Nitro replaces `console` with consola, whose own threshold sits at `info` — and a
     // Logger line at `debug` goes out through `console.debug`, which consola then drops.
     // Measured: the level was `debug`, the boot logged nothing, and the silence read as
@@ -447,7 +447,7 @@ export function generateBootPlugin(
     lines.push(`setModuleLoader((id, options) => (id in modules ? Promise.resolve(modules[id]) : loadModule(id, options)));`);
   }
 
-  const db = config.db ?? 'sqlite';
+  const db = config.db;
   const sources = (config as { sources?: unknown }).sources;
 
   // `declaresStorage` is the canonical reader of `db:` — asked, not re-interpreted.

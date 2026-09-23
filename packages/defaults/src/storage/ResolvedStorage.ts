@@ -4,7 +4,8 @@ import { Fronds, type FrondDescriptor } from '@fougere/core';
 import { lowerFirst } from '@fougere/core/contract';
 import { existsSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
-import { Sources, type Constraint, type Source, type SourceView } from '@fougere/core';
+import { Logger, Sources, type Constraint, type Source, type SourceView } from '@fougere/core';
+import { createMemorySource } from '@fougere/adapter-memory';
 import { declaresStorage } from './DeclaredStorage.js';
 import type { DbConfig } from './DbConfig.js';
 import type { SourcesConfig } from './SourcesConfig.js';
@@ -78,7 +79,11 @@ export function resolveStorage(
    */
   root?: string,
 ): ResolvedStorage {
-  if (!declaresStorage(dbConf)) return { storageFactory: undefined };
+  if (!declaresStorage(dbConf)) {
+    new Logger('storage').warn('no `db:` declared — rows live in memory and are gone when the process exits');
+
+    return storageFrom({ db: createMemorySource() });
+  }
 
   const named: Record<string, Placement> = {};
   for (const [name, conf] of Object.entries(sources ?? {})) {
@@ -206,9 +211,9 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
  * Nuxt only: a member added here reached no host, and nothing said so. This is the same
  * lesson one level down — a host spreads the layer instead of listing what it knows of it.
  */
-export function layerOf(storage: ResolvedStorage, fallback?: ResolvedStorage['storageFactory']) {
+export function layerOf(storage: ResolvedStorage) {
   return {
-    storageFactory: storage.storageFactory ?? fallback,
+    storageFactory: storage.storageFactory,
     sourceOf: storage.sourceOf,
     transacts: storage.transacts,
     enforces: storage.enforces,

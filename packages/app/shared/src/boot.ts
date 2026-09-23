@@ -6,7 +6,6 @@ import { scanProject, frondAliases } from '@fougere/compiler';
 import { resolveConventions } from '@fougere/core';
 import { loadCascadedConfig, remotesOf, setModuleLoader, statedModules } from '@fougere/core/node';
 
-import { createMemoryStorage } from '@fougere/adapter-memory';
 import type { App, CreateAppOptions, FougereConfig, Transport } from '@fougere/core';
 import { layerOf, type ResolvedStorage } from '@fougere/defaults';
 
@@ -135,7 +134,6 @@ async function boot(): Promise<App> {
   if (!storage) {
     const { resolveStorage } = await import('@fougere/defaults');
     storage = resolveStorage(fileConfig.db as never, (fileConfig as { sources?: unknown }).sources as never, root);
-    log.debug(storage.storageFactory ? 'auto-resolving storage from config.db' : 'no db declared — falling back to in-memory storage');
   }
   // The storage's two halves, kept together: its ascent is an extension, its connection
   // is not — it is opened here, before the container, so it closes after the container.
@@ -177,7 +175,7 @@ async function boot(): Promise<App> {
       : {}),
     // The layer, spread whole. Naming a few of its members is how `transacted` and `close`
     // were left behind once, under Nuxt only.
-    ...layerOf(storage, createMemoryStorage),
+    ...layerOf(storage),
     adapters: fileConfig.adapters,
     remotes,
     /** Who inherits code from whom — the tree, whole, so a refusal can name where an entry sits. */

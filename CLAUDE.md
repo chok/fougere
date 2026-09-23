@@ -1069,9 +1069,6 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   refused, `column "body" of relation "notes" already exists`. `CREATE TABLE IF NOT EXISTS`
   (`createTableSQL`) is NOT safe either under Postgres: two concurrent ones collide on
   `pg_type_typname_nsp_index`, and 2 replicas of 4 refused. Measured 2026-09-17.
-- **A host with no `db:` falls back to memory and says so at `debug` only** — `boot`
-  (`app/shared/src/boot.ts`). Two replicas: a row written on one answers 404 on the other, and the
-  `info` log never names the fallback. Measured 2026-09-17.
 - **A primitive parameter is coerced, never refused** — `ArgumentResolver` (`dispatch/ArgumentResolver.ts`),
   the `param` branch, and `coercionFor` (`wire/binding.ts`). `excitement?: number` receives `NaN`
   for `?excitement=abc` and `0` for `?excitement=`, and the op answers 200. The doc says
@@ -1088,6 +1085,11 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 ### Settled
 
 One line each, kept because a past version of this file asserted the opposite.
+
+- **No `db:` means memory, on every host, said as a warning** — `resolveStorage`
+  (`defaults/src/storage/ResolvedStorage.ts`) is the one place that falls back. Nuxt used to impose
+  SQLite, the web hosts fell back to memory at `debug`, and `fougere serve` had no storage at all.
+  A `warn` and not an `info`: the CLI runs at `warn`, and losing rows at exit is what an operator must see.
 
 - **An error names itself with a LITERAL, not `new.target.name`** — `SchemaError`,
   `ContainerError`, `FougereError`. A bundler mangles a class name: measured 2026-09-18 in
