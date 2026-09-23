@@ -48,7 +48,7 @@ reviewable whoever wrote it: you, a colleague, or an agent.
 ## Quick start
 
 ```bash
-npm create fougere shop --frond blog --app nuxt
+npm create fougere@latest -- shop --frond blog --app nuxt
 cd shop && pnpm install && pnpm dev          # :3000
 ```
 

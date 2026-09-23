@@ -3,7 +3,7 @@
 > Scaffold a Fougere workspace
 
 ```bash
-npm create fougere shop
+npm create fougere@latest -- shop
 pnpm create fougere shop --frond blog --app nuxt
 ```
 
