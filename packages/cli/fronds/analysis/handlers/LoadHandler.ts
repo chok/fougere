@@ -1,4 +1,4 @@
-import { loadScript, reachableOps } from '@fougere/testing';
+import { loadScript, reachableOps } from '@fougere/testing/load';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import ProjectScan from '../services/ProjectScan.js';
