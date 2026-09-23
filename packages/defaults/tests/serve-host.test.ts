@@ -21,3 +21,12 @@ describe('a host serving a frond the config places at an address', () => {
     expect(app.remotes).toEqual({});
   });
 });
+
+describe('an extension a frond carries', () => {
+  it('mounts on the host that serves the frond, with nothing named by the host', async () => {
+    await using app = await bootApp(root, { only: ['notes'], topology: false });
+
+    expect(app.extensions()).toContain('mark');
+    expect(app.container.resolve('Marked')).toBe('notes');
+  });
+});
