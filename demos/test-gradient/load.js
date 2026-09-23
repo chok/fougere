@@ -122,6 +122,7 @@ let id = 0;
 function pick() {
   let roll = Math.random() * TOTAL;
   for (const op of OPS) if ((roll -= op.weight) < 0) return op;
+
   return OPS[OPS.length - 1];
 }
 
