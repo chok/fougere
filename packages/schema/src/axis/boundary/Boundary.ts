@@ -6,6 +6,7 @@ import { type Shape } from '../shape/Shape.js';
 import { Shapes } from '../shape/Shape.js';
 import { SchemaError } from '../../SchemaError.js';
 import { Format, type Accepted } from '../../lib/Format.js';
+import { isObject } from '../../lib/utils.js';
 
 const closedOr = <Verb extends 'decode' | 'encode'>(verb: Verb) =>
   Format.either(Format.tokens(['closed']), Format.of().key(verb, Format.text).needs(verb).closed());
@@ -66,21 +67,93 @@ export class Boundary {
 
     return new Boundary(rules, {
       decode:
-        typeof rules.in === 'object'
-          ? Boundaries.decoders.resolve(rules.in.decode)
-          : identityDecoder,
+        rules.in === 'closed'
+          ? identityDecoder
+          : typeof declared.rules.in === 'object'
+            ? Boundaries.decoders.resolve(declared.rules.in.decode)
+            : derived.decode,
       encode:
-        typeof rules.out === 'object'
-          ? Boundaries.encoders.resolve(rules.out.encode)
-          : identityEncoder,
+        rules.out === 'closed'
+          ? identityEncoder
+          : typeof declared.rules.out === 'object'
+            ? Boundaries.encoders.resolve(declared.rules.out.encode)
+            : derived.encode,
     });
   }
 
-  /** `date-time` means a `Date` on both sides, without a word in the entity. */
+  /**
+   * `date-time` means a `Date` on both sides, without a word in the entity — and so does a
+   * `date-time` inside `json(Address)`, read off the properties the shape already states.
+   */
   static forShape(shape: Shape | undefined): Boundary {
-    if (Shapes.typeOf(shape) === 'date') return new Boundary(Boundaries.aliases.resolve('isoDate'));
+    if (Shapes.typeOf(shape) === 'date') {
+      return new Boundary(Boundaries.aliases.resolve('isoDate'), {
+        decode: Boundaries.decoders.resolve('isoDate'),
+        encode: Boundaries.encoders.resolve('isoDate'),
+      });
+    }
+
+    const base = Shapes.of(shape).base;
+    if (base?.type === 'object' && base.properties) return Boundary.within(base.properties as Record<string, Shape>);
+    if (base?.type === 'array' && base.items) return Boundary.each(Boundary.forShape(base.items));
 
     return new Boundary();
+  }
+
+  private static within(properties: Record<string, Shape>): Boundary {
+    const boundaries = Object.entries(properties)
+      .map(([key, shape]) => [key, Boundary.forShape(shape)] as const)
+      .filter(([, boundary]) => boundary.decode !== identityDecoder);
+    if (boundaries.length === 0) return new Boundary();
+
+    const decode: Decoder = (value) => {
+      if (!isObject(value)) return { value };
+      const row: Record<string, unknown> = { ...value };
+      for (const [key, boundary] of boundaries) {
+        if (row[key] === null || row[key] === undefined) continue;
+        const verdict = boundary.decode(row[key]);
+        if ('message' in verdict) return { ...verdict, path: [key, ...(verdict.path ?? [])] };
+        row[key] = verdict.value;
+      }
+
+      return { value: row };
+    };
+    const encode: Encoder = (value) => {
+      if (!isObject(value)) return value;
+      const row: Record<string, unknown> = { ...value };
+      for (const [key, boundary] of boundaries) {
+        if (row[key] === null || row[key] === undefined) continue;
+        row[key] = boundary.encode(row[key]);
+      }
+
+      return row;
+    };
+
+    return new Boundary({}, { decode, encode });
+  }
+
+  private static each(item: Boundary): Boundary {
+    if (item.decode === identityDecoder) return new Boundary();
+
+    const decode: Decoder = (value) => {
+      if (!Array.isArray(value)) return { value };
+      const items: unknown[] = [];
+      for (const [index, element] of value.entries()) {
+        if (element === null || element === undefined) {
+          items.push(element);
+          continue;
+        }
+        const verdict = item.decode(element);
+        if ('message' in verdict) return { ...verdict, path: [String(index), ...(verdict.path ?? [])] };
+        items.push(verdict.value);
+      }
+
+      return { value: items };
+    };
+    const encode: Encoder = (value) =>
+      Array.isArray(value) ? value.map((element) => (element === null || element === undefined ? element : item.encode(element))) : value;
+
+    return new Boundary({}, { decode, encode });
   }
 
   /** The dual of `declared`: what `readOnly()` writes back on the field, not a judge. */

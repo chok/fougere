@@ -5,6 +5,8 @@ import {
   entity,
   Field,
   InputValidator,
+  json,
+  list,
   optional,
   primary,
   readOnly,
@@ -156,5 +158,33 @@ describe('boundary · survives every field transform', () => {
     const once = Boundaries.decoders.resolve('isoDate')('2026-09-05T00:00:00.000Z');
     expect(once).toEqual({ value: new Date('2026-09-05T00:00:00.000Z') });
     expect(Boundaries.decoders.resolve('isoDate')((once as { value: unknown }).value)).toEqual(once);
+  });
+});
+
+describe('boundary · a nested date is rebuilt by the shape that holds it', () => {
+  class Member extends entity({ id: primary(), since: date() }) {}
+  class Club extends entity({ id: primary(), owner: json(Member), members: list(json(Member)) }) {}
+
+  const iso = '2026-05-31T10:00:00.000Z';
+
+  it('json(Member) decodes its date-time property into a Date', () => {
+    const out = Club.from({ id: 'c1', owner: { id: 'm1', since: iso }, members: [] });
+    expect((out.owner as { since: unknown }).since).toEqual(new Date(iso));
+  });
+
+  it('list(json(Member)) decodes each item', () => {
+    const out = Club.from({ id: 'c1', owner: { id: 'm1', since: iso }, members: [{ id: 'm2', since: iso }, null] });
+    expect(out.members).toEqual([{ id: 'm2', since: new Date(iso) }, null]);
+  });
+
+  it('answers a value it already produced', () => {
+    const once = Club.from({ id: 'c1', owner: { id: 'm1', since: iso }, members: [] });
+    expect(Club.from(once)).toEqual(once);
+  });
+
+  it('encodes back to the ISO string, and says where a refusal sits', () => {
+    const boundary = Boundary.of(Club.getFields().members);
+    expect(boundary.encode([{ id: 'm2', since: new Date(iso) }])).toEqual([{ id: 'm2', since: iso }]);
+    expect(boundary.decode([{ id: 'm2', since: 'nope' }])).toEqual({ message: 'Invalid date', path: ['0', 'since'] });
   });
 });
