@@ -22,10 +22,15 @@ export default async (resolve: <T>(name: string) => T) => {
     { title: 'Le pattern Frond', body: 'Un frond est un hexagone métier autonome qui encapsule entities, handlers et policies.', authorId: alice.id, publish: false },
   ];
 
+  const now = new Date();
+  const actingAs = (author: { id: string; name: string; email: string }) =>
+    ({ ...author, emailVerified: true, createdAt: now, updatedAt: now });
+
   for (const { publish, ...item } of items) {
     const created = await posts.create({ params: {}, query: {}, input: item, state: {} });
     if (publish) {
-      await posts.publish({ params: { id: created.id }, query: {}, input: undefined, state: { user: { id: item.authorId } } });
+      const user = actingAs(authors.find((author: { id: string }) => author.id === item.authorId));
+      await posts.publish({ params: { id: created.id }, query: {}, input: undefined, state: { user } });
     }
   }
 

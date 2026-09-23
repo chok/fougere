@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { InputValidator } from '@fougere/schema';
+import { InputValidator, Shapes } from '@fougere/schema';
 import { betterAuth } from '../src/index.js';
 
 describe('what a signed-in call carries', () => {
@@ -7,7 +7,8 @@ describe('what a signed-in call carries', () => {
 
   it('declares the user and the session, and the session without its token', () => {
     expect(Object.keys(state ?? {})).toEqual(['user', 'session']);
-    expect(Object.keys(state!.session!.shape.properties ?? {})).not.toContain('token');
+    const session = Shapes.of(state!.session!.shape).base;
+    expect(session?.type === 'object' && Object.keys(session.properties ?? {})).not.toContain('token');
   });
 
   it('rebuilds the dates a session crossed a process with', () => {

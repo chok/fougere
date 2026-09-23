@@ -11,6 +11,8 @@ import { setModuleLoader } from '@fougere/core/node';
 import type { App, InvocationContext } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { createMemoryStorage } from '@fougere/adapter-memory';
+import { json } from '@fougere/schema';
+import User from './fronds/blog/entities/User.js';
 import { serveLive, watch, type Change } from './live.js';
 
 const as = (name: string, over: Partial<InvocationContext> = {}): InvocationContext => ({
@@ -50,6 +52,7 @@ async function main() {
     scan: await scanProject(import.meta.dirname),
     createContainer,
     storageFactory: createMemoryStorage,
+    extensions: [{ name: 'session', state: { user: json(User) } }],
     // The whole wiring. The fact's own name and its own fields — nothing written by hand.
     // `fact` is the REGISTRATION name — `postChanged`, not the class name.
     onEmit: (fact, payload) => {

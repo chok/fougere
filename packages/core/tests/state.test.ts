@@ -24,7 +24,7 @@ const built = (extensions: Extension[], middleware?: (state: Record<string, unkn
   createContainer,
 }).then((app) => {
   if (middleware) app.use(async (context, next) => { middleware(context.state); return next(); });
-  app.use(async (context, next) => { seen.push({ ...context.invocation.state }); return next(); });
+  app.use(async (context, next) => { seen.push({ ...context.invocation?.state }); return next(); });
 
   return app;
 });
