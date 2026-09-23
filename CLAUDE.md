@@ -1009,6 +1009,12 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 - **`clean` decides nothing** (`schema/src/lib/utils.ts`) — a free function nobody has
   validated as a word of the package.
 - `graphql` dual ESM/CJS hazard in tests — use `schema.getTypeMap()`, not `printSchema()`
+- **A body just under 1 MiB passes in-process and is refused across a hop** — the app's door
+  measures the caller's frame against `MAX_BODY_BYTES`, and a hop adds its envelope (trace,
+  identity) before the receiver measures the same limit. The refusal is typed now
+  (`PAYLOAD_TOO_LARGE`, `transport/http/src/client.ts`) instead of a `BAD_GATEWAY` blaming the
+  receiver; the band itself stays, because closing it means the door keeping room for the hop,
+  which moves a public limit. Measured by the site-only audit, 2026-09-23.
 - **Replicas booting together plant the same seeds** — `runSeeds` (`core/src/boot/seed.ts`) asks
   `list()` and inserts when it is empty, with no lock, and every process runs `seeding()` in its own
   ascent. Measured 2026-09-17, 4 Bun replicas on one Postgres 17: 10 or 15 rows instead of 5 in 3

@@ -1,5 +1,5 @@
 /** Sending half — frame the call, POST it, unframe the result. */
-import { FougereError, ErrorCode, type Transport, type FrondCall, type InvocationContext, type SignedCall } from '@fougere/core/contract';
+import { FougereError, ErrorCode, MAX_BODY_BYTES, type Transport, type FrondCall, type InvocationContext, type SignedCall } from '@fougere/core/contract';
 import type { RpcErrorShape } from './jsonrpc/RpcErrorShape.js';
 import type { RpcRequest } from './jsonrpc/RpcRequest.js';
 import type { RpcResponse } from './jsonrpc/RpcResponse.js';
@@ -82,6 +82,8 @@ export function createHttpTransport(baseUrl: string, options: HttpTransportOptio
       ? { ...forwarded, state: {}, identity: await options.sign({ ...call, ...invocation }) }
       : forwarded;
     const request = frameCall(call, sent, nextId++);
+    const body = JSON.stringify(request);
+    if (new TextEncoder().encode(body).byteLength > MAX_BODY_BYTES) throw tooLarge(call, baseUrl);
 
     for (let attempt = 0; ; attempt++) {
       let res: Response;
@@ -89,14 +91,15 @@ export function createHttpTransport(baseUrl: string, options: HttpTransportOptio
         res = await send(url, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(request),
+          body,
           signal: AbortSignal.timeout(timeoutMs),
         });
       } catch (err) {
         if (isTimeout(err)) {
           throw new FougereError({
             code: ErrorCode.GATEWAY_TIMEOUT,
-            message: `${call.entity}.${call.op} timed out after ${timeoutMs}ms (${baseUrl})`,
+            message: `${call.entity}.${call.op} timed out after ${timeoutMs}ms`,
+            cause: new Error(`${baseUrl} did not answer in ${timeoutMs}ms`),
             entity: call.entity,
             operation: call.op,
           });
@@ -104,17 +107,19 @@ export function createHttpTransport(baseUrl: string, options: HttpTransportOptio
         if (attempt < retries && isConnectionFailure(err)) continue;
         throw new FougereError({
           code: ErrorCode.SERVICE_UNAVAILABLE,
-          message: `${baseUrl} unreachable: ${(err as Error)?.message ?? err}`,
+          message: `${call.entity}.${call.op}: the process serving it is unreachable`,
           entity: call.entity,
           operation: call.op,
-          cause: err,
+          cause: new Error(`${baseUrl} unreachable: ${(err as Error)?.message ?? err}`, { cause: err }),
         });
       }
 
+      if (res.status === 413) throw tooLarge(call, baseUrl);
       if (!res.ok) {
         throw new FougereError({
           code: ErrorCode.BAD_GATEWAY,
-          message: `${baseUrl} answered HTTP ${res.status} — not a Fougere receiver?`,
+          message: `${call.entity}.${call.op}: the receiver answered HTTP ${res.status} — not a Fougere receiver?`,
+          cause: new Error(`${baseUrl} answered HTTP ${res.status}`),
           entity: call.entity,
           operation: call.op,
         });
@@ -126,7 +131,8 @@ export function createHttpTransport(baseUrl: string, options: HttpTransportOptio
       } catch {
         throw new FougereError({
           code: ErrorCode.BAD_GATEWAY,
-          message: `${baseUrl} answered non-JSON`,
+          message: `${call.entity}.${call.op}: the receiver answered non-JSON`,
+          cause: new Error(`${baseUrl} answered non-JSON`),
           entity: call.entity,
           operation: call.op,
         });
@@ -135,6 +141,17 @@ export function createHttpTransport(baseUrl: string, options: HttpTransportOptio
       return unframeResponse(response, call);
     }
   };
+}
+
+/** A frame over the receiver's limit — said before sending, or when a receiver answers 413. */
+function tooLarge(call: FrondCall, baseUrl: string): FougereError {
+  return new FougereError({
+    code: ErrorCode.PAYLOAD_TOO_LARGE,
+    message: `${call.entity}.${call.op} carries more than ${MAX_BODY_BYTES} bytes, the limit a receiver takes.`,
+    cause: new Error(`refused for ${baseUrl}`),
+    entity: call.entity,
+    operation: call.op,
+  });
 }
 
 function isTimeout(err: unknown): boolean {

@@ -210,3 +210,37 @@ describe('an answer that is not a JSON-RPC response', () => {
     expect(() => unframeResponse({ error: 'boom' }, call)).toThrow(/not a JSON-RPC error object/);
   });
 });
+
+describe('a frame over the receiver limit', () => {
+  const call = { entity: 'post', op: 'create' };
+  const invocation = { params: {}, query: {}, input: { body: 'x'.repeat(1024 * 1024) }, state: {} };
+
+  it('is refused before any request leaves, as PAYLOAD_TOO_LARGE', async () => {
+    let sent = 0;
+    const transport = createHttpTransport('http://peer', { fetch: async () => { sent++; return new Response('{}'); } });
+
+    await expect(transport(call, invocation)).rejects.toMatchObject({ code: 'PAYLOAD_TOO_LARGE' });
+    expect(sent).toBe(0);
+  });
+
+  it('reads a 413 as PAYLOAD_TOO_LARGE, not as a stranger at the address', async () => {
+    const transport = createHttpTransport('http://peer', { fetch: async () => new Response('{}', { status: 413 }) });
+
+    await expect(transport(call, { ...invocation, input: {} })).rejects.toMatchObject({ code: 'PAYLOAD_TOO_LARGE' });
+  });
+});
+
+describe('a refusal a browser may read', () => {
+  it('names the operation, and keeps the internal address in its cause', async () => {
+    const transport = createHttpTransport('http://10.0.0.7:4100', {
+      retries: 0,
+      fetch: async () => { throw new TypeError('fetch failed', { cause: { code: 'ECONNREFUSED' } }); },
+    });
+    const failure = await transport({ entity: 'post', op: 'list' }, { params: {}, query: {}, input: undefined, state: {} })
+      .catch((error: FougereError) => error);
+
+    expect(failure).toMatchObject({ code: 'SERVICE_UNAVAILABLE' });
+    expect(JSON.stringify((failure as FougereError).toJSON())).not.toContain('10.0.0.7');
+    expect(String(((failure as FougereError).cause as Error).message)).toContain('10.0.0.7:4100');
+  });
+});
