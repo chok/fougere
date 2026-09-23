@@ -8,11 +8,13 @@
  * three commits earlier. The declaration outlived what it named.
  */
 import { readdirSync, readFileSync } from 'node:fs';
+import { builtinModules } from 'node:module';
 import { execSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { publint } from 'publint';
 import { formatMessage } from 'publint/utils';
+import { init, parse } from 'es-module-lexer';
 
 const ROOT = process.cwd();
 
@@ -77,6 +79,45 @@ const attwOf = (dir: string): string[] => {
     .map((hit) => `${hit.kind} — ${hit.entrypoint} (${hit.resolutionKind})`);
 };
 
+/** The package a bare specifier names — `@fougere/schema/card` is `@fougere/schema`. */
+const packageOf = (specifier: string): string | undefined => {
+  if (specifier.startsWith('.') || specifier.startsWith('/') || specifier.startsWith('#')) return undefined;
+  if (specifier.includes(':') || builtinModules.includes(specifier.split('/')[0]!)) return undefined;
+  const parts = specifier.split('/');
+
+  return specifier.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0];
+};
+
+/**
+ * What a published file imports and its package does not declare. Inside the workspace every
+ * package is reachable, and an install that hoists hides it as well; pnpm isolates, and
+ * `pnpm create fougere` died on `Cannot find package '@fougere/schema'` from the compiler.
+ * Read with a lexer, so an import written inside a string — a generated script — is not one.
+ */
+const undeclaredOf = (dir: string): string[] => {
+  const manifest = JSON.parse(readFileSync(path.join(dir, 'package.json'), 'utf8'));
+  const declared = new Set<string>([
+    manifest.name,
+    ...Object.keys(manifest.dependencies ?? {}),
+    ...Object.keys(manifest.peerDependencies ?? {}),
+    ...Object.keys(manifest.optionalDependencies ?? {}),
+  ]);
+  const missing = new Map<string, string>();
+  const dist = path.join(dir, 'dist');
+  for (const file of readdirSync(dist, { recursive: true, encoding: 'utf8' })) {
+    if (!/\.m?js$/.test(file)) continue;
+    const [imports] = parse(readFileSync(path.join(dist, file), 'utf8'));
+    for (const { n } of imports) {
+      const name = n === undefined ? undefined : packageOf(n);
+      if (name !== undefined && !declared.has(name) && !missing.has(name)) missing.set(name, file);
+    }
+  }
+
+  return [...missing].map(([name, file]) => `imports ${name}, which it does not declare — dist/${file}`);
+};
+
+await init;
+
 const packages = publishable('packages').sort((one, other) => one.name.localeCompare(other.name));
 let failed = 0;
 
@@ -88,6 +129,7 @@ for (const { name, dir } of packages) {
       .map((m) => formatMessage(m, lint.pkg))
       .filter(Boolean),
     ...attwOf(dir),
+    ...undeclaredOf(dir),
   ];
   if (findings.length === 0) {
     console.log(`ok    ${name}`);

@@ -38,7 +38,8 @@
   },
   "peerDependencies": {
     "@fougere/core": "workspace:^",
-    "@fougere/adapter-sql": "workspace:^"
+    "@fougere/adapter-sql": "workspace:^",
+    "@fougere/schema": "workspace:^"
   },
   "devDependencies": {
     "@fougere/adapter-sql": "workspace:*",

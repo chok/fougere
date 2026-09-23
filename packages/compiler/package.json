@@ -42,7 +42,8 @@
   },
   "peerDependencies": {
     "@fougere/core": "workspace:^",
-    "@fougere/container": "workspace:^"
+    "@fougere/container": "workspace:^",
+    "@fougere/schema": "workspace:^"
   },
   "devDependencies": {
     "@fougere/core": "workspace:*",

@@ -56,9 +56,15 @@
   "peerDependencies": {
     "h3": "^1.15.0",
     "nuxt": "^4.0.0",
-    "vue": "^3.5.0"
+    "vue": "^3.5.0",
+    "nitropack": "*"
   },
   "publishConfig": {
     "access": "public"
+  },
+  "peerDependenciesMeta": {
+    "nitropack": {
+      "optional": true
+    }
   }
 }
