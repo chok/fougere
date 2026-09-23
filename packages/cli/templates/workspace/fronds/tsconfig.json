@@ -12,7 +12,10 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "rootDir": "."
+    "rootDir": ".",
+    // A frond names its neighbours, it does not walk to them: the alias the Nuxt module
+    // registers at runtime (`@fronds/<name>` → the frond directory), stated for the compiler.
+    "paths": { "@fronds/*": ["./*"] }
   },
   "include": ["."]
 }
