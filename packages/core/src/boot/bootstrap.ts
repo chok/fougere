@@ -568,10 +568,20 @@ function markLineCarriers(emissions: Emissions): void {
  * declares `product`.
  */
 function answerRemotes(
-  { container, routeRegistry, dispatcher, getMiddlewares }: Pick<Assembly, 'container' | 'routeRegistry' | 'dispatcher' | 'getMiddlewares'>,
+  { container, routeRegistry, dispatcher, getMiddlewares, options }: Pick<Assembly, 'container' | 'routeRegistry' | 'dispatcher' | 'getMiddlewares' | 'options'>,
   remoteRouter: RemoteRouter,
+  fronds: Fronds,
 ): void {
-  container.setFallback((name) => (isFacadeKey(name) ? facadeOperations(dispatcher, addressOf(name)) : undefined));
+  // Only for what another process may serve: an entity a frond hosts HERE and gives no handler
+  // is served by nobody, and a stand-in for it had GraphQL project an entity with no operation.
+  const servedElsewhere = (address: string): boolean => {
+    const owner = fronds.owner(address);
+
+    return owner === undefined || owner.name in (options.remotes ?? {});
+  };
+  container.setFallback((name) => (isFacadeKey(name) && servedElsewhere(addressOf(name))
+    ? facadeOperations(dispatcher, addressOf(name))
+    : undefined));
 
   const remoteFacades = new Map<string, Record<string, Function>>();
   routeRegistry.addResolver(remoteRoutes((entity) => {
@@ -685,7 +695,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     refuseWhatDoesNotHold(refused);
     markLineCarriers(emissions);
 
-    if (remoteRouter) answerRemotes(assembly, remoteRouter);
+    if (remoteRouter) answerRemotes(assembly, remoteRouter, fronds);
 
     const { resolve, schemaFor, facadeFor, operationsFor, presenterFor } = readings({
       container, fronds, remoteRouter, localDispatcher, routeRegistry, effectiveByKey, log,
