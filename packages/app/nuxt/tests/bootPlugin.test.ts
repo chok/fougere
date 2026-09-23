@@ -247,3 +247,16 @@ describe('extensionsOf', () => {
     });
   });
 });
+
+describe('generateBootPlugin — a module key', () => {
+  it('is imported by the bundle and handed to the loader, since nothing resolves it at runtime', () => {
+    const out = generateBootPlugin(
+      { db: false, fronds: { '@fougere/log': 'logs/app.jsonl', './fronds/audit.ts': {} } } as FougereConfig,
+      [], '/app/boot', [], undefined, '/app');
+
+    expect(out).toContain("import * as module_0 from '@fougere/log';");
+    expect(out).toContain("import * as module_1 from '/app/fronds/audit';");
+    expect(out).toContain('const modules = { "@fougere/log": module_0, "./fronds/audit.ts": module_1 };');
+    expect(out).toContain('setModuleLoader((id, options) =>');
+  });
+});

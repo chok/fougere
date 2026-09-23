@@ -1,4 +1,6 @@
 /** Fougere server bootstrap — single entry point for an app's lifecycle, whatever hosts it. */
+import { resolve, sep } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { applyConfig, createApp, identityFromEnv, Logger } from '@fougere/core';
 import { scanProject, frondAliases } from '@fougere/compiler';
 import { resolveConventions } from '@fougere/core';
@@ -100,7 +102,8 @@ async function boot(): Promise<App> {
   const reads = (_config.scan === undefined && _config.fronds === undefined) || _config.config === undefined;
   const installLoader = (alias?: Record<string, string>): void => {
     if (!reads) return;
-    const jiti = createJiti(import.meta.url, { interopDefault: true, ...(alias ? { alias } : {}) });
+    // From the project: a module key is resolved against whoever made the loader.
+    const jiti = createJiti(pathToFileURL(resolve(process.cwd()) + sep).href, { interopDefault: true, ...(alias ? { alias } : {}) });
     setModuleLoader((filePath) => jiti.import(filePath) as Promise<Record<string, unknown>>);
   };
   installLoader();

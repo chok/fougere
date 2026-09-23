@@ -13,7 +13,7 @@ import {
 import type { Nuxt } from '@nuxt/schema';
 import { orderSeeds } from '@fougere/core';
 import { scanProject, emitStatement, emitFacade, emitNames, frondAliases, watchPathsOf } from '@fougere/compiler';
-import { frondPackage, resolveConventions, type Conventions } from '@fougere/core';
+import { frondPackage, resolveConventions, statedFronds, statesModule, type Conventions } from '@fougere/core';
 import { configFileIn, setModuleLoader, loadCascadedConfig, remotesOf } from '@fougere/core/node';
 import { declaresStorage } from '@fougere/defaults';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
@@ -432,6 +432,20 @@ export function generateBootPlugin(
   configFiles.forEach((file, i) => lines.push(`import config_${i} from '${file.replace(/\.(m?)[jt]sx?$/, '')}';`));
   const stated = configFiles.length > 0 ? `(${configFiles.map((_, i) => `config_${i}.fronds`).join(' ?? ')})` : undefined;
   const configArg = stated ? `{ ...${JSON.stringify(carried(config))}, fronds: ${stated} }` : JSON.stringify(carried(config));
+
+  // A module key is imported by the BUNDLE, like a seed: nothing resolves a specifier once the
+  // app is built, and the loader core falls back to looks from its own directory.
+  const moduleKeys = statedFronds(config.fronds).map((entry) => entry.key).filter(statesModule);
+  if (moduleKeys.length > 0) {
+    lines.push(`import { getModuleLoader, setModuleLoader } from '@fougere/core/node';`);
+    moduleKeys.forEach((key, i) => {
+      const specifier = key.startsWith('.') ? resolve(root ?? '', key).replace(/\.(m?)[jt]sx?$/, '') : key;
+      lines.push(`import * as module_${i} from '${specifier}';`);
+    });
+    lines.push(`const modules = { ${moduleKeys.map((key, i) => `${JSON.stringify(key)}: module_${i}`).join(', ')} };`);
+    lines.push(`const loadModule = getModuleLoader();`);
+    lines.push(`setModuleLoader((id, options) => (id in modules ? Promise.resolve(modules[id]) : loadModule(id, options)));`);
+  }
 
   const db = config.db ?? 'sqlite';
   const sources = (config as { sources?: unknown }).sources;
