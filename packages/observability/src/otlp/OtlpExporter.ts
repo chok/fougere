@@ -70,6 +70,7 @@ function payload(service: string, spans: FinishedSpan[]) {
               // viewer draws the two differently. `selfMs` is NOT sent — a collector
               // derives it from the tree it already holds.
               kind: span.kind === 'statement' ? CLIENT : INTERNAL,
+              attributes: attributesOf(span),
               startTimeUnixNano: nanos(span.startedAt),
               endTimeUnixNano: nanos(span.startedAt + span.ms),
               status: span.error ? { code: ERROR, message: span.error } : { code: OK },
@@ -79,6 +80,26 @@ function payload(service: string, spans: FinishedSpan[]) {
       },
     ],
   };
+}
+
+/**
+ * What a reader groups and filters by, under OpenTelemetry's RPC names where it has them —
+ * a span that carried none left every collector with a name and a duration.
+ */
+function attributesOf(span: FinishedSpan) {
+  const values: [string, string | number | undefined][] = [
+    ['rpc.system', 'fougere'],
+    ['rpc.service', span.entity],
+    ['rpc.method', span.operation],
+    ['fougere.frond', span.frond],
+    ['fougere.caller_frond', span.callerFrond],
+    ['fougere.statements', span.kind === 'operation' ? span.statements : undefined],
+    ['fougere.error', span.error],
+  ];
+
+  return values
+    .filter((entry): entry is [string, string | number] => entry[1] !== undefined)
+    .map(([key, value]) => ({ key, value: typeof value === 'number' ? { intValue: String(value) } : { stringValue: value } }));
 }
 
 /** Epoch milliseconds → the int64 nanoseconds OTLP wants, as a string. */

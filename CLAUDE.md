@@ -1015,6 +1015,10 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   (`PAYLOAD_TOO_LARGE`, `transport/http/src/client.ts`) instead of a `BAD_GATEWAY` blaming the
   receiver; the band itself stays, because closing it means the door keeping room for the hop,
   which moves a public limit. Measured by the site-only audit, 2026-09-23.
+- **An operation span is `INTERNAL` on OTLP even when it crosses a process** —
+  `observability/src/otlp/OtlpExporter.ts`. A viewer draws a hop as SERVER/CLIENT, and the span
+  does not know it is one: `FinishedSpan` carries `frond` and `callerFrond`, not the placement
+  the call went through. The attributes travel since 2026-09-23 (`rpc.*`, `fougere.frond`).
 - **Replicas booting together plant the same seeds** — `runSeeds` (`core/src/boot/seed.ts`) asks
   `list()` and inserts when it is empty, with no lock, and every process runs `seeding()` in its own
   ascent. Measured 2026-09-17, 4 Bun replicas on one Postgres 17: 10 or 15 rows instead of 5 in 3
