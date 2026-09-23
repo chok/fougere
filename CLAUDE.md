@@ -984,6 +984,11 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 - **An un-augmented `adapters:` accepts anything, silently.** With no adapter in the program
   `EntityAdapters<TFields>` is `Partial<{}>`, which in TypeScript means "anything
   non-nullish". The RUNTIME half is closed since the adapter's format; what remains open is the type.
+- **Seeds are ordered within a process, never across two** — `orderSeeds` (`core/src/boot/seed.ts`)
+  plants a `ref()` target before its referrer among the seeds THIS process hosts. A seed runs where
+  its rows live (`app.storageFor`, absent elsewhere), so a referrer whose target is seeded by
+  another process may be planted first, and the guard then refuses it. Stated 2026-09-23, not
+  measured: nothing in the tree seeds across processes yet.
 - **A seed cycle is not satisfiable by ordering** — `core/src/boot/seed.ts`, `orderSeeds`.
   It returns them as `cycle` beside `ordered` and the boot NAMES them; they are still planted
   in declaration order and the source answers. Not "scan order": `createApp` takes `fronds:`

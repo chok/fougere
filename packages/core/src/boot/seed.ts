@@ -1,6 +1,5 @@
 import { pageOf } from '../wire/Page.js';
 import { Role } from '@fougere/schema';
-import { facadeKeyOf } from '../wire/Facade.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import type { SeedEntry } from '../descriptor/SeedEntry.js';
 import type { SeedFactory } from '../descriptor/SeedFactory.js';
@@ -65,14 +64,9 @@ function whatEachWaitsFor(
   }));
 }
 
-/** Where a seed writes, and what it may skip — resolved per entity. */
-interface SeedFacade {
-  list(): Promise<unknown[]>;
-  write(item: Record<string, unknown>): Promise<unknown>;
-}
-
 /**
- * Plant a set of seeds, in the order given.
+ * Plant a set of seeds, in the order given — by the storage, as a handler writes: a seed is the
+ * frond's own code, not a client.
  *
  * Documented: [seeds](https://fougere.dev/docs/business/seeds).
  */
@@ -82,26 +76,26 @@ export async function runSeeds(
   report: (message: string) => void = () => {},
 ): Promise<void> {
   for (const seed of seeds) {
-    const resolve = <T>(name: string) => app.resolve<T>(name + 'Handler');
-    const data = typeof seed.data === 'function' ? await (seed.data as SeedFactory)(resolve) : seed.data;
-
-    const facade = facadeFor(app, seed.entityName);
-    if (!facade) {
-      report(`  ${seed.entityName}: no handler façade nor storage — skipping seed`);
+    const storage = app.storageFor(seed.entityName);
+    if (!storage) {
+      report(`  ${seed.entityName}: no storage in this process — skipping seed`);
       continue;
     }
 
-    const existing = await facade.list();
+    const existing = pageOf(await storage.list()).items;
     if (existing.length > 0) {
       report(`  ${seed.entityName}: skipped (${existing.length} exist)`);
       continue;
     }
 
+    const resolve = <T>(name: string) => app.resolve<T>(name + 'Handler');
+    const data = typeof seed.data === 'function' ? await (seed.data as SeedFactory)(resolve) : seed.data;
+
     // The driver's error alone names neither the entity nor the row — and a foreign
     // key is exactly what a seed gets wrong.
     for (const item of data) {
       try {
-        await facade.write(item);
+        await storage.create(item);
       } catch (cause) {
         throw new Error(
           `Seed '${seed.entityName}' failed on ${JSON.stringify(item)}: ${(cause as Error)?.message ?? cause}`,
@@ -111,27 +105,6 @@ export async function runSeeds(
     }
     report(`  ${seed.entityName}: ${data.length} records`);
   }
-}
-
-/** A seed is not a client. */
-function facadeFor(app: App, entityName: string): SeedFacade | undefined {
-  let handler: Record<string, Function> | undefined;
-  try { handler = app.resolve<Record<string, Function>>(facadeKeyOf(entityName)); } catch {}
-
-  const list = handler?.list;
-  const create = handler?.create;
-  if (typeof list === 'function' && typeof create === 'function') {
-    return {
-      // A list answers a page, not an array — read as one, `.length` was undefined and every boot seeded again.
-      list: async () => pageOf(await list.call(handler) as unknown[]).items,
-      write: (item) => create.call(handler, { params: {}, query: {}, input: item, state: {} }),
-    };
-  }
-
-  const storage = app.storageFor(entityName);
-  if (!storage) return undefined;
-
-  return { list: async () => pageOf(await storage.list()).items, write: (item) => storage.create(item) };
 }
 
 /**

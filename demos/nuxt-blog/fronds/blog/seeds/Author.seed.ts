@@ -1,4 +1,4 @@
 export default [
-  { name: 'Alice Martin', email: 'alice@example.com' },
-  { name: 'Bob Dupont', email: 'bob@example.com' },
+  { id: 'alice', name: 'Alice Martin', email: 'alice@example.com' },
+  { id: 'bob', name: 'Bob Dupont', email: 'bob@example.com' },
 ]
