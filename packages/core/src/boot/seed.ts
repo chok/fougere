@@ -1,3 +1,4 @@
+import { pageOf } from '../wire/Page.js';
 import { Role } from '@fougere/schema';
 import { facadeKeyOf } from '../wire/Facade.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
@@ -121,7 +122,8 @@ function facadeFor(app: App, entityName: string): SeedFacade | undefined {
   const create = handler?.create;
   if (typeof list === 'function' && typeof create === 'function') {
     return {
-      list: () => list.call(handler) as Promise<unknown[]>,
+      // A list answers a page, not an array — read as one, `.length` was undefined and every boot seeded again.
+      list: async () => pageOf(await list.call(handler) as unknown[]).items,
       write: (item) => create.call(handler, { params: {}, query: {}, input: item, state: {} }),
     };
   }
@@ -129,7 +131,7 @@ function facadeFor(app: App, entityName: string): SeedFacade | undefined {
   const storage = app.storageFor(entityName);
   if (!storage) return undefined;
 
-  return { list: () => storage.list(), write: (item) => storage.create(item) };
+  return { list: async () => pageOf(await storage.list()).items, write: (item) => storage.create(item) };
 }
 
 /**
