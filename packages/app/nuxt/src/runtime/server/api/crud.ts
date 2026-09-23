@@ -1,7 +1,7 @@
 /** REST catch-all — the h3 half of a facade whose decisions live in `@fougere/app`. */
 import { defineEventHandler, readBody, getQuery, createError, setResponseStatus, setResponseHeaders } from 'h3';
 import { serveRest, useFougereApp } from '@fougere/app';
-import { stateOf } from '../utils/stateOf.js';
+import { stateOf } from '../stateOf.js';
 
 export default defineEventHandler(async (event) => {
   const app = await useFougereApp();

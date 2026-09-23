@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { stateOf } from '../src/runtime/server/utils/stateOf.js';
+import { stateOf } from '../src/runtime/server/stateOf.js';
 
 describe('stateOf', () => {
   it('carries the session and nothing else of the event context', () => {

@@ -248,6 +248,15 @@ const module = defineNuxtModule<FougereModuleOptions>({
       route: '/api/**',
       handler: runtimeResolve('server/api/crud'),
     });
+    // What `adapters: { graphql: true }` publishes — Express mounted it, and here it was
+    // ignored without a word.
+    if (config.adapters?.graphql) {
+      addServerHandler({
+        route: '/graphql',
+        method: 'post',
+        handler: runtimeResolve('server/routes/graphql.post'),
+      });
+    }
     addServerImportsDir(runtimeResolve('server/utils'));
 
     // ── 5b. Auth (mounted when fougere.config.ts declares `auth`) ──

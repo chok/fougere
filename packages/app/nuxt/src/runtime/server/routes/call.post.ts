@@ -2,7 +2,7 @@
 import { defineEventHandler } from 'h3';
 import { serveRpc, rpcParseError, useFougereApp } from '@fougere/app';
 import { MAX_BODY_BYTES } from '@fougere/core';
-import { stateOf } from '../utils/stateOf.js';
+import { stateOf } from '../stateOf.js';
 
 type NodeReq = {
   body?: unknown;
