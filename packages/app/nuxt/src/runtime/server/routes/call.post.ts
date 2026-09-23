@@ -2,6 +2,7 @@
 import { defineEventHandler } from 'h3';
 import { serveRpc, rpcParseError, useFougereApp } from '@fougere/app';
 import { MAX_BODY_BYTES } from '@fougere/core';
+import { stateOf } from '../utils/stateOf.js';
 
 type NodeReq = {
   body?: unknown;
@@ -112,7 +113,7 @@ export default defineEventHandler(async (event) => {
     return await serveRpc(app, {
       path: event.path,
       body: await readJsonBody(event),
-      state: (event.context ?? {}) as Record<string, unknown>,
+      state: stateOf(event),
     });
   } catch (err) {
     if ((err as { statusCode?: number })?.statusCode === 413) throw err;

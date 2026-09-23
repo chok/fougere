@@ -1,6 +1,7 @@
 /** REST catch-all — the h3 half of a facade whose decisions live in `@fougere/app`. */
 import { defineEventHandler, readBody, getQuery, createError, setResponseStatus, setResponseHeaders } from 'h3';
 import { serveRest, useFougereApp } from '@fougere/app';
+import { stateOf } from '../utils/stateOf.js';
 
 export default defineEventHandler(async (event) => {
   const app = await useFougereApp();
@@ -13,7 +14,7 @@ export default defineEventHandler(async (event) => {
     path: event.path.replace(/^\/api\//, '').replace(/\?.*$/, ''),
     query: getQuery(event) as Record<string, string>,
     body: hasBody ? await readBody(event) : undefined,
-    state: (event.context ?? {}) as Record<string, unknown>,
+    state: stateOf(event),
   });
 
   // Nothing here is ours — an app's own /api/* routes must still reach their handler.
