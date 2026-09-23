@@ -300,21 +300,25 @@ the remote router refused, `Two remotes serve 'export'`, which left a third proc
 reach neither. `@fougere/calls` brings `KeepHandler`, `@fougere/observability`
 `ExportHandler`. Pinned by `tests/brought.test.ts`.
 
-**A call's `state` is declared, by the extensions** — `Extension.state`, `{ user: json(User) }`,
-gathered by `AppLifecycle.state()` into a `StateShape` (`core/src/wire/StateShape.ts`) once the
-fronds are read, so a frond's own `extensions/` declares too, and an extension replaced by name
-declares nothing. The façade judges it twice (`dispatch/HandlerFacade.ts`): before the
-middlewares, so they read rebuilt values, and before the handler, so a member a middleware
-wrote is judged like one that arrived. It used to be a `Record<string, unknown>` that crossed
-as raw JSON and that nobody rebuilt, so `state.user.since` was a `Date` in process and a string
-split — measured by the site-only audit, 2026-09-23. A member nobody declares is refused, two
-declarations of one refuse the boot, and every member is absent until a host fills it. Core
-holds no user: `betterAuth()` declares `user` and `session`, the session without its `token`,
-since a process trusts the one that called it (`CallIdentity`) and never the cookie behind it.
-What made it possible is `Boundary.forShape` reading a date INSIDE `json(Entity)` and `list()`.
-An extension is recognized by `up`, `down` or `state` (`isExtension`, `descriptor/ExtensionEntry.ts`),
-the one predicate the scan and the module keys share. Pinned by `core/tests/state.test.ts` and
-`defaults/tests/gradient.test.ts`.
+**A call's `state` is declared by the extensions, and judged where it ENTERED** —
+`Extension.state`, `{ user: json(User) }`, gathered by `AppLifecycle.state()` into a `StateShape`
+(`core/src/wire/StateShape.ts`) once the fronds are read, so a frond's own `extensions/` declares
+too, and an extension replaced by name declares nothing. Both facades judge it — the local one
+(`dispatch/HandlerFacade.ts`) and the one that sends a call away (`boot/remote.ts`) — unless the
+invocation is `crossed`, which only the transport receiver writes and a caller may not send
+(`transport/http/src/server.ts`, `SENT`). After the middlewares, what they WROTE is judged, since
+that is where it entered. A receiver declares nothing: the envelope proves which process wrote the
+state, and judging it again made every receiver know declarations that are not its own — the blog
+process of `demos/nuxt-blog` has no auth and refused `state.user`. What a handler READS is read by
+the type it asks for: `collectedAs` (`prefab/collector.ts`) passes what a `Collector(User)`
+answered through `json(User)`, judged and rebuilt. It used to be a `Record<string, unknown>` that
+crossed as raw JSON, so `state.user.since` was a `Date` in process and a string split — measured
+by the site-only audit, 2026-09-23. Core holds no user: `betterAuth()` declares `user` and
+`session`, the session without its `token`, since a process trusts the one that called it
+(`CallIdentity`) and never the cookie behind it. What made it possible is `Boundary.forShape`
+reading a date INSIDE `json(Entity)` and `list()`. An extension is recognized by `up`, `down` or
+`state` (`isExtension`, `descriptor/ExtensionEntry.ts`), the one predicate the scan and the module
+keys share. Pinned by `core/tests/state.test.ts` and `defaults/tests/gradient.test.ts`.
 
 **What carries a line writes none** — `CARRIES_LINE` (`core/src/builtin/LogLine.ts`), a
 set the BOOT fills from `Emissions.doorsFor('logLine')`, read by `loggerMiddleware`, by

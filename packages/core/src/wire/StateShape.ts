@@ -45,12 +45,21 @@ export class StateShape {
     return new StateShape(fields);
   }
 
-  /** The state rebuilt by its fields, or a refusal naming the member and what this process declares. */
-  judge(state: Record<string, unknown>, entity: string, operation: string): Record<string, unknown> {
-    if (Object.keys(state).length === 0) return state;
+  /**
+   * The members written since `entered` rebuilt by their fields, or a refusal naming the member
+   * and what this process declares. What `entered` already held was judged where it entered.
+   */
+  judge(
+    state: Record<string, unknown>,
+    entity: string,
+    operation: string,
+    entered: Record<string, unknown> = {},
+  ): Record<string, unknown> {
+    const written = Object.fromEntries(Object.entries(state).filter(([member, value]) => entered[member] !== value));
+    if (Object.keys(written).length === 0) return state;
 
-    const result = this.validator.validate(state);
-    if (result.success) return result.data;
+    const result = this.validator.validate(written);
+    if (result.success) return { ...state, ...result.data };
 
     const declared = Object.keys(this.fields);
     const errors = result.errors.map((error) => ({ ...error, path: ['state', ...error.path] }));

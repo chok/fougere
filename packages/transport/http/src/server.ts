@@ -71,6 +71,7 @@ export async function handleRpc(runner: Transport, raw: unknown, options: Receiv
     trace: sent.trace,
     ...(sent.runAt === undefined ? {} : { runAt: sent.runAt }),
     ...(caller ? { caller } : {}),
+    crossed: true,
   };
 
   try {
@@ -92,12 +93,13 @@ export async function handleRpc(runner: Transport, raw: unknown, options: Receiv
 }
 
 /**
- * The members a caller may send. `caller` is established by the receiver and never claimed, and
+ * The members a caller may send. `caller` and `crossed` are written by the receiver and never claimed, and
  * a key outside the list is refused by name: `body` used to be dropped, and the call then ran
  * with no input and no validation.
  */
 const SENT = {
   params: true, query: true, input: true, state: true, trace: true, identity: true, runAt: true, caller: false,
+  crossed: false,
 } satisfies Record<keyof InvocationContext, boolean>;
 
 function malformed(id: string | number, strangers: string[], entity: string, op: string): RpcResponse {

@@ -4,6 +4,7 @@
  * Documented: [the gradient](https://fougere.dev/docs/infra/gradient).
  */
 import type { FrondCall } from '../wire/FrondCall.js';
+import type { StateShape } from '../wire/StateShape.js';
 import type { Transport } from '../wire/Transport.js';
 import { RPC_ENTITY } from '../wire/RpcAnswer.js';
 import { assertIdentityCard } from '../wire/card/IdentityCard.js';
@@ -103,15 +104,19 @@ export function createRemoteFacade(
   entity: string,
   router: RemoteRouter,
   middlewaresFor: (address: string) => AppMiddleware[],
+  shape: StateShape,
 ): Facade {
-  const opFn = (op: string) => async (invocation: InvocationContext = Invocation.empty) => {
+  const opFn = (op: string) => async (received: InvocationContext = Invocation.empty) => {
     const { frond, transport, schema } = await router.route(entity);
     const call: FrondCall = { frond, entity, op };
+    const state = received.crossed ? { ...received.state } : shape.judge(received.state, entity, op);
+    const invocation = { ...received, state };
+    const entered = { ...state };
     const ctx: OperationContext = {
-      entity, frond, operation: op, args: [], state: invocation.state, invocation,
+      entity, frond, operation: op, args: [], state, invocation,
     };
     const answer = await runMiddlewares(middlewaresFor(entity), ctx, () =>
-      transport(call, ctx.invocation ?? invocation));
+      transport(call, { ...(ctx.invocation ?? invocation), state: shape.judge(ctx.state, entity, op, entered) }));
 
     // The schema the card carried, put to work: a row crosses as data and comes back through
     // the same codecs a local facade applies, so a placement does not decide what a caller

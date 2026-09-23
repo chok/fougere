@@ -568,7 +568,7 @@ function markLineCarriers(emissions: Emissions): void {
  * declares `product`.
  */
 function answerRemotes(
-  { container, routeRegistry, dispatcher, getMiddlewares, options }: Pick<Assembly, 'container' | 'routeRegistry' | 'dispatcher' | 'getMiddlewares' | 'options'>,
+  { container, routeRegistry, dispatcher, getMiddlewares, options, state }: Pick<Assembly, 'container' | 'routeRegistry' | 'dispatcher' | 'getMiddlewares' | 'options' | 'state'>,
   remoteRouter: RemoteRouter,
   fronds: Fronds,
 ): void {
@@ -587,7 +587,7 @@ function answerRemotes(
   routeRegistry.addResolver(remoteRoutes((entity) => {
     const known = remoteFacades.get(entity);
     if (known) return known;
-    const facade = createRemoteFacade(entity, remoteRouter, getMiddlewares);
+    const facade = createRemoteFacade(entity, remoteRouter, getMiddlewares, state);
     remoteFacades.set(entity, facade);
 
     return facade;

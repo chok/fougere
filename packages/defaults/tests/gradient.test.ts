@@ -19,7 +19,7 @@ import {
 } from '@fougere/schema';
 import { createSqliteSource } from '@fougere/adapter-sql/sqlite';
 import {
-  Collector, createApp, createLocalRunner, Crud, ErrorCode, frond, Invocation, Presenter,
+  Collector, createApp, createAppRunner, createLocalRunner, Crud, ErrorCode, frond, Invocation, Presenter,
   togetherKeyOf, type App, type Storage, type Transport,
 } from '@fougere/core';
 import { layerOf, storageFrom } from '../src/storage/ResolvedStorage.js';
@@ -406,52 +406,70 @@ describe('what a placement may not soften — the refusals', () => {
 /** Who the door says is calling — a date inside, which JSON turns into text on the wire. */
 class Member extends entity({ id: primary(), name: text(), since: date() }) {}
 
-/** What a handler reads of the member, reported rather than used. */
-class Visit {
-  constructor(readonly sinceType: string) {}
-}
-
-class VisitCollector extends Collector(Visit) {
-  async collect(ctx: { state: Record<string, unknown> }): Promise<Visit> {
-    const user = ctx.state.user as { since?: unknown } | undefined;
-
-    return new Visit(Object.prototype.toString.call(user?.since));
+/** The member the door put on the call, read by the entity the collector names. */
+class MemberCollector extends Collector(Member) {
+  async collect(ctx: { state: Record<string, unknown> }): Promise<Member | undefined> {
+    return ctx.state.user as Member | undefined;
   }
 }
 
 class VisitHandler {
-  async read(visit: Visit): Promise<{ sinceType: string }> {
-    return { sinceType: visit.sinceType };
+  async read(member: Member): Promise<{ sinceType: string }> {
+    return { sinceType: Object.prototype.toString.call(member.since) };
   }
 }
 
-/** What crosses between two processes: the invocation as JSON, and nothing else. */
+const visits = () => frond('visits', {
+  handlers: [{
+    ctor: VisitHandler,
+    deps: [],
+    operations: { read: { binding: [{ name: 'member', optional: false, source: { kind: 'collector' as const, typeName: 'member' } }] } },
+  }],
+  collectors: [MemberCollector],
+});
+
+/** Who fills `user`, and so the one process that declares it. */
+const session = { name: 'session', state: { user: json(Member) } };
+
+/** What crosses between two processes: the invocation as JSON, marked by the receiver as crossed. */
 const acrossTheWire = (run: Transport): Transport => (call, invocation) =>
-  run(call, JSON.parse(JSON.stringify(invocation)));
+  run(call, { ...JSON.parse(JSON.stringify(invocation)), crossed: true });
 
-describe('state — what the door put on the call reads the same at every placement', () => {
-  it.each([['in-process', false], ['across the wire', true]] as const)('%s', async (_name, crossing) => {
-    await using app = await createApp({
+describe('state — judged where it entered, read the same at every placement', () => {
+  const signedIn = { ...Invocation.empty, state: { user: { id: 'u-1', name: 'Ada', since: new Date(0) } } };
+
+  it('in-process', async () => {
+    await using app = await createApp({ createContainer, fronds: [visits()], extensions: [session] } as never);
+
+    expect(await createLocalRunner(app)({ entity: 'visit', op: 'read' }, signedIn as never))
+      .toEqual({ sinceType: '[object Date]' });
+  });
+
+  it('across the wire, to a process that declares nothing', async () => {
+    await using receiver = await createApp({ createContainer, fronds: [visits()] } as never);
+    await using entry = await createApp({
       createContainer,
-      fronds: [frond('visits', {
-        handlers: [{
-          ctor: VisitHandler,
-          deps: [],
-          operations: { read: { binding: [{ name: 'visit', optional: false, source: { kind: 'collector' as const, typeName: 'visit' } }] } },
-        }],
-        collectors: [VisitCollector],
-      })],
-      extensions: [{ name: 'session', state: { user: json(Member) } }],
-    } as never);
-    const run = createLocalRunner(app);
-    const call = crossing ? acrossTheWire(run) : run;
-
-    const answer = await call({ entity: 'visit', op: 'read' }, {
-      ...Invocation.empty,
-      state: { user: { id: 'u-1', name: 'Ada', since: new Date(0) } },
+      fronds: [visits()],
+      extensions: [session],
+      remotes: { visits: 'http://visits.test' },
+      remoteTransport: (): Transport => acrossTheWire(createLocalRunner(receiver)),
     } as never);
 
-    expect(answer).toEqual({ sinceType: '[object Date]' });
+    expect(await createAppRunner(entry)({ entity: 'visit', op: 'read' }, signedIn as never))
+      .toEqual({ sinceType: '[object Date]' });
+  });
+
+  it('refuses at the entry a member nobody there declares', async () => {
+    await using receiver = await createApp({ createContainer, fronds: [visits()] } as never);
+    await using entry = await createApp({
+      createContainer,
+      fronds: [visits()],
+      remotes: { visits: 'http://visits.test' },
+      remoteTransport: (): Transport => acrossTheWire(createLocalRunner(receiver)),
+    } as never);
+
+    await expect(createAppRunner(entry)({ entity: 'visit', op: 'read' }, signedIn as never))
+      .rejects.toMatchObject({ code: ErrorCode.VALIDATION_FAILED, message: expect.stringContaining('state.user: Unknown field') });
   });
 });
 

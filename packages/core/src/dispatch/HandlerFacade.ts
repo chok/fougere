@@ -89,8 +89,9 @@ export class HandlerFacade {
     }
 
     const received = Invocation.from(input);
-    const state = this.facade.state.judge(received.state, entity, op);
-    const invocation = state === received.state ? received : received.withState(state);
+    const state = received.crossed ? { ...received.state } : this.facade.state.judge(received.state, entity, op);
+    const invocation = received.withState(state);
+    const entered = { ...state };
     const context: OperationContext = {
       entity,
       frond: this.facade.frond,
@@ -100,7 +101,7 @@ export class HandlerFacade {
       invocation,
     };
 
-    return runMiddlewares(this.facade.middlewares(), context, () => this.answer(op, contract, context, invocation));
+    return runMiddlewares(this.facade.middlewares(), context, () => this.answer(op, contract, context, invocation, entered));
   }
 
   /**
@@ -112,8 +113,9 @@ export class HandlerFacade {
     contract: OperationContract,
     context: OperationContext,
     invocation: Invocation,
+    entered: Record<string, unknown>,
   ): Promise<unknown> {
-    const state = this.facade.state.judge(context.state, this.handler.address, op);
+    const state = this.facade.state.judge(context.state, this.handler.address, op, entered);
     const validated = validateInput(contract.input, { ...invocation, state }, this.handler.address, op);
     context.invocation = validated;
 

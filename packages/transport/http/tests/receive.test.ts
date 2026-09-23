@@ -55,4 +55,15 @@ describe('the envelope facade', () => {
 
     expect(answer.status).toBe(413);
   });
+
+  it('marks what it hands on as crossed, and refuses a caller claiming it', async () => {
+    let handed: unknown;
+    const facade = receive(async (_call, invocation) => { handed = invocation; return null; }, { allowUnsigned: true });
+
+    await facade(post({ jsonrpc: '2.0', id: 1, method: 'thing.list', params: {} }));
+    expect(handed).toMatchObject({ crossed: true });
+
+    const claimed = await facade(post({ jsonrpc: '2.0', id: 2, method: 'thing.list', params: { crossed: true } }));
+    expect(await claimed.json()).toMatchObject({ error: { message: expect.stringContaining('crossed') } });
+  });
 });

@@ -1,6 +1,7 @@
 import type { InvocationContext } from '../wire/InvocationContext.js';
 import type { BindingPlan } from '../wire/binding.js';
 import type { CollectorLookup } from './CollectorLookup.js';
+import { collectedAs } from '../prefab/collector.js';
 
 /** Resolves an operation's declared binding plan against one invocation. */
 export class ArgumentResolver {
@@ -13,7 +14,7 @@ export class ArgumentResolver {
       switch (binding.source.kind) {
         case 'collector': {
           const collector = this.collectors?.(binding.source.typeName);
-          args.push(collector ? await collector.collect(ctx) : undefined);
+          args.push(collector ? collectedAs(collector, await collector.collect(ctx)) : undefined);
           break;
         }
         case 'context': {
