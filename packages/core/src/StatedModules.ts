@@ -3,13 +3,14 @@
  * of your own. Reading one means importing it, which is why this lives on the node entry and
  * never on the one a Worker runs.
  *
- * What a module hands back decides where it goes: a shape stating `up` or `down` is an
+ * What a module hands back decides where it goes: a shape stating `up`, `down` or `state` is an
  * extension and rises with the app, anything else is a frond and is installed like the rest.
  * The author of a config does not have to know which one their package exports — the same
  * reading `extensions/` already does off a module's form.
  */
 import type { Extension } from './boot/Extension.js';
 import type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
+import { isExtension } from './descriptor/ExtensionEntry.js';
 import { statesModule, type FrondsStated } from './FrondsStated.js';
 import { statedFronds } from './StatedFrond.js';
 import { getModuleLoader } from './loader.js';
@@ -19,12 +20,6 @@ function exportedBy(specifier: string): string {
   const last = specifier.split('/').at(-1) ?? specifier;
 
   return last.replace(/\.[cm]?[jt]s$/, '');
-}
-
-function rises(built: unknown): built is Extension {
-  const shape = built as { up?: unknown; down?: unknown } | null;
-
-  return typeof shape?.up === 'function' || typeof shape?.down === 'function';
 }
 
 /** What a config's module keys hand over, sorted by what each one turned out to be. */
@@ -50,7 +45,7 @@ export async function statedModules(
     }
 
     const built = (factory as (argument?: unknown) => unknown)(entry.value);
-    if (rises(built)) extensions.push(built);
+    if (isExtension(built)) extensions.push(built as Extension);
     else fronds.push(built as FrondDescriptor);
   }
 

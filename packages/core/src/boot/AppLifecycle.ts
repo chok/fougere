@@ -1,5 +1,6 @@
 import type { App } from './App.js';
 import type { Extension } from './Extension.js';
+import { StateShape } from '../wire/StateShape.js';
 
 /** Runs application extensions up in order and down in reverse order. */
 export class AppLifecycle {
@@ -18,6 +19,11 @@ export class AppLifecycle {
 
   names(): string[] {
     return this.members.map((extension) => extension.name);
+  }
+
+  /** Read off the members that stay, so an extension replaced by name declares nothing. */
+  state(): StateShape {
+    return StateShape.of(this.members);
   }
 
   async up(app: App): Promise<void> {

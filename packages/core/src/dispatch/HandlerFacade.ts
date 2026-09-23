@@ -88,7 +88,9 @@ export class HandlerFacade {
       );
     }
 
-    const invocation = Invocation.from(input);
+    const received = Invocation.from(input);
+    const state = this.facade.state.judge(received.state, entity, op);
+    const invocation = state === received.state ? received : received.withState(state);
     const context: OperationContext = {
       entity,
       frond: this.facade.frond,
@@ -111,7 +113,8 @@ export class HandlerFacade {
     context: OperationContext,
     invocation: Invocation,
   ): Promise<unknown> {
-    const validated = validateInput(contract.input, invocation, this.handler.address, op);
+    const state = this.facade.state.judge(context.state, this.handler.address, op);
+    const validated = validateInput(contract.input, { ...invocation, state }, this.handler.address, op);
     context.invocation = validated;
 
     const args = contract.binding ? await this.arguments.resolve(contract.binding, validated) : [];

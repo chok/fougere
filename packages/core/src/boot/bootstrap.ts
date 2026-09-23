@@ -660,6 +660,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     log.debug('builtins registered (Logger, Config)');
 
     const { fronds, operationModel } = await readFronds(options, log);
+    appLifecycle.add(...frondExtensions(fronds));
     const remoteRouter = remoteRouterOf(options);
     const { inflight, routeRegistry, dispatchLifecycle, dispatcher, localDispatcher, getMiddlewares, use } =
       dispatching(options, log, fronds, () => journalOf());
@@ -682,6 +683,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       container, routeRegistry, emissions, dispatcher, localDispatcher, effectiveByKey,
       boundPorts, refused, relations, hosting, operationModel, entityByName, frondOf, contractsOf,
       getMiddlewares, use, middlewaresOf: new Map(), seamsOf: new Map(), log, options,
+      state: appLifecycle.state(),
     };
     for (const frond of fronds) await installFrond(frond, assembly);
 
@@ -735,7 +737,6 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     serveCoreRpc(app, hosting, storageFor);
 
     built = app;
-    appLifecycle.add(...frondExtensions(fronds));
     await appLifecycle.up(app);
     stopAnnouncing = announceLines(emissions, container, carry);
 

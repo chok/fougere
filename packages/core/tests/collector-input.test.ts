@@ -7,6 +7,7 @@ import { scanProject } from '@fougere/compiler';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
+import { json } from '@fougere/schema';
 import { createApp, createLocalRunner } from '../src/index.js';
 import { Invocation } from '../src/wire/Invocation.js';
 
@@ -14,6 +15,7 @@ const root = join(import.meta.dirname, 'fixtures-collector-input');
 
 /** A valid Post input, and the same one for both calls. */
 const input = { id: 'p1', title: 'Ferns unfurl in silence' };
+const session = { name: 'session', state: { user: json() } };
 const state = { user: { id: 'u-1', email: 'alice@example.com', role: 'author' } };
 
 describe('an inferred input beside a collected entity', () => {
@@ -24,7 +26,7 @@ describe('an inferred input beside a collected entity', () => {
     expect(scan.diagnostics.filter((d) => d.code === 'input-contract-ambiguous')).toEqual([]);
     expect(operations.get('bodyFirst')?.input?.getFields()).toHaveProperty('title');
     expect(operations.get('collectorFirst')?.input?.getFields()).toHaveProperty('title');
-    await using app = await createApp({ scan, createContainer });
+    await using app = await createApp({ scan, createContainer, extensions: [session] });
 
     const out = await createLocalRunner(app)(
       { entity: 'post', op: 'bodyFirst' },
@@ -35,7 +37,7 @@ describe('an inferred input beside a collected entity', () => {
   });
 
   it('validates the same input the same way when the collected parameter is first', async () => {
-    await using app = await createApp({ scan: await scanProject(root), createContainer });
+    await using app = await createApp({ scan: await scanProject(root), createContainer, extensions: [session] });
 
     const out = await createLocalRunner(app)(
       { entity: 'post', op: 'collectorFirst' },

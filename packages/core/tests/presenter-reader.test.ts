@@ -13,6 +13,7 @@ import { scanProject } from '@fougere/compiler';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
+import { json } from '@fougere/schema';
 import { createApp, createLocalRunner } from '../src/index.js';
 import type { StorageFactory } from '../src/index.js';
 import { Invocation } from '../src/wire/Invocation.js';
@@ -35,7 +36,8 @@ const storageFactory: StorageFactory = (() => ({
 beforeEach(() => { ListPresenter.calls = 0; });
 
 const scan = await scanProject(root);
-const app = () => createApp({ scan, createContainer, storageFactory });
+const session = { name: 'session', state: { user: json() } };
+const app = () => createApp({ scan, createContainer, storageFactory, extensions: [session] });
 
 describe('a computed field sees the reader', () => {
   it('answers differently for two readers, on the same rows', async () => {

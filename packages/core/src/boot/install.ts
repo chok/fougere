@@ -1,5 +1,6 @@
 /** Putting one frond into the app being built: its scope, what it serves, what it takes. */
 import type { Container } from '@fougere/container';
+import type { StateShape } from '../wire/StateShape.js';
 import type { ProviderEntry } from '../descriptor/ProviderEntry.js';
 import type { PresenterEntry } from '../descriptor/PresenterEntry.js';
 import { lowerFirst, type Fields, type SchemaView } from '@fougere/schema';
@@ -85,6 +86,8 @@ export interface Assembly {
   seamsOf: Map<string, Map<string, ProviderEntry[]>>;
   log: Logger;
   options: CreateAppOptions;
+  /** What a call's `state` may hold, read off every extension this process mounts. */
+  state: StateShape;
 }
 
 /**
@@ -424,6 +427,7 @@ function buildFacadeInto(
     presenter: presenterMap.get(handler.address),
     presenterScope: scope,
     middlewares: () => getMiddlewares(handler.address),
+    state: assembly.state,
   });
 
   // Emissions use the same contracts and execution path as direct calls, and the terms sit

@@ -3,6 +3,7 @@ import { type AppMiddleware } from '../wire/AppMiddleware.js';
 import type { EffectiveOperationsMap } from '../EffectiveOperationsMap.js';
 import type { HandlerEntry } from '../descriptor/HandlerEntry.js';
 import type { PresenterEntry } from '../descriptor/PresenterEntry.js';
+import type { StateShape } from '../wire/StateShape.js';
 
 /** What boot resolved around one handler, beyond the handler and the scope it resolves in. */
 export interface Facade {
@@ -22,4 +23,6 @@ export interface Facade {
   presenterScope: Container;
   /** The middlewares that apply to this address, read at call time and never at boot. */
   middlewares: () => AppMiddleware[];
+  /** What a call's `state` may hold in this process. */
+  state: StateShape;
 }

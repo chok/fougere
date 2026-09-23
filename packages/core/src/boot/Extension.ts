@@ -1,4 +1,5 @@
 import type { App } from './App.js';
+import type { Field } from '@fougere/schema';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 
 /**
@@ -15,6 +16,11 @@ export interface Extension {
    * signature is the only way to ask for one.
    */
   fronds?: readonly FrondDescriptor[];
+  /**
+   * The members it puts on a call's `state` — `{ user: json(User) }`. A member nobody declares
+   * is refused at the facade, and one declared twice refuses the boot.
+   */
+  state?: Readonly<Record<string, Field>>;
   up?(app: App): void | Promise<void>;
   down?(app: App): void | Promise<void>;
 }

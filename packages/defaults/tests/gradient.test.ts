@@ -15,7 +15,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createContainer } from '@fougere/container';
 import {
-  created, entity, oneOf, optional, primary, readOnly, ref, text, unique, updated, writeOnly,
+  created, date, entity, json, oneOf, optional, primary, readOnly, ref, text, unique, updated, writeOnly,
 } from '@fougere/schema';
 import { createSqliteSource } from '@fougere/adapter-sql/sqlite';
 import {
@@ -73,7 +73,10 @@ class Caller {
   constructor(public readonly who: string) {}
 }
 
-/** Reads `ctx.state`, which is what every door fills and no entity declares. */
+/** The member the door fills — declared, so it reads the same at every placement. */
+const door = { name: 'door', state: { who: text() } };
+
+/** Reads `ctx.state`, which is what every door fills. */
 class CallerCollector extends Collector(Caller) {
   async collect(ctx: { state: Record<string, unknown> }): Promise<Caller> {
     return new Caller(String(ctx.state.who ?? 'nobody'));
@@ -202,17 +205,17 @@ async function world(placement: Placement): Promise<World> {
   let writing: App;
   if (placement.apart) {
     people = await createApp({
-      createContainer, ...layer, fronds: fronds(placement),
+      createContainer, ...layer, fronds: fronds(placement), extensions: [door],
       remotes: { writing: 'http://writing.test' },
       remoteTransport: (): Transport => (c, i) => createLocalRunner(writing)(c, i),
     } as never);
     writing = await createApp({
-      createContainer, ...layer, fronds: fronds(placement),
+      createContainer, ...layer, fronds: fronds(placement), extensions: [door],
       remotes: { people: 'http://people.test' },
       remoteTransport: (): Transport => (c, i) => createLocalRunner(people)(c, i),
     } as never);
   } else {
-    people = writing = await createApp({ createContainer, ...layer, fronds: fronds(placement) } as never);
+    people = writing = await createApp({ createContainer, ...layer, fronds: fronds(placement), extensions: [door] } as never);
   }
   await storage.migrate!(people as never);
   for (const spy of spies) spy.mockRestore();
@@ -397,6 +400,58 @@ describe('what a placement may not soften — the refusals', () => {
     // the one place where moving a boundary is refused out loud instead of quietly weakening.
     await expect(world({ apart: true, frame: true }))
       .rejects.toThrow(/remotes:/);
+  });
+});
+
+/** Who the door says is calling — a date inside, which JSON turns into text on the wire. */
+class Member extends entity({ id: primary(), name: text(), since: date() }) {}
+
+/** What a handler reads of the member, reported rather than used. */
+class Visit {
+  constructor(readonly sinceType: string) {}
+}
+
+class VisitCollector extends Collector(Visit) {
+  async collect(ctx: { state: Record<string, unknown> }): Promise<Visit> {
+    const user = ctx.state.user as { since?: unknown } | undefined;
+
+    return new Visit(Object.prototype.toString.call(user?.since));
+  }
+}
+
+class VisitHandler {
+  async read(visit: Visit): Promise<{ sinceType: string }> {
+    return { sinceType: visit.sinceType };
+  }
+}
+
+/** What crosses between two processes: the invocation as JSON, and nothing else. */
+const acrossTheWire = (run: Transport): Transport => (call, invocation) =>
+  run(call, JSON.parse(JSON.stringify(invocation)));
+
+describe('state — what the door put on the call reads the same at every placement', () => {
+  it.each([['in-process', false], ['across the wire', true]] as const)('%s', async (_name, crossing) => {
+    await using app = await createApp({
+      createContainer,
+      fronds: [frond('visits', {
+        handlers: [{
+          ctor: VisitHandler,
+          deps: [],
+          operations: { read: { binding: [{ name: 'visit', optional: false, source: { kind: 'collector' as const, typeName: 'visit' } }] } },
+        }],
+        collectors: [VisitCollector],
+      })],
+      extensions: [{ name: 'session', state: { user: json(Member) } }],
+    } as never);
+    const run = createLocalRunner(app);
+    const call = crossing ? acrossTheWire(run) : run;
+
+    const answer = await call({ entity: 'visit', op: 'read' }, {
+      ...Invocation.empty,
+      state: { user: { id: 'u-1', name: 'Ada', since: new Date(0) } },
+    } as never);
+
+    expect(answer).toEqual({ sinceType: '[object Date]' });
   });
 });
 

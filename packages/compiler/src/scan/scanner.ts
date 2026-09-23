@@ -1,5 +1,5 @@
 import { DEFAULT_CONVENTIONS, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, togetherKeyOf, type Conventions, type ConventionsInput, type Diagnostic, type ScanResult } from '@fougere/core';
-import { Fronds, addressOf, awaitKeyOf, cardinalityOf, computeBindingPlan, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf, type ExtensionEntry } from '@fougere/core/descriptor';
+import { Fronds, addressOf, awaitKeyOf, cardinalityOf, computeBindingPlan, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf, isExtension, type ExtensionEntry } from '@fougere/core/descriptor';
 import { getModuleLoader, loadFrondConfig } from '@fougere/core/node';
 import type { FrondConfig, ErrorCode } from '@fougere/core';
 import type { Signature } from '@fougere/core/descriptor';
@@ -239,7 +239,7 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
 }
 
 /**
- * An extension is recognized by its FORM: a module stating `up` or `down`.
+ * An extension is recognized by its FORM: a module stating `up`, `down` or `state`.
  *
  * Not a class, unlike every other convention directory — nothing resolves it from a container
  * and nothing asks for it by type. It is handed to the ascent as a value, which is what
@@ -250,12 +250,11 @@ async function toExtensionEntry(filePath: string): Promise<ExtensionEntry | null
   const exported = await loadDefault(filePath);
   if (typeof exported !== 'object' || exported === null) return null;
 
-  const stated = exported as { name?: unknown; up?: unknown; down?: unknown };
-  if (typeof stated.up !== 'function' && typeof stated.down !== 'function') return null;
+  if (!isExtension(exported)) return null;
 
   return {
-    name: typeof stated.name === 'string' ? stated.name : basename(filePath).replace(/\.[^.]+$/, ''),
-    extension: exported as ExtensionEntry['extension'],
+    name: typeof exported.name === 'string' ? exported.name : basename(filePath).replace(/\.[^.]+$/, ''),
+    extension: exported,
     filePath,
   };
 }
