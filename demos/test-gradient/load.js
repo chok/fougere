@@ -9,75 +9,92 @@ const DOOR = "http://127.0.0.1:4300/_fougere/call";
 const OPS = [
   {
     "method": "product.list",
+    "hops": 0,
     "weight": 1
   },
   {
     "method": "product.findById",
+    "hops": 0,
     "weight": 1
   },
   {
     "method": "product.create",
-    "body": {
+    "input": {
       "sku": "gDXv8gBIU",
       "name": "MCNJHiFxGrbDH",
       "cents": 750868,
       "status": "draft"
     },
+    "hops": 0,
     "weight": 1
   },
   {
     "method": "product.update",
-    "body": {
+    "input": {
       "sku": "LKJ66",
       "name": "HpiCnX3geczfAAEpYaVsuxZNyUigJfBw2kpP",
       "cents": 496626,
       "status": "listed"
     },
+    "hops": 0,
     "weight": 1
   },
   {
     "method": "product.delete",
+    "hops": 0,
     "weight": 1
   },
   {
     "method": "product.quote",
-    "body": {
+    "input": {
       "sku": "gDXv8gBIU",
       "name": "MCNJHiFxGrbDH",
       "cents": 750868,
       "status": "draft"
     },
+    "hops": 0,
     "weight": 1
   },
   {
     "method": "order.list",
+    "hops": 0,
     "weight": 1
   },
   {
     "method": "order.findById",
+    "hops": 0,
     "weight": 1
   },
   {
     "method": "order.create",
-    "body": {
+    "input": {
       "sku": "GZA",
       "quantity": 68
     },
+    "hops": 0,
     "weight": 1
   },
   {
     "method": "order.update",
-    "body": {
+    "input": {
       "sku": "LKJ66",
       "quantity": 59
     },
+    "hops": 0,
     "weight": 1
   },
   {
     "method": "order.delete",
+    "hops": 0,
     "weight": 1
   }
 ];
+
+// Yours: how long an op may take here, and what one process boundary is allowed to add. Two
+// numbers instead of one, because an op that crosses nothing and an op that crosses twice were
+// never the same subject — hops above is read from the code, these two are facts about your
+// network.
+const BUDGET = { base: 300, perHop: 200 };
 
 export const options = {
   // Yours: a flat rate draws flat lines and there is nothing to read in them.
@@ -86,8 +103,17 @@ export const options = {
     { duration: '45s', target: 5 },
     { duration: '30s', target: 0 },
   ],
-  // Yours: what counts as too slow is a fact about your users.
-  thresholds: { http_req_failed: ['rate<0.01'], http_req_duration: ['p(95)<500'] },
+  // Yours: the shape of the run.
+  // Derived from BUDGET and each op's hops — an op that crosses two processes is not held to
+  // the same figure as one that never leaves. k6 reads a threshold per tag, and every call
+  // below is tagged with the op it made.
+  thresholds: {
+    http_req_failed: ['rate<0.01'],
+    ...Object.fromEntries(OPS.map((op) => [
+      `http_req_duration{op:${op.method}}`,
+      [`p(95)<${BUDGET.base + op.hops * BUDGET.perHop}`],
+    ])),
+  },
 };
 
 const TOTAL = OPS.reduce((sum, op) => sum + op.weight, 0);
@@ -96,7 +122,6 @@ let id = 0;
 function pick() {
   let roll = Math.random() * TOTAL;
   for (const op of OPS) if ((roll -= op.weight) < 0) return op;
-
   return OPS[OPS.length - 1];
 }
 
@@ -105,7 +130,7 @@ export default function () {
   const payload = {"jsonrpc":"2.0"};
   const response = http.post(
     DOOR,
-    JSON.stringify({ ...payload, id: ++id, method: op.method, params: { params: {}, query: {}, body: op.body, state: {} } }),
+    JSON.stringify({ ...payload, id: ++id, method: op.method, params: { params: {}, query: {}, input: op.input, state: {} } }),
     { headers: { 'content-type': 'application/json' }, tags: { op: op.method } },
   );
   check(response, { 'answered': (r) => r.status === 200 });

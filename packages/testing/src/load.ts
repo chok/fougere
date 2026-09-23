@@ -124,7 +124,7 @@ export default function () {
     JSON.stringify({ ...payload, id: ++id, method: op.method, params: { params: {}, query: {}, input: op.input, state: {} } }),
     { headers: { 'content-type': 'application/json' }, tags: { op: op.method } },
   );
-  validate(response, { 'answered': (r) => r.status === 200 });
+  check(response, { 'answered': (r) => r.status === 200 });
 }
 `;
 }

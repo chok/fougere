@@ -49,6 +49,18 @@ describe('the generated script', () => {
     expect(script).toContain('http://localhost:4200/_fougere/call');
   });
 
+  it('calls what k6 exports, and sends the input where a receiver reads it', async () => {
+    await using app = await testApp({ root });
+
+    const script = loadScript(app);
+
+    // Syntax passes on a call to a function nobody defined: a rename once turned k6's
+    // `check` into `validate`, and every generated scenario died at its first iteration.
+    expect(script).toMatch(/import \{ check \} from 'k6';[\s\S]*\bcheck\(response/);
+    expect(script).not.toMatch(/\bvalidate\(/);
+    expect(script).toMatch(/input: op\.input/);
+  });
+
   it('carries the envelope `frameCall` states, not a hand-copied one', async () => {
     await using app = await testApp({ root });
 
