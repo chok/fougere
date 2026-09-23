@@ -36,7 +36,7 @@ let id = 0;
 function call(method, params = {}) {
   return http.post(
     SHOP,
-    JSON.stringify({ jsonrpc: '2.0', id: ++id, method, params: { params: {}, query: {}, body: undefined, state: {}, ...params } }),
+    JSON.stringify({ jsonrpc: '2.0', id: ++id, method, params: { params: {}, query: {}, input: undefined, state: {}, ...params } }),
     { headers: { 'content-type': 'application/json' }, tags: { op: method } },
   );
 }

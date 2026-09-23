@@ -35,6 +35,10 @@ export async function handleRpc(runner: Transport, raw: unknown, options: Receiv
 
   // Fresh objects — middlewares deposit into state, nothing may be shared.
   const sent = (req.params ?? {}) as Partial<InvocationContext>;
+  const strangers = Object.entries(sent)
+    .filter(([key, value]) => value !== undefined && !SENT[key as keyof InvocationContext])
+    .map(([key]) => key);
+  if (strangers.length > 0) return malformed(id, strangers, entity, op);
 
   /** State is ESTABLISHED here, or it is only claimed. */
   let state: Record<string, unknown> = sent.state ?? {};
@@ -85,6 +89,27 @@ export async function handleRpc(runner: Transport, raw: unknown, options: Receiv
 
     return { jsonrpc: '2.0', id, error: { code: APP_ERROR, message: data.message, data } };
   }
+}
+
+/**
+ * The members a caller may send. `caller` is established by the receiver and never claimed, and
+ * a key outside the list is refused by name: `body` used to be dropped, and the call then ran
+ * with no input and no validation.
+ */
+const SENT = {
+  params: true, query: true, input: true, state: true, trace: true, identity: true, runAt: true, caller: false,
+} satisfies Record<keyof InvocationContext, boolean>;
+
+function malformed(id: string | number, strangers: string[], entity: string, op: string): RpcResponse {
+  const admitted = Object.keys(SENT).filter((key) => SENT[key as keyof InvocationContext]);
+  const data = toPublicError(new FougereError({
+    code: ErrorCode.BAD_REQUEST,
+    message: `Unknown invocation member ${strangers.map((key) => `'${key}'`).join(', ')} — one of ${admitted.join(', ')}.`,
+    entity,
+    operation: op,
+  }));
+
+  return { jsonrpc: '2.0', id, error: { code: APP_ERROR, message: data.message, data } };
 }
 
 /** An admission refusal, framed like any other failure so a caller reads one vocabulary. */

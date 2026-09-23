@@ -332,7 +332,7 @@ export function registerAll(
             // A facade that serves no list — a handler narrowed to `findById` — keeps the
             // row-at-a-time path rather than losing the relation entirely.
             if (typeof targetList !== 'function') {
-              return targetEntry.facade.findById({ params: { id: fk }, query: {}, body: undefined, state: {} });
+              return targetEntry.facade.findById({ params: { id: fk }, query: {}, input: undefined, state: {} });
             }
 
             return loadByKey(ctx, directionKey(targetKey(target), targetKeyName), String(fk), (ids) =>
@@ -340,7 +340,7 @@ export function registerAll(
               // value. Nothing new is published: a criterion learned to name several.
               readInSlices(ids, async (slice) => {
                 const result = await targetList.call(targetEntry.facade, {
-                  params: {}, query: { where: { [targetKeyName]: slice } }, body: undefined, state: {},
+                  params: {}, query: { where: { [targetKeyName]: slice } }, input: undefined, state: {},
                 }) as any;
                 const rows = Array.isArray(result) ? result : result?.items ?? result?.data ?? [];
 
@@ -383,7 +383,7 @@ export function registerAll(
             return loadByKey(ctx, directionKey(targetKey(target), reverseFkName), String(id), (ids) =>
               readInSlices(ids, async (slice) => {
                 const result = await targetEntry.facade.list({
-                  params: {}, query: { where: { [reverseFkName]: slice } }, body: undefined, state: {},
+                  params: {}, query: { where: { [reverseFkName]: slice } }, input: undefined, state: {},
                 }) as any;
                 const rows = Array.isArray(result) ? result : result?.items ?? result?.data ?? [];
                 const grouped = new Map<string, any[]>();

@@ -142,7 +142,7 @@ describe('a receiver that establishes nothing', () => {
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'post.list', params }),
     });
 
-    return (await res.json()) as { result: { state: unknown; caller?: string } };
+    return (await res.json()) as { result: { state: unknown; caller?: string }; error: { message: string; data: unknown } };
   };
 
   beforeAll(async () => {
@@ -153,14 +153,21 @@ describe('a receiver that establishes nothing', () => {
     await open.close();
   });
 
-  it('leaves `caller` absent even when the payload names one', async () => {
+  it('refuses a payload that names its own `caller`, rather than dropping the name', async () => {
     // The flaw a peer session caught, at its own address: as a key of `state` this name
     // survived a receiver with no verifier and was indistinguishable from a proven one.
     const answer = await ask({ params: {}, query: {}, state: { user: { role: 'reader' } }, caller: 'billing' });
 
-    // The state IS taken — nothing here validates it — but the name is not.
-    expect(answer.result.state).toEqual({ user: { role: 'reader' } });
-    expect(answer.result.caller).toBeUndefined();
+    expect(answer.result).toBeUndefined();
+    expect(answer.error.data).toMatchObject({ code: 'BAD_REQUEST' });
+    expect(answer.error.message).toMatch(/'caller'/);
+  });
+
+  it('refuses a member the invocation does not have, naming it', async () => {
+    const answer = await ask({ params: {}, query: {}, body: { title: 'x' } });
+
+    expect(answer.error.data).toMatchObject({ code: 'BAD_REQUEST' });
+    expect(answer.error.message).toMatch(/'body' — one of params, query, input, state, trace, identity, runAt/);
   });
 
   it('leaves it absent when the name hides inside state', async () => {
