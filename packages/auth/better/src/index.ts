@@ -1,7 +1,7 @@
 import { betterAuth as betterAuthLib } from 'better-auth';
 import { createId } from '@paralleldrive/cuid2';
 import { AUTH, frond, type App, type AuthRuntime, type Extension, type Storage } from '@fougere/core';
-import { lowerFirst, type SchemaView } from '@fougere/schema';
+import { json, lowerFirst, type Schema, type SchemaView } from '@fougere/schema';
 import { AuthUser } from './entity/AuthUser.js';
 import { AuthVerification } from './entity/AuthVerification.js';
 import { authEntities } from './entity/authEntities.js';
@@ -26,7 +26,9 @@ export interface BetterAuthOptions {
 
 /**
  * The auth provider, as an extension: it brings the frond its rows live in — the user too, when
- * the app names none — and registers the runtime under `AUTH` once the app exists.
+ * the app names none — declares what a signed-in call carries, and registers the runtime under
+ * `AUTH` once the app exists. The session travels without its `token`: a process trusts the one
+ * that called it, never the cookie of whoever is behind it.
  */
 export function betterAuth(opts: BetterAuthOptions): Extension {
   const user = opts.user ?? AuthUser;
@@ -44,6 +46,7 @@ export function betterAuth(opts: BetterAuthOptions): Extension {
   return {
     name: 'auth',
     fronds: [frond('auth', { entities: brought })],
+    state: { user: json(user as typeof Schema), session: json((models.session as typeof Schema).omit('token')) },
     up(app) {
       const engine = betterAuthLib({
         database: fougereAdapter(storagesOf(app, models)),

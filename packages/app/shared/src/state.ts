@@ -3,7 +3,7 @@ import { useFougereApp } from './boot.js';
 import { authOf } from './auth.js';
 
 type SessionApi = {
-  getSession: (opts: { headers: Headers }) => Promise<{ session: { userId: string }; user: Record<string, unknown> } | null>;
+  getSession: (opts: { headers: Headers }) => Promise<{ session: { userId: string; token?: string }; user: Record<string, unknown> } | null>;
 };
 
 /** The request state for these headers. Empty when no auth is declared, or nobody is signed in. */
@@ -15,7 +15,11 @@ export async function stateFor(headers: Headers): Promise<Record<string, unknown
 
   try {
     const result = await (auth.api as unknown as SessionApi).getSession({ headers });
-    if (result?.session && result?.user) return { user: result.user, session: result.session };
+    if (result?.session && result?.user) {
+      const { token: _token, ...session } = result.session;
+
+      return { user: result.user, session };
+    }
   } catch {
     // An unreachable or misconfigured provider leaves the caller anonymous rather
     // than failing the request — the same choice the Nuxt middleware makes.
