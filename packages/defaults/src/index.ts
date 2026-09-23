@@ -34,13 +34,17 @@ export interface BootAppOptions {
  */
 export async function bootApp(root: string, opts: BootAppOptions = {}): Promise<App> {
   const config = await loadConfig(root);
-  const remotes = remotesOf(config);
-  const useRemotes = (opts.topology ?? true) && Object.keys(remotes).length > 0;
+  // What this process serves is never remote to it, whatever `fronds:` says of it elsewhere:
+  // `fougere serve blog` refused to start on a config that places `blog` at an address.
+  const served = new Set(opts.only ?? opts.fronds ?? []);
+  const elsewhere = Object.fromEntries(Object.entries(remotesOf(config)).filter(([frond]) => !served.has(frond)));
+  const useRemotes = (opts.topology ?? true) && Object.keys(elsewhere).length > 0;
 
   return boot({
     root,
     only: opts.only ?? opts.fronds,
-    remotes: useRemotes ? remotes : undefined,
+    // `{}` and never undefined: `boot` reads the config's own `fronds:` when handed nothing.
+    remotes: useRemotes ? elsewhere : {},
     remoteTransport: useRemotes ? (url) => createHttpTransport(url) : undefined,
     // One resolver, one place that knows a storage package.
     db: (cfg) => resolveStorage(cfg.db as DbConfig, (cfg as { sources?: unknown }).sources as never, root),
