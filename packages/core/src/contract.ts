@@ -24,7 +24,7 @@ export { RouteAddress } from './wire/RouteAddress.js';
 export type { FrondCall } from './wire/FrondCall.js';
 export type { SignedCall } from './wire/SignedCall.js';
 export type { Transport } from './wire/Transport.js';
-export { MAX_BODY_BYTES } from './wire/SignedCall.js';
+export { ENVELOPE_BYTES, maxBodyBytes, maxFrameBytes, setMaxBodyBytes } from './wire/BodyLimit.js';
 // The reserved entity, VALUE and not type: a consumer that wants to leave it alone — a
 // call log ignoring its own reader — has to be able to name it.
 export { RPC_ENTITY } from './wire/RpcAnswer.js';

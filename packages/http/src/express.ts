@@ -24,13 +24,13 @@ const METHOD_MAP: Record<HttpMethod, 'get' | 'post' | 'put' | 'patch' | 'delete'
   DELETE: 'delete',
 };
 
-// Core declares this cap (`wire/call.ts`) and three facades read it there. This package
-// declares NO Fougere dependency — a leaf port does not take one on the kernel for a
-// number — so it keeps the fourth copy, deliberately.
-const MAX_BODY_BYTES = 1024 * 1024;
+// Core's default (`maxBodyBytes`, `wire/BodyLimit.ts`) — this package declares NO Fougere
+// dependency, a leaf port does not take one on the kernel for a number, so a host that reads
+// the config hands its own value to `readExpressBody`.
+const MAX_BODY_BYTES = 2 * 1024 * 1024;
 
 /** Drain the Node stream. Only reached when no body parser ran before us. */
-export function readRawBody(req: any): Promise<string> {
+export function readRawBody(req: any, maxBodyBytes = MAX_BODY_BYTES): Promise<string> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     let size = 0;
@@ -38,7 +38,7 @@ export function readRawBody(req: any): Promise<string> {
     req.on('data', (chunk: Buffer) => {
       if (exceeded) return;
       size += chunk.length;
-      if (size > MAX_BODY_BYTES) {
+      if (size > maxBodyBytes) {
         exceeded = true;
         reject(Object.assign(new Error('Payload too large'), { statusCode: 413 }));
 
@@ -52,7 +52,7 @@ export function readRawBody(req: any): Promise<string> {
 }
 
 /** The JSON body of an Express request, whoever parsed it. */
-export function readExpressBody(req: any): Promise<unknown> {
+export function readExpressBody(req: any, maxBodyBytes = MAX_BODY_BYTES): Promise<unknown> {
   if (req.__fougereBody) return req.__fougereBody;
 
   const verb = String(req.method ?? 'GET').toUpperCase();
@@ -64,7 +64,7 @@ export function readExpressBody(req: any): Promise<unknown> {
     if (req.body !== undefined) return req.body;
     const contentType = String(req.headers?.['content-type'] ?? '');
     if (!contentType.toLowerCase().includes('json')) return {};
-    const raw = await readRawBody(req);
+    const raw = await readRawBody(req, maxBodyBytes);
     if (!raw) return {};
     try {
       return JSON.parse(raw);

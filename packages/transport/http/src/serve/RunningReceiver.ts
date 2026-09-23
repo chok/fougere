@@ -2,7 +2,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { Transport } from '@fougere/core';
 import type { RpcResponse } from '../jsonrpc/RpcResponse.js';
 import { handleRpc } from '../server.js';
-import { MAX_BODY_BYTES, CALL_PATH, parseError, tooLarge } from '../policy.js';
+import { maxFrameBytes, CALL_PATH, parseError, tooLarge } from '../policy.js';
 import type { ServeOptions } from './ServeOptions.js';
 
 export interface RunningReceiver {
@@ -51,8 +51,6 @@ function whyNotHere(host: string | undefined, options: ServeOptions): Error | un
 
 /** One path, one method, and a body that is refused before it is read whole. */
 function answering(runner: Transport, options: ServeOptions) {
-  const maxBodyBytes = options.maxBodyBytes ?? MAX_BODY_BYTES;
-
   return async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
     if (req.method !== 'POST' || req.url !== CALL_PATH) {
       res.writeHead(404).end();
@@ -60,6 +58,7 @@ function answering(runner: Transport, options: ServeOptions) {
       return;
     }
 
+    const maxBodyBytes = maxFrameBytes();
     const chunks: Buffer[] = [];
     let size = 0;
     for await (const value of req) {

@@ -7,7 +7,7 @@
  * files, and nothing made them agree.
  */
 import { createJiti } from 'jiti';
-import { createApp, createLocalRunner, Logger } from '@fougere/core';
+import { applyConfig, createApp, createLocalRunner, Logger } from '@fougere/core';
 import { scanProject, frondAliases } from '@fougere/compiler';
 import { setModuleLoader, loadConfig, remotesOf } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
@@ -29,6 +29,7 @@ setModuleLoader((filePath: string) => jiti.import(filePath) as Promise<Record<st
 // Commenting the address is how you take the frond back in-process, so its absence means
 // this process has no caller — say that rather than binding a port nobody dials.
 const config = await loadConfig(process.cwd());
+applyConfig(config);
 const address = remotesOf(config).blog;
 if (!address) {
   throw new Error(

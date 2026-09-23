@@ -1,6 +1,6 @@
 /** The three facades as Web-standard handlers: `Request` in, `Response` out. */
 import { serveRest, serveRpc, rpcParseError, useFougereApp, serveGraphQL } from './index.js';
-import { MAX_BODY_BYTES } from '@fougere/core';
+import { maxBodyBytes } from '@fougere/core';
 import { sessionViewOf } from './session.js';
 import { stateFor } from './state.js';
 
@@ -9,7 +9,7 @@ const WITH_BODY = new Set(['POST', 'PUT', 'PATCH']);
 /** The call envelope. */
 export async function call(request: Request): Promise<Response> {
   const declared = Number(request.headers.get('content-length'));
-  if (Number.isFinite(declared) && declared > MAX_BODY_BYTES) {
+  if (Number.isFinite(declared) && declared > maxBodyBytes()) {
     return Response.json({ message: 'Payload too large' }, { status: 413 });
   }
 

@@ -1,5 +1,6 @@
 /** The facades as Express middlewares — the form an Express app expects. */
 import { readExpressBody } from '@fougere/http';
+import { maxBodyBytes } from '@fougere/core';
 import { rpcParseError, serveRest, serveRpc } from './Outcome.js';
 import { serveGraphQL } from './graphql.js';
 import { sessionViewOf } from './session.js';
@@ -70,7 +71,7 @@ export function call(mountPath = '/_fougere/call'): ExpressMiddleware {
         const app = await useFougereApp();
         let body: unknown;
         try {
-          body = await readExpressBody(req);
+          body = await readExpressBody(req, maxBodyBytes());
         } catch {
           res.status(200).json(rpcParseError());
 
@@ -105,7 +106,7 @@ export function rest(mountPath = '/api'): ExpressMiddleware {
           method: req.method,
           path: path.slice(mountPath.length + 1),
           query: queryOf(req),
-          body: await readExpressBody(req),
+          body: await readExpressBody(req, maxBodyBytes()),
           state: stateOf(req),
         });
 
@@ -131,7 +132,7 @@ export function graphql(mountPath = '/graphql'): ExpressMiddleware {
     void (async () => {
       try {
         const app = await useFougereApp();
-        const body = ((await readExpressBody(req)) ?? {}) as {
+        const body = ((await readExpressBody(req, maxBodyBytes())) ?? {}) as {
           query?: string;
           variables?: Record<string, unknown>;
           operationName?: string;

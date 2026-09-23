@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { FougereError, ErrorCode, Invocation } from '@fougere/core';
+import { ENVELOPE_BYTES, FougereError, ErrorCode, Invocation, maxBodyBytes, setMaxBodyBytes } from '@fougere/core';
+
+const DEFAULT_LIMIT = maxBodyBytes();
 import type { Transport } from '@fougere/core';
 import { createHttpTransport, handleRpc, serve, unframeResponse, PARSE_ERROR } from '../src/index.js';
 import { INVALID_REQUEST } from '../src/jsonrpc/RpcErrorShape.js';
@@ -151,15 +153,17 @@ describe('sender ↔ receiver over real HTTP', () => {
     await expect(serve(runner, { hosts: [] })).rejects.toThrow(/`hosts` is empty/);
   });
 
-  it('rejects a body larger than the configured limit', async () => {
-    const limited = await serve(runner, { maxBodyBytes: 32 });
+  it('rejects a frame larger than the configured limit and the envelope\'s room', async () => {
+    setMaxBodyBytes(1);
+    const limited = await serve(runner);
     try {
       const res = await fetch(`http://127.0.0.1:${limited.port}/_fougere/call`, {
         method: 'POST',
-        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'product.list', padding: 'x'.repeat(64) }),
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'product.list', padding: 'x'.repeat(ENVELOPE_BYTES + 64) }),
       });
       expect(res.status).toBe(413);
     } finally {
+      setMaxBodyBytes(DEFAULT_LIMIT);
       await limited.close();
     }
   });
@@ -213,7 +217,7 @@ describe('an answer that is not a JSON-RPC response', () => {
 
 describe('a frame over the receiver limit', () => {
   const call = { entity: 'post', op: 'create' };
-  const invocation = { params: {}, query: {}, input: { body: 'x'.repeat(1024 * 1024) }, state: {} };
+  const invocation = { params: {}, query: {}, input: { body: 'x'.repeat(maxBodyBytes() + ENVELOPE_BYTES) }, state: {} };
 
   it('is refused before any request leaves, as PAYLOAD_TOO_LARGE', async () => {
     let sent = 0;

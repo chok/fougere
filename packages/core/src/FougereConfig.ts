@@ -21,6 +21,8 @@ export interface FougereConfig {
   conventions?: ConventionsInput;
   /** How much every logger says. */
   logLevel?: LogLevel;
+  /** How many bytes a caller may send in one call — 2 MiB when unsaid. Consulted at every door. */
+  maxBodyBytes?: number;
   /**
    * What this app is made of, and who inherits code from whom. The key is a frond name or a
    * module specifier; nesting says only that a child resolves what its parent declared.

@@ -7,6 +7,7 @@
  * arrives on it.
  */
 import { describe, it, expect } from 'vitest';
+import { ENVELOPE_BYTES, maxBodyBytes, setMaxBodyBytes } from '@fougere/core';
 import { receive } from '../src/receive.js';
 
 const runner = async () => ({ ok: true });
@@ -50,10 +51,16 @@ describe('the envelope facade', () => {
   });
 
   it('refuses a body over the cap rather than parsing it', async () => {
-    const facade = receive(runner, { allowUnsigned: true, maxBodyBytes: 64 });
-    const answer = await facade(post({ jsonrpc: '2.0', id: 1, method: 'a.b', params: { pad: 'x'.repeat(200) } }));
+    const before = maxBodyBytes();
+    setMaxBodyBytes(1);
+    try {
+      const facade = receive(runner, { allowUnsigned: true });
+      const answer = await facade(post({ jsonrpc: '2.0', id: 1, method: 'a.b', params: { pad: 'x'.repeat(ENVELOPE_BYTES + 64) } }));
 
-    expect(answer.status).toBe(413);
+      expect(answer.status).toBe(413);
+    } finally {
+      setMaxBodyBytes(before);
+    }
   });
 
   it('marks what it hands on as crossed, and refuses a caller claiming it', async () => {

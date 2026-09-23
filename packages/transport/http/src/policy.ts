@@ -2,8 +2,8 @@
 import { PARSE_ERROR } from './jsonrpc/RpcErrorShape.js';
 import { type RpcResponse } from './jsonrpc/RpcResponse.js';
 
-/** What a receiver accepts before it stops reading — declared by core, re-exported here. */
-export { MAX_BODY_BYTES } from '@fougere/core';
+/** What a receiver reads before it stops — the caller's limit and the envelope's room, both core's. */
+export { maxFrameBytes } from '@fougere/core';
 
 /** The path the envelope answers on. A host mounting it elsewhere passes its own. */
 export const CALL_PATH = '/_fougere/call';

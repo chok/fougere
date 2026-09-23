@@ -1,7 +1,7 @@
 /** Receiving end for the browser — the h3 half. */
 import { defineEventHandler } from 'h3';
 import { serveRpc, rpcParseError, useFougereApp } from '@fougere/app';
-import { MAX_BODY_BYTES } from '@fougere/core';
+import { maxBodyBytes } from '@fougere/core';
 import { stateOf } from '../stateOf.js';
 
 type NodeReq = {
@@ -22,14 +22,14 @@ function payloadTooLarge(): Error & { statusCode: number; statusMessage: string 
 }
 
 function parseRawJson(raw: string): unknown {
-  if (Buffer.byteLength(raw) > MAX_BODY_BYTES) throw payloadTooLarge();
+  if (Buffer.byteLength(raw) > maxBodyBytes()) throw payloadTooLarge();
 
   return raw ? JSON.parse(raw) : {};
 }
 
 async function readWebBody(req: WebReq): Promise<unknown> {
   const declaredLength = Number(req.headers?.get?.('content-length'));
-  if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) throw payloadTooLarge();
+  if (Number.isFinite(declaredLength) && declaredLength > maxBodyBytes()) throw payloadTooLarge();
 
   const reader = req.body?.getReader?.();
   if (reader) {
@@ -40,7 +40,7 @@ async function readWebBody(req: WebReq): Promise<unknown> {
       if (done) break;
       const chunk = Buffer.from(value ?? []);
       size += chunk.length;
-      if (size > MAX_BODY_BYTES) {
+      if (size > maxBodyBytes()) {
         await reader.cancel?.();
         throw payloadTooLarge();
       }
@@ -65,12 +65,12 @@ async function readJsonBody(event: { req?: unknown; node?: { req?: unknown } }):
   const nodeReq = rawNodeReq && typeof rawNodeReq === 'object' ? rawNodeReq as NodeReq : undefined;
   const preset = nodeReq?.body;
   if (typeof preset === 'string') {
-    if (Buffer.byteLength(preset) > MAX_BODY_BYTES) throw payloadTooLarge();
+    if (Buffer.byteLength(preset) > maxBodyBytes()) throw payloadTooLarge();
 
     return parseRawJson(preset);
   }
   if (preset instanceof Uint8Array) {
-    if (preset.byteLength > MAX_BODY_BYTES) throw payloadTooLarge();
+    if (preset.byteLength > maxBodyBytes()) throw payloadTooLarge();
     const raw = Buffer.from(preset).toString('utf8');
 
     return parseRawJson(raw);
@@ -89,7 +89,7 @@ async function readJsonBody(event: { req?: unknown; node?: { req?: unknown } }):
         if (exceeded) return;
         const buffer = Buffer.from(chunk);
         size += buffer.length;
-        if (size > MAX_BODY_BYTES) {
+        if (size > maxBodyBytes()) {
           exceeded = true;
           reject(payloadTooLarge());
 

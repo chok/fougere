@@ -1,5 +1,6 @@
 import type { FougereConfig } from '../FougereConfig.js';
 import { envLevel, logLevel, setLogLevel } from '../builtin/Logger.js';
+import { maxBodyBytes, setMaxBodyBytes } from '../wire/BodyLimit.js';
 import { dequal } from 'dequal';
 
 export interface ConfigApplication {
@@ -8,6 +9,9 @@ export interface ConfigApplication {
   /** What differs from the config in force and did NOT take effect. */
   pending: string[];
 }
+
+/** The keys read at use rather than consumed at boot, so a re-read moves them. */
+const CONSULTED = new Set(['logLevel', 'maxBodyBytes']);
 
 /**
  * What a (re-)read config changes in a process that is already running.
@@ -34,8 +38,14 @@ export function applyConfig(next: FougereConfig, inForce?: FougereConfig): Confi
     applied.push(`logLevel: ${before} → ${wanted}`);
   }
 
+  const limit = next.maxBodyBytes ?? maxBodyBytes();
+  if (limit !== maxBodyBytes()) {
+    applied.push(`maxBodyBytes: ${maxBodyBytes()} → ${limit}`);
+    setMaxBodyBytes(limit);
+  }
+
   for (const key of new Set([...Object.keys(next), ...Object.keys(inForce ?? {})])) {
-    if (key === 'logLevel' || !inForce) continue;
+    if (CONSULTED.has(key) || !inForce) continue;
     if (!dequal((next as Record<string, unknown>)[key], (inForce as Record<string, unknown>)[key])) {
       pending.push(key);
     }

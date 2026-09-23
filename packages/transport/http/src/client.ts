@@ -1,5 +1,5 @@
 /** Sending half — frame the call, POST it, unframe the result. */
-import { FougereError, ErrorCode, MAX_BODY_BYTES, type Transport, type FrondCall, type InvocationContext, type SignedCall } from '@fougere/core/contract';
+import { FougereError, ErrorCode, maxBodyBytes, maxFrameBytes, type Transport, type FrondCall, type InvocationContext, type SignedCall } from '@fougere/core/contract';
 import type { RpcErrorShape } from './jsonrpc/RpcErrorShape.js';
 import type { RpcRequest } from './jsonrpc/RpcRequest.js';
 import type { RpcResponse } from './jsonrpc/RpcResponse.js';
@@ -84,7 +84,7 @@ export function createHttpTransport(baseUrl: string, options: HttpTransportOptio
       : forwarded;
     const request = frameCall(call, sent, nextId++);
     const body = JSON.stringify(request);
-    if (new TextEncoder().encode(body).byteLength > MAX_BODY_BYTES) throw tooLarge(call, baseUrl);
+    if (new TextEncoder().encode(body).byteLength > maxFrameBytes()) throw tooLarge(call, baseUrl);
 
     for (let attempt = 0; ; attempt++) {
       let res: Response;
@@ -148,7 +148,7 @@ export function createHttpTransport(baseUrl: string, options: HttpTransportOptio
 function tooLarge(call: FrondCall, baseUrl: string): FougereError {
   return new FougereError({
     code: ErrorCode.PAYLOAD_TOO_LARGE,
-    message: `${call.entity}.${call.op} carries more than ${MAX_BODY_BYTES} bytes, the limit a receiver takes.`,
+    message: `${call.entity}.${call.op} carries more than the ${maxBodyBytes()} bytes a caller may send (maxBodyBytes).`,
     cause: new Error(`refused for ${baseUrl}`),
     entity: call.entity,
     operation: call.op,

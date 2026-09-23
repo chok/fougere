@@ -553,8 +553,14 @@ by core, and where it lands is read off its form — `up`/`down` means an extens
 `core/tests/{fronds-stated,nesting,stated-modules}.test.ts`.
 
 **Config, consulted vs consumed** — `boot/apply.ts`, `applyConfig`. A value CONSULTED at use
-can move; a value CONSUMED to build something cannot. `logLevel` is the only consulted key
-today, and every other difference is reported as `pending`. `Logger` holds NO level:
+can move; a value CONSUMED to build something cannot. `logLevel` and `maxBodyBytes` are the
+consulted keys, and every other difference is reported as `pending`. `maxBodyBytes`
+(`wire/BodyLimit.ts`) is what a CALLER may send — every door reads it, and a hop reads it plus
+`ENVELOPE_BYTES`, the room for what a forwarding process adds; measured against the caller's
+limit alone, a body just under 1 MiB passed in process and was refused a hop away (site-only
+audit, 2026-09-23). The receivers' own `maxBodyBytes` option is gone with it: a client that
+could not see it refused at 1 MiB whatever the receiver took. `@fougere/http` keeps a default of
+its own, since it takes no dependency on core, and the Express host hands it the configured one. `Logger` holds NO level:
 `setLogLevel` sets one threshold for the process. `FOUGERE_LOG_LEVEL` wins over the file. A
 re-read needs `loadConfig(root, { fresh: true })` — a module is cached by its specifier.
 Core catches no signal: a process belongs to its host. Pinned by `tests/log-level.test.ts`.
@@ -1047,12 +1053,6 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 - **`clean` decides nothing** (`schema/src/lib/utils.ts`) — a free function nobody has
   validated as a word of the package.
 - `graphql` dual ESM/CJS hazard in tests — use `schema.getTypeMap()`, not `printSchema()`
-- **A body just under 1 MiB passes in-process and is refused across a hop** — the app's door
-  measures the caller's frame against `MAX_BODY_BYTES`, and a hop adds its envelope (trace,
-  identity) before the receiver measures the same limit. The refusal is typed now
-  (`PAYLOAD_TOO_LARGE`, `transport/http/src/client.ts`) instead of a `BAD_GATEWAY` blaming the
-  receiver; the band itself stays, because closing it means the door keeping room for the hop,
-  which moves a public limit. Measured by the site-only audit, 2026-09-23.
 - **A hop is drawn as CLIENT and SERVER only when the receiver says it crossed** —
   `observability/src/otlp/OtlpExporter.ts`, `kindOf`. The sender knows it (`OperationContext.crosses`,
   set by `boot/remote.ts`), the receiver only through `invocation.crossed`, which

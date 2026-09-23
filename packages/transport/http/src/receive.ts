@@ -6,12 +6,10 @@
  * baseline, measured 2026-08-22.
  */
 import { handleRpc, type ReceiveOptions } from './server.js';
-import { MAX_BODY_BYTES, CALL_PATH, parseError, tooLarge } from './policy.js';
+import { maxFrameBytes, CALL_PATH, parseError, tooLarge } from './policy.js';
 import type { Transport } from '@fougere/core/contract';
 
 export interface ReceiveHttpOptions extends ReceiveOptions {
-  /** Maximum JSON-RPC body size. Default: 1 MiB. */
-  maxBodyBytes?: number;
   /** The path this facade answers. Default: `/_fougere/call`. */
   path?: string;
   /** Take unsigned calls, deliberately. */
@@ -78,7 +76,6 @@ export function receive(
     );
   }
 
-  const max = options.maxBodyBytes ?? MAX_BODY_BYTES;
   const path = options.path ?? CALL_PATH;
 
   return async (request) => {
@@ -86,7 +83,7 @@ export function receive(
       return new Response(null, { status: 404 });
     }
 
-    const raw = await bodyWithin(request, max);
+    const raw = await bodyWithin(request, maxFrameBytes());
     if (raw === TOO_LARGE) return json(tooLarge(), 413);
 
     let parsed: unknown;

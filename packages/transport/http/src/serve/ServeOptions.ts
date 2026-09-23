@@ -9,8 +9,6 @@ export interface ServeOptions extends ReceiveOptions {
   host?: string;
   /** Serve unsigned calls beyond loopback, deliberately. */
   allowUnsigned?: boolean;
-  /** Maximum JSON-RPC body size. Default: 1 MiB. */
-  maxBodyBytes?: number;
   /** Time allowed to receive a request. Default: 15 seconds. */
   requestTimeoutMs?: number;
 }
