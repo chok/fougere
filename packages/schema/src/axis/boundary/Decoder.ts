@@ -40,6 +40,6 @@ Boundaries.decoders.register('isoDate', (value) => {
   return { message: 'Expected a date' };
 });
 Boundaries.encoders.register('isoDate', (value) =>
-  value instanceof Date ? value.toISOString() : value,
+  value instanceof Date && !Number.isNaN(value.getTime()) ? value.toISOString() : value,
 );
 Boundaries.aliases.register('isoDate', { in: { decode: 'isoDate' }, out: { encode: 'isoDate' } });

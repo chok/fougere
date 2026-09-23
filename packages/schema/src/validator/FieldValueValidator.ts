@@ -37,7 +37,8 @@ export class FieldValueValidator {
       }
     }
     const plan = FieldValueValidator.planFor(shape);
-    const refusal = JsonSchemaValidator.of(shape as JsonSchema).refusalOf(value, []);
+    const travelling = type === 'object' || type === 'array' ? Boundary.forShape(shape).encode(value) : value;
+    const refusal = JsonSchemaValidator.of(shape as JsonSchema).refusalOf(travelling, []);
     if (refusal) {
       return refusal.path.length > 0 ? { message: refusal.message, path: refusal.path } : { message: refusal.message };
     }

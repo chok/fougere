@@ -177,9 +177,10 @@ describe('boundary · a nested date is rebuilt by the shape that holds it', () =
     expect(out.members).toEqual([{ id: 'm2', since: new Date(iso) }, null]);
   });
 
-  it('answers a value it already produced', () => {
+  it('answers a value it already produced, and judges it as it would travel', () => {
     const once = Club.from({ id: 'c1', owner: { id: 'm1', since: iso }, members: [] });
     expect(Club.from(once)).toEqual(once);
+    expect(Club.validate(once)).toEqual({ success: true, data: once });
   });
 
   it('encodes back to the ISO string, and says where a refusal sits', () => {
