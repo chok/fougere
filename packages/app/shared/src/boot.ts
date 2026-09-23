@@ -180,7 +180,7 @@ async function boot(): Promise<App> {
     /** Who inherits code from whom — the tree, whole, so a refusal can name where an entry sits. */
     under: fileConfig.fronds,
     remoteTransport,
-    extensions: [...stated.extensions, ...(_config.extensions ?? []), fileConfig.auth],
+    extensions: [...stated.extensions, ...(_config.extensions ?? [])],
     // Opened before the container, so released after it. Never wired here until now:
     // this host boots the storage and no host closed one, which is what made a reload
     // leak the pool of every app it discarded.
@@ -190,7 +190,7 @@ async function boot(): Promise<App> {
   log.info(`ascent: ${app.extensions().join(' → ') || 'nothing declared'}`);
 
   const ms = (performance.now() - bootStart).toFixed(0);
-  log.info(`ready in ${ms}ms — ${app.fronds.length} frond(s)${fileConfig.auth ? ' + auth' : ''}`);
+  log.info(`ready in ${ms}ms — ${app.fronds.length} frond(s)`);
 
   return app;
 }

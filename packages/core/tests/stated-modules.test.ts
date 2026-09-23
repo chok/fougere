@@ -8,6 +8,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { statedModules } from '../src/StatedModules.js';
 import { setModuleLoader } from '../src/loader.js';
+import { frond } from '../src/FrondDeclaration.js';
 
 const modules: Record<string, Record<string, unknown>> = {
   '@acme/audit': { audit: (path: unknown) => ({ name: 'audit', path, handlers: [] }) },
@@ -46,5 +47,16 @@ describe('statedModules', () => {
 
     expect(fronds).toEqual([]);
     expect(extensions).toEqual([]);
+  });
+
+  it('hands over a frond the config built in place, with nothing to import', async () => {
+    const auth = frond('auth');
+    const { fronds } = await statedModules({ blog: 'http://127.0.0.1:4100', auth });
+
+    expect(fronds).toEqual([auth]);
+  });
+
+  it('refuses an entry whose key is not the name of the frond it holds', async () => {
+    await expect(statedModules({ login: frond('auth') })).rejects.toThrow("Name the entry 'auth'");
   });
 });

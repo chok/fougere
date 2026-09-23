@@ -7,6 +7,9 @@
  * extension and rises with the app, anything else is a frond and is installed like the rest.
  * The author of a config does not have to know which one their package exports — the same
  * reading `extensions/` already does off a module's form.
+ *
+ * A frond the config BUILT in place — `auth: betterAuth({ … })` — is handed over the same way,
+ * with nothing to import: the config file already did.
  */
 import type { Extension } from './boot/Extension.js';
 import type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
@@ -22,7 +25,7 @@ function exportedBy(specifier: string): string {
   return last.replace(/\.[cm]?[jt]s$/, '');
 }
 
-/** What a config's module keys hand over, sorted by what each one turned out to be. */
+/** What a config hands over as code — its module keys and the fronds it built — sorted by what each one is. */
 export async function statedModules(
   stated: FrondsStated | undefined,
 ): Promise<{ fronds: FrondDescriptor[]; extensions: Extension[] }> {
@@ -31,6 +34,16 @@ export async function statedModules(
   const loader = getModuleLoader();
 
   for (const entry of statedFronds(stated)) {
+    if (entry.held) {
+      if (entry.held.name !== entry.key) {
+        throw new Error(
+          `Fougere config: the entry '${entry.path}' holds the frond '${entry.held.name}'. `
+          + `Name the entry '${entry.held.name}' — the key is how \`only:\` and an address find it.`,
+        );
+      }
+      fronds.push(entry.held);
+      continue;
+    }
     if (!statesModule(entry.key)) continue;
 
     const module = await loader(entry.key) as Record<string, unknown>;

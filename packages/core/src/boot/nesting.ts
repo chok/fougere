@@ -6,6 +6,7 @@
  * Documented: [fronds](https://fougere.dev/docs/infra/fronds).
  */
 import type { Diagnostic } from '../diagnostic.js';
+import { isFrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import { Fronds } from '../descriptor/Fronds.js';
 import { statesModule, type FrondsStated } from '../FrondsStated.js';
@@ -102,7 +103,7 @@ export function nestingOf(
     if (frond === undefined) continue;
 
     const placed = stated[parent];
-    const address = typeof placed === 'string' ? placed : placed?.remote;
+    const address = typeof placed === 'string' ? placed : isFrondDescriptor(placed) ? undefined : placed?.remote;
     if (address !== undefined || (remotes && parent in remotes)) {
       refused.push({
         severity: 'blocking',

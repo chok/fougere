@@ -135,15 +135,13 @@ describe('a storage that could not be opened', () => {
 
   it('carries the topology, because a consumer has nothing else', () => {
     // `fronds:` is the whole reason an app that hosts nothing boots at all, and `boot()`
-    // used to re-read it off a disk the Worker does not have. `auth` is deliberately not
-    // carried: it holds a live provider, not a value.
+    // used to re-read it off a disk the Worker does not have.
     const out = generateBootPlugin(
-      { db: false, fronds: { catalog: 'https://x.workers.dev' }, auth: (() => {}) as never },
+      { db: false, fronds: { catalog: 'https://x.workers.dev' } },
       [], '/app/boot', [], '/app/fronds.ts',
     );
 
     expect(out).toContain('"fronds":{"catalog":"https://x.workers.dev"}');
-    expect(out).not.toContain('auth');
   });
 });
 
@@ -230,22 +228,22 @@ describe('extensionsOf', () => {
       expect(out).not.toContain('import fronds');
     });
   });
-  describe('auth', () => {
-    it('imports the provider from the config, since its functions cannot travel as JSON', () => {
+  describe('a module key', () => {
+    it('is handed over as the config file wrote it, since its options may hold a class', () => {
       const out = generateBootPlugin(
         { db: 'sqlite' } as FougereConfig, [], '/app/boot', [], undefined, undefined,
         ['/app/fougere.config.ts', '/workspace/fougere.config.ts']);
 
       expect(out).toContain("import config_0 from '/app/fougere.config';");
       expect(out).toContain("import config_1 from '/workspace/fougere.config';");
-      expect(out).toContain('(config_0.auth ?? config_1.auth),');
+      expect(out).toContain('fronds: (config_0.fronds ?? config_1.fronds) }');
     });
 
-    it('hands it over even when the app declares no storage', () => {
+    it('is handed over even when the app declares no storage', () => {
       const out = generateBootPlugin(
         { db: false } as FougereConfig, [], '/app/boot', [], undefined, undefined, ['/app/fougere.config.ts']);
 
-      expect(out).toContain('extensions: [(config_0.auth)]');
+      expect(out).toContain('fronds: (config_0.fronds) }');
     });
   });
 });

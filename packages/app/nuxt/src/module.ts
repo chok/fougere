@@ -259,25 +259,22 @@ const module = defineNuxtModule<FougereModuleOptions>({
     }
     addServerImportsDir(runtimeResolve('server/utils'));
 
-    // ── 5b. Auth (mounted when fougere.config.ts declares `auth`) ──
-    if (config.auth) {
-      // Session middleware — resolves user on every request
-      addServerHandler({
-        middleware: true,
-        handler: runtimeResolve('server/auth/middleware/auth'),
-      });
-      // Auth catch-all route (login, register, callback, etc.)
-      addServerHandler({
-        route: '/auth/**',
-        handler: runtimeResolve('server/auth/routes/auth/[...]'),
-      });
-      // /api/me — current user endpoint
-      addServerHandler({
-        route: '/api/me',
-        method: 'get',
-        handler: runtimeResolve('server/auth/routes/api/me.get'),
-      });
-    }
+    // ── 5b. Auth — mounted always, answered only where a frond brought the engine ──
+    // Whether one did is known once the app is up: the auth is a frond, and `only:` or a
+    // placement decides which process serves it, not this build.
+    addServerHandler({
+      middleware: true,
+      handler: runtimeResolve('server/auth/middleware/auth'),
+    });
+    addServerHandler({
+      route: '/auth/**',
+      handler: runtimeResolve('server/auth/routes/auth/[...]'),
+    });
+    addServerHandler({
+      route: '/api/me',
+      method: 'get',
+      handler: runtimeResolve('server/auth/routes/api/me.get'),
+    });
 
     // ── 6. What this app hosts ───
     //
@@ -341,7 +338,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
     const bootTpl = addTemplate({
       filename: 'fougere-boot.ts',
       write: true,
-      getContents: () => generateBootPlugin(config, allSeeds, runtimeResolve('server/utils/boot'), extensionsOf(options), statedPath, scanRoot, config.auth ? configFilesOf(rootDir, scanRoot) : []),
+      getContents: () => generateBootPlugin(config, allSeeds, runtimeResolve('server/utils/boot'), extensionsOf(options), statedPath, scanRoot, config.fronds ? configFilesOf(rootDir, scanRoot) : []),
     });
     addServerPlugin(bootTpl.dst);
 
@@ -413,8 +410,9 @@ export function generateBootPlugin(
    */
   root?: string,
   /**
-   * The config files `auth` may come from, the app's first. An auth provider is made of
-   * functions, which the config's JSON cannot carry, so the plugin imports it.
+   * The config files `fronds:` may come from, the app's first. A module key's options may hold
+   * a class — `user: User` for `@fougere/auth-better` — which the config's JSON cannot carry,
+   * so the plugin imports the file and hands its `fronds` over as written.
    */
   configFiles: readonly string[] = [],
 ): string {
@@ -432,7 +430,8 @@ export function generateBootPlugin(
   // 500. Measured both ways on demos/nuxt-blog, in-process.
   if (statedPath) lines.push(`import fronds from '${statedPath.replace(/\.(m?)[jt]sx?$/, '')}';`);
   configFiles.forEach((file, i) => lines.push(`import config_${i} from '${file.replace(/\.(m?)[jt]sx?$/, '')}';`));
-  const auth = configFiles.length > 0 ? `(${configFiles.map((_, i) => `config_${i}.auth`).join(' ?? ')})` : undefined;
+  const stated = configFiles.length > 0 ? `(${configFiles.map((_, i) => `config_${i}.fronds`).join(' ?? ')})` : undefined;
+  const configArg = stated ? `{ ...${JSON.stringify(carried(config))}, fronds: ${stated} }` : JSON.stringify(carried(config));
 
   const db = config.db ?? 'sqlite';
   const sources = (config as { sources?: unknown }).sources;
@@ -450,8 +449,7 @@ export function generateBootPlugin(
     // Always configure, even with nothing to host: `hostedBy` is where the absence is
     // answered, by name and with both keys. Skipping the call boots a silent app instead.
     const states = statedPath ? 'fronds, ' : '';
-    const extensions = auth ? `, extensions: [${auth}]` : '';
-    lines.push(`  configureFougere({ ${states}config: ${JSON.stringify(carried(config))}${extensions} });`);
+    lines.push(`  configureFougere({ ${states}config: ${configArg} });`);
     lines.push(`});`);
 
     return lines.join('\n') + '\n';
@@ -484,7 +482,7 @@ export function generateBootPlugin(
   // Two unrelated facts had been sharing one failure. `remotes` rides along for the same
   // reason: it is the whole of why a consumer that hosts nothing boots at all.
   const states = statedPath ? 'fronds, ' : '';
-  lines.push(`  configureFougere({ ${states}config: ${JSON.stringify(carried(config))} });`);
+  lines.push(`  configureFougere({ ${states}config: ${configArg} });`);
   lines.push(``);
   lines.push(`  try {`);
   // Pass `db` through unchanged — resolveStorage (@fougere/defaults → createSqliteSource)
@@ -498,7 +496,7 @@ export function generateBootPlugin(
   lines.push(``);
   lines.push(`    configureFougere({`);
   if (statedPath) lines.push(`      fronds,`);
-  lines.push(`      config: ${JSON.stringify(carried(config))},`);
+  lines.push(`      config: ${configArg},`);
   // The whole thing, not a hand-picked few of its members: the three this used to name
   // left `transacted` and `close` behind, so a `Together` always compensated and the
   // connection was never released — under Nuxt only, which is where the app really runs.
@@ -531,7 +529,6 @@ export function generateBootPlugin(
   for (const { key, options } of extensions) {
     lines.push(`        ${key}(${JSON.stringify(options ?? {})}),`);
   }
-  if (auth) lines.push(`        ${auth},`);
 
   lines.push(`      ],`);
   lines.push(`    });`);

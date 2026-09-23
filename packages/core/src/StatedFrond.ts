@@ -1,4 +1,5 @@
 import { statesModule, type FrondAttributes, type FrondStated, type FrondsStated } from './FrondsStated.js';
+import { isFrondDescriptor, type FrondDescriptor } from './descriptor/FrondDescriptor.js';
 
 /** One entry of the config, read whole. */
 export interface StatedFrond {
@@ -10,10 +11,13 @@ export interface StatedFrond {
   path: string;
   /** An address for a frond that is elsewhere, an argument for a module. */
   value?: string;
+  /** The frond the config built in place, which the host installs like one it scanned. */
+  held?: FrondDescriptor;
 }
 
 /** What an entry says, whichever of its two forms it was written in. */
 function attributesOf(stated: FrondStated, key: string): FrondAttributes {
+  if (isFrondDescriptor(stated)) return {};
   if (typeof stated !== 'string') return stated;
 
   return statesModule(key) ? { options: stated } : { remote: stated };
@@ -41,6 +45,7 @@ export function statedFronds(stated: FrondsStated | undefined): StatedFrond[] {
       path: above !== undefined ? `${above}.${key}` : key,
       ...(above !== undefined ? { extends: above } : {}),
       ...(carries !== undefined ? { value: carries } : {}),
+      ...(isFrondDescriptor(value) ? { held: value } : {}),
     };
   };
 

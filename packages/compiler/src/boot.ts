@@ -29,7 +29,6 @@ interface BootOptions {
   onEmit?: CreateAppOptions['onEmit'];
   /**
    * storage setup — returns the storage handle (db), an storageFactory, and its two halves.
-   * The `db` value is forwarded to the auth provider via AuthContext when `auth` is set.
    */
   db?: (config: FougereConfig) => {
     db?: unknown;
@@ -71,13 +70,15 @@ export async function boot(options: BootOptions): Promise<App> {
 
   // What the config names by module — imported here, because core resolves no specifier.
   const stated = await statedModules(config.fronds);
+  const only = options.only ?? options.fronds;
+  const hosted = stated.fronds.filter((frond) => !only || only.includes(frond.name));
 
   log.debug('creating app (scan + container)');
   const app = await createApp({
-    ...(stated.fronds.length > 0 ? { fronds: stated.fronds } : {}),
+    ...(hosted.length > 0 ? { fronds: hosted } : {}),
     // boot() lives on the Node entry, so boot() is what reads the disk. `createApp` is
     // handed the answer and reaches for nothing.
-    scan: await scanProject(root, options.only ?? options.fronds, config.conventions),
+    scan: await scanProject(root, only, config.conventions),
     createContainer: options.createContainer,
     storageFactory: dbSetup?.storageFactory,
     // The tree's string leaves say the same thing `remotes:` does, and this boot read
@@ -87,7 +88,7 @@ export async function boot(options: BootOptions): Promise<App> {
     // Who inherits code from whom — handed over whole, because a refusal names where an
     // entry sits in the tree.
     under: config.fronds,
-    narrowed: (options.only ?? options.fronds) !== undefined,
+    narrowed: only !== undefined,
     ports: config.ports,
     // Read from the config for the same reason `ports` is, one line up: it is a fact the
     // project states, not one the caller passes. Absent here, `serveRest` and
@@ -101,7 +102,7 @@ export async function boot(options: BootOptions): Promise<App> {
     // Its own gesture, handed over whole. The ORDER — tables, then rows, then whatever this
     // host takes on — is `createApp`'s, and was written out by four hosts before.
     migrate: dbSetup?.migrate,
-    extensions: [...stated.extensions, ...(options.extensions ?? []), config.auth],
+    extensions: [...stated.extensions, ...(options.extensions ?? [])],
     onEmit: options.onEmit,
     remoteTransport: options.remoteTransport,
   });

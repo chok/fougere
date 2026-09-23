@@ -320,6 +320,19 @@ reading a date INSIDE `json(Entity)` and `list()`. An extension is recognized by
 `state` (`isExtension`, `descriptor/ExtensionEntry.ts`), the one predicate the scan and the module
 keys share. Pinned by `core/tests/state.test.ts` and `defaults/tests/gradient.test.ts`.
 
+**The auth is a frond, written in place** — `fronds: { auth: betterAuth({ … }) }`. The config
+file imports the package, so the entry holds the frond itself (`FrondStated` admits a
+`FrondDescriptor`, recognized by `isFrondDescriptor`, and its key must be its name), and the
+frond carries its extension (`FrondDeclaration.extensions`) — engine, `AUTH`, `user`/`session` —
+which rises only where the frond is served. `only:` leaves it out like any frond, so `fougere
+serve blog` starts no engine and migrates no session table. The `auth:` key is gone: an
+extension belongs to the process, and a brought frond stands in every process, so the engine
+used to start wherever the config was read. A MODULE key (`'@fougere/…'`) could not have carried
+it: `import()` resolves from the file calling it, and core's default loader looked for the
+package from `core/dist` — `ERR_MODULE_NOT_FOUND`, measured 2026-09-23. Under Nuxt the plugin
+imports the config file and hands its `fronds` over as written, since JSON drops a class.
+Pinned by `core/tests/stated-modules.test.ts` and `auth/better/tests/state.test.ts`.
+
 **What carries a line writes none** — `CARRIES_LINE` (`core/src/builtin/LogLine.ts`), a
 set the BOOT fills from `Emissions.doorsFor('logLine')`, read by `loggerMiddleware`, by
 `observability`'s `trace()` and by `calls`' ring. Keeping a line is a DISPATCH, so logging

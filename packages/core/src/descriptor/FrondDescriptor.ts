@@ -63,3 +63,10 @@ export interface FrondDescriptor {
     rest?: { method?: string; path?: string; status?: number };
   }>;
 }
+
+/** Recognized by its FORM, like everything a config holds: a name and the lists every frond carries. */
+export function isFrondDescriptor(value: unknown): value is FrondDescriptor {
+  const shape = value as Partial<Record<keyof FrondDescriptor, unknown>> | null;
+
+  return typeof shape?.name === 'string' && Array.isArray(shape.entities) && Array.isArray(shape.handlers);
+}

@@ -8,6 +8,7 @@ import type { MiddlewareEntry } from './descriptor/MiddlewareEntry.js';
 import type { PresenterEntry } from './descriptor/PresenterEntry.js';
 import type { ProviderEntry } from './descriptor/ProviderEntry.js';
 import type { SeedEntry } from './descriptor/SeedEntry.js';
+import type { ExtensionEntry } from './descriptor/ExtensionEntry.js';
 import { DEFAULT_CONVENTIONS } from './Conventions.js';
 import { getPresenterFields } from './prefab/presenter.js';
 import type { OperationContract } from './wire/OperationContract.js';
@@ -73,6 +74,8 @@ export interface FrondDeclaration {
   scope?: string;
   /** What `frond.config.ts` states — the third producer of an operation contract. */
   operationsOverrides?: FrondDescriptor['operationsOverrides'];
+  /** What rises with the process serving this frond — the same thing its `extensions/` states. */
+  extensions?: (ExtensionEntry['extension'] & { name: string })[];
 }
 
 /** State a frond without reading a disk. */
@@ -176,5 +179,8 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
     middlewares,
     ...(declared.pipes ? { pipes: declared.pipes } : {}),
     ...(declared.surfaces ? { surfaces: declared.surfaces } : {}),
+    ...(declared.extensions
+      ? { extensions: declared.extensions.map((extension) => ({ name: extension.name, extension, filePath: '' })) }
+      : {}),
   };
 }

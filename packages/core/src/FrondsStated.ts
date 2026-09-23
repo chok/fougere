@@ -1,4 +1,5 @@
 import type { NameOf } from './NameOf.js';
+import type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
 
 /**
  * What the config says about the fronds this app is made of — where each one comes from, and
@@ -20,9 +21,10 @@ export type FrondsStated = {
 
 /**
  * Everything an entry says, or the one string that is the whole of it — an address for a frond
- * that answers elsewhere, the argument for a module key.
+ * that answers elsewhere, the argument for a module key — or the frond itself, built by the
+ * config's own import: `auth: betterAuth({ … })`.
  */
-export type FrondStated = string | FrondAttributes;
+export type FrondStated = string | FrondAttributes | FrondDescriptor;
 
 export interface FrondAttributes {
   /**

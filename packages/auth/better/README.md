@@ -2,8 +2,9 @@
 > Fougere's auth
 A translation layer onto [better-auth](https://better-auth.com): its writes go through
 Fougere's storage, and the application's `User` stays its own — Session and Account are
-built against it. `betterAuth()` is an extension: it brings the frond those rows live in, and
-registers the runtime under `AUTH` once the app exists.
+built against it. `betterAuth()` is a frond, `fronds: { auth: betterAuth({ … }) }`: it holds
+those rows, and carries the extension that registers the runtime under `AUTH` wherever the
+frond is served.
 
 ## Installation
 ```bash

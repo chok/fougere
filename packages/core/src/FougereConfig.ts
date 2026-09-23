@@ -1,6 +1,5 @@
 import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
-import type { Extension } from './boot/Extension.js';
 import type { LogLevel } from './builtin/LogLevel.js';
 import type { ConventionsInput } from './ConventionsInput.js';
 import type { NameOf } from './NameOf.js';
@@ -29,8 +28,6 @@ export interface FougereConfig {
   fronds?: FrondsStated;
   /** What answers a port — a name, or the chain from the outside in. */
   ports?: PortChoice;
-  /** The auth provider — an extension, which brings the frond its rows live in. */
-  auth?: Extension;
   /** Which protocol adapters this app serves. */
   adapters?: AdapterConfig;
 }

@@ -3,7 +3,14 @@ import { InputValidator, Shapes } from '@fougere/schema';
 import { betterAuth } from '../src/index.js';
 
 describe('what a signed-in call carries', () => {
-  const { state } = betterAuth({ secret: 'x'.repeat(32) });
+  const auth = betterAuth({ secret: 'x'.repeat(32) });
+  const { state } = auth.extensions![0]!.extension;
+
+  it('is a frond, and its extension rises wherever that frond is served', () => {
+    expect(auth.name).toBe('auth');
+    expect(auth.extensions?.map((entry) => entry.name)).toEqual(['auth']);
+  });
+
 
   it('declares the user and the session, and the session without its token', () => {
     expect(Object.keys(state ?? {})).toEqual(['user', 'session']);
