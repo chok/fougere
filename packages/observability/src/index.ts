@@ -24,6 +24,9 @@ interface Running extends SpanContext {
  */
 export type SpanKind = 'operation' | 'statement';
 
+/** Which end of a hop an operation span stands at — absent when the call stayed in this process. */
+export type Crossing = 'sent' | 'received';
+
 /** A step that has finished, and what it did. */
 export interface FinishedSpan extends SpanContext {
   parentId: string | undefined;
@@ -35,6 +38,7 @@ export interface FinishedSpan extends SpanContext {
   /** Which frond owned the op — the deployment unit, so the first thing a reader groups by. */
   frond: string | undefined;
   kind: SpanKind;
+  crossing: Crossing | undefined;
   entity: string;
   operation: string;
   /** When it started, in epoch milliseconds — an INSTANT, not an offset. */
@@ -226,6 +230,7 @@ export function tracing(takers: readonly SpanSink[], options: TracingOptions = {
         callerFrond,
         frond: ctx.frond,
         kind: 'operation',
+        crossing: ctx.crosses ? 'sent' : ctx.invocation?.crossed ? 'received' : undefined,
         entity: ctx.entity,
         operation: ctx.operation,
         startedAt,
@@ -278,6 +283,7 @@ export function tracing(takers: readonly SpanSink[], options: TracingOptions = {
         callerFrond: undefined,
         frond: under.frond,
         kind: 'statement',
+        crossing: undefined,
         entity: ran.subject,
         operation: ran.verb,
         startedAt: under.startedAt + Math.max(0, performance.now() - under.start - ran.ms),

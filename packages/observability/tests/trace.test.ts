@@ -134,12 +134,13 @@ describe('a span per operation', () => {
     ]);
   });
 
-  it('in-process, one call is one span with no parent', async () => {
+  it('in-process, one call is one span with no parent and no crossing', async () => {
     collect();
     await host.resolve<Facade>('productHandler').list();
 
     expect(spans).toHaveLength(1);
     expect(spans[0].parentId).toBeUndefined();
+    expect(spans[0].crossing).toBeUndefined();
   });
 });
 
@@ -154,6 +155,7 @@ describe('across a wire — any wire', () => {
     expect(received.parentId).toBe(caller.spanId);
     // The caller's span contains the receiver's: the difference is what the wire cost.
     expect(caller.ms).toBeGreaterThan(received.ms);
+    expect([caller.crossing, received.crossing]).toEqual(['sent', 'received']);
   });
 
   /**

@@ -113,7 +113,7 @@ export function createRemoteFacade(
     const invocation = { ...received, state };
     const entered = { ...state };
     const ctx: OperationContext = {
-      entity, frond, operation: op, args: [], state, invocation,
+      entity, frond, operation: op, args: [], state, invocation, crosses: true,
     };
     const answer = await runMiddlewares(middlewaresFor(entity), ctx, () =>
       transport(call, { ...(ctx.invocation ?? invocation), state: shape.judge(ctx.state, entity, op, entered) }));

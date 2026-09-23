@@ -34,4 +34,27 @@ describe('a span on the wire', () => {
     });
     exporter.stop();
   });
+
+  it('draws a hop as the CLIENT that sent it and the SERVER that received it', async () => {
+    const posted: { resourceSpans: { scopeSpans: { spans: { kind: number }[] }[] }[] }[] = [];
+    vi.stubGlobal('fetch', async (_url: string, init: { body: string }) => {
+      posted.push(JSON.parse(init.body));
+
+      return new Response('{}');
+    });
+    const exporter = otlp({ service: 'shop', url: 'http://collector/v1/traces', flushMs: 0 });
+    const span = (kind: 'operation' | 'statement', crossing: 'sent' | 'received' | undefined) => ({
+      traceId: '0'.repeat(32), spanId: '1'.repeat(16), parentId: undefined, sampled: true, callerFrond: undefined,
+      frond: 'catalog', kind, crossing, entity: 'product', operation: 'list', startedAt: 1, ms: 2, selfMs: 1,
+      statements: 0, error: undefined,
+    }) as never;
+
+    for (const one of [span('operation', 'sent'), span('operation', 'received'), span('operation', undefined), span('statement', undefined)]) {
+      exporter.sink(one);
+    }
+    await exporter.flush();
+
+    expect(posted[0]!.resourceSpans[0]!.scopeSpans[0]!.spans.map((one) => one.kind)).toEqual([3, 2, 1, 3]);
+    exporter.stop();
+  });
 });

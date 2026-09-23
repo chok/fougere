@@ -15,4 +15,6 @@ export interface OperationContext {
   state: Record<string, unknown>;
   /** Transport-agnostic invocation context (params, query, input, state). */
   invocation?: import('./InvocationContext.js').InvocationContext;
+  /** Set by the facade that hands the call to a transport — the dual of `invocation.crossed`. */
+  crosses?: true;
 }

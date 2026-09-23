@@ -18,8 +18,10 @@ const OK = 1;
 
 const ERROR = 2;
 
-/** OTLP span kinds, of the six only these two are ours. */
+/** OTLP span kinds, of the six only these three are ours. */
 const INTERNAL = 1;
+
+const SERVER = 2;
 
 const CLIENT = 3;
 
@@ -66,10 +68,10 @@ function payload(service: string, spans: FinishedSpan[]) {
               spanId: span.spanId,
               ...(span.parentId ? { parentSpanId: span.parentId } : {}),
               name: `${span.entity}.${span.operation}`,
-              // 1 INTERNAL, 3 CLIENT: a statement left this process for an engine, and a
-              // viewer draws the two differently. `selfMs` is NOT sent — a collector
-              // derives it from the tree it already holds.
-              kind: span.kind === 'statement' ? CLIENT : INTERNAL,
+              // A statement left this process for an engine, and a hop for another process: a
+              // viewer draws an edge between a CLIENT and the SERVER under it. `selfMs` is NOT
+              // sent — a collector derives it from the tree it already holds.
+              kind: kindOf(span),
               attributes: attributesOf(span),
               startTimeUnixNano: nanos(span.startedAt),
               endTimeUnixNano: nanos(span.startedAt + span.ms),
@@ -80,6 +82,12 @@ function payload(service: string, spans: FinishedSpan[]) {
       },
     ],
   };
+}
+
+function kindOf(span: FinishedSpan): number {
+  if (span.kind === 'statement' || span.crossing === 'sent') return CLIENT;
+
+  return span.crossing === 'received' ? SERVER : INTERNAL;
 }
 
 /**
