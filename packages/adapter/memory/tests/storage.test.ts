@@ -231,3 +231,18 @@ describe('an upsert over a row that exists', () => {
     expect(again.createdAt).toEqual(new Date(0));
   });
 });
+
+describe('the fallback store refuses as the SQL one does', () => {
+  it('answers NOT_FOUND for an update on a row that is not there', async () => {
+    const storage = createMemoryStorage(Post as never, 'post');
+
+    await expect(storage.update('ghost', { title: 'x' })).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+
+  it('answers CONFLICT for a key that is already taken', async () => {
+    const storage = createMemoryStorage(Sku as never, 'sku');
+    await storage.create({ code: 'A-1', label: 'one' });
+
+    await expect(storage.create({ code: 'A-1', label: 'two' })).rejects.toMatchObject({ code: 'CONFLICT' });
+  });
+});

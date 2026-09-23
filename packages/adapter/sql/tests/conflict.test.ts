@@ -82,3 +82,14 @@ describe('each engine recognizes its own words', () => {
     expect(sqliteDialect.isUniqueViolation(wrapped)).toBe(true);
   });
 });
+
+describe('an update on a row that is not there', () => {
+  it('leaves as NOT_FOUND, and writes nothing', async () => {
+    const storage = setup.storageFactory(Member as never, 'Member');
+
+    await expect(storage.update('ghost', { email: 'ghost@x.io' })).rejects.toMatchObject({
+      code: ErrorCode.NOT_FOUND,
+    });
+    expect(await storage.findById('ghost')).toBeUndefined();
+  });
+});

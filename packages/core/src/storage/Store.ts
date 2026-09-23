@@ -1,6 +1,8 @@
 import { applyCreate, applyUpdate, Role, type SchemaView } from '@fougere/schema';
 import { comparisonOf, comparisonsIn, type Comparison } from './Comparison.js';
 import type { Storage } from './Storage.js';
+import { ErrorCode } from '../wire/ErrorCode.js';
+import { FougereError } from '../wire/FougereError.js';
 import type { StorageFactory } from './StorageFactory.js';
 import type { Values } from './Values.js';
 import type { ListResult } from './ListResult.js';
@@ -128,7 +130,7 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
           // constraint violation, and a store that loses data silently is worse than one
           // that fails.
           if (await store.has(keyOf(id))) {
-            throw new Error(`${name}.create: '${pk}' ${JSON.stringify(id)} already exists.`);
+            throw new FougereError({ code: ErrorCode.CONFLICT, message: `${name}.create: '${pk}' ${JSON.stringify(id)} already exists.` });
           }
           await store.set(keyOf(id), values);
 
@@ -136,7 +138,7 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
         },
         async update(id: string, input: Partial<Record<string, unknown>>) {
           const existing = await store.get(keyOf(id));
-          if (!existing) throw new Error(`Not found: ${id}`);
+          if (!existing) throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `No row in ${name} for ${JSON.stringify(id)}.` });
           const updated = { ...existing, ...applyUpdate(fields, input), [pk]: existing[pk] };
           await store.set(keyOf(id), updated);
 

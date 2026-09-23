@@ -513,10 +513,10 @@ export class SqlStorage {
     await this.refusal(() => this.wherePk(this.db.updateTable(this.table.name).set(this.toRow(data)) as any, id).execute());
 
     const updated = await this.findById(id);
-    const result = updated ?? (typeof id === 'string' ? { id, ...data } : { ...id, ...data });
+    if (!updated) throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `No row in ${this.table.name} for ${JSON.stringify(id)}.` });
     const sel = this.resolveSelect(options);
 
-    return sel ? pick(result, sel) : result;
+    return sel ? pick(updated, sel) : updated;
   }
 
   /**
