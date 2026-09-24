@@ -2,7 +2,7 @@
   "name": "fougere-workspace",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@11.20.0",
+  "packageManager": "pnpm@12.6.0",
   "scripts": {
     "dev": "pnpm --filter './apps/*' --parallel dev",
     "build": "pnpm --filter './apps/*' -r build",

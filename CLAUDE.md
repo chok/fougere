@@ -1086,6 +1086,12 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 
 One line each, kept because a past version of this file asserted the opposite.
 
+- **Core does not depend on the compiler, not even for its tests** — a core test states its fronds
+  with `frond()` (`tests/fixtures-*/fronds.ts`, contracts written through `tests/contract.ts`), and
+  what the scan DEDUCES is tested in `packages/compiler/tests/`. Core's devDependency on the
+  compiler was the one edge closing a cycle, and pnpm 12 refuses a build over it
+  (`ERR_PNPM_TASK_CYCLE`, 2026-09-24).
+
 - **No `db:` means memory, on every host, said as a warning** — `resolveStorage`
   (`defaults/src/storage/ResolvedStorage.ts`) is the one place that falls back. Nuxt used to impose
   SQLite, the web hosts fell back to memory at `debug`, and `fougere serve` had no storage at all.
