@@ -11,9 +11,8 @@
  * container contient répond à la clé que la fonction rend**. Une épellation qui
  * repart ailleurs le casse.
  */
-import { scanProject } from '@fougere/compiler';
+import fronds from './fixtures/fronds.js';
 import { describe, it, expect } from 'vitest';
-import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { lowerFirst } from '@fougere/schema';
 import { createApp } from '../src/index.js';
@@ -21,7 +20,6 @@ import { entityOfStorageKey, storageKeyOf } from '../src/storage/Storage.js';
 import { facadeKeyOf } from '../src/wire/Facade.js';
 import type { Storage } from '../src/storage/Storage.js';
 
-const root = join(import.meta.dirname, 'fixtures');
 
 const fakeStorage = () => ({
   list: async () => [], findById: async () => undefined, findBy: async () => undefined,
@@ -31,7 +29,7 @@ const fakeStorage = () => ({
 
 describe('les clés d\'enregistrement ont une seule orthographe', () => {
   it('ce que le boot enregistre répond à la clé que la fonction rend', async () => {
-    await using app = await createApp({ scan: await scanProject(root), createContainer, storageFactory: fakeStorage });
+    await using app = await createApp({ fronds, createContainer, storageFactory: fakeStorage });
 
     for (const frond of app.fronds) {
       // Le storage se lit par son accesseur, qui passe par le scope de la frond —
@@ -47,7 +45,7 @@ describe('les clés d\'enregistrement ont une seule orthographe', () => {
   });
 
   it('le scan demande la clé que le boot enregistre — même fonction des deux côtés', async () => {
-    await using app = await createApp({ scan: await scanProject(root), createContainer, storageFactory: fakeStorage });
+    await using app = await createApp({ fronds, createContainer, storageFactory: fakeStorage });
 
     // `deps` vient de `depKeyOf` dans le scanner ; l'enregistrement vient de
     // `bootstrap`. Les deux lisent `storageKeyOf` maintenant, et c'est ce que dit ce test :
