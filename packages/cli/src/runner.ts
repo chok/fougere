@@ -5,8 +5,9 @@
 import type { App } from '@fougere/core';
 import { createAppRunner } from '@fougere/core';
 import { lowerFirst } from '@fougere/core/contract';
-import { defineCommand, runMain } from 'citty';
+import { defineCommand, runMain, showUsage } from 'citty';
 import { ui } from './ui.js';
+import { installLoader } from './loader.js';
 import { machineWanted } from './machine.js';
 import { Shapes } from '@fougere/schema';
 import { entityToArgs } from './bridge.js';
@@ -22,26 +23,14 @@ function toCamel(kebab: string): string {
   return kebab.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
 }
 
-/** Scan app/commands/ for command classes. */
-async function loadAppCommands(
-  root: string,
-  loader: (path: string) => Promise<Record<string, unknown>>,
-): Promise<Map<string, new (...args: unknown[]) => { run: (raw: Record<string, unknown>) => Promise<void> }>> {
-  const map = new Map();
+/** The presentation classes under app/commands/, by command name — found, not imported: a command imports its own when it runs. */
+async function appCommandFiles(root: string): Promise<Map<string, string>> {
   const dir = join(root, 'app', 'commands');
   const files = await readdir(dir, { withFileTypes: true }).catch(() => []);
 
-  for (const f of files) {
-    if (!f.isFile() || f.name.endsWith('.d.ts') || !(f.name.endsWith('.ts') || f.name.endsWith('.js'))) continue;
-    const name = f.name.replace(/Command\.(ts|js)$/, '').replace(/\.(ts|js)$/, '');
-    const kebab = toKebab(name);
-    const mod = await loader(join(dir, f.name));
-    if (mod.default && typeof mod.default === 'function') {
-      map.set(kebab, mod.default);
-    }
-  }
-
-  return map;
+  return new Map(files
+    .filter((f) => f.isFile() && !f.name.endsWith('.d.ts') && (f.name.endsWith('.ts') || f.name.endsWith('.js')))
+    .map((f) => [toKebab(f.name.replace(/Command\.(ts|js)$/, '').replace(/\.(ts|js)$/, '')), join(dir, f.name)] as const));
 }
 
 /**
@@ -61,7 +50,7 @@ export async function run(app: App, root = new URL('..', import.meta.url).pathna
 
     return createJiti(import.meta.url, { interopDefault: true }).import(path) as Promise<Record<string, unknown>>;
   };
-  const appCommands = await loadAppCommands(root, loader);
+  const appCommands = await appCommandFiles(root);
 
   const subCommands: Record<string, ReturnType<typeof defineCommand>> = {};
 
@@ -85,10 +74,10 @@ export async function run(app: App, root = new URL('..', import.meta.url).pathna
       const args = entityToArgs(fields);
 
       // Check for an app command (presentation layer)
-      const AppCommand = appCommands.get(cmdName);
+      const appCommand = appCommands.get(cmdName);
 
       // App commands handle their own prompting — don't let citty reject missing args
-      if (AppCommand) {
+      if (appCommand) {
         for (const def of Object.values(args)) {
           if (typeof def === 'object' && def) def.required = false;
         }
@@ -124,7 +113,9 @@ export async function run(app: App, root = new URL('..', import.meta.url).pathna
           );
 
           try {
-            if (AppCommand) {
+            await installLoader(process.cwd());
+            const AppCommand = appCommand ? (await loader(appCommand)).default : undefined;
+            if (typeof AppCommand === 'function') {
               const cmd = new (AppCommand as new (...a: unknown[]) => { run: (raw: Record<string, unknown>) => Promise<void> })(app, terminal);
               await cmd.run(input);
             } else {
@@ -150,6 +141,7 @@ export async function run(app: App, root = new URL('..', import.meta.url).pathna
   const main = defineCommand({
     meta: { name: 'fougere', description: 'Fougere CLI' },
     subCommands,
+    run: async ({ rawArgs }) => { if (rawArgs.length === 0) await showUsage(main); },
   });
 
   await runMain(main);

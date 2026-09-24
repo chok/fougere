@@ -4,9 +4,6 @@ import { createContainer } from '@fougere/container';
 import { scan } from '../.fougere/scan.generated.js';
 import { ui } from './ui.js';
 import { run } from './runner.js';
-import { installLoader } from './loader.js';
-
-await installLoader(process.cwd());
 
 const container = createContainer();
 const terminal = ui();
