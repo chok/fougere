@@ -17,12 +17,14 @@
  * `Nothing here is part of Fougere`, and it is right — it is demo scaffolding, and no convention
  * directory is where it belongs. Failing the build on that would teach people to silence it.
  */
-import { readdirSync, existsSync } from 'node:fs';
+import { readdirSync, existsSync, readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 
 const root = path.resolve(import.meta.dirname, '..');
-const cli = path.join(root, 'packages/cli/dist/bin.js');
+const cliPackage = path.join(root, 'packages/cli');
+const { bin } = JSON.parse(readFileSync(path.join(cliPackage, 'package.json'), 'utf8')) as { bin: { fougere: string } };
+const cli = path.join(cliPackage, bin.fougere);
 
 interface Finding {
   severity: string;
