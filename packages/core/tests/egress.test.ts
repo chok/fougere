@@ -5,61 +5,44 @@
  * may legitimately read a write-only field (verifying a password); the result
  * that crosses the façade must not carry it — to a browser or to another frond.
  */
-import { scanProject } from '@fougere/compiler';
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import { join } from 'node:path';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { describe, it, expect, vi } from 'vitest';
+import { entity, primary, text, writeOnly } from '@fougere/schema';
 import { createContainer } from '@fougere/container';
-import { createApp, createLocalRunner } from '../src/index.js';
+import { createApp, createLocalRunner, Crud, frond } from '../src/index.js';
+import { op } from './contract.js';
 import type { StorageFactory } from '../src/index.js';
 import { PresenterExecutor } from '../src/dispatch/PresenterExecutor.js';
-
-const packagesDir = join(import.meta.dirname, '..', '..');
-const coreDist = join(packagesDir, 'core', 'dist', 'index.js');
-const schemaDist = join(packagesDir, 'schema', 'dist', 'index.js');
 
 const SECRET = '$2b$10$SUPERSECRET';
 const row = { id: 'a1', label: 'prod key', passwordHash: SECRET };
 
-function writeApp(): string {
-  const root = mkdtempSync(join(tmpdir(), 'fougere-egress-'));
-  const frond = join(root, 'fronds', 'vault');
-  mkdirSync(join(frond, 'entities'), { recursive: true });
-  mkdirSync(join(frond, 'handlers'), { recursive: true });
-
-  writeFileSync(join(frond, 'entities', 'Secret.js'), `
-import { entity, primary, text, writeOnly } from ${JSON.stringify(schemaDist)};
-export default class Secret extends entity({
+class Secret extends entity({
   id: primary(),
   label: text(),
   passwordHash: writeOnly(text()),
 }) {}
-`);
-  writeFileSync(join(frond, 'handlers', 'SecretHandler.js'), `
-import { Crud } from ${JSON.stringify(coreDist)};
-import Secret from '../entities/Secret.js';
-export default class SecretHandler extends Crud(Secret) {
+
+class SecretHandler extends Crud(Secret) {
   /** A handler legitimately reads the hash — it just must not leak it. */
   async audit() {
     const all = await this.storage.list();
+
     return { checked: all.length, computedByHand: 'kept' };
   }
 }
-`);
-  writeFileSync(join(frond, 'frond.config.js'), `
-export default { operations: { audit: { kind: 'query' } } };
-`);
 
-  return root;
-}
+const vault = frond('vault', {
+  entities: [Secret],
+  handlers: [{ ctor: SecretHandler, operations: { audit: op({ cardinality: 'one' }) } }],
+  operationsOverrides: { audit: { kind: 'query' } },
+});
 
 /** The real shape: ListResult IS an array, carrying its cursor on itself. */
 function listResult(rows: Record<string, unknown>[]) {
   return Object.assign([...rows], { total: rows.length, hasMore: false, endCursor: 'a1' });
 }
 
-async function boot(root: string) {
+async function boot() {
   const storage = {
     list: vi.fn(async () => listResult([row])),
     findById: vi.fn(async () => row),
@@ -68,7 +51,7 @@ async function boot(root: string) {
     delete: vi.fn(async () => true),
     output: () => storage,
   };
-  const app = await createApp({ scan: await scanProject(root), createContainer, storageFactory: (() => storage) as unknown as StorageFactory });
+  const app = await createApp({ fronds: [vault], createContainer, storageFactory: (() => storage) as unknown as StorageFactory });
 
   return { app, run: createLocalRunner(app) };
 }
@@ -76,12 +59,9 @@ async function boot(root: string) {
 const empty = { params: {}, query: {}, input: undefined, state: {} };
 
 describe('a write-only field never crosses the façade outbound', () => {
-  let root: string;
-  beforeAll(() => { root = writeApp(); });
-  afterAll(() => { rmSync(root, { recursive: true, force: true }); });
 
   it('omits it from a list, keeping the cursor the array carries', async () => {
-    const { app, run } = await boot(root);
+    const { app, run } = await boot();
     const out = await run({ entity: 'secret', op: 'list' }, empty) as any;
 
     expect(out.items[0]).toEqual({ id: 'a1', label: 'prod key' });
@@ -95,7 +75,7 @@ describe('a write-only field never crosses the façade outbound', () => {
   });
 
   it('omits it from a single record', async () => {
-    const { app, run } = await boot(root);
+    const { app, run } = await boot();
     const out = await run({ entity: 'secret', op: 'findById' }, { ...empty, params: { id: 'a1' } });
 
     expect(out).toEqual({ id: 'a1', label: 'prod key' });
@@ -103,7 +83,7 @@ describe('a write-only field never crosses the façade outbound', () => {
   });
 
   it('accepts it inbound and omits it from what the write returns', async () => {
-    const { app, run } = await boot(root);
+    const { app, run } = await boot();
     // write-only is exactly that: a client may SUPPLY it, never read it back.
     const out = await run(
       { entity: 'secret', op: 'create' },
@@ -115,7 +95,7 @@ describe('a write-only field never crosses the façade outbound', () => {
   });
 
   it('leaves keys the schema knows nothing about untouched', async () => {
-    const { app, run } = await boot(root);
+    const { app, run } = await boot();
     const out = await run({ entity: 'secret', op: 'audit' }, empty);
 
     expect(out).toEqual({ checked: 1, computedByHand: 'kept' });
@@ -123,7 +103,7 @@ describe('a write-only field never crosses the façade outbound', () => {
   });
 
   it('passes a scalar result through', async () => {
-    const { app, run } = await boot(root);
+    const { app, run } = await boot();
     const out = await run({ entity: 'secret', op: 'delete' }, { ...empty, params: { id: 'a1' } });
 
     expect(out).toBe(true);
