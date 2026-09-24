@@ -1,5 +1,4 @@
 import { loadConfig } from '@fougere/core/node';
-import { resolveStorage } from '@fougere/defaults';
 import type { Plan, StepChange } from '@fougere/adapter-sql';
 import type { SetDiff } from '@fougere/schema';
 import ProjectScan from '../services/ProjectScan.js';
@@ -44,6 +43,7 @@ export default class MigrateHandler {
     const config = await loadConfig(scan.root);
     // `fougere migrate --root ../app` read that project's config and planned against a
     // database beside the CLI's own directory — the loudest form of this bug.
+    const { resolveStorage } = await import('@fougere/defaults');
     const storage = resolveStorage(config.db ?? {}, undefined, scan.root);
     if (!storage.db) {
       return {

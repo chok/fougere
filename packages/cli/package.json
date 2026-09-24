@@ -16,27 +16,24 @@
     "directory": "packages/cli"
   },
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
   "bin": {
-    "fougere": "dist/bin.js"
+    "fougere": "dist/src/bin.js"
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js"
     },
-    "./bin": "./dist/bin.js"
+    "./bin": "./dist/src/bin.js"
   },
   "files": [
     "dist",
-    "app",
-    "fronds",
-    "templates",
-    "src"
+    "templates"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc && chmod +x dist/bin.js && node dist/bin.js build",
+    "build": "rm -rf dist && node scripts/scan.ts && tsc && chmod +x dist/src/bin.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.runtime.json && tsc -p tsconfig.templates.json",

@@ -23,6 +23,14 @@ function monorepoPackages(): string | undefined {
   return undefined;
 }
 
+/** This package's directory — found by walking up, since the source and its compiled copy sit at different depths. */
+function packageRoot(): string {
+  let d = fileURLToPath(new URL('.', import.meta.url));
+  while (!existsSync(join(d, 'package.json'))) d = dirname(d);
+
+  return d;
+}
+
 /**
  * Scaffolds from real template files (create-vite pattern: stdlib copy, no
  * token engine). The workspace model composes at every scale:
@@ -31,7 +39,7 @@ function monorepoPackages(): string | undefined {
  *  - apps added from `apps/<template>`      (consumers: nuxt, cli).
  * The only per-piece edits are the package names.
  */
-const TEMPLATES = fileURLToPath(new URL('../../../templates/', import.meta.url));
+const TEMPLATES = join(packageRoot(), 'templates');
 
 /**
  * Where a HOST keeps its starter, or nothing when it ships none.
@@ -106,7 +114,7 @@ function fetched(pkg: string): string | undefined {
  * costs nothing: resolving all six would fetch six tarballs to print six words.
  */
 function hosts(): string[] {
-  const manifest = JSON.parse(readFileSync(fileURLToPath(new URL('../../../package.json', import.meta.url)), 'utf8')) as
+  const manifest = JSON.parse(readFileSync(join(packageRoot(), 'package.json'), 'utf8')) as
     { devDependencies?: Record<string, string> };
 
   return Object.keys(manifest.devDependencies ?? {})
@@ -116,7 +124,7 @@ function hosts(): string[] {
 
 /** The version that scaffolds is the version the templates were written for. */
 const scaffoldVersion = (): string =>
-  (JSON.parse(readFileSync(fileURLToPath(new URL('../../../package.json', import.meta.url)), 'utf8')) as
+  (JSON.parse(readFileSync(join(packageRoot(), 'package.json'), 'utf8')) as
     { version: string }).version;
 
 // npm strips a literal .gitignore from published packages — it ships as

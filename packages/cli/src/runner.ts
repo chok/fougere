@@ -12,6 +12,7 @@ import { Shapes } from '@fougere/schema';
 import { entityToArgs } from './bridge.js';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 function toKebab(name: string): string {
   return name.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase()).replace(/^-/, '');
@@ -31,7 +32,7 @@ async function loadAppCommands(
   const files = await readdir(dir, { withFileTypes: true }).catch(() => []);
 
   for (const f of files) {
-    if (!f.isFile() || !(f.name.endsWith('.ts') || f.name.endsWith('.js'))) continue;
+    if (!f.isFile() || f.name.endsWith('.d.ts') || !(f.name.endsWith('.ts') || f.name.endsWith('.js'))) continue;
     const name = f.name.replace(/Command\.(ts|js)$/, '').replace(/\.(ts|js)$/, '');
     const kebab = toKebab(name);
     const mod = await loader(join(dir, f.name));
@@ -54,9 +55,12 @@ async function loadAppCommands(
 export async function run(app: App, root = new URL('..', import.meta.url).pathname): Promise<void> {
   const terminal = ui();
 
-  const { createJiti } = await import('jiti');
-  const jiti = createJiti(import.meta.url, { interopDefault: true });
-  const loader = (path: string) => jiti.import(path) as Promise<Record<string, unknown>>;
+  const loader = async (path: string): Promise<Record<string, unknown>> => {
+    if (!path.endsWith('.ts')) return await import(pathToFileURL(path).href) as Record<string, unknown>;
+    const { createJiti } = await import('jiti');
+
+    return createJiti(import.meta.url, { interopDefault: true }).import(path) as Promise<Record<string, unknown>>;
+  };
   const appCommands = await loadAppCommands(root, loader);
 
   const subCommands: Record<string, ReturnType<typeof defineCommand>> = {};
