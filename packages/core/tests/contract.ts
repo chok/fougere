@@ -5,6 +5,7 @@
  */
 import type { OperationContract } from '../src/wire/OperationContract.js';
 import type { BindingPlan } from '../src/wire/binding.js';
+import type { Param } from '../src/wire/Param.js';
 
 type Argument = BindingPlan[number];
 
@@ -30,9 +31,21 @@ export const pipe = (name: string, factName: string): Argument => argument(name,
 /** The invocation itself — `ctx: InvocationContext`. */
 export const context = (name = 'ctx'): Argument => argument(name, { kind: 'context' });
 
-/** One operation: what it takes, in order, and what the contract states beside it. */
-export function op(contract: Omit<OperationContract, 'binding'> & { args?: Argument[] } = {}): OperationContract {
-  const { args = [], ...rest } = contract;
+/**
+ * A parameter by its TYPE — for a contract whose binding the boot must derive the way it does from
+ * a scan, where what a check reads is the type name (`user?: User`, a collector of another frond).
+ */
+export const typed = (name: string, typeName: string, options: { optional?: boolean } = {}): Param =>
+  ({ name, type: { raw: typeName, name: typeName }, ...(options.optional ? { optional: true } : {}) });
 
-  return { ...rest, binding: args };
+/**
+ * One operation: what it takes, in order — as `args`, the binding itself, or as `params`, the
+ * signature the boot derives one from — and what the contract states beside it.
+ */
+export function op(
+  contract: Omit<OperationContract, 'binding' | 'signature'> & { args?: Argument[]; params?: Param[] } = {},
+): OperationContract {
+  const { args = [], params, ...rest } = contract;
+
+  return params ? { ...rest, signature: { name: '', params } } : { ...rest, binding: args };
 }

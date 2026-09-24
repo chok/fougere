@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import split from './fixtures-collector-split/fronds.js';
 import { verify, assertSplittable } from '../src/verify.js';
 import type { FrondDescriptor } from '../src/descriptor/FrondDescriptor.js';
 
@@ -118,10 +119,7 @@ describe('verify — cross-frond dependency', () => {
 
 describe('verify — collector in another frond', () => {
   it('names the parameter whose preliminary input interpretation must be refused', async () => {
-    const { scanProject } = await import('@fougere/compiler');
-    const scan = await scanProject(new URL('./fixtures-collector-split', import.meta.url).pathname);
-
-    const violations = verify({ fronds: scan.fronds }).filter((v) => v.code === 'collector-in-another-frond');
+    const violations = verify({ fronds: split }).filter((v) => v.code === 'collector-in-another-frond');
 
     // Two ops, same misplacement — the spelling of the param changes nothing.
     expect(violations).toHaveLength(2);
