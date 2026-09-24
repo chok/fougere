@@ -7,14 +7,12 @@
  * the declared form of that position, and the third word of a family: `Emit` announces,
  * `Fact` receives, `Pipe` finishes.
  */
-import { scanProject } from '@fougere/compiler';
+import piped from './fixtures-pipe/fronds.js';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, Invocation, frond, type App } from '../src/index.js';
 import { entity, primary, text, created } from '@fougere/schema';
 
-const root = join(import.meta.dirname, 'fixtures-pipe');
 
 /** The fixture pushes here — the scanner loads it through its own loader. */
 const seen = () => ((globalThis as Record<string, unknown>).__seen ?? []) as { email?: unknown }[];
@@ -75,7 +73,7 @@ describe('an op that finishes a fact', () => {
   beforeEach(() => { (globalThis as Record<string, unknown>).__seen = []; });
 
   it('hands every subscriber what it answered, not what was announced', async () => {
-    await using app = await createApp({ scan: await scanProject(root), createContainer });
+    await using app = await createApp({ fronds: piped, createContainer });
 
     await createLocalRunner(app)({ entity: 'post', op: 'publish' }, { ...Invocation.empty, params: { id: '42' } });
     await settle(() => seen().length > 0);
@@ -87,7 +85,7 @@ describe('an op that finishes a fact', () => {
   });
 
   it('still stamps what the entity says the system writes', async () => {
-    await using app = await createApp({ scan: await scanProject(root), createContainer });
+    await using app = await createApp({ fronds: piped, createContainer });
 
     await createLocalRunner(app)({ entity: 'post', op: 'publish' }, { ...Invocation.empty, params: { id: '7' } });
     await settle(() => seen().length > 0);

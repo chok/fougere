@@ -10,9 +10,8 @@
  * façade in this process, once to a façade reached through a transport. The two
  * verdicts are compared as VALUES, not eyeballed.
  */
-import { scanProject } from '@fougere/compiler';
+import validated from './fixtures-validator/fronds.js';
 import { describe, it, expect } from 'vitest';
-import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { dotted } from '@fougere/schema';
 import { createApp, createLocalRunner, createAppRunner, FougereError } from '../src/index.js';
@@ -21,7 +20,6 @@ import { Invocation } from '../src/wire/Invocation.js';
 import { Cases } from '@fougere/schema';
 import Product from './fixtures-validator/fronds/shop/entities/Product.js';
 
-const root = join(import.meta.dirname, 'fixtures-validator');
 
 /**
  * A storage that accepts anything, so a refusal in this file can only come from
@@ -51,7 +49,7 @@ const storageFactory: StorageFactory = () => {
 /** Stands in for the wire: the other app's own runner, called in memory. */
 async function shopOnAnotherProcess(): Promise<Transport> {
   // Plain `const` — this app must outlive the function that builds it.
-  const host = await createApp({ scan: await scanProject(root), createContainer, storageFactory });
+  const host = await createApp({ fronds: validated, createContainer, storageFactory });
 
   return createLocalRunner(host);
 }
@@ -130,10 +128,10 @@ const CASES: { name: string; op: string; input: unknown }[] = [
 
 describe('juge local = juge distant', () => {
   it('returns the same verdict on both sides, case by case', async () => {
-    await using local = await createApp({ scan: await scanProject(root), createContainer, storageFactory });
+    await using local = await createApp({ fronds: validated, createContainer, storageFactory });
     const remoteTransport = await shopOnAnotherProcess();
     await using consumer = await createApp({
-      scan: await scanProject(root, []),
+      fronds: [],
       createContainer,
       storageFactory,
       remotes: { shop: 'stub://shop' },
@@ -176,7 +174,7 @@ describe('what a refusal names', () => {
     // shape of the claim is what matters: an entity the app does not serve must not be
     // listed as hosted. The message used to print `entityNames()` — every scanned class —
     // so it answered "not hosted here. Hosted here: <the very name>."
-    await using app = await createApp({ scan: await scanProject(root), createContainer, storageFactory });
+    await using app = await createApp({ fronds: validated, createContainer, storageFactory });
 
     await expect(
       createLocalRunner(app)({ entity: 'nowhere', op: 'list' }, Invocation.empty),

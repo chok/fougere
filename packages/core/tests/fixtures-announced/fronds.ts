@@ -25,7 +25,7 @@ export default [
     handlers: [{
       ctor: HashHandler,
       operations: {
-        set: op({ args: [pipe('fact', 'postPublished')], output: PostPublished, cardinality: 'one', description: 'Replace the title with what a reader may know of it.' }),
+        set: op({ args: [pipe('fact', 'postPublished')], cardinality: 'one', description: 'Replace the title with what a reader may know of it.' }),
       },
     }],
   }),

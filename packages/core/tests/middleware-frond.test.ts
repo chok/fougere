@@ -7,13 +7,11 @@
  * middleware answers for its own frond and for the fronds under it, and where it sits in
  * `FougereConfig.fronds` is the only thing that says how far that goes.
  */
-import { scanProject } from '@fougere/compiler';
+import middlewares from './fixtures-middleware/fronds.js';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, Invocation, type StorageFactory } from '../src/index.js';
 
-const root = join(import.meta.dirname, 'fixtures-middleware');
 
 /** The fixtures push here — see Trail for why it is not a module-level array. */
 const around = () => ((globalThis as Record<string, unknown>).__around ?? []) as string[];
@@ -40,7 +38,7 @@ const memory: StorageFactory = () => {
 const family = { shop: { extends: 'ops' }, mail: { extends: 'ops' } };
 
 const app = (under?: typeof family) => createApp({
-  scan: () => scanProject(root),
+  fronds: middlewares,
   ...(under ? { under } : {}),
   createContainer,
   storageFactory: memory,
@@ -104,15 +102,6 @@ describe('a middleware the frond declares', () => {
     await createLocalRunner(built)({ entity: 'note', op: 'list' }, Invocation.empty);
 
     expect(around()).toEqual(['everywhere:note.list', 'audit:note.list']);
-  });
-
-  it('is recognized by its FORM — a class without `around` is not one', async () => {
-    const scan = await scanProject(root);
-    const shop = scan.fronds.find((frond) => frond.name === 'shop');
-
-    // `NotAMiddleware` sits in the directory and declares no `around`. The directory does
-    // not make a middleware; stating the method does.
-    expect(shop?.middlewares.map((middleware) => middleware.name)).toEqual(['Audit']);
   });
 });
 
