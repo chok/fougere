@@ -8,7 +8,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { join } from 'node:path';
-import { scanProject } from '@fougere/compiler';
+import { scanProject } from '../src/index.js';
 
 const root = join(import.meta.dirname, 'fixtures-presenter-row-form');
 

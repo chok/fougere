@@ -9,17 +9,14 @@
  * The fix is that a presenter binds like a handler: what its signature declares
  * after the rows is resolved from the same invocation, by the same collectors.
  */
-import { scanProject } from '@fougere/compiler';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { json } from '@fougere/schema';
 import { createApp, createLocalRunner } from '../src/index.js';
 import type { StorageFactory } from '../src/index.js';
 import { Invocation } from '../src/wire/Invocation.js';
 import ListPresenter from './fixtures-presenter-reader/fronds/listes/presenters/ListPresenter.js';
-
-const root = join(import.meta.dirname, 'fixtures-presenter-reader');
+import fronds from './fixtures-presenter-reader/fronds.js';
 
 const rows = [
   { id: 'l1', title: 'Mienne', ownerUserId: 'u1' },
@@ -35,9 +32,8 @@ const storageFactory: StorageFactory = (() => ({
 
 beforeEach(() => { ListPresenter.calls = 0; });
 
-const scan = await scanProject(root);
 const session = { name: 'session', state: { user: json() } };
-const app = () => createApp({ scan, createContainer, storageFactory, extensions: [session] });
+const app = () => createApp({ fronds, createContainer, storageFactory, extensions: [session] });
 
 describe('a computed field sees the reader', () => {
   it('answers differently for two readers, on the same rows', async () => {

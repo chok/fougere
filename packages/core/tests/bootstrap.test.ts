@@ -1,12 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createContainer } from '@fougere/container';
-import { createApp, createLocalRunner, frond } from '../src/index.js';
+import { createApp, frond } from '../src/index.js';
 import fronds from './fixtures/fronds.js';
 import TrapHandler from './fixtures-ctor-trap/fronds/shop/handlers/ItemHandler.js';
 import TrapItem from './fixtures-ctor-trap/fronds/shop/entities/Item.js';
 import type { Container } from '@fougere/container';
 import type { StorageFactory, Storage } from '../src/index.js';
-import { Invocation } from '../src/wire/Invocation.js';
 
 
 /**

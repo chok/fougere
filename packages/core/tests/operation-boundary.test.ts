@@ -5,17 +5,15 @@
  * nobody else reached. The steps are the façade's own now, so the test states them
  * where a caller meets them: through a booted app.
  */
-import { join } from 'node:path';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner } from '../src/index.js';
-import { scanProject } from '@fougere/compiler';
 import { Invocation } from '../src/wire/Invocation.js';
 import type { AppMiddleware } from '../src/wire/AppMiddleware.js';
 import { trace } from './fixtures-operation-boundary/trace.js';
+import fronds from './fixtures-operation-boundary/fronds.js';
 
-const scan = await scanProject(join(import.meta.dirname, 'fixtures-operation-boundary'));
-const app = () => createApp({ scan, createContainer });
+const app = () => createApp({ fronds, createContainer });
 
 const recording: AppMiddleware = async (_context, next) => {
   trace.push('middleware:before');

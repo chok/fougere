@@ -7,7 +7,6 @@
  * accepts `Fact<PostPublished>` find each other because the scan read their signatures.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner } from '../src/index.js';
 import emitted, { blog } from './fixtures-emit/fronds.js';
