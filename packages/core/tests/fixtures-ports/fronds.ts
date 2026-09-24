@@ -6,7 +6,7 @@ import Payment from './fronds/billing/services/Payment.js';
 import StripePayment from './fronds/billing/services/StripePayment.js';
 
 export default [frond('billing', {
-  providers: [Mailer, Payment as never, StripePayment],
+  providers: [Mailer, Payment, StripePayment],
   handlers: [{
     ctor: CheckoutHandler,
     deps: ['Payment'],
