@@ -6,13 +6,11 @@
  * while an app was booted once per process; it is the whole question once the ring
  * turns, because then apps are discarded on purpose.
  */
-import { scanProject } from '@fougere/compiler';
+import fronds from './fixtures-ports/fronds.js';
 import { describe, it, expect } from 'vitest';
-import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp } from '../src/index.js';
 
-const root = join(import.meta.dirname, 'fixtures-ports');
 
 describe('app.dispose', () => {
   it('releases what was handed in, after the container it was handed to', async () => {
@@ -22,7 +20,7 @@ describe('app.dispose', () => {
     container.dispose = async () => { order.push('container'); await disposeContainer(); };
 
     const app = await createApp({
-      scan: await scanProject(root),
+      fronds,
       createContainer: () => container,
       onDispose: async () => { order.push('handed in'); },
     });
@@ -33,7 +31,7 @@ describe('app.dispose', () => {
 
   it('disposes a provider that says how — the container contract', async () => {
     let closed = false;
-    const app = await createApp({ scan: await scanProject(root), createContainer });
+    const app = await createApp({ fronds, createContainer });
     const scope = app.resolve<ReturnType<typeof createContainer>>('frond:billing');
     scope.register('Pool', class { [Symbol.asyncDispose]() { closed = true; } }, { lifetime: 'singleton' });
     scope.resolve('Pool');
@@ -46,7 +44,7 @@ describe('app.dispose', () => {
   it('still resolves through `await using`, which routes to the same release', async () => {
     let released = false;
     {
-      await using app = await createApp({ scan: await scanProject(root), createContainer, onDispose: () => { released = true; } });
+      await using app = await createApp({ fronds, createContainer, onDispose: () => { released = true; } });
       expect(app.fronds).toHaveLength(1);
     }
     expect(released).toBe(true);

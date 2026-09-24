@@ -6,19 +6,17 @@
  * no stored row — a health check, a pure computation, a search across several shapes —
  * is an ordinary case, not a gap to accommodate.
  */
-import { scanProject } from '@fougere/compiler';
+import fronds from './fixtures-no-entity/fronds.js';
 import { describe, it, expect } from 'vitest';
-import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner } from '../src/index.js';
 import { identityCardOf } from '../src/boot/card.js';
 import { Invocation } from '../src/wire/Invocation.js';
 
-const root = join(import.meta.dirname, 'fixtures-no-entity');
 
 describe('a handler with no entity', () => {
   it('is served, and answers', async () => {
-    await using app = await createApp({ scan: await scanProject(root), createContainer });
+    await using app = await createApp({ fronds, createContainer });
 
     const out = await createLocalRunner(app)({ entity: 'health', op: 'check' }, Invocation.empty);
 
@@ -26,7 +24,7 @@ describe('a handler with no entity', () => {
   });
 
   it('lets its result through untouched — there is no shape to project onto', async () => {
-    await using app = await createApp({ scan: await scanProject(root), createContainer });
+    await using app = await createApp({ fronds, createContainer });
     const facade = app.container.resolve<Record<string, Function>>('healthHandler');
 
     // Not `{}`: an absent field set means nothing to encode, not everything to drop.
@@ -35,7 +33,7 @@ describe('a handler with no entity', () => {
   });
 
   it('is served under a NAMED surface too, not only the default one', async () => {
-    await using app = await createApp({ scan: await scanProject(root), createContainer });
+    await using app = await createApp({ fronds, createContainer });
 
     // The surface loop looked the entity up and skipped the handler when it found none,
     // so this facade did not exist and `facadeFor` answered `undefined` — silently, while
@@ -47,13 +45,13 @@ describe('a handler with no entity', () => {
   });
 
   it('keeps the two audiences apart — a surface is closed, it does not shadow', async () => {
-    await using app = await createApp({ scan: await scanProject(root), createContainer });
+    await using app = await createApp({ fronds, createContainer });
 
     expect(await app.facadeFor('health')!.check(Invocation.empty)).toEqual({ status: 'up' });
   });
 
   it('appears in the identity card, so a consumer can discover it', async () => {
-    await using app = await createApp({ scan: await scanProject(root), createContainer });
+    await using app = await createApp({ fronds, createContainer });
 
     // The card walked `frond.entities`, so this facade was built, served, and invisible:
     // `sync` could not generate it and a remote consumer had no way to know it existed.
@@ -66,7 +64,7 @@ describe('a handler with no entity', () => {
   });
 
   it('carries its named surface into the card too', async () => {
-    await using app = await createApp({ scan: await scanProject(root), createContainer });
+    await using app = await createApp({ fronds, createContainer });
 
     const publicCard = identityCardOf(app, 'public');
     expect(publicCard.fronds[0].facades.map((d) => d.name)).toEqual(['health']);

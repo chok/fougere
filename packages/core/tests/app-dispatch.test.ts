@@ -1,4 +1,3 @@
-import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { describe, expect, it, vi } from 'vitest';
 import {
@@ -10,10 +9,9 @@ import {
   type DispatchEvent,
   type StorageFactory,
 } from '../src/index.js';
-import { scanProject } from '@fougere/compiler';
+import fronds from './fixtures/fronds.js';
 import { Invocation } from '../src/wire/Invocation.js';
 
-const fixtures = join(import.meta.dirname, 'fixtures');
 const rows = [{ id: '1', name: 'Fern', price: 12.5 }];
 const storageFactory: StorageFactory = () => ({
   list: vi.fn(async () => rows),
@@ -27,7 +25,7 @@ describe('App.dispatch', () => {
   it('executes a local route through the transverse lifecycle', async () => {
     const events: DispatchEvent[] = [];
     await using app = await createApp({
-      scan: await scanProject(fixtures),
+      fronds,
       createContainer,
       storageFactory,
     });
@@ -43,7 +41,7 @@ describe('App.dispatch', () => {
   it('lets a late subscriber watch, and stop watching', async () => {
     const seen: string[] = [];
     await using app = await createApp({
-      scan: await scanProject(fixtures),
+      fronds,
       createContainer,
       storageFactory,
     });
@@ -61,7 +59,7 @@ describe('App.dispatch', () => {
   it('makes createAppRunner an entry over the same dispatcher', async () => {
     const events: DispatchEvent[] = [];
     await using app = await createApp({
-      scan: await scanProject(fixtures),
+      fronds,
       createContainer,
       storageFactory,
     });
@@ -76,7 +74,7 @@ describe('App.dispatch', () => {
   it('shares a system route with every surface', async () => {
     const events: DispatchEvent[] = [];
     await using app = await createApp({
-      scan: await scanProject(fixtures),
+      fronds,
       createContainer,
       storageFactory,
     });
@@ -93,7 +91,7 @@ describe('App.dispatch', () => {
   it('keeps incoming transports local without a second dispatch engine', async () => {
     const transport = vi.fn(async () => ['remote']);
     await using app = await createApp({
-      scan: await scanProject('/tmp/fougere-app-dispatch-empty'),
+      fronds: [],
       createContainer,
       remotes: { catalog: 'stub://catalog' },
       remoteTransport: () => transport,

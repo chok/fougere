@@ -76,4 +76,14 @@ describe('a frond the app states', () => {
     expect(bare.handlers[0]!.deps).toEqual([]);
     expect(asking.handlers[0]!.deps).toEqual(['Payment']);
   });
+
+  it('comes out of a boot as it went in, so a second boot reads the statement and not the first answer', async () => {
+    const family = [frond('ledger'), frond('shop', { entities: [Post], handlers: [PostHandler] })];
+
+    await (await createApp({ createContainer, storageFactory, fronds: family, under: { shop: { extends: 'ledger' } } })).dispose();
+    await using second = await createApp({ createContainer, storageFactory, fronds: family });
+
+    expect(family[1]!.extends).toBeUndefined();
+    expect(second.fronds.find((one) => one.name === 'shop')?.extends).toBeUndefined();
+  });
 });

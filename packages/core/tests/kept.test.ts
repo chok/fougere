@@ -7,12 +7,11 @@
  * already answers so `await using app = await createApp(…)` works.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { join } from 'node:path';
-import { scanProject } from '@fougere/compiler';
 import { createApp } from '../src/boot/bootstrap.js';
 import { type StorageFactory } from '../src/storage/StorageFactory.js';
 import Ledger from './fixtures-kept/fronds/shop/services/Ledger.js';
 import Clock from './fixtures-kept/fronds/shop/services/Clock.js';
+import fronds from './fixtures-kept/fronds.js';
 
 const storageFactory = (() => ({
   list: vi.fn(async () => [] as unknown[]),
@@ -30,10 +29,7 @@ const storageFactory = (() => ({
   client: {},
 })) as unknown as StorageFactory;
 
-const booted = async () => createApp({
-  scan: await scanProject(join(import.meta.dirname, 'fixtures-kept')),
-  storageFactory,
-});
+const booted = async () => createApp({ fronds, storageFactory });
 
 describe('a provider its scope keeps', () => {
   beforeEach(() => {
@@ -70,16 +66,5 @@ describe('a provider its scope keeps', () => {
     await app.dispose();
 
     expect(Clock.opened).toBe(1);
-  });
-});
-
-describe('the mark travels to disk', () => {
-  it('survives the emitted scan, so two boots answer the same', async () => {
-    const { emitScan } = await import('@fougere/compiler');
-    const scan = await scanProject(join(import.meta.dirname, 'fixtures-kept'));
-    const written = emitScan(scan, { outFile: join(import.meta.dirname, 'scan.generated.ts') });
-
-    expect(written).toContain('kept: true');
-    expect(written.match(/kept: true/g), 'one provider states it, not both').toHaveLength(1);
   });
 });

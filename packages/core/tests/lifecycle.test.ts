@@ -6,14 +6,12 @@
  * seeding had to claim EVERYTHING after the boot to get it, which is how the Nitro plugin's
  * copy of the seeding loop drifted out of sight.
  */
-import { scanProject } from '@fougere/compiler';
+import fronds from './fixtures-ports/fronds.js';
 import { describe, it, expect } from 'vitest';
-import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { AppLifecycle, createApp, frond, migrating } from '../src/index.js';
 import type { Extension } from '../src/index.js';
 
-const root = join(import.meta.dirname, 'fixtures-ports');
 
 /** An extension that records when each half ran, in a shared list. */
 const recording = (name: string, log: string[]): Extension => ({
@@ -26,7 +24,7 @@ describe('Lifecycle', () => {
   it('runs up in declaration order and down in reverse', async () => {
     const log: string[] = [];
     await using app = await createApp({
-      scan: await scanProject(root), createContainer,
+      fronds, createContainer,
       extensions: [recording('migrate', log), recording('seeds', log)],
     });
 
@@ -98,7 +96,7 @@ describe('Lifecycle', () => {
     container.dispose = async () => { released.push('container'); await disposeContainer(); };
 
     const app = await createApp({
-      scan: await scanProject(root),
+      fronds,
       createContainer: () => container,
       extensions: [{ name: 'broken', down: () => { throw new Error('socket already gone'); } }],
       onDispose: () => { released.push('handed in'); },
@@ -121,7 +119,7 @@ describe('Lifecycle', () => {
     container.dispose = async () => { released.push('container'); await disposeContainer(); };
 
     const boot = createApp({
-      scan: await scanProject(root),
+      fronds,
       createContainer: () => container,
       extensions: [
         { name: 'opens', down: () => { released.push('opens'); } },
@@ -157,7 +155,7 @@ describe('Lifecycle', () => {
 
   it('keeps the original refusal beside the ones raised while releasing', async () => {
     const boot = createApp({
-      scan: await scanProject(root),
+      fronds,
       createContainer,
       extensions: [{ name: 'refuses', up: () => { throw new Error('up refused'); } }],
       onDispose: () => { throw new Error('close refused'); },
@@ -175,7 +173,7 @@ describe('Lifecycle', () => {
   it('keeps migrate before seeds when the host declares its own migrate last', async () => {
     const ran: string[] = [];
     await using app = await createApp({
-      scan: await scanProject(root), createContainer,
+      fronds, createContainer,
       extensions: [
         // No local storage resolved, so the framework contributes an empty slot…
         migrating(undefined),

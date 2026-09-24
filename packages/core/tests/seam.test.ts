@@ -7,15 +7,13 @@
  * one per entity and no class declares it, so a class extending a seam can only stand in
  * front of it. Everything else is the same key, the same order, the same refusals.
  */
-import { scanProject } from '@fougere/compiler';
+import shop from './fixtures-seam-storage/fronds.js';
+import familyFronds from './fixtures-seam-family/fronds.js';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, Invocation, type FrondsStated, type StorageFactory } from '../src/index.js';
 
-const root = join(import.meta.dirname, 'fixtures-seam-storage');
 /** `ledger` holds a link and answers nothing; `warehouse` declares none and sits under it. */
-const familyRoot = join(import.meta.dirname, 'fixtures-seam-family');
 
 const wrote = () => ((globalThis as Record<string, unknown>).__wrote ?? []) as string[];
 
@@ -46,7 +44,7 @@ const storageFactory: StorageFactory = (() => {
 }) as unknown as StorageFactory;
 
 const app = (ports?: Record<string, string | readonly string[]>) => createApp({
-  scan: () => scanProject(root),
+  fronds: shop,
   createContainer,
   storageFactory,
   ...(ports ? { ports } : {}),
@@ -116,7 +114,7 @@ describe('a link declared by the frond above', () => {
   beforeEach(() => { (globalThis as Record<string, unknown>).__wrote = []; });
 
   const family = (under?: FrondsStated) => createApp({
-    scan: () => scanProject(familyRoot),
+    fronds: familyFronds,
     createContainer,
     storageFactory,
     ...(under ? { under } : {}),

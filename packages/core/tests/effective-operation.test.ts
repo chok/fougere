@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { entity, primary, text } from '@fougere/schema';
 import {
@@ -12,19 +11,15 @@ import {
 } from '../src/index.js';
 import { EFFECTIVE_OPERATION_SEMANTICS } from '../src/EffectiveOperationSemantics.js';
 import { identityCardOf } from '../src/boot/card.js';
-import { scanProject } from '@fougere/compiler';
-
-const fixture = join(import.meta.dirname, 'fixtures-collector-input');
-const overrideFixture = join(import.meta.dirname, 'fixtures-operation-override');
+import fixture from './fixtures-collector-input/fronds.js';
+import overrideFixture from './fixtures-operation-override/fronds.js';
 
 describe('EffectiveOperation as the shared runtime contract', () => {
   it('carries the resolved handler, kind, provenance, placement, exposure and absence semantics', async () => {
-    const scan = await scanProject(fixture);
-    const model = resolveEffectiveOperations(scan.fronds, {
-      diagnostics: scan.diagnostics,
+    const model = resolveEffectiveOperations(fixture, {
       adapters: { rest: true, graphql: false },
     });
-    const handler = scan.fronds[0]!.handlers[0]!;
+    const handler = fixture[0]!.handlers[0]!;
     const operation = model.forHandler(handler).get('collectorFirst')!;
 
     expect(model.resolutionDiagnostics).toEqual([]);
@@ -75,9 +70,8 @@ describe('EffectiveOperation as the shared runtime contract', () => {
   });
 
   it('feeds the same resolved kind and contract to boot and discovery', async () => {
-    const scan = await scanProject(fixture);
     await using app = await createApp({
-      scan,
+      fronds: fixture,
       createContainer,
       adapters: { rest: true },
     });
@@ -94,8 +88,7 @@ describe('EffectiveOperation as the shared runtime contract', () => {
   });
 
   it('executes a resolved handler/method override identically through the facade and runner', async () => {
-    const scan = await scanProject(overrideFixture);
-    await using app = await createApp({ scan, createContainer });
+    await using app = await createApp({ fronds: overrideFixture, createContainer });
     const operation = app.operationsFor('post')!.get('publish')!;
     const invocation = {
       params: {}, query: {}, state: {},

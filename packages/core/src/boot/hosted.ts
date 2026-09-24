@@ -38,6 +38,14 @@ function completed(given: FrondDescriptor, found: FrondDescriptor | undefined): 
   };
 }
 
+/**
+ * A frond as this boot will write on it — the boot stamps `extends` and each handler's resolved
+ * contracts, and a statement or a scan handed to a second boot must not arrive carrying the first
+ * one's answers.
+ */
+const ownCopy = (frond: FrondDescriptor): FrondDescriptor =>
+  ({ ...frond, handlers: frond.handlers.map((handler) => ({ ...handler })) });
+
 /** What the app hosts, and what the scan — if it ran — could not do. */
 export async function hostedBy(sources: HostedSources): Promise<ScanResult> {
   const scanned = sources.scan
@@ -45,11 +53,11 @@ export async function hostedBy(sources: HostedSources): Promise<ScanResult> {
     : undefined;
 
   const stated = sources.fronds;
-  if (!stated) return scanned ?? { fronds: Fronds.hosting([]), diagnostics: [] };
-
   const found = scanned?.fronds ?? [];
+  if (!stated) return { fronds: Fronds.hosting(found.map(ownCopy)), diagnostics: scanned?.diagnostics ?? [] };
+
   const configured = stated.map((f) => completed(f, found.find((s) => s.name === f.name)));
   const discovered = found.filter((f) => !stated.some((s) => s.name === f.name));
 
-  return { fronds: Fronds.hosting([...configured, ...discovered]), diagnostics: scanned?.diagnostics ?? [] };
+  return { fronds: Fronds.hosting([...configured, ...discovered].map(ownCopy)), diagnostics: scanned?.diagnostics ?? [] };
 }

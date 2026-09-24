@@ -26,7 +26,7 @@ const repoRoot = ((d: string): string => {
 })(import.meta.dirname);
 
 const fixture = join(import.meta.dirname, 'fixtures-check');
-const ambiguousInputFixture = join(repoRoot, 'packages', 'core', 'tests', 'fixtures-input-contract');
+const ambiguousInputFixture = join(repoRoot, 'packages', 'compiler', 'tests', 'fixtures-input-contract');
 const check = () => new CheckHandler(new ProjectScan());
 
 describe('check', () => {

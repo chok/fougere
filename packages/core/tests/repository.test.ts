@@ -8,9 +8,8 @@
  * declared one wins, exactly as a Crud op redefined in a subclass wins over the
  * prefab.
  */
-import { scanProject } from '@fougere/compiler';
+import fronds from './fixtures-repository/fronds.js';
 import { describe, it, expect, vi } from 'vitest';
-import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, Repository } from '../src/index.js';
 import { repositoryKeyOf } from '../src/prefab/RepositoryConstructor.js';
@@ -18,7 +17,6 @@ import { targetOf } from '../src/prefab/prefab.js';
 import type { StorageFactory } from '../src/index.js';
 import { Invocation } from '../src/wire/Invocation.js';
 
-const root = join(import.meta.dirname, 'fixtures-repository');
 
 const rows = [{ id: 'r1', db: 91, at: 'now' }];
 
@@ -68,7 +66,7 @@ describe('Repository(Entity)', () => {
 
 describe('the declared one wins, the default is always there', () => {
   it('resolves a repository nobody wrote — it is the port itself', async () => {
-    await using app = await createApp({ scan: await scanProject(root), createContainer, storageFactory });
+    await using app = await createApp({ fronds, createContainer, storageFactory });
     const out = await createLocalRunner(app)({ entity: 'node', op: 'all' }, Invocation.empty);
 
     // NodeHandler asked for `NodeRepository`, no such file exists, and the call answered.
@@ -76,7 +74,7 @@ describe('the declared one wins, the default is always there', () => {
   });
 
   it('uses the written one when there is one', async () => {
-    await using app = await createApp({ scan: await scanProject(root), createContainer, storageFactory });
+    await using app = await createApp({ fronds, createContainer, storageFactory });
     const out = await createLocalRunner(app)({ entity: 'reading', op: 'loud' }, Invocation.empty);
 
     // `loud()` exists on no storage — answering it proves the declared class was injected.
@@ -84,7 +82,7 @@ describe('the declared one wins, the default is always there', () => {
   });
 
   it('is not a facade — a repository method is unreachable from the wire', async () => {
-    await using app = await createApp({ scan: await scanProject(root), createContainer, storageFactory });
+    await using app = await createApp({ fronds, createContainer, storageFactory });
 
     await expect(
       createLocalRunner(app)({ entity: 'reading', op: 'storage' }, Invocation.empty),

@@ -19,7 +19,7 @@ import type { Declared } from './Declared.js';
 /** A class, as a declaration hands it over: the constructor itself. */
 type Ctor = new (...args: never[]) => unknown;
 
-const ctorOf = (d: Declared): Ctor => (typeof d === 'function' ? d : d.ctor);
+const ctorOf = (d: Declared): Ctor => (typeof d === 'function' ? d : d.ctor) as Ctor;
 
 /**
  * What a prefab was BUILT ON — `Presenter(Post)` and `Collector(User)` both keep it under

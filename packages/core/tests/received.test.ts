@@ -7,24 +7,21 @@
  * wire. These two tests are the same call, twice; if the second fails, a placement decides what a
  * caller holds.
  */
-import { scanProject } from '@fougere/compiler';
 import { describe, it, expect } from 'vitest';
-import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, createAppRunner, type Transport } from '../src/index.js';
 import { Invocation } from '../src/wire/Invocation.js';
-
-const root = join(import.meta.dirname, 'fixtures-received');
+import fronds, { journal, reader } from './fixtures-received/fronds.js';
 
 async function journalOnAnotherProcess(): Promise<Transport> {
-  const host = await createApp({ scan: await scanProject(root, ['journal']), createContainer });
+  const host = await createApp({ fronds: [journal], createContainer });
 
   return createLocalRunner(host);
 }
 
 describe('a caller receives what its type promises', () => {
   it('hands over a Date when both fronds live in one process', async () => {
-    await using app = await createApp({ scan: await scanProject(root), createContainer });
+    await using app = await createApp({ fronds, createContainer });
 
     const out = await createLocalRunner(app)({ entity: 'reader', op: 'findStamp' }, Invocation.empty);
 
@@ -34,7 +31,7 @@ describe('a caller receives what its type promises', () => {
   it('hands over the same Date when the journal frond moved out', async () => {
     const remote = await journalOnAnotherProcess();
     await using app = await createApp({
-      scan: await scanProject(root, ['reader']),
+      fronds: [reader],
       createContainer,
       remotes: { journal: 'stub://journal' },
       remoteTransport: () => remote,
@@ -46,7 +43,7 @@ describe('a caller receives what its type promises', () => {
   });
 
   it('still puts data on the wire — the row leaves encoded, and this side puts it back', async () => {
-    await using app = await createApp({ scan: await scanProject(root, ['journal']), createContainer });
+    await using app = await createApp({ fronds: [journal], createContainer });
 
     const onTheWire = await createLocalRunner(app)({ entity: 'entry', op: 'findLast' }, Invocation.empty);
 

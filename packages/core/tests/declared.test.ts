@@ -5,25 +5,17 @@
  * the system is supposed to be. Both are needed because the observed half cannot report a
  * frond that never answered — it is absent from it, which reads as a healthy smaller system.
  */
-import { scanProject } from '@fougere/compiler';
+import crossFrond from './fixtures-cross-frond/fronds.js';
+import announced from './fixtures-announced/fronds.js';
 import { describe, it, expect } from 'vitest';
-import { join } from 'node:path';
 import { declaredTopologyOf, resolveEffectiveOperations } from '../src/index.js';
-import type { FrondDescriptor } from '../src/descriptor/FrondDescriptor.js';
-
-const root = join(import.meta.dirname, 'fixtures-cross-frond');
-
-const scanned = async (): Promise<FrondDescriptor[]> => (await scanProject(root)).fronds;
-
-const announcing = async (): Promise<FrondDescriptor[]> =>
-  (await scanProject(join(import.meta.dirname, 'fixtures-announced'))).fronds;
 
 const between = (edges: readonly { from: string; to: string }[]): string[] =>
   edges.map((edge) => `${edge.from} → ${edge.to}`).sort();
 
 describe('the fronds', () => {
   it('calls a frond local when no address names it', async () => {
-    const declared = declaredTopologyOf({ fronds: await scanned(), remotes: {} });
+    const declared = declaredTopologyOf({ fronds: crossFrond, remotes: {} });
 
     expect(declared.fronds).toEqual([
       { frond: 'commande', placement: 'local' },
@@ -33,7 +25,7 @@ describe('the fronds', () => {
 
   it('takes the address from the config, and keeps host and port only', async () => {
     const declared = declaredTopologyOf({
-      fronds: await scanned(),
+      fronds: crossFrond,
       remotes: { stock: 'https://user:secret@stock.example.com:8443/rpc?token=abc' },
     });
 
@@ -49,7 +41,7 @@ describe('the fronds', () => {
    */
   it('names a scanned frond once when the config moved it out', async () => {
     const declared = declaredTopologyOf({
-      fronds: await scanned(),
+      fronds: crossFrond,
       remotes: { stock: 'http://127.0.0.1:4100' },
     });
 
@@ -58,7 +50,7 @@ describe('the fronds', () => {
 
   /** A frond an extension brought instruments this app; it is not part of what it depends on. */
   it('leaves out a frond an extension brought', async () => {
-    const fronds = await scanned();
+    const fronds = crossFrond;
     const declared = declaredTopologyOf({
       fronds: [...fronds, { ...fronds[0]!, name: 'ring', brought: true }],
       remotes: {},
@@ -70,7 +62,7 @@ describe('the fronds', () => {
 
 describe('the edges', () => {
   it('reads a crossing off the dependency that declares it', async () => {
-    const declared = declaredTopologyOf({ fronds: await scanned(), remotes: {} });
+    const declared = declaredTopologyOf({ fronds: crossFrond, remotes: {} });
 
     expect(declared.edges).toEqual([{ from: 'commande', to: 'stock' }]);
   });
@@ -81,7 +73,7 @@ describe('the edges', () => {
    * which is the rule `verify()` already states.
    */
   it('ignores a dependency that names something of this frond', async () => {
-    const fronds = await scanned();
+    const fronds = crossFrond;
     const commande = fronds.find((frond) => frond.name === 'commande')!;
     const handler = commande.handlers[0]!;
 
@@ -107,27 +99,27 @@ describe('the edges', () => {
    * the deps alone reports three fronds with nothing between them.
    */
   it('reads a crossing off an announcement, which no dependency names', async () => {
-    const declared = declaredTopologyOf({ fronds: await announcing(), remotes: {} });
+    const declared = declaredTopologyOf({ fronds: announced, remotes: {} });
 
     expect(between(declared.edges)).toEqual(['blog → index', 'blog → privacy']);
   });
 
   /** A link is called like a subscriber, so the frond that holds one is reached like one. */
   it('counts the frond that FINISHES a fact, not only those that read it', async () => {
-    const declared = declaredTopologyOf({ fronds: await announcing(), remotes: {} });
+    const declared = declaredTopologyOf({ fronds: announced, remotes: {} });
 
     expect(between(declared.edges)).toContain('blog → privacy');
   });
 
   /** A delivery inside the announcer's own frond crosses nothing, and `ArchiveHandler` is one. */
   it('says nothing of a subscriber sitting in the frond that announces', async () => {
-    const declared = declaredTopologyOf({ fronds: await announcing(), remotes: {} });
+    const declared = declaredTopologyOf({ fronds: announced, remotes: {} });
 
     expect(between(declared.edges)).not.toContain('blog → blog');
   });
 
   it('says nothing about a crossing whose far side was never scanned', async () => {
-    const fronds = await scanned();
+    const fronds = crossFrond;
     const declared = declaredTopologyOf({
       fronds: fronds.filter((frond) => frond.name === 'commande'),
       remotes: { stock: 'http://127.0.0.1:4100' },
@@ -145,7 +137,7 @@ describe('what an op reaches', () => {
    * single value written down today for operations that are not the same subject at all.
    */
   it('counts a hop when the frond it reaches answers from another process', async () => {
-    const fronds = await scanned();
+    const fronds = crossFrond;
     const { operations } = resolveEffectiveOperations(fronds, { remotes: { stock: 'http://127.0.0.1:4100' } });
     const servable = operations.find((op) => op.name === 'servable')!;
 
@@ -153,7 +145,7 @@ describe('what an op reaches', () => {
   });
 
   it('counts none when everything it reaches runs here', async () => {
-    const { operations } = resolveEffectiveOperations(await scanned(), {});
+    const { operations } = resolveEffectiveOperations(crossFrond, {});
     const servable = operations.find((op) => op.name === 'servable')!;
 
     expect(servable.reach).toEqual({ fronds: [{ frond: 'stock', runtime: 'local' }], hops: 0 });
@@ -161,7 +153,7 @@ describe('what an op reaches', () => {
 
   /** Answering from elsewhere is not reaching elsewhere — `placement` already says the first. */
   it('says nothing of the op that is itself remote but reaches nobody', async () => {
-    const { operations } = resolveEffectiveOperations(await scanned(), { remotes: { stock: 'http://127.0.0.1:4100' } });
+    const { operations } = resolveEffectiveOperations(crossFrond, { remotes: { stock: 'http://127.0.0.1:4100' } });
     const onHand = operations.find((op) => op.name === 'onHand')!;
 
     expect(onHand.placement.runtime).toBe('remote');

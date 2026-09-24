@@ -16,7 +16,7 @@ function expectFougereCheckWorkflow(root: string, typecheck: string): void {
 }
 
 describe('flat project scaffold', () => {
-  it('emits a pnpm 11 project with native build permissions and accurate guidance', () => {
+  it('emits a pnpm 12 project with native build permissions and accurate guidance', () => {
     const parent = mkdtempSync(join(tmpdir(), 'fougere-flat-'));
     const root = join(parent, 'fern');
 
@@ -33,7 +33,7 @@ describe('flat project scaffold', () => {
       const workspace = readFileSync(join(root, 'pnpm-workspace.yaml'), 'utf8');
       const page = readFileSync(join(root, 'app', 'pages', 'index.vue'), 'utf8');
 
-      expect(pkg).toMatchObject({ name: 'fern', packageManager: 'pnpm@11.20.0' });
+      expect(pkg).toMatchObject({ name: 'fern', packageManager: 'pnpm@12.6.0' });
       expect(pkg.pnpm).toBeUndefined();
       expect(workspace).toContain('better-sqlite3: true');
       expect(workspace).toContain('esbuild: true');
