@@ -1,6 +1,6 @@
 {
   "name": "@fougere/workflow",
-  "version": "0.12.5-alpha.0",
+  "version": "0.12.6-alpha.0",
   "description": "A release that goes to the end: the journal is three entities, the sweep is an operation, and a shared journal is one line of remotes:.",
   "keywords": [
     "fougere",

@@ -1,6 +1,6 @@
 {
   "name": "@fougere/oclif",
-  "version": "0.12.5-alpha.0",
+  "version": "0.12.6-alpha.0",
   "description": "A frond's operations, as a terminal: topics, flags and help derived from what it declares.",
   "keywords": [
     "fougere",

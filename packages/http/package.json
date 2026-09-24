@@ -1,6 +1,6 @@
 {
   "name": "@fougere/http",
-  "version": "0.12.5-alpha.0",
+  "version": "0.12.6-alpha.0",
   "description": "HTTP router and middleware.",
   "keywords": [
     "fougere",
