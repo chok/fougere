@@ -16,9 +16,8 @@
  * input that triggers it are both computable. Not fuzzing: a projection of the schema,
  * like the SQL table and the GraphQL type.
  */
-import { scanProject } from '@fougere/compiler';
+import fronds from './fixtures-same-verdict/fronds.js';
 import { describe, it, expect } from 'vitest';
-import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, FougereError } from '../src/index.js';
 import { Invocation } from '../src/wire/Invocation.js';
@@ -28,7 +27,6 @@ import type { StorageFactory } from '../src/storage/StorageFactory.js';
 import Article from './fixtures-same-verdict/fronds/press/entities/Article.js';
 import { NewArticle } from './fixtures-same-verdict/fronds/press/handlers/ArticleHandler.js';
 
-const root = join(import.meta.dirname, 'fixtures-same-verdict');
 
 /** A verdict, in the one shape both validators already speak. */
 type Verdict = { ok: true } | { ok: false; errors: { path: string; message: string }[] };
@@ -79,7 +77,7 @@ describe('un corps, deux juges', () => {
   });
 
   it('le formulaire et la façade rendent le même verdict, sur le schéma que le contrat nomme', async () => {
-    await using app = await createApp({ scan: await scanProject(root), createContainer, storageFactory: fakeStorage });
+    await using app = await createApp({ fronds, createContainer, storageFactory: fakeStorage });
     const run = createLocalRunner(app);
 
     for (const { why, input } of table) {
@@ -90,7 +88,7 @@ describe('un corps, deux juges', () => {
   });
 
   it("le même corps, en mémoire et après l'aller-retour JSON du fil", async () => {
-    await using app = await createApp({ scan: await scanProject(root), createContainer, storageFactory: fakeStorage });
+    await using app = await createApp({ fronds, createContainer, storageFactory: fakeStorage });
     const run = createLocalRunner(app);
 
     for (const { why, input } of table) {

@@ -10,15 +10,14 @@
  * So both worlds are covered here: inside the workspace the scan discovers the
  * ops, outside it discovers nothing — and the façade must validate either way.
  */
-import { scanProject } from '@fougere/compiler';
+import { scanProject } from '../src/index.js';
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { join } from 'node:path';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { createContainer } from '@fougere/container';
-import { createApp, createLocalRunner } from '../src/index.js';
-import type { StorageFactory } from '../src/index.js';
-import type { InvocationContext } from '../src/wire/InvocationContext.js';
+import { createApp, createLocalRunner } from '@fougere/core';
+import type { InvocationContext, StorageFactory } from '@fougere/core';
 
 const packagesDir = join(import.meta.dirname, '..', '..');
 const coreDist = join(packagesDir, 'core', 'dist', 'index.js');

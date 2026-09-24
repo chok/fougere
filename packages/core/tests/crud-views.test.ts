@@ -6,15 +6,13 @@
  * instead: the storage keeps handing full rows (validates can read every field), and the
  * façade projects each op's result onto the view that op declared.
  */
-import { scanProject } from '@fougere/compiler';
+import fronds from './fixtures-crud-views/fronds.js';
 import { describe, it, expect, vi } from 'vitest';
-import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner } from '../src/index.js';
 import type { StorageFactory } from '../src/index.js';
 import type { InvocationContext } from '../src/wire/InvocationContext.js';
 
-const root = join(import.meta.dirname, 'fixtures-crud-views');
 
 /** A storage that realises and never validates — it always hands back the FULL row. */
 function fullRowStorage() {
@@ -35,7 +33,7 @@ function fullRowStorage() {
 
 async function boot() {
   const storage = fullRowStorage();
-  const app = await createApp({ scan: await scanProject(root), createContainer, storageFactory: vi.fn(() => storage) as unknown as StorageFactory });
+  const app = await createApp({ fronds, createContainer, storageFactory: vi.fn(() => storage) as unknown as StorageFactory });
 
   return { app, storage, run: createLocalRunner(app) };
 }

@@ -6,15 +6,12 @@
  * later anything could name, and turning the ring under load truncated whatever was
  * mid-flight without a word.
  */
-import { scanProject } from '@fougere/compiler';
+import fronds from './fixtures-drain/fronds.js';
 import { describe, it, expect } from 'vitest';
-import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, Invocation } from '../src/index.js';
 
-const root = join(import.meta.dirname, 'fixtures-drain');
-const scan = await scanProject(root);
-const app = () => createApp({ scan, createContainer });
+const app = () => createApp({ fronds, createContainer });
 
 describe('drain', () => {
   it('waits for a call that is already running', async () => {

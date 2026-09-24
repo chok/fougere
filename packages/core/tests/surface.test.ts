@@ -6,15 +6,13 @@
  * path. The REST and GraphQL adapters had their own tests; the runner and the identity
  * card, which the envelope stands on, had none.
  */
-import { scanProject } from '@fougere/compiler';
+import fronds from './fixtures-surface/fronds.js';
 import { describe, it, expect, vi } from 'vitest';
-import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createAppRunner, ErrorCode } from '../src/index.js';
 import type { StorageFactory, IdentityCard } from '../src/index.js';
 import { Invocation } from '../src/wire/Invocation.js';
 
-const root = join(import.meta.dirname, 'fixtures-surface');
 
 /**
  * Full rows — and `output(view)` really narrows, as `SqlStorage` does.
@@ -48,9 +46,8 @@ function storageFor(entity: { name: string }) {
   return make();
 }
 
-const scan = await scanProject(root);
 const boot = () => createApp({
-  scan,
+  fronds,
   createContainer,
   storageFactory: ((e: any, name: string) => storageFor({ name })) as unknown as StorageFactory,
 });
