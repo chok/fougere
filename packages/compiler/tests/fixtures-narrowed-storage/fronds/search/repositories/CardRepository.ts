@@ -1,4 +1,4 @@
-import { Repository } from '../../../../../src/index.js';
+import { Repository } from '@fougere/core';
 import Card from '../entities/Card.js';
 import type { RankedStorage } from '../storage.js';
 

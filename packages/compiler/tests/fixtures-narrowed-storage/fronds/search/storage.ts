@@ -1,4 +1,4 @@
-import type { Storage } from '../../../../src/storage/Storage.js';
+import type { Storage } from '@fougere/core';
 
 /**
  * What an adapter hands back: the port, plus the gesture that engine owns. Ships with the

@@ -13,11 +13,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
-import { scanProject } from '@fougere/compiler';
-import { createApp, createLocalRunner } from '../src/index.js';
-import { storageKeyOf } from '../src/storage/Storage.js';
-import { type StorageFactory } from '../src/storage/StorageFactory.js';
-import { Invocation } from '../src/wire/Invocation.js';
+import { createApp, createLocalRunner, Invocation, type StorageFactory } from '@fougere/core';
+import { storageKeyOf } from '@fougere/core/descriptor';
+import { scanProject } from '../src/index.js';
 
 function makeStorage() {
   const storage = {

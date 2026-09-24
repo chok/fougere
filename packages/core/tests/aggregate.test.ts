@@ -10,11 +10,14 @@
  * The arity is the declaration, second reading of what `storage.ts` states for `Storage`
  * against `Together`: a boundary between one thing and nothing is not a boundary.
  */
+import aggregate from './fixtures-aggregate/fronds.js';
+import aggregateCrud from './fixtures-aggregate-crud/fronds.js';
+import aggregateTrap from './fixtures-aggregate-trap/fronds.js';
+import aggregateTwice from './fixtures-aggregate-twice/fronds.js';
+import holder from './fixtures-holder/fronds.js';
 import { describe, it, expect, vi } from 'vitest';
-import { join } from 'node:path';
 import { createContainer, type Container } from '@fougere/container';
-import { scanProject } from '@fougere/compiler';
-import { createApp, createLocalRunner, Repository } from '../src/index.js';
+import { createApp, createLocalRunner, Repository, type FrondDescriptor } from '../src/index.js';
 import { ownedBy, repositoryKeyOf } from '../src/prefab/RepositoryConstructor.js';
 import { storageKeyOf } from '../src/storage/Storage.js';
 import { type StorageFactory } from '../src/storage/StorageFactory.js';
@@ -40,9 +43,17 @@ function makeStorage() {
   return storage;
 }
 
+const declared: Record<string, FrondDescriptor[]> = {
+  'fixtures-aggregate': aggregate,
+  'fixtures-aggregate-crud': aggregateCrud,
+  'fixtures-aggregate-trap': aggregateTrap,
+  'fixtures-aggregate-twice': aggregateTwice,
+  'fixtures-holder': holder,
+};
+
 const storageFactory: StorageFactory = (() => makeStorage()) as unknown as StorageFactory;
 const boot = async (fixture: string) =>
-  createApp({ scan: await scanProject(join(import.meta.dirname, fixture)), createContainer, storageFactory });
+  createApp({ fronds: declared[fixture], createContainer, storageFactory });
 
 describe('the arity is the declaration', () => {
   it('owns nothing at one, and both at two', () => {
