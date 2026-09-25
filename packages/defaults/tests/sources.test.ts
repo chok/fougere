@@ -103,11 +103,10 @@ describe('resolveStorage with a second source', () => {
   });
 
   it('lets the named adapter refuse what it cannot build', () => {
-    // The refusal moved to `adapter/sql`, which is the only one that knows which drivers it
-    // owns — it used to live here, in the package that merely happened to import one.
+    // The refusal lives in `adapter/sql`, the only one that knows which engines it speaks.
     expect(() => resolveStorage({ path: ':memory:' }, {
       legacy: { dialect: 'postgres', entities: ['Book'] },
-    })).toThrow(/dialect 'postgres': cannot be built from a name/);
+    })).toThrow(/no dialect 'postgres'. It answers sqlite, pg, mysql, mssql/);
   });
 
   it('refuses a source naming an adapter nothing answers, listing what does', () => {
@@ -125,10 +124,9 @@ describe('resolveStorage with a second source', () => {
 
 describe('storageFrom — an engine the caller built', () => {
   it('places an entity on a hand-built Kysely dialect, and migrates it there', async () => {
-    // The escape hatch `resolveStorage` cannot offer: a config file holds no live
-    // dialect, so a name resolves to sqlite and nothing else. Here the caller brings
-    // the engine — this one happens to be sqlite so the test can read it back, but
-    // nothing in the routing knows or asks.
+    // What a config cannot state: a driver whose connection is not a url. Here the
+    // caller brings the engine — this one happens to be sqlite so the test can read it
+    // back, but nothing in the routing knows or asks.
     const archive = createKyselySource(
       new SqliteDialect({ database: new Database(':memory:') }),
       'sqlite',
