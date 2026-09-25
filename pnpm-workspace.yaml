@@ -28,6 +28,9 @@ overrides:
   # build is what says the override holds.
   postcss: ^8.5.28
   sharp: ^0.35.4
+  # `better-auth` takes `next` as a peer and settled on its own copy, under the range
+  # GHSA-p293-qw3h-jr36 and GHSA-2xp9-vwfh-vxw4 cover.
+  next: ^15.5.26
 
 # pnpm 11 fails an install rather than warning about a build script it was not
 # told to run, and it renamed the allowlist: onlyBuiltDependencies (a list) is

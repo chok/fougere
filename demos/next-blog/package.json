@@ -16,7 +16,7 @@
     "@fougere/adapter-sql": "workspace:*",
     "better-sqlite3": "^13.0.3",
     "jiti": "^2.6.1",
-    "next": "^15.5.7",
+    "next": "^15.5.26",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

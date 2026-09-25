@@ -61,7 +61,7 @@
     "terser-webpack-plugin": "^5.3.14"
   },
   "devDependencies": {
-    "next": "^15.5.7",
+    "next": "^15.5.26",
     "vitest": "^4.1.0"
   },
   "peerDependencies": {
