@@ -1086,6 +1086,11 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 
 One line each, kept because a past version of this file asserted the opposite.
 
+- **A Nuxt server build keeps what a `@fougere/*` package runs at load** — Nitro reads every module
+  as free of side effects but its own, so `import '@fougere/adapter-sql/sqlite'` was dropped and a
+  built site answered `Unknown source 'sql' … answers memory`. `@fougere/nuxt` widens Nitro's rule
+  by the package NAME (`FougerePackage.ts`), since a workspace link has no `@fougere/` in its path.
+  Pinned by `app/nuxt/tests/FougerePackage.test.ts`, measured 2026-09-25.
 - **Core does not depend on the compiler, not even for its tests** — a core test states its fronds
   with `frond()` (`tests/fixtures-*/fronds.ts`, contracts written through `tests/contract.ts`), and
   what the scan DEDUCES is tested in `packages/compiler/tests/`. Core's devDependency on the

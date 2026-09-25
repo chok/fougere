@@ -19,6 +19,7 @@ import { declaresStorage } from '@fougere/defaults';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
 import { createJiti } from 'jiti';
 import { resolve, relative, join } from 'node:path';
+import { isFougerePackage } from './FougerePackage.js';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 
 export interface FougereModuleOptions {
@@ -97,6 +98,20 @@ const module = defineNuxtModule<FougereModuleOptions>({
         ...nitroConfig.esbuild,
         options: { ...nitroConfig.esbuild?.options, keepNames: true },
       };
+    });
+
+    // Nitro reads every module as free of side effects but its own, so an import that names
+    // nothing is dropped from the server build — and `import '@fougere/adapter-sql/sqlite'`
+    // is how `sql` registers: measured on `site/.output`, `Unknown source 'sql' … answers
+    // memory`. What a Fougere package runs at load is kept, whether it is installed or linked.
+    (nuxt as any).hook('nitro:init', (nitro: any) => {
+      nitro.hooks.hook('rollup:before', (_nitro: unknown, rollupConfig: any) => {
+        const nitroSideEffects = rollupConfig.treeshake?.moduleSideEffects;
+        if (typeof nitroSideEffects !== 'function') return;
+
+        rollupConfig.treeshake.moduleSideEffects = (id: string, external: boolean) =>
+          nitroSideEffects(id, external) || isFougerePackage(id);
+      });
     });
 
     // ── 0. A TS-aware loader, installed twice on purpose ──
