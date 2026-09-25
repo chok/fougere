@@ -1,16 +1,8 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": ["@fougere/core/tsconfig", "../../tsconfig.base.json"],
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": ".",
-    // A frond names its neighbours by the name they publish, never by a path through the
-    // tree — the same statement `fronds/tsconfig.json` makes for the compiler, repeated here
-    // because this is the file the runner reads.
-    "paths": {
-      "@fronds/people/*": ["./fronds/people/*"],
-      "@fronds/blog/*": ["./fronds/blog/*"],
-      "@fronds/discussion/*": ["./fronds/discussion/*"]
-    }
+    "rootDir": "."
   },
   "include": ["src", "fronds"]
 }

@@ -12,7 +12,7 @@ import {
 } from '@nuxt/kit';
 import type { Nuxt } from '@nuxt/schema';
 import { orderSeeds } from '@fougere/core';
-import { scanProject, emitStatement, emitFacade, emitNames, frondAliases, watchPathsOf } from '@fougere/compiler';
+import { scanProject, emitStatement, emitFacade, emitNames, frondAliases } from '@fougere/compiler';
 import { frondPackage, resolveConventions, statedFronds, statesModule, type Conventions } from '@fougere/core';
 import { configFileIn, setModuleLoader, loadCascadedConfig, remotesOf } from '@fougere/core/node';
 import { declaresStorage } from '@fougere/defaults';
@@ -148,7 +148,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
     // and a field you just added is simply absent with no error anywhere.
     for (const frond of fronds) {
       nuxt.options.alias[frond.source.package] = frond.source.path;
-      const watched = watchPathsOf(frond, scanRoot, conventions);
+      const watched = [frond.source.path];
       // Nuxt reads this list TWICE and a directory serves only the first read: the
       // watcher adds string entries, while the restart test is `pattern === path`
       // against the changed FILE — which a directory never equals. So each dir goes

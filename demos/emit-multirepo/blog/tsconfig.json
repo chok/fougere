@@ -1,13 +1,8 @@
 {
-  "extends": "../../../tsconfig.base.json",
+  "extends": ["@fougere/core/tsconfig", "../../../tsconfig.base.json"],
   "compilerOptions": {
     "noEmit": true,
-    "rootDir": ".",
-    // A frond names its neighbours, it does not walk to them. The alias is what
-    // the loader registers at runtime; this is the same statement for the compiler.
-    "paths": {
-      "@fronds/blog/*": ["./fronds/blog/*"]
-    }
+    "rootDir": "."
   },
   "include": ["."],
   "exclude": ["**/dist", "node_modules"]

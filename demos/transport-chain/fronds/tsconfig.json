@@ -1,10 +1,6 @@
 {
-  "extends": "../../../tsconfig.base.json",
+  "extends": ["@fougere/core/tsconfig", "../../../tsconfig.base.json"],
   "compilerOptions": {
-    "paths": {
-      "@fronds/cart/*": ["./cart/*"],
-      "@fronds/catalog/*": ["./catalog/*"]
-    },
     "noEmit": true,
     "rootDir": ".",
     "declaration": false,

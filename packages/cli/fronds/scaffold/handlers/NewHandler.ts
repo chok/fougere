@@ -3,6 +3,6 @@
  * This handler exists only so the runner registers the `new` subcommand.
  */
 export default class NewHandler {
-  /** Create a Fougere project, workspace or flat. */
+  /** Create a Fougere workspace. */
   async execute(): Promise<void> {}
 }

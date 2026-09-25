@@ -1,0 +1,21 @@
+{
+  // `@fronds/<name>` for the checker, from a tsconfig at the project root or in `fronds/`:
+  // a frond of the project, then one `fougere sync` wrote. `${configDir}` is the directory of
+  // the tsconfig that extends this one.
+  "compilerOptions": {
+    "paths": {
+      "@fronds/facade": [
+        "${configDir}/.fougere/facade.generated.ts",
+        "${configDir}/../.fougere/facade.generated.ts"
+      ],
+      "@fronds/*": [
+        "${configDir}/fronds/*",
+        "${configDir}/*",
+        "${configDir}/.fougere/remotes/*",
+        "${configDir}/../.fougere/remotes/*",
+        "${configDir}/.fougere/remotes/*/index.ts",
+        "${configDir}/../.fougere/remotes/*/index.ts"
+      ]
+    }
+  }
+}

@@ -152,35 +152,6 @@ export default class ProjectWriter {
     return { path: dir };
   }
 
-  /**
-   * The flat shell — one Nuxt app whose root carries the convention, so no `fronds/`
-   * and no workspace. `templates/flat/` is that shell; what separates the two shapes is
-   * only where the domain lands.
-   */
-  createFlat(dir: string, name: string): { path: string } {
-    cpSync(join(TEMPLATES, 'flat'), dir, { recursive: true });
-    restoreGitignore(dir);
-    setPackageName(dir, name);
-
-    return { path: dir };
-  }
-
-  /**
-   * Put a frond template's directories at the project root. Only the directories: at the
-   * root the app's own `package.json` is the frond's, and `@fronds/<name>` comes from the
-   * directory through the Nuxt module's alias, so the template's package would only
-   * duplicate it under a second name.
-   */
-  addRootFrond(dir: string, template: string): { path: string } {
-    const src = join(TEMPLATES, 'fronds', template);
-    for (const entry of readdirSync(src, { withFileTypes: true })) {
-      if (!entry.isDirectory()) continue;
-      cpSync(join(src, entry.name), join(dir, entry.name), { recursive: true });
-    }
-
-    return { path: dir };
-  }
-
   /** Add a frond (business hexagon) under fronds/<name>. */
   addFrond(wsDir: string, template: string, name: string, conventions: Conventions = DEFAULT_CONVENTIONS): { path: string } {
     const dest = join(wsDir, conventions.fronds, name);

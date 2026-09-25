@@ -15,44 +15,20 @@ function expectFougereCheckWorkflow(root: string, typecheck: string): void {
   }
 }
 
-describe('flat project scaffold', () => {
-  it('emits a pnpm 12 project with native build permissions and accurate guidance', () => {
-    const parent = mkdtempSync(join(tmpdir(), 'fougere-flat-'));
-    const root = join(parent, 'fern');
-
-    try {
-      const writer = new ProjectWriter();
-      writer.createFlat(root, 'fern');
-      writer.addRootFrond(root, 'blog');
-
-      const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as {
-        name: string;
-        packageManager?: string;
-        pnpm?: unknown;
-      };
-      const workspace = readFileSync(join(root, 'pnpm-workspace.yaml'), 'utf8');
-      const page = readFileSync(join(root, 'app', 'pages', 'index.vue'), 'utf8');
-
-      expect(pkg).toMatchObject({ name: 'fern', packageManager: 'pnpm@12.6.0' });
-      expect(pkg.pnpm).toBeUndefined();
-      expect(workspace).toContain('better-sqlite3: true');
-      expect(workspace).toContain('esbuild: true');
-      expect(page).toContain('<code>entities/</code>');
-      expect(page).not.toContain('<code>fronds/</code>');
-      expectFougereCheckWorkflow(root, 'pnpm typecheck');
-    } finally {
-      rmSync(parent, { recursive: true, force: true });
-    }
-  });
-});
-
 describe('workspace project scaffold', () => {
-  it('emits the Fougere check workflow for Claude and other coding agents', () => {
+  it('emits a pnpm 12 project with native build permissions and the Fougere check workflow', () => {
     const parent = mkdtempSync(join(tmpdir(), 'fougere-workspace-'));
     const root = join(parent, 'forest');
 
     try {
       new ProjectWriter().createWorkspace(root, 'forest');
+      const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as { packageManager?: string; pnpm?: unknown };
+      const workspace = readFileSync(join(root, 'pnpm-workspace.yaml'), 'utf8');
+
+      expect(pkg.packageManager).toBe('pnpm@12.6.0');
+      expect(pkg.pnpm).toBeUndefined();
+      expect(workspace).toContain('better-sqlite3: true');
+      expect(workspace).toContain('esbuild: true');
       expectFougereCheckWorkflow(root, 'pnpm typecheck');
     } finally {
       rmSync(parent, { recursive: true, force: true });

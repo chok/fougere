@@ -40,7 +40,8 @@
       "types": "./dist/descriptor/index.d.ts",
       "import": "./dist/descriptor/index.js",
       "default": "./dist/descriptor/index.js"
-    }
+    },
+    "./tsconfig": "./tsconfig/fronds.json"
   },
   "imports": {
     "#ambient": {
@@ -56,7 +57,8 @@
   },
   "files": [
     "dist",
-    "src"
+    "src",
+    "tsconfig"
   ],
   "scripts": {
     "build": "rm -rf dist && tsc6",

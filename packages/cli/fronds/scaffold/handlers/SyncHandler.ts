@@ -7,7 +7,7 @@ import { FacadeTypes } from '../../../src/typescript/FacadeTypes.js';
 // lived in this file and went stale the day an op stopped being a bare name: nothing
 // compared the copy to the original, so the drift cost nothing until someone read it.
 import { assertIdentityCard, type IdentityCard } from '@fougere/core';
-import { type Conventions, resolveConventions, frondPackage } from '@fougere/core';
+import { resolveConventions, frondPackage } from '@fougere/core';
 import { loadConfig } from '@fougere/core/node';
 import { facadeModule, type Served } from '@fougere/compiler';
 import { ErrorCode } from '@fougere/core/contract';
@@ -297,9 +297,6 @@ export default class SyncHandler {
     // .fougere/remotes.json is the central registry of synced remotes.
     this.updateRemotesRegistry(input.frond, baseUrl, frondDir);
 
-    // Non-Nuxt projects only: Nuxt writes its own paths.
-    this.updateTsconfigPaths(input.frond, frondDir, conventions);
-
     /**
      * What the host no longer serves stops being importable here.
      *
@@ -351,26 +348,4 @@ export default class SyncHandler {
     writeFileSync(registryPath, JSON.stringify(registry, null, 2) + '\n');
   }
 
-  /** Add the frond's scoped name to tsconfig paths if tsconfig.json exists. */
-  private updateTsconfigPaths(name: string, localPath: string, conventions: Conventions): void {
-    const tsconfigPath = join(this.cwd, 'tsconfig.json');
-    if (!existsSync(tsconfigPath)) return;
-
-    try {
-      const raw = readFileSync(tsconfigPath, 'utf-8');
-      const tsconfig = JSON.parse(raw);
-
-      // Don't touch Nuxt-managed tsconfigs (extends .nuxt/tsconfig.json)
-      if (tsconfig.extends?.includes('.nuxt/')) return;
-
-      tsconfig.compilerOptions ??= {};
-      tsconfig.compilerOptions.paths ??= {};
-
-      const relative = localPath.replace(this.cwd, '.').replace(/\\/g, '/');
-      tsconfig.compilerOptions.paths[frondPackage(name, conventions)] = [`${relative}/index.ts`];
-      tsconfig.compilerOptions.paths[`${frondPackage(name, conventions)}/*`] = [`${relative}/*`];
-
-      writeFileSync(tsconfigPath, JSON.stringify(tsconfig, null, 2) + '\n');
-    } catch { /* tsconfig parse error — skip */ }
-  }
 }
