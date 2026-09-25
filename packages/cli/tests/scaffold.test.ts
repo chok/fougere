@@ -27,7 +27,7 @@ describe('workspace project scaffold', () => {
 
       expect(pkg.packageManager).toBe('pnpm@12.6.0');
       expect(pkg.pnpm).toBeUndefined();
-      expect(workspace).toContain('better-sqlite3: true');
+      expect(workspace).toContain('better-sqlite3: false');
       expect(workspace).toContain('esbuild: true');
       expectFougereCheckWorkflow(root, 'pnpm typecheck');
     } finally {

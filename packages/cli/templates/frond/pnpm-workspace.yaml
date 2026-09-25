@@ -1,2 +1,11 @@
 packages:
   - fronds/*
+
+allowBuilds:
+  better-sqlite3: false
+  esbuild: true
+
+# A project is created the day a version is published: the delay pnpm can apply to a fresh
+# release would hold back the very version the scaffold was written for.
+minimumReleaseAgeExclude:
+  - '@fougere/*'

@@ -14,7 +14,8 @@
     "@fougere/defaults": "workspace:*",
     "@fougere/oclif": "workspace:*",
     "@fougere/schema": "workspace:*",
-    "@oclif/core": "^5.0.0"
+    "@oclif/core": "^5.0.0",
+    "better-sqlite3": "^13.0.3"
   },
   "devDependencies": {
     "tsx": "^4.21.0",

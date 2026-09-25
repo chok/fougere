@@ -10,7 +10,8 @@
   "dependencies": {
     "@fougere/container": "workspace:*",
     "@fougere/core": "workspace:*",
-    "@fougere/compiler": "workspace:*"
+    "@fougere/compiler": "workspace:*",
+    "better-sqlite3": "^13.0.3"
   },
   "devDependencies": {
     "tsx": "^4.21.0"
