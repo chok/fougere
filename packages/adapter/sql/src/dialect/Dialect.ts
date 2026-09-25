@@ -78,6 +78,8 @@ export const pgDialect: Dialect = {
         return 'double precision';
       case 'boolean':
         return 'boolean';
+      case 'date':
+        return 'timestamptz';
       case 'object':
       case 'array':
         return 'jsonb';

@@ -187,6 +187,11 @@ describe('columnType', () => {
     expect(typeOf('mssql', 'active')).toBe('bit');
   });
 
+  it('maps a date to a timestamp where the engine has one', () => {
+    expect(typeOf('pg', 'createdAt')).toBe('timestamptz');
+    expect(typeOf('sqlite', 'createdAt')).toBe('text');
+  });
+
   it('maps an embedded object to the engine JSON type', () => {
     const orders = toTable('orders', Order);
     const meta = orders.columns.find((c) => c.field === 'meta')!;
