@@ -12,7 +12,7 @@ interface Entry {
 
 /** A scope reaches its parent and its children through members only a scope can read. */
 export class ScopeContainer implements Container {
-  private readonly built: AsyncDisposable[] = [];
+  private readonly built: (AsyncDisposable | Disposable)[] = [];
   private readonly children: ScopeContainer[] = [];
   private readonly registry = new Map<string, Entry>();
   private readonly resolving: string[];
@@ -112,7 +112,7 @@ export class ScopeContainer implements Container {
     const failures: unknown[] = [];
     while (this.built.length > 0) {
       try {
-        await this.built.pop()?.[Symbol.asyncDispose]();
+        await ScopeContainer.close(this.built.pop()!);
       } catch (error) {
         failures.push(error);
       }
@@ -167,14 +167,21 @@ export class ScopeContainer implements Container {
     if (at !== -1) this.children.splice(at, 1);
   }
 
-  /** What this scope will close. A value that answers no `[Symbol.asyncDispose]` is not one of them. */
+  /** What this scope will close. A value that answers neither `[Symbol.asyncDispose]` nor `[Symbol.dispose]` is not one of them. */
   private remember(value: unknown): void {
     if (ScopeContainer.disposable(value)) this.built.push(value);
   }
 
-  private static disposable(value: unknown): value is AsyncDisposable {
+  private static disposable(value: unknown): value is AsyncDisposable | Disposable {
     return typeof value === 'object' && value !== null
-      && typeof (value as AsyncDisposable)[Symbol.asyncDispose] === 'function';
+      && (typeof (value as AsyncDisposable)[Symbol.asyncDispose] === 'function'
+        || typeof (value as Disposable)[Symbol.dispose] === 'function');
+  }
+
+  private static async close(value: AsyncDisposable | Disposable): Promise<void> {
+    if (Symbol.asyncDispose in value) return value[Symbol.asyncDispose]();
+
+    value[Symbol.dispose]();
   }
 
   private errorMessage(name: string): string {

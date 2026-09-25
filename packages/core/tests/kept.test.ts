@@ -1,5 +1,5 @@
 /**
- * A provider that closes — `[Symbol.asyncDispose]` — is kept by its frond's
+ * A provider that closes — `[Symbol.asyncDispose]` or `[Symbol.dispose]` — is kept by its frond's
  * scope and closed with it.
  *
  * Built per consumer, every consumer opens its own and the app's disposal closes none of them.
@@ -83,13 +83,13 @@ describe('a port realization that closes', () => {
 
     charge(): string { return 'charged'; }
 
-    async [Symbol.asyncDispose](): Promise<void> { StripePayment.closed += 1; }
+    [Symbol.dispose](): void { StripePayment.closed += 1; }
   }
 
   class CartHandler { constructor(private payment: Payment) {} async pay() { return this.payment.charge(); } }
   class RefundHandler { constructor(private payment: Payment) {} async pay() { return this.payment.charge(); } }
 
-  it('is kept under the port and closed with the app', async () => {
+  it('is kept under the port and closed with the app — a sync close counts', async () => {
     const app = await createApp({
       fronds: [frond('billing', {
         providers: [Payment, StripePayment],

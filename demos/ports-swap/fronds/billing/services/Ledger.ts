@@ -1,7 +1,7 @@
 /**
- * A provider that HOLDS something, and says so.
+ * A provider that HOLDS something, and closes it.
  *
- * `implements AsyncDisposable` is the language's own marker — the one `App` already answers, so
+ * `[Symbol.asyncDispose]` is the language's own close — the one `App` already answers, so
  * `await using app = await createApp(…)` works. On a provider it states two things at once:
  * there is ONE of it in this frond's scope, and that scope closes it.
  *

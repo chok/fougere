@@ -162,6 +162,17 @@ describe('Container', () => {
       expect(log).toEqual([]);
     });
 
+    it('closes a singleton that closes synchronously', async () => {
+      const log: string[] = [];
+      const container = createContainer();
+      container.register('Clock', class { [Symbol.dispose]() { log.push('clock'); } }, { lifetime: 'singleton' });
+      container.resolve('Clock');
+
+      await container.dispose();
+
+      expect(log).toEqual(['clock']);
+    });
+
     it('does not dispose a transient — its caller owns it', async () => {
       const log: string[] = [];
       const container = createContainer();

@@ -7,8 +7,8 @@
  * port the framework declares rather than you (5).
  *
  * The sixth is the other half: not WHICH provider answers, but HOW LONG it lives. A class
- * holding something says `implements AsyncDisposable`, and its frond's scope keeps it and
- * closes it; one saying nothing is built per consumer, and its caller decides.
+ * holding something closes it — `[Symbol.asyncDispose]` or `[Symbol.dispose]` — and its frond's
+ * scope keeps it and closes it; one without is built per consumer, and its caller decides.
  */
 import { createLocalRunner, Invocation, type Storage } from '@fougere/core';
 import { boot } from '@fougere/compiler';
@@ -89,7 +89,7 @@ console.log('   it extends Storage and asks for one, and nothing else declares i
 }
 
 console.log('\n6. what a provider says about its own lifetime — billing/services/Ledger.ts');
-console.log('   `implements AsyncDisposable`: one per frond, and the frond\'s scope closes it.');
+console.log('   a close method: one per frond, and the frond\'s scope closes it.');
 {
   const app = await booted({ Payment: 'StripePayment' });
   const call = createLocalRunner(app);
