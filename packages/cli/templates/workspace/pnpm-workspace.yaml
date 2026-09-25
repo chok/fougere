@@ -3,7 +3,7 @@ packages:
   - apps/*
 
 allowBuilds:
-  better-sqlite3: true
+  better-sqlite3: false
   esbuild: true
 
 # A project is created the day a version is published: the delay pnpm can apply to a fresh

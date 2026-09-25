@@ -452,6 +452,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      better-sqlite3:
+        specifier: ^13.0.3
+        version: 13.0.3
     devDependencies:
       tsx:
         specifier: ^4.21.0
@@ -736,6 +739,9 @@ importers:
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
+      better-sqlite3:
+        specifier: ^13.0.3
+        version: 13.0.3
     devDependencies:
       tsx:
         specifier: ^4.21.0
@@ -1039,6 +1045,9 @@ importers:
       '@oclif/core':
         specifier: ^5.0.0
         version: 5.0.0
+      better-sqlite3:
+        specifier: ^13.0.3
+        version: 13.0.3
     devDependencies:
       tsx:
         specifier: ^4.21.0
@@ -1070,6 +1079,9 @@ importers:
       '@fougere/workflow':
         specifier: workspace:*
         version: link:../../packages/workflow
+      better-sqlite3:
+        specifier: ^13.0.3
+        version: 13.0.3
     devDependencies:
       tsx:
         specifier: ^4.21.0
@@ -1410,6 +1422,9 @@ importers:
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
+      better-sqlite3:
+        specifier: ^13.0.3
+        version: 13.0.3
     devDependencies:
       '@fougere/adapter-graphql':
         specifier: workspace:*
@@ -1465,6 +1480,9 @@ importers:
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
+      better-sqlite3:
+        specifier: ^13.0.3
+        version: 13.0.3
     devDependencies:
       tsx:
         specifier: ^4.21.0
@@ -1563,9 +1581,6 @@ importers:
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../schema
-      better-sqlite3:
-        specifier: ^13.0.3
-        version: 13.0.3
       dequal:
         specifier: ^2.0.3
         version: 2.0.3
@@ -1576,6 +1591,9 @@ importers:
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.15
+      better-sqlite3:
+        specifier: ^13.0.3
+        version: 13.0.3
       kysely:
         specifier: ^0.28.17
         version: 0.28.17
@@ -2127,6 +2145,9 @@ importers:
       '@fougere/observability':
         specifier: workspace:*
         version: link:../observability
+      better-sqlite3:
+        specifier: ^13.0.3
+        version: 13.0.3
       vitest:
         specifier: ^4.1.0
         version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(vite@8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))

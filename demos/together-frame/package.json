@@ -14,7 +14,8 @@
     "@fougere/defaults": "workspace:*",
     "@fougere/schema": "workspace:*",
     "@fougere/adapter-file": "workspace:*",
-    "@fougere/compiler": "workspace:*"
+    "@fougere/compiler": "workspace:*",
+    "better-sqlite3": "^13.0.3"
   },
   "devDependencies": {
     "tsx": "^4.21.0"

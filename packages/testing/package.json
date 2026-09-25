@@ -80,6 +80,7 @@
     "@fougere/adapter-graphql": "workspace:*",
     "@fougere/adapter-sql": "workspace:*",
     "@fougere/observability": "workspace:*",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.0",
+    "better-sqlite3": "^13.0.3"
   }
 }

@@ -9,7 +9,7 @@ import { join } from 'node:path';
 import { MssqlDialect, MysqlDialect, PostgresDialect } from 'kysely';
 import { Sources } from '@fougere/core';
 import { dialectFor, tediousConfig } from '../src/driver/Driver.js';
-import '../src/sqlite/index.js';
+import { createSqliteSource } from '../src/sqlite/index.js';
 
 /** An app directory holding fake drivers, so the resolution is the one an installed app gets. */
 function appWith(drivers: Record<string, string>): string {
@@ -39,6 +39,20 @@ describe('an engine named in the config', () => {
 
     expect(() => dialectFor('pg', 'postgres://localhost/app', app)).toThrow(/pnpm add pg/);
     expect(() => dialectFor('mssql', 'mssql://localhost/app', app)).toThrow(/pnpm add tedious tarn/);
+  });
+
+  it('names only what is missing, and tells a driver that is there but does not load apart', () => {
+    const halfway = appWith({ tedious: 'module.exports = {};' });
+    const broken = appWith({ pg: 'throw new Error("no libpq");' });
+
+    expect(() => dialectFor('mssql', 'mssql://localhost/app', halfway)).toThrow(/'tarn' is not installed[\s\S]*pnpm add tarn$/);
+    expect(() => dialectFor('pg', 'postgres://localhost/app', broken)).toThrow(/'pg', which is installed .* but does not load: no libpq/);
+  });
+
+  it('says which file SQLite could not open', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'fougere-sqlite-'));
+
+    expect(() => createSqliteSource({ path: directory })).toThrow(`SQLite could not open '${directory}'`);
   });
 
   it('reads a SQL Server url into the object tedious takes', () => {
