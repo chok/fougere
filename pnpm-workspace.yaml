@@ -28,6 +28,13 @@ overrides:
   # build is what says the override holds.
   postcss: ^8.5.28
   sharp: ^0.35.4
+  # `better-auth` takes `next` as a peer and settled on its own copy, under the range
+  # GHSA-p293-qw3h-jr36 and GHSA-2xp9-vwfh-vxw4 cover.
+  next: ^15.5.26
+  # `@nuxt/ui` reaches both through `demos/nuxt-blog`: GHSA-j95f-988m-3j2f, and
+  # GHSA-w27v-7q3p-w38r on the svgo 4 line only — the 8 line is not covered.
+  '@tiptap/core': ^3.30.5
+  'svgo@>=4.0.0 <4.1.0': ^4.1.0
 
 # pnpm 11 fails an install rather than warning about a build script it was not
 # told to run, and it renamed the allowlist: onlyBuiltDependencies (a list) is
