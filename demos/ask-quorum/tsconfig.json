@@ -1,11 +1,8 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": ["@fougere/core/tsconfig", "../../tsconfig.base.json"],
   "compilerOptions": {
     "noEmit": true,
-    "rootDir": ".",
-    "paths": {
-      "@fronds/booking/*": ["./fronds/booking/*"]
-    }
+    "rootDir": "."
   },
   "include": ["."],
   "exclude": ["**/dist", "node_modules"]

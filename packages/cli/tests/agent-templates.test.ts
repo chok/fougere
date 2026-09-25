@@ -13,8 +13,6 @@ const agentsTemplates = agentTemplates.filter((file) => file.endsWith('/AGENTS.m
 describe('agent templates describe the storage boundary', () => {
   it('covers every shipped CLAUDE/AGENTS template', () => {
     expect(agentTemplates.map((file) => file.slice(templatesRoot.length + 1)).sort()).toEqual([
-      'flat/AGENTS.md',
-      'flat/CLAUDE.md',
       'frond/AGENTS.md',
       'frond/CLAUDE.md',
       'workspace/AGENTS.md',

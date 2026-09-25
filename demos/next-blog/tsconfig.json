@@ -1,4 +1,5 @@
 {
+  "extends": "@fougere/core/tsconfig",
   "compilerOptions": {
     "target": "ES2022",
     "lib": [
@@ -21,14 +22,6 @@
         "name": "next"
       }
     ],
-    "paths": {
-      "@fronds/blog/*": [
-        "./fronds/blog/*"
-      ],
-      "@fronds/facade": [
-        "./.fougere/facade.generated.ts"
-      ]
-    },
     "allowJs": true
   },
   "include": [

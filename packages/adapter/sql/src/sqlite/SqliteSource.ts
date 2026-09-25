@@ -5,7 +5,9 @@ import Database from 'better-sqlite3';
 import { createStorageFactory } from '../crud/SqlStorage.js';
 import { logQueries } from '../query/QuerySink.js';
 import { drift, driftReport } from '../drift.js';
-import { sqlEnforces, sqlSink, type SqlSource } from '../source/SqlSource.js';
+import { createKyselySource, sqlEnforces, sqlSink, type SqlSource } from '../source/SqlSource.js';
+import { DRIVERS, dialectFor } from '../driver/Driver.js';
+import { ENGINES } from '../fields/Engine.js';
 import { desiredTables, migrate } from '../diff/Change.js';
 import { toTableName } from '../table/TableDef.js';
 import { Sources, type Source, type SourceConfig, type SourceView } from '@fougere/core';
@@ -50,13 +52,18 @@ export function createSqliteSource(opts: SqliteSourceOptions = {}): SqliteSource
 /** `source. */
 Sources.register('sql', (conf: SourceConfig): Source => {
   const dialect = conf.dialect as string | undefined;
-  if (dialect !== undefined && dialect !== 'sqlite') {
-    throw new Error(
-      `source 'sql', dialect '${dialect}': cannot be built from a name — only 'sqlite' can, `
-      + 'because it is the one driver this package owns. Build the Kysely dialect yourself and '
-      + `call createKyselySource(dialect, '${dialect}'), then hand it in as a source.`,
-    );
-  }
+  const name = conf.name as string | undefined;
+  if (dialect === undefined || dialect === 'sqlite') return createSqliteSource({ path: conf.path as string | undefined, name });
 
-  return createSqliteSource({ path: conf.path as string | undefined, name: conf.name as string | undefined });
+  if (!isDriven(dialect)) {
+    throw new Error(`source 'sql': no dialect '${dialect}'. It answers ${ENGINES.join(', ')}.`);
+  }
+  const url = conf.url;
+  if (typeof url !== 'string') throw new Error(`source 'sql', dialect '${dialect}': states no \`url\`.`);
+
+  return createKyselySource(dialectFor(dialect, url), dialect, { name });
 });
+
+function isDriven(dialect: string): dialect is keyof typeof DRIVERS {
+  return dialect in DRIVERS;
+}

@@ -177,6 +177,27 @@ function tupleMembers(raw: string): string[] {
 const ctorParamsOf = (filePath: string) =>
   parseConstructorParams(filePath);
 
+/** What the checker answers for a type it could not resolve — no key can be read from it. */
+const UNRESOLVED = new Set(['any', 'unknown']);
+
+/** The container keys a constructor asks for — refused when a parameter names no type the checker resolved. */
+async function depsOf(filePath: string): Promise<string[]> {
+  const params = await ctorParamsOf(filePath);
+
+  return params.map((param) => {
+    const named = [param.type, ...(param.type.generics ?? [])].find((type) => UNRESOLVED.has(type.name));
+    if (named) {
+      throw new Error(
+        `${filePath}: constructor parameter '${param.name}: ${param.type.raw}' resolves to \`${named.name}\` `
+        + '— an import the type checker cannot follow. `@fronds/<name>/…` resolves for the checker '
+        + 'once fronds/tsconfig.json states `"extends": "@fougere/core/tsconfig"`.',
+      );
+    }
+
+    return depKeyOf(param.type);
+  });
+}
+
 const implementsOf = (filePath: string) =>
   parseImplements(filePath);
 
@@ -191,8 +212,7 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
   // Read here, while the class is the one the source declared. What a bundler does to
   // that name later is why it is carried rather than asked for again.
   const name = ctor.name;
-  const params = await ctorParamsOf(filePath);
-  const deps = params.map((p) => depKeyOf(p.type));
+  const deps = await depsOf(filePath);
 
   const stated = await implementsOf(filePath);
 
@@ -478,8 +498,7 @@ async function toHandlerEntry(
     declaredOps,
     projectRoot,
   );
-  const ctorParams = await ctorParamsOf(filePath);
-  const deps = ctorParams.map((p) => depKeyOf(p.type));
+  const deps = await depsOf(filePath);
 
   // Read output override from Crud(Entity, Output) — static __output property
   // A handler-wide view, when it is not simply the entity — the two are compared by
@@ -526,8 +545,7 @@ async function toPresenterEntry(filePath: string): Promise<PresenterEntry | null
   if (!target) return null;
   const entityName = lowerFirst((target as { name: string }).name);
   const fields = getPresenterFields(ctor);
-  const presenterParams = await ctorParamsOf(filePath);
-  const deps = presenterParams.map((p) => depKeyOf(p.type));
+  const deps = await depsOf(filePath);
 
   let fieldMeta: PresenterEntry['fieldMeta'] = [];
   try {
@@ -582,8 +600,7 @@ async function toCollectorEntry(filePath: string): Promise<CollectorEntry | null
   // The target's NAME and nothing else — a collector reads no fields, so the class it
   // was built on needs no schema.
   const typeName = lowerFirst((target as { name: string }).name);
-  const collectorParams = await ctorParamsOf(filePath);
-  const deps = collectorParams.map((p) => depKeyOf(p.type));
+  const deps = await depsOf(filePath);
 
   return { typeName, ctor, deps, filePath };
 }
@@ -596,12 +613,12 @@ async function toMiddlewareEntry(filePath: string): Promise<MiddlewareEntry | nu
   const ctor = await loadClass(filePath);
   const prototype = (ctor as { prototype?: { around?: unknown } }).prototype;
   if (typeof prototype?.around !== 'function') return null;
-  const params = await ctorParamsOf(filePath);
+  const deps = await depsOf(filePath);
 
   return {
     name: ctor.name,
     ctor,
-    deps: params.map((p) => depKeyOf(p.type)),
+    deps,
     filePath,
   };
 }
@@ -730,26 +747,11 @@ async function frondNameOf(frondPath: string, dirName: string): Promise<string> 
   }
 }
 
-/**
- * A frond is a directory carrying the convention, and the project root is one such directory — so
- * a single-domain app writes `entities/` next to `app/` and never names anything.
- */
-async function rootFrondOf(root: string, workspaceRoot: string, conventions: Conventions): Promise<FrondDescriptor | null> {
-  if ((await files(join(root, conventions.dirs.entities))).length === 0) return null;
-  const name = await frondNameOf(root, basename(resolvePath(root)));
-
-  return scanFrond(root, name, { path: root, package: frondPackage(name, conventions) }, conventions, workspaceRoot);
-}
-
 /** `@fronds/<name>` → the directory it names, for every frond of a project. */
 export async function frondAliases(root: string, conventions: Conventions = DEFAULT_CONVENTIONS): Promise<Record<string, string>> {
   const frondsDir = join(root, conventions.fronds);
   const aliases: Record<string, string> = {};
 
-  // The root itself is a frond when it carries `entities/` — same rule as the scan.
-  if ((await files(join(root, conventions.dirs.entities))).length > 0) {
-    aliases[frondPackage(await frondNameOf(root, basename(resolvePath(root))), conventions)] = resolvePath(root);
-  }
   for (const dir of await dirs(frondsDir)) {
     const path = join(frondsDir, dir);
     aliases[frondPackage(await frondNameOf(path, dir), conventions)] = resolvePath(path);
@@ -793,42 +795,25 @@ export async function scanProject(
   // has not seen, and a frond lives outside its project's tsconfig `include`. Both keys
   // are seeded: heritage reads under the workspace root, a constructor under none.
   const declarations = (await Promise.all(
-    [root, ...dirNames.map((dir) => join(frondsDir, dir))].flatMap((frondPath) =>
+    dirNames.map((dir) => join(frondsDir, dir)).flatMap((frondPath) =>
       frondDirsOf(conventions).map((dir) => files(join(frondPath, dir)))),
   )).flat();
   await seedTypeProgram(declarations, workspaceRoot);
   await seedTypeProgram(declarations);
 
-  const [rootFrond, under] = await Promise.all([
-    rootFrondOf(root, workspaceRoot, conventions),
-    Promise.all(
-      dirNames.map(async (dir) => {
-        const name = await frondNameOf(join(frondsDir, dir), dir);
+  const all = await Promise.all(
+    dirNames.map(async (dir) => {
+      const name = await frondNameOf(join(frondsDir, dir), dir);
 
-        return scanFrond(
-          join(frondsDir, dir), name,
-          { path: join(frondsDir, dir), package: frondPackage(name, conventions) },
-          conventions,
-          workspaceRoot,
-        );
-      }),
-    ),
-  ]);
-
-  // The app's own domain first, then the ones it took in.
-  const all = rootFrond ? [rootFrond, ...under] : under;
+      return scanFrond(
+        join(frondsDir, dir), name,
+        { path: join(frondsDir, dir), package: frondPackage(name, conventions) },
+        conventions,
+        workspaceRoot,
+      );
+    }),
+  );
   const fronds = Fronds.hosting(filter ? all.filter((f) => filter.includes(f.name)) : all);
 
   return { fronds, diagnostics };
-}
-
-/** What changes when a frond's domain changes — the paths a dev loop watches. */
-export function watchPathsOf(
-  frond: { source: { path: string } },
-  scanRoot: string,
-  conventions: Conventions,
-): string[] {
-  return frond.source.path === scanRoot
-    ? frondDirsOf(conventions).map((dir) => join(scanRoot, dir))
-    : [frond.source.path];
 }

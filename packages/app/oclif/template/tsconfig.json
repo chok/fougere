@@ -1,4 +1,5 @@
 {
+  "extends": "@fougere/core/tsconfig",
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
@@ -7,12 +8,7 @@
     "noEmit": true,
     "types": [
       "node"
-    ],
-    "paths": {
-      "@fronds/facade": [
-        "./.fougere/facade.generated.ts"
-      ]
-    }
+    ]
   },
   "include": [
     "src"

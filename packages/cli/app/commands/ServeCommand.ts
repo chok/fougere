@@ -1,5 +1,4 @@
 import { createLocalRunner, identityFromEnv } from '@fougere/core';
-import { watchPathsOf } from '@fougere/compiler';
 import { installLoader } from '../../src/loader.js';
 
 import { serve } from '@fougere/transport-http';
@@ -37,7 +36,7 @@ export default class ServeCommand {
 
     // Cache-free from the FIRST boot when watching, so every boot in this process reads
     // the same way rather than the first one being special.
-    const conventions = await installLoader(root, watching);
+    await installLoader(root, watching);
     const { bootApp } = await import('@fougere/defaults');
 
     let hosted = await bootApp(root, { only: [frond], topology: false });
@@ -91,7 +90,7 @@ export default class ServeCommand {
     let settling: NodeJS.Timeout | undefined;
     let watched = 0;
 
-    for (const path of hosted.fronds.flatMap((f) => watchPathsOf(f, root, conventions))) {
+    for (const path of hosted.fronds.map((f) => f.source.path)) {
       try {
         watch(path, { recursive: true }, () => {
           clearTimeout(settling);

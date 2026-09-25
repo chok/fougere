@@ -1,4 +1,5 @@
 {
+  "extends": "@fougere/core/tsconfig",
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
@@ -11,10 +12,7 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "types": ["node", "vite/client"],
-    "paths": {
-      "@fronds/blog/*": ["./fronds/blog/*"]
-    }
+    "types": ["node", "vite/client"]
   },
   "include": ["src", "vite.config.ts"],
   "exclude": ["node_modules", "fronds"]
