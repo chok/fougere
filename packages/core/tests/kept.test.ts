@@ -1,13 +1,16 @@
 /**
- * A provider says `implements AsyncDisposable`, and its frond's scope keeps it and closes it.
+ * A provider that closes — `[Symbol.asyncDispose]` — is kept by its frond's
+ * scope and closed with it.
  *
- * Without it, a provider is registered transient: every consumer builds its own, and the app's
- * disposal closes none of them. Measured 2026-09-15 — two handlers declaring one service opened
- * two connections, and `app.dispose()` closed zero. The marker is the language's, the one `App`
- * already answers so `await using app = await createApp(…)` works.
+ * Built per consumer, every consumer opens its own and the app's disposal closes none of them.
+ * Measured 2026-09-15 — two handlers declaring one service opened two connections, and
+ * `app.dispose()` closed zero. The container reads the method, not an `implements` that the
+ * compilation erases.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createApp } from '../src/boot/bootstrap.js';
+import { frond } from '../src/index.js';
+import { op } from './contract.js';
 import { type StorageFactory } from '../src/storage/StorageFactory.js';
 import Ledger from './fixtures-kept/fronds/shop/services/Ledger.js';
 import Clock from './fixtures-kept/fronds/shop/services/Clock.js';
@@ -66,5 +69,43 @@ describe('a provider its scope keeps', () => {
     await app.dispose();
 
     expect(Clock.opened).toBe(1);
+  });
+});
+
+describe('a port realization that closes', () => {
+  abstract class Payment { abstract charge(): string; }
+
+  class StripePayment extends Payment {
+    static opened = 0;
+    static closed = 0;
+
+    constructor() { super(); StripePayment.opened += 1; }
+
+    charge(): string { return 'charged'; }
+
+    async [Symbol.asyncDispose](): Promise<void> { StripePayment.closed += 1; }
+  }
+
+  class CartHandler { constructor(private payment: Payment) {} async pay() { return this.payment.charge(); } }
+  class RefundHandler { constructor(private payment: Payment) {} async pay() { return this.payment.charge(); } }
+
+  it('is kept under the port and closed with the app', async () => {
+    const app = await createApp({
+      fronds: [frond('billing', {
+        providers: [Payment, StripePayment],
+        handlers: [
+          { ctor: CartHandler, deps: ['Payment'], operations: { pay: op({ cardinality: 'one' }) } },
+          { ctor: RefundHandler, deps: ['Payment'], operations: { pay: op({ cardinality: 'one' }) } },
+        ],
+      })],
+      storageFactory,
+    });
+
+    await app.facadeFor('cart')!.pay!({});
+    await app.facadeFor('refund')!.pay!({});
+    expect(StripePayment.opened, 'one realization for two handlers').toBe(1);
+
+    await app.dispose();
+    expect(StripePayment.closed).toBe(1);
   });
 });

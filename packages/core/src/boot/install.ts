@@ -18,6 +18,7 @@ import type { OperationsMap } from '../wire/OperationsMap.js';
 import type { AppMiddleware } from '../wire/AppMiddleware.js';
 import type { CreateAppOptions } from './CreateAppOptions.js';
 import { registerFrames } from './together.js';
+import { lifetimeOf } from './lifetime.js';
 import type { Diagnostic } from '../diagnostic.js';
 import { HandlerFacade } from '../dispatch/HandlerFacade.js';
 import { targetOf } from '../prefab/prefab.js';
@@ -280,13 +281,7 @@ function registerProviders(
   frondLog: Logger,
 ): Map<string, ProviderEntry[]> {
   for (const provider of frond.providers) {
-    // `kept` is `implements AsyncDisposable` — one per frond scope, closed when it closes.
-    // Without it a provider is built per consumer and closed by nobody, which is what a
-    // service holding nothing wants.
-    scope.register(nameOf(provider), provider.ctor, {
-      deps: provider.deps,
-      ...(provider.kept ? { lifetime: 'singleton' as const } : {}),
-    });
+    scope.register(nameOf(provider), provider.ctor, { deps: provider.deps, ...lifetimeOf(provider.ctor) });
   }
   // What this frond puts in front of one of the framework's own ports. Its own, like every
   // provider — a link goes where its frond goes, which is what a frond behind `remotes:`
@@ -314,11 +309,12 @@ function registerProviders(
     for (const wrapper of chain.slice(0, -1).reverse()) {
       const deps = wrapper.deps.map((dep) => (dep === port ? inner : dep));
       inner = nameOf(wrapper);
-      scope.register(inner, wrapper.ctor, { deps });
+      scope.register(inner, wrapper.ctor, { deps, ...lifetimeOf(wrapper.ctor) });
     }
     const outermost = chain[0]!;
     scope.register(port, outermost.ctor, {
       deps: outermost.deps.map((dep) => (dep === port ? nameOf(chain[1]!) : dep)),
+      ...lifetimeOf(outermost.ctor),
     });
     boundPorts.add(port);
     frondLog.debug(`port ${port} → ${chain.map((one) => one.ctor.name).join(' → ')}`);
@@ -507,7 +503,7 @@ function registerFramesOf(frond: FrondDescriptor, assembly: Assembly, scope: Con
 
 function registerPresenters(frond: FrondDescriptor, scope: Container, frondLog: Logger): Map<string, PresenterEntry> {
   for (const presenter of frond.presenters) {
-    scope.register(presenterKeyOf(presenter.entityName), presenter.ctor, { deps: presenter.deps });
+    scope.register(presenterKeyOf(presenter.entityName), presenter.ctor, { deps: presenter.deps, ...lifetimeOf(presenter.ctor) });
   }
   if (frond.presenters.length > 0) {
     frondLog.debug(`${frond.presenters.length} presenter(s): ${frond.presenters.map((p) => p.entityName).join(', ')}`);
@@ -518,7 +514,7 @@ function registerPresenters(frond: FrondDescriptor, scope: Container, frondLog: 
 
 function registerCollectors(frond: FrondDescriptor, scope: Container, frondLog: Logger): Set<string> {
   for (const collector of frond.collectors) {
-    scope.register(collectorKeyOf(collector.typeName), collector.ctor, { deps: collector.deps });
+    scope.register(collectorKeyOf(collector.typeName), collector.ctor, { deps: collector.deps, ...lifetimeOf(collector.ctor) });
   }
   if (frond.collectors.length > 0) {
     frondLog.debug(`${frond.collectors.length} collector(s): ${frond.collectors.map((c) => c.typeName).join(', ')}`);

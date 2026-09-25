@@ -15,11 +15,4 @@ export interface ProviderEntry {
   deps: string[];
   /** Absolute file path (for debugging). */
   filePath: string;
-  /**
-   * It stated `implements AsyncDisposable` — so there is ONE of it per frond, and that frond's
-   * scope closes it. The language's own marker, which `App` already answers; a provider that
-   * says nothing is built per consumer and closed by nobody, which is right for one that holds
-   * nothing.
-   */
-  kept?: true;
 }

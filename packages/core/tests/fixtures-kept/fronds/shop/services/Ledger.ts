@@ -1,5 +1,5 @@
-/** Holds something, so it says so: one per frond, and this scope closes it. */
-export default class Ledger implements AsyncDisposable {
+/** Holds something, and closes it — no `implements` needed: the method is what the container reads. */
+export default class Ledger {
   static opened = 0;
   static closed = 0;
 

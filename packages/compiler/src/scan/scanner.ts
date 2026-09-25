@@ -212,10 +212,6 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
     });
   }
 
-  // `implements AsyncDisposable` — the language's own marker, which `App` already answers. It
-  // says two things at once: there is ONE of me in this frond's scope, and that scope closes me.
-  const kept = stated.some((one) => one.name === 'AsyncDisposable');
-
   // A repository inherits its constructor from `Repository(…)`, so the file declares none
   // and the scan reads no parameter. The mixin knows what it was built for and says so at
   // runtime — same escape as `Crud.__ops`, and the same reason: what a prefab fabricates,
@@ -235,7 +231,7 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
   // `name` beside `ctor`, and it IS the registration key — what `depKeyOf` returns, since
   // it reads the type as written. It used to be asked of `ctor.name` at boot, which held
   // until a bundler lowered a static field and renamed the declaration doing it.
-  return { name, ctor, deps, filePath, ...(kept ? { kept: true as const } : {}) };
+  return { name, ctor, deps, filePath };
 }
 
 /**

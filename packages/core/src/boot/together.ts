@@ -4,6 +4,7 @@
  * Documented: [together](https://fougere.dev/docs/business/together).
  */
 import { ambient } from '#ambient';
+import { lifetimeOf } from './lifetime.js';
 import { upperFirst, lowerFirst, type SchemaView } from '@fougere/schema';
 import type { Container } from '@fougere/container';
 import { entityOfStorageKey, membersOfTogetherKey, storageKeyOf, type Storage } from '../storage/Storage.js';
@@ -159,7 +160,7 @@ async function inScope<R>(
     });
     // Providers after every storage is in place: one may depend on another member's.
     const built = members.providers.map((provider) => {
-      scope.register(provider.ctor.name, provider.ctor, { deps: provider.deps });
+      scope.register(provider.ctor.name, provider.ctor, { deps: provider.deps, ...lifetimeOf(provider.ctor) });
 
       return scope.resolve(provider.ctor.name);
     });
