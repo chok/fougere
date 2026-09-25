@@ -1,0 +1,4 @@
+{
+  "metadata": { "app_id": "gestures", "env_name": "local", "env_type": "development", "cloud": "local", "base_url": "http://127.0.0.1:4700" },
+  "service_discovery": { "blog": { "base_url": "http://host.docker.internal:4701" } }
+}

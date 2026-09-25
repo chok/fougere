@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "target": "ES2022",
+    "module": "ES2022",
+    "types": ["node"],
+    "paths": { "~encore/*": ["./encore.gen/*"] },
+    "strict": true,
+    "moduleResolution": "bundler",
+    "skipLibCheck": true,
+    "noEmit": true
+  }
+}

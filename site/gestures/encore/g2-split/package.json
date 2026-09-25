@@ -1,0 +1,12 @@
+{
+  "name": "gestures-encore",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "encore.dev": "1.57.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24",
+    "typescript": "5.9"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "gestures-zenstack",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "zen generate",
+    "migrate": "zen migrate dev",
+    "serve": "node src/server.ts",
+    "serve:blog": "node src/blog.ts"
+  },
+  "dependencies": {
+    "@zenstackhq/fetch-client": "3.9.6",
+    "@zenstackhq/orm": "3.9.6",
+    "@zenstackhq/schema": "3.9.6",
+    "@zenstackhq/server": "3.9.6",
+    "better-sqlite3": "^12.4.1",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24",
+    "@zenstackhq/cli": "3.9.6",
+    "typescript": "5.9"
+  }
+}

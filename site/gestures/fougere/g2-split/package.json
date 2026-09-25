@@ -1,0 +1,28 @@
+{
+  "name": "gestures-fougere",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "serve": "node serve.ts",
+    "serve:blog": "fougere serve blog --port 4701"
+  },
+  "dependencies": {
+    "@fougere/cli": "0.12.6-alpha.0",
+    "@fougere/compiler": "0.12.6-alpha.0",
+    "@fougere/container": "0.12.6-alpha.0",
+    "@fougere/core": "0.12.6-alpha.0",
+    "@fougere/defaults": "0.12.6-alpha.0",
+    "@fougere/schema": "0.12.6-alpha.0",
+    "@fougere/transport-http": "0.12.6-alpha.0",
+    "better-sqlite3": "^13.0.3",
+    "jiti": "^2.4.2",
+    "kysely": "^0.28.17"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "typescript": "~5.9.3"
+  }
+}

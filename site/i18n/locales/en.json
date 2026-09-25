@@ -5,7 +5,8 @@
     "drafts": "Drafts",
     "write": "Write",
     "signIn": "Sign in",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "compare": "Compare"
   },
   "footer": {
     "builtWith": "Built with Fougere — this site runs on the framework it documents."
@@ -159,5 +160,31 @@
       "anotherLanguage": "another language",
       "frond": "the Frond"
     }
+  },
+  "compare": {
+    "title": "What you rewrite when your app changes",
+    "subtitle": "One mini-app — a blog and a digest that reads it — written in four tools. Three changes applied to each. Every state passes the same HTTP scenario; what you see is the diff.",
+    "gestures": {
+      "field": "Add a field",
+      "split": "Move the blog to its own process",
+      "engine": "SQLite → Postgres"
+    },
+    "gestureText": {
+      "field": "`excerpt`, visible in `create` and `list`.",
+      "split": "`blog` answers in its own process; `digest` stays and keeps calling it.",
+      "engine": "The same app on Postgres instead of SQLite."
+    },
+    "lines": "lines",
+    "files": "files",
+    "notApplicable": "Postgres only — nothing to switch.",
+    "concepts": "What the change makes you write about",
+    "noConcept": "Nothing new — the change names nothing but the domain.",
+    "commands": "What you run besides",
+    "onlyChanged": "Changed files only",
+    "generated": "generated",
+    "unchanged": "Unchanged by this gesture.",
+    "removedFile": "Removed by this gesture.",
+    "method": "Measured on 2026-09-24 with Fougere 0.12.6, ZenStack 3.9.6, NestJS 12.1 + TypeORM 1.1 and Encore 1.57.5, each written from its own quickstart. Counts are non-empty lines, hand-written files only. NestJS runs with TypeORM `synchronize: true`, a development setting: in production, its field and engine changes would each add a generated migration.",
+    "conceptCount": "concepts"
   }
 }

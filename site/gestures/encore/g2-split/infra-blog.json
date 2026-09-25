@@ -1,0 +1,11 @@
+{
+  "metadata": { "app_id": "gestures", "env_name": "local", "env_type": "development", "cloud": "local", "base_url": "http://127.0.0.1:4701" },
+  "sql_servers": [
+    {
+      "host": "host.docker.internal:5499",
+      "tls_config": { "disabled": true },
+      "databases": { "blog": { "name": "gestures_encore_blog", "username": "postgres", "password": "trust" } }
+    }
+  ],
+  "service_discovery": { "digest": { "base_url": "http://host.docker.internal:4700" } }
+}

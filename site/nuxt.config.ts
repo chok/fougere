@@ -27,7 +27,7 @@ const serverOnlyRoutes = locales.flatMap((l) =>
 export default defineNuxtConfig({
   // `./modules/demo` is named rather than left to the modules/ scan: it writes into
   // content/ and must run before @nuxt/content reads it.
-  modules: ['./modules/demo', '@nuxt/ui', '@nuxt/content', '@nuxtjs/i18n', '@fougere/nuxt'],
+  modules: ['./modules/demo', './modules/gestures', '@nuxt/ui', '@nuxt/content', '@nuxtjs/i18n', '@fougere/nuxt'],
   css: ['~/assets/css/main.css'],
   compatibilityDate: '2026-07-18',
   // The audit prompt links to the docs, and `nuxt generate` renders it with no client

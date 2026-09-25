@@ -1,0 +1,14 @@
+datasource db {
+    provider = 'postgresql'
+    url      = env('DATABASE_URL')
+}
+
+model Post {
+    id          String    @id @default(cuid())
+    title       String    @length(1, 200)
+    body        String
+    createdAt   DateTime  @default(now())
+    publishedAt DateTime?
+}
+
+mutation procedure publishPost(id: String) : Post

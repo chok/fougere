@@ -5,7 +5,8 @@
     "drafts": "Brouillons",
     "write": "Écrire",
     "signIn": "Connexion",
-    "signOut": "Déconnexion"
+    "signOut": "Déconnexion",
+    "compare": "Comparer"
   },
   "footer": {
     "builtWith": "Construit avec Fougere — ce site tourne sur le framework qu'il documente."
@@ -159,5 +160,31 @@
       "anotherLanguage": "une autre langue",
       "frond": "la Frond"
     }
+  },
+  "compare": {
+    "title": "Ce que vous réécrivez quand votre app change",
+    "subtitle": "Une même mini-app — un blog, et un digest qui le lit — écrite dans quatre outils. Trois changements appliqués à chacune. Chaque état passe le même scénario HTTP ; ce que vous voyez, c'est le diff.",
+    "gestures": {
+      "field": "Ajouter un champ",
+      "split": "Sortir le blog dans son process",
+      "engine": "SQLite → Postgres"
+    },
+    "gestureText": {
+      "field": "`excerpt`, visible dans `create` et `list`.",
+      "split": "`blog` répond dans son propre process ; `digest` reste et continue de l'appeler.",
+      "engine": "La même app sur Postgres au lieu de SQLite."
+    },
+    "lines": "lignes",
+    "files": "fichiers",
+    "notApplicable": "Postgres uniquement — rien à changer.",
+    "concepts": "Ce que le changement vous fait écrire",
+    "noConcept": "Rien de nouveau — le changement ne nomme que le domaine.",
+    "commands": "Ce que vous lancez en plus",
+    "onlyChanged": "Fichiers modifiés seulement",
+    "generated": "généré",
+    "unchanged": "Inchangé par ce geste.",
+    "removedFile": "Supprimé par ce geste.",
+    "method": "Mesuré le 2026-09-24 avec Fougere 0.12.6, ZenStack 3.9.6, NestJS 12.1 + TypeORM 1.1 et Encore 1.57.5, chacun écrit depuis son propre quickstart. Les comptes sont des lignes non vides, fichiers écrits à la main uniquement. NestJS tourne avec `synchronize: true` de TypeORM, un réglage de développement : en production, ses changements de champ et de moteur ajouteraient chacun une migration générée.",
+    "conceptCount": "concepts"
   }
 }

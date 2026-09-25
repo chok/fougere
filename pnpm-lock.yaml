@@ -2282,6 +2282,9 @@ importers:
       '@types/markdown-it':
         specifier: ^14.1.2
         version: 14.1.2
+      diff:
+        specifier: ^8.0.4
+        version: 8.0.4
 
 packages:
 
