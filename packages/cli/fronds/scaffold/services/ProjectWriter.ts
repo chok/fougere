@@ -143,6 +143,13 @@ function setPackageName(dir: string, name: string): void {
   writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
 }
 
+interface Manifest { dependencies?: Record<string, string>; devDependencies?: Record<string, string> }
+
+/** Both lists a starter names a package in — `@fougere/vite` is a build tool, so it sits in the second. */
+function rangesOf(pkg: Manifest): Record<string, string>[] {
+  return [pkg.dependencies, pkg.devDependencies].filter((ranges) => ranges !== undefined);
+}
+
 export default class ProjectWriter {
   /**
    * The whole plan, or nothing: it is written beside its destination and moved there once every
@@ -300,12 +307,14 @@ export default class ProjectWriter {
 
     for (const path of manifests) {
       if (!existsSync(path)) continue;
-      const pkg = JSON.parse(readFileSync(path, 'utf8')) as { dependencies?: Record<string, string> };
+      const pkg = JSON.parse(readFileSync(path, 'utf8')) as Manifest;
       let moved = false;
-      for (const [name, range] of Object.entries(pkg.dependencies ?? {})) {
-        if (!name.startsWith('@fougere/') || range !== 'latest') continue;
-        pkg.dependencies![name] = version;
-        moved = true;
+      for (const ranges of rangesOf(pkg)) {
+        for (const [name, range] of Object.entries(ranges)) {
+          if (!name.startsWith('@fougere/') || range !== 'latest') continue;
+          ranges[name] = version;
+          moved = true;
+        }
       }
       if (moved) writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n');
     }
@@ -346,11 +355,13 @@ export default class ProjectWriter {
         const f = join(d, e.name);
         if (e.isDirectory()) { walk(f); continue; }
         if (e.name !== 'package.json') continue;
-        const pkg = JSON.parse(readFileSync(f, 'utf8')) as { dependencies?: Record<string, string> };
+        const pkg = JSON.parse(readFileSync(f, 'utf8')) as Manifest;
         let changed = false;
-        for (const dep of Object.keys(pkg.dependencies ?? {})) {
-          const local = dirOf.get(dep);
-          if (local) { pkg.dependencies![dep] = `link:${local}`; changed = true; }
+        for (const ranges of rangesOf(pkg)) {
+          for (const dep of Object.keys(ranges)) {
+            const local = dirOf.get(dep);
+            if (local) { ranges[dep] = `link:${local}`; changed = true; }
+          }
         }
         if (changed) writeFileSync(f, JSON.stringify(pkg, null, 2) + '\n');
       }

@@ -77,6 +77,7 @@ describe('the versions a fresh project depends on', () => {
     const pw = new ProjectWriter();
     pw.createWorkspace(root, 'fern');
     pw.addApp(root, 'nuxt', 'web');
+    pw.addApp(root, 'react', 'spa');
     pw.pinVersions(root);
 
     const cli = JSON.parse(
@@ -87,6 +88,9 @@ describe('the versions a fresh project depends on', () => {
 
     expect(app.dependencies['@fougere/core']).toBe(cli.version);
     expect(Object.values(app.dependencies)).not.toContain('latest');
+    const spa = JSON.parse(readFileSync(join(root, 'apps', 'spa', 'package.json'), 'utf8')) as
+      { devDependencies: Record<string, string> };
+    expect(spa.devDependencies['@fougere/vite']).toBe(cli.version);
     rmSync(parent, { recursive: true, force: true });
   });
 });
