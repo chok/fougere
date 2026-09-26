@@ -13,7 +13,7 @@ const STEPS: Step[] = ['project', 'fronds', 'apps'];
 const TITLE: Record<Step, string> = { project: 'Project', fronds: 'Fronds', apps: 'Apps' };
 
 const QUESTION: Record<Step, string> = {
-  project: 'What is it called?',
+  project: 'Name',
   fronds: 'Which domains does it hold?',
   apps: 'What consumes them?',
 };
