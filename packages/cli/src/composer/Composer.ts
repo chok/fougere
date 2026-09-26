@@ -18,6 +18,12 @@ const QUESTION: Record<Step, string> = {
   apps: 'What consumes them?',
 };
 
+const MEANING: Record<Step, string> = {
+  project: 'Its directory and its package name.',
+  fronds: 'A frond is a domain — its entities and the operations on them. It runs inside an app, or in a process of its own.',
+  apps: 'An app is what people use — pages that call the fronds’ operations.',
+};
+
 const TYPED = /^[a-z0-9._-]$/;
 
 const ERASE = new Set(['\x7f', '\b']);
@@ -117,6 +123,8 @@ export class Composer {
       `${bar}  ${this.breadcrumb()}`,
       bar,
       `${bar}  ${pc.bold(QUESTION[this.step])}`,
+      `${bar}  ${pc.dim(MEANING[this.step])}`,
+      bar,
       ...body.map((line) => `${bar}  ${line}`),
       bar,
       `${bar}  ${pc.dim('Same, with no prompt:')} ${commandOf(plan)}`,
