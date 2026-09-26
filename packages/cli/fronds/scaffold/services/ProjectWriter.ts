@@ -146,25 +146,26 @@ function setPackageName(dir: string, name: string): void {
 export default class ProjectWriter {
   /**
    * The whole plan, or nothing: it is written beside its destination and moved there once every
-   * piece landed, since fetching a host's starter can fail halfway. `force` writes over an
-   * existing directory in place, which is what it has always meant.
+   * piece landed, since fetching a host's starter can fail halfway. `replace` removes what the
+   * destination held, and only then — a failed write leaves the old project as it was.
    */
-  write(plan: Plan, dir: string, options: { local?: boolean; force?: boolean } = {}): void {
-    const inPlace = options.force && existsSync(dir);
-    const target = inPlace ? dir : mkdtempSync(join(dirname(dir), `.${basename(dir)}-`));
+  write(plan: Plan, dir: string, options: { local?: boolean; replace?: boolean } = {}): void {
+    if (existsSync(dir) && !options.replace) throw new Error(`${basename(dir)}/ already exists.`);
 
+    const staged = mkdtempSync(join(dirname(dir), `.${basename(dir)}-`));
     try {
-      this.createWorkspace(target, plan.name);
-      for (const { template, name } of plan.fronds) this.addFrond(target, template, name);
-      for (const { template, name } of plan.apps) this.addApp(target, template, name);
-      this.linkFronds(target);
-      if (options.local) this.linkLocal(target); else this.pinVersions(target);
+      this.createWorkspace(staged, plan.name);
+      for (const { template, name } of plan.fronds) this.addFrond(staged, template, name);
+      for (const { template, name } of plan.apps) this.addApp(staged, template, name);
+      this.linkFronds(staged);
+      if (options.local) this.linkLocal(staged); else this.pinVersions(staged);
     } catch (error) {
-      if (!inPlace) rmSync(target, { recursive: true, force: true });
+      rmSync(staged, { recursive: true, force: true });
       throw error;
     }
 
-    if (!inPlace) renameSync(target, dir);
+    rmSync(dir, { recursive: true, force: true });
+    renameSync(staged, dir);
   }
 
   /** The workspace shell — fougere.config, pnpm-workspace (fronds/* apps/*), package.json. */

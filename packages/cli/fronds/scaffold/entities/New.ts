@@ -6,7 +6,7 @@ import { entity, text, bool } from "@fougere/schema";
  */
 export default class New extends entity({
   name: text({ description: "Project name — its directory and its package" }),
-  force: bool({ description: "Overwrite existing directory", default: false }),
+  force: bool({ description: "Replace an existing directory, without asking", default: false }),
   bare: bool({ description: "No fronds, no apps — the empty workspace, no prompt", default: false }),
   local: bool({ description: "Link @fougere/* to this monorepo (dev — installs offline)", default: false }),
   frond: text({ description: "Fronds to add, no prompt — 'blog' or 'blog:shop', comma-separated", default: "" }),

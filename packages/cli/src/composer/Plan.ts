@@ -71,11 +71,11 @@ export function treeOf(plan: Plan): string[] {
 }
 
 /** Everything that stops the plan from being written, in the order a reader fixes it. */
-export function refusalsOf(plan: Plan, catalog: Catalog, where: { cwd: string; force?: boolean }): string[] {
+export function refusalsOf(plan: Plan, catalog: Catalog, where: { cwd: string; replace?: boolean }): string[] {
   const refusals: string[] = [];
   if (!plan.name) refusals.push('The project has no name — fougere new <name>.');
   else if (!PROJECT.test(plan.name)) refusals.push(`'${plan.name}' is not a package name: lowercase letters, digits, '.', '_' and '-'.`);
-  else if (existsSync(join(where.cwd, plan.name)) && !where.force) refusals.push(`${plan.name}/ already exists — pick another name, or pass --force to write over it.`);
+  else if (existsSync(join(where.cwd, plan.name)) && !where.replace) refusals.push(`${plan.name}/ already exists — pick another name, or pass --force to replace it.`);
 
   for (const kind of ['fronds', 'apps'] as const) {
     const seen = new Set<string>();

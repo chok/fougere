@@ -45,7 +45,7 @@ describe('a plan', () => {
   it('names what stops it, before anything is written', () => {
     const cwd = mkdtempSync(join(tmpdir(), 'fougere-plan-'));
     try {
-      const refused = (plan: Plan, force = false) => refusalsOf(plan, catalog, { cwd, force });
+      const refused = (plan: Plan, replace = false) => refusalsOf(plan, catalog, { cwd, replace });
       expect(refused({ name: '', fronds: [], apps: [] })).toEqual(['The project has no name — fougere new <name>.']);
       expect(refused({ name: 'Shop', fronds: [], apps: [] })[0]).toContain('is not a package name');
       expect(refused({ name: 'tmp', fronds: [{ template: 'shop', name: 'shop' }], apps: [] })[0]).toContain("No fronds template 'shop'");
@@ -89,14 +89,43 @@ describe('the writer', () => {
       rmSync(cwd, { recursive: true, force: true });
     }
   });
+
+  it('replaces a project only once the new one is whole', () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'fougere-replace-'));
+    try {
+      const dir = join(cwd, 'shop');
+      const writer = new ProjectWriter();
+      writer.write({ name: 'shop', fronds: [{ template: 'blog', name: 'blog' }], apps: [] }, dir);
+      expect(() => writer.write({ name: 'shop', fronds: [], apps: [] }, dir)).toThrow('shop/ already exists.');
+
+      const broken: Plan = { name: 'shop', fronds: [{ template: 'blank', name: 'core' }], apps: [{ template: 'nowhere', name: 'web' }] };
+      expect(() => writer.write(broken, dir, { replace: true })).toThrow();
+      expect(readdirSync(join(dir, 'fronds'))).toContain('blog');
+
+      writer.write({ name: 'shop', fronds: [{ template: 'blank', name: 'core' }], apps: [] }, dir, { replace: true });
+      expect(readdirSync(cwd)).toEqual(['shop']);
+      expect(readdirSync(join(dir, 'fronds'))).not.toContain('blog');
+      expect(readdirSync(join(dir, 'fronds'))).toContain('core');
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
 });
 
 describe('the composer', () => {
-  function screen(name = 'shop') {
+  function screen(name = 'shop', taken: string[] = []) {
     const input = new PassThrough();
     const output = Object.assign(new PassThrough(), { columns: 100 });
     output.resume();
-    const composer = new Composer(name, catalog, (plan) => refusalsOf(plan, catalog, { cwd: tmpdir() + '/nowhere' }), { input, output });
+    const cwd = join(tmpdir(), 'fougere-nowhere');
+    const composer = new Composer({
+      name,
+      catalog,
+      exists: (candidate) => taken.includes(candidate),
+      refusals: (plan, replace) => refusalsOf(plan, catalog, { cwd, replace }),
+      input,
+      output,
+    });
     const answer = composer.ask();
     const press = (...keys: string[]) => { for (const key of keys) input.write(key); };
 
@@ -104,26 +133,50 @@ describe('the composer', () => {
   }
 
   const DOWN = '\x1b[B';
+  const LEFT = '\x1b[D';
+  const ENTER = '\r';
 
-  it('answers the plan the screen was left on — checked, duplicated, renamed', async () => {
+  it('walks the three steps, and answers what they were left on', async () => {
     const { answer, press } = screen();
-    press(DOWN, DOWN, ' ', '+', '\x7f', '\x7f', '\x7f', '\x7f', '\x7f', '\x7f', 'n', 'e', 'w', 's', '\r', DOWN, ' ', '\r', '\r');
+    press(ENTER);
+    press(DOWN, ' ', '+', ...'\x7f'.repeat(6), ...'news', ENTER, ENTER);
+    press(' ', ENTER);
 
     expect(await answer).toEqual({
-      name: 'shop',
-      fronds: [{ template: 'blog', name: 'blog' }, { template: 'blog', name: 'news' }],
-      apps: [{ template: 'next', name: 'next' }],
+      plan: {
+        name: 'shop',
+        fronds: [{ template: 'blog', name: 'blog' }, { template: 'blog', name: 'news' }],
+        apps: [{ template: 'next', name: 'next' }],
+      },
+      overwrite: false,
     });
   });
 
-  it('asks the name first when none was given, and refuses to leave without one', async () => {
+  it('goes back a step, and keeps what was checked', async () => {
+    const { answer, press } = screen();
+    press(ENTER, ' ', ENTER, LEFT, LEFT, ...'\x7f'.repeat(4), ...'lab', ENTER, ENTER, ENTER);
+
+    expect(await answer).toEqual({ plan: { name: 'lab', fronds: [{ template: 'blank', name: 'blank' }], apps: [] }, overwrite: false });
+  });
+
+  it('asks the name first, and does not move on without one', async () => {
     const { composer, answer, press } = screen('');
-    press('\r', '\r');
+    press(ENTER);
     await new Promise((resolve) => setImmediate(resolve));
     expect(plain(composer.frame(100))).toContain('The project has no name');
 
-    press('r', 'l', 'a', 'b', '\r', '\r');
-    expect(await answer).toEqual({ name: 'lab', fronds: [], apps: [] });
+    press(...'lab', ENTER, ENTER, ENTER);
+    expect(await answer).toEqual({ plan: { name: 'lab', fronds: [], apps: [] }, overwrite: false });
+  });
+
+  it('offers to replace a project that already exists', async () => {
+    const { composer, answer, press } = screen('shop', ['shop']);
+    press(ENTER);
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(plain(composer.frame(100))).toContain('shop/ already exists.');
+
+    press('n', ...'\x7f'.repeat(4), ...'shop', ENTER, 'y', ENTER, ENTER);
+    expect(await answer).toEqual({ plan: { name: 'shop', fronds: [], apps: [] }, overwrite: true });
   });
 
   it('answers nothing when cancelled', async () => {
@@ -133,12 +186,13 @@ describe('the composer', () => {
     expect(await answer).toBeUndefined();
   });
 
-  it('shows the tree and the command beside the choices', () => {
+  it('shows the tree and the command beside every step', () => {
     const { composer, press } = screen();
-    press(DOWN, DOWN, ' ');
+    press(ENTER, DOWN, ' ');
     const frame = plain(composer.frame(100));
 
-    expect(frame).toMatch(/◼ blog\s+└─ blog\//);
+    expect(frame).toContain('✓ Project  ›  ● Fronds  ›  ○ Apps');
+    expect(frame).toMatch(/◼ blog\s+├─ fougere\.config\.ts/);
     expect(frame).toContain('Same, with no prompt: pnpm create fougere shop --frond blog');
     expect(plain(composer.frame(40))).toMatch(/◼ blog\n/);
     press('\x03');
