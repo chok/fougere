@@ -10,6 +10,12 @@ import type { App } from '@fougere/core';
 type Ui = ReturnType<typeof createUi>;
 
 /**
+ * The hosts the composer offers: the ones run end to end from a fresh workspace. Every other host
+ * the CLI knows stays reachable by `--app`.
+ */
+const OFFERED = ['nuxt'];
+
+/**
  * A plan, then one write. The flags state it — the only form a script, a CI job or an agent can
  * drive — and the composer builds it when they state nothing; either way nothing touches the disk
  * before the plan holds.
@@ -32,7 +38,8 @@ export default class NewCommand {
       if (!terminal) {
         throw new Error('No terminal to ask in. State the project: fougere new shop --frond blog --app nuxt, or --bare for the empty shell.');
       }
-      const composed = await new Composer({ name: (raw.name as string | undefined) ?? '', catalog, exists, refusals }).ask();
+      const offered = { ...catalog, apps: catalog.apps.filter((app) => OFFERED.includes(app)) };
+      const composed = await new Composer({ name: (raw.name as string | undefined) ?? '', catalog: offered, exists, refusals }).ask();
       if (!composed) return;
 
       plan = composed.plan;
