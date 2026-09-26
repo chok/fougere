@@ -22,11 +22,12 @@ describe('workspace project scaffold', () => {
 
     try {
       new ProjectWriter().createWorkspace(root, 'forest');
-      const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as { packageManager?: string; pnpm?: unknown };
+      const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as { packageManager?: string; pnpm?: unknown; dependencies: Record<string, string> };
       const workspace = readFileSync(join(root, 'pnpm-workspace.yaml'), 'utf8');
 
       expect(pkg.packageManager).toBe('pnpm@12.6.0');
       expect(pkg.pnpm).toBeUndefined();
+      expect(pkg.dependencies).toHaveProperty('better-sqlite3');
       expect(workspace).toContain('better-sqlite3: false');
       expect(workspace).toContain('esbuild: true');
       expectFougereCheckWorkflow(root, 'pnpm typecheck');

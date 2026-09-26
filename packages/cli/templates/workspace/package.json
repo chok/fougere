@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "@fougere/core": "latest",
-    "@fougere/schema": "latest"
+    "@fougere/schema": "latest",
+    "better-sqlite3": "^13.0.3"
   },
   "devDependencies": {
     "@types/node": "^22.19.15",
