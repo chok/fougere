@@ -1,116 +1,57 @@
-import { existsSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import ProjectWriter from '../../fronds/scaffold/services/ProjectWriter.js';
+import { Composer } from '../../src/composer/Composer.js';
+import { type Catalog, type Plan, commandOf, planOf, refusalsOf } from '../../src/composer/Plan.js';
 import type { ui as createUi } from '../../src/ui.js';
 import type { App } from '@fougere/core';
 
 type Ui = ReturnType<typeof createUi>;
 
 /**
- * The same line either way, which is the point: `--local` links this checkout, the
- * default resolves `@fougere/*` from npm, and neither needs a caveat since the alpha
- * is published. It used to carry one, and a stale caveat is worse than none.
- */
-const INSTALL = 'pnpm install';
-
-/**
- * The guided composer: a workspace, then its fronds (domains), then the apps
- * that consume them — in that dependency order. ProjectWriter is a plain,
- * dependency-free service, so the presentation command drives it directly.
+ * A plan, then one write. The flags state it — the only form a script, a CI job or an agent can
+ * drive — and the composer builds it when they state nothing; either way nothing touches the disk
+ * before the plan holds.
  */
 export default class NewCommand {
   constructor(private app: App, private ui: Ui) {}
 
   async run(raw: Record<string, unknown>) {
-    const pw = new ProjectWriter();
+    const writer = new ProjectWriter();
+    const catalog: Catalog = { fronds: writer.listTemplates('fronds'), apps: writer.listTemplates('apps') };
+    const where = { cwd: process.cwd(), force: Boolean(raw.force) };
+    const refusals = (plan: Plan) => refusalsOf(plan, catalog, where);
+    const stated = planOf({ name: raw.name as string | undefined, frond: raw.frond as string, app: raw.app as string, bare: Boolean(raw.bare) });
+    const guided = !stated;
 
-    let name = raw.name as string | undefined;
-    if (!name) name = (await this.ui.text({ message: 'Workspace', placeholder: 'shop' })) as string;
-
-    const dir = join(process.cwd(), name);
-    if (existsSync(dir) && !raw.force) {
-      const ok = await this.ui.confirm({ message: `${name}/ existe déjà. Écraser ?` });
-
-
-
-
-      if (!ok) { this.ui.cancel(); return; }
-    }
-
-    pw.createWorkspace(dir, name);
-
-    if (raw.bare) {
-      if (raw.local) pw.linkLocal(dir); else pw.pinVersions(dir);
-      this.ui.note([`cd ${name}`, `fougere new   # compose it (guided)`].join('\n'), `${name} — empty workspace`);
-      this.ui.outro('Ready.');
-
-      return;
-    }
-
-    // Stated composition wins over the prompts: it is the only form a script, a CI
-    // job or an agent can drive — the guided flow needs a TTY and hangs without one.
-    const stated = (raw.frond as string) || (raw.app as string);
-    const fronds = stated
-      ? this.state(dir, pw, 'fronds', raw.frond as string)
-      : await this.compose(dir, pw, 'fronds', 'Fronds — your domains', pw.listTemplates('fronds'));
-    const apps = stated
-      ? this.state(dir, pw, 'apps', raw.app as string)
-      : await this.compose(dir, pw, 'apps', 'Apps — what consumes them', pw.listTemplates('apps'));
-
-    // Every app depends on every frond — stated here, where both names are known.
-    pw.linkFronds(dir);
-    if (raw.local) pw.linkLocal(dir); else pw.pinVersions(dir);
-    this.ui.note([`cd ${name}`, INSTALL, `pnpm dev`].join('\n'), `${name} — ${fronds} frond(s), ${apps} app(s)`);
-    this.ui.outro('Ready.');
-  }
-
-  /**
-   * One phase, stated rather than prompted — `blog,api:catalog` is two pieces, the
-   * second renamed. The template name is the default name: a piece you don't rename
-   * is called what it is.
-   */
-  private state(dir: string, pw: ProjectWriter, kind: 'fronds' | 'apps', spec: string): number {
-    const available = pw.listTemplates(kind);
-    let count = 0;
-    for (const piece of spec.split(',').map((s) => s.trim()).filter(Boolean)) {
-      const [template, itemName = template] = piece.split(':');
-      if (!available.includes(template)) {
-        throw new Error(`Unknown ${kind} template '${template}' — available: ${available.join(', ') || '(none)'}`);
+    let plan = stated;
+    if (!plan) {
+      if (!process.stdin.isTTY) {
+        throw new Error('No terminal to ask in. State the project: fougere new shop --frond blog --app nuxt, or --bare for the empty shell.');
       }
-      if (kind === 'fronds') pw.addFrond(dir, template, itemName);
-      else pw.addApp(dir, template, itemName);
-      this.ui.info(`${kind}/${itemName}`);
-      count++;
+      plan = await new Composer((raw.name as string | undefined) ?? '', catalog, refusals).ask();
+      if (!plan) return;
     }
 
-    return count;
-  }
+    const refused = refusals(plan);
+    if (refused.length) throw new Error(refused.join('\n'));
 
-  /** One phase — loop "template → name" until the user is done. Returns the count added. */
-  private async compose(
-    dir: string,
-    pw: ProjectWriter,
-    kind: 'fronds' | 'apps',
-    header: string,
-    templates: string[],
-  ): Promise<number> {
-    this.ui.step(header);
-    let count = 0;
-    for (;;) {
-      const doneLabel = count === 0 ? (kind === 'fronds' ? 'passer' : 'aucune') : 'terminé';
-      const template = (await this.ui.select({
-        message: count === 0 ? 'Template' : 'Encore un ?',
-        options: [...templates.map((v) => ({ value: v, label: v })), { value: '__done__', label: doneLabel }],
-      })) as string;
-      if (template === '__done__') break;
-
-      const itemName = (await this.ui.text({ message: 'Nom' })) as string;
-      if (kind === 'fronds') pw.addFrond(dir, template, itemName);
-      else pw.addApp(dir, template, itemName);
-      this.ui.info(`${kind}/${itemName}`);
-      count++;
+    const dir = join(where.cwd, plan.name);
+    const spinner = this.ui.spinner(`Writing ${plan.name}/`);
+    try {
+      writer.write(plan, dir, { local: Boolean(raw.local), force: where.force });
+    } catch (error) {
+      spinner.stop('Nothing was written.');
+      throw error;
     }
+    spinner.stop(`${plan.name}/ written`);
 
-    return count;
+    const installed = guided && await this.ui.confirm({ message: 'Install the dependencies now? (pnpm install)', initialValue: true })
+      && spawnSync('pnpm', ['install'], { cwd: dir, stdio: 'inherit' }).status === 0;
+
+    const next = [`cd ${plan.name}`, ...(installed ? [] : ['pnpm install']), ...(plan.apps.length ? ['pnpm dev'] : [])];
+    this.ui.note(next.join('\n'), 'Next');
+    if (guided) this.ui.info(`The same project, with no prompt:\n${commandOf(plan)}`);
+    this.ui.outro('Ready.');
   }
 }
