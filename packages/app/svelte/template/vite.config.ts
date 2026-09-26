@@ -8,5 +8,6 @@ import { sveltekit } from '@sveltejs/kit/vite';
  * minification, and writes `@fronds/facade`.
  */
 export default defineConfig({
-  plugins: [fougere(), sveltekit()],
+  // Fronds are shared at the workspace root, two levels up from apps/<name>.
+  plugins: [fougere({ root: '../..' }), sveltekit()],
 });

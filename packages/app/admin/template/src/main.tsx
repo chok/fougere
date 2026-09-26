@@ -10,8 +10,8 @@ import { createRoot } from 'react-dom/client';
 import { FougereAdmin } from '@fougere/admin/react';
 
 /**
- * No `endpoint`, so it stays `/_fougere/call` — a relative address the dev proxy in
- * `vite.config.ts` forwards to the app next door.
+ * No `endpoint`, so it stays `/_fougere/call` — the dev server answers there itself, through
+ * `fougere()` in `vite.config.ts`.
  *
  * The integrated shape is the same component with nothing changed at all: mount it on a route
  * of the app that serves the frond, and same-origin does the rest. Standalone against another

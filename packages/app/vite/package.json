@@ -36,6 +36,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
+    "@fougere/app": "workspace:*",
     "@fougere/compiler": "workspace:*",
     "@fougere/core": "workspace:*",
     "jiti": "^2.7.0",

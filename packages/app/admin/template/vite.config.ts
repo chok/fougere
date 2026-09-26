@@ -1,16 +1,13 @@
 import { defineConfig } from 'vite';
+import { fougere } from '@fougere/vite';
 import react from '@vitejs/plugin-react';
 
 /**
- * No `@fougere/vite` here: this app scans nothing and boots nothing. It is a reader of one
- * endpoint, and the only thing it needs is a way to reach it without crossing an origin.
- *
- * Point the proxy at whichever app serves your frond. In production the two are usually
- * behind one host, and this block goes away.
+ * The admin reads the identity card at `/_fougere/call`, and `fougere()` answers there: the dev
+ * server boots the app from `fougere.config.ts`, so `fronds:` decides whether a frond answers in
+ * this process or a process away.
  */
 export default defineConfig({
-  plugins: [react()],
-  server: {
-    proxy: { '/_fougere': 'http://localhost:3000' },
-  },
+  // Fronds are shared at the workspace root, two levels up from apps/<name>.
+  plugins: [fougere({ root: '../..' }), react()],
 });

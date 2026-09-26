@@ -9,6 +9,5 @@ import react from '@vitejs/plugin-react';
  */
 export default defineConfig({
   // Fronds are shared at the workspace root, two levels up from apps/<name>.
-  root: '.',
-  plugins: [fougere(), react()],
+  plugins: [fougere({ root: '../..' }), react()],
 });

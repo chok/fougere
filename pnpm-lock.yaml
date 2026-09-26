@@ -1805,6 +1805,9 @@ importers:
 
   packages/app/vite:
     dependencies:
+      '@fougere/app':
+        specifier: workspace:*
+        version: link:../shared
       '@fougere/compiler':
         specifier: workspace:*
         version: link:../../compiler
