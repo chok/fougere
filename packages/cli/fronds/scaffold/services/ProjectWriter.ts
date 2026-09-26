@@ -157,6 +157,7 @@ export default class ProjectWriter {
       this.createWorkspace(staged, plan.name);
       for (const { template, name } of plan.fronds) this.addFrond(staged, template, name);
       for (const { template, name } of plan.apps) this.addApp(staged, template, name);
+      this.runApps(staged, plan.apps.map(({ name }) => name));
       this.linkFronds(staged);
       if (options.local) this.linkLocal(staged); else this.pinVersions(staged);
     } catch (error) {
@@ -221,6 +222,22 @@ export default class ProjectWriter {
     if (!existsSync(dir)) return [];
 
     return readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name);
+  }
+
+  /**
+   * One script per app, and `dev` for the first: two apps started together fight over a port and
+   * interleave their output, and a terminal app is not a server at all.
+   */
+  runApps(wsDir: string, apps: string[]): void {
+    const path = join(wsDir, 'package.json');
+    const pkg = JSON.parse(readFileSync(path, 'utf8')) as { scripts?: Record<string, string> };
+    const run = (app: string) => `pnpm -C apps/${app} dev`;
+    pkg.scripts = {
+      ...(apps.length ? { dev: run(apps[0]) } : {}),
+      ...Object.fromEntries(apps.map((app) => [`dev:${app}`, run(app)])),
+      ...pkg.scripts,
+    };
+    writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n');
   }
 
   /**

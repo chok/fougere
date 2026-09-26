@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PassThrough } from 'node:stream';
@@ -85,6 +85,28 @@ describe('the writer', () => {
       new ProjectWriter().write({ ...plan, apps: [] }, join(cwd, 'shop'));
       expect(readdirSync(cwd)).toEqual(['shop']);
       expect(existsSync(join(cwd, 'shop', 'fronds', 'blog', 'package.json'))).toBe(true);
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+
+  it('starts one app at a time: dev for the first, dev:<name> for each', () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'fougere-scripts-'));
+    try {
+      const writer = new ProjectWriter();
+      const scripts = (dir: string) =>
+        (JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')) as { scripts: Record<string, string> }).scripts;
+      writer.createWorkspace(join(cwd, 'two'), 'two');
+      writer.runApps(join(cwd, 'two'), ['web', 'ops']);
+      expect(scripts(join(cwd, 'two'))).toMatchObject({
+        dev: 'pnpm -C apps/web dev',
+        'dev:web': 'pnpm -C apps/web dev',
+        'dev:ops': 'pnpm -C apps/ops dev',
+      });
+
+      writer.createWorkspace(join(cwd, 'none'), 'none');
+      writer.runApps(join(cwd, 'none'), []);
+      expect(scripts(join(cwd, 'none'))).not.toHaveProperty('dev');
     } finally {
       rmSync(cwd, { recursive: true, force: true });
     }

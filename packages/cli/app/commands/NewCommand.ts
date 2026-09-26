@@ -59,7 +59,8 @@ export default class NewCommand {
     const installed = guided && await this.ui.confirm({ message: 'Install the dependencies now? (pnpm install)', initialValue: true })
       && spawnSync('pnpm', ['install'], { cwd: dir, stdio: 'inherit' }).status === 0;
 
-    const next = [`cd ${plan.name}`, ...(installed ? [] : ['pnpm install']), ...(plan.apps.length ? ['pnpm dev'] : [])];
+    const started = plan.apps.length > 1 ? plan.apps.map(({ name }) => `pnpm dev:${name}`) : plan.apps.map(() => 'pnpm dev');
+    const next = [`cd ${plan.name}`, ...(installed ? [] : ['pnpm install']), ...started];
     this.ui.note(next.join('\n'), 'Next');
     if (guided) this.ui.info(`The same project, with no prompt:\n${commandOf(plan)}`);
     this.ui.outro('Ready.');
