@@ -177,6 +177,7 @@ async function boot(): Promise<App> {
     // were left behind once, under Nuxt only.
     ...layerOf(storage),
     adapters: fileConfig.adapters,
+    ports: fileConfig.ports,
     remotes,
     /** Who inherits code from whom — the tree, whole, so a refusal can name where an entry sits. */
     under: fileConfig.fronds,

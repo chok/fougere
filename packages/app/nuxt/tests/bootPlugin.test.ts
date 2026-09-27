@@ -150,6 +150,15 @@ describe('a storage that could not be opened', () => {
 
     expect(out).toContain('"fronds":{"catalog":"https://x.workers.dev"}');
   });
+
+  it('carries `ports:`, or two realizations refuse the boot with the line that settles it written', () => {
+    const out = generateBootPlugin(
+      { db: false, ports: { Payment: 'FakePayment' } },
+      [], '/app/boot', [], '/app/fronds.ts',
+    );
+
+    expect(out).toContain('"ports":{"Payment":"FakePayment"}');
+  });
 });
 
 describe('generateBootPlugin — extensions named in the fougere: section', () => {

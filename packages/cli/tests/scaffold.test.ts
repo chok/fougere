@@ -94,3 +94,19 @@ describe('the versions a fresh project depends on', () => {
     rmSync(parent, { recursive: true, force: true });
   });
 });
+
+describe('a project linked to this monorepo', () => {
+  it('takes each linked host’s peers from the monorepo, so the app loads one Vue', () => {
+    const parent = mkdtempSync(join(tmpdir(), 'fougere-local-'));
+    const root = join(parent, 'shop');
+
+    try {
+      new ProjectWriter().write({ name: 'shop', fronds: [], apps: [{ template: 'nuxt', name: 'web' }] }, root, { local: true });
+      const workspace = readFileSync(join(root, 'pnpm-workspace.yaml'), 'utf8');
+
+      expect(workspace).toMatch(/\n {2}vue: link:\/.*\/packages\/app\/nuxt\/node_modules\/vue\n/);
+    } finally {
+      rmSync(parent, { recursive: true, force: true });
+    }
+  });
+});

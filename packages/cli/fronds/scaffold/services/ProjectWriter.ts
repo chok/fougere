@@ -349,6 +349,7 @@ export default class ProjectWriter {
       }
     };
     scan(packages);
+    const linked = new Set<string>();
     const walk = (d: string): void => {
       for (const e of readdirSync(d, { withFileTypes: true })) {
         if (e.name === 'node_modules') continue;
@@ -360,12 +361,31 @@ export default class ProjectWriter {
         for (const ranges of rangesOf(pkg)) {
           for (const dep of Object.keys(ranges)) {
             const local = dirOf.get(dep);
-            if (local) { ranges[dep] = `link:${local}`; changed = true; }
+            if (local) { ranges[dep] = `link:${local}`; linked.add(local); changed = true; }
           }
         }
         if (changed) writeFileSync(f, JSON.stringify(pkg, null, 2) + '\n');
       }
     };
     walk(wsDir);
+    this.sharePeers(wsDir, linked);
+  }
+
+  sharePeers(wsDir: string, linked: Iterable<string>): void {
+    const overrides = new Map<string, string>();
+    for (const dir of linked) {
+      const { peerDependencies = {} } = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')) as
+        { peerDependencies?: Record<string, string> };
+      for (const peer of Object.keys(peerDependencies)) {
+        const copy = join(dir, 'node_modules', peer);
+        if (peer.startsWith('@fougere/') || overrides.has(peer) || !existsSync(copy)) continue;
+        overrides.set(peer, `link:${copy}`);
+      }
+    }
+    if (overrides.size === 0) return;
+
+    const lines = [...overrides].map(([peer, target]) => `  ${peer.includes('/') ? `'${peer}'` : peer}: ${target}`);
+    const workspace = join(wsDir, 'pnpm-workspace.yaml');
+    writeFileSync(workspace, `${readFileSync(workspace, 'utf8').trimEnd()}\n\noverrides:\n${lines.join('\n')}\n`);
   }
 }
