@@ -26,6 +26,8 @@ pnpm -r typecheck                  # covers site/fronds + demos/*/fronds
 pnpm -C packages/schema test
 pnpm -C packages/schema vitest run tests/entity.test.ts
 
+pnpm -C site migrate               # the boot only READS the schema: a SQL-file project migrates
+                                   # first (site, *-blog demos, oclif-catalog, mirror-catalog)
 pnpm -C site dev                   # :3000 — vitrine + docs + blog Frond
 pnpm -C demos/nuxt-blog dev:blog   # blog Frond alone in its process (:4100)
 pnpm -C demos/nuxt-blog dev        # Nuxt app (:3000), consumes it via remotes
@@ -342,19 +344,37 @@ writes, `activeCalls()` counted log deliveries, and a hard-coded list missed a t
 party's destination. A reentrancy flag cannot see it: the carry is asynchronous.
 
 **The ascent is ORDERED BY CORE, and a host hands over a gesture** — `createApp` puts
-`migrating(options.migrate)` and `seeding()` before whatever `extensions:` carries. Four
+`checking(options.pending)` and `seeding()` before whatever `extensions:` carries. Four
 hosts assembled those two members themselves (`compiler/src/boot.ts`,
 `app/shared/src/boot.ts`, the Nuxt codegen as a STRING, and a demo), and eight demos wrote
-nothing — so they had no migration and nothing said it. Rows before tables is a boot that
-finds none, which is not a host's preference to hold. `Source.migrate` is declared once and
-travels whole: `layerOf(storage)` (`defaults/src/storage/ResolvedStorage.ts`) is the ONE place that spreads
-the data layer into what `createApp` takes, so a host names no member of it — naming a few
-is how `transacted` and `close` were left behind once, under Nuxt only. Pinned by
-`tests/lifecycle.test.ts`.
+nothing. Rows before a checked schema is not a host's preference to hold. `Source.pending` is
+declared once and travels whole: `layerOf(storage)` (`defaults/src/storage/ResolvedStorage.ts`) is
+the ONE place that spreads the data layer into what `createApp` takes, so a host names no member
+of it — naming a few is how `transacted` and `close` were left behind once, under Nuxt only.
+Pinned by `tests/lifecycle.test.ts`.
+
+**The boot READS the schema and never writes it** — the `schema` member, `checking(pending)`
+(`boot/AppLifecycle.ts`), refuses a boot whose database is behind the entities, naming each
+missing table and column and the command. Every other step of a boot checks and refuses; the one
+that wrote was where replicas raced the migration (6 of 40 refused under Postgres, 2026-09-17),
+where a key was believed on a table that never got it, and where `apps/nuxt` served an empty
+second database with a green boot. Writing is `fougere migrate --apply`
+(`cli/fronds/analysis/handlers/MigrateHandler.ts`): it boots the app as its host would, `schema`
+and `seeds` replaced by name, so a brought frond's tables are migrated with the rest, then runs
+what touches live data FIRST — a rename from `previous:` or the frozen chain, a drop — and the
+additive half after, since renamed first a column moves rather than being added empty beside the
+old one. A rename needs no freeze: `previous:` read against the live table makes the database the
+baseline, and a table gaining a column while keeping one no field declares is WARNED as an
+undeclared rename. `pending` reads NAMES only, so it is built without `elsewhere` and a process
+carrying one frond reads a table whose key names an entity it never saw. A process whose database
+is born with it — `:memory:`, a test — states `migrating(storage.migrate)`, or `migrates: true` on
+`bootApp` and `configureFougere`, which replaces the check by name; `testApp()` does. Pinned by
+`core/tests/lifecycle.test.ts`, `adapter/sql/tests/pending.test.ts`, `app/shared/tests/schema.test.ts`
+and `cli/tests/migrate.test.ts`.
 
 **The ascent** — `boot/AppLifecycle.ts`. An `Extension` states `up` and `down`, handed in
 through `CreateAppOptions.extensions`. A name already declared is REPLACED, not refused.
-`migrating(storage.migrate)` and `seeding(report)` are ordinary members. The two halves
+`checking(pending)`, `migrating(storage.migrate)` and `seeding(report)` are ordinary members. The two halves
 refuse in opposite ways: `up` stops at the first refusal, `down` releases every member and
 sends the refusals together in an `AggregateError`. An extension belongs to the PROCESS, not
 to a frond. Pinned by `tests/lifecycle.test.ts`.
@@ -690,8 +710,9 @@ link reads the value the door already parsed. A bare `Storage` in a signature bi
 default of `Storage<T = Record<string, unknown>>`, which the checker fills in, and the key
 was `RecordStorage`. Pinned by `tests/seam.test.ts`.
 
-**Sources** — a place rows live, and the four gestures it owns: `storageFactory` (required),
-`migrate?`, `transacted?`, `close?` (`core/src/source.ts`). What a source is MADE OF is not
+**Sources** — a place rows live, and the five gestures it owns: `storageFactory` (required),
+`pending?`, `migrate?`, `transacted?`, `close?` (`core/src/source.ts`). `pending` is `migrate`'s
+dual — read by every boot, where `migrate` is run by `fougere migrate --apply` alone. What a source is MADE OF is not
 there: `adapter/sql` states `dialect`, `db` and `sink` on its own `SqlSource`. The migration
 is the source's own gesture; the router partitions and hands each source its `SourceView`.
 `source:` names the ADAPTER and `dialect` stays SQL's. No `transacted` means a frame
@@ -936,18 +957,17 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   the pass is additive by design, a key cannot be added to a table holding rows that already
   break it, and `drift` is where it would be said — it reads nullability today and the engine's
   introspection carries no foreign key (`ColumnMetadata`, measured 2026-09-14). The fix is one
-  statement by hand, or a fresh table.
+  statement by hand, or a fresh table. `fougere migrate` does not add it either.
 - **A service reaching another frond's repository fails at the CALL, not at the boot** — a scope
   sees its parent and never its siblings, so `AuthorRepository` registered by the frond that
   owns the entity is unreachable from a neighbour. The refusal is right (a neighbour goes
   through the facade, not through the rows) and it is LATE: a collector in the wrong frond
   refuses the boot, this one answers `'AuthorRepository' is not registered` at the first call.
   Pinned as the behaviour it is by `defaults/tests/gradient.test.ts`, measured 2026-09-14.
-- **A process carrying only its own frond cannot migrate a table whose key names an entity it
+- **A process carrying only its own frond cannot MIGRATE a table whose key names an entity it
   has never seen** — `ref(User): no source hosts it`, measured 2026-09-14 while writing
-  `defaults/tests/on-delete.test.ts`. `elsewhere` covers another SOURCE, not another process,
-  and the bench migrates once from an app that carries every frond. What each process may
-  migrate is a subject of its own.
+  `defaults/tests/on-delete.test.ts`. It can CHECK it: `pending` reads names and leaves `elsewhere`
+  out. `fougere migrate` boots the whole project, so it carries every frond and writes the key.
 - **Scanning a directory that sits under `packages/` fails** — `LogLine_base is not defined`,
   measured 2026-09-10 on `packages/log/fronds/`. The same file scanned from outside the
   workspace loads. `findWorkspaceRoot` (`compiler/src/scan/scanner.ts`) seeds a type program
@@ -1064,11 +1084,9 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   ascent. Measured 2026-09-17, 4 Bun replicas on one Postgres 17: 10 or 15 rows instead of 5 in 3
   runs of 8; with `unique()` no duplicate, but a replica REFUSES its boot
   (`Seed 'note' failed … A row with these values already exists`).
-- **Replicas booting together race the migration, and one refuses its boot** — `migrating` runs in
-  every process's ascent. `ADD COLUMN` has no guard (`delta`, `diff/Change.ts`): 6 replicas of 40
-  refused, `column "body" of relation "notes" already exists`. `CREATE TABLE IF NOT EXISTS`
-  (`createTableSQL`) is NOT safe either under Postgres: two concurrent ones collide on
-  `pg_type_typname_nsp_index`, and 2 replicas of 4 refused. Measured 2026-09-17.
+- **`fougere migrate` run twice at once races itself** — the boot no longer migrates, so replicas
+  do not race it; two release steps started together still would (`ADD COLUMN` has no guard,
+  `delta`, `diff/Change.ts`). One migration per deployment is the operator's line.
 - **A primitive parameter is coerced, never refused** — `ArgumentResolver` (`dispatch/ArgumentResolver.ts`),
   the `param` branch, and `coercionFor` (`wire/binding.ts`). `excitement?: number` receives `NaN`
   for `?excitement=abc` and `0` for `?excitement=`, and the op answers 200. The doc says

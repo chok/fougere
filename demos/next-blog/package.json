@@ -6,7 +6,8 @@
     "dev": "next dev -p 3100",
     "start": "next start -p 3100",
     "typecheck": "tsc -p fronds",
-    "build": "next build"
+    "build": "next build",
+    "migrate": "fougere migrate --apply"
   },
   "dependencies": {
     "@fougere/core": "workspace:*",
@@ -23,6 +24,7 @@
   "devDependencies": {
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "@fougere/cli": "workspace:*"
   }
 }

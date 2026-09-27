@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vite dev --port 3200",
     "typecheck": "tsc -p fronds",
-    "build": "vite build"
+    "build": "vite build",
+    "migrate": "fougere migrate --apply"
   },
   "dependencies": {
     "@fougere/app": "workspace:*",
@@ -27,6 +28,7 @@
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react": "^6.0.1",
     "typescript": "^5.9.3",
-    "vite": "^8.0.0"
+    "vite": "^8.0.0",
+    "@fougere/cli": "workspace:*"
   }
 }

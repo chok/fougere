@@ -1,5 +1,17 @@
 # From the monorepo root:  docker compose -f site/docker-compose.yml up -d --build
 services:
+  # The release step: the site's boot reads the schema and refuses a database behind it, so the
+  # database is brought up here first — from the build stage, the one holding the sources the
+  # migration reads.
+  migrate:
+    build:
+      context: ..
+      dockerfile: site/Dockerfile
+      target: build
+    command: ["pnpm", "-C", "site", "migrate"]
+    volumes:
+      - site-data:/repo/site/.data
+
   site:
     build:
       context: ..
@@ -14,6 +26,9 @@ services:
     volumes:
       # All writable state (SQLite db + content index) lives here.
       - site-data:/app/.data
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     restart: unless-stopped
 
 volumes:

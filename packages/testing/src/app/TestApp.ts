@@ -1,4 +1,4 @@
-import { type App } from '@fougere/core';
+import { migrating, type App } from '@fougere/core';
 import { boot } from '@fougere/compiler';
 import { resolveStorage, type DbConfig } from '@fougere/defaults';
 import { installStubs, type Stub } from '../stub/Stub.js';
@@ -26,6 +26,7 @@ export async function testApp(options: TestAppOptions = {}): Promise<TestApp> {
   // One entry per announcement, in order. `Emissions.announce` calls the carrier for
   // every fact, so this sees them all — including those nobody in this process listens to.
   const heard: { fact: string; payload: unknown }[] = [];
+  const storage = resolveStorage(db);
 
   const app = await boot({
     onEmit: (fact, payload) => { heard.push({ fact, payload }); },
@@ -37,7 +38,8 @@ export async function testApp(options: TestAppOptions = {}): Promise<TestApp> {
     // placed elsewhere and a test runs what it declares.
     config: options.topology ? undefined : { fronds: {} },
     ...(options.topology ? {} : { remotes: {} }),
-    db: () => resolveStorage(db),
+    db: () => storage,
+    extensions: [migrating(storage.migrate)],
   });
 
   const doubles = installStubs(app, options.stub ?? []);

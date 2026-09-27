@@ -5,7 +5,7 @@
  * can hold whole: `--help` is a rendering of the entity's axes, and a refused flag is the
  * closed set saying no. A page's equivalent needs a browser.
  */
-import { describe, it, expect } from 'vitest';
+import { beforeAll, describe, it, expect } from 'vitest';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { rmSync } from 'node:fs';
@@ -20,6 +20,11 @@ async function fougere(...argv: string[]): Promise<string> {
 
   return run('npx', ['tsx', 'src/main.ts', ...argv], { cwd: root }).then(both, both);
 }
+
+/** The boot reads the schema and never writes it — a database is brought up by `fougere migrate`. */
+const migrated = () => run('npx', ['fougere', 'migrate', '--apply'], { cwd: root });
+
+beforeAll(migrated, 60_000);
 
 describe('a frond as a terminal', () => {
   it('groups a handler under its address, with no table saying so', async () => {
@@ -63,6 +68,7 @@ describe('a frond as a terminal', () => {
 
   it('writes a row, and reads it back in another process', async () => {
     rmSync(join(root, '.fougere'), { recursive: true, force: true });
+    await migrated();
     await fougere('product:create', 'SKU-9', '--name', 'Lamp', '--cents', '2500');
 
     expect(await fougere('product:list')).toContain('SKU-9');

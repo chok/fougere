@@ -8,7 +8,7 @@ import { drift, driftReport } from '../drift.js';
 import { createKyselySource, sqlEnforces, sqlSink, type SqlSource } from '../source/SqlSource.js';
 import { DRIVERS, dialectFor, messageOf, modulesOf } from '../driver/Driver.js';
 import { ENGINES } from '../fields/Engine.js';
-import { desiredTables, migrate } from '../diff/Change.js';
+import { desiredTables, migrate, pendingOf } from '../diff/Change.js';
 import { toTableName } from '../table/TableDef.js';
 import { Sources, type Source, type SourceConfig, type SourceView } from '@fougere/core';
 import type { SqliteSourceOptions } from './SqliteSourceOptions.js';
@@ -42,6 +42,8 @@ export function createSqliteSource(opts: SqliteSourceOptions = {}): SqliteSource
 
       return found.length ? driftReport(found) : undefined;
     },
+    pending: (view: SourceView) =>
+      pendingOf(view as never, db, { dialect: 'sqlite', tableName: opts.storageFactoryOptions?.tableName ?? toTableName }),
     close: () => db.destroy(),
     name: opts.name ?? path,
     enforces: sqlEnforces,

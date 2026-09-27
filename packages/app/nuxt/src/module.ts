@@ -531,9 +531,6 @@ export function generateBootPlugin(
   // left `transacted` and `close` behind, so a `Together` always compensated and the
   // connection was never released — under Nuxt only, which is where the app really runs.
   lines.push(`      storage,`);
-  // Its own gesture, handed over whole — `createApp` orders the ascent, so this codegen
-  // states no order and cannot mistype the name it would otherwise be adding beside.
-  lines.push(`      migrate: storage.migrate,`);
   lines.push(`      extensions: [`);
 
   if (seeds.length) {

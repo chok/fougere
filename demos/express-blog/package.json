@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "node --experimental-strip-types server.ts",
-    "typecheck": "tsc -p fronds"
+    "typecheck": "tsc -p fronds",
+    "migrate": "fougere migrate --apply"
   },
   "dependencies": {
     "@fougere/app": "workspace:*",
@@ -21,6 +22,7 @@
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/node": "^22.19.15",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "@fougere/cli": "workspace:*"
   }
 }

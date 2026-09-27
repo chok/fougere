@@ -18,7 +18,7 @@ import { tmpdir } from 'node:os';
 import { createContainer } from '@fougere/container';
 import { entity, optional, primary, ref, text } from '@fougere/schema';
 import { createSqliteSource } from '@fougere/adapter-sql/sqlite';
-import { createApp, createLocalRunner, Crud, frond, type App, type Storage, type Transport } from '@fougere/core';
+import { createApp, createLocalRunner, Crud, frond, migrating, type App, type Storage, type Transport } from '@fougere/core';
 import { layerOf, storageFrom } from '../src/storage/ResolvedStorage.js';
 
 class User extends entity({ id: primary(text()), name: text() }) {}
@@ -119,20 +119,19 @@ async function bench({ together = false, split = false, apart = false }: Placeme
 
   if (crossing) {
     people = await createApp({
-      createContainer, ...counted, fronds: fronds(together),
+      createContainer, ...counted, fronds: fronds(together), extensions: [migrating(storage.migrate)],
       remotes: { blog: 'http://blog.test' },
       remoteTransport: (): Transport => (call, invocation) => createLocalRunner(blog!)(call, invocation),
     } as never);
     blog = await createApp({
-      createContainer, ...counted, fronds: fronds(together),
+      createContainer, ...counted, fronds: fronds(together), extensions: [migrating(storage.migrate)],
       remotes: { people: 'http://people.test' },
       remoteTransport: (): Transport => (call, invocation) => createLocalRunner(people!)(call, invocation),
     } as never);
   } else {
-    people = blog = await createApp({ createContainer, ...counted, fronds: fronds(together) } as never);
+    people = blog = await createApp({ createContainer, ...counted, fronds: fronds(together), extensions: [migrating(storage.migrate)] } as never);
   }
 
-  await storage.migrate!(people as never);
   for (const spy of spies) spy.mockRestore();
 
   const rows = (app: App, name: string) => app.storageFor(name) as Storage;
@@ -256,7 +255,7 @@ describe('a chain cut twice, and code that is not here', () => {
     // Migrated ONCE, by an app that carries every frond: a process holding only its own cannot
     // write a table whose key names an entity it has never seen. What each process can migrate
     // is a subject of its own, and not what this bench is about.
-    const { migrate: _migrated, ...layer } = layerOf(storage);
+    const layer = layerOf(storage);
 
     const people = frond('people', { entities: [User], handlers: [UserHandler] });
     const blog = frond('blog', { entities: [Post], handlers: [PostHandler] });
@@ -278,11 +277,13 @@ describe('a chain cut twice, and code that is not here', () => {
         remoteTransport: (url: string): Transport => to(pick[url]!),
       } as never);
 
+    const whole = await createApp({
+      createContainer, ...layer, fronds: [people, blog, talk], extensions: [migrating(storage.migrate)],
+    } as never);
+    await whole.dispose();
     a = await open(people, { blog: 'b', talk: 'c' }, { b: () => b, c: () => c });
     b = await open(blog, { people: 'a', talk: 'c' }, { a: () => a, c: () => c });
     c = await open(talk, { people: 'a', blog: 'b' }, { a: () => a, b: () => b });
-    const whole = await createApp({ createContainer, ...layerOf(storage), fronds: [people, blog, talk] } as never);
-    await whole.dispose();
     for (const spy of spies) spy.mockRestore();
 
     return {

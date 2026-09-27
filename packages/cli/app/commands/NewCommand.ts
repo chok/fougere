@@ -67,7 +67,7 @@ export default class NewCommand {
       && spawnSync('pnpm', ['install'], { cwd: dir, stdio: 'inherit' }).status === 0;
 
     const started = plan.apps.length > 1 ? plan.apps.map(({ name }) => `pnpm dev:${name}`) : plan.apps.map(() => 'pnpm dev');
-    const next = [`cd ${plan.name}`, ...(installed ? [] : ['pnpm install']), ...started];
+    const next = [`cd ${plan.name}`, ...(installed ? [] : ['pnpm install']), 'pnpm migrate', ...started];
     this.ui.note(next.join('\n'), 'Next');
     if (guided) this.ui.info(`The same project, with no prompt:\n${commandOf(plan)}`);
     this.ui.outro('Ready.');

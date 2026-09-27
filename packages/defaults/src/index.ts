@@ -1,10 +1,10 @@
 /** @fougere/defaults — the conventional boot, declared once. */
-import { type App, type CreateAppOptions } from '@fougere/core';
+import { migrating, type App, type CreateAppOptions } from '@fougere/core';
 import { boot } from '@fougere/compiler';
 import { loadConfig, remotesOf } from '@fougere/core/node';
 import { createHttpTransport } from '@fougere/transport-http';
 import { type DbConfig } from './storage/DbConfig.js';
-import { resolveStorage } from './storage/ResolvedStorage.js';
+import { resolveStorage, type ResolvedStorage } from './storage/ResolvedStorage.js';
 
 export { declaresStorage } from './storage/DeclaredStorage.js';
 export { layerOf, resolveStorage, storageFrom } from './storage/ResolvedStorage.js';
@@ -26,6 +26,12 @@ export interface BootAppOptions {
    * Appended after the framework's own members, or replacing one by naming it.
    */
   extensions?: CreateAppOptions['extensions'];
+  /**
+   * This process writes its own schema at boot, instead of refusing a database behind the
+   * entities. Only for a database born with the process — `path: ':memory:'`, a test — since
+   * anything that outlives it is migrated by `fougere migrate --apply`.
+   */
+  migrates?: boolean;
 }
 
 /**
@@ -39,6 +45,7 @@ export async function bootApp(root: string, opts: BootAppOptions = {}): Promise<
   const served = new Set(opts.only ?? opts.fronds ?? []);
   const elsewhere = Object.fromEntries(Object.entries(remotesOf(config)).filter(([frond]) => !served.has(frond)));
   const useRemotes = (opts.topology ?? true) && Object.keys(elsewhere).length > 0;
+  let storage: ResolvedStorage | undefined;
 
   return boot({
     root,
@@ -47,7 +54,7 @@ export async function bootApp(root: string, opts: BootAppOptions = {}): Promise<
     remotes: useRemotes ? elsewhere : {},
     remoteTransport: useRemotes ? (url) => createHttpTransport(url) : undefined,
     // One resolver, one place that knows a storage package.
-    db: (cfg) => resolveStorage(cfg.db as DbConfig, (cfg as { sources?: unknown }).sources as never, root),
-    extensions: opts.extensions,
+    db: (cfg) => (storage = resolveStorage(cfg.db as DbConfig, (cfg as { sources?: unknown }).sources as never, root)),
+    extensions: [...(opts.migrates ? [migrating((app) => storage?.migrate?.(app))] : []), ...(opts.extensions ?? [])],
   });
 }

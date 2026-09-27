@@ -163,3 +163,38 @@ export async function migrate(
 
   return changes;
 }
+
+/**
+ * What the database lacks that the entities ask for, READ and never written — a table, a
+ * column. Indexes are left out: this pass reads names, and `CREATE INDEX IF NOT EXISTS` is
+ * what `migrate` proposes every time precisely because nothing here can see one.
+ */
+export async function pendingOf(app: AppLike, db: Kysely<any>, options?: GenerateOptions): Promise<string[]> {
+  // Names only, so `elsewhere` is left out: it decides which relations get a foreign key, and
+  // a process carrying only its own frond refers to entities it has never seen — which a
+  // question about names has no reason to refuse.
+  const desired = desiredTables({ ...app, elsewhere: undefined }, options);
+
+  return delta(desired, await actualState(db)).flatMap((change) => {
+    if (change.kind === 'createTable') return [`${change.table.name} — no table`];
+    if (change.kind === 'addColumn') return [`${change.table.name}.${change.column.name} — no column`];
+
+    return [];
+  });
+}
+
+/**
+ * The columns a live table keeps that no field declares, for the tables that also GAIN one —
+ * which is what an undeclared rename looks like: the data stays in a column nothing reads.
+ */
+export function undeclaredColumns(desired: TableDef[], actual: SchemaState): { table: string; columns: string[]; added: string[] }[] {
+  return desired.flatMap((table) => {
+    const live = actual.get(table.name);
+    if (!live) return [];
+    const declared = new Set(table.columns.map((column) => column.name));
+    const columns = [...live].filter((name) => !declared.has(name));
+    const added = table.columns.map((column) => column.name).filter((name) => !live.has(name));
+
+    return columns.length > 0 && added.length > 0 ? [{ table: table.name, columns, added }] : [];
+  });
+}

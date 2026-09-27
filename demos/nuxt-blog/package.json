@@ -8,7 +8,8 @@
     "graphql": "tsx graphql.ts",
     "build": "nuxt build",
     "preview": "nuxt preview",
-    "dev:blog": "node serve-blog.ts"
+    "dev:blog": "node serve-blog.ts",
+    "migrate": "fougere migrate --apply"
   },
   "dependencies": {
     "@fougere/adapter-graphql": "workspace:*",
@@ -40,6 +41,7 @@
   },
   "devDependencies": {
     "@iconify-json/noto": "^1.2.7",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "@fougere/cli": "workspace:*"
   }
 }

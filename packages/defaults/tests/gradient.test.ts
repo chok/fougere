@@ -19,7 +19,7 @@ import {
 } from '@fougere/schema';
 import { createSqliteSource } from '@fougere/adapter-sql/sqlite';
 import {
-  Collector, createApp, createAppRunner, createLocalRunner, Crud, ErrorCode, frond, Invocation, Presenter,
+  Collector, createApp, createAppRunner, createLocalRunner, Crud, ErrorCode, frond, Invocation, migrating, Presenter,
   togetherKeyOf, type App, type Storage, type Transport,
 } from '@fougere/core';
 import { layerOf, storageFrom } from '../src/storage/ResolvedStorage.js';
@@ -205,19 +205,18 @@ async function world(placement: Placement): Promise<World> {
   let writing: App;
   if (placement.apart) {
     people = await createApp({
-      createContainer, ...layer, fronds: fronds(placement), extensions: [door],
+      createContainer, ...layer, fronds: fronds(placement), extensions: [migrating(storage.migrate), door],
       remotes: { writing: 'http://writing.test' },
       remoteTransport: (): Transport => (c, i) => createLocalRunner(writing)(c, i),
     } as never);
     writing = await createApp({
-      createContainer, ...layer, fronds: fronds(placement), extensions: [door],
+      createContainer, ...layer, fronds: fronds(placement), extensions: [migrating(storage.migrate), door],
       remotes: { people: 'http://people.test' },
       remoteTransport: (): Transport => (c, i) => createLocalRunner(people)(c, i),
     } as never);
   } else {
-    people = writing = await createApp({ createContainer, ...layer, fronds: fronds(placement), extensions: [door] } as never);
+    people = writing = await createApp({ createContainer, ...layer, fronds: fronds(placement), extensions: [migrating(storage.migrate), door] } as never);
   }
-  await storage.migrate!(people as never);
   for (const spy of spies) spy.mockRestore();
 
   return {

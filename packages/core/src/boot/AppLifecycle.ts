@@ -56,17 +56,40 @@ export async function closeAll(levels: readonly (() => unknown)[], refusals: str
   if (refused.length > 0) throw new AggregateError(refused, `${refused.length} ${refusals}`);
 }
 
-/** The replaceable migration slot of the application lifecycle. */
+/**
+ * The schema slot, as every boot fills it: the database is READ against the entities, and a
+ * boot that finds it behind refuses rather than writing to it. Writing is `fougere migrate
+ * --apply`, or `migrating()` stated by a process whose database is born with it.
+ *
+ * Documented: [lifecycle](https://fougere.dev/docs/infra/lifecycle).
+ */
+export function checking(pending?: (app: App) => Promise<readonly string[]>): Extension {
+  if (!pending) return { name: 'schema' };
+
+  return {
+    name: 'schema',
+    up: async (app: App) => {
+      const behind = await pending(app);
+      if (behind.length === 0) return;
+
+      throw new Error(
+        `Fougere boot refused: the database is behind the entities (${behind.length}):\n`
+        + behind.map((line) => `  ${line}`).join('\n')
+        + '\n  Read the plan: fougere migrate — then write it: fougere migrate --apply',
+      );
+    },
+  };
+}
+
+/** The schema slot filled by a process that writes its own schema — its database is born with it. */
 export function migrating(
   migrate?: (app: App) => void | string | Promise<void | string>,
   report?: (message: string) => void,
 ): Extension {
-  if (!migrate) return { name: 'migrate' };
+  if (!migrate) return { name: 'schema' };
 
-  // What a pass DECLINED to change was thrown away at every call site — the same shape
-  // `seeding` already has: the source knows what it found, the boot owns the voice.
   return {
-    name: 'migrate',
+    name: 'schema',
     up: async (app: App) => {
       const said = await migrate(app);
       if (said) report?.(said);

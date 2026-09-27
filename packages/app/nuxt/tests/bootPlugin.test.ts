@@ -85,7 +85,7 @@ describe('generateBootPlugin — db path convergence', () => {
    * seeding, and its copy of the loop drifted — losing the storage fallback, in the one
    * copy that runs when you open the app. It now names the member it replaces.
    */
-  it('hands the storage its gesture, and names the member it replaces', () => {
+  it('hands the storage over whole, writes no schema, and names the member it replaces', () => {
     const out = generateBootPlugin(
       { db: 'sqlite' } as FougereConfig,
       [{ entityName: 'post', data: [], filePath: '/app/fronds/blog/seeds/post.ts' }] as never,
@@ -93,10 +93,10 @@ describe('generateBootPlugin — db path convergence', () => {
     );
 
     expect(out).toContain('extensions: [');
-    // The gesture, handed over whole: `createApp` orders the ascent, so this codegen names
-    // no member of it and cannot put the tables after the rows.
-    expect(out).toContain('migrate: storage.migrate,');
-    expect(out).not.toContain('migrating(');
+    // The storage travels whole and the boot only READS the schema: nothing here migrates,
+    // since writing it is `fougere migrate --apply`.
+    expect(out).toContain('      storage,');
+    expect(out).not.toContain('migrate');
     // And the seeding says which member it is, instead of taking over everything.
     expect(out).toContain("{ name: 'seeds', up: (app) => runSeeds(app, [");
     expect(out).not.toContain('afterBoot');

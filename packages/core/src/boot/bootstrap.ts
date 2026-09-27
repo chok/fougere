@@ -40,7 +40,7 @@ import { RPC_ENTITY } from '../wire/RpcAnswer.js';
 import { Invocation } from '../wire/Invocation.js';
 import { addressOf, facadeKeyOf, isFacadeKey } from '../wire/Facade.js';
 import { identityCardOf } from './card.js';
-import { AppLifecycle, closeAll, migrating } from './AppLifecycle.js';
+import { AppLifecycle, checking, closeAll } from './AppLifecycle.js';
 import { seeding } from './seed.js';
 
 import { storageKeyOf, type Storage } from '../storage/Storage.js';
@@ -636,8 +636,8 @@ function announceLines(emissions: Emissions, container: Container, carry: Carry)
 /** Bootstrap a fougere application. */
 export async function createApp(options: CreateAppOptions): Promise<App> {
   const container = (options.createContainer ?? createContainer)();
-  // Tables, then rows, then whatever the host took on — the order is not a host's to choose.
-  const appLifecycle = new AppLifecycle().add(migrating(options.migrate), seeding(), ...(options.extensions ?? []));
+  // The schema checked, then rows, then whatever the host took on — the order is not a host's to choose.
+  const appLifecycle = new AppLifecycle().add(checking(options.pending), seeding(), ...(options.extensions ?? []));
   const carry = new Carry();
   let built: App | undefined;
   let stopAnnouncing: (() => void) | undefined;

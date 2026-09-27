@@ -35,10 +35,12 @@ export interface ResolvedStorage {
   /** Run `fn` inside one transaction of that source, with a storage factory bound to it. */
   transacted?: <R>(source: string, fn: (storageFactory: (entity: any, name: string) => any) => Promise<R>) => Promise<R>;
   /**
-   * Brings the schema up to date once the app is scanned — the storage's `up`, handed to
-   * `migrating()`.
+   * Brings the schema up to date — what `fougere migrate --apply` runs, and `migrating()` for a
+   * process whose database is born with it. Answers what it could not bring, when anything.
    */
-  migrate?: (app: App) => Promise<void> | void;
+  migrate?: (app: App) => Promise<string | void>;
+  /** What `migrate` would create, READ — the dual the boot checks and never writes past. */
+  pending?: (app: App) => Promise<string[]>;
   /** Close every engine this opened — the dual of opening them, declared by whoever did. */
   close?: () => Promise<void>;
   /** Raw synchronous handle, when the engine exposes one. */
@@ -190,10 +192,24 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
     // which is what makes a cross-source `ref()` a miss rather than a constraint against a
     // stranger. What a pass DOES is the source's own: it knows its engine, this does not.
     migrate: async (app) => {
-      await base.migrate?.(viewOf(app, (name) => !home.has(lowerFirst(name))));
+      const said = [await base.migrate?.(viewOf(app, (name) => !home.has(lowerFirst(name))))];
       for (const [name, engine] of engines) {
-        await engine.migrate?.(viewOf(app, (e) => home.get(lowerFirst(e)) === name));
+        said.push(await engine.migrate?.(viewOf(app, (e) => home.get(lowerFirst(e)) === name)));
       }
+      const reports = said.filter((report): report is string => Boolean(report));
+
+      return reports.length > 0 ? reports.join('\n') : undefined;
+    },
+    // The same partition `migrate` writes through, read — so what the boot refuses is exactly
+    // what the command would create. A named source says its name; the default one needs none.
+    pending: async (app) => {
+      const lines = [...(await base.pending?.(viewOf(app, (name) => !home.has(lowerFirst(name)))) ?? [])];
+      for (const [name, engine] of engines) {
+        const behind = await engine.pending?.(viewOf(app, (e) => home.get(lowerFirst(e)) === name)) ?? [];
+        lines.push(...behind.map((line) => `${name}: ${line}`));
+      }
+
+      return lines;
     },
     // Every source, the default one last: a named source may hold what the default refers
     // to, and closing in reverse of opening is the rule everywhere else.
@@ -218,6 +234,6 @@ export function layerOf(storage: ResolvedStorage) {
     transacts: storage.transacts,
     enforces: storage.enforces,
     transacted: storage.transacted as never,
-    migrate: storage.migrate,
+    pending: storage.pending,
   };
 }

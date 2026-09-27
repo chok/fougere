@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os';
 import { createContainer } from '@fougere/container';
 import { entity, oneOf, primary, readOnly, ref, text } from '@fougere/schema';
 import { createSqliteSource } from '@fougere/adapter-sql/sqlite';
-import { createApp, Crud, frond, pageOf } from '@fougere/core';
+import { createApp, Crud, frond, migrating, pageOf } from '@fougere/core';
 import { layerOf, storageFrom } from '../src/storage/ResolvedStorage.js';
 
 class Author extends entity({ id: primary(), name: text() }) {}
@@ -33,6 +33,7 @@ describe('a seed', () => {
     await using app = await createApp({
       createContainer,
       ...layerOf(storage),
+      extensions: [migrating(storage.migrate)],
       fronds: [frond('blog', {
         entities: [Author, Post],
         handlers: [PostHandler],

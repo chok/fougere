@@ -5,7 +5,8 @@
   "packageManager": "pnpm@12.6.0",
   "scripts": {
     "build": "pnpm --filter './apps/*' -r build",
-    "typecheck": "tsc -p fronds"
+    "typecheck": "tsc -p fronds",
+    "migrate": "fougere migrate --apply"
   },
   "dependencies": {
     "@fougere/core": "latest",
@@ -13,6 +14,7 @@
     "better-sqlite3": "^13.0.3"
   },
   "devDependencies": {
+    "@fougere/cli": "latest",
     "@types/node": "^22.19.15",
     "typescript": "^5.9.3"
   }

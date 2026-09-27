@@ -11,9 +11,10 @@
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { rest, graphql } from '@fougere/app/web';
-import { useFougereApp } from '@fougere/app';
+import { extendFougere, useFougereApp } from '@fougere/app';
 import { generateRoutes } from '@fougere/adapter-rest';
 
+extendFougere({ migrates: true });
 const app = await useFougereApp();
 
 // --- One server, both facades ---------------------------

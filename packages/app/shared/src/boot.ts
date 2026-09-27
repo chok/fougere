@@ -1,7 +1,7 @@
 /** Fougere server bootstrap — single entry point for an app's lifecycle, whatever hosts it. */
 import { resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { applyConfig, createApp, identityFromEnv, Logger } from '@fougere/core';
+import { applyConfig, createApp, identityFromEnv, Logger, migrating } from '@fougere/core';
 import { scanProject, frondAliases } from '@fougere/compiler';
 import { resolveConventions } from '@fougere/core';
 import { loadCascadedConfig, remotesOf, setModuleLoader, statedModules } from '@fougere/core/node';
@@ -30,6 +30,12 @@ export interface FougereServerConfig {
   config?: Partial<FougereConfig>;
   /** Who performs an outgoing call, when the default cannot. */
   remoteTransport?: (url: string) => Transport;
+  /**
+   * This process writes its own schema at boot, instead of refusing a database behind the
+   * entities. Only for a database born with the process — `path: ':memory:'` — since anything
+   * that outlives it is migrated by `fougere migrate --apply`.
+   */
+  migrates?: boolean;
 }
 
 // ── State ────────────────────────────────────────
@@ -54,10 +60,16 @@ export function extendFougere(config: Partial<FougereServerConfig>) {
   _appPromise = null;
 }
 
-/** Get the booted Fougere app. Lazy — boots on first call, then caches. */
+/**
+ * Get the booted Fougere app. Lazy — boots on first call, then caches what booted. A refusal is
+ * not kept: it names a command — `fougere migrate --apply` — whose effect the next call must see.
+ */
 export function useFougereApp(): Promise<App> {
   if (!_appPromise) {
-    _appPromise = boot();
+    _appPromise = boot().catch((refusal: unknown) => {
+      _appPromise = null;
+      throw refusal;
+    });
   }
 
   return _appPromise;
@@ -182,7 +194,11 @@ async function boot(): Promise<App> {
     /** Who inherits code from whom — the tree, whole, so a refusal can name where an entry sits. */
     under: fileConfig.fronds,
     remoteTransport,
-    extensions: [...stated.extensions, ...(_config.extensions ?? [])],
+    extensions: [
+      ...(_config.migrates ? [migrating((app) => storage.migrate?.(app))] : []),
+      ...stated.extensions,
+      ...(_config.extensions ?? []),
+    ],
     // Opened before the container, so released after it. Never wired here until now:
     // this host boots the storage and no host closed one, which is what made a reload
     // leak the pool of every app it discarded.

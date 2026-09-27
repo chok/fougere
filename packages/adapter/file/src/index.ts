@@ -1,5 +1,6 @@
 /** Files — one JSON per instance, a directory per entity. */
 import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { lowerFirst } from '@fougere/schema';
 import {
@@ -78,6 +79,11 @@ export function createFileSource(opts: FileSourceOptions): Source {
         }
       }
     },
+    pending: async (view: SourceView) =>
+      view.fronds
+        .flatMap((frond) => frond.entities.map((entry) => lowerFirst(entry.name)))
+        .filter((name) => !existsSync(join(opts.path, name)))
+        .map((name) => `${join(opts.path, name)} — no directory`),
   };
 }
 

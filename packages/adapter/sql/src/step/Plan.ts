@@ -92,7 +92,7 @@ export function planStep(step: SetDiff, tables: TableDef[], options: PlanOptions
     for (const change of answer.changes) {
       const decided = realise(entity, table, change, byName.get(table)!);
       if ('reason' in decided) refusals.push(decided);
-      else if (decided.change && !done(decided.change, actual?.get(table))) changes.push(decided.change);
+      else if (decided.change && !(actual && done(decided.change, actual.get(table)))) changes.push(decided.change);
     }
   }
 
@@ -199,13 +199,15 @@ function literalOf(rules: { create?: unknown } | undefined): unknown {
 
 const show = (value: unknown): string => (value === undefined ? 'none' : JSON.stringify(value));
 
-/** Has the table already moved? Read off the columns themselves. */
+/**
+ * Has the table already moved? Read off the columns themselves. A table that is not there has
+ * nothing to move — the additive pass creates it at its final shape — and a rename whose old
+ * name is gone has nothing left to carry.
+ */
 function done(change: StepChange, columns: Set<string> | undefined): boolean {
-  if (!columns) return false;
+  if (!columns) return true;
 
-  return change.kind === 'renameColumn'
-    ? !columns.has(change.from) && columns.has(change.to)
-    : !columns.has(change.column);
+  return change.kind === 'renameColumn' ? !columns.has(change.from) : !columns.has(change.column);
 }
 
 /** One statement per change — the same rule `migrate` follows: no driver here batches. */

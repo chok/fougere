@@ -1,7 +1,7 @@
 /** What a consumer writes, and nothing else. */
 export { createApp } from './boot/bootstrap.js';
 export { orderSeeds, runSeeds, seeding } from './boot/seed.js';
-export { AppLifecycle, migrating } from './boot/AppLifecycle.js';
+export { AppLifecycle, checking, migrating } from './boot/AppLifecycle.js';
 export type { Extension } from './boot/Extension.js';
 export { defineFougere } from './define.js';
 export type { AdapterConfig } from './AdapterConfig.js';

@@ -9,7 +9,7 @@
 import fronds from './fixtures-ports/fronds.js';
 import { describe, it, expect } from 'vitest';
 import { createContainer } from '@fougere/container';
-import { AppLifecycle, createApp, frond, migrating } from '../src/index.js';
+import { AppLifecycle, checking, createApp, frond, migrating } from '../src/index.js';
 import type { Extension } from '../src/index.js';
 
 
@@ -25,15 +25,15 @@ describe('Lifecycle', () => {
     const log: string[] = [];
     await using app = await createApp({
       fronds, createContainer,
-      extensions: [recording('migrate', log), recording('seeds', log)],
+      extensions: [recording('schema', log), recording('seeds', log)],
     });
 
-    expect(log).toEqual(['migrate up', 'seeds up']);
-    expect(app.extensions()).toEqual(['migrate', 'seeds']);
+    expect(log).toEqual(['schema up', 'seeds up']);
+    expect(app.extensions()).toEqual(['schema', 'seeds']);
 
     await app.dispose();
     // Reverse of construction, the container's own rule read one level out.
-    expect(log).toEqual(['migrate up', 'seeds up', 'seeds down', 'migrate down']);
+    expect(log).toEqual(['schema up', 'seeds up', 'seeds down', 'schema down']);
   });
 
   /**
@@ -52,7 +52,7 @@ describe('Lifecycle', () => {
   });
 
   it('skips an absent member, so a host writes a conditional one inline', () => {
-    expect(new AppLifecycle().add(undefined, migrating(() => {})).names()).toEqual(['migrate']);
+    expect(new AppLifecycle().add(undefined, migrating(() => {})).names()).toEqual(['schema']);
   });
 
   /**
@@ -60,9 +60,9 @@ describe('Lifecycle', () => {
    * what let a host's own `migrate` land after the seeds — the slot is what makes a later
    * declaration a replacement instead of an addition.
    */
-  it('holds the migrate slot even when nothing migrates', async () => {
+  it('holds the schema slot even when nothing migrates', async () => {
     const slot = migrating(undefined)!;
-    expect(slot.name).toBe('migrate');
+    expect(slot.name).toBe('schema');
     expect(slot.up).toBeUndefined();
     await new AppLifecycle().add(slot).up({} as never);
   });
@@ -170,7 +170,7 @@ describe('Lifecycle', () => {
    * The order that was broken in production shape: a host declares its own `migrate` AFTER
    * the framework's defaults, and rows must still land after tables.
    */
-  it('keeps migrate before seeds when the host declares its own migrate last', async () => {
+  it('keeps the schema before seeds when the host declares its own migration last', async () => {
     const ran: string[] = [];
     await using app = await createApp({
       fronds, createContainer,
@@ -183,7 +183,7 @@ describe('Lifecycle', () => {
       ],
     });
 
-    expect(app.extensions()).toEqual(['migrate', 'seeds']);
+    expect(app.extensions()).toEqual(['schema', 'seeds']);
     expect(ran).toEqual(['migrate', 'seeds']);
   });
 
@@ -202,13 +202,13 @@ describe('Lifecycle', () => {
 });
 
 describe('the conventional ascent', () => {
-  it('runs tables, then rows, then whatever the host took on', async () => {
+  it('checks the schema, then rows, then whatever the host took on', async () => {
     const ran: string[] = [];
 
     await using app = await createApp({
       fronds: [frond('empty', {})],
       createContainer,
-      migrate: () => { ran.push('migrate'); },
+      pending: async () => { ran.push('schema'); return []; },
       extensions: [{ name: 'host', up: () => { ran.push('host'); } }],
     });
     void app;
@@ -216,7 +216,36 @@ describe('the conventional ascent', () => {
     // Four hosts wrote `migrating(…)` and `seeding(…)` into their own lists, one of them
     // as a string inside generated code. The ORDER is not a host's preference — rows
     // before tables is a boot that finds none — so `createApp` states it.
-    expect(ran).toEqual(['migrate', 'host']);
+    expect(ran).toEqual(['schema', 'host']);
+  });
+
+  /**
+   * The boot reads the database and never writes it: every other step of the ascent checks
+   * and refuses, and the one that wrote is where replicas raced and an empty database beside
+   * the real one was served with a green boot.
+   */
+  it('refuses a database behind the entities, naming what is missing and the command', async () => {
+    const booting = createApp({
+      fronds: [frond('empty', {})],
+      createContainer,
+      pending: async () => ['products — no table', 'orders.total — no column'],
+    });
+
+    await expect(booting).rejects.toThrow(/behind the entities \(2\):\n  products — no table\n  orders\.total — no column\n.*fougere migrate --apply/);
+  });
+
+  it('writes the schema only when a process states it, replacing the check by name', async () => {
+    const ran: string[] = [];
+
+    await using app = await createApp({
+      fronds: [frond('empty', {})],
+      createContainer,
+      pending: async () => ['products — no table'],
+      extensions: [migrating(() => { ran.push('migrated'); })],
+    });
+
+    expect(app.extensions()).toEqual(['schema', 'seeds']);
+    expect(ran).toEqual(['migrated']);
   });
 
   it('holds the slot when the host hands over no gesture', async () => {
@@ -230,7 +259,8 @@ describe('the conventional ascent', () => {
       extensions: [{ name: 'host', up: () => { ran.push('host'); } }],
     });
 
-    expect(app.extensions()).toEqual(['migrate', 'seeds', 'host']);
+    expect(app.extensions()).toEqual(['schema', 'seeds', 'host']);
     expect(ran).toEqual(['host']);
+    expect(checking(undefined).up).toBeUndefined();
   });
 });

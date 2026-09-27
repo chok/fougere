@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx src/main.ts",
     "test": "vitest run",
-    "typecheck": "tsc -p . --noEmit && tsc -p fronds"
+    "typecheck": "tsc -p . --noEmit && tsc -p fronds",
+    "migrate": "fougere migrate --apply"
   },
   "dependencies": {
     "@fougere/core": "workspace:*",
@@ -19,6 +20,7 @@
   },
   "devDependencies": {
     "tsx": "^4.21.0",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.0",
+    "@fougere/cli": "workspace:*"
   }
 }

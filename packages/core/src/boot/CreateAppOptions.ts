@@ -28,15 +28,10 @@ export interface CreateAppOptions {
   transacts?: (source: string) => boolean;
   transacted?: <R>(source: string, fn: (storageFactory: StorageFactory) => Promise<R>) => Promise<R>;
   /**
-   * Bring the shape of what lives here up to date — a source's own gesture, declared on
-   * `Source.migrate` and handed over whole.
-   *
-   * Handed here rather than assembled by the host: four of them wrote
-   * `migrating(storage.migrate)` themselves, one of them as a string inside generated
-   * code, and eight demos wrote nothing — so they had no migration and nothing said it.
-   * The ASCENT is core's to order, since rows after tables is not a host's preference.
+   * What the declaration asks of the sources and they do not hold yet — `Source.pending`, handed
+   * over whole. The boot READS it and refuses when it is not empty; nothing here writes a schema.
    */
-  migrate?: (app: App) => Promise<void> | void;
+  pending?: (app: App) => Promise<readonly string[]>;
   /** Whether that source refuses a constraint at the rows — the boot says so when it does not. */
   enforces?: (source: string, constraint: Constraint) => boolean;
   /** Builds the cross-source reader a frond gets when it declares `reads:`. */

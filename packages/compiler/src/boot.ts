@@ -33,8 +33,8 @@ interface BootOptions {
   db?: (config: FougereConfig) => {
     db?: unknown;
     storageFactory: CreateAppOptions['storageFactory'];
-    /** Bring the schema up to date — an extension's `up`, because it runs after the container. */
-    migrate?: (app: App) => Promise<void> | void;
+    /** What the schema lacks, read — the boot refuses on it and never writes. */
+    pending?: (app: App) => Promise<string[]>;
     /** Closes what the factory opened — `boot()` called it, so `boot()` releases it. */
     close?: () => Promise<void>;
   };
@@ -99,9 +99,9 @@ export async function boot(options: BootOptions): Promise<App> {
     // boot() called the factory, so boot() owns closing what it opened. Not an extension:
     // it was opened before the container existed, so it closes after the container goes.
     onDispose: dbSetup?.close,
-    // Its own gesture, handed over whole. The ORDER — tables, then rows, then whatever this
-    // host takes on — is `createApp`'s, and was written out by four hosts before.
-    migrate: dbSetup?.migrate,
+    // Read, never written: the boot refuses a database behind the entities, and writing it
+    // is `fougere migrate --apply`.
+    pending: dbSetup?.pending,
     extensions: [...stated.extensions, ...(options.extensions ?? [])],
     onEmit: options.onEmit,
     remoteTransport: options.remoteTransport,

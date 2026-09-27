@@ -8,7 +8,7 @@ describe('a host serving a frond the config places at an address', () => {
   it('boots, because what it serves is never remote to it', async () => {
     // `fougere serve notes` died on `remotes is declared but remoteTransport is missing`: the
     // host dropped its remotes, and the boot fell back to reading them from the config.
-    await using app = await bootApp(root, { only: ['notes'], topology: false });
+    await using app = await bootApp(root, { only: ['notes'], topology: false, migrates: true });
 
     expect(app.remotes).toEqual({});
     await app.storageFor('note')!.create({ title: 'served here' });
@@ -16,7 +16,7 @@ describe('a host serving a frond the config places at an address', () => {
   });
 
   it('does not route the frond it serves back out, with its topology followed', async () => {
-    await using app = await bootApp(root, { only: ['notes'] });
+    await using app = await bootApp(root, { only: ['notes'], migrates: true });
 
     expect(app.remotes).toEqual({});
   });
@@ -24,7 +24,7 @@ describe('a host serving a frond the config places at an address', () => {
 
 describe('an extension a frond carries', () => {
   it('mounts on the host that serves the frond, with nothing named by the host', async () => {
-    await using app = await bootApp(root, { only: ['notes'], topology: false });
+    await using app = await bootApp(root, { only: ['notes'], topology: false, migrates: true });
 
     expect(app.extensions()).toContain('mark');
     expect(app.container.resolve('Marked')).toBe('notes');

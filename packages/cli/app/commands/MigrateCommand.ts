@@ -8,9 +8,9 @@ import { machineWanted, printMachine } from '../../src/machine.js';
 type Ui = ReturnType<typeof createUi>;
 
 /**
- * Catching a database up with the frozen chain.
+ * Bringing a database up to what the entities declare.
  *
- * Prints by default and moves nothing: what this runs drops and renames columns, so the
+ * Prints by default and moves nothing: what this runs renames and drops columns, so the
  * plan is read before it is agreed to. `--apply` is that agreement.
  */
 export default class MigrateCommand {
@@ -24,21 +24,10 @@ export default class MigrateCommand {
 
     if (machineWanted(raw)) return printMachine(result);
 
-    if (result.chain.length === 0) {
-      this.ui.warn('No frozen step to apply. `fougere freeze <version>` records one.');
-
-      return;
-    }
-
     if (result.refusals.length > 0) {
-      this.ui.error(`This chain cannot be realised as it stands (${result.chain.join(' → ')}):`);
+      const chain = result.chain.length > 0 ? ` (${result.chain.join(' → ')})` : '';
+      this.ui.error(`This migration cannot be realised as it stands${chain}:`);
       for (const one of result.refusals) this.ui.step(`${pc.bold(`${one.entity}.${one.field}`)} — ${one.reason}`);
-
-      return;
-    }
-
-    if (result.changes.length === 0) {
-      this.ui.success(`Up to date — ${result.chain.join(' → ')} already realised.`);
 
       return;
     }
@@ -50,12 +39,20 @@ export default class MigrateCommand {
           : `${change.table}: drop ${pc.bold(change.column)}`,
       );
     }
+    for (const line of result.added) this.ui.step(`create ${line.replace(/ — no (table|column)$/, '')}`);
+    for (const warning of result.warnings) this.ui.warn(warning);
 
-    if (result.ran.length === 0) {
-      this.ui.info(`${result.changes.length} statement(s) — run again with ${pc.bold('--apply')} to make it so.`);
+    const planned = result.changes.length + result.added.length;
+    if (planned === 0) {
+      this.ui.success('Up to date — the database holds what the entities declare.');
 
       return;
     }
-    this.ui.success(`${result.ran.length} statement(s) run.`);
+    if (result.ran.length === 0) {
+      this.ui.info(`${planned} change(s) — run again with ${pc.bold('--apply')} to make it so.`);
+
+      return;
+    }
+    this.ui.success(`${planned} change(s) applied.`);
   }
 }

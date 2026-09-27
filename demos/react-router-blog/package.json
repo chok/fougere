@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "react-router dev --port 3400",
     "typecheck": "tsc -p fronds",
-    "build": "react-router build"
+    "build": "react-router build",
+    "migrate": "fougere migrate --apply"
   },
   "dependencies": {
     "@react-router/node": "^8",
@@ -31,6 +32,7 @@
     "@types/react-dom": "^19.2.3",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
-    "vite": "^8.0.3"
+    "vite": "^8.0.3",
+    "@fougere/cli": "workspace:*"
   }
 }

@@ -21,7 +21,7 @@ export type { SqlSource } from './source/SqlSource.js';
 export { drift } from './drift.js';
 export type { Drift } from './drift.js';
 export { actualState } from './diff/SchemaState.js';
-export { changeSQL, delta, desiredTables, migrate } from './diff/Change.js';
+export { changeSQL, delta, desiredTables, migrate, pendingOf, undeclaredColumns } from './diff/Change.js';
 export type { Change } from './diff/Change.js';
 export type { SchemaState } from './diff/SchemaState.js';
 // The non-additive half — realised only from a step a human wrote down.

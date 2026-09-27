@@ -28,6 +28,8 @@ export interface Source {
    * still a difference, and a boot is where a reader can act on it.
    */
   migrate?(view: SourceView): Promise<void | string>;
+  /** What `migrate` would create, READ and never written — one line per table or column. */
+  pending?(view: SourceView): Promise<string[]>;
   /** Run `fn` as ONE unit of work, with a factory bound to it. */
   transacted?<R>(fn: (factory: StorageFactory) => Promise<R>): Promise<R>;
   /** What it refuses at the rows themselves. Absent leaves the judge alone with it. */

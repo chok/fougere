@@ -24,26 +24,26 @@ describe('the ascent a host composes', () => {
    * The plugin's own `migrate` was then APPENDED after the framework's `seeds`: on a fresh
    * database the seeding read a table that did not exist yet.
    */
-  it('runs a host-declared migrate before the seeds, even when this host resolved no storage', async () => {
+  it('runs a host-declared schema member before the seeds, even when this host resolved no storage', async () => {
     const ran: string[] = [];
     configureFougere({
       storage: { storageFactory: storage },
       extensions: [
-        { name: 'migrate', up: () => { ran.push('migrate'); } },
+        { name: 'schema', up: () => { ran.push('schema'); } },
         { name: 'seeds', up: () => { ran.push('seeds'); } },
       ],
     });
 
     const app = await useFougereApp();
-    expect(app.extensions()).toEqual(['migrate', 'seeds']);
-    expect(ran).toEqual(['migrate', 'seeds']);
+    expect(app.extensions()).toEqual(['schema', 'seeds']);
+    expect(ran).toEqual(['schema', 'seeds']);
     await app.dispose();
   });
 
   it('declares the two framework members even when the host adds none', async () => {
     configureFougere({ storage: { storageFactory: storage } });
     const app = await useFougereApp();
-    expect(app.extensions()).toEqual(['migrate', 'seeds']);
+    expect(app.extensions()).toEqual(['schema', 'seeds']);
     await app.dispose();
   });
 });
