@@ -4,6 +4,7 @@
 JSON-RPC. This one proves it does not care which framework hosts it either.
 
 ```bash
+pnpm -C demos/next-blog migrate  # the boot only reads the schema
 pnpm -C demos/next-blog dev     # :3100
 ```
 

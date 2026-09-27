@@ -1,6 +1,7 @@
 # express-blog — the additive case
 
 ```bash
+pnpm -C demos/express-blog migrate  # the boot only reads the schema
 pnpm -C demos/express-blog dev     # :3300
 ```
 

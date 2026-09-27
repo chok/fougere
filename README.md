@@ -49,7 +49,7 @@ reviewable whoever wrote it: you, a colleague, or an agent.
 
 ```bash
 npm create fougere@latest -- shop --frond blog --app nuxt
-cd shop && pnpm install && pnpm dev          # :3000
+cd shop && pnpm install && pnpm migrate && pnpm dev   # :3000
 ```
 
 You now have a running app: the table created, the form contract, the REST and GraphQL
@@ -143,8 +143,9 @@ surface can still move. Seen running, not planned — a validated draft→publis
 browser, the split lived daily, identical user code either side through a production
 build, and [this site](./site) is itself a Fougere app.
 
-Known limits, because you would find them anyway: storage is SQLite with additive
-auto-DDL, so renames and type changes need an explicit migration; a computed field costs
+Known limits, because you would find them anyway: the boot never writes a schema —
+`fougere migrate` adds tables and columns and renames what `previous:` declares, and a type
+change needs a migration you write; a computed field costs
 one read per row unless you name a view. A split receiver binds to loopback by default;
 widening it requires signed envelopes, or an explicit `allowUnsigned` when an upstream mesh
 already authenticated the caller. The full list is in

@@ -1,6 +1,7 @@
 # react-router-blog — a fourth host, still no adapter
 
 ```bash
+pnpm -C demos/react-router-blog migrate  # the boot only reads the schema
 pnpm -C demos/react-router-blog dev     # :3400
 ```
 

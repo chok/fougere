@@ -5,6 +5,7 @@ Ce que la déclaration écrit toute seule, et les trois crans où on l'exécute.
 ```bash
 pnpm test          # les trois premiers crans
 pnpm e2e           # le quatrième : un vrai navigateur (playwright démarre le serveur)
+pnpm migrate       # le démarrage ne fait que lire le schéma
 pnpm dev           # la page seule, sur :4300
 pnpm load:gen      # réécrit load.js depuis ce que l'app répond
 k6 run load.js     # si k6 est installé

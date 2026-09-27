@@ -1,6 +1,7 @@
 # sveltekit-blog — a second UI framework, one package
 
 ```bash
+pnpm -C demos/sveltekit-blog migrate  # the boot only reads the schema
 pnpm -C demos/sveltekit-blog dev     # :3500
 ```
 

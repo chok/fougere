@@ -13,4 +13,5 @@ scan. This is the limitation `CLAUDE.md` records; `site/Dockerfile` works around
 re-adding `jiti` and TypeScript by hand after the build. This demo has no deployment
 path of its own, so it is stated here rather than papered over.
 
-`pnpm dev` and `pnpm dev:blog` are unaffected.
+`pnpm dev` and `pnpm dev:blog` are unaffected. Both read the schema and refuse a database
+behind the entities: `pnpm migrate` first.

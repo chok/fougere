@@ -1,6 +1,7 @@
 # tanstack-blog — a third host, and no adapter package
 
 ```bash
+pnpm -C demos/tanstack-blog migrate  # the boot only reads the schema
 pnpm -C demos/tanstack-blog dev     # :3200
 ```
 

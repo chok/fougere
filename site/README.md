@@ -5,7 +5,8 @@ The Fougere site — landing page, docs, blog — built with Fougere: the blog i
 (`content/{en,fr}/docs`), i18n is en/fr (`prefix_except_default`: `/docs`, `/fr/docs`).
 
 ```bash
-pnpm dev                 # from site/ — dev server :3000
+pnpm migrate             # from site/ — the boot only reads the schema
+pnpm dev                 # dev server :3000
 pnpm build && node .output/server/index.mjs   # prod build (see Dockerfile for the trace fixes)
 ```
 
