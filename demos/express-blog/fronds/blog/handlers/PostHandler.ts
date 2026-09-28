@@ -23,7 +23,7 @@ export default class PostHandler extends Crud(Post) {
   }
 
   /**
-   * The draft→published transition — an operation, not a field write. `status` is
+   * The draft→published transition. `status` is
    * `readOnly`, so no client can reach it through create or update; this is the one
    * facade, and it states its own rules.
    */

@@ -5,9 +5,9 @@ import Task from '../entities/Task.js';
 export class TaskCard extends Task.pick('id', 'title', 'status') {}
 
 // Crud(Task) gives list/create/update/delete for free — the accelerator.
-// 'complete' is the business contract: a state transition, not a field write.
+// 'complete' is the business contract: a state transition.
 export default class TaskHandler extends Crud(Task) {
-  /** open→done — an operation, not a field write. Validate: open only. */
+  /** open→done. Validate: open only. */
   async complete(id: string): Promise<Task> {
     const task = await super.findById(id);
     if (!task) {

@@ -8,7 +8,7 @@ export class PostCard extends Post.pick('id', 'title', 'status') {}
 
 // Crud(Post) gives list/create/update/delete for free — the accelerator.
 // 'publish' is the real business contract: a state transition that validates
-// before it realises — an operation, not a field write. The golden path.
+// before it realises. The golden path.
 export default class PostHandler extends Crud(Post) {
   /**
    * The draft→published transition. Validate: exists, draft only.

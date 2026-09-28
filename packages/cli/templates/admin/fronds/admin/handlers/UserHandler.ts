@@ -5,9 +5,9 @@ import User from '../entities/User.js';
 export class UserCard extends User.pick('id', 'name', 'status') {}
 
 // Crud(User) gives list/create/update/delete for free — the accelerator.
-// 'deactivate' is the business contract: a state transition, not a field write.
+// 'deactivate' is the business contract: a state transition.
 export default class UserHandler extends Crud(User) {
-  /** active→inactive — an operation, not a field write. Validate: active only. */
+  /** active→inactive. Validate: active only. */
   async deactivate(id: string): Promise<User> {
     const user = await super.findById(id);
     if (!user) {

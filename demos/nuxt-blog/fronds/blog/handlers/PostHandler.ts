@@ -23,7 +23,7 @@ export default class PostHandler extends Crud(Post) {
   }
 
   /**
-   * The draft→published transition — an operation, not a field write.
+   * The draft→published transition.
    * Validate: author only, draft only. Realise: the server stamps the pair.
    */
   async publish(id: string, user?: User): Promise<Post> {

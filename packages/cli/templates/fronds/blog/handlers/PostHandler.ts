@@ -7,7 +7,7 @@ export default class PostHandler extends Crud(Post) {
     super(posts);
   }
 
-  /** The draft→published transition — an operation, not a field write. */
+  /** The draft→published transition. */
   async publish(id: string): Promise<Post> {
     const post = await super.findById(id);
     if (!post) {

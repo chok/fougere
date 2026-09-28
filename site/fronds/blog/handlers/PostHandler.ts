@@ -79,7 +79,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
   }
 
   /**
-   * The draft→published transition — an operation, not a field write.
+   * The draft→published transition.
    * Validate: the author, a draft, a body worth publishing. Realize: the
    * server stamps the pair.
    */
