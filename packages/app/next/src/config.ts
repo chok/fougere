@@ -62,7 +62,9 @@ export function withFougere(config: NextConfig = {}, options: { root?: string } 
     // project that never generated it fails to resolve rather than losing its types in silence.
     turbopack: {
       ...config.turbopack,
-      resolveAlias: { ...config.turbopack?.resolveAlias, [SPECIFIER]: join(app, FACADE) },
+      // Relative to the app: Turbopack refuses an absolute target — "server relative imports are
+      // not implemented yet" — where webpack, below, wants one.
+      resolveAlias: { ...config.turbopack?.resolveAlias, [SPECIFIER]: `./${FACADE}` },
     },
     webpack: (webpackConfig, context) => {
       // The app's own webpack function runs FIRST, so it sees an untouched config

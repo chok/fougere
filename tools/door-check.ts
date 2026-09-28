@@ -116,6 +116,15 @@ async function open(host: string, overrides: string): Promise<void> {
     // from SOURCE at scan time and no class carries it at runtime, so it answers only if
     // the statement the host boots from carried it across. Measured: it did not, and this
     // check said the facade was fine.
+    // The example page imports the facade by name, which the welcome page does not: a host that
+    // cannot resolve `@fronds/facade` answers `/` and fails here. Next 16's Turbopack did exactly that.
+    const posts = await fetch(`http://localhost:${PORT}/posts`);
+    if (posts.status !== 200) {
+      console.error(log);
+      console.error((await posts.text()).slice(0, 4000));
+      throw new Error(`${host}: the example page did not open: GET /posts answered ${posts.status}`);
+    }
+
     for (const method of ['post.list', 'post.listPublished']) {
       const call = await fetch(`http://localhost:${PORT}/_fougere/call`, {
         method: 'POST',
@@ -129,7 +138,7 @@ async function open(host: string, overrides: string): Promise<void> {
         throw new Error(`${host}: the facade opens but answers nothing: ${method} returned no result`);
       }
     }
-    console.log(`${host}: the facade opens — GET / → 200, and post.list and post.listPublished answer`);
+    console.log(`${host}: the facade opens — GET / and /posts → 200, and post.list and post.listPublished answer`);
   } finally {
     try {
       process.kill(-server.pid!, 'SIGTERM');
