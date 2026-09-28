@@ -532,8 +532,11 @@ a host as a tarball and never runs its code. An app is a workspace member, so th
 `oclif` has no tool and keeps its whole starter. The shell is the one network step, which is why
 `Shell` is injected: `cli/tests/fixtures-shell/` holds each tool's measured output, and
 `door:check` runs the real ones for every host of `OFFERED` (`cli/src/composer/Offered.ts`, read by
-the composer too). `withFougere` gained `{ root }`, the option `fougere()` and Nuxt's `fougere:`
-already took, and `./config` a `default` condition: the shell writes `next.config.ts`, which Next
+the composer too). No starter names the workspace: `projectRootOf` (`core/src/FougereConfig.ts`) is
+the nearest directory, up from the app, holding `fronds/` — or a config file, holding none yet —
+and Nuxt, Vite, Next and the oclif starter all read it, so `root` is an EXCEPTION written only when
+the fronds sit elsewhere; every starter used to write `'../..'`, a fact the tree already stated.
+`@fougere/next/config` gained a `default` condition: the shell writes `next.config.ts`, which Next
 loads through `require`.
 
 **`fougere load` writes the scenario the app already describes** — `cli/app/commands/LoadCommand.ts`

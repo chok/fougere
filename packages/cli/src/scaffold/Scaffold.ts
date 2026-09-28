@@ -25,8 +25,8 @@ export interface Scaffold {
 
 /** The one config gesture that makes a host serve Fougere — three forms, one per kind of host. */
 export type Wire =
-  | { kind: 'nuxtModule'; file: string; module: string; configKey: string; options: Record<string, unknown> }
-  | { kind: 'vitePlugin'; file: string; from: string; imported: string; options: Record<string, unknown> }
+  | { kind: 'nuxtModule'; file: string; module: string; configKey?: string; options?: Record<string, unknown> }
+  | { kind: 'vitePlugin'; file: string; from: string; imported: string; options?: Record<string, unknown> }
   | { kind: 'wrapExport'; file: string; from: string; imported: string; options?: Record<string, unknown> };
 
 /** Where a host writes the facade module, from the app's own directory. */

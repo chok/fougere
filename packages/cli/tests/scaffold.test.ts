@@ -171,7 +171,7 @@ describe('an app is the host\u2019s own shell, and Fougere adds its part', () =>
     const { read, dispose } = app('nuxt');
     try {
       expect(read('nuxt.config.ts')).toMatch(/modules: \[\s*['"]@fougere\/nuxt['"]\s*\]/);
-      expect(read('nuxt.config.ts')).toMatch(/fougere: \{\s*root: '\.\.\/\.\.'/);
+      expect(read('nuxt.config.ts')).not.toContain('root');
       expect(read('nuxt.config.ts')).toContain('compatibilityDate');
       expect(read('tsconfig.json')).toContain('.nuxt/tsconfig.app.json');
       expect(JSON.parse(read('package.json')).dependencies['@fougere/nuxt']).toBe('latest');
@@ -183,7 +183,7 @@ describe('an app is the host\u2019s own shell, and Fougere adds its part', () =>
     const { read, has, dispose } = app('next');
     try {
       expect(read('next.config.ts')).toContain('import { withFougere } from "@fougere/next/config"');
-      expect(read('next.config.ts')).toMatch(/export default withFougere\(nextConfig, \{\s*root: "\.\.\/\.\."/);
+      expect(read('next.config.ts')).toContain('export default withFougere(nextConfig);');
       expect(has('pnpm-workspace.yaml')).toBe(false);
       expect(JSON.parse(read('package.json')).packageManager).toBeUndefined();
       const paths = JSON.parse(read('tsconfig.json')).compilerOptions.paths;
@@ -196,7 +196,7 @@ describe('an app is the host\u2019s own shell, and Fougere adds its part', () =>
     const { read, has, dispose } = app('react');
     try {
       expect(read('vite.config.ts')).toContain("import { fougere } from '@fougere/vite'");
-      expect(read('vite.config.ts')).toMatch(/plugins: \[\s*fougere\(\{\s*root: '\.\.\/\.\.',?\s*\}\),\s*react\(\)/);
+      expect(read('vite.config.ts')).toMatch(/plugins: \[\s*fougere\(\),\s*react\(\)/);
       expect(has('src/App.css')).toBe(false);
       expect(has('src/assets')).toBe(false);
       expect(read('tsconfig.app.json')).toContain('/* Bundler mode */');
@@ -209,7 +209,7 @@ describe('an app is the host\u2019s own shell, and Fougere adds its part', () =>
   it('SvelteKit: the plugin before sveltekit(), and the page replaced', () => {
     const { read, dispose } = app('svelte');
     try {
-      expect(read('vite.config.ts')).toMatch(/plugins: \[\s*fougere\(\{\s*root: '\.\.\/\.\.',?\s*\}\),\s*sveltekit\(/);
+      expect(read('vite.config.ts')).toMatch(/plugins: \[\s*fougere\(\),\s*sveltekit\(/);
       expect(read('src/routes/+page.svelte')).toContain('Your app is running on');
     } finally { dispose(); }
   });

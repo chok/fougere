@@ -5,6 +5,7 @@ import TerserPlugin from 'terser-webpack-plugin';
 import type { NextConfig } from 'next';
 
 import { RUNTIME_PACKAGES } from '@fougere/compiler';
+import { projectRootOf } from '@fougere/core/node';
 
 /** Where the facades land, and what a page imports them by. */
 const FACADE = '.fougere/facade.generated.ts';
@@ -38,14 +39,14 @@ async function writeFacades(root: string, app: string): Promise<void> {
 }
 
 /**
- * `root` is where the fronds are — `'../..'` for an app under `apps/`, the same option `fougere()`
- * takes for Vite and `fougere:` for Nuxt. The facade is written in the app, where its tsconfig
- * looks for it, and the boot learns the root through `FOUGERE_ROOT`, as it does under Vite.
+ * The fronds are found on their own (`projectRootOf`) — `root` is for when they sit elsewhere, the
+ * same option `fougere()` takes for Vite and `fougere:` for Nuxt. The facade is written in the app,
+ * where its tsconfig looks for it, and the boot learns the root through `FOUGERE_ROOT`.
  */
 export function withFougere(config: NextConfig = {}, options: { root?: string } = {}): NextConfig {
   const userWebpack = config.webpack;
   const app = process.cwd();
-  const root = resolve(app, options.root ?? '.');
+  const root = options.root ? resolve(app, options.root) : projectRootOf(app);
   process.env.FOUGERE_ROOT = root;
   const written = writeFacades(root, app);
 

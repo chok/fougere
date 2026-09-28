@@ -23,10 +23,6 @@
   "wire": {
     "kind": "nuxtModule",
     "file": "nuxt.config.ts",
-    "module": "@fougere/nuxt",
-    "configKey": "fougere",
-    "options": {
-      "root": "../.."
-    }
+    "module": "@fougere/nuxt"
   }
 }

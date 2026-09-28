@@ -14,7 +14,7 @@ import type { Nuxt } from '@nuxt/schema';
 import { orderSeeds } from '@fougere/core';
 import { scanProject, emitStatement, emitFacade, emitNames, frondAliases } from '@fougere/compiler';
 import { frondPackage, resolveConventions, statedFronds, statesModule, type Conventions } from '@fougere/core';
-import { configFileIn, setModuleLoader, loadCascadedConfig, remotesOf } from '@fougere/core/node';
+import { configFileIn, setModuleLoader, loadCascadedConfig, projectRootOf, remotesOf } from '@fougere/core/node';
 import { declaresStorage } from '@fougere/defaults';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
 import { createJiti } from 'jiti';
@@ -25,7 +25,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 export interface FougereModuleOptions {
   /** Override fougere.config.ts values from nuxt.config. Optional. */
   db?: FougereConfig['db'];
-  /** Where `fronds/` lives, relative to the app's rootDir. */
+  /** Where `fronds/` lives, relative to the app's rootDir — found on its own (`projectRootOf`), so written only when it is elsewhere. */
   root?: string;
 
   /**
@@ -67,7 +67,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
       resolveModule('./runtime', ...path);
     const rootDir = nuxt.options.rootDir;
     // Fronds may live at the workspace root (app under apps/*); config/.fougere stay app-local.
-    const scanRoot = options.root ? resolve(rootDir, options.root) : rootDir;
+    const scanRoot = options.root ? resolve(rootDir, options.root) : projectRootOf(rootDir);
     // The runtime app (fougereApp) scans fronds too; hand it the same root via
     // env (the Nitro dev worker inherits the parent env, like FORCE_COLOR above).
     process.env.FOUGERE_ROOT = scanRoot;

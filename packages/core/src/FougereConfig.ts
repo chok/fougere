@@ -1,4 +1,4 @@
-import { resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { existsSync } from 'node:fs';
 import type { LogLevel } from './builtin/LogLevel.js';
 import type { ConventionsInput } from './ConventionsInput.js';
@@ -8,6 +8,7 @@ import { getModuleLoader } from './loader.js';
 import type { AdapterConfig } from './AdapterConfig.js';
 import { mergeStated, statesModule, type FrondsStated } from './FrondsStated.js';
 import { statedFronds } from './StatedFrond.js';
+import { DEFAULT_CONVENTIONS } from './Conventions.js';
 
 export interface FougereConfig {
   /** Database configuration — the DEFAULT source, the one an entity lands in unnamed. */
@@ -39,6 +40,22 @@ const CONFIG_FILES = ['fougere.config.ts', 'fougere.config.js', 'fougere.config.
 /** The config file a directory holds, if it holds one. */
 export function configFileIn(dir: string): string | undefined {
   return CONFIG_FILES.map((file) => resolve(dir, file)).find((path) => existsSync(path));
+}
+
+/**
+ * The project an app belongs to: the nearest directory, from `dir` up, that holds the fronds —
+ * or, holding none yet, a config file. An app under `apps/` finds its workspace, and an app that
+ * keeps its own fronds is its own project, with nothing written in either.
+ */
+export function projectRootOf(dir: string): string {
+  const up = (holds: (at: string) => boolean): string | undefined => {
+    for (let at = resolve(dir); ; at = dirname(at)) {
+      if (holds(at)) return at;
+      if (dirname(at) === at) return undefined;
+    }
+  };
+
+  return up((at) => existsSync(join(at, DEFAULT_CONVENTIONS.fronds))) ?? up((at) => configFileIn(at) !== undefined) ?? resolve(dir);
 }
 
 async function loadConfigFrom(dir: string, fresh?: boolean): Promise<FougereConfig> {

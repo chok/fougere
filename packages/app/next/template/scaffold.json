@@ -29,10 +29,7 @@
     "kind": "wrapExport",
     "file": "next.config.ts",
     "from": "@fougere/next/config",
-    "imported": "withFougere",
-    "options": {
-      "root": "../.."
-    }
+    "imported": "withFougere"
   },
   "tsconfig": "tsconfig.json"
 }

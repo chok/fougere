@@ -5,6 +5,5 @@ export default class Post extends entity({
   title: text({ min: 1, max: 200 }),
   body: text(),
   createdAt: created(),
-  // Server-owned: born a draft, flipped by the publish operation.
   status: readOnly(oneOf('draft', 'published', { default: 'draft' })),
 }) {}

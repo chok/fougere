@@ -26,9 +26,6 @@
     "kind": "vitePlugin",
     "file": "vite.config.ts",
     "from": "@fougere/vite",
-    "imported": "fougere",
-    "options": {
-      "root": "../.."
-    }
+    "imported": "fougere"
   }
 }

@@ -6,6 +6,7 @@ import { join, dirname, resolve } from 'node:path';
 import type { Plugin } from 'vite';
 import { RUNTIME_PACKAGES } from '@fougere/compiler';
 import { type Conventions, DEFAULT_CONVENTIONS } from '@fougere/core';
+import { projectRootOf } from '@fougere/core/node';
 
 /** The entity names a build must not rename, read off the filesystem. */
 export function entityNamesIn(root: string, conventions: Conventions = DEFAULT_CONVENTIONS): string[] {
@@ -36,8 +37,8 @@ export interface FougereViteOptions {
   /** Extra identifiers to reserve, for entities that do not live under `fronds/`. */
   reserved?: string[];
   /**
-   * Where the fronds are, from the app — `'../..'` in a workspace, whose `fronds/` sit at its
-   * root. The same key `@fougere/nuxt` reads.
+   * Where the fronds are, from the app — found on its own (`projectRootOf`), so written only when
+   * they sit elsewhere. The same key `@fougere/nuxt` reads.
    */
   root?: string;
   /** Set false when the host serves the call envelope itself. */
@@ -139,7 +140,7 @@ export function fougere(options: FougereViteOptions = {}): Plugin {
   // Where `config` said the app is, so `buildStart` writes beside the alias it set — and where
   // its fronds are, which a workspace puts two levels up.
   let app = process.cwd();
-  const frondsOf = (from: string) => resolve(from, options.root ?? '.');
+  const frondsOf = (from: string) => (options.root ? resolve(from, options.root) : projectRootOf(from));
 
   return {
     name: 'fougere',
