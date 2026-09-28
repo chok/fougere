@@ -1,3 +1,5 @@
+import './welcome.css';
+
 export default function Home() {
   return (
     <main className="welcome">

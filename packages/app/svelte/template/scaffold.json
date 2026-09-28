@@ -1,0 +1,34 @@
+{
+  "create": [
+    "sv@0.17",
+    "create",
+    "{dir}",
+    "--template",
+    "minimal",
+    "--types",
+    "ts",
+    "--no-add-ons",
+    "--no-install"
+  ],
+  "dependencies": {
+    "@fougere/core": "latest",
+    "@fougere/schema": "latest",
+    "@fougere/defaults": "latest",
+    "@fougere/container": "latest",
+    "better-sqlite3": "^13.0.3",
+    "kysely": "^0.28.17",
+    "@fougere/svelte": "latest"
+  },
+  "devDependencies": {
+    "@fougere/vite": "latest"
+  },
+  "wire": {
+    "kind": "vitePlugin",
+    "file": "vite.config.ts",
+    "from": "@fougere/vite",
+    "imported": "fougere",
+    "options": {
+      "root": "../.."
+    }
+  }
+}

@@ -5,6 +5,8 @@ import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type Conventions, DEFAULT_CONVENTIONS, frondPackage } from '@fougere/core';
 import type { Plan } from '../../../src/composer/Plan.js';
+import { applyScaffold, type Scaffold } from '../../../src/scaffold/Scaffold.js';
+import Shell from './Shell.js';
 
 /**
  * The monorepo's `packages/`, found by its workspace marker rather than counted
@@ -151,6 +153,8 @@ function rangesOf(pkg: Manifest): Record<string, string>[] {
 }
 
 export default class ProjectWriter {
+  constructor(private shell: Shell = new Shell()) {}
+
   /**
    * The whole plan, or nothing: it is written beside its destination and moved there once every
    * piece landed, since fetching a host's starter can fail halfway. `replace` removes what the
@@ -208,7 +212,14 @@ export default class ProjectWriter {
     const starter = hosts().includes(template) ? starterOf(`@fougere/${template}`) : undefined;
     if (!starter) throw new Error(`No host ships a starter for '${template}'. Served: ${hosts().join(', ')}.`);
 
-    cpSync(starter, dest, { recursive: true });
+    const manifest = join(starter, 'scaffold.json');
+    const scaffold = existsSync(manifest) ? JSON.parse(readFileSync(manifest, 'utf8')) as Scaffold : undefined;
+    if (scaffold?.create) {
+      mkdirSync(dirname(dest), { recursive: true });
+      this.shell.create(scaffold.create, dirname(dest), name);
+      applyScaffold(dest, scaffold);
+    }
+    cpSync(starter, dest, { recursive: true, filter: (source) => source !== manifest });
     restoreGitignore(dest);
     setPackageName(dest, name);
 
@@ -368,10 +379,11 @@ export default class ProjectWriter {
       }
     };
     walk(wsDir);
-    this.sharePeers(wsDir, linked);
+    this.sharePeers(wsDir, linked, dirOf.values());
   }
 
-  sharePeers(wsDir: string, linked: Iterable<string>): void {
+  sharePeers(wsDir: string, linked: Iterable<string>, monorepo: Iterable<string> = []): void {
+    const beside = [...new Set([...linked, ...monorepo])];
     const overrides = new Map<string, string>();
     for (const dir of linked) {
       const { peerDependencies = {} } = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')) as
@@ -388,7 +400,7 @@ export default class ProjectWriter {
     // `react-dom` refuses a `react` of another version, so taking one without the other ran none.
     for (const dependency of this.appDependencies(wsDir)) {
       if (dependency.startsWith('@fougere/') || overrides.has(dependency)) continue;
-      for (const dir of linked) {
+      for (const dir of beside) {
         const copy = join(dir, 'node_modules', dependency);
         if (!existsSync(join(copy, 'package.json'))) continue;
         const { peerDependencies = {} } = JSON.parse(readFileSync(join(copy, 'package.json'), 'utf8')) as

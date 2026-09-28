@@ -1936,6 +1936,12 @@ importers:
       jiti:
         specifier: ^2.4.2
         version: 2.7.0
+      jsonc-parser:
+        specifier: ^3.3.1
+        version: 3.3.1
+      magicast:
+        specifier: ^0.5.4
+        version: 0.5.4
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
@@ -8677,6 +8683,9 @@ packages:
   jsonc-eslint-parser@2.4.2:
     resolution: {integrity: sha512-1e4qoRgnn448pRuMvKGsFFymUCquZV0mpGgOyIKNgD3JVDTsVJyRBGH/Fm0tBb8WsWGgmB1mDe6/yJMQM37DUA==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
+
+  jsonc-parser@3.3.1:
+    resolution: {integrity: sha512-HUgH65KyejrUFPvHFPbqOY0rsFip3Bo5wb4ngvdi1EpCYWUQDC5V+Y7mZws+DLkr4M//zQJoanu1SP+87Dv1oQ==}
 
   jsonexport@3.2.0:
     resolution: {integrity: sha512-GbO9ugb0YTZatPd/hqCGR0FSwbr82H6OzG04yzdrG7XOe4QZ0jhQ+kOsB29zqkzoYJLmLxbbrFiuwbQu891XnQ==}
@@ -19744,6 +19753,8 @@ snapshots:
       eslint-visitor-keys: 3.4.3
       espree: 9.6.1
       semver: 7.8.5
+
+  jsonc-parser@3.3.1: {}
 
   jsonexport@3.2.0: {}
 

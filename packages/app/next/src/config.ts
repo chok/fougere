@@ -1,6 +1,6 @@
 /** `withFougere(config)` — what Next has to be told so a Fougere app builds. */
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import TerserPlugin from 'terser-webpack-plugin';
 import type { NextConfig } from 'next';
 
@@ -18,7 +18,7 @@ const SPECIFIER = '@fronds/facade';
  * sources, so a TS-aware loader is installed first — without it `scanProject` throws and the
  * module is silently never written.
  */
-async function writeFacades(root: string): Promise<void> {
+async function writeFacades(root: string, app: string): Promise<void> {
   try {
     const { scanProject, emitFacade, frondAliases } = await import('@fougere/compiler');
     const { setModuleLoader } = await import('@fougere/core/node');
@@ -31,16 +31,23 @@ async function writeFacades(root: string): Promise<void> {
     });
     setModuleLoader((filePath: string) => jiti.import(filePath) as Promise<Record<string, unknown>>);
 
-    const out = join(root, FACADE);
+    const out = join(app, FACADE);
     mkdirSync(dirname(out), { recursive: true });
     writeFileSync(out, emitFacade(await scanProject(root), { outFile: out }));
   } catch { /* a host with no fronds, or a scan that could not run */ }
 }
 
-export function withFougere(config: NextConfig = {}): NextConfig {
+/**
+ * `root` is where the fronds are — `'../..'` for an app under `apps/`, the same option `fougere()`
+ * takes for Vite and `fougere:` for Nuxt. The facade is written in the app, where its tsconfig
+ * looks for it, and the boot learns the root through `FOUGERE_ROOT`, as it does under Vite.
+ */
+export function withFougere(config: NextConfig = {}, options: { root?: string } = {}): NextConfig {
   const userWebpack = config.webpack;
-  const root = process.cwd();
-  const written = writeFacades(root);
+  const app = process.cwd();
+  const root = resolve(app, options.root ?? '.');
+  process.env.FOUGERE_ROOT = root;
+  const written = writeFacades(root, app);
 
   return {
     ...config,
@@ -54,7 +61,7 @@ export function withFougere(config: NextConfig = {}): NextConfig {
     // project that never generated it fails to resolve rather than losing its types in silence.
     turbopack: {
       ...config.turbopack,
-      resolveAlias: { ...config.turbopack?.resolveAlias, [SPECIFIER]: join(root, FACADE) },
+      resolveAlias: { ...config.turbopack?.resolveAlias, [SPECIFIER]: join(app, FACADE) },
     },
     webpack: (webpackConfig, context) => {
       // The app's own webpack function runs FIRST, so it sees an untouched config
@@ -63,7 +70,7 @@ export function withFougere(config: NextConfig = {}): NextConfig {
 
       void written;
       base.resolve ??= {};
-      base.resolve.alias = { ...base.resolve.alias, [SPECIFIER]: join(root, FACADE) };
+      base.resolve.alias = { ...base.resolve.alias, [SPECIFIER]: join(app, FACADE) };
 
       base.optimization ??= {};
       // ONLY the JS minifier is replaced. Next's minimizers are plain functions with

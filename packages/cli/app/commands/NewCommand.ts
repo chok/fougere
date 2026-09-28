@@ -3,17 +3,13 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import ProjectWriter from '../../fronds/scaffold/services/ProjectWriter.js';
 import { Composer } from '../../src/composer/Composer.js';
+import { OFFERED } from '../../src/composer/Offered.js';
 import { type Catalog, type Plan, commandOf, planOf, refusalsOf } from '../../src/composer/Plan.js';
 import type { ui as createUi } from '../../src/ui.js';
 import type { App } from '@fougere/core';
 
 type Ui = ReturnType<typeof createUi>;
 
-/**
- * The hosts the composer offers: the ones run end to end from a fresh workspace. Every other host
- * the CLI knows stays reachable by `--app`.
- */
-const OFFERED = ['nuxt'];
 
 /**
  * A plan, then one write. The flags state it — the only form a script, a CI job or an agent can

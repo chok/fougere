@@ -9,6 +9,10 @@
  * the host at it, so `nuxt dev` died in Rollup on the first published version and on
  * the three that followed. Four releases, one command away from being caught.
  *
+ * Every host the composer offers is opened, because each app's shell is written by the host's
+ * own tool — `create-nuxt`, `create-next-app`, `create-vite`, `sv` — and this is the one check
+ * that runs them: a major that changed what it writes is seen here, not by a user.
+ *
  * The scaffold is built OUTSIDE the repo on purpose: inside, pnpm resolves a workspace
  * link and the question cannot be asked at all.
  */
@@ -16,6 +20,7 @@ import { execFileSync, spawn, type ChildProcess, type ExecFileSyncOptions } from
 import { mkdtempSync, readdirSync, readFileSync, appendFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { OFFERED } from '../packages/cli/src/composer/Offered.ts';
 
 const ROOT = process.cwd();
 const PORT = process.env.DOOR_PORT ?? '3210';
@@ -46,9 +51,94 @@ const publishable = (dir: string, found: Publishable[] = []): Publishable[] => {
 
 const work = mkdtempSync(path.join(tmpdir(), 'fougere-facade-'));
 const store = path.join(work, 'tarballs');
-const app = path.join(work, 'app');
 
-let server: ChildProcess | undefined;
+/** Scaffold one host from the tarballs, migrate, boot, and ask the domain — or throw saying where it stopped. */
+async function open(host: string, overrides: string): Promise<void> {
+  const name = `door-${host}`;
+  const app = path.join(work, name);
+  console.log(`\n${host}: scaffolding outside the workspace`);
+  run('node', [path.join(ROOT, 'packages/entry/create/dist/bin.js'), name, '--frond', 'blog', '--app', host], { cwd: work });
+
+  // The scaffold writes `latest` for every @fougere dep. These overrides are what make
+  // this a test of THIS commit rather than of what is already on the registry — and they
+  // belong in the workspace file: pnpm 11 stopped reading `overrides` from package.json.
+  appendFileSync(path.join(app, 'pnpm-workspace.yaml'), `\noverrides:\n${overrides}\n`);
+
+  console.log(`${host}: installing from tarballs`);
+  run('pnpm', ['install', '--no-frozen-lockfile'], { cwd: app, stdio: 'inherit' });
+
+  // The boot reads the schema and refuses a database behind it, so a newcomer migrates
+  // first — and the `fougere` it runs is the one packed above.
+  console.log(`${host}: migrating`);
+  run('pnpm', ['migrate'], { cwd: app, stdio: 'inherit' });
+
+  console.log(`${host}: booting`);
+  const server: ChildProcess = spawn('pnpm', ['dev', '--port', PORT], {
+    cwd: path.join(app, 'apps', host),
+    stdio: ['ignore', 'pipe', 'pipe'],
+    detached: true,
+  });
+  let log = '';
+  server.stdout!.on('data', (chunk) => { log += chunk; });
+  server.stderr!.on('data', (chunk) => { log += chunk; });
+
+  try {
+    const deadline = Date.now() + BOOT_MS;
+    let status = 0;
+    let body = '';
+    while (Date.now() < deadline && server.exitCode === null) {
+      await new Promise((wake) => setTimeout(wake, 2000));
+      try {
+        const res = await fetch(`http://localhost:${PORT}/`);
+        status = res.status;
+        if (status === 200) break;
+        body = await res.text();
+      } catch {
+        /* not listening yet */
+      }
+    }
+
+    if (status !== 200) {
+      // A status alone does not say what to fix: a boot that failed and a page that threw
+      // both answer non-200, and only the body separates them.
+      console.error(log);
+      if (body) console.error(body.slice(0, 4000));
+      throw new Error(`${host}: the published facade did not open: GET / answered ${status || 'nothing'}`);
+    }
+
+    // A PAGE is not the facade. An app that boots with zero fronds renders every page and
+    // answers NOT_FOUND to every call — the exact failure the scan exists to prevent, and
+    // one a 200 cannot see. So the check asks the domain: the scaffold's own entity, listed.
+    //
+    // TWO operations, and the second is the one that measures anything: `post.list` comes
+    // from a prefab, which declares its own contract in a static and survives whatever the
+    // build does. `post.listPublished` is a method someone wrote — its contract is read
+    // from SOURCE at scan time and no class carries it at runtime, so it answers only if
+    // the statement the host boots from carried it across. Measured: it did not, and this
+    // check said the facade was fine.
+    for (const method of ['post.list', 'post.listPublished']) {
+      const call = await fetch(`http://localhost:${PORT}/_fougere/call`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params: {} }),
+      });
+      const answer = await call.json().then((json) => json as Record<string, unknown>).catch(() => null);
+      if (!answer || !('result' in answer)) {
+        console.error(log);
+        console.error(JSON.stringify(answer)?.slice(0, 2000));
+        throw new Error(`${host}: the facade opens but answers nothing: ${method} returned no result`);
+      }
+    }
+    console.log(`${host}: the facade opens — GET / → 200, and post.list and post.listPublished answer`);
+  } finally {
+    try {
+      process.kill(-server.pid!, 'SIGTERM');
+    } catch {
+      // the group is already gone
+    }
+  }
+}
+
 try {
   const pkgs = publishable(path.join(ROOT, 'packages'));
   console.log(`packing ${pkgs.length} packages`);
@@ -56,87 +146,9 @@ try {
   for (const { name, dir } of pkgs) {
     tarball[name] = run('pnpm', ['pack', '--pack-destination', store], { cwd: dir }).trim().split('\n').at(-1)!;
   }
-
-  console.log('scaffolding outside the workspace');
-  run('node', [path.join(ROOT, 'packages/entry/create/dist/bin.js'), 'app', '--frond', 'blog', '--app', 'nuxt'], { cwd: work });
-
-  // The scaffold writes `latest` for every @fougere dep. These overrides are what make
-  // this a test of THIS commit rather than of what is already on the registry — and they
-  // belong in the workspace file: pnpm 11 stopped reading `overrides` from package.json.
   const overrides = Object.entries(tarball).map(([n, f]) => `  '${n}': file:${f}`).join('\n');
-  appendFileSync(path.join(app, 'pnpm-workspace.yaml'), `\noverrides:\n${overrides}\n`);
 
-  console.log('installing from tarballs');
-  run('pnpm', ['install', '--no-frozen-lockfile'], { cwd: app, stdio: 'inherit' });
-
-  // The boot reads the schema and refuses a database behind it, so a newcomer migrates
-  // first — and the `fougere` it runs is the one packed above.
-  console.log('migrating');
-  run('pnpm', ['migrate'], { cwd: app, stdio: 'inherit' });
-
-  console.log('booting');
-  const nuxtApp = path.join(app, 'apps/nuxt');
-  server = spawn(path.join(nuxtApp, 'node_modules/.bin/nuxt'), ['dev', '--port', PORT], {
-    cwd: nuxtApp,
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
-  let log = '';
-  server.stdout!.on('data', (chunk) => { log += chunk; });
-  server.stderr!.on('data', (chunk) => { log += chunk; });
-
-  const deadline = Date.now() + BOOT_MS;
-  let status = 0;
-  let body = '';
-  while (Date.now() < deadline && server.exitCode === null) {
-    await new Promise((wake) => setTimeout(wake, 2000));
-    try {
-      const res = await fetch(`http://localhost:${PORT}/`);
-      status = res.status;
-      if (status === 200) break;
-      body = await res.text();
-    } catch {
-      /* not listening yet */
-    }
-  }
-
-  if (status !== 200) {
-    // A status alone does not say what to fix: a boot that failed and a page that threw
-    // both answer non-200, and only the body separates them.
-    console.error(log);
-    if (body) console.error(body.slice(0, 4000));
-    throw new Error(`the published facade did not open: GET / answered ${status || 'nothing'}`);
-  }
-
-  // A PAGE is not the facade. An app that boots with zero fronds renders every page and
-  // answers NOT_FOUND to every call — the exact failure the scan exists to prevent, and
-  // one a 200 cannot see. So the check asks the domain: the scaffold's own entity, listed.
-  //
-  // TWO operations, and the second is the one that measures anything: `post.list` comes
-  // from a prefab, which declares its own contract in a static and survives whatever the
-  // build does. `post.listPublished` is a method someone wrote — its contract is read
-  // from SOURCE at scan time and no class carries it at runtime, so it answers only if
-  // the statement the host boots from carried it across. Measured: it did not, and this
-  // check said the facade was fine.
-  const ask = async (method: string): Promise<Record<string, unknown> | null> => {
-    const call = await fetch(`http://localhost:${PORT}/_fougere/call`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params: {} }),
-    });
-
-    return call.json().then((answer) => answer as Record<string, unknown>).catch(() => null);
-  };
-
-  for (const method of ['post.list', 'post.listPublished']) {
-    const answer = await ask(method);
-    if (!answer || !('result' in answer)) {
-      console.error(log);
-      console.error(JSON.stringify(answer)?.slice(0, 2000));
-      throw new Error(`the facade opens but answers nothing: ${method} returned no result`);
-    }
-  }
-  console.log(`the facade opens: GET / → 200, and post.list and post.listPublished answer`);
+  for (const host of OFFERED) await open(host, overrides);
 } finally {
-  server?.kill('SIGTERM');
   rmSync(work, { recursive: true, force: true });
 }

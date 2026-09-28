@@ -7,5 +7,6 @@
     "sourceMap": false,
     "rootDir": "."
   },
-  "include": ["app/**/*.ts", "fronds/**/*.ts", "tests/**/*.ts"]
+  "include": ["app/**/*.ts", "fronds/**/*.ts", "tests/**/*.ts"],
+  "exclude": ["tests/fixtures-shell"]
 }

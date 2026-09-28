@@ -1,0 +1,36 @@
+{
+  "create": [
+    "create-vite@9",
+    "{dir}",
+    "--template",
+    "react-ts",
+    "--no-interactive",
+    "--no-immediate"
+  ],
+  "dependencies": {
+    "@fougere/core": "latest",
+    "@fougere/schema": "latest",
+    "@fougere/defaults": "latest",
+    "@fougere/container": "latest",
+    "better-sqlite3": "^13.0.3",
+    "kysely": "^0.28.17",
+    "@fougere/react": "latest"
+  },
+  "devDependencies": {
+    "@fougere/vite": "latest"
+  },
+  "wire": {
+    "kind": "vitePlugin",
+    "file": "vite.config.ts",
+    "from": "@fougere/vite",
+    "imported": "fougere",
+    "options": {
+      "root": "../.."
+    }
+  },
+  "remove": [
+    "src/App.css",
+    "src/assets"
+  ],
+  "tsconfig": "tsconfig.app.json"
+}
