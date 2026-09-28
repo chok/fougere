@@ -16,6 +16,15 @@ function asAdminError(err: unknown): unknown {
   });
 }
 
+/** The fields `data` holds differently from `before` — all of `data` when there is nothing to compare to. */
+function changed(data: Values, before?: Values): Values {
+  if (!before) return data;
+
+  return Object.fromEntries(
+    Object.entries(data).filter(([field, value]) => JSON.stringify(value) !== JSON.stringify(before[field])),
+  );
+}
+
 export function createDataProvider(options: ProviderOptions) {
   const { resources, endpoint = CALL_ENDPOINT, fetcher = browserFetcher } = options;
 
@@ -133,11 +142,16 @@ export function createDataProvider(options: ProviderOptions) {
       return { data: identified(values as Values, key)! };
     },
 
-    update: async (resource: string, params: { id: string | number; data: Values }) => {
+    /**
+     * A patch: what the form CHANGED, never the record it was handed. React-admin sends the whole
+     * row back, so an untouched `id`, `createdAt` or read-only `status` came back refused, and the
+     * refusal had no field on the form to show under — "The form is not valid", and nothing red.
+     */
+    update: async (resource: string, params: { id: string | number; data: Values; previousData?: Values }) => {
       const key = keyOf(resource);
       const values = await call(resource, 'update', {
         params: { id: params.id },
-        input: deidentified(params.data, key),
+        input: deidentified(changed(params.data, params.previousData), key),
       });
 
       return { data: identified(values as Values, key)! };

@@ -83,6 +83,20 @@ describe('the Fougere data provider', () => {
     expect(updated.data).toMatchObject({ id: 'hello', slug: 'hello' });
   });
 
+  it('sends what the form changed, not the record it was handed', async () => {
+    const sent: SentCall[] = [];
+    const provider = createDataProvider({
+      resources: { post: { name: 'post', primary: 'id' } },
+      fetcher: resultFetcher((call) => ({ id: 'p1', ...call.params.input }), sent),
+    });
+    const before = { id: 'p1', title: 'Edit me', body: 'x', createdAt: '2026-09-28T17:46:21.302Z', status: 'draft' };
+
+    await provider.update('post', { id: 'p1', data: { ...before, title: 'Edited' }, previousData: before });
+
+    expect(sent[0]!.params).toMatchObject({ params: { id: 'p1' }, input: { title: 'Edited' } });
+    expect(Object.keys((sent[0]!.params as { input: object }).input)).toEqual(['title']);
+  });
+
   it('turns validator refusals into field errors react-admin forms understand', async () => {
     const fetcher: Fetcher = async <T,>(
       _url: string,
