@@ -2,6 +2,7 @@
 import { createRequire } from 'node:module';
 import pc from 'picocolors';
 import { defaultTheme, type ThemeColors } from './theme.js';
+import { version } from './version.js';
 
 type Clack = typeof import('@clack/prompts');
 
@@ -23,7 +24,7 @@ export function ui(options?: UiTheme) {
 
     /** Start a new CLI session with a branded header. */
     intro(title = 'Fougere') {
-      clack().intro(c.brand(title));
+      clack().intro(`${c.brand(title)} ${c.muted(version())}`);
     },
 
     /** End the session with a message. */

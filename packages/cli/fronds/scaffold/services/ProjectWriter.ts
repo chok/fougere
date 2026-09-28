@@ -7,6 +7,7 @@ import { type Conventions, DEFAULT_CONVENTIONS, frondPackage } from '@fougere/co
 import type { Plan } from '../../../src/composer/Plan.js';
 import { applyScaffold, type Scaffold } from '../../../src/scaffold/Scaffold.js';
 import Shell from './Shell.js';
+import { version } from '../../../src/version.js';
 
 /**
  * The monorepo's `packages/`, found by its workspace marker rather than counted
@@ -126,9 +127,7 @@ function hosts(): string[] {
 }
 
 /** The version that scaffolds is the version the templates were written for. */
-const scaffoldVersion = (): string =>
-  (JSON.parse(readFileSync(join(packageRoot(), 'package.json'), 'utf8')) as
-    { version: string }).version;
+const scaffoldVersion = version;
 
 // npm strips a literal .gitignore from published packages — it ships as
 // _gitignore and the name is restored on copy.
