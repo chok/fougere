@@ -538,6 +538,9 @@ and Nuxt, Vite, Next and the oclif starter all read it, so `root` is an EXCEPTIO
 the fronds sit elsewhere; every starter used to write `'../..'`, a fact the tree already stated.
 `@fougere/next/config` gained a `default` condition: the shell writes `next.config.ts`, which Next
 loads through `require`.
+A frond's EXAMPLE page is the CLI's (`templates/examples/<frond>/<host>/`, `addExamples`), never the
+frond's: a frond names no host, so the page lands in each app of a host that has one, once, as the
+user's code — `blog` gives `/posts` on Nuxt, Next, React and SvelteKit.
 
 **`fougere load` writes the scenario the app already describes** — `cli/app/commands/LoadCommand.ts`
 over `loadScript` (`@fougere/testing`), which was exported, tested, and called by one script by

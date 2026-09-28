@@ -146,6 +146,12 @@ function setPackageName(dir: string, name: string): void {
 
 interface Manifest { dependencies?: Record<string, string>; devDependencies?: Record<string, string> }
 
+/** Every file under `dir`, relative to it. */
+function filesUnder(dir: string, prefix = ''): string[] {
+  return readdirSync(join(dir, prefix), { withFileTypes: true }).flatMap((entry) =>
+    entry.isDirectory() ? filesUnder(dir, join(prefix, entry.name)) : [join(prefix, entry.name)]);
+}
+
 /** Both lists a starter names a package in — `@fougere/vite` is a build tool, so it sits in the second. */
 function rangesOf(pkg: Manifest): Record<string, string>[] {
   return [pkg.dependencies, pkg.devDependencies].filter((ranges) => ranges !== undefined);
@@ -167,6 +173,7 @@ export default class ProjectWriter {
       this.createWorkspace(staged, plan.name);
       for (const { template, name } of plan.fronds) this.addFrond(staged, template, name);
       for (const { template, name } of plan.apps) this.addApp(staged, template, name);
+      this.addExamples(staged, plan);
       this.runApps(staged, plan.apps.map(({ name }) => name));
       this.linkFronds(staged);
       if (options.local) this.linkLocal(staged); else this.pinVersions(staged);
@@ -223,6 +230,28 @@ export default class ProjectWriter {
     setPackageName(dest, name);
 
     return { path: dest };
+  }
+
+  /**
+   * A page that uses a frond, in each app whose host has one for it — `templates/examples/<frond>/<host>/`.
+   *
+   * It lives in the CLI and never in the frond: a frond names no host, and a page is host code.
+   * Written once into the app, it is the user's to change; the frond's name is the one thing it
+   * learns from the plan, since `blog:news` imports `@fronds/news`.
+   */
+  addExamples(wsDir: string, plan: Plan): void {
+    for (const frond of plan.fronds) {
+      for (const app of plan.apps) {
+        const example = join(TEMPLATES, 'examples', frond.template, app.template);
+        if (!existsSync(example)) continue;
+        const dest = join(wsDir, 'apps', app.name);
+        cpSync(example, dest, { recursive: true });
+        for (const file of filesUnder(example)) {
+          const path = join(dest, file);
+          writeFileSync(path, readFileSync(path, 'utf8').replaceAll('__frond__', frond.name));
+        }
+      }
+    }
   }
 
   /**

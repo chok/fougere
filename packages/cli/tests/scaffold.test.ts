@@ -221,4 +221,25 @@ describe('an app is the host\u2019s own shell, and Fougere adds its part', () =>
       expect(has('scaffold.json')).toBe(false);
     } finally { dispose(); }
   });
+
+  it('puts the blog example in each app whose host has one, naming the frond as the plan did', () => {
+    const parent = mkdtempSync(join(tmpdir(), 'fougere-example-'));
+    const root = join(parent, 'shop');
+    try {
+      writer().write({ name: 'shop', fronds: [{ template: 'blog', name: 'news' }], apps: [{ template: 'nuxt', name: 'web' }, { template: 'react', name: 'spa' }] }, root);
+
+      expect(readFileSync(join(root, 'apps/web/app/pages/posts.vue'), 'utf8')).toContain("from '@fronds/news/entities/Post'");
+      expect(readFileSync(join(root, 'apps/spa/src/App.tsx'), 'utf8')).toContain("location.pathname === '/posts'");
+    } finally { rmSync(parent, { recursive: true, force: true }); }
+  });
+
+  it('puts no example when the frond is absent', () => {
+    const parent = mkdtempSync(join(tmpdir(), 'fougere-example-'));
+    const root = join(parent, 'shop');
+    try {
+      writer().write({ name: 'shop', fronds: [], apps: [{ template: 'nuxt', name: 'web' }] }, root);
+
+      expect(existsSync(join(root, 'apps/web/app/pages/posts.vue'))).toBe(false);
+    } finally { rmSync(parent, { recursive: true, force: true }); }
+  });
 });
