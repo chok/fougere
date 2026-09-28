@@ -1,5 +1,5 @@
 import { defineEventHandler, getRequestHeader } from 'h3';
-import { useFougereAuth } from '@fougere/app';
+import { authOf, useFougereApp } from '@fougere/app';
 
 /**
  * Resolves the current session/user from the request cookie and exposes them
@@ -10,12 +10,8 @@ export default defineEventHandler(async (event) => {
   const cookie = getRequestHeader(event, 'cookie');
   if (!cookie) return;
 
-  let auth;
-  try {
-    auth = await useFougereAuth();
-  } catch {
-    return; // no auth configured
-  }
+  const auth = authOf(await useFougereApp());
+  if (!auth) return;
 
   try {
     // event.headers, not toWebRequest(event).headers — the web request wraps

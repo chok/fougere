@@ -505,7 +505,7 @@ export function generateBootPlugin(
   if (seeds.length) lines.push(``);
 
   // Wrap all init in the plugin callback to avoid top-level native calls
-  lines.push(`export default defineNitroPlugin(async () => {`);
+  lines.push(`export default defineNitroPlugin(async (nitroApp) => {`);
   // What it HOSTS first, and on its own line: it names no engine, so nothing below can stop
   // it from being stated. Measured on workerd — `resolveStorage` threw on a native driver,
   // Nitro swallowed the plugin whole, and the app came up with zero fronds and not a word.
@@ -523,6 +523,9 @@ export function generateBootPlugin(
   const sourcesArg = sources || root ? `, ${JSON.stringify(sources ?? undefined)}` : '';
   const rootArg = root ? `, ${JSON.stringify(root)}` : '';
   lines.push(`    const storage = resolveStorage(${JSON.stringify(db)}${sourcesArg}${rootArg});`);
+  // Opened here, so closed here: the app is handed the storage, and a refused boot or a reload
+  // disposes an app while the next one still needs the same connection.
+  lines.push(`    nitroApp.hooks.hook('close', () => storage.close?.());`);
   lines.push(``);
   lines.push(`    configureFougere({`);
   if (statedPath) lines.push(`      fronds,`);

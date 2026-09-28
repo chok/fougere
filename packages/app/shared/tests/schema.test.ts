@@ -37,6 +37,20 @@ describe('the schema on a web host', () => {
     await app.dispose();
   });
 
+  it('keeps a storage the host handed in open across a refusal — the host closes what it opened', async () => {
+    const path = join(mkdtempSync(join(tmpdir(), 'schema-')), 'app.db');
+    const storage = resolveStorage({ dialect: 'sqlite', path });
+    configureFougere({ fronds, config: { db: { dialect: 'sqlite', path } } as never, storage });
+    await expect(useFougereApp()).rejects.toThrow(/behind the entities/);
+
+    await storage.migrate?.({ fronds } as never);
+    const app = await useFougereApp();
+    await app.storageFor('note')!.create({ title: 'still open' });
+
+    await app.dispose();
+    await storage.close?.();
+  });
+
   it('writes it when the process says it migrates', async () => {
     configureFougere({ fronds, config, migrates: true });
     const app = await useFougereApp();

@@ -199,10 +199,10 @@ async function boot(): Promise<App> {
       ...stated.extensions,
       ...(_config.extensions ?? []),
     ],
-    // Opened before the container, so released after it. Never wired here until now:
-    // this host boots the storage and no host closed one, which is what made a reload
-    // leak the pool of every app it discarded.
-    onDispose: storage.close,
+    // Opened before the container, so released after it — when THIS boot opened it. A storage
+    // the host handed in is the host's to close: a refused boot and a reload both dispose an app
+    // while the next one still holds that connection, and closing it here broke the next.
+    onDispose: _config.storage ? undefined : storage.close,
   });
 
   log.info(`ascent: ${app.extensions().join(' → ') || 'nothing declared'}`);
