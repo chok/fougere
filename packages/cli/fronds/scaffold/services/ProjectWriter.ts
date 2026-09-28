@@ -384,8 +384,34 @@ export default class ProjectWriter {
     }
     if (overrides.size === 0) return;
 
+    // A package the app names whose OWN peer was just redirected comes from the same place:
+    // `react-dom` refuses a `react` of another version, so taking one without the other ran none.
+    for (const dependency of this.appDependencies(wsDir)) {
+      if (dependency.startsWith('@fougere/') || overrides.has(dependency)) continue;
+      for (const dir of linked) {
+        const copy = join(dir, 'node_modules', dependency);
+        if (!existsSync(join(copy, 'package.json'))) continue;
+        const { peerDependencies = {} } = JSON.parse(readFileSync(join(copy, 'package.json'), 'utf8')) as
+          { peerDependencies?: Record<string, string> };
+        if (!Object.keys(peerDependencies).some((peer) => overrides.has(peer))) continue;
+        overrides.set(dependency, `link:${copy}`);
+        break;
+      }
+    }
+
     const lines = [...overrides].map(([peer, target]) => `  ${peer.includes('/') ? `'${peer}'` : peer}: ${target}`);
     const workspace = join(wsDir, 'pnpm-workspace.yaml');
     writeFileSync(workspace, `${readFileSync(workspace, 'utf8').trimEnd()}\n\noverrides:\n${lines.join('\n')}\n`);
+  }
+
+  /** Every package an app of the workspace names, in either list. */
+  private appDependencies(wsDir: string): Set<string> {
+    const apps = join(wsDir, 'apps');
+    if (!existsSync(apps)) return new Set();
+
+    return new Set(readdirSync(apps, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && existsSync(join(apps, entry.name, 'package.json')))
+      .flatMap((entry) => rangesOf(JSON.parse(readFileSync(join(apps, entry.name, 'package.json'), 'utf8')) as Manifest))
+      .flatMap((ranges) => Object.keys(ranges)));
   }
 }

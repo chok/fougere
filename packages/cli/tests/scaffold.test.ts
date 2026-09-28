@@ -109,4 +109,19 @@ describe('a project linked to this monorepo', () => {
       rmSync(parent, { recursive: true, force: true });
     }
   });
+
+  it('takes react-dom from where it takes react — one refuses the other of another version', () => {
+    const parent = mkdtempSync(join(tmpdir(), 'fougere-local-'));
+    const root = join(parent, 'shop');
+
+    try {
+      new ProjectWriter().write({ name: 'shop', fronds: [], apps: [{ template: 'react', name: 'web' }] }, root, { local: true });
+      const workspace = readFileSync(join(root, 'pnpm-workspace.yaml'), 'utf8');
+
+      expect(workspace).toMatch(/\n {2}react: link:\//);
+      expect(workspace).toMatch(/\n {2}react-dom: link:\//);
+    } finally {
+      rmSync(parent, { recursive: true, force: true });
+    }
+  });
 });

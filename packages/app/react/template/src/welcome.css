@@ -1,17 +1,3 @@
-<template>
-  <main class="welcome">
-    <h1>🌿 Fougere</h1>
-    <p class="host">Your app is running on <strong>Nuxt</strong>.</p>
-    <ol>
-      <li><a href="https://fougere.dev/docs/guides/business-logic">Handle your business logic <span>→</span></a></li>
-      <li><a href="https://fougere.dev/docs/guides/data">Store your data <span>→</span></a></li>
-      <li><a href="https://fougere.dev/docs/guides/topology">Shape your topology <span>→</span></a></li>
-    </ol>
-    <footer><a href="https://fougere.dev/docs">Docs</a></footer>
-  </main>
-</template>
-
-<style>
 :root {
   color-scheme: light dark;
   --ink: #25372d; --muted: #65736a; --line: #dce3d9; --green: #38714c; --wash: #eaf0e6; --bg: #f7f8f4;
@@ -33,4 +19,3 @@ body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 syste
 .welcome li a:hover { background: var(--wash); color: var(--green); }
 .welcome footer { margin-top: 32px; font-size: 13px; }
 .welcome footer a { color: var(--muted); }
-</style>

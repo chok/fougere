@@ -1,19 +1,34 @@
-<script lang="ts">
-  import { onDestroy } from 'svelte';
-  import { useQuery } from '@fougere/svelte';
-  // Written by the scan: one export per address, carrying the handler that answers there.
-  // Replace `post` with a facade your own frond serves.
-  import { post } from '@fronds/facade';
-
-  const rows = useQuery(post, 'list');
-  onDestroy(() => rows.dispose());
-</script>
-
-<main>
-  <h1>Fougere</h1>
-  {#if $rows.loading}<p>Loading…</p>{/if}
-  {#if $rows.error}<p style="color:#b00">{$rows.error.message}</p>{/if}
-  {#each $rows.items as row (row.id)}
-    <pre>{JSON.stringify(row, null, 2)}</pre>
-  {/each}
+<main class="welcome">
+  <h1>🌿 Fougere</h1>
+  <p class="host">Your app is running on <strong>SvelteKit</strong>.</p>
+  <ol>
+    <li><a href="https://fougere.dev/docs/guides/business-logic">Handle your business logic <span>→</span></a></li>
+    <li><a href="https://fougere.dev/docs/guides/data">Store your data <span>→</span></a></li>
+    <li><a href="https://fougere.dev/docs/guides/topology">Shape your topology <span>→</span></a></li>
+  </ol>
+  <footer><a href="https://fougere.dev/docs">Docs</a></footer>
 </main>
+
+<style>
+:global(:root) {
+  color-scheme: light dark;
+  --ink: #25372d; --muted: #65736a; --line: #dce3d9; --green: #38714c; --wash: #eaf0e6; --bg: #f7f8f4;
+}
+@media (prefers-color-scheme: dark) {
+  :global(:root) { --ink: #e0e8df; --muted: #9ca99e; --line: #303c32; --green: #9bc99d; --wash: #29392c; --bg: #151c18; }
+}
+:global(body) { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 system-ui, sans-serif; }
+.welcome { max-width: 520px; margin: 0 auto; padding: 64px 24px 40px; }
+.welcome h1 { margin: 0; font-size: 20px; font-weight: 600; }
+.welcome .host { margin: 12px 0 40px; color: var(--muted); }
+.welcome .host strong { color: var(--ink); font-weight: 500; }
+.welcome ol { margin: 0; padding-left: 32px; }
+.welcome li { padding-left: 8px; border-bottom: 1px solid var(--line); }
+.welcome li::marker { color: var(--muted); font-size: 12px; }
+.welcome li a { display: flex; justify-content: space-between; gap: 20px; padding: 17px 12px; border-radius: 6px; color: inherit; font-size: 18px; text-decoration: none; }
+.welcome li a span { color: var(--muted); }
+.welcome li:first-child a { background: var(--wash); color: var(--green); font-weight: 600; }
+.welcome li a:hover { background: var(--wash); color: var(--green); }
+.welcome footer { margin-top: 32px; font-size: 13px; }
+.welcome footer a { color: var(--muted); }
+</style>
