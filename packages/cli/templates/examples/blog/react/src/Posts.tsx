@@ -1,4 +1,5 @@
 import { useCommand, useFormFor, useQuery } from '@fougere/react';
+import './posts.css';
 import { post } from '@fronds/facade';
 import Post from '@fronds/__frond__/entities/Post';
 
@@ -8,7 +9,7 @@ export default function Posts() {
   const publish = useCommand(post, 'publish');
 
   return (
-    <main>
+    <main className="posts">
       <h1>Posts</h1>
       <form onSubmit={(event) => { event.preventDefault(); void submit(); }}>
         <input value={String(values.title ?? '')} onChange={(event) => setValue('title', event.target.value)} placeholder="Title" />
@@ -20,14 +21,15 @@ export default function Posts() {
       <ul>
         {items.map((row) => (
           <li key={row.id}>
-            {row.title} — {row.status}{' '}
+            <strong>{row.title}</strong>
+            <span>{row.status}</span>
             {row.status === 'draft' && (
               <button onClick={() => void publish.execute({ params: { id: row.id } }).catch(() => {})}>Publish</button>
             )}
           </li>
         ))}
       </ul>
-      {publish.error && <p>{publish.error.message}</p>}
+      {publish.error && <p className="refused">{publish.error.message}</p>}
     </main>
   );
 }

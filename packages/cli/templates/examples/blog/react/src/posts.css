@@ -1,35 +1,3 @@
-<script setup lang="ts">
-import { post } from '@fronds/facade';
-import Post from '@fronds/__frond__/entities/Post';
-
-const { items } = await useQuery(post, 'list');
-const { values, errors, submit } = useFormFor(Post);
-const publish = useCommand(post, 'publish');
-const publishOne = (id: string) => publish.execute({ params: { id } }).catch(() => {});
-</script>
-
-<template>
-  <main class="posts">
-    <h1>Posts</h1>
-    <form @submit.prevent="submit">
-      <input v-model="values.title" placeholder="Title" />
-      <small v-if="errors.title">{{ errors.title }}</small>
-      <textarea v-model="values.body" placeholder="Body" />
-      <small v-if="errors.body">{{ errors.body }}</small>
-      <button>Create draft</button>
-    </form>
-    <ul>
-      <li v-for="row in items" :key="row.id">
-        <strong>{{ row.title }}</strong>
-        <span>{{ row.status }}</span>
-        <button v-if="row.status === 'draft'" @click="publishOne(row.id)">Publish</button>
-      </li>
-    </ul>
-    <p v-if="publish.error.value" class="refused">{{ publish.error.value.message }}</p>
-  </main>
-</template>
-
-<style>
 :root {
   color-scheme: light dark;
   --ink: #25372d; --muted: #65736a; --line: #dce3d9; --green: #38714c; --wash: #eaf0e6; --bg: #f7f8f4; --paper: #fcfdf9; --refused: #b3261e;
@@ -51,4 +19,3 @@ body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 syste
 .posts li span { margin-right: auto; color: var(--muted); font-size: 13px; }
 .posts li button { padding: 4px 10px; font-size: 13px; background: var(--wash); color: var(--green); }
 .posts .refused { margin-top: 16px; color: var(--refused); }
-</style>
