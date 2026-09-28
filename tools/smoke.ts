@@ -59,11 +59,28 @@ function demosOf(directory: string): string[] {
   return [...new Set(tracked.split('\n').filter(inADemo).map((file) => file.split('/')[1]!))].sort();
 }
 
-function devCommandOf(demo: string): string | undefined {
+function scriptOf(demo: string, name: string): string | undefined {
   const manifest = path.join(demosDirectory, demo, 'package.json');
   if (!existsSync(manifest)) return undefined;
 
-  return JSON.parse(readFileSync(manifest, 'utf8')).scripts?.dev;
+  return JSON.parse(readFileSync(manifest, 'utf8')).scripts?.[name];
+}
+
+/**
+ * A demo whose database is a file migrates before it starts — the boot only reads the schema,
+ * and a fresh checkout holds none. Its failure is the demo's, reported like a failed start.
+ */
+function migrated(demo: string): string | undefined {
+  if (!scriptOf(demo, 'migrate')) return undefined;
+  try {
+    execFileSync('pnpm', ['-C', path.join('demos', demo), 'migrate'], { encoding: 'utf8', stdio: 'pipe' });
+
+    return undefined;
+  } catch (error) {
+    const { stdout = '', stderr = '' } = error as { stdout?: string; stderr?: string };
+
+    return tail(`${stdout}\n${stderr}`).join('\n    ');
+  }
 }
 
 function start(demo: string): ChildProcess {
@@ -110,7 +127,7 @@ const failures: [string, string][] = [];
 const stated: [string, string][] = [];
 
 for (const demo of demos) {
-  if (!devCommandOf(demo)) {
+  if (!scriptOf(demo, 'dev')) {
     const reason = STATED.get(demo);
     if (reason) stated.push([demo, reason]);
     else failures.push([demo, 'no `dev` script, and this file does not say why']);
@@ -118,6 +135,12 @@ for (const demo of demos) {
   }
 
   process.stdout.write(`${demo.padEnd(20)} `);
+  const refused = migrated(demo);
+  if (refused) {
+    console.log('FAIL (migrate)');
+    failures.push([demo, refused]);
+    continue;
+  }
   const verdict = await run(demo);
 
   if (verdict.ok) console.log(`ok   (${verdict.shape})`);

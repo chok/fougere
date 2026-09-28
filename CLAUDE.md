@@ -27,7 +27,7 @@ pnpm -C packages/schema test
 pnpm -C packages/schema vitest run tests/entity.test.ts
 
 pnpm -C site migrate               # the boot only READS the schema: a SQL-file project migrates
-                                   # first (site, *-blog demos, oclif-catalog, mirror-catalog)
+                                   # first (site, *-blog demos, oclif-catalog)
 pnpm -C site dev                   # :3000 — vitrine + docs + blog Frond
 pnpm -C demos/nuxt-blog dev:blog   # blog Frond alone in its process (:4100)
 pnpm -C demos/nuxt-blog dev        # Nuxt app (:3000), consumes it via remotes

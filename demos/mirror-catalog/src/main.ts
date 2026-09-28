@@ -21,7 +21,7 @@ rmSync(join(root, '.fougere', 'catalog.db'), { force: true });
 const partner = await startPartner();
 process.env.PARTNER_URL = partner.url;
 
-const app = await bootApp(root);
+const app = await bootApp(root, { migrates: true });
 const call = createLocalRunner(app);
 const refresh = () => call({ entity: 'catalog', op: 'refresh' }, Invocation.empty) as Promise<Refreshed>;
 

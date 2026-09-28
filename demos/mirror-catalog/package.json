@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx src/main.ts",
-    "typecheck": "tsc -p . --noEmit && tsc -p fronds",
-    "migrate": "fougere migrate --apply"
+    "typecheck": "tsc -p . --noEmit && tsc -p fronds"
   },
   "dependencies": {
     "@fougere/container": "workspace:*",
@@ -16,7 +15,6 @@
     "better-sqlite3": "^13.0.3"
   },
   "devDependencies": {
-    "tsx": "^4.21.0",
-    "@fougere/cli": "workspace:*"
+    "tsx": "^4.21.0"
   }
 }

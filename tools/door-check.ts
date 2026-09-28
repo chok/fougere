@@ -69,6 +69,11 @@ try {
   console.log('installing from tarballs');
   run('pnpm', ['install', '--no-frozen-lockfile'], { cwd: app, stdio: 'inherit' });
 
+  // The boot reads the schema and refuses a database behind it, so a newcomer migrates
+  // first — and the `fougere` it runs is the one packed above.
+  console.log('migrating');
+  run('pnpm', ['migrate'], { cwd: app, stdio: 'inherit' });
+
   console.log('booting');
   const nuxtApp = path.join(app, 'apps/nuxt');
   server = spawn(path.join(nuxtApp, 'node_modules/.bin/nuxt'), ['dev', '--port', PORT], {
