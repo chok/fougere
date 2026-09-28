@@ -88,10 +88,10 @@ function asCrudConstructor<T, V>(impl: object): CrudConstructor<T, V> {
 
 /** The prefab handler class — its ops, plus the statics the bootstrap and adapters read. */
 export interface CrudConstructor<T, V = {}> {
-  // `Storage<T>`, not the bare `Storage`: a handler that injects a second storage has to
-  // spell its own constructor, and `super(storage)` with the storage the container hands it —
-  // typed on the entity, as the `storage` property below already says — was refused.
-  new (storage: Storage<T>): CrudOps<T, V>;
+  // What the container hands is the entity's REPOSITORY (`<Entity>Repository`), typed as the
+  // port it forwards: a handler with a constructor of its own passes it on — `super(posts)` —
+  // and reaches its named queries through the field it declares, never through the prefab.
+  new (repository: Storage<T>): CrudOps<T, V>;
   readonly __entity: unknown;
   readonly __output: unknown;
   readonly __opOutputs?: CrudViews;
@@ -125,15 +125,17 @@ export function Crud<E extends EntityConstructor, V extends CrudViews | EntityCo
      */
     static __ops: Record<string, OperationContract> = crudOps(entity as unknown as SchemaView & { partial?: () => SchemaView });
 
-    storage: Storage<T>;
-    constructor(storage: Storage) {
-      this.storage = storage as Storage<T>;
+    // Private: the five ops are how a subclass reaches the rows — `super.findById(id)` — and a
+    // query worth a name belongs to the repository, which it asks for like any handler does.
+    readonly #rows: Storage<T>;
+    constructor(repository: Storage) {
+      this.#rows = repository as Storage<T>;
     }
 
-    async list(options?: ListOptions): Promise<Page<T>> { return pageOf(await this.storage.list(options)); }
-    async findById(id: string): Promise<T | undefined> { return this.storage.findById(id); }
-    async create(input: Partial<T>): Promise<T> { return this.storage.create(input); }
-    async update(id: string, input: Partial<T>): Promise<T> { return this.storage.update(id, input); }
-    async delete(id: string): Promise<boolean> { return this.storage.delete(id); }
+    async list(options?: ListOptions): Promise<Page<T>> { return pageOf(await this.#rows.list(options)); }
+    async findById(id: string): Promise<T | undefined> { return this.#rows.findById(id); }
+    async create(input: Partial<T>): Promise<T> { return this.#rows.create(input); }
+    async update(id: string, input: Partial<T>): Promise<T> { return this.#rows.update(id, input); }
+    async delete(id: string): Promise<boolean> { return this.#rows.delete(id); }
   });
 }

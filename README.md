@@ -101,14 +101,18 @@ validator — the only code on this page Fougere does not derive.
 export class PostCard extends Post.pick('id', 'slug', 'title', 'summary', 'authorName', 'publishedAt') {}
 
 export default class PostHandler extends Crud(Post, { list: PostCard }) {
+  constructor(private posts: PostRepository) {
+    super(posts);
+  }
+
   /** Validate: the author, a draft, a body worth publishing. Realize: stamp the pair. */
   async publish(id: string, user?: User): Promise<Post> {
     const author = requireUser(user, 'publish');
-    const post = await requireOwn(this.storage, id, author, 'publish');
+    const post = await requireOwn(this.posts, id, author, 'publish');
     if (post.status === 'published') {
       throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published', entity: 'post', operation: 'publish' });
     }
-    return this.storage.update(id, { status: 'published', publishedAt: new Date() });
+    return this.posts.update(id, { status: 'published', publishedAt: new Date() });
   }
 }
 ```

@@ -806,6 +806,17 @@ an engine that has one. `all()` reading everything is what bounds a file source.
 names the view ONE op emits: the handler keeps its full-row storage, and the façade projects.
 `Crud(Post, PostPublic)` is the handler-wide form and scopes the injected storage.
 
+**No handler holds a storage, a `Crud` one included** — `Crud` receives the entity's REPOSITORY
+(`depsOf`, `dispatch/HandlerFacade.ts`) and keeps it private (`#rows`, `prefab/CrudConstructor.ts`),
+so `CrudOps` has no `storage`. A subclass reaches rows through the five ops it inherits —
+`super.findById(id)`, `(await super.list(options)).items` — and `super`, never `this`, because a
+handler that redefines `list` would otherwise call its own. A query worth a name lives on the
+repository, which the handler asks for in its constructor and hands to `super()`, the form the boot
+already required of a `Crud` handler with a constructor. `this.storage` used to be the one place a
+handler touched the port directly, and the starter taught it: 22 of 71 `Crud` handlers wrote their
+queries there, filtering a whole `list()` in memory. The frond template `blank` went with it — an
+`Item` with `Crud(Item)` was the first lines of `blog` without its point, and `--bare` is the empty start.
+
 **A test states what it expects** — `@fougere/testing`. The CASES come from `InputRefusal`'s
 closed set read against the four axes (`Cases`, in `@fougere/schema` because deriving them
 reads the axes and nothing else), the DOUBLES from a port's prototype (`stubOf`), and the

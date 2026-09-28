@@ -9,7 +9,7 @@ export class TaskCard extends Task.pick('id', 'title', 'status') {}
 export default class TaskHandler extends Crud(Task) {
   /** open→done — an operation, not a field write. Validate: open only. */
   async complete(id: string): Promise<Task> {
-    const task = await this.storage.findById(id);
+    const task = await super.findById(id);
     if (!task) {
       throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `Task '${id}' not found`, entity: 'task', operation: 'complete' });
     }
@@ -17,12 +17,12 @@ export default class TaskHandler extends Crud(Task) {
       throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already done', entity: 'task', operation: 'complete' });
     }
 
-    return this.storage.update(id, { status: 'done' });
+    return super.update(id, { status: 'done' });
   }
 
   /** Still-open tasks, projected to the card contract. */
   async open(): Promise<TaskCard[]> {
-    const tasks = await this.storage.list({ where: { status: 'open' } });
+    const { items: tasks } = await super.list({ where: { status: 'open' } });
 
     return tasks.map(({ id, title, status }) => ({ id, title, status }));
   }

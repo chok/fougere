@@ -8,7 +8,7 @@ import ProjectWriter from '../fronds/scaffold/services/ProjectWriter.js';
 import { Composer } from '../src/composer/Composer.js';
 import { type Plan, commandOf, planOf, refusalsOf, treeOf } from '../src/composer/Plan.js';
 
-const catalog = { fronds: ['blank', 'blog'], apps: ['next', 'nuxt'] };
+const catalog = { fronds: ['notes', 'blog'], apps: ['next', 'nuxt'] };
 
 /** `pnpm create fougere shop --frond blog --app nuxt`, read back as the flags citty would hand over. */
 function reread(command: string): Plan | undefined {
@@ -49,7 +49,7 @@ describe('a plan', () => {
       expect(refused({ name: '', fronds: [], apps: [] })).toEqual(['The project has no name — fougere new <name>.']);
       expect(refused({ name: 'Shop', fronds: [], apps: [] })[0]).toContain('is not a package name');
       expect(refused({ name: 'tmp', fronds: [{ template: 'shop', name: 'shop' }], apps: [] })[0]).toContain("No fronds template 'shop'");
-      expect(refused({ name: 'tmp', fronds: [{ template: 'blog', name: 'blog' }, { template: 'blank', name: 'blog' }], apps: [] }))
+      expect(refused({ name: 'tmp', fronds: [{ template: 'blog', name: 'blog' }, { template: 'notes', name: 'blog' }], apps: [] }))
         .toEqual(["Two fronds are called 'blog' — rename one."]);
 
       rmSync(join(cwd, 'taken'), { recursive: true, force: true });
@@ -120,11 +120,11 @@ describe('the writer', () => {
       writer.write({ name: 'shop', fronds: [{ template: 'blog', name: 'blog' }], apps: [] }, dir);
       expect(() => writer.write({ name: 'shop', fronds: [], apps: [] }, dir)).toThrow('shop/ already exists.');
 
-      const broken: Plan = { name: 'shop', fronds: [{ template: 'blank', name: 'core' }], apps: [{ template: 'nowhere', name: 'web' }] };
+      const broken: Plan = { name: 'shop', fronds: [{ template: 'blog', name: 'core' }], apps: [{ template: 'nowhere', name: 'web' }] };
       expect(() => writer.write(broken, dir, { replace: true })).toThrow();
       expect(readdirSync(join(dir, 'fronds'))).toContain('blog');
 
-      writer.write({ name: 'shop', fronds: [{ template: 'blank', name: 'core' }], apps: [] }, dir, { replace: true });
+      writer.write({ name: 'shop', fronds: [{ template: 'blog', name: 'core' }], apps: [] }, dir, { replace: true });
       expect(readdirSync(cwd)).toEqual(['shop']);
       expect(readdirSync(join(dir, 'fronds'))).not.toContain('blog');
       expect(readdirSync(join(dir, 'fronds'))).toContain('core');
@@ -178,7 +178,7 @@ describe('the composer', () => {
     const { answer, press } = screen();
     press(ENTER, ' ', ENTER, LEFT, LEFT, ...'\x7f'.repeat(4), ...'lab', ENTER, ENTER, ENTER);
 
-    expect(await answer).toEqual({ plan: { name: 'lab', fronds: [{ template: 'blank', name: 'blank' }], apps: [] }, overwrite: false });
+    expect(await answer).toEqual({ plan: { name: 'lab', fronds: [{ template: 'notes', name: 'notes' }], apps: [] }, overwrite: false });
   });
 
   it('asks the name first, and does not move on without one', async () => {

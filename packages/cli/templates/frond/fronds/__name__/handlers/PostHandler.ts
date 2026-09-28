@@ -1,12 +1,15 @@
 import { Crud, FougereError, ErrorCode } from '@fougere/core';
 import Post from '../entities/Post.js';
-
-export class PostCard extends Post.pick('id', 'title', 'status') {}
+import PostRepository, { type PostCard } from '../repositories/PostRepository.js';
 
 export default class PostHandler extends Crud(Post) {
+  constructor(private posts: PostRepository) {
+    super(posts);
+  }
+
   /** The draft→published transition — an operation, not a field write. */
   async publish(id: string): Promise<Post> {
-    const post = await this.storage.findById(id);
+    const post = await super.findById(id);
     if (!post) {
       throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `Post '${id}' not found`, entity: 'post', operation: 'publish' });
     }
@@ -14,11 +17,11 @@ export default class PostHandler extends Crud(Post) {
       throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published', entity: 'post', operation: 'publish' });
     }
 
-    return this.storage.update(id, { status: 'published' });
+    return super.update(id, { status: 'published' });
   }
 
   /** Only published posts, projected to the card. */
   async listPublished(): Promise<PostCard[]> {
-    return this.storage.output(PostCard).findAllBy({ status: 'published' });
+    return this.posts.published();
   }
 }

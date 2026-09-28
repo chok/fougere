@@ -8,14 +8,14 @@ export class SearchByTitleOutput extends Post.pick('id', 'title') {}
 export default class PostHandler extends Crud(Post) {
   /** Public reading: only published posts exist for the outside world. */
   async list(): Promise<Page<Post>> {
-    const all = await this.storage.list();
+    const { items: all } = await super.list();
 
     return pageOf(all.filter((p) => p.status === 'published'));
   }
 
   /** A post is visible when published, or when it's the reader's own draft. */
   async findById(id: string, user?: User): Promise<Post | undefined> {
-    const post = await this.storage.findById(id);
+    const post = await super.findById(id);
     if (!post) return undefined;
     const own = user && post.authorId === user.id;
 
@@ -30,7 +30,7 @@ export default class PostHandler extends Crud(Post) {
     if (!user) {
       throw new FougereError({ code: ErrorCode.UNAUTHORIZED, message: 'Login required to publish', entity: 'post', operation: 'publish' });
     }
-    const post = await this.storage.findById(id);
+    const post = await super.findById(id);
     if (!post) {
       throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `Post '${id}' not found`, entity: 'post', operation: 'publish' });
     }
@@ -41,11 +41,11 @@ export default class PostHandler extends Crud(Post) {
       throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published', entity: 'post', operation: 'publish' });
     }
 
-    return this.storage.update(id, { status: 'published', publishedAt: new Date() });
+    return super.update(id, { status: 'published', publishedAt: new Date() });
   }
 
   async searchByTitle(input: SearchByTitleInput): Promise<SearchByTitleOutput[]> {
-    const all = await this.storage.list();
+    const { items: all } = await super.list();
 
     return all
       .filter((p) => p.status === 'published')
@@ -59,7 +59,7 @@ export default class PostHandler extends Crud(Post) {
    */
   async mine(user?: User): Promise<Post[]> {
     if (!user) return [];
-    const all = await this.storage.list();
+    const { items: all } = await super.list();
 
     return all.filter((p) => p.authorId === user.id);
   }

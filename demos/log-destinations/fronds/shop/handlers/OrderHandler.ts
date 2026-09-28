@@ -14,7 +14,7 @@ export default class OrderHandler extends Crud(Order) {
 
   /** Place an order. */
   async create(input: Order): Promise<Order> {
-    const row = await this.storage.create(input);
+    const row = await super.create(input);
     await this.log({ level: 'info', name: 'shop', message: `order ${row.id} for ${row.sku}` });
 
     return row;

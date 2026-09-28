@@ -5,7 +5,7 @@ export class StatsOutput extends Category.pick('id', 'name', 'postCount') {}
 
 export default class CategoryHandler extends Crud(Category) {
   async stats(): Promise<StatsOutput[]> {
-    const all = await this.storage.list();
+    const { items: all } = await super.list();
 
     return all.map((c) => ({
       id: String(c.id),

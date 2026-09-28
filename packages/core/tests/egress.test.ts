@@ -25,7 +25,7 @@ class Secret extends entity({
 class SecretHandler extends Crud(Secret) {
   /** A handler legitimately reads the hash — it just must not leak it. */
   async audit() {
-    const all = await this.storage.list();
+    const { items: all } = await super.list();
 
     return { checked: all.length, computedByHand: 'kept' };
   }

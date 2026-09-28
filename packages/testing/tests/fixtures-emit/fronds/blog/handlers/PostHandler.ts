@@ -9,7 +9,7 @@ export default class PostHandler extends Crud(Post) {
 
   /** Publishes a post and says so. */
   async publish(input: Post): Promise<Post> {
-    const row = await this.storage.update(input.id, { status: 'published' });
+    const row = await super.update(input.id, { status: 'published' });
     // No `at`: the announcement fills it, which is what `emit.test.ts` proves.
     await this.published({ id: row.id, title: row.title });
 

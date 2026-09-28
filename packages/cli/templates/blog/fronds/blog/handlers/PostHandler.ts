@@ -15,7 +15,7 @@ export default class PostHandler extends Crud(Post) {
    * Realise: the server flips the owned field.
    */
   async publish(id: string): Promise<Post> {
-    const post = await this.storage.findById(id);
+    const post = await super.findById(id);
     if (!post) {
       throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `Post '${id}' not found`, entity: 'post', operation: 'publish' });
     }
@@ -23,12 +23,12 @@ export default class PostHandler extends Crud(Post) {
       throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published', entity: 'post', operation: 'publish' });
     }
 
-    return this.storage.update(id, { status: 'published' });
+    return super.update(id, { status: 'published' });
   }
 
   /** Only published posts exist for the outside world, projected to the card. */
   async listPublished(): Promise<PostCard[]> {
-    const posts = await this.storage.list({ where: { status: 'published' } });
+    const { items: posts } = await super.list({ where: { status: 'published' } });
 
     return posts.map(({ id, title, status }) => ({ id, title, status }));
   }
