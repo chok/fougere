@@ -9,6 +9,7 @@ export default function Posts() {
   const { items } = useQuery(post, 'list');
   const { values, setValue, errors, submit } = useFormFor(Post);
   const publish = useCommand(post, 'publish');
+  const remove = useCommand(post, 'delete');
 
   return (
     <main className="posts">
@@ -28,10 +29,12 @@ export default function Posts() {
             {row.status === 'draft' && (
               <button onClick={() => void publish.execute({ params: { id: row.id } }).catch(() => {})}>Publish</button>
             )}
+            <button className="delete" onClick={() => void remove.execute({ params: { id: row.id } }).catch(() => {})}>Delete</button>
           </li>
         ))}
       </ul>
       {publish.error && <p className="refused">{publish.error.message}</p>}
+      {remove.error && <p className="refused">{remove.error.message}</p>}
     </main>
   );
 }

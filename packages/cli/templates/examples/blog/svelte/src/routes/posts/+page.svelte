@@ -6,6 +6,7 @@
 
   const posts = useQuery(post, 'list');
   const publish = useCommand(post, 'publish');
+  const remove = useCommand(post, 'delete');
   const { values, errors, submit } = useFormFor(Post);
   onDestroy(() => posts.dispose());
 </script>
@@ -27,10 +28,12 @@
         {#if row.status === 'draft'}
           <button onclick={() => publish.execute({ params: { id: row.id } }).catch(() => {})}>Publish</button>
         {/if}
+        <button class="delete" onclick={() => remove.execute({ params: { id: row.id } }).catch(() => {})}>Delete</button>
       </li>
     {/each}
   </ul>
   {#if $publish.error}<p class="refused">{$publish.error.message}</p>{/if}
+  {#if $remove.error}<p class="refused">{$remove.error.message}</p>{/if}
 </main>
 
 <style>
@@ -54,5 +57,6 @@
 .posts li { display: flex; align-items: center; gap: 12px; padding: 12px 4px; border-bottom: 1px solid var(--line); }
 .posts li span { margin-right: auto; color: var(--muted); font-size: 13px; }
 .posts li button { padding: 4px 10px; font-size: 13px; background: var(--wash); color: var(--green); }
+.posts li button.delete { background: transparent; color: var(--muted); }
 .posts .refused { margin-top: 16px; color: var(--refused); }
 </style>

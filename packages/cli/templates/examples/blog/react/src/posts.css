@@ -18,4 +18,5 @@ body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 syste
 .posts li { display: flex; align-items: center; gap: 12px; padding: 12px 4px; border-bottom: 1px solid var(--line); }
 .posts li span { margin-right: auto; color: var(--muted); font-size: 13px; }
 .posts li button { padding: 4px 10px; font-size: 13px; background: var(--wash); color: var(--green); }
+.posts li button.delete { background: transparent; color: var(--muted); }
 .posts .refused { margin-top: 16px; color: var(--refused); }

@@ -5,7 +5,9 @@ import Post from '@fronds/__frond__/entities/Post';
 const { items } = await useQuery(post, 'list');
 const { values, errors, submit } = useFormFor(Post);
 const publish = useCommand(post, 'publish');
+const remove = useCommand(post, 'delete');
 const publishOne = (id: string) => publish.execute({ params: { id } }).catch(() => {});
+const removeOne = (id: string) => remove.execute({ params: { id } }).catch(() => {});
 </script>
 
 <template>
@@ -23,9 +25,11 @@ const publishOne = (id: string) => publish.execute({ params: { id } }).catch(() 
         <strong>{{ row.title }}</strong>
         <span>{{ row.status }}</span>
         <button v-if="row.status === 'draft'" @click="publishOne(row.id)">Publish</button>
+        <button class="delete" @click="removeOne(row.id)">Delete</button>
       </li>
     </ul>
     <p v-if="publish.error.value" class="refused">{{ publish.error.value.message }}</p>
+    <p v-if="remove.error.value" class="refused">{{ remove.error.value.message }}</p>
   </main>
 </template>
 
@@ -50,5 +54,6 @@ body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 syste
 .posts li { display: flex; align-items: center; gap: 12px; padding: 12px 4px; border-bottom: 1px solid var(--line); }
 .posts li span { margin-right: auto; color: var(--muted); font-size: 13px; }
 .posts li button { padding: 4px 10px; font-size: 13px; background: var(--wash); color: var(--green); }
+.posts li button.delete { background: transparent; color: var(--muted); }
 .posts .refused { margin-top: 16px; color: var(--refused); }
 </style>
