@@ -9,7 +9,6 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, frond, Invocation } from '@fougere/core';
-import { getModuleLoader, setModuleLoader } from '@fougere/core/node';
 import { log } from '../src/index.js';
 
 const here = import.meta.dirname;
@@ -93,23 +92,17 @@ describe('a call writes two lines', () => {
 });
 
 describe('declared once in the config', () => {
-  it('rises in a process started for one frond only', async () => {
+  it('rises in a process started for one frond only, with no loader installed by the caller', async () => {
     const lines = printed();
-    const loading = getModuleLoader();
-    setModuleLoader((id, options) => (id === '@fougere/log' ? import('../src/index.js') : loading(id, options)));
-    try {
-      await using app = await boot({
-        root: join(here, 'fixtures-app'),
-        config: { fronds: { '@fougere/log': {} } },
-        only: ['shop'],
-      });
+    await using app = await boot({
+      root: join(here, 'fixtures-app'),
+      config: { fronds: { '@fougere/log': {} } },
+      only: ['shop'],
+    });
 
-      await createLocalRunner(app)({ entity: 'order', op: 'create' }, { ...Invocation.empty, params: { id: '1' } });
+    await createLocalRunner(app)({ entity: 'order', op: 'create' }, { ...Invocation.empty, params: { id: '1' } });
 
-      expect(app.extensions()).toContain('log');
-      expect(lines.some((line) => line.includes('OrderHandler.create'))).toBe(true);
-    } finally {
-      setModuleLoader(loading);
-    }
+    expect(app.extensions()).toContain('log');
+    expect(lines.some((line) => line.includes('OrderHandler.create'))).toBe(true);
   });
 });

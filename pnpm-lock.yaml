@@ -322,6 +322,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/log':
+        specifier: workspace:*
+        version: link:../../packages/log
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -452,6 +455,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/log':
+        specifier: workspace:*
+        version: link:../../packages/log
       better-sqlite3:
         specifier: ^13.0.3
         version: 13.0.3
@@ -497,6 +503,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/log':
+        specifier: workspace:*
+        version: link:../../packages/log
       '@fougere/observability':
         specifier: workspace:*
         version: link:../../packages/observability
@@ -534,6 +543,9 @@ importers:
       '@fougere/http':
         specifier: workspace:*
         version: link:../../packages/http
+      '@fougere/log':
+        specifier: workspace:*
+        version: link:../../packages/log
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -671,6 +683,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/log':
+        specifier: workspace:*
+        version: link:../../packages/log
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -739,6 +754,9 @@ importers:
       '@fougere/defaults':
         specifier: workspace:*
         version: link:../../packages/defaults
+      '@fougere/log':
+        specifier: workspace:*
+        version: link:../../packages/log
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -874,6 +892,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/log':
+        specifier: workspace:*
+        version: link:../../packages/log
       '@fougere/next':
         specifier: workspace:*
         version: link:../../packages/app/next
@@ -944,6 +965,9 @@ importers:
       '@fougere/http':
         specifier: workspace:*
         version: link:../../packages/http
+      '@fougere/log':
+        specifier: workspace:*
+        version: link:../../packages/log
       '@fougere/nuxt':
         specifier: workspace:*
         version: link:../../packages/app/nuxt
@@ -1048,6 +1072,9 @@ importers:
       '@fougere/defaults':
         specifier: workspace:*
         version: link:../../packages/defaults
+      '@fougere/log':
+        specifier: workspace:*
+        version: link:../../packages/log
       '@fougere/oclif':
         specifier: workspace:*
         version: link:../../packages/app/oclif
@@ -1088,6 +1115,9 @@ importers:
       '@fougere/defaults':
         specifier: workspace:*
         version: link:../../packages/defaults
+      '@fougere/log':
+        specifier: workspace:*
+        version: link:../../packages/log
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -1151,6 +1181,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/log':
+        specifier: workspace:*
+        version: link:../../packages/log
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -1170,6 +1203,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/log':
+        specifier: workspace:*
+        version: link:../../packages/log
       '@fougere/react':
         specifier: workspace:*
         version: link:../../packages/app/react
@@ -1292,6 +1328,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/log':
+        specifier: workspace:*
+        version: link:../../packages/log
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -1336,6 +1375,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/log':
+        specifier: workspace:*
+        version: link:../../packages/log
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -1388,6 +1430,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/log':
+        specifier: workspace:*
+        version: link:../../packages/log
       '@fougere/react':
         specifier: workspace:*
         version: link:../../packages/app/react
@@ -1443,6 +1488,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/log':
+        specifier: workspace:*
+        version: link:../../packages/log
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -1504,6 +1552,9 @@ importers:
       '@fougere/defaults':
         specifier: workspace:*
         version: link:../../packages/defaults
+      '@fougere/log':
+        specifier: workspace:*
+        version: link:../../packages/log
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -1526,6 +1577,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/log':
+        specifier: workspace:*
+        version: link:../../packages/log
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -1979,6 +2033,9 @@ importers:
       '@typescript/typescript6':
         specifier: ^6.0.2
         version: 6.0.2
+      jiti:
+        specifier: ^2.6.1
+        version: 2.7.0
     devDependencies:
       '@fougere/container':
         specifier: workspace:*

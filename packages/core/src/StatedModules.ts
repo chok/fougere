@@ -16,7 +16,7 @@ import type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
 import { isExtension } from './descriptor/ExtensionEntry.js';
 import { statesModule, type FrondsStated } from './FrondsStated.js';
 import { statedFronds } from './StatedFrond.js';
-import { getModuleLoader } from './loader.js';
+import { getModuleLoader, type ModuleLoader } from './loader.js';
 
 /** The export a specifier reaches: its last segment, `default` failing that. */
 function exportedBy(specifier: string): string {
@@ -28,10 +28,10 @@ function exportedBy(specifier: string): string {
 /** What a config hands over as code — its module keys and the fronds it built — sorted by what each one is. */
 export async function statedModules(
   stated: FrondsStated | undefined,
+  loader: ModuleLoader = getModuleLoader(),
 ): Promise<{ fronds: FrondDescriptor[]; extensions: Extension[] }> {
   const fronds: FrondDescriptor[] = [];
   const extensions: Extension[] = [];
-  const loader = getModuleLoader();
 
   for (const entry of statedFronds(stated)) {
     if (entry.held) {

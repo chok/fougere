@@ -684,7 +684,10 @@ EXTENSION, so `fronds: { '@fougere/log': {} }` is mounted by every boot that rea
 under the frond that answers, `← <caller>` when a signed call came from another process. A path
 (`'@fougere/log': './lines.jsonl'`) brings the file destination as well. It used to be core's
 `loggerMiddleware`, installed by `observability` alone, so an app that did not trace wrote nothing
-about its calls. The starters write the line. Pinned by `log/tests/call-lines.test.ts`.
+about its calls. The starters write the line. `boot()` resolves a PACKAGE key from the project
+(`fromProject`, `compiler/src/boot.ts`): core's own loader took `'@fougere/log'` for a file path,
+so a script calling `bootApp` with no loader of its own refused the config the starter writes.
+Pinned by `log/tests/call-lines.test.ts`.
 
 **A line says who wrote it and what it was written DURING** — a class asking for `Logger` gets
 `child(<Class>)` under its own key (`ownLoggers`, `core/src/builtin/OwnLoggers.ts`), a substituted
@@ -1064,6 +1067,11 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 - **An un-augmented `adapters:` accepts anything, silently.** With no adapter in the program
   `EntityAdapters<TFields>` is `Partial<{}>`, which in TypeScript means "anything
   non-nullish". The RUNTIME half is closed since the adapter's format; what remains open is the type.
+- **An outgoing call's line names the frond it goes to, and the address rather than the class.**
+  `callLines` reads the `OperationContext` the remote facade builds (`boot/remote.ts`), which holds
+  the TARGET frond and no `handler`, so the caller writes `[app:catalog] (shop:CartHandler.checkout)
+  product.list` where the receiver writes `[app:catalog] ProductHandler.list`. Measured 2026-09-29
+  on `demos/observability`. Left as is: the line is true, only its form differs.
 - **Seeds are ordered within a process, never across two** — `orderSeeds` (`core/src/boot/seed.ts`)
   plants a `ref()` target before its referrer among the seeds THIS process hosts. A seed runs where
   its rows live (`app.storageFor`, absent elsewhere), so a referrer whose target is seeded by

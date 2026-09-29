@@ -1,5 +1,8 @@
 import { Logger, applyConfig, createApp, type App, type CreateAppOptions, type Extension, type FougereConfig, type Transport } from '@fougere/core';
-import { loadConfig, remotesOf, statedModules } from '@fougere/core/node';
+import { getModuleLoader, loadConfig, remotesOf, statedModules, type ModuleLoader } from '@fougere/core/node';
+import { createJiti } from 'jiti';
+import { resolve, sep } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { scanProject } from './scan/scanner.js';
 
 import type { Container } from '@fougere/container';
@@ -69,7 +72,7 @@ export async function boot(options: BootOptions): Promise<App> {
   }
 
   // What the config names by module — imported here, because core resolves no specifier.
-  const stated = await statedModules(config.fronds);
+  const stated = await statedModules(config.fronds, fromProject(root));
   const only = options.only ?? options.fronds;
   const hosted = stated.fronds.filter((frond) => !only || only.includes(frond.name));
 
@@ -113,4 +116,17 @@ export async function boot(options: BootOptions): Promise<App> {
   log.info(`ready in ${ms}ms — ${app.fronds.length} frond(s)`);
 
   return app;
+}
+
+/**
+ * A package a config names — `'@fougere/log'` — resolved from the PROJECT, whose dependency it is:
+ * core's own loader takes it for a file path. A path goes to whatever loader the caller installed,
+ * which knows the project's aliases.
+ */
+function fromProject(root: string): ModuleLoader {
+  const project = createJiti(pathToFileURL(resolve(root) + sep).href, { interopDefault: true });
+
+  return (id, options) => (id.startsWith('.') || id.startsWith('/')
+    ? getModuleLoader()(id, options)
+    : project.import(id) as Promise<Record<string, unknown>>);
 }
