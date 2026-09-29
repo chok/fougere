@@ -16,6 +16,7 @@
     "@fougere/schema": "latest",
     "@fougere/defaults": "latest",
     "@fougere/container": "latest",
+    "@fougere/log": "latest",
     "better-sqlite3": "^13.0.3",
     "kysely": "^0.28.17",
     "@fougere/nuxt": "latest"

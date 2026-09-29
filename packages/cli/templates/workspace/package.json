@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@fougere/core": "latest",
+    "@fougere/log": "latest",
     "@fougere/schema": "latest",
     "better-sqlite3": "^13.0.3"
   },
