@@ -7,16 +7,16 @@
   const posts = useQuery(post, 'list');
   const publish = useCommand(post, 'publish');
   const remove = useCommand(post, 'delete');
-  const { values, errors, submit } = useFormFor(Post);
+  const { fieldsByName, values, errors, submit } = useFormFor(Post);
   onDestroy(() => posts.dispose());
 </script>
 
 <main class="posts">
   <h1>Posts</h1>
   <form onsubmit={(event) => { event.preventDefault(); submit(); }}>
-    <input bind:value={$values.title} placeholder="Title" />
+    <input bind:value={$values.title} {...fieldsByName.title?.attrs} placeholder="Title" />
     {#if $errors.title}<small>{$errors.title}</small>{/if}
-    <textarea bind:value={$values.body} placeholder="Body"></textarea>
+    <textarea bind:value={$values.body} {...fieldsByName.body?.attrs} placeholder="Body"></textarea>
     {#if $errors.body}<small>{$errors.body}</small>{/if}
     <button>Create draft</button>
   </form>

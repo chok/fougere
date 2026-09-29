@@ -3,7 +3,7 @@ import { post } from '@fronds/facade';
 import Post from '@fronds/__frond__/entities/Post';
 
 const { items } = await useQuery(post, 'list');
-const { values, errors, submit } = useFormFor(Post);
+const { fieldsByName, values, errors, submit } = useFormFor(Post);
 const publish = useCommand(post, 'publish');
 const remove = useCommand(post, 'delete');
 const publishOne = (id: string) => publish.execute({ params: { id } }).catch(() => {});
@@ -14,9 +14,9 @@ const removeOne = (id: string) => remove.execute({ params: { id } }).catch(() =>
   <main class="posts">
     <h1>Posts</h1>
     <form @submit.prevent="submit">
-      <input v-model="values.title" placeholder="Title" />
+      <input v-model="values.title" v-bind="fieldsByName.title?.attrs" placeholder="Title" />
       <small v-if="errors.title">{{ errors.title }}</small>
-      <textarea v-model="values.body" placeholder="Body" />
+      <textarea v-model="values.body" v-bind="fieldsByName.body?.attrs" placeholder="Body" />
       <small v-if="errors.body">{{ errors.body }}</small>
       <button>Create draft</button>
     </form>

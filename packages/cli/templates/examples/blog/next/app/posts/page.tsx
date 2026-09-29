@@ -7,7 +7,7 @@ import Post from '@fronds/__frond__/entities/Post';
 
 export default function Posts() {
   const { items } = useQuery(post, 'list');
-  const { values, setValue, errors, submit } = useFormFor(Post);
+  const { fieldsByName, values, setValue, errors, submit } = useFormFor(Post);
   const publish = useCommand(post, 'publish');
   const remove = useCommand(post, 'delete');
 
@@ -15,9 +15,9 @@ export default function Posts() {
     <main className="posts">
       <h1>Posts</h1>
       <form onSubmit={(event) => { event.preventDefault(); void submit(); }}>
-        <input value={String(values.title ?? '')} onChange={(event) => setValue('title', event.target.value)} placeholder="Title" />
+        <input {...fieldsByName.title?.attrs} value={String(values.title ?? '')} onChange={(event) => setValue('title', event.target.value)} placeholder="Title" />
         {errors.title && <small>{errors.title}</small>}
-        <textarea value={String(values.body ?? '')} onChange={(event) => setValue('body', event.target.value)} placeholder="Body" />
+        <textarea {...fieldsByName.body?.attrs} value={String(values.body ?? '')} onChange={(event) => setValue('body', event.target.value)} placeholder="Body" />
         {errors.body && <small>{errors.body}</small>}
         <button>Create draft</button>
       </form>
