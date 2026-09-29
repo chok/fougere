@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Card, entity, primary, text, email, url, number, bool, date, created, oneOf, ref, many, optional, writeOnly } from '@fougere/schema';
 import { errorsByField, formFieldsOf, payloadOf, tableColumnsOf } from '../src/FormEntity.js';
-import { cellOf, summaryOf } from '../src/Summary.js';
 
 class Author extends entity({ id: primary(), password: writeOnly(text()), name: text() }) {}
 class Tag extends entity({ code: primary(), weight: number() }) {}
@@ -230,23 +229,5 @@ describe('tableColumnsOf — the dual', () => {
     expect(Object.keys(cols)).toEqual(Object.keys(byName));
     expect(cols.authorId).toEqual({ ...byName.authorId });
     expect(cols.publishAt.render).toBe('date');
-  });
-});
-
-describe('summaryOf — what a line of a list shows', () => {
-  const summary = summaryOf(Article as never, 'article');
-
-  it('leads with the field that names a row, and states what reads at a glance', () => {
-    expect(summary.name?.name).toBe('title');
-    expect(summary.facts.map((column) => column.name)).toEqual(['views', 'published', 'status', 'publishAt', 'createdAt']);
-  });
-
-  it('prints a fact for a line: a true boolean by its label, a false one not at all, a date without its hour', () => {
-    const [views, published, , publishAt] = summary.facts;
-    expect(cellOf(views!, { views: 0 })).toBe('0');
-    expect(cellOf(published!, { published: true })).toBe('Published');
-    expect(cellOf(published!, { published: false })).toBe('');
-    const at = new Date('2026-09-29T12:00:00Z');
-    expect(cellOf(publishAt!, { publishAt: at })).toBe(at.toLocaleDateString());
   });
 });

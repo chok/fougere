@@ -6,7 +6,6 @@ const { items } = await useQuery(post, 'list');
 const { fields, values, errors, choices, searchable, search, submit } = useFormFor(Post);
 const publish = useCommand(post, 'publish');
 const remove = useCommand(post, 'delete');
-const summary = summaryOf(Post, 'post');
 </script>
 
 <template>
@@ -33,10 +32,8 @@ const summary = summaryOf(Post, 'post');
     </form>
     <ul>
       <li v-for="row in items" :key="row.id">
-        <strong v-if="summary.name">{{ cellOf(summary.name, row) }}</strong>
-        <template v-for="fact in summary.facts" :key="fact.name">
-          <span v-if="cellOf(fact, row)">{{ cellOf(fact, row) }}</span>
-        </template>
+        <strong>{{ row.title }}</strong>
+        <span>{{ row.status }}</span>
         <button v-if="row.status === 'draft'" @click="publish.execute({ params: { id: row.id } })">Publish</button>
         <button class="delete" @click="remove.execute({ params: { id: row.id } })">Delete</button>
       </li>

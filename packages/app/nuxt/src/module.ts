@@ -235,9 +235,6 @@ const module = defineNuxtModule<FougereModuleOptions>({
       { name: 'useQuery', from: runtimeResolve('composables/useFougereData') },
       { name: 'useCommand', from: runtimeResolve('composables/useFougereData') },
       { name: 'useFormFor', from: runtimeResolve('composables/useFormFor') },
-      { name: 'tableColumnsOf', from: '@fougere/app/client' },
-      { name: 'summaryOf', from: '@fougere/app/client' },
-      { name: 'cellOf', from: '@fougere/app/client' },
       { name: 'useCurrentUser', from: runtimeResolve('composables/useCurrentUser') },
     ]);
 

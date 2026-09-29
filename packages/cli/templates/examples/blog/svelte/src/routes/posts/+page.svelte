@@ -1,13 +1,12 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
-  import { summaryOf, cellOf, useCommand, useFormFor, useQuery } from '@fougere/svelte';
+  import { useCommand, useFormFor, useQuery } from '@fougere/svelte';
   import { post } from '@fronds/facade';
   import Post from '@fronds/__frond__/entities/Post';
 
   const posts = useQuery(post, 'list');
   const publish = useCommand(post, 'publish');
   const remove = useCommand(post, 'delete');
-  const summary = summaryOf(Post, 'post');
   const { fields, values, errors, choices, searchable, search, submit } = useFormFor(Post);
   onDestroy(() => posts.dispose());
 </script>
@@ -40,8 +39,8 @@
   <ul>
     {#each $posts.items as row (row.id)}
       <li>
-        {#if summary.name}<strong>{cellOf(summary.name, row)}</strong>{/if}
-        {#each summary.facts as fact (fact.name)}{#if cellOf(fact, row)}<span>{cellOf(fact, row)}</span>{/if}{/each}
+        <strong>{row.title}</strong>
+        <span>{row.status}</span>
         {#if row.status === 'draft'}
           <button onclick={() => publish.execute({ params: { id: row.id } })}>Publish</button>
         {/if}

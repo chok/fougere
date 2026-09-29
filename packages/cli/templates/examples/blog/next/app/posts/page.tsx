@@ -1,7 +1,7 @@
 'use client';
 
 import { Fragment } from 'react';
-import { cellOf, summaryOf, useCommand, useFormFor, useQuery } from '@fougere/react';
+import { useCommand, useFormFor, useQuery } from '@fougere/react';
 import './posts.css';
 import { post } from '@fronds/facade';
 import Post from '@fronds/__frond__/entities/Post';
@@ -11,7 +11,6 @@ export default function Posts() {
   const { fields, values, setValue, errors, choices, searchable, search, submit } = useFormFor(Post);
   const publish = useCommand(post, 'publish');
   const remove = useCommand(post, 'delete');
-  const summary = summaryOf(Post, 'post');
 
   return (
     <main className="posts">
@@ -46,8 +45,8 @@ export default function Posts() {
       <ul>
         {items.map((row) => (
           <li key={row.id}>
-            {summary.name && <strong>{cellOf(summary.name, row)}</strong>}
-            {summary.facts.map((fact) => cellOf(fact, row) && <span key={fact.name}>{cellOf(fact, row)}</span>)}
+            <strong>{row.title}</strong>
+            <span>{row.status}</span>
             {row.status === 'draft' && (
               <button onClick={() => void publish.execute({ params: { id: row.id } })}>Publish</button>
             )}
