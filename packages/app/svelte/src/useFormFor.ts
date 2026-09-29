@@ -49,17 +49,12 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
 
   async function submit(): Promise<FormRow<E> | null> {
     if (!validator()) return null;
-    try {
-      return (await command.execute({ params: options.params, input: payloadOf(entity, get(values)) })) as FormRow<E>;
-    } catch (err) {
-      const refusals = validationErrorsOf(err);
-      if (refusals) {
-        errors.set(errorsByField<E>(refusals));
+    const answer = await command.execute({ params: options.params, input: payloadOf(entity, get(values)) });
+    const failure = get(command).error;
+    const refusals = failure && validationErrorsOf(failure);
+    if (refusals) errors.set(errorsByField<E>(refusals));
 
-        return null;
-      }
-      throw err;
-    }
+    return answer as FormRow<E> | null;
   }
 
   const valid: Readable<boolean> = derived(errors, ($errors) => Object.keys($errors).length === 0);

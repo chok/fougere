@@ -28,13 +28,12 @@ async function onPublish() {
   // Unsaved edits ride along: save first, then flip.
   if (!(await submit())) return;
   const published = await publish.execute({ params: { id } });
-  navigateTo(localePath(`/blog/${published.slug}`));
+  if (published) navigateTo(localePath(`/blog/${published.slug}`));
 }
 
 async function onDelete() {
   if (!confirm(t('blog.form.deleteConfirm'))) return;
-  await remove.execute({ params: { id } });
-  navigateTo(localePath('/blog/drafts'));
+  if (await remove.execute({ params: { id } })) navigateTo(localePath('/blog/drafts'));
 }
 
 useSeoMeta({ title: () => `${t('blog.form.editTitle')} — Fougere` });
@@ -77,6 +76,7 @@ useSeoMeta({ title: () => `${t('blog.form.editTitle')} — Fougere` });
 
         <p v-if="error" class="text-sm text-error">{{ error.message }}</p>
         <p v-if="publish.error.value" class="text-sm text-error">{{ publish.error.value.message }}</p>
+        <p v-if="remove.error.value" class="text-sm text-error">{{ remove.error.value.message }}</p>
         <p v-if="saved" class="text-sm text-success">{{ $t('blog.form.saved') }}</p>
 
         <div class="flex items-center gap-2 pt-2">

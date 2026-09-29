@@ -57,18 +57,14 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
   /** Validate locally, then send through the command. */
   const submit = useCallback(async (): Promise<FormRow<E> | null> => {
     if (!validator()) return null;
-    try {
-      return (await command.execute({ params: options.params, input: payloadOf(entity, values) })) as FormRow<E>;
-    } catch (err) {
-      const refusals = validationErrorsOf(err);
-      if (refusals) {
-        setErrors(errorsByField<E>(refusals));
 
-        return null;
-      }
-      throw err;
-    }
+    return (await command.execute({ params: options.params, input: payloadOf(entity, values) })) as FormRow<E> | null;
   }, [validator, command, options.params, values]);
+
+  // What the server refused lands per field too, read off the command's own state: its `execute` resolves
+  // before React has rendered the refusal, so it cannot be handed over at the call.
+  const refusals = command.error ? validationErrorsOf(command.error) : undefined;
+  const shown = Object.keys(errors).length === 0 && refusals ? errorsByField<E>(refusals) : errors;
 
   const fieldsByName = useMemo(
     () => Object.fromEntries(fields.map((field) => [field.name, field])) as Partial<Record<FormFieldName<E>, FormField<FormFieldName<E>>>>,
@@ -84,11 +80,11 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
     fieldsByName,
     values,
     setValue,
-    errors,
+    errors: shown,
     submit,
     loading: command.loading,
     /** Non-validation failure of the last submit (unreachable host, conflict…). */
     error: command.error,
-    valid: Object.keys(errors).length === 0,
+    valid: Object.keys(shown).length === 0,
   };
 }

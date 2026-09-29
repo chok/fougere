@@ -4,16 +4,6 @@ import Post from '@fronds/blog/entities/Post';
 interface PostValues { id: string; title: string; status: 'draft' | 'published' }
 const { items: posts, loading } = await useQuery<PostValues>(Post, 'list');
 const publish = useCommand(Post, 'publish');
-const failed = ref('');
-
-async function doPublish(id: string) {
-  failed.value = '';
-  try {
-    await publish.execute({ params: { id } });
-  } catch (e: any) {
-    failed.value = e?.message ?? 'Publish failed';
-  }
-}
 </script>
 
 <template>
@@ -21,7 +11,7 @@ async function doPublish(id: string) {
     <p><NuxtLink to="/">← home</NuxtLink></p>
     <h1>Drafts &amp; publishing</h1>
     <p><NuxtLink to="/posts/new">+ New draft</NuxtLink></p>
-    <p v-if="failed" class="err">{{ failed }}</p>
+    <p v-if="publish.error.value" class="err">{{ publish.error.value.message }}</p>
     <p v-if="loading" class="muted">Loading…</p>
     <p v-else-if="!posts.length" class="muted">
       No posts yet — <NuxtLink to="/posts/new">create one</NuxtLink>, it starts as a draft.
@@ -33,7 +23,7 @@ async function doPublish(id: string) {
           <td>{{ p.title }}</td>
           <td><span class="badge" :class="{ published: p.status === 'published' }">{{ p.status }}</span></td>
           <td style="text-align: right">
-            <button v-if="p.status === 'draft'" :disabled="publish.loading.value" @click="doPublish(p.id)">
+            <button v-if="p.status === 'draft'" :disabled="publish.loading.value" @click="publish.execute({ params: { id: p.id } })">
               Publish
             </button>
           </td>

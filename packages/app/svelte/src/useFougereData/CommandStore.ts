@@ -4,7 +4,8 @@ import { asFougereError, callOf, addressOf, fetcher, invocationOf, mountedKeys, 
 
 export interface CommandStore<T, Refused extends ErrorCode = ErrorCode>
   extends Readable<{ loading: boolean; error: FougereError<Refused> | null }> {
-  execute(input?: CallInput): Promise<T>;
+  /** The answer, or `null` when the call was refused — the refusal is in `error`, and nothing is thrown. */
+  execute(input?: CallInput): Promise<T | null>;
 }
 
 export function useCommand<
@@ -17,7 +18,7 @@ export function useCommand<
 
   return {
     subscribe: store.subscribe,
-    async execute(input?: CallInput): Promise<Answer<Handler, Op>> {
+    async execute(input?: CallInput): Promise<Answer<Handler, Op> | null> {
       store.set({ loading: true, error: null });
       try {
         const result = (await sendCall(fetcher, callOf(facade, op), invocationOf(input))) as Answer<Handler, Op>;
@@ -29,7 +30,8 @@ export function useCommand<
       } catch (err) {
         const failure = asFougereError(err, entityKey, op);
         store.set({ loading: false, error: failure });
-        throw failure;
+
+        return null;
       }
     },
   };

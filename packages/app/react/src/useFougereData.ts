@@ -91,8 +91,9 @@ export function useCommand<
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<FougereError<Refused<Address, Op>> | null>(null);
 
+  /** The answer, or `null` when the call was refused — the refusal is in `error`, and nothing is thrown. */
   const execute = useCallback(
-    async (input?: CallInput): Promise<Answered> => {
+    async (input?: CallInput): Promise<Answered | null> => {
       setLoading(true);
       setError(null);
       try {
@@ -104,7 +105,8 @@ export function useCommand<
       } catch (err) {
         const failure = asFougereError(err, entityKey, op) as FougereError<Refused<Address, Op>>;
         setError(failure);
-        throw failure;
+
+        return null;
       } finally {
         setLoading(false);
       }

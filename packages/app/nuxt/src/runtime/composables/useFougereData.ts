@@ -85,7 +85,8 @@ export function useCommand<
   const loading = ref(false);
   const error = ref<FougereError<Refused<Address, Op>> | null>(null);
 
-  async function execute(input?: CallInput): Promise<Answered> {
+  /** The answer, or `null` when the call was refused — the refusal is in `error`, and nothing is thrown. */
+  async function execute(input?: CallInput): Promise<Answered | null> {
     loading.value = true;
     error.value = null;
     try {
@@ -97,7 +98,8 @@ export function useCommand<
       return result;
     } catch (err) {
       error.value = asFougereError(err, entityKey, op) as FougereError<Refused<Address, Op>>;
-      throw error.value;
+
+      return null;
     } finally {
       loading.value = false;
     }

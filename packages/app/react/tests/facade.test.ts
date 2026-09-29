@@ -48,8 +48,8 @@ export function pinned(): void {
 
   const slug: string | undefined = one.data?.slug;
   const first: { id: string; title: string } | undefined = rows.items[0];
-  const published: Promise<{ id: string; slug: string }> = publish.execute();
-  const gone: Promise<boolean> = remove.execute();
+  const published: Promise<{ id: string; slug: string } | null> = publish.execute();
+  const gone: Promise<boolean | null> = remove.execute();
 
   void [slug, first, published, gone];
 

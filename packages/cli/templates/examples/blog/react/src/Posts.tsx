@@ -38,9 +38,9 @@ export default function Posts() {
             <strong>{row.title}</strong>
             <span>{row.status}</span>
             {row.status === 'draft' && (
-              <button onClick={() => void publish.execute({ params: { id: row.id } }).catch(() => {})}>Publish</button>
+              <button onClick={() => void publish.execute({ params: { id: row.id } })}>Publish</button>
             )}
-            <button className="delete" onClick={() => void remove.execute({ params: { id: row.id } }).catch(() => {})}>Delete</button>
+            <button className="delete" onClick={() => void remove.execute({ params: { id: row.id } })}>Delete</button>
           </li>
         ))}
       </ul>

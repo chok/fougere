@@ -6,8 +6,6 @@ const { items } = await useQuery(post, 'list');
 const { fields, values, errors, submit } = useFormFor(Post);
 const publish = useCommand(post, 'publish');
 const remove = useCommand(post, 'delete');
-const publishOne = (id: string) => publish.execute({ params: { id } }).catch(() => {});
-const removeOne = (id: string) => remove.execute({ params: { id } }).catch(() => {});
 </script>
 
 <template>
@@ -29,8 +27,8 @@ const removeOne = (id: string) => remove.execute({ params: { id } }).catch(() =>
       <li v-for="row in items" :key="row.id">
         <strong>{{ row.title }}</strong>
         <span>{{ row.status }}</span>
-        <button v-if="row.status === 'draft'" @click="publishOne(row.id)">Publish</button>
-        <button class="delete" @click="removeOne(row.id)">Delete</button>
+        <button v-if="row.status === 'draft'" @click="publish.execute({ params: { id: row.id } })">Publish</button>
+        <button class="delete" @click="remove.execute({ params: { id: row.id } })">Delete</button>
       </li>
     </ul>
     <p v-if="publish.error.value" class="refused">{{ publish.error.value.message }}</p>

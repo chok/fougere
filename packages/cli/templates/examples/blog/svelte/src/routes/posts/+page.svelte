@@ -36,9 +36,9 @@
         <strong>{row.title}</strong>
         <span>{row.status}</span>
         {#if row.status === 'draft'}
-          <button onclick={() => publish.execute({ params: { id: row.id } }).catch(() => {})}>Publish</button>
+          <button onclick={() => publish.execute({ params: { id: row.id } })}>Publish</button>
         {/if}
-        <button class="delete" onclick={() => remove.execute({ params: { id: row.id } }).catch(() => {})}>Delete</button>
+        <button class="delete" onclick={() => remove.execute({ params: { id: row.id } })}>Delete</button>
       </li>
     {/each}
   </ul>

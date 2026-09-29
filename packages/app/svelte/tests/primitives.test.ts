@@ -164,11 +164,11 @@ describe('the link — a command revalidates the reads on its entity', () => {
 });
 
 describe('useCommand', () => {
-  it('reports a refusal on the store and rethrows it', async () => {
+  it('reports a refusal on the store and answers null, throwing nothing', async () => {
     wire(() => new Error('Only the author can publish'));
     const publish = useCommand(posts, 'publish');
 
-    await expect(publish.execute()).rejects.toThrow('Only the author can publish');
+    expect(await publish.execute()).toBeNull();
     expect(get(publish).error?.message).toContain('Only the author can publish');
     expect(get(publish).loading).toBe(false);
   });

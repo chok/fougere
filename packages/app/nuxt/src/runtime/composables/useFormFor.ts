@@ -46,17 +46,11 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
   /** Validate locally, then send through the command. */
   async function submit(): Promise<FormRow<E> | null> {
     if (!validator()) return null;
-    try {
-      return (await command.execute({ params: options.params, input: payloadOf(entity, values) })) as FormRow<E>;
-    } catch (err) {
-      const refusals = validationErrorsOf(err);
-      if (refusals) {
-        Object.assign(errors, errorsByField<E>(refusals));
+    const answer = await command.execute({ params: options.params, input: payloadOf(entity, values) });
+    const refusals = command.error.value && validationErrorsOf(command.error.value);
+    if (refusals) Object.assign(errors, errorsByField<E>(refusals));
 
-        return null;
-      }
-      throw err;
-    }
+    return answer as FormRow<E> | null;
   }
 
   return {

@@ -5,16 +5,6 @@ import { post as postFacade } from '@fronds/facade';
 const { user, loggedIn } = useCurrentUser();
 const { items: posts, loading } = await useQuery(postFacade, 'mine');
 const publish = useCommand(postFacade, 'publish');
-const publishError = ref('');
-
-async function doPublish(id: string) {
-  publishError.value = '';
-  try {
-    await publish.execute({ params: { id } });
-  } catch (e: any) {
-    publishError.value = e?.message ?? 'Publish failed';
-  }
-}
 </script>
 
 <template>
@@ -42,7 +32,7 @@ async function doPublish(id: string) {
     </UCard>
 
     <UCard v-else>
-      <UAlert v-if="publishError" color="error" :title="publishError" class="mb-4" />
+      <UAlert v-if="publish.error.value" color="error" :title="publish.error.value.message" class="mb-4" />
       <div v-if="loading" class="py-8 text-center text-muted">Loading...</div>
       <div v-else-if="!posts.length" class="py-8 text-center text-muted">
         <UIcon name="i-lucide-file-text" class="size-8 mb-2 mx-auto" />

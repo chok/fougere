@@ -12,8 +12,7 @@ const publish = useCommand(postFacade, 'publish');
 
 async function destroy() {
   if (!confirm('Delete this post?')) return;
-  await del.execute({ params: { id } });
-  navigateTo('/blog/posts');
+  if (await del.execute({ params: { id } })) navigateTo('/blog/posts');
 }
 
 /**
@@ -44,8 +43,7 @@ function assertNever(code: never): never {
 }
 
 async function doPublish() {
-  // `execute` rejects AND stores; the page reads the ref, so nothing is swallowed.
-  await publish.execute({ params: { id } }).catch(() => undefined);
+  await publish.execute({ params: { id } });
 }
 </script>
 
