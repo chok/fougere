@@ -27,5 +27,6 @@
     "file": "vite.config.ts",
     "from": "@fougere/vite",
     "imported": "fougere"
-  }
+  },
+  "facade": { "kind": "kitAlias", "file": "vite.config.ts" }
 }

@@ -2,7 +2,7 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { applyEdits, modify } from 'jsonc-parser';
 import { builders, generateCode, parseModule } from 'magicast';
-import { addNuxtModule, addVitePlugin } from 'magicast/helpers';
+import { addNuxtModule, addVitePlugin, getDefaultExportOptions } from 'magicast/helpers';
 
 /**
  * What a host adds to the shell its own tool writes — declared by the host, in `template/scaffold.json`.
@@ -19,8 +19,8 @@ export interface Scaffold {
   wire?: Wire;
   /** What the shell writes and Fougere's pages replace. */
   remove?: string[];
-  /** The tsconfig TypeScript reads for the app's sources, which learns where the facade module is. */
-  tsconfig?: string;
+  /** Where TypeScript learns the facade module's path — the host's own place for an alias. */
+  facade?: FacadePath;
 }
 
 /** The one config gesture that makes a host serve Fougere — three forms, one per kind of host. */
@@ -28,6 +28,14 @@ export type Wire =
   | { kind: 'nuxtModule'; file: string; module: string; configKey?: string; options?: Record<string, unknown> }
   | { kind: 'vitePlugin'; file: string; from: string; imported: string; options?: Record<string, unknown> }
   | { kind: 'wrapExport'; file: string; from: string; imported: string; options?: Record<string, unknown> };
+
+/**
+ * Two forms, because a host that generates its tsconfig owns its `paths`: SvelteKit writes them from
+ * `kit.alias`, and a `paths` beside them would replace its `$lib`.
+ */
+export type FacadePath =
+  | { kind: 'paths'; file: string }
+  | { kind: 'kitAlias'; file: string };
 
 /** Where a host writes the facade module, from the app's own directory. */
 const FACADE = './.fougere/facade.generated.ts';
@@ -38,7 +46,8 @@ export function applyScaffold(dir: string, scaffold: Scaffold): void {
   asMember(dir);
   addDependencies(dir, scaffold);
   if (scaffold.wire) wire(dir, scaffold.wire);
-  if (scaffold.tsconfig) pointAtFacade(join(dir, scaffold.tsconfig));
+  if (scaffold.facade?.kind === 'paths') pointAtFacade(join(dir, scaffold.facade.file));
+  if (scaffold.facade?.kind === 'kitAlias') aliasFacade(join(dir, scaffold.facade.file));
 }
 
 /**
@@ -78,6 +87,22 @@ function wire(dir: string, gesture: Wire): void {
     mod.exports.default = builders.functionCall(gesture.imported, ...args);
   }
 
+  write(path, source, mod);
+}
+
+/** The alias SvelteKit copies into the tsconfig it generates, stated in `sveltekit()`'s own options. */
+function aliasFacade(path: string): void {
+  const source = readFileSync(path, 'utf8');
+  const mod = parseModule(source);
+  const plugins = getDefaultExportOptions(mod).plugins as { $callee?: string; $args: Record<string, unknown>[] }[];
+  const kit = plugins.find((plugin) => plugin.$callee === 'sveltekit')?.$args[0];
+  if (!kit) throw new Error(`${path} calls no sveltekit() — the host's tool changed what it writes.`);
+  kit.alias = { ...(kit.alias as Record<string, string> | undefined), '@fronds/facade': FACADE };
+  write(path, source, mod);
+}
+
+/** Written back in the quotes the shell chose. */
+function write(path: string, source: string, mod: ReturnType<typeof parseModule>): void {
   const quote = (source.match(/"/g)?.length ?? 0) > (source.match(/'/g)?.length ?? 0) ? 'double' : 'single';
   writeFileSync(path, generateCode(mod, { format: { quote, objectCurlySpacing: true } }).code.trimEnd() + '\n');
 }

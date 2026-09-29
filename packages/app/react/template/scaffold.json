@@ -29,5 +29,5 @@
     "src/App.css",
     "src/assets"
   ],
-  "tsconfig": "tsconfig.app.json"
+  "facade": { "kind": "paths", "file": "tsconfig.app.json" }
 }

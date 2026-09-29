@@ -524,7 +524,7 @@ Fougere's own vocabulary, and no other package owns it. Pinned by `cli/tests/sca
 written: our Nuxt tsconfig still extended `./.nuxt/tsconfig.json` when `create-nuxt` had moved to
 project references. Now `create-nuxt@3`, `create-next-app@16`, `create-vite@9` or `sv@0.17 create`
 writes the shell, a MAJOR pinned and moved on purpose, and Fougere adds its dependencies, its
-pages, what they replace (`remove`), the facade path in the tsconfig TypeScript reads, and ONE
+pages, what they replace (`remove`), the facade path where TypeScript reads it (`paths` in a tsconfig, or `kit.alias` for SvelteKit, whose generated tsconfig owns its `paths`), and ONE
 config gesture of three forms — `nuxtModule`, `vitePlugin`, `wrapExport` — written with `magicast`,
 the library `nuxi module add` uses for the same thing. The manifest is DATA because the CLI fetches
 a host as a tarball and never runs its code. An app is a workspace member, so the shell's

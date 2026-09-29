@@ -31,5 +31,5 @@
     "from": "@fougere/next/config",
     "imported": "withFougere"
   },
-  "tsconfig": "tsconfig.json"
+  "facade": { "kind": "paths", "file": "tsconfig.json" }
 }

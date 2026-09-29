@@ -206,10 +206,13 @@ describe('an app is the host\u2019s own shell, and Fougere adds its part', () =>
     } finally { dispose(); }
   });
 
-  it('SvelteKit: the plugin before sveltekit(), and the page replaced', () => {
+  it('SvelteKit: the plugin before sveltekit(), the facade in kit.alias, and the page replaced', () => {
     const { read, dispose } = app('svelte');
     try {
       expect(read('vite.config.ts')).toMatch(/plugins: \[\s*fougere\(\),\s*sveltekit\(/);
+      expect(read('vite.config.ts')).toMatch(/alias: \{\s*'@fronds\/facade': '\.\/\.fougere\/facade\.generated\.ts'\s*\}/);
+      expect(read('vite.config.ts')).toContain('adapter: adapter()');
+      expect(read('tsconfig.json')).not.toContain('@fronds/facade');
       expect(read('src/routes/+page.svelte')).toContain('Your app is running on');
     } finally { dispose(); }
   });
