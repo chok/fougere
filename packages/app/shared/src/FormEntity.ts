@@ -3,6 +3,7 @@ import { FieldSet, Shapes, lowerFirst, Role, Visibility } from '@fougere/schema'
 import type { Field, SchemaView, ShapeType, ValidationError } from '@fougere/schema';
 import type { FormField, FormReference } from './FormField.js';
 import type { FormErrors, FormFieldName } from './FormRow.js';
+import { rowNameOf } from './RowName.js';
 import type { TableColumn } from './TableColumn.js';
 
 /** What an entity class exposes to a form — the schema statics it already has. */
@@ -54,10 +55,8 @@ function referenceOf(field: Field): FormReference | undefined {
   if (!target) return undefined;
   const fields = (target as Partial<SchemaView>).getFields?.() ?? {};
   const key = FieldSet.of(fields).primary ?? 'id';
-  const named = Object.entries(Visibility.of(fields).output).find(([, candidate]) =>
-    Shapes.typeOf(candidate.shape) === 'text' && !Role.of(candidate).isPrimary() && !Role.of(candidate).isRelation());
 
-  return { to: lowerFirst(target.name), key, label: named?.[0] ?? key };
+  return { to: lowerFirst(target.name), key, label: rowNameOf(fields) ?? key };
 }
 
 /** A closed set's members, when the shape declares one — `oneOf('draft','live')`. */

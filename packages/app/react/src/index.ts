@@ -4,6 +4,7 @@ export { useQuery, useCommand } from './useFougereData.js';
 // The facade a page names, and the one an entity class names for a form.
 export { facade, facadeOf } from '@fougere/app/client';
 export { useFormFor, type FormOptions } from './useFormFor.js';
+export { cellOf, summaryOf, tableColumnsOf } from '@fougere/app/client';
 export { useCurrentUser, FougereSession } from './useCurrentUser.js';
 export { fetcher, CALL_ENDPOINT } from './transport.js';
 
@@ -13,4 +14,5 @@ export type {
   FormEntity,
   FormField,
   SessionView,
+  TableColumn,
 } from '@fougere/app/client';

@@ -3,17 +3,25 @@ import { post } from '@fronds/facade';
 import Post from '@fronds/__frond__/entities/Post';
 
 const { items } = await useQuery(post, 'list');
-const { fields, values, errors, submit } = useFormFor(Post);
+const { fields, values, errors, choices, search, submit } = useFormFor(Post);
 const publish = useCommand(post, 'publish');
 const remove = useCommand(post, 'delete');
+const summary = summaryOf(Post, 'post');
 </script>
 
 <template>
   <main class="posts">
     <h1>Posts</h1>
-    <form @submit.prevent="submit">
+    <form novalidate @submit.prevent="submit">
       <template v-for="field in fields" :key="field.name">
-        <select v-if="field.control === 'select'" v-model="values[field.name]" v-bind="field.attrs">
+        <template v-if="field.control === 'reference'">
+          <input type="search" :placeholder="`Search ${field.label}`" @input="search(field.name, ($event.target as HTMLInputElement).value)" />
+          <select v-model="(values as Record<string, string>)[field.name]" v-bind="field.attrs">
+            <option value="" disabled>{{ field.label }}</option>
+            <option v-for="choice in choices[field.name]" :key="choice.value" :value="choice.value">{{ choice.label }}</option>
+          </select>
+        </template>
+        <select v-else-if="field.control === 'select'" v-model="values[field.name]" v-bind="field.attrs">
           <option v-for="option in field.options" :key="option" :value="option">{{ option }}</option>
         </select>
         <label v-else-if="field.control === 'boolean'"><input v-model="values[field.name]" type="checkbox" /> {{ field.label }}</label>
@@ -25,14 +33,17 @@ const remove = useCommand(post, 'delete');
     </form>
     <ul>
       <li v-for="row in items" :key="row.id">
-        <strong>{{ row.title }}</strong>
-        <span>{{ row.status }}</span>
+        <strong v-if="summary.name">{{ cellOf(summary.name, row) }}</strong>
+        <template v-for="fact in summary.facts" :key="fact.name">
+          <span v-if="cellOf(fact, row)">{{ cellOf(fact, row) }}</span>
+        </template>
         <button v-if="row.status === 'draft'" @click="publish.execute({ params: { id: row.id } })">Publish</button>
         <button class="delete" @click="remove.execute({ params: { id: row.id } })">Delete</button>
       </li>
     </ul>
-    <p v-if="publish.error.value" class="refused">{{ publish.error.value.message }}</p>
-    <p v-if="remove.error.value" class="refused">{{ remove.error.value.message }}</p>
+    <template v-for="(command, index) in [publish, remove]" :key="index">
+      <p v-if="command.error.value" class="refused">{{ command.error.value.message }}</p>
+    </template>
   </main>
 </template>
 
@@ -54,8 +65,9 @@ body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 syste
 .posts button { font: inherit; font-weight: 600; cursor: pointer; border: 0; border-radius: 8px; padding: 8px 14px; background: var(--green); color: var(--bg); }
 .posts form button { justify-self: start; margin-top: 4px; }
 .posts ul { list-style: none; margin: 24px 0 0; padding: 0; }
-.posts li { display: flex; align-items: center; gap: 12px; padding: 12px 4px; border-bottom: 1px solid var(--line); }
-.posts li span { margin-right: auto; color: var(--muted); font-size: 13px; }
+.posts li { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 4px; border-bottom: 1px solid var(--line); }
+.posts li span { color: var(--muted); font-size: 13px; }
+.posts li span:last-of-type { margin-right: auto; }
 .posts li button { padding: 4px 10px; font-size: 13px; background: var(--wash); color: var(--green); }
 .posts li button.delete { background: transparent; color: var(--muted); }
 .posts .refused { margin-top: 16px; color: var(--refused); }

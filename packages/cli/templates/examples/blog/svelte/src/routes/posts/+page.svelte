@@ -1,21 +1,28 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
-  import { useCommand, useFormFor, useQuery } from '@fougere/svelte';
+  import { summaryOf, cellOf, useCommand, useFormFor, useQuery } from '@fougere/svelte';
   import { post } from '@fronds/facade';
   import Post from '@fronds/__frond__/entities/Post';
 
   const posts = useQuery(post, 'list');
   const publish = useCommand(post, 'publish');
   const remove = useCommand(post, 'delete');
-  const { fields, values, errors, submit } = useFormFor(Post);
+  const summary = summaryOf(Post, 'post');
+  const { fields, values, errors, choices, search, submit } = useFormFor(Post);
   onDestroy(() => posts.dispose());
 </script>
 
 <main class="posts">
   <h1>Posts</h1>
-  <form onsubmit={(event) => { event.preventDefault(); submit(); }}>
+  <form novalidate onsubmit={(event) => { event.preventDefault(); submit(); }}>
     {#each fields as field (field.name)}
-      {#if field.control === 'select'}
+      {#if field.control === 'reference'}
+        <input type="search" placeholder={`Search ${field.label}`} oninput={(event) => search(field.name, event.currentTarget.value)} />
+        <select bind:value={$values[field.name]} {...field.attrs}>
+          <option value="" disabled>{field.label}</option>
+          {#each $choices[field.name] ?? [] as choice (choice.value)}<option value={choice.value}>{choice.label}</option>{/each}
+        </select>
+      {:else if field.control === 'select'}
         <select bind:value={$values[field.name]} {...field.attrs}>
           {#each field.options ?? [] as option (option)}<option value={option}>{option}</option>{/each}
         </select>
@@ -33,8 +40,8 @@
   <ul>
     {#each $posts.items as row (row.id)}
       <li>
-        <strong>{row.title}</strong>
-        <span>{row.status}</span>
+        {#if summary.name}<strong>{cellOf(summary.name, row)}</strong>{/if}
+        {#each summary.facts as fact (fact.name)}{#if cellOf(fact, row)}<span>{cellOf(fact, row)}</span>{/if}{/each}
         {#if row.status === 'draft'}
           <button onclick={() => publish.execute({ params: { id: row.id } })}>Publish</button>
         {/if}
@@ -42,8 +49,9 @@
       </li>
     {/each}
   </ul>
-  {#if $publish.error}<p class="refused">{$publish.error.message}</p>{/if}
-  {#if $remove.error}<p class="refused">{$remove.error.message}</p>{/if}
+  {#each [$publish, $remove] as command}
+    {#if command.error}<p class="refused">{command.error.message}</p>{/if}
+  {/each}
 </main>
 
 <style>
@@ -64,8 +72,9 @@
 .posts button { font: inherit; font-weight: 600; cursor: pointer; border: 0; border-radius: 8px; padding: 8px 14px; background: var(--green); color: var(--bg); }
 .posts form button { justify-self: start; margin-top: 4px; }
 .posts ul { list-style: none; margin: 24px 0 0; padding: 0; }
-.posts li { display: flex; align-items: center; gap: 12px; padding: 12px 4px; border-bottom: 1px solid var(--line); }
-.posts li span { margin-right: auto; color: var(--muted); font-size: 13px; }
+.posts li { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 4px; border-bottom: 1px solid var(--line); }
+.posts li span { color: var(--muted); font-size: 13px; }
+.posts li span:last-of-type { margin-right: auto; }
 .posts li button { padding: 4px 10px; font-size: 13px; background: var(--wash); color: var(--green); }
 .posts li button.delete { background: transparent; color: var(--muted); }
 .posts .refused { margin-top: 16px; color: var(--refused); }

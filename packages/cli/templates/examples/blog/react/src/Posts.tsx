@@ -1,22 +1,31 @@
 import { Fragment } from 'react';
-import { useCommand, useFormFor, useQuery } from '@fougere/react';
+import { cellOf, summaryOf, useCommand, useFormFor, useQuery } from '@fougere/react';
 import './posts.css';
 import { post } from '@fronds/facade';
 import Post from '@fronds/__frond__/entities/Post';
 
 export default function Posts() {
   const { items } = useQuery(post, 'list');
-  const { fields, values, setValue, errors, submit } = useFormFor(Post);
+  const { fields, values, setValue, errors, choices, search, submit } = useFormFor(Post);
   const publish = useCommand(post, 'publish');
   const remove = useCommand(post, 'delete');
+  const summary = summaryOf(Post, 'post');
 
   return (
     <main className="posts">
       <h1>Posts</h1>
-      <form onSubmit={(event) => { event.preventDefault(); void submit(); }}>
+      <form noValidate onSubmit={(event) => { event.preventDefault(); void submit(); }}>
         {fields.map((field) => (
           <Fragment key={field.name}>
-            {field.control === 'select' ? (
+            {field.control === 'reference' ? (
+              <>
+                <input type="search" placeholder={`Search ${field.label}`} onChange={(event) => void search(field.name, event.target.value)} />
+                <select {...field.attrs} value={String(values[field.name] ?? '')} onChange={(event) => setValue(field.name, event.target.value)}>
+                  <option value="" disabled>{field.label}</option>
+                  {choices[field.name]?.map((choice) => <option key={choice.value} value={choice.value}>{choice.label}</option>)}
+                </select>
+              </>
+            ) : field.control === 'select' ? (
               <select {...field.attrs} value={String(values[field.name] ?? '')} onChange={(event) => setValue(field.name, event.target.value)}>
                 {field.options?.map((option) => <option key={option} value={option}>{option}</option>)}
               </select>
@@ -35,8 +44,8 @@ export default function Posts() {
       <ul>
         {items.map((row) => (
           <li key={row.id}>
-            <strong>{row.title}</strong>
-            <span>{row.status}</span>
+            {summary.name && <strong>{cellOf(summary.name, row)}</strong>}
+            {summary.facts.map((fact) => cellOf(fact, row) && <span key={fact.name}>{cellOf(fact, row)}</span>)}
             {row.status === 'draft' && (
               <button onClick={() => void publish.execute({ params: { id: row.id } })}>Publish</button>
             )}
@@ -44,8 +53,7 @@ export default function Posts() {
           </li>
         ))}
       </ul>
-      {publish.error && <p className="refused">{publish.error.message}</p>}
-      {remove.error && <p className="refused">{remove.error.message}</p>}
+      {[publish, remove].map((command, index) => command.error && <p key={index} className="refused">{command.error.message}</p>)}
     </main>
   );
 }

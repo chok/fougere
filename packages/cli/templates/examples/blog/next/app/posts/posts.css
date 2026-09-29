@@ -15,8 +15,9 @@ body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 syste
 .posts button { font: inherit; font-weight: 600; cursor: pointer; border: 0; border-radius: 8px; padding: 8px 14px; background: var(--green); color: var(--bg); }
 .posts form button { justify-self: start; margin-top: 4px; }
 .posts ul { list-style: none; margin: 24px 0 0; padding: 0; }
-.posts li { display: flex; align-items: center; gap: 12px; padding: 12px 4px; border-bottom: 1px solid var(--line); }
-.posts li span { margin-right: auto; color: var(--muted); font-size: 13px; }
+.posts li { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 4px; border-bottom: 1px solid var(--line); }
+.posts li span { color: var(--muted); font-size: 13px; }
+.posts li span:last-of-type { margin-right: auto; }
 .posts li button { padding: 4px 10px; font-size: 13px; background: var(--wash); color: var(--green); }
 .posts li button.delete { background: transparent; color: var(--muted); }
 .posts .refused { margin-top: 16px; color: var(--refused); }
