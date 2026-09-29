@@ -9,6 +9,7 @@
  * `ports: { Payment: ['Retrying', 'Stripe'] }` already has, read from the outside in.
  */
 import { scanProject } from '@fougere/compiler';
+import { log } from '@fougere/log';
 import { createApp, createLocalRunner, type Storage, type Transport } from '@fougere/core';
 import { loadConfig, remotesOf } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
@@ -32,7 +33,7 @@ const shelf = () => ({
   output() { return this; },
 }) as unknown as Storage;
 
-const far = await createApp({ scan, createContainer, storageFactory: shelf });
+const far = await createApp({ scan, createContainer, storageFactory: shelf, extensions: [log()] });
 const link = memory(far);
 
 /** Boot the near side with one chain, ask it for a checkout, and say what crossed. */
@@ -44,6 +45,7 @@ async function run(name: string, chain: Transport) {
     storageFactory: shelf,
     remotes: remotesOf(config),
     remoteTransport: () => chain,
+    extensions: [log()],
   });
 
   const answer = await createLocalRunner(near)(

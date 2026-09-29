@@ -8,6 +8,7 @@ export default defineFougere({
   // config décide si elle sert quelque chose.
   adapters: { rest: true, graphql: true },
   fronds: {
+    '@fougere/log': {},
     // La Frond blog vit dans un autre process (pnpm dev:blog). Commenter cette
     // ligne pour la ravoir in-process — le code ne change pas d'une virgule.
     blog: 'http://127.0.0.1:4100',

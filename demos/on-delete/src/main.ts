@@ -6,6 +6,7 @@
  * entities, the same rows left behind, and one line of boot output that is not the same.
  */
 import { scanProject } from '@fougere/compiler';
+import { log } from '@fougere/log';
 import { createApp, createLocalRunner, Invocation, migrating, type App } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { layerOf, storageFrom } from '@fougere/defaults';
@@ -42,7 +43,7 @@ const app: App = await createApp({
   scan: await scanProject(root),
   createContainer,
   ...layerOf(storage),
-  extensions: [migrating(storage.migrate), workflow({ sweepMs: 0 })],
+  extensions: [migrating(storage.migrate), workflow({ sweepMs: 0 }), log()],
 });
 
 const of = (entity: string) => app.storageFor(entity)!;

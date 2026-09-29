@@ -10,6 +10,7 @@
  * Then uncomment a line in `fougere.config.ts` and run it again. No handler changes.
  */
 import { scanProject } from '@fougere/compiler';
+import { log } from '@fougere/log';
 import { createApp, createLocalRunner, declaredTopologyOf, resolveEffectiveOperations, type Storage } from '@fougere/core';
 import { loadConfig, remotesOf } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
@@ -37,6 +38,7 @@ await using app = await createApp({
   remotes: remotesOf(config),
   // Nothing answers at those addresses. A call would refuse; reading the shape does not.
   remoteTransport: () => (async () => { throw new Error('nobody is listening there'); }),
+  extensions: [log()],
 });
 
 const declared = declaredTopologyOf(app);

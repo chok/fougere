@@ -1,11 +1,11 @@
 /**
  * Where a line goes is the operator's line, not the domain's.
  *
- *   OrderHandler ── Emit<LogLine> ──▶ ConsoleHandler   (@fougere/log, shipped)
- *                                  └▶ KeepHandler      (this project, kept in memory)
+ *   OrderHandler ── Emit<LogLine> ──▶ a file         (@fougere/log, shipped)
+ *                                  └▶ KeepHandler    (this project, kept in memory)
  *
- * `OrderHandler` names neither. Take `logFrond()` out of the list below and nothing
- * prints — there is no logger to configure, and no level to set to silent.
+ * `OrderHandler` names neither. Take `logFrond()` out of the list below and the file stops —
+ * the console prints what `Logger` writes either way.
  *
  *   pnpm dev
  */

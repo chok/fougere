@@ -8,6 +8,7 @@
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
+    "@fougere/log": "workspace:*",
     "@fougere/core": "workspace:*",
     "@fougere/schema": "workspace:*",
     "@fougere/adapter-sql": "workspace:*",

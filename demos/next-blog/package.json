@@ -10,6 +10,7 @@
     "migrate": "fougere migrate --apply"
   },
   "dependencies": {
+    "@fougere/log": "workspace:*",
     "@fougere/core": "workspace:*",
     "@fougere/next": "workspace:*",
     "@fougere/react": "workspace:*",

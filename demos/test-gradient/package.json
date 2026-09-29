@@ -12,6 +12,7 @@
     "migrate": "fougere migrate --apply"
   },
   "dependencies": {
+    "@fougere/log": "workspace:*",
     "@fougere/core": "workspace:*",
     "@fougere/schema": "workspace:*",
     "better-sqlite3": "^13.0.3"

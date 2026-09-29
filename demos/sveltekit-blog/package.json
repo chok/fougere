@@ -20,6 +20,7 @@
     "@fougere/cli": "workspace:*"
   },
   "dependencies": {
+    "@fougere/log": "workspace:*",
     "@fougere/app": "workspace:*",
     "@fougere/core": "workspace:*",
     "@fougere/svelte": "workspace:*",

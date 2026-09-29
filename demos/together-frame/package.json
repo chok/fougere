@@ -8,6 +8,7 @@
     "typecheck": "tsc -p fronds"
   },
   "dependencies": {
+    "@fougere/log": "workspace:*",
     "@fougere/adapter-sql": "workspace:*",
     "@fougere/container": "workspace:*",
     "@fougere/core": "workspace:*",

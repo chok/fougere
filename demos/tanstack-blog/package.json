@@ -9,6 +9,7 @@
     "migrate": "fougere migrate --apply"
   },
   "dependencies": {
+    "@fougere/log": "workspace:*",
     "@fougere/app": "workspace:*",
     "@fougere/core": "workspace:*",
     "@fougere/react": "workspace:*",

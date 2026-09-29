@@ -11,6 +11,7 @@ import { boot } from '@fougere/compiler';
 import { loadConfig } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { writeFileSync } from 'node:fs';
+import { log } from '@fougere/log';
 import { join } from 'node:path';
 
 const root = join(import.meta.dirname, '..');
@@ -21,7 +22,7 @@ const write = (body: string) => writeFileSync(
   `import { defineFougere } from '@fougere/core';\n\nexport default defineFougere(${body});\n`,
 );
 
-const app = await boot({ root, createContainer });
+const app = await boot({ root, createContainer, extensions: [log()] });
 const call = createLocalRunner(app);
 
 // The host owns the process, so the host owns the signal. Core catches none — the

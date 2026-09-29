@@ -12,6 +12,7 @@
     "migrate": "fougere migrate --apply"
   },
   "dependencies": {
+    "@fougere/log": "workspace:*",
     "@fougere/adapter-graphql": "workspace:*",
     "@fougere/adapter-sql": "workspace:*",
     "@fougere/app": "workspace:*",

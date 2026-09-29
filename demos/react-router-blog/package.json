@@ -9,6 +9,7 @@
     "migrate": "fougere migrate --apply"
   },
   "dependencies": {
+    "@fougere/log": "workspace:*",
     "@react-router/node": "^8",
     "@react-router/serve": "^8",
     "react": "^19.2.7",

@@ -10,4 +10,5 @@ import { defineFougere } from '@fougere/core';
 export default defineFougere({
   db: false,
   ports: { Payment: 'StripePayment' },
+  fronds: { '@fougere/log': {} },
 });

@@ -6,6 +6,7 @@
  * same handlers, the same results, and one line of boot output that is not the same.
  */
 import { scanProject } from '@fougere/compiler';
+import { log } from '@fougere/log';
 import { createApp, createLocalRunner, migrating, type App, Invocation } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { layerOf, storageFrom } from '@fougere/defaults';
@@ -53,7 +54,7 @@ const app: App = await createApp({
   // keeps a foreign key, and picking members is how it would have been left behind.
   ...layerOf(storage),
   // The storage's ascent, declared rather than called by hand after the boot.
-  extensions: [migrating(storage.migrate)],
+  extensions: [migrating(storage.migrate), log()],
 });
 
 /**

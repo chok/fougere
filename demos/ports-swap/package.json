@@ -8,6 +8,7 @@
     "typecheck": "tsc -p . --noEmit && tsc -p fronds"
   },
   "dependencies": {
+    "@fougere/log": "workspace:*",
     "@fougere/container": "workspace:*",
     "@fougere/core": "workspace:*",
     "@fougere/compiler": "workspace:*",
