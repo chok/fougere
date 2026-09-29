@@ -7,17 +7,27 @@
   const posts = useQuery(post, 'list');
   const publish = useCommand(post, 'publish');
   const remove = useCommand(post, 'delete');
-  const { fieldsByName, values, errors, submit } = useFormFor(Post);
+  const { fields, values, errors, submit } = useFormFor(Post);
   onDestroy(() => posts.dispose());
 </script>
 
 <main class="posts">
   <h1>Posts</h1>
   <form onsubmit={(event) => { event.preventDefault(); submit(); }}>
-    <input bind:value={$values.title} {...fieldsByName.title?.attrs} placeholder="Title" />
-    {#if $errors.title}<small>{$errors.title}</small>{/if}
-    <textarea bind:value={$values.body} {...fieldsByName.body?.attrs} placeholder="Body"></textarea>
-    {#if $errors.body}<small>{$errors.body}</small>{/if}
+    {#each fields as field (field.name)}
+      {#if field.control === 'select'}
+        <select bind:value={$values[field.name]} {...field.attrs}>
+          {#each field.options ?? [] as option (option)}<option value={option}>{option}</option>{/each}
+        </select>
+      {:else if field.control === 'boolean'}
+        <label><input type="checkbox" checked={Boolean($values[field.name])} onchange={(event) => values.update((current) => ({ ...current, [field.name]: event.currentTarget.checked }))} /> {field.label}</label>
+      {:else if field.control === 'text' && !field.attrs?.maxLength}
+        <textarea bind:value={$values[field.name]} {...field.attrs} placeholder={field.label}></textarea>
+      {:else}
+        <input bind:value={$values[field.name]} {...field.attrs} placeholder={field.label} />
+      {/if}
+      {#if $errors[field.name]}<small>{$errors[field.name]}</small>{/if}
+    {/each}
     <button>Create draft</button>
   </form>
   <ul>
@@ -48,7 +58,7 @@
 .posts { max-width: 560px; margin: 0 auto; padding: 64px 24px 40px; }
 .posts h1 { margin: 0 0 24px; font-size: 20px; font-weight: 600; }
 .posts form { display: grid; gap: 8px; padding: 20px; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; }
-.posts input, .posts textarea { font: inherit; color: inherit; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+.posts input, .posts textarea, .posts select { font: inherit; color: inherit; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
 .posts textarea { min-height: 90px; resize: vertical; }
 .posts small { margin-top: -4px; color: var(--refused); font-size: 12px; }
 .posts button { font: inherit; font-weight: 600; cursor: pointer; border: 0; border-radius: 8px; padding: 8px 14px; background: var(--green); color: var(--bg); }

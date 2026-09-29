@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { useCommand, useFormFor, useQuery } from '@fougere/react';
 import './posts.css';
 import { post } from '@fronds/facade';
@@ -5,7 +6,7 @@ import Post from '@fronds/__frond__/entities/Post';
 
 export default function Posts() {
   const { items } = useQuery(post, 'list');
-  const { fieldsByName, values, setValue, errors, submit } = useFormFor(Post);
+  const { fields, values, setValue, errors, submit } = useFormFor(Post);
   const publish = useCommand(post, 'publish');
   const remove = useCommand(post, 'delete');
 
@@ -13,10 +14,22 @@ export default function Posts() {
     <main className="posts">
       <h1>Posts</h1>
       <form onSubmit={(event) => { event.preventDefault(); void submit(); }}>
-        <input {...fieldsByName.title?.attrs} value={String(values.title ?? '')} onChange={(event) => setValue('title', event.target.value)} placeholder="Title" />
-        {errors.title && <small>{errors.title}</small>}
-        <textarea {...fieldsByName.body?.attrs} value={String(values.body ?? '')} onChange={(event) => setValue('body', event.target.value)} placeholder="Body" />
-        {errors.body && <small>{errors.body}</small>}
+        {fields.map((field) => (
+          <Fragment key={field.name}>
+            {field.control === 'select' ? (
+              <select {...field.attrs} value={String(values[field.name] ?? '')} onChange={(event) => setValue(field.name, event.target.value)}>
+                {field.options?.map((option) => <option key={option} value={option}>{option}</option>)}
+              </select>
+            ) : field.control === 'boolean' ? (
+              <label><input type="checkbox" checked={Boolean(values[field.name])} onChange={(event) => setValue(field.name, event.target.checked)} /> {field.label}</label>
+            ) : field.control === 'text' && !field.attrs?.maxLength ? (
+              <textarea {...field.attrs} placeholder={field.label} value={String(values[field.name] ?? '')} onChange={(event) => setValue(field.name, event.target.value)} />
+            ) : (
+              <input {...field.attrs} placeholder={field.label} value={String(values[field.name] ?? '')} onChange={(event) => setValue(field.name, event.target.value)} />
+            )}
+            {errors[field.name] && <small>{errors[field.name]}</small>}
+          </Fragment>
+        ))}
         <button>Create draft</button>
       </form>
       <ul>
