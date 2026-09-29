@@ -7,6 +7,8 @@ export interface LogRecord {
   name: string;
   message: string;
   args: unknown[];
+  /** The operation it was written inside — 'blog:PostHandler.publish'. */
+  during?: string | null;
   /** Epoch milliseconds. */
   at: number;
 }

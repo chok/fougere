@@ -20,6 +20,7 @@ import type { CreateAppOptions } from './CreateAppOptions.js';
 import type { AppMiddleware } from '../wire/AppMiddleware.js';
 import { Carry } from '../builtin/Carry.js';
 import { Logger } from '../builtin/Logger.js';
+import { ambient } from '#ambient';
 import type { LogRecord } from '../builtin/LogRecord.js';
 import LogLine, { CARRIES_LINE } from '../builtin/LogLine.js';
 import { emitKeyOf, type Emit } from '../wire/Emit.js';
@@ -516,7 +517,7 @@ function readings(
  * `setLogLevel`'s at each line — and a frond declaring `class X extends Logger` takes the key.
  */
 function registerBuiltins(container: Container, carry: Carry): void {
-  container.registerValue('Logger', new Logger('app', { carry }));
+  container.registerValue('Logger', new Logger('app', { carry, during: ambient.currentOperation }));
   container.register('Config', Config, { lifetime: 'singleton' });
 }
 

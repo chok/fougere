@@ -4,6 +4,7 @@ import type { Ambient } from './ambient-port.js';
 
 const frame = new AsyncLocalStorage<string>();
 const chain = new AsyncLocalStorage<readonly string[]>();
+const operation = new AsyncLocalStorage<string>();
 
 export const ambient: Ambient = {
   degraded: false,
@@ -36,5 +37,11 @@ export const ambient: Ambient = {
 
   enterChain<R>(fact: string, fn: () => Promise<R>): Promise<R> {
     return chain.run([...(chain.getStore() ?? []), fact], fn);
+  },
+
+  currentOperation: () => operation.getStore(),
+
+  enterOperation<R>(label: string, fn: () => Promise<R>): Promise<R> {
+    return operation.run(label, fn);
   },
 };

@@ -4,6 +4,7 @@ import type { EffectiveOperationsMap } from '../EffectiveOperationsMap.js';
 import type { HandlerEntry } from '../descriptor/HandlerEntry.js';
 import type { PresenterEntry } from '../descriptor/PresenterEntry.js';
 import type { StateShape } from '../wire/StateShape.js';
+import type { OwnLogger } from '../builtin/OwnLoggers.js';
 
 /** What boot resolved around one handler, beyond the handler and the scope it resolves in. */
 export interface Facade {
@@ -25,4 +26,8 @@ export interface Facade {
   middlewares: () => AppMiddleware[];
   /** What a call's `state` may hold in this process. */
   state: StateShape;
+  /** Runs the handler as the operation a line written inside it names. */
+  enterOperation: <R>(label: string, fn: () => Promise<R>) => Promise<R>;
+  /** The handler's deps, its `Logger` named after it. */
+  ownLogger: OwnLogger;
 }

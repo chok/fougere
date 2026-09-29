@@ -16,6 +16,8 @@ export default class LogLine extends entity({
   /** Who wrote it — 'app', 'app:catalog'. */
   name: text(),
   message: text({ min: 1 }),
+  /** The operation it was written inside — 'blog:PostHandler.publish'. */
+  during: optional(text()),
   /** What the writer passed beside the message — most lines pass none. */
   args: optional(list(json())),
   at: created(),
@@ -32,7 +34,7 @@ export const LOG_LINE = 'logLine';
  * one. FILLED BY THE BOOT from what binds `logLine`, not written down — a hard-coded list
  * cannot know a third party's destination, and the app already knows who subscribed.
  *
- * Read by `loggerMiddleware` and by `observability`'s `trace()`, both of which observe
+ * Read by `@fougere/log`'s `callLines` and by `observability`'s `trace()`, both of which observe
  * every operation and would otherwise observe the observation.
  */
 export const CARRIES_LINE = new Set<string>();

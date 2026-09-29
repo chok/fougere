@@ -5,6 +5,8 @@ import type { ProviderEntry } from '../descriptor/ProviderEntry.js';
 import type { PresenterEntry } from '../descriptor/PresenterEntry.js';
 import { lowerFirst, type Fields, type SchemaView } from '@fougere/schema';
 import type { Logger } from '../builtin/Logger.js';
+import { ownLoggers, type OwnLogger } from '../builtin/OwnLoggers.js';
+import { basesOf } from '../descriptor/bases.js';
 import type { Dispatcher } from '../dispatch/Dispatcher.js';
 import type { RouteRegistry } from '../dispatch/RouteRegistry.js';
 import type { Emissions } from './Emissions.js';
@@ -18,6 +20,7 @@ import type { OperationsMap } from '../wire/OperationsMap.js';
 import type { AppMiddleware } from '../wire/AppMiddleware.js';
 import type { CreateAppOptions } from './CreateAppOptions.js';
 import { registerFrames } from './together.js';
+import { ambient } from '#ambient';
 import { lifetimeOf } from './lifetime.js';
 import type { Diagnostic } from '../diagnostic.js';
 import { HandlerFacade } from '../dispatch/HandlerFacade.js';
@@ -141,6 +144,7 @@ function registerMiddlewares(
   frond: FrondDescriptor,
   scope: Container,
   assembly: Assembly,
+  ownLogger: OwnLogger,
   frondLog: Logger,
 ): void {
   const { use, middlewaresOf } = assembly;
@@ -156,7 +160,7 @@ function registerMiddlewares(
   const mine: AppMiddleware[] = [];
 
   for (const middleware of frond.middlewares) {
-    scope.register(middleware.name, middleware.ctor, { deps: middleware.deps, lifetime: 'singleton' });
+    scope.register(middleware.name, middleware.ctor, { deps: ownLogger(middleware.name, middleware.deps), lifetime: 'singleton' });
     mine.push((context, next) =>
       scope.resolve<{ around: AppMiddleware }>(middleware.name).around(context, next));
   }
@@ -278,10 +282,11 @@ function registerProviders(
   ports: CreateAppOptions['ports'],
   boundPorts: Set<string>,
   refused: Diagnostic[],
+  ownLogger: OwnLogger,
   frondLog: Logger,
 ): Map<string, ProviderEntry[]> {
   for (const provider of frond.providers) {
-    scope.register(nameOf(provider), provider.ctor, { deps: provider.deps, ...lifetimeOf(provider.ctor) });
+    scope.register(nameOf(provider), provider.ctor, { deps: ownLogger(nameOf(provider), provider.deps), ...lifetimeOf(provider.ctor) });
   }
   // What this frond puts in front of one of the framework's own ports. Its own, like every
   // provider — a link goes where its frond goes, which is what a frond behind `remotes:`
@@ -307,13 +312,13 @@ function registerProviders(
     // needs nothing of the container itself. The outermost answers under the port.
     let inner = nameOf(chain.at(-1)!);
     for (const wrapper of chain.slice(0, -1).reverse()) {
-      const deps = wrapper.deps.map((dep) => (dep === port ? inner : dep));
+      const deps = ownLogger(nameOf(wrapper), wrapper.deps).map((dep) => (dep === port ? inner : dep));
       inner = nameOf(wrapper);
       scope.register(inner, wrapper.ctor, { deps, ...lifetimeOf(wrapper.ctor) });
     }
     const outermost = chain[0]!;
     scope.register(port, outermost.ctor, {
-      deps: outermost.deps.map((dep) => (dep === port ? nameOf(chain[1]!) : dep)),
+      deps: ownLogger(nameOf(outermost), outermost.deps).map((dep) => (dep === port ? nameOf(chain[1]!) : dep)),
       ...lifetimeOf(outermost.ctor),
     });
     boundPorts.add(port);
@@ -391,12 +396,13 @@ interface Building {
   scope: Container;
   collectorTypeNames: Set<string>;
   presenterMap: Map<string, PresenterEntry>;
+  ownLogger: OwnLogger;
   frondLog: Logger;
 }
 
 /** Build the facade of a handler, and register it under the audience it serves. */
 function buildFacadeInto(
-  { frond, assembly, scope, collectorTypeNames, presenterMap, frondLog }: Building,
+  { frond, assembly, scope, collectorTypeNames, presenterMap, ownLogger, frondLog }: Building,
   entity: EntityEntry | undefined,
   handler: HandlerEntry,
   targetScope: Container,
@@ -424,6 +430,8 @@ function buildFacadeInto(
     presenterScope: scope,
     middlewares: () => getMiddlewares(handler.address),
     state: assembly.state,
+    enterOperation: ambient.enterOperation,
+    ownLogger,
   });
 
   // Emissions use the same contracts and execution path as direct calls, and the terms sit
@@ -501,9 +509,9 @@ function registerFramesOf(frond: FrondDescriptor, assembly: Assembly, scope: Con
   }, refused);
 }
 
-function registerPresenters(frond: FrondDescriptor, scope: Container, frondLog: Logger): Map<string, PresenterEntry> {
+function registerPresenters(frond: FrondDescriptor, scope: Container, ownLogger: OwnLogger, frondLog: Logger): Map<string, PresenterEntry> {
   for (const presenter of frond.presenters) {
-    scope.register(presenterKeyOf(presenter.entityName), presenter.ctor, { deps: presenter.deps, ...lifetimeOf(presenter.ctor) });
+    scope.register(presenterKeyOf(presenter.entityName), presenter.ctor, { deps: ownLogger(presenter.ctor.name, presenter.deps), ...lifetimeOf(presenter.ctor) });
   }
   if (frond.presenters.length > 0) {
     frondLog.debug(`${frond.presenters.length} presenter(s): ${frond.presenters.map((p) => p.entityName).join(', ')}`);
@@ -512,9 +520,9 @@ function registerPresenters(frond: FrondDescriptor, scope: Container, frondLog: 
   return new Map(frond.presenters.map((presenter) => [presenter.entityName, presenter]));
 }
 
-function registerCollectors(frond: FrondDescriptor, scope: Container, frondLog: Logger): Set<string> {
+function registerCollectors(frond: FrondDescriptor, scope: Container, ownLogger: OwnLogger, frondLog: Logger): Set<string> {
   for (const collector of frond.collectors) {
-    scope.register(collectorKeyOf(collector.typeName), collector.ctor, { deps: collector.deps, ...lifetimeOf(collector.ctor) });
+    scope.register(collectorKeyOf(collector.typeName), collector.ctor, { deps: ownLogger(collector.ctor.name, collector.deps), ...lifetimeOf(collector.ctor) });
   }
   if (frond.collectors.length > 0) {
     frondLog.debug(`${frond.collectors.length} collector(s): ${frond.collectors.map((c) => c.typeName).join(', ')}`);
@@ -601,19 +609,20 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   await registerReads(frond, scope, entityByName, options.sourcesFactory, frondLog);
   const owners = ownershipOf(frond, assembly);
 
-  const declared = registerProviders(frond, scope, options.ports, assembly.boundPorts, assembly.refused, frondLog);
+  const ownLogger = ownLoggers(scope, basesOf(frond.providers, (base) => base === 'Logger').has('Logger'));
+  const declared = registerProviders(frond, scope, options.ports, assembly.boundPorts, assembly.refused, ownLogger, frondLog);
   // An ancestor's links stand OUTSIDE this frond's own; a seam has no container key to inherit through.
   const seams = inheritedSeams(frond, assembly.seamsOf, declared);
   assembly.seamsOf.set(frond.name, seams);
   registerStorages(frond, assembly, scope, seams, owners, frondLog);
   registerFramesOf(frond, assembly, scope, frondLog);
 
-  const presenterMap = registerPresenters(frond, scope, frondLog);
-  const collectorTypeNames = registerCollectors(frond, scope, frondLog);
-  registerMiddlewares(frond, scope, assembly, frondLog);
+  const presenterMap = registerPresenters(frond, scope, ownLogger, frondLog);
+  const collectorTypeNames = registerCollectors(frond, scope, ownLogger, frondLog);
+  registerMiddlewares(frond, scope, assembly, ownLogger, frondLog);
   exposePresenters(frond, presenterMap, container, scope);
 
-  const building: Building = { frond, assembly, scope, collectorTypeNames, presenterMap, frondLog };
+  const building: Building = { frond, assembly, scope, collectorTypeNames, presenterMap, ownLogger, frondLog };
   const defaultHandlers = frond.handlers.filter((h) => !h.surface);
   const surfaceHandlers = frond.handlers.filter((h) => h.surface);
   buildDefaultFacades(building, defaultHandlers);

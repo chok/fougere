@@ -73,16 +73,22 @@ export class Logger {
   private name: string;
   private color: boolean;
   private carry?: Carry;
+  private during?: () => string | undefined;
 
   constructor(prefix?: string, options?: Omit<LoggerOptions, 'name'>) {
     this.name = prefix ?? 'app';
     this.color = options?.color ?? supportsColor();
     this.carry = options?.carry;
+    this.during = options?.during;
   }
 
   /** Create a child logger with a sub-name. It carries no level of its own either. */
   child(name: string): Logger {
-    return new Logger(`${this.name}:${name}`, { color: this.color, ...(this.carry ? { carry: this.carry } : {}) });
+    return new Logger(`${this.name}:${name}`, {
+      color: this.color,
+      ...(this.carry ? { carry: this.carry } : {}),
+      ...(this.during ? { during: this.during } : {}),
+    });
   }
 
   debug(msg: string, ...args: unknown[]) { this.log('debug', msg, args); }
@@ -92,8 +98,10 @@ export class Logger {
 
   private log(level: string, msg: string, args: unknown[]) {
     if (LEVELS[level as LogLevel] < threshold) return;
+    const during = this.during?.();
     const record: LogRecord = {
       level: level as LogRecord['level'], name: this.name, message: msg, args, at: Date.now(),
+      ...(during ? { during } : {}),
     };
 
     this.carry?.push({ ...record, args: args.map(objectOf) });
@@ -118,13 +126,14 @@ export function formatted(
   const style = LEVEL_STYLE[record.level];
   const time = stamp(record.at);
   const method = record.level;
+  const during = record.during ? ` (${record.during})` : '';
 
   if (color) {
     const c = COLORS[style.color];
-    const prefix = `${COLORS.dim}${time}${COLORS.reset} ${c}${COLORS.bold}${style.badge}${COLORS.reset} ${COLORS.magenta}${record.name}${COLORS.reset}`;
+    const prefix = `${COLORS.dim}${time}${COLORS.reset} ${c}${COLORS.bold}${style.badge}${COLORS.reset} ${COLORS.magenta}${record.name}${COLORS.reset}${COLORS.gray}${during}${COLORS.reset}`;
 
     return { method, text: [prefix, record.message, ...(record.args ?? [])] };
   }
 
-  return { method, text: [`${time} ${style.badge} [${record.name}]`, record.message, ...(record.args ?? [])] };
+  return { method, text: [`${time} ${style.badge} [${record.name}]${during}`, record.message, ...(record.args ?? [])] };
 }

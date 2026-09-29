@@ -17,4 +17,10 @@ export interface Ambient {
 
   /** Run `fn` with `fact` appended to the emission chain. */
   enterChain<R>(fact: string, fn: () => Promise<R>): Promise<R>;
+
+  /** The operation this code runs inside — `blog:PostHandler.publish` — absent outside any. */
+  currentOperation(): string | undefined;
+
+  /** Run `fn` as the operation `label`. */
+  enterOperation<R>(label: string, fn: () => Promise<R>): Promise<R>;
 }

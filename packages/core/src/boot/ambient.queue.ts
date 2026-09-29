@@ -69,4 +69,10 @@ export const ambient: Ambient = {
   enterChain<R>(_fact: string, fn: () => Promise<R>): Promise<R> {
     return fn();
   },
+
+  currentOperation: () => undefined,
+
+  enterOperation<R>(_label: string, fn: () => Promise<R>): Promise<R> {
+    return fn();
+  },
 };

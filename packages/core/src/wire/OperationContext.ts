@@ -7,6 +7,8 @@ export interface OperationContext {
    * one a reader groups by first. Absent only where no frond claims the call.
    */
   frond?: string;
+  /** The class that answers, as the scan named it — `PostHandler`. */
+  handler?: string;
   /** Operation name (e.g. 'create', 'findById', 'searchByTitle'). */
   operation: string;
   /** Arguments passed to the operation. */

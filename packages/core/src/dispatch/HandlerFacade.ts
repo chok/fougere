@@ -92,16 +92,21 @@ export class HandlerFacade {
     const state = received.crossed ? { ...received.state } : this.facade.state.judge(received.state, entity, op);
     const invocation = received.withState(state);
     const entered = { ...state };
+    const { className, method } = this.effectiveOperations.get(op)!.implementation;
     const context: OperationContext = {
       entity,
       frond: this.facade.frond,
+      handler: className,
       operation: op,
       args: [],
       state: invocation.state,
       invocation,
     };
 
-    return runMiddlewares(this.facade.middlewares(), context, () => this.answer(op, contract, context, invocation, entered));
+    const label = `${this.facade.frond}:${className}.${method}`;
+
+    return runMiddlewares(this.facade.middlewares(), context, () =>
+      this.facade.enterOperation(label, () => this.answer(op, contract, context, invocation, entered)));
   }
 
   /**
@@ -162,7 +167,7 @@ export class HandlerFacade {
 
   private depsOf(handler: HandlerEntry): string[] {
     const { deps } = handler;
-    if (deps.length > 0) return deps;
+    if (deps.length > 0) return this.facade.ownLogger(handler.ctor.name, deps);
 
     return inheritsCrud(handler.ctor)
       ? [repositoryKeyOf(subjectOf(handler.ctor, handler.address))]

@@ -9,6 +9,8 @@ export interface LoggerOptions {
    * first lines do and what an app declaring no destination does forever.
    */
   carry?: Carry;
+  /** The operation a line is written inside, asked at each line — the boot hands it over. */
+  during?: () => string | undefined;
   /** Force color on/off. Auto-detected by default. */
   color?: boolean;
 }

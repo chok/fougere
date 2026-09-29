@@ -14,6 +14,7 @@ export interface Rendered {
   level: Exclude<LogLevel, 'silent'>;
   name: string;
   message: string;
+  during?: string | null;
   /** Absent on most lines: a message usually carries its own detail. */
   args?: unknown[] | null;
   /** Epoch milliseconds from a logger, a `Date` from an entity that stamped it. */
