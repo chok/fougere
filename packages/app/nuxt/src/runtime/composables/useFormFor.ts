@@ -31,11 +31,15 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
   const command = useCommand(facadeOf(entity), options.op ?? 'create');
   const fetcher = useRequestFetch() as Fetcher;
   const choices = reactive<Record<string, Choice[]>>({});
+  const searchable = reactive<Record<string, boolean>>({});
 
   /** What a reference field offers: its first rows, or those whose label contains `text`. */
   async function search(name: FormFieldName<E>, text = ''): Promise<void> {
     const reference = fields.find((field) => field.name === name)?.reference;
-    if (reference) choices[name] = await Choices.of(fetcher, reference, text);
+    if (!reference) return;
+    const offer = await Choices.of(fetcher, reference, text);
+    choices[name] = offer.choices;
+    if (!text) searchable[name] = offer.more;
   }
 
   onMounted(() => {
@@ -76,6 +80,8 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
     values: values as FormValues<E>,
     errors: errors as FormErrors<E>,
     choices: choices as Partial<Record<FormFieldName<E>, Choice[]>>,
+    /** Per reference field: its target holds more rows than one load offers, so a search is worth showing. */
+    searchable: searchable as Partial<Record<FormFieldName<E>, boolean>>,
     search,
     submit,
     loading: command.loading,

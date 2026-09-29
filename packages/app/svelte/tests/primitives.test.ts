@@ -270,6 +270,6 @@ describe('useFormFor — a reference', () => {
 
     await form.search('writerId', 'Bo');
     expect(get(form.choices).writerId).toEqual([{ value: 'w2', label: 'Bob' }]);
-    expect(calls.at(-1)!.params.query).toEqual({ limit: 20, where: { name: { contains: 'Bo' } } });
+    expect(calls.at(-1)!.params.query).toEqual({ limit: 21, where: { name: { contains: 'Bo' } } });
   });
 });

@@ -269,10 +269,12 @@ describe('useFormFor — a reference', () => {
       { value: 'w1', label: 'Alice' },
       { value: 'w2', label: 'Bob' },
     ]));
-    expect(calls.find((call) => call.method === 'writer.list')!.params.query).toEqual({ limit: 20 });
+    expect(calls.find((call) => call.method === 'writer.list')!.params.query).toEqual({ limit: 21 });
+    // Two writers fit in one load, so there is nothing to search for.
+    expect(result.current.searchable.writerId).toBe(false);
 
     await act(async () => { await result.current.search('writerId', 'Bo'); });
     expect(result.current.choices.writerId).toEqual([{ value: 'w2', label: 'Bob' }]);
-    expect(calls.at(-1)!.params.query).toEqual({ limit: 20, where: { name: { contains: 'Bo' } } });
+    expect(calls.at(-1)!.params.query).toEqual({ limit: 21, where: { name: { contains: 'Bo' } } });
   });
 });

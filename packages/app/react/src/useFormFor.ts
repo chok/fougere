@@ -45,13 +45,15 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
   // an address with no handler type behind it, and what it answers is the entity's row.
   const command = useCommand(facadeOf(entity), options.op ?? 'create');
   const [choices, setChoices] = useState<Partial<Record<FormFieldName<E>, Choice[]>>>({});
+  const [searchable, setSearchable] = useState<Partial<Record<FormFieldName<E>, boolean>>>({});
 
   /** What a reference field offers: its first rows, or those whose label contains `text`. */
   const search = useCallback(async (name: FormFieldName<E>, text = '') => {
     const reference = fields.find((field) => field.name === name)?.reference;
     if (!reference) return;
-    const found = await Choices.of(fetcher, reference, text);
-    setChoices((current) => ({ ...current, [name]: found }));
+    const offer = await Choices.of(fetcher, reference, text);
+    setChoices((current) => ({ ...current, [name]: offer.choices }));
+    if (!text) setSearchable((current) => ({ ...current, [name]: offer.more }));
   }, [fields]);
 
   useEffect(() => {
@@ -98,6 +100,8 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
     setValue,
     errors: shown,
     choices,
+    /** Per reference field: its target holds more rows than one load offers, so a search is worth showing. */
+    searchable,
     search,
     submit,
     loading: command.loading,

@@ -6,7 +6,7 @@ import Post from '@fronds/__frond__/entities/Post';
 
 export default function Posts() {
   const { items } = useQuery(post, 'list');
-  const { fields, values, setValue, errors, choices, search, submit } = useFormFor(Post);
+  const { fields, values, setValue, errors, choices, searchable, search, submit } = useFormFor(Post);
   const publish = useCommand(post, 'publish');
   const remove = useCommand(post, 'delete');
   const summary = summaryOf(Post, 'post');
@@ -19,7 +19,7 @@ export default function Posts() {
           <Fragment key={field.name}>
             {field.control === 'reference' ? (
               <>
-                <input type="search" placeholder={`Search ${field.label}`} onChange={(event) => void search(field.name, event.target.value)} />
+                {searchable[field.name] && <input type="search" placeholder={`Search ${field.label}`} onChange={(event) => void search(field.name, event.target.value)} />}
                 <select {...field.attrs} value={String(values[field.name] ?? '')} onChange={(event) => setValue(field.name, event.target.value)}>
                   <option value="" disabled>{field.label}</option>
                   {choices[field.name]?.map((choice) => <option key={choice.value} value={choice.value}>{choice.label}</option>)}

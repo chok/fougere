@@ -16,7 +16,7 @@ export { invokeOn, rpcParseError, serveRest, serveRpc, surfaceOf } from './Outco
 export { errorsByField, formFieldsOf, payloadOf, tableColumnsOf, type FormEntity } from './FormEntity.js';
 export { type FormRow, type FormValues, type FormErrors, type FormFieldName } from './FormRow.js';
 export { type FormField, type FormReference } from './FormField.js';
-export { Choices, type Choice } from './Choices.js';
+export { Choices, type Choice, type Offer } from './Choices.js';
 export { cellOf, summaryOf, type Summary } from './Summary.js';
 export { type TableColumn } from './TableColumn.js';
 

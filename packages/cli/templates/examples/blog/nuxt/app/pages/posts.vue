@@ -3,7 +3,7 @@ import { post } from '@fronds/facade';
 import Post from '@fronds/__frond__/entities/Post';
 
 const { items } = await useQuery(post, 'list');
-const { fields, values, errors, choices, search, submit } = useFormFor(Post);
+const { fields, values, errors, choices, searchable, search, submit } = useFormFor(Post);
 const publish = useCommand(post, 'publish');
 const remove = useCommand(post, 'delete');
 const summary = summaryOf(Post, 'post');
@@ -15,7 +15,7 @@ const summary = summaryOf(Post, 'post');
     <form novalidate @submit.prevent="submit">
       <template v-for="field in fields" :key="field.name">
         <template v-if="field.control === 'reference'">
-          <input type="search" :placeholder="`Search ${field.label}`" @input="search(field.name, ($event.target as HTMLInputElement).value)" />
+          <input v-if="searchable[field.name]" type="search" :placeholder="`Search ${field.label}`" @input="search(field.name, ($event.target as HTMLInputElement).value)" />
           <select v-model="(values as Record<string, string>)[field.name]" v-bind="field.attrs">
             <option value="" disabled>{{ field.label }}</option>
             <option v-for="choice in choices[field.name]" :key="choice.value" :value="choice.value">{{ choice.label }}</option>

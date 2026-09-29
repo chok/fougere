@@ -8,7 +8,7 @@
   const publish = useCommand(post, 'publish');
   const remove = useCommand(post, 'delete');
   const summary = summaryOf(Post, 'post');
-  const { fields, values, errors, choices, search, submit } = useFormFor(Post);
+  const { fields, values, errors, choices, searchable, search, submit } = useFormFor(Post);
   onDestroy(() => posts.dispose());
 </script>
 
@@ -17,7 +17,7 @@
   <form novalidate onsubmit={(event) => { event.preventDefault(); submit(); }}>
     {#each fields as field (field.name)}
       {#if field.control === 'reference'}
-        <input type="search" placeholder={`Search ${field.label}`} oninput={(event) => search(field.name, event.currentTarget.value)} />
+        {#if $searchable[field.name]}<input type="search" placeholder={`Search ${field.label}`} oninput={(event) => search(field.name, event.currentTarget.value)} />{/if}
         <select bind:value={$values[field.name]} {...field.attrs}>
           <option value="" disabled>{field.label}</option>
           {#each $choices[field.name] ?? [] as choice (choice.value)}<option value={choice.value}>{choice.label}</option>{/each}
