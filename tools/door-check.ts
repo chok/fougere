@@ -20,7 +20,7 @@ import { execFileSync, spawn, type ChildProcess, type ExecFileSyncOptions } from
 import { mkdtempSync, readdirSync, readFileSync, appendFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { OFFERED } from '../packages/cli/src/composer/Offered.ts';
+import { CHECKED } from '../packages/cli/src/composer/Offered.ts';
 
 const ROOT = process.cwd();
 const PORT = process.env.DOOR_PORT ?? '3210';
@@ -157,7 +157,7 @@ try {
   }
   const overrides = Object.entries(tarball).map(([n, f]) => `  '${n}': file:${f}`).join('\n');
 
-  for (const host of OFFERED) await open(host, overrides);
+  for (const host of CHECKED) await open(host, overrides);
 } finally {
   rmSync(work, { recursive: true, force: true });
 }

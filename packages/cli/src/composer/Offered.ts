@@ -1,5 +1,5 @@
-/**
- * The hosts the composer offers: the ones run end to end from a fresh workspace — which is what
- * `door:check` does to each of them, reading this list. Every other host stays reachable by `--app`.
- */
-export const OFFERED = ['nuxt', 'next', 'react', 'svelte', 'admin'];
+/** The hosts `door:check` runs end to end from a fresh workspace. Each is reachable by `--app`. */
+export const CHECKED = ['nuxt', 'next', 'react', 'svelte', 'admin'];
+
+/** The hosts the composer offers when it asks — the ones this project stands behind today. */
+export const OFFERED = ['nuxt'];
