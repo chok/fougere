@@ -22,6 +22,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { activeCalls } from '@fougere/observability';
 import { observed } from './observe.js';
+import { log } from '@fougere/log';
 import { calls } from '@fougere/calls';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -67,12 +68,12 @@ const deepest = () => { peak = Math.max(peak, activeCalls()); };
 // ── catalog — holds Product, answers about it ───
 // Observing is declared with the app, not wired onto it after the fact — so `dispose()`
 // flushes the telemetry and this file no longer owes a `stop()` it could forget.
-const catalog = await createApp({ scan: await scanProject(join(root, 'catalog')), createContainer, storageFactory: memoryStorage, extensions: [observed('catalog', deepest), calls()] });
+const catalog = await createApp({ scan: await scanProject(join(root, 'catalog')), createContainer, storageFactory: memoryStorage, extensions: [observed('catalog', deepest), log(), calls()] });
 const catalogReceiver = await serve(createLocalRunner(catalog), { port: CATALOG });
 stopping.push(async () => { await catalogReceiver.close(); await catalog.dispose(); });
 
 // ── shipping — a Frond with no entity at all ────
-const shipping = await createApp({ scan: await scanProject(join(root, 'shipping')), createContainer, extensions: [observed('shipping', deepest), calls()] });
+const shipping = await createApp({ scan: await scanProject(join(root, 'shipping')), createContainer, extensions: [observed('shipping', deepest), log(), calls()] });
 const shippingReceiver = await serve(createLocalRunner(shipping), { port: SHIPPING });
 stopping.push(async () => { await shippingReceiver.close(); await shipping.dispose(); });
 
@@ -87,7 +88,7 @@ const shop = await createApp({
     shipping: `http://127.0.0.1:${SHIPPING}`,
   },
   remoteTransport: (url) => createHttpTransport(url),
-  extensions: [observed('shop', deepest), calls({ panel: 4401 })],
+  extensions: [observed('shop', deepest), log(), calls({ panel: 4401 })],
 });
 const shopReceiver = await serve(createLocalRunner(shop), { port: SHOP });
 stopping.push(async () => { await shopReceiver.close(); await shop.dispose(); });

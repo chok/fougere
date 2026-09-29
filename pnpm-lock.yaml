@@ -1017,6 +1017,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/log':
+        specifier: workspace:*
+        version: link:../../packages/log
       '@fougere/observability':
         specifier: workspace:*
         version: link:../../packages/observability

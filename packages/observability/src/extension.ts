@@ -1,5 +1,5 @@
 /** This package's own ascent and descent, in one value. */
-import { frond, loggerMiddleware, Logger, LogLine, type App, type Extension, type LogSink } from '@fougere/core';
+import { frond, Logger, LogLine, type App, type Extension, type LogSink } from '@fougere/core';
 import ExportHandler from './ExportHandler.js';
 import { traceContext } from '#trace-context';
 import { registerFlush, statementsUnder, tracing, type SpanSink } from './index.js';
@@ -99,8 +99,6 @@ export function observability(options: ObservabilityOptions = {}): Extension {
       app.container.registerValue('LogExport', exporting);
       const undo: (() => void | Promise<void>)[] = [];
       undoing.set(app, undo);
-      // Order matters: `tracing()` opens the span that every log line written inside the
-      // call will carry. Installed the other way round, the lines leave uncorrelated.
       const spans: SpanSink[] = options.onSpan ? [options.onSpan] : [];
       takers.set(app, spans);
       const tracer = tracing(spans, {
@@ -110,10 +108,6 @@ export function observability(options: ObservabilityOptions = {}): Extension {
       });
       app.use(tracer.middleware);
       undo.push(await statementsUnder(tracer));
-      // The app's own logger, named — NOT `new Logger(service)`: a logger built here has
-      // no `Carry`, so its lines printed and announced nothing. 20 on the console, 0 in
-      // the ring, measured on `demos/observability`.
-      app.use(loggerMiddleware(app.container.resolve<Logger>('Logger').child(service)));
 
       // Said once, here, because the alternative is finding it in a trace viewer three
       // weeks later: without an ambient context a call that crossed NO wire cannot name

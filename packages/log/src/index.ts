@@ -1,17 +1,19 @@
 /**
- * Where a log line GOES. The line itself is core's — the boot announces one before any
- * frond exists, so naming it there would cost core an optional package's vocabulary, and
- * the console is core's too: it writes every line whoever else took it.
+ * What is written about a call, and where a line GOES. The line itself is core's — the boot
+ * announces one before any frond exists, so naming it here would cost core an optional package's
+ * vocabulary — and the console is core's too: it writes every line whoever else took it.
  *
- * So what this package holds is a destination that sends a line SOMEWHERE ELSE. Stated and
- * not scanned: `frond()` is what a published package hands over, so a consumer needs no
- * TypeScript loader and no scan of its `node_modules`. The contract is written here for the
- * same reason — nobody reads this handler's source at boot.
+ * So this package holds the two lines every call writes, and a destination that sends a line
+ * SOMEWHERE ELSE. Stated and not scanned: `frond()` is what a published package hands over, so a
+ * consumer needs no TypeScript loader and no scan of its `node_modules`. The contract is written
+ * here for the same reason — nobody reads this handler's source at boot.
  */
-import { frond, LogLine } from '@fougere/core';
+import { frond, LogLine, type Extension, type Logger } from '@fougere/core';
 import FileHandler, { LogFile } from './FileHandler.js';
+import { callLines } from './CallLines.js';
 
 export { default as FileHandler, LogFile } from './FileHandler.js';
+export { callLines } from './CallLines.js';
 
 /**
  * Lines to a file, one JSON object each. Leave it out and they only reach the console —
@@ -43,8 +45,14 @@ export const logFrond = (path: string) => {
 };
 
 /**
- * The name `fronds: { '@fougere/log': './lines.jsonl' }` reaches — the last segment of the
- * specifier is the export, which is what the Nuxt module already assumes of `calls` and
- * `observability`.
+ * The name `fronds: { '@fougere/log': {} }` reaches — the last segment of the specifier is the
+ * export. An extension, so every process reading the config writes its calls, whatever `only:`
+ * it was started with; a path adds the file.
  */
-export const log = logFrond;
+export const log = (path?: string): Extension => ({
+  name: 'log',
+  ...(path ? { fronds: [logFrond(path)] } : {}),
+  up(app) {
+    app.use(callLines(app.container.resolve<Logger>('Logger')));
+  },
+});

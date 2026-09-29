@@ -3,8 +3,6 @@ import { runMiddlewares, type AppMiddleware } from '../src/wire/AppMiddleware.js
 import { type OperationContext } from '../src/wire/OperationContext.js';
 import { ErrorCode } from '../src/wire/ErrorCode.js';
 import { FougereError } from '../src/wire/FougereError.js';
-import { loggerMiddleware } from '../src/wire/loggerMiddleware.js';
-import { Logger } from '../src/builtin/Logger.js';
 
 function ctx(overrides?: Partial<OperationContext>): OperationContext {
   return {
@@ -141,37 +139,5 @@ describe('FougereError', () => {
     const cause = new Error('original');
     const err = new FougereError({ code: ErrorCode.INTERNAL_ERROR, message: 'wrapped', cause });
     expect(err.cause).toBe(cause);
-  });
-});
-
-// ── loggerMiddleware ────────────────────────────
-
-describe('loggerMiddleware', () => {
-  it('logs operation entry and exit', async () => {
-    const logger = new Logger('test');
-    const infoSpy = vi.spyOn(logger, 'info');
-
-    const mw = loggerMiddleware(logger);
-    await runMiddlewares([mw], ctx(), async () => 'ok');
-
-    expect(infoSpy).toHaveBeenCalledTimes(2);
-    expect(infoSpy.mock.calls[0][0]).toContain('product.create');
-    expect(infoSpy.mock.calls[1][0]).toContain('product.create');
-    expect(infoSpy.mock.calls[1][0]).toContain('ms');
-  });
-
-  it('logs errors', async () => {
-    const logger = new Logger('test');
-    const errorSpy = vi.spyOn(logger, 'error');
-
-    const mw = loggerMiddleware(logger);
-    await expect(
-      runMiddlewares([mw], ctx(), async () => {
-        throw new Error('fail');
-      }),
-    ).rejects.toThrow('fail');
-
-    expect(errorSpy).toHaveBeenCalledOnce();
-    expect(errorSpy.mock.calls[0][0]).toContain('product.create');
   });
 });

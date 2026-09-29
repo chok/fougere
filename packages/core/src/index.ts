@@ -110,7 +110,6 @@ export { type Pipe } from './wire/Pipe.js';
 export { callValueOf } from './contract.js';
 export { toHttpError } from './wire/http-error.js';
 export { toPublicError } from './contract.js';
-export { loggerMiddleware } from './wire/loggerMiddleware.js';
 export { Carry } from './builtin/Carry.js';
 export { Logger, envLevel, formatted, logLevel, setLogLevel } from './builtin/Logger.js';
 export type { LogRecord } from './builtin/LogRecord.js';

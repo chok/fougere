@@ -182,7 +182,7 @@ export function tracing(takers: readonly SpanSink[], options: TracingOptions = {
     if (takers.length === 0) return next();
     // An op that CARRIES a line is not a call this process made: counting it puts the
     // delivery of a log line in the saturation figure, and spanning it puts a line about
-    // the span back on the wire. Same rule as `loggerMiddleware`, one declaration.
+    // the span back on the wire. Same rule as `callLines` in `@fougere/log`, one declaration.
     if (CARRIES_LINE.has(ctx.entity)) return next();
 
     // The wire first, the ambient context second: an arriving call names its parent on

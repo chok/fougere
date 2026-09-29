@@ -13,6 +13,7 @@
     "@fougere/calls": "workspace:*",
     "@fougere/container": "workspace:*",
     "@fougere/core": "workspace:*",
+    "@fougere/log": "workspace:*",
     "@fougere/observability": "workspace:*",
     "@fougere/schema": "workspace:*",
     "@fougere/transport-http": "workspace:*",

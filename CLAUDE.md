@@ -336,8 +336,8 @@ imports the config file and hands its `fronds` over as written, since JSON drops
 Pinned by `core/tests/stated-modules.test.ts` and `auth/better/tests/state.test.ts`.
 
 **What carries a line writes none** — `CARRIES_LINE` (`core/src/builtin/LogLine.ts`), a
-set the BOOT fills from `Emissions.doorsFor('logLine')`, read by `loggerMiddleware`, by
-`observability`'s `trace()` and by `calls`' ring. Keeping a line is a DISPATCH, so logging
+set the BOOT fills from `Emissions.doorsFor('logLine')`, read by `@fougere/log`'s `callLines`,
+by `observability`'s `trace()` and by `calls`' ring. Keeping a line is a DISPATCH, so logging
 it announces a line inside the announcement of one: `Emission cycle: logLine → logLine`.
 Measured four ways on 2026-09-10 — the process hung, the call ring filled with its own
 writes, `activeCalls()` counted log deliveries, and a hard-coded list missed a third
@@ -674,8 +674,26 @@ destination and what a brought one depends on is registered by its own extension
 `calls` registers its two rings there, and every held line died on `'LogRing' is not
 registered`. Whatever CARRIES a line writes none: `Emissions` has a logger with no carry, and
 `CARRIES_LINE` — filled by the boot from who subscribed, never written down — is read by
-`loggerMiddleware`, by `trace()` and by `calls`' ring. Pinned by `log/tests/log.test.ts`
+`callLines`, by `trace()` and by `calls`' ring. Pinned by `log/tests/log.test.ts`
 and `demos/log-destinations`.
+
+**What a call writes is `@fougere/log`'s, and it rises in every process** — `log()` is an
+EXTENSION, so `fronds: { '@fougere/log': {} }` is mounted by every boot that reads the config
+(`statedModules` is not narrowed by `only:`), and `up` installs `callLines`: two lines a call,
+under the frond that answers, `← <caller>` when a signed call came from another process. A path
+(`'@fougere/log': './lines.jsonl'`) brings the file destination as well. It used to be core's
+`loggerMiddleware`, installed by `observability` alone, so an app that did not trace wrote nothing
+about its calls. The starters write the line. Pinned by `log/tests/call-lines.test.ts`.
+
+**A line says who wrote it and what it was written DURING** — a class asking for `Logger` gets
+`child(<Class>)` under its own key (`ownLoggers`, `core/src/builtin/OwnLoggers.ts`), a substituted
+dep like a port chain's, so the container learns nothing; a frond whose provider extends `Logger`
+keeps its class whole, since `child()` hands back a bare one. `during` is the operation the
+process is running (`blog:PostHandler.publish`), read from the async context
+(`Ambient.currentOperation`) that `HandlerFacade` enters INSIDE the middlewares — so a call line
+carries its caller and a handler's own line carries itself. The labels are the scan's
+(`implementation.className`), never `ctor.name`, which a bundler rewrites. A runtime with no async
+context writes none. Pinned by `core/tests/own-logger.test.ts`.
 
 **Ports** — a class something already answers under, that a provider extends. Nothing
 declares one: `boot/ports.ts`, `portBindings` reads the prototype chain at boot, so
