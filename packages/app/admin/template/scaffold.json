@@ -27,5 +27,5 @@
     "src/index.css",
     "src/assets"
   ],
-  "facade": { "kind": "paths", "file": "tsconfig.app.json" }
+  "facade": { "kind": "paths", "file": "tsconfig.app.json", "compilerOptions": { "erasableSyntaxOnly": false } }
 }

@@ -201,6 +201,7 @@ describe('an app is the host\u2019s own shell, and Fougere adds its part', () =>
       expect(has('src/assets')).toBe(false);
       expect(read('tsconfig.app.json')).toContain('/* Bundler mode */');
       expect(read('tsconfig.app.json')).toContain('"@fronds/facade"');
+      expect(read('tsconfig.app.json')).toContain('"erasableSyntaxOnly": false');
       expect(read('src/main.tsx')).toContain("import './index.css'");
       expect(JSON.parse(read('package.json')).devDependencies['@fougere/vite']).toBe('latest');
     } finally { dispose(); }

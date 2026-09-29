@@ -34,7 +34,7 @@ export type Wire =
  * `kit.alias`, and a `paths` beside them would replace its `$lib`.
  */
 export type FacadePath =
-  | { kind: 'paths'; file: string }
+  | { kind: 'paths'; file: string; compilerOptions?: Record<string, unknown> }
   | { kind: 'kitAlias'; file: string };
 
 /** Where a host writes the facade module, from the app's own directory. */
@@ -46,7 +46,7 @@ export function applyScaffold(dir: string, scaffold: Scaffold): void {
   asMember(dir);
   addDependencies(dir, scaffold);
   if (scaffold.wire) wire(dir, scaffold.wire);
-  if (scaffold.facade?.kind === 'paths') pointAtFacade(join(dir, scaffold.facade.file));
+  if (scaffold.facade?.kind === 'paths') pointAtFacade(join(dir, scaffold.facade.file), scaffold.facade.compilerOptions);
   if (scaffold.facade?.kind === 'kitAlias') aliasFacade(join(dir, scaffold.facade.file));
 }
 
@@ -107,11 +107,19 @@ function write(path: string, source: string, mod: ReturnType<typeof parseModule>
   writeFileSync(path, generateCode(mod, { format: { quote, objectCurlySpacing: true } }).code.trimEnd() + '\n');
 }
 
-/** Adds the one path a page imports by name, leaving the shell's comments and its own paths as they were. */
-function pointAtFacade(path: string): void {
-  const text = readFileSync(path, 'utf8');
-  const edits = modify(text, ['compilerOptions', 'paths', '@fronds/facade'], [FACADE], {
-    formattingOptions: { insertSpaces: true, tabSize: 2 },
-  });
-  writeFileSync(path, applyEdits(text, edits));
+/**
+ * Adds the one path a page imports by name, and what the frond's code needs of the program reading it —
+ * `create-vite` sets `erasableSyntaxOnly`, which refuses the constructor a handler is injected through.
+ * The shell's comments and its own paths stay as they were.
+ */
+function pointAtFacade(path: string, compilerOptions: Record<string, unknown> = {}): void {
+  const settings: [string[], unknown][] = [
+    [['compilerOptions', 'paths', '@fronds/facade'], [FACADE]],
+    ...Object.entries(compilerOptions).map(([key, value]): [string[], unknown] => [['compilerOptions', key], value]),
+  ];
+  const text = settings.reduce(
+    (current, [key, value]) => applyEdits(current, modify(current, key, value, { formattingOptions: { insertSpaces: true, tabSize: 2 } })),
+    readFileSync(path, 'utf8'),
+  );
+  writeFileSync(path, text);
 }
