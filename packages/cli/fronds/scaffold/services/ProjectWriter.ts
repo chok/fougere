@@ -165,16 +165,22 @@ export default class ProjectWriter {
    * piece landed, since fetching a host's starter can fail halfway. `replace` removes what the
    * destination held, and only then — a failed write leaves the old project as it was.
    */
-  write(plan: Plan, dir: string, options: { local?: boolean; replace?: boolean } = {}): void {
+  async write(plan: Plan, dir: string, options: { local?: boolean; replace?: boolean; progress?: (step: string) => void } = {}): Promise<void> {
     if (existsSync(dir) && !options.replace) throw new Error(`${basename(dir)}/ already exists.`);
 
     const staged = mkdtempSync(join(dirname(dir), `.${basename(dir)}-`));
     try {
+      const progress = options.progress ?? (() => {});
+      progress('Writing the workspace');
       this.createWorkspace(staged, plan.name);
-      for (const { template, name } of plan.fronds) this.addFrond(staged, template, name);
-      for (const { template, name } of plan.apps) this.addApp(staged, template, name);
+      for (const { template, name } of plan.fronds) {
+        progress(`Adding the ${name} frond`);
+        this.addFrond(staged, template, name);
+      }
+      for (const { template, name } of plan.apps) await this.addApp(staged, template, name, progress);
       this.addExamples(staged, plan);
       this.runApps(staged, plan.apps.map(({ name }) => name));
+      progress('Linking the fronds to the apps');
       this.linkFronds(staged);
       if (options.local) this.linkLocal(staged); else this.pinVersions(staged);
     } catch (error) {
@@ -213,7 +219,7 @@ export default class ProjectWriter {
   }
 
   /** Add an app (consumer) under apps/<name>, from the host package that owns its wiring. */
-  addApp(wsDir: string, template: string, name: string): { path: string } {
+  async addApp(wsDir: string, template: string, name: string, progress: (step: string) => void = () => {}): Promise<{ path: string }> {
     const dest = join(wsDir, 'apps', name);
     const starter = hosts().includes(template) ? starterOf(`@fougere/${template}`) : undefined;
     if (!starter) throw new Error(`No host ships a starter for '${template}'. Served: ${hosts().join(', ')}.`);
@@ -222,7 +228,9 @@ export default class ProjectWriter {
     const scaffold = existsSync(manifest) ? JSON.parse(readFileSync(manifest, 'utf8')) as Scaffold : undefined;
     if (scaffold?.create) {
       mkdirSync(dirname(dest), { recursive: true });
-      this.shell.create(scaffold.create, dirname(dest), name);
+      progress(`Writing apps/${name} with ${scaffold.create[0]}`);
+      await this.shell.create(scaffold.create, dirname(dest), name);
+      progress(`Adding Fougere to apps/${name}`);
       applyScaffold(dest, scaffold);
     }
     cpSync(starter, dest, { recursive: true, filter: (source) => source !== manifest });

@@ -51,7 +51,7 @@ export default class NewCommand {
     const dir = join(cwd, plan.name);
     const spinner = this.ui.spinner(`Writing ${plan.name}/`);
     try {
-      writer.write(plan, dir, { local: Boolean(raw.local), replace });
+      await writer.write(plan, dir, { local: Boolean(raw.local), replace, progress: spinner.update });
     } catch (error) {
       spinner.stop('Nothing was written.');
       throw error;

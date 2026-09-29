@@ -75,14 +75,14 @@ describe('a plan', () => {
 });
 
 describe('the writer', () => {
-  it('writes the whole plan or nothing', () => {
+  it('writes the whole plan or nothing', async () => {
     const cwd = mkdtempSync(join(tmpdir(), 'fougere-write-'));
     try {
       const plan: Plan = { name: 'shop', fronds: [{ template: 'blog', name: 'blog' }], apps: [{ template: 'nowhere', name: 'web' }] };
-      expect(() => new ProjectWriter().write(plan, join(cwd, 'shop'))).toThrow("No host ships a starter for 'nowhere'");
+      await expect(new ProjectWriter().write(plan, join(cwd, 'shop'))).rejects.toThrow("No host ships a starter for 'nowhere'");
       expect(readdirSync(cwd)).toEqual([]);
 
-      new ProjectWriter().write({ ...plan, apps: [] }, join(cwd, 'shop'));
+      await new ProjectWriter().write({ ...plan, apps: [] }, join(cwd, 'shop'));
       expect(readdirSync(cwd)).toEqual(['shop']);
       expect(existsSync(join(cwd, 'shop', 'fronds', 'blog', 'package.json'))).toBe(true);
     } finally {
@@ -112,19 +112,19 @@ describe('the writer', () => {
     }
   });
 
-  it('replaces a project only once the new one is whole', () => {
+  it('replaces a project only once the new one is whole', async () => {
     const cwd = mkdtempSync(join(tmpdir(), 'fougere-replace-'));
     try {
       const dir = join(cwd, 'shop');
       const writer = new ProjectWriter();
-      writer.write({ name: 'shop', fronds: [{ template: 'blog', name: 'blog' }], apps: [] }, dir);
-      expect(() => writer.write({ name: 'shop', fronds: [], apps: [] }, dir)).toThrow('shop/ already exists.');
+      await writer.write({ name: 'shop', fronds: [{ template: 'blog', name: 'blog' }], apps: [] }, dir);
+      await expect(writer.write({ name: 'shop', fronds: [], apps: [] }, dir)).rejects.toThrow('shop/ already exists.');
 
       const broken: Plan = { name: 'shop', fronds: [{ template: 'blog', name: 'core' }], apps: [{ template: 'nowhere', name: 'web' }] };
-      expect(() => writer.write(broken, dir, { replace: true })).toThrow();
+      await expect(writer.write(broken, dir, { replace: true })).rejects.toThrow();
       expect(readdirSync(join(dir, 'fronds'))).toContain('blog');
 
-      writer.write({ name: 'shop', fronds: [{ template: 'blog', name: 'core' }], apps: [] }, dir, { replace: true });
+      await writer.write({ name: 'shop', fronds: [{ template: 'blog', name: 'core' }], apps: [] }, dir, { replace: true });
       expect(readdirSync(cwd)).toEqual(['shop']);
       expect(readdirSync(join(dir, 'fronds'))).not.toContain('blog');
       expect(readdirSync(join(dir, 'fronds'))).toContain('core');
