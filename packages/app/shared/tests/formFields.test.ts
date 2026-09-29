@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { Card, entity, primary, text, email, url, number, bool, date, created, oneOf, ref, many, optional, writeOnly } from '@fougere/schema';
 import { errorsByField, formFieldsOf, payloadOf, tableColumnsOf } from '../src/FormEntity.js';
 
-class Author extends entity({ id: primary(), name: text() }) {}
+class Author extends entity({ id: primary(), password: writeOnly(text()), name: text() }) {}
+class Tag extends entity({ code: primary(), weight: number() }) {}
 
 class Article extends entity({
   id: primary(),
@@ -16,6 +17,7 @@ class Article extends entity({
   source: url(),
   publishAt: date(),
   authorId: ref(Author),
+  tagId: ref(Tag),
   createdAt: created(),
 }) {}
 
@@ -49,6 +51,17 @@ describe('formFieldsOf — membership and axes', () => {
     expect(byName.contact.control).toBe('email');
     expect(byName.source.control).toBe('url');
     expect(byName.publishAt.control).toBe('date');
+  });
+
+  it('a reference chooses among its target rows, named by the first text they show', () => {
+    expect(byName.authorId.control).toBe('reference');
+    // `password` comes first and is text, but a choice is read by whoever fills the form.
+    expect(byName.authorId.reference).toEqual({ to: 'author', key: 'id', label: 'name' });
+    expect(byName.authorId.attrs).toEqual({ required: true });
+  });
+
+  it('a reference whose target shows no text is named by its key', () => {
+    expect(byName.tagId.reference).toEqual({ to: 'tag', key: 'code', label: 'code' });
   });
 
   it('labels are convention keys — the schema carries no display text', () => {

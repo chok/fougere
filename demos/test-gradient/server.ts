@@ -36,7 +36,7 @@ function inputFor(field: ReturnType<typeof formFieldsOf>[number]): string {
   // `attrs` porte déjà `type` quand la forme le décide : ne pas le réécrire, sinon la
   // balise en a deux et c'est la page qui a tranché.
   const type = 'type' in (field.attrs ?? {}) ? ''
-    : ` type="${field.control === 'boolean' ? 'checkbox' : field.control}"`;
+    : ` type="${field.control === 'boolean' ? 'checkbox' : field.control === 'reference' ? 'text' : field.control}"`;
 
   return `${label}<input id="${field.name}" name="${field.name}"${type} ${attrs}>`;
 }

@@ -1,8 +1,9 @@
 /** The form contract — state, validation, submission, error mapping. */
-import { reactive, computed } from 'vue';
+import { reactive, computed, onMounted } from 'vue';
+import { useRequestFetch } from '#imports';
 import { lowerFirst, validationErrorsOf } from '@fougere/core/contract';
 import { useCommand } from './useFougereData.js';
-import { facadeOf, formFieldsOf, payloadOf, errorsByField, type FormEntity, type FormField, type FormErrors, type FormFieldName, type FormRow, type FormValues } from '@fougere/app/client';
+import { Choices, facadeOf, formFieldsOf, payloadOf, errorsByField, type Choice, type Fetcher, type FormEntity, type FormField, type FormErrors, type FormFieldName, type FormRow, type FormValues } from '@fougere/app/client';
 
 export interface FormOptions {
   /** Command the submit rides. Default: 'create'. */
@@ -28,6 +29,18 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
   // A form is designated by its ENTITY — it is a set of fields — so the facade it submits to is
   // an address with no handler type behind it, and what it answers is the entity's row.
   const command = useCommand(facadeOf(entity), options.op ?? 'create');
+  const fetcher = useRequestFetch() as Fetcher;
+  const choices = reactive<Record<string, Choice[]>>({});
+
+  /** What a reference field offers: its first rows, or those whose label contains `text`. */
+  async function search(name: FormFieldName<E>, text = ''): Promise<void> {
+    const reference = fields.find((field) => field.name === name)?.reference;
+    if (reference) choices[name] = await Choices.of(fetcher, reference, text);
+  }
+
+  onMounted(() => {
+    for (const field of fields) if (field.reference) void search(field.name);
+  });
 
   function clearErrors() {
     for (const key of Object.keys(errors)) delete errors[key];
@@ -62,6 +75,8 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
     fieldsByName: Object.fromEntries(fields.map((f) => [f.name, f])) as Partial<Record<FormFieldName<E>, FormField<FormFieldName<E>>>>,
     values: values as FormValues<E>,
     errors: errors as FormErrors<E>,
+    choices: choices as Partial<Record<FormFieldName<E>, Choice[]>>,
+    search,
     submit,
     loading: command.loading,
     /** Non-validation failure of the last submit (unreachable host, conflict…). */

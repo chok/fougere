@@ -22,7 +22,7 @@ import type { FougereAdminProps } from './FougereAdminProps.js';
 import {
   Admin, Resource, Datagrid, List, SimpleForm, Edit, Create, Show, SimpleShowLayout,
   TextField, NumberField, BooleanField, DateField, ReferenceField, FunctionField,
-  TextInput, NumberInput, BooleanInput, DateTimeInput, SelectInput,
+  TextInput, NumberInput, BooleanInput, DateTimeInput, SelectInput, ReferenceInput, AutocompleteInput,
   Toolbar, SaveButton, EditButton, DeleteButton, WrapperField, CustomRoutes,
   useTranslate, useRecordContext, useDataProvider, useRefresh, useNotify,
 } from 'react-admin';
@@ -36,7 +36,7 @@ import { actionsOf, type AdminResource } from './AdminResource.js';
 import type { EditorialFacet } from './EditorialFacet.js';
 import type { UsersFacet } from './UsersFacet.js';
 
-import { formFieldsOf, type FormField, type TableColumn } from '@fougere/app/client';
+import { Choices, formFieldsOf, type FormField, type TableColumn } from '@fougere/app/client';
 import { Card as SchemaCard } from '@fougere/schema';
 import { FougereLayout, fougereDarkTheme, fougereLightTheme } from './theme.js';
 import { FougereTopology } from './topology-page.js';
@@ -111,6 +111,18 @@ function defaultFieldFor(column: TableColumn, t: Translate): ReactElement {
  * way; stating them here only means the refusal arrives while typing.
  */
 function defaultInputFor(field: FormField, t: Translate): ReactElement {
+  if (field.reference) {
+    const { to, label } = field.reference;
+
+    return (
+      <ReferenceInput source={field.name} reference={to} perPage={Choices.LIMIT}>
+        <AutocompleteInput
+          label={labelOf(t, field)} isRequired={field.required} optionText={label}
+          filterToQuery={(text: string) => (text ? { [label]: { contains: text } } : {})}
+        />
+      </ReferenceInput>
+    );
+  }
   if (field.control === 'select') {
     return (
       <SelectInput

@@ -1,4 +1,4 @@
-import { Card, FieldSet, type SchemaView } from '@fougere/schema';
+import { Card, FieldSet, lowerFirst, type SchemaView } from '@fougere/schema';
 import {
   CALL_ENDPOINT,
   fetcher as browserFetcher,
@@ -71,10 +71,19 @@ export function capabilitiesOf(operations: readonly Pick<AdminOperation, 'name'>
 /** A facade with no schema is not a resource. */
 export function resourcesOf(card: IdentityCard): AdminResource[] {
   const out: AdminResource[] = [];
+  // Every schema first, so a reference is resolved to the entity it names — its fields say which one
+  // names a row — rather than to a bare name, which left a choice showing its key.
+  const schemas = new Map<string, SchemaView>();
+  const resolve = (name: string) => schemas.get(lowerFirst(name)) as never;
   for (const frond of card.fronds) {
     for (const facade of frond.facades) {
-      if (!facade.schema) continue;
-      const entity = Card.fromDescriptor(facade.schema).toSchema() as unknown as SchemaView;
+      if (facade.schema) schemas.set(facade.name, Card.fromDescriptor(facade.schema).toSchema(resolve) as unknown as SchemaView);
+    }
+  }
+  for (const frond of card.fronds) {
+    for (const facade of frond.facades) {
+      const entity = schemas.get(facade.name);
+      if (!entity) continue;
       const primary = FieldSet.of(entity.getFields()).primary;
       // No primary means no row identity — a list could be drawn, but nothing could be
       // opened, edited or deleted. Refusing here is the same answer `FieldSet.primary`

@@ -74,6 +74,8 @@ export function withFougere(config: NextConfig = {}, options: { root?: string } 
       void written;
       base.resolve ??= {};
       base.resolve.alias = { ...base.resolve.alias, [SPECIFIER]: join(app, FACADE) };
+      // A frond is ESM TypeScript, so one entity imports another as `./Author.js` and the file is `.ts`.
+      base.resolve.extensionAlias = { ...base.resolve.extensionAlias, '.js': ['.ts', '.tsx', '.js'] };
 
       base.optimization ??= {};
       // ONLY the JS minifier is replaced. Next's minimizers are plain functions with

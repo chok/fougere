@@ -2,7 +2,7 @@
 import Post from '@fronds/blog/entities/Post';
 // `fieldsByName` carries what the browser enforces — type, required, bounds — read off
 // the entity. The page lays the form out; it states no rule.
-const { fieldsByName, values, errors, submit, loading, error } = useFormFor(Post);
+const { fieldsByName, values, errors, choices, search, submit, loading, error } = useFormFor(Post);
 
 async function onSubmit() {
   if (await submit()) navigateTo('/blog/posts/mine');
@@ -26,9 +26,13 @@ async function onSubmit() {
     </div>
 
     <UCard>
-      <form class="space-y-4" @submit.prevent="onSubmit">
-        <UFormField label="Author ID" :error="errors.authorId">
-          <UInput v-model="values.authorId" v-bind="fieldsByName.authorId?.attrs" placeholder="Author UUID" />
+      <form class="space-y-4" novalidate @submit.prevent="onSubmit">
+        <UFormField label="Author" :error="errors.authorId">
+          <USelectMenu
+            v-model="values.authorId" :items="choices.authorId ?? []" value-key="value" label-key="label"
+            ignore-filter placeholder="Choose an author" class="w-full"
+            @update:search-term="(text: string) => search('authorId', text)"
+          />
         </UFormField>
 
         <UFormField label="Title" :error="errors.title">

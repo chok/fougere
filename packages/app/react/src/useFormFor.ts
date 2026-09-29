@@ -1,13 +1,15 @@
 'use client';
 /** The form contract — state, validation, submission, error mapping. */
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { validationErrorsOf } from '@fougere/core/contract';
 import {
+  Choices,
   entityKeyOf,
   errorsByField,
   facadeOf,
   formFieldsOf,
   payloadOf,
+  type Choice,
   type FormEntity,
   type FormErrors,
   type FormField,
@@ -16,6 +18,7 @@ import {
   type FormValues,
 } from '@fougere/app/client';
 import { useCommand } from './useFougereData.js';
+import { fetcher } from './transport.js';
 
 export interface FormOptions {
   /** Command the submit rides. Default: 'create'. */
@@ -41,6 +44,19 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
   // A form is designated by its ENTITY — it is a set of fields — so the facade it submits to is
   // an address with no handler type behind it, and what it answers is the entity's row.
   const command = useCommand(facadeOf(entity), options.op ?? 'create');
+  const [choices, setChoices] = useState<Partial<Record<FormFieldName<E>, Choice[]>>>({});
+
+  /** What a reference field offers: its first rows, or those whose label contains `text`. */
+  const search = useCallback(async (name: FormFieldName<E>, text = '') => {
+    const reference = fields.find((field) => field.name === name)?.reference;
+    if (!reference) return;
+    const found = await Choices.of(fetcher, reference, text);
+    setChoices((current) => ({ ...current, [name]: found }));
+  }, [fields]);
+
+  useEffect(() => {
+    for (const field of fields) if (field.reference) void search(field.name);
+  }, [fields, search]);
 
   const setValue = useCallback((name: FormFieldName<E>, value: unknown) => {
     setValues((current) => ({ ...current, [name]: value }));
@@ -81,6 +97,8 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
     values,
     setValue,
     errors: shown,
+    choices,
+    search,
     submit,
     loading: command.loading,
     /** Non-validation failure of the last submit (unreachable host, conflict…). */

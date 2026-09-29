@@ -1,23 +1,12 @@
 import { Lifecycle } from '@fougere/schema';
-import { Shapes, lowerFirst, Role, Visibility } from '@fougere/schema';
+import { FieldSet, Shapes, lowerFirst, Role, Visibility } from '@fougere/schema';
 import type { Field, SchemaView, ShapeType, ValidationError } from '@fougere/schema';
-import type { FormField } from './FormField.js';
+import type { FormField, FormReference } from './FormField.js';
+import type { FormErrors, FormFieldName } from './FormRow.js';
 import type { TableColumn } from './TableColumn.js';
 
 /** What an entity class exposes to a form — the schema statics it already has. */
 export type FormEntity = SchemaView;
-
-/** The row an entity class builds, which is what its form fills and what `create` answers. */
-export type FormRow<E> = E extends abstract new (...args: never[]) => infer Row ? Row : Record<string, unknown>;
-
-/** What the form holds — any field, none of them yet. */
-export type FormValues<E> = Partial<FormRow<E>>;
-
-/** A field of that row, by name. */
-export type FormFieldName<E> = keyof FormRow<E> & string;
-
-/** One message per refused field. */
-export type FormErrors<E> = Partial<Record<FormFieldName<E>, string>>;
 
 /** The literal a field is born with, when it declares one. */
 function defaultOf(field: Field): unknown {
@@ -43,6 +32,7 @@ const CONTROL_BY_TYPE: Record<Exclude<ShapeType, 'text'>, FormField['control']> 
 };
 
 function controlOf(field: Field): FormField['control'] {
+  if (Role.of(field).isReference()) return 'reference';
   if (enumOf(field)) return 'select';
 
   const type = Shapes.typeOf(field.shape);
@@ -52,6 +42,22 @@ function controlOf(field: Field): FormField['control'] {
   const format = base?.type === 'string' ? base.format : undefined;
 
   return (format && CONTROL_BY_FORMAT[format]) ?? 'text';
+}
+
+/**
+ * What a reference field chooses among. The label is the first text the target shows — never a
+ * `writeOnly` one, since a choice is read by whoever fills the form — and its key when it shows none,
+ * or when the target is known only by name.
+ */
+function referenceOf(field: Field): FormReference | undefined {
+  const target = Role.of(field).target;
+  if (!target) return undefined;
+  const fields = (target as Partial<SchemaView>).getFields?.() ?? {};
+  const key = FieldSet.of(fields).primary ?? 'id';
+  const named = Object.entries(Visibility.of(fields).output).find(([, candidate]) =>
+    Shapes.typeOf(candidate.shape) === 'text' && !Role.of(candidate).isPrimary() && !Role.of(candidate).isRelation());
+
+  return { to: lowerFirst(target.name), key, label: named?.[0] ?? key };
 }
 
 /** A closed set's members, when the shape declares one — `oneOf('draft','live')`. */
@@ -98,6 +104,7 @@ export function formFieldsOf<E extends FormEntity>(entity: E, entityKey: string)
     const required = Lifecycle.of(f).requiredAtCreate();
     const attrs = attrsOf(f, control, required);
     const members = enumOf(f);
+    const reference = referenceOf(f);
 
     return {
       name,
@@ -105,6 +112,7 @@ export function formFieldsOf<E extends FormEntity>(entity: E, entityKey: string)
       required,
       ...labelOf(name, entityKey),
       ...(members ? { options: members.filter((value) => value !== null) } : {}),
+      ...(reference ? { reference } : {}),
       ...(Object.keys(attrs).length ? { attrs } : {}),
       ...(defaultOf(f) !== undefined ? { default: defaultOf(f) } : {}),
     };

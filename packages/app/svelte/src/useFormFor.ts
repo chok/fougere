@@ -2,11 +2,14 @@
 import { writable, derived, get, type Readable, type Writable } from 'svelte/store';
 import { validationErrorsOf } from '@fougere/core/contract';
 import {
+  Choices,
   entityKeyOf,
+  fetcher,
   facadeOf,
   errorsByField,
   formFieldsOf,
   payloadOf,
+  type Choice,
   type FormEntity,
   type FormErrors,
   type FormField,
@@ -38,6 +41,19 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
   // A form is designated by its ENTITY — it is a set of fields — so the facade it submits to is
   // an address with no handler type behind it, and what it answers is the entity's row.
   const command = useCommand(facadeOf(entity), options.op ?? 'create');
+  const choices = writable<Partial<Record<FormFieldName<E>, Choice[]>>>({});
+
+  /** What a reference field offers: its first rows, or those whose label contains `text`. */
+  async function search(name: FormFieldName<E>, text = ''): Promise<void> {
+    const reference = fields.find((field) => field.name === name)?.reference;
+    if (!reference) return;
+    const found = await Choices.of(fetcher, reference, text);
+    choices.update((current) => ({ ...current, [name]: found }));
+  }
+
+  if (typeof window !== 'undefined') {
+    for (const field of fields) if (field.reference) void search(field.name);
+  }
 
   /** Local pre-verdict — same rules as the handler, saves a lost round-trip. */
   function validator(): boolean {
@@ -66,6 +82,8 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
     fieldsByName: Object.fromEntries(fields.map((field) => [field.name, field])) as Partial<Record<FormFieldName<E>, FormField<FormFieldName<E>>>>,
     values,
     errors,
+    choices,
+    search,
     submit,
     validator,
     valid,

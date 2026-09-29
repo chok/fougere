@@ -12,7 +12,7 @@
  */
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { renderHook, act, waitFor, cleanup } from '@testing-library/react';
-import { entity, primary, text, oneOf, readOnly, created } from '@fougere/schema';
+import { entity, primary, text, oneOf, readOnly, created, ref } from '@fougere/schema';
 import { ErrorCode } from '@fougere/core/contract';
 import { facade } from '@fougere/app/client';
 import { useQuery, useCommand } from '../src/useFougereData.js';
@@ -250,5 +250,29 @@ describe('useFormFor', () => {
 
     expect(calls[0]!.method).toBe('post.update');
     expect(calls[0]!.params.params).toEqual({ id: 'a' });
+  });
+});
+
+describe('useFormFor — a reference', () => {
+  class Writer extends entity({ id: primary(), name: text() }) {}
+  class Note extends entity({ id: primary(), body: text(), writerId: ref(Writer) }) {}
+  const rows = [{ id: 'w1', name: 'Alice' }, { id: 'w2', name: 'Bob' }];
+
+  it('offers the first rows of its target, named, and searches the rest by that name', async () => {
+    const calls = wire((method, params: any) =>
+      method === 'writer.list'
+        ? rows.filter((row) => !params.query.where || row.name.includes(params.query.where.name.contains))
+        : null);
+    const { result } = renderHook(() => useFormFor(Note));
+
+    await waitFor(() => expect(result.current.choices.writerId).toEqual([
+      { value: 'w1', label: 'Alice' },
+      { value: 'w2', label: 'Bob' },
+    ]));
+    expect(calls.find((call) => call.method === 'writer.list')!.params.query).toEqual({ limit: 20 });
+
+    await act(async () => { await result.current.search('writerId', 'Bo'); });
+    expect(result.current.choices.writerId).toEqual([{ value: 'w2', label: 'Bob' }]);
+    expect(calls.at(-1)!.params.query).toEqual({ limit: 20, where: { name: { contains: 'Bo' } } });
   });
 });
