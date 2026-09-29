@@ -131,8 +131,8 @@ describe('formFieldsOf — what the browser enforces, under the names it knows',
     formFieldsOf(Article as never, 'article').map((f) => [f.name, f]),
   );
 
-  it('carries a string field bounds as minlength/maxlength', () => {
-    expect(byName.title.attrs).toEqual({ type: 'text', required: true, minlength: 1, maxlength: 200 });
+  it('carries a string field bounds as minLength/maxLength', () => {
+    expect(byName.title.attrs).toEqual({ required: true, minLength: 1, maxLength: 200 });
   });
 
   it('carries a number field bound as min, and omits the one not stated', () => {
@@ -148,7 +148,7 @@ describe('formFieldsOf — what the browser enforces, under the names it knows',
 
   it('emits no `required` when the lifecycle answers the absence', () => {
     // Absence emits nothing rather than `required="false"` — a browser reads presence.
-    expect(byName.subtitle.attrs).toEqual({ type: 'text' });
+    expect(byName.subtitle.attrs).toBeUndefined();
   });
 
   it('gives a date no type: the browser would accept what the validator refuses', () => {

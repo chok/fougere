@@ -189,8 +189,8 @@ describe('useFormFor', () => {
   it("carries the shape's bounds under the names a browser enforces", () => {
     const { result } = renderHook(() => useFormFor(Post));
     expect(result.current.fieldsByName.title!.attrs).toMatchObject({
-      minlength: 1,
-      maxlength: 200,
+      minLength: 1,
+      maxLength: 200,
       required: true,
     });
   });

@@ -131,21 +131,7 @@ function defaultInputFor(field: FormField, t: Translate): ReactElement {
   if (field.control === 'boolean') return <BooleanInput {...common} />;
   if (field.control === 'date') return <DateTimeInput {...common} />;
 
-  const { minlength, maxlength, ...attrs } = field.attrs ?? {};
-
-  return (
-    <TextInput
-      {...common}
-      type={field.control}
-      slotProps={{
-        htmlInput: {
-          ...attrs,
-          ...(minlength !== undefined ? { minLength: minlength } : {}),
-          ...(maxlength !== undefined ? { maxLength: maxlength } : {}),
-        },
-      }}
-    />
-  );
+  return <TextInput {...common} type={field.control} slotProps={{ htmlInput: field.attrs }} />;
 }
 
 function fieldFor(resource: AdminResource, column: TableColumn, t: Translate, renderers?: ReactAdminRenderers): ReactElement {

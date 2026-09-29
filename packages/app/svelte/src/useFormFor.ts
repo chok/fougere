@@ -10,6 +10,7 @@ import {
   type FormEntity,
   type FormErrors,
   type FormField,
+  type FormFieldName,
   type FormRow,
   type FormValues,
 } from '@fougere/app/client';
@@ -26,7 +27,7 @@ export interface FormOptions {
 
 export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions = {}) {
   const entityKey = entityKeyOf(entity);
-  const fields: FormField[] = formFieldsOf(entity, entityKey);
+  const fields = formFieldsOf(entity, entityKey);
 
   // `initial` wins over the declared default: editing a row shows the row. On a
   // create form there is none, so the field opens on what is about to be written.
@@ -67,7 +68,7 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
     fields,
     /** The same fields, keyed by name — spread `fieldsByName.email.attrs` on an input
      *  and the page states no rule of its own. */
-    fieldsByName: Object.fromEntries(fields.map((field) => [field.name, field])) as Record<string, FormField>,
+    fieldsByName: Object.fromEntries(fields.map((field) => [field.name, field])) as Partial<Record<FormFieldName<E>, FormField<FormFieldName<E>>>>,
     values,
     errors,
     submit,

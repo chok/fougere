@@ -11,6 +11,7 @@ import {
   type FormEntity,
   type FormErrors,
   type FormField,
+  type FormFieldName,
   type FormRow,
   type FormValues,
 } from '@fougere/app/client';
@@ -41,7 +42,7 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
   // an address with no handler type behind it, and what it answers is the entity's row.
   const command = useCommand(facadeOf(entity), options.op ?? 'create');
 
-  const setValue = useCallback((name: keyof FormRow<E> & string, value: unknown) => {
+  const setValue = useCallback((name: FormFieldName<E>, value: unknown) => {
     setValues((current) => ({ ...current, [name]: value }));
   }, []);
 
@@ -70,7 +71,7 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
   }, [validator, command, options.params, values]);
 
   const fieldsByName = useMemo(
-    () => Object.fromEntries(fields.map((field) => [field.name, field])) as Record<string, FormField>,
+    () => Object.fromEntries(fields.map((field) => [field.name, field])) as Partial<Record<FormFieldName<E>, FormField<FormFieldName<E>>>>,
     [fields],
   );
 

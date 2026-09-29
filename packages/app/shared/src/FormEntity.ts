@@ -13,8 +13,11 @@ export type FormRow<E> = E extends abstract new (...args: never[]) => infer Row 
 /** What the form holds — any field, none of them yet. */
 export type FormValues<E> = Partial<FormRow<E>>;
 
+/** A field of that row, by name. */
+export type FormFieldName<E> = keyof FormRow<E> & string;
+
 /** One message per refused field. */
-export type FormErrors<E> = Partial<Record<keyof FormRow<E> & string, string>>;
+export type FormErrors<E> = Partial<Record<FormFieldName<E>, string>>;
 
 /** The literal a field is born with, when it declares one. */
 function defaultOf(field: Field): unknown {
@@ -58,8 +61,8 @@ function enumOf(field: Field): readonly (string | number | null)[] | undefined {
   return base && 'enum' in base ? base.enum : undefined;
 }
 
-/** Controls that ARE an `<input type>` — see the two absences on {@link FormField.attrs}. */
-const INPUT_TYPES = new Set(['text', 'email', 'url', 'number']);
+/** The `<input type>`s a browser checks — `text` is an input's default, and the only one a `<textarea>` may stand for. */
+const INPUT_TYPES = new Set(['email', 'url', 'number']);
 
 /** The shape's bounds, under the names a browser already enforces. */
 function attrsOf(field: Field, control: FormField['control'], required: boolean): NonNullable<FormField['attrs']> {
@@ -69,8 +72,8 @@ function attrsOf(field: Field, control: FormField['control'], required: boolean)
   const attrs = {
     type: INPUT_TYPES.has(control) ? control : undefined,
     required: (required && control !== 'boolean') || undefined,
-    minlength: text?.minLength,
-    maxlength: text?.maxLength,
+    minLength: text?.minLength,
+    maxLength: text?.maxLength,
     min: numeric?.minimum,
     max: numeric?.maximum,
     pattern: text?.pattern,
@@ -88,8 +91,8 @@ function labelOf(name: string, entityKey: string): Pick<FormField, 'labelKey' | 
 }
 
 /** The fields a create form is made of. */
-export function formFieldsOf(entity: FormEntity, entityKey: string): FormField[] {
-  return Object.entries(Visibility.of(entity.getFields()).input).map(([name, field]) => {
+export function formFieldsOf<E extends FormEntity>(entity: E, entityKey: string): FormField<FormFieldName<E>>[] {
+  const fields = Object.entries(Visibility.of(entity.getFields()).input).map(([name, field]) => {
     const f = field;
     const control = controlOf(f);
     const required = Lifecycle.of(f).requiredAtCreate();
@@ -106,6 +109,8 @@ export function formFieldsOf(entity: FormEntity, entityKey: string): FormField[]
       ...(defaultOf(f) !== undefined ? { default: defaultOf(f) } : {}),
     };
   });
+
+  return fields as FormField<FormFieldName<E>>[];
 }
 
 /** Asked of the relation before the shape: a reference's own shape is a bare string. */

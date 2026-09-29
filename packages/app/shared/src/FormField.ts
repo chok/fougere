@@ -1,5 +1,5 @@
-export interface FormField {
-  name: string;
+export interface FormField<Name extends string = string> {
+  name: Name;
   /** Rendering hint derived from the shape — the page maps it to widgets. */
   control: 'text' | 'email' | 'url' | 'number' | 'boolean' | 'date' | 'select';
   required: boolean;
@@ -14,10 +14,10 @@ export interface FormField {
    * page states no rule of its own.
    */
   attrs?: {
-    type?: 'text' | 'email' | 'url' | 'number';
+    type?: 'email' | 'url' | 'number';
     required?: boolean;
-    minlength?: number;
-    maxlength?: number;
+    minLength?: number;
+    maxLength?: number;
     min?: number;
     max?: number;
     pattern?: string;

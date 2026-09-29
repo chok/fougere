@@ -185,7 +185,7 @@ describe('useFormFor', () => {
 
   it('carries the shape\'s bounds under the names a browser enforces', () => {
     const form = useFormFor(Post);
-    expect(form.fieldsByName.title!.attrs).toMatchObject({ minlength: 1, maxlength: 200, required: true });
+    expect(form.fieldsByName.title!.attrs).toMatchObject({ minLength: 1, maxLength: 200, required: true });
   });
 
   it('validates locally with the same rules the handler runs', async () => {

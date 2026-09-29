@@ -13,7 +13,7 @@ export { tableOf } from './RouteMatch.js';
 
 export { invokeOn, rpcParseError, serveRest, serveRpc, surfaceOf } from './Outcome.js';
 
-export { errorsByField, formFieldsOf, payloadOf, tableColumnsOf, type FormEntity, type FormRow, type FormValues, type FormErrors } from './FormEntity.js';
+export { errorsByField, formFieldsOf, payloadOf, tableColumnsOf, type FormEntity, type FormRow, type FormValues, type FormErrors, type FormFieldName } from './FormEntity.js';
 export { type FormField } from './FormField.js';
 export { type TableColumn } from './TableColumn.js';
 

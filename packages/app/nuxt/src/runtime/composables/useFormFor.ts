@@ -2,7 +2,7 @@
 import { reactive, computed } from 'vue';
 import { lowerFirst, validationErrorsOf } from '@fougere/core/contract';
 import { useCommand } from './useFougereData.js';
-import { facadeOf, formFieldsOf, payloadOf, errorsByField, type FormEntity, type FormField, type FormErrors, type FormRow, type FormValues } from '@fougere/app/client';
+import { facadeOf, formFieldsOf, payloadOf, errorsByField, type FormEntity, type FormField, type FormErrors, type FormFieldName, type FormRow, type FormValues } from '@fougere/app/client';
 
 export interface FormOptions {
   /** Command the submit rides. Default: 'create'. */
@@ -15,7 +15,7 @@ export interface FormOptions {
 
 export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions = {}) {
   const entityKey = lowerFirst(entity.name);
-  const fields: FormField[] = formFieldsOf(entity, entityKey);
+  const fields = formFieldsOf(entity, entityKey);
 
   // `initial` wins over the declared default: editing a row shows the row, including a
   // value the author deliberately changed away from that default. On a create form
@@ -65,7 +65,7 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
      * The same fields, keyed by name — a form that lays its inputs out by hand binds one at a time
      * (`v-bind="fieldsByName.email.attrs"`), and still states no rule of its own.
      */
-    fieldsByName: Object.fromEntries(fields.map((f) => [f.name, f])) as Record<string, FormField>,
+    fieldsByName: Object.fromEntries(fields.map((f) => [f.name, f])) as Partial<Record<FormFieldName<E>, FormField<FormFieldName<E>>>>,
     values: values as FormValues<E>,
     errors: errors as FormErrors<E>,
     submit,
