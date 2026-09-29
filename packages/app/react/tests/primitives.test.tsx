@@ -181,13 +181,13 @@ describe('useCommand', () => {
 
 describe('useFormFor', () => {
   it('offers only the fields a client may supply', () => {
-    const { result } = renderHook(() => useFormFor(Post as never));
+    const { result } = renderHook(() => useFormFor(Post));
     // `id` and `createdAt` are filled by the lifecycle axis, `status` is readOnly.
     expect(result.current.fields.map((f) => f.name)).toEqual(['title', 'body']);
   });
 
   it("carries the shape's bounds under the names a browser enforces", () => {
-    const { result } = renderHook(() => useFormFor(Post as never));
+    const { result } = renderHook(() => useFormFor(Post));
     expect(result.current.fieldsByName.title!.attrs).toMatchObject({
       minlength: 1,
       maxlength: 200,
@@ -197,7 +197,7 @@ describe('useFormFor', () => {
 
   it('validates locally with the same rules the handler runs', async () => {
     const calls = wire(() => ({ id: 'new' }));
-    const { result } = renderHook(() => useFormFor(Post as never));
+    const { result } = renderHook(() => useFormFor(Post));
 
     act(() => { result.current.setValue('body', 'b'); });
     await act(async () => { expect(await result.current.submit()).toBeNull(); });
@@ -210,7 +210,7 @@ describe('useFormFor', () => {
 
   it('sends what the form holds once it passes', async () => {
     const calls = wire(() => ({ id: 'new' }));
-    const { result } = renderHook(() => useFormFor(Post as never));
+    const { result } = renderHook(() => useFormFor(Post));
 
     act(() => {
       result.current.setValue('title', 'ok');
@@ -228,7 +228,7 @@ describe('useFormFor', () => {
         data: { code: ErrorCode.VALIDATION_FAILED, details: [{ path: ['title'], message: 'too short' }] },
       }),
     );
-    const { result } = renderHook(() => useFormFor(Post as never));
+    const { result } = renderHook(() => useFormFor(Post));
 
     act(() => {
       result.current.setValue('title', 'fine');
@@ -242,7 +242,7 @@ describe('useFormFor', () => {
   it('opens on the row it is editing, and rides the op it is told to', async () => {
     const calls = wire(() => ({ id: 'a' }));
     const { result } = renderHook(() =>
-      useFormFor(Post as never, { op: 'update', params: { id: 'a' }, initial: { title: 'was', body: 'b' } }),
+      useFormFor(Post, { op: 'update', params: { id: 'a' }, initial: { title: 'was', body: 'b' } }),
     );
 
     expect(result.current.values.title).toBe('was');

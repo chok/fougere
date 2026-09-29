@@ -176,7 +176,7 @@ describe('useCommand', () => {
 
 describe('useFormFor', () => {
   it('offers only the fields a client may supply', () => {
-    const form = useFormFor(Post as never);
+    const form = useFormFor(Post);
     const names = form.fields.map((f) => f.name);
 
     // `id` and `createdAt` are filled by the lifecycle axis, `status` is readOnly.
@@ -184,13 +184,13 @@ describe('useFormFor', () => {
   });
 
   it('carries the shape\'s bounds under the names a browser enforces', () => {
-    const form = useFormFor(Post as never);
+    const form = useFormFor(Post);
     expect(form.fieldsByName.title!.attrs).toMatchObject({ minlength: 1, maxlength: 200, required: true });
   });
 
   it('validates locally with the same rules the handler runs', async () => {
     const calls = wire(() => ({ id: 'new' }));
-    const form = useFormFor(Post as never);
+    const form = useFormFor(Post);
 
     form.values.set({ title: '', body: 'b' });
     expect(await form.submit()).toBeNull();
@@ -203,7 +203,7 @@ describe('useFormFor', () => {
 
   it('sends what the form holds once it passes', async () => {
     const calls = wire(() => ({ id: 'new' }));
-    const form = useFormFor(Post as never);
+    const form = useFormFor(Post);
 
     form.values.set({ title: 'ok', body: 'b' });
     expect(await form.submit()).toEqual({ id: 'new' });
@@ -217,7 +217,7 @@ describe('useFormFor', () => {
         data: { code: ErrorCode.VALIDATION_FAILED, details: [{ path: ['title'], message: 'too short' }] },
       }),
     );
-    const form = useFormFor(Post as never);
+    const form = useFormFor(Post);
 
     // Passes the local validator, so only the server can refuse it.
     form.values.set({ title: 'fine', body: 'b' });
@@ -227,7 +227,7 @@ describe('useFormFor', () => {
 
   it('rides the op it is told to, on the target it names', async () => {
     const calls = wire(() => ({ id: 'a' }));
-    const form = useFormFor(Post as never, { op: 'update', params: { id: 'a' }, initial: { title: 'was', body: 'b' } });
+    const form = useFormFor(Post, { op: 'update', params: { id: 'a' }, initial: { title: 'was', body: 'b' } });
 
     expect(get(form.values).title).toBe('was');
     await form.submit();

@@ -5,7 +5,7 @@ const { t } = useI18n();
 const localePath = useLocalePath();
 const { user } = useCurrentUser();
 
-const { values, errors, submit, loading, error } = useFormFor<{ id: string }>(Post);
+const { values, errors, submit, loading, error } = useFormFor(Post);
 
 // Convenience, not a rule: the slug follows the title until the author touches it.
 const slugTouched = ref(false);

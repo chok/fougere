@@ -7,6 +7,15 @@ import type { TableColumn } from './TableColumn.js';
 /** What an entity class exposes to a form — the schema statics it already has. */
 export type FormEntity = SchemaView;
 
+/** The row an entity class builds, which is what its form fills and what `create` answers. */
+export type FormRow<E> = E extends abstract new (...args: never[]) => infer Row ? Row : Record<string, unknown>;
+
+/** What the form holds — any field, none of them yet. */
+export type FormValues<E> = Partial<FormRow<E>>;
+
+/** One message per refused field. */
+export type FormErrors<E> = Partial<Record<keyof FormRow<E> & string, string>>;
+
 /** The literal a field is born with, when it declares one. */
 function defaultOf(field: Field): unknown {
   return Lifecycle.of(field).literal?.value;
@@ -153,7 +162,7 @@ export function payloadOf(
 }
 
 /** Index validator errors by field — local validator and remote validator share this shape. */
-export function errorsByField(errors: ValidationError[]): Record<string, string> {
+export function errorsByField<E>(errors: ValidationError[]): FormErrors<E> {
   const byField: Record<string, string> = {};
   for (const err of errors) {
     const field = err.path[0];
@@ -161,5 +170,5 @@ export function errorsByField(errors: ValidationError[]): Record<string, string>
     byField[field] ??= err.message;
   }
 
-  return byField;
+  return byField as FormErrors<E>;
 }

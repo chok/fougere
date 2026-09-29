@@ -9,7 +9,10 @@ import {
   formFieldsOf,
   payloadOf,
   type FormEntity,
+  type FormErrors,
   type FormField,
+  type FormRow,
+  type FormValues,
 } from '@fougere/app/client';
 import { useCommand } from './useFougereData.js';
 
@@ -22,7 +25,7 @@ export interface FormOptions {
   params?: Record<string, string>;
 }
 
-export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, options: FormOptions = {}) {
+export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions = {}) {
   const entityKey = entityKeyOf(entity);
   const fields = useMemo(() => formFieldsOf(entity, entityKey), [entity, entityKey]);
 
@@ -30,35 +33,35 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
   // a value the author deliberately changed away from that default. On a create form
   // there is no `initial`, so the field opens on what is about to be written — the
   // schema's own literal, shown rather than guessed by the page.
-  const [values, setValues] = useState<Record<string, unknown>>(() =>
-    Object.fromEntries(fields.map((field) => [field.name, options.initial?.[field.name] ?? field.default])),
+  const [values, setValues] = useState<FormValues<E>>(() =>
+    Object.fromEntries(fields.map((field) => [field.name, options.initial?.[field.name] ?? field.default])) as FormValues<E>,
   );
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<FormErrors<E>>({});
   // A form is designated by its ENTITY — it is a set of fields — so the facade it submits to is
-  // an address with no handler type behind it, and `T` stays the caller's to state.
+  // an address with no handler type behind it, and what it answers is the entity's row.
   const command = useCommand(facadeOf(entity), options.op ?? 'create');
 
-  const setValue = useCallback((name: string, value: unknown) => {
+  const setValue = useCallback((name: keyof FormRow<E> & string, value: unknown) => {
     setValues((current) => ({ ...current, [name]: value }));
   }, []);
 
   /** Local pre-verdict — same rules as the handler, saves a lost round-trip. */
   const validator = useCallback((): boolean => {
     const result = entity.validate(payloadOf(entity, values));
-    setErrors(result.success ? {} : errorsByField(result.errors));
+    setErrors(result.success ? {} : errorsByField<E>(result.errors));
 
     return result.success;
   }, [entity, values]);
 
   /** Validate locally, then send through the command. */
-  const submit = useCallback(async (): Promise<T | null> => {
+  const submit = useCallback(async (): Promise<FormRow<E> | null> => {
     if (!validator()) return null;
     try {
-      return (await command.execute({ params: options.params, input: payloadOf(entity, values) })) as T;
+      return (await command.execute({ params: options.params, input: payloadOf(entity, values) })) as FormRow<E>;
     } catch (err) {
       const refusals = validationErrorsOf(err);
       if (refusals) {
-        setErrors(errorsByField(refusals));
+        setErrors(errorsByField<E>(refusals));
 
         return null;
       }

@@ -8,7 +8,10 @@ import {
   formFieldsOf,
   payloadOf,
   type FormEntity,
+  type FormErrors,
   type FormField,
+  type FormRow,
+  type FormValues,
 } from '@fougere/app/client';
 import { useCommand } from './useFougereData/CommandStore.js';
 
@@ -21,36 +24,36 @@ export interface FormOptions {
   params?: Record<string, string>;
 }
 
-export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, options: FormOptions = {}) {
+export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions = {}) {
   const entityKey = entityKeyOf(entity);
   const fields: FormField[] = formFieldsOf(entity, entityKey);
 
   // `initial` wins over the declared default: editing a row shows the row. On a
   // create form there is none, so the field opens on what is about to be written.
-  const values: Writable<Record<string, unknown>> = writable(
-    Object.fromEntries(fields.map((field) => [field.name, options.initial?.[field.name] ?? field.default])),
+  const values: Writable<FormValues<E>> = writable(
+    Object.fromEntries(fields.map((field) => [field.name, options.initial?.[field.name] ?? field.default])) as FormValues<E>,
   );
-  const errors = writable<Record<string, string>>({});
+  const errors = writable<FormErrors<E>>({});
   // A form is designated by its ENTITY — it is a set of fields — so the facade it submits to is
-  // an address with no handler type behind it, and `T` stays the caller's to state.
+  // an address with no handler type behind it, and what it answers is the entity's row.
   const command = useCommand(facadeOf(entity), options.op ?? 'create');
 
   /** Local pre-verdict — same rules as the handler, saves a lost round-trip. */
   function validator(): boolean {
     const result = entity.validate(payloadOf(entity, get(values)));
-    errors.set(result.success ? {} : errorsByField(result.errors));
+    errors.set(result.success ? {} : errorsByField<E>(result.errors));
 
     return result.success;
   }
 
-  async function submit(): Promise<T | null> {
+  async function submit(): Promise<FormRow<E> | null> {
     if (!validator()) return null;
     try {
-      return (await command.execute({ params: options.params, input: payloadOf(entity, get(values)) })) as T;
+      return (await command.execute({ params: options.params, input: payloadOf(entity, get(values)) })) as FormRow<E>;
     } catch (err) {
       const refusals = validationErrorsOf(err);
       if (refusals) {
-        errors.set(errorsByField(refusals));
+        errors.set(errorsByField<E>(refusals));
 
         return null;
       }

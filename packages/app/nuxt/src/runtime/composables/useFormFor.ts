@@ -2,7 +2,7 @@
 import { reactive, computed } from 'vue';
 import { lowerFirst, validationErrorsOf } from '@fougere/core/contract';
 import { useCommand } from './useFougereData.js';
-import { facadeOf, formFieldsOf, payloadOf, errorsByField, type FormEntity, type FormField } from '@fougere/app/client';
+import { facadeOf, formFieldsOf, payloadOf, errorsByField, type FormEntity, type FormField, type FormErrors, type FormRow, type FormValues } from '@fougere/app/client';
 
 export interface FormOptions {
   /** Command the submit rides. Default: 'create'. */
@@ -13,7 +13,7 @@ export interface FormOptions {
   params?: Record<string, string>;
 }
 
-export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, options: FormOptions = {}) {
+export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions = {}) {
   const entityKey = lowerFirst(entity.name);
   const fields: FormField[] = formFieldsOf(entity, entityKey);
 
@@ -26,7 +26,7 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
   );
   const errors = reactive<Record<string, string>>({});
   // A form is designated by its ENTITY — it is a set of fields — so the facade it submits to is
-  // an address with no handler type behind it, and `T` stays the caller's to state.
+  // an address with no handler type behind it, and what it answers is the entity's row.
   const command = useCommand(facadeOf(entity), options.op ?? 'create');
 
   function clearErrors() {
@@ -38,20 +38,20 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
     clearErrors();
     const result = entity.validate(payloadOf(entity, values));
     if (result.success) return true;
-    Object.assign(errors, errorsByField(result.errors));
+    Object.assign(errors, errorsByField<E>(result.errors));
 
     return false;
   }
 
   /** Validate locally, then send through the command. */
-  async function submit(): Promise<T | null> {
+  async function submit(): Promise<FormRow<E> | null> {
     if (!validator()) return null;
     try {
-      return (await command.execute({ params: options.params, input: payloadOf(entity, values) })) as T;
+      return (await command.execute({ params: options.params, input: payloadOf(entity, values) })) as FormRow<E>;
     } catch (err) {
       const refusals = validationErrorsOf(err);
       if (refusals) {
-        Object.assign(errors, errorsByField(refusals));
+        Object.assign(errors, errorsByField<E>(refusals));
 
         return null;
       }
@@ -66,8 +66,8 @@ export function useFormFor<T = Record<string, unknown>>(entity: FormEntity, opti
      * (`v-bind="fieldsByName.email.attrs"`), and still states no rule of its own.
      */
     fieldsByName: Object.fromEntries(fields.map((f) => [f.name, f])) as Record<string, FormField>,
-    values,
-    errors,
+    values: values as FormValues<E>,
+    errors: errors as FormErrors<E>,
     submit,
     loading: command.loading,
     /** Non-validation failure of the last submit (unreachable host, conflict…). */
