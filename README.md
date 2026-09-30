@@ -155,7 +155,7 @@ browser, the split lived daily, identical user code either side through a produc
 build, and [this site](./site) is itself a Fougere app.
 
 Known limits, because you would find them anyway: the boot never writes a schema —
-`fougere migrate` adds tables and columns and renames what `previous:` declares, and a type
+`fougere migrate` applies what `fougere freeze` recorded — tables, columns, renames, drops — and a type
 change needs a migration you write; a computed field costs
 one read per row unless you name a view. A split receiver binds to loopback by default;
 widening it requires signed envelopes, or an explicit `allowUnsigned` when an upstream mesh

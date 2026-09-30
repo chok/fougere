@@ -363,7 +363,11 @@ second database with a green boot. Writing is `fougere migrate --apply`
 and `seeds` replaced by name, so a brought frond's tables are migrated with the rest, then runs
 what touches live data FIRST — a rename from `previous:` or the frozen chain, a drop — and the
 additive half after, since renamed first a column moves rather than being added empty beside the
-old one. A rename needs no freeze: `previous:` read against the live table makes the database the
+old one. Without `--latest` it applies what was FROZEN and nothing else: a frond never frozen, or
+whose entities differ from its last version (`Bundle.diff`, the comparison `freeze` uses), is
+refused by name before a database is opened, and the command exits 1. That is what makes a freeze
+necessary rather than advised, the way `prisma migrate deploy` reads only the migration folders.
+`--latest` is the local gesture: `previous:` read against the live table makes the database the
 baseline, and a table gaining a column while keeping one no field declares is WARNED as an
 undeclared rename. `pending` reads NAMES only, so it is built without `elsewhere` and a process
 carrying one frond reads a table whose key names an entity it never saw. A process whose database
