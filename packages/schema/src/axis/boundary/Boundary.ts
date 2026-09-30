@@ -158,7 +158,9 @@ export class Boundary {
 
   /** The dual of `declared`: what `readOnly()` writes back on the field, not a judge. */
   declaring(overrides: BoundaryRules): BoundaryRules {
-    return { in: overrides.in ?? this.rules.in, out: overrides.out ?? this.rules.out };
+    const rules: BoundaryRules = { in: overrides.in ?? this.rules.in, out: overrides.out ?? this.rules.out };
+
+    return Object.fromEntries(Object.entries(rules).filter(([, half]) => half !== undefined));
   }
 
   readOnly(): boolean {

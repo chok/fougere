@@ -246,4 +246,11 @@ group('the three axes a JSON Schema reader cannot see', () => {
   it('says nothing when every axis stands still', () => {
     expect(V1.diff(shapeOf({ id: primary(), title: text(), body: text() })).changes).toEqual([]);
   });
+
+  it('says nothing between a shape and the file it was frozen into', () => {
+    const shape = shapeOf({ id: primary(), authorId: readOnly(text()) });
+    const frozen = Card.fromDescriptor(JSON.parse(JSON.stringify(shape.descriptor)));
+
+    expect(frozen.diff(shape).changes).toEqual([]);
+  });
 });
