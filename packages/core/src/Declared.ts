@@ -6,4 +6,6 @@ export type Declared = AbstractCtor | (Omit<DeclaredSubject, 'ctor'> & {
   ctor: AbstractCtor;
   /** The container key, when the class's own name cannot be trusted to survive a build. */
   name?: string;
+  /** The class is `abstract` — a port and never a realization. The scan writes it; TypeScript erases it. */
+  abstract?: true;
 });

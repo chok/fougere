@@ -706,8 +706,16 @@ context writes none. Pinned by `core/tests/own-logger.test.ts`.
 **Ports** — a class something already answers under, that a provider extends. Nothing
 declares one: `boot/ports.ts`, `portBindings` reads the prototype chain at boot, so
 `class StripePayment extends Payment` IS the registration. Two implementations REFUSE at
-boot naming both; `ports: { Payment: 'StripePayment' }` settles it. Only the direct base
-binds.
+boot naming both; `ports: { Payment: 'StripePayment' }` settles it. A class something
+extends is a port at any depth (`basesOf`, `descriptor/bases.ts`): a provider answers under
+every ancestor up to the highest one that answers, so `StripePayment extends CardPayment
+extends Payment` answers both keys with `CardPayment` never declared. An `abstract` class is
+never a candidate — the scan reads the keyword TypeScript erases (`scan/Abstract.ts`) and
+carries it as `ProviderEntry.abstract`; a concrete one in between is a second candidate and
+refuses. A wrapper stops at the class it asks for. A BUILTIN takes a wrapper too: the chain
+ends on what the scope already answered, set aside under `heldKeyOf` (`boot/ports.ts`), so
+`RedactingLogger(inner: Logger)` keeps the frond's logger — its carry and its `during`.
+Pinned by `tests/ports.test.ts` and `compiler/tests/abstract-port.test.ts`.
 
 A port may be answered by a CHAIN, and a WRAPPER is recognized by its form: it extends the
 port AND asks for it (`constructor(private inner: Payment)`). Wrapping used to be

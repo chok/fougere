@@ -15,4 +15,9 @@ export interface ProviderEntry {
   deps: string[];
   /** Absolute file path (for debugging). */
   filePath: string;
+  /**
+   * What the source said and the runtime erased: a port, which a class below answers for and
+   * nothing may instantiate — never a candidate for the ports above it.
+   */
+  abstract?: true;
 }

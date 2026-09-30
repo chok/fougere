@@ -151,6 +151,7 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
     ctor: ctorOf(p),
     deps: depsOf(p),
     filePath: '',
+    ...(typeof p !== 'function' && p.abstract ? { abstract: true as const } : {}),
   }));
 
   const seeds: SeedEntry[] = (declared.seeds ?? []).map((s) => ({

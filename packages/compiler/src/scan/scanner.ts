@@ -15,6 +15,7 @@ import {
   parsePresenterMethods,
   parseConstructorParams,
 } from './handler-parser.js';
+import { parseAbstract } from './Abstract.js';
 import { parseImplements } from './Implemented.js';
 import { resetTypePrograms, seedTypeProgram } from './TypeProgram.js';
 
@@ -251,7 +252,7 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
   // `name` beside `ctor`, and it IS the registration key — what `depKeyOf` returns, since
   // it reads the type as written. It used to be asked of `ctor.name` at boot, which held
   // until a bundler lowered a static field and renamed the declaration doing it.
-  return { name, ctor, deps, filePath };
+  return { name, ctor, deps, filePath, ...(await parseAbstract(filePath) ? { abstract: true as const } : {}) };
 }
 
 /**

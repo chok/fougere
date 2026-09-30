@@ -11,6 +11,7 @@ import two from './fixtures-ports-two/fronds.js';
 import wrapped from './fixtures-ports-wrapped/fronds.js';
 import overridden from './fixtures-logger-override/fronds.js';
 import wrappedLogger from './fixtures-logger-wrapped/fronds.js';
+import { billing, CardPayment, Payment, RetryingCardPayment, StripePayment } from './fixtures-ports-deep/fronds.js';
 import repository from './fixtures-repository/fronds.js';
 import { describe, it, expect, vi } from 'vitest';
 import { createContainer, type Container } from '@fougere/container';
@@ -45,6 +46,45 @@ describe('a port declared by extension', () => {
 
     expect(direct.charge(1).provider).toBe('stripe');
     expect(viaPort.charge(1).provider).toBe('stripe');
+  });
+});
+
+describe('a port under a port', () => {
+  const pay = async (app: Awaited<ReturnType<typeof createApp>>) =>
+    createLocalRunner(app)({ address: 'checkout', op: 'pay' }, Invocation.empty);
+
+  it('answers both keys with the class below, the one between never declared', async () => {
+    await using app = await createApp({ fronds: billing([Payment, StripePayment]), createContainer });
+
+    expect(await pay(app)).toEqual({ payment: 'stripe', card: 'stripe' });
+  });
+
+  it('never takes an abstract class between them for a realization', async () => {
+    await using app = await createApp({
+      fronds: billing([Payment, { ctor: CardPayment, abstract: true }, StripePayment]),
+      createContainer,
+    });
+
+    expect(await pay(app)).toEqual({ payment: 'stripe', card: 'stripe' });
+  });
+
+  it('refuses a concrete class between them, which is a second candidate, until `ports:` picks', async () => {
+    const fronds = billing([Payment, CardPayment, StripePayment]);
+
+    await expect(createApp({ fronds, createContainer })).rejects.toThrow(/CardPayment and StripePayment both extend Payment/);
+
+    await using app = await createApp({ fronds, createContainer, ports: { Payment: 'StripePayment' } });
+
+    expect(await pay(app)).toEqual({ payment: 'stripe', card: 'stripe' });
+  });
+
+  it('stands a wrapper in front of the port it asks for, and of none above it', async () => {
+    await using app = await createApp({
+      fronds: billing([Payment, StripePayment, { ctor: RetryingCardPayment, deps: ['CardPayment'] }]),
+      createContainer,
+    });
+
+    expect(await pay(app)).toEqual({ payment: 'stripe', card: 'retrying(stripe)' });
   });
 });
 

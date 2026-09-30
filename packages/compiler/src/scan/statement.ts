@@ -116,6 +116,7 @@ function frondOf(frond: FrondDescriptor, imports: Imports): string {
       // The container key, and a bundler is free to rewrite the class's own name — it did,
       // and a handler asking for `Communes` met a provider registered as `_Communes`.
       `name: ${JSON.stringify(nameOf(p))}`,
+      p.abstract ? 'abstract: true' : '',
     )))}`);
   }
   // A seed is DATA, not a class — the one member a statement cannot derive from an import.
