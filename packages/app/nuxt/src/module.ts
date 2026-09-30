@@ -138,12 +138,10 @@ const module = defineNuxtModule<FougereModuleOptions>({
     const config: FougereConfig = { ...fileConfig, ...optionsOverride };
     // Nitro replaces `console` with consola, whose own threshold sits at `info` — and a
     // Logger line at `debug` goes out through `console.debug`, which consola then drops.
-    // Measured: the level was `debug`, the boot logged nothing, and the silence read as
-    // an app doing nothing rather than a host filtering.
+    // The server's consola is built after this runs, so it reads the threshold set here; one
+    // the operator set is theirs to keep.
     if ((process.env.FOUGERE_LOG_LEVEL ?? config.logLevel) === 'debug') {
-      useLogger('fougere').warn(
-        'logLevel is debug, and Nitro\'s console drops that level — run with CONSOLA_LEVEL=4 to see it.',
-      );
+      process.env.CONSOLA_LEVEL ??= '4';
     }
     const conventions = resolveConventions(config.conventions);
 
