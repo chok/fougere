@@ -22,7 +22,7 @@ export default function Posts() {
               <>
                 {searchable[field.name] && <input type="search" placeholder={`Search ${field.label}`} onChange={(event) => void search(field.name, event.target.value)} />}
                 <select {...field.attrs} value={String(values[field.name] ?? '')} onChange={(event) => setValue(field.name, event.target.value)}>
-                  <option value="" disabled>{field.label}</option>
+                  <option value="" disabled={field.required}>{field.label}</option>
                   {choices[field.name]?.map((choice) => <option key={choice.value} value={choice.value}>{choice.label}</option>)}
                 </select>
               </>

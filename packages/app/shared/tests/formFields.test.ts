@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Card, entity, primary, text, email, url, number, bool, date, created, oneOf, ref, many, optional, writeOnly } from '@fougere/schema';
+import { Card, entity, primary, text, email, url, number, bool, date, created, oneOf, ref, many, optional, writeOnly, nullable } from '@fougere/schema';
 import { errorsByField, formFieldsOf, payloadOf, tableColumnsOf } from '../src/FormEntity.js';
 
 class Author extends entity({ id: primary(), password: writeOnly(text()), name: text() }) {}
@@ -70,10 +70,26 @@ describe('formFieldsOf — membership and axes', () => {
   });
 });
 
+describe('a field admitting null — no choice is the answer', () => {
+  class Draft extends entity({ id: primary(), title: text(), editorId: nullable(ref(Author)) }) {}
+  const editor = formFieldsOf(Draft as never, 'draft').find((field) => field.name === 'editorId')!;
+
+  it('is not required, so the empty choice can be taken', () => {
+    expect(editor.required).toBe(false);
+    expect(editor.attrs?.required).toBeUndefined();
+  });
+
+  it('sends null for an empty control where another field would be absent', () => {
+    expect(payloadOf(Draft, { title: '', editorId: '' })).toEqual({ editorId: null });
+    expect(payloadOf(Draft, { title: 'a', editorId: undefined })).toEqual({ title: 'a', editorId: null });
+    expect(Draft.validate({ title: 'a', ...payloadOf(Draft, { editorId: '' }) }).success).toBe(true);
+  });
+});
+
 describe('payloadOf — an empty control is an absent value', () => {
-  it('drops empty strings and undefined, keeps everything else', () => {
-    expect(payloadOf(Article, { title: 'a', subtitle: '', views: 0, published: false, secret: undefined }))
-      .toEqual({ title: 'a', views: 0, published: false });
+  it('drops empty strings and undefined, keeps everything else — an optional field empties to null', () => {
+    expect(payloadOf(Article, { title: 'a', contact: '', subtitle: '', views: 0, published: false, secret: undefined }))
+      .toEqual({ title: 'a', subtitle: null, views: 0, published: false });
   });
 
   it('restores a number the browser handed back as a string, and nothing else', () => {

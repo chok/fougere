@@ -16,7 +16,7 @@ const remove = useCommand(post, 'delete');
         <template v-if="field.control === 'reference'">
           <input v-if="searchable[field.name]" type="search" :placeholder="`Search ${field.label}`" @input="search(field.name, ($event.target as HTMLInputElement).value)" />
           <select v-model="(values as Record<string, string>)[field.name]" v-bind="field.attrs">
-            <option value="" disabled>{{ field.label }}</option>
+            <option value="" :disabled="field.required">{{ field.label }}</option>
             <option v-for="choice in choices[field.name]" :key="choice.value" :value="choice.value">{{ choice.label }}</option>
           </select>
         </template>

@@ -18,7 +18,7 @@
       {#if field.control === 'reference'}
         {#if $searchable[field.name]}<input type="search" placeholder={`Search ${field.label}`} oninput={(event) => search(field.name, event.currentTarget.value)} />{/if}
         <select bind:value={$values[field.name]} {...field.attrs}>
-          <option value="" disabled>{field.label}</option>
+          <option value="" disabled={field.required}>{field.label}</option>
           {#each $choices[field.name] ?? [] as choice (choice.value)}<option value={choice.value}>{choice.label}</option>{/each}
         </select>
       {:else if field.control === 'select'}

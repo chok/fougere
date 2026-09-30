@@ -100,7 +100,7 @@ export function formFieldsOf<E extends FormEntity>(entity: E, entityKey: string)
   const fields = Object.entries(Visibility.of(entity.getFields()).input).map(([name, field]) => {
     const f = field;
     const control = controlOf(f);
-    const required = Lifecycle.of(f).requiredAtCreate();
+    const required = Lifecycle.of(f).requiredAtCreate() && !Shapes.of(f.shape).nullable;
     const attrs = attrsOf(f, control, required);
     const members = enumOf(f);
     const reference = referenceOf(f);
@@ -156,9 +156,9 @@ export function tableColumnsOf(entity: FormEntity, entityKey: string): TableColu
 }
 
 /**
- * The wire body of the form's values — an empty control is an absent value at the create boundary
- * (absence is validated by the lifecycle axis, an empty string would be validated as a present bad
- * value).
+ * The wire body of the form's values. A control left empty or never touched is `null` for a field
+ * that admits it — no choice is the answer there — and absent for any other, where the lifecycle axis judges the absence
+ * and an empty string would be judged as a present bad value.
  */
 export function payloadOf(
   entity: FormEntity,
@@ -167,9 +167,12 @@ export function payloadOf(
   const fields = entity.getFields();
 
   return Object.fromEntries(
-    Object.entries(values)
-      .filter(([, value]) => value !== undefined && value !== '')
-      .map(([name, value]) => [name, Shapes.fromText(fields[name]?.shape, value)]),
+    Object.entries(values).flatMap(([name, value]) => {
+      const shape = fields[name]?.shape;
+      if (value === undefined || value === '') return Shapes.of(shape).nullable ? [[name, null]] : [];
+
+      return [[name, Shapes.fromText(shape, value)]];
+    }),
   );
 }
 
