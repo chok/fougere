@@ -20,6 +20,9 @@ import type { Diagnostic } from '../diagnostic.js';
  */
 export const SEAMS = new Set(['Storage']);
 
+/** Where a chain of wrappers finds what the scope already answered under its port — a builtin's own instance. */
+export const heldKeyOf = (port: string): string => `held:${port}`;
+
 /**
  * What stands in front of each seam, outermost first — the same reading `portBindings`
  * does, with no realization to find.

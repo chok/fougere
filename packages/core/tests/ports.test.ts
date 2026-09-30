@@ -10,8 +10,9 @@ import one from './fixtures-ports/fronds.js';
 import two from './fixtures-ports-two/fronds.js';
 import wrapped from './fixtures-ports-wrapped/fronds.js';
 import overridden from './fixtures-logger-override/fronds.js';
+import wrappedLogger from './fixtures-logger-wrapped/fronds.js';
 import repository from './fixtures-repository/fronds.js';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { createContainer, type Container } from '@fougere/container';
 import { createApp, createLocalRunner, type FrondDescriptor } from '../src/index.js';
 import { Invocation } from '../src/wire/Invocation.js';
@@ -82,6 +83,20 @@ describe('a framework builtin is a port too', () => {
     const out = await createLocalRunner(app)({ address: 'report', op: 'run' }, Invocation.empty);
 
     expect(out).toEqual({ logger: 'AuditLogger', seen: 1 });
+  });
+
+  it('stands a wrapper in front of the logger the boot built, and keeps what it carries', async () => {
+    await using app = await createApp({ fronds: wrappedLogger, createContainer });
+    const lines: string[] = [];
+    const spy = vi.spyOn(console, 'info').mockImplementation((...args) => { lines.push(args.join(' ')); });
+
+    const out = await createLocalRunner(app)({ address: 'report', op: 'run' }, Invocation.empty);
+    spy.mockRestore();
+
+    expect(out).toEqual({ logger: 'RedactingLogger' });
+    expect(lines.filter((line) => line.includes('report ran'))).toEqual([
+      expect.stringMatching(/\[app:ops\].* report ran with token=\*\*\*$/),
+    ]);
   });
 
   it('leaves the default in place for a frond that declares none', async () => {

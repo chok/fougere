@@ -28,7 +28,7 @@ import { targetOf } from '../prefab/prefab.js';
 import { ownersOf, sharedNames, storageInUserCode, crudOnOwned } from './ownership.js';
 import { refuseArityDrift } from './arity.js';
 import { StorageGuard } from '../dispatch/StorageGuard.js';
-import { portBindings, seamChains, wrapping, SEAMS } from './ports.js';
+import { heldKeyOf, portBindings, seamChains, wrapping, SEAMS } from './ports.js';
 import { contractsKeyOf, facadeKeyOf } from '../wire/Facade.js';
 import { inheritsCrud, subjectOf } from '../prefab/CrudConstructor.js';
 import { repositoryKeyOf } from '../prefab/RepositoryConstructor.js';
@@ -310,17 +310,23 @@ function registerProviders(
     // Registered from the INSIDE OUT, each wrapper asking for the one it stands in front
     // of: the container resolves a dep by NAME, so wrapping is a substituted key and
     // needs nothing of the container itself. The outermost answers under the port.
-    let inner = nameOf(chain.at(-1)!);
-    for (const wrapper of chain.slice(0, -1).reverse()) {
+    const realization = chain.at(-1)!;
+    const held = realization.deps.includes(port);
+    const wrappers = held ? chain : chain.slice(0, -1);
+    let inner = held ? heldKeyOf(port) : nameOf(realization);
+    if (held) scope.registerValue(inner, scope.resolve(port));
+    for (const wrapper of wrappers.slice(1).reverse()) {
       const deps = ownLogger(nameOf(wrapper), wrapper.deps).map((dep) => (dep === port ? inner : dep));
       inner = nameOf(wrapper);
       scope.register(inner, wrapper.ctor, { deps, ...lifetimeOf(wrapper.ctor) });
     }
     const outermost = chain[0]!;
-    scope.register(port, outermost.ctor, {
-      deps: ownLogger(nameOf(outermost), outermost.deps).map((dep) => (dep === port ? nameOf(chain[1]!) : dep)),
+    const outermostOptions = {
+      deps: ownLogger(nameOf(outermost), outermost.deps).map((dep) => (dep === port ? inner : dep)),
       ...lifetimeOf(outermost.ctor),
-    });
+    };
+    if (wrappers.length > 0) scope.register(nameOf(outermost), outermost.ctor, outermostOptions);
+    scope.register(port, outermost.ctor, outermostOptions);
     boundPorts.add(port);
     frondLog.debug(`port ${port} → ${chain.map((one) => one.ctor.name).join(' → ')}`);
   }
