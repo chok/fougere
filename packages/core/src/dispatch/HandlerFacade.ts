@@ -105,10 +105,11 @@ export class HandlerFacade {
     };
 
     const label = `${this.facade.frond}:${className}.${method}`;
+    const addressed = (error: unknown): never => { throw error instanceof FougereError ? error.at(address, op) : error; };
 
     return runMiddlewares(this.facade.middlewares(), context, () =>
-      this.facade.enterOperation(label, () => this.answer(op, contract, context, invocation, entered)))
-      .catch((error: unknown) => { throw error instanceof FougereError ? error.at(address, op) : error; });
+      this.facade.enterOperation(label, () => this.answer(op, contract, context, invocation, entered)).catch(addressed))
+      .catch(addressed);
   }
 
   /**

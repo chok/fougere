@@ -124,9 +124,10 @@ export function createRemoteFacade(
     const ctx: OperationContext = {
       address, frond, operation: op, args: [], state, invocation, crosses: true,
     };
+    const addressed = (error: unknown): never => { throw error instanceof FougereError ? error.at(address, op) : error; };
     const answer = await runMiddlewares(middlewaresFor(address), ctx, () =>
-      transport(call, { ...(ctx.invocation ?? invocation), state: shape.judge(ctx.state, address, op, entered) }))
-      .catch((error: unknown) => { throw error instanceof FougereError ? error.at(address, op) : error; });
+      transport(call, { ...(ctx.invocation ?? invocation), state: shape.judge(ctx.state, address, op, entered) }).catch(addressed))
+      .catch(addressed);
 
     // What the op says it answers, put to work: a row crosses as data and comes back through
     // the same codecs a local facade applies, so a placement does not decide what a caller holds.

@@ -22,6 +22,19 @@ describe('a refusal names where it happened', () => {
       .rejects.toMatchObject({ code: ErrorCode.UNPROCESSABLE_ENTITY, address: 'checkout', operation: 'pay' });
   });
 
+  it('is addressed before a middleware reads it', async () => {
+    await using app = await createApp({ fronds, createContainer });
+    const seen: (string | undefined)[] = [];
+    app.use('checkout', (_context, next) => next().catch((error: FougereError) => {
+      seen.push(error.address);
+      throw error;
+    }));
+
+    await createLocalRunner(app)({ address: 'checkout', op: 'pay' }, Invocation.empty).catch(() => undefined);
+
+    expect(seen).toEqual(['checkout']);
+  });
+
   it('keeps the address a deeper facade wrote', () => {
     const refused = new FougereError({ code: ErrorCode.NOT_FOUND, message: 'no such product' })
       .at('product', 'findById')
